@@ -9254,3 +9254,110 @@ L1, L2 and L3 (the Refinement module) in `c4-diagrams.md` → "C4 Architecture D
 
 MQ-1 forecast filter in the need number (default: respected, = forecasts) · MQ-2 presenter split reveal (default:
 Team admins when RBAC on) · MQ-3 mcp-http on auth-off refuses votes · MQ-4 no age on To Do rows.
+
+---
+
+## Application Architecture — epic-5878-baseline (ADO Epic #5878 "Then & Now"; foundation for Epics 5882, 5935)
+
+Feature: epic-5878-baseline — a **Reports** tab on Teams and Portfolios; the first template, **Then & Now**, freezes a
+past window (Then) at creation and sets a rolling, saved-length Now beside it, one panel per metric ({Cycle Time},
+{Throughput}, {WIP}, {Work Item Age}) with Then, Now, change, % change and Now's points beyond Then's frozen limits.
+No verdicts. DESIGN 2026-10-03, PROPOSE. Full design: `docs/feature/epic-5878-baseline/feature-delta.md` → "Wave:
+DESIGN / …" (DD1–DD25, reuse table, storage, seams); summary in `design/wave-decisions.md`.
+
+### Architectural pattern
+
+Unchanged: modular monolith, ports-and-adapters, OOP. **One new module, `Reports`** (`Models.Reports`,
+`Services.*.Reports`, `API/TeamReportsController`, `API/PortfolioReportsController`), depending down on Metrics,
+RBAC/Identity (licence) and Platform; nothing outside `API` and the composition root depends on it. No new container,
+external integration or technology. **This is the first stored Report**: ADR-209's deferral ends here (ADR-219).
+
+### Key invariants introduced
+
+- **I1 — a Report is an owner-scoped row with a template payload.** One `Reports` table; common columns (owner, template
+  key, name, created instant, shown metric keys, token) + `TemplatePayloadJson` typed per template; payload members are
+  only added; an absent member reads "Not captured". (ADR-219)
+- **I2 — exactly one owner, deleted with it.** `TeamId?` / `PortfolioId?` cascading FKs; cross-owner routes 404. (ADR-219)
+- **I3 — delivery and schedule are not part of a template.** 5882 attaches its own table to `Reports.Id`. (ADR-219)
+- **I4 — the server never knows good from bad.** Values, sample sizes, limits and counts on the wire; direction of
+  good, change, % change and colour live in one frontend panel per metric. (ADR-220)
+- **I5 — one capture code for both sides.** `IReportMetric` captures a window through `IReportMetricSeries`; Then at
+  creation, Now on every read. (ADR-220)
+- **I6 — Then's yardstick is its own.** Limits come from Then's raw series via `XmRCalculator.Limits` (unrounded),
+  never from the PBC builders or the owner's PBC Baseline; captured for every applicable metric; the series is not
+  stored; Then is never recomputed. (ADR-221)
+- **I7 — windows are server days.** Inclusive calendar days in the instance zone from `ILighthouseClock.Today`,
+  `DateOnly` on the wire; Now's length is stored on the report and changed only by an edit under Write. (ADR-222)
+- **I8 — panels are pure functions of props**, so 5882 can render them server-side (Spike 6052).
+- **I9 — every value travels with its sample size**; "—" only when there is nothing to compute; no threshold; nothing
+  about the owner's settings is stored or compared (D45, D46; ADR-221).
+
+### Component decomposition (headline)
+
+Backend NEW: `Report` + Then & Now payload records; `IReportQueries` (write-free) / `IReportCommands`; `IReportTemplate`
++ `ThenAndNowTemplate`; `IReportMetric` × 4 + `ReportMetricCatalog`; `IReportMetricSeries` + Team / Portfolio adapters;
+pure `ReportWindowPolicy`, `BeyondLimits`, `ReportCapPolicy`;
+`ReportRepository`; two controllers. EXTEND: `XmRCalculator` (`Limits`), `BaseMetricsService` (shared cycle-time
+selection), `ITeamMetricsService` / `IPortfolioMetricsService` (finished cycle-time and daily total WIA series),
+`LighthouseAppContext`, usage-data enums (DEVOPS). Frontend NEW: shared
+`Reports/*` tab, dialogs, report view, panel frame, four panels, `reportPanelRegistry`, `ReportService`; EXTEND
+`TeamDetail.tsx`, `PortfolioDetail.tsx`, router, owner delete dialogs.
+
+### Driving / driven ports
+
+HTTP under `…/teams/{teamId}/reports` and `…/portfolios/{portfolioId}/reports`: `GET templates`, `GET` list (with
+`creationBlockedByCap`), `POST` create, `GET {id}` read (Now computed), `PUT {id}` edit, `DELETE {id}`; Read on the
+class, Write on create / edit / delete; no new requirement. Driven: `IReportRepository` (new, EF),
+`IReportMetricSeries` (new, adapters over the metrics services), reused `ILighthouseClock`, `ILicenseService`, owner
+repositories.
+
+### Data and migrations
+
+One additive migration (slice 01): `Reports` (`Id`, `TeamId?`, `PortfolioId?`, `TemplateKey`, `Name`, `CreatedAt`,
+`ShownMetricKeysJson`, `TemplatePayloadJson`, `PayloadSchemaVersion`, `ConcurrencyToken`); FKs cascade; exactly-one
+owner. Slices 02–10 add payload members only.
+
+### Reuse Analysis
+
+23 overlaps examined: 12 reused, 5 extended, 6 rejected with evidence — the PBC builders (owner baseline, rounding,
+empty on invalid baseline), `BaselineValidationService` (off by one under inclusive counting; "Baseline" copy), the
+day-keyed snapshot tables, the info-widget comparison, the percentile widget, the `TeamDeleted` cleanup path. Full
+table in the feature delta.
+
+### Quality attributes
+
+Create ≤ 10 s in-request, all-or-nothing; open ≤ 2 s; Metrics tab byte-identical. Security: owner guards,
+non-disclosing 404, payload holds aggregate numbers only. **Contract testing (Pact): N/A** — no external
+integration.
+
+### Architectural Enforcement (this feature)
+
+ArchUnitNET + NUnit + TypeScript: E1 module isolation; E2 no dependency on `ProcessBehaviourChart`, `XmRResult` or the
+owner PBC Baseline; E3 metrics only via the series port; E4 read path write-free; E5 `Calculate` = `Limits` rounded;
+E6 Then parity with the Metrics endpoints; E7 payload round-trip; E8 cross-owner 404 + cascade on both providers; E9
+exhaustive panel registry, pure panels; E10 no user-facing "Baseline".
+
+### ADR References (this feature)
+
+- [ADR-219](./adr-219-a-report-is-an-owner-scoped-record-with-a-template-payload.md) — Report model; supersedes
+  ADR-209's deferral. **Proposed.**
+- [ADR-220](./adr-220-a-metric-catalog-captures-values-and-the-frontend-panel-owns-the-direction-of-good.md) — catalog
+  and panel registry. **Proposed.**
+- [ADR-221](./adr-221-then-is-frozen-as-captured-values-and-unrounded-limits-from-its-own-series.md) — what Then
+  freezes. **Proposed.**
+- [ADR-222](./adr-222-report-windows-are-inclusive-instance-days-and-now-length-is-stored-on-the-report.md) — windows
+  and the stored Now length. **Proposed.**
+- Cross-refs: ADR-209 (status note added), ADR-160 (pin precedent), ADR-211 (client reads facts), ADR-214 / ADR-064
+  (JSON text), ADR-027 (modules, tokens), ADR-208 (one computation, two callers).
+
+### C4
+
+L1, L2 and L3 (the Reports module) in `c4-diagrams.md` → "C4 Architecture Diagrams — epic-5878-baseline".
+
+### Maintainer decisions (2026-10-03)
+
+Accepted: payload as JSON in one table · owner as two cascading FKs · Then series not stored · change and % computed
+in the panel. Changed: every value shows its sample size, "—" only when truly empty (D45) · no settings-changed
+notice and nothing about settings stored, slice 09 dropped (D46) · {Throughput} as total and per-day average over the
+whole window, change on the per-day average (D47) · average {Work Item Age} as window average and last day, like the
+total (D48). Value definitions: ADR-221 §7.

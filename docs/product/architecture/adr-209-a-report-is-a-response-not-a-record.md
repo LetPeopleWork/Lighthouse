@@ -3,6 +3,11 @@
 **Status**: Accepted (2026-09-22 — Morgan, DESIGN wave, interaction mode PROPOSE). Ratifies decision D8
 of `epic-4172-forecast-backtest-sweep`, taken in DISCUSS and confirmed from DIVERGE.
 
+> **Status note (2026-10-03)**: the deferral below is **superseded by
+> [ADR-219](./adr-219-a-report-is-an-owner-scoped-record-with-a-template-payload.md)** — the second Report kind arrived
+> with Epic 5878 ("Then & Now"), and ADR-219 answers the six questions. The decision for the Forecast Reality Check
+> itself (a response, nothing stored) stands.
+
 **Feature**: `epic-4172-forecast-backtest-sweep` — ADO Epic #4172, "Forecast Reality Check"
 (internal codename "The Full Monte")
 

@@ -1634,3 +1634,122 @@ Read the graph for the three things that make it safe:
 3. **`NB` sits between the engine and every reader of the band.** Nobody reads `GetProbability(p)` directly, which is
    the call that would put the 85% end below the median (ADR-215, E8).
 
+---
+
+# C4 Architecture Diagrams — epic-5878-baseline
+
+Feature: epic-5878-baseline (ADO Epic #5878 "Then & Now"; the Reports foundation for Epics 5882 and 5935)
+Wave: DESIGN
+Date: 2026-10-03
+Architect: Morgan (Solution Architect)
+
+## C4 Level 1 — System Context
+
+No new external system. Reports are read in Lighthouse (PDF / email arrive with 5882, not here).
+
+```mermaid
+C4Context
+  title System Context — Reports (Then & Now)
+  Person(coach, "Flow coach", "Team or Portfolio Admin; freezes Then and edits the report")
+  Person(reader, "Reader", "Viewer such as a Head of Delivery; reads the panels")
+  System(lh, "Lighthouse", "Teams, Portfolios, Work Items, metrics — now Reports with a frozen Then and a live Now")
+  System_Ext(wts, "Work tracking system", "Jira / Azure DevOps / Linear / ServiceNow / CSV")
+  System_Ext(ph, "Usage data collector", "PostHog Cloud EU, opt-in, via the backend")
+  Rel(coach, lh, "Creates, edits and deletes reports in")
+  Rel(reader, lh, "Reads reports in")
+  Rel(lh, wts, "Syncs Work Items from (unchanged)")
+  Rel(lh, ph, "Forwards opted-in usage events to")
+```
+
+## C4 Level 2 — Container
+
+```mermaid
+C4Container
+  title Container — Reports (Then & Now)
+  Person(coach, "Flow coach")
+  Person(reader, "Reader")
+  Container(spa, "Lighthouse SPA", "React 18 + TypeScript", "Reports tab, create / edit / delete dialogs, report view with one registered panel per metric")
+  Container(api, "Lighthouse backend", "ASP.NET Core .NET 10", "Team/PortfolioReportsController, Reports module, existing metrics services")
+  ContainerDb(db, "Relational store", "SQLite or PostgreSQL", "Reports table (payload JSON, FK cascade to Teams / Portfolios); Work Items")
+  System_Ext(wts, "Work tracking system")
+  Rel(coach, spa, "Creates and edits reports in")
+  Rel(reader, spa, "Reads reports in")
+  Rel(spa, api, "Lists, creates, reads, edits and deletes reports via", "HTTPS/JSON")
+  Rel(api, db, "Stores frozen reports in and reads Work Items from", "EF Core")
+  Rel(api, wts, "Syncs Work Items from (unchanged)")
+```
+
+No container is added; no queue, push channel or background job.
+
+## C4 Level 3 — Component: the Reports module
+
+Earns its place: fourteen components of its own, and the arrows answer the two questions a reviewer will ask — "where can Then's
+limits come from?" and "where does good-or-bad get decided?".
+
+```mermaid
+flowchart TB
+    subgraph SPA["SPA"]
+        RV["ReportView<br/><i>fetches once</i>"]
+        REG["reportPanelRegistry<br/><i>panel + title token + direction of good</i>"]
+        PAN["Panels × 4 in ThenNowPanelFrame<br/><i>pure; change, %, colour</i>"]
+    end
+
+    subgraph API["API — driving adapters"]
+        TRC["TeamReportsController<br/><i>TeamRead · Write on POST/PUT/DELETE</i>"]
+        PRC["PortfolioReportsController<br/><i>PortfolioRead · Write on POST/PUT/DELETE</i>"]
+    end
+
+    subgraph REP["Reports module"]
+        Q["IReportQueries<br/><i>list · get — write-free</i>"]
+        C["IReportCommands<br/><i>create · edit · delete</i>"]
+        TPL["ThenAndNowTemplate<br/><i>IReportTemplate</i>"]
+        CAT["ReportMetricCatalog<br/>IReportMetric × 4"]
+        SER["IReportMetricSeries<br/><i>Team / Portfolio adapters</i>"]
+        WIN["ReportWindowPolicy<br/><i>pure</i>"]
+        BL["BeyondLimits<br/><i>pure</i>"]
+        CAP["ReportCapPolicy<br/><i>pure</i>"]
+        REPO["IReportRepository"]
+    end
+
+    subgraph EXIST["Existing (reused / extended)"]
+        XMR["XmRCalculator.Limits<br/><i>unrounded, extracted</i>"]
+        TMS["ITeamMetricsService"]
+        PMS["IPortfolioMetricsService"]
+        CLK["ILighthouseClock"]
+        LIC["ILicenseService"]
+    end
+
+    DB[("Reports table")]
+
+    RV -->|"reads one report from"| TRC
+    RV -->|"looks up panels in"| REG
+    REG --> PAN
+    TRC -->|"reads via"| Q
+    TRC -->|"changes via"| C
+    PRC -->|"reads via"| Q
+    PRC -->|"changes via"| C
+    C -->|"checks the count with"| CAP
+    CAP --> LIC
+    C -->|"freezes Then with"| TPL
+    Q -->|"captures Now with"| TPL
+    TPL -->|"validates windows with"| WIN
+    WIN --> CLK
+    TPL -->|"captures each metric through"| CAT
+    CAT -->|"reads series from"| SER
+    SER --> TMS
+    SER --> PMS
+    CAT -->|"computes Then's limits with"| XMR
+    TPL -->|"counts Now against frozen limits with"| BL
+    C -->|"adds, updates, removes in"| REPO
+    Q -->|"reads from"| REPO
+    REPO --> DB
+```
+
+Read the graph for the three things that make it safe:
+
+1. **No arrow reaches a PBC builder or the owner's PBC Baseline.** Then's limits come only from `CAT → XMR` over the
+   series `SER` returns (ADR-221, E2).
+2. **No backend component decides good or bad.** Direction of good exists only in `REG`; `PAN` computes change, % and
+   colour from the facts in the read (ADR-220).
+3. **Only `C` writes.** `Q` reaches `REPO` to read; the read computes Now without touching a row (E4).
+

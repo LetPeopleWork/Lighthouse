@@ -19,21 +19,22 @@ create.
 - **Create Report** (Team Write only, server-guarded; UI via `useRbac().isTeamAdmin`) → template card "Then & Now" →
   Then length 30 / 90 days ending today → defaulted name (D19) → Create → the report opens.
 - Storage for reports: owner, template key, name, Then window, Now length (= Then length for now, D43), created
-  date, selection, frozen per-metric values, settings snapshot (D26, D31). One expand-only migration via
+  date, selection, frozen per-metric values with their sample sizes (D26, D45); nothing about settings (D46). One expand-only migration via
   `CreateMigration`; cascades with the Team (D42).
 - The panel registry with one registration, the {Cycle Time} panel (D39); the direction of good (down) lives only in
   the frontend panel.
 - Report view: header "Then: 90 days to 2 Oct 2026 — frozen"; the panel: Then 85th 21 days │ Now 85th / 70th / 50th,
   change and % change on the 85th; lower = green, higher = red, equal = neutral, the sign always shown. Now = the
   saved length ending today, may overlap Then (D38).
-- "—" with the existing percentile guard's reason where data is too thin; change and % then show "—" (D41).
+- Every percentile with its sample size ("· 3 Work Items"); "—" with a reason only when no {Work Item} finished in
+  the window; change and % then show "—" (D45).
 - Usage data: route key `TeamDetail_Reports` on the existing `TeamTabOpened` (DEVOPS confirms); "report created"
   event if DEVOPS has designed it by then.
 
 ## OUT
 
 Points beyond Then's limits (03), past end dates and custom lengths (02), other panels (04, 05), Portfolio (06),
-choosing Now's length (07), delete and cap (08), settings notice (09; the snapshot is stored here), Edit report (10).
+choosing Now's length (07), delete and cap (08), Edit report (10). (Slice 09 is dropped, D46.)
 No verdicts, text or charts at all (D39).
 
 ## Learning hypothesis

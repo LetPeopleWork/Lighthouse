@@ -9,7 +9,7 @@ note: >
   showing Then, Now, the change, % change and Now's points beyond Then's frozen limits. No verdicts, no generated
   text, no charts - people interpret. No Lighthouse user has walked these journeys yet. Terms in braces ({team},
   {portfolio}, {feature}, {work items}, {cycle time}, {throughput}, {wip}, {work item age}) render as the instance's
-  configured words. No user-facing "Baseline" (it names the PBC setting). Decisions D17-D44 and slices 01-11 (11
+  configured words. No user-facing "Baseline" (it names the PBC setting). Decisions D17-D48 and slices 01-11 (09 and 11
   dropped) live in docs/feature/epic-5878-baseline/feature-delta.md.
 
 journeys:
@@ -31,7 +31,7 @@ journeys:
         name: Freeze Then
         action: "{team} or {portfolio} -> Reports -> Create Report -> Then & Now -> Then end date and length -> Now length -> metrics (all four ticked) -> name -> Create"
         emotional_state: {entry: Exposed, exit: Anchored}
-        shared_artifacts: [then_window, then_values, then_limits, now_length, settings_snapshot, report_count]
+        shared_artifacts: [then_window, then_values, then_limits, now_length, report_count]
         failure_modes:
           - Then reaches past DoneItemsCutoffDays - refused, naming the earliest allowed start, never silently partial
           - Then shorter than 14 days - refused with the minimum
@@ -48,12 +48,12 @@ journeys:
         name: Read Then and Now
         action: "Open the report; read each metric's panel - Then left, Now right, change, % change, points beyond Then's limits"
         emotional_state: {entry: Hopeful, exit: Informed}
-        shared_artifacts: [then_window, then_values, then_limits, now_window, now_values, direction_of_good, settings_snapshot]
+        shared_artifacts: [then_window, then_values, then_limits, now_window, now_values, direction_of_good]
         failure_modes:
           - Now overlaps Then - shown as is; the header shows both windows
-          - Too little data - "—" with the reason the Metrics page gives, never a zero
+          - Thin data - every value shows its sample size; "—" with a reason only when truly empty, never a zero (D45)
           - Then's lower limit at zero - the below count shows "—" with the reason (Q8, confirmed 2026-10-03)
-          - Settings changed since creation - one header notice; Then stays frozen
+          - Settings changed since creation - no notice (D46); Now uses today's settings, Then stays frozen
           - Owner's PBC Baseline changed later - the counts do not move; limits come from Then
         integration_checkpoint: The Now window in the header is the window the Now side and the beyond-limits counts use
         gherkin: |
@@ -109,7 +109,7 @@ journeys:
         name: Freeze Then at hand-over
         action: "Create Report -> Then & Now -> Then ends today -> Now length (e.g. 30 days)"
         emotional_state: {entry: Rushed, exit: Grounded}
-        shared_artifacts: [then_window, then_values, then_limits, now_length, settings_snapshot]
+        shared_artifacts: [then_window, then_values, then_limits, now_length]
         failure_modes:
           - Report frozen today - Now covers the same days as Then (or part of them) and shows little or no change; the header shows both windows
         integration_checkpoint: The header shows both windows, so a same-day report plainly compares Then with itself
@@ -117,10 +117,10 @@ journeys:
         name: The client reads Now later
         action: "Weeks later the client opens the report; Now is the saved length ending today"
         emotional_state: {entry: Curious, exit: Informed}
-        shared_artifacts: [now_window, now_values, direction_of_good, settings_snapshot]
+        shared_artifacts: [now_window, now_values, direction_of_good]
         failure_modes:
           - Then ages past DoneItemsCutoffDays - irrelevant, Then is frozen; deleting warns it can no longer be rebuilt
-          - Client changed settings after the hand-over - header notice
+          - Client changed settings after the hand-over - Now uses today's settings, Then stays as frozen; no notice (D46)
 
 shared_artifacts:
   then_window: {source: "the stored report (end date + length, picked at creation, never editable)", consumers: [header, default name, days since Then ended, delete warning]}
@@ -130,7 +130,6 @@ shared_artifacts:
   now_window: {source: "derived - now_length days ending today, never clipped", consumers: [header, Now side of every panel, points beyond Then's limits]}
   now_values: {source: "existing metrics services over now_window, today's settings", consumers: [Now side of every panel, change, "% change", points beyond Then's limits]}
   direction_of_good: {source: "fixed per metric in its frontend panel; stored nowhere", consumers: [colour of change, colour of each side of the beyond-limits count]}
-  settings_snapshot: {source: "frozen at creation ({work item} types, state mapping, query, blackout days)", consumers: [settings-changed notice]}
   report_count: {source: "stored reports of the owner, all templates", consumers: [Create Report enablement, Community cap message, owner delete confirmation]}
 
 changelog:
@@ -150,3 +149,9 @@ changelog:
       one panel per metric with change, % change and points beyond Then's frozen limits; Then picked by end date and
       length (custom allowed); Now length saved on the report; Edit report step added; shared artifacts then_limits,
       now_length and direction_of_good added, then_series dropped.
+  - date: 2026-10-03
+    feature: epic-5878-baseline
+    change: >
+      After DESIGN (D45-D48) - every value shows its sample size, "—" only when truly empty; settings-changed notice
+      and settings_snapshot dropped (slice 09 dropped); {throughput} as total and per-day average; average {work item
+      age} as window average and last day.

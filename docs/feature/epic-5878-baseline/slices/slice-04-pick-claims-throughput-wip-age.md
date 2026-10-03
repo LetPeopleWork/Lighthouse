@@ -6,6 +6,9 @@
 > Re-cut 2026-10-03: was "Pick claims: {Throughput}, {WIP}, Total {Work Item Age}". Claims and verdicts are gone
 > (D39); this slice brings the metric picker and the {Throughput} panel. {WIP} and {Work Item Age} move to slice 05.
 > The file name keeps its old slug so existing links still resolve.
+>
+> Revised 2026-10-03 after DESIGN: {Throughput} is the total and the per-day average over the whole window, not a
+> weekly median (D47); every value shows its sample size (D45).
 
 ## Goal
 
@@ -16,10 +19,11 @@ The coach chooses which metrics the report shows before looking at Now, and gets
 
 - Metric picker in Create Report; every metric in the catalog ticked by default; at least one required ("Choose at
   least one metric").
-- {Throughput} panel (D39): weekly median Then and Now, the number of weeks in each sample, change, % change; good =
-  up. Days of Now beyond Then's frozen limits, by side (D40): above green, below red.
+- {Throughput} panel (D47): total {Work Items} finished in the window and the average per day, Then and Now; change
+  and % change on the per-day average (correct also when Now's length differs from Then's); good = up. Days of Now
+  beyond Then's frozen limits, by side (D40): above green, below red.
 - A Then of 0 shows no % change: "—" with "Then was 0" (Q9, confirmed 2026-10-03).
-- "—" with the existing guard's reason where data is too thin (D41).
+- Every value with its sample size; "—" with a reason only when truly empty (D45).
 - One panel registration per metric. Every applicable metric frozen at creation (D26). Reports created before this
   slice show {Throughput} as "Not captured for this report" (D27).
 
@@ -29,8 +33,8 @@ The coach chooses which metrics the report shows before looking at Now, and gets
 
 ## Learning hypothesis
 
-**This disproves "a daily count reads sensibly beside a weekly median"** if dogfood readers read "days beyond" as
-weeks, or ask what it means. Then the {Throughput} panel needs different wording or weekly points.
+**This disproves "a per-day average reads sensibly beside a count of days beyond"** if dogfood readers misread the
+per-day average or ask what "days beyond" means. Then the {Throughput} panel needs different wording.
 
 ## Data and dogfood moment
 

@@ -10,6 +10,10 @@ settled, not re-opened — except where the maintainer's 2026-10-03 answers supe
 panel per metric — Then, Now, change, % change, and Now's points beyond Then's frozen limits — and people interpret.
 Slices 03, 04, 05, 07, 10 re-cut; slice 11 dropped. Slice numbers kept so ADO Stories #6159–#6169 still match.
 
+**Revision 2026-10-03 (after DESIGN).** The maintainer answered DESIGN's decisions to confirm: D45 (sample size
+visible), D46 (no settings-changed notice; slice 09 dropped), D47 ({Throughput} total and per-day average), D48
+(average {Work Item Age} as window average and last day).
+
 Full text of everything below: `../feature-delta.md` → "Wave: DISCUSS" sections. Slice briefs: `../slices/`.
 
 ## Config (given, not asked)
@@ -17,9 +21,9 @@ Full text of everything below: `../feature-delta.md` → "Wave: DISCUSS" section
 feature_type user-facing (full stack) · walking skeleton brownfield · research depth comprehensive, reusing DIVERGE ·
 JTBD light (job reused, not re-derived) · density lean.
 
-## Scope Assessment: PASS — 10 stories, 1 new module (reports + metric catalog with panels) on 3 existing ones (metrics, licence, RBAC), estimated ~9½ days
+## Scope Assessment: PASS — 9 stories, 1 new module (reports + metric catalog with panels) on 3 existing ones (metrics, licence, RBAC), estimated ~8½ days
 
-Slice 11 dropped on 2026-10-03, so the story count is back to 10; effort just under 2 weeks; one user outcome,
+Slice 11 dropped on 2026-10-03 and slice 09 after DESIGN (D46), so the story count is 9; effort under 2 weeks; one user outcome,
 nothing ships without the Reports tab. No Epic split. The release is cut after slice 10 (Edit report is part of v1
 since D43/D44); no slice is cancellable any more.
 
@@ -39,14 +43,14 @@ since D43/D44); no slice is cancellable any more.
 - **D24** *Superseded by D39* (was: verdict rules, sustained signal for Holds).
 - **D25** *Reshaped by D41* (was: own minimum-data thresholds).
 - **D26** Frozen at creation for every applicable metric: the Then values the panel shows, Then's XmR average and
-  limits unrounded, readiness; plus window, Now length, template, selection, name, settings snapshot. Whether the
-  full Then series is stored too is DESIGN's call. Never recomputed; all-or-nothing creation. *Reshaped by D40.*
+  limits unrounded, sample sizes; plus window, Now length, template, selection, name (no settings snapshot, D46). The
+  full Then series is not stored (DESIGN, maintainer-accepted). Never recomputed; all-or-nothing creation. *Reshaped by D40.*
 - **D27** Metrics added later: "Not captured for this report".
 - **D28** *Superseded by D39* (was: zero-clamp sentence; the fact behind it is Q8).
 - **D29** Cap 2 per owner across all templates (Community), Premium unlimited, lapse keeps all readable/deletable;
   reports go with their owner (confirmed by D42).
 - **D30** Delete for editors, confirmed; warns when Then can no longer be rebuilt.
-- **D31** Settings-changed notice over types, state mapping, query, blackout days; one header line.
+- **D31** *Superseded by D46* (was: a settings-changed notice in the header).
 - **D32** Words: "Reports", "Then & Now", "Then", "Now", "{Cycle Time}: Then & Now"; no "Baseline"; no verdict
   words; no new Terminology key.
 - **D33** Usage data via new route keys + name-only candidates (DEVOPS designs); editing gets no event.
@@ -62,13 +66,22 @@ since D43/D44); no slice is cancellable any more.
 - **D38** (Q2) Now is the full rolling window ending today and may overlap Then; never clipped.
 - **D39** (Q3) No verdicts, no narrative, no charts, no Stable/Unstable or data-maturity label. One registered panel
   per metric, ValueFlow-style (Then left, accent bar, Now right with change and % change). v1: M1 {Cycle Time}
-  (Then 85th; Now 85th/70th/50th), M2 {Throughput} (weekly median, weeks), M3 {WIP} (average, range), M4 {Work Item
-  Age} (total, average). Green/red by a fixed per-metric direction of good, known only to the frontend panel. Room
+  (Then 85th; Now 85th/70th/50th), M2 {Throughput} (total and per-day average, reshaped by D47), M3 {WIP} (average,
+  range), M4 {Work Item Age} (total and average, each as window average and last day — Q10, D48). Green/red by a fixed per-metric direction of good, known only to the frontend panel. Room
   for a later per-panel author note.
 - **D40** (Q3 follow-up) Each PBC metric's panel counts Now's points beyond the XmR limits frozen from Then, split
   above / below, coloured by direction of good; limits frozen unrounded, never the owner's PBC Baseline.
-- **D41** (Q4) Too little data: "—" with a reason exactly where the Metrics page's existing guards refuse a value
-  (percentile minimum, PBC too few points); no new thresholds; never 0.
+- **D41** (Q4) Too little data: no new thresholds; never 0. *Wording superseded by D45* (was: "—" where the Metrics
+  page's existing guards refuse a value — DESIGN found no percentile minimum guard exists).
+- **D45** (after DESIGN) Every value shows its sample size ("85th: 12 days · 3 {Work Items}"); "—" + reason only when
+  truly empty: no finished {Work Item}, < 2 points for Then's limits, collapsed band, lower limit 0 for the
+  below-count (Q8), Then was 0 for % (Q9). No threshold.
+- **D46** (after DESIGN) No settings-changed notice; nothing about settings stored; slice 09 and US-09 dropped (ADO
+  #6167 is the maintainer's call).
+- **D47** (after DESIGN) {Throughput} over the whole window: total finished and the average per day, Then and Now;
+  change and % change on the per-day average; no weekly median, no week count; beyond-limits count unchanged.
+- **D48** (after DESIGN) Average {Work Item Age}, like the total, has two values per side: the window average (mean
+  over the window's days of total age ÷ {WIP}, days without {WIP} left out) and the last day's value.
 - **D42** (Q5) Reports are deleted with their Team/Portfolio; its delete confirmation names "and its N reports".
 - **D43** (Q6) Now length set at creation (default = Then length; same presets + custom), saved on the report, not
   in the address; viewers cannot change it; editors can, stored for everyone. Scheduled sending (5882) needs it.
@@ -86,7 +99,7 @@ since D43/D44); no slice is cancellable any more.
 - **Slices (order = priority)**: 01 Reports tab + Team report + {Cycle Time} panel (WS) · 02 past end date + custom
   length · 03 {Cycle Time} points beyond Then's limits · 04 metric picker + {Throughput} panel · 05 {WIP} + {Work Item
   Age} panels · 06 Portfolio · 07 Now length at creation + days since · 08 delete + cap + lapse + owner deletion ·
-  09 settings notice · 10 Edit report · ~~11 claim chart~~ dropped.
+  ~~09 settings notice~~ dropped (D46) · 10 Edit report · ~~11 claim chart~~ dropped.
 - **KPIs**: north star K2 (≥ 40% of report-creating instances return to Reports ≥ 7 days later); K1 activation
   ≥ 10% in 90 days; K3 reports saved with a Now shorter than Then (informational); K4 cap hits (land-and-expand
   learning); K5 qualitative (2 consultants show it to management); guardrails G1 (re-roll deletes ≤ 20%), G2 (≤ 2 s
@@ -97,12 +110,13 @@ since D43/D44); no slice is cancellable any more.
 - RBAC: create/edit/delete = `TeamWrite`/`PortfolioWrite`; view = Read; UI via `useRbac()` only.
 - Then limits come from Then, frozen unrounded (`XmRResult` rounds), never from the owner's PBC Baseline setting.
 - The direction of good is a fixed frontend panel property; never stored or computed in the backend.
-- No synthesised values; absent data is "—" with a reason from the existing guards only.
+- No synthesised values; every value shows its sample size; "—" with a reason only when truly empty (D45).
 - One expand-only migration in slice 01 via `CreateMigration`, all providers; cascade with the owner.
 - Terminology tokens for every metric word; no "Baseline", "Epic", "Story", "Initiative"; no verdict words.
 - NFR: create ≤ 10 s on 365 days of history; open ≤ 2 s; Metrics tab unchanged.
 - Out of scope: CLI/MCP, export, Delivery level, cross-owner reports, verdicts, rules/thresholds, narrative, charts,
-  author note (later), viewer-changeable Now, editing Then, nice-to-have metrics.
+  author note (later), viewer-changeable Now, editing Then, nice-to-have metrics, a settings-changed notice (D46), a
+  {Throughput} weekly median (D47).
 
 ## Upstream Changes
 
@@ -132,6 +146,9 @@ SSOT updates:
 **Resolved 2026-10-03**: Q8 a lower limit at 0 shows "—" below with "Then's lower limit is 0", not 0 · Q9 % change
 from a Then of 0 shows "—" with "Then was 0" · Q10 total {Work Item Age} shows both the window average of the daily
 totals and the actual total on the window's last day.
+
+**Resolved 2026-10-03 (DESIGN's decisions to confirm)**: thin data → D45 · settings notice → D46 (dropped) ·
+{Throughput} → D47 · average {Work Item Age} → D48.
 
 ## Risks carried forward
 
