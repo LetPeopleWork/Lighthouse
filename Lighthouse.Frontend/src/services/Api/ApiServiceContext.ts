@@ -44,6 +44,10 @@ import {
 	type IRecurringBlackoutRuleService,
 	RecurringBlackoutRuleService,
 } from "./RecurringBlackoutRuleService";
+import {
+	type IRefinementService,
+	RefinementService,
+} from "./RefinementService";
 import { type ISettingsService, SettingsService } from "./SettingsService";
 import {
 	type ISuggestionService,
@@ -102,6 +106,7 @@ export interface IApiServiceContext {
 	connectionHealthService: IConnectionHealthService;
 	encryptionService: IEncryptionService;
 	usageDataService: IUsageDataService;
+	refinementService: IRefinementService;
 }
 
 const defaultServices: IApiServiceContext = {
@@ -135,6 +140,7 @@ const defaultServices: IApiServiceContext = {
 	connectionHealthService: new ConnectionHealthService(),
 	encryptionService: new EncryptionService(),
 	usageDataService: new UsageDataService(),
+	refinementService: new RefinementService(),
 };
 
 export function getApiServices(): IApiServiceContext {

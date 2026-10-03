@@ -75,6 +75,8 @@ export const createMockApiServiceContext = (
 		connectionHealthService: createMockConnectionHealthService(),
 		encryptionService: createMockEncryptionService(),
 		usageDataService: createMockUsageDataService(),
+		refinementService:
+			null as unknown as IApiServiceContext["refinementService"],
 		...overrides,
 	};
 };

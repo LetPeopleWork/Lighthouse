@@ -1941,3 +1941,168 @@ CI framework, no observability rewrite.
 | K1, K2, K3, K6, K7 phrased per Team / instance | Per browser (proxies above) | The pipe has no Team or instance identity, by design |
 | K4/K5 count all votes | Browser-cast votes only | Clients have no consent; nothing they do is reported |
 
+
+---
+
+## Wave: DISTILL / [REF] Scope and Reconciliation
+
+**Agent**: Quinn (`nw-acceptance-designer`) · **Date**: 2026-10-03 · **Mode**: autonomous subagent, maintainer AFK.
+**Scope**: **E1 only — Epic #6136**: slice 01 (US-01, #6139) and slice 02 (US-02, #6140). E2–E5 are not distilled.
+
+**Reconciliation passed — 0 contradictions** across DISCUSS, DESIGN and DEVOPS. DESIGN's corrections to AC-2.1
+(backlog order = tracker rank, DSN-6), AC-2.2 (age on Doing rows only, MQ-4 default) and the slice-01 OUT list
+(Terminology keys land in 01, DSN-20) are applied as written in `design/upstream-changes.md`. DEVOPS's events for
+these slices (`TeamRefinementConfigured`, slice 01; route key `TeamDetail_Refinement` on `TeamTabOpened`, slice 02)
+each have scenarios. Settled calls re-checked: the term is **Refinement**; slices 01–02 are **Community** (no
+licence gate anywhere); nothing here touches votes or the need number. Decisions DST-1..DST-13:
+`distill/wave-decisions.md`.
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+All non-skeleton scenarios are pending (`[Ignore(PendingSlice0n)]`, `it.skip`); the E2E skeleton is `test.fixme`.
+Error/boundary share: **39 of 66** runnable cases (59%).
+
+**Backend — `Slice01RefinementStatesTest`** (13 scenarios, 14 cases; `@driving_port @real-io @slice-01`)
+
+| Scenario | Tags |
+|---|---|
+| A Team admin names the refinement states and the Team says it has them | `@us-01 @kpi-OUT-5510-K1-refinement-set-up @contract-shape:bounded-change` |
+| A Team nobody has set up says it has no refinement states | `@us-01 @boundary @contract-shape:pure-function` |
+| Every reader of the Team learns that it has refinement states | `@us-01 @contract-shape:pure-function` |
+| A state the Team maps under a name of its own can be chosen by that name | `@us-01 @contract-shape:bounded-change` |
+| A state that is neither To Do nor Doing is refused and nothing is saved (Done, Icebox) | `@us-01 @error @contract-shape:unbounded-preservation` |
+| Only a Team admin can change the refinement states | `@us-01 @error @contract-shape:unbounded-preservation` |
+| A save that says nothing about refinement leaves the chosen states as they were | `@us-01 @boundary @contract-shape:unbounded-preservation` |
+| Clearing every refinement state turns the Team back to having none | `@us-01 @boundary @contract-shape:bounded-change` |
+| A chosen state that stops being mapped is kept and flagged, never dropped | `@us-01 @error @contract-shape:bounded-change` |
+| Saving again with the flagged state still chosen keeps it flagged instead of refusing the save | `@us-01 @error @contract-shape:bounded-change` |
+| A newly chosen state that is no longer mapped is refused | `@us-01 @error @contract-shape:unbounded-preservation` |
+| Choosing refinement states keeps every Work Item the Team already holds | `@us-01 @contract-shape:bounded-change` |
+| Refinement is a word every instance can rename | `@us-02 @contract-shape:pure-function` |
+
+**Backend — `Slice02RefinementListTest`** (14; `@driving_port @real-io @slice-02 @us-02`)
+
+| Scenario | Tags |
+|---|---|
+| The coach sees every Work Item in refinement in backlog order | `@kpi-OUT-5510-K2-refinement-tab-weekly @contract-shape:pure-function` |
+| Each row names the Work Item, links to the tracker and gives its state and category | `@contract-shape:pure-function` |
+| A Doing row carries its Work Item Age and a To Do row carries none | `@boundary` |
+| Work Items the tracker ranks equally are listed by id | `@boundary` |
+| Numeric ranks are compared as numbers, not as text | `@boundary` |
+| A state chosen by its mapped name lists the Work Items held under that name | — |
+| An empty refinement is stated, not answered as an error | `@error` |
+| A Team nobody set up answers that it has no refinement states and lists nothing | `@error` |
+| Another Team's Work Items in the same state are not listed | `@boundary` |
+| Work Items in a chosen state that is no longer mapped are not listed | `@us-01 @error` |
+| Somebody without a role on the Team is told the tab does not exist | `@error @contract-shape:unbounded-preservation` |
+| Asking for the Refinement tab of a Team that does not exist is not found | `@error @contract-shape:unbounded-preservation` |
+| Opening the tab changes nothing about the Team or its Work Items | `@contract-shape:pure-function` |
+| Three hundred Work Items in refinement come back in backlog order within two seconds | `@boundary @kpi-OUT-5510-K2-refinement-tab-weekly` |
+
+**Backend — `TeamRefinementUsageEventsTests`** (5 scenarios, 6 cases; `@driving_port @real-io`)
+
+| Scenario | Tags |
+|---|---|
+| A browser that agreed reports refinement being set up as one event carrying only its name | `@us-01 @slice-01 @kpi-OUT-5510-K1-refinement-set-up` |
+| A refinement set-up event carrying anything but its name is refused (route, work tracking system) | `@us-01 @slice-01 @error` |
+| Refinement being set up is appended to the list of names, never inserted | `@us-01 @slice-01 @kpi-OUT-5510-K1-refinement-set-up` |
+| A browser that agreed reports opening the Refinement tab as a Team tab opening naming that tab | `@us-02 @slice-02 @kpi-OUT-5510-K2-refinement-tab-weekly` |
+| The usage data page lists the Refinement tab among the addresses it publishes | `@us-02 @slice-02 @kpi-OUT-5510-K2-refinement-tab-weekly` |
+
+**Frontend — Vitest + RTL** (32 cases)
+
+| File | Scenarios | Tags |
+|---|---|---|
+| `TeamDetail.refinementTab.test.tsx` | sits between Metrics and Settings · switched off, points its admin to Settings · tells a reader a Team admin has to choose · points everybody to Settings when roles are not enforced · switched on for a reader once configured · the Team's own word on tab and tooltip · opens the view and puts the tab in the address · opens straight from an address · lands on Forecasts from an address naming the tab of an unconfigured Team · switches on as soon as the save is accepted · reports set-up once · reports nothing on a later save · reports nothing and stays off when the save is refused | `@us-01 @us-02 @slice-01 @slice-02`, 6 `@error`, 1 `@boundary`, `@kpi-OUT-5510-K1-refinement-set-up` ×3 |
+| `Refinement/RefinementView.test.tsx` | asks for this Team's refinement and counts it in the heading · keeps the server's (backlog) order · links, names, state, category · age on Doing only · singular count · empty state, no error · the Team's own words (list, empty) · 300 Work Items | `@us-02 @slice-02`, 2 `@error`, 4 `@boundary`, `@kpi-OUT-5510-K2-refinement-tab-weekly` |
+| `ModifyTeamSettings.refinement.test.tsx` | offers only To Do and Doing states with their category · Doing note · saves the ticked states · shows chosen states ticked · saves none once the last is unticked · flags an unmapped chosen state · keeps a flagged state on the next edit · the Team's own word in title and flag | `@us-01 @slice-01`, 2 `@error`, 2 `@boundary` |
+| `usageDataRouteKeys.refinement.test.ts` | the Refinement tab is a Team tab opening naming that tab · names the same tab for every Team | `@us-02 @slice-02 @kpi-OUT-5510-K2-refinement-tab-weekly`, 1 `@error` |
+
+**E2E — `specs/teams/Refinement.spec.ts`** (1, `test.fixme`): *a coach opens a Team's Refinement tab and sees its
+Work Items in backlog order, while a Team without refinement states keeps the tab switched off* —
+`@walking_skeleton @driving_port @us-01 @us-02 @slice-01 @slice-02`. Given: demo scenario 12 with Team Gravity's
+refinement states Backlog, Analysing, Next and Team Zenith left unconfigured (demo seeding is DELIVER's, slice 01).
+
+## Wave: DISTILL / [REF] WS strategy
+
+Architecture of Reference + project policy (inherited, nothing appended). One walking skeleton for E1, the E2E above,
+as DVO-7 specifies: real browser → real app → seeded demo data, through POMs. Backend and frontend acceptance
+scenarios exercise the production composition root (`WebApplicationFactory<Program>` over real EF; the real component
+tree) with only the licence and the instance clock faked. Tier B: not applicable (DST-12).
+
+## Wave: DISTILL / [REF] Test placement
+
+| Where | Why (precedent) |
+|---|---|
+| `Lighthouse.Backend.Tests/API/Integration/Refinement/` — `RefinementAcceptanceTest` (harness) + `Slice01RefinementStates{Scenarios,Specifications}.cs`, `Slice02RefinementList{Scenarios,Specifications}.cs` | Per-feature folder, partial-class Scenarios/Specifications split (BlockedItems, ForecastRealityCheck, story 6083) |
+| `Lighthouse.Backend.Tests/Integration/UsageData/TeamRefinementUsageEventsTests.cs` | Beside `TeamForecastRealityCheckRunEventTests` on `UsageDataCollectorObservationTest` |
+| `Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.refinementTab.test.tsx`, `…/Refinement/RefinementView.test.tsx`, `src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx`, `src/services/UsageData/usageDataRouteKeys.refinement.test.ts` | Colocated `<component>.<concern>.test.tsx` (story 6094's `TeamForecastView.realityCheck.*`) |
+| `Lighthouse.EndToEndTests/tests/specs/teams/Refinement.spec.ts` + POM `tests/models/teams/TeamRefinementPage.ts`, `TeamDetailPage` gains `refinementTab`, `refinementTabTooltip()`, `goToRefinement()` | Specs through POMs only, demo data (`testWithDemoData`) |
+
+## Wave: DISTILL / [REF] Driving adapter coverage
+
+| Driving adapter (DESIGN) | Covered by |
+|---|---|
+| `PUT /teams/{teamId}` carrying `refinement` | every slice-01 backend scenario; frontend save scenarios |
+| `GET /teams/{teamId}` → `refinementConfigured` | slice-01 configured / not configured / reader; frontend tab enablement |
+| `GET /teams/{teamId}/settings` → `refinement` | slice-01 read-backs; settings form scenarios |
+| `GET /teams/{teamId}/refinement` | all slice-02 backend scenarios; `RefinementView` via `RefinementService`; E2E |
+| `GET /terminology/all` → `refinement`, `refinements` | `Refinement_is_a_word_every_instance_can_rename` |
+| `POST /usagedata/events` (`TeamRefinementConfigured`, `TeamTabOpened` + `TeamDetail_Refinement`) | `TeamRefinementUsageEventsTests` |
+| UI route `/teams/:id/refinement`, Settings → Refinement section | `TeamDetail.refinementTab.test.tsx`, `ModifyTeamSettings.refinement.test.tsx`, E2E |
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+| Driven adapter | Real I/O scenario |
+|---|---|
+| EF `Teams.RefinementSettings` JSON column (M1, via `IRepository<Team>`) | every slice-01 save/read-back (real EF, provider per CI leg) |
+| EF Work Items (`IWorkItemRepository`) | every slice-02 list scenario; Work Item count kept (slice 01) |
+| `TerminologySeeder` | terminology scenario (seeders run in the harness) |
+| Usage-data forwarding (`IUsageDataPublisher` fake, outbound recorder) | `TeamRefinementUsageEventsTests` |
+| `ILighthouseClock` | faked (`FakeLighthouseClock`, policy row) — the Work Item Age scenario |
+
+No new external adapter in E1 (contract testing N/A, as DESIGN states). The M1 migration itself is DELIVER's
+(`CreateMigration`), with its `HistoricalSchemaPatch` entry (DEVOPS).
+
+## Wave: DISTILL / [REF] Scaffolds
+
+| File | Marker | Behaviour until DELIVER |
+|---|---|---|
+| `Lighthouse.Frontend/src/services/Api/RefinementService.ts` | `__SCAFFOLD__` | `getRefinement` throws `Not yet implemented -- RED scaffold` |
+| `Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.tsx` | `__SCAFFOLD__` | throws on render |
+| `Lighthouse.Frontend/src/models/Refinement/Refinement.ts` | types only | — |
+| `ITeamSettings.refinement?`, `IApiServiceContext.refinementService` (+ default and mock entries) | additive | not read by any production code yet |
+
+Backend: none — the scenarios are black-box over HTTP/JSON (precedent 22e43e1f9). No EF migration. The Terminology
+keys are deliberately **not** added to `TERMINOLOGY_KEYS` (DST-7).
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+DESIGN: driving ports and wire members above (DSN-3/5, DSN-6, DSN-20; ADR-214), RBAC `TeamWrite` / `TeamRead`
+(non-disclosing 404). DEVOPS: environments `clean`, `sqlite`/`postgres` (settings round-trip on both CI legs),
+`renamed-terminology`, `usage-data-consented`; E2E in `ci_verifysqlite`/`ci_verifypostgres` with the premium
+licence CI already uploads. DELIVER owns: M1 via `CreateMigration` + `HistoricalSchemaPatch` row, demo data (Gravity
+Backlog/Analysing/Next; Zenith unconfigured), seeder + `TERMINOLOGY_KEYS` + fallback words, `docs/settings/usagedata.md`
+rows, `ARCHITECTURE.md` eighth module.
+
+## Wave: DISTILL / [REF] RED classification
+
+66 of 66 runnable cases fail for `MISSING_FUNCTIONALITY` when un-skipped; none broken. Two backend refusal
+scenarios that were vacuously green (a missing route also answers 404) now first prove the tab opens for a permitted
+caller. E2E type-checked, not run live. Detail: `distill/red-classification.md`.
+
+## Wave: DISTILL / [REF] Review
+
+Final-gate review for this scope: `nw-acceptance-designer-reviewer` (Sentinel), iteration 1 — **conditionally
+approved**, 0 blockers, 3 high, 6 low. The DISCUSS, DESIGN and DEVOPS reviewers were not re-dispatched: those
+waves were reviewed and pushed before this run and are unchanged by it.
+
+| Finding | Resolution |
+|---|---|
+| (high) Frontend and E2E cases lacked `@contract-shape:` tags | Added to every case |
+| (high) AC-2.6 demo seeding guarded only by the un-run E2E; premium demo scenario for a Community feature | Accepted, DELIVER condition: slice 01 adds a backend demo-data scenario (scenario 12 → Gravity configured, Zenith not). The premium scenario is only where Gravity lives; no scenario gates on a licence (DST-14) |
+| (high) AC-1.6's UI half not shown in the new files | Already pinned: the Settings tab, and with it the Refinement section, is hidden from readers by the existing `TeamDetail.test.tsx` RBAC cases; the server half is `Only_a_Team_admin_can_change_the_refinement_states`. Done is the non-candidate the form test proves absent |
+| (low) DST-9, DST-10, DST-13 are product-facing | Listed for maintainer confirmation in `distill/wave-decisions.md` |
+| (low) Age 4 for a start three days ago unexplained | Comment added |
+| (low) Two preservation/isolation cases tagged `@error` | Retagged `@boundary`; error + boundary share unchanged at 39 / 66 |
+| (low) Wall-clock budget, `toHaveLength(2)` on the Doing note, enum-order reflection | Kept as written; noted for DELIVER |

@@ -2,6 +2,7 @@ import type { Locator, Page } from "@playwright/test";
 import { getLastUpdatedDateFromText } from "../../helpers/dates";
 import { MetricsPage } from "../metrics/MetricsPage";
 import { TeamEditPage } from "./TeamEditPage";
+import { TeamRefinementPage } from "./TeamRefinementPage";
 
 export class TeamDetailPage {
 	page: Page;
@@ -170,6 +171,23 @@ export class TeamDetailPage {
 
 	async goToForecasts(): Promise<void> {
 		await this.page.getByRole("tab", { name: "Forecasts" }).click();
+	}
+
+	get refinementTab(): Locator {
+		return this.page.getByRole("tab", { name: "Refinement", exact: true });
+	}
+
+	// A disabled tab takes no pointer events, so the tooltip is reached through the label inside it,
+	// which the page keeps hoverable for exactly this reason.
+	async refinementTabTooltip(): Promise<Locator> {
+		await this.refinementTab.getByText("Refinement", { exact: true }).hover();
+		return this.page.getByRole("tooltip");
+	}
+
+	async goToRefinement(): Promise<TeamRefinementPage> {
+		await this.refinementTab.click();
+		await this.page.waitForURL(/\/teams\/\d+\/refinement$/);
+		return new TeamRefinementPage(this.page);
 	}
 
 	async getLastUpdatedDate(): Promise<Date> {

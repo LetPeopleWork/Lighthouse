@@ -1,0 +1,402 @@
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.Seeding;
+using Lighthouse.Backend.Tests.TestDoubles;
+using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Moq;
+using NUnit.Framework;
+
+namespace Lighthouse.Backend.Tests.API.Integration.Refinement
+{
+    /// <summary>
+    /// How the Refinement scenarios reach the system: the real ASP.NET host over a real database, through
+    /// the Team settings write and read, the Team read, and the Refinement tab's read. Only the licence and
+    /// the instance clock are replaced - the licence because it is external, the clock so that a Work Item's
+    /// age is a number the scenario can name.
+    ///
+    /// Everything a scenario seeds is a precondition: a Team with its mapped states, and the Work Items its
+    /// tracker holds. What the Team's refinement states are, and what the tab lists, is only ever put there
+    /// by the scenario's own action through the Team settings write.
+    /// </summary>
+    public abstract class RefinementAcceptanceTest
+    {
+        protected const string PendingSlice01 = "Epic #6136 slice 01 (#6139) - pending DELIVER";
+
+        protected const string PendingSlice02 = "Epic #6136 slice 02 (#6140) - pending DELIVER";
+
+        protected const string Backlog = "Backlog";
+
+        protected const string Next = "Next";
+
+        protected const string Analysing = "Analysing";
+
+        protected const string Implementation = "Implementation";
+
+        protected const string Done = "Done";
+
+        /// <summary>A Wednesday morning in the instance's zone, so every age and day below is fixed.</summary>
+        protected static readonly DateTimeOffset Today = new(2026, 10, 7, 9, 0, 0, TimeSpan.Zero);
+
+        private static readonly JsonSerializerOptions WireOptions = new(JsonSerializerDefaults.Web);
+
+        protected TestWebApplicationFactory<Program> RootFactory = null!;
+        protected WebApplicationFactory<Program> Factory = null!;
+        protected HttpClient Client = null!;
+
+        [SetUp]
+        public void Init()
+        {
+            RootFactory = new TestWebApplicationFactory<Program>();
+
+            var licenseService = new Mock<ILicenseService>();
+            licenseService.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+
+            Factory = TestWebApplicationFactory<Program>.WithTestAuthentication(RootFactory)
+                .WithWebHostBuilder(builder =>
+                {
+                    builder.ConfigureServices(services =>
+                    {
+                        services.RemoveAll<ILicenseService>();
+                        services.AddScoped(_ => licenseService.Object);
+                        services.RemoveAll<ILighthouseClock>();
+                        services.AddSingleton<ILighthouseClock>(new FakeLighthouseClock(Today));
+                    });
+                });
+
+            Client = Factory.CreateClient();
+
+            using var setupScope = Factory.Services.CreateScope();
+            var context = setupScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            context.Database.EnsureDeleted();
+            context.Database.EnsureCreated();
+
+            foreach (var seeder in setupScope.ServiceProvider.GetServices<ISeeder>())
+            {
+                seeder.Seed().GetAwaiter().GetResult();
+            }
+        }
+
+        [TearDown]
+        public void Cleanup()
+        {
+            using (var teardownScope = Factory.Services.CreateScope())
+            {
+                teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
+            }
+
+            Client.Dispose();
+            Factory.Dispose();
+            RootFactory.Dispose();
+        }
+
+        // --- Preconditions ---
+
+        /// <summary>
+        /// A Team as the Gravity demo Team maps its tracker: To Do "Backlog"; Doing "Next", "Analysing" and
+        /// "Implementation"; Done "Done". No refinement state is chosen.
+        /// </summary>
+        protected TeamUnderTest ATeamMappedLikeGravity(string name = "Team Gravity")
+            => SeedTeam(name, [Backlog], [Next, Analysing, Implementation], [Done], []);
+
+        protected TeamUnderTest SeedTeam(
+            string name,
+            List<string> toDoStates,
+            List<string> doingStates,
+            List<string> doneStates,
+            List<StateMapping> stateMappings)
+        {
+            using var scope = Factory.Services.CreateScope();
+
+            var connection = new WorkTrackingSystemConnection
+            {
+                Name = $"Connection {Guid.NewGuid():N}",
+                WorkTrackingSystem = WorkTrackingSystems.Jira,
+            };
+
+            var team = new Team
+            {
+                Name = name,
+                WorkTrackingSystemConnection = connection,
+                DataRetrievalValue = "project = GRAVITY",
+                WorkItemTypes = ["User Story", "Bug"],
+                ToDoStates = toDoStates,
+                DoingStates = doingStates,
+                DoneStates = doneStates,
+                StateMappings = stateMappings,
+                DoneItemsCutoffDays = 365,
+            };
+
+            var teamRepository = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
+            teamRepository.Add(team);
+            teamRepository.Save().GetAwaiter().GetResult();
+
+            return new TeamUnderTest(team.Id, connection.Id, name, toDoStates, doingStates, doneStates, stateMappings);
+        }
+
+        /// <summary>
+        /// A Work Item the Team's tracker holds. Its rank in the tracker's backlog is <paramref name="rank"/>;
+        /// a Doing item started <paramref name="startedDaysAgo"/> days before today.
+        /// </summary>
+        protected void SeedWorkItem(
+            TeamUnderTest team,
+            string referenceId,
+            string name,
+            string state,
+            StateCategories category,
+            string rank,
+            int startedDaysAgo = 0)
+            => SeedWorkItems(team, [new TrackerWorkItem(referenceId, name, state, category, rank, startedDaysAgo)]);
+
+        protected void SeedWorkItems(TeamUnderTest team, List<TrackerWorkItem> workItems)
+        {
+            using var scope = Factory.Services.CreateScope();
+
+            var teamRepository = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
+            var owner = teamRepository.GetById(team.TeamId) ?? throw new InvalidOperationException($"Team {team.TeamId} not found");
+            var workItemRepository = scope.ServiceProvider.GetRequiredService<IWorkItemRepository>();
+
+            foreach (var tracked in workItems)
+            {
+                var started = tracked.Category == StateCategories.Doing
+                    ? Today.UtcDateTime.Date.AddDays(-tracked.StartedDaysAgo).AddHours(12)
+                    : (DateTime?)null;
+
+                workItemRepository.Add(new WorkItem
+                {
+                    Team = owner,
+                    TeamId = owner.Id,
+                    ReferenceId = tracked.ReferenceId,
+                    Name = tracked.Name,
+                    Type = "User Story",
+                    State = tracked.State,
+                    StateCategory = tracked.Category,
+                    CreatedDate = Today.UtcDateTime.AddDays(-60),
+                    StartedDate = started,
+                    ClosedDate = null,
+                    Order = tracked.Rank,
+                    Url = TrackerAddressOf(tracked.ReferenceId),
+                });
+            }
+
+            workItemRepository.Save().GetAwaiter().GetResult();
+        }
+
+        protected static string TrackerAddressOf(string referenceId) => $"https://tracker.example/browse/{referenceId}";
+
+        protected int WorkItemsStoredFor(TeamUnderTest team)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            return context.WorkItems.Count(item => item.TeamId == team.TeamId);
+        }
+
+        // --- Who is asking ---
+
+        protected void TheCallerAdministersTheTeam(TeamUnderTest team) => Client.AsTeamAdmin(team.TeamId);
+
+        protected void TheCallerOnlyReadsTheTeam(TeamUnderTest team) => Client.AsTeamViewer(team.TeamId);
+
+        protected void TheCallerHasNoRoleOnTheTeam() => Client.AsViewer();
+
+        // --- Driving ports ---
+
+        /// <summary>
+        /// The Team settings form saved with the given refinement states chosen. The rest of the form is what
+        /// the Team already holds, so nothing but the refinement section changes.
+        /// </summary>
+        protected async Task<HttpResponseMessage> SaveTheTeamSettingsChoosing(TeamUnderTest team, params string[] refinementStates)
+        {
+            var payload = TheTeamSettingsFormFor(team);
+            payload["refinement"] = new JsonObject
+            {
+                ["states"] = new JsonArray([.. refinementStates.Select(state => (JsonNode)new JsonObject { ["state"] = state })]),
+            };
+
+            return await PutTheTeamSettings(team, payload);
+        }
+
+        /// <summary>The Team settings form saved by a client that says nothing about refinement at all.</summary>
+        protected async Task<HttpResponseMessage> SaveTheTeamSettingsLeavingRefinementOut(TeamUnderTest team)
+            => await PutTheTeamSettings(team, TheTeamSettingsFormFor(team));
+
+        /// <summary>The Team settings form saved with the Team's Doing states replaced, refinement left out.</summary>
+        protected async Task<HttpResponseMessage> SaveTheTeamSettingsWithDoingStates(TeamUnderTest team, params string[] doingStates)
+        {
+            var payload = TheTeamSettingsFormFor(team with { DoingStates = [.. doingStates] });
+            return await PutTheTeamSettings(team, payload);
+        }
+
+        protected async Task<JsonElement> ReadTheTeamSettings(TeamUnderTest team)
+            => await ReadOk($"/api/latest/teams/{team.TeamId}/settings");
+
+        protected async Task<JsonElement> ReadTheTeam(TeamUnderTest team)
+            => await ReadOk($"/api/latest/teams/{team.TeamId}");
+
+        protected async Task<HttpResponseMessage> AskForTheRefinementTab(int teamId)
+            => await Client.GetAsync($"/api/latest/teams/{teamId}/refinement");
+
+        protected async Task<JsonElement> ReadTheRefinementTab(TeamUnderTest team)
+            => await ReadOk($"/api/latest/teams/{team.TeamId}/refinement");
+
+        protected async Task<JsonElement> ReadTheTerminology()
+            => await ReadOk("/api/latest/terminology/all");
+
+        private async Task<HttpResponseMessage> PutTheTeamSettings(TeamUnderTest team, JsonObject payload)
+            => await Client.PutAsync(
+                $"/api/latest/teams/{team.TeamId}",
+                new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json"));
+
+        private static JsonObject TheTeamSettingsFormFor(TeamUnderTest team)
+        {
+            var form = new TeamSettingDto
+            {
+                Id = team.TeamId,
+                Name = team.Name,
+                DataRetrievalValue = "project = GRAVITY",
+                WorkTrackingSystemConnectionId = team.ConnectionId,
+                WorkItemTypes = ["User Story", "Bug"],
+                ToDoStates = team.ToDoStates,
+                DoingStates = team.DoingStates,
+                DoneStates = team.DoneStates,
+                StateMappings = [.. team.StateMappings.Select(mapping => new StateMappingDto(mapping))],
+                ThroughputHistory = 30,
+                UseFixedDatesForThroughput = false,
+                FeatureWIP = 1,
+                AutomaticallyAdjustFeatureWIP = false,
+                DoneItemsCutoffDays = 365,
+            };
+
+            return JsonNode.Parse(JsonSerializer.Serialize(form, WireOptions))?.AsObject()
+                ?? throw new InvalidOperationException("The Team settings form did not serialise to an object.");
+        }
+
+        private async Task<JsonElement> ReadOk(string address)
+        {
+            using var response = await Client.GetAsync(address);
+            var body = await response.Content.ReadAsStringAsync();
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), $"{address} answered {(int)response.StatusCode}: {body}");
+
+            using var document = JsonDocument.Parse(body);
+            return document.RootElement.Clone();
+        }
+
+        // --- Reading the answers ---
+
+        /// <summary>
+        /// The refinement states a settings answer lists, in the order it lists them. A Team never configured
+        /// may carry no refinement section at all; that reads as no states, and the scenarios that care
+        /// whether the Team counts as configured ask the Team read for it rather than relying on this.
+        /// </summary>
+        protected static List<RefinementStateReading> RefinementStatesIn(JsonElement settings)
+        {
+            if (!settings.TryGetProperty("refinement", out var refinement) || refinement.ValueKind != JsonValueKind.Object)
+            {
+                return [];
+            }
+
+            if (!refinement.TryGetProperty("states", out var states) || states.ValueKind != JsonValueKind.Array)
+            {
+                return [];
+            }
+
+            return [.. states.EnumerateArray().Select(RefinementStateReading.From)];
+        }
+
+        /// <summary>
+        /// Whether the Team read says the Team has refinement states. Absent reads as a failed assertion
+        /// rather than as false, because "not configured" must be said, not inferred from silence.
+        /// </summary>
+        protected static bool RefinementConfiguredOn(JsonElement team)
+        {
+            Assert.That(team.TryGetProperty("refinementConfigured", out var configured), Is.True,
+                $"The Team read does not say whether refinement states are chosen. Body: {team}");
+
+            return configured.ValueKind == JsonValueKind.True;
+        }
+
+        protected static List<RefinementRowReading> RowsIn(JsonElement refinementTab)
+        {
+            Assert.That(refinementTab.TryGetProperty("workItems", out var rows), Is.True,
+                $"The Refinement tab's answer carries no list of Work Items. Body: {refinementTab}");
+
+            return rows.ValueKind == JsonValueKind.Array
+                ? [.. rows.EnumerateArray().Select(RefinementRowReading.From)]
+                : [];
+        }
+
+        protected static string? TextOf(JsonElement element, string property)
+            => element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String
+                ? value.GetString()
+                : null;
+
+        protected sealed record TeamUnderTest(
+            int TeamId,
+            int ConnectionId,
+            string Name,
+            List<string> ToDoStates,
+            List<string> DoingStates,
+            List<string> DoneStates,
+            List<StateMapping> StateMappings);
+
+        protected sealed record TrackerWorkItem(
+            string ReferenceId,
+            string Name,
+            string State,
+            StateCategories Category,
+            string Rank,
+            int StartedDaysAgo = 0);
+
+        protected sealed record RefinementStateReading(string? State, bool? IsMapped)
+        {
+            public static RefinementStateReading From(JsonElement entry)
+            {
+                bool? isMapped = entry.TryGetProperty("isMapped", out var mapped) && mapped.ValueKind is JsonValueKind.True or JsonValueKind.False
+                    ? mapped.GetBoolean()
+                    : null;
+
+                return new RefinementStateReading(TextOf(entry, "state"), isMapped);
+            }
+        }
+
+        /// <summary>
+        /// One row of the Refinement tab. The age is read as nullable, so a row that leaves it out reads as
+        /// "no age" and a row that prints zero reads as zero - the two are different claims.
+        /// </summary>
+        protected sealed record RefinementRowReading(
+            string? ReferenceId,
+            string? Name,
+            string? Url,
+            string? State,
+            string? Category,
+            int? WorkItemAge)
+        {
+            public static RefinementRowReading From(JsonElement row)
+            {
+                int? age = row.TryGetProperty("workItemAge", out var ageValue) && ageValue.ValueKind == JsonValueKind.Number
+                    ? ageValue.GetInt32()
+                    : null;
+
+                return new RefinementRowReading(
+                    TextOf(row, "referenceId"),
+                    TextOf(row, "name"),
+                    TextOf(row, "url"),
+                    TextOf(row, "state"),
+                    TextOf(row, "stateCategory"),
+                    age);
+            }
+        }
+    }
+}
