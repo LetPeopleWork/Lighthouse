@@ -1980,6 +1980,28 @@ chain_cleanup_refuses_past_unreadable_copy_not_started() {
   assert_stopped_cleanup_refuses "$ns" pgdata
 }
 
+# pgdata-17 has lost PG_VERSION, so it no longer counts as a copy and the walk up the copies ends at pgdata,
+# yet pgdata-17 holds every write made on Postgres 17. An upgrade from pgdata would set it aside as out of
+# date and delete it, so the start is refused instead, and the older major's programs are not handed over.
+chain_newer_copy_that_no_longer_counts_is_never_set_aside() {
+  local ns="chain-uncounted-copy" line handover
+  upgrade_16_to_17_in "$ns"
+  write_marker_table "$ns" upgrade_path_written_on_17
+  stop_database "$ns"
+  on_node rm "$(node_volume_dir "$ns")/pgdata-17/PG_VERSION"
+  FINGERPRINT="$(volume_fingerprint "$ns")"
+  start_database "$ns"
+
+  line="$(refusal_line "$ns")"
+  echo "  $line"
+  assert_line_says "$ns" "$line" "refusing to start Postgres 17" "found Postgres 16 data in pgdata and pgdata-17" \
+    "cannot start on or upgrade by itself"
+  handover="$(kubectl -n "$ns" logs "$POSTGRES_POD" -c pg-old-binaries)" \
+    || fail "the log of the step handing over the older programs in $ns could not be read"
+  [[ -z "$handover" ]] || fail "the step handing over the older programs in $ns logged: $handover"
+  assert_volume_unchanged "$ns" "$FINGERPRINT"
+}
+
 # The documented cleanup is cut off right after it writes the placeholder, as if the pod running it was
 # killed there: pgdata still holds PG_VERSION and every file, so it still counts as the Postgres 16 copy.
 chain_pin_back_after_cut_off_cleanup_keeps_pinned_data() {
@@ -2102,6 +2124,7 @@ readonly CHAIN_REFUSALS=(
   chain_unfollowable_chain_is_refused_once_by_upgrade_step
   chain_cleanup_refuses_past_unreadable_copy_not_started
   chain_too_little_room_names_cleanup_and_touches_nothing
+  chain_newer_copy_that_no_longer_counts_is_never_set_aside
 )
 
 # The documented cleanup on volumes from the chain, in a leg of its own for the same reason: each scenario
@@ -2152,6 +2175,7 @@ namespaces_of() {
     chain_unfollowable_chain_is_refused_once_by_upgrade_step | chain_cleanup_refuses_past_unreadable_copy_not_started)
       echo chain-unreadable-original ;;
     chain_cleanup_refuses_past_unreadable_copy_even_with_placeholder) echo chain-cleanup-past-unreadable ;;
+    chain_newer_copy_that_no_longer_counts_is_never_set_aside) echo chain-uncounted-copy ;;
     chain_unremovable_leftover_never_stops_the_start) echo chain-unremovable-leftover ;;
   esac
 }

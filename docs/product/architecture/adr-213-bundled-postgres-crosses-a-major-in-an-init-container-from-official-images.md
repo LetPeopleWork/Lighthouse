@@ -77,9 +77,10 @@ What was measured during DESIGN (Docker 29.8, Helm v4.3.0, a throwaway kind clus
    on a hash that was actually computed: when the old data's `global/pg_control` is missing or unreadable
    while its `PG_VERSION` is still there, the start is refused instead, pointing to a backup. No removal
    leaves that state, because a removal deletes `PG_VERSION` first, and after a rollback the old data may be
-   the newest, so neither the start nor the documented cleanup ever removes it. *Slice 03:* the hash is of
-   the control file of whichever copy the upgrade read from, and the notes chain from `pgdata/` upwards to
-   the live copy.
+   the newest, so neither the start nor the documented cleanup ever removes it. A copy of the image's major
+   that no longer counts, because its `PG_VERSION` is gone, is never set aside either: the start is refused.
+   *Slice 03:* the hash is of the control file of whichever copy the upgrade read from, and the notes chain
+   from `pgdata/` upwards to the live copy.
 4. **Majors are detected at run time, never taken from values.** The data's major comes from `PG_VERSION` on
    the volume and each image's major from its `PG_MAJOR` environment variable. A mirrored or renamed image
    therefore behaves the same as the default one.

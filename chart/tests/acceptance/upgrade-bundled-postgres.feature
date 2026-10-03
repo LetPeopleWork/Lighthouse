@@ -597,6 +597,18 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     Then the cleanup fails with one line naming the original copy's control file as unreadable and saying to put it back from a backup before removing anything
     And every file on the database volume is exactly as it was before the cleanup
 
+  @US-04 @AC-4.8 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation
+  Scenario: A newer copy that lost its version file is never set aside as out of date
+    Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17
+    And a row was written on Postgres 17
+    And the Postgres 17 copy's version file is gone, so it no longer counts as a copy
+    And a fingerprint of every file on the database volume has been taken
+    When the bundled database is restarted
+    Then the bundled database does not become Ready, and keeps retrying by itself
+    And its log carries one line saying the chart cannot start on or upgrade the volume by itself
+    And the step that hands over the older major's programs handed nothing over
+    And every file on the database volume is exactly as it was before the attempt, the Postgres 17 copy included
+
   @US-04 @AC-4.2 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change
   Scenario: A copy that cannot be fully removed never stops the database starting on the new copy
     Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17

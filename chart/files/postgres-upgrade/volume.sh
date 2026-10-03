@@ -110,12 +110,15 @@ copies_newer_than() {
 }
 
 # Whether the copy the database last ran on can be upgraded to major $1: it is one major behind, Postgres can
-# open it, and a copy of major $1 already on the volume was made by an upgrade, so it is only out of date.
+# open it, and a copy of major $1 already on the volume was made by an upgrade and still counts, so it is only
+# out of date. One that no longer counts is off the chain for that reason alone and may hold every write since
+# it was made, so the upgrade, which sets such a copy aside and deletes it, never runs beside it.
 live_copy_upgradable_to() {
   local target="$1" folder major
   read -r folder major <<<"$(live_copy)"
-  [[ -n "$major" && "$major" == "$((target - 1))" && -n "$(control_hash "$folder")" ]] \
-    && [[ ! -e "$MOUNT/pgdata-$target" || -f "$MOUNT/pgdata-$target/$UPGRADE_NOTE" ]]
+  [[ -n "$major" && "$major" == "$((target - 1))" && -n "$(control_hash "$folder")" ]] || return 1
+  [[ ! -e "$MOUNT/pgdata-$target" ]] \
+    || [[ -f "$MOUNT/pgdata-$target/$UPGRADE_NOTE" && -n "$(copy_major "pgdata-$target")" ]]
 }
 
 # The folder on the chain that holds major $1, if any.
