@@ -1,6 +1,6 @@
 # ADR-134: The Ordering Policy is an AppSetting enum, read at exactly one ordering port
 
-**Status**: **PARTIALLY SUPERSEDED (2026-08-31) by [ADR-187](./adr-187-ordering-policy-optional-feature-with-per-key-applier.md)** — §1 (storage) and §A (the rejection of `OptionalFeature`) no longer hold. §2 (the single ordering seam), §3 (INV-A3) and §4 (the sync path never writes `ManualRank`) are **retained in full**, as is every enforcement rule. Originally Accepted 2026-08-06 (Morgan, interaction mode PROPOSE)
+**Status**: **PARTIALLY SUPERSEDED (2026-08-31) by [ADR-187](./adr-187-ordering-policy-optional-feature-with-per-key-applier.md)** — §1 (storage) and §A (the rejection of `OptionalFeature`) no longer hold. §2 (the single ordering seam), §3 (INV-A3) and §4 (the sync path never writes `ManualRank`) are **retained in full**, as is every enforcement rule. Originally Accepted 2026-08-06 (Morgan, interaction mode PROPOSE). **Addendum 2026-10-03** (end of file): `RefinementList` may call the rank comparison directly
 **Date**: 2026-08-06
 **Feature**: `epic-5375-manual-sorting` (ADO Epic #5375 "Manual Sorting")
 **Decider**: Morgan (Solution Architect), DESIGN application layer, interaction mode = PROPOSE
@@ -215,3 +215,16 @@ when two general instance-settings mechanisms already exist. No property of the 
 - Extends **ADR-027** — no clause superseded; no new aggregate, no new token.
 - DISCUSS decisions D2, D5, D6, D7, D9 and open questions 1, 2, 6 in
   `docs/feature/epic-5375-manual-sorting/feature-delta.md`.
+
+## Addendum (2026-10-03): the refinement list is the one other caller of the rank comparison
+
+`RefinementList` (the Refinement module, Epic #6136) is allowed to use `FeatureComparer.CompareOrderValues`
+directly. It ranks a Team's **Work Items** in its refinement states by the tracker's backlog order, and
+`IFeatureOrdering` only takes Features, so going through the seam is not possible. It uses the plain comparison of
+rank values only — numbers compared as numbers, ties broken by id — and never selects an ordering policy, so §2's
+promise holds: the manual-ordering policy still has exactly one selection point, and Features and Work Items still
+agree on which rank comes first.
+
+Enforcement: `FeatureOrderingSingleSourceArchUnitTest` excludes `RefinementList` by type, next to `FeatureOrdering`
+and `FeatureComparer` itself, and its failure message names this exception. Any further caller still needs an
+amendment here first.

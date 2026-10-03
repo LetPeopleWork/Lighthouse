@@ -1641,14 +1641,15 @@ outcomes:
     measurement_scope: opt_in_telemetry_required
     measurement_plan:
       data_collection:
-        - "TeamRefinementConfigured (provisional 12), name only, slice 01: sent when a Team settings save the server accepted turned refinementConfigured from false to true."
+        - "TeamRefinementConfigured (12), name only, slice 01: sent when a Team settings save the server accepted gives refinement states to a Team the server last said had none, from either the Team page or the edit-Team page. Later saves and a cloned Team never report it."
         - "Denominator: TeamTabOpened with route TeamDetail_Settings (existing)."
       derivation: "Distinct browsers reporting TeamRefinementConfigured / distinct browsers reporting TeamTabOpened(TeamDetail_Settings), 60-day window from the first release carrying E1."
       surfacing: ["docs/settings/usagedata.md row (slice 01)", "collector dashboard"]
     acceptance_scenarios: "@kpi-OUT-5510-K1-refinement-set-up — Vitest: consented save false→true reports once; a later autosave does not; not consented reports nothing"
     measurement_window: "60 days from the first published release carrying E1"
     alerting: []
-    status: designed-not-shipped
+    status: live-on-release
+    ga_baseline: "pending - the first published release carrying E1 (Epic #6136; on main 2026-10-03 at c5cb52587, unreleased)"
     caveat: "Browsers, not instances; viewers who cannot edit are in the denominator."
 
   - id: OUT-5510-K2-refinement-tab-weekly
@@ -1658,13 +1659,14 @@ outcomes:
     measurement_scope: opt_in_telemetry_required
     measurement_plan:
       data_collection:
-        - "TeamTabOpened with new route key TeamDetail_Refinement (provisional 10, address /teams/:id/refinement), slice 02, existing 5-second dwell rule."
+        - "TeamTabOpened with route key TeamDetail_Refinement (10, address /teams/:id/refinement), slice 02, existing 5-second dwell rule."
       derivation: "Stickiness: browsers with the opening in >= 3 of 4 consecutive ISO weeks / browsers with >= 1 opening. The tab is disabled until configured, so every opening is of a configured Team."
       surfacing: ["docs/settings/usagedata.md (sixth Team tab, eleventh address)", "collector dashboard"]
     acceptance_scenarios: "@kpi-OUT-5510-K2-refinement-tab-weekly — Vitest on usageDataRouteKeys: /teams/7/refinement maps to TeamDetail_Refinement; backend shape test accepts it on TeamTabOpened"
     measurement_window: "rolling 4-week windows after the E1 release"
     alerting: []
-    status: designed-not-shipped
+    status: live-on-release
+    ga_baseline: "pending - the first published release carrying E1 (Epic #6136; on main 2026-10-03 at c5cb52587, unreleased)"
     caveat: "Per browser, not per Team."
 
   - id: OUT-5510-K3-in-range-on-refinement-day

@@ -1,9 +1,21 @@
 # ADR-214: Refinement settings are one JSON-valued property on the Team, saved through the Team settings write, in a module of their own
 
-- **Status**: Proposed (DESIGN, 2026-10-02)
+- **Status**: Accepted — **IMPLEMENTED for the refinement states** (Epic #6136, slice 01, 2026-10-03). Decisions 1
+  (with `States` as the only member so far), 2, 3, 4 and 6 are built as written; **decision 5 is amended** — see the
+  status note below. The later members (cadence, band, readiness, stage rules) are still designed, not built.
+  Proposed in DESIGN, 2026-10-02.
 - **Date**: 2026-10-02
 - **Feature**: epic-5510-5881-refinement (ADO Epics #6136, #5881, #5510; slices 01, 03, 04, 07, 08, 13)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)
+
+> **Status note (2026-10-03)**: decision 5 changed in delivery. A refinement state that stops being one of the
+> Team's To Do or Doing states is **removed in the save that takes it out** of those lists (`SyncRefinement` in
+> `TeamExtensions`), not kept and flagged on read — the maintainer's call after reviewing slice 01. The pruning
+> runs on every save, including one whose `refinement` member is null: null still never clears the chosen states,
+> but it no longer leaves a stale one in place. A state chosen twice in different case is stored once. The
+> validator also runs when a Team is created. Only states *added* in a save are validated, so a form opened before
+> the change still saves. And only a state's **mapped name** can be chosen, not a tracker state gathered under a mapping; Work Items held under any of
+> the gathered states are still listed through `GetRawStatesForCategory`.
 
 ## Context
 
@@ -46,7 +58,8 @@ Constraints that shape the storage:
    not discard the Team's Work Items; refinement is a lens over stored items, not a query change.
 5. **Refinement states are entries picked from `ToDoStates ∪ DoingStates`** (mapped names or raw states, as
    `WaitStates` does under ADR-056) and resolve through the existing `GetRawStatesForCategory`. An entry that later
-   leaves To Do ∪ Doing is **kept and flagged** on read, never dropped silently.
+   leaves To Do ∪ Doing is **kept and flagged** on read, never dropped silently. *(Amended 2026-10-03: only mapped
+   names can be chosen, and such an entry is removed on save — see the status note.)*
 6. **A new module `Refinement`** (`Services.*.Refinement` + `API/Refinement*Controller`) holds the feature. It depends
    down on Forecasting, Metrics, WorkItems/Rules, RBAC/Identity and Platform; **nothing outside `API` and the
    composition root depends on it**.

@@ -9234,7 +9234,10 @@ E9 band parity with the manual forecast; exhaustive frontend enum maps, string-u
 ### ADR References (this feature)
 
 - [ADR-214](./adr-214-refinement-settings-are-one-json-valued-property-on-the-team.md) — settings placement, one JSON
-  column, saved via the Team settings write, new module. **Proposed.**
+  column, saved via the Team settings write, new module. **Implemented for the refinement states (E1, 2026-10-03)**;
+  decision 5 amended (a state that leaves To Do / Doing is removed on save, not flagged).
+- [ADR-134 addendum](./adr-134-ordering-policy-appsetting-enum-single-selection-point.md) — `RefinementList` may call
+  `FeatureComparer.CompareOrderValues` directly: it ranks Work Items, which `IFeatureOrdering` cannot take.
 - [ADR-215](./adr-215-the-need-band-is-the-manual-how-many-for-the-next-refinement-read-at-100-minus-p.md) — need band,
   verdict, cadence, order, yardstick; derived on read. **Proposed.**
 - [ADR-216](./adr-216-the-sizing-log-is-append-only-and-keyed-by-a-voter-key.md) — append-only log, voter identity
@@ -9250,10 +9253,34 @@ E9 band parity with the manual forecast; exhaustive frontend enum maps, string-u
 
 L1, L2 and L3 (the Refinement module) in `c4-diagrams.md` → "C4 Architecture Diagrams — epic-5510-5881-refinement".
 
+### Built so far — E1, Epic #6136 (slices 01 + 02, on `main` 2026-10-03, not yet released)
+
+- **Settings**: `Team.RefinementSettings` (JSON column, migration `AddRefinementSettingsToTeams` on both providers;
+  `States` is the only member so far), `RefinementSettingsDto` on `TeamSettingDto`, `RefinementSettingsValidator`
+  (on update and on create; only newly added states judged; To Do / Doing only, case-insensitive), save-time pruning
+  in `TeamExtensions.SyncRefinement` (a state that leaves To Do / Doing is removed; case duplicates collapse),
+  `TeamDto.RefinementConfigured`.
+- **Module, read side**: `RefinementController` (`GET /teams/{teamId}/refinement`, TeamRead) → `IRefinementViewQuery`
+  / `RefinementViewQuery` → `RefinementList` (backlog order via `FeatureComparer.CompareOrderValues`, ties by id;
+  states matched in memory, case-insensitively). Rows: `referenceId`, `name`, `url`, `state`, `parentReferenceId` —
+  Work Item Age and state category were dropped from the wire at the maintainer's review, which also settles MQ-4.
+- **Enforcement built**: `RefinementModuleArchUnitTest` (only API and the composition root depend on the module; it
+  reaches neither the trackers nor the background updates; the read calls no writing repository member; the
+  validator is static and service-free) and the `RefinementList` exception in `FeatureOrderingSingleSourceArchUnitTest`.
+- **Cross-cutting**: usage data `TeamRefinementConfigured = 12`, route key `TeamDetail_Refinement = 10`; Terminology
+  `refinement` / `refinements`; demo Team Gravity configured.
+- **Frontend**: `RefinementSettingsSection` reuses `ItemListManager` (chips, like wait states) rather than
+  `DeliveryRuleBuilder` (DESIGN's pick; slice 08's stage rules may still use it); `RefinementView` uses `DataGridBase` with the shared
+  name column and parent lookup (`createNameColumn`, `useParentWorkItems`, both widened to Work Items);
+  `useRefinementSetUpReporter` is shared by the Team page and the edit-Team page; `RefinementService`.
+- **Not built yet**: everything from slice 03 on — stages, cadence, need band, votes and the sizing log, presenter
+  mode, `RefinementVotesController`, `TeamContribute`, the clients. ADR-215..218 remain *Proposed*.
+
 ### Open for the maintainer
 
 MQ-1 forecast filter in the need number (default: respected, = forecasts) · MQ-2 presenter split reveal (default:
-Team admins when RBAC on) · MQ-3 mcp-http on auth-off refuses votes · MQ-4 no age on To Do rows.
+Team admins when RBAC on) · MQ-3 mcp-http on auth-off refuses votes · ~~MQ-4 no age on To Do rows~~ settled
+2026-10-03: no age column at all.
 
 ---
 

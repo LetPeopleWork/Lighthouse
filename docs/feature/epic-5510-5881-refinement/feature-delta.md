@@ -1957,6 +1957,13 @@ each have scenarios. Settled calls re-checked: the term is **Refinement**; slice
 licence gate anywhere); nothing here touches votes or the need number. Decisions DST-1..DST-13:
 `distill/wave-decisions.md`.
 
+> **Note added at DELIVER finalize (2026-10-03), DISTILL text left as written.** DST-2 and DST-3 were **reversed
+> by the maintainer on 2026-10-03** after the slice-01 review: a refinement state that stops being To Do or Doing is
+> now removed in the save that takes it out (auto-remove, step 01-13), so nothing is kept and flagged, `isMapped`
+> left the wire and "Work Items in a flagged state are not listed" became moot. After the slice-02 review **Work Item
+> Age and the state category left the wire** as well as the table (step 02-10); rows carry id, name, link, state and
+> parent. The scenario tables below describe the suite as DISTILL wrote it; see `## Wave: DELIVER / …` for what runs.
+
 ## Wave: DISTILL / [REF] Scenario list with tags
 
 All non-skeleton scenarios are pending (`[Ignore(PendingSlice0n)]`, `it.skip`); the E2E skeleton is `test.fixme`.
@@ -2106,3 +2113,88 @@ waves were reviewed and pushed before this run and are unchanged by it.
 | (low) Age 4 for a start three days ago unexplained | Comment added |
 | (low) Two preservation/isolation cases tagged `@error` | Retagged `@boundary`; error + boundary share unchanged at 39 / 66 |
 | (low) Wall-clock budget, `toHaveLength(2)` on the Doing note, enum-order reflection | Kept as written; noted for DELIVER |
+
+## Wave: DELIVER / [REF] Implementation summary — E1 (#6136)
+
+**Scope**: E1 only — Epic #6136, slice 01 (US-01, #6139) and slice 02 (US-02, #6140). E2–E5 are not delivered; this
+workspace stays in place for them. **Delivered** 2026-10-03, 26 roadmap steps (01-01 … 01-14, 02-01 … 02-12, of which
+01-12, 01-13, 01-14, 02-10, 02-11 and 02-12 came from the maintainer's slice reviews), every step RED → GREEN →
+COMMIT in the DES step log under `deliver/` (02-12's RED skipped as not applicable: the page objects already read
+the grid). Then refactor (4 commits), adversarial review revision (7 commits), mutation (1 commit). On `main` as
+`fd9df2bca..c5cb52587`. Evolution record: `docs/evolution/2026-10-03-epic-6136-refinement-tab.md`.
+
+A Team admin picks refinement states as chips (To Do and Doing states only) under Settings → Refinement; the
+Refinement tab between Metrics and Settings is switched off with a role-specific tooltip until a Team has some, and
+then lists the Work Items in those states in the shared Work Item grid (Name, Parent, State), backlog order by
+default, sortable. A state that stops being To Do or Doing leaves the refinement states in the same save.
+
+## Wave: DELIVER / [REF] Files modified — E1 (#6136)
+
+| Area | Files |
+|---|---|
+| Backend — model and storage | `Models/Refinement/RefinementSettings.cs` (new), `Models/Team.cs`, `Data/LighthouseAppContext.cs`; migrations `AddRefinementSettingsToTeams` (SQLite `20261003114145`, Postgres `20261003114155`) + snapshots |
+| Backend — settings write | `API/Helpers/RefinementSettingsValidator.cs` (new), `API/Helpers/TeamExtensions.cs` (`SyncRefinement`, save-time pruning), `API/DTO/RefinementSettingsDto.cs` (new), `API/DTO/TeamSettingDto.cs`, `API/DTO/TeamDto.cs` (`refinementConfigured`), `API/TeamController.cs`, `API/TeamsController.cs` (validate on create) |
+| Backend — Refinement module (read) | `API/RefinementController.cs`, `API/DTO/RefinementViewDto.cs`, `Services/Interfaces/Refinement/IRefinementViewQuery.cs`, `Services/Implementation/Refinement/RefinementViewQuery.cs`, `Services/Implementation/Refinement/RefinementList.cs` (all new), `Program.cs` (registration) |
+| Backend — cross-cutting | `Models/UsageData/UsageDataEventName.cs` (`TeamRefinementConfigured = 12`), `UsageDataRouteKey.cs` (`TeamDetail_Refinement = 10`), `UsageDataRoutePatterns.cs`, `Services/Implementation/Seeding/TerminologySeeder.cs` (`refinement`, `refinements`), `Factories/DemoDataFactory.cs` (Team Gravity) |
+| Backend — tests | `API/Integration/Refinement/` (harness + Slice01/Slice02 scenarios and specifications), `Integration/UsageData/TeamRefinementUsageEventsTests.cs`, `Services/Implementation/Refinement/RefinementListTest.cs`, `API/Helpers/RefinementSettingsValidatorTest.cs`, `Architecture/RefinementModuleArchUnitTest.cs` (new); `FeatureOrderingSingleSourceArchUnitTest`, `ModuleBoundariesArchUnitTest`, `FetchShapingPropertyGuardTest`, `StateMappingSyncTest`, `DemoDataFactoryTest`, `TerminologySeederTests`, `UsageDataRoutePatternsTests`, `Slice04ProductEventsTests`, `HistoricalSchemaPatch` (extended) |
+| Frontend — settings | `components/Common/Team/RefinementSettingsSection.tsx` (new), `ModifyTeamSettings.tsx`, `pages/Teams/Edit/EditTeam.tsx`, `hooks/useRefinementSetUpReporter.ts` (new), `models/Team/TeamSettings.ts` |
+| Frontend — tab and list | `pages/Teams/Detail/TeamDetail.tsx`, `pages/Teams/Detail/Refinement/RefinementView.tsx` (new), `services/Api/RefinementService.ts` (new), `models/Refinement/Refinement.ts` (new), `models/Team/Team.ts`, `services/Api/ApiServiceContext.ts`, `components/Common/FeatureListDataGrid/columns.tsx` and `hooks/useParentWorkItems.ts` (widened to Work Items) |
+| Frontend — cross-cutting | `models/TerminologyKeys.ts`, `services/TerminologyContext.tsx`, `models/UsageData/UsageData.ts`, `services/Api/UsageDataService.ts`, `services/UsageData/usageDataRouteKeys.ts`, `tests/MockApiServiceProvider.ts` |
+| Frontend — tests | `TeamDetail.refinementTab.test.tsx`, `RefinementView.test.tsx`, `ModifyTeamSettings.refinement.test.tsx`, `usageDataRouteKeys.refinement.test.ts`, `RefinementService.test.ts`, `useRefinementSetUpReporter.test.ts` (new); `EditTeam.test.tsx` and three existing specs extended |
+| E2E | `specs/teams/Refinement.spec.ts`, POM `models/teams/TeamRefinementPage.ts` (new), `TeamDetailPage.ts` |
+| Docs | `docs/settings/usagedata.md`, `ARCHITECTURE.md` (eighth module), `CLAUDE.md` (sketch-first rule), this workspace's `deliver/`, `distill/`, `mutation/` |
+
+## Wave: DELIVER / [REF] Scenarios green — E1 (#6136)
+
+Nothing pending remains: no `[Ignore(PendingSlice0n)]`, no `it.skip`, no `test.fixme` in the E1 files.
+
+| Suite | Count |
+|---|---|
+| Backend acceptance — `Slice01RefinementStatesScenarios` | 16 tests + 2 parameterised cases (rewritten for auto-remove; review additions: case-insensitive duplicates, refused on create) |
+| Backend acceptance — `Slice02RefinementListScenarios` | 15 tests (rows now name, link, state, parent; case-insensitive state match added by the review) |
+| Backend — `TeamRefinementUsageEventsTests` | 4 tests + 2 cases |
+| Backend unit / architecture | `RefinementListTest` 2 + 9 cases, `RefinementSettingsValidatorTest` 5 + 11 cases, `RefinementModuleArchUnitTest` 5 |
+| Frontend | `TeamDetail.refinementTab` 15, `RefinementView` 13, `ModifyTeamSettings.refinement` 11, `usageDataRouteKeys.refinement` 2, `RefinementService` 2, `useRefinementSetUpReporter` 1, plus the refinement block of `EditTeam.test.tsx` |
+| E2E | 1 walking skeleton, green live three times |
+
+Whole suites after the review revision (`1e4cb29e3`): backend 7780 passed / 0 failed / 1 skipped (connector
+categories excluded), frontend 6039 passed / 0 failed.
+
+## Wave: DELIVER / [REF] DoD check against US-01 / US-02 — E1 (#6136)
+
+| AC | Status |
+|---|---|
+| AC-1.1 only To Do and Doing states offered, each with its category | **Met, changed by the maintainer**: offered as chip suggestions (To Do and Doing only, server-enforced on update and create); the "(To Do)" / "(Doing)" labels went with the checkboxes |
+| AC-1.2 saved selection survives reload and a Team refresh | **Met**: settings round-trip on both providers; a refresh never writes Team settings |
+| AC-1.3 tab disabled with role-specific tooltip until configured | **Met** |
+| AC-1.4 a state that becomes unmapped is flagged, never dropped | **Changed by the maintainer (2026-10-03)**: the state is removed in the save that takes it out of To Do / Doing (reverses DST-2, DST-3) |
+| AC-1.5 Doing note "already counts in WIP and Cycle Time" | **Removed by the maintainer** (step 01-14) |
+| AC-1.6 only Team admins can save | **Met**: server `TeamWrite`; the Settings tab is hidden from readers through `useRbac()` |
+| AC-2.1 exactly the Work Items in the refinement states, backlog order | **Met**, backlog order = the tracker's rank ladder, ties by id (DSN-6); sorting by column is allowed with this as the default (maintainer) |
+| AC-2.2 each row: id + link, name, state, category, age | **Changed by the maintainer**: Name (id + name, linked), Parent, State; category and age removed from the table and the API |
+| AC-2.3 "Refinement" is a Terminology key used on tab, heading, tooltip | **Met** (also the settings section) |
+| AC-2.4 readable by anyone with Team read | **Met**, non-disclosing 404 otherwise |
+| AC-2.5 renders and stays responsive with 300 Work Items | **Met**: backend under 2 s at 300 rows; the grid is the virtualised shared grid |
+| AC-2.6 demo Gravity configured, one other demo Team not | **Met**: Gravity `Backlog`, `Analysing`, `Next`; Zenith and the rest unconfigured; `DemoDataFactoryTest` |
+
+## Wave: DELIVER / [REF] Quality gates — E1 (#6136)
+
+- Backend build zero warnings; backend and frontend suites green (numbers above); `pnpm build` and Biome clean.
+- E2E walking skeleton green live (×3).
+- Refactor pass: redundant list filter removed, test helpers shared, `useErrorSnackbar`, naming; Sonar S3776 max 12.
+- Adversarial review: **needs_revision**, 1 high / 3 medium / 4 low; all 8 fixed with a failing-first test each.
+- Mutation (gate 80 %): backend **90.00 %** on the feature's code, frontend **91.41 %** — `mutation/results.md`.
+- CI on `c5cb52587`: running at finalize; `/clean-ci` owned by the orchestrator.
+- DELIVER checklist: docs prose **done** (`9b2602cf0`: Team edit and detail pages, concepts, Terminology);
+  screenshots **deferred by the maintainer** until the next Epic has changed the tab; demo data **done**; website assets
+  **deferred, and N/A for E1** (DISCUSS placed the website change at E2/E3 finalize); usage-data event in
+  `docs/settings/usagedata.md` **done**; Lighthouse-Clients **N/A for E1** (first client surface is slice 09).
+
+## Wave: DELIVER / [REF] Pre-requisites for what follows — E1 (#6136)
+
+- **E2 (#5881) and later build on**: `Team.RefinementSettings` (members are added with defaults, never renamed —
+  ADR-214); the `Refinement` module and its ArchUnit rules; `RefinementList` as the one source of "what is in
+  refinement, in backlog order"; the grid in `RefinementView` (vote columns join it in E3).
+- **ADO**: #6139 and #6140 Resolved; Epic #6136 stays open until the release carrying it.
+- **Owed**: screenshots for the tab and the settings section (maintainer deferred); KPI baselines for
+  `OUT-5510-K1` and `OUT-5510-K2` after the first release carrying E1.
