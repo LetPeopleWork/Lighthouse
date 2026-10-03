@@ -43,45 +43,53 @@ export class SizingLogService
 	extends BaseApiService
 	implements ISizingLogService
 {
-	public async castVote(
+	public castVote(
 		teamId: number,
 		workItemReference: string,
 		vote: ISizingVote,
 		voterKey: string | null,
 	): Promise<IRefinementRow> {
-		throw new Error(
-			`${NOT_YET_IMPLEMENTED}: vote on ${workItemReference} of Team ${teamId} (${vote.answer}, ${voterKey === null ? "no key" : "key"})`,
+		return Promise.reject(
+			new Error(
+				`${NOT_YET_IMPLEMENTED}: vote on ${workItemReference} of Team ${teamId} (${vote.answer}, ${voterKey === null ? "no key" : "key"})`,
+			),
 		);
 	}
 
-	public async addComment(
+	public addComment(
 		teamId: number,
 		workItemReference: string,
 		comment: ISizingComment,
 		voterKey: string | null,
 	): Promise<IRefinementRow> {
-		throw new Error(
-			`${NOT_YET_IMPLEMENTED}: comment on ${workItemReference} of Team ${teamId} (${comment.channel}, ${voterKey === null ? "no key" : "key"})`,
+		return Promise.reject(
+			new Error(
+				`${NOT_YET_IMPLEMENTED}: comment on ${workItemReference} of Team ${teamId} (${comment.channel}, ${voterKey === null ? "no key" : "key"})`,
+			),
 		);
 	}
 
-	public async takeBackMyVote(
+	public takeBackMyVote(
 		teamId: number,
 		workItemReference: string,
 		voterKey: string | null,
 	): Promise<IRefinementRow> {
-		throw new Error(
-			`${NOT_YET_IMPLEMENTED}: take back on ${workItemReference} of Team ${teamId} (${voterKey === null ? "no key" : "key"})`,
+		return Promise.reject(
+			new Error(
+				`${NOT_YET_IMPLEMENTED}: take back on ${workItemReference} of Team ${teamId} (${voterKey === null ? "no key" : "key"})`,
+			),
 		);
 	}
 
-	public async getLog(
+	public getLog(
 		teamId: number,
 		workItemReference: string,
 		voterKey: string | null,
 	): Promise<ISizingLog> {
-		throw new Error(
-			`${NOT_YET_IMPLEMENTED}: log of ${workItemReference} of Team ${teamId} (${voterKey === null ? "no key" : "key"})`,
+		return Promise.reject(
+			new Error(
+				`${NOT_YET_IMPLEMENTED}: log of ${workItemReference} of Team ${teamId} (${voterKey === null ? "no key" : "key"})`,
+			),
 		);
 	}
 }
