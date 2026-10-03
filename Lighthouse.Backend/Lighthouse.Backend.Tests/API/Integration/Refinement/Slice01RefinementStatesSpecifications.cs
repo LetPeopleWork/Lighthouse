@@ -42,12 +42,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 [Done],
                 [new StateMapping { Name = Refining, States = [Analysing, Grooming] }]);
 
-        private async Task<TeamUnderTest> GivenGravitysChosenAnalysingStoppedBeingMapped()
-        {
-            var gravity = await GivenGravitysAdminHasChosen(Backlog, Analysing, Next);
-            return await GivenTheAdminStoppedMappingAnalysing(gravity);
-        }
-
         private async Task<TeamUnderTest> GivenGravitysChosenAnalysingStoppedBeingMappedWithOnlyBacklogChosen()
         {
             var gravity = await GivenGravitysAdminHasChosen(Backlog);
@@ -93,6 +87,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private async Task<HttpResponseMessage> WhenTheAdminStopsMappingAnalysing(TeamUnderTest team)
             => await SaveTheTeamSettingsWithDoingStates(team, Next, Implementation);
 
+        private async Task<HttpResponseMessage> WhenTheAdminStopsMappingAnalysingWhileStillChoosingIt(TeamUnderTest team)
+            => await SaveTheTeamSettingsChoosing(team with { DoingStates = [Next, Implementation] }, Backlog, Analysing, Next);
+
         // --- Then ---
 
         private static async Task ThenTheSaveIsAccepted(HttpResponseMessage save)
@@ -130,21 +127,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private static void ThenTheTeamSaysItHasNoRefinementStates(JsonElement team)
             => Assert.That(RefinementConfiguredOn(team), Is.False,
                 "A Team without refinement states must say so, or its Refinement tab opens onto nothing.");
-
-        private static void ThenOnlyThisStateIsFlaggedAsNoLongerMapped(JsonElement settings, string unmapped)
-        {
-            var states = RefinementStatesIn(settings);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(states, Has.Count.GreaterThan(0), $"No refinement state was read back at all. Settings: {settings}");
-                foreach (var entry in states)
-                {
-                    Assert.That(entry.IsMapped, Is.EqualTo(entry.State != unmapped),
-                        $"{entry.State} is flagged wrongly: only {unmapped} has stopped being mapped. Settings: {settings}");
-                }
-            }
-        }
 
         private void ThenTheTeamStillHoldsItsWorkItems(TeamUnderTest team, int heldBefore)
         {

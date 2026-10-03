@@ -359,16 +359,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             string Rank,
             int StartedDaysAgo = 0);
 
-        protected sealed record RefinementStateReading(string? State, bool? IsMapped)
+        protected sealed record RefinementStateReading(string? State)
         {
-            public static RefinementStateReading From(JsonElement entry)
-            {
-                bool? isMapped = entry.TryGetProperty("isMapped", out var mapped) && mapped.ValueKind is JsonValueKind.True or JsonValueKind.False
-                    ? mapped.GetBoolean()
-                    : null;
-
-                return new RefinementStateReading(TextOf(entry, "state"), isMapped);
-            }
+            public static RefinementStateReading From(JsonElement entry) => new(TextOf(entry, "state"));
         }
 
         /// <summary>

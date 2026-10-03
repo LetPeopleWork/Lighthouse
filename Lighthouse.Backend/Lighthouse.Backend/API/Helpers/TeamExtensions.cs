@@ -115,16 +115,26 @@ namespace Lighthouse.Backend.API.Helpers
                 .ToList();
         }
 
+        // Only To Do and Doing states can mean refinement, and the only way a chosen state stops being one is an
+        // admin changing those lists in this same save, so it leaves the refinement states right here, in front of
+        // them. That includes a form opened before the change that still sends the state as chosen.
         private static void SyncRefinement(Team team, TeamSettingDto teamSetting)
         {
-            if (teamSetting.Refinement is null)
+            var chosen = teamSetting.Refinement?.States.Select(dto => dto.State) ?? team.RefinementSettings?.States.Select(setting => setting.State);
+            if (chosen is null)
             {
                 return;
             }
 
+            var candidates = team.ToDoStates.Concat(team.DoingStates)
+                .GroupBy(state => state, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+
             var settings = team.RefinementSettings ?? new RefinementSettings();
-            settings.States = teamSetting.Refinement.States
-                .Select(dto => new RefinementStateSetting { State = dto.State.Trim() })
+            settings.States = chosen
+                .Select(state => candidates.GetValueOrDefault(state.Trim()))
+                .OfType<string>()
+                .Select(state => new RefinementStateSetting { State = state })
                 .ToList();
 
             team.RefinementSettings = settings;

@@ -15,10 +15,11 @@ import ModifyTeamSettings from "./ModifyTeamSettings";
  * The Refinement section of a Team's settings, exercised through the settings form a Team admin
  * actually uses, so what is checked is what the form's autosave sends. States are picked the way wait
  * states are: the Team's To Do and Doing states are suggested and every chosen state shows as a chip.
- * The section says a Doing state already counts in WIP and cycle time; a chosen state the Team stopped
- * mapping stays a chip and is flagged, never quietly dropped.
+ * The section says a Doing state already counts in WIP and cycle time. A chosen state stops being one
+ * the moment the form no longer has it as To Do or Doing: its chip goes and the save leaves it out.
  *
- * Sections the refinement choice does not depend on are stood in for, as the form's own tests do.
+ * Sections the refinement choice does not depend on are stood in for, as the form's own tests do. The
+ * states list stand-in can only take a Doing state away, which is all these cases need from it.
  */
 
 const { terms } = vi.hoisted(() => ({
@@ -54,7 +55,25 @@ vi.mock("../WorkItemTypes/WorkItemTypesComponent", () => ({
 
 vi.mock("../StatesList/StatesList", () => ({
 	__esModule: true,
-	default: () => <div>StatesList</div>,
+	default: ({
+		doingStates,
+		onRemoveDoingState,
+	}: {
+		doingStates: string[];
+		onRemoveDoingState: (state: string) => void;
+	}) => (
+		<div>
+			{doingStates.map((state) => (
+				<button
+					key={state}
+					type="button"
+					onClick={() => onRemoveDoingState(state)}
+				>
+					{`Stop mapping ${state} as Doing`}
+				</button>
+			))}
+		</div>
+	),
 }));
 
 vi.mock("../Tags/TagsComponent", () => ({
@@ -219,7 +238,7 @@ describe("The Refinement section of a Team's settings", () => {
 	// @us-01 @slice-01 @contract-shape:bounded-change
 	it("shows the states already chosen as chips", async () => {
 		await renderGravitysSettingsForm(
-			gravitysSettings({ states: [{ state: "Backlog", isMapped: true }] }),
+			gravitysSettings({ states: [{ state: "Backlog" }] }),
 		);
 
 		await theStateInput();
@@ -231,7 +250,7 @@ describe("The Refinement section of a Team's settings", () => {
 	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
 	it("saves no refinement states once the last chip is removed", async () => {
 		await renderGravitysSettingsForm(
-			gravitysSettings({ states: [{ state: "Backlog", isMapped: true }] }),
+			gravitysSettings({ states: [{ state: "Backlog" }] }),
 		);
 
 		await theStateInput();
@@ -242,64 +261,47 @@ describe("The Refinement section of a Team's settings", () => {
 		expect(theChips()).toEqual([]);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:bounded-change
-	it("flags a chosen state the Team no longer maps", async () => {
+	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
+	it("shows no chip and no flag for a chosen state that is no longer To Do or Doing", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings(
-				{
-					states: [
-						{ state: "Backlog", isMapped: true },
-						{ state: "Analysing", isMapped: false },
-					],
-				},
+				{ states: [{ state: "Backlog" }, { state: "Analysing" }] },
 				["Next"],
 			),
 		);
 
-		expect(
-			await screen.findByText(
-				"Analysing is no longer mapped; its Work Items cannot appear",
-			),
-		).toBeVisible();
-		expect(theChips()).toEqual(["Backlog", "Analysing"]);
+		await theStateInput();
+
+		expect(theChips()).toEqual(["Backlog"]);
+		expect(screen.queryByText(/no longer mapped/i)).not.toBeInTheDocument();
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:bounded-change
-	// Never silently dropped: the next edit to the section still carries the flagged state.
-	it("keeps a flagged state chosen when another state is added", async () => {
+	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
+	it("drops a chosen state from the chips and the save once it stops being a Doing state", async () => {
 		await renderGravitysSettingsForm(
-			gravitysSettings(
-				{
-					states: [
-						{ state: "Backlog", isMapped: true },
-						{ state: "Analysing", isMapped: false },
-					],
-				},
-				["Next"],
-			),
+			gravitysSettings({
+				states: [{ state: "Backlog" }, { state: "Analysing" }],
+			}),
+		);
+		expect(theChips()).toEqual(["Backlog", "Analysing"]);
+
+		await userEvent.click(
+			screen.getByRole("button", { name: "Stop mapping Analysing as Doing" }),
 		);
 
-		await pick("Next");
-
-		await waitFor(() =>
-			expect(theStatesLastSaved()).toEqual(["Analysing", "Backlog", "Next"]),
-		);
-		expect(theChips()).toEqual(["Backlog", "Analysing", "Next"]);
+		await waitFor(() => expect(saveTeamSettings).toHaveBeenCalled());
+		expect(theStatesLastSaved()).toEqual(["Backlog"]);
+		expect(theChips()).toEqual(["Backlog"]);
 	});
 
 	// @us-02 @slice-01 @boundary @contract-shape:bounded-change
-	it("says the Team's own word for Refinement as the section's title and in the flag", async () => {
+	it("says the Team's own word for Refinement as the section's title and in the state input", async () => {
 		terms.current = {
 			...defaultTerms,
-			[TERMINOLOGY_KEYS.WORK_ITEMS]: "Tickets",
 			[REFINEMENT_KEY]: "Replenishment",
 			[REFINEMENTS_KEY]: "Replenishments",
 		};
-		await renderGravitysSettingsForm(
-			gravitysSettings({ states: [{ state: "Analysing", isMapped: false }] }, [
-				"Next",
-			]),
-		);
+		await renderGravitysSettingsForm(gravitysSettings(null));
 
 		expect(
 			await screen.findByRole("heading", { name: "Replenishment" }),
@@ -307,10 +309,5 @@ describe("The Refinement section of a Team's settings", () => {
 		expect(
 			screen.getByRole("combobox", { name: "New Replenishment State" }),
 		).toBeInTheDocument();
-		expect(
-			screen.getByText(
-				"Analysing is no longer mapped; its Tickets cannot appear",
-			),
-		).toBeVisible();
 	});
 });

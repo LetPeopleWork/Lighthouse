@@ -6,9 +6,9 @@ namespace Lighthouse.Backend.API.Helpers
     {
         // Checked against the states in the same save, because one save may change the Team's states and its
         // refinement choice together. A mapped name is an entry of those lists in its own right, so it counts.
-        // Only states added in this save are judged: the settings form re-sends every section on each save, so a
-        // state chosen earlier that has since stopped being mapped comes back too, and refusing it would block
-        // every later edit to the Team. It is kept and flagged instead.
+        // Only states added in this save are judged: a form opened before the admin took a chosen state out of To Do
+        // and Doing still sends it, and refusing that would block the save. Such a state is dropped when the save
+        // is applied instead.
         public static List<string> ValidateSettings(TeamSettingDto teamSetting, IEnumerable<string> storedStates)
         {
             if (teamSetting.Refinement is null)

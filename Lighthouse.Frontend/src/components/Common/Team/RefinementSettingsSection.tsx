@@ -1,6 +1,7 @@
 import { Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
+import { useEffect } from "react";
 import type { IRefinementStateSetting } from "../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
@@ -23,11 +24,22 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 	const { getTerm } = useTerminology();
 
 	const suggestions = [...toDoStates, ...doingStates];
-	const chosen = chosenStates.map((entry) => entry.state);
+	const offered = new Set(suggestions.map((state) => state.toLowerCase()));
+	const chosen = chosenStates
+		.map((entry) => entry.state)
+		.filter((state) => offered.has(state.toLowerCase()));
 
-	// Only the state names go back: whether a state is still mapped is the server's verdict to give.
 	const save = (states: string[]) =>
 		onChange(states.map((state) => ({ state })));
+
+	// Only To Do and Doing states can mean refinement, so a chosen state leaves as soon as the form stops
+	// offering it, and the same save that changes the states carries the shorter list.
+	const anyNoLongerOffered = chosen.length < chosenStates.length;
+	useEffect(() => {
+		if (anyNoLongerOffered) {
+			onChange(chosen.map((state) => ({ state })));
+		}
+	}, [anyNoLongerOffered, chosen, onChange]);
 
 	// The list accepts free text, but the server refuses anything that is not a To Do or Doing state,
 	// so a typed value only counts when it names one of the suggestions.
@@ -42,13 +54,7 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 	const remove = (state: string) =>
 		save(chosen.filter((name) => name !== state));
 
-	// A state the Team stopped mapping stays chosen until the admin removes it; dropping it quietly
-	// would throw away their choice.
-	const offered = new Set(suggestions);
-	const noLongerMapped = chosen.filter((state) => !offered.has(state));
-
 	const refinementTerm = getTerm(TERMINOLOGY_KEYS.REFINEMENT);
-	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const doingNote = `A Doing state already counts in ${getTerm(TERMINOLOGY_KEYS.WIP)} and ${getTerm(TERMINOLOGY_KEYS.CYCLE_TIME)}`;
 
 	return (
@@ -67,11 +73,6 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 						{doingNote}
 					</Typography>
 				)}
-				{noLongerMapped.map((state) => (
-					<Typography key={state} variant="body2" color="warning.main">
-						{`${state} is no longer mapped; its ${workItemsTerm} cannot appear`}
-					</Typography>
-				))}
 			</Grid>
 		</InputGroup>
 	);

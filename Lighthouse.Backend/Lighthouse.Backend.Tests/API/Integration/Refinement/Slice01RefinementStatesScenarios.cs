@@ -5,9 +5,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     /// <summary>
     /// A Team admin names which of the Team's mapped states mean refinement, and from then on the Team says
     /// it has refinement states, which is what turns its Refinement tab on for every reader. Only To Do and
-    /// Doing states can be chosen. A chosen state that later stops being mapped is kept and flagged rather
-    /// than dropped, and a save that says nothing about refinement leaves the choice alone. Saving only the
-    /// refinement section never makes the Team throw away the Work Items it already holds.
+    /// Doing states can be chosen. A chosen state that a save takes out of To Do and Doing leaves the
+    /// refinement states in that same save; otherwise a save that says nothing about refinement leaves the
+    /// choice alone. Saving only the refinement section never makes the Team throw away the Work Items it
+    /// already holds.
     ///
     /// Driving ports: the Team settings write and read, the Team read, and start-up seeding for the word
     /// "Refinement". Step definitions live in Slice01RefinementStatesSpecifications.cs.
@@ -142,9 +143,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:bounded-change
+        // @driving_port @real-io @us-01 @slice-01 @contract-shape:bounded-change
+        // Only an admin editing To Do, Doing or the mappings can take a state out of those lists, so the removal
+        // happens in the save they make, in front of them.
         [Test]
-        public async Task A_chosen_state_that_stops_being_mapped_is_kept_and_flagged_never_dropped()
+        public async Task A_chosen_state_that_stops_being_To_Do_or_Doing_is_removed_from_the_refinement_states()
         {
             var gravity = await GivenGravitysAdminHasChosen(Backlog, Analysing, Next);
 
@@ -152,25 +155,44 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
             await ThenTheSaveIsAccepted(save);
             var settings = await ReadTheTeamSettings(gravity);
+            var team = await ReadTheTeam(gravity);
             using (Assert.EnterMultipleScope())
             {
-                ThenTheChosenStatesAre(settings, Backlog, Analysing, Next);
-                ThenOnlyThisStateIsFlaggedAsNoLongerMapped(settings, Analysing);
+                ThenTheChosenStatesAre(settings, Backlog, Next);
+                ThenTheTeamSaysItHasRefinementStates(team);
+            }
+        }
+
+        // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:bounded-change
+        [Test]
+        public async Task Removing_the_only_chosen_state_from_To_Do_and_Doing_turns_the_Team_back_to_having_none()
+        {
+            var gravity = await GivenGravitysAdminHasChosen(Analysing);
+
+            var save = await WhenTheAdminStopsMappingAnalysing(gravity);
+
+            await ThenTheSaveIsAccepted(save);
+            var settings = await ReadTheTeamSettings(gravity);
+            var team = await ReadTheTeam(gravity);
+            using (Assert.EnterMultipleScope())
+            {
+                ThenNoStateIsChosen(settings);
+                ThenTheTeamSaysItHasNoRefinementStates(team);
             }
         }
 
         // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:bounded-change
-        // The settings form saves every section together, so it sends the flagged state back with the rest.
-        // Refusing that would block every later edit to the Team until the admin noticed the flag.
+        // A form opened before the change still sends the state it showed as chosen. Refusing that would block
+        // the very save that takes the state out of Doing.
         [Test]
-        public async Task Saving_again_with_the_flagged_state_still_chosen_keeps_it_flagged_instead_of_refusing_the_save()
+        public async Task A_stale_form_that_sends_a_removed_state_again_is_accepted_and_the_state_stays_removed()
         {
-            var gravity = await GivenGravitysChosenAnalysingStoppedBeingMapped();
+            var gravity = await GivenGravitysAdminHasChosen(Backlog, Analysing, Next);
 
-            var save = await WhenTheAdminChoosesRefinementStates(gravity, Backlog, Analysing, Next);
+            var save = await WhenTheAdminStopsMappingAnalysingWhileStillChoosingIt(gravity);
 
             await ThenTheSaveIsAccepted(save);
-            ThenOnlyThisStateIsFlaggedAsNoLongerMapped(await ReadTheTeamSettings(gravity), Analysing);
+            ThenTheChosenStatesAre(await ReadTheTeamSettings(gravity), Backlog, Next);
         }
 
         // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation

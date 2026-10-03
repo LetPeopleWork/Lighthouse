@@ -1,11 +1,6 @@
-/**
- * One state a Team admin chose as a refinement state. `isMapped` is only ever read back: it is false
- * when the state is still chosen but the Team no longer maps it as To Do or Doing, so its Work Items
- * cannot appear.
- */
+/** One state a Team admin chose as a refinement state. */
 export interface IRefinementStateSetting {
 	state: string;
-	isMapped?: boolean;
 }
 
 export interface IRefinementSettings {
