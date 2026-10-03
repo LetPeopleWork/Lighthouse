@@ -1,41 +1,44 @@
-# Slice 03 — "{Cycle Time} is trending down": the first verdict
+# Slice 03 — {Cycle Time}: Now's {Work Items} beyond Then's frozen limits
 
 **Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-03 (ADO #6161) · **Estimate**: ~1d · **Tier**: Community ·
 `job_id: job-flow-coach-show-whether-flow-changed`
 
+> Re-cut 2026-10-03: was "'{Cycle Time} is trending down': the first verdict". The report gives no verdicts any more
+> (D39); this slice now adds the count of Now's points beyond Then's frozen limits (D40). The file name keeps its old
+> slug so existing links still resolve.
+
 ## Goal
 
-The {Cycle Time} row becomes a claim with a verdict — Holds, Does not hold, No change yet or Not enough data — judged
-against limits computed from the frozen Then series. Now starts no earlier than the day after Then ends.
+The {Cycle Time} panel counts how many of Now's finished {Work Items} fall beyond the limits frozen from Then, split
+above and below and coloured by {Cycle Time}'s direction of good (down). No verdict; the reader interprets.
 
 ## IN
 
-- Rule kind `ShiftInDirection(down)` as its own class; C1 registered with it.
-- Limits recomputed on each view from the frozen Then series (`XmRResult` rounds limits, S3), never from the
-  owner's PBC Baseline (S4). `XmRCalculator.Calculate(frozenThen, now)` reused.
-- Verdict rules per D24 (sustained signal for Holds; any bad-side signal = Does not hold; lone good-side point named,
-  No change yet); colour only for Holds / Does not hold.
-- Not enough data per D25 (≥ 8 finished {Work Items} in Then, ≥ 1 in Now), "—" with the reason.
-- Now clipped to start after Then (D23); a report frozen today reads No change yet, "Now begins after 2 Oct 2026";
-  the header names the clipped Now.
-- Zero-clamp disclosure in the claim detail (D28).
-- Demo data: adjust Team Lightspeed's CSV so a 30-day Then and the Now after it yield a Holds (Checklist).
+- Then's XmR average and limits for {Cycle Time}, frozen **unrounded** at creation (`XmRResult` rounds, S3); never the
+  owner's PBC Baseline (S4), never Now's own data.
+- Count of Now's {Work Items} beyond those limits, by side: "Work Items beyond Then's limits: 2 above · 0 below". Only
+  points beyond the limits count, not runs or other special-cause rules (D40).
+- Colour by direction of good, known only to the frontend panel: above red, below green, 0 neutral; the number is
+  always shown.
+- A lower limit at 0: below shows "—" with "Then's lower limit is 0" (Q8, confirmed 2026-10-03).
+- Too few Then points for a process-behaviour chart: "—" with the reason the Metrics page gives (D41).
+- Reports created before this slice show the count as "Not captured for this report" (D27).
+- Demo data: check one demo Team gives a non-zero count; adjust Team Lightspeed's CSV only if none does (Checklist).
 
 ## OUT
 
-Other claims (04, 05), the chart behind the verdict (11), Now choice (07).
+Other panels (04, 05), any chart (dropped with slice 11), verdict words of any kind (D39), the Now length (07).
 
 ## Learning hypothesis
 
-**This disproves "PBC rules give a usable verdict on real Teams"** if, on the dev instance, C1 reads No change yet
-or Not enough data for every Team over the 63 days since 31 Jul 2026. Then the zero clamp and low counts make the
-claim mute, and D24/D25 (Q3, Q4) must change before more claims are built on them.
+**This disproves "a count against frozen limits says something on real Teams"** if, on the dev instance, every Team
+reads 0 above and "—" below over the 63 days since 31 Jul 2026. Then the count is mute on per-item data, and its
+shape must change before panels 04 and 05 copy it.
 
 ## Data and dogfood moment
 
-- Dogfood: the 31 Jul report from slice 02 on every dev-instance Team; tally verdicts and note any Holds that a
-  look at the Metrics tab would not support.
-- Confirm Q2–Q4 with the maintainer before accepting this slice.
+- Dogfood: the 31 Jul report from slice 02 on every dev-instance Team; tally the counts and check two {Work Items}
+  above the limit against the Metrics tab's {Cycle Time} PBC for the same dates.
 
 ## Acceptance criteria
 
@@ -43,4 +46,4 @@ AC-3.1 … AC-3.6 in `feature-delta.md` (US-03).
 
 ## Dependencies
 
-Slices 01, 02. Maintainer answers to Q2, Q3, Q4 (provisional assumptions applied meanwhile).
+Slices 01, 02.

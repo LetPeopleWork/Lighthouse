@@ -6,7 +6,11 @@ Premium unlimited · `job_id: job-flow-coach-show-whether-flow-changed`
 ## Goal
 
 Editors delete reports. Community holds 2 reports per {Team}/{Portfolio}, counted across every template; Premium is
-unlimited; a lapsed licence keeps every report readable and deletable.
+unlimited; a lapsed licence keeps every report readable and deletable. Deleting a {Team} or {Portfolio} deletes its
+reports, and its confirmation says so.
+
+> Revised 2026-10-03: the maintainer confirmed reports go with their owner and asked for the count in the owner's
+> delete confirmation (D42).
 
 ## IN
 
@@ -16,11 +20,13 @@ unlimited; a lapsed licence keeps every report readable and deletable.
   shown on the disabled Create Report: "Community includes 2 reports per {Team}. Delete one, or use Premium for
   unlimited reports."
 - Lapse: every report stays viewable and deletable; create blocked until the count is below 2.
+- Owner deletion: the existing {Team} / {Portfolio} delete confirmation adds "and its 2 reports" (the actual count,
+  only when there is at least one); the reports cascade with the owner (D42).
 - Usage data: "report deleted" and "report creation refused at cap" if DEVOPS designed them (K4, G1).
 
 ## OUT
 
-Premium gating of claims or rules (never, DV-7), export tiers (later).
+Premium gating of metrics, panels or editing (never, DV-7), export tiers (later).
 
 ## Learning hypothesis
 

@@ -7869,20 +7869,22 @@ jobs:
       re-point the journey at this id. The 4-week assessment needs no separate job (maintainer D14). A candidate
       reader job for delivery-lead-rte (read the verdict in one look without learning flow metrics) is recorded
       in job-analysis.md and is not an entry yet. Opportunity scores are DESK ESTIMATES by the diverger;
-      DISCOVER G1-G3 failed and the maintainer accepted the risk (D2).
+      DISCOVER G1-G3 failed and the maintainer accepted the risk (D2). Changelog: 2026-10-03 - wording revised in
+      DISCUSS after the maintainer decided the Then & Now report gives no verdicts and states no rules (feature-delta
+      D39, D40); it shows the chosen metrics, how they changed, and Now's points beyond limits frozen from Then.
     job_story: >
       When I (or the Team) have changed how work flows and someone asks whether it helped,
-      I want to set today's flow against a "before" that cannot move, judged by rules agreed before looking,
+      I want to set today's flow against a "before" that cannot move, with the metrics chosen before looking,
       so I can say with evidence whether flow changed - and not present noise as progress.
     dimensions:
       functional: >
         A frozen "Then" window (picked at creation, may end in the past, inside the done-items cutoff) set
-        against a rolling "Now" window. The comparison items are chosen from a catalog, and each carries a
-        direction of good and a rule. Process-behaviour-chart rules use limits frozen from Then, and the
-        verdicts are Holds, Does not hold, No change yet and Not enough data.
+        against a rolling "Now" window. The metrics are chosen from a catalog; each metric's panel shows Then,
+        Now, the change and % change, coloured by the metric's fixed direction of good, and counts Now's points
+        beyond process-behaviour-chart limits frozen from Then. No verdicts; the reader interprets.
       emotional: >
         From exposed ("they are paying me; I have to show it worked") to vindicated, or honestly informed
-        ("Cycle Time shifted down; WIP held"). A "No change yet" must be safe to show.
+        ("Cycle Time 85th down 43%; Work Item Age up"). A flat or worse number must be safe to show.
       social: >
         The coach is seen as rigorous rather than cherry-picking; the sponsor can pass the result upward
         without defending the method.
@@ -7895,7 +7897,7 @@ jobs:
         Lighthouse already holds the history, can rebuild a past window, and has the XmR machinery to judge
         new data against limits from an earlier window.
       anxiety: >
-        Will a sponsor read "No change yet" as evasion? Will the "Now" side disagree with the frozen "Then"
+        Will a sponsor read a flat or red panel as failure? Will the "Now" side disagree with the frozen "Then"
         after settings change? Is the evidence that anyone outside Thrivve needs this real (DISCOVER G1)?
       habit: >
         A slide with two columns and hand-drawn arrows; narrating caveats out loud.

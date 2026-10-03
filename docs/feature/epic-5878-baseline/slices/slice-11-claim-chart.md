@@ -1,38 +1,22 @@
-# Slice 11 — Open the chart behind a verdict (cancellable)
+# Slice 11 — DROPPED (was: open the chart behind a verdict)
 
-**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-11 (ADO #6169) · **Estimate**: ~1d · **Tier**: Community ·
+**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-11 (ADO #6169) · **Status**: dropped 2026-10-03 ·
 `job_id: job-flow-coach-show-whether-flow-changed`
 
-## Goal
+## Why dropped
 
-A reader expands a claim and sees Now's points against the Then average and limits, with the points that decided the
-verdict highlighted and traceable to {Work Items}.
+The maintainer decided on 2026-10-03 that the Then & Now report gives no verdicts and shows no per-claim charts (D39).
+There is no verdict left for a chart to explain; each metric's panel carries Then, Now, the change and the count of
+Now's points beyond Then's frozen limits instead.
 
-## IN
+This brief is kept, not deleted, so the link from ADO Story #6169 still resolves and the slice numbers 01–10 keep
+matching their Stories. Nothing in this slice is to be built.
 
-- Expand a claim row → the existing process-behaviour chart component, fed with the frozen Then limits (never the
-  owner's PBC Baseline) and Now's points.
-- Signal points highlighted; per-{Work Item} claims name the {Work Items} (e.g. LS-412, LS-415).
-- No chart for Not enough data; the reason only.
+## What happens to ADO Story #6169
 
-## OUT
+The maintainer closes or removes it. This wave does not touch ADO.
 
-Chart export, charts for ThresholdChange claims (C6 shows values only).
+## If charts come back later
 
-## Learning hypothesis
-
-**This disproves "the verdict needs its chart to be trusted"** if readers in dogfood and early use never expand a
-row. Then later templates can leave the chart out.
-
-## Data and dogfood moment
-
-- Demo: Team Lightspeed's Holds row from slice 03.
-- Dogfood: show a report to a reader; note whether they expand before accepting a verdict.
-
-## Acceptance criteria
-
-AC-11.1 … AC-11.3 in `feature-delta.md` (US-11).
-
-## Dependencies
-
-Slice 03. Cancellable (Scope Assessment).
+A chart, if a later template wants one, reuses the existing chart components (D36) and takes its limits from the
+report's frozen Then, never from the owner's PBC Baseline setting.

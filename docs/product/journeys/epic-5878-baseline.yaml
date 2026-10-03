@@ -1,37 +1,40 @@
 schema_version: 1
 feature_id: epic-5878-baseline
-updated: 2026-10-02
+updated: 2026-10-03
 ado: "#5878 Baseline (ValueFlow, Community)"
 note: >
   Seeded in DISCOVER (2026-10-02) as two hypothesis journeys; refined in DISCUSS (2026-10-02) to the converged
-  DIVERGE direction (Option 3, "Claims checklist"): a Reports tab on Teams and Portfolios, the "Then & Now" template,
-  a frozen Then window and a rolling Now judged by claims. No Lighthouse user has walked them yet. Terms in braces
-  ({team}, {portfolio}, {feature}, {work items}, {cycle time}, {throughput}, {wip}, {work item age}, {sle}) render
-  as the instance's configured words. No user-facing "Baseline" (it names the PBC setting). Decisions D17-D35 and
-  slices 01-11 live in docs/feature/epic-5878-baseline/feature-delta.md.
+  DIVERGE direction; revised 2026-10-03 after the maintainer's answers (D37-D44): a Reports tab on Teams and
+  Portfolios, the "Then & Now" template, a frozen Then window and a saved-length rolling Now, one panel per metric
+  showing Then, Now, the change, % change and Now's points beyond Then's frozen limits. No verdicts, no generated
+  text, no charts - people interpret. No Lighthouse user has walked these journeys yet. Terms in braces ({team},
+  {portfolio}, {feature}, {work items}, {cycle time}, {throughput}, {wip}, {work item age}) render as the instance's
+  configured words. No user-facing "Baseline" (it names the PBC setting). Decisions D17-D44 and slices 01-11 (11
+  dropped) live in docs/feature/epic-5878-baseline/feature-delta.md.
 
 journeys:
 
   - name: show-what-changed-since-the-engagement-started
     goal: >
       A flow coach freezes the {team}'s or {portfolio}'s "Then" (for example the 90 days up to an engagement start
-      or a change of working agreement) and, weeks later, shows the sponsor today's flow against it as claims that
-      hold or do not hold, judged by rules fixed before looking.
+      or a change of working agreement) and, weeks later, shows the sponsor today's flow beside it - one panel per
+      metric chosen before looking, with the change coloured by whether it is better or worse.
     persona: "flow-coach (consulting or internal; Team/Portfolio Admin); reader: delivery-lead-rte (Viewer)"
     jobs:
       - job-flow-coach-show-whether-flow-changed
     emotional_arc:
       start: Exposed - "They are paying me; I need to show it worked, not just say it."
       middle: Anchored - "Then is frozen; nobody can move it after the fact."
-      end: Vindicated or honestly informed - "{cycle time} is trending down; {wip} held; {throughput} no change yet."
+      end: Informed - "{cycle time} 85th 21 -> 12 days, green; {work item age} up 44%, red - now we talk about it."
     steps:
       - id: 1
         name: Freeze Then
-        action: "{team} or {portfolio} -> Reports -> Create Report -> Then & Now -> Then length and end date -> claims (C1-C4 preselected) -> Create"
+        action: "{team} or {portfolio} -> Reports -> Create Report -> Then & Now -> Then end date and length -> Now length -> metrics (all four ticked) -> name -> Create"
         emotional_state: {entry: Exposed, exit: Anchored}
-        shared_artifacts: [then_window, then_series, settings_snapshot, report_count]
+        shared_artifacts: [then_window, then_values, then_limits, now_length, settings_snapshot, report_count]
         failure_modes:
           - Then reaches past DoneItemsCutoffDays - refused, naming the earliest allowed start, never silently partial
+          - Then shorter than 14 days - refused with the minimum
           - Then end date in the future - cannot be picked
           - Community owner already holds 2 reports (any template) - Create Report disabled with the reason
           - Reader without Write - no Create Report; empty state says an Admin can create one
@@ -43,41 +46,57 @@ journeys:
             Then the report shows "Then: 90 days to 31 Jul 2026 - frozen"
       - id: 2
         name: Read Then and Now
-        action: "Open the report; pick the Now length; read the claims with Then -> Now values"
-        emotional_state: {entry: Hopeful, exit: Confident or honestly informed}
-        shared_artifacts: [then_window, then_series, now_window, now_values, settings_snapshot]
+        action: "Open the report; read each metric's panel - Then left, Now right, change, % change, points beyond Then's limits"
+        emotional_state: {entry: Hopeful, exit: Informed}
+        shared_artifacts: [then_window, then_values, then_limits, now_window, now_values, direction_of_good, settings_snapshot]
         failure_modes:
-          - Now still overlaps Then - Now is clipped to start after Then; with nothing left every trend claim reads No change yet
-          - Routine variation presented as change - verdicts use limits from the frozen Then series; a lone point is not a trend
-          - Too few finished {work items} - Not enough data with the reason, never a zero
+          - Now overlaps Then - shown as is; the header shows both windows
+          - Too little data - "—" with the reason the Metrics page gives, never a zero
+          - Then's lower limit at zero - the below count shows "—" with the reason (Q8, confirmed 2026-10-03)
           - Settings changed since creation - one header notice; Then stays frozen
-          - Lower limit at zero - the downward claim says a fall shows mainly as a run below the Then average
-        integration_checkpoint: The Now window in the header is the window the verdicts were judged on
+          - Owner's PBC Baseline changed later - the counts do not move; limits come from Then
+        integration_checkpoint: The Now window in the header is the window the Now side and the beyond-limits counts use
         gherkin: |
-          Scenario: A sustained fall in Cycle Time holds
-            Given Team Lightspeed's Then average Cycle Time is 9 days
-            And the last 8 Work Items finished in Now all took less than 9 days
+          Scenario: A fall in Cycle Time shows as a change for the better
+            Given Elena's report froze a Then 85th percentile of 21 days
+            And the Now 85th percentile is 12 days
             When Elena opens the report
-            Then "Cycle Time is trending down" reads Holds
+            Then the Cycle Time panel shows "−9 days" and "−43%" marked as an improvement
       - id: 3
         name: Show the sponsor
-        action: "The sponsor (Viewer) opens the same report in Lighthouse; optionally expands a claim to see its chart"
+        action: "The sponsor (Viewer) opens the same report in Lighthouse and reads the panels"
         emotional_state: {entry: Sceptical, exit: Oriented in one look}
-        shared_artifacts: [then_window, now_values]
+        shared_artifacts: [then_window, now_window, now_values, direction_of_good]
         failure_modes:
-          - Sponsor reads "No change yet" as evasion (R-A) - values stay on the row; C6 offers the familiar percentage
-          - Sponsor needs it outside Lighthouse - out of scope in v1 (PDF/email later, D13)
+          - Sponsor reads a red panel without context - no narrative by design; the coach explains (author note later)
+          - Sponsor wants a different Now - fixed for readers; an editor changes it for everyone or creates another report
+          - Sponsor needs it outside Lighthouse - out of scope in v1 (PDF/email/schedule later, Epic 5882)
         integration_checkpoint: A Viewer sees exactly what the coach sees, without write actions
         gherkin: |
           Scenario: A reader sees reports but cannot create one
             Given Martin is a Viewer on Team Lightspeed
             When Martin opens the Reports tab
             Then he sees the report and no Create Report button
+      - id: 4
+        name: Adjust the report
+        action: "Editor -> Edit report -> name, Now length, shown metrics -> Save; Then stays as frozen"
+        emotional_state: {entry: Responsive, exit: Confident}
+        shared_artifacts: [now_length, then_values]
+        failure_modes:
+          - Metric added to the catalog after creation - "Not captured for this report", cannot be ticked
+          - Attempt to change Then - not offered; Then is read-only
+        integration_checkpoint: Every reader sees the edited name, Now length and metrics on their next view
+        gherkin: |
+          Scenario: A changed Now length is stored for everyone
+            Given Elena's report has a Now of 90 days
+            When Elena sets Now to 30 days
+            Then Martin's next view shows "Now: last 30 days"
 
   - name: hand-over-a-starting-point-at-the-end-of-an-assessment
     goal: >
-      A consultant ending a short (about 4-week) assessment freezes a Then that ends today and hands the report to
-      the client, who later reads a rolling Now against it. Covered by the same feature (D14), not a separate one.
+      A consultant ending a short (about 4-week) assessment freezes a Then that ends today, saves a Now length that
+      suits the client, and hands the report over; the client later reads the rolling Now beside it. Covered by the
+      same feature (D14), not a separate one.
     persona: "flow-coach (consulting, short assessment); later reader: the client's Team or delivery-lead-rte"
     jobs:
       - job-flow-coach-show-whether-flow-changed
@@ -88,28 +107,31 @@ journeys:
     steps:
       - id: 1
         name: Freeze Then at hand-over
-        action: "Create Report -> Then & Now -> Then ends today"
+        action: "Create Report -> Then & Now -> Then ends today -> Now length (e.g. 30 days)"
         emotional_state: {entry: Rushed, exit: Grounded}
-        shared_artifacts: [then_window, then_series, settings_snapshot]
+        shared_artifacts: [then_window, then_values, then_limits, now_length, settings_snapshot]
         failure_modes:
-          - Nothing of Now lies after Then yet - every trend claim reads No change yet with "Now begins after <date>"
-        integration_checkpoint: The report states plainly that Now has not begun
+          - Report frozen today - Now covers the same days as Then (or part of them) and shows little or no change; the header shows both windows
+        integration_checkpoint: The header shows both windows, so a same-day report plainly compares Then with itself
       - id: 2
         name: The client reads Now later
-        action: "Weeks later the client opens the report and picks a Now length"
+        action: "Weeks later the client opens the report; Now is the saved length ending today"
         emotional_state: {entry: Curious, exit: Informed}
-        shared_artifacts: [now_window, now_values, settings_snapshot]
+        shared_artifacts: [now_window, now_values, direction_of_good, settings_snapshot]
         failure_modes:
           - Then ages past DoneItemsCutoffDays - irrelevant, Then is frozen; deleting warns it can no longer be rebuilt
           - Client changed settings after the hand-over - header notice
 
 shared_artifacts:
-  then_window: {source: "the stored report (length + end date, picked at creation)", consumers: [header, default name, days since Then ended, Now clipping, delete warning]}
-  then_series: {source: "frozen at creation for every applicable claim, with the values shown on the row and Then's signal state", consumers: [claim rows, verdict limits, claim chart]}
-  now_window: {source: "page address (per view), clipped to start after then_window", consumers: [header, verdicts, row values]}
-  now_values: {source: "existing metrics services over now_window, today's settings", consumers: [claim rows, verdicts]}
+  then_window: {source: "the stored report (end date + length, picked at creation, never editable)", consumers: [header, default name, days since Then ended, delete warning]}
+  then_values: {source: "frozen at creation for every applicable metric - the values its panel shows", consumers: [Then side of every panel, change, "% change"]}
+  then_limits: {source: "frozen at creation - Then's XmR average and limits, unrounded, for metrics with a process-behaviour chart", consumers: [points beyond Then's limits]}
+  now_length: {source: "the stored report (set at creation, changed only through Edit report)", consumers: [header, now_window, scheduled sending later (Epic 5882)]}
+  now_window: {source: "derived - now_length days ending today, never clipped", consumers: [header, Now side of every panel, points beyond Then's limits]}
+  now_values: {source: "existing metrics services over now_window, today's settings", consumers: [Now side of every panel, change, "% change", points beyond Then's limits]}
+  direction_of_good: {source: "fixed per metric in its frontend panel; stored nowhere", consumers: [colour of change, colour of each side of the beyond-limits count]}
   settings_snapshot: {source: "frozen at creation ({work item} types, state mapping, query, blackout days)", consumers: [settings-changed notice]}
-  report_count: {source: "stored reports of the owner, all templates", consumers: [Create Report enablement, Community cap message]}
+  report_count: {source: "stored reports of the owner, all templates", consumers: [Create Report enablement, Community cap message, owner delete confirmation]}
 
 changelog:
   - date: 2026-10-02
@@ -121,3 +143,10 @@ changelog:
       DISCUSS - both journeys re-pointed to job-flow-coach-show-whether-flow-changed; intervention date replaced by
       the Then end date; steps aligned with the Reports tab, Then & Now template, claims and verdicts; reader step
       added; short assessment re-shaped as a hand-over (D14); shared artifacts rewritten.
+  - date: 2026-10-03
+    feature: epic-5878-baseline
+    change: >
+      DISCUSS revision after the maintainer's answers (D37-D44) - claims, verdicts, Now clipping and charts removed;
+      one panel per metric with change, % change and points beyond Then's frozen limits; Then picked by end date and
+      length (custom allowed); Now length saved on the report; Edit report step added; shared artifacts then_limits,
+      now_length and direction_of_good added, then_series dropped.

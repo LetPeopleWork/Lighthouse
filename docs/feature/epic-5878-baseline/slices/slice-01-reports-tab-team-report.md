@@ -5,44 +5,53 @@
 
 ## Goal
 
-A Team Admin creates a "Then & Now" report on a Team. Its Then window ends today and is frozen; the report shows
-{Cycle Time} 50th / 70th / 85th percentile for Then (frozen) and Now (live). Readers see it, cannot create.
+A Team Admin creates a "Then & Now" report on a Team. Its Then window ends today and is frozen; the report shows a
+"{Cycle Time}: Then & Now" panel — Then's 85th percentile (frozen) on the left, Now's 85th / 70th / 50th percentile
+(live) on the right with the change and % change, coloured by whether it is better or worse. Readers see it, cannot
+create.
+
+> Revised 2026-10-03 for the maintainer's decisions: a panel, not a row with a verdict to come (D39); Now saved on the
+> report and allowed to overlap Then (D43, D38); Team presets 30 / 90 days (D37).
 
 ## IN
 
 - **Reports** tab on Team detail after Metrics (D18), readable with Team read; role-specific empty state.
 - **Create Report** (Team Write only, server-guarded; UI via `useRbac().isTeamAdmin`) → template card "Then & Now" →
-  Then length 14 / 30 / 90 days ending today → defaulted name (D19) → Create → the report opens.
-- Storage for reports: owner, template key, Then window, created date, name, selection, frozen claim payloads,
-  settings snapshot (D26, D31). One expand-only migration via `CreateMigration`; cascades with the Team (Q5).
-- The claim-definition seam with one registration, C1's values ({Cycle Time} percentiles); the Then series is frozen
-  too, ready for slice 03.
-- Report view: header "Then: 90 days to 2 Oct 2026 — frozen"; one row "{Cycle Time} 6 / 11 / 21 days → … days".
-  Now = same length ending today (overlaps Then fully until slice 03 clips it).
+  Then length 30 / 90 days ending today → defaulted name (D19) → Create → the report opens.
+- Storage for reports: owner, template key, name, Then window, Now length (= Then length for now, D43), created
+  date, selection, frozen per-metric values, settings snapshot (D26, D31). One expand-only migration via
+  `CreateMigration`; cascades with the Team (D42).
+- The panel registry with one registration, the {Cycle Time} panel (D39); the direction of good (down) lives only in
+  the frontend panel.
+- Report view: header "Then: 90 days to 2 Oct 2026 — frozen"; the panel: Then 85th 21 days │ Now 85th / 70th / 50th,
+  change and % change on the 85th; lower = green, higher = red, equal = neutral, the sign always shown. Now = the
+  saved length ending today, may overlap Then (D38).
+- "—" with the existing percentile guard's reason where data is too thin; change and % then show "—" (D41).
 - Usage data: route key `TeamDetail_Reports` on the existing `TeamTabOpened` (DEVOPS confirms); "report created"
   event if DEVOPS has designed it by then.
 
 ## OUT
 
-Verdicts (03), past end dates (02), other claims (04, 05), Portfolio (06), Now choice (07), delete and cap (08),
-settings notice (09; the snapshot is stored here).
+Points beyond Then's limits (03), past end dates and custom lengths (02), other panels (04, 05), Portfolio (06),
+choosing Now's length (07), delete and cap (08), settings notice (09; the snapshot is stored here), Edit report (10).
+No verdicts, text or charts at all (D39).
 
 ## Learning hypothesis
 
 **This disproves "freezing at creation is fast and simple enough"** if creating a 90-day report on the dev
 instance's busiest Team takes more than 10 s. In that case freezing moves off the request before slice 04 multiplies
-the claims frozen.
+the metrics frozen.
 
 ## Data and dogfood moment
 
 - Demo: Team Lightspeed (≈100 days of history). E2E walking skeleton (Page Object, demo data): create a 30-day
-  report, see the {Cycle Time} row.
+  report, see the {Cycle Time} panel.
 - Dogfood the same day on the dev instance (`:5169`, real history): create a 90-day report on the busiest Team, time
   it, open it again the next day and check Then has not moved.
 
 ## Acceptance criteria
 
-AC-1.1 … AC-1.6 in `feature-delta.md` (US-01).
+AC-1.1 … AC-1.7 in `feature-delta.md` (US-01).
 
 ## Dependencies
 

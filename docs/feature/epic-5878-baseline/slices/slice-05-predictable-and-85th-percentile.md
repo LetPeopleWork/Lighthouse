@@ -1,38 +1,47 @@
-# Slice 05 — {Cycle Time} predictable; 85th percentile lower by 10% or more
+# Slice 05 — {WIP} and {Work Item Age} panels
 
 **Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-05 (ADO #6163) · **Estimate**: ~1d · **Tier**: Community ·
 `job_id: job-flow-coach-show-whether-flow-changed`
 
+> Re-cut 2026-10-03: was "{Cycle Time} predictable; 85th percentile lower by 10% or more". Predictability was a
+> stability judgement and is dropped (D39); the familiar 85th percentile and its % change already sit in the {Cycle
+> Time} panel (slice 01). This slice completes the v1 catalog instead. The file name keeps its old slug so existing
+> links still resolve.
+
 ## Goal
 
-The two remaining v1 claims: C5 judges Now on its own limits; C6 gives the sponsor the familiar 85th-percentile
-number with a 10% threshold.
+The last two v1 panels, so a report shows all four metrics by default: "{WIP}: Then & Now" and "{Work Item Age}: Then
+& Now".
 
 ## IN
 
-- Rule kind `NoSignalsInWindow` (C5): Now on its own limits; Then's signal state frozen and shown for reference.
-- Rule kind `ThresholdChange(down, 10%)` (C6): Then vs Now 85th percentile with the percentage ("21 → 12 days
-  (−43%)"); {SLE} shown when the owner has one; within ±10% = No change yet.
-- Both unticked by default; frozen like every claim.
+- {WIP} panel: average {WIP} Then and Now with its range, change and % change on the average; good = down.
+- {Work Item Age} panel: total and average {Work Item Age} Then and Now, change and % change on each; good = down.
+  Total {Work Item Age} shows both the average of the daily totals over the window and the actual total on the
+  window's last day, each with change and % change (Q10, confirmed 2026-10-03).
+- Days of Now beyond Then's frozen limits, by side, for {WIP} and total {Work Item Age} (D40): above red, below green.
+- All four metrics ticked by default. "—" with the existing guard's reason where data is too thin (D41).
+- Reports created before this slice show both as "Not captured for this report" (D27).
 
 ## OUT
 
-Nice-to-have claims (Out of scope list), percentage on other claims (the DIVERGE dissent trigger, not pulled).
+Nice-to-have metrics ({SLE} breaches, arrivals, {WIP} streaks, {Feature} size, forecast lens); {Cycle Time}
+predictability (dropped, D39).
 
 ## Learning hypothesis
 
-**This disproves "a sponsor needs the familiar percentage beside the verdict"** (R-A) if C6 is ticked on fewer than
-1 in 3 dogfood and early reports; then C6 can leave the default catalog in a later template.
+**This disproves "coaches keep the default of all four"** if dogfood users untick two or more of the four metrics on
+most reports. Then the template's default selection is wrong.
 
 ## Data and dogfood moment
 
-- Demo: Team Lightspeed has an {SLE} (85% / 7 days), so the reference shows.
-- Dogfood: show a C6 row to a reader who is not a flow expert; note whether the verdict or the percentage is read first.
+- Demo: Team Gravity for {WIP}; Team Lightspeed for {Work Item Age}.
+- Dogfood: one report per dev-instance Team; note what gets unticked.
 
 ## Acceptance criteria
 
-AC-5.1 … AC-5.3 in `feature-delta.md` (US-05).
+AC-5.1 … AC-5.5 in `feature-delta.md` (US-05).
 
 ## Dependencies
 
-Slice 04 (claims picker).
+Slice 04 (picker, panel registrations).

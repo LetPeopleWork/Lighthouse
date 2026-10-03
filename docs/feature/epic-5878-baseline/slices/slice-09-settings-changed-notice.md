@@ -13,7 +13,7 @@ When Now is computed under settings that differ from those frozen with Then, the
   the query, blackout days (D31).
 - One header notice naming what changed: "Settings changed since this report was created (state mapping). Then
   stays as frozen on 14 Sep 2026; Now uses today's settings."
-- No notice when nothing that shapes the claims changed.
+- No notice when nothing that shapes the panels changed.
 
 ## OUT
 
