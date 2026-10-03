@@ -1301,6 +1301,9 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<DateTime?>("ProcessBehaviourChartBaselineStartDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("RefinementSettings")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("ServiceLevelExpectationProbability")
                         .HasColumnType("INTEGER");
 

@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         // @driving_port @real-io @us-01 @slice-01 @kpi-OUT-5510-K1-refinement-set-up @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task A_Team_admin_names_the_refinement_states_and_the_Team_says_it_has_them()
         {
             var gravity = GivenTeamGravityWithNoRefinementStates();
@@ -40,7 +39,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task A_Team_nobody_has_set_up_says_it_has_no_refinement_states()
         {
             var gravity = GivenTeamGravityWithNoRefinementStates();
@@ -58,7 +56,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-01 @slice-01 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task Every_reader_of_the_Team_learns_that_it_has_refinement_states()
         {
             var gravity = await GivenGravitysAdminHasChosen(Backlog, Analysing, Next);
@@ -100,7 +97,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task Only_a_Team_admin_can_change_the_refinement_states()
         {
             var gravity = await GivenGravitysAdminHasChosen(Backlog);
@@ -120,7 +116,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:unbounded-preservation
         // An older client, or any form that does not know the section, must not wipe what the admin chose.
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task A_save_that_says_nothing_about_refinement_leaves_the_chosen_states_as_they_were()
         {
             var gravity = await GivenGravitysAdminHasChosen(Backlog, Analysing, Next);
@@ -133,7 +128,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task Clearing_every_refinement_state_turns_the_Team_back_to_having_none()
         {
             var gravity = await GivenGravitysAdminHasChosen(Backlog, Analysing);
@@ -201,7 +195,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // A Team's Work Items are thrown away and fetched again only when the work they describe changes;
         // naming refinement states describes nothing new about that work.
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task Choosing_refinement_states_keeps_every_Work_Item_the_Team_already_holds()
         {
             var gravity = GivenTeamGravityHoldingWorkItemsInEveryState();

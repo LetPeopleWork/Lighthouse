@@ -43,6 +43,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             new("Deliveries", "PublishForecastToSource", "boolean", "AddDeliveryForecastPublishing"),
             new("Deliveries", "LastPublishRefusedOn", "timestamp with time zone", "AddDeliveryPublishRefusal"),
             new("Deliveries", "LastPublishRefusalReason", "TEXT", "AddDeliveryPublishRefusal"),
+            new("Teams", "RefinementSettings", "TEXT", "AddRefinementSettingsToTeams"),
         ];
 
         /// <summary>Call right after rolling back, before seeding through the EF model.</summary>

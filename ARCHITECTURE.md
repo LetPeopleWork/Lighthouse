@@ -8,7 +8,7 @@
 > - [`c4-diagrams.md`](docs/product/architecture/c4-diagrams.md) — C4 Context / Container / Component diagrams.
 > - `adr-001 … adr-222` — point decisions (in that folder). The index at the end maps the load-bearing ones, and says which are designed but not built.
 >
-> **Status.** The dispatcher seam, the seven enforced module boundaries, optimistic-concurrency tokens, the config-gated cluster substrate (§2), the secret-encryption envelope and key custody (§9), and the embed surface (§11) described below are all **implemented**, not aspirational. Where something is deliberately *not* built, it says so.
+> **Status.** The dispatcher seam, the enforced module boundaries, optimistic-concurrency tokens, the config-gated cluster substrate (§2), the secret-encryption envelope and key custody (§9), and the embed surface (§11) described below are all **implemented**, not aspirational. Where something is deliberately *not* built, it says so.
 >
 > **Maintenance.** Keep this overview current with the **general concepts** — not feature-level detail. When an architectural concept changes (a module, a seam, a cross-cutting mechanism, a topology, a load-bearing constraint), update the affected section here in the same change. Per-feature specifics stay in `brief.md` / the ADRs, never here.
 
@@ -26,7 +26,7 @@ graph LR
   DB[("SQLite / PostgreSQL")]
   subgraph Proc["Lighthouse — one process (.NET 10); N replicas is opt-in, §2"]
     API["API + SPA<br/>(controllers · filters · wwwroot)"]
-    Core["Application core<br/>(7 modules · ports & adapters)"]
+    Core["Application core<br/>(8 modules · ports & adapters)"]
     Queue["Update queue<br/>(single reader)"]
     Hub["SignalR hub"]
     EF["EF Core"]
@@ -70,9 +70,9 @@ graph LR
 
 ---
 
-## 4. The seven modules
+## 4. The eight modules
 
-The codebase is one assembly organised into **seven logical modules** (namespace folders), with boundaries **enforced at test time** by `TngTech.ArchUnitNET` (ADO #5101). No physical assembly split — that would complicate the single-binary publish for enforcement the test rules already give (ADR-027 D5).
+The codebase is one assembly organised into **eight logical modules** (namespace folders), with boundaries **enforced at test time** by `TngTech.ArchUnitNET` (ADO #5101). No physical assembly split — that would complicate the single-binary publish for enforcement the test rules already give (ADR-027 D5).
 
 | # | Module | Responsibility | Anchor namespaces |
 |---|---|---|---|
@@ -83,6 +83,7 @@ The codebase is one assembly organised into **seven logical modules** (namespace
 | 5 | **Metrics / Time-in-state** | Throughput, cycle-time, percentiles, cumulative-state-time, blackout, RAG (flat in `Services.Implementation`) | (type-set, e.g. `*MetricsService`, `Percentile/XmR/Baseline*`) |
 | 6 | **RBAC / Identity** | Authorization, RBAC administration, licensing/premium gate | `Services.*.Auth`, `.Authorization`, `.Licensing` |
 | 7 | **Platform / Persistence** | `LighthouseAppContext`, repositories, DB management, **domain-event dispatcher**, seeding, OAuth token store | `Data`, `Services.*.Repositories`, `.DatabaseManagement`, `.DomainEvents`, `.Seeding`, `.OAuth` |
+| 8 | **Refinement** | The Team's Refinement tab: which Work Items are in refinement, how many more the Team needs before its next Refinement, and the sizing votes cast on them. Its settings are one JSON value on the Team, saved through the Team settings write. It depends **down only** — on WorkItems, Forecasting, Metrics and the kernel, never on WorkTracking-Integration or Portfolio/Delivery — and **nothing but `API` depends on it**, so it can be removed without touching any other module. Only the settings are built so far; the services follow | `Services.*.Refinement`, `API/Refinement*Controller` |
 
 Plus three non-module bands:
 - **`Models` — the shared kernel** at the bottom. Entities, value objects, **and the DTOs that services return** (relocated out of `API.DTO` so the core never depends on the API layer — ADO #5101). Everything may depend downward on `Models`.
@@ -92,7 +93,7 @@ Plus three non-module bands:
 ```mermaid
 graph TD
   API["API — driving adapter"]
-  subgraph CORE["Application core — the 7 modules"]
+  subgraph CORE["Application core — the 8 modules"]
     WT["WorkTracking-Integration"]
     SYNC["WorkItems / Sync"]
     FC["Forecasting"]
@@ -100,6 +101,7 @@ graph TD
     MET["Metrics / Time-in-state"]
     RBAC["RBAC / Identity"]
     PLAT["Platform / Persistence<br/>(repos · DbContext · dispatcher)"]
+    REF["Refinement"]
   end
   KERNEL["Models — shared kernel + domain events"]
   API --> CORE
@@ -108,6 +110,9 @@ graph TD
   PD --> SYNC
   PD --> FC
   FC --> SYNC
+  REF --> SYNC
+  REF --> FC
+  REF --> MET
 ```
 
 > Dependencies point **downward** (API → core → Models); the sideways arrows are the legal cross-module edges. The enforced hexagonal seam is that **no core module points back up to `API`**.
@@ -191,6 +196,10 @@ The **Forecast Reality Check** is the same idea at the size of a report (ADR-209
 
 Archiving a Delivery writes a different shape: **one row per Delivery** holding what it was showing at the moment it closed — the likelihood, the forecast dates and the Features that were in it (ADR-160). It is not day-keyed and it is never re-derived, because its whole point is to survive the live Features moving on underneath it. The archived read path is therefore **structurally unable to reach live Features** (ADR-161) rather than merely choosing not to, the aggregate refuses writes to an archived Delivery (ADR-164), and the active list excludes archived Deliveries through a narrowed port instead of a filter every caller has to remember (ADR-163).
 
+### A sizing log is appended to, never edited
+
+The Refinement tab's sizing votes are a third shape: **an append-only log keyed by voter**. Every vote, comment and taking-back of a vote is a new row naming who cast it, when and through which channel; nothing ever updates or deletes one. What a Work Item's votes currently add up to is worked out on read from the whole log, so a changed mind is a later entry rather than a rewrite, and the history of how the Team reached Ready stays intact. The voter is a key the server derives from the session or from a key the browser presents — never an identity field the caller fills in — so no request can write an entry in someone else's name. The repository port offers no update or remove member at all, which makes the invariant structural rather than a convention (ADR-216; designed, ships with the first vote).
+
 ---
 
 ## 7. Concurrency & consistency
@@ -256,6 +265,7 @@ Credentials for the work tracking systems are the only data Lighthouse holds tha
 - **Licensing / premium.** A license gate (`canUsePremiumFeatures`) flows through `IForecastFilterRuleService.GetEffectiveRuleSet`, not via a direct `ILicenseService` dependency on metrics services (enforced).
 - **Behaviour settings.** Instance-wide switches are rows in one `OptionalFeature` table, keyed by name and surfaced under Settings as a single table. A switch whose consequence goes beyond its own value declares an `IOptionalFeatureApplier` for its key, resolved through `OptionalFeatureApplierRegistry`; every other key falls to `DefaultOptionalFeatureApplier`, which only writes the value. That is how flipping the Feature-ordering switch hands out the missing places and re-forecasts, in that order, before the value changes. A premium-gated switch is refused with a 403 rather than accepted and silently dropped (ADR-187, superseding ADR-134 on storage).
 - **Usage data.** Events are **detected in the browser and forwarded by the backend** — the frontend never reaches the collector, so the collector's address and key stay server-side and one consent decision governs the whole path (ADR-190). A consenting browser is identified by a per-browser pseudonym it never sees and that never travels on the wire (ADR-191); the accepted wire format carries no field a customer's page, URL or record could ride in, enforced where the batch is admitted rather than at each call site. `UsageDataGate` decides what may leave — consent, the instance's own properties, a daily allowance — and `UsageDataEventQueue` holds a bounded backlog, so a collector that is down costs what it was down for rather than the rest of the day. The instance-wide control is a row in the behaviour-settings table above, and it is a **veto, not a permission**: a stored `true` means an administrator has stopped usage data for everybody, and an absent row reads as allowed, so an instance between a release landing and its seeder running behaves as it did the day before.
+- **The reader-write rule.** Every write requires a write permission, with one deliberate exception: a Team reader may cast, comment on and take back **their own** sizing vote. It is gated by its own named requirement that evaluates exactly like Team read, and every action carrying it lives in one controller, so a second read-permission write cannot appear unnoticed. It is safe because it only ever appends an entry attributed to the caller, changes no Work Item, setting or tracker data, and is rate-limited per caller (ADR-217; designed, ships with the first vote).
 - **CORS fail-closed, rate limiting, security headers** at the API edge (ADR-005).
 
 ---
@@ -373,7 +383,7 @@ Rejected regardless of scale: microservices, full CQRS / a separate read store, 
 | **209 – 211** | **The Forecast Reality Check: a report is a response, not a stored record; a forecast level either holds or does not, and should hold as often as the level says; the grade is read in the browser from facts the server already sends (§6). 209's deferral of a stored Report is superseded by 219; the Reality Check itself is unchanged** |
 | 213 | The chart's bundled Postgres crosses a major in an init container, `pg_upgrade --copy` into a sibling folder with binaries only from official images, the old copy kept for rollback (§13) |
 | 212 | Renovate is the one dependency bot across the LetPeopleWork repositories, and a green update merges itself, bar three exceptions that wait for a maintainer (§15) |
-| 214 – 218 | The Refinement tab and sizing votes: settings are one JSON value on the Team saved through the Team settings write, in a module of their own; the need band is the manual How Many for the next Refinement read at (100 − p); an append-only sizing log keyed by a server-derived voter key; a vote is a write gated by Team read through a named requirement; stage, readiness and the hidden split are one pure resolution on read. All *Proposed* — designed, not built; §4, §6 and §10 gain their concepts when slices 01 and 11 ship |
+| 214 – 218 | The Refinement tab and sizing votes: settings are one JSON value on the Team saved through the Team settings write, in a module of their own; the need band is the manual How Many for the next Refinement read at (100 − p); an append-only sizing log keyed by a server-derived voter key; a vote is a write gated by Team read through a named requirement; stage, readiness and the hidden split are one pure resolution on read. The Team setting of ADR-214 is built; the rest are *Proposed* — designed, not built. §4, §6 and §10 describe all of it, each marking what has not shipped yet |
 | 219 – 222 | Reports (Epic 5878 "Then & Now", the foundation for 5882 and 5935): a Report is a row owned by one Team or Portfolio, deleted with it, with a template-specific payload and delivery kept outside it; a server-side metric catalog captures values while one frontend panel per metric owns the direction of good; Then is frozen as captured values and unrounded limits from its own series, never the PBC Baseline; windows are inclusive instance-zone days and the Now length is stored on the report. All *Proposed* — designed, not built; §4 and §6 gain their concepts when slice 01 ships |
 
 The full set (001–222 — 173–177, 181–186, 195–197, 206, 214–218 and 219–222 are *Proposed*, reverted or not yet built: designed, but not what the code does), the per-feature DESIGN deltas ([`brief.md`](docs/product/architecture/brief.md)), and the diagrams ([`c4-diagrams.md`](docs/product/architecture/c4-diagrams.md)) all live under [`docs/product/architecture/`](docs/product/architecture/).

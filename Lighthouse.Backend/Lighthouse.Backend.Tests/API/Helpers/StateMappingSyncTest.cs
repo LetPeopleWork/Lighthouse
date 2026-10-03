@@ -1,6 +1,7 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Refinement;
 
 namespace Lighthouse.Backend.Tests.API.Helpers
 {
@@ -141,7 +142,49 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         /// <summary>
-        /// The positive control the three cases above need: without it they agree only because the method
+        /// Naming refinement states says nothing new about the work the Team fetches, so it must never
+        /// cost the Team the Work Items it holds - a true answer here deletes them.
+        /// </summary>
+        [TestCase(new string[0], new[] { "Backlog", "Analysing" })]
+        [TestCase(new[] { "Backlog" }, new[] { "Backlog", "Next" })]
+        [TestCase(new[] { "Backlog", "Analysing" }, new string[0])]
+        public void WorkItemRelatedSettingsChanged_RefinementStatesChanged_ReturnsFalse(string[] storedStates, string[] savedStates)
+        {
+            var team = new Team
+            {
+                DataRetrievalValue = "project = X",
+                WorkTrackingSystemConnectionId = 1,
+                WorkItemTypes = ["Bug"],
+                ToDoStates = ["Backlog"],
+                DoingStates = ["Analysing", "Next"],
+                DoneStates = ["Closed"],
+                RefinementSettings = new RefinementSettings
+                {
+                    States = [.. storedStates.Select(state => new RefinementStateSetting { State = state })],
+                },
+            };
+
+            var dto = new TeamSettingDto
+            {
+                DataRetrievalValue = "project = X",
+                WorkTrackingSystemConnectionId = 1,
+                WorkItemTypes = ["Bug"],
+                ToDoStates = ["Backlog"],
+                DoingStates = ["Analysing", "Next"],
+                DoneStates = ["Closed"],
+                Refinement = new RefinementSettingsDto
+                {
+                    States = [.. savedStates.Select(state => new RefinementStateSettingDto { State = state })],
+                },
+            };
+
+            var result = team.WorkItemRelatedSettingsChanged(dto);
+
+            Assert.That(result, Is.False);
+        }
+
+        /// <summary>
+        /// The positive control the cases above need: without it they agree only because the method
         /// can no longer say true at all, and an accidentally-empty registry would read as green.
         /// </summary>
         [Test]

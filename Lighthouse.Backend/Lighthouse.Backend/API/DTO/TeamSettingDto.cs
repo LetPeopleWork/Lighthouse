@@ -23,6 +23,7 @@ namespace Lighthouse.Backend.API.DTO
             DoneItemsCutoffDays = team.DoneItemsCutoffDays;
             ForecastFilterRuleSetJson = team.ForecastFilterRuleSetJson;
             ConcurrencyToken = team.ConcurrencyToken;
+            Refinement = team.RefinementSettings is null ? null : new RefinementSettingsDto(team.RefinementSettings);
 
             if (team.WorkTrackingSystemConnection != null)
             {
@@ -50,5 +51,8 @@ namespace Lighthouse.Backend.API.DTO
         public int DoneItemsCutoffDays { get; set; } = 365;
 
         public string? ForecastFilterRuleSetJson { get; set; }
+
+        /// <summary>Null on a save means "leave the refinement states as they are"; an empty list clears them.</summary>
+        public RefinementSettingsDto? Refinement { get; set; }
     }
 }

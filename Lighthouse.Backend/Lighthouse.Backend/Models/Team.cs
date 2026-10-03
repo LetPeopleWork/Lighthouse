@@ -1,4 +1,6 @@
-﻿namespace Lighthouse.Backend.Models
+﻿using Lighthouse.Backend.Models.Refinement;
+
+namespace Lighthouse.Backend.Models
 {
     public class Team : WorkTrackingSystemOptionsOwner
     {
@@ -27,6 +29,11 @@
         public override int BlockedStalenessThresholdDays { get; set; }
 
         public List<WorkItem> WorkItems { get; } = [];
+
+        /// <summary>Null until a Team admin first saves the refinement section.</summary>
+        public RefinementSettings? RefinementSettings { get; set; }
+
+        public bool HasRefinementStates => RefinementSettings is { States.Count: > 0 };
 
         /// <param name="today">
         /// Bug #5567: entities are EF-materialised and get no constructor injection, so the

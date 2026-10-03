@@ -150,6 +150,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             new(nameof(Team.ThroughputHistoryStartDate), Cost.Nothing, "Throughput window; read path."),
             new(nameof(Team.ThroughputHistoryEndDate), Cost.Nothing, "Throughput window; read path."),
             new(nameof(Team.ForecastFilterRuleSetJson), Cost.Nothing, "Evaluated over the stored set on the forecast path."),
+            new(nameof(Team.RefinementSettings), Cost.Nothing, "Picks which stored Work Items the Refinement tab lists; read path."),
 
             // --- Excluded: Portfolio-only derivations ---
             new(nameof(Portfolio.DefaultAmountOfWorkItemsPerFeature), Cost.Nothing, "Recomputed every cycle over the stored set."),

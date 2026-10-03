@@ -6,6 +6,7 @@ using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.ConnectionHealth;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.OAuth;
+using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Models.OptionalFeatures;
@@ -22,6 +23,8 @@ namespace Lighthouse.Backend.Data
         ILogger<LighthouseAppContext> logger)
         : DbContext(options)
     {
+        private static readonly JsonSerializerOptions RefinementSettingsJson = new(JsonSerializerDefaults.General);
+
         public DbSet<Team> Teams { get; set; } = null!;
 
         public DbSet<Feature> Features { get; set; } = null!;
@@ -627,6 +630,27 @@ namespace Lighthouse.Backend.Data
                 .Property(p => p.CycleTimeDefinitions)
                 .HasConversion(cycleTimeDefinitionsConverter)
                 .Metadata.SetValueComparer(cycleTimeDefinitionsComparer);
+
+            ConfigureRefinementSettings(modelBuilder);
+        }
+
+        private static void ConfigureRefinementSettings(ModelBuilder modelBuilder)
+        {
+            var refinementSettingsConverter = new ValueConverter<RefinementSettings?, string>(
+                v => JsonSerializer.Serialize(v, RefinementSettingsJson),
+                v => JsonSerializer.Deserialize<RefinementSettings>(v, RefinementSettingsJson) ?? new RefinementSettings()
+            );
+
+            var refinementSettingsComparer = new ValueComparer<RefinementSettings?>(
+                (c1, c2) => JsonSerializer.Serialize(c1, RefinementSettingsJson) == JsonSerializer.Serialize(c2, RefinementSettingsJson),
+                c => JsonSerializer.Serialize(c, RefinementSettingsJson).GetHashCode(),
+                c => JsonSerializer.Deserialize<RefinementSettings>(JsonSerializer.Serialize(c, RefinementSettingsJson), RefinementSettingsJson)!
+            );
+
+            modelBuilder.Entity<Team>()
+                .Property(t => t.RefinementSettings)
+                .HasConversion(refinementSettingsConverter)
+                .Metadata.SetValueComparer(refinementSettingsComparer);
         }
 
         public override int SaveChanges()

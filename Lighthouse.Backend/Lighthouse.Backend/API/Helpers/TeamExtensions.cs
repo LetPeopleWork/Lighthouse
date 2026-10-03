@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Refinement;
 
 namespace Lighthouse.Backend.API.Helpers
 {
@@ -60,6 +61,7 @@ namespace Lighthouse.Backend.API.Helpers
                 SyncBlockedItems(team, teamSetting);
                 SyncWaitStates(team, teamSetting);
                 SyncCycleTimeDefinitions(team, teamSetting);
+                SyncRefinement(team, teamSetting);
             }
         }
 
@@ -111,6 +113,21 @@ namespace Lighthouse.Backend.API.Helpers
                     EndState = dto.EndState.Trim(),
                 })
                 .ToList();
+        }
+
+        private static void SyncRefinement(Team team, TeamSettingDto teamSetting)
+        {
+            if (teamSetting.Refinement is null)
+            {
+                return;
+            }
+
+            var settings = team.RefinementSettings ?? new RefinementSettings();
+            settings.States = teamSetting.Refinement.States
+                .Select(dto => new RefinementStateSetting { State = dto.State.Trim() })
+                .ToList();
+
+            team.RefinementSettings = settings;
         }
 
         private static List<string> TrimListEntries(List<string> list)

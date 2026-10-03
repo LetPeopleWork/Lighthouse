@@ -19,6 +19,7 @@ namespace Lighthouse.Backend.API.DTO
             ThroughputEndDate = throughputSettings.EndDate;
 
             WorkItemTypes = team.WorkItemTypes;
+            RefinementConfigured = team.HasRefinementStates;
         }
 
         [JsonRequired]
@@ -39,5 +40,7 @@ namespace Lighthouse.Backend.API.DTO
         public bool HasThroughputBlackoutOverlap { get; set; }
 
         public bool HasForecastFilter { get; set; }
+
+        public bool RefinementConfigured { get; }
     }
 }
