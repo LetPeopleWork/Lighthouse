@@ -16,7 +16,6 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
         public static Yardstick None { get; } = new(YardstickSource.Unavailable, null, null);
     }
 
-    // The ordinals are stored, so new sources are appended and existing ones never renumbered.
     public enum YardstickSource
     {
         Sle = 0,

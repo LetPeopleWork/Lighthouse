@@ -9,18 +9,12 @@ type GetTerm = (key: string) => string;
 const inDays = (days: number | null): string =>
 	days === 1 ? "1 day" : `${days} days`;
 
-export const yardstickQuestion = (
-	yardstick: IYardstick,
-	getTerm: GetTerm,
-): string =>
+const yardstickQuestion = (yardstick: IYardstick, getTerm: GetTerm): string =>
 	yardstick.source === "Unavailable"
 		? `Doable within our ${getTerm(TERMINOLOGY_KEYS.SLE)}?`
 		: `Doable within ${inDays(yardstick.days)}?`;
 
-export const yardstickTooltip = (
-	yardstick: IYardstick,
-	getTerm: GetTerm,
-): string => {
+const yardstickTooltip = (yardstick: IYardstick, getTerm: GetTerm): string => {
 	const sleTerm = getTerm(TERMINOLOGY_KEYS.SLE);
 
 	switch (yardstick.source) {
