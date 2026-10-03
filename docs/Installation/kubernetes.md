@@ -419,7 +419,7 @@ Once you are sure you will not roll back, free the room the old copy takes. Run 
 pod is running on 18:
 
 ```sh
-kubectl exec l8e-lighthouse-postgres-0 -c postgres -- sh -c 'cd /var/lib/postgresql/data/pgdata && test -s ../pgdata-18/PG_VERSION && test ! -e postmaster.pid && rm -f PG_VERSION && touch UPGRADED-TO-18-see-kubernetes-docs && find . -mindepth 1 ! -name "UPGRADED-TO-*" -delete'
+kubectl exec l8e-lighthouse-postgres-0 -c postgres -- bash /lighthouse-postgres/remove-old-copies.sh
 ```
 
 It empties `pgdata/` and leaves a single file in it, `UPGRADED-TO-18-see-kubernetes-docs`; it does not
@@ -450,9 +450,9 @@ again:
 
 ```sh
 kubectl scale statefulset l8e-lighthouse-postgres --replicas=0
-kubectl run pgdata-cleanup --image=postgres:18-trixie --restart=Never --overrides='{"spec":{"containers":[{"name":"pgdata-cleanup","image":"postgres:18-trixie","command":["sleep","infinity"],"volumeMounts":[{"name":"data","mountPath":"/var/lib/postgresql/data"}]}],"volumes":[{"name":"data","persistentVolumeClaim":{"claimName":"data-l8e-lighthouse-postgres-0"}}]}}'
+kubectl run pgdata-cleanup --image=postgres:18-trixie --restart=Never --overrides='{"spec":{"containers":[{"name":"pgdata-cleanup","image":"postgres:18-trixie","command":["sleep","infinity"],"volumeMounts":[{"name":"data","mountPath":"/var/lib/postgresql/data"},{"name":"scripts","mountPath":"/lighthouse-postgres"}]}],"volumes":[{"name":"data","persistentVolumeClaim":{"claimName":"data-l8e-lighthouse-postgres-0"}},{"name":"scripts","configMap":{"name":"l8e-lighthouse-postgres-upgrade"}}]}}'
 kubectl wait --for=condition=Ready pod/pgdata-cleanup --timeout=5m
-kubectl exec pgdata-cleanup -- sh -c 'cd /var/lib/postgresql/data/pgdata && test -s ../pgdata-18/PG_VERSION && test ! -e postmaster.pid && rm -f PG_VERSION && touch UPGRADED-TO-18-see-kubernetes-docs && find . -mindepth 1 ! -name "UPGRADED-TO-*" -delete'
+kubectl exec pgdata-cleanup -- bash /lighthouse-postgres/remove-old-copies.sh
 kubectl delete pod pgdata-cleanup
 kubectl scale statefulset l8e-lighthouse-postgres --replicas=1
 ```

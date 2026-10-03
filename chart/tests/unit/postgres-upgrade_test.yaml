@@ -77,8 +77,6 @@ tests:
           of: ConfigMap
 
   - it: the upgrade scripts include the shared volume chain and the cleanup command
-    skip:
-      reason: "pending story 6131 slice 03: volume.sh and remove-old-copies.sh are not in the scripts ConfigMap yet"
     template: templates/postgres-upgrade-configmap.yaml
     asserts:
       - matchRegex:
@@ -92,8 +90,6 @@ tests:
   # way and in the same order, and both steps must read the volume the same way, so all of them source the
   # one script that knows how the copies chain.
   - it: the upgrade step, the old-programs step and the cleanup all read the volume through the same script
-    skip:
-      reason: "pending story 6131 slice 03: no script sources volume.sh yet"
     template: templates/postgres-upgrade-configmap.yaml
     asserts:
       - matchRegex:

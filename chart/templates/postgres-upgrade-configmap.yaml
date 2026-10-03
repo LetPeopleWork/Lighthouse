@@ -15,4 +15,6 @@ data:
     {{- .Files.Get "files/postgres-upgrade/upgrade.sh" | nindent 4 }}
   start.sh: |
     {{- .Files.Get "files/postgres-upgrade/start.sh" | nindent 4 }}
+  remove-old-copies.sh: |
+    {{- .Files.Get "files/postgres-upgrade/remove-old-copies.sh" | nindent 4 }}
 {{- end }}

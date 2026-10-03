@@ -1,9 +1,9 @@
 # Acceptance SSOT — story-6131-chart-postgres-major-upgrade (slices 01-03)
 # Executable via: helm-unittest (render assertions, @in-memory) in chart/tests/unit/, and the kind harness
 # chart/tests/upgrade-path/run.sh (@real-io), which the upgrade-path job in ci_chart.yml runs in groups:
-# `happy` and `refusals` for slices 01-02, `chain` and `chain-refusals` for slice 03. Every slice 01-02
-# scenario runs. The slice 03 scenarios are @pending until DELIVER implements them; it removes @pending from a
-# scenario in the same commit that turns its check green.
+# `happy` and `refusals` for slices 01-02, `chain`, `chain-refusals` and `chain-cleanup` for slice 03. Every
+# slice 01-02 scenario runs. The slice 03 scenarios are @pending until DELIVER implements them; it removes
+# @pending from a scenario in the same commit that turns its check green.
 #
 # State machine of the bundled database volume, as the upgrade step sees it on every pod start
 # (M = the image's major, D = the major of the data the volume was first initialised with):
@@ -428,7 +428,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     Then the bundled database becomes Ready on Postgres 18
     And every Lighthouse table has the same row count as before the rollback
 
-  @US-04 @AC-4.6 @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change @pending
+  @US-04 @AC-4.6 @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change
   Scenario: The documented cleanup removes every copy older than the live one, and can be run again
     Given Lighthouse was upgraded from Postgres 16 to 17, then by a plain "helm upgrade" to Postgres 18
     When the operator removes the old copies with the command from the Kubernetes docs, verbatim
@@ -437,7 +437,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     Then it succeeds and removes nothing
     And after a restart the bundled database becomes Ready on Postgres 18 with every row it had
 
-  @US-04 @AC-4.6 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change @pending
+  @US-04 @AC-4.6 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change
   Scenario: A cleanup cut off part-way is finished by running it again
     Given Lighthouse was upgraded from Postgres 16 to 17, then by a plain "helm upgrade" to Postgres 18
     And the documented cleanup was cut off after the placeholder was written and the Postgres 17 copy's version file was removed
@@ -485,7 +485,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     Then the next retry upgrades to Postgres 18 with no other step from the operator
     And every Lighthouse table has the same row count as before the upgrade
 
-  @US-04 @AC-4.7 @real-io @env:kind-chain-cleaned @slice-03 @contract-shape:bounded-change @pending
+  @US-04 @AC-4.7 @real-io @env:kind-chain-cleaned @slice-03 @contract-shape:bounded-change
   Scenario: A cleaned-up volume moves on to the next major and removes nothing
     Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17
     And the operator removed the old copy with the command from the Kubernetes docs, verbatim
@@ -554,7 +554,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And the database log and the pod's description carry one refusal line, naming the original copy and saying to put its control file back from a backup
     And every file on the database volume is exactly as it was before the attempt
 
-  @US-04 @AC-4.6 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change @pending
+  @US-04 @AC-4.6 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change
   Scenario: The cleanup finishes a removal it can see had started, even past an unreadable original copy
     Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17
     And a cleanup was cut off after the placeholder was written into the original copy
@@ -564,7 +564,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     Then the volume holds only the placeholder and the Postgres 17 copy
     And after the database is started again it becomes Ready on Postgres 17 with every row it had
 
-  @US-04 @AC-4.6 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation @pending
+  @US-04 @AC-4.6 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation
   Scenario: The cleanup refuses to guess past an unreadable copy it has no sign of having started on
     Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17
     And the original copy's control file cannot be read, with no sign that a removal had started there

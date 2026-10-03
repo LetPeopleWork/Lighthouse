@@ -7,7 +7,8 @@
 #
 # Usage: run.sh CLUSTER GROUP [SCENARIO...]
 #   CLUSTER   name of an existing kind cluster (kind create cluster --name CLUSTER)
-#   GROUP     happy | refusals | chain | chain-refusals — the legs of the CI matrix, each on its own cluster
+#   GROUP     happy | refusals | chain | chain-refusals | chain-cleanup — the legs of the CI matrix, each on
+#             its own cluster
 #   SCENARIO  optional subset of the group's scenario functions, run in the order given
 #
 # The "before" chart is the committed package, so no network access to the Helm repo is needed.
@@ -69,7 +70,7 @@ preload_images() {
   case "$group" in
     happy | refusals)
       images+=(postgres:16 postgres:17 postgres:17-trixie postgres:17-alpine postgres:18-trixie busybox:1.37) ;;
-    chain)
+    chain | chain-cleanup)
       images+=(postgres:16-trixie postgres:17-trixie postgres:18-trixie) ;;
     chain-refusals)
       images+=(postgres:15-bookworm postgres:16-bookworm postgres:16-trixie postgres:17-trixie postgres:18-trixie) ;;
@@ -919,16 +920,22 @@ documented_block() {
                              block { print }' "$KUBERNETES_DOCS"
 }
 
-# Runs commands exactly as the Kubernetes docs print them, stopping at the first that fails. The docs
-# leave the namespace to the reader's context, so they run with a copy of the kubeconfig whose context
-# points at $ns.
-run_as_documented() {
+# Runs commands exactly as the Kubernetes docs print them, stopping at the first that fails, and returns
+# its code. The docs leave the namespace to the reader's context, so they run with a copy of the kubeconfig
+# whose context points at $ns.
+try_as_documented() {
   local ns="$1" commands="$2" kubeconfig status=0
   kubeconfig="$(mktemp)"
   kubectl config view --raw >"$kubeconfig"
   KUBECONFIG="$kubeconfig" kubectl config set-context --current --namespace="$ns" >/dev/null
-  KUBECONFIG="$kubeconfig" bash -ec "$commands" || status=$?
+  KUBECONFIG="$kubeconfig" bash -ec "$commands" 2>&1 || status=$?
   rm -f "$kubeconfig"
+  return "$status"
+}
+
+run_as_documented() {
+  local ns="$1" status=0
+  try_as_documented "$@" || status=$?
   [[ $status -eq 0 ]] || fail "the documented commands failed in $ns with code $status"
 }
 
@@ -941,13 +948,19 @@ remove_old_copy_as_documented() {
 
 # The docs finish a cut-off removal from a pod of its own, with the same cleanup command, because the
 # database pod does not run while its start is refused.
-finish_old_copy_removal_as_documented() {
-  local ns="$1" removal commands
+stopped_database_cleanup_as_documented() {
+  local removal commands
   removal="$(documented_block "### Removing the old copy")"
   commands="$(documented_block "### When removing the old copy was cut off")"
   [[ -n "$commands" ]] || fail "no commands found under \"When removing the old copy was cut off\" in $KUBERNETES_DOCS"
   [[ "$commands" == *"-- ${removal#* -- }"* ]] \
     || fail "the docs finish a cut-off removal with another command than the one that removes the old copy"
+  echo "$commands"
+}
+
+finish_old_copy_removal_as_documented() {
+  local ns="$1" commands
+  commands="$(stopped_database_cleanup_as_documented)"
   run_as_documented "$ns" "$commands"
 }
 
@@ -1139,8 +1152,9 @@ interrupted_cleanup_never_costs_upgraded_copy() {
 readonly CHAIN_NS="chain-16-17"
 readonly CHAIN_PIN_17=(--set postgresql.image=postgres:17-trixie --set postgresql.upgrade.image=postgres:16-trixie)
 # The rollback and the pin-back leave the database on the Postgres 17 copy with the Postgres 18 copy out of
-# date beside it, a volume no later Given starts from, so they clear both marks and the next scenario that
-# needs an upgraded volume builds the namespace again from the start.
+# date beside it, and the cleanup leaves no Postgres 17 copy at all: volumes no later Given starts from, so
+# they clear every mark and the next scenario that needs an upgraded volume builds the namespace again from
+# the start.
 CHAIN_UPGRADED_ONCE=""
 CHAIN_UPGRADED_TWICE=""
 CHAIN_ROLLED_BACK_ONE_CHART=""
@@ -1165,7 +1179,7 @@ given_chain_rolled_back_one_chart() {
   [[ -n "$CHAIN_ROLLED_BACK_ONE_CHART" ]] || chain_rollback_one_chart_starts_previous_major_and_warns
 }
 
-chain_moved_back_to_17() {
+forget_chain_volume() {
   CHAIN_UPGRADED_ONCE=""
   CHAIN_UPGRADED_TWICE=""
   CHAIN_ROLLED_BACK_ONE_CHART=""
@@ -1337,7 +1351,7 @@ chain_rollback_one_chart_starts_previous_major_and_warns() {
   write_marker_table "$ns" upgrade_path_on_18_before_rollback
 
   helm rollback "$RELEASE" "$CHAIN_REVISION_ON_17" -n "$ns" >/dev/null
-  chain_moved_back_to_17
+  forget_chain_volume
 
   wait_postgres_ready "$ns"
   assert_server_major "$ns" 17
@@ -1386,7 +1400,7 @@ chain_pin_back_one_major_starts_kept_copy_and_warns() {
   old_uid="$(pod_uid "$ns")"
 
   helm upgrade "$RELEASE" "$NEW_CHART" -n "$ns" "${VALUES[@]}" --set postgresql.image=postgres:17-trixie >/dev/null
-  chain_moved_back_to_17
+  forget_chain_volume
   kubectl -n "$ns" delete pod "$POSTGRES_POD" --ignore-not-found --wait=false >/dev/null
   wait_pod_replaced "$ns" "$old_uid"
 
@@ -1464,8 +1478,69 @@ chain_rollback_two_charts_fails_loudly() {
   assert_carried_across "$ns" "$counts"
   assert_data_directory "$ns" pgdata-18
 }
-chain_cleanup_removes_every_older_copy_and_reruns() { scaffold "The documented cleanup removes every copy older than the live one, and can be run again"; }
-chain_cut_off_cleanup_is_finished_by_running_again() { scaffold "A cleanup cut off part-way is finished by running it again"; }
+
+# The volume holds pgdata with only placeholder $2 in it, beside the copies $3..., and nothing else.
+assert_placeholder_beside() {
+  local ns="$1" placeholder="$2" expected="pgdata ${*:3} " entries
+  entries="$(volume_entries "$ns" | tr '\n' ' ')"
+  [[ "$entries" == "$expected" ]] || fail "the volume in $ns holds ${entries}rather than $expected"
+  entries="$(in_postgres "$ns" ls -1A "$MOUNT/pgdata" | tr '\n' ' ')"
+  [[ "$entries" == "$placeholder " ]] || fail "pgdata in $ns holds ${entries}rather than only $placeholder"
+}
+
+chain_cleanup_removes_every_older_copy_and_reruns() {
+  local ns="$CHAIN_NS" counts output
+  given_chain_upgraded_twice
+  counts="$(public_row_counts "$ns")"
+
+  output="$(remove_old_copy_as_documented "$ns")"
+  forget_chain_volume
+  echo "  $output"
+  assert_placeholder_beside "$ns" UPGRADED-TO-18-see-kubernetes-docs pgdata-18
+
+  output="$(remove_old_copy_as_documented "$ns")"
+  echo "  run again: $output"
+  grep -qF -- "nothing to remove" <<<"$output" || fail "the cleanup run again in $ns did not say it had nothing to remove: $output"
+  assert_placeholder_beside "$ns" UPGRADED-TO-18-see-kubernetes-docs pgdata-18
+
+  restart_database "$ns"
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 18
+  assert_data_directory "$ns" pgdata-18
+  wait_api_ready "$ns"
+  assert_row_counts "$ns" "$counts"
+  assert_marker_row "$ns"
+}
+
+# The cleanup is cut off as a removal leaves it once it has started on the Postgres 17 copy: the placeholder
+# the second upgrade left is in pgdata, and pgdata-17 has lost PG_VERSION, its first file to go. A start does
+# not finish what only the cleanup takes, so pgdata-17 is still there until the cleanup runs again.
+chain_cut_off_cleanup_is_finished_by_running_again() {
+  local ns="$CHAIN_NS" counts log
+  given_chain_upgraded_twice
+  counts="$(public_row_counts "$ns")"
+  in_postgres "$ns" test -e "$MOUNT/pgdata/UPGRADED-TO-18-see-kubernetes-docs" \
+    || fail "pgdata in $ns holds no placeholder after the second upgrade"
+  in_postgres "$ns" rm "$MOUNT/pgdata-17/PG_VERSION"
+  forget_chain_volume
+
+  restart_database "$ns"
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 18
+  assert_data_directory "$ns" pgdata-18
+  log="$(upgrade_log "$ns")"
+  grep -qF -- "nothing to upgrade" <<<"$log" \
+    || { dump_diagnostics "$ns"; fail "the start after the cut-off cleanup in $ns did not start on pgdata-18 as it was"; }
+  ! grep -qF -- "upgrading the Postgres" <<<"$log" || fail "the start after the cut-off cleanup in $ns upgraded again"
+  wait_api_ready "$ns"
+  assert_row_counts "$ns" "$counts"
+  assert_marker_row "$ns"
+  [[ "$(volume_entries "$ns" | tr '\n' ' ')" == "pgdata pgdata-17 pgdata-18 " ]] \
+    || fail "the start after the cut-off cleanup in $ns left $(volume_entries "$ns" | tr '\n' ' ')rather than the half-removed pgdata-17 for the cleanup"
+
+  echo "  $(remove_old_copy_as_documented "$ns")"
+  assert_placeholder_beside "$ns" UPGRADED-TO-18-see-kubernetes-docs pgdata-18
+}
 # A Postgres 16 volume upgraded once to 17 by the new chart, in a namespace of its own. Any extra
 # arguments are a command run against the namespace while it is still on Postgres 16.
 upgrade_16_to_17_in() {
@@ -1596,7 +1671,22 @@ chain_interrupted_second_upgrade_removes_nothing() {
   assert_two_copies_beside_placeholder "$ns"
 }
 chain_too_little_room_names_cleanup_and_touches_nothing() { scaffold "Too little room for the next copy refuses, naming the cleanup as a way out"; }
-chain_cleaned_volume_moves_on_and_removes_nothing() { scaffold "A cleaned-up volume moves on to the next major and removes nothing"; }
+
+chain_cleaned_volume_moves_on_and_removes_nothing() {
+  local ns="chain-cleaned" counts
+  upgrade_16_to_17_in "$ns"
+  echo "  $(remove_old_copy_as_documented "$ns")"
+  assert_placeholder_beside "$ns" UPGRADED-TO-17-see-kubernetes-docs pgdata-17
+  counts="$(public_row_counts "$ns")"
+
+  upgrade_to_new_chart "$ns" --reset-values
+
+  assert_carried_across "$ns" "$counts"
+  assert_data_directory "$ns" pgdata-18
+  assert_upgrade_log_says "$ns" "upgrading the Postgres 17 data in pgdata-17 to Postgres 18 in pgdata-18"
+  assert_nothing_removed "$ns"
+  assert_placeholder_beside "$ns" UPGRADED-TO-17-see-kubernetes-docs pgdata-17 pgdata-18
+}
 # Postgres 16 running again on pgdata after the rollback rewrites its pg_control, so pgdata-17 no longer
 # matches the note it was made with and pgdata is where the newest data is.
 chain_out_of_date_copy_counts_as_older_major_and_refuses() {
@@ -1696,8 +1786,53 @@ chain_unfollowable_chain_is_refused_once_by_upgrade_step() {
   [[ "$exit_code" == "0" ]] || fail "the step handing over the older programs in $ns ended with code ${exit_code:-none} rather than 0"
   assert_volume_unchanged "$ns" "$FINGERPRINT"
 }
-chain_cleanup_finishes_started_removal_past_unreadable_copy() { scaffold "The cleanup finishes a removal it can see had started, even past an unreadable original copy"; }
-chain_cleanup_refuses_past_unreadable_copy_not_started() { scaffold "The cleanup refuses to guess past an unreadable copy it has no sign of having started on"; }
+
+# A cleanup cut off right after it wrote the placeholder into pgdata, with pgdata's control file then lost
+# as well: the database refuses to start, and the cleanup run from a pod of its own finishes the removal.
+chain_cleanup_finishes_started_removal_past_unreadable_copy() {
+  local ns="chain-cleanup-past-unreadable" counts line
+  upgrade_16_to_17_in "$ns"
+  counts="$(public_row_counts "$ns")"
+  in_postgres "$ns" touch "$MOUNT/pgdata/UPGRADED-TO-17-see-kubernetes-docs"
+  in_postgres "$ns" rm "$MOUNT/pgdata/global/pg_control"
+  stop_database "$ns"
+  start_database "$ns"
+  line="$(refusal_line "$ns")"
+  echo "  $line"
+  assert_line_says "$ns" "$line" "pgdata/global/pg_control" "#when-removing-the-old-copy-was-cut-off"
+
+  finish_old_copy_removal_as_documented "$ns"
+
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 17
+  assert_data_directory "$ns" pgdata-17
+  assert_placeholder_beside "$ns" UPGRADED-TO-17-see-kubernetes-docs pgdata-17
+  wait_api_ready "$ns"
+  assert_row_counts "$ns" "$counts"
+  assert_marker_row "$ns"
+}
+
+# Starts from the volume the refusal before it left: pgdata without its control file and with no placeholder,
+# beside pgdata-17, and the database refused under the chart's defaults. The documented commands stop at the
+# failed cleanup, so the pod they started it in is still there.
+chain_cleanup_refuses_past_unreadable_copy_not_started() {
+  local ns="chain-unreadable-original" commands output status=0 line
+  kubectl get namespace "$ns" >/dev/null 2>&1 || chain_unfollowable_chain_is_refused_once_by_upgrade_step
+  stop_database "$ns"
+  FINGERPRINT="$(volume_fingerprint "$ns")"
+  commands="$(stopped_database_cleanup_as_documented)"
+
+  output="$(try_as_documented "$ns" "$commands")" || status=$?
+
+  [[ $status -eq 1 ]] || fail "the cleanup in $ns ended with code $status rather than 1: $output"
+  line="$(the_one_line_with "lighthouse-postgres:" "$output")" \
+    || fail "the cleanup in $ns did not print exactly one line: $output"
+  echo "  $line"
+  assert_line_says "$ns" "$line" "pgdata/global/pg_control is unreadable" \
+    "put that file back from a backup before removing anything"
+  kubectl -n "$ns" delete pod pgdata-cleanup --ignore-not-found --wait >/dev/null
+  assert_volume_unchanged "$ns" "$FINGERPRINT"
+}
 # The documented cleanup is cut off right after it writes the placeholder, as if the pod running it was
 # killed there: pgdata still holds PG_VERSION and every file, so it still counts as the Postgres 16 copy.
 chain_pin_back_after_cut_off_cleanup_keeps_pinned_data() {
@@ -1819,6 +1954,16 @@ readonly CHAIN_REFUSALS=(
   chain_gap_from_a_copy_refuses_and_touches_nothing
   chain_unreadable_live_copy_refuses_before_writing
   chain_unfollowable_chain_is_refused_once_by_upgrade_step
+  chain_cleanup_refuses_past_unreadable_copy_not_started
+)
+
+# The documented cleanup on volumes from the chain, in a leg of its own for the same reason: each scenario
+# that removes the Postgres 17 copy leaves a volume the next one has to build again.
+readonly CHAIN_CLEANUP=(
+  chain_cleanup_removes_every_older_copy_and_reruns
+  chain_cut_off_cleanup_is_finished_by_running_again
+  chain_cleaned_volume_moves_on_and_removes_nothing
+  chain_cleanup_finishes_started_removal_past_unreadable_copy
 )
 
 # The namespaces each scenario uses, its Givens included, so a namespace is deleted as soon as no later
@@ -1896,7 +2041,8 @@ main() {
     refusals) scenarios=("${REFUSALS[@]}") ;;
     chain) scenarios=("${CHAIN[@]}") ;;
     chain-refusals) scenarios=("${CHAIN_REFUSALS[@]}") ;;
-    *) fail "unknown group $group (happy | refusals | chain | chain-refusals)" ;;
+    chain-cleanup) scenarios=("${CHAIN_CLEANUP[@]}") ;;
+    *) fail "unknown group $group (happy | refusals | chain | chain-refusals | chain-cleanup)" ;;
   esac
   if [[ $# -gt 0 ]]; then
     scenarios=("$@")
