@@ -138,6 +138,12 @@ namespace Lighthouse.Backend.API
                 return BadRequest(stateMappingValidation.Errors);
             }
 
+            var refinementErrors = RefinementSettingsValidator.ValidateSettings(teamSetting);
+            if (refinementErrors.Count > 0)
+            {
+                return BadRequest(refinementErrors);
+            }
+
             if (!IsThroughputHistoryValid(teamId, teamSetting))
             {
                 return BadRequest(ThroughputHistoryValidator.ErrorMessage);

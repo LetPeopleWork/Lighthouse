@@ -68,7 +68,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-01 @slice-01 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task A_state_the_Team_maps_under_a_name_of_its_own_can_be_chosen_by_that_name()
         {
             var team = GivenATeamThatMapsAnalysingAndGroomingAsRefining();
@@ -84,7 +83,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // A Done state is finished work and an unmapped state never reaches the Team, so neither can mean refinement.
         [TestCase(Done)]
         [TestCase(Icebox)]
-        [Ignore(PendingSlice01)]
         public async Task A_state_that_is_neither_To_Do_nor_Doing_is_refused_and_nothing_is_saved(string notARefinementCandidate)
         {
             var gravity = await GivenGravitysAdminHasChosen(Backlog);
@@ -180,7 +178,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         // A state the Team does map, but newly ticked, still has to be To Do or Doing at the moment it is chosen.
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task A_newly_chosen_state_that_is_no_longer_mapped_is_refused()
         {
             var gravity = await GivenGravitysChosenAnalysingStoppedBeingMappedWithOnlyBacklogChosen();
