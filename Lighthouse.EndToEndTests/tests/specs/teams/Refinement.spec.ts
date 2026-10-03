@@ -53,3 +53,41 @@ testWithDemo(
 		});
 	},
 );
+
+// The demo data gives Gravity's GR-059 two Yes votes, from Jonas Weber and Mo Okafor, so one more makes
+// it Ready at the default of three Yes votes from three voters.
+const TWO_YES_SHORT_OF_READY = "GR-059";
+
+// @walking_skeleton @driving_port @us-11 @us-13 @slice-11 @slice-13 @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:bounded-change
+// Without sign-in a voter gives a name once, votes from the list, sees the vote counted, and the third Yes
+// makes the Work Item Ready for everybody.
+testWithDemo.fixme(
+	"a voter gives a name, says Yes on a Work Item in refinement and the votes make it Ready",
+	async ({ overviewPage }) => {
+		const gravity = await overviewPage.goToTeam(CONFIGURED_TEAM);
+		const refinement = await gravity.goToRefinement();
+
+		await test.step("the Work Item still needs one more Yes", async () => {
+			await expect(
+				refinement.workItemRow(TWO_YES_SHORT_OF_READY),
+			).toContainText("1 more Yes needed");
+		});
+
+		await test.step("Priya says Yes, giving her name the first time", async () => {
+			await refinement.vote(TWO_YES_SHORT_OF_READY, "Yes", "Priya Sharma");
+
+			await expect(
+				refinement.answerButton(TWO_YES_SHORT_OF_READY, "Yes"),
+			).toHaveAttribute("aria-pressed", "true");
+			await expect(
+				refinement.workItemRow(TWO_YES_SHORT_OF_READY),
+			).toContainText("3 votes");
+		});
+
+		await test.step("three Yes votes make it Ready", async () => {
+			await expect(
+				refinement.workItemRow(TWO_YES_SHORT_OF_READY),
+			).toContainText("Ready");
+		});
+	},
+);

@@ -52,6 +52,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         /// <summary>A Wednesday morning in the instance's zone, so every day below is fixed.</summary>
         protected static readonly DateTimeOffset Today = new(2026, 10, 7, 9, 0, 0, TimeSpan.Zero);
 
+        /// <summary>How many days back the Team's Throughput, and anything sampled over the same window, looks.</summary>
+        protected const int ThroughputHistoryDays = 30;
+
         private static readonly JsonSerializerOptions WireOptions = new(JsonSerializerDefaults.Web);
 
         protected TestWebApplicationFactory<Program> RootFactory = null!;
@@ -66,7 +69,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             var licenseService = new Mock<ILicenseService>();
             licenseService.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
 
-            Factory = TestWebApplicationFactory<Program>.WithTestAuthentication(RootFactory)
+            Factory = WithAuthentication(RootFactory)
                 .WithWebHostBuilder(builder =>
                 {
                     builder.ConfigureServices(services =>
@@ -90,6 +93,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 seeder.Seed().GetAwaiter().GetResult();
             }
         }
+
+        /// <summary>
+        /// Who the instance lets in. By default sign-in is on and roles are enforced; scenarios about an
+        /// instance without sign-in, or one that does not enforce roles, choose that instance instead.
+        /// </summary>
+        protected virtual WebApplicationFactory<Program> WithAuthentication(TestWebApplicationFactory<Program> root)
+            => TestWebApplicationFactory<Program>.WithTestAuthentication(root);
 
         [TearDown]
         public void Cleanup()
@@ -127,7 +137,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             List<string> toDoStates,
             List<string> doingStates,
             List<string> doneStates,
-            List<StateMapping> stateMappings)
+            List<StateMapping> stateMappings,
+            int sleProbability = 0,
+            int sleRange = 0)
         {
             using var scope = Factory.Services.CreateScope();
 
@@ -148,13 +160,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 DoneStates = doneStates,
                 StateMappings = stateMappings,
                 DoneItemsCutoffDays = 365,
+                ThroughputHistory = ThroughputHistoryDays,
+                ServiceLevelExpectationProbability = sleProbability,
+                ServiceLevelExpectationRange = sleRange,
             };
 
             var teamRepository = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
             teamRepository.Add(team);
             teamRepository.Save().GetAwaiter().GetResult();
 
-            return new TeamUnderTest(team.Id, connection.Id, name, toDoStates, doingStates, doneStates, stateMappings);
+            return new TeamUnderTest(team.Id, connection.Id, name, toDoStates, doingStates, doneStates, stateMappings, sleProbability, sleRange);
         }
 
         /// <summary>
@@ -309,12 +324,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         protected async Task<JsonElement> ReadTheTerminology()
             => await ReadOk("/api/latest/terminology/all");
 
-        private async Task<HttpResponseMessage> PutTheTeamSettings(TeamUnderTest team, JsonObject payload)
+        protected async Task<HttpResponseMessage> PutTheTeamSettings(TeamUnderTest team, JsonObject payload)
             => await Client.PutAsync(
                 $"/api/latest/teams/{team.TeamId}",
                 new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json"));
 
-        private static JsonObject TheTeamSettingsFormFor(TeamUnderTest team)
+        protected static JsonObject TheTeamSettingsFormFor(TeamUnderTest team)
         {
             var form = new TeamSettingDto
             {
@@ -327,18 +342,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 DoingStates = team.DoingStates,
                 DoneStates = team.DoneStates,
                 StateMappings = [.. team.StateMappings.Select(mapping => new StateMappingDto(mapping))],
-                ThroughputHistory = 30,
+                ThroughputHistory = ThroughputHistoryDays,
                 UseFixedDatesForThroughput = false,
                 FeatureWIP = 1,
                 AutomaticallyAdjustFeatureWIP = false,
                 DoneItemsCutoffDays = 365,
+                ServiceLevelExpectationProbability = team.SleProbability,
+                ServiceLevelExpectationRange = team.SleRange,
             };
 
             return JsonNode.Parse(JsonSerializer.Serialize(form, WireOptions))?.AsObject()
                 ?? throw new InvalidOperationException("The Team settings form did not serialise to an object.");
         }
 
-        private async Task<JsonElement> ReadOk(string address)
+        protected async Task<JsonElement> ReadOk(string address)
         {
             using var response = await Client.GetAsync(address);
             var body = await response.Content.ReadAsStringAsync();
@@ -416,7 +433,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             List<string> ToDoStates,
             List<string> DoingStates,
             List<string> DoneStates,
-            List<StateMapping> StateMappings);
+            List<StateMapping> StateMappings,
+            int SleProbability = 0,
+            int SleRange = 0);
 
         protected sealed record TrackerWorkItem(
             string ReferenceId,

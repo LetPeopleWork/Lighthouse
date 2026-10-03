@@ -49,6 +49,7 @@ import {
 	RefinementService,
 } from "./RefinementService";
 import { type ISettingsService, SettingsService } from "./SettingsService";
+import { type ISizingLogService, SizingLogService } from "./SizingLogService";
 import {
 	type ISuggestionService,
 	SuggestionService,
@@ -107,6 +108,7 @@ export interface IApiServiceContext {
 	encryptionService: IEncryptionService;
 	usageDataService: IUsageDataService;
 	refinementService: IRefinementService;
+	sizingLogService: ISizingLogService;
 }
 
 const defaultServices: IApiServiceContext = {
@@ -141,6 +143,7 @@ const defaultServices: IApiServiceContext = {
 	encryptionService: new EncryptionService(),
 	usageDataService: new UsageDataService(),
 	refinementService: new RefinementService(),
+	sizingLogService: new SizingLogService(),
 };
 
 export function getApiServices(): IApiServiceContext {

@@ -22,6 +22,24 @@ export class TeamRefinementPage {
 		return this.workItemRows.filter({ hasText: referenceId });
 	}
 
+	/** One of the three answers on a Work Item's row: "Yes", "Yes, but…" or "No". */
+	answerButton(referenceId: string, answer: string): Locator {
+		return this.workItemRow(referenceId).getByRole("button", {
+			name: answer,
+			exact: true,
+		});
+	}
+
+	/** Votes on a Work Item, giving the name first when this browser has not voted before. */
+	async vote(referenceId: string, answer: string, name: string): Promise<void> {
+		await this.answerButton(referenceId, answer).click();
+
+		const prompt = this.page.getByRole("dialog");
+		await prompt.getByRole("textbox", { name: "Your name" }).fill(name);
+		await prompt.getByRole("button", { name: "Vote" }).click();
+		await prompt.waitFor({ state: "hidden" });
+	}
+
 	// The grid's header is a row too, but it holds column headers rather than cells.
 	private get workItemRows(): Locator {
 		return this.page

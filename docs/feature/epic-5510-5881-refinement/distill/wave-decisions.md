@@ -89,3 +89,121 @@ rest, then the E2E skeleton (run live before un-fixme'ing it). One scenario at a
   before the E2E is un-fixme'd.
 - **Maintainer to confirm** (product-facing defaults, not blockers): DST-9 (GR-051 first, 63 Work Items on demo
   Gravity), DST-10 (the copy pinned by the scenarios) and DST-13 (no age on To Do rows, MQ-4).
+
+
+---
+
+# Wave Decisions — DISTILL — E3 Sizing votes (Epic #5510), slices 10–17b
+
+**Agent**: Quinn (`nw-acceptance-designer`) · **Date**: 2026-10-03 · **Mode**: autonomous subagent, maintainer AFK
+**Scope**: E3 only — slices 10 (US-10, #6148), 11 (US-11, #6149), 12 (US-12, #6150), 13 (US-13, #6151), 14 (US-14,
+#6152), 15 (US-15, #6153), 16 (US-16, #6154), 17a (US-17a, #6155), 17b (US-17b, #6156). E1 is delivered; E2, E4, E5
+are not distilled here. The E1 block above is left as written.
+**Predecessors**: DISCUSS (DD-1..DD-22), DESIGN (DSN-1..DSN-22, ADR-214..218), DEVOPS (DVO-1..DVO-8), DELIVER E1.
+Full reasoning: `feature-delta.md` → `## Wave: DISTILL / … — E3 (#5510)`. RED evidence: `distill/red-classification.md`
+→ "Epic #5510 (E3)".
+
+## Phase 0
+
+`[lang-mode] csharp+typescript` (unchanged). `[policy-mode] inherit` — `docs/architecture/atdd-infrastructure-policy.md`
+read and applied; no port in scope is missing from it (driving: the real host over HTTP; driven internal: real EF on
+SQLite / Postgres per CI leg; external: the licence and the instance clock faked, usage-data collector captured), so no
+row was appended. `[port-mode] n/a` — as E1: the universe guard is asserted directly (row counts and readings before and
+after, settings read-back, "nothing counted on any listed Work Item").
+
+## Reconciliation gate (DISCUSS ↔ DESIGN ↔ DEVOPS, E3 scope)
+
+**Reconciliation passed — 0 contradictions.** Every DISCUSS statement DESIGN or DEVOPS reads differently is a
+documented correction (`design/upstream-changes.md`, `devops/upstream-changes.md`), applied as written:
+
+| DISCUSS | Reading applied | Source |
+|---|---|---|
+| AC-10.1 "over the Team's metrics window" | over the Team's Throughput history window | DSN-10 |
+| AC-11.2 / DD-10 "name per browser" | name plus a random per-browser voter key; "mine" and take-back follow the key | DSN-12 |
+| AC-11.4 / AC-15.2 "TeamRead"; slice-15 brief "403 without Team read" | `TeamContribute` = the Team read predicate; non-readers get 404 | DSN-13, ADR-217 |
+| AC-12.2 / DD-11 open question | open while the asker has no current vote | DSN-15 |
+| AC-13.2 / DD-5 | votes alone decide until stages (03) and rules (08) exist | DSN-14 |
+| AC-14.2 presenter exemption | presenter is E4; nothing here reveals a split | DSN-16 |
+| US-17b command names | `lh refinement vote … --answer yes-but --comment …`, `lighthouse_team_refinement_vote` | DSN-21 |
+| K4 two properties | one closed enum `sizingMoment`; `NoCadence` until slice 04 | DVO-2 |
+| ADR-217 partition "by subject" | by presented handle, else address, plus the address ceiling | DVO-5 |
+
+Settled maintainer calls re-checked against every scenario: votes are always open on every Work Item in refinement,
+whatever its stage or position (slice 11, three cases); async is pull — nothing is pushed, readiness names what is
+missing (slice 13); everything here is Community (no licence gate anywhere; named votes come only with sign-in, slice
+15); minimum Yes ≥ 1 (slice 13 refusals); the SLE fallback is the 85th percentile of the default cycle time over the
+Throughput window only, with no definition choice (slice 10); every user-facing word goes through Terminology (slice
+10's renamed-terms cases); votes and readiness join the shared grid as columns, no age, no category, nothing pruned
+by flag.
+
+## Decisions taken autonomously (DST-15 onwards; E1 used DST-1..DST-14)
+
+| # | Decision | Why this default |
+|---|---|---|
+| DST-15 | **Maintainer decision (2026-10-03), recorded here and in `feature-delta.md`: the slice-10 UI.** The tab shows the existing heading and exactly one more line, never more: the question followed by an info icon whose detail is a hover tooltip. SLE set (75% / 7 days): "Doable within 7 days?" ⓘ "SLE 75% of items in 7 days or less". No SLE, fallback 12 days: "Doable within 12 days?" ⓘ "No SLE set, based off 85% of historical cycle time". No SLE, nothing finished: "Doable within our SLE?" ⓘ "No SLE is set and no Work Items have finished yet". No visible hint line, **no settings link — AC-10.2 is dropped**. SLE / Cycle Time / Work Items / Refinement through Terminology. The server answers facts `{source: Sle\|CycleTimeFallback\|Unavailable, days?, probability?}`; the browser composes sentence and tooltip | Supersedes the US-10 elevator-pitch copy and AC-10.2. "items" in the SLE tooltip is the maintainer's word, kept verbatim |
+| DST-16 | **Usage-data numbers**: `TeamSizingVoteCast = 13` (slice 11), `TeamSizingReadinessReached = 14` (slice 13). The highest member of `UsageDataEventName` today is `TeamRefinementConfigured = 12`, and `docs/settings/usagedata.md` lists nothing beyond it. New closed enum `UsageDataSizingMoment` starts with `NoCadence = 0`; `OnRefinementDay`, `OnOtherDay` (04) and `InLiveSession` (18) are appended by their slices. Wire part `sizingMoment` in, `sizing_moment` out. The scenarios pin the order the names were appended in, not the integers | DEVOPS's integers were provisional; these are the next free ones, nothing renumbered. E3's two slices land before E2's 05 and E4's 18, so they take 13 and 14 |
+| DST-17 | **Wire shape pinned by the scenarios.** Tab read adds `yardstick {source, days, probability}` (fallback probability = 85), `voterIdentity: "Account"\|"SelfDeclared"`, `readyByVotesCount`; each row adds `voteCount`, `myVote`, `split {yes, yesBut, no}` (null when hidden), `readiness: "Ready"\|"MoreYesNeeded"\|"MoreVotersNeeded"\|"NeedsDiscussion"`, `missingVotes` (null when Ready or in discussion), `hasComments`, `hasOpenQuestion`. Log: `{hidden, voteCount?, entries: [{kind, answer, comment, voterName, channel, recordedAt, isMine}]}`. Vote body `{answer, channel, comment?, voterName?}` answered 200 with the row; comment body `{comment, channel, voterName?}`; `DELETE …/votes/mine` answered 200 with the row. Header `X-Lighthouse-Voter-Key`. Refusals are ProblemDetails with `code`: `voter-name-required` 400, `voter-key-required` 400, `work-item-not-in-refinement` 409, `vote-needs-a-person` 403; the other 400s (unknown answer or channel, a name over 100 characters, an empty or over-2,000-character comment) pin the status only. The route segment `{workItemId}` is the Work Item's reference, escaped | DESIGN names fields but not their JSON; these follow the E1 camelCase / string-enum shape and `ProblemDetails.Extensions["code"]` as the existing filters do. Rows carry no other id than the reference |
+| DST-18 | **`voterIdentity` is a fact on the tab read** so the browser knows whether to ask for a name | DESIGN says "no name prompt when authentication is enabled" without saying where the browser learns it; the tab's own read is the one place every voter already asks |
+| DST-19 | **`refinement.readiness` absent or null in a save leaves readiness unchanged**; a Team that never set it reads 3 Yes, 3 voters, no veto | DSN-3's null-means-unchanged rule, one level down — an older form must not reset it |
+| DST-20 | **Half an SLE is no SLE**: probability without days, or days without probability, falls back | DSN-10 "when both SLE fields > 0" |
+| DST-21 | **Frontend write port is its own `SizingLogService`** (`castVote`, `addComment`, `takeBackMyVote`, `getLog`, voter key passed explicitly), beside `RefinementService` (the tab's read, which sends the stored voter key header) | Mirrors the backend's read/write split (DSN-19) and leaves E1's `IRefinementService` test literals untouched |
+| DST-22 | **Copy pinned, provisional until the maintainer has seen a sketch** (CLAUDE.md: sketch any UI first — DELIVER shows it before building): row buttons "Yes" / "Yes, but…" / "No" with `aria-pressed` on the voter's own; columns "Your vote" and "Votes" on the shared grid; "No votes" / "1 vote" / "3 votes"; name prompt dialog, textbox "Your name", "Vote" / "Cancel"; "Change your name" → "Save"; "Ready" / "2 more Yes needed" / "1 more voter needed" / "Needs discussion"; heading "3 Work Items in Refinement · 1 ready by votes" on its own single line; "Yes, but…" prompt textbox "Condition" (may stay empty); "Ask a question" → "Question" → "Send"; "Open question"; "Votes and comments" → a list, days as "Wed 7 Oct", "via the command line" / "via an assistant", "Jonas Weber took back their vote"; hidden log "Vote first to see the 3 votes and their comments"; split "3 Yes · 0 Yes, but… · 1 No"; "Take back my vote"; settings "Yes votes needed", "Voters needed", "Send to discussion", "Counting" ("No" / "No or Yes, but…"), errors "At least one Yes vote is needed", "Voters needed cannot be fewer than Yes votes needed" | DISCUSS gives words for a few of these only. The ready count lives in the heading so the maintainer's "heading plus one line" stays true. DELIVER may reword only by changing the scenario in the same commit |
+| DST-23 | **An empty refinement asks no question** | Nothing to vote on |
+| DST-24 | **The UI prompts for a comment only on "Yes, but…"**; Yes and No stay one click. The server accepts a comment on every answer (AC-12.1), so clients and a later UI can add one | AC-11.5 (≤ 2 interactions per vote) and AC-12.1 pull against each other on Yes/No; the click budget wins in the UI. Flagged upstream |
+| DST-25 | **17a/17b here are the Lighthouse half**: a client is a voter with its own key; `Cli` / `Assistant` are recorded and shown; a nameless client vote is refused; a personal API key votes as its owner; a key nobody owns is refused. The CLI and MCP scenarios (commands, `lh config voter set`, refusing before calling, the tool wording of DD-19 (d), mcp-http refusing auth-off votes, the voter store) belong in `lighthouse-clients` and are distilled there together with slice 09, whose read command 17a extends | One commit, one repository; 17a's client surface does not exist until E2's slice 09 |
+| DST-26 | **A key nobody owns cannot comment or take back either** (403 `vote-needs-a-person`) | DSN-12 names votes; a comment or take-back with no voter has no author either |
+| DST-27 | **Taking back a vote you do not have answers 200 with the unchanged row** and appends nothing | DSN-15 "idempotent no-op" |
+| DST-28 | **Rate limit pinned through the shipped settings**: the 31st entry from one voter key within a minute → 429, and the voter's current vote is unchanged | One scenario covers both DEVOPS asks: the policy is configured in `appsettings.json` and it bites |
+| DST-29 | **Test placement and harness**: same folder and split as E1 (`API/Integration/Refinement/`, `Slice1n…Scenarios.cs` + `…Specifications.cs`); new shared harness `SizingVotesAcceptanceTest : RefinementAcceptanceTest` with three instances — without sign-in (default), sign-in with roles, sign-in without roles with the product's own API-key handler. The E1 harness gained an overridable authentication hook, the SLE and Throughput window on seeded Teams and in the settings form (so an admin's save no longer zeroes the SLE), and protected form/put/read helpers; E1 scenarios behave as before | Precedent E1 (black-box over HTTP/JSON, no backend scaffolds) |
+| DST-30 | **No backend scaffolds**: every backend scenario is black-box over HTTP/JSON. Frontend scaffolds: `SizingLogService` throws `Not yet implemented -- RED scaffold`; model types added as optional members; `IApiServiceContext.sizingLogService` (+ default and mock entries) | Precedent DST-11 |
+| DST-31 | **Tier B not declared**: readiness, the open question and the hidden split are one pure resolution (ADR-218); DELIVER covers its combinations with unit property tests. Acceptance stays example-based through the real host | Mandate 9: real-host acceptance is layer 3 |
+| DST-32 | **The yardstick captured on each vote (DSN-22) is not observable through any port in E3** — it is E5's. DELIVER 11 pins it below acceptance | No reader exists yet |
+| DST-33 | **Second E2E walking skeleton** (DVO-7) on demo scenario 12, `fixme`: needs demo votes — GR-059 with Yes from Jonas Weber and Mo Okafor, so the E2E voter's Yes makes it Ready; plus DISCUSS's examples (GR-073 Ready by Jonas and Mo's Yes and Ana's "Yes, but…"; Ana's condition on GR-051; Ana's No on GR-054). DELIVER 11/13 seeds them | DISCUSS demo-data checklist; the E2E establishes nothing it does not say |
+| DST-34 | **Not pinned at acceptance level, DELIVER covers below**: the fallback ignores a Team's named cycle-time definitions (D24); presenter reveal (E4) | Seeding named definitions needs state history the harness does not build; presenter is out of scope |
+| DST-35 | **Readiness is admin-only through the same settings write E1 already guards** (`Only_a_Team_admin_can_change_the_refinement_states`); not repeated | One write, one guard |
+
+## Delivery order for these scenarios
+
+Per DD-22 the E3 slices interleave with E2: **10 → 11 → 13** first (then E2's 03–06), **12** (then 07), **15 → 14**
+(then 08), **16** (then 09), **17a → 17b**. Each slice un-skips only its own cases; a later slice's case may need an
+earlier slice's behaviour (comments arrive in 12, so 14's "asking a question does not reveal the split" waits for 12,
+which is delivered first), never a later one.
+
+## Mandate-12 (informational)
+
+Step methods live in `*Specifications.cs` partial classes and the shared `SizingVotesAcceptanceTest` harness; every
+scenario body is Given/When/Then calls. Domain values are typed (`Voter`, `Answer`, `Channel`, `VetoCounts`,
+`FinishedWorkItem`, `VotedRowReading`, `LogEntryReading`, `ReadinessReading`, `YardstickReading`, `SplitReading`).
+**Step-reuse ratio 2.69×** (336 step calls / 125 distinct steps across the eight E3 scenario files) — the natural
+ceiling for a vote log with three identity modes.
+
+## Completeness audit (Phase 2.5)
+
+**13 / 15 → COMPLETE.** Passing: C1a (no votes, no SLE, nothing finished, empty refinement), C1b (100/101-character
+name, 2,000/2,001-character comment, 31-character key, veto 1/2, 0/-1 Yes, voters = Yes), C2a (a vote's life: none →
+cast → changed → taken back → cast again; a question: open → closed by the asker), C2b (illegal per state: vote off
+refinement, take back with no vote, question without a vote does not unlock), C3 (0/1/many votes, voters, Work Items),
+C4a (taking back twice, re-voting, two sessions of one account), C4b (take back with nothing to take back), C5a
+(without sign-in, sign-in with roles, sign-in without roles, Team admin, Viewer, no role, unowned and personal API
+keys), C5b (renamed terms), C6a (unknown Team, unknown Work Item, Work Item outside refinement), C6b (each refusal
+code with its status), C6c (closed refusal set: four codes, the rest status-only), C7a (a refused vote, a failed take
+back and an unreadable log each say why in the UI). Gaps, both `AT_GAP_IN_DELIVERY_SCOPE`, neither blocking: C7b
+(a vote interrupted mid-flight — the append-only log makes a retry a second entry, and the latest counts, so nothing is
+lost; not scenario-pinned), C7c (two voters at once — no read-modify-write exists, DSN-11; not scenario-pinned). **0
+SPECIFICATION_AMBIGUITY.**
+
+## Upstream notes (for the maintainer, not blockers)
+
+- DST-15 drops AC-10.2 (the settings link) and the US-10 pitch copy — recorded as the maintainer's call.
+- DST-22's copy is provisional; DELIVER's sketch-first step settles it.
+- DST-24: AC-11.5 and AC-12.1 conflict for Yes/No in the UI; the scenarios keep Yes/No at one click.
+- DST-25: the `lighthouse-clients` half of 17a/17b is owed with slice 09.
+- The SLE tooltip says "items" (maintainer's copy); every other sentence uses the Work Item term.
+
+## Handoff
+
+DELIVER slice 10 enables `Slice10SleYardstickTest` and `RefinementView.yardstick.test.tsx`; 11 `Slice11CastAVoteTest`,
+the slice-11 cases of `TeamSizingUsageEventsTests`, `RefinementView.votes.test.tsx` (first block),
+`SizingLogService.test.ts` (slice-11 cases) and `RefinementService.voterKey.test.ts`; 13 `Slice13ReadinessTest`, the
+slice-13 usage cases, `RefinementView.readiness.test.tsx`, `ModifyTeamSettings.readiness.test.tsx` and then the E2E
+skeleton (run live first); then 12, 15, 14, 16, 17a, 17b in that order. One scenario at a time.

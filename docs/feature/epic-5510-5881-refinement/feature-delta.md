@@ -2114,6 +2114,329 @@ waves were reviewed and pushed before this run and are unchanged by it.
 | (low) Two preservation/isolation cases tagged `@error` | Retagged `@boundary`; error + boundary share unchanged at 39 / 66 |
 | (low) Wall-clock budget, `toHaveLength(2)` on the Doing note, enum-order reflection | Kept as written; noted for DELIVER |
 
+## Wave: DISTILL / [REF] Scope and Reconciliation — E3 (#5510)
+
+**Agent**: Quinn (`nw-acceptance-designer`) · **Date**: 2026-10-03 · **Mode**: autonomous subagent, maintainer AFK.
+**Scope**: **E3 only — Epic #5510 Sizing votes**: slices 10 (US-10, #6148), 11 (US-11, #6149), 12 (US-12, #6150),
+13 (US-13, #6151), 14 (US-14, #6152), 15 (US-15, #6153), 16 (US-16, #6154), 17a (US-17a, #6155), 17b (US-17b, #6156).
+E1's DISTILL sections above are left as written; E2, E4, E5 are not distilled.
+
+**Reconciliation passed — 0 contradictions** across DISCUSS, DESIGN and DEVOPS for E3. DESIGN's corrections to
+AC-10.1 (Throughput window), AC-11.2 (name plus voter key), AC-11.4/AC-15.2 (`TeamContribute`, 404 for non-readers),
+AC-12.2 (open question until the asker votes), AC-13.2 (votes alone until 03/08) and the client command names, and
+DEVOPS's `sizingMoment` enum and rate-limit partition, are applied as written in the two `upstream-changes.md` files.
+Settled maintainer calls re-checked against every scenario: votes always open; async is pull; all Community, named
+votes only with sign-in; minimum Yes ≥ 1; the SLE fallback is the default cycle time's 85th percentile over the
+Throughput window; every word through Terminology; votes join the shared grid as columns. Decisions DST-15..DST-35:
+`distill/wave-decisions.md` → "E3 Sizing votes".
+
+## Wave: DISTILL / [REF] Maintainer decision — the slice-10 question (2026-10-03)
+
+Approved by the maintainer on 2026-10-03; **supersedes the US-10 elevator-pitch copy and AC-10.2** (DST-15). The tab
+shows the existing heading ("{count} {Work Items} in {Refinement}") and **exactly one more line, never more**: the
+question followed by an info icon (ⓘ) whose detail appears on hover. No visible hint line, no settings link.
+
+| Team | Line | Tooltip |
+|---|---|---|
+| SLE 75% / 7 days | Doable within 7 days? ⓘ | SLE 75% of items in 7 days or less |
+| No SLE, fallback P85 = 12 days | Doable within 12 days? ⓘ | No SLE set, based off 85% of historical cycle time |
+| No SLE, nothing finished | Doable within our SLE? ⓘ | No SLE is set and no Work Items have finished yet |
+
+SLE, Cycle Time, Work Items and Refinement come from Terminology (seeded defaults shown). The server answers facts
+`{source: Sle | CycleTimeFallback | Unavailable, days?, probability?}`; the browser composes sentence and tooltip.
+The frontend scenarios assert the question, the info icon's accessible tooltip text, and that nothing else sits
+between the heading and the list.
+
+## Wave: DISTILL / [REF] Scenario list with tags — E3 (#5510)
+
+All cases are pending (`[Ignore(PendingSlice1n)]` / `IgnoreReason = PendingSlice1n`, `it.skip`); the E2E skeleton is
+`fixme`. **196 runnable cases, 122 error/boundary (62%)**: backend 132, frontend 64.
+
+| Slice | Cases (backend + frontend) | Error / boundary |
+|---|---|---|
+| 10 yardstick | 20 (9 + 11) | 15 |
+| 11 cast a vote | 51 (35 + 16) | 37 |
+| 12 comments and the log | 30 (19 + 11) | 16 |
+| 13 readiness | 41 (26 + 15) | 25 |
+| 14 hidden split | 13 (10 + 3) | 6 |
+| 15 votes with an account | 12 (9 + 3) | 7 |
+| 16 take back | 16 (11 + 5) | 9 |
+| 17a clients read (Lighthouse half) | 3 (3 + 0) | 2 |
+| 17b clients cast (Lighthouse half) | 10 (10 + 0) | 5 |
+
+Every backend case is `@driving_port @real-io` with a `@contract-shape:` tag in the source; the tables below drop
+those three for width.
+
+**Backend — `Slice10SleYardstickTest`**
+
+| Scenario | Tags |
+|---|---|
+| The Team's SLE is the yardstick every voter answers against | `@us-10 @slice-10` |
+| Without an SLE the yardstick is the 85th percentile of the Team's cycle time | `@us-10 @slice-10` |
+| Work Items finished before the Throughput window do not move the fallback | `@us-10 @slice-10 @boundary` |
+| No SLE and no finished Work Items leaves the question without a number | `@us-10 @slice-10 @error` |
+| Work finished only before the Throughput window counts as nothing finished | `@us-10 @slice-10 @boundary` |
+| Half an SLE is no SLE and the fallback is used | `@us-10 @slice-10 @boundary` |
+| Setting an SLE replaces the fallback on the next read | `@us-10 @slice-10` |
+| Every voter is shown the same yardstick | `@us-10 @slice-10 @boundary` |
+
+**Backend — `Slice11CastAVoteTest`**
+
+| Scenario | Tags |
+|---|---|
+| A reader votes in seconds without an account | `@us-11 @slice-11 @kpi-OUT-5510-K4-votes-outside-the-meeting` |
+| Changing one's mind replaces the current vote and still counts once | `@us-11 @slice-11` |
+| Every voter counts once and sees only their own answer as theirs | `@us-11 @slice-11` |
+| Two people who declare the same name are two voters | `@us-11 @slice-11 @boundary` |
+| Votes are open on every Work Item in refinement | `@us-11 @slice-11 @boundary` |
+| A Work Item that is not in refinement cannot be voted on | `@us-11 @slice-11 @error` |
+| A vote without a name is refused and nothing is counted | `@us-11 @slice-11 @error` |
+| A vote without a voter key is refused and nothing is counted | `@us-11 @slice-11 @error` |
+| A declared name of one hundred characters is accepted | `@us-11 @slice-11 @boundary` |
+| A declared name longer than one hundred characters is refused | `@us-11 @slice-11 @error` |
+| An answer other than Yes Yes, but or No is refused | `@us-11 @slice-11 @error` |
+| A vote that does not say where it was cast from is refused | `@us-11 @slice-11 @error` |
+| The voter key never comes back in any answer | `@us-11 @slice-11 @boundary` |
+| A vote for a Team that does not exist is not found | `@us-11 @slice-11 @error` |
+| Votes outlive a Work Item leaving refinement and count again when it returns | `@us-11 @slice-11 @boundary` |
+| Voting changes nothing about the Team or its Work Items | `@us-11 @slice-11` |
+| A voter sending more than thirty entries a minute is told to slow down | `@us-11 @slice-11 @error` |
+| Without sign in the tab says a voter declares their name | `@us-11 @slice-11` |
+
+**Backend — `Slice12CommentsTest`**
+
+| Scenario | Tags |
+|---|---|
+| A Yes, but carries its condition into the Work Item's log | `@us-12 @slice-12` |
+| Any answer may carry a comment | `@us-12 @slice-12` |
+| A vote without a comment carries none | `@us-12 @slice-12 @boundary` |
+| A changed mind keeps both votes in the log oldest first | `@us-11 @us-12 @slice-12` |
+| The log says who said what when and from where oldest first | `@us-12 @slice-12` |
+| A question without a vote flags the Work Item and counts as no vote | `@us-12 @slice-12` |
+| The asker voting closes their own question | `@us-12 @slice-12` |
+| Somebody else's vote does not close the question | `@us-12 @slice-12 @boundary` |
+| A comment from somebody who has voted is no open question and keeps their vote | `@us-12 @slice-12 @boundary` |
+| A question counts for nothing towards readiness | `@us-12 @us-13 @slice-12 @boundary` |
+| An empty question is refused and nothing is recorded | `@us-12 @slice-12 @error` |
+| A comment of two thousand characters is kept whole | `@us-12 @slice-12 @boundary` |
+| A comment longer than two thousand characters is refused | `@us-12 @slice-12 @error` |
+| A question without a name is refused | `@us-12 @slice-12 @error` |
+| A question on a Work Item that is not in refinement is refused | `@us-12 @slice-12 @error` |
+| The log of a Work Item that is not in refinement is not found | `@us-12 @slice-12 @error` |
+| A comment comes back exactly as it was written | `@us-12 @slice-12 @boundary` |
+
+**Backend — `Slice13ReadinessTest`**
+
+| Scenario | Tags |
+|---|---|
+| A Team that never chose readiness needs three Yes from three voters and has no veto | `@us-13 @slice-13 @boundary` |
+| A Team admin sets readiness and it reads back | `@us-13 @slice-13` |
+| Fewer than one Yes is refused and nothing is saved | `@us-13 @slice-13 @error` |
+| Fewer voters than Yes votes is refused and nothing is saved | `@us-13 @slice-13 @error` |
+| As many voters as Yes votes is accepted | `@us-13 @slice-13 @boundary` |
+| A veto of zero votes is refused and nothing is saved | `@us-13 @slice-13 @error` |
+| A save that says nothing about readiness leaves it as it was | `@us-13 @slice-13 @boundary` |
+| Changing readiness keeps every Work Item the Team holds | `@us-13 @slice-13 @boundary` |
+| Enough Yes votes make a Work Item Ready and the tab counts it | `@us-13 @slice-13 @kpi-OUT-5510-K5-ready-before-the-day` |
+| The missing Yes votes are named | `@us-13 @slice-13` |
+| A Work Item nobody has voted on needs every Yes | `@us-13 @slice-13 @boundary` |
+| A No does not count towards the Yes votes | `@us-13 @slice-13 @boundary` |
+| Enough Yes votes from too few voters name the missing voters | `@us-13 @slice-13 @boundary` |
+| Any answer from the missing voter makes the Work Item Ready | `@us-13 @slice-13` |
+| A veto sends a Work Item to discussion however many say Yes | `@us-13 @slice-13 @error` |
+| A veto counts Yes, but only when the Team says so | `@us-13 @slice-13 @boundary` |
+| A veto of two is not tripped by one No | `@us-13 @slice-13 @boundary` |
+| A No changed to Yes lifts the veto | `@us-13 @slice-13` |
+| Lowering readiness makes a Work Item Ready on the next read | `@us-13 @slice-13` |
+| The tab counts only the Work Items the votes made Ready | `@us-13 @slice-13` |
+
+**Backend — `Slice14HiddenSplitTest`**
+
+| Scenario | Tags |
+|---|---|
+| The split is hidden from somebody who has not voted | `@us-14 @slice-14` |
+| Voting reveals the split | `@us-14 @slice-14` |
+| The log stays closed to somebody who has not voted | `@us-14 @slice-14` |
+| Voting opens the log | `@us-14 @slice-14` |
+| Asking a question does not reveal the split | `@us-14 @slice-14 @boundary` |
+| Having voted on one Work Item reveals nothing about another | `@us-14 @slice-14 @boundary` |
+| Each voter sees the split only where they have voted themselves | `@us-14 @slice-14 @boundary` |
+| A Ready Work Item shows Ready to somebody who has not voted | `@us-13 @us-14 @slice-14 @boundary` |
+| A reader who brings no voter key sees counts and readiness only | `@us-14 @us-17a @slice-14 @boundary` |
+
+**Backend — `Slice14HiddenFromTeamAdminsTest`**
+
+| Scenario | Tags |
+|---|---|
+| A Team admin who has not voted sees no split and no log either | `@us-14 @slice-14 @error` |
+
+**Backend — `Slice15VotesWithAnAccountTest`**
+
+| Scenario | Tags |
+|---|---|
+| A signed in reader votes under their account without giving a name | `@us-15 @slice-15` |
+| A name sent with a signed in vote is ignored | `@us-15 @slice-15 @error` |
+| One account is one voter whichever browser it votes from | `@us-15 @slice-15 @boundary` |
+| A Team admin votes like any reader | `@us-11 @us-15 @slice-15` |
+| Two accounts with the same name are two voters | `@us-15 @slice-15 @boundary` |
+| Somebody without a role on the Team can neither open the tab nor vote | `@us-15 @slice-15 @error` |
+| Somebody without a role on the Team can neither read the log nor comment | `@us-12 @us-15 @slice-15 @error` |
+| With sign in the tab says a voter is known by their account | `@us-15 @slice-15` |
+
+**Backend — `Slice15VotesWithoutRolesTest`**
+
+| Scenario | Tags |
+|---|---|
+| Every signed in person votes when roles are not enforced | `@us-15 @slice-15` |
+
+**Backend — `Slice16TakeBackTest`**
+
+| Scenario | Tags |
+|---|---|
+| A taken back vote stops counting and the log keeps both | `@us-16 @slice-16` |
+| Taking back a vote you do not have records nothing | `@us-16 @slice-16 @boundary` |
+| Taking back twice records one take back | `@us-16 @slice-16 @boundary` |
+| Nobody can take back somebody else's vote even under their name | `@us-16 @slice-16 @error` |
+| Taking back without a voter key is refused | `@us-16 @slice-16 @error` |
+| Taking back on a Work Item that is not in refinement is refused | `@us-16 @slice-16 @error` |
+| Taking back a Yes can cost a Work Item its Ready | `@us-13 @us-16 @slice-16 @boundary` |
+| Voting again after taking back counts again | `@us-16 @slice-16` |
+| Taking back hides the split again | `@us-14 @us-16 @slice-16 @boundary` |
+
+**Backend — `Slice16TakeBackWithAnAccountTest`**
+
+| Scenario | Tags |
+|---|---|
+| Any session of the account that voted can take the vote back | `@us-15 @us-16 @slice-16` |
+| Somebody without a role on the Team cannot take anything back | `@us-15 @us-16 @slice-16 @error` |
+
+**Backend — `Slice17ClientVotesTest`**
+
+| Scenario | Tags |
+|---|---|
+| A client is told which Work Items need discussion and which are Ready | `@us-17a @slice-17a` |
+| A client whose user has not voted is not told the split | `@us-14 @us-17a @slice-17a @error` |
+| A client whose user voted through it is told the split | `@us-14 @us-17a @slice-17a @boundary` |
+| A voter casts a Yes, but with its condition from the command line | `@us-17b @slice-17b` |
+| A vote cast through an assistant is marked as cast through an assistant | `@us-17b @slice-17b` |
+| A client vote without a name is refused and nothing is recorded | `@us-17b @slice-17b @error` |
+| A question asked through an assistant flags the Work Item | `@us-12 @us-17b @slice-17b` |
+| A client takes back the vote it cast | `@us-16 @us-17b @slice-17b` |
+| A client cannot take back a vote its user cast from a browser | `@us-16 @us-17b @slice-17b @error` |
+
+**Backend — `Slice17ClientVotesWithAnApiKeyTest`**
+
+| Scenario | Tags |
+|---|---|
+| A personal API key votes under its owner's name | `@us-15 @us-17b @slice-17b` |
+| A credential that belongs to no person cannot add to the log | `@us-15 @us-17b @slice-17b @error` |
+
+**Backend — `TeamSizingUsageEventsTests`**
+
+| Scenario | Tags |
+|---|---|
+| A browser that agreed reports the event with its name and when it happened and nothing else | `@us-11 @slice-11 @kpi-OUT-5510-K4-votes-outside-the-meeting` |
+| The event without when it happened is refused | `@us-11 @us-13 @error` |
+| The event carrying anything more is refused | `@us-11 @us-13 @error` |
+| A vote cast at a moment not on the list is refused | `@us-11 @slice-11 @error` |
+| Another event carrying a sizing moment is refused | `@us-11 @slice-11 @error` |
+| The sizing events are appended to the list of names never inserted | `@us-11 @us-13` |
+
+**Frontend — Vitest + RTL** (64 cases)
+
+| File | Scenarios | Tags |
+|---|---|---|
+| `Refinement/RefinementView.yardstick.test.tsx` | asks against the SLE, tooltip says the SLE · fallback, tooltip says it is one · no number, tooltip says why · exactly one line between heading and list, no link (×3) · one day singular · asks nothing once nothing is in refinement · the Team's own words in question and tooltip (×3) | `@us-10 @slice-10`, 1 `@error`, 8 `@boundary` |
+| `Refinement/RefinementView.votes.test.tsx` | three answers and a count on every row · first vote asks the name, vote under it, marked as own · name remembered, one click · only name and key kept in the browser · closing the prompt casts nothing · no blank name · change the name later votes carry · refused vote leaves the row and says why · 1 vote / 3 votes · each accepted vote reported (`TeamSizingVoteCast`, `NoCadence`) · refused vote reports nothing · signed in: no prompt, nothing stored · signed in: no name to change · count only before voting · split after voting · take back offered only on own vote · take back from this browser · failed take back keeps the vote | `@us-11 @us-14 @us-15 @us-16`, 5 `@error`, 3 `@boundary`, `@kpi-OUT-5510-K4-votes-outside-the-meeting` ×3 |
+| `Refinement/RefinementView.comments.test.tsx` | "Yes, but…" asks for the condition · empty condition still votes · ask a question without voting · no empty question · open question marked · log oldest first with names and days · comment shown as text, never markup · via the command line / an assistant · taken back shown · hidden log says only how many · unreadable log says why | `@us-12 @us-14 @us-16 @us-17b`, 3 `@error`, 1 `@boundary` |
+| `Refinement/RefinementView.readiness.test.tsx` | Ready / n more Yes / n more voters / Needs discussion · singular and plural · readiness shown without the split · heading counts ready by votes on its own line · 0 ready by votes · tipping vote reports `TeamSizingReadinessReached` · already Ready reports nothing · still short reports nothing | `@us-13 @slice-13`, 5 `@boundary`, `@kpi-OUT-5510-K5-ready-before-the-day` ×4 |
+| `components/Common/Team/ModifyTeamSettings.readiness.test.tsx` | defaults 3 / 3 / no veto · changed Yes saved with the rest · fewer than one Yes refused · fewer voters than Yes refused · veto after one No · veto counting "Yes, but…" · opening saves nothing | `@us-13 @slice-13`, 2 `@error`, 1 `@boundary` |
+| `services/Api/SizingLogService.test.ts` | vote: address, body, key header, the row back · no header without a key · reference escaped · refused vote passed on · question to comments · log read with the key · take back with the key | `@us-11 @us-12 @us-15 @us-16`, 1 `@error`, 2 `@boundary` |
+| `services/Api/RefinementService.voterKey.test.ts` | tab read with the stored key, none before · unreadable store sends none, then the key | `@us-11 @us-14 @slice-11`, 1 `@error` |
+
+**E2E — `specs/teams/Refinement.spec.ts`** (second skeleton, `fixme`): *a voter gives a name, says Yes on a Work Item
+in refinement and the votes make it Ready* — `@walking_skeleton @driving_port @us-11 @us-13 @slice-11 @slice-13
+@kpi-OUT-5510-K4-votes-outside-the-meeting`. Given: demo scenario 12 with GR-059 holding Yes from Jonas Weber and Mo
+Okafor (demo seeding is DELIVER's, slices 11/13). POM `TeamRefinementPage` gains `answerButton()` and `vote()`.
+
+## Wave: DISTILL / [REF] WS strategy — E3 (#5510)
+
+Architecture of Reference + project policy (inherited, nothing appended). One more walking skeleton, the E2E above,
+as DVO-7 specifies — real browser → real app → seeded demo data, through POMs. Backend scenarios run the production
+composition root (`WebApplicationFactory<Program>` over real EF) on three instances: without sign-in (every Community
+instance), sign-in with roles enforced, sign-in without roles (with the product's own API-key handler). Only the
+licence and the instance clock are faked; the usage-data collector is captured. Tier B: not declared (DST-31).
+
+## Wave: DISTILL / [REF] Test placement — E3 (#5510)
+
+| Where | Why (precedent) |
+|---|---|
+| `Lighthouse.Backend.Tests/API/Integration/Refinement/` — harness `SizingVotesAcceptanceTest` + `Slice10SleYardstick…`, `Slice11CastAVote…`, `Slice12Comments…`, `Slice13Readiness…`, `Slice14HiddenSplit…`, `Slice15VotesWithAnAccount…`, `Slice16TakeBack…`, `Slice17ClientVotes…` (`Scenarios.cs` + `Specifications.cs` each) | E1's folder and partial-class split |
+| `Lighthouse.Backend.Tests/Integration/UsageData/TeamSizingUsageEventsTests.cs` | Beside E1's `TeamRefinementUsageEventsTests` |
+| `Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.{yardstick,votes,comments,readiness}.test.tsx`, `src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx`, `src/services/Api/SizingLogService.test.ts`, `src/services/Api/RefinementService.voterKey.test.ts`, shared kit `src/tests/RefinementTabTestKit.tsx` | E1's colocated `<component>.<concern>.test.tsx`; kit beside `RealityCheckFixture.tsx` |
+| `Lighthouse.EndToEndTests/tests/specs/teams/Refinement.spec.ts` + POM `models/teams/TeamRefinementPage.ts` | E1's spec and POM |
+
+## Wave: DISTILL / [REF] Driving adapter coverage — E3 (#5510)
+
+| Driving adapter (DESIGN) | Covered by |
+|---|---|
+| `GET /teams/{teamId}/refinement` → `yardstick`, `voterIdentity`, `readyByVotesCount`, row vote facts | slices 10, 11, 13, 14, 15, 17a; frontend via `RefinementService`; E2E |
+| `POST …/work-items/{workItemId}/votes` | slices 11–17b; `SizingLogService.castVote`; E2E |
+| `POST …/work-items/{workItemId}/comments` | slices 12, 15, 17b; `SizingLogService.addComment` |
+| `DELETE …/work-items/{workItemId}/votes/mine` | slices 16, 17b; `SizingLogService.takeBackMyVote` |
+| `GET …/work-items/{workItemId}/log` | slices 12, 14, 15, 16, 17b; `SizingLogService.getLog` |
+| `PUT /teams/{teamId}` carrying `refinement.readiness`; `GET …/settings` | slice 13; `ModifyTeamSettings.readiness` |
+| `POST /usagedata/events` (`TeamSizingVoteCast`, `TeamSizingReadinessReached`, `sizingMoment`) | `TeamSizingUsageEventsTests`; frontend emission in `votes` / `readiness` |
+| CLI `lh refinement …`, MCP `lighthouse_team_refinement_*` | **not here** — `lighthouse-clients`, with slice 09 (DST-25) |
+
+## Wave: DISTILL / [REF] Adapter coverage — E3 (#5510)
+
+| Driven adapter | Real I/O scenario |
+|---|---|
+| EF `SizingLogEntries` (M2, via `ISizingLogRepository`) | every vote/comment/take-back scenario reads its effect back through the tab or the log (real EF, provider per CI leg) |
+| EF `Teams.RefinementSettings` readiness member | slice 13 save/read-back |
+| `ITeamMetricsService.GetCycleTimePercentilesForTeam` | slice 10 fallback scenarios over seeded finished Work Items |
+| `IAuthModeResolver` / `ICurrentUserProfileService` / `ApiKeyAuthenticationHandler` | slices 11 (off), 15 and 17b (on, with and without roles, personal and unowned keys) |
+| Rate limiter (`RefinementContribution`, shipped `appsettings.json`) | slice 11, 31st entry → 429 |
+| Usage-data forwarding (collector captured) | `TeamSizingUsageEventsTests` |
+
+No external adapter is added (DESIGN: contract testing N/A). M2 itself is DELIVER's (`CreateMigration`); its
+database-level cascade / SET NULL assertion is DELIVER 11's (DEVOPS).
+
+## Wave: DISTILL / [REF] Scaffolds — E3 (#5510)
+
+| File | Marker | Behaviour until DELIVER |
+|---|---|---|
+| `Lighthouse.Frontend/src/services/Api/SizingLogService.ts` | `__SCAFFOLD__` | every method throws `Not yet implemented -- RED scaffold` |
+| `Lighthouse.Frontend/src/models/Refinement/Refinement.ts` | types only | new members optional, so E1 code and tests compile unchanged |
+| `IApiServiceContext.sizingLogService` (+ default and mock entries) | additive | read by no production code yet |
+
+Backend: none — the scenarios are black-box over HTTP/JSON (as E1). No EF migration (M2 is DELIVER 11's).
+
+## Wave: DISTILL / [REF] Pre-requisites — E3 (#5510)
+
+DESIGN: the driving ports above, `TeamContribute` (DSN-13), voter identity (DSN-12), the log shape (DSN-11, M2),
+resolution precedence (DSN-14/15/16). DEVOPS: environments `auth-off`, `auth-on-rbac-off`, `auth-on-rbac-on`,
+`renamed-terminology`, `usage-data-consented`; E2E in `ci_verifysqlite` / `ci_verifypostgres`. DELIVER owns: M2 via
+`CreateMigration` and its FK assertion, demo votes (DST-33), `docs/settings/usagedata.md` rows for both events and the
+`sizing_moment` field, `ARCHITECTURE.md` (sizing log, reader write), the UI sketch shown to the maintainer before any
+vote control is built (DST-22).
+
+## Wave: DISTILL / [REF] RED classification — E3 (#5510)
+
+196 of 196 runnable cases fail for `MISSING_FUNCTIONALITY` when un-skipped (backend 132, frontend 64); none broken.
+Three cases that came back green on the first run were rewritten to prove something first; refusal cases a missing
+route would also answer start from a permitted call that succeeds. E2E type-checked, not run live. Detail:
+`distill/red-classification.md` → "Epic #5510 (E3)".
+
+## Wave: DISTILL / [REF] Delivery order — E3 (#5510)
+
+DD-22's sequence, E3 slices only: **10 → 11 → 13**, then (E2's 03–06) **12**, (07) **15 → 14**, (08) **16**, (09)
+**17a → 17b**. Slice 10 un-skips `Slice10SleYardstickTest` and `RefinementView.yardstick`; 11 its backend fixture,
+the slice-11 usage cases, the first block of `RefinementView.votes`, the slice-11 `SizingLogService` cases and
+`RefinementService.voterKey`; 13 its backend fixture, the slice-13 usage cases, `RefinementView.readiness`,
+`ModifyTeamSettings.readiness` and then the E2E skeleton (run live first); and so on. One scenario at a time.
+
 ## Wave: DELIVER / [REF] Implementation summary — E1 (#6136)
 
 **Scope**: E1 only — Epic #6136, slice 01 (US-01, #6139) and slice 02 (US-02, #6140). E2–E5 are not delivered; this

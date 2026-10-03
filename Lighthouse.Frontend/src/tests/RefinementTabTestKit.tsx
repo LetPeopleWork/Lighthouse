@@ -1,0 +1,155 @@
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { vi } from "vitest";
+import SnackbarErrorHandler from "../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
+import type {
+	IRefinementRow,
+	IRefinementView,
+	ISizingLog,
+} from "../models/Refinement/Refinement";
+import { Team } from "../models/Team/Team";
+import { TERMINOLOGY_KEYS } from "../models/TerminologyKeys";
+import RefinementView from "../pages/Teams/Detail/Refinement/RefinementView";
+import { ApiServiceContext } from "../services/Api/ApiServiceContext";
+import type { IRefinementService } from "../services/Api/RefinementService";
+import type { ISizingLogService } from "../services/Api/SizingLogService";
+import {
+	createMockApiServiceContext,
+	createMockFeatureService,
+} from "./MockApiServiceProvider";
+
+/**
+ * Team Gravity's Refinement tab with sizing votes, for the tab's acceptance tests. The tab is rendered
+ * through its real component tree; only what crosses the wire is stood in for - the tab's read and the
+ * sizing log's writes - so what a test checks is what a voter sees and what the browser sends.
+ *
+ * The voter's name and key live in this browser's storage under one entry; tests clear storage before
+ * each case so every case starts as a browser that has never voted.
+ */
+
+export const VOTER_STORAGE_KEY = "lighthouse:refinement:voter";
+
+// Spelled out: the keys join the shared list together with the words the server seeds for them.
+export const REFINEMENT_KEY = "refinement";
+
+export const defaultRefinementTerms: Record<string, string> = {
+	[TERMINOLOGY_KEYS.WORK_ITEM]: "Work Item",
+	[TERMINOLOGY_KEYS.WORK_ITEMS]: "Work Items",
+	[TERMINOLOGY_KEYS.SLE]: "SLE",
+	[TERMINOLOGY_KEYS.CYCLE_TIME]: "Cycle Time",
+	[REFINEMENT_KEY]: "Refinement",
+	[TERMINOLOGY_KEYS.TEAM]: "Team",
+};
+
+export const GRAVITY_TEAM_ID = 7;
+
+export const aRow = (
+	referenceId: string,
+	name: string,
+	state: string,
+	votes: Partial<IRefinementRow> = {},
+): IRefinementRow => ({
+	referenceId,
+	name,
+	url: `https://tracker.example/browse/${referenceId}`,
+	state,
+	parentReferenceId: "",
+	voteCount: 0,
+	myVote: null,
+	split: null,
+	readiness: "MoreYesNeeded",
+	missingVotes: 3,
+	hasComments: false,
+	hasOpenQuestion: false,
+	...votes,
+});
+
+/** Gravity's refinement as a browser without sign-in reads it: three Work Items, nobody has voted. */
+export const gravitysRefinement = (
+	overrides: Partial<IRefinementView> = {},
+	rows: IRefinementRow[] = [
+		aRow("GR-058", "User activity tracking", "Next"),
+		aRow("GR-051", "Advanced reporting module", "Analysing"),
+		aRow("GR-073", "Configuration management", "Backlog"),
+	],
+): IRefinementView => ({
+	refinementConfigured: true,
+	workItems: rows,
+	yardstick: { source: "Sle", days: 7, probability: 85 },
+	voterIdentity: "SelfDeclared",
+	readyByVotesCount: 0,
+	...overrides,
+});
+
+const teamGravity = () => {
+	const team = new Team();
+	team.id = GRAVITY_TEAM_ID;
+	team.name = "Team Gravity";
+	return team;
+};
+
+/** A sizing log that answers every write with the row as the server would now show it. */
+export const aSizingLogService = (
+	overrides: Partial<ISizingLogService> = {},
+): ISizingLogService => ({
+	castVote: vi.fn(),
+	addComment: vi.fn(),
+	takeBackMyVote: vi.fn(),
+	getLog: vi.fn().mockResolvedValue({
+		hidden: false,
+		entries: [],
+	} satisfies ISizingLog),
+	...overrides,
+});
+
+export const renderTheRefinementTab = (
+	refinement: IRefinementView,
+	sizingLogService: ISizingLogService = aSizingLogService(),
+) => {
+	const refinementService: IRefinementService = {
+		getRefinement: vi.fn().mockResolvedValue(refinement),
+	};
+	const featureService = createMockFeatureService();
+	featureService.getFeaturesByReferences = vi.fn().mockResolvedValue([]);
+	const user = userEvent.setup();
+
+	render(
+		<SnackbarErrorHandler>
+			<ApiServiceContext.Provider
+				value={createMockApiServiceContext({
+					refinementService,
+					sizingLogService,
+					featureService,
+				})}
+			>
+				<RefinementView team={teamGravity()} />
+			</ApiServiceContext.Provider>
+		</SnackbarErrorHandler>,
+	);
+
+	return { refinementService, sizingLogService, user };
+};
+
+export const theRowOf = async (referenceId: string): Promise<HTMLElement> => {
+	const name = await screen.findByText(new RegExp(`^${referenceId}: `));
+	const row = name.closest('[role="row"]');
+	if (row === null) {
+		throw new Error(`${referenceId} is not shown inside a grid row`);
+	}
+	return row as HTMLElement;
+};
+
+export const theButton = (row: HTMLElement, name: string | RegExp) =>
+	within(row).getByRole("button", { name });
+
+/** What this browser keeps about its voter, or null when it keeps nothing. */
+export const theStoredVoter = (): { name?: string; key?: string } | null => {
+	const stored = localStorage.getItem(VOTER_STORAGE_KEY);
+	return stored === null ? null : JSON.parse(stored);
+};
+
+export const aBrowserThatVotedBefore = (name: string) => {
+	const key = "a".repeat(32) + "b".repeat(32);
+	localStorage.setItem(VOTER_STORAGE_KEY, JSON.stringify({ name, key }));
+	return key;
+};
