@@ -187,17 +187,23 @@ const renderTheTeamPage = ({
 	viewer,
 	teamReads,
 	saveRefused = false,
+	rereadFails = false,
 }: {
 	viewer: Viewer;
 	teamReads: ReturnType<typeof aTeam>[];
 	saveRefused?: boolean;
+	rereadFails?: boolean;
 }) => {
 	const teamService = createMockTeamService();
 	const getTeam = vi.fn();
 	for (const read of teamReads) {
 		getTeam.mockResolvedValueOnce(read);
 	}
-	getTeam.mockResolvedValue(teamReads[teamReads.length - 1]);
+	if (rereadFails) {
+		getTeam.mockRejectedValue(new Error("the network dropped"));
+	} else {
+		getTeam.mockResolvedValue(teamReads[teamReads.length - 1]);
+	}
 	teamService.getTeam = getTeam;
 	// The stored settings agree with the first Team read: a Team that says it has refinement states
 	// holds Backlog as one.
@@ -440,6 +446,31 @@ describe("Choosing the first refinement states switches the tab on", () => {
 
 		await theSavesAreOver();
 		expect(reportsOfRefinementSetUp()).toHaveLength(1);
+	});
+
+	// @us-01 @slice-01 @error @contract-shape:bounded-change
+	// The save went through; failing to read the Team again afterwards says nothing about access to it.
+	it("keeps the settings open when reading the Team again after an accepted save fails", async () => {
+		renderTheTeamPage({
+			viewer: "teamAdmin",
+			teamReads: [aTeam(false)],
+			rereadFails: true,
+		});
+		await theRefinementTab();
+
+		await userEvent.click(
+			screen.getByRole("button", {
+				name: "Save Backlog as a refinement state",
+			}),
+		);
+
+		await theSavesAreOver();
+		expect(screen.queryByTestId("team-no-access-alert")).toBeNull();
+		expect(
+			screen.getByRole("button", {
+				name: "Save Backlog as a refinement state",
+			}),
+		).toBeVisible();
 	});
 
 	// @us-01 @slice-01 @kpi-OUT-5510-K1-refinement-set-up @error @contract-shape:bounded-change

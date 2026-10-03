@@ -243,16 +243,25 @@ const TeamDetail: React.FC = () => {
 		[team, teamService, fetchTeam],
 	);
 
+	// The save already went through, so a failed read here keeps the Team on screen rather than
+	// saying it can no longer be reached.
+	const rereadTeamAfterSave = useCallback(async () => {
+		const teamData = await teamService.getTeam(teamId).catch(() => undefined);
+		if (teamData) {
+			setTeam(teamData);
+		}
+	}, [teamService, teamId]);
+
 	// The settings form saves without leaving Settings, so the Team is read again right after an
 	// accepted save: anything the saved settings switch on, such as the Refinement tab, shows at once.
 	const saveTeamSettings = useCallback(
 		async (settings: ITeamSettings) => {
 			const savedSettings = await teamService.updateTeam(settings);
 			settingsSaved(savedSettings);
-			await fetchTeam();
+			await rereadTeamAfterSave();
 			return savedSettings;
 		},
-		[teamService, fetchTeam, settingsSaved],
+		[teamService, rereadTeamAfterSave, settingsSaved],
 	);
 
 	const onUpdateTeamData = async () => {
