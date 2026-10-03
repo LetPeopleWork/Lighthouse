@@ -19,7 +19,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         // @driving_port @real-io @us-10 @slice-10 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice10)]
         public async Task The_Teams_SLE_is_the_yardstick_every_voter_answers_against()
         {
             var gravity = await GivenGravityExpects85PercentWithinSevenDays();
@@ -97,7 +96,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-10 @slice-10 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice10)]
         public async Task Setting_an_SLE_replaces_the_fallback_on_the_next_read()
         {
             var meridian = await GivenMeridianHasNoSleAndItsCycleTimes85thPercentileIsTwelveDays();

@@ -84,6 +84,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             {
                 Assert.That(readPath.Select(type => type.Name), Does.Contain("RefinementViewQuery"),
                     "the rule finds the read path by its namespace; without it the rule guards nothing");
+                Assert.That(readPath.Select(type => type.Name), Does.Contain("SleYardstickResolver"),
+                    "the yardstick is part of the tab's read, so it must sit where the rule looks");
                 Assert.That(writes, Is.Empty,
                     "opening the Refinement tab is a read; saving, adding, updating or removing through a repository would make it write");
             }

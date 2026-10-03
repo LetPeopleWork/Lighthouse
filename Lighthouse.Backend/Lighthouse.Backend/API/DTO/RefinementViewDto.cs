@@ -8,6 +8,17 @@ namespace Lighthouse.Backend.API.DTO
         public bool RefinementConfigured { get; } = view.RefinementConfigured;
 
         public List<RefinementRowDto> WorkItems { get; } = [.. view.WorkItems.Select(item => new RefinementRowDto(item))];
+
+        public YardstickDto Yardstick { get; } = new(view.Yardstick);
+    }
+
+    public sealed class YardstickDto(Yardstick yardstick)
+    {
+        public YardstickSource Source { get; } = yardstick.Source;
+
+        public int? Days { get; } = yardstick.Days;
+
+        public int? Probability { get; } = yardstick.Probability;
     }
 
     public sealed class RefinementRowDto(WorkItem workItem)

@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 return null;
             }
 
-            return new RefinementView(team.HasRefinementStates, refinementList.For(team));
+            return new RefinementView(team.HasRefinementStates, refinementList.For(team), SleYardstickResolver.For(team));
         }
     }
 }
