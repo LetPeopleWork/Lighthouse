@@ -59,6 +59,7 @@ export const UsageDataRouteKey = {
 	TeamDetail_Metrics: "TeamDetail_Metrics",
 	TeamDetail_Settings: "TeamDetail_Settings",
 	TeamDetail_Access: "TeamDetail_Access",
+	TeamDetail_Refinement: "TeamDetail_Refinement",
 	PortfolioDetail_Features: "PortfolioDetail_Features",
 	PortfolioDetail_Metrics: "PortfolioDetail_Metrics",
 	PortfolioDetail_Deliveries: "PortfolioDetail_Deliveries",

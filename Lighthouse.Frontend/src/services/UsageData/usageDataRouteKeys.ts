@@ -17,6 +17,7 @@ const teamViews = new Map<string, UsageDataRouteKey>([
 	["metrics", UsageDataRouteKey.TeamDetail_Metrics],
 	["settings", UsageDataRouteKey.TeamDetail_Settings],
 	["access", UsageDataRouteKey.TeamDetail_Access],
+	["refinement", UsageDataRouteKey.TeamDetail_Refinement],
 ]);
 
 const portfolioViews = new Map<string, UsageDataRouteKey>([

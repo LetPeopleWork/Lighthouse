@@ -8,7 +8,7 @@ import { usageDataPageOpeningFor } from "./usageDataRouteKeys";
  */
 describe("the Refinement tab is a Team tab like the others", () => {
 	// @us-02 @slice-02 @kpi-OUT-5510-K2-refinement-tab-weekly @contract-shape:pure-function
-	it.skip("answers a Team's Refinement tab as a Team tab opening naming that tab", () => {
+	it("answers a Team's Refinement tab as a Team tab opening naming that tab", () => {
 		expect(usageDataPageOpeningFor("/teams/7/refinement")).toEqual({
 			name: UsageDataEventName.TeamTabOpened,
 			route: "TeamDetail_Refinement",
@@ -16,7 +16,7 @@ describe("the Refinement tab is a Team tab like the others", () => {
 	});
 
 	// @us-02 @slice-02 @kpi-OUT-5510-K2-refinement-tab-weekly @error @contract-shape:pure-function
-	it.skip("names the same tab whichever Team it belongs to, so nothing in it can tell Teams apart", () => {
+	it("names the same tab whichever Team it belongs to, so nothing in it can tell Teams apart", () => {
 		expect(usageDataPageOpeningFor("/teams/7/refinement")).toBeDefined();
 		expect(usageDataPageOpeningFor("/teams/7/refinement")).toEqual(
 			usageDataPageOpeningFor("/teams/1234/refinement"),
