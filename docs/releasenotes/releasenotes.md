@@ -4,7 +4,7 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse vNext
+# Lighthouse v26.10.3.6
 
 ## Forecast Reality Check
 
@@ -28,6 +28,7 @@ Upgrading switches it on **once** — also on instances where it had been turned
 
 - **Adding a Data Sync Mapping for a new field works again.** The mapping and the field it targets are now saved together, instead of failing on the first save.
 - **New Teams and Portfolios get the same defaults everywhere.** A Team created through the API started with 30 days of throughput history while the UI used 90; both now use 90. A Portfolio saved with a percentile history of 0 now falls back to 90 days as well.
+- **The Helm chart now runs PostgreSQL 18 and upgrades the bundled database for you.** On `helm upgrade`, the bundled Postgres carries its data from 17 to 18 before it starts, and keeps the old copy so you can roll back. Full detail: [Upgrading the bundled PostgreSQL](https://docs.lighthouse.letpeople.work/Installation/kubernetes.html#upgrading-the-bundled-postgresql).
 - Updated various third-party libraries.
 
 ## Contributions ❤️
@@ -36,7 +37,7 @@ Special thanks to everyone who contributed feedback for this release:
 - [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
 - [Nick Brown](https://www.linkedin.com/in/nicolasjmbrown/)
 
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.9.24.6...HEAD)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.9.24.6...v26.10.3.6)
 
 # Lighthouse v26.9.24.6
 
