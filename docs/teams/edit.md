@@ -273,6 +273,19 @@ Wait states are purely a *metrics* concept — they describe how to interpret ti
 {: .recommendation}
 Start by marking obvious queues such as *Ready for Review*, *Waiting for Test*, or any column whose name implies a hand-off. A low flow efficiency is not a failure — it is a conversation starter about where work waits.
 
+## Refinement
+Refinement states tell Lighthouse which of your states hold work your team is still refining: clarifying, slicing or sizing it before anybody starts on it. Lighthouse lists the Work Items in those states on the [Refinement tab](./detail.html#refinement) of the Team.
+
+Add a state by typing in the *New Refinement State* field and picking one of the suggestions; each chosen state shows as a chip, and the cross on a chip removes it. The suggestions are your Team's **To Do** and **Doing** states, including the names of your [state mappings](#state-mappings); anything else cannot be added. With no chips left, the Team has no refinement states and its Refinement tab switches off.
+
+If you later take a chosen state out of To Do and Doing (or rename the state mapping it came from), it is removed from the refinement states when you save. Add the new name again if you still want it.
+
+{: .note}
+Refinement states only decide what the Refinement tab lists. They do not change Cycle Time, Throughput, WIP, forecasts or any other metric.
+
+{: .recommendation}
+Pick the states your team refines from — typically the top of the backlog such as *Backlog*, *Next* or *Analysing*.
+
 ## Cycle Times (Premium)
 Alongside the built-in Cycle Time, you can define **named cycle times** — additional start→end measurements over your workflow. A "Lead Time" from *Backlog* to *Done*, or an "Analysis to Done" from your analysis state onwards, can be tracked side by side.
 

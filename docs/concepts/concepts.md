@@ -76,6 +76,14 @@ Most often also the team level items are something like *User Stories* and *Bugs
 {: .note}
 > You need at least one team, and then you can start making use of Lighthouse. See [Teams](../teams/teams.html) and [Portfolios](../portfolios/portfolios.html) for details on product areas.
 
+# Refinement
+
+Before a team starts on a Work Item, it usually refines it: clarifies what is needed, slices it and gets a feel for its size. Most teams have one or more states for work at that stage, such as *Backlog* or *Analysing*.
+
+A Team admin marks those states as the Team's **refinement states**, chosen from its *To Do* and *Doing* states. The Team's **Refinement** tab then lists every Work Item in those states, in backlog order, so the team sees what is waiting to be refined. Refinement states do not change any metric or forecast.
+
+See [Team Settings](../teams/edit.html#refinement) and [Team Details](../teams/detail.html#refinement) for how to set it up and what the tab shows. More support for running refinement is planned.
+
 # Portfolios
 
 {: .definition}

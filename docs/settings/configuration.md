@@ -151,6 +151,8 @@ The terminology configuration allows you to customize the following terms:
 | **SLE** | SLE | Abbreviated form of Service Level Expectation | Target, Goal, Expectation |
 | **Team** | Team | Groups of people working together | Squad, Crew, Group, Department |
 | **Teams** | Teams | Plural form of team | Squads, Crews, Groups, Departments |
+| **Refinement** | Refinement | The stage where Work Items are clarified and prepared before work on them starts | Grooming, Preparation |
+| **Refinements** | Refinements | Plural form of refinement | Groomings, Preparations |
 
 ### How to Configure
 1. Navigate to *System Settings* → *Configuration*

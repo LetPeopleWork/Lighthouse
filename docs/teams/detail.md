@@ -166,3 +166,37 @@ Below the summary, a table shows every scenario: rows are sampling windows group
 - Before relying on forecasts for a commitment, to see whether this Team's history makes them trustworthy.
 - When deciding whether to change the sampling window: if yours didn't hold up while others did, it's worth trying one of those.
 - To show someone *why* a forecast deserves trust, instead of asking them to take the Monte Carlo Simulation on faith.
+
+
+# Refinement
+
+The **Refinement** tab, between *Metrics* and *Settings*, lists the Work Items that are currently in the Team's [refinement states](./edit.html#refinement). Everyone who can see the Team can open it; opening it changes nothing.
+
+## When the Tab is Switched Off
+
+Until the Team has at least one refinement state, the tab is shown but switched off. Hovering it tells you what to do:
+
+- **If you can change the Team's settings** (or roles are not enforced): choose refinement states in *Settings → Refinement*.
+- **If you can only read the Team**: a Team admin needs to choose refinement states first.
+
+As soon as refinement states are configured and saved, the tab switches on immediately.
+
+## What the Tab Shows
+
+The tab displays:
+
+- **A heading** counting the Work Items in refinement, for example "3 Work Items in Refinement".
+- **A table** with search, filter and column controls, and these columns:
+  - **Work Item Name** — the Work Item's ID and name, linking to it in your work tracking system.
+  - **Parent** — the parent Feature or Work Item, if any, or "No Parent". The name links to that parent in your work tracking system.
+  - **State** — the current state of the Work Item.
+- When nothing is in the refinement states, the tab says "No Work Items in Refinement states right now" instead of showing an empty table.
+
+## Sorting and Filtering
+
+The table has the same search, filter and column controls as the other lists in Lighthouse.
+
+**Default sort order**: Work Items are ordered by their backlog rank (the order in your work tracking system). Clicking a column header sorts by that column; clicking again reverses the sort. To return to backlog order, clear the sort.
+
+**Clicking a row**: Rows do not open directly from the Refinement tab — the Work Item name and Parent name are links that open in your work tracking system.
+
