@@ -256,6 +256,12 @@ get re-applied.
 
 ## Formatting & linting
 
+### 2026-10-03 — `printf "$big" | grep -q` under `pipefail` fails whenever grep finds its match early
+- **Symptom**: `ci_chart.yml` `validate`, standalone render gate: `printf: write error: Broken pipe` followed by `standalone gate: Database__Provider missing`, for a render that does contain `Database__Provider`.
+- **Root cause**: `grep -q` exits at its first match. If `printf` is still writing the rest of the input, it dies of SIGPIPE, and `set -o pipefail` turns that into a failed pipeline, so the `||` branch reports the match as missing. It only bites once the input is larger than what fits in the pipe before grep exits, which is why it appeared when the chart's ConfigMap started carrying the upgrade scripts.
+- **Fix**: feed the variable as a here-string — `grep -q 'x' <<<"$render"` — so there is no writer to kill. The same goes for `grep -c` and `grep -A1 … | grep -q` (wrap the inner grep in `$(…)`).
+- **Rule going forward**: in any `set -o pipefail` script, never pipe a variable or a long command output into `grep -q`, `head` or anything else that stops reading early. Use a here-string, or capture first and test the captured value.
+
 ### 2026-10-03 — CI's shellcheck is 0.9.0, older than the `koalaman/shellcheck:stable` image, and flags SC2015 the newer one lets through
 - **Symptom**: `ci_chart.yml` `validate` failed seconds into the run on `chart/tests/upgrade-path/run.sh` with `SC2015 (info): Note that A && B || C is not if-then-else`, on `[[ -n "$a" && -n "$b" ]] && [[ "$b" -gt "$a" ]] || { …; fail …; }`. Every local shellcheck run had been clean.
 - **Root cause**: the runner uses the `shellcheck` that ships with ubuntu-latest (0.9.0). Locally shellcheck was run through `koalaman/shellcheck:stable` (0.11.0), which no longer reports SC2015 for that shape. Same file, different verdict.
