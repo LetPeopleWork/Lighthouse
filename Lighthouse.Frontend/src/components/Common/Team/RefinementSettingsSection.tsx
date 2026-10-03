@@ -1,6 +1,6 @@
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { IRefinementStateSetting } from "../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
@@ -33,14 +33,21 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 
 	const save = (states: string[]) => onChange(toSettings(states));
 
-	// Only To Do and Doing states can mean refinement, so a chosen state leaves as soon as the form stops
-	// offering it, and the same save that changes the states carries the shorter list.
+	// Only To Do and Doing states can mean refinement, so a chosen state leaves as soon as the admin stops
+	// offering it, and the same save that changes the states carries the shorter list. Opening the form is
+	// not an edit: a stored state that is not offered is only hidden, and the server drops it on any save.
+	const offeredKey = [...offered].join("\n");
+	const lastOfferedKey = useRef(offeredKey);
 	const anyNoLongerOffered = chosen.length < chosenStates.length;
 	useEffect(() => {
+		if (lastOfferedKey.current === offeredKey) {
+			return;
+		}
+		lastOfferedKey.current = offeredKey;
 		if (anyNoLongerOffered) {
 			onChange(toSettings(chosen));
 		}
-	}, [anyNoLongerOffered, chosen, onChange]);
+	}, [offeredKey, anyNoLongerOffered, chosen, onChange]);
 
 	// The list accepts free text, but the server refuses anything that is not a To Do or Doing state,
 	// so a typed value only counts when it names one of the suggestions.

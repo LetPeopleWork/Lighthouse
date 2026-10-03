@@ -170,6 +170,12 @@ const pick = async (state: string) => {
 	);
 };
 
+// Opening the form is not an edit, so nothing may be saved even once the autosave would have fired.
+const AUTOSAVE_DELAY_AND_MARGIN_MS = 600;
+
+const pastTheAutosaveDelay = () =>
+	new Promise((resolve) => setTimeout(resolve, AUTOSAVE_DELAY_AND_MARGIN_MS));
+
 const theChips = () =>
 	Array.from(document.querySelectorAll(".MuiChip-root")).map(
 		(chip) => chip.textContent,
@@ -269,9 +275,11 @@ describe("The Refinement section of a Team's settings", () => {
 		);
 
 		await theStateInput();
+		await pastTheAutosaveDelay();
 
 		expect(theChips()).toEqual(["Backlog"]);
 		expect(screen.queryByText(/no longer mapped/i)).not.toBeInTheDocument();
+		expect(saveTeamSettings).not.toHaveBeenCalled();
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
