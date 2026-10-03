@@ -1764,3 +1764,27 @@ The design body above was revised in place. These entries say where each finding
 **Maintainer decisions open: none new.** The review's two decisions (S3R-7, S3R-9) were taken by the
 orchestrator. If the maintainer prefers removing the oldest copy *before* the copy, to cap the room needed at
 two copies, that reverses the room-check choice above; it is not recommended.
+
+### DELIVER review revision (orchestrator decision, 2026-10-03)
+
+**An unreadable `pg_control` on a copy that still counts is damage, always refused.** When the walk up the
+copies stops at a copy whose `global/pg_control` cannot be read while that copy still has `PG_VERSION` and a
+newer copy counts, the start refuses with the "put that file back from a backup" line naming the file, and
+`remove-old-copies.sh` refuses with its backup line and removes nothing. Every removal writes the placeholder,
+then deletes `PG_VERSION` before anything else, so no removal the chart ships can leave a counting copy without
+its control file. And after a rollback or a pin to the older major, that copy holds the newest data, so
+"finishing a removal" there would delete it.
+
+This supersedes the earlier rule that a placeholder in `pgdata/` (or a `pgdata/` one major behind the image
+beside a copy of the image's major) marks a removal as started past an unreadable copy, and that the cleanup
+then finishes it by taking the newest counting copy as live. That rule, its `removal_started_in_pgdata`
+predicate and the refusal pointing to the cut-off docs section for it are gone. Real cut-offs (placeholder
+written, `PG_VERSION` gone) are unaffected and still finished as before.
+
+**A newer copy that no longer counts is never set aside.** An upgrade only redoes a copy of the image's major
+that was made by an upgrade *and still counts*. One that lost `PG_VERSION` may hold every write since the
+first upgrade, so the start falls to the catch-all refusal and the older major's programs are not handed over.
+
+**The database is Ready only over TCP.** The readiness check runs `pg_isready -h 127.0.0.1`, because the
+official entrypoint's temporary server during the first `initdb` listens on the socket alone. The liveness
+check stays on the socket.
