@@ -6,8 +6,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     /// Anyone who can read a Team opens its Refinement tab and sees every Work Item that sits in one of
     /// the Team's refinement states, in backlog order: the tracker's own rank, compared the way Feature
     /// order is compared, ties broken by id. Each row says what the Work Item is, where it lives in the
-    /// tracker, its state and category; a Doing row also says how old it is, a To Do row does not. An
-    /// empty refinement and a Team nobody set up are both stated, never answered as an error.
+    /// tracker, its state and the Work Item it belongs to; no row carries an age or a category. An empty
+    /// refinement and a Team nobody set up are both stated, never answered as an error.
     ///
     /// Every scenario starts where slice 01 ends: the admin has chosen the refinement states through the
     /// Team settings write. Driving port: the Refinement tab's read. Step definitions live in
@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-02 @slice-02 @contract-shape:pure-function
         [Test]
-        public async Task Each_row_names_the_Work_Item_links_to_the_tracker_and_gives_its_state_and_category()
+        public async Task Each_row_names_the_Work_Item_links_to_the_tracker_and_gives_its_state_and_parent()
         {
             var gravity = await GivenGravityRefinesInBacklogAnalysingAndNextAndItsTrackerHoldsWorkInEveryState();
             TheCallerOnlyReadsTheTeam(gravity);
@@ -42,28 +42,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
             using (Assert.EnterMultipleScope())
             {
-                ThenTheRowReads(tab, "GR-051", "Advanced reporting module", Analysing, DoingCategory);
-                ThenTheRowReads(tab, "GR-073", "Configuration management", Backlog, ToDoCategory);
+                ThenTheRowReads(tab, "GR-051", "Advanced reporting module", Analysing, ReportingFeature);
+                ThenTheRowReads(tab, "GR-073", "Configuration management", Backlog, NoParent);
             }
         }
 
         // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:pure-function
-        // Work Item Age is defined for started work only. A To Do row says nothing about age rather than
-        // printing a zero that reads as "brand new". Age counts the day work started, so GR-051, started
-        // three days ago, is four days old.
+        // The tab shows name, parent and state only, so the answer does not send what nobody shows.
         [Test]
-        public async Task A_Doing_row_carries_its_Work_Item_Age_and_a_To_Do_row_carries_none()
+        public async Task No_row_carries_an_age_or_a_category()
         {
             var gravity = await GivenGravityRefinesInBacklogAnalysingAndNextAndItsTrackerHoldsWorkInEveryState();
             TheCallerOnlyReadsTheTeam(gravity);
 
             var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
 
-            using (Assert.EnterMultipleScope())
-            {
-                ThenTheRowIsThisManyDaysOld(tab, "GR-051", 4);
-                ThenTheRowCarriesNoAge(tab, "GR-073");
-            }
+            ThenNoRowCarries(tab, "workItemAge", "stateCategory");
         }
 
         // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:pure-function

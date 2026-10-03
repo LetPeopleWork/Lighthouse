@@ -23,8 +23,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     /// <summary>
     /// How the Refinement scenarios reach the system: the real ASP.NET host over a real database, through
     /// the Team settings write and read, the Team read, and the Refinement tab's read. Only the licence and
-    /// the instance clock are replaced - the licence because it is external, the clock so that a Work Item's
-    /// age is a number the scenario can name.
+    /// the instance clock are replaced - the licence because it is external, the clock so that every date a
+    /// scenario seeds sits on a day it can name.
     ///
     /// Everything a scenario seeds is a precondition: a Team with its mapped states, and the Work Items its
     /// tracker holds. What the Team's refinement states are, and what the tab lists, is only ever put there
@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         protected const string Done = "Done";
 
-        /// <summary>A Wednesday morning in the instance's zone, so every age and day below is fixed.</summary>
+        /// <summary>A Wednesday morning in the instance's zone, so every day below is fixed.</summary>
         protected static readonly DateTimeOffset Today = new(2026, 10, 7, 9, 0, 0, TimeSpan.Zero);
 
         private static readonly JsonSerializerOptions WireOptions = new(JsonSerializerDefaults.Web);
@@ -145,7 +145,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         /// <summary>
         /// A Work Item the Team's tracker holds. Its rank in the tracker's backlog is <paramref name="rank"/>;
-        /// a Doing item started <paramref name="startedDaysAgo"/> days before today.
+        /// a Doing item started <paramref name="startedDaysAgo"/> days before today. It belongs to no other
+        /// Work Item.
         /// </summary>
         protected void SeedWorkItem(
             TeamUnderTest team,
@@ -185,6 +186,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                     ClosedDate = null,
                     Order = tracked.Rank,
                     Url = TrackerAddressOf(tracked.ReferenceId),
+                    ParentReferenceId = tracked.ParentReferenceId,
                 });
             }
 
@@ -335,6 +337,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 : [];
         }
 
+        /// <summary>Every property name any row of the Refinement tab's answer carries.</summary>
+        protected static List<string> RowPropertiesIn(JsonElement refinementTab)
+        {
+            Assert.That(refinementTab.TryGetProperty("workItems", out var rows), Is.True,
+                $"The Refinement tab's answer carries no list of Work Items. Body: {refinementTab}");
+
+            return rows.ValueKind == JsonValueKind.Array
+                ? [.. rows.EnumerateArray().SelectMany(row => row.EnumerateObject().Select(property => property.Name))]
+                : [];
+        }
+
         protected static string? TextOf(JsonElement element, string property)
             => element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String
                 ? value.GetString()
@@ -355,7 +368,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             string State,
             StateCategories Category,
             string Rank,
-            int StartedDaysAgo = 0);
+            int StartedDaysAgo = 0,
+            string ParentReferenceId = "");
 
         protected sealed record RefinementStateReading(string? State)
         {
@@ -363,31 +377,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         }
 
         /// <summary>
-        /// One row of the Refinement tab. The age is read as nullable, so a row that leaves it out reads as
-        /// "no age" and a row that prints zero reads as zero - the two are different claims.
+        /// One row of the Refinement tab. A parent reference that is missing reads as null, so it cannot pass
+        /// for the empty reference a row without a parent has to send.
         /// </summary>
         protected sealed record RefinementRowReading(
             string? ReferenceId,
             string? Name,
             string? Url,
             string? State,
-            string? Category,
-            int? WorkItemAge)
+            string? ParentReferenceId)
         {
-            public static RefinementRowReading From(JsonElement row)
-            {
-                int? age = row.TryGetProperty("workItemAge", out var ageValue) && ageValue.ValueKind == JsonValueKind.Number
-                    ? ageValue.GetInt32()
-                    : null;
-
-                return new RefinementRowReading(
-                    TextOf(row, "referenceId"),
-                    TextOf(row, "name"),
-                    TextOf(row, "url"),
-                    TextOf(row, "state"),
-                    TextOf(row, "stateCategory"),
-                    age);
-            }
+            public static RefinementRowReading From(JsonElement row) => new(
+                TextOf(row, "referenceId"),
+                TextOf(row, "name"),
+                TextOf(row, "url"),
+                TextOf(row, "state"),
+                TextOf(row, "parentReferenceId"));
         }
     }
 }

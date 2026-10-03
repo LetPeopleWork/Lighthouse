@@ -18,9 +18,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         private const string Refining = "Refining";
 
-        private const string DoingCategory = "Doing";
+        private const string ReportingFeature = "GR-010";
 
-        private const string ToDoCategory = "ToDo";
+        private const string NoParent = "";
 
         private const int TeamThatDoesNotExist = 987654;
 
@@ -43,7 +43,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         /// <summary>
         /// Gravity's tracker ranks GR-040 first, but it is being implemented, not refined; GR-001 is done.
-        /// The four in Backlog, Analysing and Next are what refinement is about.
+        /// The four in Backlog, Analysing and Next are what refinement is about. GR-051 belongs to the
+        /// reporting Feature; GR-073 belongs to nothing yet.
         /// </summary>
         private async Task<TeamUnderTest> GivenGravityRefinesInBacklogAnalysingAndNextAndItsTrackerHoldsWorkInEveryState()
         {
@@ -54,7 +55,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 new TrackerWorkItem("GR-040", "Billing export", Implementation, StateCategories.Doing, "1", StartedDaysAgo: 9),
                 new TrackerWorkItem("GR-058", "User activity tracking", Next, StateCategories.Doing, "2", StartedDaysAgo: 1),
                 new TrackerWorkItem("GR-059", "Advanced search filters", Next, StateCategories.Doing, "3", StartedDaysAgo: 2),
-                new TrackerWorkItem("GR-051", "Advanced reporting module", Analysing, StateCategories.Doing, "4", StartedDaysAgo: 3),
+                new TrackerWorkItem("GR-051", "Advanced reporting module", Analysing, StateCategories.Doing, "4", StartedDaysAgo: 3, ParentReferenceId: ReportingFeature),
                 new TrackerWorkItem("GR-073", "Configuration management", Backlog, StateCategories.ToDo, "5"),
                 new TrackerWorkItem("GR-001", "User authentication system", Done, StateCategories.Done, "6"),
             ]);
@@ -246,7 +247,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             => Assert.That(RowsIn(tab).Select(row => row.ReferenceId), Is.EqualTo(referenceIds),
                 $"The Refinement tab does not list exactly these Work Items in this order. Answer: {tab}");
 
-        private static void ThenTheRowReads(JsonElement tab, string referenceId, string name, string state, string category)
+        private static void ThenTheRowReads(JsonElement tab, string referenceId, string name, string state, string parentReferenceId)
         {
             var row = TheRowFor(tab, referenceId);
 
@@ -256,16 +257,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 Assert.That(row.Url, Is.EqualTo(TrackerAddressOf(referenceId)),
                     "A row has to take the coach to the Work Item in the tracker.");
                 Assert.That(row.State, Is.EqualTo(state));
-                Assert.That(row.Category, Is.EqualTo(category));
+                Assert.That(row.ParentReferenceId, Is.EqualTo(parentReferenceId),
+                    "A row has to name the Work Item it belongs to, and say so with an empty reference when it belongs to none.");
             }
         }
 
-        private static void ThenTheRowIsThisManyDaysOld(JsonElement tab, string referenceId, int days)
-            => Assert.That(TheRowFor(tab, referenceId).WorkItemAge, Is.EqualTo(days));
+        private static void ThenNoRowCarries(JsonElement tab, params string[] properties)
+        {
+            Assert.That(RowsIn(tab), Is.Not.Empty, $"With no row listed there is nothing to look into. Answer: {tab}");
 
-        private static void ThenTheRowCarriesNoAge(JsonElement tab, string referenceId)
-            => Assert.That(TheRowFor(tab, referenceId).WorkItemAge, Is.Null,
-                "A To Do Work Item has not started, so it has no Work Item Age to show.");
+            var carried = RowPropertiesIn(tab).Where(properties.Contains).Distinct();
+
+            Assert.That(carried, Is.Empty, $"The Refinement tab's rows still carry what the tab no longer shows. Answer: {tab}");
+        }
 
         private static void ThenTheTabSaysTheTeamHasRefinementStates(JsonElement tab, bool expected)
         {
