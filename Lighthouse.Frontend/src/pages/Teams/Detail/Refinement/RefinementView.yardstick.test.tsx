@@ -215,6 +215,34 @@ describe("The Refinement tab asks one question against one number", () => {
 		expect(icon).toHaveAccessibleDescription("");
 	});
 
+	// @us-10 @slice-10 @contract-shape:pure-function
+	it("opens the tooltip when the icon is reached with the keyboard", async () => {
+		const { user } = renderWithTheYardstick(SLE_75_WITHIN_7);
+		const tooltip = "SLE 75% of work items in 7 days or less";
+		await theQuestion("Doable within 7 days?");
+		const icon = screen.getByRole("button", { name: tooltip });
+
+		for (
+			let presses = 0;
+			presses < 20 && icon !== document.activeElement;
+			presses++
+		) {
+			await user.tab();
+		}
+
+		expect(icon).toHaveFocus();
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(tooltip);
+	});
+
+	// @us-10 @slice-10 @boundary @contract-shape:pure-function
+	it("asks nothing when the answer carries no yardstick, and still lists the Work Items", async () => {
+		renderTheRefinementTab(gravitysRefinement({ yardstick: undefined }));
+
+		expect(await screen.findByRole("grid")).toBeVisible();
+		expect(screen.getByRole("heading", { level: 2 })).toBeVisible();
+		expect(screen.queryByText(/^Doable within/)).toBeNull();
+	});
+
 	// @us-10 @slice-10 @boundary @contract-shape:pure-function
 	it("asks nothing once nothing is in refinement any more", async () => {
 		renderWithTheYardstick(SLE_75_WITHIN_7);
