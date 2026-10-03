@@ -181,7 +181,7 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 	});
 
 	// @us-02 @slice-02 @error @contract-shape:pure-function
-	it.skip("states that nothing is in refinement right now instead of showing an empty list or an error", async () => {
+	it("states that nothing is in refinement right now instead of showing an empty list or an error", async () => {
 		renderTheRefinementTab({ refinementConfigured: true, workItems: [] });
 
 		expect(
@@ -192,7 +192,7 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 	});
 
 	// @us-02 @slice-02 @boundary @contract-shape:pure-function
-	it.skip("says the Team's own words in the heading and in the empty state", async () => {
+	it("says the Team's own words in the heading and in the empty state", async () => {
 		terms.current = {
 			...defaultTerms,
 			[TERMINOLOGY_KEYS.WORK_ITEM]: "Ticket",
@@ -213,7 +213,7 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 	});
 
 	// @us-02 @slice-02 @error @contract-shape:pure-function
-	it.skip("says the Team's own words when nothing is in refinement", async () => {
+	it("says the Team's own words when nothing is in refinement", async () => {
 		terms.current = {
 			...defaultTerms,
 			[TERMINOLOGY_KEYS.WORK_ITEMS]: "Tickets",
@@ -229,7 +229,7 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 	// @us-02 @slice-02 @boundary @kpi-OUT-5510-K2-refinement-tab-weekly @contract-shape:pure-function
 	// Three hundred is the size of a whole backlog sitting in one To Do state; the heading has to count all
 	// of them and the list has to start where the backlog starts, whatever the list does to stay fast.
-	it.skip("handles three hundred Work Items, counting all of them and starting at the top of the backlog", async () => {
+	it("handles three hundred Work Items, counting all of them and starting at the top of the backlog", async () => {
 		renderTheRefinementTab({
 			refinementConfigured: true,
 			workItems: Array.from({ length: 300 }, (_, index) =>

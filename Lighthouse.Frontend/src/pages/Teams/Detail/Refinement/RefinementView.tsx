@@ -56,11 +56,20 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 		return null;
 	}
 
+	const refinementTerm = getTerm(TERMINOLOGY_KEYS.REFINEMENT);
 	const count = refinement.workItems.length;
+
+	if (count === 0) {
+		return (
+			<Typography>
+				{`No ${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)} in ${refinementTerm} states right now`}
+			</Typography>
+		);
+	}
+
 	const workItemsTerm = getTerm(
 		count === 1 ? TERMINOLOGY_KEYS.WORK_ITEM : TERMINOLOGY_KEYS.WORK_ITEMS,
 	);
-	const refinementTerm = getTerm(TERMINOLOGY_KEYS.REFINEMENT);
 
 	return (
 		<Stack spacing={2}>
