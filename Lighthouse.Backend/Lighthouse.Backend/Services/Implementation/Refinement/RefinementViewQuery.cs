@@ -14,9 +14,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 return null;
             }
 
-            return team.HasRefinementStates
-                ? new RefinementView(true, refinementList.For(team))
-                : new RefinementView(false, []);
+            return new RefinementView(team.HasRefinementStates, refinementList.For(team));
         }
     }
 }
