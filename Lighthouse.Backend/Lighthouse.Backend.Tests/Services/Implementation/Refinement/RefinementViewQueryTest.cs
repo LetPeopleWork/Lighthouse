@@ -69,6 +69,42 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             Assert.That(view?.Yardstick, Is.EqualTo(new Yardstick(YardstickSource.CycleTimeFallback, 12, 85)));
         }
 
+        [Test]
+        public void AnUnknownTeamHasNoRefinementView()
+        {
+            var view = subject.ForTeam(TeamId);
+
+            Assert.That(view, Is.Null);
+        }
+
+        [Test]
+        public void ATeamWithoutRefinementStatesIsNotConfiguredAndListsNoWorkItems()
+        {
+            GivenTheTeam(new Team { Id = TeamId });
+
+            var view = subject.ForTeam(TeamId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(view?.RefinementConfigured, Is.False);
+                Assert.That(view?.WorkItems, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void ATeamWithRefinementStatesIsConfigured()
+        {
+            GivenTheTeam(new Team
+            {
+                Id = TeamId,
+                RefinementSettings = new RefinementSettings { States = [new RefinementStateSetting { State = "Backlog" }] },
+            });
+
+            var view = subject.ForTeam(TeamId);
+
+            Assert.That(view?.RefinementConfigured, Is.True);
+        }
+
         private void GivenTheTeam(Team team)
             => teamRepositoryMock.Setup(repository => repository.GetById(TeamId)).Returns(team);
     }

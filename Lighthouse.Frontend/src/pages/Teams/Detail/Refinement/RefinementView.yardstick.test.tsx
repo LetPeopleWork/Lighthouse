@@ -186,6 +186,10 @@ describe("The Refinement tab asks one question against one number", () => {
 			"a fallback without days",
 			{ source: "CycleTimeFallback", days: null, probability: 85 },
 		],
+		[
+			"a source it does not know even when days come with it",
+			{ source: "Somethingelse" as never, days: 5, probability: 85 },
+		],
 	] as [string, IYardstick][])(
 		"treats %s as having no number",
 		async (_, yardstick) => {
