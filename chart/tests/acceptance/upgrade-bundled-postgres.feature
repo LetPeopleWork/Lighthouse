@@ -2,8 +2,7 @@
 # Executable via: helm-unittest (render assertions, @in-memory) in chart/tests/unit/, and the kind harness
 # chart/tests/upgrade-path/run.sh (@real-io), which the upgrade-path job in ci_chart.yml runs in groups:
 # `happy` and `refusals` for slices 01-02, `chain`, `chain-refusals` and `chain-cleanup` for slice 03. Every
-# slice 01-02 scenario runs. The slice 03 scenarios are @pending until DELIVER implements them; it removes
-# @pending from a scenario in the same commit that turns its check green.
+# scenario runs.
 #
 # State machine of the bundled database volume, as the upgrade step sees it on every pod start
 # (M = the image's major, D = the major of the data the volume was first initialised with):
@@ -17,7 +16,7 @@
 #   D <= M-2, D > M, or no copy on M    -> refuse, touch nothing, say why and how to get out
 # Every refusal is checked before anything is written, so "touch nothing" is asserted byte for byte.
 #
-# Slice 03 (pending) reads D from the live copy instead of pgdata: the last copy in the chain pgdata ->
+# Slice 03 reads D from the live copy instead of pgdata: the last copy in the chain pgdata ->
 # pgdata-K -> pgdata-(K+1)..., each made by an upgrade from the one below it and still current. The rules above
 # then hold for the live copy. After a successful upgrade from the live copy, every copy older than it is
 # removed (placeholder first), so the volume keeps the source and the new copy, and one step of rollback.
@@ -213,7 +212,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     When the operator pins the bundled database image to Postgres 17 on the new chart
     Then the bundled database becomes Ready on Postgres 17 with the pre-upgrade rows
     And the row written on Postgres 18 is not there
-    And its log carries one warning line saying a newer Postgres 18 copy exists, its writes are not in this database, and removing the pin redoes the upgrade from this copy
+    And its log carries one warning line saying a newer Postgres 18 copy exists, its writes are not in this database, and moving to Postgres 18 again redoes the upgrade from this copy
     When the operator writes a row on Postgres 17 and removes the pin
     Then the bundled database becomes Ready on Postgres 18 with the row written on Postgres 17
     And the row written on Postgres 18 before the pin is still not there
@@ -472,7 +471,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And every Lighthouse table has the same row count as before the upgrade
     And only then is the Postgres 16 copy removed
 
-  @US-04 @AC-4.2 @error @real-io @env:kind-chain-size-limited-pv @slice-03 @contract-shape:unbounded-preservation @pending
+  @US-04 @AC-4.2 @error @real-io @env:kind-chain-size-limited-pv @slice-03 @contract-shape:unbounded-preservation
   Scenario: Too little room for the next copy refuses, naming the cleanup as a way out
     Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17, on a volume with room for two copies of its data but not three
     And a fingerprint of every file on the database volume has been taken
@@ -588,7 +587,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     When that file can be deleted again and the bundled database is restarted
     Then the original folder holds only the placeholder
 
-  @US-04 @AC-4.10 @in-memory @slice-03 @contract-shape:pure-function @pending
+  @US-04 @AC-4.10 @in-memory @slice-03 @contract-shape:pure-function
   Scenario: The Kubernetes docs say what a second upgrade keeps, removes and costs
     Given the Kubernetes installation docs
     When the operator reads the section on upgrading the bundled Postgres

@@ -16,6 +16,7 @@ readonly DOCS=https://docs.lighthouse.letpeople.work/Installation/kubernetes.htm
 readonly MANUAL_PATH="$DOCS#moving-data-two-or-more-majors-behind-by-hand"
 readonly REFUSED_DOCS="$DOCS#when-an-upgrade-is-refused"
 readonly CUT_OFF_REMOVAL_DOCS="$DOCS#when-removing-the-old-copy-was-cut-off"
+readonly STOPPED_CLEANUP_DOCS="$DOCS#removing-old-copies-while-the-database-is-stopped"
 
 say() {
   echo "lighthouse-postgres: $*"
@@ -262,6 +263,17 @@ kib_in() {
   du -sk "$1" | cut -f1
 }
 
+# Copies older than the one the upgrade reads from only serve a rollback further back, so removing them is
+# one more way to make room. This step is what keeps the database pod from starting, so the removal runs from
+# a pod of its own while the database is stopped.
+older_copies_hint() {
+  local older
+  older="$(copies_to_name "$LIVE_MAJOR")"
+  if [[ -n "$older" ]]; then
+    echo "; or remove $(copy_names "$older"), older than $LIVE_COPY, while the database is stopped, as $STOPPED_CLEANUP_DOCS shows"
+  fi
+}
+
 # A leftover unfinished copy is thrown away before the upgrade starts, so its space counts as free. An
 # out-of-date copy is only removed once its replacement is in place, so its space does not.
 ensure_room_for_copy() {
@@ -273,7 +285,7 @@ ensure_room_for_copy() {
     free_kib=$((free_kib + $(kib_in "$PARTIAL")))
   fi
   if [[ "$free_kib" -lt "$needed_kib" ]]; then
-    refuse "refusing upgrade $from→$MAJOR: need $(((needed_kib + KIB_PER_MIB - 1) / KIB_PER_MIB)) MiB, $((free_kib / KIB_PER_MIB)) MiB free; grow the volume claim itself with kubectl patch pvc$(namespace_flag) data-$HOSTNAME ($REFUSED_DOCS shows how) or pin postgresql.image to postgres:$from$(image_suffix) and $(delete_pod_hint)"
+    refuse "refusing upgrade $from→$MAJOR: need $(((needed_kib + KIB_PER_MIB - 1) / KIB_PER_MIB)) MiB, $((free_kib / KIB_PER_MIB)) MiB free; grow the volume claim itself with kubectl patch pvc$(namespace_flag) data-$HOSTNAME ($REFUSED_DOCS shows how) or pin postgresql.image to postgres:$from$(image_suffix) and $(delete_pod_hint)$(older_copies_hint)"
   fi
 }
 
@@ -411,6 +423,11 @@ say_nothing_to_upgrade() {
   fi
 }
 
+# The copies a removal with bound $1 takes, oldest first, as the "folder major" lines copy_names reads.
+copies_to_name() {
+  copies_older_than "$1" | sort -n | awk '{ print $2, ($1 == 0 ? "" : $1) }'
+}
+
 # "folder (Postgres K)" for each "folder major" line of $1, or "what was left of folder" when the major can
 # no longer be told, joined by commas.
 copy_names() {
@@ -431,7 +448,7 @@ copy_names() {
 # one warning, the database starts on folder $1 all the same, and the next start tries again.
 remove_older_copies() {
   local starts_on="$1" targets
-  targets="$(copies_older_than "$PREVIOUS_MAJOR" | sort -n | awk '{ print $2, ($1 == 0 ? "" : $1) }')"
+  targets="$(copies_to_name "$PREVIOUS_MAJOR")"
   if ! REMOVED="$(remove_copies_older_than "$PREVIOUS_MAJOR" "$MAJOR")"; then
     say "warning: $(copy_names "$targets") could not be fully removed; Postgres $MAJOR starts on $starts_on all the same, what is left only takes room, and the next start tries again"
     return 1
@@ -461,7 +478,7 @@ finish_earlier_removal() {
 # the note in the newer copy, so moving the image forward again redoes the upgrade from the copy started here.
 warn_newer_copy_exists() {
   local folder="$1" newer="$2"
-  say "warning: starting Postgres $MAJOR on $folder, but a newer Postgres ${newer#pgdata-} copy of this database exists in $newer; what was written on that copy is not in this database, and removing the pin on postgresql.image redoes the upgrade from this copy, so those writes do not come back"
+  say "warning: starting Postgres $MAJOR on $folder, but a newer Postgres ${newer#pgdata-} copy of this database exists in $newer; what was written on that copy is not in this database, and moving to Postgres ${newer#pgdata-} again redoes the upgrade from this copy, so those writes do not come back"
 }
 
 main() {

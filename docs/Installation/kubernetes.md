@@ -328,7 +328,7 @@ external MCP client can auto-discover the IdP and run the browser OAuth flow. Au
 The chart's default `postgresql.image` moves to a new PostgreSQL major from time to time (it is
 `postgres:18-trixie` today). A PostgreSQL major cannot open the data files of the previous one, so the
 chart carries the data across by itself: before the database starts on the new major, a step in the
-database pod upgrades a copy of the data and keeps the original beside it. This does not apply to an
+database pod upgrades a copy of the data and keeps the copy it read from beside it. This does not apply to an
 external database (`postgresql.enabled=false`); you upgrade that one the way your provider documents.
 
 The step runs on every start of the database, even when there is nothing to upgrade, so every start pulls
@@ -341,7 +341,7 @@ cannot run the bundled database. Use an external database there.
 ### What happens on `helm upgrade`
 
 A plain `helm upgrade`, or one with `--reset-then-reuse-values`, moves the image and carries data from the
-previous major across. There is nothing to do before or after it:
+previous major across. There is nothing to do before it:
 
 ```sh
 helm upgrade l8e letpeoplework/lighthouse --reset-then-reuse-values --wait --timeout 15m
@@ -356,6 +356,12 @@ lighthouse-postgres: upgrading the Postgres 17 data in pgdata to Postgres 18 in 
 lighthouse-postgres: upgrade finished: Postgres 18 starts on pgdata-18, and the Postgres 17 data stays in pgdata
 ```
 
+Each chart release that moves the default image moves the data one major, from the copy the database runs
+on. A volume upgraded before runs on a copy such as `pgdata-18/`, and the next chart release on Postgres 19
+upgrades that copy into `pgdata-19/` the same way. If you skipped a chart release that moved the major,
+upgrade to that release first: the upgrade is refused when the data is two or more majors behind (see
+[When an upgrade is refused](#when-an-upgrade-is-refused)).
+
 **`--reuse-values` keeps the old image.** Helm then carries over the previous chart's `postgresql.image`
 as well, so the database stays on its current major and nothing is upgraded. The install notes say so:
 
@@ -366,13 +372,31 @@ NOTE: The bundled Postgres (postgres:17) is behind this chart's default major (1
 Settings made inside the database with `ALTER SYSTEM` are not carried across. Apply them again on the
 new major.
 
+### After an upgrade, refresh the planner statistics
+
+The upgrade does not carry all of the planner statistics across; extended statistics, for one, never come
+across. Until they are rebuilt, some queries can be slow. Once the database pod is Ready, rebuild them with
+one command:
+
+```sh
+kubectl exec l8e-lighthouse-postgres-0 -c postgres -- vacuumdb -U lighthouse --all --analyze-in-stages --missing-stats-only
+```
+
+If `vacuumdb` says it does not know `--missing-stats-only`, run the same command without it. The chart
+does not do this for you.
+
 ### Where the old copy is and what it costs
 
-Both copies sit on the same data volume (`data-l8e-lighthouse-postgres-0`):
+The copies sit side by side on the same data volume (`data-l8e-lighthouse-postgres-0`). After the first
+upgrade:
 
 - `pgdata/` holds the previous major's data exactly as it was before the upgrade. It is kept so that a
   rollback still finds it.
 - `pgdata-18/` holds the upgraded database, the one Lighthouse uses from now on.
+
+A later upgrade, say to Postgres 19, keeps `pgdata-18/`, the copy it read from, and builds `pgdata-19/`.
+Once `pgdata-19/` is in place, it removes the copy before that one (see
+[Removing the old copy](#removing-the-old-copy)), so the volume keeps one older copy, not more.
 
 The `PGDATA` a `kubectl exec` shell sees is the image's default, not the folder the database was started
 on. Ask the database itself instead:
@@ -381,19 +405,21 @@ on. Ask the database itself instead:
 kubectl exec l8e-lighthouse-postgres-0 -c postgres -- psql -U lighthouse -d lighthouse -Atc 'SHOW data_directory'
 ```
 
-The old copy takes about as much room again as the database itself, so the volume holds roughly twice
-the data until you remove it. The upgrade checks for that room before it writes anything (see
+The older copy takes about as much room again as the database itself, so after any upgrade the volume
+holds roughly twice the data. While an upgrade runs, it briefly needs room for one more copy: the new one
+is built before anything older is removed. The upgrade checks for that room before it writes anything (see
 [When an upgrade is refused](#when-an-upgrade-is-refused)).
 
 ### Rolling back
 
-`helm rollback` to the revision of the previous chart (chart 0.1.17 or earlier; `helm history l8e` lists
-the revisions) starts the old major on `pgdata/`, the database as it was before the upgrade.
-**Everything written since the upgrade is discarded**: it lives only in `pgdata-18/`, which the old major
-cannot open. Upgrading again afterwards redoes the copy from `pgdata/`, so what was written between the
-rollback and the new upgrade comes across, and what was written before the rollback still does not. The
-out-of-date `pgdata-18/` is only removed once the new copy is in place, so this needs room for one more
-copy while it runs. The upgrade log says:
+`helm rollback` to the revision of the previous chart (`helm history l8e` lists the revisions) always
+works: it starts the previous major on the copy the upgrade read from, the database as it was before the
+upgrade. After the first upgrade that is `pgdata/`, under chart 0.1.17 or earlier.
+**Everything written since the upgrade is discarded**: it lives only in the newer copy, which the previous
+major cannot open. Upgrading again afterwards redoes the copy from the one the rollback started on, so what
+was written between the rollback and the new upgrade comes across, and what was written before the
+rollback still does not. The out-of-date newer copy is only removed once the new copy is in place, so this
+needs room for one more copy while it runs. The upgrade log says:
 
 ```text
 lighthouse-postgres: pgdata-18 is out of date: Postgres 17 has run on pgdata since that copy was made, so it is discarded and the upgrade redone from pgdata
@@ -403,50 +429,72 @@ A rollback between two revisions of the new chart changes nothing about the data
 
 Pinning the image back on the new chart, for example with
 `--reset-then-reuse-values --set postgresql.image=postgres:17-trixie`, does the same as a rollback: the
-database starts on `pgdata/` without what was written on 18, and removing the pin redoes the upgrade from
-it. The database pod logs one warning about it:
+database starts on `pgdata/` without what was written on 18, and moving to 18 again redoes the upgrade
+from it. A chart that has the upgrade step logs one warning about it, after a pin or a rollback:
 
 ```text
-lighthouse-postgres: warning: starting Postgres 17 on pgdata, but a newer Postgres 18 copy of this database exists in pgdata-18; what was written on that copy is not in this database, and removing the pin on postgresql.image redoes the upgrade from this copy, so those writes do not come back
+lighthouse-postgres: warning: starting Postgres 17 on pgdata, but a newer Postgres 18 copy of this database exists in pgdata-18; what was written on that copy is not in this database, and moving to Postgres 18 again redoes the upgrade from this copy, so those writes do not come back
 ```
 
 A rollback to chart 0.1.17 itself cannot print that warning: that chart has no upgrade step and does not
 know the newer copy exists.
 
+**After a second upgrade, a rollback of two charts no longer works.** The copy it would start on was
+removed by the second upgrade. Say the database moved from chart 0.1.17 (Postgres 17) to this chart (18)
+and then to a chart on Postgres 19. A rollback to 0.1.17 fails loudly: the database pod does not become
+Ready, and its `postgres` container logs
+
+```text
+initdb: error: directory "/var/lib/postgresql/data/pgdata" exists but is not empty
+```
+
+A rollback of two charts to a chart that has the upgrade step, for example from a chart on Postgres 20 to
+the chart on 18, is refused instead:
+
+```text
+lighthouse-postgres: refusing to start Postgres 18: the data is Postgres 20, in pgdata-20, which is newer than this image, and no Postgres 18 copy of it is left to start on; set postgresql.image back to Postgres 20 or remove the pin on it, then run kubectl delete pod -n default l8e-lighthouse-postgres-0 so it starts again with the new values. Nothing was changed
+```
+
+Neither starts an empty or out-of-date database. Upgrade to the chart you
+came from again, then delete the stuck pod with `kubectl delete pod l8e-lighthouse-postgres-0` (see
+[When an upgrade is refused](#when-an-upgrade-is-refused) for why).
+
 ### Removing the old copy
 
-Once you are sure you will not roll back, free the room the old copy takes. Run this while the database
-pod is running on 18:
+A second or later upgrade removes the copy before the one it read from by itself, once its new copy is in
+place, and logs one line about it:
+
+```text
+lighthouse-postgres: removed pgdata (Postgres 17), the copy before the one this upgrade read from; a rollback to a chart on Postgres 17 is no longer possible, a rollback to the chart on Postgres 18 still is
+```
+
+The copy the upgrade read from stays, for a rollback one chart back. Once you are sure you will not roll
+back, free the room it takes. Run this while the database pod is running:
 
 ```sh
 kubectl exec l8e-lighthouse-postgres-0 -c postgres -- bash /lighthouse-postgres/remove-old-copies.sh
 ```
 
-It empties `pgdata/` and leaves a single file in it, `UPGRADED-TO-18-see-kubernetes-docs`; it does not
-touch `pgdata-18/`. It does nothing, and exits with code 1, when there is no upgraded copy in `pgdata-18/`
-or when a database is running on `pgdata/` (after a rollback or a pin). The placeholder file keeps a later
-rollback to chart 0.1.17 from creating a new, empty database in the emptied folder: that rollback stops
-with an error instead. The database keeps starting on `pgdata-18/` after a restart, and a plain
+It removes every copy older than the one the database runs on, and never touches that one. When `pgdata/`
+is among them, it empties it and leaves a single file in it, named after the major the database runs on,
+such as `UPGRADED-TO-18-see-kubernetes-docs`. It
+removes nothing, and exits with code 1, when the database runs on `pgdata/` (before any upgrade, or after a
+rollback or a pin to it). When there is nothing older to remove, it says so and succeeds. The placeholder
+file keeps a later rollback to chart 0.1.17 from creating a new, empty database in the emptied folder: that
+rollback stops with an error instead. The database keeps starting on its copy after a restart, and a plain
 `helm upgrade` to this chart starts it there again. After such a failed rollback, the `helm upgrade` alone
 is not enough: delete the stuck pod as well, with `kubectl delete pod l8e-lighthouse-postgres-0` (see
 [When an upgrade is refused](#when-an-upgrade-is-refused) for why).
 
-**After this command a rollback to the previous chart is no longer possible.** The previous major's data
-is gone, and only `pgdata-18/` remains.
+**After this command a rollback to the previous chart is no longer possible.** The older data is gone,
+and only the copy the database runs on remains.
 
-### When removing the old copy was cut off
+### Removing old copies while the database is stopped
 
-If the command is cut off part-way, for instance because the connection drops, run it again: it picks up
-where it stopped. If the database pod restarts before you do, its start may be refused with a line saying
-that `pgdata` holds no database, or that it has no readable `pgdata/global/pg_control`:
-
-```text
-lighthouse-postgres: refusing to start Postgres 18: pgdata holds Postgres 17 data without a readable pgdata/global/pg_control, which is what a removal of the old copy cut off part-way leaves, so whether pgdata-18 is still current cannot be told; finish removing the old copy as https://docs.lighthouse.letpeople.work/Installation/kubernetes.html#when-removing-the-old-copy-was-cut-off describes. Nothing was changed
-```
-
-`pgdata-18/` is untouched. The database container does not run while its start is refused, so finish the
-removal from a pod of its own that mounts the volume, with the same command, then start the database
-again:
+The command above runs inside the database pod, so it cannot run while the database's start is refused,
+for instance because the volume has too little room for an upgrade. Stop the database, run the same
+command from a pod of its own that mounts the volume and the chart's scripts, delete that pod, and start
+the database again:
 
 ```sh
 kubectl scale statefulset l8e-lighthouse-postgres --replicas=0
@@ -456,6 +504,38 @@ kubectl exec pgdata-cleanup -- bash /lighthouse-postgres/remove-old-copies.sh
 kubectl delete pod pgdata-cleanup
 kubectl scale statefulset l8e-lighthouse-postgres --replicas=1
 ```
+
+Use the image your `postgresql.image` is set to in both places where `postgres:18-trixie` appears. The same
+holds as for the command above: a rollback to an older chart is no longer possible afterwards. When the
+database starts again, a refused upgrade retries by itself.
+
+### When removing the old copy was cut off
+
+A removal is safe to cut off at any point; what is left only takes room:
+
+- **The removal an upgrade does by itself** is finished by the next start of the database. Its log says so:
+
+  ```text
+  lighthouse-postgres: finished removing pgdata (Postgres 17), which an earlier start left behind; Postgres 19 starts on pgdata-19
+  ```
+
+- **The command you ran**, cut off part-way, for instance because the connection dropped, is finished by
+  running it again: it picks up where it stopped, whether or not the database restarted in between. That
+  includes a first-upgrade volume where `pgdata/` is left without
+  `pgdata/global/pg_control`. The database's start is then refused with:
+
+  ```text
+  lighthouse-postgres: refusing to start Postgres 18: pgdata holds Postgres 17 data without a readable pgdata/global/pg_control, which is what a removal of the old copy cut off part-way leaves, so whether pgdata-18 is still current cannot be told; finish removing the old copy as https://docs.lighthouse.letpeople.work/Installation/kubernetes.html#when-removing-the-old-copy-was-cut-off describes. Nothing was changed
+  ```
+
+  The copy the database runs on is untouched. Run the command while the database is stopped, as
+  [Removing old copies while the database is stopped](#removing-old-copies-while-the-database-is-stopped)
+  shows; the database then starts on its copy.
+
+- **A control file that is gone where no removal had started** cannot be told apart from a damaged volume.
+  The start of the database, and the command, refuse with a line ending in "put that file back from a
+  backup", naming the file. Neither removes or changes anything. Restore that file, or the volume, from a
+  backup.
 
 ### When an upgrade is refused
 
@@ -479,13 +559,13 @@ How the next retry picks up the fix depends on what the fix is:
   Every refusal line that suggests a values change ends with this command, with the pod's real name and
   namespace filled in.
 
-Too little room for the second copy:
+Too little room for the new copy:
 
 ```text
 lighthouse-postgres: refusing upgrade 17→18: need 2310 MiB, 1024 MiB free; grow the volume claim itself with kubectl patch pvc -n default data-l8e-lighthouse-postgres-0 (https://docs.lighthouse.letpeople.work/Installation/kubernetes.html#when-an-upgrade-is-refused shows how) or pin postgresql.image to postgres:17-trixie and then run kubectl delete pod -n default l8e-lighthouse-postgres-0 so it starts again with the new values. Nothing was changed
 ```
 
-There are two ways out:
+There are two ways out, and a third on a volume that holds a copy older than the one the database runs on:
 
 - **Grow the volume.** This needs a StorageClass that allows volume expansion
   (`allowVolumeExpansion: true`). Kubernetes does not let a StatefulSet change the size of a claim it has
@@ -506,21 +586,22 @@ There are two ways out:
   kubectl delete pod l8e-lighthouse-postgres-0
   ```
 
+- **Remove the older copy.** On a volume upgraded before, the line also names the copies older than the one
+  the database runs on, and links to
+  [Removing old copies while the database is stopped](#removing-old-copies-while-the-database-is-stopped).
+  Removing them frees about as much room as the database takes, and the upgrade then goes ahead once the
+  database starts again. A rollback to the chart before the current one is no longer possible afterwards.
+
 Data two or more majors behind the image is refused with a line that names both majors and links the
 manual path below:
 
 ```text
-lighthouse-postgres: refusing to start Postgres 18: the data in pgdata is Postgres 16, and this chart only upgrades data from Postgres 17; pin postgresql.image to postgres:16 to start it again as it was, then run kubectl delete pod -n default l8e-lighthouse-postgres-0 so it starts again with the new values, and move it by hand: https://docs.lighthouse.letpeople.work/Installation/kubernetes.html#moving-data-two-or-more-majors-behind-by-hand. Nothing was changed
+lighthouse-postgres: refusing to start Postgres 18: the database runs on Postgres 16 in pgdata, 2 majors behind Postgres 18, and the automatic upgrade moves one major per chart release, so this chart only upgrades data from Postgres 17; pin postgresql.image to postgres:16 to start pgdata again as it was, then run kubectl delete pod -n default l8e-lighthouse-postgres-0 so it starts again with the new values, then upgrade through each chart release that moved the major, one at a time, or move it by hand: https://docs.lighthouse.letpeople.work/Installation/kubernetes.html#moving-data-two-or-more-majors-behind-by-hand. Nothing was changed
 ```
 
 Pin `postgresql.image` to the data's major (here `postgres:16`) and delete the stuck pod to start the
-database again as it was, then move it with the manual path below.
-
-The chart only ever upgrades the data in `pgdata/`, the folder the volume was first set up with. A volume
-that has already been upgraded once runs on `pgdata-18/`, so a later chart that moves on to the next major
-cannot carry it across by itself. It refuses instead, naming `pgdata-18/` as where the database runs and
-the image to set back to; never pin the image to the older data in `pgdata/`, which would start the
-database without anything written since the upgrade.
+database again as it was. Then step through each chart release that moved the major, one at a time, or
+move the data with the manual path below.
 
 Data newer than the image, with no copy of the image's major left to start on, is refused the same way.
 That happens when the image is pinned back after the old copy was removed:

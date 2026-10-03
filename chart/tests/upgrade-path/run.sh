@@ -610,7 +610,7 @@ pin_back_after_upgrade_starts_on_kept_copy_and_warns() {
     || { dump_diagnostics "$ns"; fail "the database log in $ns does not carry exactly one warning about the newer copy"; }
   echo "  $warning"
   if ! grep -qF "not in this database" <<<"$warning" || ! grep -qF "redoes the upgrade from this copy" <<<"$warning"; then
-    fail "the warning in $ns does not say what is missing and what removing the pin does: $warning"
+    fail "the warning in $ns does not say what is missing and what moving to Postgres 18 again does: $warning"
   fi
   wait_api_ready "$ns"
   write_marker_table "$ns" upgrade_path_during_pin
@@ -695,8 +695,6 @@ upgrade_after_unclean_stop_keeps_every_row() {
 # tmpfs holds; a hostPath PV's capacity is only a label, so the tmpfs size is what the database sees.
 readonly SMALL_NS="small-volume"
 readonly SMALL_CLASS="lh-small"
-readonly SMALL_PV="lh-small-$SMALL_NS"
-readonly SMALL_DIR="/mnt/lh-small/$SMALL_NS"
 readonly SMALL_VALUES=(--set "postgresql.persistence.storageClass=$SMALL_CLASS")
 SMALL_COUNTS=""
 SMALL_GROWN_MIB=""
@@ -705,17 +703,24 @@ kind_node() {
   kubectl get nodes -o jsonpath='{.items[0].metadata.name}'
 }
 
+# The tmpfs of namespace $1's volume on the kind node; each namespace has its own, so two scenarios on
+# small volumes can share a cluster.
+small_dir() {
+  echo "/mnt/lh-small/$1"
+}
+
 provide_small_volume() {
-  local ns="$1" node
+  local ns="$1" node dir
   node="$(kind_node)"
+  dir="$(small_dir "$ns")"
   kubectl delete namespace "$ns" --ignore-not-found --wait >/dev/null
-  kubectl delete pv "$SMALL_PV" --ignore-not-found --wait >/dev/null
-  docker exec "$node" sh -c "if mountpoint -q '$SMALL_DIR'; then umount '$SMALL_DIR'; fi; mkdir -p '$SMALL_DIR' && mount -t tmpfs -o size=1024m tmpfs '$SMALL_DIR'"
+  kubectl delete pv "lh-small-$ns" --ignore-not-found --wait >/dev/null
+  docker exec "$node" sh -c "if mountpoint -q '$dir'; then umount '$dir'; fi; mkdir -p '$dir' && mount -t tmpfs -o size=1024m tmpfs '$dir'"
   kubectl apply -f - >/dev/null <<EOF
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: $SMALL_PV
+  name: lh-small-$ns
 spec:
   capacity:
     storage: 8Gi
@@ -726,14 +731,14 @@ spec:
     namespace: $ns
     name: data-$POSTGRES_POD
   hostPath:
-    path: $SMALL_DIR
+    path: $dir
     type: Directory
 EOF
 }
 
 resize_small_volume() {
-  local mib="$1"
-  docker exec "$(kind_node)" mount -o "remount,size=${mib}m" "$SMALL_DIR"
+  local ns="$1" mib="$2"
+  docker exec "$(kind_node)" mount -o "remount,size=${mib}m" "$(small_dir "$ns")"
 }
 
 mount_size_mib() {
@@ -751,7 +756,7 @@ shrink_to_one_copy() {
   needed_mib=$((data_kib * 11 / 10 / 1024 + 64))
   small_mib=$((used_mib + needed_mib / 2))
   SMALL_GROWN_MIB=$((used_mib + needed_mib * 2 + 64))
-  resize_small_volume "$small_mib"
+  resize_small_volume "$ns" "$small_mib"
   [[ "$(mount_size_mib "$ns")" == "$small_mib" ]] \
     || fail "the database in $ns sees a ${MOUNT} of $(mount_size_mib "$ns") MiB, expected the ${small_mib} MiB tmpfs"
   echo "  volume: ${used_mib} MiB used, a second copy needs about ${needed_mib} MiB; sized to ${small_mib} MiB, grows to ${SMALL_GROWN_MIB} MiB"
@@ -840,7 +845,7 @@ grown_volume_lets_refused_upgrade_proceed() {
   local ns="$SMALL_NS"
   given_refused_for_room
 
-  resize_small_volume "$SMALL_GROWN_MIB"
+  resize_small_volume "$ns" "$SMALL_GROWN_MIB"
 
   kubectl -n "$ns" wait --for=condition=Ready "pod/$POSTGRES_POD" --timeout="${WAIT_SECONDS}s" >/dev/null \
     || { dump_diagnostics "$ns"; fail "the database in $ns did not become Ready after the volume grew"; }
@@ -946,15 +951,15 @@ remove_old_copy_as_documented() {
   run_as_documented "$ns" "$command"
 }
 
-# The docs finish a cut-off removal from a pod of its own, with the same cleanup command, because the
-# database pod does not run while its start is refused.
+# The docs remove old copies from a pod of its own, with the same cleanup command, when the database pod
+# cannot run it: its start is refused, so its container never runs.
 stopped_database_cleanup_as_documented() {
   local removal commands
   removal="$(documented_block "### Removing the old copy")"
-  commands="$(documented_block "### When removing the old copy was cut off")"
-  [[ -n "$commands" ]] || fail "no commands found under \"When removing the old copy was cut off\" in $KUBERNETES_DOCS"
+  commands="$(documented_block "### Removing old copies while the database is stopped")"
+  [[ -n "$commands" ]] || fail "no commands found under \"Removing old copies while the database is stopped\" in $KUBERNETES_DOCS"
   [[ "$commands" == *"-- ${removal#* -- }"* ]] \
-    || fail "the docs finish a cut-off removal with another command than the one that removes the old copy"
+    || fail "the docs remove old copies while the database is stopped with another command than the one that removes the old copy"
   echo "$commands"
 }
 
@@ -1146,8 +1151,7 @@ interrupted_cleanup_never_costs_upgraded_copy() {
 
 # --- group: chain (slice 03), in the order the scenarios build on each other ---------------------------
 # A Postgres 16 volume upgraded to 17 by the new chart pinned to 17, then to 18 by the chart's defaults,
-# because no Postgres 19 image exists yet. Functions still written as one scaffold line are not delivered
-# yet.
+# because no Postgres 19 image exists yet.
 
 readonly CHAIN_NS="chain-16-17"
 readonly CHAIN_PIN_17=(--set postgresql.image=postgres:17-trixie --set postgresql.upgrade.image=postgres:16-trixie)
@@ -1161,11 +1165,6 @@ CHAIN_ROLLED_BACK_ONE_CHART=""
 CHAIN_REVISION_ON_16=""
 CHAIN_REVISION_ON_17=""
 CHAIN_COUNTS_ON_17=""
-
-scaffold() {
-  local scenario="$1"
-  fail "SCAFFOLD: not yet implemented — $scenario"
-}
 
 given_chain_upgraded_once() {
   [[ -n "$CHAIN_UPGRADED_ONCE" ]] || chain_first_upgrade_removes_nothing
@@ -1212,10 +1211,9 @@ assert_note_names_source() {
     || fail "the note in $copy in $ns does not carry the hash of $source_folder/global/pg_control ($hash): $note"
 }
 
-# A warning after a pin back advises removing the pin, which removes nothing.
 assert_nothing_removed() {
   local ns="$1" removals
-  removals="$(upgrade_log "$ns" | grep '^lighthouse-postgres:' | grep -i 'remov' | grep -vF 'removing the pin on postgresql.image' || true)"
+  removals="$(upgrade_log "$ns" | grep '^lighthouse-postgres:' | grep -i 'remov' || true)"
   [[ -z "$removals" ]] || fail "the upgrade log in $ns speaks of removing a copy: $removals"
 }
 
@@ -1670,7 +1668,69 @@ chain_interrupted_second_upgrade_removes_nothing() {
   echo "  $(sed -n "${removed}p" <<<"$log")"
   assert_two_copies_beside_placeholder "$ns"
 }
-chain_too_little_room_names_cleanup_and_touches_nothing() { scaffold "Too little room for the next copy refuses, naming the cleanup as a way out"; }
+
+readonly CHAIN_SMALL_NS="chain-small-volume"
+readonly STOPPED_CLEANUP_DOCS="https://docs.lighthouse.letpeople.work/Installation/kubernetes.html#removing-old-copies-while-the-database-is-stopped"
+
+volume_used_mib() {
+  local ns="$1" used_kib
+  used_kib="$(in_postgres "$ns" df -Pk "$MOUNT" | awk 'NR == 2 { print $3 }')"
+  echo $(((used_kib + 1023) / 1024))
+}
+
+# The room the upgrade step asks for to copy folder $2, by its own measure, in MiB.
+copy_needs_mib() {
+  local ns="$1" folder="$2" data_kib
+  data_kib="$(in_postgres "$ns" du -sk "$MOUNT/$folder" | cut -f1)"
+  echo $((data_kib * 11 / 10 / 1024 + 64))
+}
+
+# Shrinks the tmpfs under a volume upgraded once so that the next copy does not fit beside the two it
+# holds, by half the room the Postgres 16 copy takes, while the first upgrade, which needed $2 MiB in all,
+# would still have fitted. Removing the Postgres 16 copy then frees enough for the next copy.
+shrink_below_next_copy() {
+  local ns="$1" first_needed_mib="$2" used old_mib needed small_mib
+  used="$(volume_used_mib "$ns")"
+  old_mib=$(($(in_postgres "$ns" du -sk "$MOUNT/pgdata" | cut -f1) / 1024))
+  needed="$(copy_needs_mib "$ns" pgdata-17)"
+  small_mib=$((used + needed - old_mib / 2))
+  [[ $small_mib -ge $first_needed_mib ]] \
+    || fail "a ${small_mib} MiB volume in $ns would not have held the first upgrade, which needed ${first_needed_mib} MiB"
+  resize_small_volume "$ns" "$small_mib"
+  [[ "$(mount_size_mib "$ns")" == "$small_mib" ]] \
+    || fail "the database in $ns sees a ${MOUNT} of $(mount_size_mib "$ns") MiB, expected the ${small_mib} MiB tmpfs"
+  echo "  volume: the first upgrade needed ${first_needed_mib} MiB in all; now ${used} MiB used, the Postgres 16 copy takes ${old_mib} MiB and the next copy needs about ${needed} MiB; sized to ${small_mib} MiB"
+}
+
+chain_too_little_room_names_cleanup_and_touches_nothing() {
+  local ns="$CHAIN_SMALL_NS" first_needed counts line commands output
+  provide_small_volume "$ns"
+  install_with_data "$ns" "${SMALL_VALUES[@]}" --set postgresql.image=postgres:16-trixie
+  first_needed=$(($(volume_used_mib "$ns") + $(copy_needs_mib "$ns" pgdata)))
+  upgrade_to_new_chart "$ns" "${SMALL_VALUES[@]}" "${CHAIN_PIN_17[@]}"
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 17
+  assert_data_directory "$ns" pgdata-17
+  wait_api_ready "$ns"
+  shrink_below_next_copy "$ns" "$first_needed"
+  counts="$(public_row_counts "$ns")"
+
+  fingerprint_then_upgrade "$ns" "${SMALL_VALUES[@]}" --reset-values
+
+  line="$(refusal_line "$ns")"
+  echo "  $line"
+  assert_line_says "$ns" "$line" "refusing upgrade 17→18" "MiB free" "need " "$STOPPED_CLEANUP_DOCS"
+  assert_volume_unchanged "$ns" "$FINGERPRINT"
+
+  commands="$(stopped_database_cleanup_as_documented)"
+  output="$(run_as_documented "$ns" "$commands")"
+  echo "  $(grep -F "lighthouse-postgres:" <<<"$output")"
+
+  assert_carried_across "$ns" "$counts"
+  assert_data_directory "$ns" pgdata-18
+  assert_upgrade_log_says "$ns" "upgrading the Postgres 17 data in pgdata-17 to Postgres 18 in pgdata-18"
+  assert_placeholder_beside "$ns" UPGRADED-TO-17-see-kubernetes-docs pgdata-17 pgdata-18
+}
 
 chain_cleaned_volume_moves_on_and_removes_nothing() {
   local ns="chain-cleaned" counts
@@ -1955,6 +2015,7 @@ readonly CHAIN_REFUSALS=(
   chain_unreadable_live_copy_refuses_before_writing
   chain_unfollowable_chain_is_refused_once_by_upgrade_step
   chain_cleanup_refuses_past_unreadable_copy_not_started
+  chain_too_little_room_names_cleanup_and_touches_nothing
 )
 
 # The documented cleanup on volumes from the chain, in a leg of its own for the same reason: each scenario
