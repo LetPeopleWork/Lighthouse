@@ -7,7 +7,7 @@
 	},
 	"license": "LicenseRef-Lighthouse-SAL-1.0",
 	"type": "module",
-	"packageManager": "pnpm@12.6.0",
+	"packageManager": "pnpm@12.7.0",
 	"scripts": {
 		"dev": "cross-env VITE_API_BASE_URL=http://localhost:5169/api vite",
 		"build": "pnpm exec tsc -b && vite build --outDir ../Lighthouse.Backend/Lighthouse.Backend/wwwroot",
