@@ -520,22 +520,25 @@ A removal is safe to cut off at any point; what is left only takes room:
   ```
 
 - **The command you ran**, cut off part-way, for instance because the connection dropped, is finished by
-  running it again: it picks up where it stopped, whether or not the database restarted in between. That
-  includes a first-upgrade volume where `pgdata/` is left without
-  `pgdata/global/pg_control`. The database's start is then refused with:
+  running it again: it picks up where it stopped, whether or not the database restarted in between.
+
+- **A control file missing from a copy that still has its `PG_VERSION` file** is never what a removal leaves:
+  a removal deletes a copy's `PG_VERSION` before anything else. It is damage, and without that file whether
+  a newer copy is still current cannot be told. The start of the database refuses, naming the file:
 
   ```text
-  lighthouse-postgres: refusing to start Postgres 18: pgdata holds Postgres 17 data without a readable pgdata/global/pg_control, which is what a removal of the old copy cut off part-way leaves, so whether pgdata-18 is still current cannot be told; finish removing the old copy as https://docs.lighthouse.letpeople.work/Installation/kubernetes.html#when-removing-the-old-copy-was-cut-off describes. Nothing was changed
+  lighthouse-postgres: refusing to start Postgres 18: pgdata holds Postgres 17 data without a readable pgdata/global/pg_control, so whether the newer pgdata-18 is still current cannot be told; put that file back from a backup. Nothing was changed
   ```
 
-  The copy the database runs on is untouched. Run the command while the database is stopped, as
-  [Removing old copies while the database is stopped](#removing-old-copies-while-the-database-is-stopped)
-  shows; the database then starts on its copy.
+  The command refuses as well:
 
-- **A control file that is gone where no removal had started** cannot be told apart from a damaged volume.
-  The start of the database, and the command, refuse with a line ending in "put that file back from a
-  backup", naming the file. Neither removes or changes anything. Restore that file, or the volume, from a
-  backup.
+  ```text
+  lighthouse-postgres: refusing to remove old copies: pgdata/global/pg_control is unreadable, so which copy is current cannot be told; put that file back from a backup before removing anything. Nothing was removed
+  ```
+
+  Neither removes or changes anything. Put that file back, or restore the volume, from a backup. Removing
+  the copy instead could cost the newest data: after a rollback or a pin to the older major, that copy is the
+  one the database last wrote to.
 
 ### When an upgrade is refused
 

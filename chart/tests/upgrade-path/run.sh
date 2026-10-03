@@ -999,12 +999,6 @@ stopped_database_cleanup_as_documented() {
   echo "$commands"
 }
 
-finish_old_copy_removal_as_documented() {
-  local ns="$1" commands
-  commands="$(stopped_database_cleanup_as_documented)"
-  run_as_documented "$ns" "$commands"
-}
-
 given_old_copy_removed() {
   if [[ -z "$CLEANED_COUNTS" ]]; then cleanup_then_rollback_refuses_empty_database; fi
 }
@@ -1162,17 +1156,61 @@ foreign_upgrade_source_refuses_and_touches_nothing() {
   assert_volume_unchanged "$ns" "$FINGERPRINT"
 }
 
-# A removal of the old copy cut off part-way can leave pgdata saying it is Postgres 17 without the control
-# file that tells whether pgdata-18 is still current. Removing that file by hand leaves the same state.
-interrupted_cleanup_never_costs_upgraded_copy() {
-  local ns="interrupted-cleanup" counts line
+# Moves the control file of folder $2 off the database volume of $1, to a place on the kind node it can be put
+# back from.
+set_control_file_aside() {
+  local ns="$1" folder="$2"
+  on_node mv "$(node_volume_dir "$ns")/$folder/global/pg_control" "/tmp/$ns-$folder-pg_control"
+}
+
+put_control_file_back() {
+  local ns="$1" folder="$2"
+  on_node mv "/tmp/$ns-$folder-pg_control" "$(node_volume_dir "$ns")/$folder/global/pg_control"
+}
+
+# The start was refused because the control file of $3, a Postgres $4 copy, cannot be read below the newer
+# copy $5: the line names both and says to put the file back from a backup, never to finish a removal.
+assert_unreadable_control_refusal() {
+  local ns="$1" line="$2" folder="$3" major="$4" newer="$5"
+  assert_line_says "$ns" "$line" "$folder holds Postgres $major data without a readable $folder/global/pg_control" \
+    "$newer" "put that file back from a backup"
+  ! grep -qF -- "#when-removing-the-old-copy-was-cut-off" <<<"$line" \
+    || fail "the refusal line in $ns points to finishing a removal: $line"
+}
+
+# Runs the cleanup while the database is stopped, as the docs show, and checks that it refuses: code 1, one
+# line naming $2/global/pg_control as unreadable and saying to put it back from a backup, and every file on the
+# volume as it was. The documented commands stop at the failed cleanup, so the pod they started is deleted here.
+assert_stopped_cleanup_refuses() {
+  local ns="$1" folder="$2" commands output status=0 line
+  stop_database "$ns"
+  FINGERPRINT="$(volume_fingerprint "$ns")"
+  commands="$(stopped_database_cleanup_as_documented)"
+
+  output="$(try_as_documented "$ns" "$commands")" || status=$?
+
+  [[ $status -eq 1 ]] || fail "the cleanup in $ns ended with code $status rather than 1: $output"
+  line="$(the_one_line_with "lighthouse-postgres:" "$output")" \
+    || fail "the cleanup in $ns did not print exactly one line: $output"
+  echo "  cleanup: $line"
+  assert_line_says "$ns" "$line" "$folder/global/pg_control is unreadable" \
+    "put that file back from a backup before removing anything" "Nothing was removed"
+  kubectl -n "$ns" delete pod pgdata-cleanup --ignore-not-found --wait >/dev/null
+  assert_volume_unchanged "$ns" "$FINGERPRINT"
+}
+
+# pgdata loses its control file while the database runs on pgdata-18. Every removal takes a copy's PG_VERSION
+# before anything else, so a pgdata that still has one did not lose the file to a removal: this is damage, and
+# without that file whether pgdata-18 is still current cannot be told. Putting the file back is the way out.
+unreadable_original_copy_beside_upgraded_copy_is_refused() {
+  local ns="unreadable-original" counts line
   install_with_data "$ns"
   counts="$(public_row_counts "$ns")"
   upgrade_to_new_chart "$ns"
   assert_carried_across "$ns" "$counts"
   write_marker_table "$ns" upgrade_path_written_on_18
   counts="$(public_row_counts "$ns")"
-  in_postgres "$ns" rm "$MOUNT/pgdata/global/pg_control"
+  set_control_file_aside "$ns" pgdata
 
   stop_database "$ns"
   FINGERPRINT="$(volume_fingerprint "$ns")"
@@ -1180,18 +1218,56 @@ interrupted_cleanup_never_costs_upgraded_copy() {
 
   line="$(refusal_line "$ns")"
   echo "  $line"
-  assert_line_says "$ns" "$line" "pgdata/global/pg_control" "pgdata-18" "#when-removing-the-old-copy-was-cut-off"
+  assert_unreadable_control_refusal "$ns" "$line" pgdata 17 pgdata-18
   assert_volume_unchanged "$ns" "$FINGERPRINT"
 
-  finish_old_copy_removal_as_documented "$ns"
+  assert_stopped_cleanup_refuses "$ns" pgdata
 
+  put_control_file_back "$ns" pgdata
+  start_database "$ns"
   wait_postgres_ready "$ns"
   assert_server_major "$ns" 18
   assert_data_directory "$ns" pgdata-18
-  assert_upgrade_log_says "$ns" "the old copy was removed"
   wait_api_ready "$ns"
   assert_row_counts "$ns" "$counts"
   assert_marker_row "$ns"
+}
+
+# After a rollback to chart 0.1.17, Postgres 17 runs on pgdata again, so pgdata holds the newest rows and
+# pgdata-18 is out of date, though it still counts as a copy. pgdata losing its control file then must never
+# lead the start or the cleanup to remove pgdata as an old copy.
+rolled_back_copy_without_control_file_keeps_its_rows() {
+  local ns="unreadable-rolled-back" counts before_revision line
+  install_with_data "$ns"
+  before_revision="$(current_revision "$ns")"
+  counts="$(public_row_counts "$ns")"
+  upgrade_to_new_chart "$ns"
+  assert_carried_across "$ns" "$counts"
+  helm rollback "$RELEASE" "$before_revision" -n "$ns" >/dev/null
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 17
+  assert_data_directory "$ns" pgdata
+  write_marker_table "$ns" upgrade_path_written_on_17_after_rollback
+  stop_database "$ns"
+  set_control_file_aside "$ns" pgdata
+  FINGERPRINT="$(volume_fingerprint "$ns")"
+
+  upgrade_to_new_chart "$ns"
+  start_database "$ns"
+
+  line="$(refusal_line "$ns")"
+  echo "  $line"
+  assert_unreadable_control_refusal "$ns" "$line" pgdata 17 pgdata-18
+  assert_volume_unchanged "$ns" "$FINGERPRINT"
+
+  assert_stopped_cleanup_refuses "$ns" pgdata
+
+  put_control_file_back "$ns" pgdata
+  open_kept_copy "$ns" postgres:17-trixie pgdata
+  [[ "$(marker_rows_in "$ns" upgrade_path_written_on_17_after_rollback kept-copy)" == "1" ]] \
+    || fail "the row written on Postgres 17 after the rollback in $ns is no longer in pgdata"
+  close_kept_copy "$ns"
+  echo "  pgdata still opens on Postgres 17 with the row written after the rollback"
 }
 
 # --- group: chain, in the order the scenarios build on each other --------------------------------------
@@ -1853,7 +1929,7 @@ every_container_log() {
 }
 
 # Without pgdata's control file the note in pgdata-17 cannot be checked, so whether the database last ran on
-# pgdata or on pgdata-17 cannot be told. No placeholder is there to show a removal had started.
+# pgdata or on pgdata-17 cannot be told.
 chain_unfollowable_chain_is_refused_once_by_upgrade_step() {
   local ns="chain-unreadable-original" line all_logs handover exit_code
   upgrade_16_to_17_in "$ns"
@@ -1863,10 +1939,7 @@ chain_unfollowable_chain_is_refused_once_by_upgrade_step() {
 
   line="$(refusal_line "$ns")"
   echo "  $line"
-  assert_line_says "$ns" "$line" "pgdata holds Postgres 16 data without a readable pgdata/global/pg_control" \
-    "pgdata-17" "put that file back from a backup"
-  ! grep -qF -- "#when-removing-the-old-copy-was-cut-off" <<<"$line" \
-    || fail "the refusal line in $ns points to finishing a removal no sign shows had started: $line"
+  assert_unreadable_control_refusal "$ns" "$line" pgdata 16 pgdata-17
   all_logs="$(every_container_log "$ns")"
   the_one_line_with "refusing" "$all_logs" >/dev/null \
     || { dump_diagnostics "$ns"; fail "the logs of every container in $ns do not carry exactly one refusal line"; }
@@ -1879,51 +1952,32 @@ chain_unfollowable_chain_is_refused_once_by_upgrade_step() {
   assert_volume_unchanged "$ns" "$FINGERPRINT"
 }
 
-# A cleanup cut off right after it wrote the placeholder into pgdata, with pgdata's control file then lost
-# as well: the database refuses to start, and the cleanup run from a pod of its own finishes the removal.
-chain_cleanup_finishes_started_removal_past_unreadable_copy() {
-  local ns="chain-cleanup-past-unreadable" counts line
+# A placeholder in pgdata beside a PG_VERSION that still makes pgdata count is no sign of a removal: every
+# removal takes PG_VERSION right after it writes the placeholder, before anything else. With pgdata's control
+# file gone as well, only damage leaves this volume, so the start and the cleanup both refuse.
+chain_cleanup_refuses_past_unreadable_copy_even_with_placeholder() {
+  local ns="chain-cleanup-past-unreadable" line
   upgrade_16_to_17_in "$ns"
-  counts="$(public_row_counts "$ns")"
   in_postgres "$ns" touch "$MOUNT/pgdata/UPGRADED-TO-17-see-kubernetes-docs"
   in_postgres "$ns" rm "$MOUNT/pgdata/global/pg_control"
   stop_database "$ns"
+  FINGERPRINT="$(volume_fingerprint "$ns")"
   start_database "$ns"
+
   line="$(refusal_line "$ns")"
   echo "  $line"
-  assert_line_says "$ns" "$line" "pgdata/global/pg_control" "#when-removing-the-old-copy-was-cut-off"
+  assert_unreadable_control_refusal "$ns" "$line" pgdata 16 pgdata-17
+  assert_volume_unchanged "$ns" "$FINGERPRINT"
 
-  finish_old_copy_removal_as_documented "$ns"
-
-  wait_postgres_ready "$ns"
-  assert_server_major "$ns" 17
-  assert_data_directory "$ns" pgdata-17
-  assert_placeholder_beside "$ns" UPGRADED-TO-17-see-kubernetes-docs pgdata-17
-  wait_api_ready "$ns"
-  assert_row_counts "$ns" "$counts"
-  assert_marker_row "$ns"
+  assert_stopped_cleanup_refuses "$ns" pgdata
 }
 
-# Starts from the volume the refusal before it left: pgdata without its control file and with no placeholder,
-# beside pgdata-17, and the database refused under the chart's defaults. The documented commands stop at the
-# failed cleanup, so the pod they started it in is still there.
+# Starts from the volume the refusal before it left: pgdata without its control file beside pgdata-17, and the
+# database refused under the chart's defaults.
 chain_cleanup_refuses_past_unreadable_copy_not_started() {
-  local ns="chain-unreadable-original" commands output status=0 line
+  local ns="chain-unreadable-original"
   if ! kubectl get namespace "$ns" >/dev/null 2>&1; then chain_unfollowable_chain_is_refused_once_by_upgrade_step; fi
-  stop_database "$ns"
-  FINGERPRINT="$(volume_fingerprint "$ns")"
-  commands="$(stopped_database_cleanup_as_documented)"
-
-  output="$(try_as_documented "$ns" "$commands")" || status=$?
-
-  [[ $status -eq 1 ]] || fail "the cleanup in $ns ended with code $status rather than 1: $output"
-  line="$(the_one_line_with "lighthouse-postgres:" "$output")" \
-    || fail "the cleanup in $ns did not print exactly one line: $output"
-  echo "  $line"
-  assert_line_says "$ns" "$line" "pgdata/global/pg_control is unreadable" \
-    "put that file back from a backup before removing anything"
-  kubectl -n "$ns" delete pod pgdata-cleanup --ignore-not-found --wait >/dev/null
-  assert_volume_unchanged "$ns" "$FINGERPRINT"
+  assert_stopped_cleanup_refuses "$ns" pgdata
 }
 
 # The documented cleanup is cut off right after it writes the placeholder, as if the pod running it was
@@ -2019,7 +2073,8 @@ readonly REFUSALS=(
   newer_data_without_kept_copy_refuses
   foreign_upgrade_source_refuses_and_touches_nothing
   interrupted_upgrade_is_redone_from_start
-  interrupted_cleanup_never_costs_upgraded_copy
+  unreadable_original_copy_beside_upgraded_copy_is_refused
+  rolled_back_copy_without_control_file_keeps_its_rows
 )
 
 readonly CHAIN=(
@@ -2055,7 +2110,7 @@ readonly CHAIN_CLEANUP=(
   chain_cleanup_removes_every_older_copy_and_reruns
   chain_cut_off_cleanup_is_finished_by_running_again
   chain_cleaned_volume_moves_on_and_removes_nothing
-  chain_cleanup_finishes_started_removal_past_unreadable_copy
+  chain_cleanup_refuses_past_unreadable_copy_even_with_placeholder
 )
 
 # The namespaces each scenario uses, its Givens included, so a namespace is deleted as soon as no later
@@ -2077,7 +2132,8 @@ namespaces_of() {
     cleanup_then_rollback_refuses_empty_database | newer_data_without_kept_copy_refuses) echo "$CLEANED_NS" ;;
     foreign_upgrade_source_refuses_and_touches_nothing) echo foreign-source ;;
     interrupted_upgrade_is_redone_from_start) echo interrupted-upgrade ;;
-    interrupted_cleanup_never_costs_upgraded_copy) echo interrupted-cleanup ;;
+    unreadable_original_copy_beside_upgraded_copy_is_refused) echo unreadable-original ;;
+    rolled_back_copy_without_control_file_keeps_its_rows) echo unreadable-rolled-back ;;
     chain_first_upgrade_removes_nothing | chain_second_upgrade_keeps_every_row \
       | chain_second_upgrade_removes_copy_before_last | chain_rollback_one_chart_starts_previous_major_and_warns \
       | chain_upgrade_again_after_one_chart_rollback_starts_afresh | chain_pin_back_one_major_starts_kept_copy_and_warns \
@@ -2095,7 +2151,7 @@ namespaces_of() {
     chain_unreadable_live_copy_refuses_before_writing) echo chain-unreadable-live ;;
     chain_unfollowable_chain_is_refused_once_by_upgrade_step | chain_cleanup_refuses_past_unreadable_copy_not_started)
       echo chain-unreadable-original ;;
-    chain_cleanup_finishes_started_removal_past_unreadable_copy) echo chain-cleanup-past-unreadable ;;
+    chain_cleanup_refuses_past_unreadable_copy_even_with_placeholder) echo chain-cleanup-past-unreadable ;;
     chain_unremovable_leftover_never_stops_the_start) echo chain-unremovable-leftover ;;
   esac
 }

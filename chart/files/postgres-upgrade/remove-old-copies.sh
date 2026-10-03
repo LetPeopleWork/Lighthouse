@@ -3,9 +3,8 @@
 # it runs on, the copy that one was made from included. The upgrade step removes old copies through the same
 # function but always keeps that copy, because a rollback one chart back starts on it; this cleanup takes it
 # too, so it only ever runs when the operator asks for it. It decides from reads alone and refuses before it
-# removes anything when which copy is current cannot be told. The one exception is a pgdata whose control
-# file is gone where a removal had visibly started: it holds the placeholder, or it is one major behind this
-# image beside a copy of this image's major, which the upgrade step also reads as a removal cut off part-way.
+# removes anything when which copy is current cannot be told, as when the control file of the copy the walk up
+# the copies stopped at is unreadable while a newer copy counts: the older copy may hold the newest data.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR source=volume.sh
@@ -22,10 +21,7 @@ refuse() {
 
 read -r live_folder live_major <<<"$(live_copy)"
 if [[ -n "$live_major" && -z "$(control_hash "$live_folder")" && -n "$(copies_newer_than "$live_major")" ]]; then
-  if [[ "$live_folder" != pgdata ]] || ! removal_started_in_pgdata "${PG_MAJOR:-}"; then
-    refuse "$live_folder/global/pg_control is unreadable, so which copy is current cannot be told; put that file back from a backup before removing anything"
-  fi
-  read -r live_folder live_major <<<"$(copies_newer_than "$live_major" | tail -n 1)"
+  refuse "$live_folder/global/pg_control is unreadable, so which copy is current cannot be told; put that file back from a backup before removing anything"
 fi
 
 if [[ -z "$live_folder" ]]; then

@@ -74,10 +74,12 @@ What was measured during DESIGN (Docker 29.8, Helm v4.3.0, a throwaway kind clus
    copy is then out of date, so the upgrade is redone from the old data. The out-of-date copy is set aside
    as `pgdata-<major>.stale` and deleted only once the new copy has been renamed into place; a `.stale`
    left by a stop in between is put back when nothing replaced it. A copy is only ever called out of date
-   on a hash that was actually computed: when the old data's `global/pg_control` is missing or unreadable,
-   as a removal of the old copy cut off part-way leaves it, the start is refused instead. *Slice 03:* the
-   hash is of the control file of whichever copy the upgrade read from, and the notes chain from `pgdata/`
-   upwards to the live copy.
+   on a hash that was actually computed: when the old data's `global/pg_control` is missing or unreadable
+   while its `PG_VERSION` is still there, the start is refused instead, pointing to a backup. No removal
+   leaves that state, because a removal deletes `PG_VERSION` first, and after a rollback the old data may be
+   the newest, so neither the start nor the documented cleanup ever removes it. *Slice 03:* the hash is of
+   the control file of whichever copy the upgrade read from, and the notes chain from `pgdata/` upwards to
+   the live copy.
 4. **Majors are detected at run time, never taken from values.** The data's major comes from `PG_VERSION` on
    the volume and each image's major from its `PG_MAJOR` environment variable. A mirrored or renamed image
    therefore behaves the same as the default one.

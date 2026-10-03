@@ -128,18 +128,6 @@ pgdata_beyond_placeholder() {
   [[ -n "$(find "$MOUNT/pgdata" -mindepth 1 -maxdepth 1 ! -name 'UPGRADED-TO-*' -print -quit 2>/dev/null)" ]]
 }
 
-# Whether pgdata shows that a removal of the old copy had started there, for an image of major $1: it holds
-# the placeholder, or it still counts one major below that image beside a copy of the image's major, which is
-# what a removal written before the placeholder existed leaves when it is cut off.
-removal_started_in_pgdata() {
-  local image_major="$1"
-  if has_placeholder; then
-    return 0
-  fi
-  [[ "$image_major" =~ ^[0-9]+$ ]] \
-    && [[ "$(copy_major pgdata)" == "$((image_major - 1))" && -e "$MOUNT/pgdata-$image_major" ]]
-}
-
 # The folders a removal with bound $1 takes, as "folder major" lines, oldest first. A pgdata-<K> goes
 # whether it counts or not, since a half-removed one no longer does. pgdata goes when it counts below the
 # bound, or when it no longer counts but holds the placeholder, which shows a removal had started there; its

@@ -14,7 +14,6 @@ source "$(dirname "${BASH_SOURCE[0]}")/volume.sh"
 readonly DOCS=https://docs.lighthouse.letpeople.work/Installation/kubernetes.html
 readonly MANUAL_PATH="$DOCS#moving-data-two-or-more-majors-behind-by-hand"
 readonly REFUSED_DOCS="$DOCS#when-an-upgrade-is-refused"
-readonly CUT_OFF_REMOVAL_DOCS="$DOCS#when-removing-the-old-copy-was-cut-off"
 readonly STOPPED_CLEANUP_DOCS="$DOCS#removing-old-copies-while-the-database-is-stopped"
 
 say() {
@@ -184,15 +183,11 @@ refuse_gap() {
 }
 
 # The walk up the copies stopped at the live copy because its control file cannot be read, so whether a newer
-# copy is still current cannot be told. Where pgdata shows a removal of the old copy had started, finishing
-# that removal is the way out; anywhere else only a backup is.
+# copy is still current cannot be told. A removal takes a copy's PG_VERSION before anything else, so a copy that
+# still counts never lost that file to one: only a backup brings it back. After a rollback the live copy may
+# hold the newest data, so removing it is never offered as the way out.
 refuse_unhashable_link() {
-  local newer
-  newer="$(folder_list "$NEWER_THAN_LIVE")"
-  if [[ "$LIVE_COPY" == pgdata ]] && removal_started_in_pgdata "$MAJOR"; then
-    refuse "refusing to start Postgres $MAJOR: pgdata holds Postgres $LIVE_MAJOR data without a readable pgdata/global/pg_control, which is what a removal of the old copy cut off part-way leaves, so whether $newer is still current cannot be told; finish removing the old copy as $CUT_OFF_REMOVAL_DOCS describes"
-  fi
-  refuse "refusing to start Postgres $MAJOR: $LIVE_COPY holds Postgres $LIVE_MAJOR data without a readable $LIVE_COPY/global/pg_control, so whether the newer $newer $(is_or_are "$NEWER_THAN_LIVE") still current cannot be told; put that file back from a backup"
+  refuse "refusing to start Postgres $MAJOR: $LIVE_COPY holds Postgres $LIVE_MAJOR data without a readable $LIVE_COPY/global/pg_control, so whether the newer $(folder_list "$NEWER_THAN_LIVE") $(is_or_are "$NEWER_THAN_LIVE") still current cannot be told; put that file back from a backup"
 }
 
 refuse_unreadable_live_copy() {

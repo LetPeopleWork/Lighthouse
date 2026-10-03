@@ -297,19 +297,41 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And every Lighthouse table has the same row count as before the upgrade
     And the kept Postgres 17 copy still opens with Postgres 17 and holds the recorded row counts
 
-  @US-03 @AC-3.4 @error @real-io @env:kind-newer-data-no-kept-copy @slice-02 @contract-shape:unbounded-preservation
-  Scenario: An interrupted removal of the old copy never costs the upgraded copy
+  # No removal leaves a copy that still has its version file without its control file: every removal takes
+  # the version file first. So a control file missing from a copy that still counts is damage, whatever else
+  # the volume holds, and both the start and the documented cleanup refuse.
+  @US-03 @AC-3.4 @error @real-io @env:kind-0.1.17-with-data @slice-02 @contract-shape:unbounded-preservation
+  Scenario: A control file missing from the old copy beside the upgraded copy is refused as damage
     Given the operator has upgraded a Lighthouse with data from chart 0.1.17 to the new chart
     And a row was written on Postgres 18 after the upgrade
-    And the old copy's control file is gone, as a removal of the old copy cut off part-way leaves it
+    And the old copy's control file is gone, while its version file is still there
     And a fingerprint of every file on the database volume has been taken
     When the bundled database is restarted
     Then the bundled database does not become Ready, and keeps retrying by itself
-    And its log carries one line naming the missing control file and pointing to the Kubernetes docs on finishing the removal
+    And its log carries one line naming pgdata/global/pg_control and pgdata-18 and saying to put that file back from a backup
     And every file on the database volume is exactly as it was before the attempt
-    When the operator finishes removing the old copy as the Kubernetes docs say
+    When the operator runs the cleanup while the database is stopped, as the Kubernetes docs say
+    Then the cleanup fails with one line naming pgdata/global/pg_control as unreadable and saying to put it back from a backup before removing anything
+    And every file on the database volume is exactly as it was before the cleanup
+    When the operator puts the control file back and starts the database again
     Then the bundled database becomes Ready on Postgres 18
     And every Lighthouse table has the same row count as before the restart, the row written on Postgres 18 included
+
+  @US-03 @AC-3.4 @error @real-io @env:kind-0.1.17-with-data @slice-02 @contract-shape:unbounded-preservation
+  Scenario: A rolled-back old copy that lost its control file keeps the rows written on it
+    Given the operator has upgraded a Lighthouse with data from chart 0.1.17 to the new chart
+    And then rolled back to chart 0.1.17, which starts Postgres 17 on the old copy again
+    And a row was written on Postgres 17 after the rollback
+    And the old copy's control file is gone, while its version file is still there
+    And a fingerprint of every file on the database volume has been taken
+    When the operator runs a plain "helm upgrade" to the new chart again
+    Then the bundled database does not become Ready, and keeps retrying by itself
+    And its log carries one line naming pgdata/global/pg_control and pgdata-18 and saying to put that file back from a backup
+    And every file on the database volume is exactly as it was before the attempt
+    When the operator runs the cleanup while the database is stopped, as the Kubernetes docs say
+    Then the cleanup fails with one line naming pgdata/global/pg_control as unreadable and saying to put it back from a backup before removing anything
+    And every file on the database volume is exactly as it was before the cleanup
+    And once the control file is put back, the old copy opens with Postgres 17 and holds the row written after the rollback
 
   @US-03 @D3 @error @real-io @env:kind-0.1.17-with-data @slice-02 @contract-shape:unbounded-preservation
   Scenario: An upgrade-source image whose programs cannot run beside the database image is refused
@@ -553,15 +575,18 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And the database log and the pod's description carry one refusal line, naming the original copy and saying to put its control file back from a backup
     And every file on the database volume is exactly as it was before the attempt
 
-  @US-04 @AC-4.6 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change
-  Scenario: The cleanup finishes a removal it can see had started, even past an unreadable original copy
+  @US-04 @AC-4.6 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation
+  Scenario: The cleanup refuses past an unreadable original copy that still counts, even beside a placeholder
     Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17
-    And a cleanup was cut off after the placeholder was written into the original copy
+    And the placeholder was written into the original copy, which still has its version file
     And the original copy's control file cannot be read
-    And the bundled database refuses to start, pointing to the Kubernetes docs on a cut-off removal
+    And a fingerprint of every file on the database volume has been taken
+    When the bundled database is restarted
+    Then the bundled database does not become Ready, and its log carries one line naming the original copy and saying to put its control file back from a backup
+    And every file on the database volume is exactly as it was before the attempt
     When the operator runs the cleanup while the database is stopped, as the Kubernetes docs say
-    Then the volume holds only the placeholder and the Postgres 17 copy
-    And after the database is started again it becomes Ready on Postgres 17 with every row it had
+    Then the cleanup fails with one line naming the original copy's control file as unreadable and saying to put it back from a backup before removing anything
+    And every file on the database volume is exactly as it was before the cleanup
 
   @US-04 @AC-4.6 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation
   Scenario: The cleanup refuses to guess past an unreadable copy it has no sign of having started on
