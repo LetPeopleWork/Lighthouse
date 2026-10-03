@@ -17,12 +17,16 @@ const UNCONFIGURED_TEAM = "Team Zenith";
 const FIRST_IN_BACKLOG_ORDER = "GR-051";
 
 // @walking_skeleton @driving_port @us-01 @us-02 @slice-01 @slice-02 @contract-shape:bounded-change
-// Pending until DELIVER: the demo data names Gravity's refinement states (Backlog, Analysing, Next)
-// and leaves Zenith without any (slice 01), and the tab lists what is in them (slice 02). Without
-// sign-in everybody may edit the Team, so the switched-off tab points to Settings.
-testWithDemo.fixme(
+// The demo data names Gravity's refinement states (Backlog, Analysing, Next) and leaves Zenith
+// without any, and the tab lists what is in them. Without sign-in everybody may edit the Team, so the
+// switched-off tab points to Settings.
+testWithDemo(
 	"a coach opens a Team's Refinement tab and sees its Work Items in backlog order, while a Team without refinement states keeps the tab switched off",
-	async ({ overviewPage, page }) => {
+	async ({ testData, overviewPage, page }) => {
+		expect(testData.teams.map((team) => team.name)).toEqual(
+			expect.arrayContaining([CONFIGURED_TEAM, UNCONFIGURED_TEAM]),
+		);
+
 		await test.step("Gravity's Refinement tab lists what is in refinement, in backlog order", async () => {
 			const gravity = await overviewPage.goToTeam(CONFIGURED_TEAM);
 
