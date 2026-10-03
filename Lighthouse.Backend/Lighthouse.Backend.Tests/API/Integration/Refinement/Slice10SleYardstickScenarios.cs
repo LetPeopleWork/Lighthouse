@@ -53,6 +53,31 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheYardstickIs(tab, TheCycleTimeFallback, days: 12, probability: 85);
         }
 
+        // @driving_port @real-io @us-10 @slice-10 @boundary @contract-shape:pure-function
+        // The window counts today, so its first day is one day short of the Throughput history ago.
+        [Test]
+        public async Task Work_Items_finished_on_the_first_day_of_the_Throughput_window_move_the_fallback()
+        {
+            var meridian = await GivenMeridianHasNoSleAndItsCycleTimes85thPercentileIsTwelveDays();
+            AndFiveVerySlowWorkItemsFinishedOnTheFirstDayOfTheThroughputWindow(meridian);
+
+            var tab = await WhenJonasOpensTheRefinementTab(meridian);
+
+            ThenTheYardstickIs(tab, TheCycleTimeFallback, days: 60, probability: 85);
+        }
+
+        // @driving_port @real-io @us-10 @slice-10 @boundary @contract-shape:pure-function
+        [Test]
+        public async Task Work_Items_finished_the_day_before_the_Throughput_window_opens_do_not_move_the_fallback()
+        {
+            var meridian = await GivenMeridianHasNoSleAndItsCycleTimes85thPercentileIsTwelveDays();
+            AndFiveVerySlowWorkItemsFinishedTheDayBeforeTheThroughputWindowOpens(meridian);
+
+            var tab = await WhenJonasOpensTheRefinementTab(meridian);
+
+            ThenTheYardstickIs(tab, TheCycleTimeFallback, days: 12, probability: 85);
+        }
+
         // @driving_port @real-io @us-10 @slice-10 @error @contract-shape:pure-function
         [Test]
         public async Task No_SLE_and_no_finished_Work_Items_leaves_the_question_without_a_number()

@@ -51,8 +51,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             => await GravityRefinesSixWorkItemsNobodyHasVotedOn(0, 0, TeamEquinox);
 
         private void AndFiveVerySlowWorkItemsFinishedFortyDaysAgo(TeamUnderTest team)
+            => FiveVerySlowWorkItemsFinished(team, daysAgo: 40);
+
+        private void AndFiveVerySlowWorkItemsFinishedOnTheFirstDayOfTheThroughputWindow(TeamUnderTest team)
+            => FiveVerySlowWorkItemsFinished(team, daysAgo: ThroughputHistoryDays - 1);
+
+        private void AndFiveVerySlowWorkItemsFinishedTheDayBeforeTheThroughputWindowOpens(TeamUnderTest team)
+            => FiveVerySlowWorkItemsFinished(team, daysAgo: ThroughputHistoryDays);
+
+        private void FiveVerySlowWorkItemsFinished(TeamUnderTest team, int daysAgo)
             => SeedFinishedWorkItems(team,
-                [.. Enumerable.Range(1, 5).Select(index => new FinishedWorkItem($"OLD-{index}", CycleTimeDays: 60, FinishedDaysAgo: 40))]);
+                [.. Enumerable.Range(1, 5).Select(index => new FinishedWorkItem($"SLOW-{index}", CycleTimeDays: 60, FinishedDaysAgo: daysAgo))]);
 
         // --- When ---
 

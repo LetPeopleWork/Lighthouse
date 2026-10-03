@@ -41,10 +41,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         [TestCase(0, 0)]
         [TestCase(85, 0)]
         [TestCase(0, 7)]
-        public void ATeamWithoutAWholeSleFallsBackToThe85thPercentileOfItsCycleTime(int probability, int days)
+        public void ATeamWithoutAWholeSleFallsBackToThe85thPercentileOfItsDefaultCycleTimeNotANamedDefinition(int probability, int days)
         {
             var team = new Team { ServiceLevelExpectationProbability = probability, ServiceLevelExpectationRange = days };
             GivenTheCycleTimePercentiles(new PercentileValue(50, 5), new PercentileValue(70, 8), new PercentileValue(85, 12), new PercentileValue(95, 20));
+            GivenANamedCycleTimeDefinitionWhose85thPercentileIs(99);
 
             var yardstick = subject.For(team);
 
@@ -96,13 +97,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         public void TheFallbackSamplesTheTeamsRollingThroughputWindow()
         {
             var team = new Team { ThroughputHistory = 30 };
-            var window = team.GetThroughputSettings(Today);
             GivenTheCycleTimePercentiles(new PercentileValue(85, 12));
 
             subject.For(team);
 
-            teamMetricsServiceMock.Verify(service => service.GetCycleTimePercentilesForTeam(team, window.StartDate, window.EndDate), Times.Once);
-            Assert.That(window.StartDate, Is.EqualTo(new DateTime(2026, 9, 4, 0, 0, 0, DateTimeKind.Utc)));
+            var thirtyDaysAgoIncludingToday = new DateTime(2026, 9, 4, 0, 0, 0, DateTimeKind.Utc);
+            var today = new DateTime(2026, 10, 3, 0, 0, 0, DateTimeKind.Utc);
+            teamMetricsServiceMock.Verify(service => service.GetCycleTimePercentilesForTeam(team, thirtyDaysAgoIncludingToday, today), Times.Once);
         }
 
         [Test]
@@ -116,19 +117,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             subject.For(team);
 
             teamMetricsServiceMock.Verify(service => service.GetCycleTimePercentilesForTeam(team, start, end), Times.Once);
-        }
-
-        [Test]
-        public void TheFallbackUsesTheTeamsDefaultCycleTimeAndNeverANamedCycleTimeDefinition()
-        {
-            var team = new Team();
-            GivenTheCycleTimePercentiles(new PercentileValue(85, 12));
-
-            subject.For(team);
-
-            teamMetricsServiceMock.Verify(
-                service => service.GetNamedCycleTimePercentilesForTeam(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<int>()),
-                Times.Never);
         }
 
         [Test]
@@ -148,6 +136,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             teamMetricsServiceMock
                 .Setup(service => service.GetCycleTimePercentilesForTeam(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns(percentiles);
+        }
+
+        private void GivenANamedCycleTimeDefinitionWhose85thPercentileIs(int days)
+        {
+            teamMetricsServiceMock
+                .Setup(service => service.GetNamedCycleTimePercentilesForTeam(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<int>()))
+                .Returns([new PercentileValue(85, days)]);
         }
     }
 }
