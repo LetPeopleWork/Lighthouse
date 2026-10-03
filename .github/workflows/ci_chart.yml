@@ -93,12 +93,12 @@ jobs:
         run: |
           set -euo pipefail
           render="$(helm template l8e ./chart --set postgresql.auth.password=ci --set encryption.key="$CI_ENCRYPTION_KEY")"
-          deploys="$(printf '%s\n' "$render" | grep -c '^kind: Deployment' || true)"
+          deploys="$(grep -c '^kind: Deployment' <<<"$render" || true)"
           [ "$deploys" = "1" ] || { echo "standalone gate: expected 1 Deployment, got $deploys"; exit 1; }
-          printf '%s\n' "$render" | grep -qE 'Database__Provider' || { echo "standalone gate: Database__Provider missing"; exit 1; }
+          grep -qE 'Database__Provider' <<<"$render" || { echo "standalone gate: Database__Provider missing"; exit 1; }
           # The provider value must be postgres and never sqlite (the chart is Postgres-only).
-          printf '%s\n' "$render" | grep -iE '[:=]\s*"?sqlite' && { echo "standalone gate: chart must never set provider sqlite"; exit 1; }
-          printf '%s\n' "$render" | grep -A1 'Database__Provider' | grep -qi 'postgres' || { echo "standalone gate: provider is not postgres"; exit 1; }
+          grep -iE '[:=]\s*"?sqlite' <<<"$render" && { echo "standalone gate: chart must never set provider sqlite"; exit 1; }
+          grep -qi 'postgres' <<<"$(grep -A1 'Database__Provider' <<<"$render")" || { echo "standalone gate: provider is not postgres"; exit 1; }
           echo "standalone gate OK"
 
       - name: No template can invent an encryption key
