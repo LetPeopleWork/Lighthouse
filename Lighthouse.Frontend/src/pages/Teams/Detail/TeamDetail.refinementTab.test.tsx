@@ -335,7 +335,7 @@ describe("The Refinement tab on a Team page", () => {
 
 	// @us-01 @slice-01 @error @contract-shape:pure-function
 	// The same way an address naming the Features tab of a Team without Features lands on Forecasts.
-	it.skip("lands on Forecasts from an address naming the Refinement tab of a Team without refinement states", async () => {
+	it("lands on Forecasts from an address naming the Refinement tab of a Team without refinement states", async () => {
 		mockParams = { id: "1", tab: "refinement" };
 		renderTheTeamPage({ viewer: "reader", teamReads: [aTeam(false)] });
 
@@ -356,7 +356,7 @@ describe("Choosing the first refinement states switches the tab on", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip("switches the tab on as soon as the save is accepted, without leaving Settings", async () => {
+	it("switches the tab on as soon as the save is accepted, without leaving Settings", async () => {
 		renderTheTeamPage({
 			viewer: "teamAdmin",
 			teamReads: [aTeam(false), aTeam(true)],

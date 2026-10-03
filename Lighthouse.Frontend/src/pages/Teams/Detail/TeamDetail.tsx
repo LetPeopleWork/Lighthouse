@@ -32,6 +32,7 @@ import type {
 	ScopedRbacRole,
 } from "../../../models/Authorization/RbacModels";
 import type { Team } from "../../../models/Team/Team";
+import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
@@ -43,13 +44,24 @@ import TeamFeaturesView from "./TeamFeaturesView";
 import TeamForecastView from "./TeamForecastView";
 import TeamMetricsView from "./TeamMetricsView";
 
-type TeamViewType =
-	| "features"
-	| "forecasts"
-	| "metrics"
-	| "refinement"
-	| "settings"
-	| "access";
+const TEAM_VIEWS = [
+	"features",
+	"forecasts",
+	"metrics",
+	"refinement",
+	"settings",
+	"access",
+] as const;
+
+type TeamViewType = (typeof TEAM_VIEWS)[number];
+
+const initialViewFor = (tabParam: string | undefined): TeamViewType =>
+	TEAM_VIEWS.find((view) => view === tabParam) ?? "features";
+
+// A tab that is switched off for this Team cannot be the open one, even when the address names it.
+const isViewUnavailable = (team: Team, view: TeamViewType): boolean =>
+	(view === "features" && team.features.length === 0) ||
+	(view === "refinement" && !team.refinementConfigured);
 
 // Only somebody who can open Settings is sent there; a reader has no Settings tab to go to.
 const refinementTabTooltip = (
@@ -81,34 +93,6 @@ const TeamDetail: React.FC = () => {
 	const { canUpdateTeamData, maxTeamsWithoutPremium } =
 		useLicenseRestrictions();
 
-	const getInitialView = (
-		tabParam: string | undefined,
-		teamData: Team | undefined,
-	): TeamViewType => {
-		if (tabParam === "metrics") {
-			return "metrics";
-		}
-
-		if (tabParam === "forecasts") {
-			return "forecasts";
-		}
-
-		if (tabParam === "settings") {
-			return "settings";
-		}
-
-		if (tabParam === "access") {
-			return "access";
-		}
-
-		// If features tab is requested but team has no features, redirect to forecasts
-		if (tabParam === "features" && teamData?.features.length === 0) {
-			return "forecasts";
-		}
-
-		return "features";
-	};
-
 	const [team, setTeam] = useState<Team>();
 	const [hasNoAccess, setHasNoAccess] = useState(false);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -116,7 +100,7 @@ const TeamDetail: React.FC = () => {
 	const [lastTeamRefreshFailed, setLastTeamRefreshFailed] =
 		useState<boolean>(false);
 	const [activeView, setActiveView] = useState<TeamViewType>(
-		getInitialView(tab, undefined),
+		initialViewFor(tab),
 	);
 	const [pendingTeamRefresh, setPendingTeamRefresh] = useState(false);
 	const [teamMembers, setTeamMembers] = useState<RbacScopedMemberSummary[]>([]);
@@ -264,6 +248,17 @@ const TeamDetail: React.FC = () => {
 		[team, teamService, fetchTeam],
 	);
 
+	// The settings form saves without leaving Settings, so the Team is read again right after an
+	// accepted save: anything the saved settings switch on, such as the Refinement tab, shows at once.
+	const saveTeamSettings = useCallback(
+		async (settings: ITeamSettings) => {
+			const savedSettings = await teamService.updateTeam(settings);
+			await fetchTeam();
+			return savedSettings;
+		},
+		[teamService, fetchTeam],
+	);
+
 	const onUpdateTeamData = async () => {
 		if (!team) {
 			return;
@@ -378,10 +373,8 @@ const TeamDetail: React.FC = () => {
 		};
 	}, [portfolioSubscriptionKey, updateSubscriptionService]);
 
-	// Redirect to forecasts if on features tab but team has no features
 	useEffect(() => {
-		if (team && activeView === "features" && team.features.length === 0) {
-			// Redirect to forecasts when features tab is requested but team has no features
+		if (team && isViewUnavailable(team, activeView)) {
 			const newView = "forecasts";
 			setActiveView(newView);
 			reportFailedNavigation(
@@ -600,9 +593,7 @@ const TeamDetail: React.FC = () => {
 											workTrackingSystemService.getConfiguredWorkTrackingSystems()
 										}
 										getTeamSettings={() => teamService.getTeamSettings(team.id)}
-										saveTeamSettings={(settings) =>
-											teamService.updateTeam(settings)
-										}
+										saveTeamSettings={saveTeamSettings}
 										validateTeamSettings={(settings) =>
 											teamService.validateTeamSettings(settings)
 										}
