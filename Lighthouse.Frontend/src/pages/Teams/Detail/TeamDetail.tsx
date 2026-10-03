@@ -27,6 +27,7 @@ import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandle
 import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettings";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useRbac } from "../../../hooks/useRbac";
+import { useRefinementSetUpReporter } from "../../../hooks/useRefinementSetUpReporter";
 import type {
 	RbacScopedMemberSummary,
 	ScopedRbacRole,
@@ -119,6 +120,7 @@ const TeamDetail: React.FC = () => {
 		rbacService,
 	} = useContext(ApiServiceContext);
 	const reportUsage = useUsageDataReporter();
+	const { settingsLoaded, settingsSaved } = useRefinementSetUpReporter();
 
 	const rbac = useRbac();
 
@@ -243,19 +245,14 @@ const TeamDetail: React.FC = () => {
 
 	// The settings form saves without leaving Settings, so the Team is read again right after an
 	// accepted save: anything the saved settings switch on, such as the Refinement tab, shows at once.
-	// Usage data counts Teams getting refinement set up, not saves, so only the save that switches it
-	// on reports it.
 	const saveTeamSettings = useCallback(
 		async (settings: ITeamSettings) => {
-			const wasRefinementConfigured = team?.refinementConfigured ?? false;
 			const savedSettings = await teamService.updateTeam(settings);
-			const savedTeam = await fetchTeam();
-			if (!wasRefinementConfigured && savedTeam?.refinementConfigured) {
-				reportUsage({ name: UsageDataEventName.TeamRefinementConfigured });
-			}
+			settingsSaved(savedSettings);
+			await fetchTeam();
 			return savedSettings;
 		},
-		[team, teamService, fetchTeam, reportUsage],
+		[teamService, fetchTeam, settingsSaved],
 	);
 
 	const onUpdateTeamData = async () => {
@@ -595,7 +592,9 @@ const TeamDetail: React.FC = () => {
 										getWorkTrackingSystems={() =>
 											workTrackingSystemService.getConfiguredWorkTrackingSystems()
 										}
-										getTeamSettings={() => teamService.getTeamSettings(team.id)}
+										getTeamSettings={() =>
+											teamService.getTeamSettings(team.id).then(settingsLoaded)
+										}
 										saveTeamSettings={saveTeamSettings}
 										validateTeamSettings={(settings) =>
 											teamService.validateTeamSettings(settings)

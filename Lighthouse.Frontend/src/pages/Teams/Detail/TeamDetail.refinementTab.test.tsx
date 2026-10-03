@@ -78,34 +78,56 @@ vi.mock("./Refinement/RefinementView", () => ({
 	default: () => <div data-testid="team-refinement-view" />,
 }));
 
-// Stands in for the settings form: one button that saves the Team's settings with Backlog chosen as
-// its refinement state, through the same save the real form is handed.
-vi.mock("../../../components/Common/Team/ModifyTeamSettings", () => ({
-	default: ({
+// Stands in for the settings form: saves the Team's settings with Backlog chosen as its refinement
+// state, through the same save the real form is handed, and says when its saves are over. The second
+// button saves twice, the second save started from inside the first one's resolution, the way the real
+// form sends an edit made while a save was still on its way.
+vi.mock("../../../components/Common/Team/ModifyTeamSettings", async () => {
+	const { useState } = await import("react");
+
+	const withBacklogChosen = (settings: ITeamSettings): ITeamSettings => ({
+		...settings,
+		refinement: { states: [{ state: "Backlog" }] },
+	});
+
+	const SettingsFormStandIn = ({
 		getTeamSettings,
 		saveTeamSettings,
 	}: {
 		getTeamSettings: () => Promise<ITeamSettings>;
-		saveTeamSettings: (settings: ITeamSettings) => Promise<void>;
-	}) => (
-		<button
-			type="button"
-			onClick={async () => {
-				const settings = await getTeamSettings();
-				try {
-					await saveTeamSettings({
-						...settings,
-						refinement: { states: [{ state: "Backlog" }] },
-					});
-				} catch {
-					// The page under test owns what a refused save shows; the stand-in only stops it escaping.
+		saveTeamSettings: (settings: ITeamSettings) => Promise<ITeamSettings>;
+	}) => {
+		const [savesOver, setSavesOver] = useState(0);
+
+		const saveBacklog = async (times: number) => {
+			const settings = withBacklogChosen(await getTeamSettings());
+			try {
+				let chain = saveTeamSettings(settings);
+				for (let again = 1; again < times; again++) {
+					chain = chain.then(() => saveTeamSettings(settings));
 				}
-			}}
-		>
-			Save Backlog as a refinement state
-		</button>
-	),
-}));
+				await chain;
+			} catch {
+				// The page under test owns what a refused save shows; the stand-in only stops it escaping.
+			}
+			setSavesOver((count) => count + 1);
+		};
+
+		return (
+			<>
+				<button type="button" onClick={() => saveBacklog(1)}>
+					Save Backlog as a refinement state
+				</button>
+				<button type="button" onClick={() => saveBacklog(2)}>
+					Save Backlog twice in a row
+				</button>
+				<output>{`Saves over: ${savesOver}`}</output>
+			</>
+		);
+	};
+
+	return { default: SettingsFormStandIn };
+});
 
 let mockParams: { id: string; tab?: string } = { id: "1", tab: "forecasts" };
 const mockNavigate = vi.fn();
@@ -177,13 +199,17 @@ const renderTheTeamPage = ({
 	}
 	getTeam.mockResolvedValue(teamReads[teamReads.length - 1]);
 	teamService.getTeam = getTeam;
+	// The stored settings agree with the first Team read: a Team that says it has refinement states
+	// holds Backlog as one.
 	teamService.getTeamSettings = vi.fn().mockResolvedValue({
 		id: 1,
 		name: "Team Gravity",
 		toDoStates: ["Backlog"],
 		doingStates: ["Next", "Analysing"],
 		doneStates: ["Done"],
-		refinement: null,
+		refinement: teamReads[0].refinementConfigured
+			? { states: [{ state: "Backlog" }] }
+			: null,
 	});
 	teamService.updateTeam = saveRefused
 		? vi.fn().mockRejectedValue(new Error("refused"))
@@ -222,6 +248,14 @@ const renderTheTeamPage = ({
 
 const theRefinementTab = async (name = "Refinement") =>
 	screen.findByRole("tab", { name });
+
+const reportsOfRefinementSetUp = () =>
+	reportUsage.mock.calls.filter(
+		([use]) => use.name === TEAM_REFINEMENT_CONFIGURED,
+	);
+
+const theSavesAreOver = async (count = 1) =>
+	screen.findByText(`Saves over: ${count}`);
 
 const theTooltipOf = async (tab: HTMLElement, label: string) => {
 	fireEvent.mouseOver(within(tab).getByText(label));
@@ -386,16 +420,26 @@ describe("Choosing the first refinement states switches the tab on", () => {
 			}),
 		);
 
-		await waitFor(() =>
-			expect(reportUsage).toHaveBeenCalledWith({
-				name: TEAM_REFINEMENT_CONFIGURED,
-			}),
+		await theSavesAreOver();
+		expect(reportsOfRefinementSetUp()).toHaveLength(1);
+	});
+
+	// @us-01 @slice-01 @kpi-OUT-5510-K1-refinement-set-up @error @contract-shape:bounded-change
+	// An edit made while a save is on its way is sent as soon as that save is answered, before the page
+	// has drawn the answer, so the second save must not still believe the Team had no refinement states.
+	it("reports it once when a second save follows straight on from the first", async () => {
+		renderTheTeamPage({
+			viewer: "teamAdmin",
+			teamReads: [aTeam(false), aTeam(true), aTeam(true)],
+		});
+		await theRefinementTab();
+
+		await userEvent.click(
+			screen.getByRole("button", { name: "Save Backlog twice in a row" }),
 		);
-		expect(
-			reportUsage.mock.calls.filter(
-				([use]) => use.name === TEAM_REFINEMENT_CONFIGURED,
-			),
-		).toHaveLength(1);
+
+		await theSavesAreOver();
+		expect(reportsOfRefinementSetUp()).toHaveLength(1);
 	});
 
 	// @us-01 @slice-01 @kpi-OUT-5510-K1-refinement-set-up @error @contract-shape:bounded-change
@@ -413,10 +457,9 @@ describe("Choosing the first refinement states switches the tab on", () => {
 			}),
 		);
 
-		await waitFor(() => expect(teamService.updateTeam).toHaveBeenCalled());
-		expect(reportUsage).not.toHaveBeenCalledWith({
-			name: TEAM_REFINEMENT_CONFIGURED,
-		});
+		await theSavesAreOver();
+		expect(teamService.updateTeam).toHaveBeenCalled();
+		expect(reportsOfRefinementSetUp()).toHaveLength(0);
 	});
 
 	// @us-01 @slice-01 @kpi-OUT-5510-K1-refinement-set-up @error @contract-shape:bounded-change
@@ -434,10 +477,9 @@ describe("Choosing the first refinement states switches the tab on", () => {
 			}),
 		);
 
-		await waitFor(() => expect(teamService.updateTeam).toHaveBeenCalled());
-		expect(reportUsage).not.toHaveBeenCalledWith({
-			name: TEAM_REFINEMENT_CONFIGURED,
-		});
+		await theSavesAreOver();
+		expect(teamService.updateTeam).toHaveBeenCalled();
+		expect(reportsOfRefinementSetUp()).toHaveLength(0);
 		expect(await theRefinementTab()).toBeDisabled();
 	});
 });

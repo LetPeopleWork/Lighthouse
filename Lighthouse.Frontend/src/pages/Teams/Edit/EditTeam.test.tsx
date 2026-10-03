@@ -32,13 +32,33 @@ vi.mock("../../../components/Common/CreateWizards/CreateTeamWizard", () => ({
 	default: () => <div data-testid="create-team-wizard">CreateTeamWizard</div>,
 }));
 
-const renderedForm = vi.hoisted(() => ({
-	getTeamSettings: undefined as undefined | (() => Promise<ITeamSettings>),
+const { renderedForm, reportUsage } = vi.hoisted(() => ({
+	renderedForm: {
+		getTeamSettings: undefined as undefined | (() => Promise<ITeamSettings>),
+		saveTeamSettings: undefined as
+			| undefined
+			| ((settings: ITeamSettings) => Promise<ITeamSettings>),
+	},
+	reportUsage: vi.fn(),
 }));
 
+vi.mock(
+	"../../../services/UsageData/usageDataReporter",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("../../../services/UsageData/usageDataReporter")
+		>()),
+		useUsageDataReporter: () => reportUsage,
+	}),
+);
+
 vi.mock("../../../components/Common/Team/ModifyTeamSettings", () => ({
-	default: (props: { getTeamSettings: () => Promise<ITeamSettings> }) => {
+	default: (props: {
+		getTeamSettings: () => Promise<ITeamSettings>;
+		saveTeamSettings: (settings: ITeamSettings) => Promise<ITeamSettings>;
+	}) => {
 		renderedForm.getTeamSettings = props.getTeamSettings;
+		renderedForm.saveTeamSettings = props.saveTeamSettings;
 		return <div data-testid="modify-team-settings">ModifyTeamSettings</div>;
 	},
 }));
@@ -79,6 +99,7 @@ const mockTeamService = {
 	validateTeamSettings: vi.fn(),
 	createTeam: vi.fn(),
 	updateTeam: vi.fn(),
+	updateTeamData: vi.fn(),
 };
 
 const mockSettingsService = {
@@ -131,6 +152,7 @@ describe("EditTeam", () => {
 		mockParams = { id: undefined };
 		mockRbacGate = { allowed: true, isLoading: false };
 		renderedForm.getTeamSettings = undefined;
+		renderedForm.saveTeamSettings = undefined;
 		// Reset globalThis.location.search
 		globalThis.location.search = "";
 		mockSettingsService.getDefaultTeamSettings.mockResolvedValue({
@@ -248,6 +270,71 @@ describe("EditTeam", () => {
 				id: 0,
 				name: "Copy of Platform Team",
 			});
+		});
+	});
+
+	describe("reporting that a Team's refinement was set up", () => {
+		const TEAM_REFINEMENT_CONFIGURED = "TeamRefinementConfigured";
+
+		const storedSettings = {
+			id: 7,
+			name: "Team Gravity",
+			toDoStates: ["Backlog"],
+			doingStates: ["Next"],
+			doneStates: ["Done"],
+			refinement: null,
+		} as unknown as ITeamSettings;
+
+		const withBacklogChosen = (settings: ITeamSettings): ITeamSettings => ({
+			...settings,
+			refinement: { states: [{ state: "Backlog" }] },
+		});
+
+		const saveBacklogThroughForm = async () => {
+			await waitFor(() => {
+				expect(renderedForm.saveTeamSettings).toBeDefined();
+			});
+			const loaded = await renderedForm.getTeamSettings?.();
+			if (loaded === undefined) {
+				throw new Error("The form loaded no settings.");
+			}
+			return renderedForm.saveTeamSettings?.(withBacklogChosen(loaded));
+		};
+
+		const reportsOfRefinementSetUp = () =>
+			reportUsage.mock.calls.filter(
+				([use]) => use.name === TEAM_REFINEMENT_CONFIGURED,
+			);
+
+		it("reports it when the edit form saves the first refinement states of a Team", async () => {
+			mockParams = { id: "7" };
+			mockTeamService.getTeamSettings.mockResolvedValue(storedSettings);
+			mockTeamService.updateTeam.mockImplementation(
+				async (settings: ITeamSettings) => settings,
+			);
+
+			renderEditTeamWithContext();
+			await saveBacklogThroughForm();
+
+			expect(reportsOfRefinementSetUp()).toHaveLength(1);
+		});
+
+		// Copying a Team that has refinement states copies a choice somebody already made.
+		it("reports nothing when a clone is created with refinement states", async () => {
+			globalThis.location.search = "?cloneFrom=7";
+			mockGet.mockImplementation((key: string) =>
+				key === "cloneFrom" ? "7" : null,
+			);
+			mockTeamService.getTeamSettings.mockResolvedValue(storedSettings);
+			mockTeamService.createTeam.mockImplementation(
+				async (settings: ITeamSettings) => ({ ...settings, id: 8 }),
+			);
+
+			renderEditTeamWithContext();
+			await saveBacklogThroughForm();
+
+			expect(mockTeamService.createTeam).toHaveBeenCalled();
+			expect(reportsOfRefinementSetUp()).toHaveLength(0);
 		});
 	});
 

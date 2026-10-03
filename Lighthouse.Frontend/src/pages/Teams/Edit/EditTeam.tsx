@@ -7,6 +7,7 @@ import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandle
 import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettings";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useRbacGate } from "../../../hooks/useRbacGate";
+import { useRefinementSetUpReporter } from "../../../hooks/useRefinementSetUpReporter";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -21,6 +22,7 @@ const EditTeamPage: React.FC = () => {
 	const navigate = useNavigate();
 	const gate = useRbacGate({ kind: "systemAdmin" });
 	const reportUsage = useUsageDataReporter();
+	const { settingsLoaded, settingsSaved } = useRefinementSetUpReporter();
 
 	const cloneFromId = Number.parseInt(
 		new URLSearchParams(globalThis.location.search).get("cloneFrom") ?? "",
@@ -47,12 +49,15 @@ const EditTeamPage: React.FC = () => {
 	const saveTeamSettings = async (updatedSettings: ITeamSettings) => {
 		let newSettings: ITeamSettings;
 		if (isNewTeam) {
+			// A clone copies refinement states somebody already chose, so creating a Team never counts as setting it up.
 			newSettings = await teamService.createTeam(updatedSettings);
 			reportUsage({ name: UsageDataEventName.TeamCreated });
 			await teamService.updateTeamData(newSettings.id);
 			reportFailedNavigation(navigate(`/teams/${newSettings.id}/settings`));
 		} else {
-			newSettings = await teamService.updateTeam(updatedSettings);
+			newSettings = settingsSaved(
+				await teamService.updateTeam(updatedSettings),
+			);
 			reportFailedNavigation(navigate(`/teams/${newSettings.id}`));
 		}
 		return newSettings;
@@ -60,7 +65,9 @@ const EditTeamPage: React.FC = () => {
 
 	const getTeamSettings = async (): Promise<ITeamSettings> => {
 		if (id !== undefined) {
-			return await teamService.getTeamSettings(Number.parseInt(id, 10));
+			return settingsLoaded(
+				await teamService.getTeamSettings(Number.parseInt(id, 10)),
+			);
 		}
 
 		const sourceSettings = await teamService.getTeamSettings(cloneFromId);
