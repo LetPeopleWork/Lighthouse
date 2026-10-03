@@ -43,7 +43,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // The fallback samples the same window the Team's Throughput does, so old slow work does not
         // inflate the question.
         [Test]
-        [Ignore(PendingSlice10)]
         public async Task Work_Items_finished_before_the_Throughput_window_do_not_move_the_fallback()
         {
             var meridian = await GivenMeridianHasNoSleAndItsCycleTimes85thPercentileIsTwelveDays();
@@ -56,7 +55,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-10 @slice-10 @error @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice10)]
         public async Task No_SLE_and_no_finished_Work_Items_leaves_the_question_without_a_number()
         {
             var equinox = await GivenEquinoxHasNoSleAndHasFinishedNothing();
@@ -68,7 +66,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-10 @slice-10 @boundary @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice10)]
         public async Task Work_finished_only_before_the_Throughput_window_counts_as_nothing_finished()
         {
             var equinox = await GivenEquinoxHasNoSleAndHasFinishedNothing();

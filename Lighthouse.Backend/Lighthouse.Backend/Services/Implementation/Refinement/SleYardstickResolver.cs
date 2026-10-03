@@ -26,7 +26,9 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 .GetCycleTimePercentilesForTeam(team, window.StartDate, window.EndDate)
                 .FirstOrDefault(percentile => percentile.Percentile == FallbackPercentile);
 
-            if (fallback is null)
+            // With nothing finished in the window the percentile comes back as zero days, which is not a
+            // number anyone could size against.
+            if (fallback is null || fallback.Value <= 0)
             {
                 return Yardstick.None;
             }

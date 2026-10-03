@@ -52,6 +52,47 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         }
 
         [Test]
+        public void NoPercentilesAtAllLeaveTheYardstickWithoutANumber()
+        {
+            GivenTheCycleTimePercentiles();
+
+            var yardstick = subject.For(new Team());
+
+            Assert.That(yardstick, Is.EqualTo(new Yardstick(YardstickSource.Unavailable, null, null)));
+        }
+
+        [Test]
+        public void PercentilesWithoutAn85thEntryLeaveTheYardstickWithoutANumber()
+        {
+            GivenTheCycleTimePercentiles(new PercentileValue(50, 5), new PercentileValue(70, 8), new PercentileValue(95, 20));
+
+            var yardstick = subject.For(new Team());
+
+            Assert.That(yardstick, Is.EqualTo(new Yardstick(YardstickSource.Unavailable, null, null)));
+        }
+
+        [TestCase(0)]
+        [TestCase(-1)]
+        public void AnEmpty85thPercentileMeansNothingFinishedAndLeavesTheYardstickWithoutANumber(int days)
+        {
+            GivenTheCycleTimePercentiles(new PercentileValue(50, days), new PercentileValue(70, days), new PercentileValue(85, days), new PercentileValue(95, days));
+
+            var yardstick = subject.For(new Team());
+
+            Assert.That(yardstick, Is.EqualTo(new Yardstick(YardstickSource.Unavailable, null, null)));
+        }
+
+        [Test]
+        public void TheSmallestRealCycleTimeIsStillAFallback()
+        {
+            GivenTheCycleTimePercentiles(new PercentileValue(85, 1));
+
+            var yardstick = subject.For(new Team());
+
+            Assert.That(yardstick, Is.EqualTo(new Yardstick(YardstickSource.CycleTimeFallback, 1, 85)));
+        }
+
+        [Test]
         public void TheFallbackSamplesTheTeamsRollingThroughputWindow()
         {
             var team = new Team { ThroughputHistory = 30 };
