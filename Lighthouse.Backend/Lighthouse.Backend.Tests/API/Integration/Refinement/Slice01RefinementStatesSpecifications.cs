@@ -62,6 +62,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private async Task<HttpResponseMessage> WhenTheAdminStopsMappingAnalysingWhileStillChoosingIt(TeamUnderTest team)
             => await SaveTheTeamSettingsChoosing(team with { DoingStates = [.. DoingWithoutAnalysing] }, Backlog, Analysing, Next);
 
+        private async Task<HttpResponseMessage> WhenATeamIsCreatedLike(TeamUnderTest team, params string[] states)
+            => await CreateATeamLike(team, "Team Gravity Two", states);
+
+        private static async Task<JsonElement> TheSettingsAnswerOf(HttpResponseMessage save)
+        {
+            using var document = JsonDocument.Parse(await save.Content.ReadAsStringAsync());
+            return document.RootElement.Clone();
+        }
+
         // --- Then ---
 
         private static async Task ThenTheSaveIsAccepted(HttpResponseMessage save)

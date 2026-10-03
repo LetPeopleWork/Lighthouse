@@ -187,8 +187,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 StartedDaysAgo: index % 10);
         }
 
-        private void TheCallerAdministersTheWholeInstance() => Client.AsSystemAdmin();
-
         /// <summary>
         /// Checked first so that the "not found" after it is about who is asking, or which Team, and not
         /// about a tab that answers nobody.

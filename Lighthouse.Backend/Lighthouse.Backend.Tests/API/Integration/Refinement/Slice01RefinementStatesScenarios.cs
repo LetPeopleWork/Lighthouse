@@ -109,6 +109,32 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         }
 
         // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
+        // Creating a Team is the same settings form, so it refuses what a save of an existing Team refuses.
+        [Test]
+        public async Task Creating_a_Team_with_a_state_that_is_neither_To_Do_nor_Doing_is_refused()
+        {
+            var gravity = GivenTeamGravityWithNoRefinementStates();
+            TheCallerAdministersTheWholeInstance();
+
+            var create = await WhenATeamIsCreatedLike(gravity, Backlog, Done);
+
+            await ThenTheSaveIsRefusedNaming(create, Done);
+        }
+
+        // @driving_port @real-io @us-01 @slice-01 @contract-shape:bounded-change
+        [Test]
+        public async Task Creating_a_Team_keeps_the_refinement_states_it_was_created_with()
+        {
+            var gravity = GivenTeamGravityWithNoRefinementStates();
+            TheCallerAdministersTheWholeInstance();
+
+            var create = await WhenATeamIsCreatedLike(gravity, Backlog, Next);
+
+            await ThenTheSaveIsAccepted(create);
+            ThenTheChosenStatesAre(await TheSettingsAnswerOf(create), Backlog, Next);
+        }
+
+        // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task Only_a_Team_admin_can_change_the_refinement_states()
         {

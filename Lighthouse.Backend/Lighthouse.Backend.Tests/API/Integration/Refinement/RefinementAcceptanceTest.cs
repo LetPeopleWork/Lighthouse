@@ -224,6 +224,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         protected void TheCallerHasNoRoleOnTheTeam() => Client.AsViewer();
 
+        protected void TheCallerAdministersTheWholeInstance() => Client.AsSystemAdmin();
+
         // --- What the admin has already saved ---
 
         /// <summary>The Team's admin has saved these refinement states, and the save was accepted.</summary>
@@ -265,6 +267,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             };
 
             return await PutTheTeamSettings(team, payload);
+        }
+
+        /// <summary>A new Team created from the given Team's settings form, under another name, with these refinement states chosen.</summary>
+        protected async Task<HttpResponseMessage> CreateATeamLike(TeamUnderTest team, string name, params string[] refinementStates)
+        {
+            var payload = TheTeamSettingsFormFor(team with { Name = name });
+            payload["refinement"] = new JsonObject
+            {
+                ["states"] = new JsonArray([.. refinementStates.Select(state => (JsonNode)new JsonObject { ["state"] = state })]),
+            };
+
+            return await Client.PostAsync(
+                "/api/latest/teams",
+                new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json"));
         }
 
         /// <summary>The Team settings form saved by a client that says nothing about refinement at all.</summary>
