@@ -129,9 +129,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             await subject.Seed();
 
             var entries = DatabaseContext.TerminologyEntries.ToList();
-            
-            // Should have exactly 21 terminology entries
-            Assert.That(entries, Has.Count.EqualTo(21));
+
+            Assert.That(entries, Has.Count.EqualTo(23));
         }
 
         [Test]
@@ -146,7 +145,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
 
             // Assert
             var entries = DatabaseContext.TerminologyEntries.ToList();
-            Assert.That(entries, Has.Count.EqualTo(21)); // Should still be 21, not duplicated
+            Assert.That(entries, Has.Count.EqualTo(23)); // Should still be 23, not duplicated
         }
 
         [Test]

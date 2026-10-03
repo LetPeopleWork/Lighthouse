@@ -90,6 +90,8 @@ const theWordsAFreshInstallIsSeededWith: ReadonlyArray<
 	["portfolios", "Portfolios"],
 	["delivery", "Delivery"],
 	["deliveries", "Deliveries"],
+	["refinement", "Refinement"],
+	["refinements", "Refinements"],
 ];
 
 const theKey = ([key]: readonly [string, string]) => key;

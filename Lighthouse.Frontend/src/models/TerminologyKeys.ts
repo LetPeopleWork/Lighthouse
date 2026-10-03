@@ -24,6 +24,8 @@ export const TERMINOLOGY_KEYS = {
 	PORTFOLIOS: "portfolios",
 	DELIVERY: "delivery",
 	DELIVERIES: "deliveries",
+	REFINEMENT: "refinement",
+	REFINEMENTS: "refinements",
 } as const;
 
 export type TerminologyKey =

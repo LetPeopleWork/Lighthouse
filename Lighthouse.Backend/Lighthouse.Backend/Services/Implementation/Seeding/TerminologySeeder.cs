@@ -149,6 +149,18 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                     Key = "deliveries",
                     DefaultValue = "Deliveries",
                     Description = "Plural form of 'Delivery'"
+                },
+                new TerminologyEntry
+                {
+                    Key = "refinement",
+                    DefaultValue = "Refinement",
+                    Description = "The stage where 'Work Items' are clarified and prepared before work on them starts. Alternatives may be 'Grooming' or 'Preparation'"
+                },
+                new TerminologyEntry
+                {
+                    Key = "refinements",
+                    DefaultValue = "Refinements",
+                    Description = "Plural form of 'Refinement'"
                 }
             };
 

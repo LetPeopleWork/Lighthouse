@@ -210,7 +210,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-02 @slice-01 @contract-shape:pure-function
         // The tab, its heading and its tooltip all say the Team's own word; the word has to exist to be renamed.
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task Refinement_is_a_word_every_instance_can_rename()
         {
             TheCallerHasNoRoleOnTheTeam();

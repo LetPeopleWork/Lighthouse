@@ -34,6 +34,8 @@ const defaultTerminologyMap: Record<string, string> = {
 	[TERMINOLOGY_KEYS.PORTFOLIOS]: "Portfolios",
 	[TERMINOLOGY_KEYS.DELIVERY]: "Delivery",
 	[TERMINOLOGY_KEYS.DELIVERIES]: "Deliveries",
+	[TERMINOLOGY_KEYS.REFINEMENT]: "Refinement",
+	[TERMINOLOGY_KEYS.REFINEMENTS]: "Refinements",
 };
 
 // What the product calls something before this instance has said otherwise - the same words a fresh
