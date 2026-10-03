@@ -1374,6 +1374,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IForecastService, ForecastService>();
             builder.Services.AddScoped<IForecastRealityCheckService, ForecastRealityCheckService>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Implementation.Refinement.RefinementList>();
+            builder.Services.AddScoped<Lighthouse.Backend.Services.Implementation.Refinement.SleYardstickResolver>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.Refinement.IRefinementViewQuery, Lighthouse.Backend.Services.Implementation.Refinement.RefinementViewQuery>();
             builder.Services.AddScoped<IFeaturePositionMap, FeaturePositionMap>();
             builder.Services.AddScoped<IFeatureOrderingPolicyProvider, FeatureOrderingPolicyProvider>();

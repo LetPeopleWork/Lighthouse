@@ -30,7 +30,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-10 @slice-10 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice10)]
         public async Task Without_an_SLE_the_yardstick_is_the_85th_percentile_of_the_Teams_cycle_time()
         {
             var meridian = await GivenMeridianHasNoSleAndItsCycleTimes85thPercentileIsTwelveDays();
@@ -84,7 +83,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // An SLE needs both a probability and a number of days; either one alone is not a promise.
         [TestCase(85, 0)]
         [TestCase(0, 7)]
-        [Ignore(PendingSlice10)]
         public async Task Half_an_SLE_is_no_SLE_and_the_fallback_is_used(int probability, int days)
         {
             var meridian = await GivenMeridianWithAHalfSetSleAndCycleTimes85thPercentileOfTwelveDays(probability, days);
@@ -109,7 +107,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-10 @slice-10 @boundary @contract-shape:pure-function
         // The question is the same whoever asks: the yardstick is the Team's, not the reader's.
         [Test]
-        [Ignore(PendingSlice10)]
         public async Task Every_voter_is_shown_the_same_yardstick()
         {
             var meridian = await GivenMeridianHasNoSleAndItsCycleTimes85thPercentileIsTwelveDays();

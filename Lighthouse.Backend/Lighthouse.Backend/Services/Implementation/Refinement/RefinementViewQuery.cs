@@ -4,7 +4,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation.Refinement
 {
-    public sealed class RefinementViewQuery(IRepository<Team> teamRepository, RefinementList refinementList) : IRefinementViewQuery
+    public sealed class RefinementViewQuery(IRepository<Team> teamRepository, RefinementList refinementList, SleYardstickResolver yardstickResolver) : IRefinementViewQuery
     {
         public RefinementView? ForTeam(int teamId)
         {
@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 return null;
             }
 
-            return new RefinementView(team.HasRefinementStates, refinementList.For(team), SleYardstickResolver.For(team));
+            return new RefinementView(team.HasRefinementStates, refinementList.For(team), yardstickResolver.For(team));
         }
     }
 }
