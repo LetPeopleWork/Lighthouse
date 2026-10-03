@@ -29,6 +29,7 @@ export const UsageDataEventName = {
 	PortfolioRefreshTriggered: "PortfolioRefreshTriggered",
 	OptionalFeatureToggled: "OptionalFeatureToggled",
 	TeamForecastRealityCheckRun: "TeamForecastRealityCheckRun",
+	TeamRefinementConfigured: "TeamRefinementConfigured",
 } as const;
 
 export type UsageDataEventName =

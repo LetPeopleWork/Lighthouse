@@ -206,21 +206,13 @@ const TeamDetail: React.FC = () => {
 	const fetchTeam = useCallback(async () => {
 		setHasNoAccess(false);
 
-		try {
-			const teamData = await teamService.getTeam(teamId);
+		const teamData = await teamService.getTeam(teamId).catch(() => undefined);
 
-			if (teamData) {
-				setTeam(teamData);
-			} else {
-				setTeam(undefined);
-				setHasNoAccess(true);
-			}
-		} catch {
-			setTeam(undefined);
-			setHasNoAccess(true);
-		}
-
+		setTeam(teamData ?? undefined);
+		setHasNoAccess(!teamData);
 		setIsLoading(false);
+
+		return teamData;
 	}, [teamService, teamId]);
 
 	const updateTeamSettings = useCallback(
@@ -250,13 +242,19 @@ const TeamDetail: React.FC = () => {
 
 	// The settings form saves without leaving Settings, so the Team is read again right after an
 	// accepted save: anything the saved settings switch on, such as the Refinement tab, shows at once.
+	// Usage data counts Teams getting refinement set up, not saves, so only the save that switches it
+	// on reports it.
 	const saveTeamSettings = useCallback(
 		async (settings: ITeamSettings) => {
+			const wasRefinementConfigured = team?.refinementConfigured ?? false;
 			const savedSettings = await teamService.updateTeam(settings);
-			await fetchTeam();
+			const savedTeam = await fetchTeam();
+			if (!wasRefinementConfigured && savedTeam?.refinementConfigured) {
+				reportUsage({ name: UsageDataEventName.TeamRefinementConfigured });
+			}
 			return savedSettings;
 		},
-		[teamService, fetchTeam],
+		[team, teamService, fetchTeam, reportUsage],
 	);
 
 	const onUpdateTeamData = async () => {

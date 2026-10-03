@@ -373,7 +373,7 @@ describe("Choosing the first refinement states switches the tab on", () => {
 	});
 
 	// @us-01 @slice-01 @kpi-OUT-5510-K1-refinement-set-up @contract-shape:bounded-change
-	it.skip("reports that the Team's refinement was set up, once", async () => {
+	it("reports that the Team's refinement was set up, once", async () => {
 		renderTheTeamPage({
 			viewer: "teamAdmin",
 			teamReads: [aTeam(false), aTeam(true)],
@@ -400,7 +400,7 @@ describe("Choosing the first refinement states switches the tab on", () => {
 
 	// @us-01 @slice-01 @kpi-OUT-5510-K1-refinement-set-up @error @contract-shape:bounded-change
 	// The event counts Teams being set up, not saves; every later autosave would otherwise count again.
-	it.skip("reports nothing when a Team that already had refinement states is saved again", async () => {
+	it("reports nothing when a Team that already had refinement states is saved again", async () => {
 		const { teamService } = renderTheTeamPage({
 			viewer: "teamAdmin",
 			teamReads: [aTeam(true), aTeam(true)],
@@ -420,7 +420,7 @@ describe("Choosing the first refinement states switches the tab on", () => {
 	});
 
 	// @us-01 @slice-01 @kpi-OUT-5510-K1-refinement-set-up @error @contract-shape:bounded-change
-	it.skip("reports nothing and keeps the tab switched off when the save is refused", async () => {
+	it("reports nothing and keeps the tab switched off when the save is refused", async () => {
 		const { teamService } = renderTheTeamPage({
 			viewer: "teamAdmin",
 			teamReads: [aTeam(false)],
