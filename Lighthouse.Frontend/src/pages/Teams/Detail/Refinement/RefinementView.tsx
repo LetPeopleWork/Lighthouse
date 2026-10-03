@@ -19,6 +19,7 @@ import type { Team } from "../../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../services/TerminologyContext";
+import YardstickQuestion from "./YardstickQuestion";
 
 type RefinementGridRow = IRefinementRow & GridValidRowModel;
 
@@ -117,6 +118,9 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 			<Typography variant="h6" component="h2">
 				{`${count} ${workItemsTerm} in ${refinementTerm}`}
 			</Typography>
+			{refinement.yardstick && (
+				<YardstickQuestion yardstick={refinement.yardstick} getTerm={getTerm} />
+			)}
 			<TableContainer component={Paper}>
 				<DataGridBase<RefinementGridRow>
 					rows={workItems as RefinementGridRow[]}

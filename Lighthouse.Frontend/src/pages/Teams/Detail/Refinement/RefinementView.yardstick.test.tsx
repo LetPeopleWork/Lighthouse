@@ -100,17 +100,17 @@ describe("The Refinement tab asks one question against one number", () => {
 	});
 
 	// @us-10 @slice-10 @driving_port @contract-shape:pure-function
-	it.skip("asks whether a Work Item is doable within the Team's SLE and says the SLE in the tooltip", async () => {
+	it("asks whether a Work Item is doable within the Team's SLE and says the SLE in the tooltip", async () => {
 		const { user } = renderWithTheYardstick(SLE_75_WITHIN_7);
 
 		expect(await theQuestion("Doable within 7 days?")).toBeVisible();
 		expect(
-			await theTooltipShownFor(user, "SLE 75% of items in 7 days or less"),
-		).toHaveTextContent("SLE 75% of items in 7 days or less");
+			await theTooltipShownFor(user, "SLE 75% of work items in 7 days or less"),
+		).toHaveTextContent("SLE 75% of work items in 7 days or less");
 	});
 
 	// @us-10 @slice-10 @contract-shape:pure-function
-	it.skip("without an SLE asks against the fallback and says in the tooltip that it is one", async () => {
+	it("without an SLE asks against the fallback and says in the tooltip that it is one", async () => {
 		const { user } = renderWithTheYardstick(FALLBACK_OF_12);
 
 		expect(await theQuestion("Doable within 12 days?")).toBeVisible();
@@ -123,7 +123,7 @@ describe("The Refinement tab asks one question against one number", () => {
 	});
 
 	// @us-10 @slice-10 @error @contract-shape:pure-function
-	it.skip("without an SLE or finished Work Items asks without a number and says why in the tooltip", async () => {
+	it("without an SLE or finished Work Items asks without a number and says why in the tooltip", async () => {
 		const { user } = renderWithTheYardstick(NOTHING_TO_GO_ON);
 
 		expect(await theQuestion("Doable within our SLE?")).toBeVisible();
@@ -180,7 +180,7 @@ describe("The Refinement tab asks one question against one number", () => {
 		[
 			SLE_75_WITHIN_7,
 			"Doable within 7 days?",
-			"Delivery promise 75% of items in 7 days or less",
+			"Delivery promise 75% of tickets in 7 days or less",
 		],
 		[
 			FALLBACK_OF_12,
