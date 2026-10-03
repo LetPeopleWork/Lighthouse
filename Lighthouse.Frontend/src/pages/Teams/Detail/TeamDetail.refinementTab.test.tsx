@@ -314,7 +314,7 @@ describe("The Refinement tab on a Team page", () => {
 	});
 
 	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
-	it.skip("opens the Refinement view and puts the tab in the address", async () => {
+	it("opens the Refinement view and puts the tab in the address", async () => {
 		renderTheTeamPage({ viewer: "reader", teamReads: [aTeam(true)] });
 
 		await userEvent.click(await theRefinementTab());
@@ -326,7 +326,7 @@ describe("The Refinement tab on a Team page", () => {
 	});
 
 	// @us-02 @slice-02 @contract-shape:pure-function
-	it.skip("opens straight onto the Refinement view from an address that names it", async () => {
+	it("opens straight onto the Refinement view from an address that names it", async () => {
 		mockParams = { id: "1", tab: "refinement" };
 		renderTheTeamPage({ viewer: "reader", teamReads: [aTeam(true)] });
 

@@ -40,6 +40,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 import { reportFailedNavigation } from "../../../utils/navigation";
+import RefinementView from "./Refinement/RefinementView";
 import TeamFeaturesView from "./TeamFeaturesView";
 import TeamForecastView from "./TeamForecastView";
 import TeamMetricsView from "./TeamMetricsView";
@@ -582,6 +583,10 @@ const TeamDetail: React.FC = () => {
 
 								{activeView === "metrics" && team && (
 									<TeamMetricsView team={team} />
+								)}
+
+								{activeView === "refinement" && team.refinementConfigured && (
+									<RefinementView team={team} />
 								)}
 
 								{activeView === "settings" && team && (
