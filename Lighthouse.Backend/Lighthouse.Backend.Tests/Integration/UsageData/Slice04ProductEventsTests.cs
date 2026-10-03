@@ -46,6 +46,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             "TeamRefreshTriggered",
             "PortfolioRefreshTriggered",
             "TeamForecastRealityCheckRun",
+            "TeamRefinementConfigured",
         ];
 
         /// <summary>

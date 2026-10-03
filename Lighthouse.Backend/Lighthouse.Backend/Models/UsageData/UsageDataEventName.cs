@@ -32,5 +32,7 @@ namespace Lighthouse.Backend.Models.UsageData
         OptionalFeatureToggled = 10,
 
         TeamForecastRealityCheckRun = 11,
+
+        TeamRefinementConfigured = 12,
     }
 }

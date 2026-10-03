@@ -17,8 +17,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     [Category("epic-5510-5881-refinement")]
     public class TeamRefinementUsageEventsTests : UsageDataCollectorObservationTest
     {
-        private const string PendingSlice01 = "Epic #6136 slice 01 (#6139) - pending DELIVER";
-
         private const string PendingSlice02 = "Epic #6136 slice 02 (#6140) - pending DELIVER";
 
         private const string TeamRefinementConfigured = "TeamRefinementConfigured";
@@ -43,7 +41,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @driving_port @real-io @us-01 @slice-01 @kpi-OUT-5510-K1-refinement-set-up @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task A_browser_that_agreed_reports_refinement_being_set_up_as_one_event_carrying_only_its_name()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -68,7 +65,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         [TestCase(",\"route\":\"" + TeamMetricsTab + "\"")]
         [TestCase(",\"workTrackingSystem\":\"Jira\"")]
-        [Ignore(PendingSlice01)]
         public async Task A_refinement_set_up_event_carrying_anything_but_its_name_is_refused(string somethingExtra)
         {
             var token = await ABrowserThatAgreedAsync();
@@ -94,7 +90,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// </summary>
         // @us-01 @slice-01 @kpi-OUT-5510-K1-refinement-set-up @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice01)]
         public void Refinement_being_set_up_is_appended_to_the_list_of_names_never_inserted()
         {
             var vocabulary = typeof(Backend.Program).Assembly.GetTypes()
