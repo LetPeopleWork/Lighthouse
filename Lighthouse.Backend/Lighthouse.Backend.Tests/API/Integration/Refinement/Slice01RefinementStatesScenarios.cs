@@ -80,6 +80,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheChosenStatesAre(await ReadTheTeamSettings(team), Refining);
         }
 
+        // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:bounded-change
+        // States match whatever their case, so the same state sent twice in different case is one choice.
+        [Test]
+        public async Task A_state_chosen_twice_in_different_case_is_kept_once()
+        {
+            var gravity = GivenTeamGravityWithNoRefinementStates();
+            TheCallerAdministersTheTeam(gravity);
+
+            var save = await WhenTheAdminChoosesRefinementStates(gravity, Backlog, "backlog", Next);
+
+            await ThenTheSaveIsAccepted(save);
+            ThenTheChosenStatesAre(await ReadTheTeamSettings(gravity), Backlog, Next);
+        }
+
         // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         // A Done state is finished work and an unmapped state never reaches the Team, so neither can mean refinement.
         [TestCase(Done)]

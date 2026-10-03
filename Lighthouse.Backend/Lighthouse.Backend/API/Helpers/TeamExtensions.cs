@@ -134,6 +134,7 @@ namespace Lighthouse.Backend.API.Helpers
             settings.States = chosen
                 .Select(state => candidates.GetValueOrDefault(state.Trim()))
                 .OfType<string>()
+                .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Select(state => new RefinementStateSetting { State = state })
                 .ToList();
 
