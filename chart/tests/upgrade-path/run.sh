@@ -2070,7 +2070,8 @@ chain_unremovable_leftover_never_stops_the_start() {
 }
 
 # Only scenarios that are implemented, in an order where each one's Given is made by itself or left by
-# one before it.
+# one before it. The legs are split by running time, about ten minutes each on a laptop, well inside the CI
+# job's limit; a scenario on a volume of its own can move to any leg that loads its images.
 readonly HAPPY=(
   fresh_install_starts_18_without_upgrading
   upgrade_plain_helm_upgrade_keeps_every_row
@@ -2083,18 +2084,18 @@ readonly HAPPY=(
   upgrade_by_rendered_manifests_keeps_every_row
   pin_back_after_upgrade_starts_on_kept_copy_and_warns
   reuse_values_stays_on_17_and_says_so
+  upgrade_after_unclean_stop_keeps_every_row
+  interrupted_upgrade_is_redone_from_start
+  foreign_upgrade_source_refuses_and_touches_nothing
 )
 
 readonly REFUSALS=(
-  upgrade_after_unclean_stop_keeps_every_row
   too_little_room_refuses_and_touches_nothing
   grown_volume_lets_refused_upgrade_proceed
   two_majors_behind_refuses_and_touches_nothing
   pinning_to_data_major_starts_without_other_step
   cleanup_then_rollback_refuses_empty_database
   newer_data_without_kept_copy_refuses
-  foreign_upgrade_source_refuses_and_touches_nothing
-  interrupted_upgrade_is_redone_from_start
   unreadable_original_copy_beside_upgraded_copy_is_refused
   rolled_back_copy_without_control_file_keeps_its_rows
 )
@@ -2110,13 +2111,11 @@ readonly CHAIN=(
   chain_pin_back_two_majors_refuses_and_touches_nothing
   chain_rollback_two_charts_fails_loudly
   chain_interrupted_second_upgrade_removes_nothing
-  chain_interrupted_removal_is_finished_by_next_start
   chain_unremovable_leftover_never_stops_the_start
-  chain_pin_back_after_cut_off_cleanup_keeps_pinned_data
 )
 
-# The slice 03 refusals, each on a volume of its own, in a leg of their own so neither chain leg comes near
-# the CI job's time limit.
+# The refusals on volumes the new chart upgraded, each on a volume of its own, and a pin-back that must not
+# remove anything.
 readonly CHAIN_REFUSALS=(
   chain_out_of_date_copy_counts_as_older_major_and_refuses
   chain_gap_from_a_copy_refuses_and_touches_nothing
@@ -2125,15 +2124,17 @@ readonly CHAIN_REFUSALS=(
   chain_cleanup_refuses_past_unreadable_copy_not_started
   chain_too_little_room_names_cleanup_and_touches_nothing
   chain_newer_copy_that_no_longer_counts_is_never_set_aside
+  chain_pin_back_after_cut_off_cleanup_keeps_pinned_data
 )
 
-# The documented cleanup on volumes from the chain, in a leg of its own for the same reason: each scenario
-# that removes the Postgres 17 copy leaves a volume the next one has to build again.
+# The documented cleanup and the removals an upgrade makes by itself, on volumes the new chart upgraded. Each
+# scenario that removes the Postgres 17 copy leaves a volume the next one has to build again.
 readonly CHAIN_CLEANUP=(
   chain_cleanup_removes_every_older_copy_and_reruns
   chain_cut_off_cleanup_is_finished_by_running_again
   chain_cleaned_volume_moves_on_and_removes_nothing
   chain_cleanup_refuses_past_unreadable_copy_even_with_placeholder
+  chain_interrupted_removal_is_finished_by_next_start
 )
 
 # The namespaces each scenario uses, its Givens included, so a namespace is deleted as soon as no later

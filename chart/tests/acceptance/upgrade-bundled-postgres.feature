@@ -1,8 +1,8 @@
 # Acceptance SSOT — story-6131-chart-postgres-major-upgrade (slices 01-03)
 # Executable via: helm-unittest (render assertions, @in-memory) in chart/tests/unit/, and the kind harness
-# chart/tests/upgrade-path/run.sh (@real-io), which the upgrade-path job in ci_chart.yml runs in groups:
-# `happy` and `refusals` for slices 01-02, `chain`, `chain-refusals` and `chain-cleanup` for slice 03. Every
-# scenario runs.
+# chart/tests/upgrade-path/run.sh (@real-io), which the upgrade-path job in ci_chart.yml runs in five legs:
+# `happy`, `refusals`, `chain`, `chain-refusals` and `chain-cleanup`. The legs are split by running time, not
+# by slice; run.sh lists the scenarios of each. Every scenario runs.
 #
 # State machine of the bundled database volume, as the upgrade step sees it on every pod start
 # (M = the image's major, D = the major of the data the volume was first initialised with):

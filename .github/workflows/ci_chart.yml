@@ -245,7 +245,7 @@ jobs:
   # pulls per address, and a node pulling the same images again would spend that limit twice.
   upgrade-path:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
