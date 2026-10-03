@@ -29,11 +29,17 @@ readonly CRASH_LOOP_RESTARTS=3
 readonly NOTHING_TO_UPGRADE="nothing to upgrade"
 readonly UPGRADING_17_TO_18="upgrading the Postgres 17 data in pgdata-17 to Postgres 18 in pgdata-18"
 
+# Both charts run the "before" chart's app. A newer app seeds rows of its own when it first starts, and
+# those would read as rows the database upgrade added; the harness checks the database, not the app.
+BEFORE_APP_VERSION="$(helm show chart "$BEFORE_CHART" | awk '/^appVersion:/ { gsub(/"/, "", $2); print $2; exit }')"
+readonly BEFORE_APP_VERSION
+
 # The install and every upgrade take exactly these values, so an upgrade never carries a value the
 # install did not have.
 ENCRYPTION_KEY="$(head -c 32 /dev/urandom | base64)"
 readonly ENCRYPTION_KEY
 readonly VALUES=(
+  --set image.tag="$BEFORE_APP_VERSION"
   --set ingress.enabled=false
   --set postgresql.auth.password=upgrade-path
   --set encryption.key="$ENCRYPTION_KEY"
@@ -57,20 +63,13 @@ the_one_line_with() {
   return
 }
 
-chart_app_version() {
-  local chart="$1"
-  helm show chart "$chart" | awk '/^appVersion:/ { gsub(/"/, "", $2); print $2; exit }'
-  return $?
-}
-
 # Pulls each image group $2 starts once into the local Docker and loads it into the kind node, so the node
 # never pulls from Docker Hub itself: its anonymous pull limit is shared by every job on a CI runner's
 # address. A group loads only its own images, because every image loaded costs its leg time.
 preload_images() {
   local cluster="$1" group="$2" image
   local images=(
-    "ghcr.io/letpeoplework/lighthouse:$(chart_app_version "$BEFORE_CHART")"
-    "ghcr.io/letpeoplework/lighthouse:$(chart_app_version "$NEW_CHART")"
+    "ghcr.io/letpeoplework/lighthouse:$BEFORE_APP_VERSION"
   )
   case "$group" in
     happy | refusals)
