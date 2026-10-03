@@ -156,13 +156,13 @@ What was measured during DESIGN (Docker 29.8, Helm v4.3.0, a throwaway kind clus
   user, so a runtime that forbids root (OpenShift's `restricted` SCC, for one) cannot run the bundled
   database.
 
-## Known limitation — resolved once slice 03 is delivered
+## Known limitation — resolved by slice 03
 
-Until slice 03 is delivered, the upgrade only reads the data in `pgdata/`, the folder the volume was first
-set up with. A chart that moves the default image on to the next major would therefore refuse every volume
-this chart has already upgraded once, whose database runs on `pgdata-<major>/`. The publish guard does not
-catch that: a move from 18 to 19 passes both of its checks. The chart must not move its default past 18
-before slice 03 is delivered.
+Before slice 03, the upgrade only read the data in `pgdata/`, the folder the volume was first set up with.
+A chart that moved the default image on to the next major would therefore have refused every volume this
+chart had already upgraded once, whose database runs on `pgdata-<major>/`. The publish guard does not catch
+that: a move from 18 to 19 passes both of its checks. Slice 03 is delivered, so the chart may move its
+default past 18 one major per release.
 
 Slice 03 takes the upgrade's source from the copy the database last ran on. Every upgraded copy carries a
 note with the hash of the control file of the copy it was made from, and any start of that older copy
