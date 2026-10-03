@@ -6,7 +6,7 @@ import DataGridBase from "../../../../components/Common/DataGrid/DataGridBase";
 import type { DataGridColumn } from "../../../../components/Common/DataGrid/types";
 import { createNameColumn } from "../../../../components/Common/FeatureListDataGrid/columns";
 import ParentWorkItemCell from "../../../../components/Common/ParentWorkItemCell/ParentWorkItemCell";
-import { ErrorSnackbarContext } from "../../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
+import { useErrorSnackbar } from "../../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import {
 	type ParentWorkItem,
 	useParentWorkItems,
@@ -54,8 +54,7 @@ interface RefinementViewProps {
 
 const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 	const { refinementService } = useContext(ApiServiceContext);
-	// Read without the throwing hook: the view still renders where no snackbar host is mounted.
-	const errorSnackbar = useContext(ErrorSnackbarContext);
+	const { showError } = useErrorSnackbar();
 	const { getTerm } = useTerminology();
 	const [refinement, setRefinement] = useState<IRefinementView | null>(null);
 
@@ -71,16 +70,14 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 			})
 			.catch((error: unknown) => {
 				if (isCurrent) {
-					errorSnackbar?.showError(
-						error instanceof Error ? error.message : String(error),
-					);
+					showError(error instanceof Error ? error.message : String(error));
 				}
 			});
 
 		return () => {
 			isCurrent = false;
 		};
-	}, [team.id, refinementService, errorSnackbar]);
+	}, [team.id, refinementService, showError]);
 
 	const workItems = refinement?.workItems ?? NO_ROWS;
 	const parentReferences = useMemo(

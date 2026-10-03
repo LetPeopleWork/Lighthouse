@@ -1,5 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import SnackbarErrorHandler from "../../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import type { IFeature } from "../../../../models/Feature";
 import type {
 	IRefinementRow,
@@ -100,11 +101,16 @@ const renderTheRefinementTab = (answer: IRefinementView) => {
 		.mockResolvedValue([payments]);
 
 	render(
-		<ApiServiceContext.Provider
-			value={createMockApiServiceContext({ refinementService, featureService })}
-		>
-			<RefinementView team={teamGravity()} />
-		</ApiServiceContext.Provider>,
+		<SnackbarErrorHandler>
+			<ApiServiceContext.Provider
+				value={createMockApiServiceContext({
+					refinementService,
+					featureService,
+				})}
+			>
+				<RefinementView team={teamGravity()} />
+			</ApiServiceContext.Provider>
+		</SnackbarErrorHandler>,
 	);
 
 	return { refinementService, featureService };
