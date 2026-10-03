@@ -6,13 +6,16 @@ import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 
 type GetTerm = (key: string) => string;
 
+const inDays = (days: number | null): string =>
+	days === 1 ? "1 day" : `${days} days`;
+
 export const yardstickQuestion = (
 	yardstick: IYardstick,
 	getTerm: GetTerm,
 ): string =>
 	yardstick.source === "Unavailable"
 		? `Doable within our ${getTerm(TERMINOLOGY_KEYS.SLE)}?`
-		: `Doable within ${yardstick.days} days?`;
+		: `Doable within ${inDays(yardstick.days)}?`;
 
 export const yardstickTooltip = (
 	yardstick: IYardstick,
@@ -22,7 +25,7 @@ export const yardstickTooltip = (
 
 	switch (yardstick.source) {
 		case "Sle":
-			return `${sleTerm} ${yardstick.probability}% of ${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS).toLowerCase()} in ${yardstick.days} days or less`;
+			return `${sleTerm} ${yardstick.probability}% of ${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS).toLowerCase()} in ${inDays(yardstick.days)} or less`;
 		case "CycleTimeFallback":
 			return `No ${sleTerm} set, based off ${yardstick.probability}% of historical ${getTerm(TERMINOLOGY_KEYS.CYCLE_TIME).toLowerCase()}`;
 		case "Unavailable":

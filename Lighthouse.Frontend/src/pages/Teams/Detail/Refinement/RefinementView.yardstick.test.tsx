@@ -136,7 +136,7 @@ describe("The Refinement tab asks one question against one number", () => {
 	});
 
 	// @us-10 @slice-10 @boundary @contract-shape:pure-function
-	it.skip.each([
+	it.each([
 		["the Team's SLE", SLE_75_WITHIN_7, "Doable within 7 days?"],
 		["the fallback", FALLBACK_OF_12, "Doable within 12 days?"],
 		["no number", NOTHING_TO_GO_ON, "Doable within our SLE?"],
@@ -155,14 +155,28 @@ describe("The Refinement tab asks one question against one number", () => {
 	);
 
 	// @us-10 @slice-10 @boundary @contract-shape:pure-function
-	it.skip("says one day in the singular", async () => {
+	it("says one day in the singular", async () => {
 		renderWithTheYardstick({ source: "Sle", days: 1, probability: 85 });
 
 		expect(await theQuestion("Doable within 1 day?")).toBeVisible();
 	});
 
 	// @us-10 @slice-10 @boundary @contract-shape:pure-function
-	it.skip("asks nothing once nothing is in refinement any more", async () => {
+	it("says one day in the singular in the tooltip too", async () => {
+		const { user } = renderWithTheYardstick({
+			source: "Sle",
+			days: 1,
+			probability: 85,
+		});
+		await theQuestion("Doable within 1 day?");
+
+		expect(
+			await theTooltipShownFor(user, "SLE 85% of work items in 1 day or less"),
+		).toHaveTextContent("SLE 85% of work items in 1 day or less");
+	});
+
+	// @us-10 @slice-10 @boundary @contract-shape:pure-function
+	it("asks nothing once nothing is in refinement any more", async () => {
 		renderWithTheYardstick(SLE_75_WITHIN_7);
 		expect(await theQuestion("Doable within 7 days?")).toBeVisible();
 		cleanup();
