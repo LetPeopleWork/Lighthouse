@@ -33,7 +33,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-02 @slice-02 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task Each_row_names_the_Work_Item_links_to_the_tracker_and_gives_its_state_and_category()
         {
             var gravity = await GivenGravityRefinesInBacklogAnalysingAndNextAndItsTrackerHoldsWorkInEveryState();
@@ -53,7 +52,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // printing a zero that reads as "brand new". Age counts the day work started, so GR-051, started
         // three days ago, is four days old.
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task A_Doing_row_carries_its_Work_Item_Age_and_a_To_Do_row_carries_none()
         {
             var gravity = await GivenGravityRefinesInBacklogAnalysingAndNextAndItsTrackerHoldsWorkInEveryState();
@@ -96,7 +94,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-02 @slice-02 @contract-shape:pure-function
         // A Team that maps Analysing and Grooming together holds their Work Items under the mapping's name.
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task A_state_chosen_by_its_mapped_name_lists_the_Work_Items_held_under_that_name()
         {
             var orbit = await GivenOrbitRefinesInItsRefiningMappingAndHoldsWorkInBothMappedStates();
@@ -142,7 +139,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task Another_Teams_Work_Items_in_the_same_state_are_not_listed()
         {
             var gravity = await GivenGravityAndPulsarBothHoldWorkInBacklogAndOnlyGravityRefinesThere();
@@ -154,17 +150,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         }
 
         // @driving_port @real-io @us-01 @us-02 @slice-02 @error @contract-shape:pure-function
-        // The section warns "its Work Items cannot appear"; this is the list keeping that promise.
+        // The Work Items keep reading Analysing until the tracker is read again, so only the Team's
+        // current mapping can keep them off the list.
         [Test]
-        [Ignore(PendingSlice02)]
-        public async Task Work_Items_in_a_chosen_state_that_is_no_longer_mapped_are_not_listed()
+        public async Task Work_Items_in_a_state_taken_out_of_Doing_are_no_longer_listed()
         {
-            var gravity = await GivenGravitysChosenAnalysingStoppedBeingMappedWhileWorkSitsThere();
-            TheCallerOnlyReadsTheTeam(gravity);
+            var gravity = await GivenGravityRefinesInBacklogAndAnalysingAndHoldsWorkInBoth();
+            await GivenTheCoachSeesTheWorkInAnalysingListed(gravity, "GR-051", "GR-052", "GR-073");
 
-            var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
+            var unmapped = await WhenTheAdminTakesAnalysingOutOfDoing(gravity);
 
-            ThenTheRowsAre(tab, "GR-073");
+            TheCallerOnlyReadsTheTeam(unmapped);
+            var tab = await WhenTheCoachOpensTheRefinementTab(unmapped);
+            var settings = await ReadTheTeamSettings(unmapped);
+            using (Assert.EnterMultipleScope())
+            {
+                ThenTheRowsAre(tab, "GR-073");
+                ThenTheSettingsNoLongerName(settings, Analysing);
+            }
         }
 
         // @driving_port @real-io @us-02 @slice-02 @error @contract-shape:unbounded-preservation

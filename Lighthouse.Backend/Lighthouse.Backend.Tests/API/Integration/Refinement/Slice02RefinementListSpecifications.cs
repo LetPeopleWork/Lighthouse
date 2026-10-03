@@ -136,26 +136,30 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             return await TheAdminHasChosen(gravity, Backlog);
         }
 
-        /// <summary>
-        /// GR-051 still reads Analysing because the tracker has not been read again since the admin stopped
-        /// mapping it. Until then it is held as it was, and it is exactly the Work Item the warning is about.
-        /// </summary>
-        private async Task<TeamUnderTest> GivenGravitysChosenAnalysingStoppedBeingMappedWhileWorkSitsThere()
+        private async Task<TeamUnderTest> GivenGravityRefinesInBacklogAndAnalysingAndHoldsWorkInBoth()
         {
-            var gravity = await TheAdminHasChosen(ATeamMappedLikeGravity(), Backlog, Analysing);
+            var gravity = ATeamMappedLikeGravity();
 
-            using var unmapping = await SaveTheTeamSettingsWithDoingStates(gravity, Next, Implementation);
-            Assert.That(unmapping.StatusCode, Is.EqualTo(HttpStatusCode.OK),
-                $"The admin could not stop mapping {Analysing}. {await unmapping.Content.ReadAsStringAsync()}");
-
-            var unmapped = gravity with { DoingStates = [Next, Implementation] };
-            SeedWorkItems(unmapped,
+            SeedWorkItems(gravity,
             [
                 new TrackerWorkItem("GR-051", "Advanced reporting module", Analysing, StateCategories.Doing, "1", StartedDaysAgo: 3),
-                new TrackerWorkItem("GR-073", "Configuration management", Backlog, StateCategories.ToDo, "2"),
+                new TrackerWorkItem("GR-052", "Custom dashboards", Analysing, StateCategories.Doing, "2", StartedDaysAgo: 1),
+                new TrackerWorkItem("GR-073", "Configuration management", Backlog, StateCategories.ToDo, "3"),
             ]);
 
-            return unmapped;
+            return await TheAdminHasChosen(gravity, Backlog, Analysing);
+        }
+
+        /// <summary>
+        /// Without the Work Items in Analysing on the list first, their absence afterwards would prove nothing.
+        /// </summary>
+        private async Task GivenTheCoachSeesTheWorkInAnalysingListed(TeamUnderTest team, params string[] referenceIds)
+        {
+            TheCallerOnlyReadsTheTeam(team);
+            var before = await ReadTheRefinementTab(team);
+
+            Assert.That(RowsIn(before).Select(row => row.ReferenceId), Is.EqualTo(referenceIds),
+                $"The Work Items in Analysing were not listed before the admin's save. Answer: {before}");
         }
 
         /// <summary>
@@ -216,6 +220,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private async Task<HttpResponseMessage> WhenSomebodyAsksForTheRefinementTabOf(int teamId)
             => await AskForTheRefinementTab(teamId);
 
+        private async Task<TeamUnderTest> WhenTheAdminTakesAnalysingOutOfDoing(TeamUnderTest team)
+        {
+            TheCallerAdministersTheTeam(team);
+
+            using var save = await SaveTheTeamSettingsWithDoingStates(team, Next, Implementation);
+            Assert.That(save.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                $"The admin could not take {Analysing} out of Doing. {await save.Content.ReadAsStringAsync()}");
+
+            return team with { DoingStates = [Next, Implementation] };
+        }
+
         private async Task<(JsonElement Tab, TimeSpan Elapsed)> WhenTheCoachOpensTheRefinementTabAgainAndItIsTimed(TeamUnderTest team)
         {
             var stopwatch = Stopwatch.StartNew();
@@ -261,6 +276,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             Assert.That(said, Is.EqualTo(expected),
                 $"The answer has to say whether the Team has refinement states; silence is not an answer. Answer: {tab}");
         }
+
+        private static void ThenTheSettingsNoLongerName(JsonElement settings, string state)
+            => Assert.That(RefinementStatesIn(settings).Select(entry => entry.State), Does.Not.Contain(state),
+                $"A state that is no longer To Do or Doing is still among the refinement states. Settings: {settings}");
 
         private static void ThenNoWorkItemIsListed(JsonElement tab)
             => Assert.That(RowsIn(tab), Is.Empty);
