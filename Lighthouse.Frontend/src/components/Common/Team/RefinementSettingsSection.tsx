@@ -1,10 +1,11 @@
-import { Checkbox, FormControlLabel, Stack, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import type { IRefinementStateSetting } from "../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
 import InputGroup from "../InputGroup/InputGroup";
+import ItemListManager from "../ItemListManager/ItemListManager";
 
 interface RefinementSettingsSectionProps {
 	toDoStates: string[];
@@ -12,40 +13,6 @@ interface RefinementSettingsSectionProps {
 	chosenStates: IRefinementStateSetting[];
 	onChange: (states: IRefinementStateSetting[]) => void;
 }
-
-interface RefinementCandidate {
-	state: string;
-	category: "To Do" | "Doing";
-}
-
-interface RefinementOptionProps {
-	label: string;
-	checked: boolean;
-	note?: string;
-	noteColor?: string;
-	onToggle: () => void;
-}
-
-// The note sits beside the label rather than inside it, so the option is named by its state alone.
-const RefinementOption: React.FC<RefinementOptionProps> = ({
-	label,
-	checked,
-	note,
-	noteColor = "text.secondary",
-	onToggle,
-}) => (
-	<Stack>
-		<FormControlLabel
-			control={<Checkbox checked={checked} onChange={onToggle} />}
-			label={label}
-		/>
-		{note && (
-			<Typography variant="caption" color={noteColor} sx={{ ml: 4 }}>
-				{note}
-			</Typography>
-		)}
-	</Stack>
-);
 
 const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 	toDoStates,
@@ -55,52 +22,55 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 }) => {
 	const { getTerm } = useTerminology();
 
-	const candidates: RefinementCandidate[] = [
-		...toDoStates.map((state) => ({ state, category: "To Do" as const })),
-		...doingStates.map((state) => ({ state, category: "Doing" as const })),
-	];
-
+	const suggestions = [...toDoStates, ...doingStates];
 	const chosen = chosenStates.map((entry) => entry.state);
 
-	// A state the Team stopped mapping is no longer offered, so it is shown from what was stored;
-	// hiding it would silently throw away the admin's choice.
-	const offered = new Set(candidates.map((candidate) => candidate.state));
-	const flagged = chosenStates.filter(
-		(entry) => entry.isMapped === false && !offered.has(entry.state),
-	);
-
 	// Only the state names go back: whether a state is still mapped is the server's verdict to give.
-	const toggle = (state: string) => {
-		const next = chosen.includes(state)
-			? chosen.filter((name) => name !== state)
-			: [...chosen, state];
-		onChange(next.map((name) => ({ state: name })));
+	const save = (states: string[]) =>
+		onChange(states.map((state) => ({ state })));
+
+	// The list accepts free text, but the server refuses anything that is not a To Do or Doing state,
+	// so a typed value only counts when it names one of the suggestions.
+	const add = (typed: string) => {
+		const wanted = typed.trim().toLowerCase();
+		const match = suggestions.find((state) => state.toLowerCase() === wanted);
+		if (match && !chosen.includes(match)) {
+			save([...chosen, match]);
+		}
 	};
 
-	const doingNote = `already counts in ${getTerm(TERMINOLOGY_KEYS.WIP)} and ${getTerm(TERMINOLOGY_KEYS.CYCLE_TIME)}`;
+	const remove = (state: string) =>
+		save(chosen.filter((name) => name !== state));
+
+	// A state the Team stopped mapping stays chosen until the admin removes it; dropping it quietly
+	// would throw away their choice.
+	const offered = new Set(suggestions);
+	const noLongerMapped = chosen.filter((state) => !offered.has(state));
+
+	const refinementTerm = getTerm(TERMINOLOGY_KEYS.REFINEMENT);
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const doingNote = `A Doing state already counts in ${getTerm(TERMINOLOGY_KEYS.WIP)} and ${getTerm(TERMINOLOGY_KEYS.CYCLE_TIME)}`;
 
 	return (
-		<InputGroup title={getTerm(TERMINOLOGY_KEYS.REFINEMENT)}>
+		<InputGroup title={refinementTerm}>
 			<Grid size={{ xs: 12 }}>
-				{candidates.map(({ state, category }) => (
-					<RefinementOption
-						key={`${category}-${state}`}
-						label={`${state} (${category})`}
-						checked={chosen.includes(state)}
-						note={category === "Doing" ? doingNote : undefined}
-						onToggle={() => toggle(state)}
-					/>
-				))}
-				{flagged.map(({ state }) => (
-					<RefinementOption
-						key={`flagged-${state}`}
-						label={state}
-						checked
-						note={`${state} is no longer mapped; its ${workItemsTerm} cannot appear`}
-						noteColor="warning.main"
-						onToggle={() => toggle(state)}
-					/>
+				<ItemListManager
+					title={`${refinementTerm} State`}
+					items={chosen}
+					onAddItem={add}
+					onRemoveItem={remove}
+					suggestions={suggestions}
+					isLoading={false}
+				/>
+				{doingStates.length > 0 && (
+					<Typography variant="body2" color="text.secondary">
+						{doingNote}
+					</Typography>
+				)}
+				{noLongerMapped.map((state) => (
+					<Typography key={state} variant="body2" color="warning.main">
+						{`${state} is no longer mapped; its ${workItemsTerm} cannot appear`}
+					</Typography>
 				))}
 			</Grid>
 		</InputGroup>

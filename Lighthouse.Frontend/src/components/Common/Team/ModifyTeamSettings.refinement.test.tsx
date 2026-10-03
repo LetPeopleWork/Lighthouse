@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IRefinementSettings } from "../../../models/Refinement/Refinement";
@@ -13,9 +13,10 @@ import ModifyTeamSettings from "./ModifyTeamSettings";
 
 /**
  * The Refinement section of a Team's settings, exercised through the settings form a Team admin
- * actually uses, so what is checked is what the form's autosave sends. It offers only the Team's To Do
- * and Doing states, each labelled with its category; a Doing state says it already counts in WIP and
- * cycle time; a chosen state the Team stopped mapping is flagged and kept, never quietly dropped.
+ * actually uses, so what is checked is what the form's autosave sends. States are picked the way wait
+ * states are: the Team's To Do and Doing states are suggested and every chosen state shows as a chip.
+ * The section says a Doing state already counts in WIP and cycle time; a chosen state the Team stopped
+ * mapping stays a chip and is flagged, never quietly dropped.
  *
  * Sections the refinement choice does not depend on are stood in for, as the form's own tests do.
  */
@@ -133,6 +134,35 @@ const theStatesLastSaved = () => {
 		.sort((left, right) => left.localeCompare(right));
 };
 
+const theStateInput = () =>
+	screen.findByRole("combobox", { name: "New Refinement State" });
+
+const theSuggestions = async () => {
+	await userEvent.click(await theStateInput());
+	return within(screen.getByRole("listbox"))
+		.getAllByRole("option")
+		.map((option) => option.textContent);
+};
+
+const pick = async (state: string) => {
+	await userEvent.click(await theStateInput());
+	await userEvent.click(
+		within(screen.getByRole("listbox")).getByRole("option", { name: state }),
+	);
+};
+
+const theChips = () =>
+	Array.from(document.querySelectorAll(".MuiChip-root")).map(
+		(chip) => chip.textContent,
+	);
+
+const removeChip = async (state: string) => {
+	const chip = screen.getByText(state).closest(".MuiChip-root");
+	const deleteIcon = chip?.querySelector(".MuiChip-deleteIcon");
+	if (!deleteIcon) throw new Error(`${state} has no delete affordance`);
+	await userEvent.click(deleteIcon);
+};
+
 describe("The Refinement section of a Team's settings", () => {
 	beforeEach(() => {
 		terms.current = { ...defaultTerms };
@@ -141,81 +171,75 @@ describe("The Refinement section of a Team's settings", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it("offers only the Team's To Do and Doing states, each labelled with its category", async () => {
+	it("offers only the Team's To Do and Doing states as suggestions", async () => {
 		await renderGravitysSettingsForm(gravitysSettings(null));
 
 		expect(
 			await screen.findByRole("heading", { name: "Refinement" }),
 		).toBeVisible();
-		for (const option of [
-			"Backlog (To Do)",
-			"Next (Doing)",
-			"Analysing (Doing)",
-		]) {
-			expect(
-				screen.getByRole("checkbox", { name: option }),
-			).toBeInTheDocument();
-			expect(screen.getByText(option)).toBeVisible();
-		}
-		expect(screen.queryByRole("checkbox", { name: /^Done/ })).toBeNull();
+		expect(await theSuggestions()).toEqual(["Backlog", "Next", "Analysing"]);
+	});
+
+	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
+	// The server refuses a state that is not To Do or Doing, so typing one must never reach the autosave.
+	it("adds nothing when a state that is not suggested is typed", async () => {
+		await renderGravitysSettingsForm(gravitysSettings(null));
+
+		await userEvent.type(await theStateInput(), "Done{Enter}");
+
+		expect(theChips()).toEqual([]);
+		expect(saveTeamSettings).not.toHaveBeenCalled();
 	});
 
 	// @us-01 @slice-01 @contract-shape:bounded-change
 	it("notes that a Doing state already counts in WIP and Cycle Time", async () => {
 		await renderGravitysSettingsForm(gravitysSettings(null));
 
-		await screen.findByRole("checkbox", { name: "Backlog (To Do)" });
+		await theStateInput();
 
 		expect(
-			screen.getAllByText(/already counts in WIP and Cycle Time/),
-		).toHaveLength(2);
+			screen.getByText("A Doing state already counts in WIP and Cycle Time"),
+		).toBeVisible();
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it("saves the ticked states as the Team's refinement states", async () => {
+	it("saves the added states as the Team's refinement states", async () => {
 		await renderGravitysSettingsForm(gravitysSettings(null));
 
-		await userEvent.click(
-			await screen.findByRole("checkbox", { name: "Backlog (To Do)" }),
-		);
-		await userEvent.click(
-			screen.getByRole("checkbox", { name: "Analysing (Doing)" }),
-		);
-		await userEvent.click(
-			screen.getByRole("checkbox", { name: "Next (Doing)" }),
-		);
+		await pick("Backlog");
+		await pick("Analysing");
+		await userEvent.type(await theStateInput(), "next{Enter}");
 
 		await waitFor(() =>
 			expect(theStatesLastSaved()).toEqual(["Analysing", "Backlog", "Next"]),
 		);
+		expect(theChips()).toEqual(["Backlog", "Analysing", "Next"]);
 	});
 
 	// @us-01 @slice-01 @contract-shape:bounded-change
-	it("shows the states already chosen as ticked", async () => {
+	it("shows the states already chosen as chips", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({ states: [{ state: "Backlog", isMapped: true }] }),
 		);
 
-		expect(
-			await screen.findByRole("checkbox", { name: "Backlog (To Do)" }),
-		).toBeChecked();
-		expect(
-			screen.getByRole("checkbox", { name: "Next (Doing)" }),
-		).not.toBeChecked();
+		await theStateInput();
+
+		expect(theChips()).toEqual(["Backlog"]);
+		expect(await theSuggestions()).toEqual(["Next", "Analysing"]);
 	});
 
 	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
-	it("saves no refinement states once the last one is unticked", async () => {
+	it("saves no refinement states once the last chip is removed", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({ states: [{ state: "Backlog", isMapped: true }] }),
 		);
 
-		await userEvent.click(
-			await screen.findByRole("checkbox", { name: "Backlog (To Do)" }),
-		);
+		await theStateInput();
+		await removeChip("Backlog");
 
 		await waitFor(() => expect(saveTeamSettings).toHaveBeenCalled());
 		expect(theStatesLastSaved()).toEqual([]);
+		expect(theChips()).toEqual([]);
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
@@ -237,11 +261,12 @@ describe("The Refinement section of a Team's settings", () => {
 				"Analysing is no longer mapped; its Work Items cannot appear",
 			),
 		).toBeVisible();
+		expect(theChips()).toEqual(["Backlog", "Analysing"]);
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	// Never silently dropped: the next edit to the section still carries the flagged state.
-	it("keeps a flagged state chosen when another state is ticked", async () => {
+	it("keeps a flagged state chosen when another state is added", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings(
 				{
@@ -254,13 +279,12 @@ describe("The Refinement section of a Team's settings", () => {
 			),
 		);
 
-		await userEvent.click(
-			await screen.findByRole("checkbox", { name: "Next (Doing)" }),
-		);
+		await pick("Next");
 
 		await waitFor(() =>
 			expect(theStatesLastSaved()).toEqual(["Analysing", "Backlog", "Next"]),
 		);
+		expect(theChips()).toEqual(["Backlog", "Analysing", "Next"]);
 	});
 
 	// @us-02 @slice-01 @boundary @contract-shape:bounded-change
@@ -280,6 +304,9 @@ describe("The Refinement section of a Team's settings", () => {
 		expect(
 			await screen.findByRole("heading", { name: "Replenishment" }),
 		).toBeVisible();
+		expect(
+			screen.getByRole("combobox", { name: "New Replenishment State" }),
+		).toBeInTheDocument();
 		expect(
 			screen.getByText(
 				"Analysing is no longer mapped; its Tickets cannot appear",
