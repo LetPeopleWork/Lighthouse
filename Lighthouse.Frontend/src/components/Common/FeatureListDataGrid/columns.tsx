@@ -32,15 +32,15 @@ import WarningsIndicator from "./WarningsIndicator";
 type NamedWorkItemRow = GridValidRowModel &
 	Pick<IFeature, "name" | "referenceId"> & { url?: string | null };
 
-// FeatureListDataGrid pins this column first, so every feature list renders the name the same way.
-// Any other list of Work Items uses it too, so a name reads the same wherever it appears.
+// Every list of Features or Work Items names its rows through this column, so a name reads the same
+// wherever it appears.
 export const createNameColumn = <
 	T extends NamedWorkItemRow = IFeature & GridValidRowModel,
 >(
-	featureTerm: string,
+	itemTerm: string,
 ): DataGridColumn<T> => ({
 	field: "name",
-	headerName: `${featureTerm} Name`,
+	headerName: `${itemTerm} Name`,
 	hideable: false,
 	width: 300,
 	flex: 1,

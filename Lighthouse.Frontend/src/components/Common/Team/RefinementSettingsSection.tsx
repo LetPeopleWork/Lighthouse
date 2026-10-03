@@ -14,6 +14,9 @@ interface RefinementSettingsSectionProps {
 	onChange: (states: IRefinementStateSetting[]) => void;
 }
 
+const toSettings = (states: string[]): IRefinementStateSetting[] =>
+	states.map((state) => ({ state }));
+
 const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 	toDoStates,
 	doingStates,
@@ -28,15 +31,14 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 		.map((entry) => entry.state)
 		.filter((state) => offered.has(state.toLowerCase()));
 
-	const save = (states: string[]) =>
-		onChange(states.map((state) => ({ state })));
+	const save = (states: string[]) => onChange(toSettings(states));
 
 	// Only To Do and Doing states can mean refinement, so a chosen state leaves as soon as the form stops
 	// offering it, and the same save that changes the states carries the shorter list.
 	const anyNoLongerOffered = chosen.length < chosenStates.length;
 	useEffect(() => {
 		if (anyNoLongerOffered) {
-			onChange(chosen.map((state) => ({ state })));
+			onChange(toSettings(chosen));
 		}
 	}, [anyNoLongerOffered, chosen, onChange]);
 

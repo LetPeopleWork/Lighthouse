@@ -10,11 +10,11 @@ export interface ParentWorkItem {
 
 /**
  * Custom hook to fetch parent work item information from references
- * @param features - Array of features that may have parent references
+ * @param items - Features or Work Items that may have parent references
  * @returns Map of reference IDs to parent work item details
  */
 export const useParentWorkItems = (
-	features: ReadonlyArray<Pick<IFeature, "parentWorkItemReference">>,
+	items: ReadonlyArray<Pick<IFeature, "parentWorkItemReference">>,
 ): Map<string, ParentWorkItem> => {
 	const { featureService } = useContext(ApiServiceContext);
 	const [parentMap, setParentMap] = useState<Map<string, ParentWorkItem>>(
@@ -25,9 +25,9 @@ export const useParentWorkItems = (
 		const fetchParentWorkItems = async () => {
 			// Collect all unique parent references
 			const parentReferences = new Set<string>();
-			for (const feature of features) {
-				if (feature.parentWorkItemReference) {
-					parentReferences.add(feature.parentWorkItemReference);
+			for (const item of items) {
+				if (item.parentWorkItemReference) {
+					parentReferences.add(item.parentWorkItemReference);
 				}
 			}
 
@@ -63,7 +63,7 @@ export const useParentWorkItems = (
 		fetchParentWorkItems().catch((error) => {
 			console.error("Failed to fetch parent work items:", error);
 		});
-	}, [features, featureService]);
+	}, [items, featureService]);
 
 	return parentMap;
 };
