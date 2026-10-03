@@ -109,6 +109,24 @@ namespace Lighthouse.Backend.Tests.Factories
         }
 
         [Test]
+        [TestCase("Team Equinox", new string[0])]
+        [TestCase("Team Gravity", new[] { "Backlog", "Analysing", "Next" })]
+        [TestCase("Team Lightspeed", new string[0])]
+        [TestCase("Team Meridian", new string[0])]
+        [TestCase("Team Pulsar", new string[0])]
+        [TestCase("Team Voyager", new string[0])]
+        [TestCase("Team Zenith", new string[0])]
+        public void CreateDemoTeam_RefinementStates_OnlyTeamGravityShipsWithBacklogAnalysingNext(string teamName, string[] expectedRefinementStates)
+        {
+            var subject = CreateSubject();
+
+            var demoTeam = subject.CreateDemoTeam(teamName);
+
+            var refinementStates = demoTeam.RefinementSettings?.States.Select(s => s.State) ?? [];
+            Assert.That(refinementStates, Is.EqualTo(expectedRefinementStates));
+        }
+
+        [Test]
         [TestCase("Project Apollo")]
         [TestCase("Project NeuroLink City")]
         [TestCase("Project Ocean Explorer")]

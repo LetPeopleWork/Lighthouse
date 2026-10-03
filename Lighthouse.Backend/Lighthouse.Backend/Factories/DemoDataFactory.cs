@@ -1,4 +1,5 @@
 ﻿﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
@@ -54,10 +55,31 @@ namespace Lighthouse.Backend.Factories
                 // it a whole feature is invisible to anyone evaluating Lighthouse.
                 ServiceLevelExpectationProbability = 85,
                 ServiceLevelExpectationRange = 7,
-                DataRetrievalValue = ParseCsv(name)
+                DataRetrievalValue = ParseCsv(name),
+                RefinementSettings = CreateDemoRefinementSettings(name),
             };
 
             return demoTeam;
+        }
+
+        // One Team shows the Refinement tab at work while every other Team shows it switched off,
+        // so a demo has both sides of it to look at.
+        private static RefinementSettings? CreateDemoRefinementSettings(string teamName)
+        {
+            if (teamName != DemoTeamNames.OldItems)
+            {
+                return null;
+            }
+
+            return new RefinementSettings
+            {
+                States =
+                [
+                    new RefinementStateSetting { State = "Backlog" },
+                    new RefinementStateSetting { State = "Analysing" },
+                    new RefinementStateSetting { State = "Next" },
+                ],
+            };
         }
 
         public WorkTrackingSystemConnection CreateDemoWorkTrackingSystemConnection()
