@@ -1,0 +1,43 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6136.ts",
+    "related": false
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "playwright-report",
+    "reports"
+  ],
+  "mutate": [
+    "src/components/Common/Team/RefinementSettingsSection.tsx",
+    "src/pages/Teams/Detail/Refinement/RefinementView.tsx",
+    "src/hooks/useRefinementSetUpReporter.ts",
+    "src/services/Api/RefinementService.ts",
+    "src/services/UsageData/usageDataRouteKeys.ts:20-20"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "stryker-6136-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6136"
+}

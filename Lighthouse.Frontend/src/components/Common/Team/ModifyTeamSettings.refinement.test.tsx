@@ -265,6 +265,34 @@ describe("The Refinement section of a Team's settings", () => {
 		expect(theChips()).toEqual([]);
 	});
 
+	// @us-01 @slice-01 @contract-shape:bounded-change
+	it("keeps the other chosen states when one chip is removed", async () => {
+		await renderGravitysSettingsForm(
+			gravitysSettings({
+				states: [{ state: "Backlog" }, { state: "Analysing" }],
+			}),
+		);
+
+		await theStateInput();
+		await removeChip("Backlog");
+
+		await waitFor(() => expect(saveTeamSettings).toHaveBeenCalled());
+		expect(theStatesLastSaved()).toEqual(["Analysing"]);
+		expect(theChips()).toEqual(["Analysing"]);
+	});
+
+	// @us-01 @slice-01 @contract-shape:bounded-change
+	// The suggestions are the form's own To Do and Doing states, so there is never anything to wait for.
+	it("shows no loading indicator in the state input", async () => {
+		await renderGravitysSettingsForm(gravitysSettings(null));
+
+		const inputBox = (await theStateInput()).closest(
+			".MuiInputBase-root",
+		) as HTMLElement;
+
+		expect(within(inputBox).queryByRole("progressbar")).toBeNull();
+	});
+
 	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
 	it("shows no chip and no flag for a chosen state that is no longer To Do or Doing", async () => {
 		await renderGravitysSettingsForm(

@@ -56,6 +56,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             Assert.That(listed.Select(item => item.ReferenceId), Is.EqualTo(OnlyA));
         }
 
+        // Every Team page asks for the refinement list, and most Teams have not set refinement up, so those
+        // must not cost a read of every Work Item the Team holds.
+        [Test]
+        public void ATeamWithoutRefinementStatesListsNothingWithoutReadingItsWorkItems()
+        {
+            var team = new Team { Id = 12, ToDoStates = [Backlog], DoingStates = ["Doing"] };
+            var repository = new Mock<IWorkItemRepository>();
+
+            var listed = new RefinementList(repository.Object).For(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(listed, Is.Empty);
+                repository.Verify(repo => repo.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()), Times.Never);
+            }
+        }
+
         private static Team ATeamRefiningIn(string state, List<StateMapping> mappings)
         {
             return new Team

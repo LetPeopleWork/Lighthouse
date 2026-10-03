@@ -331,3 +331,96 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 		expect(screen.queryByRole("grid")).toBeNull();
 	});
 });
+
+describe("The Refinement tab follows the Team it is showing", () => {
+	beforeEach(() => {
+		localStorage.clear();
+		terms.current = { ...defaultTerms };
+		mockUseLicenseRestrictions.mockReturnValue({
+			licenseStatus: { canUsePremiumFeatures: true },
+			isLoading: false,
+		});
+	});
+
+	const teamOcean = () => {
+		const team = new Team();
+		team.id = 8;
+		team.name = "Team Ocean";
+		return team;
+	};
+
+	const oceansRefinement: IRefinementView = {
+		refinementConfigured: true,
+		workItems: [aRow("OE-001", "Sonar mapping", "Backlog")],
+	};
+
+	// Opens Gravity's tab with Gravity's read still outstanding, then moves to Ocean, whose read answers
+	// at once. Returns the outstanding read so the case can settle it late.
+	const moveFromGravityToOceanBeforeGravitysReadAnswers = () => {
+		let settleGravity: {
+			answer: (view: IRefinementView) => void;
+			fail: (error: Error) => void;
+		} = { answer: () => {}, fail: () => {} };
+		const gravitysRead = new Promise<IRefinementView>((resolve, reject) => {
+			settleGravity = { answer: resolve, fail: reject };
+		});
+		const refinementService: IRefinementService = {
+			getRefinement: vi.fn((teamId: number) =>
+				teamId === 7 ? gravitysRead : Promise.resolve(oceansRefinement),
+			),
+		};
+		const featureService = createMockFeatureService();
+		featureService.getFeaturesByReferences = vi.fn().mockResolvedValue([]);
+
+		const tabFor = (team: Team) => (
+			<SnackbarErrorHandler>
+				<ApiServiceContext.Provider
+					value={createMockApiServiceContext({
+						refinementService,
+						featureService,
+					})}
+				>
+					<RefinementView team={team} />
+				</ApiServiceContext.Provider>
+			</SnackbarErrorHandler>
+		);
+
+		const { rerender } = render(tabFor(teamGravity()));
+		rerender(tabFor(teamOcean()));
+
+		return { refinementService, settleGravity };
+	};
+
+	it("shows the new Team's refinement, not the previous Team's answer that arrived late", async () => {
+		const { refinementService, settleGravity } =
+			moveFromGravityToOceanBeforeGravitysReadAnswers();
+
+		expect(
+			await screen.findByRole("heading", {
+				name: "1 Work Item in Refinement",
+			}),
+		).toBeVisible();
+		settleGravity.answer(gravitysRefinement);
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(refinementService.getRefinement).toHaveBeenCalledWith(8);
+		expect(
+			screen.getByRole("heading", { name: "1 Work Item in Refinement" }),
+		).toBeVisible();
+		expect(screen.queryByText(/^GR-058: /)).toBeNull();
+	});
+
+	it("says nothing about the previous Team's read failing once it shows another Team", async () => {
+		const { settleGravity } = moveFromGravityToOceanBeforeGravitysReadAnswers();
+
+		await screen.findByRole("heading", { name: "1 Work Item in Refinement" });
+		settleGravity.fail(
+			new Error("Team Gravity's refinement could not be read"),
+		);
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(
+			screen.queryByText("Team Gravity's refinement could not be read"),
+		).toBeNull();
+	});
+});
