@@ -91,9 +91,12 @@ const teamGravity = () => {
 	return team;
 };
 
-const renderTheRefinementTab = (answer: IRefinementView) => {
+const renderTheRefinementTab = (answer: IRefinementView | Error) => {
 	const refinementService: IRefinementService = {
-		getRefinement: vi.fn().mockResolvedValue(answer),
+		getRefinement:
+			answer instanceof Error
+				? vi.fn().mockRejectedValue(answer)
+				: vi.fn().mockResolvedValue(answer),
 	};
 	const featureService = createMockFeatureService();
 	featureService.getFeaturesByReferences = vi
@@ -314,5 +317,17 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 		).toBeVisible();
 		await theRowOf("GR-1000");
 		expect(theListedReferenceIds()[0]).toBe("GR-1000");
+	});
+
+	// @us-02 @slice-02 @error @contract-shape:pure-function
+	// A read that fails is said the way the other Team views say it, never shown as an empty refinement.
+	it("says the read failed instead of claiming nothing is in refinement", async () => {
+		renderTheRefinementTab(new Error("The Refinement tab could not be read"));
+
+		expect(
+			await screen.findByText("The Refinement tab could not be read"),
+		).toBeVisible();
+		expect(screen.queryByText(/right now/)).toBeNull();
+		expect(screen.queryByRole("grid")).toBeNull();
 	});
 });
