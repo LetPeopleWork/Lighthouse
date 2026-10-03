@@ -112,7 +112,7 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 	});
 
 	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
-	it.skip("asks for this Team's refinement and counts what it holds in the heading", async () => {
+	it("asks for this Team's refinement and counts what it holds in the heading", async () => {
 		const { refinementService } = renderTheRefinementTab(gravitysRefinement);
 
 		expect(
@@ -124,7 +124,7 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 	});
 
 	// @us-02 @slice-02 @contract-shape:pure-function
-	it.skip("shows the Work Items in the order they came, which is backlog order", async () => {
+	it("shows the Work Items in the order they came, which is backlog order", async () => {
 		renderTheRefinementTab(gravitysRefinement);
 
 		await screen.findByRole("link", { name: "GR-058" });
@@ -138,7 +138,7 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 	});
 
 	// @us-02 @slice-02 @contract-shape:pure-function
-	it.skip("links each Work Item to the tracker and names it, its state and its category", async () => {
+	it("links each Work Item to the tracker and names it, its state and its category", async () => {
 		renderTheRefinementTab(gravitysRefinement);
 
 		const analysing = await theRowOf("GR-051");
@@ -156,7 +156,7 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 	});
 
 	// @us-02 @slice-02 @boundary @contract-shape:pure-function
-	it.skip("says how old a Doing Work Item is and gives a To Do Work Item no age", async () => {
+	it("says how old a Doing Work Item is and gives a To Do Work Item no age", async () => {
 		renderTheRefinementTab(gravitysRefinement);
 
 		const analysing = await theRowOf("GR-051");
@@ -167,7 +167,7 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 	});
 
 	// @us-02 @slice-02 @boundary @contract-shape:pure-function
-	it.skip("counts a single Work Item in the singular", async () => {
+	it("counts a single Work Item in the singular", async () => {
 		renderTheRefinementTab({
 			refinementConfigured: true,
 			workItems: [aRow("GR-073", "Configuration management", "Backlog", null)],
