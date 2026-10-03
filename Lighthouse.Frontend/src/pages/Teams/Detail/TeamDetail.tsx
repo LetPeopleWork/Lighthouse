@@ -47,8 +47,25 @@ type TeamViewType =
 	| "features"
 	| "forecasts"
 	| "metrics"
+	| "refinement"
 	| "settings"
 	| "access";
+
+// Only somebody who can open Settings is sent there; a reader has no Settings tab to go to.
+const refinementTabTooltip = (
+	team: Team,
+	canChooseStates: boolean,
+	teamTerm: string,
+	refinementTerm: string,
+): string => {
+	if (team.refinementConfigured) {
+		return "";
+	}
+
+	return canChooseStates
+		? `Choose ${refinementTerm.toLowerCase()} states in Settings → ${refinementTerm}`
+		: `A ${teamTerm} admin needs to choose ${refinementTerm.toLowerCase()} states first`;
+};
 
 const TeamDetail: React.FC = () => {
 	const navigate = useNavigate();
@@ -59,6 +76,7 @@ const TeamDetail: React.FC = () => {
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
+	const refinementTerm = getTerm(TERMINOLOGY_KEYS.REFINEMENT);
 
 	const { canUpdateTeamData, maxTeamsWithoutPremium } =
 		useLicenseRestrictions();
@@ -509,6 +527,26 @@ const TeamDetail: React.FC = () => {
 											/>
 											<Tab label="Forecasts" value="forecasts" />
 											<Tab label="Metrics" value="metrics" />
+											<Tab
+												label={
+													<Tooltip
+														title={refinementTabTooltip(
+															team,
+															showSettingsTab,
+															teamTerm,
+															refinementTerm,
+														)}
+														arrow
+													>
+														<span style={{ pointerEvents: "auto" }}>
+															{refinementTerm}
+														</span>
+													</Tooltip>
+												}
+												value="refinement"
+												disabled={!team.refinementConfigured}
+												aria-label={refinementTerm}
+											/>
 											{showSettingsTab && (
 												<Tab label="Settings" value="settings" />
 											)}

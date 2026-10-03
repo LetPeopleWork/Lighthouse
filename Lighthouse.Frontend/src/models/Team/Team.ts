@@ -14,6 +14,7 @@ export interface ITeam extends IFeatureOwner {
 	workItemTypes: string[];
 	hasThroughputBlackoutOverlap: boolean;
 	hasForecastFilter: boolean;
+	refinementConfigured: boolean;
 }
 
 export const TeamSchema = z.object({
@@ -27,6 +28,7 @@ export const TeamSchema = z.object({
 	useFixedDatesForThroughput: z.boolean().optional().default(false),
 	hasThroughputBlackoutOverlap: z.boolean().optional().default(false),
 	hasForecastFilter: z.boolean().optional().default(false),
+	refinementConfigured: z.boolean().optional().default(false),
 	serviceLevelExpectationProbability: z.number().optional().default(0),
 	serviceLevelExpectationRange: z.number().optional().default(0),
 	systemWIPLimit: z.number().optional().default(0),
@@ -55,6 +57,8 @@ export class Team implements ITeam {
 
 	hasForecastFilter = false;
 
+	refinementConfigured = false;
+
 	serviceLevelExpectationProbability = 0;
 	serviceLevelExpectationRange = 0;
 
@@ -80,6 +84,7 @@ export class Team implements ITeam {
 		team.useFixedDatesForThroughput = data.useFixedDatesForThroughput;
 		team.hasThroughputBlackoutOverlap = data.hasThroughputBlackoutOverlap;
 		team.hasForecastFilter = data.hasForecastFilter;
+		team.refinementConfigured = data.refinementConfigured;
 		team.serviceLevelExpectationProbability =
 			data.serviceLevelExpectationProbability;
 		team.serviceLevelExpectationRange = data.serviceLevelExpectationRange;

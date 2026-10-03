@@ -48,6 +48,7 @@ describe("TeamFeaturesView component", () => {
 		remainingFeatures: 5,
 		hasThroughputBlackoutOverlap: false,
 		hasForecastFilter: false,
+		refinementConfigured: false,
 	} as Team;
 
 	const mockApiServiceContext = createMockApiServiceContext({});

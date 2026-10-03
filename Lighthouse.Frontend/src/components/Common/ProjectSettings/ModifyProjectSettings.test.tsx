@@ -332,6 +332,7 @@ describe("ModifyProjectSettings", () => {
 			workItemTypes: ["User Story", "Bug"],
 			hasThroughputBlackoutOverlap: false,
 			hasForecastFilter: false,
+			refinementConfigured: false,
 		},
 		{
 			id: 2,
@@ -353,6 +354,7 @@ describe("ModifyProjectSettings", () => {
 			workItemTypes: ["Task", "Feature"],
 			hasThroughputBlackoutOverlap: false,
 			hasForecastFilter: false,
+			refinementConfigured: false,
 		},
 	];
 

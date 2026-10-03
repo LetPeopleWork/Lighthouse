@@ -32,6 +32,7 @@ describe("OwnershipComponent", () => {
 			workItemTypes: ["User Story", "Bug"],
 			hasThroughputBlackoutOverlap: false,
 			hasForecastFilter: false,
+			refinementConfigured: false,
 		},
 		{
 			id: 2,
@@ -51,6 +52,7 @@ describe("OwnershipComponent", () => {
 			workItemTypes: ["Task", "Feature"],
 			hasThroughputBlackoutOverlap: false,
 			hasForecastFilter: false,
+			refinementConfigured: false,
 		},
 	];
 

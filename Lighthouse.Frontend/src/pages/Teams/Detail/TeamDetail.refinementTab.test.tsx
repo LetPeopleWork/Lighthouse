@@ -237,7 +237,7 @@ describe("The Refinement tab on a Team page", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:pure-function
-	it.skip("sits between Metrics and Settings", async () => {
+	it("sits between Metrics and Settings", async () => {
 		renderTheTeamPage({ viewer: "teamAdmin", teamReads: [aTeam(true)] });
 
 		await theRefinementTab();
@@ -255,7 +255,7 @@ describe("The Refinement tab on a Team page", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:pure-function
-	it.skip("is switched off for a Team without refinement states and points its admin to Settings", async () => {
+	it("is switched off for a Team without refinement states and points its admin to Settings", async () => {
 		renderTheTeamPage({ viewer: "teamAdmin", teamReads: [aTeam(false)] });
 
 		const tab = await theRefinementTab();
@@ -266,7 +266,7 @@ describe("The Refinement tab on a Team page", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:pure-function
-	it.skip("tells a reader, who has no Settings tab, that a Team admin has to choose the states", async () => {
+	it("tells a reader, who has no Settings tab, that a Team admin has to choose the states", async () => {
 		renderTheTeamPage({ viewer: "reader", teamReads: [aTeam(false)] });
 
 		const tab = await theRefinementTab();
@@ -279,7 +279,7 @@ describe("The Refinement tab on a Team page", () => {
 
 	// @us-01 @slice-01 @error @contract-shape:pure-function
 	// Every Community instance runs without sign-in, where everybody may edit the Team.
-	it.skip("points everybody to Settings when roles are not enforced", async () => {
+	it("points everybody to Settings when roles are not enforced", async () => {
 		renderTheTeamPage({ viewer: "rbacOff", teamReads: [aTeam(false)] });
 
 		const tab = await theRefinementTab();
@@ -289,14 +289,14 @@ describe("The Refinement tab on a Team page", () => {
 	});
 
 	// @us-01 @slice-01 @contract-shape:pure-function
-	it.skip("is switched on for a reader once the Team has refinement states", async () => {
+	it("is switched on for a reader once the Team has refinement states", async () => {
 		renderTheTeamPage({ viewer: "reader", teamReads: [aTeam(true)] });
 
 		expect(await theRefinementTab()).toBeEnabled();
 	});
 
 	// @us-02 @slice-01 @boundary @contract-shape:pure-function
-	it.skip("says the Team's own word for Refinement on the tab and in its tooltip", async () => {
+	it("says the Team's own word for Refinement on the tab and in its tooltip", async () => {
 		terms.current = {
 			...defaultTerms,
 			[REFINEMENT_KEY]: "Replenishment",
