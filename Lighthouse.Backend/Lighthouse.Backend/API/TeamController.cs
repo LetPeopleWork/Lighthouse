@@ -140,8 +140,7 @@ namespace Lighthouse.Backend.API
 
             var storedTeam = teamRepository.GetById(teamId);
 
-            var refinementErrors = RefinementSettingsValidator.ValidateSettings(
-                teamSetting, storedTeam?.RefinementSettings?.States.Select(chosen => chosen.State) ?? []);
+            var refinementErrors = RefinementSettingsValidator.ValidateSettings(teamSetting, StoredRefinementStates(storedTeam));
             if (refinementErrors.Count > 0)
             {
                 return BadRequest(refinementErrors);
@@ -152,14 +151,10 @@ namespace Lighthouse.Backend.API
                 return BadRequest(ThroughputHistoryValidator.ErrorMessage);
             }
 
-            if (!IsStalenessThresholdInRange(teamSetting.StalenessThresholdDays))
+            var stalenessError = ValidateStalenessThresholds(teamSetting);
+            if (stalenessError != null)
             {
-                return BadRequest($"Staleness threshold must be between {MinStalenessThresholdDays} and {MaxStalenessThresholdDays} days.");
-            }
-
-            if (!IsStalenessThresholdInRange(teamSetting.BlockedStalenessThresholdDays))
-            {
-                return BadRequest($"Blocked staleness threshold must be between {MinStalenessThresholdDays} and {MaxStalenessThresholdDays} days.");
+                return BadRequest(stalenessError);
             }
 
             var ruleSetError = ValidateTeamRuleSets(storedTeam, teamSetting);
@@ -230,6 +225,26 @@ namespace Lighthouse.Backend.API
         public ActionResult<WorkItemRuleSchema> GetForecastFilterSchema(int teamId)
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team => forecastFilterRuleService.GetSchema(team));
+        }
+
+        private static IEnumerable<string> StoredRefinementStates(Team? storedTeam)
+        {
+            return storedTeam?.RefinementSettings?.States.Select(chosen => chosen.State) ?? [];
+        }
+
+        private static string? ValidateStalenessThresholds(TeamSettingDto teamSetting)
+        {
+            if (!IsStalenessThresholdInRange(teamSetting.StalenessThresholdDays))
+            {
+                return $"Staleness threshold must be between {MinStalenessThresholdDays} and {MaxStalenessThresholdDays} days.";
+            }
+
+            if (!IsStalenessThresholdInRange(teamSetting.BlockedStalenessThresholdDays))
+            {
+                return $"Blocked staleness threshold must be between {MinStalenessThresholdDays} and {MaxStalenessThresholdDays} days.";
+            }
+
+            return null;
         }
 
         private static bool IsThroughputHistoryValid(Team? storedTeam, TeamSettingDto teamSetting)

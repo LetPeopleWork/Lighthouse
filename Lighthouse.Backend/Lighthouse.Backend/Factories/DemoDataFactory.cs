@@ -10,6 +10,10 @@ namespace Lighthouse.Backend.Factories
 {
     public class DemoDataFactory : IDemoDataFactory
     {
+        private const string Backlog = "Backlog";
+        private const string Next = "Next";
+        private const string Analysing = "Analysing";
+
         private readonly IWorkTrackingSystemFactory workTrackingSystemFactory;
         private readonly ILighthouseClock clock;
 
@@ -26,8 +30,8 @@ namespace Lighthouse.Backend.Factories
                 Name = name,
                 BlockedRuleSetJson = BlockedTagRuleSetJson("feature.tags"),
                 BlockedStalenessThresholdDays = 5,
-                ToDoStates = new List<string> { "Backlog" },
-                DoingStates = new List<string> { "Next", "Analysing", "Implementation", "Waiting for Verification", "Verification" },
+                ToDoStates = new List<string> { Backlog },
+                DoingStates = new List<string> { Next, Analysing, "Implementation", "Waiting for Verification", "Verification" },
                 DoneStates = new List<string> { "Done" },
                 WorkItemTypes = new List<string> { "Epic" },
                 CycleTimeDefinitions = CreateDemoCycleTimeDefinitions(),
@@ -45,8 +49,8 @@ namespace Lighthouse.Backend.Factories
                 AutomaticallyAdjustFeatureWIP = false,
                 BlockedRuleSetJson = BlockedTagRuleSetJson("workitem.tags"),
                 BlockedStalenessThresholdDays = 5,
-                ToDoStates = new List<string> { "Backlog" },
-                DoingStates = new List<string> { "Next", "Analysing", "Implementation", "Waiting for Verification", "Verification" },
+                ToDoStates = new List<string> { Backlog },
+                DoingStates = new List<string> { Next, Analysing, "Implementation", "Waiting for Verification", "Verification" },
                 DoneStates = new List<string> { "Done" },
                 WorkItemTypes = new List<string> { "User Story", "Bug" },
                 CycleTimeDefinitions = CreateDemoCycleTimeDefinitions(),
@@ -75,9 +79,9 @@ namespace Lighthouse.Backend.Factories
             {
                 States =
                 [
-                    new RefinementStateSetting { State = "Backlog" },
-                    new RefinementStateSetting { State = "Analysing" },
-                    new RefinementStateSetting { State = "Next" },
+                    new RefinementStateSetting { State = Backlog },
+                    new RefinementStateSetting { State = Analysing },
+                    new RefinementStateSetting { State = Next },
                 ],
             };
         }
