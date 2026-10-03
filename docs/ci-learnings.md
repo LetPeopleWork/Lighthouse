@@ -256,6 +256,12 @@ get re-applied.
 
 ## Formatting & linting
 
+### 2026-10-03 — CI's shellcheck is 0.9.0, older than the `koalaman/shellcheck:stable` image, and flags SC2015 the newer one lets through
+- **Symptom**: `ci_chart.yml` `validate` failed seconds into the run on `chart/tests/upgrade-path/run.sh` with `SC2015 (info): Note that A && B || C is not if-then-else`, on `[[ -n "$a" && -n "$b" ]] && [[ "$b" -gt "$a" ]] || { …; fail …; }`. Every local shellcheck run had been clean.
+- **Root cause**: the runner uses the `shellcheck` that ships with ubuntu-latest (0.9.0). Locally shellcheck was run through `koalaman/shellcheck:stable` (0.11.0), which no longer reports SC2015 for that shape. Same file, different verdict.
+- **Fix**: fold both tests into one `[[ … && … && … ]] || { …; }` — a single command before `||` is a plain guard and neither version complains.
+- **Rule going forward**: run shellcheck locally with the version CI has — `docker run --rm -v "$PWD:/mnt" -w /mnt koalaman/shellcheck:v0.9.0 chart/files/postgres-upgrade/*.sh chart/tests/upgrade-path/run.sh chart/scripts/version-guard.sh` — not `:stable`. And never chain two `[[ ]]` with `&&` in front of an `||` fallback; put every condition in one `[[ ]]`.
+
 ### 2026-08-25 — CA1834 is CA1865's twin for StringBuilder, and it failed the gate the same way
 - **Symptom**: `sonar-gates` failed on `LetPeopleWork_Lighthouse` with `new_violations = 3 GT 0`. All three were `external_roslyn:CA1834` on one file — "Use 'StringBuilder.Append(char)' instead of 'StringBuilder.Append(string)' when the input is a constant unit string" (`DeliveryForecastBlockRenderer.cs:65,72,80`). `dotnet build` said zero warnings, `dotnet test` was 6,245 green, and both mutation runs were over the gate.
 - **Root cause**: `private const string LineSeparator = "\n";` appended three times with `StringBuilder.Append(LineSeparator)`. CA1834 is INFO severity, so it is invisible to the build and reaches only the Sonar `new_violations = 0` gate — the same shape as CA1865 a week earlier, and it was not in the promoted block because nothing had tripped it yet.

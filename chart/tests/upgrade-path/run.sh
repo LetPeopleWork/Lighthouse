@@ -1782,7 +1782,7 @@ chain_interrupted_second_upgrade_removes_nothing() {
   assert_marker_row "$ns"
   finished="$(grep -nF "upgrade finished" <<<"$log" | cut -d: -f1 || true)"
   removed="$(grep -nF "removed pgdata (Postgres 16)" <<<"$log" | cut -d: -f1 || true)"
-  [[ -n "$finished" && -n "$removed" ]] && [[ "$removed" -gt "$finished" ]] \
+  [[ -n "$finished" && -n "$removed" && "$removed" -gt "$finished" ]] \
     || { dump_diagnostics "$ns"; fail "the Postgres 16 copy in $ns was not removed after the redone upgrade finished"; }
   echo "  $(sed -n "${removed}p" <<<"$log")"
   assert_two_copies_beside_placeholder "$ns"
