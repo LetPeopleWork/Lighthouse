@@ -18,20 +18,23 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 return [];
             }
 
+            // The database compares text by case where the rest of the product does not, so the state is
+            // matched here rather than in the query.
             return [.. workItemRepository
-                .GetAllByPredicate(item => item.TeamId == team.Id && states.Contains(item.State))
+                .GetAllByPredicate(item => item.TeamId == team.Id)
                 .AsEnumerable()
+                .Where(item => states.Contains(item.State))
                 .OrderBy(item => item.Order, BacklogRank)
                 .ThenBy(item => item.ReferenceId, StringComparer.Ordinal)];
         }
 
         // A Work Item may be held under a mapping's name or under one of the tracker's states the mapping
         // gathers, so both are looked for.
-        private static List<string> StatesHoldingRefinementWork(Team team)
+        private static HashSet<string> StatesHoldingRefinementWork(Team team)
         {
             var chosen = team.RefinementSettings?.States.Select(setting => setting.State).ToList() ?? [];
 
-            return [.. chosen.Union(team.GetRawStatesForCategory(chosen))];
+            return new HashSet<string>(chosen.Concat(team.GetRawStatesForCategory(chosen)), StringComparer.OrdinalIgnoreCase);
         }
     }
 }

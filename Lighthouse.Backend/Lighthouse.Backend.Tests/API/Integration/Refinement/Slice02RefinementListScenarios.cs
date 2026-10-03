@@ -98,6 +98,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowsAre(tab, "OR-002", "OR-001");
         }
 
+        // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:pure-function
+        // Everywhere else a Team's states match the tracker's whatever their case, so the tab must too.
+        [Test]
+        public async Task A_state_typed_in_other_case_than_the_trackers_still_lists_its_Work_Items()
+        {
+            var nova = await GivenNovaRefinesInBacklogTypedInLowerCaseWhileItsTrackerSaysBacklog();
+            TheCallerOnlyReadsTheTeam(nova);
+
+            var tab = await WhenTheCoachOpensTheRefinementTab(nova);
+
+            ThenTheRowsAre(tab, "NV-002", "NV-001");
+        }
+
         // @driving_port @real-io @us-02 @slice-02 @error @contract-shape:pure-function
         [Test]
         public async Task An_empty_refinement_is_stated_not_answered_as_an_error()

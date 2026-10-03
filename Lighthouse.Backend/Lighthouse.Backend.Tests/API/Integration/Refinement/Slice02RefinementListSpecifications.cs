@@ -88,6 +88,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             return await TheAdminHasChosen(orbit, Refining);
         }
 
+        private async Task<TeamUnderTest> GivenNovaRefinesInBacklogTypedInLowerCaseWhileItsTrackerSaysBacklog()
+        {
+            var nova = SeedTeam("Team Nova", ["backlog"], [Next, Implementation], [Done], []);
+
+            SeedWorkItems(nova,
+            [
+                new TrackerWorkItem("NV-001", "Offline mode", Backlog, StateCategories.ToDo, "2"),
+                new TrackerWorkItem("NV-002", "Bulk import", "BACKLOG", StateCategories.ToDo, "1"),
+            ]);
+
+            return await TheAdminHasChosen(nova, "backlog");
+        }
+
         private async Task<TeamUnderTest> GivenZenithRefinesInBacklogButHoldsNothingThere()
         {
             var zenith = ATeamMappedLikeGravity("Team Zenith");

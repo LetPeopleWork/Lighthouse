@@ -12,6 +12,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
     {
         private const string Backlog = "Backlog";
 
+        private static readonly string[] OnlyA = ["A"];
+
         [TestCase("7,7,7", "GR-3,GR-1,GR-2", "GR-1,GR-2,GR-3", TestName = "Equal ranks are listed by id")]
         [TestCase("7,7", "GR-10,GR-9", "GR-10,GR-9", TestName = "Equal ranks compare ids as text, not as numbers")]
         [TestCase("10,9,100", "A,B,C", "B,A,C", TestName = "Numeric ranks are compared as numbers")]
@@ -29,6 +31,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             var listed = new RefinementList(ARepositoryHolding(items)).For(team);
 
             Assert.That(listed.Select(item => item.ReferenceId), Is.EqualTo(expectedOrder.Split(',')));
+        }
+
+        [TestCase("backlog", "Backlog", TestName = "A state typed in other case than the tracker's is still listed")]
+        [TestCase("Backlog", "BACKLOG", TestName = "A tracker state in other case than the Team's is still listed")]
+        public void MatchesTheTrackersStateWhateverItsCase(string teamState, string trackerState)
+        {
+            var team = ATeamRefiningIn(teamState, []);
+            var items = new List<WorkItem> { new() { ReferenceId = "A", Order = "1", State = trackerState, TeamId = team.Id } };
+
+            var listed = new RefinementList(ARepositoryHolding(items)).For(team);
+
+            Assert.That(listed.Select(item => item.ReferenceId), Is.EqualTo(OnlyA));
+        }
+
+        [Test]
+        public void MatchesAStateGatheredByAMappingWhateverItsCase()
+        {
+            var team = ATeamRefiningIn("Refining", [new StateMapping { Name = "refining", States = ["analysing"] }]);
+            var items = new List<WorkItem> { new() { ReferenceId = "A", Order = "1", State = "Analysing", TeamId = team.Id } };
+
+            var listed = new RefinementList(ARepositoryHolding(items)).For(team);
+
+            Assert.That(listed.Select(item => item.ReferenceId), Is.EqualTo(OnlyA));
+        }
+
+        private static Team ATeamRefiningIn(string state, List<StateMapping> mappings)
+        {
+            return new Team
+            {
+                Id = 12,
+                ToDoStates = [state],
+                DoingStates = ["Doing"],
+                StateMappings = mappings,
+                RefinementSettings = new RefinementSettings { States = [new RefinementStateSetting { State = state }] },
+            };
         }
 
         private static Team ATeamRefiningInBacklog()
