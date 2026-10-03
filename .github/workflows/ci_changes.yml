@@ -104,15 +104,19 @@ jobs:
                 const jobs = await github.rest.actions.listJobsForWorkflowRun({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  run_id: run.id
+                  run_id: run.id,
+                  per_page: 100
                 });
                 
-                // Check if both verify stages succeeded (even if the overall workflow is still in progress)
+                // Check if both verify stages succeeded (even if the overall workflow is still in progress) and
+                // its Sonar gate did not fail, so a red gate stays in the next run's window and gets scanned again.
                 const sqliteVerify = jobs.data.jobs.find(j => j.name.includes('sqlite'));
                 const postgresVerify = jobs.data.jobs.find(j => j.name.includes('postgres'));
+                const sonarGate = jobs.data.jobs.find(j => j.name.includes('sonar-gates'));
+                const sonarGateHeld = !sonarGate || ['success', 'skipped'].includes(sonarGate.conclusion);
               
                 
-                if (sqliteVerify?.conclusion === 'success' && postgresVerify?.conclusion === 'success') {
+                if (sqliteVerify?.conclusion === 'success' && postgresVerify?.conclusion === 'success' && sonarGateHeld) {
                   console.log(`Found last successful run: ${run.id} (status: ${run.status}) at commit ${run.head_sha}`);
                   foundCommit = run.head_sha;
                   break;

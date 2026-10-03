@@ -99,8 +99,8 @@ jobs:
           /d:sonar.language="cs" \
           /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" \
           /d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx" \
-          /d:sonar.exclusions="**/Lighthouse.Migrations.Sqlite/**,**/Lighthouse.Migrations.Postgres/**,**/Lighthouse.Frontend/**,**/Lighthouse.EndToEndTests/**,Lighthouse.Frontend/**,Lighthouse.EndToEndTests/**,Scripts/**,tools/**,**/.github/**,**/.vscode/**,**/docs/**" \
-          /d:sonar.coverage.exclusions="**/Lighthouse.Migrations.Sqlite/**,**/Lighthouse.Migrations.Postgres/**,**/Lighthouse.Frontend/**,**/Lighthouse.EndToEndTests/**,Scripts/**"
+          /d:sonar.exclusions="**/Lighthouse.Migrations.Sqlite/**,**/Lighthouse.Migrations.Postgres/**,**/Lighthouse.Frontend/**,**/Lighthouse.EndToEndTests/**,Lighthouse.Frontend/**,Lighthouse.EndToEndTests/**,Scripts/**,tools/**,**/.github/**,**/.vscode/**,**/docs/**,chart/**,.githooks/**,.claude/**,.nwave/**" \
+          /d:sonar.coverage.exclusions="**/Lighthouse.Migrations.Sqlite/**,**/Lighthouse.Migrations.Postgres/**,**/Lighthouse.Frontend/**,**/Lighthouse.EndToEndTests/**,Scripts/**,chart/**,.githooks/**,.claude/**,.nwave/**"
     
     - name: Build Backend (composite)
       uses: ./.github/actions/build-backend
