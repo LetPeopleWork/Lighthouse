@@ -2138,7 +2138,7 @@ question followed by an info icon (ⓘ) whose detail appears on hover. No visibl
 
 | Team | Line | Tooltip |
 |---|---|---|
-| SLE 75% / 7 days | Doable within 7 days? ⓘ | SLE 75% of items in 7 days or less |
+| SLE 75% / 7 days | Doable within 7 days? ⓘ | SLE 75% of work items in 7 days or less |
 | No SLE, fallback P85 = 12 days | Doable within 12 days? ⓘ | No SLE set, based off 85% of historical cycle time |
 | No SLE, nothing finished | Doable within our SLE? ⓘ | No SLE is set and no Work Items have finished yet |
 
@@ -2146,6 +2146,13 @@ SLE, Cycle Time, Work Items and Refinement come from Terminology (seeded default
 `{source: Sle | CycleTimeFallback | Unavailable, days?, probability?}`; the browser composes sentence and tooltip.
 The frontend scenarios assert the question, the info icon's accessible tooltip text, and that nothing else sits
 between the heading and the list.
+
+**Amended by the maintainer, 2026-10-03 (later the same day):** the SLE tooltip uses the Work Items term, not the
+literal "items" (lower-cased mid-sentence, like Cycle Time in the fallback tooltip). And for slices 11–12: a plain Yes
+or No may also carry an optional comment explaining why, because voting is asynchronous and the reason helps answer
+points raised earlier. Yes and No still record in one click; adding a comment is optional, never a prompt. This
+replaces DST-24 ("the UI prompts for a comment only on Yes, but…"); "Yes, but…" keeps its prompt. The exact control is
+sketched before slice 11 is built.
 
 ## Wave: DISTILL / [REF] Scenario list with tags — E3 (#5510)
 
