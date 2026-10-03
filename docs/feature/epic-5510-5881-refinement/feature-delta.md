@@ -2531,3 +2531,18 @@ categories excluded), frontend 6039 passed / 0 failed.
 - **ADO**: #6139 and #6140 Resolved; Epic #6136 stays open until the release carrying it.
 - **Owed**: screenshots for the tab and the settings section (maintainer deferred); KPI baselines for
   `OUT-5510-K1` and `OUT-5510-K2` after the first release carrying E1.
+
+## Wave: DELIVER / [REF] Implementation summary — E3 slice 10 (#6148)
+
+The Refinement tab's read carries the yardstick as facts `{ source, days, probability }`: the Team's SLE
+when both fields are set, else the 85th percentile of the Team's default cycle time over its Throughput
+window, else no number (also when the Team does not refine, without asking the metrics service). The
+tab shows the heading plus one line, "Doable within N days?" ("1 day" in the singular, "our SLE" with no
+number), and an info icon whose tooltip and accessible name say where N comes from, in the Team's
+Terminology. Steps 10-01..10-06, then refactor, an adversarial review (0 blocker / 0 high; 2 medium and
+7 low fixed, the "no Work Items have finished yet" wording kept by the maintainer, acronym lower-casing
+left as the existing project pattern), and mutation testing (backend 100 %, frontend 94.23 %,
+`mutation/results.md`). The maintainer tested it by hand on 2026-10-03.
+
+Open: the dev-instance check of how large real fallback values get (the slice's learning hypothesis)
+was not run — the dev instance was down.

@@ -157,3 +157,60 @@ Frontend:
 - `models/Refinement/Refinement.ts`, `models/Team/Team.ts`, `models/TerminologyKeys.ts`,
   `models/UsageData/UsageData.ts`, `services/Api/UsageDataService.ts`,
   `services/TerminologyContext.tsx` — types, enum members and terminology keys.
+
+---
+
+# Mutation testing — 6148 (the SLE yardstick, E3 slice 10)
+
+Run 2026-10-03 against `main` @ `15dc4580a`, with the production code frozen; the only commit after the
+first run added tests. Gate is 80 % kill rate on both stacks.
+
+| stack | score | tested | killed | survived | no coverage | timeout |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 5.0.0) | **100.00 %** | 20 | 20 | 0 | 0 | 0 |
+| Frontend (StrykerJS 10.0.0) | **94.23 %** | 52 | 49 | 3 | 0 | 0 |
+
+Configs: `stryker.6148.backend.json`, `stryker.6148.frontend.json`, `vitest.stryker.6148.ts`.
+
+## Backend
+
+| file | tested | killed |
+| --- | --- | --- |
+| `SleYardstickResolver.cs` | 15 | 15 |
+| `RefinementViewQuery.cs` | 5 | 5 |
+
+The filter keeps to the unit namespace `Tests.Services.Implementation.Refinement`; the acceptance suite
+boots a host per test and would make the gate too slow to run per slice.
+
+### Closed by this pass
+
+The first run scored 85.00 % (17 of 20): `RefinementViewQuery` was only exercised through the acceptance
+suite, so the unknown-Team null, and the configured flag being `false` / `true`, survived. Three unit
+cases in `RefinementViewQueryTest` now pin them (commit `15dc4580a`).
+
+### Not mutated
+
+`RefinementViewDto.cs` (the `yardstick` mapping) is plain property copying covered only by the
+acceptance scenarios that read `source`, `days` and `probability` off the wire; mutating it would
+need the acceptance suite in the filter. `Program.cs` carries one registration line, proven by every
+acceptance scenario that reads the tab.
+
+## Frontend
+
+| file | tested | killed | survived |
+| --- | --- | --- | --- |
+| `YardstickQuestion.tsx` | 49 | 46 | 3 |
+| `RefinementView.tsx` (lines 121-123, the yardstick guard) | 3 | 3 | 0 |
+
+### Closed by this pass
+
+The first run scored 88.46 %: the `source is Sle or CycleTimeFallback` condition forced to `true`
+survived, because no case sent an unknown source with a positive number of days. A row in the
+"treats %s as having no number" table now does.
+
+### Accepted survivors
+
+- `YardstickQuestion.tsx:18` `yardstick.days !== null` → `true`: equivalent. The next condition is
+  `yardstick.days > 0`, and `null > 0` is already `false`, so dropping the null check changes nothing.
+- `YardstickQuestion.tsx:57` the `sx={{ alignItems: "center" }}` object and its string: vertical
+  alignment of the question and the icon only, which jsdom does not lay out and no behaviour depends on.
