@@ -70,6 +70,12 @@ Two standing principles worth keeping visible here because they're easy to skip 
   renumber. Emitting it is a DELIVER step in the slice that first makes the feature usable, and that
   step also lists the event in `docs/settings/usagedata.md`.
 - **Write the configurable term, not one tracker's word for it.** Everything a user can rename under Settings → Terminology (feature, work item, team, portfolio, delivery, cycle time, throughput, WIP, blocked, SLE) renders as *their* word. Docs, release notes and UI fallback defaults use the seeded default from `TerminologySeeder.cs` — `Feature`/`Features`, `Work Item`/`Work Items`, … — never "Epic", "Initiative" or "Story", which name a heading a Jira or Linear reader never sees. A literal work-tracking-system **value** (a filter matching type `Epic` in ADO) is the exception and stays as written.
+- **Sketch any UI before building it, and ask.** Before a DELIVER step (or a fix) that adds or changes
+  something a user sees, show the maintainer a sketch of it (an ASCII mock of the layout, columns, controls
+  and copy) and get a yes first. This holds in AFK mode too: collect the sketches up front while the
+  maintainer is there, rather than shipping UI they have not seen. Prefer reusing an existing control or
+  table style (`DataGridBase`, `ItemListManager`, the feature-list columns) over a new one, and say which
+  one the sketch reuses.
 
 ### Commits & Shared Contracts
 

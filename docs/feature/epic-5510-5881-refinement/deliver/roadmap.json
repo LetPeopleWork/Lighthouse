@@ -2,7 +2,7 @@
   "roadmap": {
     "project_id": "epic-5510-5881-refinement",
     "created_at": "2026-10-03",
-    "total_steps": 22,
+    "total_steps": 26,
     "total_phases": 2,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
@@ -474,6 +474,26 @@
             "01-12"
           ],
           "implementation_notes": "Maintainer-directed behaviour change; the kept-and-flagged scenarios are re-expressed as removed (authorised rewrite). Reverses DISTILL DST-2/DST-3 and the 01-03 flag."
+        },
+        {
+          "id": "01-14",
+          "name": "Settings -> Refinement drops the Doing note",
+          "description": "Maintainer review: the line 'A Doing state already counts in WIP and Cycle Time' is pointless; remove it and its test assertion.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx",
+          "scenario_name": "notes that Doing states already count in WIP and Cycle Time -> re-expressed: no such note is shown",
+          "criteria": [
+            "Settings -> Refinement shows no note about Doing states counting in WIP and Cycle Time",
+            "The other Settings -> Refinement cases stay green"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Team/RefinementSettingsSection.tsx",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx"
+          ],
+          "dependencies": [
+            "01-13"
+          ],
+          "implementation_notes": "Maintainer-directed copy removal."
         }
       ]
     },
@@ -796,6 +816,73 @@
             "02-07"
           ],
           "implementation_notes": "EXEMPT FROM PARADIGM: E2E walking skeleton, single-shot UI flow (WS strategy: one skeleton for E1, DVO-7). This step REQUIRES A RUNNING APP and cannot be self-certified from a type-check (memory: run Playwright before commit; Claude runs live E2E itself; E2E via POM; E2E uses demo data; E2E is a thin sanity check - one skeleton, widen a timeout rather than add a test). Procedure: start the backend with Lighthouse.Backend/Start-DevServer.ps1 on a spare port by overriding the Kestrel keys (ASPNETCORE_URLS is ignored; appsettings pins 5169/7246), import the premium licence (scenario 12 is premium; copy valid_not_expired_license.json from the main checkout if in a worktree), start the frontend, run the spec once while still fixme'd-off locally to see it go RED-for-the-right-reason only if any slice-01/02 piece is missing (by now all are, so expect green), then remove .fixme and run again. DST-9: GR-051 is first under DSN-6 (CSV rank = file order); if it is not, investigate the order ladder before touching the spec. The tooltip asserted is the editor copy because E2E runs without sign-in (everybody edits). Commit: test(refinement): the Refinement walking skeleton runs (stories 6139, 6140)."
+        },
+        {
+          "id": "02-10",
+          "name": "The refinement answer carries each Work Item's parent, not its age or category",
+          "description": "Maintainer review of slice 02 (2026-10-03), sketch approved: heading + shared DataGrid (DataGridBase + toolbar search/filter/columns), columns '{Work Item} Name' (id+name one link, the Feature list's name cell), 'Parent' (the Feature list's ParentWorkItemCell, '\u2014' when none), 'State'; rows open in backlog order, header sorting allowed like the other grids; no age, no category, also not in the API. Backend half: rows become { referenceId, name, url, state, parentReferenceId }; workItemAge and stateCategory leave the wire.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice02RefinementListScenarios.cs",
+          "scenario_name": "Each_row_names_the_Work_Item... and A_Doing_row_carries_its_Work_Item_Age... re-expressed (parent instead of age/category)",
+          "criteria": [
+            "Each row gives the Work Item's id, link, name, state and its parent's reference (empty when it has none)",
+            "No row carries an age or a category",
+            "Order, filtering, RBAC and the read-only guarantee are unchanged"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/RefinementViewDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/RefinementController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice02RefinementListScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice02RefinementListSpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementAcceptanceTest.cs"
+          ],
+          "dependencies": [
+            "02-09"
+          ],
+          "implementation_notes": "Maintainer-directed; authorised scenario rewrite."
+        },
+        {
+          "id": "02-11",
+          "name": "The Refinement tab is a shared grid: Work Item Name, Parent, State",
+          "description": "Maintainer review of slice 02 (2026-10-03), sketch approved: heading + shared DataGrid (DataGridBase + toolbar search/filter/columns), columns '{Work Item} Name' (id+name one link, the Feature list's name cell), 'Parent' (the Feature list's ParentWorkItemCell, '\u2014' when none), 'State'; rows open in backlog order, header sorting allowed like the other grids; no age, no category, also not in the API. Frontend half: RefinementView keeps its counted heading and empty state, and renders the rows through DataGridBase with the Feature list's name and parent cells.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.test.tsx",
+          "scenario_name": "RefinementView cases re-expressed for the grid (name link, parent, state; no age/category)",
+          "criteria": [
+            "The tab shows the counted heading and a grid with search, filter and column controls",
+            "Columns are '{Work Item} Name' (id and name as one link), 'Parent' (link, or a dash when none) and 'State'",
+            "Rows open in backlog order; no age or category is shown",
+            "Empty state and the Team's own words unchanged"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementRow.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.test.tsx",
+            "Lighthouse.Frontend/src/models/Refinement/Refinement.ts"
+          ],
+          "dependencies": [
+            "02-10"
+          ],
+          "implementation_notes": "Maintainer-directed; authorised test rewrite. Reuse DataGridBase, FeatureName/getWorkItemName, ParentWorkItemCell + useParentWorkItems."
+        },
+        {
+          "id": "02-12",
+          "name": "The walking skeleton reads the grid",
+          "description": "Re-run Refinement.spec.ts live against the grid; adjust only the page objects to read the first row from the grid.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/teams/Refinement.spec.ts",
+          "scenario_name": "a coach opens a Team's Refinement tab and sees its Work Items in backlog order, while a Team without refinement states keeps the tab switched off",
+          "criteria": [
+            "The walking skeleton passes live against the grid: Gravity's first row is GR-051 in Analysing; Zenith's tab stays switched off"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/models/teams/TeamRefinementPage.ts",
+            "Lighthouse.EndToEndTests/tests/specs/teams/Refinement.spec.ts"
+          ],
+          "dependencies": [
+            "02-11"
+          ],
+          "implementation_notes": "Run live on a spare port with a scratch DB and the premium licence, as in 02-09."
         }
       ]
     }
