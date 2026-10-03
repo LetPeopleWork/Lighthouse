@@ -2154,6 +2154,9 @@ points raised earlier. Yes and No still record in one click; adding a comment is
 replaces DST-24 ("the UI prompts for a comment only on Yes, but…"); "Yes, but…" keeps its prompt. The exact control is
 sketched before slice 11 is built.
 
+The conditional answer is labelled **"Yes, if…"** (maintainer, 2026-10-03), replacing "Yes, but…" everywhere a user
+reads it; the three answers read Yes · Yes, if… · No. Only the label changes; the stored answer value stays as it is.
+
 ## Wave: DISTILL / [REF] Scenario list with tags — E3 (#5510)
 
 All cases are pending (`[Ignore(PendingSlice1n)]` / `IgnoreReason = PendingSlice1n`, `it.skip`); the E2E skeleton is
