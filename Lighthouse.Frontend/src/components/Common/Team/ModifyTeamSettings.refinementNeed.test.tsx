@@ -10,13 +10,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IRefinementSettings } from "../../../models/Refinement/Refinement";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
-import type { IWorkItemRuleSchema } from "../../../models/WorkItemRules";
+import type {
+	IWorkItemRuleCondition,
+	IWorkItemRuleSchema,
+	IWorkItemRuleSet,
+} from "../../../models/WorkItemRules";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ITeamService } from "../../../services/Api/TeamService";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import ModifyTeamSettings from "./ModifyTeamSettings";
+import {
+	hasIncompleteStageRule,
+	stageRuleOf,
+} from "./RefinementSettingsSection";
 
 /**
  * What a Team admin sets in the Refinement section so the tab can say how much to refine: the optional
@@ -179,7 +187,7 @@ describe("Stage rules in the Refinement section of a Team's settings", () => {
 	});
 
 	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
-	it.skip("offers optional stages, a Ready rule and a Being refined rule, each with nothing set", async () => {
+	it("offers optional stages, a Ready rule and a Being refined rule, each with nothing set", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
 		expect(await screen.findByText("Stages (optional)")).toBeVisible();
@@ -196,7 +204,7 @@ describe("Stage rules in the Refinement section of a Team's settings", () => {
 	});
 
 	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
-	it.skip("shows the Ready rule the Team stored", async () => {
+	it("shows the Ready rule the Team stored", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
 				stageRules: { ready: tagsContain("ready"), beingRefined: null },
@@ -208,7 +216,7 @@ describe("Stage rules in the Refinement section of a Team's settings", () => {
 	});
 
 	// @us-03 @slice-03 @driving_port @contract-shape:bounded-change
-	it.skip("saves a changed Ready rule and leaves the Being refined rule as it was", async () => {
+	it("saves a changed Ready rule and leaves the Being refined rule as it was", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
 				stageRules: {
@@ -233,7 +241,7 @@ describe("Stage rules in the Refinement section of a Team's settings", () => {
 	});
 
 	// @us-03 @slice-03 @boundary @contract-shape:bounded-change
-	it.skip("switches the Ready rule off when its last condition is removed", async () => {
+	it("switches the Ready rule off when its last condition is removed", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
 				stageRules: {
@@ -258,7 +266,7 @@ describe("Stage rules in the Refinement section of a Team's settings", () => {
 	});
 
 	// @us-03 @slice-03 @error @contract-shape:unbounded-preservation
-	it.skip("saves nothing while a new rule is still incomplete", async () => {
+	it("saves nothing while a new rule is still incomplete", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
 		await userEvent.click(
@@ -269,6 +277,69 @@ describe("Stage rules in the Refinement section of a Team's settings", () => {
 		await pastTheAutosaveDelay();
 
 		expect(saveTeamSettings).not.toHaveBeenCalled();
+	});
+});
+
+describe("What a stage rule saves as", () => {
+	const incomplete = {
+		fieldKey: "workitem.tags",
+		operator: "contains",
+		value: " ",
+	};
+	const valueless = {
+		fieldKey: "workitem.tags",
+		operator: "isEmpty",
+		value: "",
+	};
+
+	it.each<[string, IWorkItemRuleCondition[], IWorkItemRuleSet | null, boolean]>(
+		[
+			["no conditions", [], null, false],
+			[
+				"a condition without a value",
+				[incomplete],
+				{ version: 1, mode: "or", conditions: [incomplete] },
+				true,
+			],
+			[
+				"a condition that needs no value",
+				[valueless],
+				{ version: 1, mode: "or", conditions: [valueless] },
+				false,
+			],
+			[
+				"a finished condition beside an unfinished one",
+				[...tagsContain("ready").conditions, incomplete],
+				{
+					version: 1,
+					mode: "or",
+					conditions: [...tagsContain("ready").conditions, incomplete],
+				},
+				true,
+			],
+			[
+				"finished conditions only",
+				tagsContain("ready").conditions,
+				{ ...tagsContain("ready"), mode: "or" },
+				false,
+			],
+		],
+	)(
+		"%s saves as the rule shown and blocks the save only while unfinished",
+		(_, conditions, rule, blocks) => {
+			expect(stageRuleOf(conditions, "or")).toEqual(rule);
+			expect(hasIncompleteStageRule({ ready: null, beingRefined: rule })).toBe(
+				blocks,
+			);
+			expect(hasIncompleteStageRule({ ready: rule, beingRefined: null })).toBe(
+				blocks,
+			);
+		},
+	);
+
+	it("holds nothing back for a Team without stage rules", () => {
+		expect(hasIncompleteStageRule(undefined)).toBe(false);
+		expect(hasIncompleteStageRule(null)).toBe(false);
 	});
 });
 

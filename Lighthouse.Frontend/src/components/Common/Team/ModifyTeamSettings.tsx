@@ -32,7 +32,9 @@ import SaveStateIndicator from "../ValidationActions/SaveStateIndicator";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
 import RefinementSettingsSection, {
 	DEFAULT_READINESS,
+	hasIncompleteStageRule,
 	hasReadinessErrors,
+	NO_STAGE_RULES,
 } from "./RefinementSettingsSection";
 
 interface ModifyTeamSettingsProps {
@@ -87,6 +89,9 @@ function teamAutoSaveBlockers(
 	const readiness = s.refinement?.readiness;
 	if (readiness && hasReadinessErrors(readiness)) {
 		reasons.push("Correct Readiness by votes");
+	}
+	if (hasIncompleteStageRule(s.refinement?.stageRules)) {
+		reasons.push("Complete the stage rules");
 	}
 	if (isDefault) {
 		return reasons;
@@ -264,6 +269,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 						/>
 
 						<RefinementSettingsSection
+							teamId={teamSettings.id}
 							toDoStates={teamSettings.toDoStates || []}
 							doingStates={teamSettings.doingStates || []}
 							chosenStates={teamSettings.refinement?.states ?? []}
@@ -278,8 +284,17 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							}
 							onReadinessChange={(readiness) =>
 								updateSettings("refinement", {
+									...teamSettings.refinement,
 									states: teamSettings.refinement?.states ?? [],
 									readiness,
+								})
+							}
+							stageRules={teamSettings.refinement?.stageRules ?? NO_STAGE_RULES}
+							onStageRulesChange={(stageRules) =>
+								updateSettings("refinement", {
+									...teamSettings.refinement,
+									states: teamSettings.refinement?.states ?? [],
+									stageRules,
 								})
 							}
 						/>
