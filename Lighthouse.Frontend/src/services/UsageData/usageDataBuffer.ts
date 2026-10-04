@@ -1,6 +1,7 @@
 import type {
 	UsageDataOptionalFeature,
 	UsageDataRouteKey,
+	UsageDataSizingMoment,
 	UsageDataWorkTrackingSystem,
 } from "../../models/UsageData/UsageData";
 import type { UsageDataEventName } from "../Api/UsageDataService";
@@ -19,6 +20,7 @@ export interface NoticedEvent {
 	workTrackingSystem?: UsageDataWorkTrackingSystem;
 	optionalFeature?: UsageDataOptionalFeature;
 	enabled?: boolean;
+	sizingMoment?: UsageDataSizingMoment;
 	noticedAt: number;
 }
 

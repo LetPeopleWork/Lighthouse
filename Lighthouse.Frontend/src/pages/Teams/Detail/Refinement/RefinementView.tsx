@@ -25,9 +25,12 @@ import type {
 } from "../../../../models/Refinement/Refinement";
 import type { Team } from "../../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
+import { UsageDataSizingMoment } from "../../../../models/UsageData/UsageData";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
+import { UsageDataEventName } from "../../../../services/Api/UsageDataService";
 import type { IStoredVoter } from "../../../../services/Refinement/voterStore";
 import { useTerminology } from "../../../../services/TerminologyContext";
+import { useUsageDataReporter } from "../../../../services/UsageData/usageDataReporter";
 import VoteControl from "./VoteControl";
 import VoterNamePrompt from "./VoterNamePrompt";
 import VotesAndCommentsDialog from "./VotesAndCommentsDialog";
@@ -37,6 +40,10 @@ import YardstickQuestion from "./YardstickQuestion";
 type RefinementGridRow = IRefinementRow & GridValidRowModel;
 
 const NO_ROWS: IRefinementRow[] = [];
+
+/** A Team cannot have a refinement cadence yet, so every vote is cast without one. */
+const sizingMomentOfAVote = (): UsageDataSizingMoment =>
+	UsageDataSizingMoment.NoCadence;
 
 interface IPendingVote {
 	referenceId: string;
@@ -108,6 +115,7 @@ interface RefinementViewProps {
 const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 	const { refinementService, sizingLogService } = useContext(ApiServiceContext);
 	const { showError } = useErrorSnackbar();
+	const reportUsage = useUsageDataReporter();
 	const { getTerm } = useTerminology();
 	const [refinement, setRefinement] = useState<IRefinementView | null>(null);
 	const [pendingVote, setPendingVote] = useState<IPendingVote | null>(null);
@@ -155,10 +163,23 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 			const { vote, voterKey } = ballotFor(answer, declared);
 			sizingLogService
 				.castVote(team.id, referenceId, vote, voterKey)
-				.then(showAnsweredRow)
+				.then((answeredRow) => {
+					showAnsweredRow(answeredRow);
+					reportUsage({
+						name: UsageDataEventName.TeamSizingVoteCast,
+						sizingMoment: sizingMomentOfAVote(),
+					});
+				})
 				.catch((error: unknown) => showError(messageOf(error)));
 		},
-		[ballotFor, sizingLogService, team.id, showAnsweredRow, showError],
+		[
+			ballotFor,
+			sizingLogService,
+			team.id,
+			showAnsweredRow,
+			showError,
+			reportUsage,
+		],
 	);
 
 	const onVote = useCallback(

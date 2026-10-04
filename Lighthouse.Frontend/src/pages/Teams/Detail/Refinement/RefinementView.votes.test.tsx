@@ -338,7 +338,7 @@ describe("A voter casts a sizing vote from the list", () => {
 	});
 
 	// @us-11 @slice-11 @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:bounded-change
-	it.skip("reports each vote the server took to usage data, saying no cadence is set yet", async () => {
+	it("reports each vote the server took to usage data, saying no cadence is set yet", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const sizingLogService = aSizingLogService({
 			castVote: vi.fn().mockResolvedValue(
@@ -370,7 +370,7 @@ describe("A voter casts a sizing vote from the list", () => {
 	});
 
 	// @us-11 @slice-11 @error @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:unbounded-preservation
-	it.skip("reports nothing for a vote the server refused", async () => {
+	it("reports nothing for a vote the server refused", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const sizingLogService = aSizingLogService({
 			castVote: vi

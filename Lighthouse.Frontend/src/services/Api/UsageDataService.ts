@@ -3,6 +3,7 @@ import type {
 	UsageDataDecisionValue,
 	UsageDataOptionalFeature,
 	UsageDataRouteKey,
+	UsageDataSizingMoment,
 	UsageDataWorkTrackingSystem,
 } from "../../models/UsageData/UsageData";
 import { BaseApiService } from "./BaseApiService";
@@ -30,6 +31,7 @@ export const UsageDataEventName = {
 	OptionalFeatureToggled: "OptionalFeatureToggled",
 	TeamForecastRealityCheckRun: "TeamForecastRealityCheckRun",
 	TeamRefinementConfigured: "TeamRefinementConfigured",
+	TeamSizingVoteCast: "TeamSizingVoteCast",
 } as const;
 
 export type UsageDataEventName =
@@ -52,6 +54,8 @@ export interface IUsageDataEvent {
 	optionalFeature?: UsageDataOptionalFeature;
 	/** Only on a behaviour setting being switched: whether it is now on. */
 	enabled?: boolean;
+	/** Only on a sizing vote: when it was cast relative to the Team's refinement. */
+	sizingMoment?: UsageDataSizingMoment;
 	/** How long before this batch was handed in the thing happened, so a reader can order them. */
 	offsetMs: number;
 	sequence: number;

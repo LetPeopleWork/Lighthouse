@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useUsageDataConsentIfKnown } from "../../hooks/useUsageDataConsent";
 import type {
 	UsageDataOptionalFeature,
+	UsageDataSizingMoment,
 	UsageDataWorkTrackingSystem,
 } from "../../models/UsageData/UsageData";
 import type { WorkTrackingSystemType } from "../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -20,6 +21,7 @@ export interface UsageDataCapabilityUse {
 	workTrackingSystem?: UsageDataWorkTrackingSystem;
 	optionalFeature?: UsageDataOptionalFeature;
 	enabled?: boolean;
+	sizingMoment?: UsageDataSizingMoment;
 }
 
 /**

@@ -108,6 +108,19 @@ export const UsageDataOptionalFeature = {
 export type UsageDataOptionalFeature =
 	(typeof UsageDataOptionalFeature)[keyof typeof UsageDataOptionalFeature];
 
+/**
+ * When a sizing vote was cast relative to the Team's refinement, said as a choice from this list.
+ *
+ * A word for the moment, never a date or a time: when somebody votes is one of the few things that
+ * tells one voter from another. Until a Team can have a refinement cadence there is only one word.
+ */
+export const UsageDataSizingMoment = {
+	NoCadence: "NoCadence",
+} as const;
+
+export type UsageDataSizingMoment =
+	(typeof UsageDataSizingMoment)[keyof typeof UsageDataSizingMoment];
+
 export const USAGE_DATA_DOCS_URL =
 	"https://docs.lighthouse.letpeople.work/settings/usagedata.html";
 
