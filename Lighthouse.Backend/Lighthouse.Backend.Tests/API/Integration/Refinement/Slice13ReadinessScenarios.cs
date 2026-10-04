@@ -155,6 +155,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         }
 
         // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:unbounded-preservation
+        // A threshold left out of the save keeps the stored one; only a threshold sent as null turns its rule off.
+        [Test]
+        public async Task A_save_that_sends_only_the_No_rule_keeps_the_stored_Yes_if_rule()
+        {
+            var gravity = await GivenTheAdminChoseTwoYesFromTwoVotersAndNoDiscussionOnNo();
+
+            using var save = await WhenTheAdminSavesOnlyTheDiscussionThreshold(gravity, "no", 2);
+
+            ThenTheReadinessIs(await WhenTheAdminOpensTheTeamSettings(gravity), minYes: 2, minVoters: 2, new DiscussWhen(No: 2, YesIf: 3));
+        }
+
+        // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:unbounded-preservation
+        [Test]
+        public async Task A_save_that_sends_only_the_Yes_if_rule_keeps_the_stored_No_rule()
+        {
+            var gravity = await GivenTheDiscussionRules(new DiscussWhen(No: 2, YesIf: null));
+
+            using var save = await WhenTheAdminSavesOnlyTheDiscussionThreshold(gravity, "yesIf", 3);
+
+            ThenTheReadinessIs(await WhenTheAdminOpensTheTeamSettings(gravity), minYes: 3, minVoters: 3, new DiscussWhen(No: 2, YesIf: 3));
+        }
+
+        // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:unbounded-preservation
         [Test]
         public async Task Changing_readiness_keeps_every_Work_Item_the_Team_holds()
         {

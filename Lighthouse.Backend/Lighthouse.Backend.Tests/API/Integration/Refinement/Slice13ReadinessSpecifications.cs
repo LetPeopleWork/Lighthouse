@@ -165,6 +165,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             });
         }
 
+        private async Task<HttpResponseMessage> WhenTheAdminSavesOnlyTheDiscussionThreshold(TeamUnderTest team, string rule, int votes)
+        {
+            TheCallerAdministersTheTeam(team);
+            return await SaveTheRefinementSection(team, new JsonObject
+            {
+                ["discussWhen"] = new JsonObject { [rule] = votes },
+            });
+        }
+
         private async Task<HttpResponseMessage> WhenTheSettingsAreSavedWithoutReadiness(TeamUnderTest team)
         {
             TheCallerAdministersTheTeam(team);
