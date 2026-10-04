@@ -24,7 +24,7 @@ export interface IRefinementSettings {
 	readiness?: IReadinessSetting;
 }
 
-/** The three answers to "doable within our SLE?". */
+/** The three answers to "doable within our SLE?". A reader sees YesBut labelled "Yes, if…". */
 export type SizingAnswer = "Yes" | "YesBut" | "No";
 
 /** Where an entry was cast from, as the caller declares it. */
@@ -37,7 +37,7 @@ export type RowReadiness =
 	| "MoreVotersNeeded"
 	| "NeedsDiscussion";
 
-/** How the votes on a row split; only sent to somebody who has voted on it. */
+/** How the votes on a row split; every reader is told, voted or not. */
 export interface ISizingSplit {
 	yes: number;
 	yesBut: number;
@@ -53,7 +53,7 @@ export interface IRefinementRow {
 	parentReferenceId: string;
 	voteCount?: number;
 	myVote?: SizingAnswer | null;
-	split?: ISizingSplit | null;
+	split?: ISizingSplit;
 	readiness?: RowReadiness;
 	/** How many more Yes votes or voters the row needs; null when Ready or in discussion. */
 	missingVotes?: number | null;
@@ -93,11 +93,9 @@ export interface ISizingLogEntry {
 	isMine: boolean;
 }
 
-/** One Work Item's log, or only how many have voted when the reader has not voted yet. */
+/** One Work Item's log, oldest first, open to every reader whether they voted or not. */
 export interface ISizingLog {
-	hidden: boolean;
-	voteCount?: number;
-	entries?: ISizingLogEntry[];
+	entries: ISizingLogEntry[];
 }
 
 export interface ISizingVote {

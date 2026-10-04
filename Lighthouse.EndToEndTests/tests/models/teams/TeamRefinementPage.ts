@@ -22,7 +22,7 @@ export class TeamRefinementPage {
 		return this.workItemRows.filter({ hasText: referenceId });
 	}
 
-	/** One of the three answers on a Work Item's row: "Yes", "Yes, but…" or "No". */
+	/** One of the three answers on a Work Item's row: "Yes", "Yes, if…" or "No". */
 	answerButton(referenceId: string, answer: string): Locator {
 		return this.workItemRow(referenceId).getByRole("button", {
 			name: answer,
@@ -34,7 +34,7 @@ export class TeamRefinementPage {
 	async vote(referenceId: string, answer: string, name: string): Promise<void> {
 		await this.answerButton(referenceId, answer).click();
 
-		const prompt = this.page.getByRole("dialog");
+		const prompt = this.page.getByRole("dialog", { name: "Who is voting?" });
 		await prompt.getByRole("textbox", { name: "Your name" }).fill(name);
 		await prompt.getByRole("button", { name: "Vote" }).click();
 		await prompt.waitFor({ state: "hidden" });

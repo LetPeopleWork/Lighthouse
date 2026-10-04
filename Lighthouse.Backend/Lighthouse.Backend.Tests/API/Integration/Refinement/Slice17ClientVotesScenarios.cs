@@ -34,29 +34,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheClientReads(tab, (ApiVersioning, "NeedsDiscussion"), (ConfigurationManagement, "Ready"));
         }
 
-        // @driving_port @real-io @us-14 @us-17a @slice-17a @error @contract-shape:pure-function
+        // @driving_port @real-io @us-17a @slice-17a @contract-shape:pure-function
         [Test]
         [Ignore(PendingSlice17a)]
-        public async Task A_client_whose_user_has_not_voted_is_not_told_the_split()
+        public async Task A_client_is_told_how_the_votes_split()
         {
             var gravity = await GivenApiVersioningNeedsDiscussionAndConfigurationManagementIsReady();
 
             var tab = await WhenPriyasClientReadsTheRefinement(gravity);
 
-            ThenTheClientSeesCountsButNoSplitOn(tab, ApiVersioning, voteCount: 4);
-        }
-
-        // @driving_port @real-io @us-14 @us-17a @slice-17a @boundary @contract-shape:pure-function
-        [Test]
-        [Ignore(PendingSlice17a)]
-        public async Task A_client_whose_user_voted_through_it_is_told_the_split()
-        {
-            var gravity = await GivenApiVersioningNeedsDiscussionAndConfigurationManagementIsReady();
-            await HasVoted(PriyasClient, gravity, ApiVersioning, Answer.Yes, channel: Channel.Cli);
-
-            var tab = await WhenPriyasClientReadsTheRefinement(gravity);
-
-            Assert.That(RowOf(tab, ApiVersioning).Split, Is.EqualTo(new SplitReading(Yes: 4, YesBut: 0, No: 1)));
+            ThenTheClientSeesTheSplitOn(tab, ApiVersioning, voteCount: 4, new SplitReading(Yes: 3, YesBut: 0, No: 1));
         }
 
         // --- Casting from a client without sign-in (17b) ---

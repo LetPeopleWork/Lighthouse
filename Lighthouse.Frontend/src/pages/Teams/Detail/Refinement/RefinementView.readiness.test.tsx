@@ -138,24 +138,17 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 		expect(await theRowOf("GR-059")).toHaveTextContent("2 more voters needed");
 	});
 
-	// @us-13 @us-14 @slice-13 @boundary @contract-shape:pure-function
-	it.skip("shows readiness to a reader who has not voted, without the split", async () => {
-		renderTheRefinementTab(
-			gravitysRefinement({ readyByVotesCount: 1 }, [
-				configurationManagement({
-					voteCount: 3,
-					readiness: "Ready",
-					missingVotes: null,
-					split: null,
-					myVote: null,
-				}),
-			]),
-		);
+	// @us-13 @slice-13 @contract-shape:pure-function
+	it.skip("gives readiness its own column, right after the votes", async () => {
+		renderTheRefinementTab(gravitysRefinement());
 
-		const row = await theRowOf(CONFIGURATION_MANAGEMENT);
+		await theRowOf(CONFIGURATION_MANAGEMENT);
+		const columns = screen
+			.getAllByRole("columnheader")
+			.map((header) => header.textContent?.trim());
 
-		expect(row).toHaveTextContent("Ready");
-		expect(row).not.toHaveTextContent(/\d+ Yes\b/);
+		expect(columns).toContain("Readiness");
+		expect(columns.indexOf("Readiness")).toBe(columns.indexOf("Votes") + 1);
 	});
 
 	// @us-13 @slice-13 @contract-shape:pure-function

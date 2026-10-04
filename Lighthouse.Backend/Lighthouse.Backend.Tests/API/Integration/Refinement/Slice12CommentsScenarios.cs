@@ -4,13 +4,13 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 {
     /// <summary>
-    /// A vote can say why: any answer may carry a comment, and a "Yes, but…" is where the condition goes.
+    /// A vote can say why: any answer may carry a comment, and a "Yes, if…" is where the condition goes.
     /// A comment can also stand alone - a question rather than a view. It counts for nothing, and it marks
     /// the Work Item as having an open question until the person who asked it votes. Every vote, comment
     /// and change of mind stays in the Work Item's log, oldest first, saying who, when and from where.
     ///
-    /// Every log in these scenarios is read by somebody who has voted on that Work Item, so the scenarios
-    /// keep holding once a voter must vote before seeing the others' views.
+    /// The log is open to everybody who can open the tab, voted or not: a Product Owner who never votes
+    /// still reads how the Team voted and why.
     ///
     /// Driving ports: the vote and comment writes, the Work Item's log and the Refinement tab's read. Step
     /// definitions live in Slice12CommentsSpecifications.cs.
@@ -86,6 +86,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheLogReads(log,
                 new LogEntryReading("Vote", nameof(Answer.Yes), null, JonasWeber, nameof(Channel.Web), null, IsMine: false),
                 new LogEntryReading("Vote", nameof(Answer.No), null, AnaLima, nameof(Channel.Web), null, IsMine: true),
+                new LogEntryReading("Comment", null, WhichApiVersion, MoOkafor, nameof(Channel.Web), null, IsMine: false));
+        }
+
+        // @driving_port @real-io @us-11 @us-12 @slice-12 @boundary @contract-shape:pure-function
+        // Nobody has to vote to read the others: the split and every comment are there for anyone.
+        [Test]
+        [Ignore(PendingSlice12)]
+        public async Task Somebody_who_never_voted_reads_how_the_votes_split_and_every_comment()
+        {
+            var gravity = await GivenJonasVotedYesAnaVotedNoAndMoAskedAQuestionOnAdvancedReporting();
+
+            var (row, log) = await WhenPriyaWhoNeverVotedLooksAt(gravity, AdvancedReporting);
+
+            ThenPriyaReadsTheSplitAndTheLog(row, log, new SplitReading(Yes: 1, YesBut: 0, No: 1),
+                new LogEntryReading("Vote", nameof(Answer.Yes), null, JonasWeber, nameof(Channel.Web), null, IsMine: false),
+                new LogEntryReading("Vote", nameof(Answer.No), null, AnaLima, nameof(Channel.Web), null, IsMine: false),
                 new LogEntryReading("Comment", null, WhichApiVersion, MoOkafor, nameof(Channel.Web), null, IsMine: false));
         }
 

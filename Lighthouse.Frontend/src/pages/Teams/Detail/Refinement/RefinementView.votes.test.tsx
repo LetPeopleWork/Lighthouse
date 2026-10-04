@@ -8,6 +8,7 @@ import {
 	defaultRefinementTerms,
 	GRAVITY_TEAM_ID,
 	gravitysRefinement,
+	openTheVotesAndCommentsOf,
 	renderTheRefinementTab,
 	theButton,
 	theRowOf,
@@ -17,10 +18,11 @@ import {
 
 /**
  * Casting, seeing and taking back a sizing vote on the Refinement tab. Every row in refinement offers
- * Yes, "Yes, but…" and No; once a name is known one click casts the vote. Without sign-in the first vote
- * asks for the voter's name, and the browser keeps that name and a random key so later votes need no
- * name and stay this browser's. With sign-in nobody is asked anything. Until you vote on a Work Item you
- * see only how many have; afterwards you see how they split. Only your own vote can be taken back.
+ * Yes, "Yes, if…" and No in its own column; once a name is known one click casts the vote. Without
+ * sign-in the first vote asks who is voting, and the browser keeps that name and a random key so later
+ * votes need no name and stay this browser's. With sign-in nobody is asked anything. The grid shows how
+ * many have voted; clicking that opens the votes and comments, where everybody, voted or not, reads how
+ * the votes split, and where a voter changes their name or takes back their own vote.
  */
 
 const { terms, mockUseLicenseRestrictions, reporter } = vi.hoisted(() => ({
@@ -49,7 +51,8 @@ vi.mock("../../../../services/UsageData/usageDataReporter", () => ({
 const CONFIGURATION_MANAGEMENT = "GR-073";
 const ADVANCED_REPORTING = "GR-051";
 const JONAS = "Jonas Weber";
-const YES_BUT = "Yes, but…";
+const YES_IF = "Yes, if…";
+const TAKE_BACK = "Take back my vote";
 const ONE_VOTE = "1 vote";
 const VOTE_CAST = "TeamSizingVoteCast";
 
@@ -59,7 +62,16 @@ const theRowAfter = (
 ): IRefinementRow =>
 	aRow(referenceId, "Configuration management", "Backlog", votes);
 
-const theNamePrompt = () => screen.findByRole("dialog");
+const theNamePrompt = () =>
+	screen.findByRole("dialog", { name: "Who is voting?" });
+
+const closeTheVotesAndComments = async (
+	user: ReturnType<typeof renderTheRefinementTab>["user"],
+	dialog: HTMLElement,
+) => {
+	await user.click(within(dialog).getByRole("button", { name: "Close" }));
+	await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+};
 
 describe("A voter casts a sizing vote from the list", () => {
 	beforeEach(() => {
@@ -73,7 +85,7 @@ describe("A voter casts a sizing vote from the list", () => {
 	});
 
 	// @us-11 @slice-11 @driving_port @contract-shape:pure-function
-	it.skip("offers Yes, Yes but… and No on every Work Item in refinement, beside how many have voted", async () => {
+	it.skip("offers Yes, Yes, if… and No on every Work Item in refinement, beside how many have voted", async () => {
 		renderTheRefinementTab(gravitysRefinement());
 
 		for (const referenceId of [
@@ -83,7 +95,7 @@ describe("A voter casts a sizing vote from the list", () => {
 		]) {
 			const row = await theRowOf(referenceId);
 			expect(theButton(row, "Yes")).toBeEnabled();
-			expect(theButton(row, YES_BUT)).toBeEnabled();
+			expect(theButton(row, YES_IF)).toBeEnabled();
 			expect(theButton(row, "No")).toBeEnabled();
 			expect(row).toHaveTextContent("No votes");
 		}
@@ -114,6 +126,12 @@ describe("A voter casts a sizing vote from the list", () => {
 			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
 		);
 		const prompt = await theNamePrompt();
+		expect(
+			within(prompt).getByText("Kept in this browser only."),
+		).toBeVisible();
+		expect(
+			within(prompt).getByRole("button", { name: "Cancel" }),
+		).toBeEnabled();
 		await user.type(
 			within(prompt).getByRole("textbox", { name: "Your name" }),
 			JONAS,
@@ -200,9 +218,7 @@ describe("A voter casts a sizing vote from the list", () => {
 			sizingLogService,
 		);
 
-		await user.click(
-			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), YES_BUT),
-		);
+		await user.click(theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "No"));
 		await user.click(
 			within(await theNamePrompt()).getByRole("button", { name: "Cancel" }),
 		);
@@ -249,8 +265,13 @@ describe("A voter casts a sizing vote from the list", () => {
 			sizingLogService,
 		);
 
+		const votes = await openTheVotesAndCommentsOf(
+			user,
+			CONFIGURATION_MANAGEMENT,
+		);
+		expect(votes).toHaveTextContent("Voting as Jonas");
 		await user.click(
-			await screen.findByRole("button", { name: /change your name/i }),
+			within(votes).getByRole("button", { name: "Change your name" }),
 		);
 		const prompt = await theNamePrompt();
 		const name = within(prompt).getByRole("textbox", { name: "Your name" });
@@ -258,6 +279,10 @@ describe("A voter casts a sizing vote from the list", () => {
 		await user.clear(name);
 		await user.type(name, JONAS);
 		await user.click(within(prompt).getByRole("button", { name: "Save" }));
+		await closeTheVotesAndComments(
+			user,
+			await screen.findByRole("dialog", { name: /Votes and comments/ }),
+		);
 		await user.click(
 			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
 		);
@@ -409,18 +434,26 @@ describe("A signed-in voter votes under their account", () => {
 
 	// @us-15 @slice-15 @boundary @contract-shape:pure-function
 	it.skip("offers no way to change a name, because the account is the name", async () => {
-		renderTheRefinementTab(gravitysRefinement({ voterIdentity: "Account" }));
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement({ voterIdentity: "Account" }),
+		);
 
-		const row = await theRowOf(CONFIGURATION_MANAGEMENT);
-
-		expect(theButton(row, "Yes")).toBeEnabled();
 		expect(
-			screen.queryByRole("button", { name: /change your name/i }),
+			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
+		).toBeEnabled();
+		const votes = await openTheVotesAndCommentsOf(
+			user,
+			CONFIGURATION_MANAGEMENT,
+		);
+
+		expect(votes).not.toHaveTextContent("Voting as");
+		expect(
+			within(votes).queryByRole("button", { name: "Change your name" }),
 		).toBeNull();
 	});
 });
 
-describe("Somebody who has not voted sees how many have, not how they split", () => {
+describe("The votes and comments of a Work Item", () => {
 	beforeEach(() => {
 		localStorage.clear();
 		terms.current = { ...defaultRefinementTerms };
@@ -431,51 +464,24 @@ describe("Somebody who has not voted sees how many have, not how they split", ()
 		});
 	});
 
-	// @us-14 @slice-14 @contract-shape:pure-function
-	it.skip("shows only the count on a Work Item the reader has not voted on", async () => {
-		renderTheRefinementTab(
-			gravitysRefinement({}, [
-				aRow(ADVANCED_REPORTING, "Advanced reporting module", "Analysing", {
-					voteCount: 3,
-					split: null,
-				}),
-			]),
-		);
-
-		const row = await theRowOf(ADVANCED_REPORTING);
-
-		expect(row).toHaveTextContent("3 votes");
-		expect(within(row).queryByText(/\d+ Yes\b/)).toBeNull();
-	});
-
-	// @us-14 @slice-14 @contract-shape:bounded-change
-	it.skip("shows the split once the reader's own vote is in", async () => {
+	// @us-11 @slice-11 @driving_port @contract-shape:pure-function
+	it.skip("opens from the Votes cell and says how the votes split", async () => {
 		aBrowserThatVotedBefore(JONAS);
-		const sizingLogService = aSizingLogService({
-			castVote: vi.fn().mockResolvedValue(
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement({}, [
 				aRow(ADVANCED_REPORTING, "Advanced reporting module", "Analysing", {
 					voteCount: 4,
 					myVote: "Yes",
 					split: { yes: 3, yesBut: 0, no: 1 },
 				}),
-			),
-		});
-		const { user } = renderTheRefinementTab(
-			gravitysRefinement({}, [
-				aRow(ADVANCED_REPORTING, "Advanced reporting module", "Analysing", {
-					voteCount: 3,
-					split: null,
-				}),
 			]),
-			sizingLogService,
 		);
 
-		await user.click(theButton(await theRowOf(ADVANCED_REPORTING), "Yes"));
+		expect(await theRowOf(ADVANCED_REPORTING)).toHaveTextContent("4 votes");
+		const votes = await openTheVotesAndCommentsOf(user, ADVANCED_REPORTING);
 
-		const row = await theRowOf(ADVANCED_REPORTING);
-		await waitFor(() =>
-			expect(row).toHaveTextContent("3 Yes · 0 Yes, but… · 1 No"),
-		);
+		expect(votes).toHaveTextContent("3 Yes · 0 Yes, if… · 1 No");
+		expect(within(votes).getByRole("button", { name: "Close" })).toBeEnabled();
 	});
 });
 
@@ -501,15 +507,22 @@ describe("A voter takes back their own vote", () => {
 	// @us-16 @slice-16 @contract-shape:pure-function
 	it.skip("offers to take back a vote only where the reader has one", async () => {
 		aBrowserThatVotedBefore(JONAS);
-		renderTheRefinementTab(jonasVotedOnConfigurationManagementOnly());
+		const { user } = renderTheRefinementTab(
+			jonasVotedOnConfigurationManagementOnly(),
+		);
 
+		const onTheirOwn = await openTheVotesAndCommentsOf(
+			user,
+			CONFIGURATION_MANAGEMENT,
+		);
 		expect(
-			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Take back my vote"),
+			within(onTheirOwn).getByRole("button", { name: TAKE_BACK }),
 		).toBeEnabled();
+		await closeTheVotesAndComments(user, onTheirOwn);
+
+		const onAnother = await openTheVotesAndCommentsOf(user, ADVANCED_REPORTING);
 		expect(
-			within(await theRowOf(ADVANCED_REPORTING)).queryByRole("button", {
-				name: "Take back my vote",
-			}),
+			within(onAnother).queryByRole("button", { name: TAKE_BACK }),
 		).toBeNull();
 	});
 
@@ -528,9 +541,11 @@ describe("A voter takes back their own vote", () => {
 			sizingLogService,
 		);
 
-		await user.click(
-			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Take back my vote"),
+		const votes = await openTheVotesAndCommentsOf(
+			user,
+			CONFIGURATION_MANAGEMENT,
 		);
+		await user.click(within(votes).getByRole("button", { name: TAKE_BACK }));
 
 		const row = await theRowOf(CONFIGURATION_MANAGEMENT);
 		await waitFor(() => expect(row).toHaveTextContent("No votes"));
@@ -539,9 +554,7 @@ describe("A voter takes back their own vote", () => {
 			CONFIGURATION_MANAGEMENT,
 			key,
 		);
-		expect(
-			within(row).queryByRole("button", { name: "Take back my vote" }),
-		).toBeNull();
+		expect(screen.queryByRole("button", { name: TAKE_BACK })).toBeNull();
 	});
 
 	// @us-16 @slice-16 @error @contract-shape:unbounded-preservation
@@ -559,12 +572,17 @@ describe("A voter takes back their own vote", () => {
 			sizingLogService,
 		);
 
-		const row = await theRowOf(CONFIGURATION_MANAGEMENT);
-		await user.click(theButton(row, "Take back my vote"));
+		const votes = await openTheVotesAndCommentsOf(
+			user,
+			CONFIGURATION_MANAGEMENT,
+		);
+		await user.click(within(votes).getByRole("button", { name: TAKE_BACK }));
 
 		expect(await screen.findByRole("alert")).toHaveTextContent(
 			"That Work Item is no longer in refinement",
 		);
+		await closeTheVotesAndComments(user, votes);
+		const row = await theRowOf(CONFIGURATION_MANAGEMENT);
 		expect(row).toHaveTextContent(ONE_VOTE);
 		expect(theButton(row, "Yes")).toHaveAttribute("aria-pressed", "true");
 	});

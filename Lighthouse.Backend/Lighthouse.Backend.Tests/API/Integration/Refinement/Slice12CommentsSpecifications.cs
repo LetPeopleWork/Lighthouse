@@ -84,6 +84,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private async Task<JsonElement> WhenAnaOpensTheLogOf(TeamUnderTest team, string workItem)
             => await TheLogAsSeenBy(Ana, team, workItem);
 
+        private async Task<(VotedRowReading Row, JsonElement Log)> WhenPriyaWhoNeverVotedLooksAt(TeamUnderTest team, string workItem)
+        {
+            var priya = ABrowserOf(PriyaSharma);
+            var row = RowOf(await TheTabAsSeenBy(priya, team), workItem);
+            var log = await TheLogAsSeenBy(priya, team, workItem);
+            return (row, log);
+        }
+
         private async Task WhenJonasAsks(TeamUnderTest team, string workItem, string question)
             => await HasCommented(Jonas, team, workItem, question);
 
@@ -112,6 +120,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             {
                 Assert.That(entries.Select(entry => entry with { RecordedAt = null }), Is.EqualTo(expected), $"Log: {log}");
                 Assert.That(entries.Select(entry => entry.RecordedAt), Has.All.StartsWith(RecordedToday), "every entry says when it was recorded");
+            }
+        }
+
+        private static void ThenPriyaReadsTheSplitAndTheLog(VotedRowReading row, JsonElement log, SplitReading split, params LogEntryReading[] expected)
+        {
+            var entries = EntriesIn(log).Select(entry => entry with { RecordedAt = null });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(row.Split, Is.EqualTo(split), "the split is there for somebody who never voted");
+                Assert.That(row.MyVote, Is.Null);
+                Assert.That(entries, Is.EqualTo(expected), $"every comment is there for somebody who never voted. Log: {log}");
             }
         }
 

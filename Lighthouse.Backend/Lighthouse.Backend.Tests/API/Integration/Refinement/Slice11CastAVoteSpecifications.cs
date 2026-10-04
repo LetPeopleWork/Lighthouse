@@ -168,6 +168,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
+        private async Task ThenEveryReaderSeesTheSplit(TeamUnderTest team, string workItem, SplitReading split)
+        {
+            var jonasSees = RowOf(await TheTabAsSeenBy(Jonas, team), workItem);
+            var anaSees = RowOf(await TheTabAsSeenBy(Ana, team), workItem);
+            var priyaSees = RowOf(await TheTabAsSeenBy(ABrowserOf(PriyaSharma), team), workItem);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(jonasSees.Split, Is.EqualTo(split));
+                Assert.That(anaSees.Split, Is.EqualTo(split));
+                Assert.That(priyaSees.Split, Is.EqualTo(split), "somebody who has not voted sees the split too");
+            }
+        }
+
         /// <summary>
         /// The refusal, and that no listed Work Item counts a vote it did not count before. Opening the tab
         /// as a fresh browser shows every row as anybody sees it.

@@ -16,7 +16,7 @@ import ModifyTeamSettings from "./ModifyTeamSettings";
 
 /**
  * Readiness in the Refinement section of a Team's settings: how many Yes votes, from how many voters,
- * make a Work Item Ready, and whether some No - or No and "Yes, but…" - votes send it to discussion
+ * make a Work Item Ready, and whether some No - or No and "Yes, if…" - votes send it to discussion
  * instead. Exercised through the settings form a Team admin uses, so what is checked is what the
  * form's autosave sends. At least one Yes is always needed, and never fewer voters than Yes votes.
  *
@@ -234,7 +234,7 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 	});
 
 	// @us-13 @slice-13 @contract-shape:bounded-change
-	it.skip("saves a veto that counts Yes, but… votes as well", async () => {
+	it.skip("saves a veto that counts Yes, if… votes as well", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
 				minYes: 3,
@@ -247,7 +247,7 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 			await screen.findByRole("combobox", { name: "Counting" }),
 		);
 		await userEvent.click(
-			await screen.findByRole("option", { name: "No or Yes, but…" }),
+			await screen.findByRole("option", { name: "No or Yes, if…" }),
 		);
 
 		await waitFor(() =>

@@ -1,5 +1,15 @@
 using System.Net;
+using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Refinement;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Moq;
 
 namespace Lighthouse.Backend.Tests.Integration.UsageData
 {
@@ -31,6 +41,22 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         private const string NoCadence = "NoCadence";
 
         private const string SizingMomentOnTheWire = "sizing_moment";
+
+        private const string VoterKeyHeader = "X-Lighthouse-Voter-Key";
+
+        private const string ForwardedForHeader = "X-Forwarded-For";
+
+        private const string RefinementState = "Backlog";
+
+        private const string WorkItemVotedOn = "GR-073";
+
+        private const string DistinctiveVoterName = "Zephyrine Quillfeather";
+
+        private const string DistinctiveVoterKey = "zq6152voterkey0000000000000000000000000000000000000000000000zq";
+
+        private const string DistinctiveComment = "only if Zephyrine's export spike lands first";
+
+        private const string DistinctiveAddress = "203.0.113.77";
 
         private static readonly string[] EverythingThePageSaysTravelsWithAMoment =
         [
@@ -65,6 +91,46 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 Assert.That(PropertyNames(messages[0].GetProperty("properties")), Is.EquivalentTo(EverythingThePageSaysTravelsWithAMoment),
                     "nothing about the Team, the Work Item, the answer or the voter may travel with the event");
                 Assert.That(messages[0].GetProperty("properties").GetProperty(SizingMomentOnTheWire).GetString(), Is.EqualTo(NoCadence));
+            }
+        }
+
+        // @driving_port @real-io @us-11 @us-13 @contract-shape:unbounded-preservation
+        // No usage-data event ever carries personal data. The browser that just voted, under a name, a key, a
+        // comment and an address nobody else uses, hands the event in with the same key and address on the
+        // request; none of them may reach the collector, and neither may anything beyond the event's name,
+        // its moment and the facts every event carries about the instance.
+        [TestCase(TeamSizingVoteCast, IgnoreReason = PendingSlice11)]
+        [TestCase(TeamSizingReadinessReached, IgnoreReason = PendingSlice13)]
+        public async Task The_event_from_a_browser_that_just_voted_carries_nothing_about_the_voter(string name)
+        {
+            var token = await ABrowserThatAgreedAsync();
+            using var vote = await TheBrowserVotesUnderItsNameKeyAndAddress(ATeamRefiningOneWorkItem());
+            Assert.That(vote.IsSuccessStatusCode, Is.True,
+                $"the vote was not taken, so the event cannot be shown to leave it behind: {(int)vote.StatusCode} {await vote.Content.ReadAsStringAsync()}");
+
+            using var handedIn = await TheSameBrowserHandsIn(token, AnEvent(name, $",\"sizingMoment\":\"{NoCadence}\""));
+            var sent = await EverythingTheCollectorReceived();
+            var messages = EveryMessageIn(sent);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(handedIn.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+                Assert.That(messages, Has.Count.EqualTo(1));
+                Assert.That(sent, Does.Not.Contain(DistinctiveVoterName), "the voter's name travelled");
+                Assert.That(sent, Does.Not.Contain(DistinctiveVoterKey), "the voter's key travelled");
+                Assert.That(sent, Does.Not.Contain(DistinctiveComment), "the voter's comment travelled");
+                Assert.That(sent, Does.Not.Contain(DistinctiveAddress), "the voter's address travelled");
+                Assert.That(sent, Does.Not.Contain(WorkItemVotedOn), "the Work Item voted on travelled");
+            }
+
+            var properties = messages[0].GetProperty("properties");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(messages[0].GetProperty("event").GetString(), Is.EqualTo(name));
+                Assert.That(PropertyNames(properties), Is.EquivalentTo(EverythingThePageSaysTravelsWithAMoment));
+                Assert.That(properties.GetProperty(SizingMomentOnTheWire).GetString(), Is.EqualTo(NoCadence));
+                Assert.That(properties.GetProperty("$ip").ValueKind, Is.EqualTo(JsonValueKind.Null), "no address is sent for the collector to keep");
             }
         }
 
@@ -168,6 +234,93 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                     Is.Positive,
                     $"{name} must come after {namedBefore}");
             }
+        }
+
+        /// <summary>The refinement scenarios run as a premium instance; the vote here is cast on the same terms.</summary>
+        protected override void AlsoRegister(IServiceCollection services)
+        {
+            var licenseService = new Mock<ILicenseService>();
+            licenseService.Setup(service => service.CanUsePremiumFeatures()).Returns(true);
+
+            services.RemoveAll<ILicenseService>();
+            services.AddScoped(_ => licenseService.Object);
+        }
+
+        /// <summary>A Team that refines in Backlog, with one Work Item there to vote on.</summary>
+        private int ATeamRefiningOneWorkItem()
+        {
+            using var scope = Factory.Services.CreateScope();
+
+            var team = new Team
+            {
+                Name = "Team Gravity",
+                WorkTrackingSystemConnection = new WorkTrackingSystemConnection
+                {
+                    Name = "Gravity's tracker",
+                    WorkTrackingSystem = WorkTrackingSystems.Jira,
+                },
+                DataRetrievalValue = "project = GRAVITY",
+                WorkItemTypes = ["User Story"],
+                ToDoStates = [RefinementState],
+                DoingStates = ["Implementation"],
+                DoneStates = ["Done"],
+                RefinementSettings = new RefinementSettings { States = [new RefinementStateSetting { State = RefinementState }] },
+            };
+
+            var teams = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
+            teams.Add(team);
+            teams.Save().GetAwaiter().GetResult();
+
+            var workItems = scope.ServiceProvider.GetRequiredService<IWorkItemRepository>();
+            workItems.Add(new WorkItem
+            {
+                Team = team,
+                TeamId = team.Id,
+                ReferenceId = WorkItemVotedOn,
+                Name = "Configuration management",
+                Type = "User Story",
+                State = RefinementState,
+                StateCategory = StateCategories.ToDo,
+                CreatedDate = DateTime.UtcNow.AddDays(-30),
+                Order = "1",
+                Url = $"https://tracker.example/browse/{WorkItemVotedOn}",
+            });
+            workItems.Save().GetAwaiter().GetResult();
+
+            return team.Id;
+        }
+
+        private async Task<HttpResponseMessage> TheBrowserVotesUnderItsNameKeyAndAddress(int teamId)
+        {
+            var vote = new JsonObject
+            {
+                ["answer"] = "YesBut",
+                ["channel"] = "Web",
+                ["voterName"] = DistinctiveVoterName,
+                ["comment"] = DistinctiveComment,
+            };
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"/api/latest/teams/{teamId}/refinement/work-items/{WorkItemVotedOn}/votes")
+            {
+                Content = new StringContent(vote.ToJsonString(), Encoding.UTF8, JsonMediaType),
+            };
+            request.Headers.Add(VoterKeyHeader, DistinctiveVoterKey);
+            request.Headers.Add(ForwardedForHeader, DistinctiveAddress);
+
+            return await Client.SendAsync(request);
+        }
+
+        private async Task<HttpResponseMessage> TheSameBrowserHandsIn(string token, string body)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, EventsRoute)
+            {
+                Content = new StringContent(body, Encoding.UTF8, JsonMediaType),
+            };
+            request.Headers.Add(ConsentTokenHeader, token);
+            request.Headers.Add(VoterKeyHeader, DistinctiveVoterKey);
+            request.Headers.Add(ForwardedForHeader, DistinctiveAddress);
+
+            return await Client.SendAsync(request);
         }
 
         private async Task ThePlainEventIsAccepted(string token, string name)

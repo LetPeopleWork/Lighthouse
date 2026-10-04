@@ -4,7 +4,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 {
     /// <summary>
-    /// A voter can take back their own vote. It stops counting at once - readiness and the hidden split
+    /// A voter can take back their own vote. It stops counting at once - readiness and the split
     /// follow - and the log records that it was taken back; nothing is deleted. Only the browser that cast
     /// a vote (or, with sign-in, the same account) can take it back, and taking back a vote you do not have
     /// changes nothing.
@@ -117,17 +117,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenConfigurationManagementNeeds(gravity, "Ready", missingVotes: null);
         }
 
-        // @driving_port @real-io @us-14 @us-16 @slice-16 @boundary @contract-shape:bounded-change
-        // Without a vote of your own you are back to seeing only the count.
+        // @driving_port @real-io @us-16 @slice-16 @boundary @contract-shape:bounded-change
         [Test]
         [Ignore(PendingSlice16)]
-        public async Task Taking_back_hides_the_split_again()
+        public async Task Taking_back_takes_the_vote_out_of_the_split()
         {
             var gravity = await GivenJonasAndAnaSaidYesOnConfigurationManagement();
 
             await WhenJonasTakesBackHisVote(gravity);
 
-            await ThenJonasSeesNoSplitAndAClosedLog(gravity);
+            await ThenJonasSeesTheSplitWithoutHisVote(gravity, new SplitReading(Yes: 1, YesBut: 0, No: 0));
         }
     }
 

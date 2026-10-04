@@ -108,15 +108,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        private async Task ThenJonasSeesNoSplitAndAClosedLog(TeamUnderTest team)
+        private async Task ThenJonasSeesTheSplitWithoutHisVote(TeamUnderTest team, SplitReading split)
         {
             var row = RowOf(await TheTabAsSeenBy(Jonas, team), ConfigurationManagement);
-            var log = await TheLogAsSeenBy(Jonas, team, ConfigurationManagement);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(row.Split, Is.Null);
-                Assert.That(LogIsHidden(log), Is.True, $"Log: {log}");
+                Assert.That(row.Split, Is.EqualTo(split));
+                Assert.That(row.MyVote, Is.Null);
             }
         }
     }

@@ -5,8 +5,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     /// <summary>
     /// Votes make a Work Item Ready. A Team admin says how many Yes votes that takes (at least one; three
     /// unless changed), how many voters (never fewer than the Yes votes; three unless changed), and,
-    /// optionally, how many No votes - or No and "Yes, but…" votes - send it to discussion instead. A
-    /// "Yes, but…" counts as a Yes. Each row then says Ready, how many more Yes votes or voters it needs, or
+    /// optionally, how many No votes - or No and "Yes, if…" votes - send it to discussion instead. A
+    /// "Yes, if…" counts as a Yes. Each row then says Ready, how many more Yes votes or voters it needs, or
     /// that it needs discussion, and the tab counts the Work Items the votes have made Ready. What is missing
     /// is named so the Team can raise it in its own rituals; nothing is pushed to anybody.
     ///

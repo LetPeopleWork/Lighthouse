@@ -56,7 +56,7 @@ export const aRow = (
 	parentReferenceId: "",
 	voteCount: 0,
 	myVote: null,
-	split: null,
+	split: { yes: 0, yesBut: 0, no: 0 },
 	readiness: "MoreYesNeeded",
 	missingVotes: 3,
 	hasComments: false,
@@ -96,7 +96,6 @@ export const aSizingLogService = (
 	addComment: vi.fn(),
 	takeBackMyVote: vi.fn(),
 	getLog: vi.fn().mockResolvedValue({
-		hidden: false,
 		entries: [],
 	} satisfies ISizingLog),
 	...overrides,
@@ -141,6 +140,18 @@ export const theRowOf = async (referenceId: string): Promise<HTMLElement> => {
 
 export const theButton = (row: HTMLElement, name: string | RegExp) =>
 	within(row).getByRole("button", { name });
+
+/** The Votes cell names what it opens, whatever count and markers it shows beside it. */
+export const VOTES_AND_COMMENTS = /Votes and comments/;
+
+/** Clicks a row's Votes cell and returns the Votes and comments dialog it opens. */
+export const openTheVotesAndCommentsOf = async (
+	user: ReturnType<typeof userEvent.setup>,
+	referenceId: string,
+): Promise<HTMLElement> => {
+	await user.click(theButton(await theRowOf(referenceId), VOTES_AND_COMMENTS));
+	return await screen.findByRole("dialog", { name: VOTES_AND_COMMENTS });
+};
 
 /** What this browser keeps about its voter, or null when it keeps nothing. */
 export const theStoredVoter = (): { name?: string; key?: string } | null => {

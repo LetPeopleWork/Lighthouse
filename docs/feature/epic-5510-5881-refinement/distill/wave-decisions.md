@@ -207,3 +207,45 @@ the slice-11 cases of `TeamSizingUsageEventsTests`, `RefinementView.votes.test.t
 `SizingLogService.test.ts` (slice-11 cases) and `RefinementService.voterKey.test.ts`; 13 `Slice13ReadinessTest`, the
 slice-13 usage cases, `RefinementView.readiness.test.tsx`, `ModifyTeamSettings.readiness.test.tsx` and then the E2E
 skeleton (run live first); then 12, 15, 14, 16, 17a, 17b in that order. One scenario at a time.
+
+## Amendment 2026-10-04 (maintainer)
+
+Two maintainer decisions, taken from the voting-UI sketches before slices 11–16 were built (recorded in full in
+`feature-delta.md`, "Maintainer decision — the voting UI, and slice 14 dropped"). The scenarios were changed to match;
+nothing else about this wave moved.
+
+- **Slice 14 is dropped (US-14, #6152 Removed).** Every vote split and every comment is visible to everybody, voted
+  or not: a Product Owner who never votes still reads how the Team voted. `Slice14HiddenSplitScenarios.cs` and
+  `Slice14HiddenSplitSpecifications.cs` are deleted (10 backend cases), with the frontend's three slice-14 cases.
+- **No hiding on the wire.** A row's `split {yes, yesBut, no}` is always sent; the log answers `{entries: [...]}`
+  only — `hidden` and the hidden log's `voteCount` are gone from the scenarios, the harness (`LogIsHidden`,
+  `VoteCountOfAHiddenLog`, `PendingSlice14`) and the frontend `ISizingLog` type. `ISizingSplit` on a row is no
+  longer nullable.
+- **Rewritten instead of deleted, one per stack where it still checks something:** backend slice 11 *Every reader
+  sees how the votes split* (two voters and somebody who has not voted read the same split) and slice 12 *Somebody
+  who never voted reads how the votes split and every comment*; frontend slice 12 *lets a reader who never voted
+  read how the votes split and every comment*. Slice 16 *Taking back hides the split again* became *Taking back takes
+  the vote out of the split*. Slice 17a's two split cases became one, *A client is told how the votes split*. The
+  readiness case "shown to a reader who has not voted, without the split" became *gives readiness its own column,
+  right after the votes*.
+- **"Yes, if…" is the label of the conditional answer** wherever a user reads it: the button, the split
+  ("3 Yes · 0 Yes, if… · 1 No"), the condition dialog title, the log, and Counting's "No or Yes, if…". The stored
+  and wire value stays `YesBut`; no type, member or identifier is renamed.
+- **The approved copy and placement replace the provisional copy of DST-22 where they differ**: the name dialog is
+  "Who is voting?" with "Your name", "Kept in this browser only." and Cancel / Vote; the Votes cell opens
+  **Votes and comments** (split, log, "Ask a question", "Voting as <name>" with "Change your name" when sign-in is
+  off, "Take back my vote", Close) — so changing the name, asking a question and taking back a vote are now reached
+  from that dialog, not the row; "Readiness" is its own column right after "Votes"; "Yes, if…" opens a dialog with
+  an optional "Condition" and Cancel / Vote. The E2E page object finds the name dialog by its title.
+- **No usage-data event carries personal data.** `TeamSizingUsageEventsTests` gains *The event from a browser that
+  just voted carries nothing about the voter* (one case per event, pending with slices 11 and 13): the browser votes
+  under a distinctive name, key, comment and address, then hands the event in carrying the same key and address; the
+  collector receives only the event name, its moment and the instance facts every event carries, `$ip` is empty, and
+  none of the name, key, comment, address or Work Item reaches it. Un-skipped once, it fails for the right reason
+  (the vote route answers 404).
+
+Case counts after the amendment: backend 125 runnable (slice 11 27, 12 20, 13 22, 15 9, 16 11, 17a/17b 12, usage
+data 15, slice 10 9), frontend 63 (votes 17, comments 11, readiness 8, the rest unchanged).
+
+**Delivery order from here: 11 → 13 → 12 → 15 → 16.** 17a and 17b are out of this run. Each slice still un-skips
+only its own cases, with the same `[Ignore(PendingSlice1n)]` / `IgnoreReason` / `it.skip` markers as before.

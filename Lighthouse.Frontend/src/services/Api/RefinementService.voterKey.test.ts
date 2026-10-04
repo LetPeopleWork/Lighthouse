@@ -7,8 +7,8 @@ const mockedAxios = vi.mocked(axios, true);
 
 /**
  * The Refinement tab's read tells the server which browser is asking, so it can mark the reader's own
- * votes and hide the split where the reader has not voted. The key comes from what the browser keeps
- * about its voter; a browser that keeps nothing usable sends no header.
+ * votes. The key comes from what the browser keeps about its voter; a browser that keeps nothing usable
+ * sends no header.
  */
 
 const VOTER_STORAGE_KEY = "lighthouse:refinement:voter";
@@ -37,7 +37,7 @@ describe("RefinementService and the browser's voter key", () => {
 		localStorage.clear();
 	});
 
-	// @us-11 @us-14 @slice-11 @driving_port @contract-shape:pure-function
+	// @us-11 @slice-11 @driving_port @contract-shape:pure-function
 	it.skip("reads the tab with the key this browser keeps for its voter, and with none before it keeps one", async () => {
 		await refinementService.getRefinement(7);
 		localStorage.setItem(

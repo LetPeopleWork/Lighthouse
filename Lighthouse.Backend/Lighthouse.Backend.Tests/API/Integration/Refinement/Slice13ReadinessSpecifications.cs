@@ -7,7 +7,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     /// <summary>
     /// Step definitions for readiness. The setting is saved the way an admin saves it, through the Team
     /// settings write; votes are cast by the scenario's voters; the row's readiness is read from the tab as
-    /// somebody who has not voted sees it, because readiness is shown to everybody.
+    /// somebody who has not voted sees it.
     /// </summary>
     public partial class Slice13ReadinessTest
     {

@@ -64,14 +64,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private static void ThenTheClientReads(JsonElement tab, params (string WorkItem, string Readiness)[] expected)
             => Assert.That(expected.Select(row => (row.WorkItem, RowOf(tab, row.WorkItem).Readiness)), Is.EqualTo(expected.Select(row => (row.WorkItem, (string?)row.Readiness))));
 
-        private static void ThenTheClientSeesCountsButNoSplitOn(JsonElement tab, string workItem, int voteCount)
+        private static void ThenTheClientSeesTheSplitOn(JsonElement tab, string workItem, int voteCount, SplitReading split)
         {
             var row = RowOf(tab, workItem);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(row.VoteCount, Is.EqualTo(voteCount));
-                Assert.That(row.Split, Is.Null);
+                Assert.That(row.Split, Is.EqualTo(split));
                 Assert.That(row.MyVote, Is.Null);
             }
         }

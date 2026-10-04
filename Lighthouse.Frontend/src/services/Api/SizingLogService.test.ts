@@ -138,7 +138,19 @@ describe("SizingLogService", () => {
 
 	// @us-12 @slice-12 @driving_port @contract-shape:pure-function
 	it.skip("reads a Work Item's log with the voter's key", async () => {
-		const log: ISizingLog = { hidden: true, voteCount: 3 };
+		const log: ISizingLog = {
+			entries: [
+				{
+					kind: "Vote",
+					answer: "YesBut",
+					comment: "only if the PDF export moves out",
+					voterName: "Ana Lima",
+					channel: "Web",
+					recordedAt: "2026-10-07T09:00:00Z",
+					isMine: false,
+				},
+			],
+		};
 		mockedAxios.get.mockResolvedValueOnce({ data: log });
 
 		const answer = await sizingLogService.getLog(7, "GR-051", VOTER_KEY);

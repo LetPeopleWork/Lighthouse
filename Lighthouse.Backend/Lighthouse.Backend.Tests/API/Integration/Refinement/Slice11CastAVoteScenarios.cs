@@ -5,7 +5,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 {
     /// <summary>
     /// On an instance without sign-in - every Community instance - anyone who can open the Refinement tab
-    /// says Yes, "Yes, but…" or No on any Work Item in a refinement state, at any time. The voter is the
+    /// says Yes, "Yes, if…" or No on any Work Item in a refinement state, at any time. The voter is the
     /// name they declared plus the key their browser keeps, so two people with one name stay two voters
     /// and nobody can speak as somebody else's browser. Every vote is added to the Team's sizing log;
     /// changing your mind adds another entry and the latest one counts. The tab shows how many have voted
@@ -54,6 +54,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await WhenAnaVotesFromHerOwnBrowser(gravity, ConfigurationManagement, Answer.No);
 
             await ThenEachVoterSeesTwoVotesAndTheirOwnAnswer(gravity);
+        }
+
+        // @driving_port @real-io @us-11 @slice-11 @contract-shape:bounded-change
+        [Test]
+        [Ignore(PendingSlice11)]
+        public async Task Every_reader_sees_how_the_votes_split()
+        {
+            var gravity = await GivenJonasHasVotedYesOnConfigurationManagement();
+
+            await WhenAnaVotesFromHerOwnBrowser(gravity, ConfigurationManagement, Answer.No);
+
+            await ThenEveryReaderSeesTheSplit(gravity, ConfigurationManagement, new SplitReading(Yes: 1, YesBut: 0, No: 1));
         }
 
         // @driving_port @real-io @us-11 @slice-11 @boundary @contract-shape:bounded-change

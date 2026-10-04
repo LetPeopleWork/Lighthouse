@@ -37,8 +37,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         protected const string PendingSlice13 = "Epic #5510 slice 13 (#6151) - pending DELIVER";
 
-        protected const string PendingSlice14 = "Epic #5510 slice 14 (#6152) - pending DELIVER";
-
         protected const string PendingSlice15 = "Epic #5510 slice 15 (#6153) - pending DELIVER";
 
         protected const string PendingSlice16 = "Epic #5510 slice 16 (#6154) - pending DELIVER";
@@ -403,11 +401,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         protected static string? VoterIdentityIn(JsonElement tab) => TextOf(tab, "voterIdentity");
 
-        protected static bool LogIsHidden(JsonElement log)
-            => log.TryGetProperty("hidden", out var hidden) && hidden.ValueKind == JsonValueKind.True;
-
-        protected static int? VoteCountOfAHiddenLog(JsonElement log) => NumberOf(log, "voteCount");
-
         protected static List<LogEntryReading> EntriesIn(JsonElement log)
         {
             if (!log.TryGetProperty("entries", out var entries) || entries.ValueKind != JsonValueKind.Array)
@@ -606,7 +599,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         protected sealed record SplitReading(int? Yes, int? YesBut, int? No);
 
-        /// <summary>One row's votes: how many, the reader's own, the split if the reader may see it, and readiness.</summary>
+        /// <summary>One row's votes: how many, the reader's own, how they split, and readiness.</summary>
         protected sealed record VotedRowReading(
             string? ReferenceId,
             int? VoteCount,
