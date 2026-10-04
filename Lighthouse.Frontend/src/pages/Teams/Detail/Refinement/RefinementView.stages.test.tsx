@@ -8,6 +8,7 @@ import {
 	renderTheRefinementTab,
 	theRowOf,
 } from "../../../../tests/RefinementTabTestKit";
+import { describeStageBreakdown } from "./StageBreakdown";
 
 /**
  * Stages and votes are two signals the Refinement tab shows side by side. A Team that sets no stage rule
@@ -108,7 +109,7 @@ describe("The Refinement tab shows stages beside the votes", () => {
 	});
 
 	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
-	it.skip("counts the Work Items whose stage is Ready in the heading and breaks the list down by stage", async () => {
+	it("counts the Work Items whose stage is Ready in the heading and breaks the list down by stage", async () => {
 		renderTheRefinementTab(gravityWithStages());
 
 		expect(
@@ -195,7 +196,7 @@ describe("The Refinement tab shows stages beside the votes", () => {
 	});
 
 	// @us-03 @slice-03 @boundary @contract-shape:pure-function
-	it.skip("says nobody is Ready yet rather than leaving the stage count out when no Work Item matches the Ready rule", async () => {
+	it("says nobody is Ready yet rather than leaving the stage count out when no Work Item matches the Ready rule", async () => {
 		renderTheRefinementTab(
 			gravitysRefinement(
 				{ stagesConfigured: true, readySource: "Stages", readyCount: 0 },
@@ -222,7 +223,7 @@ describe("The Refinement tab shows stages beside the votes", () => {
 	});
 
 	// @us-03 @us-13 @slice-03 @boundary @contract-shape:unbounded-preservation
-	it.skip("shows the tab as before when the Team sets no stage rule: no Stage column, no breakdown, ready by votes", async () => {
+	it("shows the tab as before when the Team sets no stage rule: no Stage column, no breakdown, ready by votes", async () => {
 		renderTheRefinementTab(
 			gravitysRefinement({
 				stagesConfigured: false,
@@ -245,7 +246,7 @@ describe("The Refinement tab shows stages beside the votes", () => {
 	});
 
 	// @us-03 @slice-03 @boundary @contract-shape:pure-function
-	it.skip("says the Team's own words in the heading and the breakdown", async () => {
+	it("says the Team's own words in the heading and the breakdown", async () => {
 		terms.current = {
 			...defaultRefinementTerms,
 			workItem: "Ticket",
@@ -260,4 +261,27 @@ describe("The Refinement tab shows stages beside the votes", () => {
 			}),
 		).toBeVisible();
 	});
+});
+
+describe("The stage breakdown line", () => {
+	const rowIn = (stage: IRefinementRow["stage"]) =>
+		aRow("GR-1", "Any", "Next", { stage });
+
+	it.each([
+		{ stages: [], line: "0 Ready · 0 Being refined · 0 Waiting" },
+		{ stages: ["Ready"], line: "1 Ready · 0 Being refined · 0 Waiting" },
+		{
+			stages: ["Waiting", "BeingRefined", "Waiting", "Ready"],
+			line: "1 Ready · 1 Being refined · 2 Waiting",
+		},
+		{
+			stages: [null, "Waiting"],
+			line: "0 Ready · 0 Being refined · 1 Waiting",
+		},
+	] as { stages: IRefinementRow["stage"][]; line: string }[])(
+		"reads $line for the stages $stages",
+		({ stages, line }) => {
+			expect(describeStageBreakdown(stages.map(rowIn))).toBe(line);
+		},
+	);
 });

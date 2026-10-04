@@ -17,6 +17,7 @@ import {
 	createRefinementColumns,
 	type RefinementGridRow,
 } from "./refinementColumns";
+import StageBreakdown from "./StageBreakdown";
 import { useVoteCasting } from "./useVoteCasting";
 import VoterNamePrompt from "./VoterNamePrompt";
 import VotesAndCommentsDialog from "./VotesAndCommentsDialog";
@@ -55,6 +56,16 @@ const withAnsweredRow = (
 			row === shownRow ? answeredRow : row,
 		),
 	};
+};
+
+const describeReadyCount = (refinement: IRefinementView): string => {
+	if (refinement.stagesConfigured && refinement.readyCount !== undefined) {
+		return ` · ${refinement.readyCount} ready`;
+	}
+	if (refinement.readyByVotesCount === undefined) {
+		return "";
+	}
+	return ` · ${refinement.readyByVotesCount} ready by votes`;
 };
 
 interface RefinementViewProps {
@@ -158,16 +169,13 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 	);
 	const workItemsTerm =
 		count === 1 ? workItemTerm : getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
-	const readyByVotes =
-		refinement.readyByVotesCount === undefined
-			? ""
-			: ` · ${refinement.readyByVotesCount} ready by votes`;
 
 	return (
 		<Stack spacing={2}>
 			<Typography variant="h6" component="h2">
-				{`${count} ${workItemsTerm} in ${refinementTerm}${readyByVotes}`}
+				{`${count} ${workItemsTerm} in ${refinementTerm}${describeReadyCount(refinement)}`}
 			</Typography>
+			{refinement.stagesConfigured && <StageBreakdown rows={workItems} />}
 			{refinement.yardstick && (
 				<YardstickQuestion yardstick={refinement.yardstick} getTerm={getTerm} />
 			)}
