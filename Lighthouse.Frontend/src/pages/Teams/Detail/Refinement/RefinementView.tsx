@@ -137,6 +137,7 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 	);
 	const parentMap = useParentWorkItems(parentReferences);
 	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
+	const stagesConfigured = refinement?.stagesConfigured ?? false;
 	const columns = useMemo(
 		() =>
 			createRefinementColumns(
@@ -145,8 +146,9 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 				onVote,
 				votesBeingSent,
 				setVotesShownFor,
+				stagesConfigured,
 			),
-		[workItemTerm, parentMap, onVote, votesBeingSent],
+		[workItemTerm, parentMap, onVote, votesBeingSent, stagesConfigured],
 	);
 
 	if (refinement === null) {

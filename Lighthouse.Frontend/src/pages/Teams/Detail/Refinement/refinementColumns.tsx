@@ -6,11 +6,21 @@ import ParentWorkItemCell from "../../../../components/Common/ParentWorkItemCell
 import type { ParentWorkItem } from "../../../../hooks/useParentWorkItems";
 import type { IRefinementRow } from "../../../../models/Refinement/Refinement";
 import ReadinessCell from "./ReadinessCell";
+import StageCell from "./StageCell";
 import type { IPendingVote } from "./useVoteCasting";
 import VoteControl from "./VoteControl";
 import { describeVoteCount } from "./voteWording";
 
 export type RefinementGridRow = IRefinementRow & GridValidRowModel;
+
+const stageColumn: DataGridColumn<RefinementGridRow> = {
+	field: "stage",
+	headerName: "Stage",
+	width: 160,
+	renderCell: ({ row }) => (
+		<StageCell stage={row.stage} signalsDisagree={row.signalsDisagree} />
+	),
+};
 
 export const createRefinementColumns = (
 	workItemTerm: string,
@@ -18,6 +28,7 @@ export const createRefinementColumns = (
 	onVote: (vote: IPendingVote) => void,
 	votesBeingSent: ReadonlySet<string>,
 	onOpenVotes: (referenceId: string) => void,
+	stagesConfigured: boolean,
 ): DataGridColumn<RefinementGridRow>[] => [
 	createNameColumn<RefinementGridRow>(workItemTerm),
 	{
@@ -37,6 +48,7 @@ export const createRefinementColumns = (
 		headerName: "State",
 		width: 160,
 	},
+	...(stagesConfigured ? [stageColumn] : []),
 	{
 		field: "myVote",
 		headerName: "Your vote",
@@ -70,7 +82,7 @@ export const createRefinementColumns = (
 	},
 	{
 		field: "readiness",
-		headerName: "Readiness",
+		headerName: stagesConfigured ? "Votes say" : "Readiness",
 		width: 200,
 		renderCell: ({ row }) => (
 			<ReadinessCell

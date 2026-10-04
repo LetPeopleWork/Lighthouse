@@ -1,18 +1,22 @@
 import { describe, expect, it, vi } from "vitest";
+import type { RefinementStage } from "../../../../models/Refinement/Refinement";
 import { createRefinementColumns } from "./refinementColumns";
+import { describeDisagreement } from "./StageCell";
+
+const columnsFor = (stagesConfigured: boolean) =>
+	createRefinementColumns(
+		"Work Item",
+		new Map(),
+		vi.fn(),
+		new Set(),
+		vi.fn(),
+		stagesConfigured,
+	);
 
 describe("the Refinement tab's columns", () => {
 	it("sorts by name, state, vote count and readiness, but not by parent or by the reader's own vote", () => {
-		const columns = createRefinementColumns(
-			"Work Item",
-			new Map(),
-			vi.fn(),
-			new Set(),
-			vi.fn(),
-		);
-
 		expect(
-			columns
+			columnsFor(false)
 				.slice(1)
 				.map(({ field, sortable }) => ({ field, sortable: sortable ?? true })),
 		).toEqual([
@@ -23,4 +27,59 @@ describe("the Refinement tab's columns", () => {
 			{ field: "readiness", sortable: true },
 		]);
 	});
+
+	it.each([
+		{
+			stagesConfigured: false,
+			columns: [
+				["parentReferenceId", "Parent"],
+				["state", "State"],
+				["myVote", "Your vote"],
+				["voteCount", "Votes"],
+				["readiness", "Readiness"],
+			],
+		},
+		{
+			stagesConfigured: true,
+			columns: [
+				["parentReferenceId", "Parent"],
+				["state", "State"],
+				["stage", "Stage"],
+				["myVote", "Your vote"],
+				["voteCount", "Votes"],
+				["readiness", "Votes say"],
+			],
+		},
+	])(
+		"lays out the columns in order when stage rules are set: $stagesConfigured",
+		({ stagesConfigured, columns }) => {
+			expect(
+				columnsFor(stagesConfigured)
+					.slice(1)
+					.map(({ field, headerName }) => [field, headerName]),
+			).toEqual(columns);
+		},
+	);
+});
+
+describe("the words behind the disagreement marker", () => {
+	it.each([
+		{
+			stage: "Ready",
+			words: "The stage says Ready, but the votes don't agree yet.",
+		},
+		{
+			stage: "BeingRefined",
+			words: "The votes say Ready, but the stage is still Being refined.",
+		},
+		{
+			stage: "Waiting",
+			words: "The votes say Ready, but the stage is still Waiting.",
+		},
+	] as { stage: RefinementStage; words: string }[])(
+		"reads '$words' for a row in the $stage stage",
+		({ stage, words }) => {
+			expect(describeDisagreement(stage)).toBe(words);
+		},
+	);
 });

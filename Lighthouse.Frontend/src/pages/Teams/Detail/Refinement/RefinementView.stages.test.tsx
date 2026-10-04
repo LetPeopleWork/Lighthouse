@@ -123,7 +123,7 @@ describe("The Refinement tab shows stages beside the votes", () => {
 	});
 
 	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
-	it.skip("puts a Stage column straight after State and heads the votes column Votes say", async () => {
+	it("puts a Stage column straight after State and heads the votes column Votes say", async () => {
 		renderTheRefinementTab(gravityWithStages());
 		await theRowOf("GR-058");
 
@@ -134,7 +134,7 @@ describe("The Refinement tab shows stages beside the votes", () => {
 	});
 
 	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
-	it.skip("says each row's stage in words", async () => {
+	it("says each row's stage in words", async () => {
 		renderTheRefinementTab(gravityWithStages());
 
 		expect(await theRowOf("GR-058")).toHaveTextContent("Ready");
@@ -143,7 +143,7 @@ describe("The Refinement tab shows stages beside the votes", () => {
 	});
 
 	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
-	it.skip("marks a row whose stage and votes disagree, in words a screen reader reads too", async () => {
+	it("marks a row whose stage and votes disagree, in words a screen reader reads too", async () => {
 		renderTheRefinementTab(gravityWithStages());
 
 		expect(
@@ -152,7 +152,7 @@ describe("The Refinement tab shows stages beside the votes", () => {
 	});
 
 	// @us-03 @slice-03 @boundary @contract-shape:pure-function
-	it.skip("marks only the row where the two signals disagree", async () => {
+	it("marks only the row where the two signals disagree", async () => {
 		renderTheRefinementTab(gravityWithStages());
 
 		expect(
@@ -167,7 +167,7 @@ describe("The Refinement tab shows stages beside the votes", () => {
 
 	// @us-03 @slice-03 @boundary @contract-shape:pure-function
 	// Nobody has voted on GR-060, so its votes hold no opinion yet: its Ready stage carries no marker.
-	it.skip("marks no row whose stage is Ready when nobody has voted on it yet", async () => {
+	it("marks no row whose stage is Ready when nobody has voted on it yet", async () => {
 		renderTheRefinementTab(
 			gravitysRefinement(
 				{ stagesConfigured: true, readySource: "Stages", readyCount: 2 },
