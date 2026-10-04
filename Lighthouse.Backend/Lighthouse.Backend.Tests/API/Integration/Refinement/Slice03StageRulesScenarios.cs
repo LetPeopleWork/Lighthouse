@@ -51,7 +51,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-03 @us-13 @slice-03 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task Without_stage_rules_the_ready_count_follows_the_votes()
         {
             var gravity = await GivenGravityRefinesWithoutStages();
@@ -64,7 +63,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-03 @slice-03 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task With_stage_rules_the_ready_count_follows_the_stages()
         {
             var gravity = await GivenGravityTagsTwoWorkItemsReadyUnderItsReadyRule();
@@ -196,7 +194,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-03 @slice-03 @error @contract-shape:bounded-change
         // Stage rules that make nothing Ready leave nothing Ready, however the votes went.
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task Stage_rules_that_match_nothing_Ready_leave_the_ready_count_at_zero()
         {
             var gravity = await GivenGravityWithItsReadyRuleTagging();
@@ -210,7 +207,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-03 @slice-03 @error @contract-shape:pure-function
         // A Team may split its refinement into Waiting and Being refined only; then nothing is Ready by stage.
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task A_Being_refined_rule_alone_still_counts_by_stage()
         {
             var gravity = await GivenGravityWithOnlyABeingRefinedRuleTagging((AdvancedReporting, AnalysingTag));
@@ -297,7 +293,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task Turning_every_stage_rule_off_hands_the_ready_count_back_to_the_votes()
         {
             var gravity = await GivenGravityWithItsReadyRuleTagging((UserActivityTracking, ReadyTag));

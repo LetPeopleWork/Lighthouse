@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Services.Implementation.Refinement;
 using Lighthouse.Backend.Services.Interfaces.Refinement;
@@ -212,6 +213,54 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
             Assert.That(RefinementResolution.SignalsDisagree(stage, votes, new RowStanding(readiness, null)), Is.EqualTo(disagree));
         }
+
+        [TestCase(false, 0, 0, 0, 0, ReadySource.Votes, TestName = "Without stage rules and no Ready votes nothing is Ready")]
+        [TestCase(false, 0, 3, 0, 3, ReadySource.Votes, TestName = "Without stage rules every Work Item the votes call Ready counts")]
+        [TestCase(true, 0, 0, 0, 0, ReadySource.Stages, TestName = "Stage rules that make nothing Ready count nothing")]
+        [TestCase(true, 2, 0, 0, 2, ReadySource.Stages, TestName = "With stage rules every Work Item whose stage is Ready counts")]
+        [TestCase(true, 0, 3, 0, 0, ReadySource.Stages, TestName = "With stage rules Ready votes alone count nothing")]
+        [TestCase(true, 2, 3, 0, 2, ReadySource.Stages, TestName = "With stage rules the stages and the votes are never added together")]
+        [TestCase(true, 1, 0, 1, 2, ReadySource.Stages, TestName = "A Work Item both signals call Ready counts once")]
+        [TestCase(true, 0, 2, 2, 2, ReadySource.Stages, TestName = "With stage rules only the Ready stages count, whatever else the votes say")]
+        public void The_ready_count_follows_the_votes_without_stage_rules_and_the_stages_with_them(
+            bool stagesConfigured, int readyByStageOnly, int readyByVotesOnly, int readyByBoth, int readyCount, ReadySource source)
+        {
+            var rows = RowsWith(stagesConfigured, readyByStageOnly, readyByVotesOnly, readyByBoth);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(RefinementResolution.ReadyCountOf(stagesConfigured, rows), Is.EqualTo(readyCount));
+                Assert.That(RefinementResolution.ReadySourceOf(stagesConfigured), Is.EqualTo(source));
+                Assert.That(RefinementResolution.ReadyByVotesCountOf(rows), Is.EqualTo(readyByVotesOnly + readyByBoth), "the votes' own count never changes meaning");
+            }
+        }
+
+        // Every table also carries one Work Item neither signal calls Ready, so a count of all rows shows up.
+        private static List<RefinementRow> RowsWith(bool stagesConfigured, int readyByStageOnly, int readyByVotesOnly, int readyByBoth)
+        {
+            RefinementStage? StageWhen(bool ready)
+            {
+                if (!stagesConfigured)
+                {
+                    return null;
+                }
+
+                return ready ? RefinementStage.Ready : RefinementStage.Waiting;
+            }
+
+            var notReadyByVotes = new RowStanding(RowReadiness.MoreYesNeeded, 3);
+
+            return
+            [
+                .. Enumerable.Range(0, readyByStageOnly).Select(_ => Row(StageWhen(true), notReadyByVotes)),
+                .. Enumerable.Range(0, readyByVotesOnly).Select(_ => Row(StageWhen(false), RowStanding.Ready)),
+                .. Enumerable.Range(0, readyByBoth).Select(_ => Row(StageWhen(true), RowStanding.Ready)),
+                Row(stagesConfigured ? RefinementStage.BeingRefined : null, notReadyByVotes),
+            ];
+        }
+
+        private static RefinementRow Row(RefinementStage? stage, RowStanding standing)
+            => new(new WorkItem(), RowVotes.None, standing, stage);
 
         private static SizingLogEntry VoteBy(string voterKey, int id, SizingAnswer answer, string displayName = "Voter")
             => Entry(voterKey, id, SizingEntryKind.Vote, answer, displayName);

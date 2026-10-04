@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Refinement;
+using Lighthouse.Backend.Services.Implementation.Refinement;
 
 namespace Lighthouse.Backend.Services.Interfaces.Refinement
 {
@@ -18,14 +19,11 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
         VoterIdentityKind VoterIdentity,
         bool StagesConfigured = false)
     {
-        public int ReadyByVotesCount => WorkItems.Count(row => row.Standing.Readiness == RowReadiness.Ready);
+        public int ReadyByVotesCount => RefinementResolution.ReadyByVotesCountOf(WorkItems);
 
-        /// <summary>A Team with stage rules trusts its tracker for what is Ready; a Team without them trusts the votes.</summary>
-        public ReadySource ReadySource => StagesConfigured ? ReadySource.Stages : ReadySource.Votes;
+        public ReadySource ReadySource => RefinementResolution.ReadySourceOf(StagesConfigured);
 
-        public int ReadyCount => StagesConfigured
-            ? WorkItems.Count(row => row.Stage == RefinementStage.Ready)
-            : ReadyByVotesCount;
+        public int ReadyCount => RefinementResolution.ReadyCountOf(StagesConfigured, WorkItems);
     }
 
     /// <param name="Stage">The stage the Team's rules give the row; null when the Team sets no stage rule.</param>

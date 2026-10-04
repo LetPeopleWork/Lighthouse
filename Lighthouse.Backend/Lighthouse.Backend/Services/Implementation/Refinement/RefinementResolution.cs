@@ -70,6 +70,21 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 && votes.VoteCount > 0
                 && (stage == RefinementStage.Ready) != (standing.Readiness == RowReadiness.Ready);
 
+        /// <summary>
+        /// A Team with stage rules trusts its tracker for what is Ready, whatever the votes say; a Team without
+        /// them trusts the votes. The two signals are never added together.
+        /// </summary>
+        public static int ReadyCountOf(bool stagesConfigured, IEnumerable<RefinementRow> rows)
+            => stagesConfigured
+                ? rows.Count(row => row.Stage == RefinementStage.Ready)
+                : ReadyByVotesCountOf(rows);
+
+        public static int ReadyByVotesCountOf(IEnumerable<RefinementRow> rows)
+            => rows.Count(row => row.Standing.Readiness == RowReadiness.Ready);
+
+        public static ReadySource ReadySourceOf(bool stagesConfigured)
+            => stagesConfigured ? ReadySource.Stages : ReadySource.Votes;
+
         private static bool IsReady(IEnumerable<SizingLogEntry> entries, ReadinessSetting readiness)
             => StandingOf(SplitOf(CurrentVotes(entries)), readiness).Readiness == RowReadiness.Ready;
 
