@@ -162,6 +162,39 @@ describe("The Refinement tab shows stages beside the votes", () => {
 		).toBeInTheDocument();
 	});
 
+	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
+	it("tells a screen reader which way the stage and votes disagree, not only that they do", async () => {
+		renderTheRefinementTab(
+			gravitysRefinement(
+				{ stagesConfigured: true, readySource: "Stages", readyCount: 1 },
+				[
+					staged("GR-059", "Advanced search filters", "Next", "Ready", {
+						voteCount: 1,
+						readiness: "MoreYesNeeded",
+						missingVotes: 2,
+						signalsDisagree: true,
+					}),
+					staged("GR-073", "Configuration management", "Backlog", "Waiting", {
+						voteCount: 3,
+						readiness: "Ready",
+						missingVotes: null,
+						signalsDisagree: true,
+					}),
+				],
+			),
+		);
+
+		expect(
+			within(await theRowOf("GR-059")).getByLabelText(
+				/^Stage and votes disagree\. The stage says Ready, but the votes don't agree yet\.$/,
+			),
+		).toBeInTheDocument();
+		expect(
+			within(await theRowOf("GR-073")).getByLabelText(
+				/^Stage and votes disagree\. The votes say Ready, but the stage is still Waiting\.$/,
+			),
+		).toBeInTheDocument();
+	});
 
 	// @us-03 @slice-03 @boundary @contract-shape:pure-function
 	it("marks only the row where the two signals disagree", async () => {

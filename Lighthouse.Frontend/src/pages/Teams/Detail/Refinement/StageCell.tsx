@@ -32,7 +32,7 @@ const StageCell: React.FC<Readonly<StageCellProps>> = ({
 				<Tooltip title={describeDisagreement(stage)} describeChild>
 					<WarningAmberIcon
 						role="img"
-						aria-label="Stage and votes disagree"
+						aria-label={`Stage and votes disagree. ${describeDisagreement(stage)}`}
 						fontSize="small"
 						sx={{ color: "warning.main" }}
 					/>
