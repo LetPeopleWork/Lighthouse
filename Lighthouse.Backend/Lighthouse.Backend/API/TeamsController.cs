@@ -115,6 +115,12 @@ namespace Lighthouse.Backend.API
                 return BadRequest(ThroughputHistoryValidator.ErrorMessage);
             }
 
+            var stageRuleError = ValidateStageRulesForNewTeam(teamSetting);
+            if (stageRuleError is not null)
+            {
+                return BadRequest(stageRuleError);
+            }
+
             teamSetting.Id = 0;
             var newTeam = new Team();
             newTeam.SyncTeamWithTeamSettings(teamSetting);
@@ -144,6 +150,22 @@ namespace Lighthouse.Backend.API
 
             var teamSettingDto = new TeamSettingDto(newTeam, clock.Today);
             return Ok(teamSettingDto);
+        }
+
+        // The fields a stage rule may name come from the connection the new Team will use; an unknown
+        // connection offers no additional fields.
+        private string? ValidateStageRulesForNewTeam(TeamSettingDto teamSetting)
+        {
+            var stageRules = teamSetting.Refinement?.StageRules;
+            if (stageRules is null)
+            {
+                return null;
+            }
+
+            var connection = workTrackingSystemConnectionRepository.GetById(teamSetting.WorkTrackingSystemConnectionId);
+            var newTeam = new Team { WorkTrackingSystemConnection = connection ?? new WorkTrackingSystemConnection() };
+
+            return RuleSetValidation.ValidateStageRules(stageRules, newTeam, forecastFilterRuleService);
         }
 
         [HttpPost("validate")]

@@ -288,13 +288,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         protected static JsonObject ARuleWithoutAValue(string fieldKey, string valuelessOperator) => ARuleOn(fieldKey, valuelessOperator, "");
 
         /// <summary>A rule with this many conditions, each "Tags contains" a different word.</summary>
-        protected static JsonObject ARuleWithConditions(int count) => new()
+        protected static JsonObject ARuleWithConditions(int count) => ARuleWithConditionsOn(TagsField, count);
+
+        /// <summary>A rule with this many conditions on the field, each "contains" a different word.</summary>
+        protected static JsonObject ARuleWithConditionsOn(string fieldKey, int count) => new()
         {
             ["version"] = 1,
             ["mode"] = "or",
             ["conditions"] = new JsonArray([.. Enumerable.Range(1, count).Select(index => (JsonNode)new JsonObject
             {
-                ["fieldKey"] = TagsField,
+                ["fieldKey"] = fieldKey,
                 ["operator"] = ContainsOperator,
                 ["value"] = $"tag-{index}",
             })]),

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lighthouse.Backend.Data;
@@ -17,6 +18,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     public partial class Slice03StageRulesTest
     {
         private const string PulsarRefinementState = "Refinement";
+
+        private const string CreatedTeamName = "Team Gravity Two";
 
         private static readonly Voter Jonas = ABrowserOf(JonasWeber);
 
@@ -138,6 +141,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             return await PutTheTeamSettings(team, payload);
         }
 
+        private async Task<HttpResponseMessage> WhenATeamIsCreatedLikeItWithTheReadyRule(TeamUnderTest team, JsonObject ready)
+        {
+            TheCallerAdministersTheWholeInstance();
+
+            var payload = TheTeamSettingsFormFor(team with { Name = CreatedTeamName });
+            payload["refinement"] = new JsonObject
+            {
+                ["states"] = new JsonArray(new JsonObject { ["state"] = Backlog }),
+                ["stageRules"] = StageRules(ready, null),
+            };
+
+            return await Client.PostAsync("/api/latest/teams", new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json"));
+        }
+
         private async Task WhenTheSettingsAreSaved(TeamUnderTest team, SaveShape shape)
         {
             using var save = await SaveTheSettingsShaped(team, shape);
@@ -217,6 +234,27 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 Assert.That(save.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
                 Assert.That(StageRulesIn(settings).Ready, Is.EqualTo(expected));
             }
+        }
+
+        private void ThenTheCreateIsRefusedAndNoTeamIsCreated(HttpResponseMessage create)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(create.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+                Assert.That(context.Teams.Count(team => team.Name == CreatedTeamName), Is.Zero, "a refused create stored a Team");
+            }
+        }
+
+        private static async Task ThenTheCreatedTeamHasTheReadyRule(HttpResponseMessage create, StageRuleReading expected)
+        {
+            var body = await create.Content.ReadAsStringAsync();
+            Assert.That(create.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+
+            using var document = JsonDocument.Parse(body);
+            Assert.That(StageRulesIn(document.RootElement).Ready, Is.EqualTo(expected));
         }
 
         private async Task ThenTheSaveIsAcceptedAndTheTeamHasNoReadyRule(HttpResponseMessage save, TeamUnderTest team)

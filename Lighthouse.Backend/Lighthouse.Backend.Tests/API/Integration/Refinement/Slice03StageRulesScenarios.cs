@@ -260,6 +260,30 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheSaveIsRefusedAndTheReadyRuleIsStill(refused, gravity, ReadyTag);
         }
 
+        // @driving_port @real-io @us-03 @slice-03 @error @contract-shape:unbounded-preservation
+        // A Team created through the API, the CLI or MCP gets the same check as one whose settings are saved.
+        [TestCase("workitem.storypoints", 1)]
+        [TestCase("workitem.tags", 21)]
+        public async Task Creating_a_Team_with_a_stage_rule_the_rule_editor_would_refuse_is_refused_and_no_Team_is_created(string fieldKey, int conditions)
+        {
+            var gravity = await GivenGravityRefinesWithoutStages();
+
+            using var create = await WhenATeamIsCreatedLikeItWithTheReadyRule(gravity, ARuleWithConditionsOn(fieldKey, conditions));
+
+            ThenTheCreateIsRefusedAndNoTeamIsCreated(create);
+        }
+
+        // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:bounded-change
+        [Test]
+        public async Task Creating_a_Team_with_a_valid_stage_rule_keeps_it()
+        {
+            var gravity = await GivenGravityRefinesWithoutStages();
+
+            using var create = await WhenATeamIsCreatedLikeItWithTheReadyRule(gravity, TagsContain(ReadyTag));
+
+            await ThenTheCreatedTeamHasTheReadyRule(create, TagsContainReading(ReadyTag)!);
+        }
+
         // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:bounded-change
         [Test]
         public async Task A_rule_of_twenty_conditions_is_accepted()
