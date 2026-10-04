@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Tests.Models.UsageData
         [TestCaseSource(nameof(EveryName))]
         public void A_sizing_moment_is_carried_exactly_by_a_sizing_event(UsageDataEventName name)
         {
-            var isASizingEvent = name == UsageDataEventName.TeamSizingVoteCast;
+            var isASizingEvent = name is UsageDataEventName.TeamSizingVoteCast or UsageDataEventName.TeamSizingReadinessReached;
 
             using (Assert.EnterMultipleScope())
             {

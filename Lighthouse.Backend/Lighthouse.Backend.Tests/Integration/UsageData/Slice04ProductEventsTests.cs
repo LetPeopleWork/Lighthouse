@@ -31,6 +31,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         private const string WorkTrackingSystemConnected = "WorkTrackingSystemConnected";
         private const string OptionalFeatureToggled = "OptionalFeatureToggled";
         private const string TeamSizingVoteCast = "TeamSizingVoteCast";
+        private const string TeamSizingReadinessReached = "TeamSizingReadinessReached";
 
         /// <summary>
         /// The events that say somebody used something rather than that somebody looked at
@@ -64,6 +65,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             WorkTrackingSystemConnected,
             OptionalFeatureToggled,
             TeamSizingVoteCast,
+            TeamSizingReadinessReached,
         ];
 
         /// <summary>
@@ -372,7 +374,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             PortfolioTabOpened => ABatchOf(name, PortfolioMetricsTab),
             WorkTrackingSystemConnected => ABatchNamingAWorkTrackingSystem(name, "Jira"),
             OptionalFeatureToggled => ABatchSwitchingASetting(name),
-            TeamSizingVoteCast => ABatchSayingWhenAVoteWasCast(name),
+            TeamSizingVoteCast or TeamSizingReadinessReached => ABatchSayingWhenAVoteWasCast(name),
             _ => ABatchOfJustTheName(name),
         };
 

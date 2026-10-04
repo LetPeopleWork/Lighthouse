@@ -36,5 +36,7 @@ namespace Lighthouse.Backend.Models.UsageData
         TeamRefinementConfigured = 12,
 
         TeamSizingVoteCast = 13,
+
+        TeamSizingReadinessReached = 14,
     }
 }

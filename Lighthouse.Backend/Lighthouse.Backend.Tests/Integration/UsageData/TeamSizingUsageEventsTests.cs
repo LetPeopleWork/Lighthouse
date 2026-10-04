@@ -30,8 +30,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     [Category("epic-5510-5881-refinement")]
     public class TeamSizingUsageEventsTests : UsageDataCollectorObservationTest
     {
-        private const string PendingSlice13 = "Epic #5510 slice 13 (#6151) - pending DELIVER";
-
         private const string TeamSizingVoteCast = "TeamSizingVoteCast";
 
         private const string TeamSizingReadinessReached = "TeamSizingReadinessReached";
@@ -71,7 +69,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @driving_port @real-io @us-11 @slice-11 @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:bounded-change
         [TestCase(TeamSizingVoteCast)]
-        [TestCase(TeamSizingReadinessReached, IgnoreReason = PendingSlice13)]
+        [TestCase(TeamSizingReadinessReached)]
         public async Task A_browser_that_agreed_reports_the_event_with_its_name_and_when_it_happened_and_nothing_else(string name)
         {
             var token = await ABrowserThatAgreedAsync();
@@ -100,7 +98,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // request; none of them may reach the collector, and neither may anything beyond the event's name,
         // its moment and the facts every event carries about the instance.
         [TestCase(TeamSizingVoteCast)]
-        [TestCase(TeamSizingReadinessReached, IgnoreReason = PendingSlice13)]
+        [TestCase(TeamSizingReadinessReached)]
         public async Task The_event_from_a_browser_that_just_voted_carries_nothing_about_the_voter(string name)
         {
             var token = await ABrowserThatAgreedAsync();
@@ -137,7 +135,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // @driving_port @real-io @us-11 @us-13 @error @contract-shape:unbounded-preservation
         // The moment is the whole reason these events exist; one arriving without it would be counted wrongly.
         [TestCase(TeamSizingVoteCast)]
-        [TestCase(TeamSizingReadinessReached, IgnoreReason = PendingSlice13)]
+        [TestCase(TeamSizingReadinessReached)]
         public async Task The_event_without_when_it_happened_is_refused(string name)
         {
             var token = await ABrowserThatAgreedAsync();
@@ -157,7 +155,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [TestCase(TeamSizingVoteCast, ",\"route\":\"" + TeamMetricsTab + "\"")]
         [TestCase(TeamSizingVoteCast, ",\"workTrackingSystem\":\"Jira\"")]
         [TestCase(TeamSizingVoteCast, ",\"enabled\":true")]
-        [TestCase(TeamSizingReadinessReached, ",\"route\":\"" + TeamMetricsTab + "\"", IgnoreReason = PendingSlice13)]
+        [TestCase(TeamSizingReadinessReached, ",\"route\":\"" + TeamMetricsTab + "\"")]
         public async Task The_event_carrying_anything_more_is_refused(string name, string somethingExtra)
         {
             var token = await ABrowserThatAgreedAsync();
@@ -216,7 +214,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// </summary>
         // @us-11 @us-13 @contract-shape:bounded-change
         [TestCase(TeamSizingVoteCast, TheLastEventNamedBeforeSizingVotes)]
-        [TestCase(TeamSizingReadinessReached, TeamSizingVoteCast, IgnoreReason = PendingSlice13)]
+        [TestCase(TeamSizingReadinessReached, TeamSizingVoteCast)]
         public void The_sizing_events_are_appended_to_the_list_of_names_never_inserted(string name, string namedBefore)
         {
             var vocabulary = typeof(Backend.Program).Assembly.GetTypes()

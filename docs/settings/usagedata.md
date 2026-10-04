@@ -51,11 +51,12 @@ The complete list of events:
 | A forecast reality check was run | Somebody ran a forecast reality check on a Team page and got an answer back. **A check whose history was too thin to judge still counts; a check that failed to come back never does** | Nothing. **Not which Team, not its sampling window, not what the check found** |
 | A Team's refinement was set up | Somebody chose which states mean refinement for a Team that had none, and your server accepted it. **Changing the states of a Team that already has some is never reported** | Nothing. **Not which Team, not which states were chosen** |
 | A sizing vote was cast | Somebody voted on whether a Work Item in refinement is ready to be worked on, and your server took the vote | When it was cast, relative to the Team's refinement — and while a Team has no refinement cadence that is always `NoCadence`. **Never who voted, never their name or anything that tells one voter from another, never the answer or a comment, never which Team or which Work Item** |
+| A Work Item was made Ready by votes | A vote on a Work Item in refinement brought in enough Yes votes to make it Ready, and your server took the vote. **Counted once, by the browser that cast that vote; a Work Item that was already Ready, or is still short of votes, is never reported** | When it happened, relative to the Team's refinement — and while a Team has no refinement cadence that is always `NoCadence`. **Never who voted, never their name or anything that tells one voter from another, never how many votes there were, never which Team or which Work Item** |
 
 That is the whole vocabulary. It is a closed list in the code — not a pattern that quietly matches new
 things — and the build fails if anything outside it is sent.
 
-**Nine of the fourteen carry nothing but the fact that they happened.** That is not a courtesy; each
+**Nine of the fifteen carry nothing but the fact that they happened.** That is not a courtesy; each
 event in the code says what it is allowed to carry, and one arriving with anything else is refused
 rather than trimmed. So the two tab openings are the only events that can name a page at all.
 
@@ -75,10 +76,10 @@ Every event carries these, attached by **your** server rather than by your brows
 | Field | What it is | Example |
 |---|---|---|
 | Browser identifier | A random value your Lighthouse generates and stores **on your own server**, against the record of this browser's answer, the first time somebody agrees here. Derived from nothing — not your hostname, not your licence key, not your account. Your browser never sees it and never sends it | `a7f2…` |
-| Which tab was opened | **Only on the two tab openings above.** One of eleven addresses this product publishes about itself, listed in full below. Your browser never sends an address; it sends a label, and your server looks the published address up. On the other twelve events this field is not empty — it is not there at all | `/teams/:id/metrics` |
-| Which setting was switched | **Only on a setting being switched.** A fixed word this product publishes for the setting, and there is one: `FeatureOrder`, for *Let Lighthouse own the order of your Features*. **Never the key the setting is stored under, and never its name as you see it on screen.** On the other thirteen events this field is not empty — it is not there at all | `FeatureOrder` |
-| Which way it was switched | **Only on a setting being switched.** `true` when the setting is now on, `false` when it is now off. On the other thirteen events this field is not `false` — it is not there at all | `true`, `false` |
-| When the vote was cast | **Only on a sizing vote.** A fixed word for when it was cast relative to the Team's refinement, and today there is one: `NoCadence`, for a Team that has no refinement cadence. **Never a date, a time or a day of the week.** On the other thirteen events this field is not empty — it is not there at all | `NoCadence` |
+| Which tab was opened | **Only on the two tab openings above.** One of eleven addresses this product publishes about itself, listed in full below. Your browser never sends an address; it sends a label, and your server looks the published address up. On the other thirteen events this field is not empty — it is not there at all | `/teams/:id/metrics` |
+| Which setting was switched | **Only on a setting being switched.** A fixed word this product publishes for the setting, and there is one: `FeatureOrder`, for *Let Lighthouse own the order of your Features*. **Never the key the setting is stored under, and never its name as you see it on screen.** On the other fourteen events this field is not empty — it is not there at all | `FeatureOrder` |
+| Which way it was switched | **Only on a setting being switched.** `true` when the setting is now on, `false` when it is now off. On the other fourteen events this field is not `false` — it is not there at all | `true`, `false` |
+| When it happened in refinement | **Only on a sizing vote and on a Work Item made Ready by votes.** A fixed word for when it happened relative to the Team's refinement, and today there is one: `NoCadence`, for a Team that has no refinement cadence. **Never a date, a time or a day of the week.** On the other thirteen events this field is not empty — it is not there at all | `NoCadence` |
 | Lighthouse version | The version this instance runs, but only when it is a published release. Anything else is sent as the literal word `unreleased` | `v26.9.9.9`, `unreleased` |
 | Deployment mode | How it is deployed, as one of `Standalone`, `Windows`, `Linux`, `MacOS`, `Docker`, `Kubernetes` | `Kubernetes` |
 | Licence tier | Which tier this instance runs on | `Community`, `Premium` |

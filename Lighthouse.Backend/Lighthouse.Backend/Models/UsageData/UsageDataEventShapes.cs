@@ -5,8 +5,8 @@ namespace Lighthouse.Backend.Models.UsageData
     /// <summary>
     /// What each event is allowed to carry. Two of them are about a page somebody opened and say
     /// which one; one says which kind of work tracking system was connected; one says which setting
-    /// was switched and which way; a sizing vote says when it was cast relative to the Team's
-    /// Refinement; the rest are about something somebody did, which happens on no particular page,
+    /// was switched and which way; the sizing events say when they happened relative to the
+    /// Team's Refinement; the rest are about something somebody did, which happens on no particular page,
     /// and they carry nothing but their name.
     ///
     /// This is a declaration rather than a rule applied at each call site, because the promise it
@@ -55,7 +55,7 @@ namespace Lighthouse.Backend.Models.UsageData
         /// would be counted wrongly; and no other event has a Refinement to be relative to.
         /// </summary>
         private static readonly FrozenSet<UsageDataEventName> EventsThatSayWhenTheyHappenedInRefinement =
-            FrozenSet.ToFrozenSet([UsageDataEventName.TeamSizingVoteCast]);
+            FrozenSet.ToFrozenSet([UsageDataEventName.TeamSizingVoteCast, UsageDataEventName.TeamSizingReadinessReached]);
 
         public static bool Fits(UsageDataEventReported reported)
         {
