@@ -3,7 +3,9 @@
 - **Status**: Accepted — **IMPLEMENTED for the refinement states** (Epic #6136, slice 01, 2026-10-03). Decisions 1
   (with `States` as the only member so far), 2, 3, 4 and 6 are built as written; **decision 5 is amended** — see the
   status note below. The later members (cadence, band, readiness, stage rules) are still designed, not built.
-  Proposed in DESIGN, 2026-10-02.
+  Proposed in DESIGN, 2026-10-02. **Amended 2026-10-04**: the per-state `Stage` is dropped from the design (stages
+  come only from `StageRules`). The already-stored `States[].Stage` (always `Waiting`) stays in the JSON so nothing
+  is removed; no code reads it, and a later change may stop writing it.
 - **Date**: 2026-10-02
 - **Feature**: epic-5510-5881-refinement (ADO Epics #6136, #5881, #5510; slices 01, 03, 04, 07, 08, 13)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)

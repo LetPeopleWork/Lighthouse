@@ -14,6 +14,25 @@ export class TeamRefinementPage {
 		});
 	}
 
+	/** The next Refinement named beside the heading: the day, the date and how far off it is. */
+	get nextRefinement(): Locator {
+		return this.page.getByText(
+			/^Next Refinement: \w{3} \d{1,2} \w{3} · (tomorrow|in \d+ days)$/,
+		);
+	}
+
+	/** Whether to refine more or stop, or why the tab cannot say. */
+	get verdict(): Locator {
+		return this.page.getByRole("alert");
+	}
+
+	/** The line after the Work Items needed before the next Refinement. */
+	get enoughForLine(): Locator {
+		return this.page.getByText(
+			/^(enough for \w{3} \d{1,2} \w{3} \(\d+%\) · not needed before then|All \d+ Work Items in Refinement are needed before \w{3} \d{1,2} \w{3}\.)$/,
+		);
+	}
+
 	get firstWorkItemRow(): Locator {
 		return this.workItemRows.first();
 	}

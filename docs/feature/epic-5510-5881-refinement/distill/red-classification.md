@@ -126,3 +126,71 @@ votes make it Ready*. **Not run live**: it needs DELIVER's vote controls and dem
 from Jonas Weber and Mo Okafor). Type-checked (`tsc --noEmit`, 0 errors) and Biome-clean. Expected RED when
 un-fixme'd today: the row has no "1 more Yes needed" and no Yes button. **DELIVER slice 13 runs it against a live
 instance before committing it un-fixme'd.**
+
+
+---
+
+# RED classification — Epic #5881 (E2), slices 03–09
+
+**Wave**: DISTILL · **Date**: 2026-10-04 · **Scope**: slices 03 (US-03, #6141, with US-08 folded in), 04 (US-04,
+#6142), 05 (US-05, #6143), 06 (US-06, #6144), 07 (US-07, #6145) and 09 (US-09, #6147) — the Lighthouse half of 09
+only.
+
+Every case below was un-skipped once on `66e49b7e1` plus this wave's test files, run, classified, and skipped again.
+**Backend 105 of 105 fail; frontend 56 of 58 fail, 2 pass by design. Every failure is on missing behaviour
+(`MISSING_FUNCTIONALITY`); none is `IMPORT_ERROR`, `FIXTURE_BROKEN`, `SETUP_FAILURE` or `WRONG_ASSERTION`.** The E2E
+walking skeleton was type-checked and linted, not run live.
+
+Five frontend cases first came back **green** and were rewritten so they prove something first:
+
+- *marks only the row where the two signals disagree* (was "marks no row where the two signals agree"): an absent
+  marker held on a tab that draws none. It now first finds the marker on GR-059.
+- *shows backlog order again the next time the tab opens after a sort*: it now first checks the sorted list is
+  numbered from GR-051, so it cannot pass on a tab that never numbers rows.
+- *shows no # column and no line when there is no number* (×2): each now first finds what the tab says instead — the
+  editor hint without a cadence, the next Refinement with too little history.
+- *shows no message without a cadence*: it now first finds the editor hint.
+
+Two frontend cases pass today **on purpose**, as preservation guards: *shows the tab as before when the Team sets no
+stage rule* (slice 13's heading and columns must survive slice 03) and *reports a vote … with the next Refinement on
+null … as NoCadence* (today's moment must survive slice 04).
+
+Backend refusals start from a stored value only a shipped slice can hold (a cadence of Thursdays, a band of 30/95, a
+Ready rule), so "nothing was saved" cannot pass on a server that ignores the member.
+
+## Backend — `Lighthouse.Backend.Tests` (NUnit, `WebApplicationFactory`, real EF)
+
+Run: `dotnet test --filter "FullyQualifiedName~Slice03StageRulesTest|FullyQualifiedName~Slice04RefinementCadenceTest|FullyQualifiedName~Slice05NeedAndVerdictTest|FullyQualifiedName~Slice07BandPercentilesTest|FullyQualifiedName~Slice09ClientNeed|FullyQualifiedName~TeamRefinementNeedUsageEventsTests"`
+with every `[Ignore(PendingSlice…)]` removed → **Failed 105, Passed 0**.
+
+| Fixture (slice) | Cases | Fails at | Why it fails today | Class |
+|---|---|---|---|---|
+| `Slice03StageRulesTest` (03, 08) | 24 | Then: `stageRules` in the settings read, `readyCount` / `readySource` / `stagesConfigured` / row `stage` on the tab, or 400 on a bad rule | The settings write ignores `stageRules` (200, nothing stored); the tab carries no stage facts | MISSING_FUNCTIONALITY |
+| `Slice04RefinementCadenceTest` (04) | 26 | Then: `cadence` in the settings read, `nextRefinementDate` / `isRefinementDay` on the tab, or 400 | The cadence is neither stored nor validated (200); the tab names no date | MISSING_FUNCTIONALITY |
+| `Slice05NeedAndVerdictTest` (05) | 18 | Then: `need` on the tab | "The Refinement tab's answer says nothing about how many Work Items are needed"; the Givens (rule, cadence, finished Work Items, blackout day, scripted forecast) complete or fail only on the unstored cadence | MISSING_FUNCTIONALITY |
+| `Slice07BandPercentilesTest` (07) | 16 | Then: `band` in the settings read, `need` on the tab, or 400 | "The Team's settings carry no band"; bad bands answer 200 | MISSING_FUNCTIONALITY |
+| `Slice09ClientNeedTest` + `…WithAnApiKeyTest` (09) | 4 | Then: `need` on the tab read with the client's key / personal API key | No need facts; the key's read itself answers 200 | MISSING_FUNCTIONALITY |
+| `TeamRefinementNeedUsageEventsTests` (04, 05) | 17 | Then: 204, the plain-event precondition, a 400, or the name on the enum | `OnRefinementDay` / `OnOtherDay` and `TeamRefinementDayVerdictShown` are unknown (400); a verdict on a sizing event is ignored (204, not 400) | MISSING_FUNCTIONALITY |
+
+## Frontend — `Lighthouse.Frontend` (Vitest + RTL)
+
+Run: `pnpm vitest run` over the five files with every `it.skip(` / `it.skip.each(` turned into `it(` / `it.each(` →
+**56 failed, 2 passed** (the two guards above).
+
+| File | Cases | Fails because | Class |
+|---|---|---|---|
+| `pages/Teams/Detail/Refinement/RefinementView.stages.test.tsx` | 9 (8 RED) | no "· 2 ready" heading, breakdown, Stage column, "Votes say" or ⚠ label | MISSING_FUNCTIONALITY |
+| `pages/Teams/Detail/Refinement/RefinementView.cadence.test.tsx` | 10 (9 RED) | no "Next Refinement: …", no hints; votes report `NoCadence` on every day | MISSING_FUNCTIONALITY |
+| `pages/Teams/Detail/Refinement/RefinementView.need.test.tsx` | 13 | no alert; no `TeamRefinementDayVerdictShown`; no hint | MISSING_FUNCTIONALITY |
+| `pages/Teams/Detail/Refinement/RefinementView.enoughFor.test.tsx` | 9 | no "#" column, no line, no hint / next Refinement | MISSING_FUNCTIONALITY |
+| `components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx` | 17 | the Refinement section has no stages, cadence or band fields | MISSING_FUNCTIONALITY |
+
+## E2E — `Lighthouse.EndToEndTests/tests/specs/teams/Refinement.spec.ts`
+
+Third walking skeleton, `testWithDemo.fixme`: *a Team admin sets the Refinement cadence and the tab says how many Work
+Items to refine before the next Refinement*. **Not run live.** Type-checked (`pnpm exec tsc --noEmit`, 0 errors) and
+Biome-clean. Expected RED when un-fixme'd today: Settings has no "Thursday" cadence checkbox. **DELIVER slice 06 runs it
+against a live instance before committing it un-fixme'd**; it assumes demo Gravity has enough Throughput history for a
+number.
+
+**Amendment 2026-10-04 (maintainer answer):** a stage-Ready row nobody has voted on carries no ⚠. *A Ready stage the votes cast do not back yet is marked as disagreeing* now casts one Yes first; the new boundary case *A Ready stage nobody has voted on shows no disagreement* (backend) and *marks no row whose stage is Ready when nobody has voted on it yet* (frontend) were un-skipped once: both fail on missing behaviour (the tab carries no `stage` / `signalsDisagree`; no ⚠ label on GR-059), then re-skipped.

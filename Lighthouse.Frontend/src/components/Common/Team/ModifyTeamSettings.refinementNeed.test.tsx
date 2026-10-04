@@ -1,0 +1,489 @@
+import {
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { IRefinementSettings } from "../../../models/Refinement/Refinement";
+import type { ITeamSettings } from "../../../models/Team/TeamSettings";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import type { IWorkItemRuleSchema } from "../../../models/WorkItemRules";
+import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import type { ITeamService } from "../../../services/Api/TeamService";
+import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
+import { createMockTeamSettings } from "../../../tests/TestDataProvider";
+import ModifyTeamSettings from "./ModifyTeamSettings";
+
+/**
+ * What a Team admin sets in the Refinement section so the tab can say how much to refine: the optional
+ * stage rules, the Refinement cadence, and the likelihoods the range is read at. Exercised through the
+ * settings form a Team admin uses, so what is checked is what the form's autosave sends. The stage rules
+ * use the rule editor the Team's other rules use; the cadence copies the recurring-blackout form.
+ *
+ * Sections these settings do not depend on are stood in for, as the form's own tests do.
+ */
+
+const { terms } = vi.hoisted(() => ({
+	terms: { current: {} as Record<string, string> },
+}));
+
+vi.mock("../../../services/TerminologyContext", () => ({
+	useTerminology: () => ({
+		getTerm: (key: string) => terms.current[key] ?? key,
+		isLoading: false,
+		error: null,
+		refetchTerminology: () => {},
+	}),
+}));
+
+vi.mock("../../../pages/Common/AdvancedInputs/AdvancedInputs.tsx", () => ({
+	__esModule: true,
+	default: () => <div>AdvancedInputsComponent</div>,
+}));
+
+vi.mock(
+	"../../../components/Common/BaseSettings/GeneralSettingsComponent.tsx",
+	() => ({
+		__esModule: true,
+		default: () => <div>GeneralInputsComponent</div>,
+	}),
+);
+
+vi.mock("../WorkItemTypes/WorkItemTypesComponent", () => ({
+	__esModule: true,
+	default: () => <div>WorkItemTypesComponent</div>,
+}));
+
+vi.mock("../StatesList/StatesList", () => ({
+	__esModule: true,
+	default: () => <div>StatesListComponent</div>,
+}));
+
+vi.mock("../Tags/TagsComponent", () => ({
+	__esModule: true,
+	default: () => <div>TagsComponent</div>,
+}));
+
+const defaultTerms: Record<string, string> = {
+	[TERMINOLOGY_KEYS.WORK_ITEMS]: "Work Items",
+	[TERMINOLOGY_KEYS.REFINEMENT]: "Refinement",
+	[TERMINOLOGY_KEYS.TEAM]: "Team",
+};
+
+const workTrackingSystems: IWorkTrackingSystemConnection[] = [
+	{
+		id: 1,
+		name: "Gravity's Jira",
+		options: [],
+		workTrackingSystem: "Jira",
+		authenticationMethodKey: "jira.cloud",
+		additionalFieldDefinitions: [],
+		writeBackMappingDefinitions: [],
+		workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
+	},
+];
+
+// The fields a rule on Gravity's Work Items can look at, as the server describes them.
+const workItemRuleSchema: IWorkItemRuleSchema = {
+	fields: [
+		{ fieldKey: "workitem.tags", displayName: "Tags", isMultiValue: true },
+		{ fieldKey: "workitem.type", displayName: "Type", isMultiValue: false },
+	],
+	operators: ["equals", "notEquals", "contains"],
+	maxRules: 20,
+	maxValueLength: 500,
+};
+
+const tagsContain = (tag: string) => ({
+	version: 1,
+	mode: "and" as const,
+	conditions: [{ fieldKey: "workitem.tags", operator: "contains", value: tag }],
+});
+
+const gravitysSettings = (
+	refinement: Partial<IRefinementSettings> = {},
+): ITeamSettings => ({
+	...createMockTeamSettings(),
+	name: "Team Gravity",
+	workTrackingSystemConnectionId: 1,
+	toDoStates: ["Backlog"],
+	doingStates: ["Next", "Analysing"],
+	doneStates: ["Done"],
+	refinement: {
+		states: [{ state: "Backlog" }, { state: "Analysing" }, { state: "Next" }],
+		readiness: { minYes: 3, minVoters: 3, discussWhen: { no: 1, yesIf: 2 } },
+		...refinement,
+	},
+});
+
+const saveTeamSettings = vi.fn();
+
+const renderGravitysSettingsForm = async (settings: ITeamSettings) => {
+	render(
+		<ApiServiceContext.Provider
+			value={createMockApiServiceContext({
+				teamService: {
+					updateTeamData: vi.fn().mockResolvedValue(undefined),
+					getForecastFilterSchema: vi
+						.fn()
+						.mockResolvedValue(workItemRuleSchema),
+				} as unknown as ITeamService,
+			})}
+		>
+			<ModifyTeamSettings
+				title="Edit Team"
+				getWorkTrackingSystems={vi.fn().mockResolvedValue(workTrackingSystems)}
+				getTeamSettings={vi.fn().mockResolvedValue(settings)}
+				saveTeamSettings={saveTeamSettings}
+				validateTeamSettings={vi.fn().mockResolvedValue(true)}
+			/>
+		</ApiServiceContext.Provider>,
+	);
+
+	await screen.findByText("GeneralInputsComponent");
+};
+
+const theRefinementLastSaved = () => {
+	const calls = saveTeamSettings.mock.calls;
+	const saved = calls[calls.length - 1]?.[0] as ITeamSettings | undefined;
+	return saved?.refinement;
+};
+
+// Opening the form is not an edit, so nothing may be saved even once the autosave would have fired.
+const AUTOSAVE_DELAY_AND_MARGIN_MS = 600;
+
+const pastTheAutosaveDelay = () =>
+	new Promise((resolve) => setTimeout(resolve, AUTOSAVE_DELAY_AND_MARGIN_MS));
+
+const replaceTheNumberIn = async (label: string, value: string) => {
+	const field = await screen.findByRole("spinbutton", { name: label });
+	await userEvent.clear(field);
+	await userEvent.type(field, value);
+};
+
+const READY_WHEN = "Ready when";
+const BEING_REFINED_WHEN = "Being refined when";
+
+const theStageGroup = async (name: string) =>
+	await screen.findByRole("group", { name });
+
+describe("Stage rules in the Refinement section of a Team's settings", () => {
+	beforeEach(() => {
+		terms.current = { ...defaultTerms };
+		saveTeamSettings.mockReset();
+		saveTeamSettings.mockResolvedValue(undefined);
+	});
+
+	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
+	it.skip("offers optional stages, a Ready rule and a Being refined rule, each with nothing set", async () => {
+		await renderGravitysSettingsForm(gravitysSettings());
+
+		expect(await screen.findByText("Stages (optional)")).toBeVisible();
+		for (const stage of [READY_WHEN, BEING_REFINED_WHEN]) {
+			const group = await theStageGroup(stage);
+			expect(
+				within(group).getByRole("button", { name: /^Add Rule$/i }),
+			).toBeEnabled();
+			expect(within(group).queryByLabelText("Value")).not.toBeInTheDocument();
+		}
+
+		await pastTheAutosaveDelay();
+		expect(saveTeamSettings).not.toHaveBeenCalled();
+	});
+
+	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
+	it.skip("shows the Ready rule the Team stored", async () => {
+		await renderGravitysSettingsForm(
+			gravitysSettings({
+				stageRules: { ready: tagsContain("ready"), beingRefined: null },
+			}),
+		);
+
+		const ready = await theStageGroup(READY_WHEN);
+		expect(within(ready).getByLabelText("Value")).toHaveValue("ready");
+	});
+
+	// @us-03 @slice-03 @driving_port @contract-shape:bounded-change
+	it.skip("saves a changed Ready rule and leaves the Being refined rule as it was", async () => {
+		await renderGravitysSettingsForm(
+			gravitysSettings({
+				stageRules: {
+					ready: tagsContain("ready"),
+					beingRefined: tagsContain("analysing"),
+				},
+			}),
+		);
+
+		const value = within(await theStageGroup(READY_WHEN)).getByLabelText(
+			"Value",
+		);
+		await userEvent.clear(value);
+		await userEvent.type(value, "groomed");
+
+		await waitFor(() =>
+			expect(theRefinementLastSaved()?.stageRules).toEqual({
+				ready: tagsContain("groomed"),
+				beingRefined: tagsContain("analysing"),
+			}),
+		);
+	});
+
+	// @us-03 @slice-03 @boundary @contract-shape:bounded-change
+	it.skip("switches the Ready rule off when its last condition is removed", async () => {
+		await renderGravitysSettingsForm(
+			gravitysSettings({
+				stageRules: {
+					ready: tagsContain("ready"),
+					beingRefined: tagsContain("analysing"),
+				},
+			}),
+		);
+
+		await userEvent.click(
+			within(await theStageGroup(READY_WHEN)).getByRole("button", {
+				name: "Remove rule",
+			}),
+		);
+
+		await waitFor(() =>
+			expect(theRefinementLastSaved()?.stageRules).toEqual({
+				ready: null,
+				beingRefined: tagsContain("analysing"),
+			}),
+		);
+	});
+
+	// @us-03 @slice-03 @error @contract-shape:unbounded-preservation
+	it.skip("saves nothing while a new rule is still incomplete", async () => {
+		await renderGravitysSettingsForm(gravitysSettings());
+
+		await userEvent.click(
+			within(await theStageGroup(BEING_REFINED_WHEN)).getByRole("button", {
+				name: /^Add Rule$/i,
+			}),
+		);
+		await pastTheAutosaveDelay();
+
+		expect(saveTeamSettings).not.toHaveBeenCalled();
+	});
+});
+
+const REPEAT_EVERY = "Repeat every (weeks)";
+const STARTING_WEEK = "Starting week";
+
+describe("The Refinement cadence in the Refinement section of a Team's settings", () => {
+	beforeEach(() => {
+		terms.current = { ...defaultTerms };
+		saveTeamSettings.mockReset();
+		saveTeamSettings.mockResolvedValue(undefined);
+	});
+
+	// @us-04 @slice-04 @driving_port @contract-shape:pure-function
+	it.skip("offers the weekdays Monday to Sunday and every week, with no starting week asked for", async () => {
+		await renderGravitysSettingsForm(gravitysSettings());
+
+		expect(await screen.findByText("Refinement cadence")).toBeVisible();
+		const weekdays = [
+			"Monday",
+			"Tuesday",
+			"Wednesday",
+			"Thursday",
+			"Friday",
+			"Saturday",
+			"Sunday",
+		];
+		expect(
+			screen
+				.getAllByRole("checkbox")
+				.map((box) => box.closest("label")?.textContent ?? "")
+				.filter((label) => weekdays.includes(label)),
+		).toEqual(weekdays);
+		expect(screen.getByRole("spinbutton", { name: REPEAT_EVERY })).toHaveValue(
+			1,
+		);
+		expect(screen.queryByLabelText(STARTING_WEEK)).not.toBeInTheDocument();
+	});
+
+	// @us-04 @slice-04 @driving_port @contract-shape:bounded-change
+	it.skip("saves Thursdays every week", async () => {
+		await renderGravitysSettingsForm(gravitysSettings());
+
+		await userEvent.click(
+			await screen.findByRole("checkbox", { name: "Thursday" }),
+		);
+
+		await waitFor(() =>
+			expect(theRefinementLastSaved()?.cadence).toEqual({
+				weekdays: ["Thursday"],
+				intervalWeeks: 1,
+				anchorWeek: null,
+			}),
+		);
+	});
+
+	// @us-04 @slice-04 @driving_port @contract-shape:bounded-change
+	it.skip("asks for the starting week once Refinements are more than a week apart, and saves it", async () => {
+		await renderGravitysSettingsForm(
+			gravitysSettings({
+				cadence: { weekdays: ["Tuesday"], intervalWeeks: 1, anchorWeek: null },
+			}),
+		);
+
+		await replaceTheNumberIn(REPEAT_EVERY, "2");
+		fireEvent.change(await screen.findByLabelText(STARTING_WEEK), {
+			target: { value: "2026-10-05" },
+		});
+
+		await waitFor(() =>
+			expect(theRefinementLastSaved()?.cadence).toEqual({
+				weekdays: ["Tuesday"],
+				intervalWeeks: 2,
+				anchorWeek: "2026-10-05",
+			}),
+		);
+	});
+
+	// @us-04 @slice-04 @error @contract-shape:unbounded-preservation
+	it.skip("saves nothing while every second week names no starting week, and marks the field", async () => {
+		await renderGravitysSettingsForm(
+			gravitysSettings({
+				cadence: { weekdays: ["Tuesday"], intervalWeeks: 1, anchorWeek: null },
+			}),
+		);
+
+		await replaceTheNumberIn(REPEAT_EVERY, "2");
+		await pastTheAutosaveDelay();
+
+		expect(await screen.findByLabelText(STARTING_WEEK)).toHaveAttribute(
+			"aria-invalid",
+			"true",
+		);
+		expect(saveTeamSettings).not.toHaveBeenCalled();
+	});
+
+	// @us-04 @slice-04 @error @contract-shape:unbounded-preservation
+	it.skip("saves nothing for fewer than one week between Refinements", async () => {
+		await renderGravitysSettingsForm(
+			gravitysSettings({
+				cadence: { weekdays: ["Thursday"], intervalWeeks: 1, anchorWeek: null },
+			}),
+		);
+
+		await replaceTheNumberIn(REPEAT_EVERY, "0");
+		await pastTheAutosaveDelay();
+
+		expect(
+			screen.getByRole("spinbutton", { name: REPEAT_EVERY }),
+		).toHaveAttribute("aria-invalid", "true");
+		expect(saveTeamSettings).not.toHaveBeenCalled();
+	});
+
+	// @us-04 @slice-04 @boundary @contract-shape:bounded-change
+	it.skip("leaves the Team without a cadence when the last weekday is unticked", async () => {
+		await renderGravitysSettingsForm(
+			gravitysSettings({
+				cadence: { weekdays: ["Thursday"], intervalWeeks: 1, anchorWeek: null },
+			}),
+		);
+
+		await userEvent.click(
+			await screen.findByRole("checkbox", { name: "Thursday" }),
+		);
+
+		await waitFor(() =>
+			expect(theRefinementLastSaved()?.cadence?.weekdays).toEqual([]),
+		);
+	});
+});
+
+// The band's labels and messages wait for the maintainer's sketch; the tests hold the behaviour.
+const LOW_END = /^Low end likelihood/;
+const HIGH_END = /^High end likelihood/;
+
+const replaceTheLikelihood = async (label: RegExp, value: string) => {
+	const field = await screen.findByRole("spinbutton", { name: label });
+	await userEvent.clear(field);
+	await userEvent.type(field, value);
+};
+
+describe("The band in the Refinement section of a Team's settings", () => {
+	beforeEach(() => {
+		terms.current = { ...defaultTerms };
+		saveTeamSettings.mockReset();
+		saveTeamSettings.mockResolvedValue(undefined);
+	});
+
+	// @us-07 @slice-07 @driving_port @contract-shape:pure-function
+	it.skip("shows the range read at 50% and 85% until the admin changes it", async () => {
+		await renderGravitysSettingsForm(gravitysSettings());
+
+		expect(
+			await screen.findByRole("spinbutton", { name: LOW_END }),
+		).toHaveValue(50);
+		expect(screen.getByRole("spinbutton", { name: HIGH_END })).toHaveValue(85);
+
+		await pastTheAutosaveDelay();
+		expect(saveTeamSettings).not.toHaveBeenCalled();
+	});
+
+	// @us-07 @slice-07 @driving_port @contract-shape:bounded-change
+	it.skip("saves a changed high end with the low end as it was", async () => {
+		await renderGravitysSettingsForm(gravitysSettings());
+
+		await replaceTheLikelihood(HIGH_END, "95");
+
+		await waitFor(() =>
+			expect(theRefinementLastSaved()?.band).toEqual({
+				lowPercentile: 50,
+				highPercentile: 95,
+			}),
+		);
+	});
+
+	// @us-07 @slice-07 @error @contract-shape:unbounded-preservation
+	it.skip.each([
+		["90", "85"],
+		["85", "85"],
+	])(
+		"refuses a low end of %s against a high end of %s, naming both, and saves nothing",
+		async (low, high) => {
+			await renderGravitysSettingsForm(
+				gravitysSettings({
+					band: { lowPercentile: 50, highPercentile: Number(high) },
+				}),
+			);
+
+			await replaceTheLikelihood(LOW_END, low);
+			await pastTheAutosaveDelay();
+
+			expect(
+				await screen.findByText(new RegExp(`${low}.*${high}`)),
+			).toBeVisible();
+			expect(saveTeamSettings).not.toHaveBeenCalled();
+		},
+	);
+
+	// @us-07 @slice-07 @error @boundary @contract-shape:unbounded-preservation
+	it.skip.each([
+		[LOW_END, "0"],
+		[HIGH_END, "100"],
+	])(
+		"refuses %s at %s, outside 1 to 99, and saves nothing",
+		async (label, value) => {
+			await renderGravitysSettingsForm(gravitysSettings());
+
+			await replaceTheLikelihood(label, value);
+			await pastTheAutosaveDelay();
+
+			expect(screen.getByRole("spinbutton", { name: label })).toHaveAttribute(
+				"aria-invalid",
+				"true",
+			);
+			expect(saveTeamSettings).not.toHaveBeenCalled();
+		},
+	);
+});

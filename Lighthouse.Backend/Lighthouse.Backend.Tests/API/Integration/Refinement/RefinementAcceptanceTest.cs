@@ -61,6 +61,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         protected WebApplicationFactory<Program> Factory = null!;
         protected HttpClient Client = null!;
 
+        /// <summary>The instance's clock. Scenarios about which day it is move it; it starts on <see cref="Today"/>.</summary>
+        protected FakeLighthouseClock InstanceClock = null!;
+
         [SetUp]
         public void Init()
         {
@@ -68,6 +71,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
             var licenseService = new Mock<ILicenseService>();
             licenseService.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+            InstanceClock = new FakeLighthouseClock(Today);
+            var clock = InstanceClock;
 
             Factory = WithAuthentication(RootFactory)
                 .WithWebHostBuilder(builder =>
@@ -77,7 +82,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                         services.RemoveAll<ILicenseService>();
                         services.AddScoped(_ => licenseService.Object);
                         services.RemoveAll<ILighthouseClock>();
-                        services.AddSingleton<ILighthouseClock>(new FakeLighthouseClock(Today));
+                        services.AddSingleton<ILighthouseClock>(clock);
+                        ConfigureAdditionalServices(services);
                     });
                 });
 
@@ -100,6 +106,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         /// </summary>
         protected virtual WebApplicationFactory<Program> WithAuthentication(TestWebApplicationFactory<Program> root)
             => TestWebApplicationFactory<Program>.WithTestAuthentication(root);
+
+        /// <summary>Anything else a fixture replaces in the host, after the licence and the clock.</summary>
+        protected virtual void ConfigureAdditionalServices(IServiceCollection services)
+        {
+            // Most fixtures run the host exactly as shipped apart from the licence and the clock.
+        }
 
         [TearDown]
         public void Cleanup()

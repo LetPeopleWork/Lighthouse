@@ -1,6 +1,16 @@
 # ADR-218: Stage, readiness, the open question and the hidden split are one pure resolution on read, enforced in the API
 
-- **Status**: Proposed (DESIGN, 2026-10-02)
+- **Status**: Proposed (DESIGN, 2026-10-02); **amended by the maintainer 2026-10-04** — see the amendment below,
+  which supersedes decisions 1 and 2 where they differ. The hidden split (slice 14) is dropped.
+
+> **Amendment (2026-10-04, E2 UI review).** There is no stage per state: stages come only from optional rules
+> ("Ready when", "Being refined when"; unmatched rows are Waiting; when both match, Ready wins). Stage and votes are
+> **two independent signals**: a rule decides the stage only, and the votes' readiness is computed as before and
+> never overridden by a rule. Which one feeds the ready count depends on the Team: **without stage rules, the votes**;
+> **with stage rules, the stage**. The row carries a mismatch flag when votes have been cast and disagree with the
+> stage (no votes, no flag). The hidden split is gone: every vote and comment is visible to everyone. Recorded in
+> `docs/feature/epic-5510-5881-refinement/feature-delta.md` (maintainer-decision blocks of 2026-10-04) and
+> `distill/upstream-issues.md`.
 - **Date**: 2026-10-02
 - **Feature**: epic-5510-5881-refinement (slices 03, 08, 12, 13, 14, 18)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)

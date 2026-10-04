@@ -3,9 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import SnackbarErrorHandler from "../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import type {
+	IRefinementNeed,
 	IRefinementRow,
 	IRefinementView,
 	ISizingLog,
+	NeedUnavailableReason,
 } from "../models/Refinement/Refinement";
 import { Team } from "../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../models/TerminologyKeys";
@@ -16,6 +18,7 @@ import type { ISizingLogService } from "../services/Api/SizingLogService";
 import {
 	createMockApiServiceContext,
 	createMockFeatureService,
+	createMockRbacService,
 } from "./MockApiServiceProvider";
 
 /**
@@ -81,6 +84,48 @@ export const gravitysRefinement = (
 	...overrides,
 });
 
+/** Gravity's six Work Items in refinement, in backlog order. */
+export const gravitysSixWorkItems = (): IRefinementRow[] => [
+	aRow("GR-058", "User activity tracking", "Next"),
+	aRow("GR-059", "Advanced search filters", "Next"),
+	aRow("GR-051", "Advanced reporting module", "Analysing"),
+	aRow("GR-054", "Public API versioning", "Analysing"),
+	aRow("GR-073", "Configuration management", "Backlog"),
+	aRow("GR-074", "Load testing framework", "Backlog"),
+];
+
+/** Likely to pull 5 to 8 Work Items before Gravity's next Refinement, read at 50% and 85%. */
+export const aNeedOfFiveToEight = (
+	overrides: Partial<IRefinementNeed> = {},
+): IRefinementNeed => ({
+	verdict: "Below",
+	unavailableReason: null,
+	low: 5,
+	high: 8,
+	lowPercentile: 50,
+	highPercentile: 85,
+	horizonWorkingDays: 4,
+	...overrides,
+});
+
+/** No number, for this reason. */
+export const noNeedBecause = (
+	reason: NeedUnavailableReason,
+): IRefinementNeed => ({
+	verdict: null,
+	unavailableReason: reason,
+	low: null,
+	high: null,
+	lowPercentile: null,
+	highPercentile: null,
+	horizonWorkingDays: null,
+});
+
+/** Gravity refines on Thursdays; today is Sunday 4 October 2026, so the next Refinement is in four days. */
+export const THURSDAY_THE_EIGHTH = "2026-10-08";
+
+export const SUNDAY_THE_FOURTH = new Date(2026, 9, 4, 9, 0, 0);
+
 const teamGravity = () => {
 	const team = new Team();
 	team.id = GRAVITY_TEAM_ID;
@@ -101,9 +146,26 @@ export const aSizingLogService = (
 	...overrides,
 });
 
+/** Who is looking: somebody who may change Gravity's settings, or somebody who may only read them. */
+export type Onlooker = "TeamAdmin" | "Reader";
+
+const anRbacServiceFor = (onlooker: Onlooker) => {
+	const rbacService = createMockRbacService();
+	rbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+		isRbacEnabled: true,
+		isSystemAdmin: false,
+		canCreateTeam: onlooker === "TeamAdmin",
+		canCreatePortfolio: false,
+		adminTeamIds: onlooker === "TeamAdmin" ? [GRAVITY_TEAM_ID] : [],
+		adminPortfolioIds: [],
+	});
+	return rbacService;
+};
+
 export const renderTheRefinementTab = (
 	refinement: IRefinementView,
 	sizingLogService: ISizingLogService = aSizingLogService(),
+	onlooker: Onlooker = "TeamAdmin",
 ) => {
 	const refinementService: IRefinementService = {
 		getRefinement: vi.fn().mockResolvedValue(refinement),
@@ -119,6 +181,7 @@ export const renderTheRefinementTab = (
 					refinementService,
 					sizingLogService,
 					featureService,
+					rbacService: anRbacServiceFor(onlooker),
 				})}
 			>
 				<RefinementView team={teamGravity()} />

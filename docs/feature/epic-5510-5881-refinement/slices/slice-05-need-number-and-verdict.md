@@ -1,5 +1,10 @@
 # Slice 05 — Know whether to refine more or stop
 
+> **Superseded in part on 2026-10-04 (maintainer): the ready count only.** The verdict uses the votes' ready count
+> on a Team without stage rules and the stages' on a Team with them — never the two added together. Everything else
+> here stands. See `../feature-delta.md` → "Maintainer decision — the E2 UI, and slice 08 folded into 03
+> (2026-10-04)" and `../distill/upstream-issues.md`.
+
 **Feature**: epic-5510-5881-refinement · **Epic (proposed)**: E2 Refinement need (#5881) · **Story**: US-05 ·
 **Estimate**: ~1d · **Tier**: Community
 

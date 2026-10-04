@@ -1,5 +1,10 @@
 # Slice 08 — Optional rules split refinement into stages
 
+> **Folded into slice 03 on 2026-10-04 (maintainer); ADO #6146 Removed; #6141 retitled "Optional stage rules: see
+> what is refined, being refined or waiting".** A Ready rule no longer overrides the votes: stage and votes are two
+> separate signals. See `../feature-delta.md` → "Maintainer decision — the E2 UI, and slice 08 folded into 03
+> (2026-10-04)" and `../distill/upstream-issues.md`.
+
 **Feature**: epic-5510-5881-refinement · **Epic (proposed)**: E2 Refinement need (#5881) · **Story**: US-08 ·
 **Estimate**: ~1d · **Tier**: Community (rule options stay free, D25)
 

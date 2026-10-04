@@ -1,3 +1,6 @@
+import type { DayOfWeek } from "../RecurringBlackoutRule";
+import type { IWorkItemRuleSet } from "../WorkItemRules";
+
 /** One state a Team admin chose as a refinement state. */
 export interface IRefinementStateSetting {
 	state: string;
@@ -20,10 +23,39 @@ export interface IReadinessSetting {
 	discussWhen?: IDiscussWhenSetting;
 }
 
+/**
+ * The optional rules that put a Work Item in refinement into a stage. Null switches that stage's rule
+ * off; a Work Item neither rule matches is Waiting.
+ */
+export interface IStageRulesSetting {
+	ready: IWorkItemRuleSet | null;
+	beingRefined: IWorkItemRuleSet | null;
+}
+
+/** The days a Team refines on: these weekdays, every so many weeks, counted from the starting week. */
+export interface IRefinementCadenceSetting {
+	weekdays: DayOfWeek[];
+	intervalWeeks: number;
+	/** The Monday of the starting week; only needed when the Team refines less often than weekly. */
+	anchorWeek?: string | null;
+}
+
+/** The likelihoods the Team's forecast is read at for the low and high end of the range. */
+export interface IRefinementBandSetting {
+	lowPercentile: number;
+	highPercentile: number;
+}
+
 export interface IRefinementSettings {
 	states: IRefinementStateSetting[];
 	/** Absent from a save means "leave as it is". */
 	readiness?: IReadinessSetting;
+	/** Absent from a save means "leave as it is". */
+	stageRules?: IStageRulesSetting | null;
+	/** Absent from a save means "leave as it is"; null when the Team has no cadence. */
+	cadence?: IRefinementCadenceSetting | null;
+	/** Absent from a save means "leave as it is". */
+	band?: IRefinementBandSetting;
 }
 
 /** The three answers to "doable within our SLE?". A reader sees YesBut labelled "Yes, if…". */
@@ -61,6 +93,37 @@ export interface IRefinementRow {
 	missingVotes?: number | null;
 	hasComments?: boolean;
 	hasOpenQuestion?: boolean;
+	/** The stage the Team's rules give the row; null when the Team sets no stage rule. */
+	stage?: RefinementStage | null;
+	/** Whether the stage and the votes tell a different story about the row. */
+	signalsDisagree?: boolean;
+}
+
+export type RefinementStage = "Waiting" | "BeingRefined" | "Ready";
+
+/** Which signal the ready count follows: the votes, or the stages once the Team sets a stage rule. */
+export type ReadySource = "Votes" | "Stages";
+
+export type RefinementVerdict = "Below" | "In" | "Above";
+
+/** Why the tab cannot say how many Work Items are needed. */
+export type NeedUnavailableReason =
+	| "NoCadence"
+	| "InsufficientData"
+	| "NoRefinementStates";
+
+/**
+ * How many Work Items the Team is likely to pull before its next Refinement, and what the ready count
+ * makes of it. Facts only; the words are the browser's.
+ */
+export interface IRefinementNeed {
+	verdict: RefinementVerdict | null;
+	unavailableReason: NeedUnavailableReason | null;
+	low: number | null;
+	high: number | null;
+	lowPercentile: number | null;
+	highPercentile: number | null;
+	horizonWorkingDays: number | null;
 }
 
 /** The row as a vote left it, and whether that vote is the one that moved it to Ready. */
@@ -86,6 +149,13 @@ export interface IRefinementView {
 	yardstick?: IYardstick;
 	voterIdentity?: VoterIdentity;
 	readyByVotesCount?: number;
+	stagesConfigured?: boolean;
+	readyCount?: number;
+	readySource?: ReadySource;
+	/** The calendar day of the next Refinement; null when the Team has no cadence. */
+	nextRefinementDate?: string | null;
+	isRefinementDay?: boolean;
+	need?: IRefinementNeed;
 }
 
 export type SizingEntryKind = "Vote" | "Comment" | "Revocation";

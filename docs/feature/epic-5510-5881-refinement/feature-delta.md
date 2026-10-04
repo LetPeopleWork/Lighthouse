@@ -342,6 +342,8 @@ or stop* → *give / collect sizing views* → *see what is ready* → *run the 
 | 07 band setting | | | 14 hidden until cast | | |
 | | | | 15 with an account · 16 revoke | | |
 
+*Note 2026-10-04: 08 is folded into 03 and 14 is removed (maintainer); the map is kept as it was drawn.*
+
 **Walking skeleton = 01 + 02** (brownfield: existing Team page, settings, tab pattern S1, demo states S8). It
 crosses settings → persistence → tab enablement → list, which every later slice stands on. "Know", "Vote" and "Run"
 are deliberately not on the skeleton line: the skeleton proves Teams can name their refinement states and that the
@@ -370,11 +372,16 @@ list is the right home, which is R1 (setup friction), the cheapest fatal assumpt
 | 18 | Presenter mode: one shared screen, one Work Item at a time; only the facilitator's own vote/comment is saved (DD-20) | E4 | 1d | "A shared screen is enough to make the room discuss only the doubted" — if the dogfood session still walks every Work Item, the gateway story is wrong |
 | 19 | Spike: remote facilitated session (push channel, auth-off subject) | E4 | ≤1d timebox | Learning only: can an auth-off browser join a hub session without weakening tenant security (R5, X4) |
 
+*Note 2026-10-04: 08 is folded into 03 (#6146 Removed) and 14 is removed (#6152); the rows are kept as written.*
+
 Briefs: `slices/slice-NN-*.md`.
 
 ### Prioritisation rationale
 
 Order (maintainer, DD-22): **01 → 02 → 10 → 11 → 13 → 03 → 04 → 05 → 06 → 12 → 07 → 15 → 14 → 08 → 16 → 09 → 17a → 17b → 18 → 19.**
+
+*Note 2026-10-04: 08 is folded into 03 and 14 is removed; each Epic now ships on its own, so its slices run in order
+without another Epic's interleaved.*
 
 - **01, 02 first**: the walking skeleton and R1 (setup friction, score 16) — fatal if Teams won't name states.
 - **10, 11, 13 next — voting first**: R4 (async votes, score 17) is the riskiest bet and needs weeks of usage
@@ -521,6 +528,13 @@ disabled tab can be shown and tested.
 
 ### US-03 — Say which refinement states mean Ready (slice 03)
 
+> **Superseded in part on 2026-10-04 (maintainer).** Refinement states no longer carry a stage. A Work Item's stage
+> comes only from two optional rules, "Ready when" and "Being refined when"; anything they do not match is Waiting.
+> Stage and votes are two separate signals: without rules the ready count is the votes', with rules it is the
+> stages', never a sum, and a row is marked only where votes have been cast and disagree with the stage. US-08 is
+> folded into this story (#6141 retitled "Optional stage rules: see what is refined, being refined or waiting"). See
+> "Maintainer decision — the E2 UI, and slice 08 folded into 03 (2026-10-04)" below and `distill/upstream-issues.md`.
+
 `job_id: job-flow-coach-refine-just-enough` · persona `config-admin`
 
 **Problem**: The need number has to know how many Work Items are already ready; Sofia's `Next` state means "refined,
@@ -591,6 +605,11 @@ DD-6 in the instance time zone. AC-4.3 No cadence → D29 behaviour. AC-4.4 Edit
 
 ### US-05 — Know whether to refine more or stop (slice 05)
 
+> **Superseded in part on 2026-10-04 (maintainer): AC-5.7 only.** The ready count the verdict uses is the votes'
+> on a Team without stage rules and the stages' on a Team with them — never the two added together. The rest of
+> this story stands. See "Maintainer decision — the E2 UI, and slice 08 folded into 03 (2026-10-04)" below and
+> `distill/upstream-issues.md`.
+
 `job_id: job-flow-coach-refine-just-enough` · persona `flow-coach`
 
 **Problem**: Priya's Team "refines ten more, just in case"; nothing tells her when enough is enough.
@@ -629,6 +648,12 @@ slice 13, which ships earlier (DD-22).
 **KPI**: K3. **Tech**: careful with `HowManyForecast` semantics — its "85%" is the *conservative* (low) count.
 
 ### US-06 — See which Work Items are needed before the next Refinement (slice 06)
+
+> **Superseded in part on 2026-10-04 (maintainer).** The "enough for" line follows the order the rows are shown
+> in, not backlog order: a "#" column numbers the first N rows as shown (N = the high end) and the line sits after
+> the N-th. Backlog order is only the default, and a sort is not kept. With fewer Work Items than N the line after
+> the last row reads "All 6 Work Items in Refinement are needed before Thu 8 Oct." See "Maintainer decision — the E2
+> UI, and slice 08 folded into 03 (2026-10-04)" below and `distill/upstream-issues.md`.
 
 `job_id: job-flow-coach-refine-just-enough` · persona `product-owner` (Marco Bianchi)
 
@@ -681,6 +706,11 @@ Scenario: An inverted band is refused
 **AC**: AC-7.1 Percentiles 1–99, low < high. AC-7.2 Defaults 50/85. AC-7.3 Editors only.
 
 ### US-08 — Split refinement stages by rule (slice 08)
+
+> **Folded into US-03 on 2026-10-04 (maintainer); ADO #6146 Removed.** Stage rules are now slice 03's whole story,
+> and a Ready rule no longer overrides the votes: stage and votes are two separate signals. Pulsar's example below is
+> a slice-03 scenario. See "Maintainer decision — the E2 UI, and slice 08 folded into 03 (2026-10-04)" below and
+> `distill/upstream-issues.md`.
 
 `job_id: job-flow-coach-refine-just-enough` · persona `config-admin`
 
@@ -2616,3 +2646,240 @@ readiness can never end up breaking a rule.
 **The Votes and comments dialog stays as it is for now**; it gets its richer look with the comments (slice 12).
 **Icons in the Readiness column** (a check for Ready, a stop for a discussion) are an idea to revisit at the end of
 the Epic, once every readiness source exists.
+
+## Wave: DISTILL / [REF] Scope and Reconciliation — E2 (#5881)
+
+**Agent**: Quinn (`nw-acceptance-designer`) · **Date**: 2026-10-04 · **Mode**: autonomous subagent, maintainer reachable
+through the orchestrator.
+**Scope**: **E2 only — Epic #5881 "Refinement need: refine enough, then stop"**: slices 03 (US-03, #6141), 04 (US-04,
+#6142), 05 (US-05, #6143), 06 (US-06, #6144), 07 (US-07, #6145) and 09 (US-09, #6147, the Lighthouse/API half only; the
+CLI and MCP half belongs to `lighthouse-clients`, as E3's DST-25). Slice 08 (US-08, #6146) is folded into 03 by the
+maintainer (below). E1 and E3 sections above are left as written; E4 and E5 are not distilled.
+
+**Reconciliation passed — 0 contradictions** across DISCUSS, DESIGN and DEVOPS for E2. The places where the maintainer's
+2026-10-04 sketch decisions replace DISCUSS/DESIGN wording (per-state stage, DD-5's rule-overrides-votes, AC-6.1's
+backlog-order line) are maintainer decisions taken in this wave, not contradictions between waves; they are recorded
+below and back-propagated in `distill/upstream-issues.md`. Settled calls re-checked against every scenario: the need
+is HowMany over the Team's total Throughput; async is pull; votes stay open on every Work Item in refinement; band
+defaults 50/85, a Team setting from slice 07; cadence = weekdays + every N weeks + starting week, next Refinement the
+first cadence day strictly after today in the instance time zone; date ranges inclusive; all Community; every word
+through Terminology; settings reuse existing controls. Decisions DST-36..DST-56: `distill/wave-decisions.md` → "E2
+Refinement need".
+
+## Wave: DISTILL / [REF] Maintainer decision — the E2 UI, and slice 08 folded into 03 (2026-10-04)
+
+Approved by the maintainer on 2026-10-04 from sketches, before any E2 slice was built. **Supersedes DD-5, DSN-14's
+rule-decides-readiness half, AC-3.1–AC-3.2, US-08 and AC-6.1's counting order, and every provisional E2 copy where
+they differ. Slice 08 (US-08, #6146) is folded into slice 03; the orchestrator marks #6146 Removed once the
+maintainer confirms.**
+
+**Stage and votes are two independent signals.**
+
+- A Work Item's **stage** comes only from two optional rules on the Team — "Ready when" and "Being refined when" —
+  built with the rule editor the Team's other rules use. Anything neither rule matches is Waiting. There is no
+  stage per refinement state; the stored per-state stage stays unused (expand-only).
+- When both rules match a Work Item, **Ready wins**.
+- **Without rules**: no Stage column, no breakdown; the ready count is the votes' (slice 13, unchanged).
+- **With rules**: the ready count is the Work Items whose stage is Ready. Votes never make a Work Item Ready and
+  never block a stage-Ready one; they are still taken on every Work Item.
+- A row is **flagged when votes have been cast and they disagree with the stage**: stage Ready but the votes cast
+  fall short of Yes or need discussion, or the votes say Ready on a row whose stage is Waiting or Being refined.
+  **No votes means no opinion, so no marker** (maintainer, 2026-10-04, answering DISTILL's question).
+- No "no state is marked Ready" hint.
+
+```
+9 Work Items in Refinement · 2 ready                      Next Refinement: Thu 8 Oct · in 4 days
+2 Ready · 3 Being refined · 4 Waiting
+[⚠] 3 ready — below the range of 5–8 Work Items Team Gravity is likely to pull before Thu 8 Oct. Refine 2 to 5 more.
+
+#  Work Item              Parent  State      Stage           Your vote            Votes     Votes say
+1  GR-058 User activity   GR-010  Next       Ready           [Yes][Yes, if…][No]  3 votes   Ready
+2  GR-059 Advanced search GR-010  Next       Ready  ⚠        [Yes][Yes, if…][No]  1 vote    2 more Yes needed
+3  GR-051 Reporting       GR-010  Analysing  Being refined   …
+── enough for Thu 8 Oct (85%) · not needed before then ─────────────────────────────────────
+   GR-054 …   (muted, unnumbered)
+```
+
+**Slice 03 — stages.** Settings → Refinement → "Stages (optional)" with "Ready when [+ Add rule]" and "Being refined
+when [+ Add rule]". Tab with rules: heading "N Work Items in Refinement · R ready", a breakdown line "2 Ready · 3 Being
+refined · 4 Waiting", a "Stage" column straight after State, the readiness column headed "Votes say", and a ⚠ marker
+with a tooltip on a disagreeing row. Without rules the tab is as slice 13 left it ("· R ready by votes", "Readiness").
+
+**Slice 04 — cadence.** Settings → Refinement → "Refinement cadence", copying the recurring-blackout form: weekday
+checkboxes Monday…Sunday, "Repeat every (weeks)" [1], "Starting week" date shown only when the repeat is above 1
+(required then). Tab: on the heading's row, right-aligned, "Next Refinement: Thu 8 Oct · in 4 days" — "tomorrow" for
+one day, never "today" (the date is always after today); calendar days, from the ISO date the API returns. Without a
+cadence that spot holds a role-aware hint: editors "Set a Refinement cadence in Settings to see how many Work Items are
+needed"; readers "A Team admin can set a Refinement cadence to see how many Work Items are needed" (the tab tooltip's
+role split).
+
+**Slice 05 — verdict.** One MUI Alert under the heading, same size and place in all three states, icon plus colour:
+below = warning, in = success, **above = warning too** ("stop" as loud as "refine more"). Copy: below "3 ready — below
+the range of 5–8 Work Items Team Gravity is likely to pull before Thu 8 Oct. Refine 2 to 5 more." · in "6 ready — in
+the range of 5–8. Nothing more needs refining before Thu 8 Oct." · above "11 ready — above the range of 5–8. Stop
+refining: nothing more is needed before Thu 8 Oct." Too little history: the alert shows the forecasts' minimum-data
+message. No cadence: no alert (slice 04's hint is enough). The ready count is the votes' without rules, the stages'
+with rules.
+
+**Slice 06 — needed rows.** A leading "#" column numbers rows 1..N (N = the band's high end), then a full-width divider
+"enough for Thu 8 Oct (85%) · not needed before then"; the rows below are unnumbered and muted. **The numbering follows
+the order the rows are shown in, not backlog order** (a Team may be unable to fix its backlog order): sort by another
+column and the first N rows as shown are numbered, the line after the N-th. Backlog order is the default; the sort is
+not kept. So the API returns N (the high end) with the date and percentile, and the browser places the line. Fewer in
+refinement than N: the line after the last row reads "All 6 Work Items in Refinement are needed before Thu 8 Oct." No
+number: no "#" column, no line. Whether `DataGridBase` can hold a divider row is DELIVER's to find out; the scenarios
+assert the line's text and its place among the rows, not grid internals.
+
+Still provisional (DST-48): the ⚠ marker's tooltip words, the band's field labels and its error wording, the cadence
+validation messages.
+
+## Wave: DISTILL / [REF] Scenario list with tags — E2 (#5881)
+
+All cases are pending (`[Ignore(PendingSliceNN)]`, `it.skip`); the E2E skeleton is `fixme`. **162 runnable cases**:
+backend 105, of which 75 error/boundary (71%); frontend 58 cases from 51 scenario templates, of which 30 templates are
+error/boundary (59%). Every backend case is `@driving_port @real-io` with a `@contract-shape:` tag in the source.
+
+| Slice | Backend cases | Frontend cases | Error / boundary (backend) |
+|---|---|---|---|
+| 03 stages (08 folded in) | 24 `Slice03StageRulesTest` | 9 `RefinementView.stages` + 5 settings | 20 |
+| 04 cadence | 26 `Slice04RefinementCadenceTest` + 6 usage | 10 `RefinementView.cadence` + 6 settings | 21 + 0 |
+| 05 need and verdict | 18 `Slice05NeedAndVerdictTest` + 11 usage | 13 `RefinementView.need` | 15 + 6 |
+| 06 needed rows | — (facts pinned in 05) | 9 `RefinementView.enoughFor` | — |
+| 07 band | 16 `Slice07BandPercentilesTest` | 6 settings | 11 |
+| 09 clients (Lighthouse half) | 4 `Slice09ClientNeedTest` + `…WithAnApiKeyTest` | — | 2 |
+
+**Backend — `Slice03StageRulesTest`**: rules set and read back · no rules, no stages · without rules the count follows
+the votes · with rules it follows the stages · unmatched is Waiting · both match, Ready wins `@boundary` · votes never
+make Ready `@boundary` · votes never block Ready `@boundary` · stage-Ready not backed by the votes cast disagrees · stage-Ready
+nobody voted on shows no disagreement `@boundary` · both Ready agree · Waiting and not voted Ready agree · votes stay open on a Ready row · no Ready match → 0 `@boundary` · Being
+refined rule alone still counts by stage `@boundary` · rules judge only Work Items in refinement `@boundary` · Pulsar's
+one state split by rule (US-08's case) · unknown field refused `@error` · 21 conditions refused `@error` · 20 accepted
+`@boundary` · a save silent on rules keeps them (×2) `@boundary` · turning rules off hands back to votes `@boundary` ·
+Work Items kept `@boundary`.
+
+**Backend — `Slice04RefinementCadenceTest`**: set and read back · starting week kept as its Monday `@boundary` · same
+weekday twice is one `@boundary` · every-N without a starting week refused `@error` · fewer than one week refused (×2)
+`@error` · not a weekday refused (×2) `@error` · silent save keeps it (×2) `@boundary` · clearing every day leaves no
+cadence `@boundary` · Work Items kept `@boundary` · next Refinement strictly after today (×4) · every second week from
+the starting week (×3) `@boundary` · none before the starting week `@boundary` · two weekdays, whichever is first
+`@boundary` · the instance's time zone decides today (×2) `@boundary` · a Refinement on a blackout day keeps its date
+`@boundary` · without a cadence the list stays and no date is named `@error` · without a cadence votes are taken
+`@error`.
+
+**Backend — `Slice05NeedAndVerdictTest`**: below range with the full facts `@kpi-OUT-5510-K3` · verdict against both
+inclusive ends (×4) `@boundary` · without stages a Ready-making vote moves the verdict · with stages votes do not
+`@boundary` · range = the Team's own manual How Many forecast for the date (shipped engine) · blackout days not counted
+`@boundary` · on a Refinement day the number is for the following one `@boundary` · too little history `@error` · no
+cadence `@error` · no refinement states `@error` · the high end stated as forecast, never cut to the listed Work Items
+(×3) `@boundary` · a range of nothing says stop `@boundary` · 300 Work Items answer within two seconds `@boundary`.
+
+**Backend — `Slice07BandPercentilesTest`**: defaults 50/85 · set and read back · the band decides where the range is
+read (×3) · low not below high refused, naming both (×2) `@error` · outside 1–99 refused (×3) `@error @boundary` · 1/99
+accepted `@boundary` · one end alone judged against the stored other `@error` · low end alone keeps the stored high
+`@boundary` · silent save keeps it (×2) `@boundary` · Work Items kept `@boundary`.
+
+**Backend — `Slice09ClientNeedTest` / `Slice09ClientNeedWithAnApiKeyTest`**: a client is told refine more or stop · told
+why there is no number `@error` · the need joins the answer without removing what older clients read `@boundary` · a
+personal API key is told the same need.
+
+**Backend — `TeamRefinementNeedUsageEventsTests`**: a sizing event carries `OnRefinementDay` / `OnOtherDay` and nothing
+else (×4) · the moments are appended after `NoCadence` (×2) · `TeamRefinementDayVerdictShown` carries one verdict and
+nothing else (×4) `@kpi-OUT-5510-K3` · refused without a verdict from the list or with anything more (×5) `@error` · a
+sizing event carrying a verdict refused `@error` · appended after `TeamSizingReadinessReached`.
+
+**Frontend**
+
+| File | Cases | Tags |
+|---|---|---|
+| `pages/Teams/Detail/Refinement/RefinementView.stages.test.tsx` | heading "· 2 ready" + breakdown · Stage after State, "Votes say" · stage in words · ⚠ marker by label · only the disagreeing row marked · no marker on a Ready row nobody voted on · 0 ready with rules · no rules = slice 13's tab · the Team's own words | `@us-03 @slice-03`, 5 `@boundary` |
+| `pages/Teams/Detail/Refinement/RefinementView.cadence.test.tsx` | "Next Refinement: Thu 8 Oct · in 4 days" · "tomorrow" · a Refinement day counts a week ahead, never "today" · on the heading's row · editor hint · reader hint · the Team's own words · sizing moment per day (×3) | `@us-04 @slice-04`, 2 `@error`, 4 `@boundary`, `@kpi-OUT-5510-K4` |
+| `pages/Teams/Detail/Refinement/RefinementView.need.test.tsx` | below / in / above copy with act vs settled icon · inclusive low end · the Team's own words · minimum-data message · no alert without a cadence · a Ready-making vote moves the alert (no rules) · verdict reported once on a Refinement day (×3) · `None` without a number · nothing reported on other days | `@us-05 @slice-05`, 2 `@error`, 2 `@boundary`, `@kpi-OUT-5510-K3` |
+| `pages/Teams/Detail/Refinement/RefinementView.enoughFor.test.tsx` | "#" 1..N and the line after N · numbering follows a sort · backlog order again next visit · all needed when fewer · exactly as many · nothing needed, line first · no number, no "#" and no line (×2) · the Team's own words | `@us-06 @slice-06`, 1 `@error`, 5 `@boundary` |
+| `components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx` | stages: offered empty · stored rule shown · changed Ready rule saved · last condition removed → null · incomplete rule saves nothing; cadence: Monday…Sunday + every 1 week · Thursdays saved · starting week asked for and saved · every 2 weeks without one saves nothing · under one week saves nothing · last weekday off → no cadence; band: 50/85 · high end saved · inverted refused naming both (×2) · outside 1–99 (×2) | `@us-03 @us-04 @us-07`, 6 `@error`, 2 `@boundary` |
+
+**E2E — `specs/teams/Refinement.spec.ts`** (third skeleton, `fixme`): *a Team admin sets the Refinement cadence and the
+tab says how many Work Items to refine before the next Refinement* — `@walking_skeleton @driving_port @us-04 @us-05
+@us-06 @kpi-OUT-5510-K3-in-range-on-refinement-day`. Demo scenario 12, Team Gravity: the admin ticks Thursday; the tab
+names the next Thursday, shows a verdict and the "enough for" line. POM: `TeamEditPage.refineEveryWeekOn()`,
+`TeamRefinementPage.nextRefinement`, `.verdict`, `.enoughForLine`.
+
+## Wave: DISTILL / [REF] WS strategy — E2 (#5881)
+
+Architecture of Reference + project policy (inherited; nothing appended). One more walking skeleton, the E2E above
+(DST-49). Backend scenarios run the production composition root (`WebApplicationFactory<Program>` over real EF) without
+sign-in, and one fixture with sign-in without roles. Faked: the licence, the instance clock (`FakeLighthouseClock`, now
+also on E1's harness), and — per horizon a scenario scripts — the How Many forecast (`ForecastWithScriptedHorizons`
+around the shipped `ForecastService`; unscripted horizons run the shipped engine, which the parity and the 300-row
+scenarios use over a Team with constant Throughput). The usage-data collector is captured. Tier B: not declared
+(DST-53).
+
+## Wave: DISTILL / [REF] Test placement — E2 (#5881)
+
+| Where | Why (precedent) |
+|---|---|
+| `Lighthouse.Backend.Tests/API/Integration/Refinement/` — harness `RefinementNeedAcceptanceTest` (extends `SizingVotesAcceptanceTest`) + `Slice03StageRules…`, `Slice04RefinementCadence…`, `Slice05NeedAndVerdict…`, `Slice07BandPercentiles…`, `Slice09ClientNeed…` (`Scenarios.cs` + `Specifications.cs` each) | E1/E3 folder and partial-class split |
+| `Lighthouse.Backend.Tests/Integration/UsageData/TeamRefinementNeedUsageEventsTests.cs` | Beside `TeamSizingUsageEventsTests` |
+| `Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.{stages,cadence,need,enoughFor}.test.tsx`, `src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx`, shared kit `src/tests/RefinementTabTestKit.tsx` (gains `gravitysSixWorkItems`, `aNeedOfFiveToEight`, `noNeedBecause`, an onlooker role) | E3's colocated `<component>.<concern>.test.tsx` and kit |
+| `Lighthouse.EndToEndTests/tests/specs/teams/Refinement.spec.ts` + POMs `TeamRefinementPage.ts`, `TeamEditPage.ts` | E1/E3 spec and POM |
+
+## Wave: DISTILL / [REF] Driving adapter coverage — E2 (#5881)
+
+| Driving adapter (DESIGN) | Covered by |
+|---|---|
+| `PUT /teams/{teamId}` carrying `refinement.stageRules`, `.cadence`, `.band`; `GET …/settings` | slices 03, 04, 07; `ModifyTeamSettings.refinementNeed`; E2E |
+| `GET /teams/{teamId}/refinement` → `stagesConfigured`, `readyCount`, `readySource`, row `stage` / `signalsDisagree`, `nextRefinementDate`, `isRefinementDay`, `need` | slices 03, 04, 05, 07, 09; frontend via `RefinementService`; E2E |
+| `POST …/work-items/{id}/votes` (moves the verdict on a Team without rules) | slices 03, 05, 09 |
+| `POST /api/latest/forecast/manual/{teamId}` (parity reference) | slice 05 |
+| `POST /api/latest/blackout-periods` (calendar precondition) | slices 04, 05 |
+| `POST /usagedata/events` (`TeamRefinementDayVerdictShown`, `refinementVerdict`, the two new `sizingMoment` values) | `TeamRefinementNeedUsageEventsTests`; frontend emission in `cadence` / `need` |
+| CLI / MCP need commands | **not here** — `lighthouse-clients`, slice 09's other half |
+
+## Wave: DISTILL / [REF] Adapter coverage — E2 (#5881)
+
+| Driven adapter | Real I/O scenario |
+|---|---|
+| EF `Teams.RefinementSettings` (stage rules, cadence, band in the one JSON value) | slices 03, 04, 07 save / read-back / silent-save-keeps |
+| `IForecastService.HowMany` over `IThroughputService` | slice 05 parity (shipped engine) and every scripted-horizon case (the horizon asked is checked) |
+| `ForecastDataSufficiencyPolicy` | slice 05 too-little-history |
+| Blackout periods (`IBlackoutPeriodService`) | slices 04 (date kept), 05 (horizon shortened) |
+| `ILighthouseClock` + instance time zone | slice 04 time-zone cases |
+| Usage-data forwarding (collector captured) | `TeamRefinementNeedUsageEventsTests` |
+
+No external adapter is added. No EF migration: the settings are members of the existing JSON value (ADR-214).
+
+## Wave: DISTILL / [REF] Scaffolds — E2 (#5881)
+
+| File | Marker | Behaviour until DELIVER |
+|---|---|---|
+| `Lighthouse.Frontend/src/models/Refinement/Refinement.ts` | types only | new members optional (`stageRules`, `cadence`, `band`, row `stage` / `signalsDisagree`, tab `stagesConfigured`, `readyCount`, `readySource`, `nextRefinementDate`, `isRefinementDay`, `need`), so E1/E3 code compiles unchanged |
+| `RefinementAcceptanceTest` (E1 harness) | additive | a `FakeLighthouseClock` registered as the clock, and a `ConfigureAdditionalServices` hook |
+
+Backend production code: none. Frontend production code: none beyond the optional model members.
+
+## Wave: DISTILL / [REF] Pre-requisites — E2 (#5881)
+
+DESIGN: the settings JSON members, the tab facts, ADR-214's "absent means unchanged", the forecast port. DEVOPS:
+`renamed-terminology`, `usage-data-consented`, `auth-on-rbac-off`; E2E in `ci_verifysqlite` / `ci_verifypostgres`.
+DELIVER owns: the UI sketches still open (DST-48); `UsageDataEventName.TeamRefinementDayVerdictShown = 15`,
+`UsageDataRefinementVerdict`, `UsageDataSizingMoment.OnRefinementDay = 1` / `OnOtherDay = 2`, and their rows in
+`docs/settings/usagedata.md`; `ARCHITECTURE.md` (stages as rules, the need); demo data if the E2E needs a cadence
+seeded rather than set; updating the E2E heading regex when demo Gravity gets stage rules (it has none today).
+
+## Wave: DISTILL / [REF] RED classification — E2 (#5881)
+
+162 of 162 runnable cases were un-skipped once and run: **backend 105 fail, 0 pass; frontend 56 fail, 2 pass by
+design** (preservation guards: without stage rules the tab is slice 13's, and a vote on a Team without a cadence still
+reports `NoCadence`). Every failure is on missing behaviour (`MISSING_FUNCTIONALITY`); none broken. Five cases that
+first passed vacuously were rewritten to prove something first. E2E type-checked and linted, not run live. Detail:
+`distill/red-classification.md` → "Epic #5881 (E2)".
+
+## Wave: DISTILL / [REF] Delivery order — E2 (#5881)
+
+The maintainer kept DD-22's interleaving for this split (the "each Epic ships on its own" rule applies to future
+splits only), with 08 folded into 03 and 14 removed: **03 → 04 → 05 → 06 → (E3 12) → 07 → (E3 15) → (E3 16) → 09
+→ (E3 17a → 17b)**.
+Slice 03 un-skips `Slice03StageRulesTest`, `RefinementView.stages` and the stage block of
+`ModifyTeamSettings.refinementNeed`; 04 `Slice04RefinementCadenceTest`, the slice-04 usage cases,
+`RefinementView.cadence` and the cadence block; 05 `Slice05NeedAndVerdictTest`, the slice-05 usage cases and
+`RefinementView.need`; 06 `RefinementView.enoughFor` and then the E2E skeleton (run live first); 07
+`Slice07BandPercentilesTest` and the band block; 09 the two slice-09 fixtures. One scenario at a time.

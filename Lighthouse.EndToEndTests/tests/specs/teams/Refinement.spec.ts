@@ -93,3 +93,40 @@ testWithDemo(
 		});
 	},
 );
+
+// @walking_skeleton @driving_port @us-04 @us-05 @us-06 @slice-04 @slice-05 @slice-06 @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:bounded-change
+// The demo data gives Gravity no Refinement cadence. Once its admin says the Team refines on Thursdays,
+// the tab names the next Thursday, says whether to refine more or stop against the Team's own forecast,
+// and marks where the Work Items needed before then end. The numbers depend on the day the run happens,
+// so only their shape is checked.
+testWithDemo.fixme(
+	"a Team admin sets the Refinement cadence and the tab says how many Work Items to refine before the next Refinement",
+	async ({ testData, overviewPage }) => {
+		expect(testData.teams.map((team) => team.name)).toContain(CONFIGURED_TEAM);
+
+		const gravity = await overviewPage.goToTeam(CONFIGURED_TEAM);
+
+		await test.step("the admin has Gravity refine every Thursday", async () => {
+			const settings = await gravity.editTeam();
+			await settings.refineEveryWeekOn("Thursday");
+		});
+
+		const refinement = await gravity.goToRefinement();
+
+		await test.step("the tab names the next Thursday", async () => {
+			await expect(refinement.nextRefinement).toContainText(
+				"Next Refinement: Thu ",
+			);
+		});
+
+		await test.step("the tab says whether to refine more or stop", async () => {
+			await expect(refinement.verdict).toHaveText(
+				/^\d+ ready — (below|in|above) the range of \d+–\d+/,
+			);
+		});
+
+		await test.step("the list marks where the Work Items needed before Thursday end", async () => {
+			await expect(refinement.enoughForLine).toBeVisible();
+		});
+	},
+);

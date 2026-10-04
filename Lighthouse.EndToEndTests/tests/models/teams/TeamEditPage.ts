@@ -112,6 +112,14 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 		await expect(this.savedIndicator).toBeVisible({ timeout: 15_000 });
 	}
 
+	/** Has the Team refine on this weekday every week, in the Refinement section's cadence. */
+	async refineEveryWeekOn(weekday: string): Promise<void> {
+		await this.page
+			.getByRole("checkbox", { name: weekday, exact: true })
+			.check();
+		await this.waitForChangesSaved();
+	}
+
 	async hasSaveButton(): Promise<boolean> {
 		return this.saveButton.isVisible();
 	}

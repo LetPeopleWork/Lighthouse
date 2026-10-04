@@ -1,5 +1,12 @@
 # Slice 03 — Say which refinement states mean Ready
 
+> **Superseded in part on 2026-10-04 (maintainer).** Refinement states no longer carry a stage. A Work Item's stage
+> comes only from two optional rules, "Ready when" and "Being refined when"; anything unmatched is Waiting. Stage and
+> votes are two separate signals: without rules the ready count is the votes', with rules the stages', never a sum,
+> and a row is marked only where votes have been cast and disagree with the stage. Slice 08 is folded in here; #6141
+> is retitled "Optional stage rules: see what is refined, being refined or waiting". See `../feature-delta.md` →
+> "Maintainer decision — the E2 UI, and slice 08 folded into 03 (2026-10-04)" and `../distill/upstream-issues.md`.
+
 **Feature**: epic-5510-5881-refinement · **Epic (proposed)**: E2 Refinement need (#5881) · **Story**: US-03 ·
 **Estimate**: ~½d · **Tier**: Community
 

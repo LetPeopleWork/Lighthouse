@@ -1,5 +1,11 @@
 # Slice 06 — Highlight the Work Items needed before the next Refinement
 
+> **Superseded in part on 2026-10-04 (maintainer).** The "enough for" line follows the order the rows are shown in,
+> not backlog order: a "#" column numbers the first N rows as shown (N = the high end) and the line sits after the
+> N-th; backlog order is only the default and a sort is not kept. The API returns N, the date and the percentile; the
+> browser places the line. See `../feature-delta.md` → "Maintainer decision — the E2 UI, and slice 08 folded into 03
+> (2026-10-04)" and `../distill/upstream-issues.md`.
+
 **Feature**: epic-5510-5881-refinement · **Epic (proposed)**: E2 Refinement need (#5881) · **Story**: US-06 ·
 **Estimate**: ~½d · **Tier**: Community
 

@@ -249,3 +249,76 @@ data 15, slice 10 9), frontend 63 (votes 17, comments 11, readiness 8, the rest 
 
 **Delivery order from here: 11 → 13 → 12 → 15 → 16.** 17a and 17b are out of this run. Each slice still un-skips
 only its own cases, with the same `[Ignore(PendingSlice1n)]` / `IgnoreReason` / `it.skip` markers as before.
+
+
+---
+
+# Wave Decisions — DISTILL — E2 Refinement need (Epic #5881), slices 03–09
+
+**Date**: 2026-10-04 · **Agent**: Quinn (`nw-acceptance-designer`) · **Scope**: slices 03 (US-03, #6141), 04 (US-04,
+#6142), 05 (US-05, #6143), 06 (US-06, #6144), 07 (US-07, #6145), 09 (US-09, #6147, Lighthouse half). Slice 08 (US-08,
+#6146) is folded into 03 by the maintainer. E1 is delivered; E3 is distilled and in DELIVER; E4 and E5 are not
+distilled.
+
+## Phase 0
+
+`[lang-mode] csharp+typescript` (backend NUnit, frontend Vitest + RTL, E2E Playwright) · `[policy-mode] inherit`
+(`docs/architecture/atdd-infrastructure-policy.md`; one more stand-in, the scripted forecast, recorded as DST-45) ·
+`[port-mode] inherit` (assertions read the HTTP/JSON answers, as E1 and E3).
+
+## Reconciliation gate (DISCUSS ↔ DESIGN ↔ DEVOPS, E2 scope)
+
+**Reconciliation passed — 0 contradictions.** DESIGN's corrections (DSN-1..22) and DEVOPS's usage-data and environment
+decisions agree with DISCUSS for E2 once `upstream-changes.md` is applied. What changes here is the maintainer's own
+2026-10-04 sketch decisions (stages from rules only, two signals, the line following the displayed order); those
+replace DISCUSS/DESIGN wording rather than resolve a disagreement between them, and are back-propagated in
+`distill/upstream-issues.md`.
+
+## Decisions taken in this wave (DST-36 onwards; E1 used DST-1..14, E3 DST-15..35)
+
+| # | Decision | Why |
+|---|---|---|
+| DST-36 | **Stage and votes are two signals.** Stage comes only from the optional "Ready when" / "Being refined when" rules; unmatched is Waiting. Without rules the ready count is the votes' (`readySource: Votes`); with rules it is the stages' (`readySource: Stages`), and votes neither make nor block Ready | Maintainer, 2026-10-04; supersedes DD-5, DSN-14's readiness half, AC-3.1–3.2 |
+| DST-37 | **Slice 08 folded into 03.** US-08's Pulsar case is a slice-03 scenario; there is no `PendingSlice08`. The orchestrator marks #6146 Removed after the maintainer confirms | Maintainer |
+| DST-38 | **Ready wins** when both rules match a Work Item | DSN-14's precedence, kept for the rules |
+| DST-39 | **`signalsDisagree`** is true only when votes have been cast and they disagree with the stage: the stage is Ready and the votes cast fall short of Yes or need discussion, or the votes say Ready and the stage is Waiting or Being refined. **A row nobody has voted on is never flagged** — no votes is no opinion. A Waiting row the votes do not call Ready agrees | Maintainer, 2026-10-04 (answered DISTILL's question: no votes, no ⚠) |
+| DST-40 | **No "no state/rule is marked Ready" hint**; a Team with rules that match nothing Ready reads "· 0 ready" | Maintainer |
+| DST-41 | **Vote facts unchanged**: `readyByVotesCount` and `madeReady` keep their votes meaning on every Team; the heading reads "· R ready by votes" without rules (slice 13 unchanged) and "· R ready" with rules. The E2E heading regex stays valid for demo Gravity, which has no rules | Older clients and the E3 browser code read them |
+| DST-42 | **Wire shape.** Settings `refinement.stageRules {ready, beingRefined}` (each a `WorkItemRuleSet` or null), `.cadence {weekdays: ["Thursday"], intervalWeeks, anchorWeek}`, `.band {lowPercentile, highPercentile}`; an absent member leaves it unchanged (ADR-214). Tab: `stagesConfigured`, `readyCount`, `readySource`, `nextRefinementDate` (ISO day or explicit null), `isRefinementDay`, row `stage` (`Waiting`/`BeingRefined`/`Ready` or null) and `signalsDisagree` (rule: DST-39; false on a row without votes), `need {verdict: Below/In/Above/null, unavailableReason: NoCadence/InsufficientData/NoRefinementStates/null, low, high, lowPercentile, highPercentile, horizonWorkingDays}`. Facts only, never a sentence | AC-5.5; DESIGN's facts-not-copy rule |
+| DST-43 | **Cadence normalisation**: the starting week is stored as its Monday whatever day names it; a weekday named twice is one; `weekdays: []` means no cadence and reads back as null; a starting week is required only when `intervalWeeks > 1`; weekdays are English weekday names, anything else refused | AC-4.1; one cadence has one stored form |
+| DST-44 | **Dates.** Next Refinement = first cadence day strictly after today in the instance time zone; a blackout day does not move it. The need's horizon is the forecasts' own count of days from today to that date, blackout days left out; on a Refinement day it is the following Refinement | DD-6, AC-4.2, US-04 tech note |
+| DST-45 | **Scripted forecast stand-in**: `ForecastWithScriptedHorizons` decorates the shipped `ForecastService`; a scenario scripts How Many per horizon, and only the exact horizon the tab asks for is answered from the script, so a scripted range also proves the horizon. Unscripted horizons run the shipped engine — the parity case (against the manual forecast) and the 300-row guardrail use it over constant Throughput | A verdict scenario must choose its forecast or it asserts sampling noise; policy: non-deterministic port |
+| DST-46 | **The line follows the displayed order** (maintainer): the API returns the high end (never cut to the listed count), the date and the percentile; the browser numbers the first N rows as shown and places the line. No `lineAfterPosition` on the wire. The sort is not kept between visits | Maintainer; supersedes DD-4's backlog-order counting and AC-6.1 |
+| DST-47 | **Usage data**: `TeamRefinementDayVerdictShown = 15` with closed enum `refinementVerdict` (`UsageDataRefinementVerdict {Below = 0, In = 1, Above = 2, None = 3}`, wire `refinement_verdict`), reported once per tab mount on a Refinement day only; `UsageDataSizingMoment` appends `OnRefinementDay = 1`, `OnOtherDay = 2`. Tests pin the names and their order, not the integers | DEVOPS usage-data rule; never personal data |
+| DST-48 | **Copy.** Pinned (maintainer): "Stages (optional)", "Ready when", "Being refined when", "Stage", "Votes say", the breakdown, "Refinement cadence", "Repeat every (weeks)", "Starting week", "Next Refinement: Thu 8 Oct · in 4 days" / "tomorrow", both cadence hints, the three verdict sentences, "enough for Thu 8 Oct (85%) · not needed before then", "All 6 Work Items in Refinement are needed before Thu 8 Oct.". **Still provisional**: the ⚠ tooltip words (tests match `/stage and (the )?votes disagree/i` on the accessible label), the band's labels ("Low end likelihood…", "High end likelihood…") and its refusal wording (tests require both values named), the cadence validation wording (tests use `aria-invalid`) | Maintainer's sketches covered 03–06 |
+| DST-49 | **One E2 walking skeleton** in E2E (cadence → next Refinement → verdict → line), `fixme`, demo scenario 12. DVO-7 named E3's; E2 gets its own because each Epic ships alone | CLAUDE.md "each Epic ships on its own" |
+| DST-50 | **Rule editor fields** come from the Team's existing work-item rule schema; the frontend tests serve it through `getForecastFilterSchema`. DELIVER may use another source of the same `IWorkItemRuleSchema` shape and adjust the mock | Reuse the rule editor and schema the Team's other rules use |
+| DST-51 | **Admin-only** stage rules, cadence and band ride the settings write E1 already guards; the guard is not repeated | Precedent DST-35 |
+| DST-52 | **Not pinned at acceptance**: whether the need honours the Team's forecast filter (the parity case compares with the manual forecast, which applies whatever forecasts apply); the "muted" look of rows below the line (styling) | No observable port fact distinguishes them reliably |
+| DST-53 | **Tier B not declared**: next-date and verdict are pure functions DELIVER covers with unit property tests (week modulo, inclusive ends); acceptance stays example-based through the real host | Mandate 9: real-host acceptance is layer 3 |
+| DST-54 | **Slice 06 has no backend scenarios**: its facts (the unclamped high end, the percentile, the date) are pinned in slice 05; slice 06 is frontend-only | DST-46 |
+| DST-55 | **Minimum data** is the forecasts' own guard (`ForecastDataSufficiencyPolicy`, at least five days with finished Work Items); the browser reuses `INSUFFICIENT_FORECAST_DATA_MESSAGE` | AC-5.6 |
+| DST-56 | **Slice 09 is the Lighthouse half**: a client reads the need with its own key, a personal API key reads the same on a sign-in-without-roles instance, and older vote facts stay. The CLI/MCP half is owed in `lighthouse-clients` | Precedent DST-25 |
+
+## Mandate-12 (informational)
+
+Domain constants and readers live in the harness (`RefinementNeedAcceptanceTest`: stages, verdicts, reasons, weekdays,
+`SaveShape`, typed readings `StageRowReading`, `CadenceReading`, `CadenceFactsReading`, `BandReading`, `NeedReading`).
+Step methods delegate to the HTTP driving ports; each Then reads one typed reading. Step reuse: 74 slice step methods
+invoked 204 times from the scenarios, plus shared harness steps (`TheAdminHasSet…`, `TodayIs`, `TheTeamIsLikelyToPull`)
+— about 2.8×, the natural ceiling for readable scenarios.
+
+## Completeness audit (Phase 2.5)
+
+13/15 → **COMPLETE**. C1a/C1b happy paths per story ✓; C2a/C2b stage and cadence states (no rules / rules, no cadence /
+cadence / Refinement day) ✓; C3 boundaries (inclusive ends, interval 0/−1, 1/99, 20/21 conditions, time zone, blackout)
+✓; C4a/C4b refusals leave state unchanged and name what is wrong ✓; C5a/C5b mode flags (`readySource`, silent saves)
+✓; C6a/C6b/C6c error contracts (400 on bad settings, `unavailableReason`, usage refusals) ✓; C7a auth modes (off,
+sign-in without roles) ✓; **C7b** (renamed Terminology) frontend only — partial; **C7c** (two admins saving at once)
+not pinned — one JSON value, last write wins as for every Team setting. **0 SPECIFICATION_AMBIGUITY.**
+
+## Handoff
+
+DELIVER runs 03 → 04 → 05 → 06 → 07 → 09 (each Epic ships alone), one scenario at a time, un-skipping per slice as
+listed in `feature-delta.md` → "Delivery order — E2". Before any UI step, DELIVER sketches what DST-48 leaves
+provisional.
