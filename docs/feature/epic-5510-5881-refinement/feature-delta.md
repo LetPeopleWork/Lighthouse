@@ -2588,3 +2588,31 @@ left as the existing project pattern), and mutation testing (backend 100 %, fron
 
 Open: the dev-instance check of how large real fallback values get (the slice's learning hypothesis)
 was not run — the dev instance was down.
+
+## Wave: DELIVER / [REF] Maintainer review of slices 11 and 13 (2026-10-04)
+
+Reviewed by hand on the demo instance after slices 11 and 13 were delivered locally.
+
+**The veto becomes two independent discussion rules, both on by default.** A Work Item goes to discussion when it
+has **1 or more No votes**, or **2 or more "Yes, if…" votes**. Each rule has its own checkbox and threshold and either
+one is enough; the old single threshold with a "Counting" choice is gone. A Team that never set readiness gets both
+rules on with those thresholds. "Yes, if…" still counts as a Yes towards Ready. Wire shape:
+`readiness.discussWhen { no: number | null, yesIf: number | null }`, where `null` means that rule is off; a
+threshold below 1 is refused ("A discussion rule needs at least 1 vote"). Settings → Refinement:
+
+```
+Readiness by votes
+  Yes votes needed  [ 3 ]
+  Voters needed     [ 3 ]
+
+  Send to discussion when
+  ☑ [ 1 ] or more No votes
+  ☑ [ 2 ] or more "Yes, if…" votes
+```
+
+A save that changes only some readiness fields is checked against the stored values for the rest, so the stored
+readiness can never end up breaking a rule.
+
+**The Votes and comments dialog stays as it is for now**; it gets its richer look with the comments (slice 12).
+**Icons in the Readiness column** (a check for Ready, a stop for a discussion) are an idea to revisit at the end of
+the Epic, once every readiness source exists.
