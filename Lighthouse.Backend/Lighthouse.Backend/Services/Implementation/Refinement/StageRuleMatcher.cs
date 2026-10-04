@@ -10,8 +10,8 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
     {
         public StageMatches Match(StageRules? rules, List<WorkItem> workItems)
         {
-            var ready = SetRuleOrNull(rules?.Ready);
-            var beingRefined = SetRuleOrNull(rules?.BeingRefined);
+            var ready = RuleWithConditionsOrNull(rules?.Ready);
+            var beingRefined = RuleWithConditionsOrNull(rules?.BeingRefined);
             if (ready is null && beingRefined is null)
             {
                 return StageMatches.NoStages;
@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         }
 
         // A rule saved without a single condition says nothing, so it counts as no rule at all.
-        private static WorkItemRuleSet? SetRuleOrNull(WorkItemRuleSet? rule)
+        private static WorkItemRuleSet? RuleWithConditionsOrNull(WorkItemRuleSet? rule)
             => rule is { Conditions.Count: > 0 } ? rule : null;
 
         private HashSet<WorkItem> MatchedBy(WorkItemRuleSet? rule, List<WorkItem> workItems)

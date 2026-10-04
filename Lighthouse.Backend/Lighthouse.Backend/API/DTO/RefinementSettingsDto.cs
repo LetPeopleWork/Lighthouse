@@ -27,19 +27,12 @@ namespace Lighthouse.Backend.API.DTO
         public StageRulesDto? StageRules { get; set; }
     }
 
-    /// <summary>
-    /// A rule sent as null removes it, while a rule left out of the save keeps the stored one, so each
-    /// setter remembers that it was called.
-    /// </summary>
+    /// <summary>A rule sent as null removes it, while a rule left out of the save keeps the stored one.</summary>
     public class StageRulesDto
     {
-        private StageRuleDto? ready;
+        private SaveField<StageRuleDto?> ready;
 
-        private StageRuleDto? beingRefined;
-
-        private bool readySent;
-
-        private bool beingRefinedSent;
+        private SaveField<StageRuleDto?> beingRefined;
 
         public StageRulesDto()
         {
@@ -53,30 +46,22 @@ namespace Lighthouse.Backend.API.DTO
 
         public StageRuleDto? Ready
         {
-            get => ready;
-            set
-            {
-                ready = value;
-                readySent = true;
-            }
+            get => ready.Value;
+            set => ready = new(value, Sent: true);
         }
 
         public StageRuleDto? BeingRefined
         {
-            get => beingRefined;
-            set
-            {
-                beingRefined = value;
-                beingRefinedSent = true;
-            }
+            get => beingRefined.Value;
+            set => beingRefined = new(value, Sent: true);
         }
 
         public StageRules AppliedTo(StageRules stored)
         {
             return new StageRules
             {
-                Ready = readySent ? ready?.ToRuleSet() : stored.Ready,
-                BeingRefined = beingRefinedSent ? beingRefined?.ToRuleSet() : stored.BeingRefined,
+                Ready = ready.Or(stored.Ready, rule => rule?.ToRuleSet()),
+                BeingRefined = beingRefined.Or(stored.BeingRefined, rule => rule?.ToRuleSet()),
             };
         }
     }
@@ -157,19 +142,12 @@ namespace Lighthouse.Backend.API.DTO
         }
     }
 
-    /// <summary>
-    /// A threshold sent as null turns its rule off, while a threshold left out of the save keeps the stored
-    /// one, so each setter remembers that it was called.
-    /// </summary>
+    /// <summary>A threshold sent as null turns its rule off, while a threshold left out of the save keeps the stored one.</summary>
     public class DiscussionRulesDto
     {
-        private int? no;
+        private SaveField<int?> no;
 
-        private int? yesIf;
-
-        private bool noSent;
-
-        private bool yesIfSent;
+        private SaveField<int?> yesIf;
 
         public DiscussionRulesDto()
         {
@@ -183,30 +161,22 @@ namespace Lighthouse.Backend.API.DTO
 
         public int? No
         {
-            get => no;
-            set
-            {
-                no = value;
-                noSent = true;
-            }
+            get => no.Value;
+            set => no = new(value, Sent: true);
         }
 
         public int? YesIf
         {
-            get => yesIf;
-            set
-            {
-                yesIf = value;
-                yesIfSent = true;
-            }
+            get => yesIf.Value;
+            set => yesIf = new(value, Sent: true);
         }
 
         public DiscussionRules AppliedTo(DiscussionRules stored)
         {
             return new DiscussionRules
             {
-                No = noSent ? no : stored.No,
-                YesIf = yesIfSent ? yesIf : stored.YesIf,
+                No = no.Or(stored.No),
+                YesIf = yesIf.Or(stored.YesIf),
             };
         }
     }

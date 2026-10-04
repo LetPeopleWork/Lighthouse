@@ -32,8 +32,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     /// </summary>
     public abstract class RefinementNeedAcceptanceTest : SizingVotesAcceptanceTest
     {
-        protected const string PendingSlice03 = "Epic #5881 slice 03 (#6141) - pending DELIVER";
-
         protected const string PendingSlice04 = "Epic #5881 slice 04 (#6142) - pending DELIVER";
 
         protected const string PendingSlice05 = "Epic #5881 slice 05 (#6143) - pending DELIVER";
