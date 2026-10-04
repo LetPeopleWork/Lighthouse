@@ -155,7 +155,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase("Maybe")]
         [TestCase("")]
         [TestCase(null)]
-        [Ignore(PendingSlice11)]
         public async Task An_answer_other_than_Yes_Yes_but_or_No_is_refused(string? answer)
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -168,7 +167,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-11 @slice-11 @error @contract-shape:unbounded-preservation
         [TestCase("Email")]
         [TestCase(null)]
-        [Ignore(PendingSlice11)]
         public async Task A_vote_that_does_not_say_where_it_was_cast_from_is_refused(string? channel)
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -193,7 +191,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-11 @slice-11 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice11)]
         public async Task A_vote_for_a_Team_that_does_not_exist_is_not_found()
         {
             var gravity = await GivenJonasHasVotedYesOnConfigurationManagement();
