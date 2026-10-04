@@ -68,7 +68,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                     new RuleEvaluator<WorkItem>(),
                     new WorkItemFieldProvider(),
                     new ForecastFilterRuleService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider(), Mock.Of<ILicenseService>())),
-                new RefinementCalendar(clockMock.Object));
+                new RefinementCalendar(clockMock.Object, Mock.Of<IBlackoutPeriodService>(service =>
+                    service.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()) == new List<BlackoutPeriod>())));
         }
 
         [Test]

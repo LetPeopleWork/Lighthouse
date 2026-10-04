@@ -164,7 +164,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice04)]
         public async Task No_Refinement_falls_before_the_starting_week()
         {
             var gravity = await GivenGravityRefinesWithoutACadence();
@@ -178,7 +177,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice04)]
         public async Task A_Team_refining_on_two_weekdays_looks_to_whichever_comes_first()
         {
             var gravity = await GivenGravityRefinesWithoutACadence();
@@ -194,7 +192,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // At 23:30 UTC on Wednesday 7 October it is already Thursday in Zurich - a Refinement day there.
         [TestCase("Europe/Zurich", "2026-10-15", true)]
         [TestCase("UTC", "2026-10-08", false)]
-        [Ignore(PendingSlice04)]
         public async Task The_instances_time_zone_decides_which_day_today_is(string timeZone, string nextRefinement, bool isRefinementDay)
         {
             var gravity = await GivenGravityRefinesOnThursdaysEveryWeek();
@@ -206,17 +203,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         }
 
         // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:pure-function
-        [Test]
-        [Ignore(PendingSlice04)]
-        public async Task A_Refinement_on_a_blackout_day_keeps_its_date()
+        // Nobody refines on a day the instance has blacked out, so that Refinement simply does not happen.
+        [TestCase(2)]
+        [TestCase(8)]
+        public async Task A_Refinement_on_a_blackout_day_is_skipped(int todayInOctober)
         {
             var gravity = await GivenGravityRefinesOnThursdaysEveryWeek();
             await ABlackoutDayOn(new DateOnly(2026, 10, 8));
-            TodayIs(2026, 10, 2);
+            TodayIs(2026, 10, todayInOctober);
 
             var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
 
-            ThenTheNextRefinementIs(tab, "2026-10-08", false);
+            ThenTheNextRefinementIs(tab, "2026-10-15", false);
         }
 
         // @driving_port @real-io @us-04 @slice-04 @error @contract-shape:pure-function

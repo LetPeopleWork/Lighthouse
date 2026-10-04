@@ -44,8 +44,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         {
             var cadence = Cadence(weekdays, intervalWeeks, anchorWeek);
 
-            var next = RefinementCadenceCalendar.NextAfter(cadence, Day(today));
-            var isCadenceDay = RefinementCadenceCalendar.IsCadenceDay(cadence, Day(today));
+            var next = RefinementCadenceCalendar.NextAfter(cadence, Day(today), NoBlackouts);
+            var isCadenceDay = RefinementCadenceCalendar.IsCadenceDay(cadence, Day(today), NoBlackouts);
 
             using (Assert.EnterMultipleScope())
             {
@@ -54,11 +54,48 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             }
         }
 
+        // Thursdays every week
+        [TestCase("2026-10-08", "2026-10-02", "2026-10-15", false)]
+        [TestCase("2026-10-08,2026-10-15", "2026-10-02", "2026-10-22", false)]
+        [TestCase("2026-10-08", "2026-10-08", "2026-10-15", false)]
+        [TestCase("2026-10-15", "2026-10-08", "2026-10-22", true)]
+        [TestCase("2026-10-09", "2026-10-02", "2026-10-08", false)]
+        public void A_Refinement_on_a_blackout_day_is_skipped(string blackoutDays, string today, string nextRefinement, bool isRefinementDay)
+        {
+            var cadence = Cadence("Thursday", 1, null);
+            var blackedOut = blackoutDays.Split(',').Select(Day).ToHashSet();
+
+            var next = RefinementCadenceCalendar.NextAfter(cadence, Day(today), blackedOut.Contains);
+            var isCadenceDay = RefinementCadenceCalendar.IsCadenceDay(cadence, Day(today), blackedOut.Contains);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(next, Is.EqualTo(Day(nextRefinement)));
+                Assert.That(isCadenceDay, Is.EqualTo(isRefinementDay));
+            }
+        }
+
+        [Test]
+        public void A_cadence_blacked_out_for_as_far_as_the_calendar_looks_has_no_next_Refinement()
+        {
+            var cadence = Cadence("Thursday", 1, null);
+            var today = Day("2026-10-02");
+            var lastDaySearched = RefinementCadenceCalendar.LastDaySearched(cadence, today);
+
+            var next = RefinementCadenceCalendar.NextAfter(cadence, today, day => day <= lastDaySearched);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(next, Is.Null);
+                Assert.That(lastDaySearched, Is.GreaterThanOrEqualTo(today.AddYears(1)));
+            }
+        }
+
         [Test]
         public void ATeamWithoutACadenceHasNoNextRefinementAndNoRefinementDay()
         {
-            var next = RefinementCadenceCalendar.NextAfter(null, Day("2026-10-08"));
-            var isCadenceDay = RefinementCadenceCalendar.IsCadenceDay(null, Day("2026-10-08"));
+            var next = RefinementCadenceCalendar.NextAfter(null, Day("2026-10-08"), NoBlackouts);
+            var isCadenceDay = RefinementCadenceCalendar.IsCadenceDay(null, Day("2026-10-08"), NoBlackouts);
 
             using (Assert.EnterMultipleScope())
             {
@@ -76,6 +113,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                 AnchorWeek = anchorWeek is null ? null : Day(anchorWeek),
             };
         }
+
+        private static readonly Func<DateOnly, bool> NoBlackouts = _ => false;
 
         private static DateOnly Day(string isoDay) => DateOnly.ParseExact(isoDay, "yyyy-MM-dd", CultureInfo.InvariantCulture);
     }
