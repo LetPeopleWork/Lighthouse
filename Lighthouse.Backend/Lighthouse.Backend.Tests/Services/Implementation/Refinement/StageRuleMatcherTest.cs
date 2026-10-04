@@ -3,6 +3,8 @@ using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.Refinement;
 using Lighthouse.Backend.Services.Implementation.WorkItemRules;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 {
@@ -13,7 +15,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         private const string AnalysingTag = "analysing";
 
-        private readonly StageRuleMatcher subject = new(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider());
+        private readonly StageRuleMatcher subject = new(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider(), Mock.Of<IForecastFilterRuleService>());
 
         private static readonly WorkItem TaggedReady = Tagged("GR-058", ReadyTag);
 

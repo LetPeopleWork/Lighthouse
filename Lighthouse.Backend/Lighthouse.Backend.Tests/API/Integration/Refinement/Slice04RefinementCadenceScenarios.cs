@@ -137,7 +137,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase(2026, 10, 7, "2026-10-08", false)]
         [TestCase(2026, 10, 8, "2026-10-15", true)]
         [TestCase(2026, 10, 9, "2026-10-15", false)]
-        [Ignore(PendingSlice04)]
         public async Task The_next_Refinement_is_the_first_cadence_day_after_today(int year, int month, int day, string nextRefinement, bool isRefinementDay)
         {
             var gravity = await GivenGravityRefinesOnThursdaysEveryWeek();
@@ -153,7 +152,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase(2026, 10, 2, "2026-10-06", false)]
         [TestCase(2026, 10, 6, "2026-10-20", true)]
         [TestCase(2026, 10, 14, "2026-10-20", false)]
-        [Ignore(PendingSlice04)]
         public async Task Every_second_week_counts_from_the_starting_week(int year, int month, int day, string nextRefinement, bool isRefinementDay)
         {
             var gravity = await GivenGravityRefinesOnTuesdaysEveryOtherWeekFromTheFifth();

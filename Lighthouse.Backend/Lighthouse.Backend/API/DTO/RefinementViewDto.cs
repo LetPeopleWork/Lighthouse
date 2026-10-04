@@ -1,3 +1,4 @@
+using System.Globalization;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Services.Interfaces.Refinement;
 
@@ -20,6 +21,10 @@ namespace Lighthouse.Backend.API.DTO
         public int ReadyCount { get; } = view.ReadyCount;
 
         public ReadySource ReadySource { get; } = view.ReadySource;
+
+        public string? NextRefinementDate { get; } = view.CalendarFacts.NextRefinementDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        public bool IsRefinementDay { get; } = view.CalendarFacts.IsRefinementDay;
     }
 
     public sealed class YardstickDto(Yardstick yardstick)

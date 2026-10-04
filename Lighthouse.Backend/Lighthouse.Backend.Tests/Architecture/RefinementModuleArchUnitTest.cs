@@ -5,6 +5,7 @@ using ArchUnitNET.NUnit;
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Refinement;
 using Lighthouse.Backend.Services.Implementation.Repositories;
@@ -29,6 +30,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string RefinementImplementationNamespace = "Lighthouse.Backend.Services.Implementation.Refinement";
 
         private const string RefinementResolutionAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.Refinement\.RefinementResolution($|\+.*)";
+
+        private const string WeeklyRecurrenceAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.WeeklyRecurrence($|\+.*)";
+
+        private const string RefinementCadenceCalendarAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.Refinement\.RefinementCadenceCalendar($|\+.*)";
 
         private const string RepositoriesNamespace = "Lighthouse.Backend.Services.Interfaces.Repositories";
 
@@ -85,6 +90,37 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ServicesImplementationPattern)
                     .And().DoNotHaveFullNameMatching(RefinementResolutionAndItsNestedTypesPattern))
                 .Because("a resolution that reaches into a service can no longer be tested by handing it entries.")
+                .Check(Architecture);
+        }
+
+        // Which day a cadence falls on is worked out from the cadence and the day alone, so every answer can be
+        // checked against a fixed calendar, and the blackout rules and the Refinement cadence count weeks the same way.
+        [TestCase(typeof(WeeklyRecurrence))]
+        [TestCase(typeof(RefinementCadenceCalendar))]
+        public void The_cadence_arithmetic_IsStatic(Type calendar)
+        {
+            Assert.That(calendar.IsAbstract && calendar.IsSealed, Is.True,
+                $"{calendar.Name} must stay a static class: it answers from the days it is given and holds nothing.");
+        }
+
+        [Test]
+        public void The_weekly_recurrence_ReferencesNothingElseInServicesImplementation()
+        {
+            Types().That().HaveFullName(typeof(WeeklyRecurrence).FullName!)
+                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ServicesImplementationPattern)
+                    .And().DoNotHaveFullNameMatching(WeeklyRecurrenceAndItsNestedTypesPattern))
+                .Because("a recurrence rule that reaches into a service can no longer be tested by handing it days.")
+                .Check(Architecture);
+        }
+
+        [Test]
+        public void The_Refinement_cadence_calendar_ReferencesNothingInServicesImplementationButTheWeeklyRecurrence()
+        {
+            Types().That().HaveFullName(typeof(RefinementCadenceCalendar).FullName!)
+                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ServicesImplementationPattern)
+                    .And().DoNotHaveFullNameMatching(WeeklyRecurrenceAndItsNestedTypesPattern)
+                    .And().DoNotHaveFullNameMatching(RefinementCadenceCalendarAndItsNestedTypesPattern))
+                .Because("a calendar that reaches into a service can no longer be tested by handing it a cadence and a day.")
                 .Check(Architecture);
         }
 

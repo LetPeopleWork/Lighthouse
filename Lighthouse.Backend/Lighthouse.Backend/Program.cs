@@ -1412,6 +1412,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<Lighthouse.Backend.Services.Implementation.Refinement.SleYardstickResolver>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Implementation.Refinement.VoterIdentityResolver>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Implementation.Refinement.StageRuleMatcher>();
+            builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.Refinement.IRefinementCalendar, Lighthouse.Backend.Services.Implementation.Refinement.RefinementCalendar>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.Refinement.IRefinementViewQuery, Lighthouse.Backend.Services.Implementation.Refinement.RefinementViewQuery>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.Refinement.ISizingLogCommands, Lighthouse.Backend.Services.Implementation.Refinement.SizingLogCommands>();
             builder.Services.AddScoped<ISizingLogRepository, SizingLogRepository>();

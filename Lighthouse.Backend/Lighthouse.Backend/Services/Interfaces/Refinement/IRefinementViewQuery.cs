@@ -12,13 +12,17 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
     }
 
     /// <param name="StagesConfigured">Whether the Team sets any stage rule; without one no row has a stage.</param>
+    /// <param name="Calendar">When the Team next refines, and whether it does today; no date without a cadence.</param>
     public sealed record RefinementView(
         bool RefinementConfigured,
         List<RefinementRow> WorkItems,
         Yardstick Yardstick,
         VoterIdentityKind VoterIdentity,
-        bool StagesConfigured = false)
+        bool StagesConfigured = false,
+        RefinementCalendarFacts? Calendar = null)
     {
+        public RefinementCalendarFacts CalendarFacts => Calendar ?? RefinementCalendarFacts.None;
+
         public int ReadyByVotesCount => RefinementResolution.ReadyByVotesCountOf(WorkItems);
 
         public ReadySource ReadySource => RefinementResolution.ReadySourceOf(StagesConfigured);

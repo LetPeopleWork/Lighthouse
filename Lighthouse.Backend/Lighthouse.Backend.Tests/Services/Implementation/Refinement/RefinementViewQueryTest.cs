@@ -64,8 +64,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                 new SleYardstickResolver(teamMetricsServiceMock.Object, clockMock.Object),
                 sizingLogMock.Object,
                 new VoterIdentityResolver(Mock.Of<IAuthModeResolver>(resolver => resolver.Resolve() == new RuntimeAuthStatus { Mode = AuthMode.Disabled })),
-                new StageRuleMatcher(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider()),
-                new ForecastFilterRuleService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider(), Mock.Of<ILicenseService>()));
+                new StageRuleMatcher(
+                    new RuleEvaluator<WorkItem>(),
+                    new WorkItemFieldProvider(),
+                    new ForecastFilterRuleService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider(), Mock.Of<ILicenseService>())),
+                new RefinementCalendar(clockMock.Object));
         }
 
         [Test]
