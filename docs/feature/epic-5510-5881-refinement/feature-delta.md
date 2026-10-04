@@ -2733,6 +2733,12 @@ assert the line's text and its place among the rows, not grid internals.
 Still provisional (DST-48): the ⚠ marker's tooltip words, the band's field labels and its error wording, the cadence
 validation messages.
 
+**Amended during DELIVER (2026-10-04): a Refinement on a blackout day is skipped.** The maintainer reversed the
+"not blackout-shifted" rule (DSN-7, the slice-04 scenario "a Refinement on a blackout day keeps its date"): a cadence
+day that is blacked out is no Refinement, so the next Refinement is the first cadence day after today that is not a
+blackout day, and a blacked-out cadence day is not a Refinement day. The slice-04 scenario is renamed "a Refinement on a
+blackout day is skipped". The need's horizon (slice 05) still counts working days to that date.
+
 ## Wave: DISTILL / [REF] Scenario list with tags — E2 (#5881)
 
 All cases are pending (`[Ignore(PendingSliceNN)]`, `it.skip`); the E2E skeleton is `fixme`. **162 runnable cases**:
