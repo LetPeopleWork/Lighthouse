@@ -2739,6 +2739,17 @@ day that is blacked out is no Refinement, so the next Refinement is the first ca
 blackout day, and a blacked-out cadence day is not a Refinement day. The slice-04 scenario is renamed "a Refinement on a
 blackout day is skipped". The need's horizon (slice 05) still counts working days to that date.
 
+**Amended after the slice 03–04 manual review (2026-10-04).** The maintainer reviewed the tab in the browser:
+
+- The yardstick question moves onto the vote: the "Your vote" column header reads "Doable within 2 days? ⓘ" (same
+  tooltip as before), and the separate line above the grid goes.
+- With stage rules the heading is the breakdown itself, "2 Ready · 2 Being refined · 6 Waiting"; the separate
+  "N Work Items in Refinement · R ready" line goes. Without rules there is no breakdown and the heading stays
+  "N Work Items in Refinement · R ready by votes". Slice 05's verdict alert sits under the heading and carries the
+  ready number with the range.
+- Without a cadence the spot on the heading's row reads "No Refinement cadence ⓘ"; the role-aware hint ("Set a
+  Refinement cadence in Settings…" / "A Team admin can set…") moves into the icon's tooltip.
+
 ## Wave: DISTILL / [REF] Scenario list with tags — E2 (#5881)
 
 All cases are pending (`[Ignore(PendingSliceNN)]`, `it.skip`); the E2E skeleton is `fixme`. **162 runnable cases**:
