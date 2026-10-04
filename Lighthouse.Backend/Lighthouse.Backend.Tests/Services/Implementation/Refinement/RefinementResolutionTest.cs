@@ -102,6 +102,44 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             Assert.That(standing, Is.EqualTo(new RowStanding(readiness, missingVotes)));
         }
 
+        [TestCase(3, 0, 1, 1, VetoCounts.No, RowReadiness.NeedsDiscussion, TestName = "A No at the veto threshold sends the Work Item to discussion")]
+        [TestCase(5, 0, 1, 1, VetoCounts.No, RowReadiness.NeedsDiscussion, TestName = "A veto beats any number of Yes votes")]
+        [TestCase(0, 0, 1, 1, VetoCounts.No, RowReadiness.NeedsDiscussion, TestName = "A veto is named before missing Yes votes")]
+        [TestCase(3, 0, 1, 2, VetoCounts.No, RowReadiness.Ready, TestName = "One No below a veto of two does not trip it")]
+        [TestCase(3, 0, 2, 2, VetoCounts.No, RowReadiness.NeedsDiscussion, TestName = "Two No votes trip a veto of two")]
+        [TestCase(2, 1, 0, 1, VetoCounts.NoOrYesBut, RowReadiness.NeedsDiscussion, TestName = "A Yes-if trips a veto that counts it")]
+        [TestCase(2, 1, 0, 1, VetoCounts.No, RowReadiness.Ready, TestName = "A Yes-if does not trip a veto that counts only No")]
+        [TestCase(3, 1, 0, 2, VetoCounts.NoOrYesBut, RowReadiness.Ready, TestName = "A Yes-if alone below a veto of two does not trip it")]
+        [TestCase(3, 1, 1, 2, VetoCounts.NoOrYesBut, RowReadiness.NeedsDiscussion, TestName = "A No and a Yes-if together trip a veto of two that counts both")]
+        [TestCase(3, 1, 1, 2, VetoCounts.No, RowReadiness.Ready, TestName = "A veto that counts only No ignores the Yes-if alongside a No")]
+        public void A_veto_sends_a_Work_Item_to_discussion(
+            int yes, int yesBut, int no, int threshold, VetoCounts counts, RowReadiness readiness)
+        {
+            var standing = RefinementResolution.StandingOf(
+                new VoteSplit(yes, yesBut, no),
+                new ReadinessSetting { MinYes = 3, MinVoters = 3, Veto = new VetoSetting { Threshold = threshold, Counts = counts } });
+
+            Assert.That(standing, Is.EqualTo(new RowStanding(readiness, null)));
+        }
+
+        [Test]
+        public void A_No_taken_back_by_a_later_Yes_no_longer_vetoes()
+        {
+            var log = new[]
+            {
+                VoteBy(Jonas, 1, SizingAnswer.Yes),
+                VoteBy(Priya, 2, SizingAnswer.Yes),
+                VoteBy(Ana, 3, SizingAnswer.No),
+                VoteBy(Ana, 4, SizingAnswer.Yes),
+            };
+
+            var standing = RefinementResolution.StandingOf(
+                RefinementResolution.VotesOn(log, null).Split,
+                new ReadinessSetting { MinYes = 3, MinVoters = 3, Veto = new VetoSetting { Threshold = 1, Counts = VetoCounts.No } });
+
+            Assert.That(standing, Is.EqualTo(RowStanding.Ready));
+        }
+
         private static SizingLogEntry VoteBy(string voterKey, int id, SizingAnswer answer, string displayName = "Voter")
             => Entry(voterKey, id, SizingEntryKind.Vote, answer, displayName);
 

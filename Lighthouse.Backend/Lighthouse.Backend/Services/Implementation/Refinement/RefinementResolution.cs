@@ -18,11 +18,17 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         }
 
         /// <summary>
-        /// A "Yes, if…" counts as a Yes; a No does not, though every answer counts as a voter. Missing Yes
-        /// votes are named before missing voters, because more Yes votes also bring more voters.
+        /// A "Yes, if…" counts as a Yes; a No does not, though every answer counts as a voter. A tripped veto
+        /// wins over everything else, because the doubt is what the meeting is for. Missing Yes votes are
+        /// named before missing voters, because more Yes votes also bring more voters.
         /// </summary>
         public static RowStanding StandingOf(VoteSplit split, ReadinessSetting readiness)
         {
+            if (VetoTrips(split, readiness.Veto))
+            {
+                return new RowStanding(RowReadiness.NeedsDiscussion, null);
+            }
+
             var yesVotes = split.Yes + split.YesBut;
             var missingYes = readiness.MinYes - yesVotes;
             if (missingYes > 0)
@@ -32,6 +38,17 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
 
             var missingVoters = readiness.MinVoters - (yesVotes + split.No);
             return missingVoters > 0 ? new RowStanding(RowReadiness.MoreVotersNeeded, missingVoters) : RowStanding.Ready;
+        }
+
+        private static bool VetoTrips(VoteSplit split, VetoSetting? veto)
+        {
+            if (veto is null)
+            {
+                return false;
+            }
+
+            var vetoVotes = veto.Counts == VetoCounts.NoOrYesBut ? split.No + split.YesBut : split.No;
+            return vetoVotes >= veto.Threshold;
         }
 
         private static List<SizingLogEntry> CurrentVotes(IEnumerable<SizingLogEntry> entries)

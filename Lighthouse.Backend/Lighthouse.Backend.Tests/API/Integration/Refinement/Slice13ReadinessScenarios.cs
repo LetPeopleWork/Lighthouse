@@ -185,7 +185,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-13 @slice-13 @error @contract-shape:pure-function
         // A veto wins over any number of Yes votes: the doubt is what the meeting is for.
         [Test]
-        [Ignore(PendingSlice13)]
         public async Task A_veto_sends_a_Work_Item_to_discussion_however_many_say_Yes()
         {
             var gravity = await GivenAVetoOfOneNoAndThreeYesAndAnasNoOn(ApiVersioning);
@@ -198,7 +197,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:pure-function
         [TestCase(VetoCounts.NoOrYesBut, NeedsDiscussion)]
         [TestCase(VetoCounts.No, Ready)]
-        [Ignore(PendingSlice13)]
         public async Task A_veto_counts_Yes_but_only_when_the_Team_says_so(VetoCounts counts, string readiness)
         {
             var gravity = await GivenAVetoOfOneCounting(counts);
@@ -211,7 +209,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice13)]
         public async Task A_veto_of_two_is_not_tripped_by_one_No()
         {
             var gravity = await GivenAVetoOfTwoNoAndThreeYesAndOneNoOn(ApiVersioning);
@@ -224,7 +221,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-13 @slice-13 @contract-shape:bounded-change
         // Only the latest answer of each voter counts, for a veto too.
         [Test]
-        [Ignore(PendingSlice13)]
         public async Task A_No_changed_to_Yes_lifts_the_veto()
         {
             var gravity = await GivenAVetoOfOneNoAndThreeYesAndAnasNoOn(ApiVersioning);
