@@ -54,20 +54,26 @@ const VOTE_CAST = "TeamSizingVoteCast";
 const configurationManagement = (votes: Partial<IRefinementRow>) =>
 	aRow(CONFIGURATION_MANAGEMENT, "Configuration management", "Backlog", votes);
 
-const castingYesTurnsItInto = async (
+const castingTurnsItInto = async (
+	answerLabel: string,
 	before: Partial<IRefinementRow>,
 	after: Partial<IRefinementRow>,
+	readyByVotesCount = 0,
 ) => {
 	aBrowserThatVotedBefore("Jonas Weber");
 	const sizingLogService = aSizingLogService({
 		castVote: vi.fn().mockResolvedValue(configurationManagement(after)),
 	});
 	const { user } = renderTheRefinementTab(
-		gravitysRefinement({}, [configurationManagement(before)]),
+		gravitysRefinement({ readyByVotesCount }, [
+			configurationManagement(before),
+		]),
 		sizingLogService,
 	);
 
-	await user.click(theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"));
+	await user.click(
+		theButton(await theRowOf(CONFIGURATION_MANAGEMENT), answerLabel),
+	);
 	await waitFor(() =>
 		expect(sizingLogService.castVote).toHaveBeenCalledTimes(1),
 	);
@@ -78,6 +84,11 @@ const castingYesTurnsItInto = async (
 		}),
 	);
 };
+
+const castingYesTurnsItInto = (
+	before: Partial<IRefinementRow>,
+	after: Partial<IRefinementRow>,
+) => castingTurnsItInto("Yes", before, after);
 
 describe("The Refinement tab says what the votes make of each Work Item", () => {
 	beforeEach(() => {
@@ -174,6 +185,42 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 		expect(
 			await screen.findByRole("heading", {
 				name: "3 Work Items in Refinement · 0 ready by votes",
+			}),
+		).toBeVisible();
+	});
+
+	// @us-13 @slice-13 @contract-shape:bounded-change
+	it("counts a Work Item a vote has just made Ready in the heading", async () => {
+		await castingTurnsItInto(
+			"Yes",
+			{ voteCount: 2, readiness: "MoreYesNeeded", missingVotes: 1 },
+			{ voteCount: 3, myVote: "Yes", readiness: "Ready", missingVotes: null },
+		);
+
+		expect(
+			await screen.findByRole("heading", {
+				name: "1 Work Item in Refinement · 1 ready by votes",
+			}),
+		).toBeVisible();
+	});
+
+	// @us-13 @slice-13 @contract-shape:bounded-change
+	it("stops counting a Work Item a vote has just taken out of Ready", async () => {
+		await castingTurnsItInto(
+			"No",
+			{ voteCount: 3, readiness: "Ready", missingVotes: null },
+			{
+				voteCount: 4,
+				myVote: "No",
+				readiness: "NeedsDiscussion",
+				missingVotes: null,
+			},
+			1,
+		);
+
+		expect(
+			await screen.findByRole("heading", {
+				name: "1 Work Item in Refinement · 0 ready by votes",
 			}),
 		).toBeVisible();
 	});

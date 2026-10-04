@@ -28,6 +28,35 @@ const NO_ROWS: IRefinementRow[] = [];
 const messageOf = (error: unknown): string =>
 	error instanceof Error ? error.message : String(error);
 
+const readyCount = (row: IRefinementRow | undefined): number =>
+	row?.readiness === "Ready" ? 1 : 0;
+
+const withAnsweredRow = (
+	current: IRefinementView,
+	answeredRow: IRefinementRow,
+): IRefinementView => {
+	const shownRow = current.workItems.find(
+		(row) => row.referenceId === answeredRow.referenceId,
+	);
+	if (shownRow === undefined) {
+		return current;
+	}
+	const readyByVotesCount =
+		current.readyByVotesCount === undefined
+			? undefined
+			: current.readyByVotesCount -
+				readyCount(shownRow) +
+				readyCount(answeredRow);
+
+	return {
+		...current,
+		readyByVotesCount,
+		workItems: current.workItems.map((row) =>
+			row === shownRow ? answeredRow : row,
+		),
+	};
+};
+
 interface RefinementViewProps {
 	team: Team;
 }
@@ -70,14 +99,7 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 
 	const showAnsweredRow = useCallback((answeredRow: IRefinementRow) => {
 		setRefinement((current) =>
-			current === null
-				? current
-				: {
-						...current,
-						workItems: current.workItems.map((row) =>
-							row.referenceId === answeredRow.referenceId ? answeredRow : row,
-						),
-					},
+			current === null ? current : withAnsweredRow(current, answeredRow),
 		);
 	}, []);
 
