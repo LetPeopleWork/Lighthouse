@@ -97,10 +97,19 @@ const localStorageMock = {
   }),
 };
 
+// Object.keys on a real Storage lists the stored keys, never its methods; the proxy keeps that true.
+const enumerableLocalStorage = new Proxy(localStorageMock, {
+  ownKeys: () => Object.keys(store),
+  getOwnPropertyDescriptor: (_target, key) =>
+    typeof key === "string" && key in store
+      ? { value: store[key], enumerable: true, configurable: true, writable: true }
+      : undefined,
+});
+
 // jsdom exposes localStorage as a getter-only accessor on the window object, so a
 // plain assignment throws. Redefining the property replaces it outright.
 Object.defineProperty(globalThis, "localStorage", {
-  value: localStorageMock as Storage,
+  value: enumerableLocalStorage as Storage,
   writable: true,
   configurable: true,
 });

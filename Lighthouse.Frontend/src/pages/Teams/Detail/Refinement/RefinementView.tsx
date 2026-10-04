@@ -1,7 +1,13 @@
-import { Paper, Stack, TableContainer, Typography } from "@mui/material";
+import {
+	Button,
+	Paper,
+	Stack,
+	TableContainer,
+	Typography,
+} from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import DataGridBase from "../../../../components/Common/DataGrid/DataGridBase";
 import type { DataGridColumn } from "../../../../components/Common/DataGrid/types";
 import { createNameColumn } from "../../../../components/Common/FeatureListDataGrid/columns";
@@ -11,23 +17,45 @@ import {
 	type ParentWorkItem,
 	useParentWorkItems,
 } from "../../../../hooks/useParentWorkItems";
+import { useVoterIdentity } from "../../../../hooks/useVoterIdentity";
 import type {
 	IRefinementRow,
 	IRefinementView,
+	SizingAnswer,
 } from "../../../../models/Refinement/Refinement";
 import type { Team } from "../../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
+import type { IStoredVoter } from "../../../../services/Refinement/voterStore";
 import { useTerminology } from "../../../../services/TerminologyContext";
+import VoteControl from "./VoteControl";
+import VoterNamePrompt from "./VoterNamePrompt";
 import YardstickQuestion from "./YardstickQuestion";
 
 type RefinementGridRow = IRefinementRow & GridValidRowModel;
 
 const NO_ROWS: IRefinementRow[] = [];
 
+interface IPendingVote {
+	referenceId: string;
+	answer: SizingAnswer;
+}
+
+const describeVoteCount = (voteCount: number): string => {
+	if (voteCount === 0) {
+		return "No votes";
+	}
+
+	return voteCount === 1 ? "1 vote" : `${voteCount} votes`;
+};
+
+const messageOf = (error: unknown): string =>
+	error instanceof Error ? error.message : String(error);
+
 const createRefinementColumns = (
 	workItemTerm: string,
 	parentMap: Map<string, ParentWorkItem>,
+	onVote: (vote: IPendingVote) => void,
 ): DataGridColumn<RefinementGridRow>[] => [
 	createNameColumn<RefinementGridRow>(workItemTerm),
 	{
@@ -47,6 +75,31 @@ const createRefinementColumns = (
 		headerName: "State",
 		width: 160,
 	},
+	{
+		field: "myVote",
+		headerName: "Your vote",
+		width: 240,
+		sortable: false,
+		renderCell: ({ row }) => (
+			<VoteControl
+				myVote={row.myVote ?? null}
+				onVote={(answer) => onVote({ referenceId: row.referenceId, answer })}
+			/>
+		),
+	},
+	{
+		field: "voteCount",
+		headerName: "Votes",
+		width: 120,
+		renderCell: ({ row }) => {
+			const voteCount = describeVoteCount(row.voteCount ?? 0);
+			return (
+				<Button size="small" aria-label={`${voteCount} - Votes and comments`}>
+					{voteCount}
+				</Button>
+			);
+		},
+	},
 ];
 
 interface RefinementViewProps {
@@ -54,10 +107,14 @@ interface RefinementViewProps {
 }
 
 const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
-	const { refinementService } = useContext(ApiServiceContext);
+	const { refinementService, sizingLogService } = useContext(ApiServiceContext);
 	const { showError } = useErrorSnackbar();
 	const { getTerm } = useTerminology();
 	const [refinement, setRefinement] = useState<IRefinementView | null>(null);
+	const [pendingVote, setPendingVote] = useState<IPendingVote | null>(null);
+	const { voter, asksForName, declareName, ballotFor } = useVoterIdentity(
+		refinement?.voterIdentity,
+	);
 
 	useEffect(() => {
 		let isCurrent = true;
@@ -71,7 +128,7 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 			})
 			.catch((error: unknown) => {
 				if (isCurrent) {
-					showError(error instanceof Error ? error.message : String(error));
+					showError(messageOf(error));
 				}
 			});
 
@@ -79,6 +136,49 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 			isCurrent = false;
 		};
 	}, [team.id, refinementService, showError]);
+
+	const showAnsweredRow = useCallback((answeredRow: IRefinementRow) => {
+		setRefinement((current) =>
+			current === null
+				? current
+				: {
+						...current,
+						workItems: current.workItems.map((row) =>
+							row.referenceId === answeredRow.referenceId ? answeredRow : row,
+						),
+					},
+		);
+	}, []);
+
+	const castVote = useCallback(
+		({ referenceId, answer }: IPendingVote, declared: IStoredVoter | null) => {
+			const { vote, voterKey } = ballotFor(answer, declared);
+			sizingLogService
+				.castVote(team.id, referenceId, vote, voterKey)
+				.then(showAnsweredRow)
+				.catch((error: unknown) => showError(messageOf(error)));
+		},
+		[ballotFor, sizingLogService, team.id, showAnsweredRow, showError],
+	);
+
+	const onVote = useCallback(
+		(chosen: IPendingVote) => {
+			if (asksForName) {
+				setPendingVote(chosen);
+				return;
+			}
+
+			castVote(chosen, voter);
+		},
+		[asksForName, castVote, voter],
+	);
+
+	const voteUnderName = (name: string) => {
+		if (pendingVote !== null) {
+			castVote(pendingVote, declareName(name));
+		}
+		setPendingVote(null);
+	};
 
 	const workItems = refinement?.workItems ?? NO_ROWS;
 	const parentReferences = useMemo(
@@ -91,8 +191,8 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 	const parentMap = useParentWorkItems(parentReferences);
 	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
 	const columns = useMemo(
-		() => createRefinementColumns(workItemTerm, parentMap),
-		[workItemTerm, parentMap],
+		() => createRefinementColumns(workItemTerm, parentMap, onVote),
+		[workItemTerm, parentMap, onVote],
 	);
 
 	if (refinement === null) {
@@ -129,6 +229,12 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 					storageKey={`team-refinement-${team.id}`}
 				/>
 			</TableContainer>
+			{pendingVote !== null && (
+				<VoterNamePrompt
+					onCancel={() => setPendingVote(null)}
+					onVote={voteUnderName}
+				/>
+			)}
 		</Stack>
 	);
 };

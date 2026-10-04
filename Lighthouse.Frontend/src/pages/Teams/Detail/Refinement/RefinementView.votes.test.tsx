@@ -85,7 +85,7 @@ describe("A voter casts a sizing vote from the list", () => {
 	});
 
 	// @us-11 @slice-11 @driving_port @contract-shape:pure-function
-	it.skip("offers Yes, Yes, if… and No on every Work Item in refinement, beside how many have voted", async () => {
+	it("offers Yes, Yes, if… and No on every Work Item in refinement, beside how many have voted", async () => {
 		renderTheRefinementTab(gravitysRefinement());
 
 		for (const referenceId of [
@@ -108,7 +108,7 @@ describe("A voter casts a sizing vote from the list", () => {
 	});
 
 	// @us-11 @slice-11 @driving_port @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:bounded-change
-	it.skip("asks for a name the first time, then casts the vote under it and shows it as the voter's own", async () => {
+	it("asks for a name the first time, then casts the vote under it and shows it as the voter's own", async () => {
 		const sizingLogService = aSizingLogService({
 			castVote: vi.fn().mockResolvedValue(
 				theRowAfter(CONFIGURATION_MANAGEMENT, {
@@ -151,7 +151,7 @@ describe("A voter casts a sizing vote from the list", () => {
 	});
 
 	// @us-11 @slice-11 @contract-shape:bounded-change
-	it.skip("remembers the name, so the next vote takes one click and comes from the same browser", async () => {
+	it("remembers the name, so the next vote takes one click and comes from the same browser", async () => {
 		const key = aBrowserThatVotedBefore(JONAS);
 		const sizingLogService = aSizingLogService({
 			castVote: vi.fn().mockResolvedValue(
@@ -180,7 +180,7 @@ describe("A voter casts a sizing vote from the list", () => {
 	});
 
 	// @us-11 @slice-11 @boundary @contract-shape:bounded-change
-	it.skip("keeps only the voter's name and a long random key in this browser", async () => {
+	it("keeps only the voter's name and a long random key in this browser", async () => {
 		const sizingLogService = aSizingLogService({
 			castVote: vi.fn().mockResolvedValue(
 				theRowAfter(CONFIGURATION_MANAGEMENT, {
@@ -211,7 +211,7 @@ describe("A voter casts a sizing vote from the list", () => {
 	});
 
 	// @us-11 @slice-11 @error @contract-shape:unbounded-preservation
-	it.skip("casts nothing and keeps nothing when the name prompt is closed", async () => {
+	it("casts nothing and keeps nothing when the name prompt is closed", async () => {
 		const sizingLogService = aSizingLogService();
 		const { user } = renderTheRefinementTab(
 			gravitysRefinement(),
@@ -229,7 +229,7 @@ describe("A voter casts a sizing vote from the list", () => {
 	});
 
 	// @us-11 @slice-11 @error @contract-shape:unbounded-preservation
-	it.skip("will not vote under a blank name", async () => {
+	it("will not vote under a blank name", async () => {
 		const sizingLogService = aSizingLogService();
 		const { user } = renderTheRefinementTab(
 			gravitysRefinement(),

@@ -37,3 +37,19 @@ export const readStoredVoter = (): IStoredVoter | null => {
 };
 
 export const readVoterKey = (): string | null => readStoredVoter()?.key ?? null;
+
+const aRandomVoterKey = (): string =>
+	`${globalThis.crypto.randomUUID()}${globalThis.crypto.randomUUID()}`.replaceAll(
+		"-",
+		"",
+	);
+
+/**
+ * Keeps the declared name, and the key this browser already holds - minting one the first time - so a
+ * renamed voter's earlier votes stay theirs.
+ */
+export const rememberVoter = (name: string): IStoredVoter => {
+	const voter = { name, key: readVoterKey() ?? aRandomVoterKey() };
+	globalThis.localStorage.setItem(VOTER_STORAGE_KEY, JSON.stringify(voter));
+	return voter;
+};
