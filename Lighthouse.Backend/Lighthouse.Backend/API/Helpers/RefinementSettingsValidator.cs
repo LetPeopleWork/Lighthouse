@@ -39,19 +39,18 @@ namespace Lighthouse.Backend.API.Helpers
                 .ToList();
         }
 
-
         // A save that leaves readiness out keeps what is stored, so there is nothing to judge. Otherwise the
         // readiness the save would leave behind is judged, so one that sends only some fields cannot break a
         // rule together with the stored values for the rest.
         private static List<string> ValidateReadiness(ReadinessSettingDto? sent, ReadinessSetting stored)
         {
-            var errors = new List<string>();
             if (sent is null)
             {
-                return errors;
+                return [];
             }
 
             var readiness = sent.AppliedTo(stored);
+            var errors = new List<string>();
 
             if (readiness.MinYes < 1)
             {
