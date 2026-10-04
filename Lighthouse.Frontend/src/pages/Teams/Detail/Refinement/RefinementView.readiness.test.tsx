@@ -1,19 +1,31 @@
-import { screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import SnackbarErrorHandler from "../../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import type {
 	IRefinementRow,
+	IRefinementView,
 	IVotedRow,
 } from "../../../../models/Refinement/Refinement";
+import { Team } from "../../../../models/Team/Team";
+import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
+import {
+	createMockApiServiceContext,
+	createMockFeatureService,
+} from "../../../../tests/MockApiServiceProvider";
 import {
 	aBrowserThatVotedBefore,
 	aRow,
 	aSizingLogService,
 	defaultRefinementTerms,
+	GRAVITY_TEAM_ID,
 	gravitysRefinement,
 	renderTheRefinementTab,
 	theButton,
 	theRowOf,
 } from "../../../../tests/RefinementTabTestKit";
+import RefinementView from "./RefinementView";
 
 /**
  * What the votes make of each Work Item, as the Refinement tab says it: Ready, how many more Yes votes
@@ -82,6 +94,21 @@ const castingTurnsItInto = async (
 			sizingMoment: "NoCadence",
 		}),
 	);
+};
+
+const OTHER_TEAM_ID = 8;
+
+const aTeam = (id: number) => {
+	const team = new Team();
+	team.id = id;
+	team.name = `Team ${id}`;
+	return team;
+};
+
+const withoutParents = () => {
+	const featureService = createMockFeatureService();
+	featureService.getFeaturesByReferences = vi.fn().mockResolvedValue([]);
+	return featureService;
 };
 
 const castingYesTurnsItInto = (
@@ -219,6 +246,109 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 
 		expect(
 			await screen.findByRole("heading", {
+				name: "1 Work Item in Refinement · 0 ready by votes",
+			}),
+		).toBeVisible();
+	});
+
+	it("names no ready count, also after a vote, when the server sends none", async () => {
+		aBrowserThatVotedBefore("Jonas Weber");
+		const sizingLogService = aSizingLogService({
+			castVote: vi.fn().mockResolvedValue(
+				configurationManagement({
+					voteCount: 3,
+					myVote: "Yes",
+					readiness: "Ready",
+					missingVotes: null,
+				}),
+			),
+		});
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement({ readyByVotesCount: undefined }, [
+				configurationManagement({ voteCount: 2, missingVotes: 1 }),
+			]),
+			sizingLogService,
+		);
+
+		await user.click(
+			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
+		);
+		await waitFor(() =>
+			expect(reporter.current).toHaveBeenCalledWith({
+				name: VOTE_CAST,
+				sizingMoment: "NoCadence",
+			}),
+		);
+
+		expect(
+			await screen.findByRole("heading", {
+				name: "1 Work Item in Refinement",
+			}),
+		).toBeVisible();
+	});
+
+	it("leaves the next Team's count alone when a vote cast before switching Teams is answered after", async () => {
+		aBrowserThatVotedBefore("Jonas Weber");
+		let answerTheVote: (row: IVotedRow) => void = () => {};
+		const sizingLogService = aSizingLogService({
+			castVote: vi.fn().mockReturnValue(
+				new Promise<IVotedRow>((resolve) => {
+					answerTheVote = resolve;
+				}),
+			),
+		});
+		const refinements: Record<number, IRefinementView> = {
+			[GRAVITY_TEAM_ID]: gravitysRefinement({ readyByVotesCount: 0 }, [
+				configurationManagement({ voteCount: 2, missingVotes: 1 }),
+			]),
+			[OTHER_TEAM_ID]: gravitysRefinement({ readyByVotesCount: 0 }, [
+				aRow("OE-001", "Hull design", "Backlog"),
+			]),
+		};
+		const apiServices = createMockApiServiceContext({
+			refinementService: {
+				getRefinement: vi.fn((teamId: number) =>
+					Promise.resolve(refinements[teamId]),
+				),
+			},
+			sizingLogService,
+			featureService: withoutParents(),
+		});
+		const tabOf = (teamId: number): React.ReactElement => (
+			<SnackbarErrorHandler>
+				<ApiServiceContext.Provider value={apiServices}>
+					<RefinementView team={aTeam(teamId)} />
+				</ApiServiceContext.Provider>
+			</SnackbarErrorHandler>
+		);
+		const user = userEvent.setup();
+		const { rerender } = render(tabOf(GRAVITY_TEAM_ID));
+
+		await user.click(
+			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
+		);
+		rerender(tabOf(OTHER_TEAM_ID));
+		await theRowOf("OE-001");
+		await act(async () => {
+			answerTheVote({
+				...configurationManagement({
+					voteCount: 3,
+					myVote: "Yes",
+					readiness: "Ready",
+					missingVotes: null,
+				}),
+				madeReady: true,
+			});
+		});
+		await waitFor(() =>
+			expect(reporter.current).toHaveBeenCalledWith({
+				name: VOTE_CAST,
+				sizingMoment: "NoCadence",
+			}),
+		);
+
+		expect(
+			screen.getByRole("heading", {
 				name: "1 Work Item in Refinement · 0 ready by votes",
 			}),
 		).toBeVisible();
