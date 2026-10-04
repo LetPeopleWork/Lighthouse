@@ -76,6 +76,12 @@ Two standing principles worth keeping visible here because they're easy to skip 
   maintainer is there, rather than shipping UI they have not seen. Prefer reusing an existing control or
   table style (`DataGridBase`, `ItemListManager`, the feature-list columns) over a new one, and say which
   one the sketch reuses.
+- **Each Epic ships on its own.** When DISCUSS splits a feature into several Epics, each one must be
+  deliverable and releasable alone: finished, it adds something valuable to at least some users, even if
+  no other Epic of the split ever ships. Order the slices Epic by Epic, so one Epic is completed before
+  the next starts; do not interleave slices across Epics. A dependency between sibling Epics is allowed
+  only in one direction (a later Epic builds on an earlier, finished one), never as a slice of one Epic
+  waiting on a slice of another. If the value only appears once two Epics are both done, they are one Epic.
 
 ### Commits & Shared Contracts
 
