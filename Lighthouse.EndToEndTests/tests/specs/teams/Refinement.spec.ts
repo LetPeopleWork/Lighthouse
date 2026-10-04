@@ -34,7 +34,7 @@ testWithDemo(
 			const refinement = await gravity.goToRefinement();
 
 			await expect(refinement.heading).toBeVisible();
-			await expect(refinement.noCadence).toBeVisible();
+			await expect(refinement.nextRefinement).toBeVisible();
 			await expect(refinement.voteColumnHeader).toBeVisible();
 			await expect(refinement.firstWorkItemRow).toContainText(
 				FIRST_IN_BACKLOG_ORDER,
@@ -97,7 +97,7 @@ testWithDemo(
 );
 
 // @walking_skeleton @driving_port @us-04 @us-05 @us-06 @slice-04 @slice-05 @slice-06 @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:bounded-change
-// The demo data gives Gravity no Refinement cadence. Once its admin says the Team refines on Thursdays,
+// The demo data already has Gravity refine on Thursdays, and its admin re-affirms that here. Then
 // the tab names the next Thursday, says whether to refine more or stop against the Team's own forecast,
 // and marks where the Work Items needed before then end. The numbers depend on the day the run happens,
 // so only their shape is checked.

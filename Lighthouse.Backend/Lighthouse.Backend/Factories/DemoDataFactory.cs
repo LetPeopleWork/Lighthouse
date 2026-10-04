@@ -83,6 +83,7 @@ namespace Lighthouse.Backend.Factories
                     new RefinementStateSetting { State = Analysing },
                     new RefinementStateSetting { State = Next },
                 ],
+                Cadence = RefinementCadence.Of([DayOfWeek.Thursday], intervalWeeks: 1, anchorWeek: null),
             };
         }
 

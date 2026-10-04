@@ -28,6 +28,8 @@ namespace Lighthouse.Backend.Tests.Factories
 
         private static readonly string[] TheMappingInitiative = ["OE-001"];
 
+        private static readonly DayOfWeek[] OnlyThursday = [DayOfWeek.Thursday];
+
         [Test]
         public void CreateDemoWorkTrackingSystemConnection_CreatesWorkTrackingSystemConnectionWithCorrectDetails()
         {
@@ -124,6 +126,59 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var refinementStates = demoTeam.RefinementSettings?.States.Select(s => s.State) ?? [];
             Assert.That(refinementStates, Is.EqualTo(expectedRefinementStates));
+        }
+
+        [Test]
+        public void CreateDemoTeam_Gravity_RefinesOnThursdaysEveryWeek()
+        {
+            var subject = CreateSubject();
+
+            var cadence = subject.CreateDemoTeam("Team Gravity").RefinementSettings?.Cadence;
+
+            Assert.That(cadence, Is.Not.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(cadence!.Weekdays, Is.EqualTo(OnlyThursday));
+                Assert.That(cadence.IntervalWeeks, Is.EqualTo(1));
+                Assert.That(cadence.AnchorWeek, Is.Null);
+            }
+        }
+
+        [Test]
+        [TestCase("Team Equinox")]
+        [TestCase("Team Lightspeed")]
+        [TestCase("Team Meridian")]
+        [TestCase("Team Pulsar")]
+        [TestCase("Team Voyager")]
+        [TestCase("Team Zenith")]
+        public void CreateDemoTeam_EveryTeamButGravity_HasNoRefinementCadence(string teamName)
+        {
+            var subject = CreateSubject();
+
+            var demoTeam = subject.CreateDemoTeam(teamName);
+
+            Assert.That(demoTeam.RefinementSettings?.Cadence, Is.Null);
+        }
+
+        [Test]
+        [TestCase("Team Equinox")]
+        [TestCase("Team Gravity")]
+        [TestCase("Team Lightspeed")]
+        [TestCase("Team Meridian")]
+        [TestCase("Team Pulsar")]
+        [TestCase("Team Voyager")]
+        [TestCase("Team Zenith")]
+        public void CreateDemoTeam_NoTeamCarriesStageRules(string teamName)
+        {
+            var subject = CreateSubject();
+
+            var stageRules = subject.CreateDemoTeam(teamName).RefinementSettings?.StageRules;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stageRules?.Ready, Is.Null);
+                Assert.That(stageRules?.BeingRefined, Is.Null);
+            }
         }
 
         [Test]

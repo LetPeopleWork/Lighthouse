@@ -114,9 +114,11 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 
 	/** Has the Team refine on this weekday every week, in the Refinement section's cadence. */
 	async refineEveryWeekOn(weekday: string): Promise<void> {
-		await this.page
-			.getByRole("checkbox", { name: weekday, exact: true })
-			.check();
+		const day = this.page.getByRole("checkbox", { name: weekday, exact: true });
+		if (await day.isChecked()) {
+			return;
+		}
+		await day.check();
 		await this.waitForChangesSaved();
 	}
 
