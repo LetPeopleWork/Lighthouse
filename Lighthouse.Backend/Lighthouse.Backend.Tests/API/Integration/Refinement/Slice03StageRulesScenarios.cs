@@ -99,7 +99,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-03 @us-13 @slice-03 @boundary @contract-shape:bounded-change
         // With stages the tracker decides: three Yes votes say Ready, the stage still says Waiting.
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task With_stage_rules_votes_never_make_a_Work_Item_Ready()
         {
             var gravity = await GivenGravityTagsTwoWorkItemsReadyUnderItsReadyRule();
@@ -114,7 +113,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-03 @us-13 @slice-03 @boundary @contract-shape:bounded-change
         // One No sends a Work Item to discussion by default; its stage stays Ready, and so does the count.
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task With_stage_rules_votes_never_block_a_Ready_Work_Item()
         {
             var gravity = await GivenGravityTagsTwoWorkItemsReadyUnderItsReadyRule();
@@ -129,7 +127,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:pure-function
         // One Yes is cast and the votes still want two more, so the votes cast disagree with the Ready stage.
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task A_Ready_stage_the_votes_cast_do_not_back_yet_is_marked_as_disagreeing()
         {
             var gravity = await GivenGravityTagsTwoWorkItemsReadyUnderItsReadyRule();
@@ -143,7 +140,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:pure-function
         // Nobody has voted, so the votes hold no opinion yet and there is nothing to disagree with.
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task A_Ready_stage_nobody_has_voted_on_shows_no_disagreement()
         {
             var gravity = await GivenGravityTagsTwoWorkItemsReadyUnderItsReadyRule();

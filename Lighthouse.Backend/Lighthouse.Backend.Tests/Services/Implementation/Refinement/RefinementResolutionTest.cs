@@ -199,19 +199,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             Assert.That(RefinementResolution.StageOf(matchesReady, matchesBeingRefined), Is.EqualTo(stage));
         }
 
-        [TestCase(null, 3, RowReadiness.Ready, false, TestName = "Without a stage the votes are the only signal")]
-        [TestCase(RefinementStage.Ready, 0, RowReadiness.MoreYesNeeded, false, TestName = "A Ready stage nobody has voted on has nothing to disagree with")]
-        [TestCase(RefinementStage.Ready, 1, RowReadiness.MoreYesNeeded, true, TestName = "A Ready stage the votes cast do not back yet disagrees")]
-        [TestCase(RefinementStage.Ready, 1, RowReadiness.NeedsDiscussion, true, TestName = "A Ready stage the votes send to discussion disagrees")]
-        [TestCase(RefinementStage.Ready, 3, RowReadiness.Ready, false, TestName = "A Ready stage the votes also call Ready agrees")]
-        [TestCase(RefinementStage.Waiting, 3, RowReadiness.Ready, true, TestName = "A Waiting stage the votes call Ready disagrees")]
-        [TestCase(RefinementStage.BeingRefined, 3, RowReadiness.Ready, true, TestName = "A stage being refined the votes call Ready disagrees")]
-        [TestCase(RefinementStage.Waiting, 1, RowReadiness.MoreYesNeeded, false, TestName = "A Waiting stage the votes do not call Ready agrees")]
+        [TestCaseSource(nameof(StageAgainstVotes))]
         public void The_stage_and_the_votes_cast_disagree_only_about_being_Ready(RefinementStage? stage, int voteCount, RowReadiness readiness, bool disagree)
         {
             var votes = new RowVotes(voteCount, null, new VoteSplit(voteCount, 0, 0));
 
             Assert.That(RefinementResolution.SignalsDisagree(stage, votes, new RowStanding(readiness, null)), Is.EqualTo(disagree));
+        }
+
+        // Every stage against every reading of the votes, once with nobody voting and once with votes cast. The
+        // expected answer is written out by hand for each pair so the table cannot agree with itself.
+        private static IEnumerable<TestCaseData> StageAgainstVotes()
+        {
+            var disagreeOnceVoted = new (RefinementStage? Stage, RowReadiness Readiness, bool Disagree)[]
+            {
+                (null, RowReadiness.Ready, false),
+                (null, RowReadiness.MoreYesNeeded, false),
+                (null, RowReadiness.MoreVotersNeeded, false),
+                (null, RowReadiness.NeedsDiscussion, false),
+                (RefinementStage.Waiting, RowReadiness.Ready, true),
+                (RefinementStage.Waiting, RowReadiness.MoreYesNeeded, false),
+                (RefinementStage.Waiting, RowReadiness.MoreVotersNeeded, false),
+                (RefinementStage.Waiting, RowReadiness.NeedsDiscussion, false),
+                (RefinementStage.BeingRefined, RowReadiness.Ready, true),
+                (RefinementStage.BeingRefined, RowReadiness.MoreYesNeeded, false),
+                (RefinementStage.BeingRefined, RowReadiness.MoreVotersNeeded, false),
+                (RefinementStage.BeingRefined, RowReadiness.NeedsDiscussion, false),
+                (RefinementStage.Ready, RowReadiness.Ready, false),
+                (RefinementStage.Ready, RowReadiness.MoreYesNeeded, true),
+                (RefinementStage.Ready, RowReadiness.MoreVotersNeeded, true),
+                (RefinementStage.Ready, RowReadiness.NeedsDiscussion, true),
+            };
+
+            foreach (var (stage, readiness, disagree) in disagreeOnceVoted)
+            {
+                var stageName = stage?.ToString() ?? "No";
+                yield return new TestCaseData(stage, 0, readiness, false)
+                    .SetName($"{stageName} stage, votes read {readiness}, nobody voted: no disagreement");
+                yield return new TestCaseData(stage, 1, readiness, disagree)
+                    .SetName($"{stageName} stage, votes read {readiness}, votes cast: disagree is {disagree}");
+            }
         }
 
         [TestCase(false, 0, 0, 0, 0, ReadySource.Votes, TestName = "Without stage rules and no Ready votes nothing is Ready")]
