@@ -1,6 +1,8 @@
-import { screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IRefinementRow } from "../../../../models/Refinement/Refinement";
+import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
+import { ApiError } from "../../../../services/Api/ApiError";
 import {
 	aBrowserThatVotedBefore,
 	aRow,
@@ -9,6 +11,7 @@ import {
 	GRAVITY_TEAM_ID,
 	gravitysRefinement,
 	openTheVotesAndCommentsOf,
+	REFINEMENT_KEY,
 	renderTheRefinementTab,
 	theButton,
 	theRowOf,
@@ -62,6 +65,8 @@ const theRowAfter = (
 ): IRefinementRow =>
 	aRow(referenceId, "Configuration management", "Backlog", votes);
 
+const A_HEX_KEY = /^[\da-f]{64}$/;
+
 const theNamePrompt = () =>
 	screen.findByRole("dialog", { name: "Who is voting?" });
 
@@ -73,6 +78,21 @@ const closeTheVotesAndComments = async (
 	await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 };
 
+const voteUnderTheName = async (
+	user: ReturnType<typeof renderTheRefinementTab>["user"],
+	referenceId: string,
+	answer: string,
+	name: string,
+) => {
+	await user.click(theButton(await theRowOf(referenceId), answer));
+	const prompt = await theNamePrompt();
+	await user.type(
+		within(prompt).getByRole("textbox", { name: "Your name" }),
+		name,
+	);
+	await user.click(within(prompt).getByRole("button", { name: "Vote" }));
+};
+
 describe("A voter casts a sizing vote from the list", () => {
 	beforeEach(() => {
 		localStorage.clear();
@@ -82,6 +102,10 @@ describe("A voter casts a sizing vote from the list", () => {
 			licenseStatus: { canUsePremiumFeatures: true },
 			isLoading: false,
 		});
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
 	});
 
 	// @us-11 @slice-11 @driving_port @contract-shape:pure-function
@@ -304,7 +328,7 @@ describe("A voter casts a sizing vote from the list", () => {
 			castVote: vi
 				.fn()
 				.mockRejectedValue(
-					new Error("Too many votes from this browser, try again in a minute"),
+					new ApiError(429, "Request failed with status code 429"),
 				),
 		});
 		const { user } = renderTheRefinementTab(
@@ -316,10 +340,228 @@ describe("A voter casts a sizing vote from the list", () => {
 		await user.click(theButton(row, "Yes"));
 
 		expect(await screen.findByRole("alert")).toHaveTextContent(
-			"Too many votes from this browser, try again in a minute",
+			"Too many votes from this browser. Try again in a minute.",
 		);
 		expect(row).toHaveTextContent("No votes");
 		expect(theButton(row, "Yes")).toHaveAttribute("aria-pressed", "false");
+	});
+
+	// @us-11 @slice-11 @error @contract-shape:unbounded-preservation
+	it.each([
+		{
+			why: "the work left refinement",
+			refusal: new ApiError(
+				409,
+				"Request failed with status code 409",
+				undefined,
+				undefined,
+				"work-item-not-in-refinement",
+			),
+			said: "This ticket is no longer in grooming.",
+		},
+		{
+			why: "the name is missing",
+			refusal: new ApiError(
+				400,
+				"Request failed with status code 400",
+				undefined,
+				undefined,
+				"voter-name-required",
+			),
+			said: "Please give your name (at most 100 characters).",
+		},
+		{
+			why: "the name is too long",
+			refusal: new ApiError(
+				400,
+				"Request failed with status code 400",
+				undefined,
+				undefined,
+				"voter-name-too-long",
+			),
+			said: "Please give your name (at most 100 characters).",
+		},
+		{
+			why: "the server failed for a reason of its own",
+			refusal: new ApiError(500, "The sizing log could not be written"),
+			said: "The sizing log could not be written",
+		},
+	])(
+		"says in plain words why a vote was refused when $why",
+		async ({ refusal, said }) => {
+			terms.current = {
+				...defaultRefinementTerms,
+				[TERMINOLOGY_KEYS.WORK_ITEM]: "Ticket",
+				[REFINEMENT_KEY]: "Grooming",
+			};
+			aBrowserThatVotedBefore(JONAS);
+			const sizingLogService = aSizingLogService({
+				castVote: vi.fn().mockRejectedValue(refusal),
+			});
+			const { user } = renderTheRefinementTab(
+				gravitysRefinement(),
+				sizingLogService,
+			);
+
+			await user.click(
+				theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
+			);
+
+			expect(await screen.findByRole("alert")).toHaveTextContent(said);
+		},
+	);
+
+	// @us-11 @slice-11 @error @contract-shape:bounded-change
+	it("mints the browser's key where the page is not served over a secure connection", async () => {
+		const realCrypto = globalThis.crypto;
+		vi.stubGlobal("crypto", {
+			getRandomValues: realCrypto.getRandomValues.bind(realCrypto),
+		});
+		const sizingLogService = aSizingLogService({
+			castVote: vi.fn().mockResolvedValue(
+				theRowAfter(CONFIGURATION_MANAGEMENT, {
+					voteCount: 1,
+					myVote: "Yes",
+				}),
+			),
+		});
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement(),
+			sizingLogService,
+		);
+
+		await voteUnderTheName(user, CONFIGURATION_MANAGEMENT, "Yes", JONAS);
+
+		await waitFor(() => expect(sizingLogService.castVote).toHaveBeenCalled());
+		expect(theStoredVoter()?.key).toMatch(A_HEX_KEY);
+	});
+
+	// @us-11 @slice-11 @error @contract-shape:bounded-change
+	it("still votes, and keeps the name for the page, when the browser refuses to store it", async () => {
+		const storage = localStorage;
+		vi.stubGlobal("localStorage", {
+			getItem: (key: string) => storage.getItem(key),
+			setItem: () => {
+				throw new DOMException("Storage is full", "QuotaExceededError");
+			},
+		});
+		const sizingLogService = aSizingLogService({
+			castVote: vi.fn().mockResolvedValue(
+				theRowAfter(CONFIGURATION_MANAGEMENT, {
+					voteCount: 1,
+					myVote: "Yes",
+				}),
+			),
+		});
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement(),
+			sizingLogService,
+		);
+
+		await voteUnderTheName(user, CONFIGURATION_MANAGEMENT, "Yes", JONAS);
+		await waitFor(() =>
+			expect(sizingLogService.castVote).toHaveBeenCalledTimes(1),
+		);
+		await user.click(theButton(await theRowOf(ADVANCED_REPORTING), "No"));
+
+		await waitFor(() =>
+			expect(sizingLogService.castVote).toHaveBeenCalledTimes(2),
+		);
+		expect(screen.queryByRole("dialog")).toBeNull();
+		const [first, second] = vi.mocked(sizingLogService.castVote).mock.calls;
+		expect(first[2]).toEqual({
+			answer: "Yes",
+			channel: "Web",
+			voterName: JONAS,
+		});
+		expect(second[2]).toEqual({
+			answer: "No",
+			channel: "Web",
+			voterName: JONAS,
+		});
+		expect(first[3]).toMatch(A_HEX_KEY);
+		expect(second[3]).toBe(first[3]);
+	});
+
+	// @us-11 @slice-11 @boundary @contract-shape:unbounded-preservation
+	it("takes a name of at most 100 characters", async () => {
+		const { user } = renderTheRefinementTab(gravitysRefinement());
+
+		await user.click(
+			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
+		);
+		const prompt = await theNamePrompt();
+		const name = within(prompt).getByRole("textbox", { name: "Your name" });
+		await user.type(name, "x".repeat(101));
+
+		expect(name).toHaveValue("x".repeat(100));
+		expect(within(prompt).getByRole("button", { name: "Vote" })).toBeEnabled();
+	});
+
+	// @us-11 @slice-11 @boundary @contract-shape:unbounded-preservation
+	it("will not save a name longer than 100 characters", async () => {
+		aBrowserThatVotedBefore("x".repeat(101));
+		const { user } = renderTheRefinementTab(gravitysRefinement());
+
+		const votes = await openTheVotesAndCommentsOf(
+			user,
+			CONFIGURATION_MANAGEMENT,
+		);
+		await user.click(
+			within(votes).getByRole("button", { name: "Change your name" }),
+		);
+		const prompt = await theNamePrompt();
+
+		expect(within(prompt).getByRole("button", { name: "Save" })).toBeDisabled();
+	});
+
+	// @us-11 @slice-11 @error @contract-shape:bounded-change
+	it("sends one vote at a time from a row, and offers the row's answers again once the server has answered", async () => {
+		aBrowserThatVotedBefore(JONAS);
+		let answer: (row: IRefinementRow) => void = () => {};
+		const sizingLogService = aSizingLogService({
+			castVote: vi.fn().mockImplementation(
+				() =>
+					new Promise<IRefinementRow>((resolve) => {
+						answer = resolve;
+					}),
+			),
+		});
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement(),
+			sizingLogService,
+		);
+
+		const row = await theRowOf(CONFIGURATION_MANAGEMENT);
+		await user.click(theButton(row, "Yes"));
+		fireEvent.click(theButton(row, "No"));
+
+		expect(sizingLogService.castVote).toHaveBeenCalledTimes(1);
+		for (const label of ["Yes", YES_IF, "No"]) {
+			expect(theButton(row, label)).toBeDisabled();
+		}
+		expect(theButton(await theRowOf(ADVANCED_REPORTING), "No")).toBeEnabled();
+
+		answer(
+			theRowAfter(CONFIGURATION_MANAGEMENT, { voteCount: 1, myVote: "Yes" }),
+		);
+
+		const answered = await theRowOf(CONFIGURATION_MANAGEMENT);
+		await waitFor(() => expect(theButton(answered, "No")).toBeEnabled());
+		expect(theButton(answered, "Yes")).toHaveAttribute("aria-pressed", "true");
+	});
+
+	// @us-11 @slice-11 @boundary @contract-shape:pure-function
+	it("names the Work Item each row's answers are for", async () => {
+		renderTheRefinementTab(gravitysRefinement());
+
+		const row = await theRowOf(CONFIGURATION_MANAGEMENT);
+
+		expect(
+			within(row).getByRole("group", {
+				name: `Your vote on ${CONFIGURATION_MANAGEMENT}`,
+			}),
+		).toBeInTheDocument();
 	});
 
 	// @us-11 @slice-11 @boundary @contract-shape:pure-function

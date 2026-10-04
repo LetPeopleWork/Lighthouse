@@ -23,11 +23,14 @@ export const useVoterIdentity = (voterIdentity: VoterIdentity | undefined) => {
 	const [voter, setVoter] = useState<IStoredVoter | null>(readStoredVoter);
 	const isAccount = voterIdentity === "Account";
 
-	const declareName = useCallback((name: string): IStoredVoter => {
-		const declared = rememberVoter(name.trim());
-		setVoter(declared);
-		return declared;
-	}, []);
+	const declareName = useCallback(
+		(name: string): IStoredVoter => {
+			const declared = rememberVoter(name.trim(), voter?.key ?? null);
+			setVoter(declared);
+			return declared;
+		},
+		[voter],
+	);
 
 	const ballotFor = useCallback(
 		(answer: SizingAnswer, declared: IStoredVoter | null): IVoterBallot => {

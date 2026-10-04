@@ -38,18 +38,32 @@ export const readStoredVoter = (): IStoredVoter | null => {
 
 export const readVoterKey = (): string | null => readStoredVoter()?.key ?? null;
 
+const VOTER_KEY_BYTES = 32;
+
+// getRandomValues, unlike randomUUID, also exists on a page served over plain HTTP, as a LAN install is.
 const aRandomVoterKey = (): string =>
-	`${globalThis.crypto.randomUUID()}${globalThis.crypto.randomUUID()}`.replaceAll(
-		"-",
-		"",
-	);
+	Array.from(
+		globalThis.crypto.getRandomValues(new Uint8Array(VOTER_KEY_BYTES)),
+		(byte) => byte.toString(16).padStart(2, "0"),
+	).join("");
 
 /**
  * Keeps the declared name, and the key this browser already holds - minting one the first time - so a
- * renamed voter's earlier votes stay theirs.
+ * renamed voter's earlier votes stay theirs. A browser that refuses to store it still gets the voter
+ * back, so the vote goes ahead and the caller can hold on to it for as long as the page is open.
  */
-export const rememberVoter = (name: string): IStoredVoter => {
-	const voter = { name, key: readVoterKey() ?? aRandomVoterKey() };
-	globalThis.localStorage.setItem(VOTER_STORAGE_KEY, JSON.stringify(voter));
+export const rememberVoter = (
+	name: string,
+	keyHeldByThePage: string | null = null,
+): IStoredVoter => {
+	const voter = {
+		name,
+		key: readVoterKey() ?? keyHeldByThePage ?? aRandomVoterKey(),
+	};
+	try {
+		globalThis.localStorage.setItem(VOTER_STORAGE_KEY, JSON.stringify(voter));
+	} catch {
+		// Private browsing or a full storage: the name lasts only as long as this page.
+	}
 	return voter;
 };

@@ -9,19 +9,24 @@ const ANSWERS: { answer: SizingAnswer; label: string }[] = [
 ];
 
 interface VoteControlProps {
+	referenceId: string;
 	myVote: SizingAnswer | null;
+	isSending: boolean;
 	onVote: (answer: SizingAnswer) => void;
 }
 
 const VoteControl: React.FC<Readonly<VoteControlProps>> = ({
+	referenceId,
 	myVote,
+	isSending,
 	onVote,
 }) => (
 	<ToggleButtonGroup
 		size="small"
 		exclusive
 		value={myVote}
-		aria-label="Your vote"
+		disabled={isSending}
+		aria-label={`Your vote on ${referenceId}`}
 		onChange={(_event, answer: SizingAnswer | null) => {
 			if (answer !== null) {
 				onVote(answer);

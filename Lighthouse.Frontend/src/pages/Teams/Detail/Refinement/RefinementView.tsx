@@ -20,6 +20,7 @@ import {
 import { useVoteCasting } from "./useVoteCasting";
 import VoterNamePrompt from "./VoterNamePrompt";
 import VotesAndCommentsDialog from "./VotesAndCommentsDialog";
+import { describeVoteRefusal } from "./voteWording";
 import YardstickQuestion from "./YardstickQuestion";
 
 const NO_ROWS: IRefinementRow[] = [];
@@ -80,12 +81,13 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 		);
 	}, []);
 
-	const { onVote, isAskingForName, voteUnderName, cancelVote } = useVoteCasting(
-		team.id,
-		voterIdentity,
-		showAnsweredRow,
-		showFailure,
+	const showVoteRefusal = useCallback(
+		(error: unknown) => showError(describeVoteRefusal(error, getTerm)),
+		[showError, getTerm],
 	);
+
+	const { onVote, votesBeingSent, isAskingForName, voteUnderName, cancelVote } =
+		useVoteCasting(team.id, voterIdentity, showAnsweredRow, showVoteRefusal);
 
 	const changeNameTo = (name: string) => {
 		declareName(name);
@@ -108,9 +110,10 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 				workItemTerm,
 				parentMap,
 				onVote,
+				votesBeingSent,
 				setVotesShownFor,
 			),
-		[workItemTerm, parentMap, onVote],
+		[workItemTerm, parentMap, onVote, votesBeingSent],
 	);
 
 	if (refinement === null) {

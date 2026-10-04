@@ -15,6 +15,7 @@ export const createRefinementColumns = (
 	workItemTerm: string,
 	parentMap: Map<string, ParentWorkItem>,
 	onVote: (vote: IPendingVote) => void,
+	votesBeingSent: ReadonlySet<string>,
 	onOpenVotes: (referenceId: string) => void,
 ): DataGridColumn<RefinementGridRow>[] => [
 	createNameColumn<RefinementGridRow>(workItemTerm),
@@ -42,7 +43,9 @@ export const createRefinementColumns = (
 		sortable: false,
 		renderCell: ({ row }) => (
 			<VoteControl
+				referenceId={row.referenceId}
 				myVote={row.myVote ?? null}
+				isSending={votesBeingSent.has(row.referenceId)}
 				onVote={(answer) => onVote({ referenceId: row.referenceId, answer })}
 			/>
 		),

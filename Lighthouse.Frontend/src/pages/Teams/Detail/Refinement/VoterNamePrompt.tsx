@@ -9,6 +9,8 @@ import {
 import type React from "react";
 import { useState } from "react";
 
+export const LONGEST_VOTER_NAME = 100;
+
 interface VoterNamePromptProps {
 	initialName?: string;
 	confirmLabel: "Vote" | "Save";
@@ -24,7 +26,8 @@ const VoterNamePrompt: React.FC<Readonly<VoterNamePromptProps>> = ({
 	onConfirm,
 }) => {
 	const [name, setName] = useState(initialName);
-	const isBlank = name.trim() === "";
+	const trimmed = name.trim();
+	const isUsable = trimmed !== "" && trimmed.length <= LONGEST_VOTER_NAME;
 
 	return (
 		<Dialog open onClose={onCancel} maxWidth="xs" fullWidth>
@@ -35,6 +38,7 @@ const VoterNamePrompt: React.FC<Readonly<VoterNamePromptProps>> = ({
 					value={name}
 					onChange={(event) => setName(event.target.value)}
 					helperText="Kept in this browser only."
+					slotProps={{ htmlInput: { maxLength: LONGEST_VOTER_NAME } }}
 					fullWidth
 					autoFocus
 					margin="dense"
@@ -44,7 +48,7 @@ const VoterNamePrompt: React.FC<Readonly<VoterNamePromptProps>> = ({
 				<Button onClick={onCancel}>Cancel</Button>
 				<Button
 					variant="contained"
-					disabled={isBlank}
+					disabled={!isUsable}
 					onClick={() => onConfirm(name)}
 				>
 					{confirmLabel}
