@@ -48,7 +48,8 @@ namespace Lighthouse.Backend.API
 
             return outcome switch
             {
-                VoteOutcome.Recorded => RowAsItNowStands(teamId, workItemReference, voterKey),
+                VoteOutcome.Recorded => RowAsItNowStands(teamId, workItemReference, voterKey, madeReady: false),
+                VoteOutcome.RecordedAndMadeReady => RowAsItNowStands(teamId, workItemReference, voterKey, madeReady: true),
                 VoteOutcome.TeamNotFound => NotFound(),
                 VoteOutcome.WorkItemNotInRefinement => Refused(StatusCodes.Status409Conflict, "That Work Item is not in refinement.", SizingRefusal.WorkItemNotInRefinement),
                 _ => throw new System.Diagnostics.UnreachableException($"No such vote outcome: {outcome}"),
@@ -90,12 +91,12 @@ namespace Lighthouse.Backend.API
             return new ObjectResult(problem) { StatusCode = statusCode };
         }
 
-        private ActionResult<RefinementRowDto> RowAsItNowStands(int teamId, string workItemId, string? voterKey)
+        private ActionResult<RefinementRowDto> RowAsItNowStands(int teamId, string workItemId, string? voterKey, bool madeReady)
         {
             var row = refinementViewQuery.ForTeam(teamId, voterKey)?.WorkItems
                 .FirstOrDefault(candidate => string.Equals(candidate.WorkItem.ReferenceId, workItemId, StringComparison.Ordinal));
 
-            return row is null ? NotFound() : Ok(new RefinementRowDto(row));
+            return row is null ? NotFound() : Ok(new VotedRowDto(row, madeReady));
         }
     }
 }

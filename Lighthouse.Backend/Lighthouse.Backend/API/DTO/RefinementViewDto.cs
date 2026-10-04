@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.API.DTO
         public int? Probability { get; } = yardstick.Probability;
     }
 
-    public sealed class RefinementRowDto(RefinementRow row)
+    public class RefinementRowDto(RefinementRow row)
     {
         public string ReferenceId { get; } = row.WorkItem.ReferenceId;
 
@@ -46,6 +46,12 @@ namespace Lighthouse.Backend.API.DTO
         public RowReadiness Readiness { get; } = row.Standing.Readiness;
 
         public int? MissingVotes { get; } = row.Standing.MissingVotes;
+    }
+
+    /// <summary>The row as a vote left it, and whether that vote is the one that made it Ready.</summary>
+    public sealed class VotedRowDto(RefinementRow row, bool madeReady) : RefinementRowDto(row)
+    {
+        public bool MadeReady { get; } = madeReady;
     }
 
     public sealed class VoteSplitDto(VoteSplit split)

@@ -1,7 +1,10 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
-import type { IRefinementRow } from "../../../../models/Refinement/Refinement";
+import type {
+	IRefinementRow,
+	IVotedRow,
+} from "../../../../models/Refinement/Refinement";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import type { ISizingLogService } from "../../../../services/Api/SizingLogService";
 import type { IStoredVoter } from "../../../../services/Refinement/voterStore";
@@ -14,7 +17,7 @@ vi.mock("../../../../services/UsageData/usageDataReporter", () => ({
 
 const JONAS: IStoredVoter = { name: "Jonas", key: "c".repeat(64) };
 
-const theRow: IRefinementRow = {
+const theRow: IVotedRow = {
 	referenceId: "GR-073",
 	name: "Configuration management",
 	url: null,
@@ -22,6 +25,7 @@ const theRow: IRefinementRow = {
 	parentReferenceId: "",
 	voteCount: 1,
 	myVote: "Yes",
+	madeReady: false,
 };
 
 const aVoterIdentity = (asksForName: boolean) => ({
@@ -60,7 +64,7 @@ const renderTheCasting = (
 	);
 	const hook = renderHook(
 		({ team }: { team: number }) =>
-			useVoteCasting(team, identity, () => undefined, vi.fn(), vi.fn()),
+			useVoteCasting(team, identity, vi.fn(), vi.fn()),
 		{ wrapper, initialProps: { team: teamId } },
 	);
 	return { ...hook, sizingLogService };
@@ -68,9 +72,9 @@ const renderTheCasting = (
 
 describe("casting a vote from the tab", () => {
 	it("sends a second vote on a row only once the first has been answered", async () => {
-		let answer: (row: IRefinementRow) => void = () => {};
+		let answer: (row: IVotedRow) => void = () => {};
 		const { result, sizingLogService } = renderTheCasting(
-			() => new Promise<IRefinementRow>((resolve) => (answer = resolve)),
+			() => new Promise<IVotedRow>((resolve) => (answer = resolve)),
 		);
 
 		act(() => {

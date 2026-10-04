@@ -293,6 +293,42 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowIsReadyAndTheTabCounts(await WhenPriyaOpensTheRefinementTab(gravity), ApiVersioning, readyByVotes: 1);
         }
 
+        // @driving_port @real-io @us-13 @slice-13 @kpi-OUT-5510-K5-ready-before-the-day @contract-shape:bounded-change
+        // Usage data counts a Work Item reaching Ready once, so only the vote that tipped it may say it did.
+        [Test]
+        public async Task Only_the_vote_that_makes_a_Work_Item_Ready_says_it_did()
+        {
+            var gravity = await GivenTheAdminChoseTwoYesFromTwoVotersAndNoDiscussionOnNo();
+            await HasVoted(Jonas, gravity, AdvancedReporting, Answer.Yes);
+
+            var tipping = await WhenTheVoteIsCast(Mo, gravity, AdvancedReporting, Answer.Yes);
+            var following = await WhenTheVoteIsCast(Ana, gravity, AdvancedReporting, Answer.Yes);
+
+            ThenOnlyTheFirstSaysItMadeTheWorkItemReady(tipping, following);
+        }
+
+        // @driving_port @real-io @us-13 @slice-13 @boundary @kpi-OUT-5510-K5-ready-before-the-day @contract-shape:unbounded-preservation
+        [Test]
+        public async Task A_vote_on_a_Work_Item_that_was_Ready_already_does_not_say_it_made_it_Ready()
+        {
+            var gravity = await GivenJonasAndMoSaidYesAndAnaSaidYesButOn(ConfigurationManagement);
+
+            var answer = await WhenTheVoteIsCast(Priya, gravity, ConfigurationManagement, Answer.Yes);
+
+            ThenTheVoteDidNotMakeItReady(answer);
+        }
+
+        // @driving_port @real-io @us-13 @slice-13 @boundary @kpi-OUT-5510-K5-ready-before-the-day @contract-shape:unbounded-preservation
+        [Test]
+        public async Task A_vote_that_leaves_a_Work_Item_short_does_not_say_it_made_it_Ready()
+        {
+            var gravity = await GivenOnlyJonasSaidYesOn(AdvancedReporting);
+
+            var answer = await WhenTheVoteIsCast(Mo, gravity, AdvancedReporting, Answer.Yes);
+
+            ThenTheVoteDidNotMakeItReady(answer);
+        }
+
         // @driving_port @real-io @us-13 @slice-13 @contract-shape:bounded-change
         [Test]
         public async Task Lowering_readiness_makes_a_Work_Item_Ready_on_the_next_read()

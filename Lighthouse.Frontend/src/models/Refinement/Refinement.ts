@@ -63,6 +63,11 @@ export interface IRefinementRow {
 	hasOpenQuestion?: boolean;
 }
 
+/** The row as a vote left it, and whether that vote is the one that moved it to Ready. */
+export interface IVotedRow extends IRefinementRow {
+	madeReady: boolean;
+}
+
 /** What the votes are cast against: the Team's SLE, a fallback from its cycle time, or nothing. */
 export type YardstickSource = "Sle" | "CycleTimeFallback" | "Unavailable";
 

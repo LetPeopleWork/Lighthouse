@@ -177,6 +177,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private async Task WhenAnaVotes(TeamUnderTest team, string workItem, Answer answer)
             => await HasVoted(Ana, team, workItem, answer);
 
+        private async Task<JsonElement> WhenTheVoteIsCast(Voter voter, TeamUnderTest team, string workItem, Answer answer)
+        {
+            using var response = await Votes(voter, team, workItem, answer);
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.That(response.IsSuccessStatusCode, Is.True, $"{voter.Name}'s {answer} on {workItem} was not accepted: {(int)response.StatusCode} {body}");
+
+            using var document = JsonDocument.Parse(body);
+            return document.RootElement.Clone();
+        }
+
         // --- Then ---
 
         private static void ThenTheReadinessIs(JsonElement settings, int minYes, int minVoters, DiscussWhen discussWhen)
@@ -201,6 +211,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 Assert.That(WorkItemsStoredFor(team), Is.EqualTo(heldBefore));
             }
         }
+
+        private static void ThenOnlyTheFirstSaysItMadeTheWorkItemReady(JsonElement tipping, JsonElement following)
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(FlagOf(tipping, "madeReady"), Is.True, $"the vote that made the Work Item Ready must say so. Body: {tipping}");
+                Assert.That(FlagOf(following, "madeReady"), Is.False, $"a vote after the Work Item was Ready must not say it made it Ready. Body: {following}");
+            }
+        }
+
+        private static void ThenTheVoteDidNotMakeItReady(JsonElement answer)
+            => Assert.That(FlagOf(answer, "madeReady"), Is.False, $"this vote did not make the Work Item Ready. Body: {answer}");
 
         private static void ThenTheRowIsReadyAndTheTabCounts(JsonElement tab, string workItem, int readyByVotes)
         {

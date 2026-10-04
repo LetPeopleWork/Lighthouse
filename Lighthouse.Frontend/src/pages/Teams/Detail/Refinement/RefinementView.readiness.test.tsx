@@ -2,7 +2,7 @@ import { screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
 	IRefinementRow,
-	RowReadiness,
+	IVotedRow,
 } from "../../../../models/Refinement/Refinement";
 import {
 	aBrowserThatVotedBefore,
@@ -14,14 +14,13 @@ import {
 	theButton,
 	theRowOf,
 } from "../../../../tests/RefinementTabTestKit";
-import { tipsToReady } from "./useVoteCasting";
 
 /**
  * What the votes make of each Work Item, as the Refinement tab says it: Ready, how many more Yes votes
  * or voters it needs, or that it needs discussion - shown to everybody, voted or not. The heading counts
  * the Work Items the votes have made Ready on the same line, so the tab still shows the heading and one
- * line above the list. The vote that tips a Work Item to Ready is reported to usage data from the
- * browser that cast it.
+ * line above the list. The vote the server says tipped a Work Item to Ready is reported to usage data
+ * from the browser that cast it.
  */
 
 const { terms, mockUseLicenseRestrictions, reporter } = vi.hoisted(() => ({
@@ -57,7 +56,7 @@ const configurationManagement = (votes: Partial<IRefinementRow>) =>
 const castingTurnsItInto = async (
 	answerLabel: string,
 	before: Partial<IRefinementRow>,
-	after: Partial<IRefinementRow>,
+	after: Partial<IVotedRow>,
 	readyByVotesCount = 0,
 ) => {
 	aBrowserThatVotedBefore("Jonas Weber");
@@ -87,7 +86,7 @@ const castingTurnsItInto = async (
 
 const castingYesTurnsItInto = (
 	before: Partial<IRefinementRow>,
-	after: Partial<IRefinementRow>,
+	after: Partial<IVotedRow>,
 ) => castingTurnsItInto("Yes", before, after);
 
 describe("The Refinement tab says what the votes make of each Work Item", () => {
@@ -226,10 +225,16 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 	});
 
 	// @us-13 @slice-13 @kpi-OUT-5510-K5-ready-before-the-day @contract-shape:bounded-change
-	it("reports the vote that makes a Work Item Ready to usage data", async () => {
+	it("reports the vote the server says made a Work Item Ready to usage data", async () => {
 		await castingYesTurnsItInto(
 			{ voteCount: 2, readiness: "MoreYesNeeded", missingVotes: 1 },
-			{ voteCount: 3, myVote: "Yes", readiness: "Ready", missingVotes: null },
+			{
+				voteCount: 3,
+				myVote: "Yes",
+				readiness: "Ready",
+				missingVotes: null,
+				madeReady: true,
+			},
 		);
 
 		expect(reporter.current).toHaveBeenCalledWith({
@@ -242,7 +247,31 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 	it("reports no readiness for a vote on a Work Item that was Ready already", async () => {
 		await castingYesTurnsItInto(
 			{ voteCount: 3, readiness: "Ready", missingVotes: null },
-			{ voteCount: 4, myVote: "Yes", readiness: "Ready", missingVotes: null },
+			{
+				voteCount: 4,
+				myVote: "Yes",
+				readiness: "Ready",
+				missingVotes: null,
+				madeReady: false,
+			},
+		);
+
+		expect(reporter.current).not.toHaveBeenCalledWith(
+			expect.objectContaining({ name: READINESS_REACHED }),
+		);
+	});
+
+	// @us-13 @slice-13 @boundary @kpi-OUT-5510-K5-ready-before-the-day @contract-shape:unbounded-preservation
+	it("reports no readiness when the server says another vote made the Work Item Ready", async () => {
+		await castingYesTurnsItInto(
+			{ voteCount: 2, readiness: "MoreYesNeeded", missingVotes: 1 },
+			{
+				voteCount: 4,
+				myVote: "Yes",
+				readiness: "Ready",
+				missingVotes: null,
+				madeReady: false,
+			},
 		);
 
 		expect(reporter.current).not.toHaveBeenCalledWith(
@@ -259,6 +288,7 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 				myVote: "Yes",
 				readiness: "MoreYesNeeded",
 				missingVotes: 2,
+				madeReady: false,
 			},
 		);
 
@@ -266,34 +296,4 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 			expect.objectContaining({ name: READINESS_REACHED }),
 		);
 	});
-});
-
-const READINESSES: RowReadiness[] = [
-	"Ready",
-	"MoreYesNeeded",
-	"MoreVotersNeeded",
-	"NeedsDiscussion",
-];
-
-const TIPPING_PAIRS = [
-	"MoreYesNeeded -> Ready",
-	"MoreVotersNeeded -> Ready",
-	"NeedsDiscussion -> Ready",
-];
-
-describe("A vote makes a Work Item Ready only when it was not Ready before", () => {
-	it.each(
-		READINESSES.flatMap((before) =>
-			READINESSES.map((after) => ({
-				before,
-				after,
-				reported: TIPPING_PAIRS.includes(`${before} -> ${after}`),
-			})),
-		),
-	)(
-		"$before -> $after reports readiness: $reported",
-		({ before, after, reported }) => {
-			expect(tipsToReady(before, after)).toBe(reported);
-		},
-	);
 });

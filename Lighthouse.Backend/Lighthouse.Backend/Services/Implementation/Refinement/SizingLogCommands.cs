@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             // something against the number it was cast against.
             var yardstick = yardstickResolver.For(team);
 
-            sizingLog.Append(new SizingLogEntry
+            var entry = new SizingLogEntry
             {
                 TeamId = team.Id,
                 WorkItemReferenceId = workItemReference,
@@ -48,9 +48,16 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 YardstickDays = yardstick.Days,
                 YardstickSource = yardstick.Source,
                 YardstickProbability = yardstick.Probability,
-            });
+            };
+            sizingLog.Append(entry);
 
-            return VoteOutcome.Recorded;
+            return MadeReady(team, entry) ? VoteOutcome.RecordedAndMadeReady : VoteOutcome.Recorded;
+        }
+
+        private bool MadeReady(Team team, SizingLogEntry entry)
+        {
+            var log = sizingLog.ReadForTeam(team.Id, [entry.WorkItemReferenceId]).ToList();
+            return RefinementResolution.MadeReady(log, entry, team.RefinementSettings?.Readiness ?? new ReadinessSetting());
         }
     }
 }

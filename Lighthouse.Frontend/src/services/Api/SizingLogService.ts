@@ -4,6 +4,7 @@ import type {
 	ISizingComment,
 	ISizingLog,
 	ISizingVote,
+	IVotedRow,
 } from "../../models/Refinement/Refinement";
 import { BaseApiService } from "./BaseApiService";
 
@@ -31,7 +32,7 @@ export interface ISizingLogService {
 		workItemReference: string,
 		vote: ISizingVote,
 		voterKey: string | null,
-	): Promise<IRefinementRow>;
+	): Promise<IVotedRow>;
 	addComment(
 		teamId: number,
 		workItemReference: string,
@@ -59,9 +60,9 @@ export class SizingLogService
 		workItemReference: string,
 		vote: ISizingVote,
 		voterKey: string | null,
-	): Promise<IRefinementRow> {
+	): Promise<IVotedRow> {
 		return this.withErrorHandling(async () => {
-			const response = await this.apiService.post<IRefinementRow>(
+			const response = await this.apiService.post<IVotedRow>(
 				`${workItemAddress(teamId, workItemReference)}/votes`,
 				vote,
 				withVoterKey(voterKey),

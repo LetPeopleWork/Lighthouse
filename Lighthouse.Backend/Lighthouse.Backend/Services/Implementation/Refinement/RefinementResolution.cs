@@ -40,6 +40,18 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             return missingVoters > 0 ? new RowStanding(RowReadiness.MoreVotersNeeded, missingVoters) : RowStanding.Ready;
         }
 
+        /// <summary>
+        /// Whether this entry moved the Work Item to Ready, judged on the log as it stood just before the entry
+        /// and just after it. Each step to Ready therefore belongs to exactly one entry, however many readers
+        /// were looking at an older picture of the row when they voted.
+        /// </summary>
+        public static bool MadeReady(IReadOnlyCollection<SizingLogEntry> log, SizingLogEntry entry, ReadinessSetting readiness)
+            => !IsReady(log.Where(earlier => earlier.Id < entry.Id), readiness)
+                && IsReady(log.Where(upTo => upTo.Id <= entry.Id), readiness);
+
+        private static bool IsReady(IEnumerable<SizingLogEntry> entries, ReadinessSetting readiness)
+            => StandingOf(SplitOf(CurrentVotes(entries)), readiness).Readiness == RowReadiness.Ready;
+
         // A rule that is off has no threshold, and a comparison with a missing threshold is never true.
         private static bool NeedsDiscussion(VoteSplit split, DiscussionRules rules)
             => split.No >= rules.No || split.YesBut >= rules.YesIf;

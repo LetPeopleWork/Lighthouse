@@ -18,5 +18,6 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
         Recorded,
         TeamNotFound,
         WorkItemNotInRefinement,
+        RecordedAndMadeReady,
     }
 }
