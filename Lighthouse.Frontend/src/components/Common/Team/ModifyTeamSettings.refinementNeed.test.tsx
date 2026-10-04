@@ -432,7 +432,7 @@ describe("The Refinement cadence in the Refinement section of a Team's settings"
 	});
 
 	// @us-04 @slice-04 @driving_port @contract-shape:bounded-change
-	it.skip("asks for the starting week once Refinements are more than a week apart, and saves it", async () => {
+	it("asks for the starting week once Refinements are more than a week apart, and saves it", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
 				cadence: { weekdays: ["Tuesday"], intervalWeeks: 1, anchorWeek: null },
@@ -454,7 +454,7 @@ describe("The Refinement cadence in the Refinement section of a Team's settings"
 	});
 
 	// @us-04 @slice-04 @error @contract-shape:unbounded-preservation
-	it.skip("saves nothing while every second week names no starting week, and marks the field", async () => {
+	it("saves nothing while every second week names no starting week, and marks the field", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
 				cadence: { weekdays: ["Tuesday"], intervalWeeks: 1, anchorWeek: null },
@@ -472,7 +472,7 @@ describe("The Refinement cadence in the Refinement section of a Team's settings"
 	});
 
 	// @us-04 @slice-04 @error @contract-shape:unbounded-preservation
-	it.skip("saves nothing for fewer than one week between Refinements", async () => {
+	it("saves nothing for fewer than one week between Refinements", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
 				cadence: { weekdays: ["Thursday"], intervalWeeks: 1, anchorWeek: null },

@@ -98,6 +98,26 @@ const isAtLeastOne = (votes: number): boolean =>
 // A cleared number field holds NaN, which the input shows as empty rather than as "NaN".
 const shownNumber = (value: number) => (Number.isNaN(value) ? "" : value);
 
+interface CadenceErrors {
+	intervalWeeks: boolean;
+	anchorWeek: boolean;
+}
+
+// Refinements less often than weekly need a week to count from, or the server cannot tell which weeks they fall in.
+export const cadenceErrors = (
+	cadence: IRefinementCadenceSetting,
+): CadenceErrors => {
+	const everyFewWeeks = isAtLeastOne(cadence.intervalWeeks);
+	return {
+		intervalWeeks: !everyFewWeeks,
+		anchorWeek:
+			everyFewWeeks && cadence.intervalWeeks > 1 && !cadence.anchorWeek,
+	};
+};
+
+export const hasCadenceErrors = (cadence: IRefinementCadenceSetting): boolean =>
+	Object.values(cadenceErrors(cadence)).some(Boolean);
+
 const discussionRuleError = (threshold: number | null) =>
 	threshold === null || isAtLeastOne(threshold) ? null : DISCUSSION_RULE_ERROR;
 
@@ -281,10 +301,12 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 	};
 
 	const shownCadence = cadence ?? NO_CADENCE;
-	const changeCadence = (weekdays: DayOfWeek[], intervalWeeks: number) =>
-		onCadenceChange(
-			cadenceOf(weekdays, intervalWeeks, shownCadence.anchorWeek ?? null),
-		);
+	const changeCadence = (
+		weekdays: DayOfWeek[],
+		intervalWeeks: number,
+		anchorWeek = shownCadence.anchorWeek ?? null,
+	) => onCadenceChange(cadenceOf(weekdays, intervalWeeks, anchorWeek));
+	const cadenceError = cadenceErrors(shownCadence);
 	const toggleWeekday = (day: DayOfWeek) =>
 		changeCadence(
 			shownCadence.weekdays.includes(day)
@@ -358,9 +380,36 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 					intervalWeeks={shownCadence.intervalWeeks}
 					onToggleWeekday={toggleWeekday}
 					onIntervalWeeksChange={(intervalWeeks) =>
-						changeCadence(shownCadence.weekdays, intervalWeeks || 1)
+						changeCadence(shownCadence.weekdays, intervalWeeks)
+					}
+					intervalWeeksError={
+						cadenceError.intervalWeeks
+							? `${getTerm(TERMINOLOGY_KEYS.REFINEMENTS)} are at least one week apart.`
+							: null
 					}
 				/>
+				{shownCadence.intervalWeeks > 1 && (
+					<TextField
+						label="Starting week"
+						type="date"
+						fullWidth
+						value={shownCadence.anchorWeek ?? ""}
+						onChange={(event) =>
+							changeCadence(
+								shownCadence.weekdays,
+								shownCadence.intervalWeeks,
+								event.target.value || null,
+							)
+						}
+						error={cadenceError.anchorWeek}
+						helperText={
+							cadenceError.anchorWeek
+								? `Pick a day in the week of a ${refinementTerm} to count the weeks from.`
+								: null
+						}
+						slotProps={{ inputLabel: { shrink: true } }}
+					/>
+				)}
 			</Grid>
 		</InputGroup>
 	);

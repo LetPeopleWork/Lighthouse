@@ -33,6 +33,7 @@ import SaveStateIndicator from "../ValidationActions/SaveStateIndicator";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
 import RefinementSettingsSection, {
 	DEFAULT_READINESS,
+	hasCadenceErrors,
 	hasReadinessErrors,
 } from "./RefinementSettingsSection";
 import { hasIncompleteStageRule, NO_STAGE_RULES } from "./StageRulesSettings";
@@ -92,6 +93,12 @@ function teamAutoSaveBlockers(
 	}
 	if (hasIncompleteStageRule(s.refinement?.stageRules)) {
 		reasons.push("Complete the stage rules");
+	}
+	const cadence = s.refinement?.cadence;
+	if (cadence && hasCadenceErrors(cadence)) {
+		reasons.push(
+			`Complete the ${getTerm(TERMINOLOGY_KEYS.REFINEMENT)} cadence`,
+		);
 	}
 	if (isDefault) {
 		return reasons;

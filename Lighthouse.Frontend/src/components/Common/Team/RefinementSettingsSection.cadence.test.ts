@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DayOfWeek } from "../../../models/RecurringBlackoutRule";
-import { cadenceOf } from "./RefinementSettingsSection";
+import { cadenceErrors, cadenceOf } from "./RefinementSettingsSection";
 
 describe("What the Refinement cadence fields save as", () => {
 	it.each<{
@@ -59,5 +59,49 @@ describe("What the Refinement cadence fields save as", () => {
 		},
 	])("$case", ({ weekdays, intervalWeeks, anchorWeek, saved }) => {
 		expect(cadenceOf(weekdays, intervalWeeks, anchorWeek)).toEqual(saved);
+	});
+});
+
+describe("Which Refinement cadence fields are marked invalid", () => {
+	it.each<{
+		case: string;
+		intervalWeeks: number;
+		anchorWeek: string | null;
+		invalid: { intervalWeeks: boolean; anchorWeek: boolean };
+	}>([
+		{
+			case: "every week needs no starting week",
+			intervalWeeks: 1,
+			anchorWeek: null,
+			invalid: { intervalWeeks: false, anchorWeek: false },
+		},
+		{
+			case: "every second week with a starting week is complete",
+			intervalWeeks: 2,
+			anchorWeek: "2026-10-05",
+			invalid: { intervalWeeks: false, anchorWeek: false },
+		},
+		{
+			case: "every second week without a starting week marks the starting week",
+			intervalWeeks: 2,
+			anchorWeek: null,
+			invalid: { intervalWeeks: false, anchorWeek: true },
+		},
+		{
+			case: "fewer than one week apart marks the weeks",
+			intervalWeeks: 0,
+			anchorWeek: null,
+			invalid: { intervalWeeks: true, anchorWeek: false },
+		},
+		{
+			case: "an emptied number of weeks marks the weeks",
+			intervalWeeks: Number.NaN,
+			anchorWeek: "2026-10-05",
+			invalid: { intervalWeeks: true, anchorWeek: false },
+		},
+	])("$case", ({ intervalWeeks, anchorWeek, invalid }) => {
+		expect(
+			cadenceErrors({ weekdays: ["Tuesday"], intervalWeeks, anchorWeek }),
+		).toEqual(invalid);
 	});
 });

@@ -16,6 +16,8 @@ interface WeeklyRecurrenceFieldsProps {
 	onToggleWeekday: (day: DayOfWeek) => void;
 	/** Receives the typed number of weeks, NaN while the field is empty. */
 	onIntervalWeeksChange: (intervalWeeks: number) => void;
+	/** Marks the number of weeks invalid and says why underneath. */
+	intervalWeeksError?: string | null;
 	testIdPrefix?: string;
 }
 
@@ -27,6 +29,7 @@ const WeeklyRecurrenceFields: React.FC<WeeklyRecurrenceFieldsProps> = ({
 	intervalWeeks,
 	onToggleWeekday,
 	onIntervalWeeksChange,
+	intervalWeeksError = null,
 	testIdPrefix,
 }) => (
 	<>
@@ -48,10 +51,13 @@ const WeeklyRecurrenceFields: React.FC<WeeklyRecurrenceFieldsProps> = ({
 		<TextField
 			label="Repeat every (weeks)"
 			type="number"
-			value={intervalWeeks}
+			// A cleared number field holds NaN, which the input shows as empty rather than as "NaN".
+			value={Number.isNaN(intervalWeeks) ? "" : intervalWeeks}
 			onChange={(e) =>
 				onIntervalWeeksChange(Number.parseInt(e.target.value, 10))
 			}
+			error={intervalWeeksError !== null}
+			helperText={intervalWeeksError}
 			fullWidth
 			sx={{ mt: 2, mb: 2 }}
 			slotProps={{ htmlInput: { min: 1 } }}
