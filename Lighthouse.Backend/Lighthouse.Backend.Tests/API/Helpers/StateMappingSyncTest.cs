@@ -285,6 +285,46 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             Assert.That(result, Is.False);
         }
 
+        /// <summary>When the Team refines says nothing about which Work Items the Team fetches.</summary>
+        [TestCase(false)]
+        [TestCase(true)]
+        public void WorkItemRelatedSettingsChanged_CadenceChanged_ReturnsFalse(bool storedCadence)
+        {
+            var team = new Team
+            {
+                DataRetrievalValue = "project = X",
+                WorkTrackingSystemConnectionId = 1,
+                WorkItemTypes = ["Bug"],
+                ToDoStates = ["Backlog"],
+                DoingStates = ["Analysing"],
+                DoneStates = ["Closed"],
+                RefinementSettings = new RefinementSettings
+                {
+                    States = [new RefinementStateSetting { State = "Backlog" }],
+                    Cadence = storedCadence ? RefinementCadence.Of([DayOfWeek.Monday], 1, null) : null,
+                },
+            };
+
+            var dto = new TeamSettingDto
+            {
+                DataRetrievalValue = "project = X",
+                WorkTrackingSystemConnectionId = 1,
+                WorkItemTypes = ["Bug"],
+                ToDoStates = ["Backlog"],
+                DoingStates = ["Analysing"],
+                DoneStates = ["Closed"],
+                Refinement = new RefinementSettingsDto
+                {
+                    States = [new RefinementStateSettingDto { State = "Backlog" }],
+                    Cadence = new RefinementCadenceDto { Weekdays = [DayOfWeek.Thursday], IntervalWeeks = 2, AnchorWeek = new DateOnly(2026, 10, 5) },
+                },
+            };
+
+            var result = team.WorkItemRelatedSettingsChanged(dto);
+
+            Assert.That(result, Is.False);
+        }
+
         [Test]
         public void SyncTeamWithTeamSettings_StageRuleSentAsNull_RemovesOnlyThatRule()
         {

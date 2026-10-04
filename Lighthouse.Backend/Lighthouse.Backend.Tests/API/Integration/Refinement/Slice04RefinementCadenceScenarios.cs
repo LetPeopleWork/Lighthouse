@@ -23,7 +23,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-04 @slice-04 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice04)]
         public async Task A_Team_admin_sets_the_Refinement_cadence_and_it_reads_back()
         {
             var gravity = await GivenGravityRefinesWithoutACadence();
@@ -36,7 +35,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:bounded-change
         // A starting week can be named by any of its days; it is kept as the week, from its Monday.
         [Test]
-        [Ignore(PendingSlice04)]
         public async Task A_starting_week_named_by_any_of_its_days_is_kept_as_that_week()
         {
             var gravity = await GivenGravityRefinesWithoutACadence();
@@ -48,7 +46,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice04)]
         public async Task The_same_weekday_named_twice_is_one_Refinement_day()
         {
             var gravity = await GivenGravityRefinesWithoutACadence();
@@ -101,7 +98,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // An older settings form knows nothing about the cadence; its saves must not remove it.
         [TestCase(SaveShape.WithoutTheRefinementSection)]
         [TestCase(SaveShape.RefinementSectionWithoutTheMember)]
-        [Ignore(PendingSlice04)]
         public async Task A_save_that_says_nothing_about_the_cadence_keeps_it(SaveShape shape)
         {
             var gravity = await GivenGravityRefinesOnThursdaysEveryWeek();
@@ -126,7 +122,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:bounded-change
         // The cadence is a refinement setting; it never makes the Team fetch its Work Items afresh.
         [Test]
-        [Ignore(PendingSlice04)]
         public async Task Setting_the_cadence_keeps_every_Work_Item_the_Team_holds()
         {
             var gravity = await GivenGravityRefinesWithoutACadence();

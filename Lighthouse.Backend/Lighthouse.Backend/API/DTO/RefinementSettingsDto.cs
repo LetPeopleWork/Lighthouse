@@ -16,6 +16,7 @@ namespace Lighthouse.Backend.API.DTO
                 .ToList();
             Readiness = new ReadinessSettingDto(settings.Readiness);
             StageRules = new StageRulesDto(settings.StageRules);
+            Cadence = settings.Cadence is null ? null : new RefinementCadenceDto(settings.Cadence);
         }
 
         public List<RefinementStateSettingDto> States { get; set; } = [];
@@ -25,6 +26,31 @@ namespace Lighthouse.Backend.API.DTO
 
         /// <summary>Null on a save leaves the stage rules the Team already has.</summary>
         public StageRulesDto? StageRules { get; set; }
+
+        /// <summary>Null on a save leaves the cadence the Team already has.</summary>
+        public RefinementCadenceDto? Cadence { get; set; }
+    }
+
+    public class RefinementCadenceDto
+    {
+        public RefinementCadenceDto()
+        {
+        }
+
+        public RefinementCadenceDto(RefinementCadence cadence)
+        {
+            Weekdays = [.. cadence.Weekdays];
+            IntervalWeeks = cadence.IntervalWeeks;
+            AnchorWeek = cadence.AnchorWeek;
+        }
+
+        public List<DayOfWeek> Weekdays { get; set; } = [];
+
+        public int IntervalWeeks { get; set; } = 1;
+
+        public DateOnly? AnchorWeek { get; set; }
+
+        public RefinementCadence ToCadence() => RefinementCadence.Of(Weekdays, IntervalWeeks, AnchorWeek);
     }
 
     /// <summary>A rule sent as null removes it, while a rule left out of the save keeps the stored one.</summary>

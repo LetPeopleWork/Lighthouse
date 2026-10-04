@@ -14,6 +14,35 @@ namespace Lighthouse.Backend.Models.Refinement
         public ReadinessSetting Readiness { get; set; } = new();
 
         public StageRules StageRules { get; set; } = new();
+
+        /// <summary>When the Team refines; null for a Team that has not said.</summary>
+        public RefinementCadence? Cadence { get; set; }
+    }
+
+    /// <summary>
+    /// The weekdays a Team refines on, every so many weeks counted from the week of <see cref="AnchorWeek"/>.
+    /// Built through <see cref="Of"/> so one cadence always has one stored form: each weekday once, Monday
+    /// first, and the starting week kept as its Monday whichever of its days was named.
+    /// </summary>
+    public class RefinementCadence
+    {
+        public List<DayOfWeek> Weekdays { get; set; } = [];
+
+        public int IntervalWeeks { get; set; } = 1;
+
+        public DateOnly? AnchorWeek { get; set; }
+
+        public static RefinementCadence Of(IEnumerable<DayOfWeek> weekdays, int intervalWeeks, DateOnly? anchorWeek)
+        {
+            return new RefinementCadence
+            {
+                Weekdays = [.. weekdays.Distinct().OrderBy(DaysFromMonday)],
+                IntervalWeeks = intervalWeeks,
+                AnchorWeek = anchorWeek?.AddDays(-DaysFromMonday(anchorWeek.Value.DayOfWeek)),
+            };
+        }
+
+        private static int DaysFromMonday(DayOfWeek day) => ((int)day + 6) % 7;
     }
 
     /// <summary>

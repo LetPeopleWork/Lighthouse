@@ -139,6 +139,7 @@ namespace Lighthouse.Backend.API.Helpers
                 .ToList();
             SyncReadiness(settings, teamSetting.Refinement?.Readiness);
             SyncStageRules(settings, teamSetting.Refinement?.StageRules);
+            SyncCadence(settings, teamSetting.Refinement?.Cadence);
 
             team.RefinementSettings = settings;
         }
@@ -161,6 +162,16 @@ namespace Lighthouse.Backend.API.Helpers
             }
 
             settings.StageRules = stageRules.AppliedTo(settings.StageRules);
+        }
+
+        private static void SyncCadence(RefinementSettings settings, RefinementCadenceDto? cadence)
+        {
+            if (cadence is null)
+            {
+                return;
+            }
+
+            settings.Cadence = cadence.ToCadence();
         }
 
         private static List<string> TrimListEntries(List<string> list)

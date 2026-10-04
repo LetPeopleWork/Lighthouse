@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Lighthouse.Backend.Models.Refinement;
 
@@ -12,6 +13,8 @@ namespace Lighthouse.Backend.Tests.Models.Refinement
         private static readonly JsonSerializerOptions StoredJson = new(JsonSerializerDefaults.General);
 
         private static readonly string[] OnlyBacklog = ["Backlog"];
+
+        private static readonly DayOfWeek[] TuesdayAndThursday = [DayOfWeek.Tuesday, DayOfWeek.Thursday];
 
         [Test]
         public void A_value_stored_before_readiness_existed_reads_three_Yes_from_three_voters_and_both_discussion_rules_on()
@@ -48,6 +51,31 @@ namespace Lighthouse.Backend.Tests.Models.Refinement
             var read = JsonSerializer.Deserialize<RefinementSettings>(JsonSerializer.Serialize(stored, StoredJson), StoredJson)!;
 
             Assert.That(ReadinessOf(read), Is.EqualTo((2, 4, no, yesIf)));
+        }
+
+        [Test]
+        public void A_value_stored_before_the_cadence_existed_reads_as_a_Team_without_a_cadence()
+        {
+            var settings = JsonSerializer.Deserialize<RefinementSettings>("""{"States":[{"State":"Backlog","Stage":0}]}""", StoredJson)!;
+
+            Assert.That(settings.Cadence, Is.Null);
+        }
+
+        [TestCase(null)]
+        [TestCase("2026-10-05")]
+        public void A_cadence_round_trips(string? anchorWeek)
+        {
+            var anchor = anchorWeek is null ? (DateOnly?)null : DateOnly.Parse(anchorWeek, CultureInfo.InvariantCulture);
+            var stored = new RefinementSettings { Cadence = RefinementCadence.Of(TuesdayAndThursday, 2, anchor) };
+
+            var read = JsonSerializer.Deserialize<RefinementSettings>(JsonSerializer.Serialize(stored, StoredJson), StoredJson)!;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(read.Cadence?.Weekdays, Is.EqualTo(TuesdayAndThursday));
+                Assert.That(read.Cadence?.IntervalWeeks, Is.EqualTo(2));
+                Assert.That(read.Cadence?.AnchorWeek, Is.EqualTo(anchor));
+            }
         }
 
         private static (int MinYes, int MinVoters, int? No, int? YesIf) ReadinessOf(RefinementSettings settings)
