@@ -59,12 +59,14 @@ const CONFIGURATION_MANAGEMENT = "GR-073";
 const refiningOnThursdayTheEighth = (isRefinementDay = false) =>
 	gravitysRefinement({
 		nextRefinementDate: THURSDAY_THE_EIGHTH,
+		daysUntilNextRefinement: 4,
 		isRefinementDay,
 	});
 
 const withoutACadence = () =>
 	gravitysRefinement({
 		nextRefinementDate: null,
+		daysUntilNextRefinement: null,
 		isRefinementDay: false,
 		need: noNeedBecause("NoCadence"),
 	});
@@ -129,11 +131,48 @@ describe("The Refinement tab names the next Refinement", () => {
 	// @us-04 @slice-04 @boundary @contract-shape:pure-function
 	it("says tomorrow when the next Refinement is one day away", async () => {
 		vi.setSystemTime(new Date(2026, 9, 7, 9, 0, 0));
-		renderTheRefinementTab(refiningOnThursdayTheEighth());
+		renderTheRefinementTab(
+			gravitysRefinement({
+				nextRefinementDate: THURSDAY_THE_EIGHTH,
+				daysUntilNextRefinement: 1,
+			}),
+		);
 
 		expect(
 			await screen.findByText(/^Next Refinement: Thu 8 Oct · tomorrow$/),
 		).toBeVisible();
+	});
+
+	// @us-04 @slice-04 @boundary @contract-shape:pure-function
+	// The server counts from the instance's today, which in another time zone is not the viewer's.
+	it("counts the days the server counted, not the days the browser's clock would count", async () => {
+		vi.setSystemTime(new Date(2026, 9, 7, 9, 0, 0));
+		renderTheRefinementTab(
+			gravitysRefinement({
+				nextRefinementDate: THURSDAY_THE_EIGHTH,
+				daysUntilNextRefinement: 2,
+			}),
+		);
+
+		expect(
+			await screen.findByText(/^Next Refinement: Thu 8 Oct · in 2 days$/),
+		).toBeVisible();
+	});
+
+	// @us-04 @slice-04 @boundary @contract-shape:pure-function
+	it("says tomorrow when the server counts one day even though the browser's clock is already on that day", async () => {
+		vi.setSystemTime(new Date(2026, 9, 8, 9, 0, 0));
+		renderTheRefinementTab(
+			gravitysRefinement({
+				nextRefinementDate: THURSDAY_THE_EIGHTH,
+				daysUntilNextRefinement: 1,
+			}),
+		);
+
+		expect(
+			await screen.findByText(/^Next Refinement: Thu 8 Oct · tomorrow$/),
+		).toBeVisible();
+		expect(screen.queryByText(/in 0 days/)).not.toBeInTheDocument();
 	});
 
 	// @us-04 @slice-04 @boundary @contract-shape:pure-function
@@ -143,6 +182,7 @@ describe("The Refinement tab names the next Refinement", () => {
 		renderTheRefinementTab(
 			gravitysRefinement({
 				nextRefinementDate: "2026-10-15",
+				daysUntilNextRefinement: 7,
 				isRefinementDay: true,
 			}),
 		);

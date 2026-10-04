@@ -72,6 +72,7 @@ const gravityWithReady = (
 			readySource: "Stages",
 			readyCount,
 			nextRefinementDate: THURSDAY_THE_EIGHTH,
+			daysUntilNextRefinement: 4,
 			isRefinementDay: false,
 			need: aNeedOfFiveToEight({ verdict }),
 			...overrides,
@@ -175,6 +176,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		renderTheRefinementTab(
 			gravityWithReady(2, "Below", {
 				nextRefinementDate: null,
+				daysUntilNextRefinement: null,
 				need: noNeedBecause("NoCadence"),
 			}),
 		);
@@ -195,6 +197,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 				readyCount: 4,
 				readyByVotesCount: 4,
 				nextRefinementDate: THURSDAY_THE_EIGHTH,
+				daysUntilNextRefinement: 4,
 				need: aNeedOfFiveToEight({ verdict: "Below" }),
 			},
 			[

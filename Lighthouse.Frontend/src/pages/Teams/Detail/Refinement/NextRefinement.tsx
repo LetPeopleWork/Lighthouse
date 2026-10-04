@@ -12,6 +12,7 @@ export const NEXT_REFINEMENT_SLOT = "data-next-refinement";
 
 interface NextRefinementProps {
 	nextRefinementDate: string | null | undefined;
+	daysUntilNextRefinement: number | null | undefined;
 	terms: CadenceHintTerms;
 	canChangeSettings: boolean;
 }
@@ -19,12 +20,13 @@ interface NextRefinementProps {
 /** The next Refinement, or, for a Team without a cadence, that it has none and how to get one. */
 const NextRefinement: React.FC<Readonly<NextRefinementProps>> = ({
 	nextRefinementDate,
+	daysUntilNextRefinement,
 	terms,
 	canChangeSettings,
 }) => {
 	const nextRefinement = describeNextRefinement(
 		nextRefinementDate,
-		new Date(),
+		daysUntilNextRefinement,
 		terms.refinement,
 	);
 	if (nextRefinement !== null) {

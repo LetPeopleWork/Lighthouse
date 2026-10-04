@@ -115,6 +115,7 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 			</Typography>
 			<NextRefinement
 				nextRefinementDate={refinement.nextRefinementDate}
+				daysUntilNextRefinement={refinement.daysUntilNextRefinement}
 				terms={{
 					team: getTerm(TERMINOLOGY_KEYS.TEAM),
 					refinement: refinementTerm,

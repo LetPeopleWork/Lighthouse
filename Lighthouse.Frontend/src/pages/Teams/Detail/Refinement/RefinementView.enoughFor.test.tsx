@@ -59,6 +59,7 @@ const gravityNeeding = (
 			readySource: "Stages",
 			readyCount: 2,
 			nextRefinementDate: THURSDAY_THE_EIGHTH,
+			daysUntilNextRefinement: 4,
 			isRefinementDay: false,
 			need: aNeedOfFiveToEight({ low: Math.min(5, high), high }),
 			...overrides,
@@ -229,17 +230,30 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 	// @us-06 @slice-06 @error @contract-shape:pure-function
 	// The tab says why there is no number, so the missing column and line are not a tab that failed to load.
 	it.skip.each([
-		["no cadence", noNeedBecause("NoCadence"), null, /^No Refinement cadence$/],
+		[
+			"no cadence",
+			noNeedBecause("NoCadence"),
+			null,
+			null,
+			/^No Refinement cadence$/,
+		],
 		[
 			"too little history",
 			noNeedBecause("InsufficientData"),
 			THURSDAY_THE_EIGHTH,
+			4,
 			/^Next Refinement: Thu 8 Oct · in 4 days$/,
 		],
 	])(
 		"shows no # column and no line when there is no number because of %s",
-		async (_why, need, nextRefinementDate, whatTheTabSays) => {
-			renderTheRefinementTab(gravityNeeding(3, { need, nextRefinementDate }));
+		async (_why, need, nextRefinementDate, daysUntilNextRefinement, whatTheTabSays) => {
+			renderTheRefinementTab(
+				gravityNeeding(3, {
+					need,
+					nextRefinementDate,
+					daysUntilNextRefinement,
+				}),
+			);
 
 			await theListAsShown();
 			expect(screen.getByText(whatTheTabSays)).toBeVisible();

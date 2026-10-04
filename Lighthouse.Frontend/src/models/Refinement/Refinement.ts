@@ -154,6 +154,8 @@ export interface IRefinementView {
 	readySource?: ReadySource;
 	/** The calendar day of the next Refinement; null when the Team has no cadence. */
 	nextRefinementDate?: string | null;
+	/** Calendar days from the instance's today to the next Refinement, at least 1; null without a cadence. */
+	daysUntilNextRefinement?: number | null;
 	isRefinementDay?: boolean;
 	need?: IRefinementNeed;
 }

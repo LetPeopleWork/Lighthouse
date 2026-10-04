@@ -1,14 +1,5 @@
 import { parseLocalDate } from "../../../../utils/date/localDate";
 
-const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
-
-const dayKey = (date: Date): number =>
-	Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
-
-/** Calendar days from today to the given day, counted on local days so a clock change is not a day. */
-export const daysUntil = (day: Date, today: Date): number =>
-	Math.round((dayKey(day) - dayKey(today)) / MILLISECONDS_PER_DAY);
-
 /** A day as "Thu 8 Oct". */
 export const formatDayAndDate = (date: Date): string =>
 	date.toLocaleDateString("en-GB", {
@@ -20,10 +11,13 @@ export const formatDayAndDate = (date: Date): string =>
 const describeDistance = (days: number): string =>
 	days === 1 ? "tomorrow" : `in ${days} days`;
 
-/** "Next Refinement: Thu 8 Oct · in 4 days", or null when there is no next Refinement to name. */
+/**
+ * "Next Refinement: Thu 8 Oct · in 4 days", or null when there is no next Refinement to name. The days
+ * are the server's count from the instance's today, which in another time zone is not the viewer's.
+ */
 export const describeNextRefinement = (
 	nextRefinementDate: string | null | undefined,
-	today: Date,
+	daysUntilNextRefinement: number | null | undefined,
 	refinementTerm: string,
 ): string | null => {
 	const day =
@@ -31,7 +25,10 @@ export const describeNextRefinement = (
 	if (day === null) {
 		return null;
 	}
-	return `Next ${refinementTerm}: ${formatDayAndDate(day)} · ${describeDistance(daysUntil(day, today))}`;
+	const named = `Next ${refinementTerm}: ${formatDayAndDate(day)}`;
+	return daysUntilNextRefinement == null
+		? named
+		: `${named} · ${describeDistance(daysUntilNextRefinement)}`;
 };
 
 /** The words a Team has renamed that the hint for a Team without a cadence uses. */
