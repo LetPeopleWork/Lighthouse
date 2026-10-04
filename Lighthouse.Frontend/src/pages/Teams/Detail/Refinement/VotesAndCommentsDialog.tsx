@@ -26,7 +26,7 @@ const VotesAndCommentsDialog: React.FC<
 	Readonly<VotesAndCommentsDialogProps>
 > = ({ workItem, voterName, onChangeName, onClose }) => (
 	<Dialog open onClose={onClose} maxWidth="sm" fullWidth>
-		<DialogTitle>Votes and comments</DialogTitle>
+		<DialogTitle>{`${workItem.referenceId} ${workItem.name} · Votes and comments`}</DialogTitle>
 		<DialogContent>
 			<Typography>{describeSplit(workItem.split ?? NO_SPLIT)}</Typography>
 		</DialogContent>

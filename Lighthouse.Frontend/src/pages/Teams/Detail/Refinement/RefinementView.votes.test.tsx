@@ -483,6 +483,24 @@ describe("The votes and comments of a Work Item", () => {
 		expect(votes).toHaveTextContent("3 Yes · 0 Yes, if… · 1 No");
 		expect(within(votes).getByRole("button", { name: "Close" })).toBeEnabled();
 	});
+
+	// @us-11 @slice-11 @driving_port @contract-shape:pure-function
+	it("names the Work Item it shows the votes of in its title", async () => {
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement({}, [
+				aRow(ADVANCED_REPORTING, "Advanced reporting module", "Analysing", {
+					voteCount: 4,
+					split: { yes: 3, yesBut: 0, no: 1 },
+				}),
+			]),
+		);
+
+		const votes = await openTheVotesAndCommentsOf(user, ADVANCED_REPORTING);
+
+		expect(votes).toHaveAccessibleName(
+			`${ADVANCED_REPORTING} Advanced reporting module · Votes and comments`,
+		);
+	});
 });
 
 describe("A voter takes back their own vote", () => {
