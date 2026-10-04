@@ -152,7 +152,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task A_Ready_stage_the_votes_also_call_Ready_shows_no_disagreement()
         {
             var gravity = await GivenGravityTagsTwoWorkItemsReadyUnderItsReadyRule();
@@ -165,7 +164,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task A_Waiting_Work_Item_the_votes_do_not_call_Ready_shows_no_disagreement()
         {
             var gravity = await GivenGravityTagsTwoWorkItemsReadyUnderItsReadyRule();
@@ -177,7 +175,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-03 @us-11 @slice-03 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task Votes_stay_open_on_a_Work_Item_whose_stage_is_Ready()
         {
             var gravity = await GivenGravityTagsTwoWorkItemsReadyUnderItsReadyRule();
