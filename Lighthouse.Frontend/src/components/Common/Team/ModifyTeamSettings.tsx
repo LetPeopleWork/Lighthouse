@@ -32,7 +32,7 @@ import SaveStateIndicator from "../ValidationActions/SaveStateIndicator";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
 import RefinementSettingsSection, {
 	DEFAULT_READINESS,
-	readinessErrors,
+	hasReadinessErrors,
 } from "./RefinementSettingsSection";
 
 interface ModifyTeamSettingsProps {
@@ -45,7 +45,7 @@ interface ModifyTeamSettingsProps {
 	disableSave?: boolean;
 }
 
-// Bug #5613: autosave is the only save trigger, so an invalid form has to name what blocks it.
+// Autosave is the only save trigger, so an invalid form has to name what blocks it.
 function teamAutoSaveBlockers(
 	s: ITeamSettings,
 	system: IWorkTrackingSystemConnection | null,
@@ -85,11 +85,8 @@ function teamAutoSaveBlockers(
 		);
 	}
 	const readiness = s.refinement?.readiness;
-	if (readiness) {
-		const errors = readinessErrors(readiness);
-		if (Object.values(errors).some((error) => error !== null)) {
-			reasons.push("Correct Readiness by votes");
-		}
+	if (readiness && hasReadinessErrors(readiness)) {
+		reasons.push("Correct Readiness by votes");
 	}
 	if (isDefault) {
 		return reasons;

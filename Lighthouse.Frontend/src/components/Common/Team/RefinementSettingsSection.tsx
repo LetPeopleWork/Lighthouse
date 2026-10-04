@@ -56,21 +56,27 @@ export const DISCUSSION_RULE_ERROR = "A discussion rule needs at least 1 vote";
 const discussWhenOf = (readiness: IReadinessSetting): IDiscussWhenSetting =>
 	readiness.discussWhen ?? DEFAULT_DISCUSS_WHEN;
 
-const discussionRuleError = (threshold: number | null) =>
-	threshold === null || (Number.isInteger(threshold) && threshold >= 1)
-		? null
-		: DISCUSSION_RULE_ERROR;
+const isAtLeastOne = (votes: number): boolean =>
+	Number.isInteger(votes) && votes >= 1;
 
-// The same rule the server enforces, so a save it would refuse is never sent.
-export const readinessErrors = (
-	readiness: IReadinessSetting,
-): {
+// A cleared number field holds NaN, which the input shows as empty rather than as "NaN".
+const shownNumber = (value: number) => (Number.isNaN(value) ? "" : value);
+
+const discussionRuleError = (threshold: number | null) =>
+	threshold === null || isAtLeastOne(threshold) ? null : DISCUSSION_RULE_ERROR;
+
+interface ReadinessErrors {
 	minYes: string | null;
 	minVoters: string | null;
 	discussWhenNo: string | null;
 	discussWhenYesIf: string | null;
-} => {
-	const enoughYes = Number.isInteger(readiness.minYes) && readiness.minYes >= 1;
+}
+
+// The same rule the server enforces, so a save it would refuse is never sent.
+export const readinessErrors = (
+	readiness: IReadinessSetting,
+): ReadinessErrors => {
+	const enoughYes = isAtLeastOne(readiness.minYes);
 	const enoughVoters =
 		Number.isInteger(readiness.minVoters) &&
 		readiness.minVoters >= readiness.minYes;
@@ -82,6 +88,9 @@ export const readinessErrors = (
 		discussWhenYesIf: discussionRuleError(discussWhen.yesIf),
 	};
 };
+
+export const hasReadinessErrors = (readiness: IReadinessSetting): boolean =>
+	Object.values(readinessErrors(readiness)).some((error) => error !== null);
 
 interface DiscussionRuleRowProps {
 	votes: string;
@@ -118,7 +127,7 @@ const DiscussionRuleRow: React.FC<DiscussionRuleRowProps> = ({
 					size="small"
 					sx={{ width: 80 }}
 					disabled={!on}
-					value={Number.isNaN(shownThreshold) ? "" : shownThreshold}
+					value={shownNumber(shownThreshold)}
 					onChange={(event) =>
 						onThresholdChange(Number.parseInt(event.target.value, 10))
 					}
@@ -204,8 +213,6 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 				[key]: Number.parseInt(event.target.value, 10),
 			});
 
-	const shown = (value: number) => (Number.isNaN(value) ? "" : value);
-
 	const discussWhen = discussWhenOf(readiness);
 	const discussionErrors: Record<DiscussionRule, string | null> = {
 		no: errors.discussWhenNo,
@@ -252,7 +259,7 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 					label="Yes votes needed"
 					type="number"
 					fullWidth
-					value={shown(readiness.minYes)}
+					value={shownNumber(readiness.minYes)}
 					onChange={changeNumber("minYes")}
 					error={errors.minYes !== null}
 					helperText={errors.minYes}
@@ -264,7 +271,7 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 					label="Voters needed"
 					type="number"
 					fullWidth
-					value={shown(readiness.minVoters)}
+					value={shownNumber(readiness.minVoters)}
 					onChange={changeNumber("minVoters")}
 					error={errors.minVoters !== null}
 					helperText={errors.minVoters}
