@@ -8,6 +8,7 @@ using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.Licensing;
+using Lighthouse.Backend.Services.Implementation.Refinement;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
@@ -219,10 +220,10 @@ namespace Lighthouse.Backend.API
 
                 // A stage rule naming a field that went away would come back on the next save and fail its
                 // validation, rejecting every later settings save; reading it without that field clears it.
-                if (teamSettingDto.Refinement is not null && team.RefinementSettings is not null && team.WorkTrackingSystemConnection is not null)
+                if (teamSettingDto.Refinement is { } refinement
+                    && StageRuleHealing.HealedStageRulesOf(team, forecastFilterRuleService) is { } stageRules)
                 {
-                    teamSettingDto.Refinement.StageRules = new StageRulesDto(
-                        team.RefinementSettings.StageRules.WithoutFieldsMissingFrom(forecastFilterRuleService.GetSchema(team)));
+                    refinement.StageRules = new StageRulesDto(stageRules);
                 }
 
                 return teamSettingDto;

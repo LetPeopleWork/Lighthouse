@@ -55,10 +55,7 @@ namespace Lighthouse.Backend.Models.Refinement
 
         public WorkItemRuleSet? BeingRefined { get; set; }
 
-        /// <summary>
-        /// These rules without the conditions on fields the schema no longer offers. A rule left with no
-        /// condition says nothing, so it becomes no rule at all.
-        /// </summary>
+        /// <summary>These rules without the conditions on fields the schema no longer offers.</summary>
         public StageRules WithoutFieldsMissingFrom(WorkItemRuleSchema schema)
         {
             return new StageRules
@@ -68,16 +65,12 @@ namespace Lighthouse.Backend.Models.Refinement
             };
         }
 
-        private static WorkItemRuleSet? Healed(WorkItemRuleSet? rule, WorkItemRuleSchema schema)
-        {
-            if (rule is null)
-            {
-                return null;
-            }
+        /// <summary>A rule without a single condition says nothing, so it counts as no rule at all.</summary>
+        public static WorkItemRuleSet? RuleWithConditionsOrNull(WorkItemRuleSet? rule)
+            => rule is { Conditions.Count: > 0 } ? rule : null;
 
-            var healed = AdditionalFieldRuleHealing.WithoutFieldsMissingFrom(rule, schema);
-            return healed.Conditions.Count == 0 ? null : healed;
-        }
+        private static WorkItemRuleSet? Healed(WorkItemRuleSet? rule, WorkItemRuleSchema schema)
+            => rule is null ? null : RuleWithConditionsOrNull(AdditionalFieldRuleHealing.WithoutFieldsMissingFrom(rule, schema));
     }
 
     public class RefinementStateSetting
