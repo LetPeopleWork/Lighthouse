@@ -21,6 +21,7 @@ describe("RefinementService", () => {
 	it("reads a Team's refinement from that Team's address and answers what the server said", async () => {
 		const answer: IRefinementView = {
 			refinementConfigured: true,
+			yardstick: { source: "Sle", days: 7, probability: 85 },
 			workItems: [
 				{
 					referenceId: "GR-058",

@@ -20,7 +20,7 @@ export interface RefinementColumnsOptions {
 	workItemTerm: string;
 	parentMap: Map<string, ParentWorkItem>;
 	/** The question every vote answers; it heads the vote column. */
-	voteQuestion?: YardstickQuestionWords;
+	voteQuestion: YardstickQuestionWords;
 	stagesConfigured: boolean;
 	votesBeingSent: ReadonlySet<string>;
 	onVote: (vote: IPendingVote) => void;
@@ -66,10 +66,8 @@ export const createRefinementColumns = ({
 	...(stagesConfigured ? [stageColumn] : []),
 	{
 		field: "myVote",
-		headerName: voteQuestion?.question ?? "Your vote",
-		...(voteQuestion && {
-			renderHeader: () => <YardstickQuestion {...voteQuestion} />,
-		}),
+		headerName: voteQuestion.question,
+		renderHeader: () => <YardstickQuestion {...voteQuestion} />,
 		width: 260,
 		minWidth: 220,
 		sortable: false,

@@ -19,7 +19,7 @@ import { askYardstick } from "./YardstickQuestion";
 interface RefinementGridProps {
 	teamId: number;
 	workItems: IRefinementRow[];
-	yardstick: IYardstick | undefined;
+	yardstick: IYardstick;
 	stagesConfigured: boolean;
 	votesBeingSent: ReadonlySet<string>;
 	onVote: (vote: IPendingVote) => void;
@@ -46,19 +46,13 @@ const RefinementGrid: React.FC<RefinementGridProps> = ({
 	);
 	const parentMap = useParentWorkItems(parentReferences);
 	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
-	const voteQuestion =
-		yardstick === undefined ? undefined : askYardstick(yardstick, getTerm);
-	const question = voteQuestion?.question;
-	const tooltip = voteQuestion?.tooltip;
+	const { question, tooltip } = askYardstick(yardstick, getTerm);
 	const columns = useMemo(
 		() =>
 			createRefinementColumns({
 				workItemTerm,
 				parentMap,
-				voteQuestion:
-					question === undefined || tooltip === undefined
-						? undefined
-						: { question, tooltip },
+				voteQuestion: { question, tooltip },
 				stagesConfigured,
 				votesBeingSent,
 				onVote,

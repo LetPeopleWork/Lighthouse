@@ -146,7 +146,7 @@ export type VoterIdentity = "Account" | "SelfDeclared";
 export interface IRefinementView {
 	refinementConfigured: boolean;
 	workItems: IRefinementRow[];
-	yardstick?: IYardstick;
+	yardstick: IYardstick;
 	voterIdentity?: VoterIdentity;
 	readyByVotesCount?: number;
 	stagesConfigured?: boolean;

@@ -260,16 +260,6 @@ describe("The Refinement tab asks one question against one number", () => {
 	});
 
 	// @us-10 @slice-10 @boundary @contract-shape:pure-function
-	it("asks nothing when the answer carries no yardstick, and still lists the Work Items", async () => {
-		renderTheRefinementTab(gravitysRefinement({ yardstick: undefined }));
-
-		expect(await screen.findByRole("grid")).toBeVisible();
-		expect(screen.getByRole("heading", { level: 2 })).toBeVisible();
-		expect(screen.queryByText(/^Doable within/)).toBeNull();
-		expect(theVoteColumnHeader()).toHaveTextContent(/^Your vote$/);
-	});
-
-	// @us-10 @slice-10 @boundary @contract-shape:pure-function
 	it("opens the tooltip when the icon in the header is clicked, and the click neither sorts nor takes focus away", async () => {
 		const { user } = renderWithTheYardstick(SLE_75_WITHIN_7);
 		const tooltip = "SLE 75% of work items in 7 days or less";

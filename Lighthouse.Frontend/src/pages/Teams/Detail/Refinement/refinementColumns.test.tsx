@@ -6,10 +6,16 @@ import {
 } from "./refinementColumns";
 import { describeDisagreement } from "./StageCell";
 
+const VOTE_QUESTION = {
+	question: "Doable within 12 days?",
+	tooltip: "SLE 85% of work items in 12 days or less",
+};
+
 const columnsWith = (options: Partial<RefinementColumnsOptions>) =>
 	createRefinementColumns({
 		workItemTerm: "Work Item",
 		parentMap: new Map(),
+		voteQuestion: VOTE_QUESTION,
 		stagesConfigured: false,
 		votesBeingSent: new Set(),
 		onVote: vi.fn(),
@@ -41,7 +47,7 @@ describe("the Refinement tab's columns", () => {
 			columns: [
 				["parentReferenceId", "Parent"],
 				["state", "State"],
-				["myVote", "Your vote"],
+				["myVote", VOTE_QUESTION.question],
 				["voteCount", "Votes"],
 				["readiness", "Readiness"],
 			],
@@ -52,7 +58,7 @@ describe("the Refinement tab's columns", () => {
 				["parentReferenceId", "Parent"],
 				["state", "State"],
 				["stage", "Stage"],
-				["myVote", "Your vote"],
+				["myVote", VOTE_QUESTION.question],
 				["voteCount", "Votes"],
 				["readiness", "Votes say"],
 			],
@@ -70,9 +76,7 @@ describe("the Refinement tab's columns", () => {
 });
 
 describe("the vote column's header", () => {
-	const voteColumn = (
-		question: { question: string; tooltip: string } | undefined,
-	) =>
+	const voteColumn = (question: { question: string; tooltip: string }) =>
 		columnsWith({ voteQuestion: question }).find(
 			({ field }) => field === "myVote",
 		);
@@ -86,13 +90,6 @@ describe("the vote column's header", () => {
 		expect(column?.headerName).toBe("Doable within 12 days?");
 		expect(column?.renderHeader).toBeDefined();
 		expect(column?.minWidth).toBeGreaterThanOrEqual(220);
-	});
-
-	it("falls back to Your vote when there is no question to ask", () => {
-		const column = voteColumn(undefined);
-
-		expect(column?.headerName).toBe("Your vote");
-		expect(column?.renderHeader).toBeUndefined();
 	});
 });
 

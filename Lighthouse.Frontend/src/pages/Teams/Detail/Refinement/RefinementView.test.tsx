@@ -5,6 +5,7 @@ import type { IFeature } from "../../../../models/Feature";
 import type {
 	IRefinementRow,
 	IRefinementView,
+	IYardstick,
 } from "../../../../models/Refinement/Refinement";
 import { Team } from "../../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
@@ -55,6 +56,14 @@ const defaultTerms: Record<string, string> = {
 	[TERMINOLOGY_KEYS.TEAM]: "Team",
 };
 
+// The server always says what votes are cast against. Without a number the vote column says no "days",
+// which a case about the columns could otherwise mistake for an age.
+const NOTHING_TO_GO_ON: IYardstick = {
+	source: "Unavailable",
+	days: null,
+	probability: null,
+};
+
 const aRow = (
 	referenceId: string,
 	name: string,
@@ -70,6 +79,7 @@ const aRow = (
 
 const gravitysRefinement: IRefinementView = {
 	refinementConfigured: true,
+	yardstick: NOTHING_TO_GO_ON,
 	workItems: [
 		aRow("GR-058", "User activity tracking", "Next", "GR-010"),
 		aRow("GR-059", "Advanced search filters", "Next", "GR-010"),
@@ -238,6 +248,7 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 	it("counts a single Work Item in the singular", async () => {
 		renderTheRefinementTab({
 			refinementConfigured: true,
+			yardstick: NOTHING_TO_GO_ON,
 			workItems: [aRow("GR-073", "Configuration management", "Backlog")],
 		});
 
@@ -250,7 +261,11 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 
 	// @us-02 @slice-02 @error @contract-shape:pure-function
 	it("states that nothing is in refinement right now instead of showing an empty grid or an error", async () => {
-		renderTheRefinementTab({ refinementConfigured: true, workItems: [] });
+		renderTheRefinementTab({
+			refinementConfigured: true,
+			yardstick: NOTHING_TO_GO_ON,
+			workItems: [],
+		});
 
 		expect(
 			await screen.findByText("No Work Items in Refinement states right now"),
@@ -291,7 +306,11 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 			[TERMINOLOGY_KEYS.WORK_ITEMS]: "Tickets",
 			[REFINEMENT_KEY]: "Replenishment",
 		};
-		renderTheRefinementTab({ refinementConfigured: true, workItems: [] });
+		renderTheRefinementTab({
+			refinementConfigured: true,
+			yardstick: NOTHING_TO_GO_ON,
+			workItems: [],
+		});
 
 		expect(
 			await screen.findByText("No Tickets in Replenishment states right now"),
@@ -305,6 +324,7 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 	it("handles three hundred Work Items, counting all of them and starting at the top of the backlog", async () => {
 		renderTheRefinementTab({
 			refinementConfigured: true,
+			yardstick: NOTHING_TO_GO_ON,
 			workItems: Array.from({ length: 300 }, (_, index) =>
 				aRow(`GR-${1000 + index}`, `Refinement candidate ${index}`, "Backlog"),
 			),
@@ -351,6 +371,7 @@ describe("The Refinement tab follows the Team it is showing", () => {
 
 	const oceansRefinement: IRefinementView = {
 		refinementConfigured: true,
+		yardstick: NOTHING_TO_GO_ON,
 		workItems: [aRow("OE-001", "Sonar mapping", "Backlog")],
 	};
 
