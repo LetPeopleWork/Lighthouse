@@ -116,7 +116,7 @@ describe("The Refinement tab names the next Refinement", () => {
 	});
 
 	// @us-04 @slice-04 @driving_port @contract-shape:pure-function
-	it.skip("names the day and date of the next Refinement and how many days away it is", async () => {
+	it("names the day and date of the next Refinement and how many days away it is", async () => {
 		renderTheRefinementTab(refiningOnThursdayTheEighth());
 
 		expect(
@@ -125,7 +125,7 @@ describe("The Refinement tab names the next Refinement", () => {
 	});
 
 	// @us-04 @slice-04 @boundary @contract-shape:pure-function
-	it.skip("says tomorrow when the next Refinement is one day away", async () => {
+	it("says tomorrow when the next Refinement is one day away", async () => {
 		vi.setSystemTime(new Date(2026, 9, 7, 9, 0, 0));
 		renderTheRefinementTab(refiningOnThursdayTheEighth());
 
@@ -136,7 +136,7 @@ describe("The Refinement tab names the next Refinement", () => {
 
 	// @us-04 @slice-04 @boundary @contract-shape:pure-function
 	// On a Refinement day the server already names the following one; the tab never says "today".
-	it.skip("counts a week ahead on a Refinement day and never says today", async () => {
+	it("counts a week ahead on a Refinement day and never says today", async () => {
 		vi.setSystemTime(new Date(2026, 9, 8, 9, 0, 0));
 		renderTheRefinementTab(
 			gravitysRefinement({
@@ -152,7 +152,7 @@ describe("The Refinement tab names the next Refinement", () => {
 	});
 
 	// @us-04 @slice-04 @boundary @contract-shape:pure-function
-	it.skip("names the next Refinement on the heading's row, beside the count", async () => {
+	it("names the next Refinement on the heading's row, beside the count", async () => {
 		renderTheRefinementTab(refiningOnThursdayTheEighth());
 
 		const heading = await screen.findByRole("heading", {

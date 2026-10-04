@@ -1,4 +1,11 @@
-import { Paper, Stack, TableContainer, Typography } from "@mui/material";
+import {
+	Box,
+	Paper,
+	type SxProps,
+	TableContainer,
+	type Theme,
+	Typography,
+} from "@mui/material";
 import type React from "react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import DataGridBase from "../../../../components/Common/DataGrid/DataGridBase";
@@ -13,6 +20,7 @@ import type { Team } from "../../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../services/TerminologyContext";
+import NextRefinement, { NEXT_REFINEMENT_SLOT } from "./NextRefinement";
 import {
 	createRefinementColumns,
 	type RefinementGridRow,
@@ -25,6 +33,20 @@ import { describeVoteRefusal } from "./voteWording";
 import YardstickQuestion from "./YardstickQuestion";
 
 const NO_ROWS: IRefinementRow[] = [];
+
+// The heading and the next Refinement share the first row while every other part of the tab spans the
+// full width beneath them; a grid does that without wrapping the heading, which stays a direct sibling
+// of what follows it.
+const TAB_LAYOUT: SxProps<Theme> = {
+	display: "grid",
+	gridTemplateColumns: "1fr auto",
+	alignItems: "baseline",
+	columnGap: 2,
+	rowGap: 2,
+	"& > *": { gridColumn: "1 / -1", minWidth: 0 },
+	"& > h2": { gridColumn: "1" },
+	[`& > [${NEXT_REFINEMENT_SLOT}]`]: { gridColumn: "2", justifySelf: "end" },
+};
 
 const messageOf = (error: unknown): string =>
 	error instanceof Error ? error.message : String(error);
@@ -173,10 +195,14 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 		count === 1 ? workItemTerm : getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 
 	return (
-		<Stack spacing={2}>
+		<Box sx={TAB_LAYOUT}>
 			<Typography variant="h6" component="h2">
 				{`${count} ${workItemsTerm} in ${refinementTerm}${describeReadyCount(refinement)}`}
 			</Typography>
+			<NextRefinement
+				nextRefinementDate={refinement.nextRefinementDate}
+				refinementTerm={refinementTerm}
+			/>
 			{refinement.stagesConfigured && <StageBreakdown rows={workItems} />}
 			{refinement.yardstick && (
 				<YardstickQuestion yardstick={refinement.yardstick} getTerm={getTerm} />
@@ -212,7 +238,7 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 					onConfirm={changeNameTo}
 				/>
 			)}
-		</Stack>
+		</Box>
 	);
 };
 
