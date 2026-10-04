@@ -27,6 +27,14 @@ namespace Lighthouse.Backend.Tests.API.DTO
             Assert.That(() => JsonSerializer.Deserialize<SizingVoteDto>(body, HostOptions), Throws.InstanceOf<JsonException>());
         }
 
+        [Test]
+        public void A_refused_answer_names_the_answers_there_are()
+        {
+            var refusal = Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<SizingVoteDto>("""{"answer":"Maybe","channel":"Web"}""", HostOptions));
+
+            Assert.That(refusal!.Message, Does.Contain("Expected one of Yes, YesBut, No."));
+        }
+
         [TestCase("Yes", "Web", SizingAnswer.Yes, SizingChannel.Web)]
         [TestCase("YesBut", "LiveSession", SizingAnswer.YesBut, SizingChannel.LiveSession)]
         [TestCase("No", "Cli", SizingAnswer.No, SizingChannel.Cli)]

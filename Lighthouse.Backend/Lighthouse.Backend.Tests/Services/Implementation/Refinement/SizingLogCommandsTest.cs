@@ -19,6 +19,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         private const string BeingBuilt = "GR-040";
 
+        private const string AlsoInRefinement = "GR-074";
+
         private static readonly DateTimeOffset CastAt = new(2026, 10, 4, 7, 30, 0, TimeSpan.Zero);
 
         private static readonly Voter Jonas = new("self:jonas", "Jonas Weber", null);
@@ -41,6 +43,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                 {
                     new() { TeamId = TeamId, ReferenceId = InRefinement, State = "Backlog", Order = "1" },
                     new() { TeamId = TeamId, ReferenceId = BeingBuilt, State = "Implementation", Order = "2" },
+                    new() { TeamId = TeamId, ReferenceId = AlsoInRefinement, State = "Backlog", Order = "3" },
                 }.AsQueryable());
 
             var teamMetricsServiceMock = new Mock<ITeamMetricsService>();
@@ -83,6 +86,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                 Assert.That(appended, Has.Count.EqualTo(1));
                 Assert.That(appended.Select(Summary), Has.All.EqualTo(new EntrySummary(
                     TeamId, InRefinement, SizingEntryKind.Vote, answer, comment, Jonas.Key, null, Jonas.DisplayName, CastAt.UtcDateTime, channel)));
+            }
+        }
+
+        [TestCase(InRefinement)]
+        [TestCase(AlsoInRefinement)]
+        public void AVoteOnAnyOfSeveralWorkItemsInRefinementIsRecordedAgainstThatWorkItem(string workItem)
+        {
+            GivenTheTeam(ATeamThatRefinesInBacklog(sleProbability: 85, sleDays: 7));
+
+            var outcome = subject.Vote(TeamId, workItem, new SizingVote(SizingAnswer.Yes, SizingChannel.Web, null), Jonas);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome, Is.EqualTo(VoteOutcome.Recorded));
+                Assert.That(appended.Select(entry => entry.WorkItemReferenceId), Is.EqualTo(new[] { workItem }));
             }
         }
 

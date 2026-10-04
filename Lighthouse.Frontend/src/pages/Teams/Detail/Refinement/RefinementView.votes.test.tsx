@@ -34,13 +34,18 @@ const { terms, mockUseLicenseRestrictions, reporter } = vi.hoisted(() => ({
 	reporter: { current: vi.fn() },
 }));
 
+// Like the real provider, a render hands out a lookup over the words as they stood then, so a callback
+// that held on to an earlier lookup still speaks the earlier words.
 vi.mock("../../../../services/TerminologyContext", () => ({
-	useTerminology: () => ({
-		getTerm: (key: string) => terms.current[key] ?? key,
-		isLoading: false,
-		error: null,
-		refetchTerminology: () => {},
-	}),
+	useTerminology: () => {
+		const wordsNow = { ...terms.current };
+		return {
+			getTerm: (key: string) => wordsNow[key] ?? key,
+			isLoading: false,
+			error: null,
+			refetchTerminology: () => {},
+		};
+	},
 }));
 
 vi.mock("../../../../hooks/useLicenseRestrictions", () => ({
@@ -496,6 +501,69 @@ describe("A voter casts a sizing vote from the list", () => {
 
 		expect(name).toHaveValue("x".repeat(100));
 		expect(within(prompt).getByRole("button", { name: "Vote" })).toBeEnabled();
+	});
+
+	it("keeps the name as it was when changing it is cancelled", async () => {
+		aBrowserThatVotedBefore("Jonas");
+		const { user } = renderTheRefinementTab(gravitysRefinement());
+
+		const votes = await openTheVotesAndCommentsOf(
+			user,
+			CONFIGURATION_MANAGEMENT,
+		);
+		await user.click(
+			within(votes).getByRole("button", { name: "Change your name" }),
+		);
+		const prompt = await theNamePrompt();
+		await user.type(
+			within(prompt).getByRole("textbox", { name: "Your name" }),
+			" Weber",
+		);
+		await user.click(within(prompt).getByRole("button", { name: "Cancel" }));
+
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("dialog", { name: "Who is voting?" }),
+			).toBeNull(),
+		);
+		expect(
+			screen.getByRole("dialog", { name: /Votes and comments/ }),
+		).toHaveTextContent("Voting as Jonas ·");
+		expect(theStoredVoter()?.name).toBe("Jonas");
+	});
+
+	it("words a refusal in the terms the instance uses by the time the vote is refused", async () => {
+		aBrowserThatVotedBefore(JONAS);
+		const sizingLogService = aSizingLogService({
+			castVote: vi
+				.fn()
+				.mockRejectedValue(
+					new ApiError(
+						409,
+						"Request failed with status code 409",
+						undefined,
+						undefined,
+						"work-item-not-in-refinement",
+					),
+				),
+		});
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement(),
+			sizingLogService,
+		);
+		terms.current = {
+			...defaultRefinementTerms,
+			[TERMINOLOGY_KEYS.WORK_ITEM]: "Ticket",
+			[REFINEMENT_KEY]: "Grooming",
+		};
+
+		await user.click(
+			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
+		);
+
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"This ticket is no longer in grooming.",
+		);
 	});
 
 	// @us-11 @slice-11 @boundary @contract-shape:unbounded-preservation

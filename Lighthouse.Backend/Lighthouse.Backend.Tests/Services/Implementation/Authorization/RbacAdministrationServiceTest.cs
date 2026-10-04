@@ -529,6 +529,54 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             Assert.That(result, Is.True);
         }
 
+        // A vote is open to whoever may read the Team, and only on that Team.
+        [TestCase(44, true)]
+        [TestCase(45, false)]
+        public async Task CanSatisfyRequirementAsync_TeamContribute_FollowsReadingThatTeam(int teamId, bool expected)
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|system-admin", SubjectClaimType = "sub" });
+            context.UserProfiles.Add(new UserProfile { Id = 2, Subject = "auth0|viewer", SubjectClaimType = "sub" });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.Viewer, ScopeType = PermissionScopeType.Team, ScopeId = 44 });
+            await context.SaveChangesAsync();
+
+            var principal = BuildPrincipal(new Claim("sub", "auth0|viewer"));
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(context.UserProfiles.Single(x => x.Id == 2));
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var result = await subject.CanSatisfyRequirementAsync(
+                principal,
+                RbacGuardRequirement.TeamContribute,
+                teamId,
+                CancellationToken.None);
+
+            Assert.That(result, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public async Task CanSatisfyRequirementAsync_TeamContribute_WithoutScopeId_ReturnsFalse()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            var principal = BuildPrincipal(new Claim("sub", "auth0|user"));
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var result = await subject.CanSatisfyRequirementAsync(
+                principal,
+                RbacGuardRequirement.TeamContribute,
+                null,
+                CancellationToken.None);
+
+            Assert.That(result, Is.False);
+        }
+
         [Test]
         public async Task CanSatisfyRequirementAsync_PortfolioWrite_WithoutScopeId_ReturnsFalse()
         {

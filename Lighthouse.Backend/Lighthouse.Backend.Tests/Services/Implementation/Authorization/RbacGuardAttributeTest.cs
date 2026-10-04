@@ -191,4 +191,79 @@ public class RbacGuardAttributeTest
             Assert.That(((StatusCodeResult)context.Result!).StatusCode, Is.EqualTo(StatusCodes.Status500InternalServerError));
         }
     }
+
+    [Test]
+    public async Task OnAuthorizationAsync_ScopedRequirementWithoutARouteKey_ReturnsInternalServerError()
+    {
+        context.RouteData.Values["teamId"] = "42";
+        var attribute = new RbacGuardAttribute(RbacGuardRequirement.TeamContribute)
+        {
+            ScopeIdRouteKey = " ",
+        };
+
+        await attribute.OnAuthorizationAsync(context);
+
+        AssertInternalServerError();
+    }
+
+    [Test]
+    public async Task OnAuthorizationAsync_ScopedRequirementWithANullRouteValue_ReturnsInternalServerError()
+    {
+        context.RouteData.Values["teamId"] = null;
+        var attribute = new RbacGuardAttribute(RbacGuardRequirement.TeamContribute)
+        {
+            ScopeIdRouteKey = "teamId",
+        };
+
+        await attribute.OnAuthorizationAsync(context);
+
+        AssertInternalServerError();
+    }
+
+    [Test]
+    public async Task OnAuthorizationAsync_ScopedRequirementWithARouteValueThatIsNoNumber_ReturnsInternalServerError()
+    {
+        context.RouteData.Values["teamId"] = "not-a-team";
+        var attribute = new RbacGuardAttribute(RbacGuardRequirement.TeamContribute)
+        {
+            ScopeIdRouteKey = "teamId",
+        };
+
+        await attribute.OnAuthorizationAsync(context);
+
+        AssertInternalServerError();
+    }
+
+    [Test]
+    public async Task OnAuthorizationAsync_HandsTheRequestsCancellationToTheCheck()
+    {
+        using var aborted = new CancellationTokenSource();
+        context.HttpContext.RequestAborted = aborted.Token;
+        context.RouteData.Values["teamId"] = "42";
+        rbacAdministrationServiceMock
+            .Setup(x => x.CanSatisfyRequirementAsync(
+                It.IsAny<ClaimsPrincipal>(),
+                RbacGuardRequirement.TeamContribute,
+                42,
+                aborted.Token))
+            .ReturnsAsync(true);
+
+        var attribute = new RbacGuardAttribute(RbacGuardRequirement.TeamContribute)
+        {
+            ScopeIdRouteKey = "teamId",
+        };
+
+        await attribute.OnAuthorizationAsync(context);
+
+        Assert.That(context.Result, Is.Null, "the check is only answered when it is handed the request's own cancellation");
+    }
+
+    private void AssertInternalServerError()
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(context.Result, Is.InstanceOf<StatusCodeResult>());
+            Assert.That(((StatusCodeResult)context.Result!).StatusCode, Is.EqualTo(StatusCodes.Status500InternalServerError));
+        }
+    }
 }
