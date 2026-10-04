@@ -325,6 +325,34 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             Assert.That(result, Is.False);
         }
 
+        /// <summary>A cadence naming no weekday is no cadence, so it is stored as none rather than as an empty one.</summary>
+        [Test]
+        public void SyncTeamWithTeamSettings_CadenceWithoutWeekdays_LeavesTheTeamWithoutACadence()
+        {
+            var team = new Team
+            {
+                ToDoStates = ["Backlog"],
+                RefinementSettings = new RefinementSettings
+                {
+                    States = [new RefinementStateSetting { State = "Backlog" }],
+                    Cadence = RefinementCadence.Of([DayOfWeek.Thursday], 1, null),
+                },
+            };
+            var dto = new TeamSettingDto
+            {
+                ToDoStates = ["Backlog"],
+                Refinement = new RefinementSettingsDto
+                {
+                    States = [new RefinementStateSettingDto { State = "Backlog" }],
+                    Cadence = new RefinementCadenceDto { Weekdays = [], IntervalWeeks = 1 },
+                },
+            };
+
+            team.SyncTeamWithTeamSettings(dto);
+
+            Assert.That(team.RefinementSettings.Cadence, Is.Null);
+        }
+
         [Test]
         public void SyncTeamWithTeamSettings_StageRuleSentAsNull_RemovesOnlyThatRule()
         {

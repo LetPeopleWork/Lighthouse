@@ -171,7 +171,7 @@ namespace Lighthouse.Backend.API.Helpers
                 return;
             }
 
-            settings.Cadence = cadence.ToCadence();
+            settings.Cadence = cadence.Weekdays.Count == 0 ? null : cadence.ToCadence();
         }
 
         private static List<string> TrimListEntries(List<string> list)

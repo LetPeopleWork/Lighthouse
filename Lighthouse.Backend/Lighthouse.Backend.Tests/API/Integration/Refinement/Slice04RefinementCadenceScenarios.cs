@@ -106,7 +106,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice04)]
         public async Task Clearing_every_Refinement_day_leaves_the_Team_without_a_cadence()
         {
             var gravity = await GivenGravityRefinesOnThursdaysEveryWeek();
@@ -220,7 +219,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-04 @slice-04 @error @contract-shape:pure-function
         // Without a cadence the tab is still the place to see and vote; it just names no date.
         [Test]
-        [Ignore(PendingSlice04)]
         public async Task Without_a_cadence_the_tab_lists_its_Work_Items_and_names_no_date()
         {
             var gravity = await GivenGravityRefinesWithoutACadence();
@@ -232,7 +230,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-04 @us-11 @slice-04 @error @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice04)]
         public async Task Without_a_cadence_votes_are_still_taken()
         {
             var gravity = await GivenGravityRefinesWithoutACadence();
