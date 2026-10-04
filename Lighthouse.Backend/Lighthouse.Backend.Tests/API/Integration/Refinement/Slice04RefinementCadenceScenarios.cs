@@ -58,7 +58,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-04 @slice-04 @error @contract-shape:unbounded-preservation
         // Without a starting week "every second Tuesday" names no Tuesday in particular.
         [Test]
-        [Ignore(PendingSlice04)]
         public async Task Every_few_weeks_without_a_starting_week_is_refused_and_nothing_is_saved()
         {
             var gravity = await GivenGravityRefinesOnThursdaysEveryWeek();
@@ -71,7 +70,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-04 @slice-04 @error @contract-shape:unbounded-preservation
         [TestCase(0)]
         [TestCase(-1)]
-        [Ignore(PendingSlice04)]
         public async Task Fewer_than_one_week_between_Refinements_is_refused_and_nothing_is_saved(int intervalWeeks)
         {
             var gravity = await GivenGravityRefinesOnThursdaysEveryWeek();
@@ -84,7 +82,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-04 @slice-04 @error @contract-shape:unbounded-preservation
         [TestCase("Someday")]
         [TestCase("Thu 8 Oct")]
-        [Ignore(PendingSlice04)]
         public async Task A_Refinement_day_that_is_not_a_weekday_is_refused_and_nothing_is_saved(string notAWeekday)
         {
             var gravity = await GivenGravityRefinesOnThursdaysEveryWeek();

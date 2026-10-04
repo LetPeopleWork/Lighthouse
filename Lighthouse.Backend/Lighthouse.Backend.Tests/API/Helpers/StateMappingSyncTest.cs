@@ -316,7 +316,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 Refinement = new RefinementSettingsDto
                 {
                     States = [new RefinementStateSettingDto { State = "Backlog" }],
-                    Cadence = new RefinementCadenceDto { Weekdays = [DayOfWeek.Thursday], IntervalWeeks = 2, AnchorWeek = new DateOnly(2026, 10, 5) },
+                    Cadence = new RefinementCadenceDto { Weekdays = [nameof(DayOfWeek.Thursday)], IntervalWeeks = 2, AnchorWeek = new DateOnly(2026, 10, 5) },
                 },
             };
 

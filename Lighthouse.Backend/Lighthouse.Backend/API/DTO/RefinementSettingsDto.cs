@@ -39,18 +39,20 @@ namespace Lighthouse.Backend.API.DTO
 
         public RefinementCadenceDto(RefinementCadence cadence)
         {
-            Weekdays = [.. cadence.Weekdays];
+            Weekdays = [.. cadence.Weekdays.Select(day => day.ToString())];
             IntervalWeeks = cadence.IntervalWeeks;
             AnchorWeek = cadence.AnchorWeek;
         }
 
-        public List<DayOfWeek> Weekdays { get; set; } = [];
+        /// <summary>Names rather than enum values, so a save naming no weekday is refused with the name it sent.</summary>
+        public List<string> Weekdays { get; set; } = [];
 
         public int IntervalWeeks { get; set; } = 1;
 
         public DateOnly? AnchorWeek { get; set; }
 
-        public RefinementCadence ToCadence() => RefinementCadence.Of(Weekdays, IntervalWeeks, AnchorWeek);
+        public RefinementCadence ToCadence()
+            => RefinementCadence.Of(Weekdays.Select(day => Enum.Parse<DayOfWeek>(day, ignoreCase: true)), IntervalWeeks, AnchorWeek);
     }
 
     /// <summary>A rule sent as null removes it, while a rule left out of the save keeps the stored one.</summary>

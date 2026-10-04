@@ -261,6 +261,102 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             }));
         }
 
+        private static readonly DateOnly StartingWeek = new(2026, 10, 5);
+
+        private static TeamSettingDto SettingsWithCadence(int intervalWeeks, DateOnly? anchorWeek, params string[] weekdays)
+        {
+            var settings = SettingsChoosing(Backlog);
+            settings.Refinement!.Cadence = new RefinementCadenceDto
+            {
+                Weekdays = [.. weekdays],
+                IntervalWeeks = intervalWeeks,
+                AnchorWeek = anchorWeek,
+            };
+            return settings;
+        }
+
+        private static string WeekdayRefused(string day)
+            => $"'{day}' cannot be a Refinement day: only a weekday such as Monday can be chosen.";
+
+        [TestCase(1, false)]
+        [TestCase(1, true)]
+        [TestCase(2, true)]
+        [TestCase(5, true)]
+        public void A_cadence_of_a_week_or_more_with_a_starting_week_when_it_skips_weeks_is_accepted(int intervalWeeks, bool withStartingWeek)
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(
+                SettingsWithCadence(intervalWeeks, withStartingWeek ? StartingWeek : null, "Tuesday"), NothingStored);
+
+            Assert.That(errors, Is.Empty);
+        }
+
+        [TestCase(2)]
+        [TestCase(3)]
+        public void Skipping_weeks_without_a_starting_week_is_refused(int intervalWeeks)
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithCadence(intervalWeeks, null, "Tuesday"), NothingStored);
+
+            Assert.That(errors, Is.EqualTo(new List<string> { $"Refining every {intervalWeeks} weeks needs a starting week." }));
+        }
+
+        [TestCase(0, true)]
+        [TestCase(0, false)]
+        [TestCase(-1, true)]
+        public void Fewer_than_one_week_between_Refinements_is_refused_by_value(int intervalWeeks, bool withStartingWeek)
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(
+                SettingsWithCadence(intervalWeeks, withStartingWeek ? StartingWeek : null, "Thursday"), NothingStored);
+
+            Assert.That(errors, Is.EqualTo(new List<string>
+            {
+                $"'{intervalWeeks}' cannot be the weeks between Refinements: at least one week is needed.",
+            }));
+        }
+
+        [TestCase("Monday")]
+        [TestCase("Sunday")]
+        [TestCase("saturday")]
+        public void An_English_weekday_name_is_accepted_as_a_Refinement_day(string day)
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithCadence(1, null, day), NothingStored);
+
+            Assert.That(errors, Is.Empty);
+        }
+
+        [TestCase("Someday")]
+        [TestCase("Thu 8 Oct")]
+        [TestCase("Thu")]
+        [TestCase("4")]
+        [TestCase("Monday,Tuesday")]
+        [TestCase("")]
+        public void A_Refinement_day_that_is_not_a_weekday_name_is_refused_by_name(string day)
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithCadence(1, null, "Tuesday", day), NothingStored);
+
+            Assert.That(errors, Is.EqualTo(new List<string> { WeekdayRefused(day) }));
+        }
+
+        [Test]
+        public void A_cadence_without_weekdays_is_accepted()
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithCadence(1, null), NothingStored);
+
+            Assert.That(errors, Is.Empty);
+        }
+
+        [Test]
+        public void Every_broken_cadence_rule_is_named()
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithCadence(-2, null, "Someday", "Thu"), NothingStored);
+
+            Assert.That(errors, Is.EqualTo(new List<string>
+            {
+                WeekdayRefused("Someday"),
+                WeekdayRefused("Thu"),
+                "'-2' cannot be the weeks between Refinements: at least one week is needed.",
+            }));
+        }
+
         [Test]
         public void Every_broken_readiness_rule_is_named_after_a_refused_state()
         {
