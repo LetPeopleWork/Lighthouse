@@ -90,6 +90,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenJonasSeesTheRow(gravity, workItem, voteCount: 1, myVote: Answer.No);
         }
 
+        // @driving_port @real-io @us-11 @slice-11 @boundary @contract-shape:bounded-change
+        // A reference is whatever text the tracker uses. A slash or a hash in it travels escaped, as a
+        // browser sends it, and is unescaped exactly once: a reference that already reads as escaped stays itself.
+        [TestCase("REQ/12#3")]
+        [TestCase("REQ%2512")]
+        public async Task A_Work_Item_whose_reference_a_web_address_has_to_escape_can_be_voted_on(string reference)
+        {
+            var gravity = await GivenGravityAlsoRefinesAWorkItemReferencedAs(reference);
+
+            var answer = await WhenJonasVotes(gravity, reference, Answer.Yes);
+
+            await ThenTheVoteIsTakenAndTheRowCountsIt(answer, gravity, reference, voteCount: 1, myVote: Answer.Yes);
+        }
+
         // @driving_port @real-io @us-11 @slice-11 @error @contract-shape:unbounded-preservation
         // GR-040 is being implemented, not refined; GR-999 is a Work Item the tracker does not hold.
         [TestCase(BillingExport)]

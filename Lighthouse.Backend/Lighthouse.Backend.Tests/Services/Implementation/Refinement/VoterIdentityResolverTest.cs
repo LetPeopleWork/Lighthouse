@@ -17,6 +17,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         private const string SixtyFourCharacterKey = ThirtyTwoCharacterKey + ThirtyTwoCharacterKey;
 
+        private const string ThirtyTwoSpaces = "                                ";
+
         private static readonly string OneHundredCharacterName = new('a', VoterIdentityResolver.LongestVoterName);
 
         private static readonly string OneHundredAndOneCharacterName = new('a', VoterIdentityResolver.LongestVoterName + 1);
@@ -34,6 +36,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             yield return new TestCaseData("Jonas Weber", ThirtyOneCharacterKey, VoterRefusal.KeyRequired).SetName("A thirty-one-character key");
             yield return new TestCaseData("Jonas Weber", ThirtyTwoCharacterKey, null).SetName("A thirty-two-character key");
             yield return new TestCaseData("Jonas Weber", SixtyFourCharacterKey, null).SetName("A sixty-four-character key");
+            yield return new TestCaseData("Jonas Weber", ThirtyTwoSpaces, VoterRefusal.KeyRequired).SetName("A key of thirty-two spaces");
+            yield return new TestCaseData("Jonas Weber", "0123456789abcdef 0123456789abcdef", VoterRefusal.KeyRequired).SetName("A key with a space inside");
+            yield return new TestCaseData("Jonas Weber", ThirtyTwoCharacterKey + "\t", VoterRefusal.KeyRequired).SetName("A key ending in a tab");
+            yield return new TestCaseData("Jonas Weber", ThirtyTwoCharacterKey + "\u0001", VoterRefusal.KeyRequired).SetName("A key carrying a control character");
             yield return new TestCaseData(null, null, VoterRefusal.NameRequired).SetName("Neither a name nor a key asks for the name first");
         }
 
@@ -81,6 +87,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         [TestCase(ThirtyTwoCharacterKey, StoredFormOfThatKey)]
         [TestCase(null, null)]
         [TestCase(ThirtyOneCharacterKey, null)]
+        [TestCase(ThirtyTwoSpaces, null)]
         public void OnAReadTheKeyRecognisesTheReadersOwnVotes(string? presented, string? stored)
         {
             Assert.That(ResolverWhere(AuthMode.Disabled).ReaderKeyFrom(presented), Is.EqualTo(stored));

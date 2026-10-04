@@ -1,6 +1,9 @@
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Models;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Refinement
@@ -25,6 +28,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         private async Task<TeamUnderTest> GivenGravityRefinesAndNobodyHasVoted()
             => await GravityRefinesSixWorkItemsNobodyHasVotedOn();
+
+        private async Task<TeamUnderTest> GivenGravityAlsoRefinesAWorkItemReferencedAs(string reference)
+        {
+            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+            SeedWorkItem(gravity, reference, "Imported requirement", Backlog, StateCategories.ToDo, "7");
+            return gravity;
+        }
 
         private async Task<TeamUnderTest> GivenJonasHasVotedYesOnConfigurationManagement()
         {
@@ -184,7 +194,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         /// <summary>
         /// The refusal, and that no listed Work Item counts a vote it did not count before. Opening the tab
-        /// as a fresh browser shows every row as anybody sees it.
+        /// as a fresh browser shows every row as anybody sees it. The tab only shows listed Work Items of
+        /// this Team, so the sizing log itself is counted too: a refused vote written down against a Work
+        /// Item nobody lists, or against another Team, would not show on the tab at all.
         /// </summary>
         private async Task ThenTheVoteIsRefusedAndNothingIsCounted(HttpResponseMessage answer, TeamUnderTest team, HttpStatusCode status, string? expectedCode, int alreadyCounted = 0)
         {
@@ -201,7 +213,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 }
 
                 Assert.That(counted, Is.EqualTo(alreadyCounted), "a refused vote must not be counted on any Work Item");
+                Assert.That(SizingLogEntriesStored(), Is.EqualTo(alreadyCounted), "a refused vote must not be written to any Team's sizing log");
             }
+        }
+
+        private int SizingLogEntriesStored()
+        {
+            using var scope = Factory.Services.CreateScope();
+            return scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().SizingLogEntries.Count();
         }
 
         private static void ThenNothingCarriesJonassKey(List<string> whatCameBack)

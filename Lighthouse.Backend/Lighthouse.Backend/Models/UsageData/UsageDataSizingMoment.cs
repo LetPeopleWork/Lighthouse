@@ -5,8 +5,10 @@ namespace Lighthouse.Backend.Models.UsageData
     /// sizing event says: it answers whether votes arrive outside the meeting, and nothing about the
     /// Team, the Work Item, the answer or whoever voted travels with it.
     ///
-    /// A closed list rather than a time or a weekday, because either of those could be read back
-    /// into who voted when. A Team with no Refinement cadence has only one answer.
+    /// A closed list, so the event can only ever carry one of the values named here and never a
+    /// free value of its own. It does not hide when the vote happened: like every other event, it
+    /// travels with the moment the browser recorded it. A Team with no Refinement cadence has only
+    /// one answer.
     /// </summary>
     public enum UsageDataSizingMoment
     {

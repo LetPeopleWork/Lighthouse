@@ -54,9 +54,13 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             return VoterResolution.Of(new Voter(SizingLogEntry.SelfDeclaredVoterKeyOf(presentedVoterKey!), name, null));
         }
 
-        // A short key could be guessed, and a guessed key speaks for somebody else's votes.
+        // A short key could be guessed, and a guessed key speaks for somebody else's votes. A browser's key
+        // is hex, so whitespace or a control character means it is not one; a key of nothing but spaces
+        // is also what the rate limiter counts as no key at all.
         private static bool IsUsable(string? presentedVoterKey)
-            => presentedVoterKey is not null && presentedVoterKey.Length >= ShortestVoterKey;
+            => presentedVoterKey is not null
+                && presentedVoterKey.Length >= ShortestVoterKey
+                && !presentedVoterKey.Any(character => char.IsWhiteSpace(character) || char.IsControl(character));
     }
 
     /// <summary>Exactly one of the two is set: the voter, or why there is none.</summary>

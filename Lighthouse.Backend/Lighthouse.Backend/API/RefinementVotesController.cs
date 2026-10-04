@@ -43,16 +43,24 @@ namespace Lighthouse.Backend.API
                 return RefusedWithoutAVoter(resolution.Refusal, teamId, channel);
             }
 
-            var outcome = sizingLogCommands.Vote(teamId, workItemId, new SizingVote(answer, channel, vote.Comment), voter);
+            var workItemReference = WorkItemReferenceFrom(workItemId);
+            var outcome = sizingLogCommands.Vote(teamId, workItemReference, new SizingVote(answer, channel, vote.Comment), voter);
 
             return outcome switch
             {
-                VoteOutcome.Recorded => RowAsItNowStands(teamId, workItemId, voterKey),
+                VoteOutcome.Recorded => RowAsItNowStands(teamId, workItemReference, voterKey),
                 VoteOutcome.TeamNotFound => NotFound(),
                 VoteOutcome.WorkItemNotInRefinement => Refused(StatusCodes.Status409Conflict, "That Work Item is not in refinement.", SizingRefusal.WorkItemNotInRefinement),
                 _ => throw new System.Diagnostics.UnreachableException($"No such vote outcome: {outcome}"),
             };
         }
+
+        // The server has already unescaped every part of the path except an escaped slash, which it leaves
+        // as it came so that it cannot pass for a path separator. A reference holding a slash therefore
+        // arrives with "%2F" in it. Only that escape is restored: unescaping everything a second time would
+        // turn a reference that merely contains "%25" into a different one.
+        private static string WorkItemReferenceFrom(string routeValue)
+            => routeValue.Replace("%2F", "/", StringComparison.OrdinalIgnoreCase);
 
         // A missing name or key is routine (a browser that lost its key, a blank name) and the caller can put it
         // right, so the answer names it. A credential no person stands behind is for an administrator to fix.
