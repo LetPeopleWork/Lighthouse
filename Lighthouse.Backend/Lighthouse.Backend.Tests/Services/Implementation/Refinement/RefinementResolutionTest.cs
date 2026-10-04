@@ -87,6 +87,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         [TestCase(0, 0, 1, 1, 1, RowReadiness.MoreYesNeeded, 1, TestName = "A single Yes asked for and only a No given")]
         [TestCase(1, 0, 0, 1, 1, RowReadiness.Ready, null, TestName = "A single Yes asked for and given")]
         [TestCase(2, 0, 0, 5, 5, RowReadiness.MoreYesNeeded, 3, TestName = "The missing count follows the Team's own minimum")]
+        [TestCase(1, 0, 0, 2, 4, RowReadiness.MoreYesNeeded, 1, TestName = "A Yes shortfall is named before a voter shortfall")]
+        [TestCase(2, 0, 0, 2, 3, RowReadiness.MoreVotersNeeded, 1, TestName = "Enough Yes votes from too few voters name the missing voters")]
+        [TestCase(1, 1, 0, 2, 5, RowReadiness.MoreVotersNeeded, 3, TestName = "The missing voters follow the Team's own minimum")]
+        [TestCase(2, 0, 1, 2, 3, RowReadiness.Ready, null, TestName = "A No counts as a voter")]
+        [TestCase(1, 1, 1, 2, 3, RowReadiness.Ready, null, TestName = "Enough Yes votes from enough voters are Ready")]
         public void Enough_Yes_votes_make_a_Work_Item_Ready_and_a_shortfall_is_named(
             int yes, int yesBut, int no, int minYes, int minVoters, RowReadiness readiness, int? missingVotes)
         {

@@ -162,7 +162,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice13)]
         public async Task Enough_Yes_votes_from_too_few_voters_name_the_missing_voters()
         {
             var gravity = await GivenReadinessOfTwoYesFromThreeVotersAndTwoYesOn(AdvancedReporting);
@@ -174,7 +173,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-13 @slice-13 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice13)]
         public async Task Any_answer_from_the_missing_voter_makes_the_Work_Item_Ready()
         {
             var gravity = await GivenReadinessOfTwoYesFromThreeVotersAndTwoYesOn(AdvancedReporting);
@@ -238,7 +236,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-13 @slice-13 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice13)]
         public async Task Lowering_readiness_makes_a_Work_Item_Ready_on_the_next_read()
         {
             var gravity = await GivenJonasAndMoSaidYesOn(AdvancedReporting);

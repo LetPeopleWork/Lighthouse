@@ -17,12 +17,21 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             return new RowVotes(current.Count, myVote, SplitOf(current));
         }
 
-        /// <summary>A "Yes, if…" counts as a Yes; a No does not.</summary>
+        /// <summary>
+        /// A "Yes, if…" counts as a Yes; a No does not, though every answer counts as a voter. Missing Yes
+        /// votes are named before missing voters, because more Yes votes also bring more voters.
+        /// </summary>
         public static RowStanding StandingOf(VoteSplit split, ReadinessSetting readiness)
         {
-            var missingYes = readiness.MinYes - (split.Yes + split.YesBut);
+            var yesVotes = split.Yes + split.YesBut;
+            var missingYes = readiness.MinYes - yesVotes;
+            if (missingYes > 0)
+            {
+                return new RowStanding(RowReadiness.MoreYesNeeded, missingYes);
+            }
 
-            return missingYes > 0 ? new RowStanding(RowReadiness.MoreYesNeeded, missingYes) : RowStanding.Ready;
+            var missingVoters = readiness.MinVoters - (yesVotes + split.No);
+            return missingVoters > 0 ? new RowStanding(RowReadiness.MoreVotersNeeded, missingVoters) : RowStanding.Ready;
         }
 
         private static List<SizingLogEntry> CurrentVotes(IEnumerable<SizingLogEntry> entries)
