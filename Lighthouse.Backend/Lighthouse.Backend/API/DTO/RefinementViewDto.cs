@@ -12,6 +12,8 @@ namespace Lighthouse.Backend.API.DTO
         public YardstickDto Yardstick { get; } = new(view.Yardstick);
 
         public VoterIdentityKind VoterIdentity { get; } = view.VoterIdentity;
+
+        public int ReadyByVotesCount { get; } = view.ReadyByVotesCount;
     }
 
     public sealed class YardstickDto(Yardstick yardstick)
@@ -40,6 +42,10 @@ namespace Lighthouse.Backend.API.DTO
         public SizingAnswer? MyVote { get; } = row.Votes.MyVote;
 
         public VoteSplitDto Split { get; } = new(row.Votes.Split);
+
+        public RowReadiness Readiness { get; } = row.Standing.Readiness;
+
+        public int? MissingVotes { get; } = row.Standing.MissingVotes;
     }
 
     public sealed class VoteSplitDto(VoteSplit split)

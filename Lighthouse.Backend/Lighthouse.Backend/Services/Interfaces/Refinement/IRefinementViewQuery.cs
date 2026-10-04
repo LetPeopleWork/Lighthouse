@@ -10,9 +10,18 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
         RefinementView? ForTeam(int teamId, string? presentedVoterKey);
     }
 
-    public sealed record RefinementView(bool RefinementConfigured, List<RefinementRow> WorkItems, Yardstick Yardstick, VoterIdentityKind VoterIdentity);
+    public sealed record RefinementView(bool RefinementConfigured, List<RefinementRow> WorkItems, Yardstick Yardstick, VoterIdentityKind VoterIdentity)
+    {
+        public int ReadyByVotesCount => WorkItems.Count(row => row.Standing.Readiness == RowReadiness.Ready);
+    }
 
-    public sealed record RefinementRow(WorkItem WorkItem, RowVotes Votes);
+    public sealed record RefinementRow(WorkItem WorkItem, RowVotes Votes, RowStanding Standing);
+
+    /// <summary>What the votes make of a row, and how many more votes it needs when that is what stands in the way.</summary>
+    public sealed record RowStanding(RowReadiness Readiness, int? MissingVotes)
+    {
+        public static RowStanding Ready { get; } = new(RowReadiness.Ready, null);
+    }
 
     /// <summary>How many people currently have a vote on the row, the reader's own vote, if any, and how the votes split.</summary>
     public sealed record RowVotes(int VoteCount, SizingAnswer? MyVote, VoteSplit Split)

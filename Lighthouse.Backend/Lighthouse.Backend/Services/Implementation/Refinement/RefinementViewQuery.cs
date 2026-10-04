@@ -28,12 +28,16 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
 
             var workItems = refinementList.For(team);
             var votes = CurrentVotesOn(team.Id, workItems, voterIdentityResolver.ReaderKeyFrom(presentedVoterKey));
+            var readiness = team.RefinementSettings?.Readiness ?? new ReadinessSetting();
             var rows = workItems
-                .Select(item => new RefinementRow(item, votes.GetValueOrDefault(item.ReferenceId, RowVotes.None)))
+                .Select(item => RowFor(item, votes.GetValueOrDefault(item.ReferenceId, RowVotes.None), readiness))
                 .ToList();
 
             return new RefinementView(true, rows, yardstickResolver.For(team), voterIdentity);
         }
+
+        private static RefinementRow RowFor(WorkItem item, RowVotes votes, ReadinessSetting readiness)
+            => new(item, votes, RefinementResolution.StandingOf(votes.Split, readiness));
 
         private Dictionary<string, RowVotes> CurrentVotesOn(int teamId, List<WorkItem> workItems, string? readerKey)
         {

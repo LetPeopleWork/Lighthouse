@@ -76,6 +76,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                 .SetName("A vote taken back no longer counts");
         }
 
+        [TestCase(0, 0, 0, 3, 3, RowReadiness.MoreYesNeeded, 3, TestName = "Nobody has voted, so every Yes is missing")]
+        [TestCase(1, 0, 0, 3, 3, RowReadiness.MoreYesNeeded, 2, TestName = "One Yes of three leaves two missing")]
+        [TestCase(2, 0, 1, 3, 3, RowReadiness.MoreYesNeeded, 1, TestName = "A No does not count as a Yes")]
+        [TestCase(0, 0, 3, 3, 3, RowReadiness.MoreYesNeeded, 3, TestName = "Only No votes leave every Yes missing")]
+        [TestCase(2, 1, 0, 3, 3, RowReadiness.Ready, null, TestName = "A Yes-if counts as a Yes")]
+        [TestCase(0, 3, 0, 3, 3, RowReadiness.Ready, null, TestName = "Yes-if votes alone can make a Work Item Ready")]
+        [TestCase(3, 0, 0, 3, 3, RowReadiness.Ready, null, TestName = "Exactly the Yes votes asked for are enough")]
+        [TestCase(4, 0, 1, 3, 3, RowReadiness.Ready, null, TestName = "More Yes votes than asked for are still Ready")]
+        [TestCase(0, 0, 1, 1, 1, RowReadiness.MoreYesNeeded, 1, TestName = "A single Yes asked for and only a No given")]
+        [TestCase(1, 0, 0, 1, 1, RowReadiness.Ready, null, TestName = "A single Yes asked for and given")]
+        [TestCase(2, 0, 0, 5, 5, RowReadiness.MoreYesNeeded, 3, TestName = "The missing count follows the Team's own minimum")]
+        public void Enough_Yes_votes_make_a_Work_Item_Ready_and_a_shortfall_is_named(
+            int yes, int yesBut, int no, int minYes, int minVoters, RowReadiness readiness, int? missingVotes)
+        {
+            var standing = RefinementResolution.StandingOf(
+                new VoteSplit(yes, yesBut, no),
+                new ReadinessSetting { MinYes = minYes, MinVoters = minVoters });
+
+            Assert.That(standing, Is.EqualTo(new RowStanding(readiness, missingVotes)));
+        }
+
         private static SizingLogEntry VoteBy(string voterKey, int id, SizingAnswer answer, string displayName = "Voter")
             => Entry(voterKey, id, SizingEntryKind.Vote, answer, displayName);
 

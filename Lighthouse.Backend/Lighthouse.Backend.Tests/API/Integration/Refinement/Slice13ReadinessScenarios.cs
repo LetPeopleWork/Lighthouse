@@ -118,7 +118,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-13 @slice-13 @kpi-OUT-5510-K5-ready-before-the-day @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice13)]
         public async Task Enough_Yes_votes_make_a_Work_Item_Ready_and_the_tab_counts_it()
         {
             var gravity = await GivenJonasAndMoSaidYesAndAnaSaidYesButOn(ConfigurationManagement);
@@ -130,7 +129,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-13 @slice-13 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice13)]
         public async Task The_missing_Yes_votes_are_named()
         {
             var gravity = await GivenOnlyJonasSaidYesOn(AdvancedReporting);
@@ -142,7 +140,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice13)]
         public async Task A_Work_Item_nobody_has_voted_on_needs_every_Yes()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -154,7 +151,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice13)]
         public async Task A_No_does_not_count_towards_the_Yes_votes()
         {
             var gravity = await GivenJonasAndMoSaidYesAndAnaSaidNoOn(ApiVersioning);
@@ -254,7 +250,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-13 @slice-13 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice13)]
         public async Task The_tab_counts_only_the_Work_Items_the_votes_made_Ready()
         {
             var gravity = await GivenTwoWorkItemsReadyByVotesAndOneShortOfIt();
