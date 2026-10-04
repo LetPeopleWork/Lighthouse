@@ -2157,6 +2157,48 @@ sketched before slice 11 is built.
 The conditional answer is labelled **"Yes, if…"** (maintainer, 2026-10-03), replacing "Yes, but…" everywhere a user
 reads it; the three answers read Yes · Yes, if… · No. Only the label changes; the stored answer value stays as it is.
 
+## Wave: DISTILL / [REF] Maintainer decision — the voting UI, and slice 14 dropped (2026-10-04)
+
+Approved by the maintainer on 2026-10-04 from sketches, before slices 11–16 were built. **Supersedes DST-22's
+provisional copy where they differ, and drops slice 14 (US-14, #6152 Removed).**
+
+**Slice 14 is dropped: every vote and every comment is visible to everyone, voted or not.** A Product Owner who does not
+vote still needs to read how the Team voted. "Not at first glance" is enough: the grid shows only the count, and the
+split and the comments sit one click away in the Votes dialog. The API never hides the split or the comments; the
+`split` on a row and the log entries are always returned. The slice-14 scenarios are deleted, and every other scenario
+that read "hidden until you vote" now reads "visible".
+
+The grid (the shared `DataGridBase`, after Work Item / Parent / State):
+
+```
+3 Work Items in Refinement · 1 ready by votes
+Doable within 7 days? ⓘ
+
+Work Item           Parent  State  Your vote                 Votes          Readiness
+GR-051 PDF export   GR-010  Next   [Yes] [Yes, if…] [No]     3 votes 💬 ❓   2 more Yes needed
+GR-054 Bulk import  GR-010  Next   [Yes] [Yes, if…] [■No]    2 votes        Needs discussion
+GR-073 SSO login    GR-012  Ready  [■Yes] [Yes, if…] [No]    3 votes        Ready
+```
+
+- **Your vote** (slice 11): three one-click buttons, the voter's own answer `aria-pressed`; clicking another changes it.
+  Yes and No record in one click. **Yes, if…** (slice 12) opens a dialog with an optional "Condition" textbox, Cancel / Vote.
+- **Votes** (slice 11, markers in 12): "No votes" / "1 vote" / "3 votes", with a comments marker and an open-question
+  marker. Clicking the cell opens **Votes and comments**: the split "3 Yes · 0 Yes, if… · 1 No", the log oldest first
+  ("Wed 7 Oct", "via the command line" / "via an assistant", "Jonas Weber took back their vote"), "Ask a question",
+  a footer "Voting as Ana Lima · Change your name" (auth off), "Take back my vote" (slice 16), Close. A comment added
+  there by someone who has a current vote is a plain comment, which is how a Yes or No carries its optional reason
+  from the UI.
+- **Who is voting?** (slice 11, auth off): the first vote opens a dialog with "Your name", "Kept in this browser only.",
+  Cancel / Vote. Name and a random voter key are kept in localStorage.
+- **Readiness** (slice 13): its own column after Votes: "Ready" / "2 more Yes needed" / "1 more voter needed" /
+  "Needs discussion". Settings → Refinement gains "Readiness by votes": Yes votes needed [3], Voters needed [3],
+  a "Send to discussion at [1] or more" checkbox with Counting (•) No ( ) No or Yes, if…, and the two errors of DST-22.
+
+DEVOPS points settled the same day: the per-browser KPI proxies (DVO-3) and K4/K5 leaving out client votes are
+accepted; the vote-write rate limit stays as DVO-5 partitions it. **No usage-data event ever carries personal data**:
+no IP, no voter name, no voter key, no account id, no free text. Each event emitted by these slices has a test that
+reads the forwarded payload and finds only the event name and its closed-enum property.
+
 ## Wave: DISTILL / [REF] Scenario list with tags — E3 (#5510)
 
 All cases are pending (`[Ignore(PendingSlice1n)]` / `IgnoreReason = PendingSlice1n`, `it.skip`); the E2E skeleton is
