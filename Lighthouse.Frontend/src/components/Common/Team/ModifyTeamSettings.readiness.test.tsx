@@ -77,6 +77,9 @@ const YES_IF_RULE = "Send to discussion on “Yes, if…” votes";
 const NO_THRESHOLD = "No votes that send to discussion";
 const YES_IF_THRESHOLD = "“Yes, if…” votes that send to discussion";
 
+// The server binds each number as a 32-bit int and refuses anything larger with a bare 400.
+const LARGEST_WHOLE_NUMBER_THE_SERVER_TAKES = 2147483647;
+
 const defaultTerms: Record<string, string> = {
 	[TERMINOLOGY_KEYS.WORK_ITEMS]: "Work Items",
 	refinement: "Refinement",
@@ -409,6 +412,24 @@ describe("the readiness rule the form shares with the server", () => {
 			minYesError: null,
 			minVotersError: MIN_VOTERS_ERROR,
 		},
+		{
+			minYes: 1e11,
+			minVoters: 1e11,
+			minYesError: MIN_YES_ERROR,
+			minVotersError: null,
+		},
+		{
+			minYes: 3,
+			minVoters: 1e11,
+			minYesError: null,
+			minVotersError: MIN_VOTERS_ERROR,
+		},
+		{
+			minYes: LARGEST_WHOLE_NUMBER_THE_SERVER_TAKES,
+			minVoters: LARGEST_WHOLE_NUMBER_THE_SERVER_TAKES,
+			minYesError: null,
+			minVotersError: null,
+		},
 	])(
 		"$minYes Yes from $minVoters voters → $minYesError / $minVotersError",
 		({ minYes, minVoters, minYesError, minVotersError }) => {
@@ -442,6 +463,14 @@ describe("the discussion rules the form shares with the server", () => {
 			yesIfError: DISCUSSION_RULE_ERROR,
 		},
 		{ no: null, yesIf: 0, noError: null, yesIfError: DISCUSSION_RULE_ERROR },
+		{ no: 1e11, yesIf: 2, noError: DISCUSSION_RULE_ERROR, yesIfError: null },
+		{ no: 1, yesIf: 1e11, noError: null, yesIfError: DISCUSSION_RULE_ERROR },
+		{
+			no: LARGEST_WHOLE_NUMBER_THE_SERVER_TAKES,
+			yesIf: LARGEST_WHOLE_NUMBER_THE_SERVER_TAKES,
+			noError: null,
+			yesIfError: null,
+		},
 	])(
 		"No at $no, “Yes, if…” at $yesIf → $noError / $yesIfError",
 		({ no, yesIf, noError, yesIfError }) => {

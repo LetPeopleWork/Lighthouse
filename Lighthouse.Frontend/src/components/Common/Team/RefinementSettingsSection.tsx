@@ -56,8 +56,14 @@ export const DISCUSSION_RULE_ERROR = "A discussion rule needs at least 1 vote";
 const discussWhenOf = (readiness: IReadinessSetting): IDiscussWhenSetting =>
 	readiness.discussWhen ?? DEFAULT_DISCUSS_WHEN;
 
+// The server binds each number as a 32-bit int and answers anything larger with a bare 400.
+const LARGEST_VOTE_COUNT = 2147483647;
+
+const isAVoteCount = (votes: number): boolean =>
+	Number.isInteger(votes) && votes <= LARGEST_VOTE_COUNT;
+
 const isAtLeastOne = (votes: number): boolean =>
-	Number.isInteger(votes) && votes >= 1;
+	isAVoteCount(votes) && votes >= 1;
 
 // A cleared number field holds NaN, which the input shows as empty rather than as "NaN".
 const shownNumber = (value: number) => (Number.isNaN(value) ? "" : value);
@@ -78,7 +84,7 @@ export const readinessErrors = (
 ): ReadinessErrors => {
 	const enoughYes = isAtLeastOne(readiness.minYes);
 	const enoughVoters =
-		Number.isInteger(readiness.minVoters) &&
+		isAVoteCount(readiness.minVoters) &&
 		readiness.minVoters >= readiness.minYes;
 	const discussWhen = discussWhenOf(readiness);
 	return {
