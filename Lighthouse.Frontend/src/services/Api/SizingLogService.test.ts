@@ -43,7 +43,7 @@ describe("SizingLogService", () => {
 	});
 
 	// @us-11 @slice-11 @driving_port @contract-shape:bounded-change
-	it.skip("casts a vote to the Work Item's address with the voter's key and answers the row as it now stands", async () => {
+	it("casts a vote to the Work Item's address with the voter's key and answers the row as it now stands", async () => {
 		mockedAxios.post.mockResolvedValueOnce({ data: theRow });
 
 		const row = await sizingLogService.castVote(
@@ -77,7 +77,7 @@ describe("SizingLogService", () => {
 	});
 
 	// @us-11 @slice-11 @boundary @contract-shape:bounded-change
-	it.skip("keeps a Work Item reference that needs escaping in one piece of the address", async () => {
+	it("keeps a Work Item reference that needs escaping in one piece of the address", async () => {
 		mockedAxios.post.mockResolvedValueOnce({ data: theRow });
 
 		await sizingLogService.castVote(
@@ -95,7 +95,7 @@ describe("SizingLogService", () => {
 	});
 
 	// @us-11 @slice-11 @error @contract-shape:unbounded-preservation
-	it.skip("passes a refused vote on to the caller", async () => {
+	it("passes a refused vote on to the caller", async () => {
 		mockedAxios.post.mockRejectedValueOnce(
 			new Error("Request failed with status code 409"),
 		);

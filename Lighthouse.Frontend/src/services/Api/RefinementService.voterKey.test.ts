@@ -38,7 +38,7 @@ describe("RefinementService and the browser's voter key", () => {
 	});
 
 	// @us-11 @slice-11 @driving_port @contract-shape:pure-function
-	it.skip("reads the tab with the key this browser keeps for its voter, and with none before it keeps one", async () => {
+	it("reads the tab with the key this browser keeps for its voter, and with none before it keeps one", async () => {
 		await refinementService.getRefinement(7);
 		localStorage.setItem(
 			VOTER_STORAGE_KEY,
@@ -55,7 +55,7 @@ describe("RefinementService and the browser's voter key", () => {
 	});
 
 	// @us-11 @slice-11 @error @contract-shape:pure-function
-	it.skip("sends no key while what the browser keeps cannot be read, and the key once it can", async () => {
+	it("sends no key while what the browser keeps cannot be read, and the key once it can", async () => {
 		localStorage.setItem(VOTER_STORAGE_KEY, "not json");
 		await refinementService.getRefinement(7);
 		localStorage.setItem(
@@ -67,4 +67,36 @@ describe("RefinementService and the browser's voter key", () => {
 		expect(theKeySentWithRead(0)).toBeUndefined();
 		expect(theKeySentWithRead(1)).toBe(THE_KEY);
 	});
+
+	it.each([
+		["nothing kept", null, undefined],
+		["not JSON", "not json", undefined],
+		["JSON that is not a voter", JSON.stringify(["Jonas Weber"]), undefined],
+		[
+			"a name without a key",
+			JSON.stringify({ name: "Jonas Weber" }),
+			undefined,
+		],
+		[
+			"an empty key",
+			JSON.stringify({ name: "Jonas Weber", key: "" }),
+			undefined,
+		],
+		[
+			"a name and a key",
+			JSON.stringify({ name: "Jonas Weber", key: THE_KEY }),
+			THE_KEY,
+		],
+	])(
+		"with %s kept, the tab read sends a key only when it is usable",
+		async (_kept, stored, expectedKey) => {
+			if (stored !== null) {
+				localStorage.setItem(VOTER_STORAGE_KEY, stored);
+			}
+
+			await refinementService.getRefinement(7);
+
+			expect(theKeySentWithRead(0)).toBe(expectedKey);
+		},
+	);
 });

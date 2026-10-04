@@ -1,3 +1,4 @@
+import type { AxiosRequestConfig } from "axios";
 import type {
 	IRefinementRow,
 	ISizingComment,
@@ -5,6 +6,16 @@ import type {
 	ISizingVote,
 } from "../../models/Refinement/Refinement";
 import { BaseApiService } from "./BaseApiService";
+
+const VOTER_KEY_HEADER = "X-Lighthouse-Voter-Key";
+
+/** A browser without a key - every signed-in one - sends no header at all, never an empty one. */
+export const withVoterKey = (voterKey: string | null): AxiosRequestConfig =>
+	voterKey === null ? {} : { headers: { [VOTER_KEY_HEADER]: voterKey } };
+
+/** A Work Item reference may hold a slash or a hash, and must stay one segment of the address. */
+const workItemAddress = (teamId: number, workItemReference: string): string =>
+	`/teams/${teamId}/refinement/work-items/${encodeURIComponent(workItemReference)}`;
 
 export const __SCAFFOLD__ = true;
 
@@ -43,17 +54,20 @@ export class SizingLogService
 	extends BaseApiService
 	implements ISizingLogService
 {
-	public castVote(
+	public async castVote(
 		teamId: number,
 		workItemReference: string,
 		vote: ISizingVote,
 		voterKey: string | null,
 	): Promise<IRefinementRow> {
-		return Promise.reject(
-			new Error(
-				`${NOT_YET_IMPLEMENTED}: vote on ${workItemReference} of Team ${teamId} (${vote.answer}, ${voterKey === null ? "no key" : "key"})`,
-			),
-		);
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.post<IRefinementRow>(
+				`${workItemAddress(teamId, workItemReference)}/votes`,
+				vote,
+				withVoterKey(voterKey),
+			);
+			return response.data;
+		});
 	}
 
 	public addComment(
