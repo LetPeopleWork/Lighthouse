@@ -76,6 +76,12 @@ Two standing principles worth keeping visible here because they're easy to skip 
   maintainer is there, rather than shipping UI they have not seen. Prefer reusing an existing control or
   table style (`DataGridBase`, `ItemListManager`, the feature-list columns) over a new one, and say which
   one the sketch reuses.
+  **When:** if the slices being distilled touch anything a user sees, walk through the sketches with the
+  maintainer at the **start of DISTILL**, one decision at a time with options, before the scenarios are
+  written. DISTILL pins copy and layout in tests, so a sketch reviewed later means rewriting the tests
+  too, and the review tends to change more than the layout (it has merged and dropped slices). Record the
+  outcome in `feature-delta.md` as a maintainer-decision block; DELIVER then only re-sketches what DISTILL
+  left open.
 - **Each Epic ships on its own.** When DISCUSS splits a feature into several Epics, each one must be
   deliverable and releasable alone: finished, it adds something valuable to at least some users, even if
   no other Epic of the split ever ships. Order the slices Epic by Epic, so one Epic is completed before
