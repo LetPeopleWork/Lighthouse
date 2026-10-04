@@ -9,7 +9,7 @@ import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import type { ISizingLogService } from "../../../../services/Api/SizingLogService";
 import type { IStoredVoter } from "../../../../services/Refinement/voterStore";
 import { createMockApiServiceContext } from "../../../../tests/MockApiServiceProvider";
-import { useVoteCasting } from "./useVoteCasting";
+import { sizingMomentOf, useVoteCasting } from "./useVoteCasting";
 
 vi.mock("../../../../services/UsageData/usageDataReporter", () => ({
 	useUsageDataReporter: () => () => {},
@@ -64,7 +64,7 @@ const renderTheCasting = (
 	);
 	const hook = renderHook(
 		({ team }: { team: number }) =>
-			useVoteCasting(team, identity, vi.fn(), vi.fn()),
+			useVoteCasting(team, identity, vi.fn(), vi.fn(), null),
 		{ wrapper, initialProps: { team: teamId } },
 	);
 	return { ...hook, sizingLogService };
@@ -119,5 +119,27 @@ describe("casting a vote from the tab", () => {
 
 		expect(sizingLogService.castVote).not.toHaveBeenCalled();
 		expect(result.current.isAskingForName).toBe(false);
+	});
+});
+
+describe("when a vote counts as cast, relative to the Team's Refinement", () => {
+	it.each([
+		[null, false, "NoCadence"],
+		[null, true, "NoCadence"],
+		[undefined, undefined, "NoCadence"],
+		["2026-10-08", true, "OnRefinementDay"],
+		["2026-10-08", false, "OnOtherDay"],
+		["2026-10-08", undefined, "OnOtherDay"],
+	])(
+		"with the next Refinement on %s and a Refinement day %s is %s",
+		(nextRefinementDate, isRefinementDay, moment) => {
+			expect(sizingMomentOf({ nextRefinementDate, isRefinementDay })).toBe(
+				moment,
+			);
+		},
+	);
+
+	it("is NoCadence before the tab has loaded", () => {
+		expect(sizingMomentOf(null)).toBe("NoCadence");
 	});
 });

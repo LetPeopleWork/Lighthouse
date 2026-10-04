@@ -2,6 +2,7 @@ import { useCallback, useContext, useRef, useState } from "react";
 import type { useVoterIdentity } from "../../../../hooks/useVoterIdentity";
 import type {
 	IRefinementRow,
+	IRefinementView,
 	SizingAnswer,
 } from "../../../../models/Refinement/Refinement";
 import { UsageDataSizingMoment } from "../../../../models/UsageData/UsageData";
@@ -20,9 +21,25 @@ type VoterIdentity = Pick<
 	"voter" | "asksForName" | "declareName" | "ballotFor"
 >;
 
-/** A Team cannot have a refinement cadence yet, so every vote is cast without one. */
-const sizingMomentOfAVote = (): UsageDataSizingMoment =>
-	UsageDataSizingMoment.NoCadence;
+export type RefinementFacts = Pick<
+	IRefinementView,
+	"nextRefinementDate" | "isRefinementDay"
+> | null;
+
+/**
+ * Whether a vote was cast on a Refinement day is the server's answer, not this browser's clock: the
+ * server counts days in the instance's time zone and knows which cadence days are blacked out.
+ */
+export const sizingMomentOf = (
+	facts: RefinementFacts,
+): UsageDataSizingMoment => {
+	if ((facts?.nextRefinementDate ?? null) === null) {
+		return UsageDataSizingMoment.NoCadence;
+	}
+	return facts?.isRefinementDay
+		? UsageDataSizingMoment.OnRefinementDay
+		: UsageDataSizingMoment.OnOtherDay;
+};
 
 /**
  * Casting a vote from the tab. A voter without sign-in who has not named themselves yet is asked first, and
@@ -33,6 +50,7 @@ export const useVoteCasting = (
 	{ voter, asksForName, declareName, ballotFor }: VoterIdentity,
 	onAnswered: (answeredRow: IRefinementRow) => void,
 	onFailure: (error: unknown) => void,
+	refinementFacts: RefinementFacts,
 ) => {
 	const { sizingLogService } = useContext(ApiServiceContext);
 	const reportUsage = useUsageDataReporter();
@@ -61,16 +79,17 @@ export const useVoteCasting = (
 				.castVote(teamId, referenceId, vote, voterKey)
 				.then((answeredRow) => {
 					onAnswered(answeredRow);
+					const sizingMoment = sizingMomentOf(refinementFacts);
 					reportUsage({
 						name: UsageDataEventName.TeamSizingVoteCast,
-						sizingMoment: sizingMomentOfAVote(),
+						sizingMoment,
 					});
 					// Only the server knows which vote moved the row to Ready; this browser's copy of the
 					// row may be older than other people's votes, and the event must be counted once.
 					if (answeredRow.madeReady) {
 						reportUsage({
 							name: UsageDataEventName.TeamSizingReadinessReached,
-							sizingMoment: sizingMomentOfAVote(),
+							sizingMoment,
 						});
 					}
 				})
@@ -88,6 +107,7 @@ export const useVoteCasting = (
 			onFailure,
 			reportUsage,
 			showSending,
+			refinementFacts,
 		],
 	);
 

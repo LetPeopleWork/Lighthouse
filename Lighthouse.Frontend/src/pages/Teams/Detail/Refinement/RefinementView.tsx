@@ -142,7 +142,13 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 	);
 
 	const { onVote, votesBeingSent, isAskingForName, voteUnderName, cancelVote } =
-		useVoteCasting(team.id, voterIdentity, showAnsweredRow, showVoteRefusal);
+		useVoteCasting(
+			team.id,
+			voterIdentity,
+			showAnsweredRow,
+			showVoteRefusal,
+			refinement,
+		);
 
 	const changeNameTo = (name: string) => {
 		declareName(name);

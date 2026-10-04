@@ -263,7 +263,7 @@ describe("The sizing events say whether they happened on a Refinement day", () =
 	});
 
 	// @us-04 @us-11 @us-13 @slice-04 @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:bounded-change
-	it.skip.each([
+	it.each([
 		[THURSDAY_THE_EIGHTH, true, "OnRefinementDay"],
 		[THURSDAY_THE_EIGHTH, false, "OnOtherDay"],
 		[null, false, "NoCadence"],
