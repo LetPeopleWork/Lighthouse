@@ -16,6 +16,17 @@ import YardstickQuestion, {
 
 export type RefinementGridRow = IRefinementRow & GridValidRowModel;
 
+export interface RefinementColumnsOptions {
+	workItemTerm: string;
+	parentMap: Map<string, ParentWorkItem>;
+	/** The question every vote answers; it heads the vote column. */
+	voteQuestion?: YardstickQuestionWords;
+	stagesConfigured: boolean;
+	votesBeingSent: ReadonlySet<string>;
+	onVote: (vote: IPendingVote) => void;
+	onOpenVotes: (referenceId: string) => void;
+}
+
 const stageColumn: DataGridColumn<RefinementGridRow> = {
 	field: "stage",
 	headerName: "Stage",
@@ -25,15 +36,15 @@ const stageColumn: DataGridColumn<RefinementGridRow> = {
 	),
 };
 
-export const createRefinementColumns = (
-	workItemTerm: string,
-	parentMap: Map<string, ParentWorkItem>,
-	onVote: (vote: IPendingVote) => void,
-	votesBeingSent: ReadonlySet<string>,
-	onOpenVotes: (referenceId: string) => void,
-	stagesConfigured: boolean,
-	voteQuestion?: YardstickQuestionWords,
-): DataGridColumn<RefinementGridRow>[] => [
+export const createRefinementColumns = ({
+	workItemTerm,
+	parentMap,
+	voteQuestion,
+	stagesConfigured,
+	votesBeingSent,
+	onVote,
+	onOpenVotes,
+}: RefinementColumnsOptions): DataGridColumn<RefinementGridRow>[] => [
 	createNameColumn<RefinementGridRow>(workItemTerm),
 	{
 		field: "parentReferenceId",

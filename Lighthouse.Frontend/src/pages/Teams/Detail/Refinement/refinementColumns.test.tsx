@@ -1,17 +1,24 @@
 import { describe, expect, it, vi } from "vitest";
 import type { RefinementStage } from "../../../../models/Refinement/Refinement";
-import { createRefinementColumns } from "./refinementColumns";
+import {
+	createRefinementColumns,
+	type RefinementColumnsOptions,
+} from "./refinementColumns";
 import { describeDisagreement } from "./StageCell";
 
+const columnsWith = (options: Partial<RefinementColumnsOptions>) =>
+	createRefinementColumns({
+		workItemTerm: "Work Item",
+		parentMap: new Map(),
+		stagesConfigured: false,
+		votesBeingSent: new Set(),
+		onVote: vi.fn(),
+		onOpenVotes: vi.fn(),
+		...options,
+	});
+
 const columnsFor = (stagesConfigured: boolean) =>
-	createRefinementColumns(
-		"Work Item",
-		new Map(),
-		vi.fn(),
-		new Set(),
-		vi.fn(),
-		stagesConfigured,
-	);
+	columnsWith({ stagesConfigured });
 
 describe("the Refinement tab's columns", () => {
 	it("sorts by name, state, vote count and readiness, but not by parent or by the reader's own vote", () => {
@@ -66,15 +73,9 @@ describe("the vote column's header", () => {
 	const voteColumn = (
 		question: { question: string; tooltip: string } | undefined,
 	) =>
-		createRefinementColumns(
-			"Work Item",
-			new Map(),
-			vi.fn(),
-			new Set(),
-			vi.fn(),
-			false,
-			question,
-		).find(({ field }) => field === "myVote");
+		columnsWith({ voteQuestion: question }).find(
+			({ field }) => field === "myVote",
+		);
 
 	it("is the yardstick question when there is one to ask, wide enough not to cut it off", () => {
 		const column = voteColumn({
