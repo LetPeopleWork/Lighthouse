@@ -289,6 +289,8 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							onStageRulesChange={(stageRules) =>
 								changeRefinement({ stageRules })
 							}
+							cadence={teamSettings.refinement?.cadence ?? null}
+							onCadenceChange={(cadence) => changeRefinement({ cadence })}
 						/>
 
 						<FlowMetricsConfigurationComponent

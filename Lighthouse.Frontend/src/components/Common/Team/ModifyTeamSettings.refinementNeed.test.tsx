@@ -389,7 +389,7 @@ describe("The Refinement cadence in the Refinement section of a Team's settings"
 	});
 
 	// @us-04 @slice-04 @driving_port @contract-shape:pure-function
-	it.skip("offers the weekdays Monday to Sunday and every week, with no starting week asked for", async () => {
+	it("offers the weekdays Monday to Sunday and every week, with no starting week asked for", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
 		expect(await screen.findByText("Refinement cadence")).toBeVisible();
@@ -415,7 +415,7 @@ describe("The Refinement cadence in the Refinement section of a Team's settings"
 	});
 
 	// @us-04 @slice-04 @driving_port @contract-shape:bounded-change
-	it.skip("saves Thursdays every week", async () => {
+	it("saves Thursdays every week", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
 		await userEvent.click(
@@ -489,7 +489,7 @@ describe("The Refinement cadence in the Refinement section of a Team's settings"
 	});
 
 	// @us-04 @slice-04 @boundary @contract-shape:bounded-change
-	it.skip("leaves the Team without a cadence when the last weekday is unticked", async () => {
+	it("leaves the Team without a cadence when the last weekday is unticked", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
 				cadence: { weekdays: ["Thursday"], intervalWeeks: 1, anchorWeek: null },

@@ -8,9 +8,14 @@ import {
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useEffect, useId, useRef, useState } from "react";
+import {
+	type DayOfWeek,
+	ORDERED_WEEKDAYS,
+} from "../../../models/RecurringBlackoutRule";
 import type {
 	IDiscussWhenSetting,
 	IReadinessSetting,
+	IRefinementCadenceSetting,
 	IRefinementStateSetting,
 	IStageRulesSetting,
 } from "../../../models/Refinement/Refinement";
@@ -18,6 +23,7 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
 import InputGroup from "../InputGroup/InputGroup";
 import ItemListManager from "../ItemListManager/ItemListManager";
+import WeeklyRecurrenceFields from "../WeeklyRecurrence/WeeklyRecurrenceFields";
 import StageRulesSettings from "./StageRulesSettings";
 
 interface RefinementSettingsSectionProps {
@@ -30,7 +36,26 @@ interface RefinementSettingsSectionProps {
 	onReadinessChange: (readiness: IReadinessSetting) => void;
 	stageRules: IStageRulesSetting;
 	onStageRulesChange: (stageRules: IStageRulesSetting) => void;
+	cadence: IRefinementCadenceSetting | null;
+	onCadenceChange: (cadence: IRefinementCadenceSetting) => void;
 }
+
+export const NO_CADENCE: IRefinementCadenceSetting = {
+	weekdays: [],
+	intervalWeeks: 1,
+	anchorWeek: null,
+};
+
+// The server reads the starting week only when the Team refines less often than weekly.
+export const cadenceOf = (
+	weekdays: DayOfWeek[],
+	intervalWeeks: number,
+	anchorWeek: string | null,
+): IRefinementCadenceSetting => ({
+	weekdays: ORDERED_WEEKDAYS.filter((day) => weekdays.includes(day)),
+	intervalWeeks,
+	anchorWeek: intervalWeeks === 1 ? null : anchorWeek,
+});
 
 type DiscussionRule = keyof IDiscussWhenSetting;
 
@@ -176,6 +201,8 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 	onReadinessChange,
 	stageRules,
 	onStageRulesChange,
+	cadence,
+	onCadenceChange,
 }) => {
 	const { getTerm } = useTerminology();
 
@@ -253,6 +280,19 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 		changeDiscussWhen(rule, on ? rememberedThresholds[rule] : null);
 	};
 
+	const shownCadence = cadence ?? NO_CADENCE;
+	const changeCadence = (weekdays: DayOfWeek[], intervalWeeks: number) =>
+		onCadenceChange(
+			cadenceOf(weekdays, intervalWeeks, shownCadence.anchorWeek ?? null),
+		);
+	const toggleWeekday = (day: DayOfWeek) =>
+		changeCadence(
+			shownCadence.weekdays.includes(day)
+				? shownCadence.weekdays.filter((selected) => selected !== day)
+				: [...shownCadence.weekdays, day],
+			shownCadence.intervalWeeks,
+		);
+
 	return (
 		<InputGroup title={refinementTerm}>
 			<Grid size={{ xs: 12 }}>
@@ -311,6 +351,17 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 				stageRules={stageRules}
 				onChange={onStageRulesChange}
 			/>
+			<Grid size={{ xs: 12 }}>
+				<Typography variant="subtitle1">{`${refinementTerm} cadence`}</Typography>
+				<WeeklyRecurrenceFields
+					weekdays={shownCadence.weekdays}
+					intervalWeeks={shownCadence.intervalWeeks}
+					onToggleWeekday={toggleWeekday}
+					onIntervalWeeksChange={(intervalWeeks) =>
+						changeCadence(shownCadence.weekdays, intervalWeeks || 1)
+					}
+				/>
+			</Grid>
 		</InputGroup>
 	);
 };
