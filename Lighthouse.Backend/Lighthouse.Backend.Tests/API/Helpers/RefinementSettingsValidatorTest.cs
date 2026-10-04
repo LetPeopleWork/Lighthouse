@@ -19,7 +19,10 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
         private const string Icebox = "Icebox";
 
-        private static readonly string[] NothingStored = [];
+        private static readonly RefinementSettings? NothingStored = null;
+
+        private static RefinementSettings StoredStates(params string[] states)
+            => new() { States = [.. states.Select(state => new RefinementStateSetting { State = state })] };
 
         private static TeamSettingDto SettingsChoosing(params string[] chosen)
         {
@@ -110,7 +113,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         [TestCase(" Icebox ")]
         public void A_stored_state_that_stopped_being_mapped_is_accepted_when_sent_again(string resent)
         {
-            var errors = RefinementSettingsValidator.ValidateSettings(SettingsChoosing(Backlog, resent), [Icebox]);
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsChoosing(Backlog, resent), StoredStates(Icebox));
 
             Assert.That(errors, Is.Empty);
         }
@@ -118,7 +121,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         [Test]
         public void A_newly_added_state_outside_To_Do_and_Doing_is_refused_next_to_a_kept_stored_one()
         {
-            var errors = RefinementSettingsValidator.ValidateSettings(SettingsChoosing(Backlog, Icebox, Done), [Backlog, Icebox]);
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsChoosing(Backlog, Icebox, Done), StoredStates(Backlog, Icebox));
 
             Assert.That(errors, Is.EqualTo(new List<string>
             {
@@ -126,17 +129,26 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             }));
         }
 
-        private static TeamSettingDto SettingsWithReadiness(int? minYes, int? minVoters, int? vetoThreshold = null)
+        private static TeamSettingDto SettingsWithReadiness(int? minYes, int? minVoters, DiscussionRulesDto? discussWhen = null)
         {
             var settings = SettingsChoosing(Backlog);
             settings.Refinement!.Readiness = new ReadinessSettingDto
             {
                 MinYes = minYes,
                 MinVoters = minVoters,
-                Veto = vetoThreshold is null ? null : new VetoSettingDto { Threshold = vetoThreshold, Counts = VetoCounts.No },
+                DiscussWhen = discussWhen,
             };
             return settings;
         }
+
+        private static RefinementSettings StoredReadiness(int minYes, int minVoters)
+            => new() { States = [new RefinementStateSetting { State = Backlog }], Readiness = new ReadinessSetting { MinYes = minYes, MinVoters = minVoters } };
+
+        private static string NoRuleRefused(int threshold)
+            => $"'{threshold}' cannot be the No votes that send a Work Item to discussion: a discussion rule needs at least 1 vote.";
+
+        private static string YesIfRuleRefused(int threshold)
+            => $"'{threshold}' cannot be the \"Yes, if…\" votes that send a Work Item to discussion: a discussion rule needs at least 1 vote.";
 
         [TestCase(1, 1)]
         [TestCase(1, 5)]
@@ -173,25 +185,37 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             }));
         }
 
-        [TestCase(1)]
-        [TestCase(2)]
-        public void A_veto_of_at_least_one_vote_is_accepted(int threshold)
+        [TestCase(1, 2)]
+        [TestCase(5, 1)]
+        [TestCase(null, 2)]
+        [TestCase(1, null)]
+        [TestCase(null, null)]
+        public void Discussion_rules_of_at_least_one_vote_or_turned_off_are_accepted(int? no, int? yesIf)
         {
-            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithReadiness(3, 3, threshold), NothingStored);
+            var errors = RefinementSettingsValidator.ValidateSettings(
+                SettingsWithReadiness(3, 3, new DiscussionRulesDto { No = no, YesIf = yesIf }), NothingStored);
 
             Assert.That(errors, Is.Empty);
         }
 
         [TestCase(0)]
         [TestCase(-1)]
-        public void A_veto_of_fewer_than_one_vote_is_refused_by_value(int threshold)
+        public void A_No_rule_of_fewer_than_one_vote_is_refused_by_value(int threshold)
         {
-            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithReadiness(3, 3, threshold), NothingStored);
+            var errors = RefinementSettingsValidator.ValidateSettings(
+                SettingsWithReadiness(3, 3, new DiscussionRulesDto { No = threshold, YesIf = 2 }), NothingStored);
 
-            Assert.That(errors, Is.EqualTo(new List<string>
-            {
-                $"'{threshold}' cannot be the votes a veto needs: at least one vote is needed.",
-            }));
+            Assert.That(errors, Is.EqualTo(new List<string> { NoRuleRefused(threshold) }));
+        }
+
+        [TestCase(0)]
+        [TestCase(-1)]
+        public void A_Yes_if_rule_of_fewer_than_one_vote_is_refused_by_value(int threshold)
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(
+                SettingsWithReadiness(3, 3, new DiscussionRulesDto { No = 1, YesIf = threshold }), NothingStored);
+
+            Assert.That(errors, Is.EqualTo(new List<string> { YesIfRuleRefused(threshold) }));
         }
 
         [Test]
@@ -202,20 +226,45 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             Assert.That(errors, Is.Empty);
         }
 
-        [TestCase(5, null)]
-        [TestCase(null, 1)]
-        [TestCase(null, null)]
-        public void A_readiness_save_leaving_out_one_side_of_the_voter_rule_is_not_judged_on_it(int? minYes, int? minVoters)
+        [TestCase(5, null, 3, 3, "'3' cannot be the voters readiness needs: never fewer than the 5 Yes votes.")]
+        [TestCase(null, 1, 3, 3, "'1' cannot be the voters readiness needs: never fewer than the 3 Yes votes.")]
+        [TestCase(null, 4, 5, 6, "'4' cannot be the voters readiness needs: never fewer than the 5 Yes votes.")]
+        public void A_readiness_save_leaving_out_one_side_of_the_voter_rule_is_judged_with_the_stored_side(
+            int? minYes, int? minVoters, int storedMinYes, int storedMinVoters, string refusal)
         {
-            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithReadiness(minYes, minVoters), NothingStored);
+            var errors = RefinementSettingsValidator.ValidateSettings(
+                SettingsWithReadiness(minYes, minVoters), StoredReadiness(storedMinYes, storedMinVoters));
+
+            Assert.That(errors, Is.EqualTo(new List<string> { refusal }));
+        }
+
+        [TestCase(2, null, 3, 3)]
+        [TestCase(null, 6, 5, 5)]
+        [TestCase(null, null, 2, 2)]
+        public void A_readiness_save_leaving_out_one_side_of_the_voter_rule_is_accepted_when_the_stored_side_agrees(
+            int? minYes, int? minVoters, int storedMinYes, int storedMinVoters)
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(
+                SettingsWithReadiness(minYes, minVoters), StoredReadiness(storedMinYes, storedMinVoters));
 
             Assert.That(errors, Is.Empty);
         }
 
         [Test]
+        public void A_readiness_save_for_a_Team_without_refinement_is_judged_with_the_default_side()
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithReadiness(5, null), NothingStored);
+
+            Assert.That(errors, Is.EqualTo(new List<string>
+            {
+                "'3' cannot be the voters readiness needs: never fewer than the 5 Yes votes.",
+            }));
+        }
+
+        [Test]
         public void Every_broken_readiness_rule_is_named_after_a_refused_state()
         {
-            var settings = SettingsWithReadiness(0, -1, 0);
+            var settings = SettingsWithReadiness(0, -1, new DiscussionRulesDto { No = 0, YesIf = -2 });
             settings.Refinement!.States.Add(new RefinementStateSettingDto { State = Done });
 
             var errors = RefinementSettingsValidator.ValidateSettings(settings, NothingStored);
@@ -225,7 +274,8 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 $"'{Done}' cannot be a refinement state: only the Team's To Do and Doing states can be chosen.",
                 "'0' cannot be the Yes votes readiness needs: at least one Yes is needed.",
                 "'-1' cannot be the voters readiness needs: never fewer than the 0 Yes votes.",
-                "'0' cannot be the votes a veto needs: at least one vote is needed.",
+                NoRuleRefused(0),
+                YesIfRuleRefused(-2),
             }));
         }
     }

@@ -25,13 +25,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // --- Given ---
 
         /// <summary>
-        /// A veto of one No is set. GR-054 has three Yes votes and one No, so it needs discussion; GR-073 has
-        /// three Yes votes and is Ready. Priya has voted on neither.
+        /// The Team keeps the default readiness, where one No sends a Work Item to discussion. GR-054 has three
+        /// Yes votes and one No, so it needs discussion; GR-073 has three Yes votes and is Ready. Priya has
+        /// voted on neither.
         /// </summary>
         private async Task<TeamUnderTest> GivenApiVersioningNeedsDiscussionAndConfigurationManagementIsReady()
         {
             var gravity = await GravityRefinesSixWorkItemsNobodyHasVotedOn();
-            await TheAdminHasSetReadiness(gravity, minYes: 3, minVoters: 3, vetoThreshold: 1);
 
             foreach (var voter in new[] { Jonas, Mo, AnasBrowser })
             {

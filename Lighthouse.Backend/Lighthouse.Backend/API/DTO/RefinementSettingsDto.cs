@@ -46,31 +46,79 @@ namespace Lighthouse.Backend.API.DTO
         {
             MinYes = setting.MinYes;
             MinVoters = setting.MinVoters;
-            Veto = setting.Veto is null ? null : new VetoSettingDto(setting.Veto);
+            DiscussWhen = new DiscussionRulesDto(setting.DiscussWhen);
         }
 
         public int? MinYes { get; set; }
 
         public int? MinVoters { get; set; }
 
-        /// <summary>Null means no veto: only the Yes votes and voters decide.</summary>
-        public VetoSettingDto? Veto { get; set; }
+        /// <summary>Null on a save leaves the discussion rules the Team already has.</summary>
+        public DiscussionRulesDto? DiscussWhen { get; set; }
+
+        /// <summary>The readiness a save results in: what it sends, and what is stored for everything it leaves out.</summary>
+        public ReadinessSetting AppliedTo(ReadinessSetting stored)
+        {
+            return new ReadinessSetting
+            {
+                MinYes = MinYes ?? stored.MinYes,
+                MinVoters = MinVoters ?? stored.MinVoters,
+                DiscussWhen = DiscussWhen?.AppliedTo(stored.DiscussWhen) ?? stored.DiscussWhen,
+            };
+        }
     }
 
-    public class VetoSettingDto
+    /// <summary>
+    /// A threshold sent as null turns its rule off, while a threshold left out of the save keeps the stored
+    /// one, so each setter remembers that it was called.
+    /// </summary>
+    public class DiscussionRulesDto
     {
-        public VetoSettingDto()
+        private int? no;
+
+        private int? yesIf;
+
+        private bool noSent;
+
+        private bool yesIfSent;
+
+        public DiscussionRulesDto()
         {
         }
 
-        public VetoSettingDto(VetoSetting setting)
+        public DiscussionRulesDto(DiscussionRules rules)
         {
-            Threshold = setting.Threshold;
-            Counts = setting.Counts;
+            No = rules.No;
+            YesIf = rules.YesIf;
         }
 
-        public int? Threshold { get; set; }
+        public int? No
+        {
+            get => no;
+            set
+            {
+                no = value;
+                noSent = true;
+            }
+        }
 
-        public VetoCounts? Counts { get; set; }
+        public int? YesIf
+        {
+            get => yesIf;
+            set
+            {
+                yesIf = value;
+                yesIfSent = true;
+            }
+        }
+
+        public DiscussionRules AppliedTo(DiscussionRules stored)
+        {
+            return new DiscussionRules
+            {
+                No = noSent ? no : stored.No,
+                YesIf = yesIfSent ? yesIf : stored.YesIf,
+            };
+        }
     }
 }

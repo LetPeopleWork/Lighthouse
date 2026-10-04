@@ -149,18 +149,7 @@ namespace Lighthouse.Backend.API.Helpers
                 return;
             }
 
-            settings.Readiness = new ReadinessSetting
-            {
-                MinYes = readiness.MinYes ?? settings.Readiness.MinYes,
-                MinVoters = readiness.MinVoters ?? settings.Readiness.MinVoters,
-                Veto = readiness.Veto is null
-                    ? null
-                    : new VetoSetting
-                    {
-                        Threshold = readiness.Veto.Threshold ?? VetoSetting.DefaultThreshold,
-                        Counts = readiness.Veto.Counts ?? VetoCounts.No,
-                    },
-            };
+            settings.Readiness = readiness.AppliedTo(settings.Readiness);
         }
 
         private static List<string> TrimListEntries(List<string> list)

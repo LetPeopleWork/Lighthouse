@@ -1,10 +1,13 @@
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Models.Refinement;
 
 namespace Lighthouse.Backend.API.Helpers
 {
     public static class RefinementSettingsValidator
     {
-        public static List<string> ValidateSettings(TeamSettingDto teamSetting, IEnumerable<string> storedStates)
+        private const string DiscussionRuleNeedsAVote = "a discussion rule needs at least 1 vote.";
+
+        public static List<string> ValidateSettings(TeamSettingDto teamSetting, RefinementSettings? stored)
         {
             var refinement = teamSetting.Refinement;
             if (refinement is null)
@@ -14,8 +17,8 @@ namespace Lighthouse.Backend.API.Helpers
 
             return
             [
-                .. ValidateStates(teamSetting, refinement, storedStates),
-                .. ValidateReadiness(refinement.Readiness),
+                .. ValidateStates(teamSetting, refinement, stored?.States.Select(chosen => chosen.State) ?? []),
+                .. ValidateReadiness(refinement.Readiness, stored?.Readiness ?? new ReadinessSetting()),
             ];
         }
 
@@ -36,14 +39,19 @@ namespace Lighthouse.Backend.API.Helpers
                 .ToList();
         }
 
-        // A save that leaves readiness out keeps what is stored, so there is nothing to judge.
-        private static List<string> ValidateReadiness(ReadinessSettingDto? readiness)
+
+        // A save that leaves readiness out keeps what is stored, so there is nothing to judge. Otherwise the
+        // readiness the save would leave behind is judged, so one that sends only some fields cannot break a
+        // rule together with the stored values for the rest.
+        private static List<string> ValidateReadiness(ReadinessSettingDto? sent, ReadinessSetting stored)
         {
             var errors = new List<string>();
-            if (readiness is null)
+            if (sent is null)
             {
                 return errors;
             }
+
+            var readiness = sent.AppliedTo(stored);
 
             if (readiness.MinYes < 1)
             {
@@ -55,9 +63,14 @@ namespace Lighthouse.Backend.API.Helpers
                 errors.Add($"'{readiness.MinVoters}' cannot be the voters readiness needs: never fewer than the {readiness.MinYes} Yes votes.");
             }
 
-            if (readiness.Veto?.Threshold < 1)
+            if (readiness.DiscussWhen.No < 1)
             {
-                errors.Add($"'{readiness.Veto.Threshold}' cannot be the votes a veto needs: at least one vote is needed.");
+                errors.Add($"'{readiness.DiscussWhen.No}' cannot be the No votes that send a Work Item to discussion: {DiscussionRuleNeedsAVote}");
+            }
+
+            if (readiness.DiscussWhen.YesIf < 1)
+            {
+                errors.Add($"'{readiness.DiscussWhen.YesIf}' cannot be the \"Yes, if…\" votes that send a Work Item to discussion: {DiscussionRuleNeedsAVote}");
             }
 
             return errors;

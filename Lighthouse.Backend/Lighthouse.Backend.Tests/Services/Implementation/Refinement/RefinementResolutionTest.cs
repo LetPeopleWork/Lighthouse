@@ -15,6 +15,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         private const string Priya = "priya-browser";
 
+        private static readonly DiscussionRules NoDiscussion = new() { No = null, YesIf = null };
+
         [TestCaseSource(nameof(Logs))]
         public void Each_voter_counts_once_with_their_latest_answer(SizingLogEntry[] log, string? readerKey, RowVotes expected)
         {
@@ -97,33 +99,47 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         {
             var standing = RefinementResolution.StandingOf(
                 new VoteSplit(yes, yesBut, no),
-                new ReadinessSetting { MinYes = minYes, MinVoters = minVoters });
+                new ReadinessSetting { MinYes = minYes, MinVoters = minVoters, DiscussWhen = NoDiscussion });
 
             Assert.That(standing, Is.EqualTo(new RowStanding(readiness, missingVotes)));
         }
 
-        [TestCase(3, 0, 1, 1, VetoCounts.No, RowReadiness.NeedsDiscussion, TestName = "A No at the veto threshold sends the Work Item to discussion")]
-        [TestCase(5, 0, 1, 1, VetoCounts.No, RowReadiness.NeedsDiscussion, TestName = "A veto beats any number of Yes votes")]
-        [TestCase(0, 0, 1, 1, VetoCounts.No, RowReadiness.NeedsDiscussion, TestName = "A veto is named before missing Yes votes")]
-        [TestCase(3, 0, 1, 2, VetoCounts.No, RowReadiness.Ready, TestName = "One No below a veto of two does not trip it")]
-        [TestCase(3, 0, 2, 2, VetoCounts.No, RowReadiness.NeedsDiscussion, TestName = "Two No votes trip a veto of two")]
-        [TestCase(2, 1, 0, 1, VetoCounts.NoOrYesBut, RowReadiness.NeedsDiscussion, TestName = "A Yes-if trips a veto that counts it")]
-        [TestCase(2, 1, 0, 1, VetoCounts.No, RowReadiness.Ready, TestName = "A Yes-if does not trip a veto that counts only No")]
-        [TestCase(3, 1, 0, 2, VetoCounts.NoOrYesBut, RowReadiness.Ready, TestName = "A Yes-if alone below a veto of two does not trip it")]
-        [TestCase(3, 1, 1, 2, VetoCounts.NoOrYesBut, RowReadiness.NeedsDiscussion, TestName = "A No and a Yes-if together trip a veto of two that counts both")]
-        [TestCase(3, 1, 1, 2, VetoCounts.No, RowReadiness.Ready, TestName = "A veto that counts only No ignores the Yes-if alongside a No")]
-        public void A_veto_sends_a_Work_Item_to_discussion(
-            int yes, int yesBut, int no, int threshold, VetoCounts counts, RowReadiness readiness)
+        [TestCase(3, 0, 1, RowReadiness.NeedsDiscussion, TestName = "By default one No sends the Work Item to discussion")]
+        [TestCase(1, 2, 0, RowReadiness.NeedsDiscussion, TestName = "By default two Yes-if votes send the Work Item to discussion")]
+        [TestCase(2, 1, 0, RowReadiness.Ready, TestName = "By default one Yes-if alone does not send the Work Item to discussion")]
+        [TestCase(3, 0, 0, RowReadiness.Ready, TestName = "By default Yes votes alone are Ready")]
+        public void A_Team_that_never_set_the_discussion_rules_discusses_one_No_or_two_Yes_if_votes(
+            int yes, int yesBut, int no, RowReadiness readiness)
+        {
+            var standing = RefinementResolution.StandingOf(new VoteSplit(yes, yesBut, no), new ReadinessSetting());
+
+            Assert.That(standing, Is.EqualTo(new RowStanding(readiness, null)));
+        }
+
+        [TestCase(3, 0, 1, 1, null, RowReadiness.NeedsDiscussion, TestName = "A No at the No threshold sends the Work Item to discussion")]
+        [TestCase(5, 0, 1, 1, null, RowReadiness.NeedsDiscussion, TestName = "A discussion beats any number of Yes votes")]
+        [TestCase(0, 0, 1, 1, null, RowReadiness.NeedsDiscussion, TestName = "A discussion is named before missing Yes votes")]
+        [TestCase(3, 0, 1, 2, null, RowReadiness.Ready, TestName = "One No below a No threshold of two does not send it")]
+        [TestCase(3, 0, 2, 2, null, RowReadiness.NeedsDiscussion, TestName = "Two No votes reach a No threshold of two")]
+        [TestCase(2, 1, 0, null, 1, RowReadiness.NeedsDiscussion, TestName = "A Yes-if at a Yes-if threshold of one sends the Work Item to discussion")]
+        [TestCase(3, 1, 0, null, 2, RowReadiness.Ready, TestName = "One Yes-if below a Yes-if threshold of two does not send it")]
+        [TestCase(1, 2, 0, null, 2, RowReadiness.NeedsDiscussion, TestName = "Two Yes-if votes reach a Yes-if threshold of two")]
+        [TestCase(3, 1, 1, 2, 2, RowReadiness.Ready, TestName = "A No and a Yes-if do not add up across the two rules")]
+        [TestCase(3, 0, 1, null, 2, RowReadiness.Ready, TestName = "With the No rule off a No sends nothing to discussion")]
+        [TestCase(1, 2, 0, 1, null, RowReadiness.Ready, TestName = "With the Yes-if rule off Yes-if votes send nothing to discussion")]
+        [TestCase(2, 2, 2, null, null, RowReadiness.Ready, TestName = "With both rules off only the Yes votes and voters decide")]
+        public void Either_discussion_rule_on_its_own_sends_a_Work_Item_to_discussion(
+            int yes, int yesBut, int no, int? noThreshold, int? yesIfThreshold, RowReadiness readiness)
         {
             var standing = RefinementResolution.StandingOf(
                 new VoteSplit(yes, yesBut, no),
-                new ReadinessSetting { MinYes = 3, MinVoters = 3, Veto = new VetoSetting { Threshold = threshold, Counts = counts } });
+                new ReadinessSetting { MinYes = 3, MinVoters = 3, DiscussWhen = new DiscussionRules { No = noThreshold, YesIf = yesIfThreshold } });
 
             Assert.That(standing, Is.EqualTo(new RowStanding(readiness, null)));
         }
 
         [Test]
-        public void A_No_taken_back_by_a_later_Yes_no_longer_vetoes()
+        public void A_No_taken_back_by_a_later_Yes_no_longer_sends_the_Work_Item_to_discussion()
         {
             var log = new[]
             {
@@ -135,7 +151,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
             var standing = RefinementResolution.StandingOf(
                 RefinementResolution.VotesOn(log, null).Split,
-                new ReadinessSetting { MinYes = 3, MinVoters = 3, Veto = new VetoSetting { Threshold = 1, Counts = VetoCounts.No } });
+                new ReadinessSetting());
 
             Assert.That(standing, Is.EqualTo(RowStanding.Ready));
         }

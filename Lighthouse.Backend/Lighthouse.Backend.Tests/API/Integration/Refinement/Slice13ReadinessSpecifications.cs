@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Refinement
@@ -19,6 +20,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         private const string NeedsDiscussion = "NeedsDiscussion";
 
+        private const string YesIfCondition = "only if the PDF export moves to its own Work Item";
+
+        private static readonly DiscussWhen TheDefaultDiscussion = new(No: 1, YesIf: 2);
+
+        private static readonly DiscussWhen NoDiscussionOnNo = new(No: null, YesIf: 2);
+
         private static readonly Voter Jonas = ABrowserOf(JonasWeber);
 
         private static readonly Voter Ana = ABrowserOf(AnaLima);
@@ -27,15 +34,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         private static readonly Voter Priya = ABrowserOf(PriyaSharma);
 
+        private static readonly Voter[] VotersInOrder = [Jonas, Mo, Ana, Priya];
+
         // --- Given ---
 
         private async Task<TeamUnderTest> GivenGravityRefinesAndNobodyHasVoted()
             => await GravityRefinesSixWorkItemsNobodyHasVotedOn();
 
-        private async Task<TeamUnderTest> GivenTheAdminChoseTwoYesFromTwoVoters()
+        private async Task<TeamUnderTest> GivenTheAdminChoseTwoYesFromTwoVotersAndNoDiscussionOnNo()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
-            await TheAdminHasSetReadiness(gravity, minYes: 2, minVoters: 2);
+            await TheAdminHasSetReadiness(gravity, minYes: 2, minVoters: 2, new DiscussWhen(No: null, YesIf: 3));
+            return gravity;
+        }
+
+        private async Task<TeamUnderTest> GivenTheDiscussionRules(DiscussWhen discussWhen)
+        {
+            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+            await TheAdminHasSetReadiness(gravity, minYes: 3, minVoters: 3, discussWhen);
             return gravity;
         }
 
@@ -50,7 +66,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         {
             await HasVoted(Jonas, team, workItem, Answer.Yes);
             await HasVoted(Mo, team, workItem, Answer.Yes);
-            await HasVoted(Ana, team, workItem, Answer.YesBut, "only if the PDF export moves to its own Work Item");
+            await HasVoted(Ana, team, workItem, Answer.YesBut, YesIfCondition);
+        }
+
+        private async Task<TeamUnderTest> GivenThreeVotersOfWhomSomeSaidYesIfOn(string workItem, int yesIfVotes)
+        {
+            var answers = Enumerable.Range(0, 3).Select(voter => voter < 3 - yesIfVotes ? Answer.Yes : Answer.YesBut).ToArray();
+
+            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+            await GivenTheVotersAnsweredOn(gravity, workItem, answers);
+            return gravity;
+        }
+
+        private async Task GivenTheVotersAnsweredOn(TeamUnderTest team, string workItem, Answer[] answers)
+        {
+            foreach (var (voter, answer) in VotersInOrder.Zip(answers))
+            {
+                await HasVoted(voter, team, workItem, answer, answer == Answer.YesBut ? YesIfCondition : null);
+            }
         }
 
         private async Task<TeamUnderTest> GivenOnlyJonasSaidYesOn(string workItem)
@@ -68,39 +101,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             return gravity;
         }
 
-        private async Task<TeamUnderTest> GivenJonasAndMoSaidYesAndAnaSaidNoOn(string workItem)
+        private async Task<TeamUnderTest> GivenNoDiscussionOnNoAndJonasAndMoSaidYesAndAnaSaidNoOn(string workItem)
         {
-            var gravity = await GivenJonasAndMoSaidYesOn(workItem);
+            var gravity = await GivenTheDiscussionRules(NoDiscussionOnNo);
+            await HasVoted(Jonas, gravity, workItem, Answer.Yes);
+            await HasVoted(Mo, gravity, workItem, Answer.Yes);
             await HasVoted(Ana, gravity, workItem, Answer.No);
             return gravity;
         }
 
-        private async Task<TeamUnderTest> GivenReadinessOfTwoYesFromThreeVotersAndTwoYesOn(string workItem)
+        private async Task<TeamUnderTest> GivenReadinessOfTwoYesFromThreeVotersAndTwoYesOn(string workItem, DiscussWhen? discussWhen = null)
         {
             var gravity = await GivenJonasAndMoSaidYesOn(workItem);
-            await TheAdminHasSetReadiness(gravity, minYes: 2, minVoters: 3);
+            await TheAdminHasSetReadiness(gravity, minYes: 2, minVoters: 3, discussWhen);
             return gravity;
         }
 
-        private async Task<TeamUnderTest> GivenAVetoOfOneCounting(VetoCounts counts)
+        private async Task<TeamUnderTest> GivenThreeYesAndAnasNoOn(string workItem)
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
-            await TheAdminHasSetReadiness(gravity, minYes: 3, minVoters: 3, vetoThreshold: 1, counts);
-            return gravity;
-        }
-
-        private async Task<TeamUnderTest> GivenAVetoOfOneNoAndThreeYesAndAnasNoOn(string workItem)
-        {
-            var gravity = await GivenAVetoOfOneCounting(VetoCounts.No);
-            await ThreeYesAndOneNoFromAnaOn(gravity, workItem);
-            return gravity;
-        }
-
-        private async Task<TeamUnderTest> GivenAVetoOfTwoNoAndThreeYesAndOneNoOn(string workItem)
-        {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
-            await TheAdminHasSetReadiness(gravity, minYes: 3, minVoters: 3, vetoThreshold: 2);
-            await ThreeYesAndOneNoFromAnaOn(gravity, workItem);
+            await HasVoted(Jonas, gravity, workItem, Answer.Yes);
+            await HasVoted(Mo, gravity, workItem, Answer.Yes);
+            await HasVoted(Priya, gravity, workItem, Answer.Yes);
+            await HasVoted(Ana, gravity, workItem, Answer.No);
             return gravity;
         }
 
@@ -113,14 +136,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             return gravity;
         }
 
-        private async Task ThreeYesAndOneNoFromAnaOn(TeamUnderTest team, string workItem)
-        {
-            await HasVoted(Jonas, team, workItem, Answer.Yes);
-            await HasVoted(Mo, team, workItem, Answer.Yes);
-            await HasVoted(Priya, team, workItem, Answer.Yes);
-            await HasVoted(Ana, team, workItem, Answer.No);
-        }
-
         // --- When ---
 
         private async Task<JsonElement> WhenTheAdminOpensTheTeamSettings(TeamUnderTest team)
@@ -129,10 +144,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             return await ReadTheTeamSettings(team);
         }
 
-        private async Task<HttpResponseMessage> WhenTheAdminSavesReadiness(TeamUnderTest team, int minYes, int minVoters, int? vetoThreshold = null)
+        private async Task<HttpResponseMessage> WhenTheAdminSavesReadiness(TeamUnderTest team, int minYes, int minVoters, DiscussWhen? discussWhen = null)
         {
             TheCallerAdministersTheTeam(team);
-            return await SaveTheReadiness(team, minYes, minVoters, vetoThreshold);
+            return await SaveTheReadiness(team, minYes, minVoters, discussWhen);
+        }
+
+        private async Task<HttpResponseMessage> WhenTheAdminSavesOnlyTheReadinessField(TeamUnderTest team, string field, int value)
+        {
+            TheCallerAdministersTheTeam(team);
+            return await SaveTheRefinementSection(team, new JsonObject { [field] = value });
+        }
+
+        private async Task<HttpResponseMessage> WhenTheAdminSavesOnlyTheDiscussionRules(TeamUnderTest team, DiscussWhen discussWhen)
+        {
+            TheCallerAdministersTheTeam(team);
+            return await SaveTheRefinementSection(team, new JsonObject
+            {
+                ["discussWhen"] = new JsonObject { ["no"] = discussWhen.No, ["yesIf"] = discussWhen.YesIf },
+            });
         }
 
         private async Task<HttpResponseMessage> WhenTheSettingsAreSavedWithoutReadiness(TeamUnderTest team)
@@ -149,8 +179,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // --- Then ---
 
-        private static void ThenTheReadinessIs(JsonElement settings, int minYes, int minVoters, int? vetoThreshold, string? vetoCounts)
-            => Assert.That(ReadinessIn(settings), Is.EqualTo(new ReadinessReading(minYes, minVoters, vetoThreshold, vetoCounts)));
+        private static void ThenTheReadinessIs(JsonElement settings, int minYes, int minVoters, DiscussWhen discussWhen)
+            => Assert.That(ReadinessIn(settings), Is.EqualTo(new ReadinessReading(minYes, minVoters, discussWhen)));
 
         private async Task ThenTheSaveIsRefusedAndReadinessIsUnchanged(HttpResponseMessage refused, TeamUnderTest team)
         {
@@ -159,7 +189,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-                Assert.That(readiness, Is.EqualTo(new ReadinessReading(3, 3, null, null)), "a refused save must leave the readiness the Team had");
+                Assert.That(readiness, Is.EqualTo(new ReadinessReading(3, 3, TheDefaultDiscussion)), "a refused save must leave the readiness the Team had");
             }
         }
 
@@ -167,7 +197,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         {
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(ReadinessIn(settings), Is.EqualTo(new ReadinessReading(1, 1, 2, nameof(VetoCounts.No))));
+                Assert.That(ReadinessIn(settings), Is.EqualTo(new ReadinessReading(1, 1, new DiscussWhen(No: 2, YesIf: null))));
                 Assert.That(WorkItemsStoredFor(team), Is.EqualTo(heldBefore));
             }
         }

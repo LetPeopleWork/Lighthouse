@@ -186,10 +186,10 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         /// <summary>
         /// How many votes make a Work Item Ready says nothing about which Work Items the Team fetches either.
         /// </summary>
-        [TestCase(3, 3, null, null)]
-        [TestCase(1, 1, 2, VetoCounts.No)]
-        [TestCase(2, 5, 1, VetoCounts.NoOrYesBut)]
-        public void WorkItemRelatedSettingsChanged_ReadinessChanged_ReturnsFalse(int minYes, int minVoters, int? vetoThreshold, VetoCounts? vetoCounts)
+        [TestCase(3, 3, 1, 2)]
+        [TestCase(1, 1, null, 2)]
+        [TestCase(2, 5, 4, null)]
+        public void WorkItemRelatedSettingsChanged_ReadinessChanged_ReturnsFalse(int minYes, int minVoters, int? discussWhenNo, int? discussWhenYesIf)
         {
             var team = new Team
             {
@@ -221,7 +221,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                     {
                         MinYes = minYes,
                         MinVoters = minVoters,
-                        Veto = vetoThreshold is null ? null : new VetoSettingDto { Threshold = vetoThreshold, Counts = vetoCounts },
+                        DiscussWhen = new DiscussionRulesDto { No = discussWhenNo, YesIf = discussWhenYesIf },
                     },
                 },
             };

@@ -30,28 +30,27 @@ namespace Lighthouse.Backend.Models.Refinement
 
         public int MinVoters { get; set; } = DefaultMinVoters;
 
-        public VetoSetting? Veto { get; set; }
+        public DiscussionRules DiscussWhen { get; set; } = new();
     }
 
-    public class VetoSetting
+    /// <summary>
+    /// Two independent rules, either of which sends a Work Item to discussion: enough No votes, or enough
+    /// "Yes, if…" votes. A null threshold turns that rule off.
+    /// </summary>
+    public class DiscussionRules
     {
-        public const int DefaultThreshold = 1;
+        public const int DefaultNo = 1;
 
-        public int Threshold { get; set; } = DefaultThreshold;
+        public const int DefaultYesIf = 2;
 
-        public VetoCounts Counts { get; set; } = VetoCounts.No;
+        public int? No { get; set; } = DefaultNo;
+
+        public int? YesIf { get; set; } = DefaultYesIf;
     }
 
     /// <summary>Stored by ordinal inside the Team's JSON: append new members, never renumber.</summary>
     public enum RefinementStage
     {
         Waiting = 0,
-    }
-
-    /// <summary>Which answers a veto counts. Stored by ordinal inside the Team's JSON: append new members, never renumber.</summary>
-    public enum VetoCounts
-    {
-        No = 0,
-        NoOrYesBut = 1,
     }
 }

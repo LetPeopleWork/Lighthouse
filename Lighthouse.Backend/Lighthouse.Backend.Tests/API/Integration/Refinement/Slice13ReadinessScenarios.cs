@@ -4,11 +4,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 {
     /// <summary>
     /// Votes make a Work Item Ready. A Team admin says how many Yes votes that takes (at least one; three
-    /// unless changed), how many voters (never fewer than the Yes votes; three unless changed), and,
-    /// optionally, how many No votes - or No and "Yes, if…" votes - send it to discussion instead. A
-    /// "Yes, if…" counts as a Yes. Each row then says Ready, how many more Yes votes or voters it needs, or
-    /// that it needs discussion, and the tab counts the Work Items the votes have made Ready. What is missing
-    /// is named so the Team can raise it in its own rituals; nothing is pushed to anybody.
+    /// unless changed), how many voters (never fewer than the Yes votes; three unless changed), and which
+    /// votes send it to discussion instead: one rule for No votes (one unless changed) and one for "Yes, if…"
+    /// votes (two unless changed), each of which can be turned off on its own. A "Yes, if…" counts as a Yes.
+    /// Each row then says Ready, how many more Yes votes or voters it needs, or that it needs discussion, and
+    /// the tab counts the Work Items the votes have made Ready. What is missing is named so the Team can raise
+    /// it in its own rituals; nothing is pushed to anybody.
     ///
     /// Driving ports: the Team settings write and read, the vote write and the Refinement tab's read. Step
     /// definitions live in Slice13ReadinessSpecifications.cs.
@@ -23,13 +24,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:pure-function
         [Test]
-        public async Task A_Team_that_never_chose_readiness_needs_three_Yes_from_three_voters_and_has_no_veto()
+        public async Task A_Team_that_never_chose_readiness_needs_three_Yes_from_three_voters_and_discusses_one_No_or_two_Yes_if_votes()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
 
             var settings = await WhenTheAdminOpensTheTeamSettings(gravity);
 
-            ThenTheReadinessIs(settings, minYes: 3, minVoters: 3, vetoThreshold: null, vetoCounts: null);
+            ThenTheReadinessIs(settings, minYes: 3, minVoters: 3, TheDefaultDiscussion);
         }
 
         // @driving_port @real-io @us-13 @slice-13 @contract-shape:bounded-change
@@ -38,9 +39,23 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
 
-            await TheAdminHasSetReadiness(gravity, minYes: 2, minVoters: 3, vetoThreshold: 1, VetoCounts.NoOrYesBut);
+            await TheAdminHasSetReadiness(gravity, minYes: 2, minVoters: 3, new DiscussWhen(No: 2, YesIf: 3));
 
-            ThenTheReadinessIs(await WhenTheAdminOpensTheTeamSettings(gravity), minYes: 2, minVoters: 3, vetoThreshold: 1, vetoCounts: nameof(VetoCounts.NoOrYesBut));
+            ThenTheReadinessIs(await WhenTheAdminOpensTheTeamSettings(gravity), minYes: 2, minVoters: 3, new DiscussWhen(No: 2, YesIf: 3));
+        }
+
+        // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:bounded-change
+        // Each rule has its own switch: turning one off leaves the other as the admin set it.
+        [TestCase(null, 2)]
+        [TestCase(1, null)]
+        [TestCase(null, null)]
+        public async Task Either_discussion_rule_is_turned_off_on_its_own_and_reads_back_off(int? no, int? yesIf)
+        {
+            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+
+            await TheAdminHasSetReadiness(gravity, minYes: 3, minVoters: 3, new DiscussWhen(no, yesIf));
+
+            ThenTheReadinessIs(await WhenTheAdminOpensTheTeamSettings(gravity), minYes: 3, minVoters: 3, new DiscussWhen(no, yesIf));
         }
 
         // @driving_port @real-io @us-13 @slice-13 @error @contract-shape:unbounded-preservation
@@ -68,6 +83,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheSaveIsRefusedAndReadinessIsUnchanged(refused, gravity);
         }
 
+        // @driving_port @real-io @us-13 @slice-13 @error @contract-shape:unbounded-preservation
+        // A save that names only one side of the voter rule is judged with the side already stored.
+        [TestCase("minVoters", 2)]
+        [TestCase("minYes", 4)]
+        public async Task A_partial_save_that_would_leave_fewer_voters_than_Yes_votes_is_refused_and_nothing_is_saved(string field, int value)
+        {
+            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+
+            using var refused = await WhenTheAdminSavesOnlyTheReadinessField(gravity, field, value);
+
+            await ThenTheSaveIsRefusedAndReadinessIsUnchanged(refused, gravity);
+        }
+
         // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:bounded-change
         [Test]
         public async Task As_many_voters_as_Yes_votes_is_accepted()
@@ -76,16 +104,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
             await TheAdminHasSetReadiness(gravity, minYes: 2, minVoters: 2);
 
-            ThenTheReadinessIs(await WhenTheAdminOpensTheTeamSettings(gravity), minYes: 2, minVoters: 2, vetoThreshold: null, vetoCounts: null);
+            ThenTheReadinessIs(await WhenTheAdminOpensTheTeamSettings(gravity), minYes: 2, minVoters: 2, TheDefaultDiscussion);
         }
 
         // @driving_port @real-io @us-13 @slice-13 @error @contract-shape:unbounded-preservation
-        [Test]
-        public async Task A_veto_of_zero_votes_is_refused_and_nothing_is_saved()
+        // A rule that needs no votes would send every Work Item to discussion; turning the rule off is the way to silence it.
+        [TestCase(0, 2)]
+        [TestCase(1, 0)]
+        public async Task A_discussion_rule_of_zero_votes_is_refused_and_nothing_is_saved(int no, int yesIf)
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
 
-            using var refused = await WhenTheAdminSavesReadiness(gravity, minYes: 3, minVoters: 3, vetoThreshold: 0);
+            using var refused = await WhenTheAdminSavesReadiness(gravity, minYes: 3, minVoters: 3, new DiscussWhen(no, yesIf));
 
             await ThenTheSaveIsRefusedAndReadinessIsUnchanged(refused, gravity);
         }
@@ -95,11 +125,33 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [Test]
         public async Task A_save_that_says_nothing_about_readiness_leaves_it_as_it_was()
         {
-            var gravity = await GivenTheAdminChoseTwoYesFromTwoVoters();
+            var gravity = await GivenTheAdminChoseTwoYesFromTwoVotersAndNoDiscussionOnNo();
 
             using var save = await WhenTheSettingsAreSavedWithoutReadiness(gravity);
 
-            ThenTheReadinessIs(await WhenTheAdminOpensTheTeamSettings(gravity), minYes: 2, minVoters: 2, vetoThreshold: null, vetoCounts: null);
+            ThenTheReadinessIs(await WhenTheAdminOpensTheTeamSettings(gravity), minYes: 2, minVoters: 2, new DiscussWhen(No: null, YesIf: 3));
+        }
+
+        // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:unbounded-preservation
+        [Test]
+        public async Task A_readiness_save_that_leaves_out_the_discussion_rules_keeps_them()
+        {
+            var gravity = await GivenTheAdminChoseTwoYesFromTwoVotersAndNoDiscussionOnNo();
+
+            await TheAdminHasSetReadiness(gravity, minYes: 1, minVoters: 1);
+
+            ThenTheReadinessIs(await WhenTheAdminOpensTheTeamSettings(gravity), minYes: 1, minVoters: 1, new DiscussWhen(No: null, YesIf: 3));
+        }
+
+        // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:unbounded-preservation
+        [Test]
+        public async Task A_save_of_only_the_discussion_rules_keeps_the_Yes_votes_and_voters()
+        {
+            var gravity = await GivenTheAdminChoseTwoYesFromTwoVotersAndNoDiscussionOnNo();
+
+            using var save = await WhenTheAdminSavesOnlyTheDiscussionRules(gravity, new DiscussWhen(No: 3, YesIf: null));
+
+            ThenTheReadinessIs(await WhenTheAdminOpensTheTeamSettings(gravity), minYes: 2, minVoters: 2, new DiscussWhen(No: 3, YesIf: null));
         }
 
         // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:unbounded-preservation
@@ -109,7 +161,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
             var heldBefore = WorkItemsStoredFor(gravity);
 
-            await TheAdminHasSetReadiness(gravity, minYes: 1, minVoters: 1, vetoThreshold: 2);
+            await TheAdminHasSetReadiness(gravity, minYes: 1, minVoters: 1, new DiscussWhen(No: 2, YesIf: null));
 
             ThenTheReadinessIsStoredAndTheWorkItemsKept(await WhenTheAdminOpensTheTeamSettings(gravity), gravity, heldBefore);
         }
@@ -153,7 +205,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [Test]
         public async Task A_No_does_not_count_towards_the_Yes_votes()
         {
-            var gravity = await GivenJonasAndMoSaidYesAndAnaSaidNoOn(ApiVersioning);
+            var gravity = await GivenNoDiscussionOnNoAndJonasAndMoSaidYesAndAnaSaidNoOn(ApiVersioning);
 
             var tab = await WhenPriyaOpensTheRefinementTab(gravity);
 
@@ -175,7 +227,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [Test]
         public async Task Any_answer_from_the_missing_voter_makes_the_Work_Item_Ready()
         {
-            var gravity = await GivenReadinessOfTwoYesFromThreeVotersAndTwoYesOn(AdvancedReporting);
+            var gravity = await GivenReadinessOfTwoYesFromThreeVotersAndTwoYesOn(AdvancedReporting, NoDiscussionOnNo);
 
             await WhenAnaVotes(gravity, AdvancedReporting, Answer.No);
 
@@ -183,11 +235,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         }
 
         // @driving_port @real-io @us-13 @slice-13 @error @contract-shape:pure-function
-        // A veto wins over any number of Yes votes: the doubt is what the meeting is for.
+        // A discussion wins over any number of Yes votes: the doubt is what the meeting is for.
         [Test]
-        public async Task A_veto_sends_a_Work_Item_to_discussion_however_many_say_Yes()
+        public async Task By_default_one_No_sends_a_Work_Item_to_discussion_however_many_say_Yes()
         {
-            var gravity = await GivenAVetoOfOneNoAndThreeYesAndAnasNoOn(ApiVersioning);
+            var gravity = await GivenThreeYesAndAnasNoOn(ApiVersioning);
 
             var tab = await WhenPriyaOpensTheRefinementTab(gravity);
 
@@ -195,12 +247,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         }
 
         // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:pure-function
-        [TestCase(VetoCounts.NoOrYesBut, NeedsDiscussion)]
-        [TestCase(VetoCounts.No, Ready)]
-        public async Task A_veto_counts_Yes_but_only_when_the_Team_says_so(VetoCounts counts, string readiness)
+        // A single "Yes, if…" is a Yes with a caveat the Team can take along; a second one is worth a talk.
+        [TestCase(1, Ready)]
+        [TestCase(2, NeedsDiscussion)]
+        public async Task By_default_the_second_Yes_if_sends_a_Work_Item_to_discussion(int yesIfVotes, string readiness)
         {
-            var gravity = await GivenAVetoOfOneCounting(counts);
-            await GivenJonasAndMoSaidYesAndAnaSaidYesButOn(gravity, AdvancedReporting);
+            var gravity = await GivenThreeVotersOfWhomSomeSaidYesIfOn(AdvancedReporting, yesIfVotes);
 
             var tab = await WhenPriyaOpensTheRefinementTab(gravity);
 
@@ -208,22 +260,33 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         }
 
         // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:pure-function
-        [Test]
-        public async Task A_veto_of_two_is_not_tripped_by_one_No()
+        // Jonas, Mo, Ana and Priya answer in that order; the readiness itself stays three Yes from three voters.
+        [TestCase(null, 2, new[] { Answer.Yes, Answer.Yes, Answer.Yes, Answer.No }, Ready, TestName = "With the No rule off a No sends nothing to discussion")]
+        [TestCase(null, 2, new[] { Answer.Yes, Answer.YesBut, Answer.YesBut }, NeedsDiscussion, TestName = "With the No rule off the Yes-if rule still sends to discussion")]
+        [TestCase(1, null, new[] { Answer.Yes, Answer.YesBut, Answer.YesBut }, Ready, TestName = "With the Yes-if rule off Yes-if votes send nothing to discussion")]
+        [TestCase(1, null, new[] { Answer.Yes, Answer.Yes, Answer.Yes, Answer.No }, NeedsDiscussion, TestName = "With the Yes-if rule off the No rule still sends to discussion")]
+        [TestCase(null, null, new[] { Answer.YesBut, Answer.YesBut, Answer.YesBut, Answer.No }, Ready, TestName = "With both rules off only the Yes votes and voters decide")]
+        [TestCase(2, 3, new[] { Answer.Yes, Answer.Yes, Answer.Yes, Answer.No }, Ready, TestName = "One No stays below a No rule of two")]
+        [TestCase(2, 3, new[] { Answer.Yes, Answer.Yes, Answer.No, Answer.No }, NeedsDiscussion, TestName = "Two No votes reach a No rule of two")]
+        [TestCase(2, 3, new[] { Answer.YesBut, Answer.YesBut, Answer.Yes }, Ready, TestName = "Two Yes-if votes stay below a Yes-if rule of three")]
+        [TestCase(2, 3, new[] { Answer.YesBut, Answer.YesBut, Answer.YesBut }, NeedsDiscussion, TestName = "Three Yes-if votes reach a Yes-if rule of three")]
+        [TestCase(2, 2, new[] { Answer.Yes, Answer.Yes, Answer.YesBut, Answer.No }, Ready, TestName = "A No and a Yes-if do not add up across the two rules")]
+        public async Task Each_discussion_rule_sends_a_Work_Item_to_discussion_on_its_own(int? no, int? yesIf, Answer[] answers, string readiness)
         {
-            var gravity = await GivenAVetoOfTwoNoAndThreeYesAndOneNoOn(ApiVersioning);
+            var gravity = await GivenTheDiscussionRules(new DiscussWhen(no, yesIf));
+            await GivenTheVotersAnsweredOn(gravity, AdvancedReporting, answers);
 
             var tab = await WhenPriyaOpensTheRefinementTab(gravity);
 
-            ThenTheRowIsReadyAndTheTabCounts(tab, ApiVersioning, readyByVotes: 1);
+            Assert.That(RowOf(tab, AdvancedReporting).Readiness, Is.EqualTo(readiness));
         }
 
         // @driving_port @real-io @us-13 @slice-13 @contract-shape:bounded-change
-        // Only the latest answer of each voter counts, for a veto too.
+        // Only the latest answer of each voter counts, for a discussion too.
         [Test]
-        public async Task A_No_changed_to_Yes_lifts_the_veto()
+        public async Task A_No_changed_to_Yes_lifts_the_discussion()
         {
-            var gravity = await GivenAVetoOfOneNoAndThreeYesAndAnasNoOn(ApiVersioning);
+            var gravity = await GivenThreeYesAndAnasNoOn(ApiVersioning);
 
             await WhenAnaVotes(gravity, ApiVersioning, Answer.Yes);
 

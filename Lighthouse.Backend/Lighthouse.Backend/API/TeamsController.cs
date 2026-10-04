@@ -104,7 +104,7 @@ namespace Lighthouse.Backend.API
                 return BadRequest(stateMappingValidation.Errors);
             }
 
-            var refinementErrors = RefinementSettingsValidator.ValidateSettings(teamSetting, []);
+            var refinementErrors = RefinementSettingsValidator.ValidateSettings(teamSetting, null);
             if (refinementErrors.Count > 0)
             {
                 return BadRequest(refinementErrors);

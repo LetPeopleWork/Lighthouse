@@ -140,7 +140,7 @@ namespace Lighthouse.Backend.API
 
             var storedTeam = teamRepository.GetById(teamId);
 
-            var refinementErrors = RefinementSettingsValidator.ValidateSettings(teamSetting, StoredRefinementStates(storedTeam));
+            var refinementErrors = RefinementSettingsValidator.ValidateSettings(teamSetting, storedTeam?.RefinementSettings);
             if (refinementErrors.Count > 0)
             {
                 return BadRequest(refinementErrors);
@@ -225,11 +225,6 @@ namespace Lighthouse.Backend.API
         public ActionResult<WorkItemRuleSchema> GetForecastFilterSchema(int teamId)
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team => forecastFilterRuleService.GetSchema(team));
-        }
-
-        private static IEnumerable<string> StoredRefinementStates(Team? storedTeam)
-        {
-            return storedTeam?.RefinementSettings?.States.Select(chosen => chosen.State) ?? [];
         }
 
         private static string? ValidateStalenessThresholds(TeamSettingDto teamSetting)

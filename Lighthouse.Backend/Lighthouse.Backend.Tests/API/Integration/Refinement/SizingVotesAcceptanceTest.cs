@@ -241,11 +241,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         }
 
         /// <summary>The admin has saved this readiness alongside the refinement states the Team already has.</summary>
-        protected async Task TheAdminHasSetReadiness(TeamUnderTest team, int minYes, int minVoters, int? vetoThreshold = null, VetoCounts vetoCounts = VetoCounts.No)
+        protected async Task TheAdminHasSetReadiness(TeamUnderTest team, int minYes, int minVoters, DiscussWhen? discussWhen = null)
         {
             TheCallerAdministersTheTeam(team);
 
-            using var save = await SaveTheReadiness(team, minYes, minVoters, vetoThreshold, vetoCounts);
+            using var save = await SaveTheReadiness(team, minYes, minVoters, discussWhen);
             Assert.That(save.StatusCode, Is.EqualTo(HttpStatusCode.OK),
                 $"The admin's readiness was not saved, so nothing that follows can build on it. {await save.Content.ReadAsStringAsync()}");
         }
@@ -316,16 +316,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         protected async Task<JsonElement> TheLogAsSeenBy(Voter voter, TeamUnderTest team, string workItem)
             => await ReadOkAs(voter, $"{RefinementOf(team.TeamId)}/work-items/{Uri.EscapeDataString(workItem)}/log");
 
-        protected async Task<HttpResponseMessage> SaveTheReadiness(TeamUnderTest team, int minYes, int minVoters, int? vetoThreshold = null, VetoCounts vetoCounts = VetoCounts.No)
+        /// <summary>The readiness section with both voter numbers, and the discussion rules only when given.</summary>
+        protected async Task<HttpResponseMessage> SaveTheReadiness(TeamUnderTest team, int minYes, int minVoters, DiscussWhen? discussWhen = null)
         {
             var readiness = new JsonObject
             {
                 ["minYes"] = minYes,
                 ["minVoters"] = minVoters,
-                ["veto"] = vetoThreshold is { } threshold
-                    ? new JsonObject { ["threshold"] = threshold, ["counts"] = vetoCounts.ToString() }
-                    : null,
             };
+
+            if (discussWhen is not null)
+            {
+                readiness["discussWhen"] = new JsonObject { ["no"] = discussWhen.No, ["yesIf"] = discussWhen.YesIf };
+            }
 
             return await SaveTheRefinementSection(team, readiness);
         }
@@ -420,15 +423,26 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 $"The Team's settings carry no readiness. Body: {settings}");
 
             var readiness = settings.GetProperty("refinement").GetProperty("readiness");
-            var veto = readiness.TryGetProperty("veto", out var vetoElement) && vetoElement.ValueKind == JsonValueKind.Object
-                ? vetoElement
-                : (JsonElement?)null;
-
             return new ReadinessReading(
                 NumberOf(readiness, "minYes"),
                 NumberOf(readiness, "minVoters"),
-                veto is { } setVeto ? NumberOf(setVeto, "threshold") : null,
-                veto is { } countedVeto ? TextOf(countedVeto, "counts") : null);
+                DiscussWhenIn(readiness));
+        }
+
+        // A rule that is off reads as an explicit null, so the reader can tell it apart from a field it never got.
+        private static DiscussWhen? DiscussWhenIn(JsonElement readiness)
+        {
+            if (!readiness.TryGetProperty("discussWhen", out var discussWhen) || discussWhen.ValueKind != JsonValueKind.Object)
+            {
+                return null;
+            }
+
+            Assert.That(
+                discussWhen.TryGetProperty("no", out _) && discussWhen.TryGetProperty("yesIf", out _),
+                Is.True,
+                $"The discussion rules must name both thresholds, null for a rule that is off. Body: {discussWhen}");
+
+            return new DiscussWhen(NumberOf(discussWhen, "no"), NumberOf(discussWhen, "yesIf"));
         }
 
         /// <summary>The refusal code a problem answer names, or null when it names none.</summary>
@@ -572,13 +586,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             Assistant,
         }
 
-        /// <summary>Which answers a veto counts.</summary>
-        public enum VetoCounts
-        {
-            No,
-            NoOrYesBut,
-        }
-
         /// <summary>
         /// Somebody who votes. Without sign-in: a declared name and the key their browser or client keeps.
         /// With sign-in: an account (subject, display name, grants), or an API key.
@@ -593,7 +600,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         protected sealed record YardstickReading(string? Source, int? Days, int? Probability);
 
-        protected sealed record ReadinessReading(int? MinYes, int? MinVoters, int? VetoThreshold, string? VetoCounts);
+        protected sealed record ReadinessReading(int? MinYes, int? MinVoters, DiscussWhen? Discussion);
+
+        /// <summary>How many No and how many "Yes, if…" votes send a Work Item to discussion; null turns that rule off.</summary>
+        protected sealed record DiscussWhen(int? No, int? YesIf);
 
         protected sealed record SplitReading(int? Yes, int? YesBut, int? No);
 
