@@ -1,3 +1,6 @@
+using System.Security.Cryptography;
+using System.Text;
+
 namespace Lighthouse.Backend.Models.Refinement
 {
     /// <summary>
@@ -7,6 +10,15 @@ namespace Lighthouse.Backend.Models.Refinement
     public class SizingLogEntry
     {
         public const int LongestComment = 2000;
+
+        private const string SelfDeclaredKeyPrefix = "self:";
+
+        /// <summary>
+        /// How the log keys a voter who signed in nowhere: only a hash of the key their browser keeps, so the
+        /// log never holds anything that could speak for them.
+        /// </summary>
+        public static string SelfDeclaredVoterKeyOf(string browserKey)
+            => SelfDeclaredKeyPrefix + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(browserKey)));
 
         public int Id { get; init; }
 

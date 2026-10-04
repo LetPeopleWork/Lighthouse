@@ -1,6 +1,5 @@
-using System.Security.Cryptography;
-using System.Text;
 using Lighthouse.Backend.Models.Auth;
+using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Refinement;
 
@@ -17,8 +16,6 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         public const int ShortestVoterKey = 32;
 
         public const int LongestVoterName = 100;
-
-        private const string SelfDeclaredKeyPrefix = "self:";
 
         public VoterIdentityKind Kind => authModeResolver.Resolve().Mode == AuthMode.Enabled
             ? VoterIdentityKind.Account
@@ -62,7 +59,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             => presentedVoterKey is not null && presentedVoterKey.Length >= ShortestVoterKey;
 
         private static string SelfDeclaredKeyOf(string presentedVoterKey)
-            => SelfDeclaredKeyPrefix + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(presentedVoterKey)));
+            => SizingLogEntry.SelfDeclaredVoterKeyOf(presentedVoterKey);
     }
 
     /// <summary>Exactly one of the two is set: the voter, or why there is none.</summary>

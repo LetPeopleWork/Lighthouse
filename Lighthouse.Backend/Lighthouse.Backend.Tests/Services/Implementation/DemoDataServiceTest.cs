@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.WorkItemRules;
@@ -26,11 +27,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             "OE-007", "OE-009", "OE-010", "OE-011", "OE-012",
         ];
 
+        private static readonly string[] DemoVoters = ["Jonas Weber", "Mo Okafor", "Ana Lima"];
+
         private Mock<IRepository<Portfolio>> projectRepoMock;
         private Mock<IRepository<Team>> teamRepoMock;
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionsRepoMock;
         private Mock<IDeliveryRepository> deliveryRepoMock;
         private Mock<IDeliveryMetricSnapshotRepository> deliveryMetricSnapshotRepoMock;
+        private Mock<ISizingLogRepository> sizingLogMock;
 
         private Mock<IDemoDataFactory> demoDataFactoryMock;
 
@@ -43,6 +47,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             deliveryRepoMock = new Mock<IDeliveryRepository>();
             deliveryMetricSnapshotRepoMock = new Mock<IDeliveryMetricSnapshotRepository>();
             demoDataFactoryMock = new Mock<IDemoDataFactory>();
+            sizingLogMock = new Mock<ISizingLogRepository>();
 
             projectRepoMock.Setup(x => x.GetAll()).Returns(new List<Portfolio>());
             teamRepoMock.Setup(x => x.GetAll()).Returns(new List<Team>());
@@ -409,9 +414,44 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 .ToList();
         }
 
+        [Test]
+        [TestCase("GR-059", "Yes:Jonas Weber", "Yes:Mo Okafor")]
+        [TestCase("GR-073", "Yes:Jonas Weber", "Yes:Mo Okafor", "YesBut:Ana Lima")]
+        [TestCase("GR-054", "No:Ana Lima")]
+        public async Task LoadScenarios_Gravity_SeedsSizingVotesFromThreeNamedVoters(string workItemReference, params string[] expectedVotes)
+        {
+            var clock = new FakeLighthouseClock(new DateTimeOffset(2026, 10, 4, 9, 0, 0, TimeSpan.Zero));
+            var gravity = new Team { Id = 51, Name = "Team Gravity", ServiceLevelExpectationProbability = 85, ServiceLevelExpectationRange = 7 };
+            demoDataFactoryMock.Setup(x => x.CreateDemoTeam("Team Gravity")).Returns(gravity);
+
+            var appended = new List<SizingLogEntry>();
+            sizingLogMock.Setup(x => x.Append(It.IsAny<SizingLogEntry>())).Callback((SizingLogEntry entry) => appended.Add(entry));
+
+            var subject = CreateSubject(clock);
+            var dependencies = subject.GetAllScenarios().Single(x => x.Title == "Dependencies");
+            await subject.LoadScenarios(dependencies);
+
+            var votesOnWorkItem = appended.Where(entry => entry.WorkItemReferenceId == workItemReference).Select(entry => $"{entry.Answer}:{entry.VoterDisplayName}").ToList();
+            var keysPerVoter = appended.GroupBy(entry => entry.VoterDisplayName).ToDictionary(group => group.Key, group => group.Select(entry => entry.VoterKey).Distinct().ToList());
+            var now = clock.Now.UtcDateTime;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(votesOnWorkItem, Is.EqualTo(expectedVotes));
+                Assert.That(appended, Has.Count.EqualTo(6));
+                Assert.That(appended, Has.All.Matches<SizingLogEntry>(entry => entry.TeamId == gravity.Id && entry.Kind == SizingEntryKind.Vote && entry.Channel == SizingChannel.Web));
+                Assert.That(appended, Has.All.Matches<SizingLogEntry>(entry => entry.RecordedAt < now && entry.RecordedAt > now.AddDays(-7)));
+                Assert.That(appended, Has.All.Matches<SizingLogEntry>(entry => entry.YardstickSource == YardstickSource.Sle && entry.YardstickDays == 7 && entry.YardstickProbability == 85));
+                Assert.That(appended.Select(entry => entry.VoterKey), Has.All.Match("^self:[0-9a-f]{64}$"));
+                Assert.That(keysPerVoter.Keys, Is.EquivalentTo(DemoVoters));
+                Assert.That(keysPerVoter.Values, Has.All.Count.EqualTo(1));
+                Assert.That(keysPerVoter.Values.Select(keys => keys[0]).Distinct().Count(), Is.EqualTo(DemoVoters.Length));
+            }
+        }
+
         private DemoDataService CreateSubject(ILighthouseClock? clock = null)
         {
-            return new DemoDataService(projectRepoMock.Object, teamRepoMock.Object, workTrackingSystemConnectionsRepoMock.Object, deliveryRepoMock.Object, deliveryMetricSnapshotRepoMock.Object, demoDataFactoryMock.Object, clock ?? new FakeLighthouseClock(DateTimeOffset.UtcNow));
+            return new DemoDataService(projectRepoMock.Object, teamRepoMock.Object, workTrackingSystemConnectionsRepoMock.Object, deliveryRepoMock.Object, deliveryMetricSnapshotRepoMock.Object, demoDataFactoryMock.Object, clock ?? new FakeLighthouseClock(DateTimeOffset.UtcNow), sizingLogMock.Object);
         }
     }
 }

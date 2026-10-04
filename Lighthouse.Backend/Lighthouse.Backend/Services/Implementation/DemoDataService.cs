@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.DemoData;
+using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -47,6 +48,22 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static readonly JsonSerializerOptions WhenDistributionJsonOptions = new();
 
+        private static readonly DemoVoter JonasWeber = new("Jonas Weber", "demo-voter-jonas-weber-00000000000000000000000000000000000000000");
+        private static readonly DemoVoter MoOkafor = new("Mo Okafor", "demo-voter-mo-okafor-0000000000000000000000000000000000000000000");
+        private static readonly DemoVoter AnaLima = new("Ana Lima", "demo-voter-ana-lima-00000000000000000000000000000000000000000000");
+
+        // GR-059 is one Yes short of Ready, so a demo (and the end-to-end test) can tip it over with a
+        // single vote. Votes are listed oldest first, the order they would have been cast in.
+        private static readonly DemoSizingVote[] DemoSizingVotes =
+        [
+            new("GR-059", JonasWeber, SizingAnswer.Yes, 4),
+            new("GR-073", JonasWeber, SizingAnswer.Yes, 4),
+            new("GR-059", MoOkafor, SizingAnswer.Yes, 3),
+            new("GR-073", MoOkafor, SizingAnswer.Yes, 3),
+            new("GR-073", AnaLima, SizingAnswer.YesBut, 2),
+            new("GR-054", AnaLima, SizingAnswer.No, 2),
+        ];
+
         private readonly List<DemoDataScenario> scenarios = [];
 
         private readonly IRepository<Portfolio> projectRepository;
@@ -56,10 +73,14 @@ namespace Lighthouse.Backend.Services.Implementation
         private readonly IDeliveryMetricSnapshotRepository deliveryMetricSnapshotRepository;
         private readonly IDemoDataFactory demoDataFactory;
         private readonly ILighthouseClock clock;
+        private readonly ISizingLogRepository sizingLog;
 
+#pragma warning disable S107 // Loading demo data writes every store a demo shows - configuration, deliveries with their history, and the sizing log - and those stores share no concept that grouping them would name.
         public DemoDataService(
-            IRepository<Portfolio> projectRepository, IRepository<Team> teamRepository, IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo, IDeliveryRepository deliveryRepository, IDeliveryMetricSnapshotRepository deliveryMetricSnapshotRepository, IDemoDataFactory demoDataFactory, ILighthouseClock clock)
+            IRepository<Portfolio> projectRepository, IRepository<Team> teamRepository, IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo, IDeliveryRepository deliveryRepository, IDeliveryMetricSnapshotRepository deliveryMetricSnapshotRepository, IDemoDataFactory demoDataFactory, ILighthouseClock clock, ISizingLogRepository sizingLog)
+#pragma warning restore S107
         {
+            this.sizingLog = sizingLog;
             this.projectRepository = projectRepository;
             this.teamRepository = teamRepository;
             this.workTrackingSystemConnectionRepo = workTrackingSystemConnectionRepo;
@@ -82,12 +103,40 @@ namespace Lighthouse.Backend.Services.Implementation
             await ClearExistingData();
 
             var workTrackingSystemConnection = await AddDemoWorkTrackingSystemConnection();
-            await AddTeamsForScenarios(scenariosToLoad, workTrackingSystemConnection);
+            var addedTeams = await AddTeamsForScenarios(scenariosToLoad, workTrackingSystemConnection);
 
             var addedPortfolios = await AddProjectsForSceanrios(scenariosToLoad, workTrackingSystemConnection);
 
             await SeedDemoDeliveryWithBurnup(addedPortfolios);
             await SeedMultiTeamDelivery(addedPortfolios);
+            SeedDemoSizingVotes(addedTeams);
+        }
+
+        private void SeedDemoSizingVotes(Dictionary<string, Team> addedTeams)
+        {
+            if (!addedTeams.TryGetValue(DemoTeamNames.OldItems, out var team))
+            {
+                return;
+            }
+
+            // Every demo Team carries an SLE, and a Team's SLE is the yardstick a vote is cast against.
+            foreach (var vote in DemoSizingVotes)
+            {
+                sizingLog.Append(new SizingLogEntry
+                {
+                    TeamId = team.Id,
+                    WorkItemReferenceId = vote.WorkItemReference,
+                    Kind = SizingEntryKind.Vote,
+                    Answer = vote.Answer,
+                    VoterKey = SizingLogEntry.SelfDeclaredVoterKeyOf(vote.Voter.BrowserKey),
+                    VoterDisplayName = vote.Voter.Name,
+                    RecordedAt = clock.Now.UtcDateTime.AddDays(-vote.DaysAgo),
+                    Channel = SizingChannel.Web,
+                    YardstickDays = team.ServiceLevelExpectationRange,
+                    YardstickSource = YardstickSource.Sle,
+                    YardstickProbability = team.ServiceLevelExpectationProbability,
+                });
+            }
         }
 
         private async Task<IReadOnlyDictionary<string, Portfolio>> AddProjectsForSceanrios(IEnumerable<DemoDataScenario> scenariosToLoad, WorkTrackingSystemConnection workTrackingSystemConnection)
@@ -284,9 +333,10 @@ namespace Lighthouse.Backend.Services.Implementation
             _ => spread * 2,
         };
 
-        private async Task AddTeamsForScenarios(IEnumerable<DemoDataScenario> scenariosToLoad, WorkTrackingSystemConnection workTrackingSystemConnection)
+        private async Task<Dictionary<string, Team>> AddTeamsForScenarios(IEnumerable<DemoDataScenario> scenariosToLoad, WorkTrackingSystemConnection workTrackingSystemConnection)
         {
             var teamNames = scenariosToLoad.SelectMany(s => s.Teams).Distinct();
+            var addedTeams = new Dictionary<string, Team>();
 
             foreach (var teamName in teamNames)
             {
@@ -296,9 +346,12 @@ namespace Lighthouse.Backend.Services.Implementation
                 team.WorkTrackingSystemConnectionId = workTrackingSystemConnection.Id;
 
                 teamRepository.Add(team);
+                addedTeams.Add(teamName, team);
             }
 
             await teamRepository.Save();
+
+            return addedTeams;
         }
 
         private async Task<WorkTrackingSystemConnection> AddDemoWorkTrackingSystemConnection()
@@ -451,5 +504,9 @@ namespace Lighthouse.Backend.Services.Implementation
                 IsPremium = false,
             };
         }
+
+        private sealed record DemoVoter(string Name, string BrowserKey);
+
+        private sealed record DemoSizingVote(string WorkItemReference, DemoVoter Voter, SizingAnswer Answer, int DaysAgo);
     }
 }
