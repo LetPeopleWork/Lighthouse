@@ -76,6 +76,7 @@ vi.mock("../Tags/TagsComponent", () => ({
 const defaultTerms: Record<string, string> = {
 	[TERMINOLOGY_KEYS.WORK_ITEMS]: "Work Items",
 	[TERMINOLOGY_KEYS.REFINEMENT]: "Refinement",
+	[TERMINOLOGY_KEYS.REFINEMENTS]: "Refinements",
 	[TERMINOLOGY_KEYS.TEAM]: "Team",
 };
 
@@ -485,6 +486,27 @@ describe("The Refinement cadence in the Refinement section of a Team's settings"
 		expect(
 			screen.getByRole("spinbutton", { name: REPEAT_EVERY }),
 		).toHaveAttribute("aria-invalid", "true");
+		expect(saveTeamSettings).not.toHaveBeenCalled();
+	});
+
+	// @us-04 @slice-04 @error @contract-shape:unbounded-preservation
+	// The server looks a year ahead for the next Refinement, so a longer gap could leave it none.
+	it("saves nothing for more than 52 weeks between Refinements, and says why", async () => {
+		await renderGravitysSettingsForm(
+			gravitysSettings({
+				cadence: { weekdays: ["Thursday"], intervalWeeks: 1, anchorWeek: null },
+			}),
+		);
+
+		await replaceTheNumberIn(REPEAT_EVERY, "53");
+		await pastTheAutosaveDelay();
+
+		expect(
+			screen.getByRole("spinbutton", { name: REPEAT_EVERY }),
+		).toHaveAttribute("aria-invalid", "true");
+		expect(
+			screen.getByText(/^Refinements are at most 52 weeks apart\.$/),
+		).toBeVisible();
 		expect(saveTeamSettings).not.toHaveBeenCalled();
 	});
 

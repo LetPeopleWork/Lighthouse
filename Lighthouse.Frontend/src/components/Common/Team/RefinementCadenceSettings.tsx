@@ -34,6 +34,12 @@ export const cadenceOf = (
 	anchorWeek: intervalWeeks === 1 ? null : anchorWeek,
 });
 
+// The server looks a year ahead for the next Refinement, so a longer gap could leave it none to find.
+const MOST_WEEKS_APART = 52;
+
+const isTooFarApart = (intervalWeeks: number): boolean =>
+	intervalWeeks > MOST_WEEKS_APART;
+
 interface CadenceErrors {
 	intervalWeeks: boolean;
 	anchorWeek: boolean;
@@ -42,7 +48,9 @@ interface CadenceErrors {
 export const cadenceErrors = (
 	cadence: IRefinementCadenceSetting,
 ): CadenceErrors => {
-	const everyFewWeeks = isAtLeastOne(cadence.intervalWeeks);
+	const everyFewWeeks =
+		isAtLeastOne(cadence.intervalWeeks) &&
+		!isTooFarApart(cadence.intervalWeeks);
 	return {
 		intervalWeeks: !everyFewWeeks,
 		anchorWeek:
@@ -75,6 +83,10 @@ const RefinementCadenceSettings: React.FC<RefinementCadenceSettingsProps> = ({
 		anchorWeek = shownCadence.anchorWeek ?? null,
 	) => onChange(cadenceOf(weekdays, intervalWeeks, anchorWeek));
 	const errors = cadenceErrors(shownCadence);
+	const refinementsTerm = getTerm(TERMINOLOGY_KEYS.REFINEMENTS);
+	const intervalWeeksError = isTooFarApart(shownCadence.intervalWeeks)
+		? `${refinementsTerm} are at most ${MOST_WEEKS_APART} weeks apart.`
+		: `${refinementsTerm} are at least one week apart.`;
 	const toggleWeekday = (day: DayOfWeek) =>
 		changeCadence(
 			shownCadence.weekdays.includes(day)
@@ -93,11 +105,7 @@ const RefinementCadenceSettings: React.FC<RefinementCadenceSettingsProps> = ({
 				onIntervalWeeksChange={(intervalWeeks) =>
 					changeCadence(shownCadence.weekdays, intervalWeeks)
 				}
-				intervalWeeksError={
-					errors.intervalWeeks
-						? `${getTerm(TERMINOLOGY_KEYS.REFINEMENTS)} are at least one week apart.`
-						: null
-				}
+				intervalWeeksError={errors.intervalWeeks ? intervalWeeksError : null}
 			/>
 			{asksForStartingWeek(shownCadence.intervalWeeks) && (
 				<TextField

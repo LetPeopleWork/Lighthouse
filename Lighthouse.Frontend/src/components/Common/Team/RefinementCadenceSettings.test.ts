@@ -94,6 +94,18 @@ describe("Which Refinement cadence fields are marked invalid", () => {
 			invalid: { intervalWeeks: true, anchorWeek: false },
 		},
 		{
+			case: "a year of weeks apart is the longest gap",
+			intervalWeeks: 52,
+			anchorWeek: "2026-10-05",
+			invalid: { intervalWeeks: false, anchorWeek: false },
+		},
+		{
+			case: "more than a year of weeks apart marks the weeks",
+			intervalWeeks: 53,
+			anchorWeek: "2026-10-05",
+			invalid: { intervalWeeks: true, anchorWeek: false },
+		},
+		{
 			case: "an emptied number of weeks marks the weeks",
 			intervalWeeks: Number.NaN,
 			anchorWeek: "2026-10-05",
