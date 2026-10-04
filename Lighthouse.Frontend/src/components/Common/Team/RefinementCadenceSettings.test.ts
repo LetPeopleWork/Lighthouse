@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DayOfWeek } from "../../../models/RecurringBlackoutRule";
-import { cadenceErrors, cadenceOf } from "./RefinementSettingsSection";
+import { cadenceErrors, cadenceOf } from "./RefinementCadenceSettings";
 
 describe("What the Refinement cadence fields save as", () => {
 	it.each<{

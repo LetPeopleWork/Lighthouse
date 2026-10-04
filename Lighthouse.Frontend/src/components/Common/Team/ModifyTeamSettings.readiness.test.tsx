@@ -18,7 +18,7 @@ import {
 	MIN_VOTERS_ERROR,
 	MIN_YES_ERROR,
 	readinessErrors,
-} from "./RefinementSettingsSection";
+} from "./ReadinessSettings";
 
 /**
  * Readiness in the Refinement section of a Team's settings: how many Yes votes, from how many voters,

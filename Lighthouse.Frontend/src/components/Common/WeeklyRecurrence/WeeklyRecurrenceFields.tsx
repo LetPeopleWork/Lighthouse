@@ -9,6 +9,7 @@ import {
 	type DayOfWeek,
 	ORDERED_WEEKDAYS,
 } from "../../../models/RecurringBlackoutRule";
+import { shownNumber } from "../../../utils/numberField";
 
 interface WeeklyRecurrenceFieldsProps {
 	weekdays: DayOfWeek[];
@@ -51,8 +52,7 @@ const WeeklyRecurrenceFields: React.FC<WeeklyRecurrenceFieldsProps> = ({
 		<TextField
 			label="Repeat every (weeks)"
 			type="number"
-			// A cleared number field holds NaN, which the input shows as empty rather than as "NaN".
-			value={Number.isNaN(intervalWeeks) ? "" : intervalWeeks}
+			value={shownNumber(intervalWeeks)}
 			onChange={(e) =>
 				onIntervalWeeksChange(Number.parseInt(e.target.value, 10))
 			}

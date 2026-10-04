@@ -32,11 +32,8 @@ import StatesList from "../StatesList/StatesList";
 import SaveStateIndicator from "../ValidationActions/SaveStateIndicator";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
 import RefinementSettingsSection, {
-	DEFAULT_READINESS,
-	hasCadenceErrors,
-	hasReadinessErrors,
+	refinementSettingsBlockers,
 } from "./RefinementSettingsSection";
-import { hasIncompleteStageRule, NO_STAGE_RULES } from "./StageRulesSettings";
 
 interface ModifyTeamSettingsProps {
 	title: string;
@@ -87,19 +84,12 @@ function teamAutoSaveBlockers(
 			`Add at least one ${getTerm(TERMINOLOGY_KEYS.WORK_ITEM)} Type`,
 		);
 	}
-	const readiness = s.refinement?.readiness;
-	if (readiness && hasReadinessErrors(readiness)) {
-		reasons.push("Correct Readiness by votes");
-	}
-	if (hasIncompleteStageRule(s.refinement?.stageRules)) {
-		reasons.push("Complete the stage rules");
-	}
-	const cadence = s.refinement?.cadence;
-	if (cadence && hasCadenceErrors(cadence)) {
-		reasons.push(
-			`Complete the ${getTerm(TERMINOLOGY_KEYS.REFINEMENT)} cadence`,
-		);
-	}
+	reasons.push(
+		...refinementSettingsBlockers(
+			s.refinement,
+			getTerm(TERMINOLOGY_KEYS.REFINEMENT),
+		),
+	);
 	if (isDefault) {
 		return reasons;
 	}
@@ -286,18 +276,8 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							teamId={teamSettings.id}
 							toDoStates={teamSettings.toDoStates || []}
 							doingStates={teamSettings.doingStates || []}
-							chosenStates={teamSettings.refinement?.states ?? []}
-							onChange={(states) => changeRefinement({ states })}
-							readiness={
-								teamSettings.refinement?.readiness ?? DEFAULT_READINESS
-							}
-							onReadinessChange={(readiness) => changeRefinement({ readiness })}
-							stageRules={teamSettings.refinement?.stageRules ?? NO_STAGE_RULES}
-							onStageRulesChange={(stageRules) =>
-								changeRefinement({ stageRules })
-							}
-							cadence={teamSettings.refinement?.cadence ?? null}
-							onCadenceChange={(cadence) => changeRefinement({ cadence })}
+							refinement={teamSettings.refinement}
+							onChange={changeRefinement}
 						/>
 
 						<FlowMetricsConfigurationComponent
