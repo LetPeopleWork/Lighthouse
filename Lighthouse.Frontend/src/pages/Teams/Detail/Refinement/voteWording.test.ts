@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { RowReadiness } from "../../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { ApiError } from "../../../../services/Api/ApiError";
-import type { RowReadiness } from "../../../../models/Refinement/Refinement";
 import {
 	describeReadiness,
 	describeSplit,
