@@ -1,0 +1,67 @@
+import { Button } from "@mui/material";
+import type { GridValidRowModel } from "@mui/x-data-grid";
+import type { DataGridColumn } from "../../../../components/Common/DataGrid/types";
+import { createNameColumn } from "../../../../components/Common/FeatureListDataGrid/columns";
+import ParentWorkItemCell from "../../../../components/Common/ParentWorkItemCell/ParentWorkItemCell";
+import type { ParentWorkItem } from "../../../../hooks/useParentWorkItems";
+import type { IRefinementRow } from "../../../../models/Refinement/Refinement";
+import type { IPendingVote } from "./useVoteCasting";
+import VoteControl from "./VoteControl";
+import { describeVoteCount } from "./voteWording";
+
+export type RefinementGridRow = IRefinementRow & GridValidRowModel;
+
+export const createRefinementColumns = (
+	workItemTerm: string,
+	parentMap: Map<string, ParentWorkItem>,
+	onVote: (vote: IPendingVote) => void,
+	onOpenVotes: (referenceId: string) => void,
+): DataGridColumn<RefinementGridRow>[] => [
+	createNameColumn<RefinementGridRow>(workItemTerm),
+	{
+		field: "parentReferenceId",
+		headerName: "Parent",
+		width: 300,
+		sortable: false,
+		renderCell: ({ row }) => (
+			<ParentWorkItemCell
+				parentReference={row.parentReferenceId}
+				parentMap={parentMap}
+			/>
+		),
+	},
+	{
+		field: "state",
+		headerName: "State",
+		width: 160,
+	},
+	{
+		field: "myVote",
+		headerName: "Your vote",
+		width: 240,
+		sortable: false,
+		renderCell: ({ row }) => (
+			<VoteControl
+				myVote={row.myVote ?? null}
+				onVote={(answer) => onVote({ referenceId: row.referenceId, answer })}
+			/>
+		),
+	},
+	{
+		field: "voteCount",
+		headerName: "Votes",
+		width: 120,
+		renderCell: ({ row }) => {
+			const voteCount = describeVoteCount(row.voteCount ?? 0);
+			return (
+				<Button
+					size="small"
+					aria-label={`${voteCount} - Votes and comments`}
+					onClick={() => onOpenVotes(row.referenceId)}
+				>
+					{voteCount}
+				</Button>
+			);
+		},
+	},
+];
