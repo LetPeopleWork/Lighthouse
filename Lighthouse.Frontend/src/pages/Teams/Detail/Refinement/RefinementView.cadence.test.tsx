@@ -163,7 +163,7 @@ describe("The Refinement tab names the next Refinement", () => {
 	});
 
 	// @us-04 @slice-04 @error @contract-shape:pure-function
-	it.skip("points a Team admin to Settings when the Team has no cadence, and still lists the Work Items", async () => {
+	it("points a Team admin to Settings when the Team has no cadence, and still lists the Work Items", async () => {
 		renderTheRefinementTab(withoutACadence(), aSizingLogService(), "TeamAdmin");
 
 		expect(await screen.findByText(EDITOR_HINT)).toBeVisible();
@@ -172,7 +172,7 @@ describe("The Refinement tab names the next Refinement", () => {
 	});
 
 	// @us-04 @slice-04 @error @contract-shape:pure-function
-	it.skip("tells somebody who cannot change the settings that a Team admin can set a cadence", async () => {
+	it("tells somebody who cannot change the settings that a Team admin can set a cadence", async () => {
 		renderTheRefinementTab(withoutACadence(), aSizingLogService(), "Reader");
 
 		expect(await screen.findByText(READER_HINT)).toBeVisible();
@@ -180,7 +180,7 @@ describe("The Refinement tab names the next Refinement", () => {
 	});
 
 	// @us-04 @slice-04 @boundary @contract-shape:pure-function
-	it.skip("says the Team's own words in the next Refinement and in the hint", async () => {
+	it("says the Team's own words in the next Refinement and in the hint", async () => {
 		terms.current = {
 			...defaultRefinementTerms,
 			workItems: "Tickets",

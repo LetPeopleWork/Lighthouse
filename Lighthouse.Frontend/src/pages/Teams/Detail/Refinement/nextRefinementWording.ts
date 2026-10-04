@@ -33,3 +33,19 @@ export const describeNextRefinement = (
 	}
 	return `Next ${refinementTerm}: ${formatDayAndDate(day)} · ${describeDistance(daysUntil(day, today))}`;
 };
+
+/** The words a Team has renamed that the hint for a Team without a cadence uses. */
+export interface CadenceHintTerms {
+	team: string;
+	refinement: string;
+	workItems: string;
+}
+
+/** How to get a cadence: somebody who may change the Team's settings is pointed there, anybody else to a Team admin. */
+export const describeHowToGetACadence = (
+	canChangeSettings: boolean,
+	terms: CadenceHintTerms,
+): string =>
+	canChangeSettings
+		? `Set a ${terms.refinement} cadence in Settings to see how many ${terms.workItems} are needed`
+		: `A ${terms.team} admin can set a ${terms.refinement} cadence to see how many ${terms.workItems} are needed`;

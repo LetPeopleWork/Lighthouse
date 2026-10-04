@@ -11,6 +11,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import DataGridBase from "../../../../components/Common/DataGrid/DataGridBase";
 import { useErrorSnackbar } from "../../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useParentWorkItems } from "../../../../hooks/useParentWorkItems";
+import { useRbac } from "../../../../hooks/useRbac";
 import { useVoterIdentity } from "../../../../hooks/useVoterIdentity";
 import type {
 	IRefinementRow,
@@ -44,8 +45,12 @@ const TAB_LAYOUT: SxProps<Theme> = {
 	columnGap: 2,
 	rowGap: 2,
 	"& > *": { gridColumn: "1 / -1", minWidth: 0 },
-	"& > h2": { gridColumn: "1" },
-	[`& > [${NEXT_REFINEMENT_SLOT}]`]: { gridColumn: "2", justifySelf: "end" },
+	"& > h2": { gridColumn: "1", gridRow: "1" },
+	[`& > [${NEXT_REFINEMENT_SLOT}]`]: {
+		gridColumn: "2",
+		gridRow: "1",
+		justifySelf: "end",
+	},
 };
 
 const messageOf = (error: unknown): string =>
@@ -98,6 +103,7 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 	const { refinementService } = useContext(ApiServiceContext);
 	const { showError } = useErrorSnackbar();
 	const { getTerm } = useTerminology();
+	const { isTeamAdmin } = useRbac();
 	const [refinement, setRefinement] = useState<IRefinementView | null>(null);
 	const [votesShownFor, setVotesShownFor] = useState<string | null>(null);
 	const [isChangingName, setIsChangingName] = useState(false);
@@ -196,13 +202,19 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 
 	return (
 		<Box sx={TAB_LAYOUT}>
+			{/* The grid shows it at the end of the heading's row; it comes first in the markup so the heading leads straight into the list. */}
+			<NextRefinement
+				nextRefinementDate={refinement.nextRefinementDate}
+				terms={{
+					team: getTerm(TERMINOLOGY_KEYS.TEAM),
+					refinement: refinementTerm,
+					workItems: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
+				}}
+				canChangeSettings={isTeamAdmin(team.id)}
+			/>
 			<Typography variant="h6" component="h2">
 				{`${count} ${workItemsTerm} in ${refinementTerm}${describeReadyCount(refinement)}`}
 			</Typography>
-			<NextRefinement
-				nextRefinementDate={refinement.nextRefinementDate}
-				refinementTerm={refinementTerm}
-			/>
 			{refinement.stagesConfigured && <StageBreakdown rows={workItems} />}
 			{refinement.yardstick && (
 				<YardstickQuestion yardstick={refinement.yardstick} getTerm={getTerm} />
