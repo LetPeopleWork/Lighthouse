@@ -262,6 +262,44 @@ describe("Stage rules in the Refinement section of a Team's settings", () => {
 		);
 	});
 
+	// @us-03 @slice-03 @boundary @contract-shape:bounded-change
+	it("keeps an edited Ready rule when the Yes votes needed change before it is saved", async () => {
+		await renderGravitysSettingsForm(
+			gravitysSettings({
+				stageRules: {
+					ready: tagsContain("ready"),
+					beingRefined: tagsContain("analysing"),
+				},
+			}),
+		);
+
+		const value = within(await theStageGroup(READY_WHEN)).getByLabelText(
+			"Value",
+		);
+		await userEvent.clear(value);
+		await userEvent.type(value, "groomed");
+		await replaceTheNumberIn("Yes votes needed", "2");
+
+		await waitFor(() =>
+			expect(theRefinementLastSaved()).toEqual({
+				states: [
+					{ state: "Backlog" },
+					{ state: "Analysing" },
+					{ state: "Next" },
+				],
+				readiness: {
+					minYes: 2,
+					minVoters: 3,
+					discussWhen: { no: 1, yesIf: 2 },
+				},
+				stageRules: {
+					ready: tagsContain("groomed"),
+					beingRefined: tagsContain("analysing"),
+				},
+			}),
+		);
+	});
+
 	// @us-03 @slice-03 @error @contract-shape:unbounded-preservation
 	it("saves nothing while a new rule is still incomplete", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
