@@ -1,22 +1,17 @@
 import {
 	Box,
 	Checkbox,
-	FormControl,
-	FormControlLabel,
-	FormLabel,
-	Radio,
-	RadioGroup,
+	FormHelperText,
 	TextField,
 	Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type {
+	IDiscussWhenSetting,
 	IReadinessSetting,
 	IRefinementStateSetting,
-	IVetoSetting,
-	VetoCounts,
 } from "../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
@@ -32,35 +27,120 @@ interface RefinementSettingsSectionProps {
 	onReadinessChange: (readiness: IReadinessSetting) => void;
 }
 
+type DiscussionRule = keyof IDiscussWhenSetting;
+
+const DEFAULT_DISCUSS_WHEN: Record<DiscussionRule, number> = {
+	no: 1,
+	yesIf: 2,
+};
+
 export const DEFAULT_READINESS: IReadinessSetting = {
 	minYes: 3,
 	minVoters: 3,
-	veto: null,
+	discussWhen: DEFAULT_DISCUSS_WHEN,
 };
 
-const VETO_COUNTS_LABELS: Record<VetoCounts, string> = {
-	No: "No",
-	NoOrYesBut: "No or Yes, if…",
-};
-
-const vetoCountsOptions = Object.keys(VETO_COUNTS_LABELS) as VetoCounts[];
+const DISCUSSION_RULES: {
+	rule: DiscussionRule;
+	votes: string;
+}[] = [
+	{ rule: "no", votes: "No votes" },
+	{ rule: "yesIf", votes: "“Yes, if…” votes" },
+];
 
 export const MIN_YES_ERROR = "At least one Yes vote is needed";
 export const MIN_VOTERS_ERROR =
 	"Voters needed cannot be fewer than Yes votes needed";
+export const DISCUSSION_RULE_ERROR = "A discussion rule needs at least 1 vote";
+
+const discussWhenOf = (readiness: IReadinessSetting): IDiscussWhenSetting =>
+	readiness.discussWhen ?? DEFAULT_DISCUSS_WHEN;
+
+const discussionRuleError = (threshold: number | null) =>
+	threshold === null || (Number.isInteger(threshold) && threshold >= 1)
+		? null
+		: DISCUSSION_RULE_ERROR;
 
 // The same rule the server enforces, so a save it would refuse is never sent.
 export const readinessErrors = (
 	readiness: IReadinessSetting,
-): { minYes: string | null; minVoters: string | null } => {
+): {
+	minYes: string | null;
+	minVoters: string | null;
+	discussWhenNo: string | null;
+	discussWhenYesIf: string | null;
+} => {
 	const enoughYes = Number.isInteger(readiness.minYes) && readiness.minYes >= 1;
 	const enoughVoters =
 		Number.isInteger(readiness.minVoters) &&
 		readiness.minVoters >= readiness.minYes;
+	const discussWhen = discussWhenOf(readiness);
 	return {
 		minYes: enoughYes ? null : MIN_YES_ERROR,
 		minVoters: enoughYes && !enoughVoters ? MIN_VOTERS_ERROR : null,
+		discussWhenNo: discussionRuleError(discussWhen.no),
+		discussWhenYesIf: discussionRuleError(discussWhen.yesIf),
 	};
+};
+
+interface DiscussionRuleRowProps {
+	votes: string;
+	threshold: number | null;
+	remembered: number;
+	error: string | null;
+	onToggle: (on: boolean) => void;
+	onThresholdChange: (threshold: number) => void;
+}
+
+const DiscussionRuleRow: React.FC<DiscussionRuleRowProps> = ({
+	votes,
+	threshold,
+	remembered,
+	error,
+	onToggle,
+	onThresholdChange,
+}) => {
+	const errorId = useId();
+	const on = threshold !== null;
+	const shownThreshold = on ? threshold : remembered;
+	return (
+		<Grid size={{ xs: 12 }}>
+			<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+				<Checkbox
+					checked={on}
+					onChange={(event) => onToggle(event.target.checked)}
+					slotProps={{
+						input: { "aria-label": `Send to discussion on ${votes}` },
+					}}
+				/>
+				<TextField
+					type="number"
+					size="small"
+					sx={{ width: 80 }}
+					disabled={!on}
+					value={Number.isNaN(shownThreshold) ? "" : shownThreshold}
+					onChange={(event) =>
+						onThresholdChange(Number.parseInt(event.target.value, 10))
+					}
+					error={error !== null}
+					slotProps={{
+						htmlInput: {
+							min: 1,
+							step: 1,
+							"aria-label": `${votes} that send to discussion`,
+							"aria-describedby": error === null ? undefined : errorId,
+						},
+					}}
+				/>
+				<Typography>or more {votes}</Typography>
+			</Box>
+			{error !== null && (
+				<FormHelperText id={errorId} error>
+					{error}
+				</FormHelperText>
+			)}
+		</Grid>
+	);
 };
 
 const toSettings = (states: string[]): IRefinementStateSetting[] =>
@@ -126,20 +206,30 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 
 	const shown = (value: number) => (Number.isNaN(value) ? "" : value);
 
-	const veto = readiness.veto;
-	const countingLabelId = useId();
+	const discussWhen = discussWhenOf(readiness);
+	const discussionErrors: Record<DiscussionRule, string | null> = {
+		no: errors.discussWhenNo,
+		yesIf: errors.discussWhenYesIf,
+	};
 
-	const toggleVeto = (event: React.ChangeEvent<HTMLInputElement>) =>
+	// A rule switched off and on again comes back at the threshold it had, not at the default.
+	const [rememberedThresholds, setRememberedThresholds] = useState(() => ({
+		no: discussWhen.no ?? DEFAULT_DISCUSS_WHEN.no,
+		yesIf: discussWhen.yesIf ?? DEFAULT_DISCUSS_WHEN.yesIf,
+	}));
+
+	const changeDiscussWhen = (rule: DiscussionRule, threshold: number | null) =>
 		onReadinessChange({
 			...readiness,
-			veto: event.target.checked ? { threshold: 1, counts: "No" } : null,
+			discussWhen: { ...discussWhen, [rule]: threshold },
 		});
 
-	const changeVeto = (change: Partial<IVetoSetting>) => {
-		if (veto === null) {
-			return;
+	const toggleRule = (rule: DiscussionRule) => (on: boolean) => {
+		const current = discussWhen[rule];
+		if (!on && current !== null && discussionRuleError(current) === null) {
+			setRememberedThresholds({ ...rememberedThresholds, [rule]: current });
 		}
-		onReadinessChange({ ...readiness, veto: { ...veto, ...change } });
+		changeDiscussWhen(rule, on ? rememberedThresholds[rule] : null);
 	};
 
 	return (
@@ -182,61 +272,19 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 				/>
 			</Grid>
 			<Grid size={{ xs: 12 }}>
-				<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-					<FormControlLabel
-						control={<Checkbox checked={veto !== null} onChange={toggleVeto} />}
-						label="Send to discussion"
-					/>
-					{veto && (
-						<>
-							<Typography>at</Typography>
-							<TextField
-								type="number"
-								size="small"
-								sx={{ width: 80 }}
-								value={shown(veto.threshold)}
-								onChange={(event) =>
-									changeVeto({
-										threshold: Number.parseInt(event.target.value, 10),
-									})
-								}
-								slotProps={{
-									htmlInput: {
-										min: 1,
-										step: 1,
-										"aria-label": "Votes that send to discussion",
-									},
-								}}
-							/>
-							<Typography>or more</Typography>
-						</>
-					)}
-				</Box>
+				<Typography variant="subtitle2">Send to discussion when</Typography>
 			</Grid>
-			{veto && (
-				<Grid size={{ xs: 12 }}>
-					<FormControl>
-						<FormLabel id={countingLabelId}>Counting</FormLabel>
-						<RadioGroup
-							row
-							aria-labelledby={countingLabelId}
-							value={veto.counts}
-							onChange={(event) =>
-								changeVeto({ counts: event.target.value as VetoCounts })
-							}
-						>
-							{vetoCountsOptions.map((counts) => (
-								<FormControlLabel
-									key={counts}
-									value={counts}
-									control={<Radio />}
-									label={VETO_COUNTS_LABELS[counts]}
-								/>
-							))}
-						</RadioGroup>
-					</FormControl>
-				</Grid>
-			)}
+			{DISCUSSION_RULES.map(({ rule, votes }) => (
+				<DiscussionRuleRow
+					key={rule}
+					votes={votes}
+					threshold={discussWhen[rule]}
+					remembered={rememberedThresholds[rule]}
+					error={discussionErrors[rule]}
+					onToggle={toggleRule(rule)}
+					onThresholdChange={(threshold) => changeDiscussWhen(rule, threshold)}
+				/>
+			))}
 		</InputGroup>
 	);
 };

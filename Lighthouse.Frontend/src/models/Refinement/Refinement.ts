@@ -3,19 +3,21 @@ export interface IRefinementStateSetting {
 	state: string;
 }
 
-/** Which answers send a Work Item to discussion once enough of them are cast. */
-export type VetoCounts = "No" | "NoOrYesBut";
-
-export interface IVetoSetting {
-	threshold: number;
-	counts: VetoCounts;
+/**
+ * How many No votes, and how many "Yes, if…" votes, send a Work Item to discussion. Either one is
+ * enough; null switches that rule off.
+ */
+export interface IDiscussWhenSetting {
+	no: number | null;
+	yesIf: number | null;
 }
 
 /** How many votes make a Work Item Ready, and what sends it to discussion instead. */
 export interface IReadinessSetting {
 	minYes: number;
 	minVoters: number;
-	veto: IVetoSetting | null;
+	/** Absent when stored before the discussion rules existed: both rules apply at their defaults. */
+	discussWhen?: IDiscussWhenSetting;
 }
 
 export interface IRefinementSettings {

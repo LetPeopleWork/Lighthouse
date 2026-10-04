@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
@@ -14,6 +14,7 @@ import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvid
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import ModifyTeamSettings from "./ModifyTeamSettings";
 import {
+	DISCUSSION_RULE_ERROR,
 	MIN_VOTERS_ERROR,
 	MIN_YES_ERROR,
 	readinessErrors,
@@ -21,8 +22,8 @@ import {
 
 /**
  * Readiness in the Refinement section of a Team's settings: how many Yes votes, from how many voters,
- * make a Work Item Ready, and whether some No - or No and "Yes, if…" - votes send it to discussion
- * instead. Exercised through the settings form a Team admin uses, so what is checked is what the
+ * make a Work Item Ready, and how many No votes, or how many "Yes, if…" votes, send it to discussion
+ * instead. Each of the two discussion rules can be switched off on its own. Exercised through the settings form a Team admin uses, so what is checked is what the
  * form's autosave sends. At least one Yes is always needed, and never fewer voters than Yes votes.
  *
  * Sections readiness does not depend on are stood in for, as the form's own tests do.
@@ -71,7 +72,10 @@ vi.mock("../Tags/TagsComponent", () => ({
 
 const YES_VOTES_NEEDED = "Yes votes needed";
 const VOTERS_NEEDED = "Voters needed";
-const SEND_TO_DISCUSSION = "Send to discussion";
+const NO_RULE = "Send to discussion on No votes";
+const YES_IF_RULE = "Send to discussion on “Yes, if…” votes";
+const NO_THRESHOLD = "No votes that send to discussion";
+const YES_IF_THRESHOLD = "“Yes, if…” votes that send to discussion";
 
 const defaultTerms: Record<string, string> = {
 	[TERMINOLOGY_KEYS.WORK_ITEMS]: "Work Items",
@@ -92,7 +96,17 @@ const workTrackingSystems: IWorkTrackingSystemConnection[] = [
 	},
 ];
 
-const THE_DEFAULTS: IReadinessSetting = { minYes: 3, minVoters: 3, veto: null };
+const THE_DEFAULTS: IReadinessSetting = {
+	minYes: 3,
+	minVoters: 3,
+	discussWhen: { no: 1, yesIf: 2 },
+};
+
+// Readiness stored before the discussion rules existed carries none.
+const STORED_WITHOUT_DISCUSSION_RULES: IReadinessSetting = {
+	minYes: 3,
+	minVoters: 3,
+};
 
 const gravitysSettings = (
 	readiness: IReadinessSetting = THE_DEFAULTS,
@@ -164,8 +178,10 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 	});
 
 	// @us-13 @slice-13 @driving_port @contract-shape:pure-function
-	it("shows three Yes votes from three voters and no veto until the admin changes them", async () => {
-		await renderGravitysSettingsForm(gravitysSettings());
+	it("shows three Yes votes from three voters, and discussion at one No or two “Yes, if…”, until the admin changes them", async () => {
+		await renderGravitysSettingsForm(
+			gravitysSettings(STORED_WITHOUT_DISCUSSION_RULES),
+		);
 
 		expect(
 			await screen.findByRole("spinbutton", { name: YES_VOTES_NEEDED }),
@@ -173,9 +189,20 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		expect(screen.getByRole("spinbutton", { name: VOTERS_NEEDED })).toHaveValue(
 			3,
 		);
+		expect(screen.getByText("Send to discussion when")).toBeVisible();
+		expect(screen.getByRole("checkbox", { name: NO_RULE })).toBeChecked();
+		expect(screen.getByRole("spinbutton", { name: NO_THRESHOLD })).toHaveValue(
+			1,
+		);
+		expect(screen.getByText("or more No votes")).toBeVisible();
+		expect(screen.getByRole("checkbox", { name: YES_IF_RULE })).toBeChecked();
 		expect(
-			screen.getByRole("checkbox", { name: SEND_TO_DISCUSSION }),
-		).not.toBeChecked();
+			screen.getByRole("spinbutton", { name: YES_IF_THRESHOLD }),
+		).toHaveValue(2);
+		expect(screen.getByText("or more “Yes, if…” votes")).toBeVisible();
+
+		await pastTheAutosaveDelay();
+		expect(saveTeamSettings).not.toHaveBeenCalled();
 	});
 
 	// @us-13 @slice-13 @driving_port @contract-shape:bounded-change
@@ -188,7 +215,7 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 			expect(theReadinessLastSaved()).toEqual({
 				minYes: 2,
 				minVoters: 3,
-				veto: null,
+				discussWhen: { no: 1, yesIf: 2 },
 			}),
 		);
 	});
@@ -222,47 +249,113 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 	});
 
 	// @us-13 @slice-13 @contract-shape:bounded-change
-	it("saves a veto that sends a Work Item to discussion after one No", async () => {
+	it("switches off the No rule on its own, keeping the “Yes, if…” rule", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
 		await userEvent.click(
-			await screen.findByRole("checkbox", { name: SEND_TO_DISCUSSION }),
+			await screen.findByRole("checkbox", { name: NO_RULE }),
 		);
 
 		await waitFor(() =>
 			expect(theReadinessLastSaved()).toEqual({
 				minYes: 3,
 				minVoters: 3,
-				veto: { threshold: 1, counts: "No" },
+				discussWhen: { no: null, yesIf: 2 },
 			}),
 		);
 	});
 
 	// @us-13 @slice-13 @contract-shape:bounded-change
-	it("saves a veto that counts Yes, if… votes as well", async () => {
+	it("saves a changed number of “Yes, if…” votes that send to discussion", async () => {
+		await renderGravitysSettingsForm(gravitysSettings());
+
+		await replaceTheNumberIn(YES_IF_THRESHOLD, "3");
+
+		await waitFor(() =>
+			expect(theReadinessLastSaved()).toEqual({
+				minYes: 3,
+				minVoters: 3,
+				discussWhen: { no: 1, yesIf: 3 },
+			}),
+		);
+	});
+
+	// @us-13 @slice-13 @contract-shape:bounded-change
+	it("switches a rule back on at the threshold it had before", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
 				minYes: 3,
 				minVoters: 3,
-				veto: { threshold: 2, counts: "No" },
+				discussWhen: { no: 4, yesIf: 2 },
 			}),
 		);
 
-		const counting = await screen.findByRole("radiogroup", {
-			name: "Counting",
-		});
+		const noRule = await screen.findByRole("checkbox", { name: NO_RULE });
+		await userEvent.click(noRule);
+		await waitFor(() =>
+			expect(theReadinessLastSaved()?.discussWhen).toEqual({
+				no: null,
+				yesIf: 2,
+			}),
+		);
+		await userEvent.click(noRule);
+
+		await waitFor(() =>
+			expect(theReadinessLastSaved()).toEqual({
+				minYes: 3,
+				minVoters: 3,
+				discussWhen: { no: 4, yesIf: 2 },
+			}),
+		);
+	});
+
+	// @us-13 @slice-13 @contract-shape:bounded-change
+	it("switches on a rule stored as off at its default threshold", async () => {
+		await renderGravitysSettingsForm(
+			gravitysSettings({
+				minYes: 3,
+				minVoters: 3,
+				discussWhen: { no: 1, yesIf: null },
+			}),
+		);
+
 		await userEvent.click(
-			within(counting).getByRole("radio", { name: "No or Yes, if…" }),
+			await screen.findByRole("checkbox", { name: YES_IF_RULE }),
 		);
 
 		await waitFor(() =>
 			expect(theReadinessLastSaved()).toEqual({
 				minYes: 3,
 				minVoters: 3,
-				veto: { threshold: 2, counts: "NoOrYesBut" },
+				discussWhen: { no: 1, yesIf: 2 },
 			}),
 		);
 	});
+
+	// @us-13 @slice-13 @error @contract-shape:unbounded-preservation
+	it.each([
+		{ field: NO_THRESHOLD, typed: "0" },
+		{ field: NO_THRESHOLD, typed: "" },
+		{ field: YES_IF_THRESHOLD, typed: "0" },
+		{ field: YES_IF_THRESHOLD, typed: "" },
+	])(
+		"refuses '$typed' in $field, says why and saves nothing",
+		async ({ field, typed }) => {
+			await renderGravitysSettingsForm(gravitysSettings());
+
+			const threshold = await screen.findByRole("spinbutton", { name: field });
+			await userEvent.clear(threshold);
+			if (typed !== "") {
+				await userEvent.type(threshold, typed);
+			}
+			await pastTheAutosaveDelay();
+
+			expect(
+				await screen.findByText("A discussion rule needs at least 1 vote"),
+			).toBeVisible();
+			expect(saveTeamSettings).not.toHaveBeenCalled();
+		},
+	);
 
 	// @us-13 @slice-13 @boundary @contract-shape:unbounded-preservation
 	it("saves nothing just because the form was opened", async () => {
@@ -319,10 +412,60 @@ describe("the readiness rule the form shares with the server", () => {
 	])(
 		"$minYes Yes from $minVoters voters → $minYesError / $minVotersError",
 		({ minYes, minVoters, minYesError, minVotersError }) => {
-			expect(readinessErrors({ minYes, minVoters, veto: null })).toEqual({
+			expect(
+				readinessErrors({
+					minYes,
+					minVoters,
+					discussWhen: { no: 1, yesIf: 2 },
+				}),
+			).toEqual({
 				minYes: minYesError,
 				minVoters: minVotersError,
+				discussWhenNo: null,
+				discussWhenYesIf: null,
 			});
 		},
 	);
+});
+
+describe("the discussion rules the form shares with the server", () => {
+	it.each([
+		{ no: 1, yesIf: 2, noError: null, yesIfError: null },
+		{ no: 5, yesIf: 1, noError: null, yesIfError: null },
+		{ no: null, yesIf: null, noError: null, yesIfError: null },
+		{ no: 0, yesIf: 2, noError: DISCUSSION_RULE_ERROR, yesIfError: null },
+		{ no: 1, yesIf: -1, noError: null, yesIfError: DISCUSSION_RULE_ERROR },
+		{
+			no: Number.NaN,
+			yesIf: Number.NaN,
+			noError: DISCUSSION_RULE_ERROR,
+			yesIfError: DISCUSSION_RULE_ERROR,
+		},
+		{ no: null, yesIf: 0, noError: null, yesIfError: DISCUSSION_RULE_ERROR },
+	])(
+		"No at $no, “Yes, if…” at $yesIf → $noError / $yesIfError",
+		({ no, yesIf, noError, yesIfError }) => {
+			expect(
+				readinessErrors({
+					minYes: 3,
+					minVoters: 3,
+					discussWhen: { no, yesIf },
+				}),
+			).toEqual({
+				minYes: null,
+				minVoters: null,
+				discussWhenNo: noError,
+				discussWhenYesIf: yesIfError,
+			});
+		},
+	);
+
+	it("checks a readiness stored without discussion rules as if it had the defaults", () => {
+		expect(readinessErrors({ minYes: 3, minVoters: 3 })).toEqual({
+			minYes: null,
+			minVoters: null,
+			discussWhenNo: null,
+			discussWhenYesIf: null,
+		});
+	});
 });

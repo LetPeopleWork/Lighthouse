@@ -87,7 +87,7 @@ function teamAutoSaveBlockers(
 	const readiness = s.refinement?.readiness;
 	if (readiness) {
 		const errors = readinessErrors(readiness);
-		if (errors.minYes !== null || errors.minVoters !== null) {
+		if (Object.values(errors).some((error) => error !== null)) {
 			reasons.push("Correct Readiness by votes");
 		}
 	}
