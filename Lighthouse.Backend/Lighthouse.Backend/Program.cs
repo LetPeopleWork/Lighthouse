@@ -1134,6 +1134,12 @@ namespace Lighthouse.Backend
         // for the whole rest of the application rather than one per address that never asked.
         private const string NothingHereIsCountedByAddress = "not-counted-by-address";
 
+        private static readonly string[] PoliciesCountedByPresentedHandle =
+        [
+            RateLimitingConfiguration.UsageDataIngestPolicy,
+            RateLimitingConfiguration.RefinementContributionPolicy,
+        ];
+
         private static void ConfigureRateLimiting(WebApplicationBuilder builder)
         {
             builder.Services.Configure<RateLimitingConfiguration>(
@@ -1173,14 +1179,19 @@ namespace Lighthouse.Backend
                     RateLimitingConfiguration.UsageDataIngestPolicy,
                     ResolveUsageDataIngestPartitionKey);
 
+                AddFixedWindowPolicy(
+                    options,
+                    RateLimitingConfiguration.RefinementContributionPolicy,
+                    ResolveRefinementContributionPartitionKey);
+
                 options.GlobalLimiter = WhatOneAddressMayHandIn();
             });
         }
 
         /// <summary>
-        /// The bound on an address, underneath the per-browser one on the endpoint that takes usage
-        /// events. The browser's handle is presented rather than proved, so a caller who invents a
-        /// new one for every request lands in a fresh allowance every time and is never refused -
+        /// The bound on an address, underneath the per-browser one on the endpoints that count callers
+        /// by a handle they present. That handle is presented rather than proved, so a caller who
+        /// invents a new one for every request lands in a fresh allowance every time and is never refused -
         /// while each of those requests still reaches the database twice. Counting the address as
         /// well gives that caller somewhere to stop, and leaves an office sharing one address
         /// counted per browser as before, because this ceiling is a large multiple of that one.
@@ -1193,7 +1204,8 @@ namespace Lighthouse.Backend
         {
             return PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
             {
-                if (WhatPolicyApplies(httpContext) != RateLimitingConfiguration.UsageDataIngestPolicy)
+                var policyName = WhatPolicyApplies(httpContext);
+                if (policyName is null || !PoliciesCountedByPresentedHandle.Contains(policyName))
                 {
                     return RateLimitPartition.GetNoLimiter(NothingHereIsCountedByAddress);
                 }
@@ -1201,7 +1213,7 @@ namespace Lighthouse.Backend
                 var snapshot = httpContext.RequestServices
                     .GetRequiredService<IOptionsMonitor<RateLimitingConfiguration>>().CurrentValue;
 
-                if (!snapshot.Policies.TryGetValue(RateLimitingConfiguration.UsageDataIngestPolicy, out var perBrowser)
+                if (!snapshot.Policies.TryGetValue(policyName, out var perBrowser)
                     || perBrowser.PermitLimit <= 0
                     || perBrowser.WindowSeconds <= 0)
                 {
@@ -1209,7 +1221,7 @@ namespace Lighthouse.Backend
                 }
 
                 return RateLimitPartition.GetFixedWindowLimiter(
-                    ResolvePartitionKey(httpContext),
+                    $"{policyName}:{ResolvePartitionKey(httpContext)}",
                     _ => new FixedWindowRateLimiterOptions
                     {
                         PermitLimit = perBrowser.PermitLimit * BrowsersOneAddressMaySpeakFor,
@@ -1272,9 +1284,32 @@ namespace Lighthouse.Backend
         /// </summary>
         private static string ResolveUsageDataIngestPartitionKey(HttpContext httpContext)
         {
-            var presented = httpContext.Request.Headers[API.UsageDataController.ConsentTokenHeader].ToString();
+            return ResolvePresentedHandlePartitionKey(
+                httpContext,
+                httpContext.Request.Headers[API.UsageDataController.ConsentTokenHeader].ToString());
+        }
 
-            if (string.IsNullOrWhiteSpace(presented))
+        /// <summary>
+        /// One voter, not one address, for the same reason as above. The limiter runs before sign-in,
+        /// so there is no person yet to count: whatever the caller presents to say who they are - the
+        /// voter key, an API key, a bearer token, the session cookie - stands in for one.
+        /// </summary>
+        private static string ResolveRefinementContributionPartitionKey(HttpContext httpContext)
+        {
+            var request = httpContext.Request;
+            return ResolvePresentedHandlePartitionKey(
+                httpContext,
+                request.Headers[API.RefinementController.VoterKeyHeader].ToString(),
+                request.Headers[ApiKeyAuthenticationHandler.ApiKeyHeaderName].ToString(),
+                request.Headers.Authorization.ToString(),
+                request.Cookies[SmartAuthSchemeSelector.SessionCookieName]);
+        }
+
+        private static string ResolvePresentedHandlePartitionKey(HttpContext httpContext, params string?[] presentedInOrder)
+        {
+            var presented = Array.Find(presentedInOrder, handle => !string.IsNullOrWhiteSpace(handle));
+
+            if (presented is null)
             {
                 return ResolvePartitionKey(httpContext);
             }

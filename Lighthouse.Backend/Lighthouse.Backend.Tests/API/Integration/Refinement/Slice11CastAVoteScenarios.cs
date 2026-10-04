@@ -179,7 +179,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-11 @slice-11 @boundary @contract-shape:pure-function
         // The key is what makes a vote somebody's; an answer that echoed it would hand it to anyone watching.
         [Test]
-        [Ignore(PendingSlice11)]
         public async Task The_voter_key_never_comes_back_in_any_answer()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -216,7 +215,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-11 @slice-11 @contract-shape:unbounded-preservation
         // A vote is a view, not an edit: the Team's settings and Work Items stay exactly as they were.
         [Test]
-        [Ignore(PendingSlice11)]
         public async Task Voting_changes_nothing_about_the_Team_or_its_Work_Items()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -230,7 +228,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-11 @slice-11 @error @contract-shape:unbounded-preservation
         // Thirty entries a minute is about ten times what a person needs; the thirty-first is held back.
         [Test]
-        [Ignore(PendingSlice11)]
         public async Task A_voter_sending_more_than_thirty_entries_a_minute_is_told_to_slow_down()
         {
             var gravity = await GivenJonasHasVotedYesThirtyTimesWithinAMinute();

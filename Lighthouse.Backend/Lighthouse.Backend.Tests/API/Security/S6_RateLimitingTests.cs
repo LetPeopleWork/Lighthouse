@@ -1,5 +1,7 @@
 using System.Globalization;
 using System.Net;
+using System.Text.Json;
+using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Tests.TestHelpers.ForwardedHeaders;
 using Microsoft.AspNetCore.Hosting;
@@ -131,6 +133,27 @@ namespace Lighthouse.Backend.Tests.API.Security
             }
 
             Assert.That(statuses, Has.All.Not.EqualTo(HttpStatusCode.TooManyRequests));
+        }
+
+        // Every other test configures the policy it exercises, so they pass whether or not the shipped file
+        // defines it - and an undefined policy throttles nothing, silently. Only reading the shipped file
+        // catches a refinement contribution policy that has gone missing or drifted from thirty a minute.
+        [Test]
+        public void TheShippedConfiguration_LimitsRefinementContributionsToThirtyAMinute()
+        {
+            var appsettingsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "appsettings.json");
+            using var document = JsonDocument.Parse(File.ReadAllText(appsettingsPath));
+            var rateLimits = document.RootElement.GetProperty(RateLimitingConfiguration.SectionName);
+
+            Assert.That(rateLimits.GetProperty("Policies").TryGetProperty(RateLimitingConfiguration.RefinementContributionPolicy, out var policy), Is.True,
+                $"policy '{RateLimitingConfiguration.RefinementContributionPolicy}' is undefined in appsettings.json, so every vote write runs unthrottled");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(policy.GetProperty(nameof(FixedWindowPolicyConfiguration.PermitLimit)).GetInt32(), Is.EqualTo(30));
+                Assert.That(policy.GetProperty(nameof(FixedWindowPolicyConfiguration.WindowSeconds)).GetInt32(), Is.EqualTo(60));
+                Assert.That(policy.GetProperty(nameof(FixedWindowPolicyConfiguration.QueueLimit)).GetInt32(), Is.Zero);
+            }
         }
 
         private static WebApplicationFactory<Program> BuildFactory(bool rateLimitsEnabled, bool authEnabled)

@@ -1,10 +1,12 @@
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Refinement;
 using Lighthouse.Backend.Services.Interfaces.Refinement;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Lighthouse.Backend.API
 {
@@ -16,6 +18,7 @@ namespace Lighthouse.Backend.API
     [Route("api/latest/teams/{teamId:int}/refinement/work-items/{workItemId}")]
     [ApiController]
     [RbacGuard(RbacGuardRequirement.TeamContribute, ScopeIdRouteKey = "teamId")]
+    [EnableRateLimiting(RateLimitingConfiguration.RefinementContributionPolicy)]
     public class RefinementVotesController(
         ISizingLogCommands sizingLogCommands,
         IRefinementViewQuery refinementViewQuery,

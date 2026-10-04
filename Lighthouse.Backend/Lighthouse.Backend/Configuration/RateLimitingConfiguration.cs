@@ -20,6 +20,11 @@ namespace Lighthouse.Backend.Configuration
         // would otherwise throttle each other and silence the instances worth hearing from.
         public const string UsageDataIngestPolicy = "UsageDataIngest";
 
+        // Anyone who may read a Team may write to its Refinement tab without signing in, and each
+        // entry is a durable row. Counted per presented voter rather than per address so an office
+        // behind one address is not throttled as one person.
+        public const string RefinementContributionPolicy = "RefinementContribution";
+
         public bool Enabled { get; set; } = true;
 
         public Dictionary<string, FixedWindowPolicyConfiguration> Policies { get; set; } = new();
