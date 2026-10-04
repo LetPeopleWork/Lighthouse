@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
+using Lighthouse.Backend.Models.Refinement;
 
 namespace Lighthouse.Backend.Tests.API.Helpers
 {
@@ -122,6 +123,109 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             Assert.That(errors, Is.EqualTo(new List<string>
             {
                 $"'{Done}' cannot be a refinement state: only the Team's To Do and Doing states can be chosen.",
+            }));
+        }
+
+        private static TeamSettingDto SettingsWithReadiness(int? minYes, int? minVoters, int? vetoThreshold = null)
+        {
+            var settings = SettingsChoosing(Backlog);
+            settings.Refinement!.Readiness = new ReadinessSettingDto
+            {
+                MinYes = minYes,
+                MinVoters = minVoters,
+                Veto = vetoThreshold is null ? null : new VetoSettingDto { Threshold = vetoThreshold, Counts = VetoCounts.No },
+            };
+            return settings;
+        }
+
+        [TestCase(1, 1)]
+        [TestCase(1, 5)]
+        [TestCase(3, 3)]
+        [TestCase(2, 3)]
+        public void Readiness_with_at_least_one_Yes_and_as_many_voters_is_accepted(int minYes, int minVoters)
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithReadiness(minYes, minVoters), NothingStored);
+
+            Assert.That(errors, Is.Empty);
+        }
+
+        [TestCase(0)]
+        [TestCase(-1)]
+        public void Fewer_than_one_Yes_is_refused_by_value(int minYes)
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithReadiness(minYes, 3), NothingStored);
+
+            Assert.That(errors, Is.EqualTo(new List<string>
+            {
+                $"'{minYes}' cannot be the Yes votes readiness needs: at least one Yes is needed.",
+            }));
+        }
+
+        [TestCase(1, 0)]
+        [TestCase(3, 2)]
+        public void Fewer_voters_than_Yes_votes_is_refused_by_value(int minYes, int minVoters)
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithReadiness(minYes, minVoters), NothingStored);
+
+            Assert.That(errors, Is.EqualTo(new List<string>
+            {
+                $"'{minVoters}' cannot be the voters readiness needs: never fewer than the {minYes} Yes votes.",
+            }));
+        }
+
+        [TestCase(1)]
+        [TestCase(2)]
+        public void A_veto_of_at_least_one_vote_is_accepted(int threshold)
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithReadiness(3, 3, threshold), NothingStored);
+
+            Assert.That(errors, Is.Empty);
+        }
+
+        [TestCase(0)]
+        [TestCase(-1)]
+        public void A_veto_of_fewer_than_one_vote_is_refused_by_value(int threshold)
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithReadiness(3, 3, threshold), NothingStored);
+
+            Assert.That(errors, Is.EqualTo(new List<string>
+            {
+                $"'{threshold}' cannot be the votes a veto needs: at least one vote is needed.",
+            }));
+        }
+
+        [Test]
+        public void A_save_without_readiness_is_not_judged_against_the_defaults()
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsChoosing(Backlog), NothingStored);
+
+            Assert.That(errors, Is.Empty);
+        }
+
+        [TestCase(5, null)]
+        [TestCase(null, 1)]
+        [TestCase(null, null)]
+        public void A_readiness_save_leaving_out_one_side_of_the_voter_rule_is_not_judged_on_it(int? minYes, int? minVoters)
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithReadiness(minYes, minVoters), NothingStored);
+
+            Assert.That(errors, Is.Empty);
+        }
+
+        [Test]
+        public void Every_broken_readiness_rule_is_named_after_a_refused_state()
+        {
+            var settings = SettingsWithReadiness(0, -1, 0);
+            settings.Refinement!.States.Add(new RefinementStateSettingDto { State = Done });
+
+            var errors = RefinementSettingsValidator.ValidateSettings(settings, NothingStored);
+
+            Assert.That(errors, Is.EqualTo(new List<string>
+            {
+                $"'{Done}' cannot be a refinement state: only the Team's To Do and Doing states can be chosen.",
+                "'0' cannot be the Yes votes readiness needs: at least one Yes is needed.",
+                "'-1' cannot be the voters readiness needs: never fewer than the 0 Yes votes.",
+                "'0' cannot be the votes a veto needs: at least one vote is needed.",
             }));
         }
     }

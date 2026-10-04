@@ -47,7 +47,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // Green always means somebody looked, so at least one Yes is needed.
         [TestCase(0)]
         [TestCase(-1)]
-        [Ignore(PendingSlice13)]
         public async Task Fewer_than_one_Yes_is_refused_and_nothing_is_saved(int minYes)
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -60,7 +59,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-13 @slice-13 @error @contract-shape:unbounded-preservation
         // Three Yes votes already are three voters, so fewer voters than Yes votes could never bite.
         [Test]
-        [Ignore(PendingSlice13)]
         public async Task Fewer_voters_than_Yes_votes_is_refused_and_nothing_is_saved()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -83,7 +81,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-13 @slice-13 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice13)]
         public async Task A_veto_of_zero_votes_is_refused_and_nothing_is_saved()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
