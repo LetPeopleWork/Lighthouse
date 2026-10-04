@@ -8,6 +8,11 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
     {
         public RefinementCalendarFacts FactsFor(RefinementCadence? cadence)
         {
+            if (cadence is null)
+            {
+                return RefinementCalendarFacts.None;
+            }
+
             var today = clock.Today;
             var blackoutDays = blackoutPeriodService.GetEffectiveBlackoutDays(
                 today.ToDateTime(TimeOnly.MinValue),

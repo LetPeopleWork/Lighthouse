@@ -8,8 +8,8 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
         RefinementCalendarFacts FactsFor(RefinementCadence? cadence);
     }
 
-    /// <param name="NextRefinementDate">The first cadence day strictly after today; null without a cadence.</param>
-    /// <param name="IsRefinementDay">Whether today itself is a cadence day.</param>
+    /// <param name="NextRefinementDate">The first cadence day strictly after today that is not blacked out; null without a cadence.</param>
+    /// <param name="IsRefinementDay">Whether today itself is a cadence day that is not blacked out.</param>
     public sealed record RefinementCalendarFacts(DateOnly? NextRefinementDate, bool IsRefinementDay)
     {
         public static RefinementCalendarFacts None { get; } = new(null, false);

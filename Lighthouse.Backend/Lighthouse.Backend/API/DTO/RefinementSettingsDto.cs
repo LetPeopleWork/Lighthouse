@@ -33,6 +33,8 @@ namespace Lighthouse.Backend.API.DTO
 
     public class RefinementCadenceDto
     {
+        private static readonly HashSet<string> WeekdayNames = new(Enum.GetNames<DayOfWeek>(), StringComparer.OrdinalIgnoreCase);
+
         public RefinementCadenceDto()
         {
         }
@@ -51,8 +53,13 @@ namespace Lighthouse.Backend.API.DTO
 
         public DateOnly? AnchorWeek { get; set; }
 
-        public RefinementCadence ToCadence()
-            => RefinementCadence.Of(Weekdays.Select(day => Enum.Parse<DayOfWeek>(day, ignoreCase: true)), IntervalWeeks, AnchorWeek);
+        public static bool IsWeekdayName(string name) => WeekdayNames.Contains(name);
+
+        /// <summary>The cadence a save results in; a save naming no weekday clears it.</summary>
+        public RefinementCadence? ToCadence()
+            => Weekdays.Count == 0
+                ? null
+                : RefinementCadence.Of(Weekdays.Select(name => Enum.Parse<DayOfWeek>(name, ignoreCase: true)), IntervalWeeks, AnchorWeek);
     }
 
     /// <summary>A rule sent as null removes it, while a rule left out of the save keeps the stored one.</summary>

@@ -7,8 +7,6 @@ namespace Lighthouse.Backend.API.Helpers
     {
         private const string DiscussionRuleNeedsAVote = "a discussion rule needs at least 1 vote.";
 
-        private static readonly HashSet<string> WeekdayNames = new(Enum.GetNames<DayOfWeek>(), StringComparer.OrdinalIgnoreCase);
-
         public static List<string> ValidateSettings(TeamSettingDto teamSetting, RefinementSettings? stored)
         {
             var refinement = teamSetting.Refinement;
@@ -25,7 +23,6 @@ namespace Lighthouse.Backend.API.Helpers
             ];
         }
 
-        // Without a starting week, "every second Tuesday" names no Tuesday in particular.
         private static List<string> ValidateCadence(RefinementCadenceDto? cadence)
         {
             if (cadence is null)
@@ -34,7 +31,7 @@ namespace Lighthouse.Backend.API.Helpers
             }
 
             var errors = cadence.Weekdays
-                .Where(day => !WeekdayNames.Contains(day))
+                .Where(day => !RefinementCadenceDto.IsWeekdayName(day))
                 .Select(day => $"'{day}' cannot be a Refinement day: only a weekday such as Monday can be chosen.")
                 .ToList();
 
@@ -43,6 +40,7 @@ namespace Lighthouse.Backend.API.Helpers
                 errors.Add($"'{cadence.IntervalWeeks}' cannot be the weeks between Refinements: at least one week is needed.");
             }
 
+            // Without a starting week, "every second Tuesday" names no Tuesday in particular.
             if (cadence.IntervalWeeks > 1 && cadence.AnchorWeek is null)
             {
                 errors.Add($"Refining every {cadence.IntervalWeeks} weeks needs a starting week.");
