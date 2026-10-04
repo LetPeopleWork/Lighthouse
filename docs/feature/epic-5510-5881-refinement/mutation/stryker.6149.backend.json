@@ -1,0 +1,37 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Services/Implementation/Refinement/RefinementResolution.cs",
+      "**/Services/Implementation/Refinement/RefinementViewQuery.cs",
+      "**/Services/Implementation/Refinement/SizingLogCommands.cs",
+      "**/Services/Implementation/Refinement/VoterIdentityResolver.cs",
+      "**/Services/Implementation/Refinement/SizingRefusal.cs",
+      "**/Services/Implementation/Repositories/SizingLogRepository.cs",
+      "**/Services/Implementation/Authorization/RbacGuardAttribute.cs",
+      "**/API/RefinementVotesController.cs",
+      "**/API/DTO/SizingVoteDto.cs",
+      "**/Models/Refinement/SizingLogEntry.cs",
+      "**/Models/UsageData/UsageDataEventShapes.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Tests.Services.Implementation.Refinement|FullyQualifiedName~RefinementVotesControllerTest|FullyQualifiedName~SizingLogRepositoryTest|FullyQualifiedName~SizingVoteDtoTest|FullyQualifiedName~UsageDataEventShapesTests|FullyQualifiedName~RbacGuardAttributeTest)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

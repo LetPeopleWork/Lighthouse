@@ -214,3 +214,184 @@ survived, because no case sent an unknown source with a positive number of days.
   `yardstick.days > 0`, and `null > 0` is already `false`, so dropping the null check changes nothing.
 - `YardstickQuestion.tsx:57` the `sx={{ alignItems: "center" }}` object and its string: vertical
   alignment of the question and the icon only, which jsdom does not lay out and no behaviour depends on.
+
+---
+
+# Mutation testing — 6149 (casting a sizing vote, E3 slice 11)
+
+Run 2026-10-04 against `main` @ `7cadf3a62`, with the production code frozen at that commit; only tests
+were added. Gate is 80 % kill rate on both stacks.
+
+| stack | score | tested | killed | survived | no coverage | timeout | wall clock |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 5.0.0) | **97.73 %** | 132 | 129 | 1 | 2 | 0 | 4 m 20 s |
+| Frontend (StrykerJS 10.0.0) | **94.59 %** | 314 | 297 | 17 | 0 | 0 | 12 m 18 s |
+
+Configs: `stryker.6149.backend.json`, `stryker.6149.frontend.json`, `vitest.stryker.6149.ts`.
+Backend runs from `Lighthouse.Backend/Lighthouse.Backend.Tests/`; frontend from `Lighthouse.Frontend/`,
+with `vitest.stryker.6149.ts` copied there first.
+
+First runs, before this pass added tests: backend **67.42 %** (89 / 132: 12 survived, 31 with no
+covering test), frontend **79.30 %** (249 / 314: 52 survived, 13 with no covering test). Both were
+below the gate.
+
+## Backend
+
+Scope sanity check: `130 total mutants will be tested` (plus 2 with no covering test) over the eleven
+mutated files. The `test-case-filter` keeps to the unit tests that cover them — the
+`Tests.Services.Implementation.Refinement` namespace and the classes named after the controller, the
+repository, the vote's body, the event shapes and the guard attribute — and excludes the acceptance
+suite (`API.Integration`, `Integration.Containers`), which boots a host per scenario.
+
+| file | first run (killed / tested) | final (killed / tested) |
+| --- | --- | --- |
+| `API/RefinementVotesController.cs` | 0 / 24 (24 no coverage) | 22 / 24 |
+| `API/DTO/SizingVoteDto.cs` | 6 / 9 | 8 / 9 |
+| `Models/UsageData/UsageDataEventShapes.cs` | 5 / 10 | 10 / 10 |
+| `Services/Implementation/Authorization/RbacGuardAttribute.cs` | 31 / 35 | 35 / 35 |
+| `Services/Implementation/Refinement/RefinementResolution.cs` | 10 / 10 | 10 / 10 |
+| `Services/Implementation/Refinement/RefinementViewQuery.cs` | 5 / 6 | 6 / 6 |
+| `Services/Implementation/Refinement/SizingLogCommands.cs` | 4 / 5 | 5 / 5 |
+| `Services/Implementation/Refinement/SizingRefusal.cs` | 1 / 1 | 1 / 1 |
+| `Services/Implementation/Refinement/VoterIdentityResolver.cs` | 27 / 27 | 27 / 27 |
+| `Services/Implementation/Repositories/SizingLogRepository.cs` | 0 / 5 (5 no coverage) | 5 / 5 |
+
+`SizingLogEntry.cs` was in `mutate` and produced no testable mutant: its only mutant (the string
+concatenation of the hashed voter key) does not compile. The hash itself is pinned by
+`VoterIdentityResolverTest` and the new controller test, which compare against its output.
+`RbacGuardAttribute.cs` was mutated whole (108 lines, two of them this slice's); its four survivors
+were on pre-existing lines and are closed below rather than left to drag the file.
+
+### Closed by this pass
+
+- **`RefinementVotesController.cs`** (24, all no coverage) — the controller was only exercised by the
+  acceptance scenarios. `RefinementVotesControllerTest` now pins every answer it gives: the 400 for a
+  missing answer or channel; each voter refusal's status, title, whether it names its `code` (only the
+  name and key refusals do), and the reason and level it logs (Warning only for a credential nobody
+  stands behind); the row as it now stands after a recorded vote, including a reference whose slash
+  arrived as `%2F` or `%2f` and one holding `%25` that must not be unescaped twice; 404 for an unknown
+  Team and for a row gone by the time it is read; 409 with `work-item-not-in-refinement`.
+- **`SizingLogRepository.cs`** (5, all no coverage) — `SizingLogRepositoryTest` appends and reads on a
+  real database: an appended entry is stored at once, and a read returns only the asked Team's entries
+  on the asked Work Items, oldest first.
+- **`SizingVoteDto.cs:36`** (2) — the refusal's wording was unpinned. `SizingVoteDtoTest` —
+  `A_refused_answer_names_the_answers_there_are`.
+- **`UsageDataEventShapes.cs:31, 32, 64`** (5) — the page prefixes and three of the `&&` links between
+  the parts were only checked from the controller's tests, outside this filter. `UsageDataEventShapesTests`
+  — `An_event_missing_or_misplacing_one_of_its_other_parts_does_not_fit`: a Team tab naming a Portfolio
+  page and the reverse, a Team tab naming none, a connection naming no system, a switch missing either
+  half.
+- **`RbacGuardAttribute.cs:52, 86, 89, 106`** (4) — a blank route key, a route value that is null or not
+  a number (each must answer 500, not fall through to the check with no scope), and the request's
+  cancellation reaching the check. Four cases in `RbacGuardAttributeTest`.
+- **`RefinementViewQuery.cs:39`** — the votes-per-row lookup was never reached by a unit test, since no
+  case had Work Items in refinement. `RefinementViewQueryTest` —
+  `EachRowCarriesItsOwnVotesAndARowNobodyVotedOnCarriesNone`, which also proves the reader's own vote is
+  recognised from the browser key.
+- **`SizingLogCommands.cs:25`** `Any` → `All` — the fixture had only one Work Item in refinement, where
+  the two agree. `SizingLogCommandsTest` — `AVoteOnAnyOfSeveralWorkItemsInRefinementIsRecordedAgainstThatWorkItem`.
+
+### Accepted survivors
+
+| line | mutant | why it survives |
+| --- | --- | --- |
+| `SizingVoteDto.cs:30` | `TokenType == String ? GetString() : null` → always `GetString()` | equivalent through the serializer: on a number or a boolean `GetString()` throws `InvalidOperationException`, which System.Text.Json rethrows as a `JsonException`, so the body is refused the same way either way |
+| `RefinementVotesController.cs:54`, `:75` | the `UnreachableException` messages blanked | the discard arms of two total switches over closed enums; no value reaches them through the API |
+
+## Frontend
+
+`mutate` takes the slice's new files whole, and line ranges for the three it changed:
+`RefinementView.tsx` 31-48, 62-95, 108-116, 134-136 and 156-178, `SizingLogService.ts` 10-18 and 57-71,
+`RefinementService.ts` 15-26. The initial test run ran 119 tests from the 15 specs in
+`vitest.stryker.6149.ts`, written from `ls`.
+
+| file | first run (killed / tested) | final (killed / tested) |
+| --- | --- | --- |
+| `hooks/useVoterIdentity.ts` | 21 / 34 | 34 / 34 |
+| `services/Refinement/voterStore.ts` | 32 / 46 | 39 / 46 |
+| `Refinement/voteWording.ts` | 42 / 55 | 54 / 55 |
+| `Refinement/useVoteCasting.ts` | 33 / 38 | 37 / 38 |
+| `Refinement/RefinementView.tsx` (ranges above) | 43 / 50 | 46 / 50 |
+| `Refinement/refinementColumns.tsx` | 20 / 25 | 25 / 25 |
+| `Refinement/VoteControl.tsx` | 17 / 19 | 19 / 19 |
+| `Refinement/VoterNamePrompt.tsx` | 17 / 17 | 17 / 17 |
+| `Refinement/VotesAndCommentsDialog.tsx` | 8 / 13 | 10 / 13 |
+| `services/Api/SizingLogService.ts` (ranges above) | 11 / 12 | 11 / 12 |
+| `services/Api/RefinementService.ts` (range above) | 5 / 5 | 5 / 5 |
+
+`VotesAndCommentsDialog.tsx` stays below 80 % on its own: its three survivors are one `sx` object and
+its strings (see below).
+
+### Closed by this pass
+
+- **`voterStore.ts`** — nothing tested the store directly. `voterStore.test.ts` reads a stored voter
+  back, counts ten unreadable shapes as no voter (nothing, not JSON, `null`, a number, a string, a name
+  or key missing or not text, an empty key), and storage that refuses to be read; and keeps the stored
+  key over the page's on a rename, keeps it when the page holds none, takes the page's when storage has
+  none, and mints a fresh 64-hex key otherwise.
+- **`useVoterIdentity.ts`** — `useVoterIdentity.test.ts`: a signed-in voter's ballot carries no name and
+  no key, also once the tab learns the instance signs voters in after the first render (the
+  `[isAccount]` dependency); a ballot with nobody declared carries neither; the name is trimmed; and a
+  rename in a browser that refuses to store keeps the key the page holds (the `voter?.key ?? null`
+  hand-over and the `[voter]` dependency).
+- **`voteWording.ts`** — `voteWording.test.ts`, `why a vote was refused`: each refusal's words,
+  including another server code and another field of a 400 (which must not be read as a name refusal),
+  the name field on a non-400, a plain `Error`, and a thrown value that is not an error at all.
+- **`useVoteCasting.ts`** — `useVoteCasting.test.tsx`: two votes on one row in the same tick send one;
+  a vote after the Team changed goes to the new Team (the `castVote` dependency list); a name given with
+  no vote waiting casts nothing.
+- **`refinementColumns.tsx`** — `refinementColumns.test.tsx` pins which fields the grid can sort by:
+  state and vote count, not parent or the reader's own vote.
+- **`VoteControl.tsx`** — `VoteControl.test.tsx`: each label casts its answer (`Yes, if…` as `YesBut`),
+  and clicking the answer already given casts nothing.
+- **`VotesAndCommentsDialog.tsx:14, 34`** — `VotesAndCommentsDialog.test.tsx`: a row with no split reads
+  as zero votes; a reader with no name is offered no name to change.
+- **`RefinementView.tsx:86, 175`** — `RefinementView.votes.test.tsx`: `keeps the name as it was when
+  changing it is cancelled`, and `words a refusal in the terms the instance uses by the time the vote is
+  refused`. The file's terminology mock now hands out a lookup over the words as they stood at each
+  render, as the real provider does; with the old live lookup a stale callback could never be told
+  apart.
+
+### Accepted survivors
+
+| line | mutant | why it survives |
+| --- | --- | --- |
+| `voterStore.ts:13` (×5) | the not-an-object guard forced false, `&&`, or emptied | equivalent: the guard only runs inside `readStoredVoter`'s `try`. Destructuring `null` throws and is caught as no voter; destructuring any other primitive yields no name and no key, which the next line refuses |
+| `voterStore.ts:28` (×2) | `stored === null` forced false or emptied | equivalent: `JSON.parse(null)` is `null`, which the shape check refuses |
+| `voteWording.ts:22` | `problemCode !== undefined` → `true` | equivalent: `NAME_REFUSALS.has(undefined)` is already false |
+| `SizingLogService.ts:14` | `voterKey === null` forced false | a null key only reaches `withVoterKey` from a signed-in voter, which is slice 15; its scaffold `sends no voter key header when the browser holds none` pins this and is skipped until then |
+| `RefinementView.tsx:47` | `showFailure`'s dependency on `showError` emptied | equivalent: `showError` is a `useCallback` with no dependencies inside the snackbar provider, so it never changes |
+| `RefinementView.tsx:73` | `current === null` → `false` | a row's answer only arrives for a vote cast from a rendered row, and rows render only once `refinement` is set; nothing sets it back to null |
+| `RefinementView.tsx:82`, `useVoteCasting.ts:49` | empty dependency array gains a constant | equivalent: a constant dependency never changes |
+| `RefinementView.tsx:171` | `changeableName !== null` → `true` | the name prompt only opens from "Change your name", which the dialog offers only when there is a name |
+| `VotesAndCommentsDialog.tsx:35` (×3) | the `sx` object and its strings | layout of the "Voting as" line only |
+
+## Not mutated
+
+Backend:
+
+- `API/RefinementController.cs` (the voter key header), `API/DTO/RefinementViewDto.cs` (the row's votes),
+  `Data/LighthouseAppContext.cs` and the two `AddSizingLogEntries` migrations, `Program.cs`,
+  `Configuration/RateLimitingConfiguration.cs`, `Services/Implementation/DemoDataService.cs` — wiring,
+  mapping and seed data, pinned by the `Slice11CastAVote` acceptance scenarios, `S6_RateLimitingTests`
+  and `DemoDataServiceTest`.
+- `Services/Implementation/Authorization/RbacAdministrationService.cs` — two added lines in a 1400-line
+  class (`TeamContribute` is satisfied by reading that Team); mutated whole it would bury them. No
+  acceptance scenario signs in, so nothing exercised them: this pass added
+  `CanSatisfyRequirementAsync_TeamContribute_FollowsReadingThatTeam` (the reader's own Team yes, another
+  Team no) and `CanSatisfyRequirementAsync_TeamContribute_WithoutScopeId_ReturnsFalse` to
+  `RbacAdministrationServiceTest`, and checked by hand that each fails when the scope is ignored or a
+  missing scope is let through.
+- `API/UsageDataController.cs`, `Services/Implementation/UsageData/PostHogUsageDataPublisher.cs`,
+  `Models/UsageData/*` (the new `SizingMoment` part) — one line each in large files, covered by
+  `TeamSizingUsageEventsTests` and `UsageDataPublishedMessageTests`; the rule they rely on,
+  `UsageDataEventShapes.cs`, is mutated above.
+- `Models/Refinement/{SizingAnswer,SizingChannel,SizingEntryKind,YardstickSource}.cs`,
+  `Services/Interfaces/**` — enums, records and interfaces.
+
+Frontend:
+
+- `models/UsageData/UsageData.ts`, `services/Api/UsageDataService.ts`,
+  `services/UsageData/{usageDataBuffer,usageDataReporter}.ts` — an enum member and the new event part
+  passed through; covered by `reports each vote the server took to usage data` in the votes spec.
+- `setupTests.ts` — test setup.

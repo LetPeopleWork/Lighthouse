@@ -1,0 +1,54 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6149.ts",
+    "related": false
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "playwright-report",
+    "reports"
+  ],
+  "mutate": [
+    "src/pages/Teams/Detail/Refinement/refinementColumns.tsx",
+    "src/pages/Teams/Detail/Refinement/useVoteCasting.ts",
+    "src/pages/Teams/Detail/Refinement/VoteControl.tsx",
+    "src/pages/Teams/Detail/Refinement/VoterNamePrompt.tsx",
+    "src/pages/Teams/Detail/Refinement/VotesAndCommentsDialog.tsx",
+    "src/pages/Teams/Detail/Refinement/voteWording.ts",
+    "src/pages/Teams/Detail/Refinement/RefinementView.tsx:31-48",
+    "src/pages/Teams/Detail/Refinement/RefinementView.tsx:62-95",
+    "src/pages/Teams/Detail/Refinement/RefinementView.tsx:108-116",
+    "src/pages/Teams/Detail/Refinement/RefinementView.tsx:134-136",
+    "src/pages/Teams/Detail/Refinement/RefinementView.tsx:156-178",
+    "src/hooks/useVoterIdentity.ts",
+    "src/services/Refinement/voterStore.ts",
+    "src/services/Api/SizingLogService.ts:10-18",
+    "src/services/Api/SizingLogService.ts:57-71",
+    "src/services/Api/RefinementService.ts:15-26"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "stryker-6149-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6149"
+}
