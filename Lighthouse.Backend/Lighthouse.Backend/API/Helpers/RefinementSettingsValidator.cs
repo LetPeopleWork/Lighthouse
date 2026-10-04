@@ -40,6 +40,11 @@ namespace Lighthouse.Backend.API.Helpers
                 errors.Add($"'{cadence.IntervalWeeks}' cannot be the weeks between Refinements: at least one week is needed.");
             }
 
+            if (cadence.IntervalWeeks > RefinementCadence.MaxIntervalWeeks)
+            {
+                errors.Add($"'{cadence.IntervalWeeks}' cannot be the weeks between Refinements: at most {RefinementCadence.MaxIntervalWeeks} weeks are allowed.");
+            }
+
             // Without a starting week, "every second Tuesday" names no Tuesday in particular.
             if (cadence.IntervalWeeks > 1 && cadence.AnchorWeek is null)
             {

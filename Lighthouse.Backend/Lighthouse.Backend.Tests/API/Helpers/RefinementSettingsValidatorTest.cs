@@ -282,6 +282,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         [TestCase(1, true)]
         [TestCase(2, true)]
         [TestCase(5, true)]
+        [TestCase(52, true)]
         public void A_cadence_of_a_week_or_more_with_a_starting_week_when_it_skips_weeks_is_accepted(int intervalWeeks, bool withStartingWeek)
         {
             var errors = RefinementSettingsValidator.ValidateSettings(
@@ -310,6 +311,19 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             Assert.That(errors, Is.EqualTo(new List<string>
             {
                 $"'{intervalWeeks}' cannot be the weeks between Refinements: at least one week is needed.",
+            }));
+        }
+
+        // The next Refinement is looked for a year ahead, so a longer interval would read as no cadence at all.
+        [TestCase(53)]
+        [TestCase(60)]
+        public void More_than_52_weeks_between_Refinements_is_refused_by_value(int intervalWeeks)
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithCadence(intervalWeeks, StartingWeek, "Thursday"), NothingStored);
+
+            Assert.That(errors, Is.EqualTo(new List<string>
+            {
+                $"'{intervalWeeks}' cannot be the weeks between Refinements: at most 52 weeks are allowed.",
             }));
         }
 

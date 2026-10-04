@@ -70,7 +70,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-04 @slice-04 @error @contract-shape:unbounded-preservation
         [TestCase(0)]
         [TestCase(-1)]
-        public async Task Fewer_than_one_week_between_Refinements_is_refused_and_nothing_is_saved(int intervalWeeks)
+        [TestCase(53)]
+        public async Task Fewer_than_one_or_more_than_52_weeks_between_Refinements_is_refused_and_nothing_is_saved(int intervalWeeks)
         {
             var gravity = await GivenGravityRefinesOnThursdaysEveryWeek();
 

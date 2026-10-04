@@ -26,6 +26,9 @@ namespace Lighthouse.Backend.Models.Refinement
     /// </summary>
     public class RefinementCadence
     {
+        /// <summary>The next Refinement is looked for a year ahead, so a cadence repeating less often would never name one.</summary>
+        public const int MaxIntervalWeeks = 52;
+
         public List<DayOfWeek> Weekdays { get; set; } = [];
 
         public int IntervalWeeks { get; set; } = 1;
