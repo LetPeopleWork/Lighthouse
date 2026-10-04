@@ -21,10 +21,7 @@ import type { ITeamService } from "../../../services/Api/TeamService";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import ModifyTeamSettings from "./ModifyTeamSettings";
-import {
-	hasIncompleteStageRule,
-	stageRuleOf,
-} from "./RefinementSettingsSection";
+import { hasIncompleteStageRule, stageRuleOf } from "./StageRulesSettings";
 
 /**
  * What a Team admin sets in the Refinement section so the tab can say how much to refine: the optional

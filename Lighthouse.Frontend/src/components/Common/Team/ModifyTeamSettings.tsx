@@ -11,6 +11,7 @@ import type React from "react";
 import { useCallback, useContext, useMemo, useRef } from "react";
 import { useModifySettings } from "../../../hooks/useModifySettings";
 import { getDefaultTeamSchema } from "../../../models/Common/DataRetrievalSchemaDefaults";
+import type { IRefinementSettings } from "../../../models/Refinement/Refinement";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -32,10 +33,9 @@ import SaveStateIndicator from "../ValidationActions/SaveStateIndicator";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
 import RefinementSettingsSection, {
 	DEFAULT_READINESS,
-	hasIncompleteStageRule,
 	hasReadinessErrors,
-	NO_STAGE_RULES,
 } from "./RefinementSettingsSection";
+import { hasIncompleteStageRule, NO_STAGE_RULES } from "./StageRulesSettings";
 
 interface ModifyTeamSettingsProps {
 	title: string;
@@ -174,6 +174,13 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 	const onWtsChange = (e: SelectChangeEvent<string>) =>
 		handleWorkTrackingSystemChange(e.target.value);
 
+	const changeRefinement = (change: Partial<IRefinementSettings>) =>
+		updateSettings("refinement", {
+			...teamSettings?.refinement,
+			states: teamSettings?.refinement?.states ?? [],
+			...change,
+		});
+
 	return (
 		<LoadingAnimation isLoading={loading} hasError={false}>
 			<Container maxWidth={false}>
@@ -273,29 +280,14 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							toDoStates={teamSettings.toDoStates || []}
 							doingStates={teamSettings.doingStates || []}
 							chosenStates={teamSettings.refinement?.states ?? []}
-							onChange={(states) =>
-								updateSettings("refinement", {
-									...teamSettings.refinement,
-									states,
-								})
-							}
+							onChange={(states) => changeRefinement({ states })}
 							readiness={
 								teamSettings.refinement?.readiness ?? DEFAULT_READINESS
 							}
-							onReadinessChange={(readiness) =>
-								updateSettings("refinement", {
-									...teamSettings.refinement,
-									states: teamSettings.refinement?.states ?? [],
-									readiness,
-								})
-							}
+							onReadinessChange={(readiness) => changeRefinement({ readiness })}
 							stageRules={teamSettings.refinement?.stageRules ?? NO_STAGE_RULES}
 							onStageRulesChange={(stageRules) =>
-								updateSettings("refinement", {
-									...teamSettings.refinement,
-									states: teamSettings.refinement?.states ?? [],
-									stageRules,
-								})
+								changeRefinement({ stageRules })
 							}
 						/>
 

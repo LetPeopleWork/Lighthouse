@@ -2,7 +2,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { Stack, Tooltip, Typography } from "@mui/material";
 import type React from "react";
 import type { RefinementStage } from "../../../../models/Refinement/Refinement";
-import { STAGE_WORDS } from "./StageBreakdown";
+import { STAGE_WORDS } from "./stageWording";
 
 export const describeDisagreement = (stage: RefinementStage): string =>
 	stage === "Ready"

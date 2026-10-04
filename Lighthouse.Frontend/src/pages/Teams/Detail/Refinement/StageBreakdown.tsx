@@ -4,12 +4,7 @@ import type {
 	IRefinementRow,
 	RefinementStage,
 } from "../../../../models/Refinement/Refinement";
-
-export const STAGE_WORDS: Readonly<Record<RefinementStage, string>> = {
-	Ready: "Ready",
-	BeingRefined: "Being refined",
-	Waiting: "Waiting",
-};
+import { STAGE_WORDS } from "./stageWording";
 
 const STAGES_IN_ORDER: readonly RefinementStage[] = [
 	"Ready",
