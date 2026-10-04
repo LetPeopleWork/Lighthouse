@@ -61,9 +61,11 @@ const TWO_YES_SHORT_OF_READY = "GR-059";
 // @walking_skeleton @driving_port @us-11 @us-13 @slice-11 @slice-13 @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:bounded-change
 // Without sign-in a voter gives a name once, votes from the list, sees the vote counted, and the third Yes
 // makes the Work Item Ready for everybody.
-testWithDemo.fixme(
+testWithDemo(
 	"a voter gives a name, says Yes on a Work Item in refinement and the votes make it Ready",
-	async ({ overviewPage }) => {
+	async ({ testData, overviewPage }) => {
+		expect(testData.teams.map((team) => team.name)).toContain(CONFIGURED_TEAM);
+
 		const gravity = await overviewPage.goToTeam(CONFIGURED_TEAM);
 		const refinement = await gravity.goToRefinement();
 
