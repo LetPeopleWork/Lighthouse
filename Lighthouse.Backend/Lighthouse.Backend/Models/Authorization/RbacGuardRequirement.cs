@@ -11,5 +11,6 @@ namespace Lighthouse.Backend.Models.Authorization
         CanCreatePortfolio,
         SystemAdminOrBootstrap,
         AnyScopedAdmin,
+        TeamContribute,
     }
 }

@@ -108,6 +108,51 @@ public class RbacGuardAttributeTest
         Assert.That(context.Result, Is.InstanceOf<NotFoundResult>());
     }
 
+    // A vote is a write anyone who may read the Team may make, so refusing it must not disclose that the Team exists.
+    [Test]
+    public async Task OnAuthorizationAsync_TeamContributeRequirementDenied_ReturnsNotFound()
+    {
+        context.RouteData.Values["teamId"] = "42";
+        rbacAdministrationServiceMock
+            .Setup(x => x.CanSatisfyRequirementAsync(
+                It.IsAny<ClaimsPrincipal>(),
+                RbacGuardRequirement.TeamContribute,
+                42,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var attribute = new RbacGuardAttribute(RbacGuardRequirement.TeamContribute)
+        {
+            ScopeIdRouteKey = "teamId",
+        };
+
+        await attribute.OnAuthorizationAsync(context);
+
+        Assert.That(context.Result, Is.InstanceOf<NotFoundResult>());
+    }
+
+    [Test]
+    public async Task OnAuthorizationAsync_TeamContributeRequirementAllowed_AllowsExecution()
+    {
+        context.RouteData.Values["teamId"] = "42";
+        rbacAdministrationServiceMock
+            .Setup(x => x.CanSatisfyRequirementAsync(
+                It.IsAny<ClaimsPrincipal>(),
+                RbacGuardRequirement.TeamContribute,
+                42,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var attribute = new RbacGuardAttribute(RbacGuardRequirement.TeamContribute)
+        {
+            ScopeIdRouteKey = "teamId",
+        };
+
+        await attribute.OnAuthorizationAsync(context);
+
+        Assert.That(context.Result, Is.Null);
+    }
+
     [Test]
     public async Task OnAuthorizationAsync_PortfolioWriteRequirementAllowed_AllowsExecution()
     {

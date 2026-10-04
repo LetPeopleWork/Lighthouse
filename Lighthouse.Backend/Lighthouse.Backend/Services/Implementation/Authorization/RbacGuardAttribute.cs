@@ -64,6 +64,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
         private bool RequiresScope()
         {
             return Requirement is RbacGuardRequirement.TeamRead
+                or RbacGuardRequirement.TeamContribute
                 or RbacGuardRequirement.TeamWrite
                 or RbacGuardRequirement.PortfolioRead
                 or RbacGuardRequirement.PortfolioWrite;
@@ -72,6 +73,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
         private bool IsReadRequirement()
         {
             return Requirement is RbacGuardRequirement.TeamRead
+                or RbacGuardRequirement.TeamContribute
                 or RbacGuardRequirement.PortfolioRead;
         }
 

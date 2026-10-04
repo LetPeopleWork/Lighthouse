@@ -1,0 +1,57 @@
+using System.Security.Cryptography;
+using System.Text;
+using Lighthouse.Backend.Models.Auth;
+using Lighthouse.Backend.Services.Interfaces.Auth;
+using Lighthouse.Backend.Services.Interfaces.Refinement;
+
+namespace Lighthouse.Backend.Services.Implementation.Refinement
+{
+    /// <summary>
+    /// Who is voting. Without sign-in a voter is the name they declare plus a random key their browser
+    /// keeps; only a hash of the key is stored, so the log never holds anything that could speak for them.
+    /// Whether sign-in is on is asked of the auth mode, never guessed from a missing profile: without
+    /// sign-in every request still carries one shared placeholder subject.
+    /// </summary>
+    public sealed class VoterIdentityResolver(IAuthModeResolver authModeResolver)
+    {
+        public const int ShortestVoterKey = 32;
+
+        public const int LongestVoterName = 100;
+
+        private const string SelfDeclaredKeyPrefix = "self:";
+
+        public VoterIdentityKind Kind => authModeResolver.Resolve().Mode == AuthMode.Enabled
+            ? VoterIdentityKind.Account
+            : VoterIdentityKind.SelfDeclared;
+
+        /// <summary>The stored key of whoever presents this browser key, to recognise their own votes on a read.</summary>
+        public string? ReaderKeyFrom(string? presentedVoterKey)
+            => Kind == VoterIdentityKind.SelfDeclared && IsUsable(presentedVoterKey)
+                ? SelfDeclaredKeyOf(presentedVoterKey!)
+                : null;
+
+        /// <returns>The voter, or null when the caller has not said who they are well enough to vote.</returns>
+        public Voter? ForWrite(string? declaredName, string? presentedVoterKey)
+        {
+            if (Kind != VoterIdentityKind.SelfDeclared)
+            {
+                return null;
+            }
+
+            var name = declaredName?.Trim();
+            if (string.IsNullOrEmpty(name) || name.Length > LongestVoterName || !IsUsable(presentedVoterKey))
+            {
+                return null;
+            }
+
+            return new Voter(SelfDeclaredKeyOf(presentedVoterKey!), name, null);
+        }
+
+        // A short key could be guessed, and a guessed key speaks for somebody else's votes.
+        private static bool IsUsable(string? presentedVoterKey)
+            => presentedVoterKey is not null && presentedVoterKey.Length >= ShortestVoterKey;
+
+        private static string SelfDeclaredKeyOf(string presentedVoterKey)
+            => SelfDeclaredKeyPrefix + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(presentedVoterKey)));
+    }
+}

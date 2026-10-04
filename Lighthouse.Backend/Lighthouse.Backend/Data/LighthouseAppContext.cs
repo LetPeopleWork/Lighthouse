@@ -89,6 +89,8 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<ConnectionHealthVerdict> ConnectionHealthVerdicts { get; set; } = null!;
 
+        public DbSet<SizingLogEntry> SizingLogEntries { get; set; } = null!;
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             // Restore SQLite's legacy double-quoted-string tolerance on every EF-opened connection.
@@ -632,6 +634,34 @@ namespace Lighthouse.Backend.Data
                 .Metadata.SetValueComparer(cycleTimeDefinitionsComparer);
 
             ConfigureRefinementSettings(modelBuilder);
+            ConfigureSizingLog(modelBuilder);
+        }
+
+        private static void ConfigureSizingLog(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<SizingLogEntry>(entity =>
+            {
+                entity.HasKey(entry => entry.Id);
+
+                entity.HasOne<Team>()
+                      .WithMany()
+                      .HasForeignKey(entry => entry.TeamId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // Removing somebody clears the link rather than their votes; the captured name keeps the
+                // entry readable.
+                entity.HasOne<UserProfile>()
+                      .WithMany()
+                      .HasForeignKey(entry => entry.VoterProfileId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.Property(entry => entry.WorkItemReferenceId).IsRequired();
+                entity.Property(entry => entry.VoterKey).IsRequired();
+                entity.Property(entry => entry.VoterDisplayName).IsRequired();
+                entity.Property(entry => entry.Comment).HasMaxLength(SizingLogEntry.LongestComment);
+
+                entity.HasIndex(entry => new { entry.TeamId, entry.WorkItemReferenceId, entry.Id });
+            });
         }
 
         private static void ConfigureRefinementSettings(ModelBuilder modelBuilder)

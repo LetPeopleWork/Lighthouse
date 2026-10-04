@@ -1,9 +1,11 @@
 using System.Linq.Expressions;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Services.Implementation.Refinement;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Refinement;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Moq;
@@ -39,7 +41,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             subject = new RefinementViewQuery(
                 teamRepositoryMock.Object,
                 new RefinementList(workItemRepositoryMock.Object),
-                new SleYardstickResolver(teamMetricsServiceMock.Object, clockMock.Object));
+                new SleYardstickResolver(teamMetricsServiceMock.Object, clockMock.Object),
+                Mock.Of<ISizingLogRepository>(),
+                new VoterIdentityResolver(Mock.Of<IAuthModeResolver>(resolver => resolver.Resolve() == new RuntimeAuthStatus { Mode = AuthMode.Disabled })));
         }
 
         [Test]
@@ -47,7 +51,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         {
             GivenTheTeam(new Team { Id = TeamId });
 
-            var view = subject.ForTeam(TeamId);
+            var view = subject.ForTeam(TeamId, null);
 
             Assert.That(view?.Yardstick, Is.EqualTo(Yardstick.None));
             teamMetricsServiceMock.Verify(
@@ -64,7 +68,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                 RefinementSettings = new RefinementSettings { States = [new RefinementStateSetting { State = "Backlog" }] },
             });
 
-            var view = subject.ForTeam(TeamId);
+            var view = subject.ForTeam(TeamId, null);
 
             Assert.That(view?.Yardstick, Is.EqualTo(new Yardstick(YardstickSource.CycleTimeFallback, 12, 85)));
         }
@@ -72,7 +76,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         [Test]
         public void AnUnknownTeamHasNoRefinementView()
         {
-            var view = subject.ForTeam(TeamId);
+            var view = subject.ForTeam(TeamId, null);
 
             Assert.That(view, Is.Null);
         }
@@ -82,7 +86,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         {
             GivenTheTeam(new Team { Id = TeamId });
 
-            var view = subject.ForTeam(TeamId);
+            var view = subject.ForTeam(TeamId, null);
 
             using (Assert.EnterMultipleScope())
             {
@@ -100,7 +104,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                 RefinementSettings = new RefinementSettings { States = [new RefinementStateSetting { State = "Backlog" }] },
             });
 
-            var view = subject.ForTeam(TeamId);
+            var view = subject.ForTeam(TeamId, null);
 
             Assert.That(view?.RefinementConfigured, Is.True);
         }

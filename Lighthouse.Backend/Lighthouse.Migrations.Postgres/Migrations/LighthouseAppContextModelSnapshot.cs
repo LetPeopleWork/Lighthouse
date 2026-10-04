@@ -1241,6 +1241,66 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.ToTable("RecurringBlackoutRules");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.Refinement.SizingLogEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("Answer")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Channel")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("TeamId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("VoterDisplayName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("VoterKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("VoterProfileId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("WorkItemReferenceId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("YardstickDays")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("YardstickProbability")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("YardstickSource")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VoterProfileId");
+
+                    b.HasIndex("TeamId", "WorkItemReferenceId", "Id");
+
+                    b.ToTable("SizingLogEntries");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.RefreshLog", b =>
                 {
                     b.Property<int>("Id")
@@ -1976,6 +2036,20 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Navigation("OwningTeam");
 
                     b.Navigation("WorkTrackingSystemConnection");
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.Refinement.SizingLogEntry", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.Team", null)
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lighthouse.Backend.Models.Auth.UserProfile", null)
+                        .WithMany()
+                        .HasForeignKey("VoterProfileId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Team", b =>

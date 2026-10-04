@@ -12,10 +12,12 @@ namespace Lighthouse.Backend.API
     [RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "teamId")]
     public class RefinementController(IRefinementViewQuery refinementViewQuery) : ControllerBase
     {
+        public const string VoterKeyHeader = "X-Lighthouse-Voter-Key";
+
         [HttpGet]
-        public ActionResult<RefinementViewDto> GetRefinement(int teamId)
+        public ActionResult<RefinementViewDto> GetRefinement(int teamId, [FromHeader(Name = VoterKeyHeader)] string? voterKey)
         {
-            var view = refinementViewQuery.ForTeam(teamId);
+            var view = refinementViewQuery.ForTeam(teamId, voterKey);
             if (view is null)
             {
                 return NotFound();

@@ -22,7 +22,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         // @driving_port @real-io @us-11 @slice-11 @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice11)]
         public async Task A_reader_votes_in_seconds_without_an_account()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -258,7 +257,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-11 @slice-11 @contract-shape:pure-function
         // The tab tells the browser how a voter is known here, so it knows to ask for a name.
         [Test]
-        [Ignore(PendingSlice11)]
         public async Task Without_sign_in_the_tab_says_a_voter_declares_their_name()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();

@@ -362,6 +362,8 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                     || !await HasSystemAdminAsync(cancellationToken)
                     || await CanManageRbacAsync(principal, cancellationToken),
                 RbacGuardRequirement.AnyScopedAdmin => await CanSatisfyAnyScopedAdminAsync(principal, cancellationToken),
+                RbacGuardRequirement.TeamContribute => scopeId.HasValue
+                    && await CanReadTeamAsync(principal, scopeId.Value, cancellationToken),
                 _ => false,
             };
         }
