@@ -15,5 +15,7 @@ namespace Lighthouse.Backend.Models.UsageData
         // Zero is a real answer here, not a stand-in for "none given". Anything reading this has to
         // establish that a value was actually sent before trusting it.
         NoCadence = 0,
+        OnRefinementDay = 1,
+        OnOtherDay = 2,
     }
 }

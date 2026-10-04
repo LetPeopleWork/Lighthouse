@@ -68,7 +68,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [TestCase(TeamSizingVoteCast, OnOtherDay)]
         [TestCase(TeamSizingReadinessReached, OnRefinementDay)]
         [TestCase(TeamSizingReadinessReached, OnOtherDay)]
-        [Ignore(PendingSlice04)]
         public async Task A_sizing_event_says_whether_it_happened_on_a_Refinement_day_and_nothing_else(string name, string moment)
         {
             var token = await ABrowserThatAgreedAsync();
@@ -83,7 +82,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // The moments are appended to their list, so a number already counted never changes meaning.
         [TestCase(OnRefinementDay, NoCadence)]
         [TestCase(OnOtherDay, OnRefinementDay)]
-        [Ignore(PendingSlice04)]
         public void The_new_moments_are_appended_to_their_list_never_inserted(string moment, string namedBefore)
             => ThenIsAppendedAfter("UsageDataSizingMoment", moment, namedBefore);
 
