@@ -1,15 +1,22 @@
 import {
+	Box,
 	Checkbox,
+	FormControl,
 	FormControlLabel,
+	FormLabel,
+	Radio,
+	RadioGroup,
 	TextField,
 	Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import type {
 	IReadinessSetting,
 	IRefinementStateSetting,
+	IVetoSetting,
+	VetoCounts,
 } from "../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
@@ -30,6 +37,13 @@ export const DEFAULT_READINESS: IReadinessSetting = {
 	minVoters: 3,
 	veto: null,
 };
+
+const VETO_COUNTS_LABELS: Record<VetoCounts, string> = {
+	No: "No",
+	NoOrYesBut: "No or Yes, if…",
+};
+
+const vetoCountsOptions = Object.keys(VETO_COUNTS_LABELS) as VetoCounts[];
 
 export const MIN_YES_ERROR = "At least one Yes vote is needed";
 export const MIN_VOTERS_ERROR =
@@ -112,6 +126,22 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 
 	const shown = (value: number) => (Number.isNaN(value) ? "" : value);
 
+	const veto = readiness.veto;
+	const countingLabelId = useId();
+
+	const toggleVeto = (event: React.ChangeEvent<HTMLInputElement>) =>
+		onReadinessChange({
+			...readiness,
+			veto: event.target.checked ? { threshold: 1, counts: "No" } : null,
+		});
+
+	const changeVeto = (change: Partial<IVetoSetting>) => {
+		if (veto === null) {
+			return;
+		}
+		onReadinessChange({ ...readiness, veto: { ...veto, ...change } });
+	};
+
 	return (
 		<InputGroup title={refinementTerm}>
 			<Grid size={{ xs: 12 }}>
@@ -152,11 +182,61 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 				/>
 			</Grid>
 			<Grid size={{ xs: 12 }}>
-				<FormControlLabel
-					control={<Checkbox checked={readiness.veto !== null} disabled />}
-					label="Send to discussion"
-				/>
+				<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+					<FormControlLabel
+						control={<Checkbox checked={veto !== null} onChange={toggleVeto} />}
+						label="Send to discussion"
+					/>
+					{veto && (
+						<>
+							<Typography>at</Typography>
+							<TextField
+								type="number"
+								size="small"
+								sx={{ width: 80 }}
+								value={shown(veto.threshold)}
+								onChange={(event) =>
+									changeVeto({
+										threshold: Number.parseInt(event.target.value, 10),
+									})
+								}
+								slotProps={{
+									htmlInput: {
+										min: 1,
+										step: 1,
+										"aria-label": "Votes that send to discussion",
+									},
+								}}
+							/>
+							<Typography>or more</Typography>
+						</>
+					)}
+				</Box>
 			</Grid>
+			{veto && (
+				<Grid size={{ xs: 12 }}>
+					<FormControl>
+						<FormLabel id={countingLabelId}>Counting</FormLabel>
+						<RadioGroup
+							row
+							aria-labelledby={countingLabelId}
+							value={veto.counts}
+							onChange={(event) =>
+								changeVeto({ counts: event.target.value as VetoCounts })
+							}
+						>
+							{vetoCountsOptions.map((counts) => (
+								<FormControlLabel
+									key={counts}
+									value={counts}
+									control={<Radio />}
+									label={VETO_COUNTS_LABELS[counts]}
+								/>
+							))}
+						</RadioGroup>
+					</FormControl>
+				</Grid>
+			)}
 		</InputGroup>
 	);
 };

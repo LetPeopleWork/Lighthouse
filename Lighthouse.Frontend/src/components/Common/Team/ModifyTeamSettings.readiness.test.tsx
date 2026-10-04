@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
@@ -222,7 +222,7 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 	});
 
 	// @us-13 @slice-13 @contract-shape:bounded-change
-	it.skip("saves a veto that sends a Work Item to discussion after one No", async () => {
+	it("saves a veto that sends a Work Item to discussion after one No", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
 		await userEvent.click(
@@ -239,7 +239,7 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 	});
 
 	// @us-13 @slice-13 @contract-shape:bounded-change
-	it.skip("saves a veto that counts Yes, if… votes as well", async () => {
+	it("saves a veto that counts Yes, if… votes as well", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
 				minYes: 3,
@@ -248,11 +248,11 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 			}),
 		);
 
+		const counting = await screen.findByRole("radiogroup", {
+			name: "Counting",
+		});
 		await userEvent.click(
-			await screen.findByRole("combobox", { name: "Counting" }),
-		);
-		await userEvent.click(
-			await screen.findByRole("option", { name: "No or Yes, if…" }),
+			within(counting).getByRole("radio", { name: "No or Yes, if…" }),
 		);
 
 		await waitFor(() =>
