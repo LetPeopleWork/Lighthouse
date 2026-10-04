@@ -5,14 +5,11 @@ import {
 	Alert,
 	Box,
 	Button,
-	Checkbox,
 	CircularProgress,
 	Dialog,
 	DialogActions,
 	DialogContent,
 	DialogTitle,
-	FormControlLabel,
-	FormGroup,
 	IconButton,
 	Table,
 	TableBody,
@@ -26,11 +23,11 @@ import {
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
+import WeeklyRecurrenceFields from "../../../components/Common/WeeklyRecurrence/WeeklyRecurrenceFields";
 import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
-import {
-	type DayOfWeek,
-	type IRecurringBlackoutRule,
-	ORDERED_WEEKDAYS,
+import type {
+	DayOfWeek,
+	IRecurringBlackoutRule,
 } from "../../../models/RecurringBlackoutRule";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 
@@ -536,35 +533,14 @@ const BlackoutSettings: React.FC<BlackoutSettingsProps> = ({ isPremium }) => {
 					<Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
 						Weekdays
 					</Typography>
-					<FormGroup row>
-						{ORDERED_WEEKDAYS.map((day) => (
-							<FormControlLabel
-								key={day}
-								control={
-									<Checkbox
-										checked={ruleForm.weekdays.includes(day)}
-										onChange={() => toggleWeekday(day)}
-										data-testid={`recurring-weekday-${day}`}
-									/>
-								}
-								label={day}
-							/>
-						))}
-					</FormGroup>
-					<TextField
-						label="Repeat every (weeks)"
-						type="number"
-						value={ruleForm.intervalWeeks}
-						onChange={(e) =>
-							setRuleForm({
-								...ruleForm,
-								intervalWeeks: Number.parseInt(e.target.value, 10) || 1,
-							})
+					<WeeklyRecurrenceFields
+						weekdays={ruleForm.weekdays}
+						intervalWeeks={ruleForm.intervalWeeks}
+						onToggleWeekday={toggleWeekday}
+						onIntervalWeeksChange={(intervalWeeks) =>
+							setRuleForm({ ...ruleForm, intervalWeeks: intervalWeeks || 1 })
 						}
-						fullWidth
-						sx={{ mt: 2, mb: 2 }}
-						slotProps={{ htmlInput: { min: 1 } }}
-						data-testid="recurring-interval-weeks"
+						testIdPrefix="recurring"
 					/>
 					<TextField
 						label="Start Date"
