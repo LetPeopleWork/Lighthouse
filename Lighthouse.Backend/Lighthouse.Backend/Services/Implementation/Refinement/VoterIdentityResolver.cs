@@ -30,21 +30,31 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 ? SelfDeclaredKeyOf(presentedVoterKey!)
                 : null;
 
-        /// <returns>The voter, or null when the caller has not said who they are well enough to vote.</returns>
-        public Voter? ForWrite(string? declaredName, string? presentedVoterKey)
+        /// <returns>The voter, or what the caller still has to say about who they are before they may write.</returns>
+        public VoterResolution ForWrite(string? declaredName, string? presentedVoterKey)
         {
             if (Kind != VoterIdentityKind.SelfDeclared)
             {
-                return null;
+                return VoterResolution.RefusedFor(VoterRefusal.NeedsAPerson);
             }
 
             var name = declaredName?.Trim();
-            if (string.IsNullOrEmpty(name) || name.Length > LongestVoterName || !IsUsable(presentedVoterKey))
+            if (string.IsNullOrEmpty(name))
             {
-                return null;
+                return VoterResolution.RefusedFor(VoterRefusal.NameRequired);
             }
 
-            return new Voter(SelfDeclaredKeyOf(presentedVoterKey!), name, null);
+            if (name.Length > LongestVoterName)
+            {
+                return VoterResolution.RefusedFor(VoterRefusal.NameTooLong);
+            }
+
+            if (!IsUsable(presentedVoterKey))
+            {
+                return VoterResolution.RefusedFor(VoterRefusal.KeyRequired);
+            }
+
+            return VoterResolution.Of(new Voter(SelfDeclaredKeyOf(presentedVoterKey!), name, null));
         }
 
         // A short key could be guessed, and a guessed key speaks for somebody else's votes.
@@ -53,5 +63,21 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
 
         private static string SelfDeclaredKeyOf(string presentedVoterKey)
             => SelfDeclaredKeyPrefix + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(presentedVoterKey)));
+    }
+
+    /// <summary>Exactly one of the two is set: the voter, or why there is none.</summary>
+    public sealed record VoterResolution(Voter? Voter, VoterRefusal? Refusal)
+    {
+        public static VoterResolution Of(Voter voter) => new(voter, null);
+
+        public static VoterResolution RefusedFor(VoterRefusal refusal) => new(null, refusal);
+    }
+
+    public enum VoterRefusal
+    {
+        NameRequired,
+        KeyRequired,
+        NameTooLong,
+        NeedsAPerson,
     }
 }

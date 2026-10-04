@@ -13,6 +13,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         // SHA-256 of the key above, worked out outside the product with `sha256sum`.
         private const string StoredFormOfThatKey = "self:3eb1bd439947eb762998e566ccc2e099c791118b2f40579cc4f7da2b5061b7f9";
 
+        private const string ThirtyOneCharacterKey = "0123456789abcdef0123456789abcde";
+
+        private const string SixtyFourCharacterKey = ThirtyTwoCharacterKey + ThirtyTwoCharacterKey;
+
+        private static readonly string OneHundredCharacterName = new('a', VoterIdentityResolver.LongestVoterName);
+
+        private static readonly string OneHundredAndOneCharacterName = new('a', VoterIdentityResolver.LongestVoterName + 1);
+
+        private static IEnumerable<TestCaseData> WhatADeclaredNameAndAKeyAmountTo()
+        {
+            yield return new TestCaseData(null, ThirtyTwoCharacterKey, VoterRefusal.NameRequired).SetName("No name");
+            yield return new TestCaseData("", ThirtyTwoCharacterKey, VoterRefusal.NameRequired).SetName("An empty name");
+            yield return new TestCaseData("   ", ThirtyTwoCharacterKey, VoterRefusal.NameRequired).SetName("A blank name");
+            yield return new TestCaseData("J", ThirtyTwoCharacterKey, null).SetName("A one-character name");
+            yield return new TestCaseData(OneHundredCharacterName, ThirtyTwoCharacterKey, null).SetName("A one-hundred-character name");
+            yield return new TestCaseData($"  {OneHundredCharacterName}  ", ThirtyTwoCharacterKey, null).SetName("A one-hundred-character name with spaces around it");
+            yield return new TestCaseData(OneHundredAndOneCharacterName, ThirtyTwoCharacterKey, VoterRefusal.NameTooLong).SetName("A one-hundred-and-one-character name");
+            yield return new TestCaseData("Jonas Weber", null, VoterRefusal.KeyRequired).SetName("No key");
+            yield return new TestCaseData("Jonas Weber", ThirtyOneCharacterKey, VoterRefusal.KeyRequired).SetName("A thirty-one-character key");
+            yield return new TestCaseData("Jonas Weber", ThirtyTwoCharacterKey, null).SetName("A thirty-two-character key");
+            yield return new TestCaseData("Jonas Weber", SixtyFourCharacterKey, null).SetName("A sixty-four-character key");
+            yield return new TestCaseData(null, null, VoterRefusal.NameRequired).SetName("Neither a name nor a key asks for the name first");
+        }
+
         [TestCase(AuthMode.Disabled, VoterIdentityKind.SelfDeclared)]
         [TestCase(AuthMode.Enabled, VoterIdentityKind.Account)]
         public void HowAVoterIsKnownFollowsTheAuthMode(AuthMode mode, VoterIdentityKind expected)
@@ -20,52 +44,43 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             Assert.That(ResolverWhere(mode).Kind, Is.EqualTo(expected));
         }
 
+        [TestCaseSource(nameof(WhatADeclaredNameAndAKeyAmountTo))]
+        public void WithoutSignInANameAndAKeyMakeAVoterOrSayWhatIsMissing(string? declaredName, string? presentedKey, VoterRefusal? expectedRefusal)
+        {
+            var resolution = ResolverWhere(AuthMode.Disabled).ForWrite(declaredName, presentedKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resolution.Refusal, Is.EqualTo(expectedRefusal));
+                Assert.That(resolution.Voter is null, Is.EqualTo(expectedRefusal is not null));
+            }
+        }
+
         [TestCase("Jonas Weber", "Jonas Weber")]
         [TestCase("  Jonas Weber  ", "Jonas Weber")]
         [TestCase("J", "J")]
         public void WithoutSignInTheDeclaredNameIsTrimmedAndKept(string declared, string kept)
         {
-            var voter = ResolverWhere(AuthMode.Disabled).ForWrite(declared, ThirtyTwoCharacterKey);
+            var resolution = ResolverWhere(AuthMode.Disabled).ForWrite(declared, ThirtyTwoCharacterKey);
 
-            Assert.That(voter, Is.EqualTo(new Voter(StoredFormOfThatKey, kept, null)));
+            Assert.That(resolution.Voter, Is.EqualTo(new Voter(StoredFormOfThatKey, kept, null)));
         }
 
         [Test]
-        public void ANameOfOneHundredCharactersIsKept()
+        public void WithSignInNobodyIsYetAVoter()
         {
-            var name = new string('a', VoterIdentityResolver.LongestVoterName);
+            var resolution = ResolverWhere(AuthMode.Enabled).ForWrite("Jonas Weber", ThirtyTwoCharacterKey);
 
-            var voter = ResolverWhere(AuthMode.Disabled).ForWrite(name, ThirtyTwoCharacterKey);
-
-            Assert.That(voter?.DisplayName, Is.EqualTo(name));
-        }
-
-        [TestCase(null)]
-        [TestCase("")]
-        [TestCase("   ")]
-        public void WithoutANameNobodyVotes(string? declared)
-        {
-            Assert.That(ResolverWhere(AuthMode.Disabled).ForWrite(declared, ThirtyTwoCharacterKey), Is.Null);
-        }
-
-        [Test]
-        public void ANameLongerThanOneHundredCharactersIsRefused()
-        {
-            var name = new string('a', VoterIdentityResolver.LongestVoterName + 1);
-
-            Assert.That(ResolverWhere(AuthMode.Disabled).ForWrite(name, ThirtyTwoCharacterKey), Is.Null);
-        }
-
-        [TestCase(null)]
-        [TestCase("0123456789abcdef0123456789abcde")]
-        public void AMissingOrShortKeyIsRefusedOnAWrite(string? presented)
-        {
-            Assert.That(ResolverWhere(AuthMode.Disabled).ForWrite("Jonas Weber", presented), Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resolution.Voter, Is.Null);
+                Assert.That(resolution.Refusal, Is.EqualTo(VoterRefusal.NeedsAPerson));
+            }
         }
 
         [TestCase(ThirtyTwoCharacterKey, StoredFormOfThatKey)]
         [TestCase(null, null)]
-        [TestCase("0123456789abcdef0123456789abcde", null)]
+        [TestCase(ThirtyOneCharacterKey, null)]
         public void OnAReadTheKeyRecognisesTheReadersOwnVotes(string? presented, string? stored)
         {
             Assert.That(ResolverWhere(AuthMode.Disabled).ReaderKeyFrom(presented), Is.EqualTo(stored));
@@ -79,7 +94,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             var first = resolver.ForWrite("Ana Lima", ThirtyTwoCharacterKey);
             var second = resolver.ForWrite("Ana Lima", "fedcba9876543210fedcba9876543210");
 
-            Assert.That(first?.Key, Is.Not.EqualTo(second?.Key));
+            Assert.That(first.Voter?.Key, Is.Not.EqualTo(second.Voter?.Key));
         }
 
         private static VoterIdentityResolver ResolverWhere(AuthMode mode)

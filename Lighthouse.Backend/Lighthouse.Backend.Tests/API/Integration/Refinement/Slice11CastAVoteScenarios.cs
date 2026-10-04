@@ -106,7 +106,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-11 @slice-11 @error @contract-shape:unbounded-preservation
         [TestCase(null)]
         [TestCase("   ")]
-        [Ignore(PendingSlice11)]
         public async Task A_vote_without_a_name_is_refused_and_nothing_is_counted(string? declaredName)
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -120,7 +119,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // A key shorter than thirty-two characters is as good as none: it could be guessed.
         [TestCase(null)]
         [TestCase("0123456789abcdef0123456789abcde")]
-        [Ignore(PendingSlice11)]
         public async Task A_vote_without_a_voter_key_is_refused_and_nothing_is_counted(string? voterKey)
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -132,7 +130,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-11 @slice-11 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice11)]
         public async Task A_declared_name_of_one_hundred_characters_is_accepted()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -144,7 +141,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-11 @slice-11 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice11)]
         public async Task A_declared_name_longer_than_one_hundred_characters_is_refused()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
