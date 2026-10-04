@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Refinement;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Refinement;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
@@ -11,7 +12,8 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         SleYardstickResolver yardstickResolver,
         ISizingLogRepository sizingLog,
         VoterIdentityResolver voterIdentityResolver,
-        StageRuleMatcher stageRuleMatcher) : IRefinementViewQuery
+        StageRuleMatcher stageRuleMatcher,
+        IForecastFilterRuleService forecastFilterRuleService) : IRefinementViewQuery
     {
         public RefinementView? ForTeam(int teamId, string? presentedVoterKey)
         {
@@ -30,12 +32,21 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             var workItems = refinementList.For(team);
             var votes = CurrentVotesOn(team.Id, workItems, voterIdentityResolver.ReaderKeyFrom(presentedVoterKey));
             var readiness = team.RefinementSettings?.Readiness ?? new ReadinessSetting();
-            var stages = stageRuleMatcher.Match(team.RefinementSettings?.StageRules, workItems);
+            var stages = stageRuleMatcher.Match(StageRulesOf(team), workItems);
             var rows = workItems
                 .Select(item => RowFor(item, votes.GetValueOrDefault(item.ReferenceId, RowVotes.None), readiness, stages))
                 .ToList();
 
             return new RefinementView(true, rows, yardstickResolver.For(team), voterIdentity, stages.StagesConfigured);
+        }
+
+        // A field that went away reads as empty on every Work Item, so a rule still naming it would match at random.
+        private StageRules? StageRulesOf(Team team)
+        {
+            var stored = team.RefinementSettings?.StageRules;
+            return stored is null || team.WorkTrackingSystemConnection is null
+                ? stored
+                : stored.WithoutFieldsMissingFrom(forecastFilterRuleService.GetSchema(team));
         }
 
         private static RefinementRow RowFor(WorkItem item, RowVotes votes, ReadinessSetting readiness, StageMatches stages)

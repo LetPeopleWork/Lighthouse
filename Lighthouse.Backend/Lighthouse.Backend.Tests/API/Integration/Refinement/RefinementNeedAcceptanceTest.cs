@@ -266,17 +266,26 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }),
         };
 
-        protected static JsonObject ARuleOn(string fieldKey, string value) => new()
+        protected static JsonObject ARuleOn(string fieldKey, string value) => ARuleOn(fieldKey, ContainsOperator, value);
+
+        protected static JsonObject ARuleOn(string fieldKey, string ruleOperator, string value) => new()
         {
             ["version"] = 1,
             ["mode"] = "and",
             ["conditions"] = new JsonArray(new JsonObject
             {
                 ["fieldKey"] = fieldKey,
-                ["operator"] = ContainsOperator,
+                ["operator"] = ruleOperator,
                 ["value"] = value,
             }),
         };
+
+        /// <summary>How <see cref="TagsContain"/> reads back, or null for no rule.</summary>
+        protected static StageRuleReading? TagsContainReading(string? tag)
+            => tag is null ? null : new StageRuleReading("and", 1, TagsField, ContainsOperator, tag);
+
+        /// <summary>A rule of one condition whose operator takes no value, sent with an empty value as the rule editor sends it.</summary>
+        protected static JsonObject ARuleWithoutAValue(string fieldKey, string valuelessOperator) => ARuleOn(fieldKey, valuelessOperator, "");
 
         /// <summary>A rule with this many conditions, each "Tags contains" a different word.</summary>
         protected static JsonObject ARuleWithConditions(int count) => new()
@@ -483,7 +492,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             return new BandReading(NumberOf(band, "lowPercentile"), NumberOf(band, "highPercentile"));
         }
 
-        /// <summary>The value each stage rule's first condition matches, or null when that stage has no rule.</summary>
+        /// <summary>Each stage rule as the settings read gives it back, or null when that stage has no rule.</summary>
         protected static StageRulesReading StageRulesIn(JsonElement settings)
         {
             var refinement = RefinementSectionOf(settings);
@@ -492,7 +501,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 return new StageRulesReading(null, null);
             }
 
-            return new StageRulesReading(FirstValueOf(rules, "ready"), FirstValueOf(rules, "beingRefined"));
+            return new StageRulesReading(StageRuleOf(rules, "ready"), StageRuleOf(rules, "beingRefined"));
         }
 
         private static JsonElement AnEmptyObject()
@@ -501,16 +510,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             return document.RootElement.Clone();
         }
 
-        private static string? FirstValueOf(JsonElement rules, string stage)
+        private static StageRuleReading? StageRuleOf(JsonElement rules, string stage)
         {
             if (!rules.TryGetProperty(stage, out var rule) || rule.ValueKind != JsonValueKind.Object)
             {
                 return null;
             }
 
-            return rule.TryGetProperty("conditions", out var conditions) && conditions.ValueKind == JsonValueKind.Array
-                ? conditions.EnumerateArray().Select(condition => TextOf(condition, "value")).FirstOrDefault()
-                : null;
+            List<JsonElement> conditions = rule.TryGetProperty("conditions", out var array) && array.ValueKind == JsonValueKind.Array
+                ? [.. array.EnumerateArray()]
+                : [];
+            string? OfFirst(string property) => conditions.Count == 0 ? null : TextOf(conditions[0], property);
+
+            return new StageRuleReading(TextOf(rule, "mode"), conditions.Count, OfFirst("fieldKey"), OfFirst("operator"), OfFirst("value"));
         }
 
         protected int SizingEntriesStoredFor(TeamUnderTest team)
@@ -541,7 +553,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         protected sealed record BandReading(int? LowPercentile, int? HighPercentile);
 
-        protected sealed record StageRulesReading(string? Ready, string? BeingRefined);
+        protected sealed record StageRulesReading(StageRuleReading? Ready, StageRuleReading? BeingRefined);
+
+        /// <summary>A stage rule's mode, how many conditions it has, and the field, operator and value of its first.</summary>
+        protected sealed record StageRuleReading(string? Mode, int ConditionCount, string? FieldKey, string? Operator, string? Value);
 
         /// <summary>
         /// The need as facts: the verdict or why there is none, the range and its likelihoods, and the working

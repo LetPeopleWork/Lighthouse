@@ -216,6 +216,15 @@ namespace Lighthouse.Backend.API
                     BlockedRuleSetJson = blockedItemService.GetEffectiveRuleSetJson(team),
                     ForecastFilterRuleSetJson = forecastFilterRuleService.GetStoredRuleSetJsonForEditing(team),
                 };
+
+                // A stage rule naming a field that went away would come back on the next save and fail its
+                // validation, rejecting every later settings save; reading it without that field clears it.
+                if (teamSettingDto.Refinement is not null && team.RefinementSettings is not null && team.WorkTrackingSystemConnection is not null)
+                {
+                    teamSettingDto.Refinement.StageRules = new StageRulesDto(
+                        team.RefinementSettings.StageRules.WithoutFieldsMissingFrom(forecastFilterRuleService.GetSchema(team)));
+                }
+
                 return teamSettingDto;
             });
         }

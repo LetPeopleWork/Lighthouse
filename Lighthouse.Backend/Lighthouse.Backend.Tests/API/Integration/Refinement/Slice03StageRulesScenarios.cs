@@ -268,7 +268,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
             using var save = await WhenTheAdminSavesTheReadyRule(gravity, ARuleWithConditions(20));
 
-            await ThenTheSaveIsAcceptedWithAReadyRuleOn(save, gravity, "tag-1");
+            await ThenTheSaveIsAcceptedWithAReadyRuleReading(save, gravity, new StageRuleReading("or", 20, "workitem.tags", "contains", "tag-1"));
         }
 
         // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:unbounded-preservation
@@ -282,6 +282,43 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await WhenTheSettingsAreSaved(gravity, shape);
 
             ThenTheStageRulesAre(await ReadTheTeamSettings(gravity), ready: ReadyTag, beingRefined: null);
+        }
+
+        // @driving_port @real-io @us-03 @slice-03 @error @contract-shape:bounded-change
+        // Editing a connection's additional fields re-creates them under new ids, so a rule saved on the
+        // old one names a field that is gone. The form saves back what it read, and that save must go through.
+        [Test]
+        public async Task A_Ready_rule_on_an_additional_field_that_went_away_reads_back_as_no_rule_and_the_settings_still_save()
+        {
+            var gravity = await GivenGravityWithAReadyRuleOnAnAdditionalFieldTheConnectionNoLongerOffers();
+
+            using var save = await WhenTheAdminSavesTheSettingsAsTheyReadThem(gravity);
+
+            await ThenTheSaveIsAcceptedAndTheTeamHasNoReadyRule(save, gravity);
+        }
+
+        // @driving_port @real-io @us-03 @slice-03 @error @contract-shape:pure-function
+        // A missing field reads as empty, so the stale rule "is not High" would otherwise call every Work Item Ready.
+        [Test]
+        public async Task A_Ready_rule_on_an_additional_field_that_went_away_gives_the_tab_no_stages()
+        {
+            var gravity = await GivenGravityWithAReadyRuleOnAnAdditionalFieldTheConnectionNoLongerOffers();
+
+            var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
+
+            ThenTheTabHasNoStages(tab);
+        }
+
+        // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:bounded-change
+        // The rule editor sends an empty value for the operators that take none.
+        [Test]
+        public async Task A_Ready_rule_whose_operator_takes_no_value_is_accepted_and_reads_back()
+        {
+            var gravity = await GivenGravityRefinesWithoutStages();
+
+            using var save = await WhenTheAdminSavesTheReadyRule(gravity, ARuleWithoutAValue("workitem.tags", "isEmpty"));
+
+            await ThenTheSaveIsAcceptedWithAReadyRuleReading(save, gravity, new StageRuleReading("and", 1, "workitem.tags", "isEmpty", ""));
         }
 
         // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:bounded-change

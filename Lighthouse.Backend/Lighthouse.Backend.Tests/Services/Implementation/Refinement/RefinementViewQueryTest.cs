@@ -3,10 +3,12 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Models.Refinement;
+using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Implementation.Refinement;
 using Lighthouse.Backend.Services.Implementation.WorkItemRules;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Auth;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Refinement;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Moq;
@@ -62,7 +64,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                 new SleYardstickResolver(teamMetricsServiceMock.Object, clockMock.Object),
                 sizingLogMock.Object,
                 new VoterIdentityResolver(Mock.Of<IAuthModeResolver>(resolver => resolver.Resolve() == new RuntimeAuthStatus { Mode = AuthMode.Disabled })),
-                new StageRuleMatcher(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider()));
+                new StageRuleMatcher(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider()),
+                new ForecastFilterRuleService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider(), Mock.Of<ILicenseService>()));
         }
 
         [Test]

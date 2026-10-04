@@ -1,7 +1,10 @@
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Refinement
@@ -64,6 +67,44 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             return pulsar;
         }
 
+        /// <summary>
+        /// Gravity's connection offered the additional field "Priority", and the admin set the Ready rule
+        /// "Priority is not High" on it. Then the connection's additional fields were edited, which re-creates
+        /// "Priority" under a new id: the rule now names a field the connection no longer offers.
+        /// </summary>
+        private async Task<TeamUnderTest> GivenGravityWithAReadyRuleOnAnAdditionalFieldTheConnectionNoLongerOffers()
+        {
+            var gravity = await GravityRefinesSixWorkItems();
+            var priority = TheConnectionOffersPriority(gravity);
+            await TheAdminHasSetTheStageRules(gravity, ready: ARuleOn($"additionalField.{priority}", "notequals", "High"), beingRefined: null);
+
+            TheConnectionRecreatesPriority(gravity, priority);
+            return gravity;
+        }
+
+        private int TheConnectionOffersPriority(TeamUnderTest team)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            var priority = new AdditionalFieldDefinition { DisplayName = "Priority", Reference = "priority", WorkTrackingSystemConnectionId = team.ConnectionId };
+            context.Add(priority);
+            context.SaveChanges();
+            return priority.Id;
+        }
+
+        private void TheConnectionRecreatesPriority(TeamUnderTest team, int priorityId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            var connection = context.WorkTrackingSystemConnections
+                .Include(candidate => candidate.AdditionalFieldDefinitions)
+                .Single(candidate => candidate.Id == team.ConnectionId);
+
+            connection.AdditionalFieldDefinitions.RemoveAll(field => field.Id == priorityId);
+            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { DisplayName = "Priority", Reference = "priority" });
+            context.SaveChanges();
+        }
+
         private async Task GivenJonasSaidYesOn(TeamUnderTest team, string workItem)
             => await HasVoted(Jonas, team, workItem, Answer.Yes);
 
@@ -85,6 +126,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private async Task<HttpResponseMessage> WhenTheAdminSavesTheReadyRule(TeamUnderTest team, JsonObject ready)
             => await SaveTheRefinementSectionWith(team, "stageRules", StageRules(ready, null));
 
+        /// <summary>The settings form saved with the refinement section exactly as the settings read gave it.</summary>
+        private async Task<HttpResponseMessage> WhenTheAdminSavesTheSettingsAsTheyReadThem(TeamUnderTest team)
+        {
+            TheCallerAdministersTheTeam(team);
+            var settings = await ReadTheTeamSettings(team);
+
+            var payload = TheTeamSettingsFormFor(team);
+            payload["refinement"] = JsonNode.Parse(RefinementSectionOf(settings).GetRawText());
+
+            return await PutTheTeamSettings(team, payload);
+        }
+
         private async Task WhenTheSettingsAreSaved(TeamUnderTest team, SaveShape shape)
         {
             using var save = await SaveTheSettingsShaped(team, shape);
@@ -94,7 +147,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // --- Then ---
 
         private static void ThenTheStageRulesAre(JsonElement settings, string? ready, string? beingRefined)
-            => Assert.That(StageRulesIn(settings), Is.EqualTo(new StageRulesReading(ready, beingRefined)));
+            => Assert.That(StageRulesIn(settings), Is.EqualTo(new StageRulesReading(TagsContainReading(ready), TagsContainReading(beingRefined))));
 
         private static void ThenTheTabHasNoStages(JsonElement tab)
         {
@@ -150,11 +203,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-                Assert.That(StageRulesIn(settings).Ready, Is.EqualTo(ready), "the refused save changed the stored Ready rule");
+                Assert.That(StageRulesIn(settings).Ready, Is.EqualTo(TagsContainReading(ready)), "the refused save changed the stored Ready rule");
             }
         }
 
-        private async Task ThenTheSaveIsAcceptedWithAReadyRuleOn(HttpResponseMessage save, TeamUnderTest team, string firstValue)
+        private async Task ThenTheSaveIsAcceptedWithAReadyRuleReading(HttpResponseMessage save, TeamUnderTest team, StageRuleReading expected)
         {
             var body = await save.Content.ReadAsStringAsync();
             var settings = await ReadTheTeamSettings(team);
@@ -162,7 +215,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(save.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-                Assert.That(StageRulesIn(settings).Ready, Is.EqualTo(firstValue));
+                Assert.That(StageRulesIn(settings).Ready, Is.EqualTo(expected));
+            }
+        }
+
+        private async Task ThenTheSaveIsAcceptedAndTheTeamHasNoReadyRule(HttpResponseMessage save, TeamUnderTest team)
+        {
+            var body = await save.Content.ReadAsStringAsync();
+            var settings = await ReadTheTeamSettings(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(save.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(StageRulesIn(settings).Ready, Is.Null, "a rule whose only field went away is no rule");
             }
         }
 
@@ -173,7 +238,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(WorkItemsStoredFor(team), Is.EqualTo(workItemsBefore));
-                Assert.That(StageRulesIn(settings).Ready, Is.EqualTo(ready), "the rule was saved, so the kept Work Items prove something");
+                Assert.That(StageRulesIn(settings).Ready, Is.EqualTo(TagsContainReading(ready)), "the rule was saved, so the kept Work Items prove something");
             }
         }
     }
