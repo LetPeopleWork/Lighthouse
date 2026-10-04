@@ -28,7 +28,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-03 @slice-03 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task A_Team_admin_sets_a_Ready_rule_and_a_Being_refined_rule_and_both_read_back()
         {
             var gravity = await GivenGravityRefinesWithoutStages();
@@ -295,7 +294,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // An older settings form knows nothing about stage rules; its saves must not remove them.
         [TestCase(SaveShape.WithoutTheRefinementSection)]
         [TestCase(SaveShape.RefinementSectionWithoutTheMember)]
-        [Ignore(PendingSlice03)]
         public async Task A_save_that_says_nothing_about_stage_rules_keeps_them(SaveShape shape)
         {
             var gravity = await GivenGravityWithItsReadyRuleTagging((UserActivityTracking, ReadyTag));
@@ -323,7 +321,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:bounded-change
         // A stage rule is a refinement setting; it never makes the Team fetch its Work Items afresh.
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task Setting_stage_rules_keeps_every_Work_Item_the_Team_holds()
         {
             var gravity = await GivenGravityRefinesWithoutStages();

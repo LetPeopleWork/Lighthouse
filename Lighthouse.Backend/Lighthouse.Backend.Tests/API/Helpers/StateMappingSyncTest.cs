@@ -1,7 +1,9 @@
+using System.Text.Json;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Refinement;
+using Lighthouse.Backend.Models.WorkItemRules;
 
 namespace Lighthouse.Backend.Tests.API.Helpers
 {
@@ -230,6 +232,113 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
             Assert.That(result, Is.False);
         }
+
+        /// <summary>
+        /// Which Work Items in refinement count as Ready or being refined says nothing about which Work Items
+        /// the Team fetches.
+        /// </summary>
+        [TestCase(false, false, true, true)]
+        [TestCase(true, true, false, false)]
+        [TestCase(true, false, false, true)]
+        public void WorkItemRelatedSettingsChanged_StageRulesChanged_ReturnsFalse(bool storedReady, bool storedBeingRefined, bool savedReady, bool savedBeingRefined)
+        {
+            var team = new Team
+            {
+                DataRetrievalValue = "project = X",
+                WorkTrackingSystemConnectionId = 1,
+                WorkItemTypes = ["Bug"],
+                ToDoStates = ["Backlog"],
+                DoingStates = ["Analysing"],
+                DoneStates = ["Closed"],
+                RefinementSettings = new RefinementSettings
+                {
+                    States = [new RefinementStateSetting { State = "Backlog" }],
+                    StageRules = new StageRules
+                    {
+                        Ready = storedReady ? TagsContain("ready") : null,
+                        BeingRefined = storedBeingRefined ? TagsContain("analysing") : null,
+                    },
+                },
+            };
+
+            var dto = new TeamSettingDto
+            {
+                DataRetrievalValue = "project = X",
+                WorkTrackingSystemConnectionId = 1,
+                WorkItemTypes = ["Bug"],
+                ToDoStates = ["Backlog"],
+                DoingStates = ["Analysing"],
+                DoneStates = ["Closed"],
+                Refinement = new RefinementSettingsDto
+                {
+                    States = [new RefinementStateSettingDto { State = "Backlog" }],
+                    StageRules = new StageRulesDto
+                    {
+                        Ready = savedReady ? new StageRuleDto(TagsContain("ready")) : null,
+                        BeingRefined = savedBeingRefined ? new StageRuleDto(TagsContain("analysing")) : null,
+                    },
+                },
+            };
+
+            var result = team.WorkItemRelatedSettingsChanged(dto);
+
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public void SyncTeamWithTeamSettings_StageRuleSentAsNull_RemovesOnlyThatRule()
+        {
+            var team = new Team
+            {
+                ToDoStates = ["Backlog"],
+                RefinementSettings = new RefinementSettings
+                {
+                    States = [new RefinementStateSetting { State = "Backlog" }],
+                    StageRules = new StageRules { Ready = TagsContain("ready"), BeingRefined = TagsContain("analysing") },
+                },
+            };
+            var stageRules = JsonSerializer.Deserialize<StageRulesDto>("""{ "ready": null }""", WebJson)!;
+            var dto = new TeamSettingDto
+            {
+                ToDoStates = ["Backlog"],
+                Refinement = new RefinementSettingsDto { States = [new RefinementStateSettingDto { State = "Backlog" }], StageRules = stageRules },
+            };
+
+            team.SyncTeamWithTeamSettings(dto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(team.RefinementSettings.StageRules.Ready, Is.Null);
+                Assert.That(team.RefinementSettings.StageRules.BeingRefined?.Conditions.Single().Value, Is.EqualTo("analysing"));
+            }
+        }
+
+        /// <summary>
+        /// Settings stored before stage rules existed must read back as a Team with no stages, without a migration.
+        /// </summary>
+        [Test]
+        public void RefinementSettings_StoredWithoutStageRules_ReadsBackWithNone()
+        {
+            const string storedBeforeStageRules = """{ "States": [{ "State": "Backlog", "Stage": 0 }], "Readiness": { "MinYes": 2, "MinVoters": 2 } }""";
+
+            var settings = JsonSerializer.Deserialize<RefinementSettings>(storedBeforeStageRules, StoredJson)!;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(settings.StageRules.Ready, Is.Null);
+                Assert.That(settings.StageRules.BeingRefined, Is.Null);
+                Assert.That(settings.Readiness.MinYes, Is.EqualTo(2));
+            }
+        }
+
+        private static readonly JsonSerializerOptions WebJson = new(JsonSerializerDefaults.Web);
+
+        private static readonly JsonSerializerOptions StoredJson = new(JsonSerializerDefaults.General);
+
+        private static WorkItemRuleSet TagsContain(string tag) => new()
+        {
+            Conditions = [new WorkItemRuleCondition { FieldKey = "workitem.tags", Operator = "contains", Value = tag }],
+        };
 
         /// <summary>
         /// The positive control the cases above need: without it they agree only because the method

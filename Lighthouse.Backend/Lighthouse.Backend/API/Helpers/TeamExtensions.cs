@@ -138,6 +138,7 @@ namespace Lighthouse.Backend.API.Helpers
                 .Select(state => new RefinementStateSetting { State = state })
                 .ToList();
             SyncReadiness(settings, teamSetting.Refinement?.Readiness);
+            SyncStageRules(settings, teamSetting.Refinement?.StageRules);
 
             team.RefinementSettings = settings;
         }
@@ -150,6 +151,16 @@ namespace Lighthouse.Backend.API.Helpers
             }
 
             settings.Readiness = readiness.AppliedTo(settings.Readiness);
+        }
+
+        private static void SyncStageRules(RefinementSettings settings, StageRulesDto? stageRules)
+        {
+            if (stageRules is null)
+            {
+                return;
+            }
+
+            settings.StageRules = stageRules.AppliedTo(settings.StageRules);
         }
 
         private static List<string> TrimListEntries(List<string> list)

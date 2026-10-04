@@ -1,3 +1,5 @@
+using Lighthouse.Backend.Models.WorkItemRules;
+
 namespace Lighthouse.Backend.Models.Refinement
 {
     /// <summary>
@@ -10,6 +12,19 @@ namespace Lighthouse.Backend.Models.Refinement
         public List<RefinementStateSetting> States { get; set; } = [];
 
         public ReadinessSetting Readiness { get; set; } = new();
+
+        public StageRules StageRules { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Which Work Items in refinement are Ready and which are being refined, each by an optional rule;
+    /// whatever no rule matches is Waiting. A Team that sets neither rule has no stages at all.
+    /// </summary>
+    public class StageRules
+    {
+        public WorkItemRuleSet? Ready { get; set; }
+
+        public WorkItemRuleSet? BeingRefined { get; set; }
     }
 
     public class RefinementStateSetting
