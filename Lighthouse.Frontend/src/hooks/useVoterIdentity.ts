@@ -46,6 +46,7 @@ export const useVoterIdentity = (voterIdentity: VoterIdentity | undefined) => {
 	return {
 		voter,
 		asksForName: !isAccount && voter === null,
+		changeableName: isAccount ? null : (voter?.name ?? null),
 		declareName,
 		ballotFor,
 	};

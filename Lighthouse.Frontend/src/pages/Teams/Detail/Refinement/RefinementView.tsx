@@ -30,6 +30,8 @@ import type { IStoredVoter } from "../../../../services/Refinement/voterStore";
 import { useTerminology } from "../../../../services/TerminologyContext";
 import VoteControl from "./VoteControl";
 import VoterNamePrompt from "./VoterNamePrompt";
+import VotesAndCommentsDialog from "./VotesAndCommentsDialog";
+import { describeVoteCount } from "./voteWording";
 import YardstickQuestion from "./YardstickQuestion";
 
 type RefinementGridRow = IRefinementRow & GridValidRowModel;
@@ -41,14 +43,6 @@ interface IPendingVote {
 	answer: SizingAnswer;
 }
 
-const describeVoteCount = (voteCount: number): string => {
-	if (voteCount === 0) {
-		return "No votes";
-	}
-
-	return voteCount === 1 ? "1 vote" : `${voteCount} votes`;
-};
-
 const messageOf = (error: unknown): string =>
 	error instanceof Error ? error.message : String(error);
 
@@ -56,6 +50,7 @@ const createRefinementColumns = (
 	workItemTerm: string,
 	parentMap: Map<string, ParentWorkItem>,
 	onVote: (vote: IPendingVote) => void,
+	onOpenVotes: (referenceId: string) => void,
 ): DataGridColumn<RefinementGridRow>[] => [
 	createNameColumn<RefinementGridRow>(workItemTerm),
 	{
@@ -94,7 +89,11 @@ const createRefinementColumns = (
 		renderCell: ({ row }) => {
 			const voteCount = describeVoteCount(row.voteCount ?? 0);
 			return (
-				<Button size="small" aria-label={`${voteCount} - Votes and comments`}>
+				<Button
+					size="small"
+					aria-label={`${voteCount} - Votes and comments`}
+					onClick={() => onOpenVotes(row.referenceId)}
+				>
 					{voteCount}
 				</Button>
 			);
@@ -112,9 +111,10 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 	const { getTerm } = useTerminology();
 	const [refinement, setRefinement] = useState<IRefinementView | null>(null);
 	const [pendingVote, setPendingVote] = useState<IPendingVote | null>(null);
-	const { voter, asksForName, declareName, ballotFor } = useVoterIdentity(
-		refinement?.voterIdentity,
-	);
+	const [votesShownFor, setVotesShownFor] = useState<string | null>(null);
+	const [isChangingName, setIsChangingName] = useState(false);
+	const { voter, asksForName, changeableName, declareName, ballotFor } =
+		useVoterIdentity(refinement?.voterIdentity);
 
 	useEffect(() => {
 		let isCurrent = true;
@@ -180,6 +180,11 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 		setPendingVote(null);
 	};
 
+	const changeNameTo = (name: string) => {
+		declareName(name);
+		setIsChangingName(false);
+	};
+
 	const workItems = refinement?.workItems ?? NO_ROWS;
 	const parentReferences = useMemo(
 		() =>
@@ -191,7 +196,13 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 	const parentMap = useParentWorkItems(parentReferences);
 	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
 	const columns = useMemo(
-		() => createRefinementColumns(workItemTerm, parentMap, onVote),
+		() =>
+			createRefinementColumns(
+				workItemTerm,
+				parentMap,
+				onVote,
+				setVotesShownFor,
+			),
 		[workItemTerm, parentMap, onVote],
 	);
 
@@ -210,6 +221,9 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 		);
 	}
 
+	const votesShownOn = workItems.find(
+		(row) => row.referenceId === votesShownFor,
+	);
 	const workItemsTerm =
 		count === 1 ? workItemTerm : getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 
@@ -231,8 +245,25 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 			</TableContainer>
 			{pendingVote !== null && (
 				<VoterNamePrompt
+					confirmLabel="Vote"
 					onCancel={() => setPendingVote(null)}
-					onVote={voteUnderName}
+					onConfirm={voteUnderName}
+				/>
+			)}
+			{votesShownOn !== undefined && (
+				<VotesAndCommentsDialog
+					workItem={votesShownOn}
+					voterName={changeableName}
+					onChangeName={() => setIsChangingName(true)}
+					onClose={() => setVotesShownFor(null)}
+				/>
+			)}
+			{isChangingName && changeableName !== null && (
+				<VoterNamePrompt
+					initialName={changeableName}
+					confirmLabel="Save"
+					onCancel={() => setIsChangingName(false)}
+					onConfirm={changeNameTo}
 				/>
 			)}
 		</Stack>

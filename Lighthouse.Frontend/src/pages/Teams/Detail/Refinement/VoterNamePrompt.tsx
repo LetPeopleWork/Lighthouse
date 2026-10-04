@@ -10,16 +10,20 @@ import type React from "react";
 import { useState } from "react";
 
 interface VoterNamePromptProps {
+	initialName?: string;
+	confirmLabel: "Vote" | "Save";
 	onCancel: () => void;
-	onVote: (name: string) => void;
+	onConfirm: (name: string) => void;
 }
 
-/** Asks a voter without sign-in for the name their votes are cast under, the first time they vote. */
+/** Asks a voter without sign-in for the name their votes are cast under: before the first vote, or to change it. */
 const VoterNamePrompt: React.FC<Readonly<VoterNamePromptProps>> = ({
+	initialName = "",
+	confirmLabel,
 	onCancel,
-	onVote,
+	onConfirm,
 }) => {
-	const [name, setName] = useState("");
+	const [name, setName] = useState(initialName);
 	const isBlank = name.trim() === "";
 
 	return (
@@ -41,9 +45,9 @@ const VoterNamePrompt: React.FC<Readonly<VoterNamePromptProps>> = ({
 				<Button
 					variant="contained"
 					disabled={isBlank}
-					onClick={() => onVote(name)}
+					onClick={() => onConfirm(name)}
 				>
-					Vote
+					{confirmLabel}
 				</Button>
 			</DialogActions>
 		</Dialog>

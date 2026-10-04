@@ -250,7 +250,7 @@ describe("A voter casts a sizing vote from the list", () => {
 	});
 
 	// @us-11 @slice-11 @contract-shape:bounded-change
-	it.skip("lets the voter change the name their later votes carry, from the same browser", async () => {
+	it("lets the voter change the name their later votes carry, from the same browser", async () => {
 		const key = aBrowserThatVotedBefore("Jonas");
 		const sizingLogService = aSizingLogService({
 			castVote: vi.fn().mockResolvedValue(
@@ -298,7 +298,7 @@ describe("A voter casts a sizing vote from the list", () => {
 	});
 
 	// @us-11 @slice-11 @error @contract-shape:unbounded-preservation
-	it.skip("leaves the row as it was and says why when a vote is refused", async () => {
+	it("leaves the row as it was and says why when a vote is refused", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const sizingLogService = aSizingLogService({
 			castVote: vi
@@ -323,7 +323,7 @@ describe("A voter casts a sizing vote from the list", () => {
 	});
 
 	// @us-11 @slice-11 @boundary @contract-shape:pure-function
-	it.skip("counts one vote in the singular and more in the plural", async () => {
+	it("counts one vote in the singular and more in the plural", async () => {
 		renderTheRefinementTab(
 			gravitysRefinement({}, [
 				aRow("GR-058", "User activity tracking", "Next", { voteCount: 1 }),
@@ -465,7 +465,7 @@ describe("The votes and comments of a Work Item", () => {
 	});
 
 	// @us-11 @slice-11 @driving_port @contract-shape:pure-function
-	it.skip("opens from the Votes cell and says how the votes split", async () => {
+	it("opens from the Votes cell and says how the votes split", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const { user } = renderTheRefinementTab(
 			gravitysRefinement({}, [
