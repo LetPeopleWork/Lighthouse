@@ -92,6 +92,17 @@ const gravityWithStages = () =>
 		],
 	);
 
+// The votes column can say "Ready" too, so a stage assertion has to look inside the Stage cell alone.
+const theStageCellOf = async (referenceId: string): Promise<HTMLElement> => {
+	const cell = (await theRowOf(referenceId)).querySelector<HTMLElement>(
+		'[role="gridcell"][data-field="stage"]',
+	);
+	if (cell === null) {
+		throw new Error(`${referenceId} has no Stage cell`);
+	}
+	return cell;
+};
+
 const columnHeaders = () =>
 	screen
 		.getAllByRole("columnheader")
@@ -137,9 +148,9 @@ describe("The Refinement tab shows stages beside the votes", () => {
 	it("says each row's stage in words", async () => {
 		renderTheRefinementTab(gravityWithStages());
 
-		expect(await theRowOf("GR-058")).toHaveTextContent("Ready");
-		expect(await theRowOf("GR-051")).toHaveTextContent("Being refined");
-		expect(await theRowOf("GR-073")).toHaveTextContent("Waiting");
+		expect(await theStageCellOf("GR-058")).toHaveTextContent(/^Ready$/);
+		expect(await theStageCellOf("GR-051")).toHaveTextContent(/^Being refined$/);
+		expect(await theStageCellOf("GR-073")).toHaveTextContent(/^Waiting$/);
 	});
 
 	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
@@ -150,6 +161,7 @@ describe("The Refinement tab shows stages beside the votes", () => {
 			within(await theRowOf("GR-059")).getByLabelText(SIGNALS_DISAGREE),
 		).toBeInTheDocument();
 	});
+
 
 	// @us-03 @slice-03 @boundary @contract-shape:pure-function
 	it("marks only the row where the two signals disagree", async () => {
