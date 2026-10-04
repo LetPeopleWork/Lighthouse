@@ -30,8 +30,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     [Category("epic-5510-5881-refinement")]
     public class TeamSizingUsageEventsTests : UsageDataCollectorObservationTest
     {
-        private const string PendingSlice11 = "Epic #5510 slice 11 (#6149) - pending DELIVER";
-
         private const string PendingSlice13 = "Epic #5510 slice 13 (#6151) - pending DELIVER";
 
         private const string TeamSizingVoteCast = "TeamSizingVoteCast";
@@ -156,9 +154,9 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         // @driving_port @real-io @us-11 @us-13 @error @contract-shape:unbounded-preservation
-        [TestCase(TeamSizingVoteCast, ",\"route\":\"" + TeamMetricsTab + "\"", IgnoreReason = PendingSlice11)]
-        [TestCase(TeamSizingVoteCast, ",\"workTrackingSystem\":\"Jira\"", IgnoreReason = PendingSlice11)]
-        [TestCase(TeamSizingVoteCast, ",\"enabled\":true", IgnoreReason = PendingSlice11)]
+        [TestCase(TeamSizingVoteCast, ",\"route\":\"" + TeamMetricsTab + "\"")]
+        [TestCase(TeamSizingVoteCast, ",\"workTrackingSystem\":\"Jira\"")]
+        [TestCase(TeamSizingVoteCast, ",\"enabled\":true")]
         [TestCase(TeamSizingReadinessReached, ",\"route\":\"" + TeamMetricsTab + "\"", IgnoreReason = PendingSlice13)]
         public async Task The_event_carrying_anything_more_is_refused(string name, string somethingExtra)
         {
@@ -197,7 +195,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // @driving_port @real-io @us-11 @slice-11 @error @contract-shape:unbounded-preservation
         // Only the sizing events may say when something happened relative to a Refinement.
         [Test]
-        [Ignore(PendingSlice11)]
         public async Task Another_event_carrying_a_sizing_moment_is_refused()
         {
             var token = await ABrowserThatAgreedAsync();
