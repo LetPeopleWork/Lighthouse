@@ -2,6 +2,7 @@ import { useCallback, useContext, useRef, useState } from "react";
 import type { useVoterIdentity } from "../../../../hooks/useVoterIdentity";
 import type {
 	IRefinementRow,
+	RowReadiness,
 	SizingAnswer,
 } from "../../../../models/Refinement/Refinement";
 import { UsageDataSizingMoment } from "../../../../models/UsageData/UsageData";
@@ -25,12 +26,22 @@ const sizingMomentOfAVote = (): UsageDataSizingMoment =>
 	UsageDataSizingMoment.NoCadence;
 
 /**
+ * Whether a vote moved a Work Item to Ready. "Before" is the row as this browser last showed it, so a
+ * Work Item that was Ready already is never counted a second time.
+ */
+export const tipsToReady = (
+	before: RowReadiness | undefined,
+	after: RowReadiness | undefined,
+): boolean => before !== "Ready" && after === "Ready";
+
+/**
  * Casting a vote from the tab. A voter without sign-in who has not named themselves yet is asked first, and
  * the vote they chose waits until they have.
  */
 export const useVoteCasting = (
 	teamId: number,
 	{ voter, asksForName, declareName, ballotFor }: VoterIdentity,
+	readinessShownFor: (referenceId: string) => RowReadiness | undefined,
 	onAnswered: (answeredRow: IRefinementRow) => void,
 	onFailure: (error: unknown) => void,
 ) => {
@@ -56,6 +67,7 @@ export const useVoteCasting = (
 			sending.current.add(referenceId);
 			showSending();
 
+			const readinessBefore = readinessShownFor(referenceId);
 			const { vote, voterKey } = ballotFor(answer, declared);
 			sizingLogService
 				.castVote(teamId, referenceId, vote, voterKey)
@@ -65,6 +77,12 @@ export const useVoteCasting = (
 						name: UsageDataEventName.TeamSizingVoteCast,
 						sizingMoment: sizingMomentOfAVote(),
 					});
+					if (tipsToReady(readinessBefore, answeredRow.readiness)) {
+						reportUsage({
+							name: UsageDataEventName.TeamSizingReadinessReached,
+							sizingMoment: sizingMomentOfAVote(),
+						});
+					}
 				})
 				.catch(onFailure)
 				.finally(() => {
@@ -74,6 +92,7 @@ export const useVoteCasting = (
 		},
 		[
 			ballotFor,
+			readinessShownFor,
 			sizingLogService,
 			teamId,
 			onAnswered,

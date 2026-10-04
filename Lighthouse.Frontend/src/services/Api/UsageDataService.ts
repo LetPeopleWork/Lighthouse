@@ -32,6 +32,7 @@ export const UsageDataEventName = {
 	TeamForecastRealityCheckRun: "TeamForecastRealityCheckRun",
 	TeamRefinementConfigured: "TeamRefinementConfigured",
 	TeamSizingVoteCast: "TeamSizingVoteCast",
+	TeamSizingReadinessReached: "TeamSizingReadinessReached",
 } as const;
 
 export type UsageDataEventName =
@@ -54,7 +55,7 @@ export interface IUsageDataEvent {
 	optionalFeature?: UsageDataOptionalFeature;
 	/** Only on a behaviour setting being switched: whether it is now on. */
 	enabled?: boolean;
-	/** Only on a sizing vote: when it was cast relative to the Team's refinement. */
+	/** Only on a sizing vote and on the vote that made a Work Item Ready: when it happened relative to the Team's refinement. */
 	sizingMoment?: UsageDataSizingMoment;
 	/** How long before this batch was handed in the thing happened, so a reader can order them. */
 	offsetMs: number;

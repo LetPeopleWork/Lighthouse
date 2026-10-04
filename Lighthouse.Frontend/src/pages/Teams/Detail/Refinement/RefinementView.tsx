@@ -86,8 +86,21 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 		[showError, getTerm],
 	);
 
+	const readinessShownFor = useCallback(
+		(referenceId: string) =>
+			refinement?.workItems.find((row) => row.referenceId === referenceId)
+				?.readiness,
+		[refinement],
+	);
+
 	const { onVote, votesBeingSent, isAskingForName, voteUnderName, cancelVote } =
-		useVoteCasting(team.id, voterIdentity, showAnsweredRow, showVoteRefusal);
+		useVoteCasting(
+			team.id,
+			voterIdentity,
+			readinessShownFor,
+			showAnsweredRow,
+			showVoteRefusal,
+		);
 
 	const changeNameTo = (name: string) => {
 		declareName(name);

@@ -1,6 +1,9 @@
 import { screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { IRefinementRow } from "../../../../models/Refinement/Refinement";
+import type {
+	IRefinementRow,
+	RowReadiness,
+} from "../../../../models/Refinement/Refinement";
 import {
 	aBrowserThatVotedBefore,
 	aRow,
@@ -11,6 +14,7 @@ import {
 	theButton,
 	theRowOf,
 } from "../../../../tests/RefinementTabTestKit";
+import { tipsToReady } from "./useVoteCasting";
 
 /**
  * What the votes make of each Work Item, as the Refinement tab says it: Ready, how many more Yes votes
@@ -175,7 +179,7 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 	});
 
 	// @us-13 @slice-13 @kpi-OUT-5510-K5-ready-before-the-day @contract-shape:bounded-change
-	it.skip("reports the vote that makes a Work Item Ready to usage data", async () => {
+	it("reports the vote that makes a Work Item Ready to usage data", async () => {
 		await castingYesTurnsItInto(
 			{ voteCount: 2, readiness: "MoreYesNeeded", missingVotes: 1 },
 			{ voteCount: 3, myVote: "Yes", readiness: "Ready", missingVotes: null },
@@ -188,7 +192,7 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 	});
 
 	// @us-13 @slice-13 @boundary @kpi-OUT-5510-K5-ready-before-the-day @contract-shape:unbounded-preservation
-	it.skip("reports no readiness for a vote on a Work Item that was Ready already", async () => {
+	it("reports no readiness for a vote on a Work Item that was Ready already", async () => {
 		await castingYesTurnsItInto(
 			{ voteCount: 3, readiness: "Ready", missingVotes: null },
 			{ voteCount: 4, myVote: "Yes", readiness: "Ready", missingVotes: null },
@@ -200,7 +204,7 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 	});
 
 	// @us-13 @slice-13 @boundary @kpi-OUT-5510-K5-ready-before-the-day @contract-shape:unbounded-preservation
-	it.skip("reports no readiness for a vote that leaves the Work Item short", async () => {
+	it("reports no readiness for a vote that leaves the Work Item short", async () => {
 		await castingYesTurnsItInto(
 			{ voteCount: 0, readiness: "MoreYesNeeded", missingVotes: 3 },
 			{
@@ -215,4 +219,34 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 			expect.objectContaining({ name: READINESS_REACHED }),
 		);
 	});
+});
+
+const READINESSES: RowReadiness[] = [
+	"Ready",
+	"MoreYesNeeded",
+	"MoreVotersNeeded",
+	"NeedsDiscussion",
+];
+
+const TIPPING_PAIRS = [
+	"MoreYesNeeded -> Ready",
+	"MoreVotersNeeded -> Ready",
+	"NeedsDiscussion -> Ready",
+];
+
+describe("A vote makes a Work Item Ready only when it was not Ready before", () => {
+	it.each(
+		READINESSES.flatMap((before) =>
+			READINESSES.map((after) => ({
+				before,
+				after,
+				reported: TIPPING_PAIRS.includes(`${before} -> ${after}`),
+			})),
+		),
+	)(
+		"$before -> $after reports readiness: $reported",
+		({ before, after, reported }) => {
+			expect(tipsToReady(before, after)).toBe(reported);
+		},
+	);
 });
