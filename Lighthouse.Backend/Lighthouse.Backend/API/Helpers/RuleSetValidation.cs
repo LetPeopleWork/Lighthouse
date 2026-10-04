@@ -1,3 +1,4 @@
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
@@ -15,6 +16,10 @@ namespace Lighthouse.Backend.API.Helpers
 
         private const string ForecastFilterLabel = "Forecast filter rule set";
 
+        private const string ReadyStageLabel = "'Ready when' rule";
+
+        private const string BeingRefinedStageLabel = "'Being refined when' rule";
+
         public static string? ValidateBlockedRuleSet(
             string? ruleSetJson,
             WorkTrackingSystemOptionsOwner owner,
@@ -31,6 +36,22 @@ namespace Lighthouse.Backend.API.Helpers
             return Validate(ruleSetJson, ForecastFilterLabel, ruleSet => forecastFilterRuleService.ValidateRuleSet(ruleSet, team));
         }
 
+        public static string? ValidateStageRules(
+            StageRulesDto? stageRules,
+            Team team,
+            IForecastFilterRuleService forecastFilterRuleService)
+        {
+            if (stageRules == null)
+            {
+                return null;
+            }
+
+            bool IsValid(WorkItemRuleSet ruleSet) => forecastFilterRuleService.ValidateRuleSet(ruleSet, team);
+
+            return Validate(stageRules.Ready?.ToRuleSet(), ReadyStageLabel, IsValid)
+                ?? Validate(stageRules.BeingRefined?.ToRuleSet(), BeingRefinedStageLabel, IsValid);
+        }
+
         private static string? Validate(string? ruleSetJson, string label, Func<WorkItemRuleSet, bool> isValid)
         {
             if (string.IsNullOrWhiteSpace(ruleSetJson))
@@ -43,6 +64,11 @@ namespace Lighthouse.Backend.API.Helpers
                 return $"{label} is not valid JSON.";
             }
 
+            return Validate(ruleSet, label, isValid);
+        }
+
+        private static string? Validate(WorkItemRuleSet? ruleSet, string label, Func<WorkItemRuleSet, bool> isValid)
+        {
             if (ruleSet == null || ruleSet.Conditions.Count == 0)
             {
                 return null;

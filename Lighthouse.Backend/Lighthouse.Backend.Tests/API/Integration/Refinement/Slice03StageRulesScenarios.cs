@@ -255,7 +255,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-03 @slice-03 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task A_rule_on_a_field_Work_Items_do_not_have_is_refused_and_nothing_is_saved()
         {
             var gravity = await GivenGravityWithItsReadyRuleTagging((UserActivityTracking, ReadyTag));
@@ -268,7 +267,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-03 @slice-03 @error @contract-shape:unbounded-preservation
         // The same limit the blocked-items rule editor has: twenty conditions.
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task A_rule_with_more_conditions_than_the_rule_editor_allows_is_refused_and_nothing_is_saved()
         {
             var gravity = await GivenGravityWithItsReadyRuleTagging((UserActivityTracking, ReadyTag));
@@ -280,7 +278,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task A_rule_of_twenty_conditions_is_accepted()
         {
             var gravity = await GivenGravityRefinesWithoutStages();

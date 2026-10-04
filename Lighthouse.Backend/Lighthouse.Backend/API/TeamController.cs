@@ -258,7 +258,8 @@ namespace Lighthouse.Backend.API
                 teamSetting.ForecastFilterRuleSetJson, team, forecastFilterRuleService);
 
             return filterError
-                ?? RuleSetValidation.ValidateBlockedRuleSet(teamSetting.BlockedRuleSetJson, team, blockedItemService);
+                ?? RuleSetValidation.ValidateBlockedRuleSet(teamSetting.BlockedRuleSetJson, team, blockedItemService)
+                ?? RuleSetValidation.ValidateStageRules(teamSetting.Refinement?.StageRules, team, forecastFilterRuleService);
         }
     }
 }

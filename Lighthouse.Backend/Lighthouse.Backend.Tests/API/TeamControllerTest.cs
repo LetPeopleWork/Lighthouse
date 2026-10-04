@@ -892,6 +892,94 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task UpdateTeam_ValidStageRules_ValidatesBothAgainstTheTeamAndSavesThem()
+        {
+            var team = new Team { Id = 1, DoneItemsCutoffDays = 180 };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+
+            var dto = ASaveWithStageRules(AStageRuleOn("ready"), AStageRuleOn("refining"));
+
+            var subject = CreateSubject();
+            var result = await subject.UpdateTeam(1, dto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                Assert.That(team.RefinementSettings?.StageRules.Ready?.Conditions[0].Value, Is.EqualTo("ready"));
+                Assert.That(team.RefinementSettings?.StageRules.BeingRefined?.Conditions[0].Value, Is.EqualTo("refining"));
+                forecastFilterRuleServiceMock.Verify(x => x.ValidateRuleSet(It.IsAny<WorkItemRuleSet>(), team), Times.Exactly(2));
+                teamRepositoryMock.Verify(x => x.Save(), Times.Once);
+            }
+        }
+
+        [TestCase(true, "'Ready when' rule is invalid")]
+        [TestCase(false, "'Being refined when' rule is invalid")]
+        public async Task UpdateTeam_InvalidStageRule_IsRefusedBeforeAnythingIsWritten(bool readyIsInvalid, string expectedError)
+        {
+            var team = new Team { Id = 1, DoneItemsCutoffDays = 180 };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+            forecastFilterRuleServiceMock
+                .Setup(x => x.ValidateRuleSet(It.Is<WorkItemRuleSet>(ruleSet => ruleSet.Conditions[0].Value == "unknown"), It.IsAny<Team>()))
+                .Returns(false);
+
+            var dto = readyIsInvalid
+                ? ASaveWithStageRules(AStageRuleOn("unknown"), AStageRuleOn("refining"))
+                : ASaveWithStageRules(AStageRuleOn("ready"), AStageRuleOn("unknown"));
+
+            var subject = CreateSubject();
+            var result = await subject.UpdateTeam(1, dto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+                Assert.That((result.Result as BadRequestObjectResult)?.Value as string, Does.StartWith(expectedError));
+                Assert.That(team.RefinementSettings, Is.Null);
+                teamRepositoryMock.Verify(x => x.Save(), Times.Never);
+            }
+        }
+
+        [Test]
+        public async Task UpdateTeam_SaveWithoutStageRules_NeverValidatesThem()
+        {
+            var team = new Team { Id = 1, DoneItemsCutoffDays = 180 };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+
+            var dto = ASaveWithStageRules(AStageRuleOn("ready"), AStageRuleOn("refining"));
+            dto.Refinement!.StageRules = null;
+
+            var subject = CreateSubject();
+            var result = await subject.UpdateTeam(1, dto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                forecastFilterRuleServiceMock.Verify(x => x.ValidateRuleSet(It.IsAny<WorkItemRuleSet>(), It.IsAny<Team>()), Times.Never);
+            }
+        }
+
+        private static TeamSettingDto ASaveWithStageRules(StageRuleDto ready, StageRuleDto beingRefined)
+        {
+            return new TeamSettingDto
+            {
+                WorkTrackingSystemConnectionId = 1,
+                DoneItemsCutoffDays = 180,
+                ThroughputHistory = 30,
+                Refinement = new RefinementSettingsDto
+                {
+                    StageRules = new StageRulesDto { Ready = ready, BeingRefined = beingRefined },
+                },
+            };
+        }
+
+        private static StageRuleDto AStageRuleOn(string tag)
+        {
+            return new StageRuleDto
+            {
+                Conditions = [new WorkItemRuleCondition { FieldKey = "workitem.tags", Operator = "contains", Value = tag }],
+            };
+        }
+
+        [Test]
         public async Task UpdateTeam_ValidStateMappings_ReturnsOk()
         {
             var team = new Team { Id = 1, DoneItemsCutoffDays = 180 };
