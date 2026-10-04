@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Implementation.Refinement;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Refinement;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
@@ -25,6 +26,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<ISizingLogRepository> sizingLogMock;
         private List<SizingLogEntry> appended;
+        private Mock<ILogger<SizingLogCommands>> loggerMock;
         private SizingLogCommands subject;
 
         [SetUp]
@@ -54,12 +56,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             sizingLogMock = new Mock<ISizingLogRepository>();
             sizingLogMock.Setup(log => log.Append(It.IsAny<SizingLogEntry>())).Callback<SizingLogEntry>(appended.Add);
 
+            loggerMock = new Mock<ILogger<SizingLogCommands>>();
+
             subject = new SizingLogCommands(
                 teamRepositoryMock.Object,
                 new RefinementList(workItemRepositoryMock.Object),
                 new SleYardstickResolver(teamMetricsServiceMock.Object, clockMock.Object),
                 sizingLogMock.Object,
-                clockMock.Object);
+                clockMock.Object,
+                loggerMock.Object);
         }
 
         [TestCase(SizingAnswer.Yes, SizingChannel.Web, null)]
@@ -106,8 +111,40 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(outcome, Is.EqualTo(VoteOutcome.WorkItemNotInRefinement));
-                Assert.That(appended, Is.Empty);
+                sizingLogMock.Verify(log => log.Append(It.IsAny<SizingLogEntry>()), Times.Never);
             }
+        }
+
+        [TestCase(BeingBuilt, SizingChannel.Web)]
+        [TestCase("GR-999", SizingChannel.Cli)]
+        public void ARefusedVoteLogsWhyForWhichTeamAndChannelButNeverWhoOrWhat(string workItem, SizingChannel channel)
+        {
+            GivenTheTeam(ATeamThatRefinesInBacklog(sleProbability: 85, sleDays: 7));
+
+            subject.Vote(TeamId, workItem, new SizingVote(SizingAnswer.Yes, channel, "too big"), Jonas);
+
+            var lines = LoggedLines();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(lines.Select(line => line.Level), Is.EqualTo(new List<LogLevel> { LogLevel.Information }));
+                Assert.That(lines.Single().Fields, Is.EqualTo(new Dictionary<string, string?>
+                {
+                    ["Reason"] = "work-item-not-in-refinement",
+                    ["TeamId"] = TeamId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    ["Channel"] = channel.ToString(),
+                }));
+                Assert.That(lines.Single().Text, Does.Not.Contain(workItem).And.Not.Contain(Jonas.DisplayName).And.Not.Contain(Jonas.Key).And.Not.Contain("too big"));
+            }
+        }
+
+        [Test]
+        public void AVoteThatIsTakenLogsNothingAtInformation()
+        {
+            GivenTheTeam(ATeamThatRefinesInBacklog(sleProbability: 85, sleDays: 7));
+
+            subject.Vote(TeamId, InRefinement, new SizingVote(SizingAnswer.Yes, SizingChannel.Web, null), Jonas);
+
+            Assert.That(LoggedLines().Where(line => line.Level >= LogLevel.Information), Is.Empty);
         }
 
         [Test]
@@ -134,8 +171,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             entry.TeamId, entry.WorkItemReferenceId, entry.Kind, entry.Answer, entry.Comment,
             entry.VoterKey, entry.VoterProfileId, entry.VoterDisplayName, entry.RecordedAt, entry.Channel);
 
+        private List<LoggedLine> LoggedLines()
+            => loggerMock.Invocations
+                .Where(invocation => invocation.Method.Name == nameof(ILogger.Log))
+                .Select(invocation => AsLoggedLine(invocation.Arguments))
+                .OfType<LoggedLine>()
+                .ToList();
+
+        private static LoggedLine? AsLoggedLine(IReadOnlyList<object?> arguments)
+            => arguments is [LogLevel level, _, IEnumerable<KeyValuePair<string, object?>> state, ..]
+                ? new LoggedLine(
+                    level,
+                    state
+                        .Where(field => field.Key != "{OriginalFormat}")
+                        .ToDictionary(field => field.Key, field => Convert.ToString(field.Value, System.Globalization.CultureInfo.InvariantCulture)),
+                    state.ToString() ?? string.Empty)
+                : null;
+
         private void GivenTheTeam(Team team)
             => teamRepositoryMock.Setup(repository => repository.GetById(TeamId)).Returns(team);
+
+        private sealed record LoggedLine(LogLevel Level, Dictionary<string, string?> Fields, string Text);
 
         private sealed record EntrySummary(
             int TeamId,

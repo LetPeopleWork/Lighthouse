@@ -20,6 +20,8 @@ namespace Lighthouse.Backend.API
         IRefinementViewQuery refinementViewQuery,
         VoterIdentityResolver voterIdentityResolver) : ControllerBase
     {
+        private const string WorkItemNotInRefinementCode = "work-item-not-in-refinement";
+
         [HttpPost("votes")]
         public ActionResult<RefinementRowDto> CastVote(
             int teamId,
@@ -44,9 +46,16 @@ namespace Lighthouse.Backend.API
             {
                 VoteOutcome.Recorded => RowAsItNowStands(teamId, workItemId, voterKey),
                 VoteOutcome.TeamNotFound => NotFound(),
-                VoteOutcome.WorkItemNotInRefinement => Problem(statusCode: StatusCodes.Status409Conflict, title: "That Work Item is not in refinement."),
+                VoteOutcome.WorkItemNotInRefinement => Refused(StatusCodes.Status409Conflict, "That Work Item is not in refinement.", WorkItemNotInRefinementCode),
                 _ => throw new System.Diagnostics.UnreachableException($"No such vote outcome: {outcome}"),
             };
+        }
+
+        private ObjectResult Refused(int statusCode, string title, string code)
+        {
+            var problem = ProblemDetailsFactory.CreateProblemDetails(HttpContext, statusCode: statusCode, title: title);
+            problem.Extensions["code"] = code;
+            return new ObjectResult(problem) { StatusCode = statusCode };
         }
 
         private ActionResult<RefinementRowDto> RowAsItNowStands(int teamId, string workItemId, string? voterKey)

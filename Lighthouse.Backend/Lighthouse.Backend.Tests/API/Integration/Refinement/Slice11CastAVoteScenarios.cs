@@ -81,7 +81,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase(UserActivityTracking)]
         [TestCase(AdvancedReporting)]
         [TestCase(LoadTesting)]
-        [Ignore(PendingSlice11)]
         public async Task Votes_are_open_on_every_Work_Item_in_refinement(string workItem)
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -95,7 +94,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // GR-040 is being implemented, not refined; GR-999 is a Work Item the tracker does not hold.
         [TestCase(BillingExport)]
         [TestCase("GR-999")]
-        [Ignore(PendingSlice11)]
         public async Task A_Work_Item_that_is_not_in_refinement_cannot_be_voted_on(string workItem)
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -213,7 +211,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // The log keeps every vote. A Work Item that leaves refinement is no longer listed; when it comes
         // back, so do its votes.
         [Test]
-        [Ignore(PendingSlice11)]
         public async Task Votes_outlive_a_Work_Item_leaving_refinement_and_count_again_when_it_returns()
         {
             var gravity = await GivenJonasHasVotedYesOnConfigurationManagement();
