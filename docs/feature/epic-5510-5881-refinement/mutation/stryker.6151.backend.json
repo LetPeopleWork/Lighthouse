@@ -1,0 +1,37 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/API/DTO/RefinementSettingsDto.cs",
+      "**/API/DTO/RefinementViewDto.cs",
+      "**/API/Helpers/RefinementSettingsValidator.cs",
+      "**/API/Helpers/TeamExtensions.cs",
+      "**/API/RefinementVotesController.cs",
+      "**/Models/Refinement/RefinementSettings.cs",
+      "**/Models/UsageData/UsageDataEventShapes.cs",
+      "**/Services/Implementation/Refinement/RefinementResolution.cs",
+      "**/Services/Implementation/Refinement/RefinementViewQuery.cs",
+      "**/Services/Implementation/Refinement/SizingLogCommands.cs",
+      "**/Services/Interfaces/Refinement/IRefinementViewQuery.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Tests.Services.Implementation.Refinement|FullyQualifiedName~RefinementVotesControllerTest|FullyQualifiedName~RefinementSettingsValidatorTest|FullyQualifiedName~RefinementSettingsJsonTest|FullyQualifiedName~RefinementSettingsDtoTest|FullyQualifiedName~RefinementReadinessSyncTest|FullyQualifiedName~StateMappingSyncTest|FullyQualifiedName~BaselineSettingsSyncTest|FullyQualifiedName~EstimationFieldSyncTest|FullyQualifiedName~BlockedRuleSetSyncTest|FullyQualifiedName~UsageDataEventShapesTests)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

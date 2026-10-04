@@ -395,3 +395,176 @@ Frontend:
   `services/UsageData/{usageDataBuffer,usageDataReporter}.ts` — an enum member and the new event part
   passed through; covered by `reports each vote the server took to usage data` in the votes spec.
 - `setupTests.ts` — test setup.
+
+# Mutation testing — 6151 (readiness by votes, E3 slice 13)
+
+Run 2026-10-04 against `main` @ `62ff787b2`, with the production code frozen at that commit; only tests
+were added. Gate is 80 % kill rate on both stacks, judged on mutants on the lines slice 13 added or
+changed (`git diff eb6fb05dd^..62ff787b2`).
+
+| stack | score | tested | killed | survived | no coverage | timeout | wall clock |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 5.0.0), slice-13 lines | **100.00 %** | 80 | 80 | 0 | 0 | 0 | 3 m 13 s |
+| Backend, every mutated file whole | 80.53 % | 190 | 153 | 18 | 19 | 0 | (same run) |
+| Frontend (StrykerJS 10.0.0) | **92.75 %** | 207 | 192 | 15 | 0 | 0 | 13 m 45 s |
+
+Configs: `stryker.6151.backend.json`, `stryker.6151.frontend.json`, `vitest.stryker.6151.ts`.
+Backend runs from `Lighthouse.Backend/Lighthouse.Backend.Tests/`
+(`dotnet stryker -f ../../docs/feature/epic-5510-5881-refinement/mutation/stryker.6151.backend.json`);
+frontend from `Lighthouse.Frontend/`, with `vitest.stryker.6151.ts` copied there first
+(`pnpm exec stryker run ../docs/feature/epic-5510-5881-refinement/mutation/stryker.6151.frontend.json`).
+
+First runs, before this pass added tests: backend **76.25 %** on the slice-13 lines (61 / 80: 8
+survived, 11 with no covering test; 68.42 % whole-file), frontend **76.33 %** (158 / 207: 47 survived,
+2 with no covering test). Both were below the gate.
+
+## Backend
+
+**Why two backend rows.** Stryker.NET ignores line ranges, so every file is mutated whole and the
+survivors are triaged by line. `TeamExtensions.cs` (159 lines, of which `SyncReadiness` and its call are
+this slice's) carries most of the difference: its 32 non-killed mutants sit in `CreateTeamDto`, the
+throughput-date conversions, the cycle-time definitions and `SyncRefinement`'s state handling, all
+written before this slice. None of the whole-file survivors sits on a slice-13 line.
+
+Scope sanity check: `171 total mutants will be tested` over the eleven mutated files, 249 tests in the
+filter. The `test-case-filter` keeps to the unit tests: the `Tests.Services.Implementation.Refinement`
+namespace and the classes named after the vote's controller, the settings validator, the settings JSON,
+the settings DTO, the Team-settings sync tests and the event shapes. It excludes the acceptance suite
+(`API.Integration`, `Integration.Containers`). The `Slice13Readiness` acceptance scenarios were **not**
+needed: after this pass the unit tests alone kill every mutant on the slice's lines.
+
+| file | first run, slice-13 lines (killed / tested) | final, slice-13 lines | final, whole file |
+| --- | --- | --- | --- |
+| `API/DTO/RefinementSettingsDto.cs` | 9 / 13 (2 no coverage) | 13 / 13 | 14 / 16 |
+| `API/Helpers/RefinementSettingsValidator.cs` | 27 / 27 | 27 / 27 | 33 / 33 |
+| `API/Helpers/TeamExtensions.cs` | 0 / 3 (3 no coverage) | 3 / 3 | 19 / 51 |
+| `API/RefinementVotesController.cs` | 3 / 5 (1 no coverage) | 5 / 5 | 24 / 26 |
+| `Services/Implementation/Refinement/RefinementResolution.cs` | 20 / 26 (4 no coverage) | 26 / 26 | 36 / 36 |
+| `Services/Implementation/Refinement/RefinementViewQuery.cs` | 0 / 1 | 1 / 1 | 7 / 7 |
+| `Services/Implementation/Refinement/SizingLogCommands.cs` | 2 / 4 | 4 / 4 | 9 / 9 |
+| `Services/Interfaces/Refinement/IRefinementViewQuery.cs` | 0 / 1 (1 no coverage) | 1 / 1 | 1 / 1 |
+| `Models/UsageData/UsageDataEventShapes.cs` | no mutant on the slice's line | — | 10 / 10 |
+| `Models/Refinement/RefinementSettings.cs` | no mutant on the slice's lines | — | 0 / 1 |
+| `API/DTO/RefinementViewDto.cs` | no mutant | — | — |
+
+`RefinementViewDto.cs` is property initialisers only, so Stryker.NET makes nothing of it; what it adds
+(`Readiness`, `MissingVotes`, `MadeReady`) is pinned by the controller test below. The slice's one line
+in `UsageDataEventShapes.cs` adds `TeamSizingReadinessReached` to a collection expression, which
+Stryker.NET does not mutate; `UsageDataEventShapesTests` checks that event carries its sizing moment
+and nothing else. `IRefinementViewQuery.cs` was added to `mutate` although it is an interface file,
+because `ReadyByVotesCount` is a rule, not a declaration.
+
+### Closed by this pass
+
+- **`RefinementResolution.cs:49, 50, 53`** (6: four no coverage, two survived) — `MadeReady` had no unit
+  test; the readiness of the log before and after the entry was never compared. `RefinementResolutionTest`
+  — `Only_the_entry_that_moves_a_Work_Item_to_Ready_made_it_Ready`: the second Yes of two made it Ready,
+  the first did not, a Yes on an already-Ready Work Item did not, the entry that made it Ready still did
+  after a later No took it away, and that No did not.
+- **`SizingLogCommands.cs:54, 60`** (2) — no test had a vote make a Work Item Ready, and none had a Team
+  with its own readiness. `SizingLogCommandsTest` —
+  `AVoteSaysWhetherItMadeTheWorkItemReadyUnderTheTeamsOwnReadiness`: under one Yes from one voter, a Yes
+  or a "Yes, if…" is `RecordedAndMadeReady` and a No is `Recorded`.
+- **`RefinementVotesController.cs:51, 52`** (2) — whether the answered row says it was made Ready.
+  `RefinementVotesControllerTest` — `ARecordedVoteSaysWhetherItIsTheVoteThatMadeItsRowReady`.
+- **`RefinementViewQuery.cs:31`, `IRefinementViewQuery.cs:15`** (2) — the view was only ever read under
+  the default readiness, and nothing read `ReadyByVotesCount`. `RefinementViewQueryTest` —
+  `EachRowStandsUnderTheTeamsOwnReadinessAndOnlyReadyRowsAreCounted`: three rows under one Yes from one
+  voter, one of them Ready, counted as one.
+- **`RefinementSettingsDto.cs:46, 90, 119, 120`** (4) — the readiness read out to the form, and a
+  discussion rule left out of a save. New `RefinementSettingsDtoTest`: the readiness a Team has is read
+  out whole; rules read out and sent back replace the stored ones, a rule that is off included; a save
+  that sends only the No rule keeps the stored "Yes, if…" rule, and the reverse.
+- **`TeamExtensions.cs:140, 147, 149`** (3, all no coverage) — `SyncReadiness` was reached only by the
+  acceptance scenarios. New `RefinementReadinessSyncTest`: a saved readiness is stored with what it
+  leaves out kept, and a save that says nothing about readiness leaves it as it was.
+
+### Accepted survivors
+
+None on a slice-13 line. The whole-file survivors are on code earlier slices wrote and gated:
+`TeamExtensions.cs` (above), `RefinementSettingsDto.cs:32, 36` and `RefinementSettings.cs:17` (the
+refinement-state setting's constructor and `State` defaults, slice 01), and the two
+`UnreachableException` messages in `RefinementVotesController.cs:55, 76`, accepted in 6149.
+
+## Frontend
+
+`mutate` takes `ReadinessCell.tsx` whole and line ranges for every changed file:
+`RefinementSettingsSection.tsx` 30-160, 212-246 and 260-300, `ModifyTeamSettings.tsx` 87-90 and
+270-284, `RefinementView.tsx` 31-58, 102 and 161-169, `refinementColumns.tsx` 71-81, `useVoteCasting.ts`
+70-75 and `voteWording.ts` 52-65. The ranges in `RefinementView.tsx` and `useVoteCasting.ts` leave out
+the slice-11 lines gated in 6149. The initial test run ran 158 tests from the 9 specs in
+`vitest.stryker.6151.ts`, written from `ls`.
+
+| file | first run (killed / tested) | final (killed / tested) |
+| --- | --- | --- |
+| `Common/Team/RefinementSettingsSection.tsx` (ranges above) | 87 / 127 | 114 / 127 |
+| `Common/Team/ModifyTeamSettings.tsx` (ranges above) | 13 / 17 | 17 / 17 |
+| `Refinement/RefinementView.tsx` (ranges above) | 29 / 34 | 32 / 34 |
+| `Refinement/ReadinessCell.tsx` | 5 / 5 | 5 / 5 |
+| `Refinement/refinementColumns.tsx` (range above) | 4 / 4 | 4 / 4 |
+| `Refinement/useVoteCasting.ts` (range above) | 4 / 4 | 4 / 4 |
+| `Refinement/voteWording.ts` (range above) | 16 / 16 | 16 / 16 |
+
+### Closed by this pass
+
+All in `ModifyTeamSettings.readiness.test.tsx` unless named otherwise.
+
+- **`RefinementSettingsSection.tsx:37`, `ModifyTeamSettings.tsx:281`** (4) — no spec opened a Team that had
+  never chosen refinement, and none checked the states a readiness save carries. `starts a Team that has
+  never chosen refinement at the default readiness, and saves it with no states`; `keeps the chosen
+  refinement states when readiness changes`.
+- **`ModifyTeamSettings.tsx:89`** — the blocker's wording. `names readiness as what keeps the settings
+  from being saved`, against the literal.
+- **`RefinementSettingsSection.tsx:140, 146, 270, 282`** (12) — the fields were checked for their helper
+  text, never for being marked. `marks $refused as refused and leaves $accepted unmarked` (Yes votes and
+  voters) and `marks $refused as refused, describes it by why, and leaves $accepted unmarked` (both
+  discussion thresholds: `aria-invalid`, the accessible description, and no `aria-describedby` on the
+  field that is fine).
+- **`RefinementSettingsSection.tsx:272, 284`** (4) — `does not let any of its numbers step below one
+  vote`: `min` and `step` of all four number fields.
+- **`RefinementSettingsSection.tsx:230, 242`** (10) — remembering a threshold when a rule is switched
+  off. The existing case switched back on at the stored threshold, which the first render already
+  remembers. `switches a rule back on at the threshold it was changed to before it was switched off`;
+  `switches a rule that was refused when switched off back on at its last allowed threshold` (which
+  first switches the rule off and on once, so that switching on must not overwrite what is remembered);
+  `switches on a No rule stored as off at its default threshold`. The last mutant of the ten, the
+  `!on && current !== null` pair forced `true`, survived the second run and was killed by the off-and-on
+  step added to the refused case, checked by hand before the final run.
+- **`RefinementView.tsx:41, 45`** (3) — `RefinementView.readiness.test.tsx`: `leaves the next Team's count
+  alone when a vote cast before switching Teams is answered after` (the answered row is not in the list
+  any more, so the count must not move), and `names no ready count, also after a vote, when the server
+  sends none`.
+
+### Accepted survivors
+
+| line | mutant | why it survives |
+| --- | --- | --- |
+| `RefinementSettingsSection.tsx:242` | `current !== null` forced `true` | equivalent: the branch only runs on switching a rule off, and a rule can only be switched off from a ticked box, which means its threshold is not null |
+| `RefinementSettingsSection.tsx:242` | `!on && current !== null` → `!on \|\| current !== null` | equivalent: switching on, `current` is null and both read false; switching off, both read true |
+| `RefinementSettingsSection.tsx:69` | the empty string shown for a cleared field → `"Stryker was here!"` | equivalent: a number input sanitises any value that is not a number to empty, in the browser and in jsdom alike |
+| `RefinementSettingsSection.tsx:152` | `error !== null` forced `true` | renders an empty helper paragraph under a threshold that is fine; nothing points at it (`aria-describedby` is unset without an error), so it is a few pixels of layout |
+| `RefinementSettingsSection.tsx:122, 123` (×3), `134`, `260`, `263`, `275`, `287` | Grid `size`, `Box` and `TextField` `sx` objects and their strings | layout only |
+| `RefinementView.tsx:32` | `row?.readiness` → `row.readiness` | equivalent: both callers pass a defined row, since the shown row is checked for `undefined` first |
+| `RefinementView.tsx:102` | `current === null` → `false` | a row's answer only arrives for a vote cast from a rendered row, and rows render only once `refinement` is set; nothing sets it back to null (accepted in 6149 for the same line) |
+
+## Not mutated
+
+Backend:
+
+- `API/TeamController.cs`, `API/TeamsController.cs` — the slice changed one line in each, handing the
+  validator the stored `RefinementSettings` (`storedTeam?.RefinementSettings`) or `null` for a new Team.
+  Stryker.NET has no mutator for a `?.` member access or a `null` argument, so mutating the two
+  controllers whole would only score their older code. The stored side is pinned through the update
+  endpoint by the `Slice13Readiness` scenarios that refuse a partial save judged against it; the `null`
+  a new Team passes is pinned at the validator by
+  `A_readiness_save_for_a_Team_without_refinement_is_judged_with_the_default_side`.
+- `Models/Refinement/RowReadiness.cs`, `Models/UsageData/UsageDataEventName.cs`,
+  `Services/Interfaces/Refinement/ISizingLogCommands.cs` — enums and an enum member.
+
+Frontend:
+
+- `services/Api/SizingLogService.ts` — the change is the return type (`IVotedRow`), which has no runtime
+  form.
+- `models/Refinement/Refinement.ts` — types only.
+- `services/Api/UsageDataService.ts` — an enum member, pinned against its literal by `reports the vote
+  the server says made a Work Item Ready to usage data`.
