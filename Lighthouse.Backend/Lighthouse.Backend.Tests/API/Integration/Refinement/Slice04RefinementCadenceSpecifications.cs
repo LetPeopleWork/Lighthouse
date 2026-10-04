@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using NUnit.Framework;
@@ -41,6 +42,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private async Task<HttpResponseMessage> WhenTheAdminSavesTheCadence(TeamUnderTest team, JsonObject cadence)
             => await SaveTheRefinementSectionWith(team, "cadence", cadence);
 
+        private async Task<HttpResponseMessage> WhenTheAdminChecksTheSettingsWithTheCadence(TeamUnderTest team, JsonObject cadence)
+        {
+            TheCallerAdministersTheTeam(team);
+
+            var payload = TheTeamSettingsFormFor(team);
+            payload["refinement"] = new JsonObject { ["states"] = new JsonArray(), ["cadence"] = cadence };
+
+            return await Client.PostAsync("/api/latest/teams/validate", new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json"));
+        }
+
         private async Task WhenTheSettingsAreSaved(TeamUnderTest team, SaveShape shape)
         {
             using var save = await SaveTheSettingsShaped(team, shape);
@@ -72,6 +83,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             {
                 Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
                 Assert.That(CadenceIn(settings), Is.EqualTo(ThursdaysEveryWeek), "the refused save changed the stored cadence");
+            }
+        }
+
+        private static async Task ThenTheCheckIsRefusedNaming(HttpResponseMessage refused, string notAWeekday)
+        {
+            var body = await refused.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), body);
+                Assert.That(body, Does.Contain($"'{notAWeekday}' cannot be a Refinement day"));
             }
         }
 

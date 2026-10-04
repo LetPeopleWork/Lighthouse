@@ -91,6 +91,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheSaveIsRefusedAndTheCadenceIsStillThursdaysEveryWeek(refused, gravity);
         }
 
+        // @driving_port @real-io @us-04 @slice-04 @error @contract-shape:pure-function
+        // The settings form checks a Team before it saves it; a day that is not a weekday is refused there too,
+        // by name, rather than failing the check.
+        [TestCase("Funday")]
+        [TestCase("8")]
+        public async Task Checking_settings_with_a_Refinement_day_that_is_not_a_weekday_is_refused(string notAWeekday)
+        {
+            var gravity = await GivenGravityRefinesOnThursdaysEveryWeek();
+
+            using var refused = await WhenTheAdminChecksTheSettingsWithTheCadence(gravity, ACadence([notAWeekday], 1, null));
+
+            await ThenTheCheckIsRefusedNaming(refused, notAWeekday);
+        }
+
         // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:unbounded-preservation
         // An older settings form knows nothing about the cadence; its saves must not remove it.
         [TestCase(SaveShape.WithoutTheRefinementSection)]

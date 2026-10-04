@@ -55,11 +55,19 @@ namespace Lighthouse.Backend.API.DTO
 
         public static bool IsWeekdayName(string name) => WeekdayNames.Contains(name);
 
-        /// <summary>The cadence a save results in; a save naming no weekday clears it.</summary>
+        /// <summary>
+        /// The cadence a save results in; a save naming no weekday clears it. A name that is not a weekday is
+        /// left out rather than parsed, because a number would otherwise parse into a day that does not exist.
+        /// </summary>
         public RefinementCadence? ToCadence()
-            => Weekdays.Count == 0
-                ? null
-                : RefinementCadence.Of(Weekdays.Select(name => Enum.Parse<DayOfWeek>(name, ignoreCase: true)), IntervalWeeks, AnchorWeek);
+        {
+            var weekdays = Weekdays
+                .Where(IsWeekdayName)
+                .Select(name => Enum.Parse<DayOfWeek>(name, ignoreCase: true))
+                .ToList();
+
+            return weekdays.Count == 0 ? null : RefinementCadence.Of(weekdays, IntervalWeeks, AnchorWeek);
+        }
     }
 
     /// <summary>A rule sent as null removes it, while a rule left out of the save keeps the stored one.</summary>

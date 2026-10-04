@@ -178,6 +178,12 @@ namespace Lighthouse.Backend.API
                 return NotFound();
             }
 
+            var refinementErrors = RefinementSettingsValidator.ValidateSettings(teamSettingDto, null);
+            if (refinementErrors.Count > 0)
+            {
+                return BadRequest(refinementErrors);
+            }
+
             var team = new Team { WorkTrackingSystemConnection = workTrackingSystem };
             team.SyncTeamWithTeamSettings(teamSettingDto);
 

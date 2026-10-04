@@ -353,6 +353,26 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             Assert.That(team.RefinementSettings.Cadence, Is.Null);
         }
 
+        /// <summary>The validator refuses such a save; a caller that skips it still never stores a day that does not exist.</summary>
+        [Test]
+        public void SyncTeamWithTeamSettings_CadenceNamingSomethingOtherThanAWeekday_KeepsOnlyTheWeekdays()
+        {
+            var team = new Team { ToDoStates = ["Backlog"] };
+            var dto = new TeamSettingDto
+            {
+                ToDoStates = ["Backlog"],
+                Refinement = new RefinementSettingsDto
+                {
+                    States = [new RefinementStateSettingDto { State = "Backlog" }],
+                    Cadence = new RefinementCadenceDto { Weekdays = ["Funday", "thursday", "8", " Monday"], IntervalWeeks = 1 },
+                },
+            };
+
+            team.SyncTeamWithTeamSettings(dto);
+
+            Assert.That(team.RefinementSettings.Cadence?.Weekdays, Is.EqualTo(OnlyThursday));
+        }
+
         [Test]
         public void SyncTeamWithTeamSettings_StageRuleSentAsNull_RemovesOnlyThatRule()
         {
@@ -398,6 +418,8 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 Assert.That(settings.Readiness.MinYes, Is.EqualTo(2));
             }
         }
+
+        private static readonly DayOfWeek[] OnlyThursday = [DayOfWeek.Thursday];
 
         private static readonly JsonSerializerOptions WebJson = new(JsonSerializerDefaults.Web);
 
