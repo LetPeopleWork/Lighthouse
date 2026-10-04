@@ -19,6 +19,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         private static readonly string[] BothWorkItems = ["GR-1", "GR-2"];
 
+        private static readonly RowStanding[] StandingsWithOneYesOfOne =
+        [
+            RowStanding.Ready,
+            new(RowReadiness.MoreYesNeeded, 1),
+            new(RowReadiness.MoreYesNeeded, 1),
+        ];
+
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
         private List<WorkItem> workItems;
@@ -150,6 +157,37 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                     ("GR-1", new RowVotes(2, SizingAnswer.Yes, new VoteSplit(1, 0, 1))),
                     ("GR-2", RowVotes.None),
                 }));
+        }
+
+        [Test]
+        public void EachRowStandsUnderTheTeamsOwnReadinessAndOnlyReadyRowsAreCounted()
+        {
+            GivenTheTeam(new Team
+            {
+                Id = TeamId,
+                RefinementSettings = new RefinementSettings
+                {
+                    States = [new RefinementStateSetting { State = "Backlog" }],
+                    Readiness = new ReadinessSetting { MinYes = 1, MinVoters = 1 },
+                },
+            });
+            workItems.AddRange(
+            [
+                new WorkItem { TeamId = TeamId, ReferenceId = "GR-1", State = "Backlog", Order = "1" },
+                new WorkItem { TeamId = TeamId, ReferenceId = "GR-2", State = "Backlog", Order = "2" },
+                new WorkItem { TeamId = TeamId, ReferenceId = "GR-3", State = "Backlog", Order = "3" },
+            ]);
+            sizingLogMock
+                .Setup(log => log.ReadForTeam(TeamId, It.IsAny<IReadOnlyCollection<string>>()))
+                .Returns([VoteOn("GR-1", 1, "self:jonas", SizingAnswer.Yes)]);
+
+            var view = subject.ForTeam(TeamId, null);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(view?.WorkItems.Select(row => row.Standing), Is.EqualTo(StandingsWithOneYesOfOne));
+                Assert.That(view?.ReadyByVotesCount, Is.EqualTo(1));
+            }
         }
 
         private static SizingLogEntry VoteOn(string workItemReference, int id, string voterKey, SizingAnswer answer) => new()

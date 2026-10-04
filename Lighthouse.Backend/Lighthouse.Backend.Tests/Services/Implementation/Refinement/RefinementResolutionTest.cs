@@ -156,6 +156,39 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             Assert.That(standing, Is.EqualTo(RowStanding.Ready));
         }
 
+        [TestCaseSource(nameof(StepsToReady))]
+        public void Only_the_entry_that_moves_a_Work_Item_to_Ready_made_it_Ready(SizingLogEntry[] log, int entryId, bool madeReady)
+        {
+            var twoYesFromTwoVoters = new ReadinessSetting { MinYes = 2, MinVoters = 2 };
+
+            var made = RefinementResolution.MadeReady(log, log.Single(entry => entry.Id == entryId), twoYesFromTwoVoters);
+
+            Assert.That(made, Is.EqualTo(madeReady));
+        }
+
+        private static IEnumerable<TestCaseData> StepsToReady()
+        {
+            yield return new TestCaseData(
+                    new[] { VoteBy(Jonas, 1, SizingAnswer.Yes), VoteBy(Ana, 2, SizingAnswer.Yes) }, 2, true)
+                .SetName("The second Yes of two made the Work Item Ready");
+
+            yield return new TestCaseData(
+                    new[] { VoteBy(Jonas, 1, SizingAnswer.Yes), VoteBy(Ana, 2, SizingAnswer.Yes) }, 1, false)
+                .SetName("The first Yes of two left the Work Item short of Ready");
+
+            yield return new TestCaseData(
+                    new[] { VoteBy(Jonas, 1, SizingAnswer.Yes), VoteBy(Ana, 2, SizingAnswer.Yes), VoteBy(Priya, 3, SizingAnswer.Yes) }, 3, false)
+                .SetName("A Yes on a Work Item that was already Ready did not make it Ready");
+
+            yield return new TestCaseData(
+                    new[] { VoteBy(Jonas, 1, SizingAnswer.Yes), VoteBy(Ana, 2, SizingAnswer.Yes), VoteBy(Priya, 3, SizingAnswer.No) }, 2, true)
+                .SetName("The entry that made a Work Item Ready keeps that even after a later No takes it away");
+
+            yield return new TestCaseData(
+                    new[] { VoteBy(Jonas, 1, SizingAnswer.Yes), VoteBy(Ana, 2, SizingAnswer.Yes), VoteBy(Priya, 3, SizingAnswer.No) }, 3, false)
+                .SetName("A No that sends a Ready Work Item to discussion did not make it Ready");
+        }
+
         private static SizingLogEntry VoteBy(string voterKey, int id, SizingAnswer answer, string displayName = "Voter")
             => Entry(voterKey, id, SizingEntryKind.Vote, answer, displayName);
 

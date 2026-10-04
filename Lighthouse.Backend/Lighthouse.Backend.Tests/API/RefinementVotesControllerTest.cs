@@ -105,6 +105,26 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [TestCase(VoteOutcome.Recorded, false)]
+        [TestCase(VoteOutcome.RecordedAndMadeReady, true)]
+        public void ARecordedVoteSaysWhetherItIsTheVoteThatMadeItsRowReady(VoteOutcome outcome, bool madeReady)
+        {
+            sizingLogCommandsMock
+                .Setup(commands => commands.Vote(TeamId, InRefinement, It.IsAny<SizingVote>(), It.IsAny<Voter>()))
+                .Returns(outcome);
+            GivenTheRows(Row(InRefinement, 3));
+
+            var result = CastVote(InRefinement, new SizingVoteDto { Answer = SizingAnswer.Yes, Channel = SizingChannel.Web, VoterName = Jonas });
+
+            var row = (result.Result as OkObjectResult)?.Value as VotedRowDto;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(row?.ReferenceId, Is.EqualTo(InRefinement));
+                Assert.That(row?.Readiness, Is.EqualTo(RowReadiness.Ready));
+                Assert.That(row?.MadeReady, Is.EqualTo(madeReady));
+            }
+        }
+
         [Test]
         public void ARecordedVoteIsCastAsTheVoterTheBrowserNamed()
         {

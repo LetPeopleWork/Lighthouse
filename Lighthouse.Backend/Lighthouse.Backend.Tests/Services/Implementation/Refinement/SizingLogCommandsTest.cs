@@ -177,6 +177,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             }
         }
 
+        [TestCase(SizingAnswer.Yes, VoteOutcome.RecordedAndMadeReady)]
+        [TestCase(SizingAnswer.YesBut, VoteOutcome.RecordedAndMadeReady)]
+        [TestCase(SizingAnswer.No, VoteOutcome.Recorded)]
+        public void AVoteSaysWhetherItMadeTheWorkItemReadyUnderTheTeamsOwnReadiness(SizingAnswer answer, VoteOutcome expected)
+        {
+            var team = ATeamThatRefinesInBacklog(sleProbability: 85, sleDays: 7);
+            team.RefinementSettings!.Readiness = new ReadinessSetting { MinYes = 1, MinVoters = 1 };
+            GivenTheTeam(team);
+            GivenTheLogKeepsWhatIsAppended();
+
+            var outcome = subject.Vote(TeamId, InRefinement, new SizingVote(answer, SizingChannel.Web, null), Jonas);
+
+            Assert.That(outcome, Is.EqualTo(expected));
+        }
+
         private static Team ATeamThatRefinesInBacklog(int sleProbability, int sleDays) => new()
         {
             Id = TeamId,
@@ -208,6 +223,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         private void GivenTheTeam(Team team)
             => teamRepositoryMock.Setup(repository => repository.GetById(TeamId)).Returns(team);
+
+        private void GivenTheLogKeepsWhatIsAppended()
+            => sizingLogMock
+                .Setup(log => log.ReadForTeam(TeamId, It.IsAny<IReadOnlyCollection<string>>()))
+                .Returns(() => appended);
 
         private sealed record LoggedLine(LogLevel Level, Dictionary<string, string?> Fields, string Text);
 
