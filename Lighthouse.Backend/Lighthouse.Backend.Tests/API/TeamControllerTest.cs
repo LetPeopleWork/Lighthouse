@@ -905,8 +905,8 @@ namespace Lighthouse.Backend.Tests.API
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-                Assert.That(team.RefinementSettings?.StageRules.Ready?.Conditions[0].Value, Is.EqualTo("ready"));
-                Assert.That(team.RefinementSettings?.StageRules.BeingRefined?.Conditions[0].Value, Is.EqualTo("refining"));
+                Assert.That(ShapeOf(team.RefinementSettings?.StageRules.Ready), Is.EqualTo("or: workitem.tags contains ready | workitem.type equals Bug"));
+                Assert.That(ShapeOf(team.RefinementSettings?.StageRules.BeingRefined), Is.EqualTo("or: workitem.tags contains refining | workitem.type equals Bug"));
                 forecastFilterRuleServiceMock.Verify(x => x.ValidateRuleSet(It.IsAny<WorkItemRuleSet>(), team), Times.Exactly(2));
                 teamRepositoryMock.Verify(x => x.Save(), Times.Once);
             }
@@ -975,9 +975,19 @@ namespace Lighthouse.Backend.Tests.API
         {
             return new StageRuleDto
             {
-                Conditions = [new WorkItemRuleCondition { FieldKey = "workitem.tags", Operator = "contains", Value = tag }],
+                Mode = WorkItemRuleSet.ModeOr,
+                Conditions =
+                [
+                    new WorkItemRuleCondition { FieldKey = "workitem.tags", Operator = "contains", Value = tag },
+                    new WorkItemRuleCondition { FieldKey = "workitem.type", Operator = "equals", Value = "Bug" },
+                ],
             };
         }
+
+        private static string? ShapeOf(WorkItemRuleSet? rule)
+            => rule is null
+                ? null
+                : $"{rule.Mode}: {string.Join(" | ", rule.Conditions.Select(condition => $"{condition.FieldKey} {condition.Operator} {condition.Value}"))}";
 
         [Test]
         public async Task UpdateTeam_ValidStateMappings_ReturnsOk()
