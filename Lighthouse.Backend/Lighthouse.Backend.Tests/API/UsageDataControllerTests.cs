@@ -113,6 +113,7 @@ namespace Lighthouse.Backend.Tests.API
                     WorkTrackingSystem: null,
                     OptionalFeature: null,
                     Enabled: null,
+                    SizingMoment: null,
                     offsetMs,
                     sequence)]);
         }

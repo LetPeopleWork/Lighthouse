@@ -54,6 +54,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "optional_feature",
             "properties",
             "route",
+            "sizing_moment",
             "timestamp",
             "version",
             "work_tracking_system",

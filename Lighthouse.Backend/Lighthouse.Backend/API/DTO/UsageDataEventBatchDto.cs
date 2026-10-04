@@ -26,6 +26,7 @@ namespace Lighthouse.Backend.API.DTO
         UsageDataWorkTrackingSystem? WorkTrackingSystem,
         UsageDataOptionalFeature? OptionalFeature,
         bool? Enabled,
+        UsageDataSizingMoment? SizingMoment,
         int? OffsetMs,
         int? Sequence);
 }

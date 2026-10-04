@@ -34,5 +34,7 @@ namespace Lighthouse.Backend.Models.UsageData
         TeamForecastRealityCheckRun = 11,
 
         TeamRefinementConfigured = 12,
+
+        TeamSizingVoteCast = 13,
     }
 }

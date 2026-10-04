@@ -6,9 +6,10 @@ namespace Lighthouse.Backend.Models.UsageData
     /// carried one its event has no business carrying, is refused where it is read.
     ///
     /// Most parts are absent for most of these, and that is the shape rather than a gap. Two events
-    /// say which page somebody opened, one says which kind of work tracking system was connected, and
-    /// one says which setting was switched and whether it is now on or off; the rest say only that
-    /// somebody did something. Which event may carry which part is declared in
+    /// say which page somebody opened, one says which kind of work tracking system was connected,
+    /// one says which setting was switched and whether it is now on or off, and a sizing vote says
+    /// when it was cast relative to the Team's Refinement; the rest say only that somebody did
+    /// something. Which event may carry which part is declared in
     /// <see cref="UsageDataEventShapes"/>.
     ///
     /// Choices from closed lists and bounded numbers, and nothing else - there is no field here in
@@ -21,6 +22,7 @@ namespace Lighthouse.Backend.Models.UsageData
         UsageDataWorkTrackingSystem? WorkTrackingSystem,
         UsageDataOptionalFeature? OptionalFeature,
         bool? Enabled,
+        UsageDataSizingMoment? SizingMoment,
         int OffsetMs,
         int Sequence);
 }

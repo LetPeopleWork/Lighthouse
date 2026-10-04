@@ -225,6 +225,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
                         WorkTrackingSystem: null,
                         OptionalFeature: null,
                         Enabled: null,
+                        SizingMoment: null,
                         OffsetMs: 0,
                         Sequence: handed)]));
             }

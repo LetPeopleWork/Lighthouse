@@ -4,9 +4,11 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Refinement;
+using Lighthouse.Backend.Services.Implementation.Seeding;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
@@ -70,7 +72,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         ];
 
         // @driving_port @real-io @us-11 @slice-11 @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:bounded-change
-        [TestCase(TeamSizingVoteCast, IgnoreReason = PendingSlice11)]
+        [TestCase(TeamSizingVoteCast)]
         [TestCase(TeamSizingReadinessReached, IgnoreReason = PendingSlice13)]
         public async Task A_browser_that_agreed_reports_the_event_with_its_name_and_when_it_happened_and_nothing_else(string name)
         {
@@ -99,7 +101,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // comment and an address nobody else uses, hands the event in with the same key and address on the
         // request; none of them may reach the collector, and neither may anything beyond the event's name,
         // its moment and the facts every event carries about the instance.
-        [TestCase(TeamSizingVoteCast, IgnoreReason = PendingSlice11)]
+        [TestCase(TeamSizingVoteCast)]
         [TestCase(TeamSizingReadinessReached, IgnoreReason = PendingSlice13)]
         public async Task The_event_from_a_browser_that_just_voted_carries_nothing_about_the_voter(string name)
         {
@@ -136,7 +138,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @driving_port @real-io @us-11 @us-13 @error @contract-shape:unbounded-preservation
         // The moment is the whole reason these events exist; one arriving without it would be counted wrongly.
-        [TestCase(TeamSizingVoteCast, IgnoreReason = PendingSlice11)]
+        [TestCase(TeamSizingVoteCast)]
         [TestCase(TeamSizingReadinessReached, IgnoreReason = PendingSlice13)]
         public async Task The_event_without_when_it_happened_is_refused(string name)
         {
@@ -177,7 +179,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // The moment is a choice from a closed list; anything else could carry a date or a name.
         [TestCase("Tuesday")]
         [TestCase("2026-10-06")]
-        [Ignore(PendingSlice11)]
         public async Task A_vote_cast_at_a_moment_not_on_the_list_is_refused(string moment)
         {
             var token = await ABrowserThatAgreedAsync();
@@ -217,7 +218,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// the order the names were appended in rather than their numbers.
         /// </summary>
         // @us-11 @us-13 @contract-shape:bounded-change
-        [TestCase(TeamSizingVoteCast, TheLastEventNamedBeforeSizingVotes, IgnoreReason = PendingSlice11)]
+        [TestCase(TeamSizingVoteCast, TheLastEventNamedBeforeSizingVotes)]
         [TestCase(TeamSizingReadinessReached, TeamSizingVoteCast, IgnoreReason = PendingSlice13)]
         public void The_sizing_events_are_appended_to_the_list_of_names_never_inserted(string name, string namedBefore)
         {
@@ -246,10 +247,15 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             services.AddScoped(_ => licenseService.Object);
         }
 
-        /// <summary>A Team that refines in Backlog, with one Work Item there to vote on.</summary>
+        /// <summary>
+        /// A Team that refines in Backlog, with one Work Item there to vote on, on an instance holding the
+        /// settings every real one is started with - taking a vote reads them.
+        /// </summary>
         private int ATeamRefiningOneWorkItem()
         {
             using var scope = Factory.Services.CreateScope();
+
+            scope.ServiceProvider.GetServices<ISeeder>().OfType<AppSettingSeeder>().Single().Seed().GetAwaiter().GetResult();
 
             var team = new Team
             {

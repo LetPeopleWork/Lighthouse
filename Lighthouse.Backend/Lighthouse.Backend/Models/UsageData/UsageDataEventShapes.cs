@@ -5,8 +5,9 @@ namespace Lighthouse.Backend.Models.UsageData
     /// <summary>
     /// What each event is allowed to carry. Two of them are about a page somebody opened and say
     /// which one; one says which kind of work tracking system was connected; one says which setting
-    /// was switched and which way; the rest are about something somebody did, which happens on no
-    /// particular page, and they carry nothing but their name.
+    /// was switched and which way; a sizing vote says when it was cast relative to the Team's
+    /// Refinement; the rest are about something somebody did, which happens on no particular page,
+    /// and they carry nothing but their name.
     ///
     /// This is a declaration rather than a rule applied at each call site, because the promise it
     /// keeps is that no address travels with an event that has no page. A rule has to be remembered
@@ -48,6 +49,14 @@ namespace Lighthouse.Backend.Models.UsageData
         private static readonly FrozenSet<UsageDataEventName> EventsThatSayWhichSettingWasSwitched =
             FrozenSet.ToFrozenSet([UsageDataEventName.OptionalFeatureToggled]);
 
+        /// <summary>
+        /// The sizing events, which say when they happened relative to the Team's Refinement and
+        /// nothing else. That moment is the whole reason they are counted, so one arriving without it
+        /// would be counted wrongly; and no other event has a Refinement to be relative to.
+        /// </summary>
+        private static readonly FrozenSet<UsageDataEventName> EventsThatSayWhenTheyHappenedInRefinement =
+            FrozenSet.ToFrozenSet([UsageDataEventName.TeamSizingVoteCast]);
+
         public static bool Fits(UsageDataEventReported reported)
         {
             var name = reported.Name;
@@ -55,7 +64,8 @@ namespace Lighthouse.Backend.Models.UsageData
             return NamesItsPage(name, reported.Route)
                 && IsCarriedExactlyWhenDeclared(EventsThatSayWhichKindOfSystem, name, reported.WorkTrackingSystem)
                 && IsCarriedExactlyWhenDeclared(EventsThatSayWhichSettingWasSwitched, name, reported.OptionalFeature)
-                && IsCarriedExactlyWhenDeclared(EventsThatSayWhichSettingWasSwitched, name, reported.Enabled);
+                && IsCarriedExactlyWhenDeclared(EventsThatSayWhichSettingWasSwitched, name, reported.Enabled)
+                && IsCarriedExactlyWhenDeclared(EventsThatSayWhenTheyHappenedInRefinement, name, reported.SizingMoment);
         }
 
         private static bool NamesItsPage(UsageDataEventName name, UsageDataRouteKey? route)

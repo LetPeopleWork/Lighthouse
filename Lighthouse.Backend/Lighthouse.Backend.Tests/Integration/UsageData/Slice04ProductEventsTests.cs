@@ -30,6 +30,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         private const string PortfolioMetricsTab = "PortfolioDetail_Metrics";
         private const string WorkTrackingSystemConnected = "WorkTrackingSystemConnected";
         private const string OptionalFeatureToggled = "OptionalFeatureToggled";
+        private const string TeamSizingVoteCast = "TeamSizingVoteCast";
 
         /// <summary>
         /// The events that say somebody used something rather than that somebody looked at
@@ -62,6 +63,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             .. EventsThatCarryNothingButTheirName,
             WorkTrackingSystemConnected,
             OptionalFeatureToggled,
+            TeamSizingVoteCast,
         ];
 
         /// <summary>
@@ -370,6 +372,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             PortfolioTabOpened => ABatchOf(name, PortfolioMetricsTab),
             WorkTrackingSystemConnected => ABatchNamingAWorkTrackingSystem(name, "Jira"),
             OptionalFeatureToggled => ABatchSwitchingASetting(name),
+            TeamSizingVoteCast => ABatchSayingWhenAVoteWasCast(name),
             _ => ABatchOfJustTheName(name),
         };
 
@@ -381,6 +384,9 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         private static string ABatchSwitchingASetting(string name)
             => $"{{\"events\":[{{\"name\":\"{name}\",\"optionalFeature\":\"FeatureOrder\",\"enabled\":true,\"offsetMs\":0,\"sequence\":0}}]}}";
+
+        private static string ABatchSayingWhenAVoteWasCast(string name)
+            => $"{{\"events\":[{{\"name\":\"{name}\",\"sizingMoment\":\"NoCadence\",\"offsetMs\":0,\"sequence\":0}}]}}";
 
         private static List<string> WhatTravelledWithTheFirstMessageIn(string sent)
         {

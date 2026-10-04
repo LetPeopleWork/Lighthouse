@@ -101,6 +101,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
                     WorkTrackingSystem: null,
                     OptionalFeature: null,
                     Enabled: null,
+                    SizingMoment: null,
                     OffsetMs: 0,
                     Sequence: 0)]);
         }
