@@ -80,7 +80,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         {
             var cadence = Cadence("Thursday", 1, null);
             var today = Day("2026-10-02");
-            var lastDaySearched = RefinementCadenceCalendar.LastDaySearched(cadence, today);
+            var lastDaySearched = RefinementCadenceCalendar.DaysSearched(cadence, today)?.Last;
 
             var next = RefinementCadenceCalendar.NextAfter(cadence, today, day => day <= lastDaySearched);
 
@@ -89,6 +89,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                 Assert.That(next, Is.Null);
                 Assert.That(lastDaySearched, Is.GreaterThanOrEqualTo(today.AddYears(1)));
             }
+        }
+
+        // A year's search from that week would run past the last day the calendar has.
+        [Test]
+        public void A_starting_week_at_the_end_of_the_calendar_has_no_next_Refinement()
+        {
+            var next = RefinementCadenceCalendar.NextAfter(Cadence("Thursday", 2, "9999-12-27"), Day("2026-10-02"), NoBlackouts);
+
+            Assert.That(next, Is.Null);
         }
 
         [Test]

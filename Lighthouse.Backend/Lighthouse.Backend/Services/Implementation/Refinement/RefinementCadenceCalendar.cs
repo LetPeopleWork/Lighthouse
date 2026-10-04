@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
 
         public static DateOnly? NextAfter(RefinementCadence? cadence, DateOnly today, Func<DateOnly, bool> isBlackedOut)
         {
-            if (!HasCadence(cadence))
+            if (!HasCadence(cadence) || DaysSearched(cadence, today) is not { } daysSearched)
             {
                 return null;
             }
@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             var anchorWeek = AnchorWeekOf(cadence, today);
 
             return Enumerable.Range(0, SearchHorizonDays)
-                .Select(FirstDaySearched(cadence, today).AddDays)
+                .Select(daysSearched.First.AddDays)
                 .Where(day => WeeklyRecurrence.Matches(cadence.Weekdays, cadence.IntervalWeeks, anchorWeek, day))
                 .Where(day => !isBlackedOut(day))
                 .Select(day => (DateOnly?)day)
@@ -36,11 +36,24 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 && !isBlackedOut(day);
         }
 
-        /// <summary>The last day <see cref="NextAfter"/> looks at, so a caller knows which blackout days to fetch.</summary>
-        public static DateOnly LastDaySearched(RefinementCadence? cadence, DateOnly today)
+        /// <summary>
+        /// The days <see cref="NextAfter"/> looks at, so a caller knows which blackout days to fetch. Null when it looks
+        /// at none: without a cadence, or when a starting week so late would run the search past the calendar's last day.
+        /// </summary>
+        public static (DateOnly First, DateOnly Last)? DaysSearched(RefinementCadence? cadence, DateOnly today)
         {
-            var firstDay = HasCadence(cadence) ? FirstDaySearched(cadence, today) : today.AddDays(1);
-            return firstDay.AddDays(SearchHorizonDays - 1);
+            if (!HasCadence(cadence))
+            {
+                return null;
+            }
+
+            var firstDay = FirstDaySearched(cadence, today);
+            if (DateOnly.MaxValue.DayNumber - firstDay.DayNumber < SearchHorizonDays - 1)
+            {
+                return null;
+            }
+
+            return (firstDay, firstDay.AddDays(SearchHorizonDays - 1));
         }
 
         private static bool HasCadence([NotNullWhen(true)] RefinementCadence? cadence)
