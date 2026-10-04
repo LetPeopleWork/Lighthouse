@@ -10,7 +10,7 @@ export class TeamRefinementPage {
 
 	get heading(): Locator {
 		return this.page.getByRole("heading", {
-			name: /^\d+ Work Items? in Refinement( · \d+ ready by votes)?$/,
+			name: /^\d+ Work Items? in Refinement · \d+ ready by votes$/,
 		});
 	}
 
