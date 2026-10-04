@@ -190,6 +190,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheNextRefinementIs(tab, "2026-10-20", false);
         }
 
+        // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:bounded-change
+        // A client may still send a starting week with an every-week cadence; it means nothing there, so it is not kept.
+        [Test]
+        public async Task Refining_every_week_keeps_no_starting_week_and_looks_to_the_next_cadence_day()
+        {
+            var gravity = await GivenGravityRefinesWithoutACadence();
+            await TheAdminHasSetTheCadence(gravity, [Thursday], 1, "2026-10-19");
+            TodayIs(2026, 10, 2);
+
+            var settings = await ReadTheTeamSettings(gravity);
+            var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenTheCadenceIs(settings, new CadenceReading(Thursday, 1, null));
+                ThenTheNextRefinementIs(tab, "2026-10-08", false);
+            }
+        }
+
         // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:pure-function
         [Test]
         public async Task A_Team_refining_on_two_weekdays_looks_to_whichever_comes_first()

@@ -31,6 +31,13 @@ namespace Lighthouse.Backend.Tests.Models.Refinement
             Assert.That(RefinementCadence.Of(OnlyThursday, 1, null).AnchorWeek, Is.Null);
         }
 
+        // Every week counts the same from any week, so a starting week kept there would only hold back the first Refinement.
+        [Test]
+        public void Refining_every_week_keeps_no_starting_week([Values(-7, 0, 14)] int daysFromTheFifth)
+        {
+            Assert.That(RefinementCadence.Of(OnlyThursday, 1, MondayFifthOfOctober.AddDays(daysFromTheFifth)).AnchorWeek, Is.Null);
+        }
+
         [Test]
         public void Weekdays_named_in_any_order_and_any_number_of_times_are_kept_once_each_from_Monday()
         {

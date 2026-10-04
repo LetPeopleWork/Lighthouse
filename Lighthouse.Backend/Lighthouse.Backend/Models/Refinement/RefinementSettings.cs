@@ -22,7 +22,9 @@ namespace Lighthouse.Backend.Models.Refinement
     /// <summary>
     /// The weekdays a Team refines on, every so many weeks counted from the week of <see cref="AnchorWeek"/>.
     /// Built through <see cref="Of"/> so one cadence always has one stored form: each weekday once, Monday
-    /// first, and the starting week kept as its Monday whichever of its days was named.
+    /// first, and the starting week kept as its Monday whichever of its days was named. Every week counts the
+    /// same from any week, so a cadence that does not skip weeks keeps no starting week at all; one kept there
+    /// would only hold back the first Refinement.
     /// </summary>
     public class RefinementCadence
     {
@@ -41,7 +43,7 @@ namespace Lighthouse.Backend.Models.Refinement
             {
                 Weekdays = [.. weekdays.Distinct().OrderBy(DaysFromMonday)],
                 IntervalWeeks = intervalWeeks,
-                AnchorWeek = anchorWeek?.AddDays(-DaysFromMonday(anchorWeek.Value.DayOfWeek)),
+                AnchorWeek = intervalWeeks == 1 ? null : anchorWeek?.AddDays(-DaysFromMonday(anchorWeek.Value.DayOfWeek)),
             };
         }
 

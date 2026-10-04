@@ -66,7 +66,8 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             return anchorWeek > tomorrow ? anchorWeek : tomorrow;
         }
 
-        // Only a cadence that skips weeks needs a starting week; every week counts the same from any of them.
+        // A cadence without a starting week refines every week, where any week counts the same, so today's week will do.
+        // A starting week is honoured whenever there is one: no Refinement falls before it.
         private static DateOnly AnchorWeekOf(RefinementCadence cadence, DateOnly today)
             => WeeklyRecurrence.MondayOfWeek(cadence.AnchorWeek ?? today);
     }
