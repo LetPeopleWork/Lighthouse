@@ -8,13 +8,13 @@ import {
 	renderTheRefinementTab,
 	theRowOf,
 } from "../../../../tests/RefinementTabTestKit";
-import { describeStageBreakdown } from "./StageBreakdown";
+import { describeStageBreakdown } from "./stageBreakdown";
 
 /**
  * Stages and votes are two signals the Refinement tab shows side by side. A Team that sets no stage rule
  * sees the tab as before: the votes alone say what is ready. Once the Team sets a stage rule, a Stage
- * column follows the State column, the votes column is headed "Votes say", the heading counts the Work
- * Items whose stage is Ready, and a line under it breaks the list down by stage. Where the two signals
+ * column follows the State column, the votes column is headed "Votes say", and the heading is the list
+ * broken down by stage, with no separate count. Where the two signals
  * tell a different story the row carries a marker that says so in words, not colour alone.
  */
 
@@ -120,17 +120,16 @@ describe("The Refinement tab shows stages beside the votes", () => {
 	});
 
 	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
-	it("counts the Work Items whose stage is Ready in the heading and breaks the list down by stage", async () => {
+	it("heads the tab with the list broken down by stage, and counts it nowhere else", async () => {
 		renderTheRefinementTab(gravityWithStages());
 
 		expect(
 			await screen.findByRole("heading", {
-				name: /^9 Work Items in Refinement · 2 ready$/,
+				name: /^2 Ready · 3 Being refined · 4 Waiting$/,
 			}),
 		).toBeVisible();
-		expect(
-			screen.getByText(/^2 Ready · 3 Being refined · 4 Waiting$/),
-		).toBeVisible();
+		expect(screen.getAllByText(/ Being refined · /)).toHaveLength(1);
+		expect(screen.queryByText(/ in Refinement/)).not.toBeInTheDocument();
 	});
 
 	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
@@ -259,11 +258,8 @@ describe("The Refinement tab shows stages beside the votes", () => {
 
 		expect(
 			await screen.findByRole("heading", {
-				name: /^2 Work Items in Refinement · 0 ready$/,
+				name: /^0 Ready · 1 Being refined · 1 Waiting$/,
 			}),
-		).toBeVisible();
-		expect(
-			screen.getByText(/^0 Ready · 1 Being refined · 1 Waiting$/),
 		).toBeVisible();
 	});
 
@@ -291,7 +287,7 @@ describe("The Refinement tab shows stages beside the votes", () => {
 	});
 
 	// @us-03 @slice-03 @boundary @contract-shape:pure-function
-	it("says the Team's own words in the heading and the breakdown", async () => {
+	it("keeps the breakdown as the heading when the Team has its own words", async () => {
 		terms.current = {
 			...defaultRefinementTerms,
 			workItem: "Ticket",
@@ -302,9 +298,10 @@ describe("The Refinement tab shows stages beside the votes", () => {
 
 		expect(
 			await screen.findByRole("heading", {
-				name: /^9 Tickets in Grooming · 2 ready$/,
+				name: /^2 Ready · 3 Being refined · 4 Waiting$/,
 			}),
 		).toBeVisible();
+		expect(screen.queryByText(/ Tickets in Grooming/)).not.toBeInTheDocument();
 	});
 });
 

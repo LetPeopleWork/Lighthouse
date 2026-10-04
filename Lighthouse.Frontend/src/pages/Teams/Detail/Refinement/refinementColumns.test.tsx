@@ -62,6 +62,39 @@ describe("the Refinement tab's columns", () => {
 	);
 });
 
+describe("the vote column's header", () => {
+	const voteColumn = (
+		question: { question: string; tooltip: string } | undefined,
+	) =>
+		createRefinementColumns(
+			"Work Item",
+			new Map(),
+			vi.fn(),
+			new Set(),
+			vi.fn(),
+			false,
+			question,
+		).find(({ field }) => field === "myVote");
+
+	it("is the yardstick question when there is one to ask, wide enough not to cut it off", () => {
+		const column = voteColumn({
+			question: "Doable within 12 days?",
+			tooltip: "SLE 85% of work items in 12 days or less",
+		});
+
+		expect(column?.headerName).toBe("Doable within 12 days?");
+		expect(column?.renderHeader).toBeDefined();
+		expect(column?.minWidth).toBeGreaterThanOrEqual(220);
+	});
+
+	it("falls back to Your vote when there is no question to ask", () => {
+		const column = voteColumn(undefined);
+
+		expect(column?.headerName).toBe("Your vote");
+		expect(column?.renderHeader).toBeUndefined();
+	});
+});
+
 describe("the words behind the disagreement marker", () => {
 	it.each([
 		{

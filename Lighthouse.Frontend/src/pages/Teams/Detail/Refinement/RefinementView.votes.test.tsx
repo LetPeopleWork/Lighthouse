@@ -129,7 +129,7 @@ describe("A voter casts a sizing vote from the list", () => {
 			expect(row).toHaveTextContent("No votes");
 		}
 		expect(
-			screen.getByRole("columnheader", { name: "Your vote" }),
+			screen.getByRole("columnheader", { name: /^Doable within 7 days\?/ }),
 		).toBeInTheDocument();
 		expect(
 			screen.getByRole("columnheader", { name: "Votes" }),

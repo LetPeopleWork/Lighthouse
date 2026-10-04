@@ -34,6 +34,8 @@ testWithDemo(
 			const refinement = await gravity.goToRefinement();
 
 			await expect(refinement.heading).toBeVisible();
+			await expect(refinement.noCadence).toBeVisible();
+			await expect(refinement.voteColumnHeader).toBeVisible();
 			await expect(refinement.firstWorkItemRow).toContainText(
 				FIRST_IN_BACKLOG_ORDER,
 			);

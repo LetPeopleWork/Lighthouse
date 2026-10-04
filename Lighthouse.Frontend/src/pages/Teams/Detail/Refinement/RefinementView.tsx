@@ -26,18 +26,17 @@ import {
 	createRefinementColumns,
 	type RefinementGridRow,
 } from "./refinementColumns";
-import StageBreakdown from "./StageBreakdown";
+import { describeStageBreakdown } from "./stageBreakdown";
 import { useVoteCasting } from "./useVoteCasting";
 import VoterNamePrompt from "./VoterNamePrompt";
 import VotesAndCommentsDialog from "./VotesAndCommentsDialog";
 import { describeVoteRefusal } from "./voteWording";
-import YardstickQuestion from "./YardstickQuestion";
+import { askYardstick } from "./YardstickQuestion";
 
 const NO_ROWS: IRefinementRow[] = [];
 
 // The heading and the next Refinement share the first row while every other part of the tab spans the
-// full width beneath them; a grid does that without wrapping the heading, which stays a direct sibling
-// of what follows it.
+// full width beneath them; a grid does that without wrapping the two in a row of their own.
 const TAB_LAYOUT: SxProps<Theme> = {
 	display: "grid",
 	gridTemplateColumns: "1fr auto",
@@ -85,15 +84,10 @@ const withAnsweredRow = (
 	};
 };
 
-const describeReadyCount = (refinement: IRefinementView): string => {
-	if (refinement.stagesConfigured && refinement.readyCount !== undefined) {
-		return ` · ${refinement.readyCount} ready`;
-	}
-	if (refinement.readyByVotesCount === undefined) {
-		return "";
-	}
-	return ` · ${refinement.readyByVotesCount} ready by votes`;
-};
+const describeReadyByVotes = (refinement: IRefinementView): string =>
+	refinement.readyByVotesCount === undefined
+		? ""
+		: ` · ${refinement.readyByVotesCount} ready by votes`;
 
 interface RefinementViewProps {
 	team: Team;
@@ -166,6 +160,11 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 	const parentMap = useParentWorkItems(parentReferences);
 	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
 	const stagesConfigured = refinement?.stagesConfigured ?? false;
+	const yardstick = refinement?.yardstick;
+	const voteQuestion =
+		yardstick === undefined ? undefined : askYardstick(yardstick, getTerm);
+	const question = voteQuestion?.question;
+	const questionTooltip = voteQuestion?.tooltip;
 	const columns = useMemo(
 		() =>
 			createRefinementColumns(
@@ -175,8 +174,19 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 				votesBeingSent,
 				setVotesShownFor,
 				stagesConfigured,
+				question === undefined || questionTooltip === undefined
+					? undefined
+					: { question, tooltip: questionTooltip },
 			),
-		[workItemTerm, parentMap, onVote, votesBeingSent, stagesConfigured],
+		[
+			workItemTerm,
+			parentMap,
+			onVote,
+			votesBeingSent,
+			stagesConfigured,
+			question,
+			questionTooltip,
+		],
 	);
 
 	if (refinement === null) {
@@ -202,7 +212,11 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 
 	return (
 		<Box sx={TAB_LAYOUT}>
-			{/* The grid shows it at the end of the heading's row; it comes first in the markup so the heading leads straight into the list. */}
+			<Typography variant="h6" component="h2">
+				{refinement.stagesConfigured
+					? describeStageBreakdown(workItems)
+					: `${count} ${workItemsTerm} in ${refinementTerm}${describeReadyByVotes(refinement)}`}
+			</Typography>
 			<NextRefinement
 				nextRefinementDate={refinement.nextRefinementDate}
 				terms={{
@@ -212,13 +226,6 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 				}}
 				canChangeSettings={isTeamAdmin(team.id)}
 			/>
-			<Typography variant="h6" component="h2">
-				{`${count} ${workItemsTerm} in ${refinementTerm}${describeReadyCount(refinement)}`}
-			</Typography>
-			{refinement.stagesConfigured && <StageBreakdown rows={workItems} />}
-			{refinement.yardstick && (
-				<YardstickQuestion yardstick={refinement.yardstick} getTerm={getTerm} />
-			)}
 			<TableContainer component={Paper}>
 				<DataGridBase<RefinementGridRow>
 					rows={workItems as RefinementGridRow[]}

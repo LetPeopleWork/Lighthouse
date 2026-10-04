@@ -1,17 +1,30 @@
 import type { Locator, Page } from "@playwright/test";
 
 /**
- * A Team's Refinement tab: the heading that counts the Work Items in refinement, and the grid's rows
- * in backlog order. Rows are found by role and by the Work Item's id, never by a test id; the demo data's
- * Work Items carry no tracker link, so a row is not assumed to hold one.
+ * A Team's Refinement tab: the heading - the count of Work Items in refinement, or the stage breakdown
+ * once the Team has stage rules - and the grid's rows in backlog order. Rows are found by role and by
+ * the Work Item's id, never by a test id; the demo data's Work Items carry no tracker link, so a row is
+ * not assumed to hold one.
  */
 export class TeamRefinementPage {
 	constructor(private readonly page: Page) {}
 
 	get heading(): Locator {
 		return this.page.getByRole("heading", {
-			name: /^\d+ Work Items? in Refinement · \d+ ready by votes$/,
+			name: /^(\d+ Work Items? in Refinement · \d+ ready by votes|\d+ Ready · \d+ Being refined · \d+ Waiting)$/,
 		});
+	}
+
+	/** The vote column's header, which asks the yardstick question. */
+	get voteColumnHeader(): Locator {
+		return this.page.getByRole("columnheader", {
+			name: /^Doable within (\d+ days?|our .+)\?/,
+		});
+	}
+
+	/** What the heading's row says for a Team without a Refinement cadence; the hint is the icon's tooltip. */
+	get noCadence(): Locator {
+		return this.page.getByText("No Refinement cadence", { exact: true });
 	}
 
 	/** The next Refinement named beside the heading: the day, the date and how far off it is. */

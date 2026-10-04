@@ -1,4 +1,4 @@
-import { cleanup, screen } from "@testing-library/react";
+import { act, cleanup, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IYardstick } from "../../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
@@ -9,10 +9,10 @@ import {
 } from "../../../../tests/RefinementTabTestKit";
 
 /**
- * The question every voter answers, and the number it is answered against. Under the heading the tab
- * shows exactly one more line: the question, followed by an info icon whose tooltip says where the
- * number comes from - the Team's SLE, a fallback from its cycle time, or nothing at all. There is no
- * other hint and no link. The server sends facts; the words, including every renameable term, are put
+ * The question every voter answers, and the number it is answered against. The vote column is headed
+ * by the question, followed by an info icon whose tooltip says where the number comes from - the Team's
+ * SLE, a fallback from its cycle time, or nothing at all. Nothing else sits between the heading and the
+ * list, there is no other hint and no link. The server sends facts; the words, including every renameable term, are put
  * together here.
  */
 
@@ -55,9 +55,23 @@ const NOTHING_TO_GO_ON: IYardstick = {
 const renderWithTheYardstick = (yardstick: IYardstick) =>
 	renderTheRefinementTab(gravitysRefinement({ yardstick }));
 
-/** The question line, and the info icon that sits on it, found by the words it carries. */
-const theQuestion = async (question: string) =>
-	await screen.findByText(question, { exact: true });
+/** The header of the column a voter votes in. */
+const theVoteColumnHeader = () => {
+	const header = within(screen.getByRole("grid"))
+		.getAllByRole("columnheader")
+		.find((columnHeader) => columnHeader.dataset.field === "myVote");
+	if (header === undefined) {
+		throw new Error("The grid has no vote column");
+	}
+	return header;
+};
+
+/** The question, found by the words it carries in the vote column's header. */
+const theQuestion = async (question: string) => {
+	const shown = await screen.findByText(question, { exact: true });
+	expect(theVoteColumnHeader()).toContainElement(shown);
+	return shown;
+};
 
 /** Hovering the info icon shows its tooltip; the icon's accessible name is the same text. */
 const theTooltipShownFor = async (
@@ -70,8 +84,8 @@ const theTooltipShownFor = async (
 };
 
 /**
- * Everything between the heading and the grid, sibling by sibling. The maintainer's rule is one line
- * there and never more, so the list must hold the question line alone.
+ * Everything between the heading and the grid, sibling by sibling. Only the next Refinement belongs
+ * there, on the heading's own row; the question has moved into the vote column's header.
  */
 const whatSitsBetweenTheHeadingAndTheList = () => {
 	const heading = screen.getByRole("heading", { level: 2 });
@@ -141,7 +155,7 @@ describe("The Refinement tab asks one question against one number", () => {
 		["the fallback", FALLBACK_OF_12, "Doable within 12 days?"],
 		["no number", NOTHING_TO_GO_ON, "Doable within our SLE?"],
 	])(
-		"with %s puts exactly one line between the heading and the list, and no link",
+		"with %s asks the question in the vote column's header, puts only the next Refinement between the heading and the list, and no link",
 		async (_, yardstick, question) => {
 			renderWithTheYardstick(yardstick);
 			await theQuestion(question);
@@ -149,7 +163,8 @@ describe("The Refinement tab asks one question against one number", () => {
 			const between = whatSitsBetweenTheHeadingAndTheList();
 
 			expect(between).toHaveLength(1);
-			expect(between[0].textContent?.trim()).toBe(question);
+			expect(between[0].textContent?.trim()).toBe("No Refinement cadence");
+			expect(theVoteColumnHeader()).toHaveTextContent(question);
 			expect(screen.queryByRole("link", { name: /sle|setting/i })).toBeNull();
 		},
 	);
@@ -220,11 +235,17 @@ describe("The Refinement tab asks one question against one number", () => {
 	});
 
 	// @us-10 @slice-10 @contract-shape:pure-function
-	it("opens the tooltip when the icon is reached with the keyboard", async () => {
+	it("opens the tooltip when the icon is reached with the keyboard from the grid's first header", async () => {
 		const { user } = renderWithTheYardstick(SLE_75_WITHIN_7);
 		const tooltip = "SLE 75% of work items in 7 days or less";
 		await theQuestion("Doable within 7 days?");
 		const icon = screen.getByRole("button", { name: tooltip });
+		// jsdom only guesses whether focus came from the keyboard, and once any earlier button on the
+		// page has been tabbed through, it guesses wrong for every later one; a browser does not. So the
+		// keyboard walk starts in the grid's header rather than at the top of the page.
+		act(() =>
+			screen.getByRole("columnheader", { name: "Work Item Name" }).focus(),
+		);
 
 		for (
 			let presses = 0;
@@ -245,6 +266,29 @@ describe("The Refinement tab asks one question against one number", () => {
 		expect(await screen.findByRole("grid")).toBeVisible();
 		expect(screen.getByRole("heading", { level: 2 })).toBeVisible();
 		expect(screen.queryByText(/^Doable within/)).toBeNull();
+		expect(theVoteColumnHeader()).toHaveTextContent(/^Your vote$/);
+	});
+
+	// @us-10 @slice-10 @boundary @contract-shape:pure-function
+	it("opens the tooltip when the icon in the header is clicked, and the click neither sorts nor takes focus away", async () => {
+		const { user } = renderWithTheYardstick(SLE_75_WITHIN_7);
+		const tooltip = "SLE 75% of work items in 7 days or less";
+		await theQuestion("Doable within 7 days?");
+		const rowsBefore = screen.getAllByRole("row").map((row) => row.textContent);
+		const icon = screen.getByRole("button", { name: tooltip });
+
+		await user.click(icon);
+
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(tooltip);
+		expect(icon).toHaveFocus();
+		expect(theVoteColumnHeader()).not.toHaveAttribute("aria-sort", "ascending");
+		expect(theVoteColumnHeader()).not.toHaveAttribute(
+			"aria-sort",
+			"descending",
+		);
+		expect(screen.getAllByRole("row").map((row) => row.textContent)).toEqual(
+			rowsBefore,
+		);
 	});
 
 	// @us-10 @slice-10 @boundary @contract-shape:pure-function

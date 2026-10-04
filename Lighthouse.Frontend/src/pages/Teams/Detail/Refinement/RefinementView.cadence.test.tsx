@@ -18,8 +18,9 @@ import {
 /**
  * The Refinement tab names the Team's next Refinement on the heading's row, to the right of the count:
  * the day and date, and how far off it is in calendar days - "tomorrow" for one day, never "today",
- * because the next Refinement is always after today. Without a cadence the same spot says how to get
- * one: a Team admin is pointed to Settings, anybody else is told a Team admin can set it. The two sizing
+ * because the next Refinement is always after today. Without a cadence the same spot says there is no
+ * cadence, and the info icon beside it says how to get one: a Team admin is pointed to Settings, anybody
+ * else is told a Team admin can set it. The two sizing
  * events say whether they happened on a Refinement day or another day once the Team has a cadence.
  */
 
@@ -50,6 +51,7 @@ const EDITOR_HINT =
 	/^Set a Refinement cadence in Settings to see how many Work Items are needed$/;
 const READER_HINT =
 	/^A Team admin can set a Refinement cadence to see how many Work Items are needed$/;
+const NO_CADENCE = /^No Refinement cadence$/;
 const VOTE_CAST = "TeamSizingVoteCast";
 const READINESS_REACHED = "TeamSizingReadinessReached";
 const CONFIGURATION_MANAGEMENT = "GR-073";
@@ -162,21 +164,72 @@ describe("The Refinement tab names the next Refinement", () => {
 		expect(heading.parentElement).toContainElement(nextRefinement);
 	});
 
-	// @us-04 @slice-04 @error @contract-shape:pure-function
-	it("points a Team admin to Settings when the Team has no cadence, and still lists the Work Items", async () => {
-		renderTheRefinementTab(withoutACadence(), aSizingLogService(), "TeamAdmin");
+	// @us-04 @slice-04 @boundary @contract-shape:pure-function
+	it("reads the heading first and the next Refinement after it", async () => {
+		renderTheRefinementTab(refiningOnThursdayTheEighth());
 
-		expect(await screen.findByText(EDITOR_HINT)).toBeVisible();
+		const heading = await screen.findByRole("heading", {
+			name: /^3 Work Items in Refinement/,
+		});
+		const nextRefinement = screen.getByText(/^Next Refinement: /);
+		expect(
+			heading.compareDocumentPosition(nextRefinement) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+	});
+
+	// @us-04 @slice-04 @error @contract-shape:pure-function
+	it("says a Team without a cadence has none, points a Team admin to Settings in the tooltip, and still lists the Work Items", async () => {
+		const { user } = renderTheRefinementTab(
+			withoutACadence(),
+			aSizingLogService(),
+			"TeamAdmin",
+		);
+
+		expect(await screen.findByText(NO_CADENCE)).toBeVisible();
+		expect(screen.queryByText(EDITOR_HINT)).not.toBeInTheDocument();
+		await user.hover(screen.getByRole("button", { name: EDITOR_HINT }));
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(EDITOR_HINT);
 		expect(await theRowOf("GR-058")).toBeVisible();
 		expect(screen.queryByText(/^Next Refinement: /)).not.toBeInTheDocument();
 	});
 
 	// @us-04 @slice-04 @error @contract-shape:pure-function
 	it("tells somebody who cannot change the settings that a Team admin can set a cadence", async () => {
-		renderTheRefinementTab(withoutACadence(), aSizingLogService(), "Reader");
+		const { user } = renderTheRefinementTab(
+			withoutACadence(),
+			aSizingLogService(),
+			"Reader",
+		);
 
-		expect(await screen.findByText(READER_HINT)).toBeVisible();
-		expect(screen.queryByText(EDITOR_HINT)).not.toBeInTheDocument();
+		expect(await screen.findByText(NO_CADENCE)).toBeVisible();
+		await user.hover(screen.getByRole("button", { name: READER_HINT }));
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(READER_HINT);
+		expect(
+			screen.queryByRole("button", { name: EDITOR_HINT }),
+		).not.toBeInTheDocument();
+	});
+
+	// @us-04 @slice-04 @error @contract-shape:pure-function
+	it("opens the hint when the icon beside No cadence is reached with the keyboard", async () => {
+		const { user } = renderTheRefinementTab(
+			withoutACadence(),
+			aSizingLogService(),
+			"Reader",
+		);
+		await screen.findByText(NO_CADENCE);
+		const icon = screen.getByRole("button", { name: READER_HINT });
+
+		for (
+			let presses = 0;
+			presses < 20 && icon !== document.activeElement;
+			presses++
+		) {
+			await user.tab();
+		}
+
+		expect(icon).toHaveFocus();
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(READER_HINT);
 	});
 
 	// @us-04 @slice-04 @boundary @contract-shape:pure-function
@@ -189,10 +242,11 @@ describe("The Refinement tab names the next Refinement", () => {
 		};
 		renderTheRefinementTab(withoutACadence(), aSizingLogService(), "Reader");
 
+		expect(await screen.findByText(/^No Grooming cadence$/)).toBeVisible();
 		expect(
-			await screen.findByText(
-				/^A Squad admin can set a Grooming cadence to see how many Tickets are needed$/,
-			),
+			screen.getByRole("button", {
+				name: /^A Squad admin can set a Grooming cadence to see how many Tickets are needed$/,
+			}),
 		).toBeVisible();
 	});
 });

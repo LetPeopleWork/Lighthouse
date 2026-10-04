@@ -10,6 +10,9 @@ import StageCell from "./StageCell";
 import type { IPendingVote } from "./useVoteCasting";
 import VoteControl from "./VoteControl";
 import { describeVoteCount } from "./voteWording";
+import YardstickQuestion, {
+	type YardstickQuestionWords,
+} from "./YardstickQuestion";
 
 export type RefinementGridRow = IRefinementRow & GridValidRowModel;
 
@@ -29,6 +32,7 @@ export const createRefinementColumns = (
 	votesBeingSent: ReadonlySet<string>,
 	onOpenVotes: (referenceId: string) => void,
 	stagesConfigured: boolean,
+	voteQuestion?: YardstickQuestionWords,
 ): DataGridColumn<RefinementGridRow>[] => [
 	createNameColumn<RefinementGridRow>(workItemTerm),
 	{
@@ -51,8 +55,12 @@ export const createRefinementColumns = (
 	...(stagesConfigured ? [stageColumn] : []),
 	{
 		field: "myVote",
-		headerName: "Your vote",
-		width: 240,
+		headerName: voteQuestion?.question ?? "Your vote",
+		...(voteQuestion && {
+			renderHeader: () => <YardstickQuestion {...voteQuestion} />,
+		}),
+		width: 260,
+		minWidth: 220,
 		sortable: false,
 		renderCell: ({ row }) => (
 			<VoteControl

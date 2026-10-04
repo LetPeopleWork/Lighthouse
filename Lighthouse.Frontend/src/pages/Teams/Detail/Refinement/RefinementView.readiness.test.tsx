@@ -30,9 +30,8 @@ import RefinementView from "./RefinementView";
 /**
  * What the votes make of each Work Item, as the Refinement tab says it: Ready, how many more Yes votes
  * or voters it needs, or that it needs discussion - shown to everybody, voted or not. The heading counts
- * the Work Items the votes have made Ready on the same line, so the tab still shows the heading and one
- * line above the list. The vote the server says tipped a Work Item to Ready is reported to usage data
- * from the browser that cast it.
+ * the Work Items the votes have made Ready on the same line, so there is no second line for it. The vote
+ * the server says tipped a Work Item to Ready is reported to usage data from the browser that cast it.
  */
 
 const { terms, mockUseLicenseRestrictions, reporter } = vi.hoisted(() => ({

@@ -1,5 +1,3 @@
-import { Typography } from "@mui/material";
-import type React from "react";
 import type {
 	IRefinementRow,
 	RefinementStage,
@@ -36,15 +34,3 @@ export const describeStageBreakdown = (
 		(stage) => `${counts[stage]} ${STAGE_WORDS[stage]}`,
 	).join(" · ");
 };
-
-interface StageBreakdownProps {
-	rows: readonly IRefinementRow[];
-}
-
-const StageBreakdown: React.FC<Readonly<StageBreakdownProps>> = ({ rows }) => (
-	<Typography variant="body2" color="text.secondary">
-		{describeStageBreakdown(rows)}
-	</Typography>
-);
-
-export default StageBreakdown;

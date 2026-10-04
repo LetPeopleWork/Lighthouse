@@ -179,11 +179,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 			}),
 		);
 
-		expect(
-			await screen.findByText(
-				/^Set a Refinement cadence in Settings to see how many Work Items are needed$/,
-			),
-		).toBeVisible();
+		expect(await screen.findByText(/^No Refinement cadence$/)).toBeVisible();
 		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	});
 

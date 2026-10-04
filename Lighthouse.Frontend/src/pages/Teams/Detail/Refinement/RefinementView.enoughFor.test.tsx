@@ -229,12 +229,7 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 	// @us-06 @slice-06 @error @contract-shape:pure-function
 	// The tab says why there is no number, so the missing column and line are not a tab that failed to load.
 	it.skip.each([
-		[
-			"no cadence",
-			noNeedBecause("NoCadence"),
-			null,
-			/^Set a Refinement cadence in Settings to see how many Work Items are needed$/,
-		],
+		["no cadence", noNeedBecause("NoCadence"), null, /^No Refinement cadence$/],
 		[
 			"too little history",
 			noNeedBecause("InsufficientData"),

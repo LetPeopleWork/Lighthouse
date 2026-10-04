@@ -1,5 +1,6 @@
-import { Typography } from "@mui/material";
+import { Stack, Typography } from "@mui/material";
 import type React from "react";
+import InfoTooltip from "./InfoTooltip";
 import {
 	type CadenceHintTerms,
 	describeHowToGetACadence,
@@ -15,19 +16,34 @@ interface NextRefinementProps {
 	canChangeSettings: boolean;
 }
 
-/** The next Refinement, or, for a Team without a cadence, how to get one. */
+/** The next Refinement, or, for a Team without a cadence, that it has none and how to get one. */
 const NextRefinement: React.FC<Readonly<NextRefinementProps>> = ({
 	nextRefinementDate,
 	terms,
 	canChangeSettings,
 }) => {
-	const wording =
-		describeNextRefinement(nextRefinementDate, new Date(), terms.refinement) ??
-		describeHowToGetACadence(canChangeSettings, terms);
+	const nextRefinement = describeNextRefinement(
+		nextRefinementDate,
+		new Date(),
+		terms.refinement,
+	);
+	if (nextRefinement !== null) {
+		return (
+			<Typography color="text.secondary" {...{ [NEXT_REFINEMENT_SLOT]: true }}>
+				{nextRefinement}
+			</Typography>
+		);
+	}
 	return (
-		<Typography color="text.secondary" {...{ [NEXT_REFINEMENT_SLOT]: true }}>
-			{wording}
-		</Typography>
+		<Stack
+			direction="row"
+			spacing={0.5}
+			sx={{ alignItems: "center" }}
+			{...{ [NEXT_REFINEMENT_SLOT]: true }}
+		>
+			<Typography color="text.secondary">{`No ${terms.refinement} cadence`}</Typography>
+			<InfoTooltip text={describeHowToGetACadence(canChangeSettings, terms)} />
+		</Stack>
 	);
 };
 

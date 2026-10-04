@@ -1,8 +1,8 @@
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import { IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import { Stack, Typography } from "@mui/material";
 import type React from "react";
 import type { IYardstick } from "../../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
+import InfoTooltip from "./InfoTooltip";
 
 type GetTerm = (key: string) => string;
 
@@ -41,28 +41,37 @@ const yardstickTooltip = (yardstick: IYardstick, getTerm: GetTerm): string => {
 	}
 };
 
-interface YardstickQuestionProps {
-	yardstick: IYardstick;
-	getTerm: GetTerm;
+/** The question a voter answers, and where the number in it comes from. */
+export interface YardstickQuestionWords {
+	question: string;
+	tooltip: string;
 }
 
-const YardstickQuestion: React.FC<Readonly<YardstickQuestionProps>> = ({
-	yardstick,
-	getTerm,
-}) => {
+export const askYardstick = (
+	yardstick: IYardstick,
+	getTerm: GetTerm,
+): YardstickQuestionWords => {
 	const shown = withANumberOrNone(yardstick);
-	const tooltip = yardstickTooltip(shown, getTerm);
-
-	return (
-		<Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
-			<Typography>{yardstickQuestion(shown, getTerm)}</Typography>
-			<Tooltip title={tooltip}>
-				<IconButton size="small" aria-label={tooltip}>
-					<InfoOutlinedIcon fontSize="small" />
-				</IconButton>
-			</Tooltip>
-		</Stack>
-	);
+	return {
+		question: yardstickQuestion(shown, getTerm),
+		tooltip: yardstickTooltip(shown, getTerm),
+	};
 };
+
+const YardstickQuestion: React.FC<Readonly<YardstickQuestionWords>> = ({
+	question,
+	tooltip,
+}) => (
+	<Stack
+		direction="row"
+		spacing={0.5}
+		sx={{ alignItems: "center", minWidth: 0 }}
+	>
+		<Typography variant="inherit" component="span" noWrap>
+			{question}
+		</Typography>
+		<InfoTooltip text={tooltip} />
+	</Stack>
+);
 
 export default YardstickQuestion;
