@@ -80,7 +80,6 @@ namespace Lighthouse.Backend.Services.Implementation
             IRepository<Portfolio> projectRepository, IRepository<Team> teamRepository, IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo, IDeliveryRepository deliveryRepository, IDeliveryMetricSnapshotRepository deliveryMetricSnapshotRepository, IDemoDataFactory demoDataFactory, ILighthouseClock clock, ISizingLogRepository sizingLog)
 #pragma warning restore S107
         {
-            this.sizingLog = sizingLog;
             this.projectRepository = projectRepository;
             this.teamRepository = teamRepository;
             this.workTrackingSystemConnectionRepo = workTrackingSystemConnectionRepo;
@@ -88,6 +87,7 @@ namespace Lighthouse.Backend.Services.Implementation
             this.deliveryMetricSnapshotRepository = deliveryMetricSnapshotRepository;
             this.demoDataFactory = demoDataFactory;
             this.clock = clock;
+            this.sizingLog = sizingLog;
 
             scenarios.AddRange(GetFreeScenarios());
             scenarios.AddRange(GetPremiumScenarios());

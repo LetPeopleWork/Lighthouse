@@ -25,12 +25,6 @@ namespace Lighthouse.Backend.API
         VoterIdentityResolver voterIdentityResolver,
         ILogger<RefinementVotesController> logger) : ControllerBase
     {
-        private const string WorkItemNotInRefinementCode = "work-item-not-in-refinement";
-
-        private const string VoterNameRequiredCode = "voter-name-required";
-
-        private const string VoterKeyRequiredCode = "voter-key-required";
-
         [HttpPost("votes")]
         public ActionResult<RefinementRowDto> CastVote(
             int teamId,
@@ -55,38 +49,36 @@ namespace Lighthouse.Backend.API
             {
                 VoteOutcome.Recorded => RowAsItNowStands(teamId, workItemId, voterKey),
                 VoteOutcome.TeamNotFound => NotFound(),
-                VoteOutcome.WorkItemNotInRefinement => Refused(StatusCodes.Status409Conflict, "That Work Item is not in refinement.", WorkItemNotInRefinementCode),
+                VoteOutcome.WorkItemNotInRefinement => Refused(StatusCodes.Status409Conflict, "That Work Item is not in refinement.", SizingRefusal.WorkItemNotInRefinement),
                 _ => throw new System.Diagnostics.UnreachableException($"No such vote outcome: {outcome}"),
             };
         }
 
-        // A refused write is routine (a browser that lost its key, a blank name), so the line says why, for which
-        // Team and from where, and never who: the declared name and the key are exactly what it must not carry.
+        // A missing name or key is routine (a browser that lost its key, a blank name) and the caller can put it
+        // right, so the answer names it. A credential no person stands behind is for an administrator to fix.
         private ObjectResult RefusedWithoutAVoter(VoterRefusal? refusal, int teamId, SizingChannel channel)
         {
-            var (level, reason) = refusal switch
+            var (level, reason, title, namesTheReason) = refusal switch
             {
-                VoterRefusal.NameRequired => (LogLevel.Information, VoterNameRequiredCode),
-                VoterRefusal.KeyRequired => (LogLevel.Information, VoterKeyRequiredCode),
-                VoterRefusal.NameTooLong => (LogLevel.Information, "voter-name-too-long"),
-                VoterRefusal.NeedsAPerson => (LogLevel.Warning, "vote-needs-a-person"),
+                VoterRefusal.NameRequired => (LogLevel.Information, SizingRefusal.VoterNameRequired, "A vote needs the voter's name.", true),
+                VoterRefusal.KeyRequired => (LogLevel.Information, SizingRefusal.VoterKeyRequired, "A vote needs the key the voter's browser keeps.", true),
+                VoterRefusal.NameTooLong => (LogLevel.Information, SizingRefusal.VoterNameTooLong, $"A voter's name is at most {VoterIdentityResolver.LongestVoterName} characters.", false),
+                VoterRefusal.NeedsAPerson => (LogLevel.Warning, SizingRefusal.VoteNeedsAPerson, "A vote needs a person to cast it.", false),
                 _ => throw new System.Diagnostics.UnreachableException($"No such voter refusal: {refusal}"),
             };
-            logger.Log(level, "Sizing entry refused ({Reason}) for Team {TeamId} from {Channel}", reason, teamId, channel);
+            SizingRefusal.Log(logger, level, reason, teamId, channel);
 
-            return refusal switch
-            {
-                VoterRefusal.NameRequired => Refused(StatusCodes.Status400BadRequest, "A vote needs the voter's name.", VoterNameRequiredCode),
-                VoterRefusal.KeyRequired => Refused(StatusCodes.Status400BadRequest, "A vote needs the key the voter's browser keeps.", VoterKeyRequiredCode),
-                VoterRefusal.NameTooLong => Problem(statusCode: StatusCodes.Status400BadRequest, title: $"A voter's name is at most {VoterIdentityResolver.LongestVoterName} characters."),
-                _ => Problem(statusCode: StatusCodes.Status400BadRequest, title: "A vote needs a person to cast it."),
-            };
+            return Refused(StatusCodes.Status400BadRequest, title, namesTheReason ? reason : null);
         }
 
-        private ObjectResult Refused(int statusCode, string title, string code)
+        private ObjectResult Refused(int statusCode, string title, string? code)
         {
             var problem = ProblemDetailsFactory.CreateProblemDetails(HttpContext, statusCode: statusCode, title: title);
-            problem.Extensions["code"] = code;
+            if (code is not null)
+            {
+                problem.Extensions["code"] = code;
+            }
+
             return new ObjectResult(problem) { StatusCode = statusCode };
         }
 

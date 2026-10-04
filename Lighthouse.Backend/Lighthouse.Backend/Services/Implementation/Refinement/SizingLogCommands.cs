@@ -14,8 +14,6 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         ILighthouseClock clock,
         ILogger<SizingLogCommands> logger) : ISizingLogCommands
     {
-        private const string WorkItemNotInRefinementReason = "work-item-not-in-refinement";
-
         public VoteOutcome Vote(int teamId, string workItemReference, SizingVote vote, Voter voter)
         {
             var team = teamRepository.GetById(teamId);
@@ -26,9 +24,8 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
 
             if (!refinementList.For(team).Any(item => string.Equals(item.ReferenceId, workItemReference, StringComparison.Ordinal)))
             {
-                // A Work Item leaving refinement between reading the tab and voting is routine, and its reference
-                // names the work, so the line says why and for which Team, never which Work Item.
-                logger.LogInformation("Sizing entry refused ({Reason}) for Team {TeamId} from {Channel}", WorkItemNotInRefinementReason, team.Id, vote.Channel);
+                // A Work Item leaving refinement between reading the tab and voting is routine, not a fault.
+                SizingRefusal.Log(logger, LogLevel.Information, SizingRefusal.WorkItemNotInRefinement, team.Id, vote.Channel);
                 return VoteOutcome.WorkItemNotInRefinement;
             }
 

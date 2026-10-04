@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         /// <summary>The stored key of whoever presents this browser key, to recognise their own votes on a read.</summary>
         public string? ReaderKeyFrom(string? presentedVoterKey)
             => Kind == VoterIdentityKind.SelfDeclared && IsUsable(presentedVoterKey)
-                ? SelfDeclaredKeyOf(presentedVoterKey!)
+                ? SizingLogEntry.SelfDeclaredVoterKeyOf(presentedVoterKey!)
                 : null;
 
         /// <returns>The voter, or what the caller still has to say about who they are before they may write.</returns>
@@ -51,15 +51,12 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 return VoterResolution.RefusedFor(VoterRefusal.KeyRequired);
             }
 
-            return VoterResolution.Of(new Voter(SelfDeclaredKeyOf(presentedVoterKey!), name, null));
+            return VoterResolution.Of(new Voter(SizingLogEntry.SelfDeclaredVoterKeyOf(presentedVoterKey!), name, null));
         }
 
         // A short key could be guessed, and a guessed key speaks for somebody else's votes.
         private static bool IsUsable(string? presentedVoterKey)
             => presentedVoterKey is not null && presentedVoterKey.Length >= ShortestVoterKey;
-
-        private static string SelfDeclaredKeyOf(string presentedVoterKey)
-            => SizingLogEntry.SelfDeclaredVoterKeyOf(presentedVoterKey);
     }
 
     /// <summary>Exactly one of the two is set: the voter, or why there is none.</summary>

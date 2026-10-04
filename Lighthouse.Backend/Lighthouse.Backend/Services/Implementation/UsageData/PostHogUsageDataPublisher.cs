@@ -240,10 +240,9 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         /// The address, the kind of system, the setting, its direction and the sizing moment are each
         /// left out entirely on an event they do not belong to, rather than written as an empty
         /// value or as off - an "enabled: false" on an event that switched nothing would read as a
-        /// switch nobody made. The
-        /// two instructions below are also empty-looking and are written anyway, on purpose: an
-        /// absent instruction is one the collector does not follow, and what it would not follow is
-        /// the instruction to throw away the caller's own address.
+        /// switch nobody made. The two instructions below are also empty-looking and are written
+        /// anyway, on purpose: an absent instruction is one the collector does not follow, and what
+        /// it would not follow is the instruction to throw away the caller's own address.
         /// </summary>
         private sealed record WhatEachMessageCarries(
             [property: JsonPropertyName("route")]
