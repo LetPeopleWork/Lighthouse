@@ -28,6 +28,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string RefinementImplementationNamespace = "Lighthouse.Backend.Services.Implementation.Refinement";
 
+        private const string RefinementResolutionAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.Refinement\.RefinementResolution($|\+.*)";
+
         private const string RepositoriesNamespace = "Lighthouse.Backend.Services.Interfaces.Repositories";
 
         private static readonly string[] RepositoryWriters = ["Save", "Add", "Append", "Update", "Remove", "Delete", "Apply"];
@@ -61,6 +63,28 @@ namespace Lighthouse.Backend.Tests.Architecture
             Types().That().HaveFullName(typeof(RefinementSettingsValidator).FullName!)
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ServicesImplementationPattern))
                 .Because("a validator that reaches into a service can no longer be tested by handing it values.")
+                .Check(Architecture);
+        }
+
+        // How the votes on a row resolve is decided from the log's entries alone, so every answer it gives can be
+        // checked by handing it entries.
+        [Test]
+        public void TheRefinementResolution_IsStatic()
+        {
+            var resolution = typeof(RefinementResolution);
+
+            Assert.That(resolution.IsAbstract && resolution.IsSealed, Is.True,
+                "The refinement resolution must stay a static class: it resolves the entries it is given and holds nothing.");
+        }
+
+        // Its own lambdas compile into nested types beside it, which are not a reach into another service.
+        [Test]
+        public void TheRefinementResolution_ReferencesNothingInServicesImplementation()
+        {
+            Types().That().HaveFullName(typeof(RefinementResolution).FullName!)
+                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ServicesImplementationPattern)
+                    .And().DoNotHaveFullNameMatching(RefinementResolutionAndItsNestedTypesPattern))
+                .Because("a resolution that reaches into a service can no longer be tested by handing it entries.")
                 .Check(Architecture);
         }
 

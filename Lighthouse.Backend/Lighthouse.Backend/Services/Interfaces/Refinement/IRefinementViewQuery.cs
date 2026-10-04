@@ -14,10 +14,16 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
 
     public sealed record RefinementRow(WorkItem WorkItem, RowVotes Votes);
 
-    /// <summary>How many people currently have a vote on the row, and the reader's own vote, if any.</summary>
-    public sealed record RowVotes(int VoteCount, SizingAnswer? MyVote)
+    /// <summary>How many people currently have a vote on the row, the reader's own vote, if any, and how the votes split.</summary>
+    public sealed record RowVotes(int VoteCount, SizingAnswer? MyVote, VoteSplit Split)
     {
-        public static RowVotes None { get; } = new(0, null);
+        public static RowVotes None { get; } = new(0, null, VoteSplit.None);
+    }
+
+    /// <summary>How many current votes say each answer.</summary>
+    public sealed record VoteSplit(int Yes, int YesBut, int No)
+    {
+        public static VoteSplit None { get; } = new(0, 0, 0);
     }
 
     /// <summary>The number every voter answers against: so many days, with so much probability.</summary>

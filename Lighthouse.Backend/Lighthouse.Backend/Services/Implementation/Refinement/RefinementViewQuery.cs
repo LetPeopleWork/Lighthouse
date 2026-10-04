@@ -40,23 +40,8 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             List<string> references = [.. workItems.Select(item => item.ReferenceId).Distinct(StringComparer.Ordinal)];
 
             return sizingLog.ReadForTeam(teamId, references)
-                .Where(entry => entry.Kind != SizingEntryKind.Comment)
                 .GroupBy(entry => entry.WorkItemReferenceId, StringComparer.Ordinal)
-                .ToDictionary(entries => entries.Key, entries => Tally(entries, readerKey), StringComparer.Ordinal);
-        }
-
-        // Each voter counts once, with whatever they said last; a vote taken back leaves them uncounted.
-        private static RowVotes Tally(IEnumerable<SizingLogEntry> entries, string? readerKey)
-        {
-            var current = entries
-                .GroupBy(entry => entry.VoterKey, StringComparer.Ordinal)
-                .Select(byVoter => byVoter.MaxBy(entry => entry.Id)!)
-                .Where(latest => latest.Kind == SizingEntryKind.Vote)
-                .ToList();
-
-            var myVote = current.FirstOrDefault(entry => readerKey is not null && entry.VoterKey == readerKey)?.Answer;
-
-            return new RowVotes(current.Count, myVote);
+                .ToDictionary(entries => entries.Key, entries => RefinementResolution.VotesOn(entries, readerKey), StringComparer.Ordinal);
         }
     }
 }

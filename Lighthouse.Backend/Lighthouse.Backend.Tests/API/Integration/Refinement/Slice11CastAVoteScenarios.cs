@@ -33,7 +33,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-11 @slice-11 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice11)]
         public async Task Changing_ones_mind_replaces_the_current_vote_and_still_counts_once()
         {
             var gravity = await GivenJonasHasVotedYesOnConfigurationManagement();
@@ -45,7 +44,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-11 @slice-11 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice11)]
         public async Task Every_voter_counts_once_and_sees_only_their_own_answer_as_theirs()
         {
             var gravity = await GivenJonasHasVotedYesOnConfigurationManagement();
@@ -57,7 +55,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-11 @slice-11 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice11)]
         public async Task Every_reader_sees_how_the_votes_split()
         {
             var gravity = await GivenJonasHasVotedYesOnConfigurationManagement();
@@ -70,7 +67,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-11 @slice-11 @boundary @contract-shape:bounded-change
         // A name is not an identity: two browsers declaring "Ana Lima" are two people.
         [Test]
-        [Ignore(PendingSlice11)]
         public async Task Two_people_who_declare_the_same_name_are_two_voters()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();

@@ -38,5 +38,16 @@ namespace Lighthouse.Backend.API.DTO
         public int VoteCount { get; } = row.Votes.VoteCount;
 
         public SizingAnswer? MyVote { get; } = row.Votes.MyVote;
+
+        public VoteSplitDto Split { get; } = new(row.Votes.Split);
+    }
+
+    public sealed class VoteSplitDto(VoteSplit split)
+    {
+        public int Yes { get; } = split.Yes;
+
+        public int YesBut { get; } = split.YesBut;
+
+        public int No { get; } = split.No;
     }
 }
