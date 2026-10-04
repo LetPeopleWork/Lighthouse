@@ -13,6 +13,11 @@ import type { ITeamService } from "../../../services/Api/TeamService";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import ModifyTeamSettings from "./ModifyTeamSettings";
+import {
+	MIN_VOTERS_ERROR,
+	MIN_YES_ERROR,
+	readinessErrors,
+} from "./RefinementSettingsSection";
 
 /**
  * Readiness in the Refinement section of a Team's settings: how many Yes votes, from how many voters,
@@ -159,7 +164,7 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 	});
 
 	// @us-13 @slice-13 @driving_port @contract-shape:pure-function
-	it.skip("shows three Yes votes from three voters and no veto until the admin changes them", async () => {
+	it("shows three Yes votes from three voters and no veto until the admin changes them", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
 		expect(
@@ -174,7 +179,7 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 	});
 
 	// @us-13 @slice-13 @driving_port @contract-shape:bounded-change
-	it.skip("saves a changed number of Yes votes with the rest of readiness as it was", async () => {
+	it("saves a changed number of Yes votes with the rest of readiness as it was", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
 		await replaceTheNumberIn(YES_VOTES_NEEDED, "2");
@@ -189,7 +194,7 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 	});
 
 	// @us-13 @slice-13 @error @contract-shape:unbounded-preservation
-	it.skip("refuses fewer than one Yes vote, says why and saves nothing", async () => {
+	it("refuses fewer than one Yes vote, says why and saves nothing", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
 		await replaceTheNumberIn(YES_VOTES_NEEDED, "0");
@@ -202,7 +207,7 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 	});
 
 	// @us-13 @slice-13 @error @contract-shape:unbounded-preservation
-	it.skip("refuses fewer voters than Yes votes, says why and saves nothing", async () => {
+	it("refuses fewer voters than Yes votes, says why and saves nothing", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
 		await replaceTheNumberIn(VOTERS_NEEDED, "2");
@@ -260,7 +265,7 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 	});
 
 	// @us-13 @slice-13 @boundary @contract-shape:unbounded-preservation
-	it.skip("saves nothing just because the form was opened", async () => {
+	it("saves nothing just because the form was opened", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
 		await screen.findByRole("spinbutton", { name: YES_VOTES_NEEDED });
@@ -268,4 +273,56 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 
 		expect(saveTeamSettings).not.toHaveBeenCalled();
 	});
+});
+
+describe("the readiness rule the form shares with the server", () => {
+	it.each([
+		{ minYes: 3, minVoters: 3, minYesError: null, minVotersError: null },
+		{ minYes: 1, minVoters: 1, minYesError: null, minVotersError: null },
+		{ minYes: 2, minVoters: 5, minYesError: null, minVotersError: null },
+		{
+			minYes: 0,
+			minVoters: 3,
+			minYesError: MIN_YES_ERROR,
+			minVotersError: null,
+		},
+		{
+			minYes: -1,
+			minVoters: 0,
+			minYesError: MIN_YES_ERROR,
+			minVotersError: null,
+		},
+		{
+			minYes: Number.NaN,
+			minVoters: 3,
+			minYesError: MIN_YES_ERROR,
+			minVotersError: null,
+		},
+		{
+			minYes: 3,
+			minVoters: 2,
+			minYesError: null,
+			minVotersError: MIN_VOTERS_ERROR,
+		},
+		{
+			minYes: 1,
+			minVoters: 0,
+			minYesError: null,
+			minVotersError: MIN_VOTERS_ERROR,
+		},
+		{
+			minYes: 3,
+			minVoters: Number.NaN,
+			minYesError: null,
+			minVotersError: MIN_VOTERS_ERROR,
+		},
+	])(
+		"$minYes Yes from $minVoters voters → $minYesError / $minVotersError",
+		({ minYes, minVoters, minYesError, minVotersError }) => {
+			expect(readinessErrors({ minYes, minVoters, veto: null })).toEqual({
+				minYes: minYesError,
+				minVoters: minVotersError,
+			});
+		},
+	);
 });

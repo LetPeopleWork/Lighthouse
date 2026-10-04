@@ -30,7 +30,10 @@ import WaitStatesEditor from "../StateMappings/WaitStatesEditor";
 import StatesList from "../StatesList/StatesList";
 import SaveStateIndicator from "../ValidationActions/SaveStateIndicator";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
-import RefinementSettingsSection from "./RefinementSettingsSection";
+import RefinementSettingsSection, {
+	DEFAULT_READINESS,
+	readinessErrors,
+} from "./RefinementSettingsSection";
 
 interface ModifyTeamSettingsProps {
 	title: string;
@@ -80,6 +83,13 @@ function teamAutoSaveBlockers(
 		reasons.push(
 			`Add at least one ${getTerm(TERMINOLOGY_KEYS.WORK_ITEM)} Type`,
 		);
+	}
+	const readiness = s.refinement?.readiness;
+	if (readiness) {
+		const errors = readinessErrors(readiness);
+		if (errors.minYes !== null || errors.minVoters !== null) {
+			reasons.push("Correct Readiness by votes");
+		}
 	}
 	if (isDefault) {
 		return reasons;
@@ -260,7 +270,21 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							toDoStates={teamSettings.toDoStates || []}
 							doingStates={teamSettings.doingStates || []}
 							chosenStates={teamSettings.refinement?.states ?? []}
-							onChange={(states) => updateSettings("refinement", { states })}
+							onChange={(states) =>
+								updateSettings("refinement", {
+									...teamSettings.refinement,
+									states,
+								})
+							}
+							readiness={
+								teamSettings.refinement?.readiness ?? DEFAULT_READINESS
+							}
+							onReadinessChange={(readiness) =>
+								updateSettings("refinement", {
+									states: teamSettings.refinement?.states ?? [],
+									readiness,
+								})
+							}
 						/>
 
 						<FlowMetricsConfigurationComponent

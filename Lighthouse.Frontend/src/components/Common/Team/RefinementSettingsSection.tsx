@@ -1,7 +1,16 @@
+import {
+	Checkbox,
+	FormControlLabel,
+	TextField,
+	Typography,
+} from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useEffect, useRef } from "react";
-import type { IRefinementStateSetting } from "../../../models/Refinement/Refinement";
+import type {
+	IReadinessSetting,
+	IRefinementStateSetting,
+} from "../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
 import InputGroup from "../InputGroup/InputGroup";
@@ -12,7 +21,33 @@ interface RefinementSettingsSectionProps {
 	doingStates: string[];
 	chosenStates: IRefinementStateSetting[];
 	onChange: (states: IRefinementStateSetting[]) => void;
+	readiness: IReadinessSetting;
+	onReadinessChange: (readiness: IReadinessSetting) => void;
 }
+
+export const DEFAULT_READINESS: IReadinessSetting = {
+	minYes: 3,
+	minVoters: 3,
+	veto: null,
+};
+
+export const MIN_YES_ERROR = "At least one Yes vote is needed";
+export const MIN_VOTERS_ERROR =
+	"Voters needed cannot be fewer than Yes votes needed";
+
+// The same rule the server enforces, so a save it would refuse is never sent.
+export const readinessErrors = (
+	readiness: IReadinessSetting,
+): { minYes: string | null; minVoters: string | null } => {
+	const enoughYes = Number.isInteger(readiness.minYes) && readiness.minYes >= 1;
+	const enoughVoters =
+		Number.isInteger(readiness.minVoters) &&
+		readiness.minVoters >= readiness.minYes;
+	return {
+		minYes: enoughYes ? null : MIN_YES_ERROR,
+		minVoters: enoughYes && !enoughVoters ? MIN_VOTERS_ERROR : null,
+	};
+};
 
 const toSettings = (states: string[]): IRefinementStateSetting[] =>
 	states.map((state) => ({ state }));
@@ -22,6 +57,8 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 	doingStates,
 	chosenStates,
 	onChange,
+	readiness,
+	onReadinessChange,
 }) => {
 	const { getTerm } = useTerminology();
 
@@ -63,6 +100,17 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 		save(chosen.filter((name) => name !== state));
 
 	const refinementTerm = getTerm(TERMINOLOGY_KEYS.REFINEMENT);
+	const errors = readinessErrors(readiness);
+
+	const changeNumber =
+		(key: "minYes" | "minVoters") =>
+		(event: React.ChangeEvent<HTMLInputElement>) =>
+			onReadinessChange({
+				...readiness,
+				[key]: Number.parseInt(event.target.value, 10),
+			});
+
+	const shown = (value: number) => (Number.isNaN(value) ? "" : value);
 
 	return (
 		<InputGroup title={refinementTerm}>
@@ -74,6 +122,39 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 					onRemoveItem={remove}
 					suggestions={suggestions}
 					isLoading={false}
+				/>
+			</Grid>
+			<Grid size={{ xs: 12 }}>
+				<Typography variant="subtitle1">Readiness by votes</Typography>
+			</Grid>
+			<Grid size={{ xs: 12, sm: 6 }}>
+				<TextField
+					label="Yes votes needed"
+					type="number"
+					fullWidth
+					value={shown(readiness.minYes)}
+					onChange={changeNumber("minYes")}
+					error={errors.minYes !== null}
+					helperText={errors.minYes}
+					slotProps={{ htmlInput: { min: 1, step: 1 } }}
+				/>
+			</Grid>
+			<Grid size={{ xs: 12, sm: 6 }}>
+				<TextField
+					label="Voters needed"
+					type="number"
+					fullWidth
+					value={shown(readiness.minVoters)}
+					onChange={changeNumber("minVoters")}
+					error={errors.minVoters !== null}
+					helperText={errors.minVoters}
+					slotProps={{ htmlInput: { min: 1, step: 1 } }}
+				/>
+			</Grid>
+			<Grid size={{ xs: 12 }}>
+				<FormControlLabel
+					control={<Checkbox checked={readiness.veto !== null} disabled />}
+					label="Send to discussion"
 				/>
 			</Grid>
 		</InputGroup>
