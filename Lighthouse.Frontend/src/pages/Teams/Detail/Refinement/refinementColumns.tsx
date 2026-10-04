@@ -5,6 +5,7 @@ import { createNameColumn } from "../../../../components/Common/FeatureListDataG
 import ParentWorkItemCell from "../../../../components/Common/ParentWorkItemCell/ParentWorkItemCell";
 import type { ParentWorkItem } from "../../../../hooks/useParentWorkItems";
 import type { IRefinementRow } from "../../../../models/Refinement/Refinement";
+import ReadinessCell from "./ReadinessCell";
 import type { IPendingVote } from "./useVoteCasting";
 import VoteControl from "./VoteControl";
 import { describeVoteCount } from "./voteWording";
@@ -66,5 +67,16 @@ export const createRefinementColumns = (
 				</Button>
 			);
 		},
+	},
+	{
+		field: "readiness",
+		headerName: "Readiness",
+		width: 200,
+		renderCell: ({ row }) => (
+			<ReadinessCell
+				readiness={row.readiness}
+				missingVotes={row.missingVotes}
+			/>
+		),
 	},
 ];

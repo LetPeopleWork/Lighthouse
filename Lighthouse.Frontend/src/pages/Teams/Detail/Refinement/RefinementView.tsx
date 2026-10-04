@@ -136,11 +136,15 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 	);
 	const workItemsTerm =
 		count === 1 ? workItemTerm : getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const readyByVotes =
+		refinement.readyByVotesCount === undefined
+			? ""
+			: ` · ${refinement.readyByVotesCount} ready by votes`;
 
 	return (
 		<Stack spacing={2}>
 			<Typography variant="h6" component="h2">
-				{`${count} ${workItemsTerm} in ${refinementTerm}`}
+				{`${count} ${workItemsTerm} in ${refinementTerm}${readyByVotes}`}
 			</Typography>
 			{refinement.yardstick && (
 				<YardstickQuestion yardstick={refinement.yardstick} getTerm={getTerm} />

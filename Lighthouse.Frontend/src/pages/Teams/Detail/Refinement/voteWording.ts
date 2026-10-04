@@ -1,4 +1,7 @@
-import type { ISizingSplit } from "../../../../models/Refinement/Refinement";
+import type {
+	ISizingSplit,
+	RowReadiness,
+} from "../../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { ApiError } from "../../../../services/Api/ApiError";
 import { LONGEST_VOTER_NAME } from "./VoterNamePrompt";
@@ -45,3 +48,18 @@ export const describeVoteRefusal = (
 
 	return error.message;
 };
+
+const moreVoters = (missing: number): string =>
+	`${missing} more ${missing === 1 ? "voter" : "voters"} needed`;
+
+const READINESS_WORDING: Record<RowReadiness, (missing: number) => string> = {
+	Ready: () => "Ready",
+	MoreYesNeeded: (missing) => `${missing} more Yes needed`,
+	MoreVotersNeeded: moreVoters,
+	NeedsDiscussion: () => "Needs discussion",
+};
+
+export const describeReadiness = (
+	readiness: RowReadiness,
+	missingVotes: number | null,
+): string => READINESS_WORDING[readiness](missingVotes ?? 0);

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { describeSplit, describeVoteCount } from "./voteWording";
+import type { RowReadiness } from "../../../../models/Refinement/Refinement";
+import {
+	describeReadiness,
+	describeSplit,
+	describeVoteCount,
+} from "./voteWording";
 
 describe("how a row's votes read", () => {
 	it.each([
@@ -17,5 +22,18 @@ describe("how a row's votes read", () => {
 		[{ yes: 1, yesBut: 2, no: 3 }, "1 Yes · 2 Yes, if… · 3 No"],
 	])("the split %o reads as '%s'", (split, expected) => {
 		expect(describeSplit(split)).toBe(expected);
+	});
+});
+
+describe("what a row's votes make of it, in words", () => {
+	it.each<[RowReadiness, number | null, string]>([
+		["Ready", null, "Ready"],
+		["MoreYesNeeded", 1, "1 more Yes needed"],
+		["MoreYesNeeded", 2, "2 more Yes needed"],
+		["MoreVotersNeeded", 1, "1 more voter needed"],
+		["MoreVotersNeeded", 2, "2 more voters needed"],
+		["NeedsDiscussion", null, "Needs discussion"],
+	])("%s missing %s reads as '%s'", (readiness, missingVotes, expected) => {
+		expect(describeReadiness(readiness, missingVotes)).toBe(expected);
 	});
 });

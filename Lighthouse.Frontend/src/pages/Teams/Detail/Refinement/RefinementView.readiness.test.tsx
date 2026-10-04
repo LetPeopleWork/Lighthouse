@@ -87,7 +87,7 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 	});
 
 	// @us-13 @slice-13 @driving_port @kpi-OUT-5510-K5-ready-before-the-day @contract-shape:pure-function
-	it.skip("says on each row whether it is Ready, what is still missing, or that it needs discussion", async () => {
+	it("says on each row whether it is Ready, what is still missing, or that it needs discussion", async () => {
 		renderTheRefinementTab(
 			gravitysRefinement({ readyByVotesCount: 1 }, [
 				aRow("GR-058", "User activity tracking", "Next", {
@@ -120,7 +120,7 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 	});
 
 	// @us-13 @slice-13 @boundary @contract-shape:pure-function
-	it.skip("says one missing Yes in the singular and missing voters in the plural", async () => {
+	it("says one missing Yes in the singular and missing voters in the plural", async () => {
 		renderTheRefinementTab(
 			gravitysRefinement({}, [
 				aRow("GR-051", "Advanced reporting module", "Analysing", {
@@ -139,7 +139,7 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 	});
 
 	// @us-13 @slice-13 @contract-shape:pure-function
-	it.skip("gives readiness its own column, right after the votes", async () => {
+	it("gives readiness its own column, right after the votes", async () => {
 		renderTheRefinementTab(gravitysRefinement());
 
 		await theRowOf(CONFIGURATION_MANAGEMENT);
@@ -152,7 +152,7 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 	});
 
 	// @us-13 @slice-13 @contract-shape:pure-function
-	it.skip("counts the Work Items the votes made Ready in the heading, on the heading's own line", async () => {
+	it("counts the Work Items the votes made Ready in the heading, on the heading's own line", async () => {
 		renderTheRefinementTab(gravitysRefinement({ readyByVotesCount: 1 }));
 
 		expect(
@@ -164,7 +164,7 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 	});
 
 	// @us-13 @slice-13 @boundary @contract-shape:pure-function
-	it.skip("says so when no Work Item is Ready by votes yet", async () => {
+	it("says so when no Work Item is Ready by votes yet", async () => {
 		renderTheRefinementTab(gravitysRefinement({ readyByVotesCount: 0 }));
 
 		expect(
