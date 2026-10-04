@@ -14,6 +14,7 @@ import {
 	theButton,
 	theRowOf,
 } from "../../../../tests/RefinementTabTestKit";
+import { NEXT_REFINEMENT_SLOT } from "./NextRefinement";
 
 /**
  * The Refinement tab names the Team's next Refinement on the heading's row, to the right of the count:
@@ -201,7 +202,11 @@ describe("The Refinement tab names the next Refinement", () => {
 			name: /^3 Work Items in Refinement/,
 		});
 		const nextRefinement = screen.getByText(/^Next Refinement: /);
-		expect(heading.parentElement).toContainElement(nextRefinement);
+		const placedBesideTheHeading = nextRefinement.closest(
+			`[${NEXT_REFINEMENT_SLOT}]`,
+		);
+		expect(placedBesideTheHeading).not.toBeNull();
+		expect(heading.nextElementSibling).toBe(placedBesideTheHeading);
 	});
 
 	// @us-04 @slice-04 @boundary @contract-shape:pure-function
