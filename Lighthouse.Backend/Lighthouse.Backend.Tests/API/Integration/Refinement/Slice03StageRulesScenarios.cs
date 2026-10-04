@@ -40,7 +40,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:pure-function
         // Stages are optional, and a Team that uses none is told nothing new.
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task A_Team_that_never_set_a_stage_rule_has_no_stages_at_all()
         {
             var gravity = await GivenGravityRefinesWithoutStages();
@@ -77,7 +76,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-03 @slice-03 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task Every_Work_Item_the_rules_do_not_match_is_Waiting()
         {
             var gravity = await GivenGravityWithBothRules((UserActivityTracking, ReadyTag), (AdvancedReporting, AnalysingTag));
@@ -89,7 +87,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task When_both_rules_match_a_Work_Item_the_Ready_rule_wins()
         {
             var gravity = await GivenGravityWithBothRules((AdvancedReporting, ReadyTag), (AdvancedReporting, AnalysingTag));
@@ -227,7 +224,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:pure-function
         // A rule never pulls a Work Item into refinement from a state the Team does not refine in.
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task Rules_only_ever_judge_Work_Items_already_in_refinement()
         {
             var gravity = await GivenGravityWithItsReadyRuleTagging((BillingExport, ReadyTag), (UserActivityTracking, ReadyTag));
@@ -241,7 +237,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-03 @slice-03 @contract-shape:pure-function
         // Team Pulsar refines in one state and marks ready Work Items with a tag.
         [Test]
-        [Ignore(PendingSlice03)]
         public async Task A_Team_with_a_single_refinement_state_splits_it_into_stages_by_rule()
         {
             var pulsar = await GivenPulsarRefinesInOneStateWithFourOfSixTaggedReady();

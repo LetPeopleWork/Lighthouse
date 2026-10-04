@@ -10,7 +10,8 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         RefinementList refinementList,
         SleYardstickResolver yardstickResolver,
         ISizingLogRepository sizingLog,
-        VoterIdentityResolver voterIdentityResolver) : IRefinementViewQuery
+        VoterIdentityResolver voterIdentityResolver,
+        StageRuleMatcher stageRuleMatcher) : IRefinementViewQuery
     {
         public RefinementView? ForTeam(int teamId, string? presentedVoterKey)
         {
@@ -29,15 +30,21 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             var workItems = refinementList.For(team);
             var votes = CurrentVotesOn(team.Id, workItems, voterIdentityResolver.ReaderKeyFrom(presentedVoterKey));
             var readiness = team.RefinementSettings?.Readiness ?? new ReadinessSetting();
+            var stages = stageRuleMatcher.Match(team.RefinementSettings?.StageRules, workItems);
             var rows = workItems
-                .Select(item => RowFor(item, votes.GetValueOrDefault(item.ReferenceId, RowVotes.None), readiness))
+                .Select(item => RowFor(item, votes.GetValueOrDefault(item.ReferenceId, RowVotes.None), readiness, stages))
                 .ToList();
 
-            return new RefinementView(true, rows, yardstickResolver.For(team), voterIdentity);
+            return new RefinementView(true, rows, yardstickResolver.For(team), voterIdentity, stages.StagesConfigured);
         }
 
-        private static RefinementRow RowFor(WorkItem item, RowVotes votes, ReadinessSetting readiness)
-            => new(item, votes, RefinementResolution.StandingOf(votes.Split, readiness));
+        private static RefinementRow RowFor(WorkItem item, RowVotes votes, ReadinessSetting readiness, StageMatches stages)
+        {
+            var standing = RefinementResolution.StandingOf(votes.Split, readiness);
+            var stage = stages.StageOf(item);
+
+            return new(item, votes, standing, stage, RefinementResolution.SignalsDisagree(stage, votes, standing));
+        }
 
         private Dictionary<string, RowVotes> CurrentVotesOn(int teamId, List<WorkItem> workItems, string? readerKey)
         {

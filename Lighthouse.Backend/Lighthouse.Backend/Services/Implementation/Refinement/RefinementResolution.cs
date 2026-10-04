@@ -49,6 +49,27 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             => !IsReady(log.Where(earlier => earlier.Id < entry.Id), readiness)
                 && IsReady(log.Where(upTo => upTo.Id <= entry.Id), readiness);
 
+        /// <summary>
+        /// A Work Item both stage rules match is Ready, because being ready is the further step; one neither
+        /// rule matches is Waiting.
+        /// </summary>
+        public static RefinementStage StageOf(bool matchesReady, bool matchesBeingRefined)
+            => (matchesReady, matchesBeingRefined) switch
+            {
+                (true, _) => RefinementStage.Ready,
+                (false, true) => RefinementStage.BeingRefined,
+                (false, false) => RefinementStage.Waiting,
+            };
+
+        /// <summary>
+        /// Whether the stage and the votes cast tell a different story about the Work Item being Ready. Without
+        /// a stage, or before anybody has voted, there is only one signal and so nothing to disagree with.
+        /// </summary>
+        public static bool SignalsDisagree(RefinementStage? stage, RowVotes votes, RowStanding standing)
+            => stage is not null
+                && votes.VoteCount > 0
+                && (stage == RefinementStage.Ready) != (standing.Readiness == RowReadiness.Ready);
+
         private static bool IsReady(IEnumerable<SizingLogEntry> entries, ReadinessSetting readiness)
             => StandingOf(SplitOf(CurrentVotes(entries)), readiness).Readiness == RowReadiness.Ready;
 

@@ -14,6 +14,12 @@ namespace Lighthouse.Backend.API.DTO
         public VoterIdentityKind VoterIdentity { get; } = view.VoterIdentity;
 
         public int ReadyByVotesCount { get; } = view.ReadyByVotesCount;
+
+        public bool StagesConfigured { get; } = view.StagesConfigured;
+
+        public int ReadyCount { get; } = view.ReadyCount;
+
+        public ReadySource ReadySource { get; } = view.ReadySource;
     }
 
     public sealed class YardstickDto(Yardstick yardstick)
@@ -46,6 +52,10 @@ namespace Lighthouse.Backend.API.DTO
         public RowReadiness Readiness { get; } = row.Standing.Readiness;
 
         public int? MissingVotes { get; } = row.Standing.MissingVotes;
+
+        public RefinementStage? Stage { get; } = row.Stage;
+
+        public bool SignalsDisagree { get; } = row.SignalsDisagree;
     }
 
     /// <summary>The row as a vote left it, and whether that vote is the one that made it Ready.</summary>

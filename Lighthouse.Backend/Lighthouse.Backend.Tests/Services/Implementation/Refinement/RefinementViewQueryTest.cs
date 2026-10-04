@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Services.Implementation.Refinement;
+using Lighthouse.Backend.Services.Implementation.WorkItemRules;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Refinement;
@@ -60,7 +61,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                 new RefinementList(workItemRepositoryMock.Object),
                 new SleYardstickResolver(teamMetricsServiceMock.Object, clockMock.Object),
                 sizingLogMock.Object,
-                new VoterIdentityResolver(Mock.Of<IAuthModeResolver>(resolver => resolver.Resolve() == new RuntimeAuthStatus { Mode = AuthMode.Disabled })));
+                new VoterIdentityResolver(Mock.Of<IAuthModeResolver>(resolver => resolver.Resolve() == new RuntimeAuthStatus { Mode = AuthMode.Disabled })),
+                new StageRuleMatcher(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider()));
         }
 
         [Test]

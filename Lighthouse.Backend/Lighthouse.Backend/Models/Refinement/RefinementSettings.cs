@@ -67,5 +67,7 @@ namespace Lighthouse.Backend.Models.Refinement
     public enum RefinementStage
     {
         Waiting = 0,
+        BeingRefined = 1,
+        Ready = 2,
     }
 }

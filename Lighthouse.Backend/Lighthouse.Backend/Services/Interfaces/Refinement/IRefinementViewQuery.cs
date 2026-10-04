@@ -10,12 +10,34 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
         RefinementView? ForTeam(int teamId, string? presentedVoterKey);
     }
 
-    public sealed record RefinementView(bool RefinementConfigured, List<RefinementRow> WorkItems, Yardstick Yardstick, VoterIdentityKind VoterIdentity)
+    /// <param name="StagesConfigured">Whether the Team sets any stage rule; without one no row has a stage.</param>
+    public sealed record RefinementView(
+        bool RefinementConfigured,
+        List<RefinementRow> WorkItems,
+        Yardstick Yardstick,
+        VoterIdentityKind VoterIdentity,
+        bool StagesConfigured = false)
     {
         public int ReadyByVotesCount => WorkItems.Count(row => row.Standing.Readiness == RowReadiness.Ready);
+
+        /// <summary>A Team with stage rules trusts its tracker for what is Ready; a Team without them trusts the votes.</summary>
+        public ReadySource ReadySource => StagesConfigured ? ReadySource.Stages : ReadySource.Votes;
+
+        public int ReadyCount => StagesConfigured
+            ? WorkItems.Count(row => row.Stage == RefinementStage.Ready)
+            : ReadyByVotesCount;
     }
 
-    public sealed record RefinementRow(WorkItem WorkItem, RowVotes Votes, RowStanding Standing);
+    /// <param name="Stage">The stage the Team's rules give the row; null when the Team sets no stage rule.</param>
+    /// <param name="SignalsDisagree">Whether the stage and the votes cast differ on the row being Ready.</param>
+    public sealed record RefinementRow(WorkItem WorkItem, RowVotes Votes, RowStanding Standing, RefinementStage? Stage = null, bool SignalsDisagree = false);
+
+    /// <summary>Which signal the tab's ready count follows.</summary>
+    public enum ReadySource
+    {
+        Votes = 0,
+        Stages = 1,
+    }
 
     /// <summary>What the votes make of a row, and how many more votes it needs when that is what stands in the way.</summary>
     public sealed record RowStanding(RowReadiness Readiness, int? MissingVotes)

@@ -88,6 +88,19 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Check(Architecture);
         }
 
+        // Stages come from the same rule engine every other Work Item rule uses, reached through its port, so a
+        // stage rule can never mean something different from the identical blocked-items rule.
+        [Test]
+        public void The_stage_rule_matcher_reaches_the_rule_engine_only_through_its_port()
+        {
+            Types().That().HaveFullName(typeof(StageRuleMatcher).FullName!)
+                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ServicesImplementationPattern)
+                    .And().DoNotResideInNamespace(RefinementImplementationNamespace))
+                .AndShould().NotDependOnAny(Types().That().ResideInNamespace(RepositoriesNamespace))
+                .Because("matching rules is the rule engine's job; the matcher only hands it the Work Items already in refinement.")
+                .Check(Architecture);
+        }
+
         [Test]
         public void Nothing_but_the_API_and_the_composition_root_depends_on_the_Refinement_module()
         {
