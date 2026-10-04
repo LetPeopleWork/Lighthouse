@@ -137,8 +137,30 @@ namespace Lighthouse.Backend.API.Helpers
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Select(state => new RefinementStateSetting { State = state })
                 .ToList();
+            SyncReadiness(settings, teamSetting.Refinement?.Readiness);
 
             team.RefinementSettings = settings;
+        }
+
+        private static void SyncReadiness(RefinementSettings settings, ReadinessSettingDto? readiness)
+        {
+            if (readiness is null)
+            {
+                return;
+            }
+
+            settings.Readiness = new ReadinessSetting
+            {
+                MinYes = readiness.MinYes ?? settings.Readiness.MinYes,
+                MinVoters = readiness.MinVoters ?? settings.Readiness.MinVoters,
+                Veto = readiness.Veto is null
+                    ? null
+                    : new VetoSetting
+                    {
+                        Threshold = readiness.Veto.Threshold ?? VetoSetting.DefaultThreshold,
+                        Counts = readiness.Veto.Counts ?? VetoCounts.No,
+                    },
+            };
         }
 
         private static List<string> TrimListEntries(List<string> list)

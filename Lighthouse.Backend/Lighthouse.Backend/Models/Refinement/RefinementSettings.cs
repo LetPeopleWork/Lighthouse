@@ -8,6 +8,8 @@ namespace Lighthouse.Backend.Models.Refinement
     public class RefinementSettings
     {
         public List<RefinementStateSetting> States { get; set; } = [];
+
+        public ReadinessSetting Readiness { get; set; } = new();
     }
 
     public class RefinementStateSetting
@@ -17,9 +19,39 @@ namespace Lighthouse.Backend.Models.Refinement
         public RefinementStage Stage { get; set; } = RefinementStage.Waiting;
     }
 
+    /// <summary>How many Yes votes from how many voters make a Work Item Ready, and what sends it to discussion instead.</summary>
+    public class ReadinessSetting
+    {
+        public const int DefaultMinYes = 3;
+
+        public const int DefaultMinVoters = 3;
+
+        public int MinYes { get; set; } = DefaultMinYes;
+
+        public int MinVoters { get; set; } = DefaultMinVoters;
+
+        public VetoSetting? Veto { get; set; }
+    }
+
+    public class VetoSetting
+    {
+        public const int DefaultThreshold = 1;
+
+        public int Threshold { get; set; } = DefaultThreshold;
+
+        public VetoCounts Counts { get; set; } = VetoCounts.No;
+    }
+
     /// <summary>Stored by ordinal inside the Team's JSON: append new members, never renumber.</summary>
     public enum RefinementStage
     {
         Waiting = 0,
+    }
+
+    /// <summary>Which answers a veto counts. Stored by ordinal inside the Team's JSON: append new members, never renumber.</summary>
+    public enum VetoCounts
+    {
+        No = 0,
+        NoOrYesBut = 1,
     }
 }

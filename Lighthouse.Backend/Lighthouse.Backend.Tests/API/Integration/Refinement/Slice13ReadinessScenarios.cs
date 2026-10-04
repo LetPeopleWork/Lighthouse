@@ -23,7 +23,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice13)]
         public async Task A_Team_that_never_chose_readiness_needs_three_Yes_from_three_voters_and_has_no_veto()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -35,7 +34,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-13 @slice-13 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice13)]
         public async Task A_Team_admin_sets_readiness_and_it_reads_back()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -74,7 +72,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice13)]
         public async Task As_many_voters_as_Yes_votes_is_accepted()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -99,7 +96,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:unbounded-preservation
         // An older settings form knows nothing about readiness; its saves must not reset what the admin chose.
         [Test]
-        [Ignore(PendingSlice13)]
         public async Task A_save_that_says_nothing_about_readiness_leaves_it_as_it_was()
         {
             var gravity = await GivenTheAdminChoseTwoYesFromTwoVoters();
@@ -111,7 +107,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice13)]
         public async Task Changing_readiness_keeps_every_Work_Item_the_Team_holds()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();

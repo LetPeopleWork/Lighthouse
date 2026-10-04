@@ -184,6 +184,54 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         /// <summary>
+        /// How many votes make a Work Item Ready says nothing about which Work Items the Team fetches either.
+        /// </summary>
+        [TestCase(3, 3, null, null)]
+        [TestCase(1, 1, 2, VetoCounts.No)]
+        [TestCase(2, 5, 1, VetoCounts.NoOrYesBut)]
+        public void WorkItemRelatedSettingsChanged_ReadinessChanged_ReturnsFalse(int minYes, int minVoters, int? vetoThreshold, VetoCounts? vetoCounts)
+        {
+            var team = new Team
+            {
+                DataRetrievalValue = "project = X",
+                WorkTrackingSystemConnectionId = 1,
+                WorkItemTypes = ["Bug"],
+                ToDoStates = ["Backlog"],
+                DoingStates = ["Analysing"],
+                DoneStates = ["Closed"],
+                RefinementSettings = new RefinementSettings
+                {
+                    States = [new RefinementStateSetting { State = "Backlog" }],
+                    Readiness = new ReadinessSetting { MinYes = 2, MinVoters = 2 },
+                },
+            };
+
+            var dto = new TeamSettingDto
+            {
+                DataRetrievalValue = "project = X",
+                WorkTrackingSystemConnectionId = 1,
+                WorkItemTypes = ["Bug"],
+                ToDoStates = ["Backlog"],
+                DoingStates = ["Analysing"],
+                DoneStates = ["Closed"],
+                Refinement = new RefinementSettingsDto
+                {
+                    States = [new RefinementStateSettingDto { State = "Backlog" }],
+                    Readiness = new ReadinessSettingDto
+                    {
+                        MinYes = minYes,
+                        MinVoters = minVoters,
+                        Veto = vetoThreshold is null ? null : new VetoSettingDto { Threshold = vetoThreshold, Counts = vetoCounts },
+                    },
+                },
+            };
+
+            var result = team.WorkItemRelatedSettingsChanged(dto);
+
+            Assert.That(result, Is.False);
+        }
+
+        /// <summary>
         /// The positive control the cases above need: without it they agree only because the method
         /// can no longer say true at all, and an accidentally-empty registry would read as green.
         /// </summary>
