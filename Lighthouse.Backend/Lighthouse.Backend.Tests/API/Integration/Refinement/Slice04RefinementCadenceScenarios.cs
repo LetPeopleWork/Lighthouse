@@ -131,19 +131,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // --- The next Refinement ---
 
         // @driving_port @real-io @us-04 @slice-04 @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:pure-function
-        // Thursdays every week. The Thursday itself and the Friday after are the boundaries.
-        [TestCase(2026, 10, 2, "2026-10-08", false)]
-        [TestCase(2026, 10, 7, "2026-10-08", false)]
-        [TestCase(2026, 10, 8, "2026-10-15", true)]
-        [TestCase(2026, 10, 9, "2026-10-15", false)]
-        public async Task The_next_Refinement_is_the_first_cadence_day_after_today(int year, int month, int day, string nextRefinement, bool isRefinementDay)
+        // Thursdays every week. The Thursday itself and the Friday after are the boundaries. The days until it
+        // are counted from the instance's today, so a browser in another time zone shows the same number.
+        [TestCase(2026, 10, 2, "2026-10-08", false, 6)]
+        [TestCase(2026, 10, 7, "2026-10-08", false, 1)]
+        [TestCase(2026, 10, 8, "2026-10-15", true, 7)]
+        [TestCase(2026, 10, 9, "2026-10-15", false, 6)]
+        public async Task The_next_Refinement_is_the_first_cadence_day_after_today(int year, int month, int day, string nextRefinement, bool isRefinementDay, int daysAway)
         {
             var gravity = await GivenGravityRefinesOnThursdaysEveryWeek();
             TodayIs(year, month, day);
 
             var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
 
-            ThenTheNextRefinementIs(tab, nextRefinement, isRefinementDay);
+            ThenTheNextRefinementIsDaysAway(tab, nextRefinement, isRefinementDay, daysAway);
         }
 
         // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:pure-function
@@ -189,16 +190,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:pure-function
         // At 23:30 UTC on Wednesday 7 October it is already Thursday in Zurich - a Refinement day there.
-        [TestCase("Europe/Zurich", "2026-10-15", true)]
-        [TestCase("UTC", "2026-10-08", false)]
-        public async Task The_instances_time_zone_decides_which_day_today_is(string timeZone, string nextRefinement, bool isRefinementDay)
+        [TestCase("Europe/Zurich", "2026-10-15", true, 7)]
+        [TestCase("UTC", "2026-10-08", false, 1)]
+        public async Task The_instances_time_zone_decides_which_day_today_is(string timeZone, string nextRefinement, bool isRefinementDay, int daysAway)
         {
             var gravity = await GivenGravityRefinesOnThursdaysEveryWeek();
             TheInstantIs(new DateTimeOffset(2026, 10, 7, 23, 30, 0, TimeSpan.Zero), timeZone);
 
             var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
 
-            ThenTheNextRefinementIs(tab, nextRefinement, isRefinementDay);
+            ThenTheNextRefinementIsDaysAway(tab, nextRefinement, isRefinementDay, daysAway);
         }
 
         // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:pure-function

@@ -20,9 +20,12 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
 
             bool IsBlackedOut(DateOnly day) => blackoutDays.IsBlackoutDay(day);
 
+            var next = RefinementCadenceCalendar.NextAfter(cadence, today, IsBlackedOut);
+
             return new RefinementCalendarFacts(
-                RefinementCadenceCalendar.NextAfter(cadence, today, IsBlackedOut),
-                RefinementCadenceCalendar.IsCadenceDay(cadence, today, IsBlackedOut));
+                next,
+                RefinementCadenceCalendar.IsCadenceDay(cadence, today, IsBlackedOut),
+                next?.DayNumber - today.DayNumber);
         }
     }
 }

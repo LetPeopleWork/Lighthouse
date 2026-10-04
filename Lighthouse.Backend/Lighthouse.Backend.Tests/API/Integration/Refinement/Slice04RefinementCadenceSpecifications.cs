@@ -55,6 +55,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private static void ThenTheNextRefinementIs(JsonElement tab, string nextRefinement, bool isRefinementDay)
             => Assert.That(CadenceFactsIn(tab), Is.EqualTo(new CadenceFactsReading(nextRefinement, isRefinementDay)));
 
+        private static void ThenTheNextRefinementIsDaysAway(JsonElement tab, string nextRefinement, bool isRefinementDay, int daysAway)
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(CadenceFactsIn(tab), Is.EqualTo(new CadenceFactsReading(nextRefinement, isRefinementDay)));
+                Assert.That(NumberOf(tab, "daysUntilNextRefinement"), Is.EqualTo(daysAway), $"Body: {tab}");
+            }
+        }
+
         private async Task ThenTheSaveIsRefusedAndTheCadenceIsStillThursdaysEveryWeek(HttpResponseMessage refused, TeamUnderTest team)
         {
             var settings = await ReadTheTeamSettings(team);
@@ -93,11 +102,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private static void ThenTheTabListsAllSixAndNamesNoDate(JsonElement tab)
         {
             var namesTheDay = tab.TryGetProperty("nextRefinementDate", out var date) && date.ValueKind == JsonValueKind.Null;
+            var countsNoDays = tab.TryGetProperty("daysUntilNextRefinement", out var days) && days.ValueKind == JsonValueKind.Null;
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(RowsIn(tab), Has.Count.EqualTo(6));
                 Assert.That(namesTheDay, Is.True, $"the tab must say there is no next Refinement. Body: {tab}");
+                Assert.That(countsNoDays, Is.True, $"the tab must say there are no days to count. Body: {tab}");
                 Assert.That(CadenceFactsIn(tab).IsRefinementDay, Is.False);
             }
         }

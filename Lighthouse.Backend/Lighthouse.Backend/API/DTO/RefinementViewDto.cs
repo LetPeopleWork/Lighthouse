@@ -25,6 +25,8 @@ namespace Lighthouse.Backend.API.DTO
         public string? NextRefinementDate { get; } = view.CalendarFacts.NextRefinementDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
         public bool IsRefinementDay { get; } = view.CalendarFacts.IsRefinementDay;
+
+        public int? DaysUntilNextRefinement { get; } = view.CalendarFacts.DaysUntilNextRefinement;
     }
 
     public sealed class YardstickDto(Yardstick yardstick)
