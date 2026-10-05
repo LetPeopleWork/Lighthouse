@@ -174,7 +174,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase(3)]
         [TestCase(6)]
         [TestCase(11)]
-        [Ignore(PendingSlice05)]
         public async Task The_high_end_is_stated_as_forecast_whatever_number_of_Work_Items_is_listed(int high)
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
@@ -188,7 +187,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-06 @slice-05 @boundary @contract-shape:pure-function
         // A Team likely to pull nothing at all before the next Refinement needs nothing refined.
         [Test]
-        [Ignore(PendingSlice05)]
         public async Task A_range_of_nothing_says_stop_with_two_ready()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();

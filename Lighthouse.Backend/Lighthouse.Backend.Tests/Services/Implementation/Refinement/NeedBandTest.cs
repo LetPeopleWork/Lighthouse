@@ -24,6 +24,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         [TestCase(0, 0, 0, RefinementVerdict.In)]
         [TestCase(1, 0, 0, RefinementVerdict.Above)]
         [TestCase(0, 1, 1, RefinementVerdict.Below)]
+        [TestCase(2, 0, 0, RefinementVerdict.Above)]
+        [TestCase(6, 1, 11, RefinementVerdict.In)]
         public void The_verdict_counts_both_ends_as_in_range(int readyCount, int low, int high, RefinementVerdict expected)
         {
             Assert.That(NeedBand.VerdictFor(readyCount, low, high), Is.EqualTo(expected));
@@ -37,6 +39,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         public void A_likelihood_reads_the_count_that_share_of_runs_reaches(int percentile, int expected)
         {
             var forecast = new HowManyForecast(Distributions[0], 6);
+
+            Assert.That(NeedBand.ValueAt(forecast, percentile), Is.EqualTo(expected));
+        }
+
+        // The band reads whatever the forecast says, however many Work Items are waiting to be refined.
+        [TestCase(2, 50, 0)]
+        [TestCase(2, 85, 0)]
+        [TestCase(1, 50, 12)]
+        [TestCase(1, 85, 12)]
+        public void A_zero_forecast_reads_zero_and_a_large_one_is_read_in_full(int distribution, int percentile, int expected)
+        {
+            var forecast = new HowManyForecast(Distributions[distribution], 6);
 
             Assert.That(NeedBand.ValueAt(forecast, percentile), Is.EqualTo(expected));
         }
