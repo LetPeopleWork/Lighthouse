@@ -2900,3 +2900,26 @@ Slice 03 un-skips `Slice03StageRulesTest`, `RefinementView.stages` and the stage
 `RefinementView.cadence` and the cadence block; 05 `Slice05NeedAndVerdictTest`, the slice-05 usage cases and
 `RefinementView.need`; 06 `RefinementView.enoughFor` and then the E2E skeleton (run live first); 07
 `Slice07BandPercentilesTest` and the band block; 09 the two slice-09 fixtures. One scenario at a time.
+
+## Wave: DELIVER / [REF] Maintainer decision — the verdict alert's open points (2026-10-05)
+
+Sketched before 05-08 and answered by the maintainer on 2026-10-05. These close what the 2026-10-04 E2 UI review left
+open for slice 05; the three sentences, the single MUI Alert and "above as loud as below" stand as approved then.
+
+- **The ready number appears twice on a Team without stage rules, and that stays.** The heading keeps
+  "N Work Items in Refinement · R ready by votes" (slice 13's) and the alert opens with "R ready —". The heading
+  still carries the number when there is no alert (no cadence, too little history).
+- **Equal ends collapse to one number.** When low = high the range reads as one number and "Refine X to Y more"
+  drops "to Y": "3 ready — below the 5 Work Items Team Gravity is likely to pull before Thu 8 Oct. Refine 2 more."
+  · above: "2 ready — above the 0 likely to be pulled. Stop refining: nothing more is needed before Thu 8 Oct."
+  · in range: "5 ready — exactly the 5 likely to be pulled. Nothing more needs refining
+  before Thu 8 Oct." (the in-range and above wordings were the orchestrator's, written to the rule; open to change at
+  review). The browser decides this from the facts; the wire is unchanged.
+- **Too little history is `info`, not `warning`.** The alert shows the forecasts' minimum-data message with the
+  neutral info severity and icon: there is nothing for the Team to act on, it only has no number yet.
+- **An ⓘ at the end of the alert says where the range comes from** (proposed during DELIVER, accepted "ok fair"),
+  reusing the tab's `InfoTooltip`: "Based on Team Gravity's Throughput: a How Many forecast for the 6 working days
+  until Thu 8 Oct. The low end is what the Team pulls with 50% likelihood; it pulls more than the high end with only
+  15% likelihood. Same forecast as on the Forecasts page." Built from facts already on the wire (percentiles,
+  horizon, date); Team and Work Item words through Terminology. Only on the three verdict states, not on the
+  minimum-data message.
