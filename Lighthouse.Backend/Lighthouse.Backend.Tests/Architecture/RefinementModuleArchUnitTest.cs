@@ -35,6 +35,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string RefinementCadenceCalendarAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.Refinement\.RefinementCadenceCalendar($|\+.*)";
 
+        private const string NeedBandAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.Refinement\.NeedBand($|\+.*)";
+
         private const string RepositoriesNamespace = "Lighthouse.Backend.Services.Interfaces.Repositories";
 
         private static readonly string[] RepositoryWriters = ["Save", "Add", "Append", "Update", "Remove", "Delete", "Apply"];
@@ -122,6 +124,33 @@ namespace Lighthouse.Backend.Tests.Architecture
                     .And().DoNotHaveFullNameMatching(RefinementCadenceCalendarAndItsNestedTypesPattern))
                 .Because("a calendar that reaches into a service can no longer be tested by handing it a cadence and a day.")
                 .Check(Architecture);
+        }
+
+        // Where the range lies and what the ready count makes of it are read off a forecast already run, so every
+        // reading can be checked by handing it a fixed forecast.
+        [Test]
+        public void The_need_band_IsStatic()
+        {
+            var band = typeof(NeedBand);
+
+            Assert.That(band.IsAbstract && band.IsSealed, Is.True,
+                "The need band must stay a static class: it reads the forecast it is given and holds nothing.");
+        }
+
+        [Test]
+        public void The_need_band_ReferencesNothingInServicesImplementation()
+        {
+            Types().That().HaveFullName(typeof(NeedBand).FullName!)
+                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ServicesImplementationPattern)
+                    .And().DoNotHaveFullNameMatching(NeedBandAndItsNestedTypesPattern))
+                .Because("a band that reaches into a service, or runs a forecast of its own, can no longer be tested by handing it one.")
+                .Check(Architecture);
+        }
+
+        [Test]
+        public void The_need_calculator_lives_in_the_Refinement_module()
+        {
+            Assert.That(typeof(RefinementNeedCalculator).Namespace, Is.EqualTo(RefinementImplementationNamespace));
         }
 
         // Stages come from the same rule engine every other Work Item rule uses, reached through its port, so a

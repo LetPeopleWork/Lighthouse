@@ -19,9 +19,13 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
         Yardstick Yardstick,
         VoterIdentityKind VoterIdentity,
         bool StagesConfigured = false,
-        RefinementCalendarFacts? Calendar = null)
+        RefinementCalendarFacts? Calendar = null,
+        RefinementNeed? Need = null)
     {
         public RefinementCalendarFacts CalendarFacts => Calendar ?? RefinementCalendarFacts.None;
+
+        /// <summary>A Team that refines in no state has nothing to count, so it has no range either.</summary>
+        public RefinementNeed NeedFacts => Need ?? RefinementNeed.Unavailable(NeedUnavailableReason.NoRefinementStates);
 
         public int ReadyByVotesCount => RefinementResolution.ReadyByVotesCountOf(WorkItems);
 
@@ -33,6 +37,21 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
     /// <param name="Stage">The stage the Team's rules give the row; null when the Team sets no stage rule.</param>
     /// <param name="SignalsDisagree">Whether the stage and the votes cast differ on the row being Ready.</param>
     public sealed record RefinementRow(WorkItem WorkItem, RowVotes Votes, RowStanding Standing, RefinementStage? Stage = null, bool SignalsDisagree = false);
+
+    /// <summary>When the Team next refines, and how its ready Work Items compare with what it is likely to pull until then.</summary>
+    public sealed record RefinementOutlook(RefinementCalendarFacts Calendar, RefinementNeed Need);
+
+    /// <param name="Verdict">Null exactly when <paramref name="UnavailableReason"/> says why there is no range.</param>
+    public sealed record RefinementNeed(RefinementVerdict? Verdict, NeedUnavailableReason? UnavailableReason, NeedRange? Range)
+    {
+        public static RefinementNeed Unavailable(NeedUnavailableReason reason) => new(null, reason, null);
+    }
+
+    /// <summary>
+    /// How many Work Items the Team is likely to pull over <paramref name="HorizonWorkingDays"/>, read at the two
+    /// likelihoods of its band. The high end is stated as forecast, never cut down to the Work Items listed.
+    /// </summary>
+    public sealed record NeedRange(int Low, int High, int LowPercentile, int HighPercentile, int HorizonWorkingDays);
 
     /// <summary>Which signal the tab's ready count follows.</summary>
     public enum ReadySource

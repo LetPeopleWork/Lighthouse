@@ -1,6 +1,9 @@
 # ADR-215: The need band is the manual forecast's How Many for the next Refinement date, read at (100 − p), and everything on the Refinement tab is derived on read
 
-- **Status**: Proposed (DESIGN, 2026-10-02)
+- **Status**: Accepted for the need number and its verdict (DELIVER, 2026-10-05); the band setting is still Proposed.
+  **Amended 2026-10-04**: decision 6 no longer holds for `lineAfterPosition` and `fewerListedThanHigh` — the maintainer
+  moved the "enough for" line to the browser, which places it after the high end's count of rows in whatever order it
+  shows them, so the response carries neither.
 - **Date**: 2026-10-02
 - **Feature**: epic-5510-5881-refinement (ADO Epic #5881 slices 02, 04, 05, 06, 07; Epic #5510 slice 10)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)

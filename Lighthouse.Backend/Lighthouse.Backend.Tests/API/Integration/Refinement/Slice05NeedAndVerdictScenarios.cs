@@ -28,7 +28,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-05 @slice-05 @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:pure-function
         // The forecast differs at every likelihood, so only the median and the 85% reading give 5 and 8.
         [Test]
-        [Ignore(PendingSlice05)]
         public async Task Below_range_says_how_many_are_ready_against_the_range_the_Team_is_likely_to_pull()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
@@ -46,7 +45,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase(2, 8, InRange)]
         [TestCase(1, 2, InRange)]
         [TestCase(0, 1, Above)]
-        [Ignore(PendingSlice05)]
         public async Task The_verdict_compares_the_ready_count_with_both_ends_of_the_range(int low, int high, string verdict)
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();

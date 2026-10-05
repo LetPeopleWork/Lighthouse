@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         ISizingLogRepository sizingLog,
         VoterIdentityResolver voterIdentityResolver,
         StageRuleMatcher stageRuleMatcher,
-        IRefinementCalendar refinementCalendar) : IRefinementViewQuery
+        RefinementNeedCalculator needCalculator) : IRefinementViewQuery
     {
         public RefinementView? ForTeam(int teamId, string? presentedVoterKey)
         {
@@ -36,9 +36,9 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 .Select(item => RowFor(item, votes.GetValueOrDefault(item.ReferenceId, RowVotes.None), readiness, stages))
                 .ToList();
 
-            var calendar = refinementCalendar.FactsFor(team.RefinementSettings?.Cadence);
+            var outlook = needCalculator.For(team, RefinementResolution.ReadyCountOf(stages.StagesConfigured, rows));
 
-            return new RefinementView(true, rows, yardstickResolver.For(team), voterIdentity, stages.StagesConfigured, calendar);
+            return new RefinementView(true, rows, yardstickResolver.For(team), voterIdentity, stages.StagesConfigured, outlook.Calendar, outlook.Need);
         }
 
         private static RefinementRow RowFor(WorkItem item, RowVotes votes, ReadinessSetting readiness, StageMatches stages)

@@ -8,6 +8,7 @@ using Lighthouse.Backend.Services.Implementation.Refinement;
 using Lighthouse.Backend.Services.Implementation.WorkItemRules;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Auth;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Refinement;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -57,6 +58,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
             var clockMock = new Mock<ILighthouseClock>();
             clockMock.Setup(clock => clock.Today).Returns(new DateOnly(2026, 10, 3));
+            var blackoutPeriodService = Mock.Of<IBlackoutPeriodService>(service =>
+                service.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()) == new List<BlackoutPeriod>());
 
             subject = new RefinementViewQuery(
                 teamRepositoryMock.Object,
@@ -68,8 +71,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                     new RuleEvaluator<WorkItem>(),
                     new WorkItemFieldProvider(),
                     new ForecastFilterRuleService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider(), Mock.Of<ILicenseService>())),
-                new RefinementCalendar(clockMock.Object, Mock.Of<IBlackoutPeriodService>(service =>
-                    service.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()) == new List<BlackoutPeriod>())));
+                new RefinementNeedCalculator(
+                    new RefinementCalendar(clockMock.Object, blackoutPeriodService),
+                    clockMock.Object,
+                    blackoutPeriodService,
+                    teamMetricsServiceMock.Object,
+                    Mock.Of<IForecastService>()));
         }
 
         [Test]

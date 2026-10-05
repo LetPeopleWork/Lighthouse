@@ -27,6 +27,26 @@ namespace Lighthouse.Backend.API.DTO
         public bool IsRefinementDay { get; } = view.CalendarFacts.IsRefinementDay;
 
         public int? DaysUntilNextRefinement { get; } = view.CalendarFacts.DaysUntilNextRefinement;
+
+        public RefinementNeedDto Need { get; } = new(view.NeedFacts);
+    }
+
+    /// <summary>The need as facts only; the browser and the clients put them into words and place the line.</summary>
+    public sealed class RefinementNeedDto(RefinementNeed need)
+    {
+        public RefinementVerdict? Verdict { get; } = need.Verdict;
+
+        public NeedUnavailableReason? UnavailableReason { get; } = need.UnavailableReason;
+
+        public int? Low { get; } = need.Range?.Low;
+
+        public int? High { get; } = need.Range?.High;
+
+        public int? LowPercentile { get; } = need.Range?.LowPercentile;
+
+        public int? HighPercentile { get; } = need.Range?.HighPercentile;
+
+        public int? HorizonWorkingDays { get; } = need.Range?.HorizonWorkingDays;
     }
 
     public sealed class YardstickDto(Yardstick yardstick)

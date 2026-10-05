@@ -17,6 +17,23 @@ namespace Lighthouse.Backend.Models.Refinement
 
         /// <summary>When the Team refines; null for a Team that has not said.</summary>
         public RefinementCadence? Cadence { get; set; }
+
+        public RefinementBand Band { get; set; } = new();
+    }
+
+    /// <summary>
+    /// The two likelihoods the range to refine towards is read at: the low end is what the Team pulls with
+    /// <see cref="LowPercentile"/> likelihood, the high end what it pulls with <see cref="HighPercentile"/>.
+    /// </summary>
+    public class RefinementBand
+    {
+        public const int DefaultLowPercentile = 50;
+
+        public const int DefaultHighPercentile = 85;
+
+        public int LowPercentile { get; set; } = DefaultLowPercentile;
+
+        public int HighPercentile { get; set; } = DefaultHighPercentile;
     }
 
     /// <summary>
