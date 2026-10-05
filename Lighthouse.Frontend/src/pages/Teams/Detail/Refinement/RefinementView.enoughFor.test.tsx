@@ -125,7 +125,7 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 
 	// @us-06 @slice-06 @driving_port @contract-shape:pure-function
 	// Somebody sorting by State sees the first three rows as sorted numbered, not the backlog's first three.
-	it.skip("numbers the rows in the order they are shown when somebody sorts the list", async () => {
+	it("numbers the rows in the order they are shown when somebody sorts the list", async () => {
 		const { user } = renderTheRefinementTab(gravityNeeding(3));
 		await theListAsShown();
 
@@ -151,7 +151,7 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 	});
 
 	// @us-06 @slice-06 @boundary @contract-shape:unbounded-preservation
-	it.skip("shows backlog order again the next time the tab opens after a sort", async () => {
+	it("shows backlog order again the next time the tab opens after a sort", async () => {
 		const { user } = renderTheRefinementTab(gravityNeeding(3));
 		await theListAsShown();
 		await user.click(screen.getByRole("columnheader", { name: "State" }));
@@ -231,7 +231,7 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 
 	// @us-06 @slice-06 @error @contract-shape:pure-function
 	// The tab says why there is no number, so the missing column and line are not a tab that failed to load.
-	it.skip.each([
+	it.each([
 		[
 			"no cadence",
 			noNeedBecause("NoCadence"),
