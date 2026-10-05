@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 WorkItemReferenceId = workItemReference,
                 Kind = SizingEntryKind.Vote,
                 Answer = vote.Answer,
-                Comment = vote.Comment,
+                Comment = string.IsNullOrWhiteSpace(vote.Comment) ? null : vote.Comment,
                 VoterKey = voter.Key,
                 VoterProfileId = voter.ProfileId,
                 VoterDisplayName = voter.DisplayName,

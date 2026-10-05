@@ -25,5 +25,17 @@ namespace Lighthouse.Backend.API
 
             return Ok(new RefinementViewDto(view));
         }
+
+        [HttpGet("work-items/{workItemReference}/log")]
+        public ActionResult<SizingLogDto> GetLog(int teamId, string workItemReference, [FromHeader(Name = VoterKeyHeader)] string? voterKey)
+        {
+            var log = refinementViewQuery.LogOf(teamId, workItemReference, voterKey);
+            if (log is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(new SizingLogDto(log));
+        }
     }
 }

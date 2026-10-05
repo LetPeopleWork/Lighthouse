@@ -23,7 +23,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         // @driving_port @real-io @us-12 @slice-12 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice12)]
         public async Task A_Yes_but_carries_its_condition_into_the_Work_Items_log()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -37,7 +36,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-12 @slice-12 @contract-shape:bounded-change
         [TestCase(Answer.Yes)]
         [TestCase(Answer.No)]
-        [Ignore(PendingSlice12)]
         public async Task Any_answer_may_carry_a_comment(Answer answer)
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -50,7 +48,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-12 @slice-12 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice12)]
         public async Task A_vote_without_a_comment_carries_none()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -64,7 +61,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-11 @us-12 @slice-12 @contract-shape:bounded-change
         // Changing your mind adds to the log; nothing is ever overwritten.
         [Test]
-        [Ignore(PendingSlice12)]
         public async Task A_changed_mind_keeps_both_votes_in_the_log_oldest_first()
         {
             var gravity = await GivenJonasVotedYesOnConfigurationManagement();

@@ -25,6 +25,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         private static readonly Voter Jonas = new("self:jonas", "Jonas Weber", null);
 
+        private static readonly string?[] NoComment = [null];
+
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<ISizingLogRepository> sizingLogMock;
         private List<SizingLogEntry> appended;
@@ -87,6 +89,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                 Assert.That(appended.Select(Summary), Has.All.EqualTo(new EntrySummary(
                     TeamId, InRefinement, SizingEntryKind.Vote, answer, comment, Jonas.Key, null, Jonas.DisplayName, CastAt.UtcDateTime, channel)));
             }
+        }
+
+        [TestCase("")]
+        [TestCase("   ")]
+        public void AVoteWhoseCommentIsOnlyBlankIsRecordedWithoutOne(string comment)
+        {
+            GivenTheTeam(ATeamThatRefinesInBacklog(sleProbability: 85, sleDays: 7));
+
+            subject.Vote(TeamId, InRefinement, new SizingVote(SizingAnswer.Yes, SizingChannel.Web, comment), Jonas);
+
+            Assert.That(appended.Select(entry => entry.Comment), Is.EqualTo(NoComment));
         }
 
         [TestCase(InRefinement)]

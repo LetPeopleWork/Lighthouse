@@ -9,7 +9,25 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
         /// <param name="presentedVoterKey">The key the reader's browser keeps, used only to mark the reader's own votes.</param>
         /// <returns>Null when there is no such Team.</returns>
         RefinementView? ForTeam(int teamId, string? presentedVoterKey);
+
+        /// <param name="presentedVoterKey">The key the reader's browser keeps, used only to mark the reader's own entries.</param>
+        /// <returns>Null when there is no such Team or the Work Item is not in its refinement.</returns>
+        SizingLog? LogOf(int teamId, string workItemReference, string? presentedVoterKey);
     }
+
+    /// <summary>Everything said about one Work Item, oldest first. Every reader sees every entry.</summary>
+    public sealed record SizingLog(List<SizingLogLine> Entries);
+
+    /// <param name="VoterName">The name as it stood when the entry was written; the voter's key is never handed out.</param>
+    /// <param name="RecordedAt">When the entry was written, in UTC.</param>
+    public sealed record SizingLogLine(
+        SizingEntryKind Kind,
+        SizingAnswer? Answer,
+        string? Comment,
+        string VoterName,
+        SizingChannel Channel,
+        DateTime RecordedAt,
+        bool IsMine);
 
     /// <param name="StagesConfigured">Whether the Team sets any stage rule; without one no row has a stage.</param>
     /// <param name="Calendar">When the Team next refines, and whether it does today; no date without a cadence.</param>

@@ -23,6 +23,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         private static readonly string[] BothWorkItems = ["GR-1", "GR-2"];
 
+        private static readonly string[] OnlyGr1 = ["GR-1"];
+
+        private static readonly DateTime VotedAt = new(2026, 10, 3, 9, 0, 0, DateTimeKind.Utc);
+
         private static readonly RowStanding[] StandingsWithOneYesOfOne =
         [
             RowStanding.Ready,
@@ -206,16 +210,119 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             }
         }
 
-        private static SizingLogEntry VoteOn(string workItemReference, int id, string voterKey, SizingAnswer answer) => new()
+        [Test]
+        public void TheLogOfAWorkItemReadsOldestFirstAndMarksOnlyTheReadersOwnEntries()
+        {
+            const string anaBrowserKey = "ana-browser-keeps-this-voter-key-x";
+            var anaKey = SizingLogEntry.SelfDeclaredVoterKeyOf(anaBrowserKey);
+            GivenTheTeamRefinesGr1();
+            var recordedWithoutAKind = new DateTime(2026, 10, 3, 9, 15, 0, DateTimeKind.Unspecified);
+            sizingLogMock
+                .Setup(log => log.ReadForTeam(TeamId, It.Is<IReadOnlyCollection<string>>(references => references.SequenceEqual(OnlyGr1))))
+                .Returns(
+                [
+                    VoteOn("GR-1", 3, anaKey, SizingAnswer.YesBut, "only if the export moves out"),
+                    VoteOn("GR-1", 1, "self:jonas", SizingAnswer.Yes),
+                    CommentOn("GR-1", 2, "self:mo", "Which API version?", recordedWithoutAKind),
+                ]);
+
+            var log = subject.LogOf(TeamId, "GR-1", anaBrowserKey);
+
+            Assert.That(log?.Entries, Is.EqualTo(new[]
+            {
+                new SizingLogLine(SizingEntryKind.Vote, SizingAnswer.Yes, null, "self:jonas", SizingChannel.Web, VotedAt, false),
+                new SizingLogLine(SizingEntryKind.Comment, null, "Which API version?", "self:mo", SizingChannel.Cli, DateTime.SpecifyKind(recordedWithoutAKind, DateTimeKind.Utc), false),
+                new SizingLogLine(SizingEntryKind.Vote, SizingAnswer.YesBut, "only if the export moves out", anaKey, SizingChannel.Web, VotedAt, true),
+            }));
+        }
+
+        [Test]
+        public void TheLogSaysWhenEachEntryWasRecordedAsAUtcInstant()
+        {
+            GivenTheTeamRefinesGr1();
+            sizingLogMock
+                .Setup(log => log.ReadForTeam(TeamId, It.IsAny<IReadOnlyCollection<string>>()))
+                .Returns([CommentOn("GR-1", 1, "self:mo", "Why?", new DateTime(2026, 10, 3, 9, 15, 0, DateTimeKind.Unspecified))]);
+
+            var log = subject.LogOf(TeamId, "GR-1", null);
+
+            Assert.That(log?.Entries.Select(entry => entry.RecordedAt.Kind), Has.All.EqualTo(DateTimeKind.Utc));
+        }
+
+        [Test]
+        public void WithoutAReaderKeyNoEntryIsTheReaders()
+        {
+            GivenTheTeamRefinesGr1();
+            sizingLogMock
+                .Setup(log => log.ReadForTeam(TeamId, It.IsAny<IReadOnlyCollection<string>>()))
+                .Returns([VoteOn("GR-1", 1, "self:jonas", SizingAnswer.Yes)]);
+
+            var log = subject.LogOf(TeamId, "GR-1", null);
+
+            Assert.That(log?.Entries.Select(entry => entry.IsMine), Has.All.False);
+        }
+
+        [TestCase("GR-2")]
+        [TestCase("GR-999")]
+        public void AWorkItemOutsideTheTeamsRefinementHasNoLog(string workItem)
+        {
+            GivenTheTeamRefinesGr1();
+            workItems.Add(new WorkItem { TeamId = TeamId, ReferenceId = "GR-2", State = "Implementation", Order = "2" });
+
+            var log = subject.LogOf(TeamId, workItem, null);
+
+            Assert.That(log, Is.Null);
+        }
+
+        [Test]
+        public void AnUnknownTeamOrOneThatDoesNotRefineHasNoLog()
+        {
+            var unknown = subject.LogOf(TeamId, "GR-1", null);
+            GivenTheTeam(new Team { Id = TeamId });
+            var notRefining = subject.LogOf(TeamId, "GR-1", null);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(unknown, Is.Null);
+                Assert.That(notRefining, Is.Null);
+            }
+        }
+
+        private static SizingLogEntry CommentOn(string workItemReference, int id, string voterKey, string comment, DateTime recordedAt) => new()
+        {
+            Id = id,
+            TeamId = TeamId,
+            WorkItemReferenceId = workItemReference,
+            Kind = SizingEntryKind.Comment,
+            Comment = comment,
+            VoterKey = voterKey,
+            VoterDisplayName = voterKey,
+            RecordedAt = recordedAt,
+            Channel = SizingChannel.Cli,
+            YardstickSource = YardstickSource.CycleTimeFallback,
+        };
+
+        private void GivenTheTeamRefinesGr1()
+        {
+            GivenTheTeam(new Team
+            {
+                Id = TeamId,
+                RefinementSettings = new RefinementSettings { States = [new RefinementStateSetting { State = "Backlog" }] },
+            });
+            workItems.Add(new WorkItem { TeamId = TeamId, ReferenceId = "GR-1", State = "Backlog", Order = "1" });
+        }
+
+        private static SizingLogEntry VoteOn(string workItemReference, int id, string voterKey, SizingAnswer answer, string? comment = null) => new()
         {
             Id = id,
             TeamId = TeamId,
             WorkItemReferenceId = workItemReference,
             Kind = SizingEntryKind.Vote,
             Answer = answer,
+            Comment = comment,
             VoterKey = voterKey,
             VoterDisplayName = voterKey,
-            RecordedAt = new DateTime(2026, 10, 3, 9, 0, 0, DateTimeKind.Utc),
+            RecordedAt = VotedAt,
             Channel = SizingChannel.Web,
             YardstickSource = YardstickSource.CycleTimeFallback,
         };
