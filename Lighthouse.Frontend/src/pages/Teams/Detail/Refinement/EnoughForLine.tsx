@@ -6,7 +6,7 @@ import {
 	type GridRowSpacingParams,
 } from "@mui/x-data-grid";
 import type React from "react";
-import { createContext, forwardRef, useContext } from "react";
+import { createContext, forwardRef, useContext, useMemo } from "react";
 import type { IRefinementNeed } from "../../../../models/Refinement/Refinement";
 import {
 	describeEnoughFor,
@@ -46,34 +46,59 @@ export const EnoughForContext = createContext<EnoughForMarking | null>(null);
 
 const ShownIndexContext = createContext(-1);
 
-const LINE_HEIGHT = 36;
+const LINE_HEIGHT_PX = 36;
+
+const BELOW_THE_LINE_OPACITY = 0.6;
+
+type LineSide = "above" | "below";
+
+/** The side of the shown row the line sits on, or null when the line is not next to that row. */
+const lineBeside = (lineAfterRow: number, index: number): LineSide | null => {
+	if (index === lineAfterRow) {
+		return "below";
+	}
+	if (lineAfterRow === -1 && index === 0) {
+		return "above";
+	}
+	return null;
+};
+
+const isNumberedRow = (placement: EnoughForPlacement, index: number) =>
+	index >= 0 && index < placement.numbered;
+
+const SPACE_FOR_THE_LINE: Record<LineSide, GridRowSpacing> = {
+	above: { top: LINE_HEIGHT_PX },
+	below: { bottom: LINE_HEIGHT_PX },
+};
 
 /**
  * The grid lays its rows out from the heights it knows about, so the line lives in space the grid reserves
  * as row spacing; otherwise every row after it would be drawn a line lower than the grid thinks it is.
  */
-export const spaceForTheLine =
+const spaceForTheLine =
 	(lineAfterRow: number) =>
 	({ indexRelativeToCurrentPage }: GridRowSpacingParams): GridRowSpacing => {
-		if (indexRelativeToCurrentPage === lineAfterRow) {
-			return { bottom: LINE_HEIGHT };
-		}
-		if (lineAfterRow === -1 && indexRelativeToCurrentPage === 0) {
-			return { top: LINE_HEIGHT };
-		}
-		return {};
+		const side = lineBeside(lineAfterRow, indexRelativeToCurrentPage);
+		return side === null ? {} : SPACE_FOR_THE_LINE[side];
 	};
 
-const Line: React.FC<Readonly<{ sentence: string; beforeRow: boolean }>> = ({
+/** The line pulls itself back into the space reserved for it rather than pushing the next row down. */
+const INTO_THE_RESERVED_SPACE: Record<
+	LineSide,
+	{ marginTop: string } | { marginBottom: string }
+> = {
+	above: { marginBottom: `-${LINE_HEIGHT_PX}px` },
+	below: { marginTop: `-${LINE_HEIGHT_PX}px` },
+};
+
+const Line: React.FC<Readonly<{ sentence: string; side: LineSide }>> = ({
 	sentence,
-	beforeRow,
+	side,
 }) => (
 	<Box
 		sx={{
-			height: LINE_HEIGHT,
-			...(beforeRow
-				? { marginBottom: `-${LINE_HEIGHT}px` }
-				: { marginTop: `-${LINE_HEIGHT}px` }),
+			height: LINE_HEIGHT_PX,
+			...INTO_THE_RESERVED_SPACE[side],
 			display: "flex",
 			alignItems: "center",
 			px: 2,
@@ -89,38 +114,47 @@ const Line: React.FC<Readonly<{ sentence: string; beforeRow: boolean }>> = ({
 );
 
 /** A grid row that knows where it is shown, with the line before or after it when that is where the line goes. */
-export const EnoughForRow = forwardRef<HTMLDivElement, GridRowProps>(
+const EnoughForRow = forwardRef<HTMLDivElement, GridRowProps>(
 	function EnoughForRow(props, ref) {
 		const marking = useContext(EnoughForContext);
 		if (marking === null) {
 			return <GridRow ref={ref} {...props} />;
 		}
-		const { numbered, lineAfterRow } = marking.placement;
-		const isBelowTheLine = props.index >= numbered;
-		const line = (
-			<Line sentence={marking.sentence} beforeRow={lineAfterRow === -1} />
-		);
+		const side = lineBeside(marking.placement.lineAfterRow, props.index);
+		const line =
+			side === null ? null : <Line sentence={marking.sentence} side={side} />;
+		const style = isNumberedRow(marking.placement, props.index)
+			? props.style
+			: { ...props.style, opacity: BELOW_THE_LINE_OPACITY };
 		return (
 			<ShownIndexContext.Provider value={props.index}>
-				{lineAfterRow === -1 && props.index === 0 && line}
-				<GridRow
-					ref={ref}
-					{...props}
-					style={
-						isBelowTheLine ? { ...props.style, opacity: 0.6 } : props.style
-					}
-				/>
-				{props.index === lineAfterRow && line}
+				{side === "above" && line}
+				<GridRow ref={ref} {...props} style={style} />
+				{side === "below" && line}
 			</ShownIndexContext.Provider>
 		);
 	},
 );
 
+const ROW_SLOTS = { row: EnoughForRow };
+
+/** What the grid needs to draw the line: rows that can carry it, and the space to carry it in. */
+export const useEnoughForLine = (marking: EnoughForMarking | null) => {
+	const lineAfterRow = marking?.placement.lineAfterRow;
+	const getRowSpacing = useMemo(
+		() =>
+			lineAfterRow === undefined ? undefined : spaceForTheLine(lineAfterRow),
+		[lineAfterRow],
+	);
+	return { slots: ROW_SLOTS, getRowSpacing };
+};
+
 /** The row's place among the rows needed before the next Refinement, or nothing below the line. */
 export const NeededNumber: React.FC = () => {
 	const marking = useContext(EnoughForContext);
 	const index = useContext(ShownIndexContext);
-	const isNumbered =
-		marking !== null && index >= 0 && index < marking.placement.numbered;
-	return isNumbered ? index + 1 : null;
+	if (marking === null || !isNumberedRow(marking.placement, index)) {
+		return null;
+	}
+	return index + 1;
 };

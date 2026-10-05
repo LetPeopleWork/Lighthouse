@@ -12,8 +12,7 @@ import { useTerminology } from "../../../../services/TerminologyContext";
 import {
 	EnoughForContext,
 	type EnoughForMarking,
-	EnoughForRow,
-	spaceForTheLine,
+	useEnoughForLine,
 } from "./EnoughForLine";
 import {
 	createRefinementColumns,
@@ -33,8 +32,6 @@ interface RefinementGridProps {
 	onVote: (vote: IPendingVote) => void;
 	onOpenVotes: (referenceId: string) => void;
 }
-
-const ROW_SLOTS = { row: EnoughForRow };
 
 /** The Work Items in refinement, one row each, with the vote every reader can cast on it. */
 const RefinementGrid: React.FC<RefinementGridProps> = ({
@@ -83,12 +80,7 @@ const RefinementGrid: React.FC<RefinementGridProps> = ({
 			onOpenVotes,
 		],
 	);
-	const lineAfterRow = marking?.placement.lineAfterRow;
-	const getRowSpacing = useMemo(
-		() =>
-			lineAfterRow === undefined ? undefined : spaceForTheLine(lineAfterRow),
-		[lineAfterRow],
-	);
+	const { slots, getRowSpacing } = useEnoughForLine(marking);
 
 	return (
 		<EnoughForContext.Provider value={marking}>
@@ -98,7 +90,7 @@ const RefinementGrid: React.FC<RefinementGridProps> = ({
 					columns={columns}
 					idField="referenceId"
 					storageKey={`team-refinement-${teamId}`}
-					slots={ROW_SLOTS}
+					slots={slots}
 					getRowSpacing={getRowSpacing}
 				/>
 			</TableContainer>

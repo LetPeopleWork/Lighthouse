@@ -2,7 +2,6 @@ import type {
 	GridColDef,
 	GridFilterModel,
 	GridRowId,
-	GridSlotsComponent,
 	GridSortModel,
 	GridValidRowModel,
 	DataGridProps as MuiDataGridProps,
@@ -72,7 +71,7 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	/** Custom actions to display in the toolbar */
 	toolbarActions?: React.ReactNode;
 	/** Replaces parts of the grid, such as how a row renders. */
-	slots?: Partial<GridSlotsComponent>;
+	slots?: MuiDataGridProps<T>["slots"];
 	/** Space to leave above or below a row, which the grid counts when it lays the rows out. */
 	getRowSpacing?: MuiDataGridProps<T>["getRowSpacing"];
 }

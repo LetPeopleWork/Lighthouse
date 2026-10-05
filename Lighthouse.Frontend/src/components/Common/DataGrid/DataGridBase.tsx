@@ -20,24 +20,25 @@ import {
 import type { DataGridBaseProps } from "./types";
 
 /**
- * A saved column order predates any column added since, so each such column goes right after the
- * column declared before it (or first, when it is declared first) rather than at the end, where a
- * leading column like a row number would make no sense.
+ * A saved column order knows nothing of columns added since it was saved. Each of those goes right
+ * after the column declared before it, or first when it is declared first, rather than at the end,
+ * where a leading column such as a row number would make no sense.
  */
 function withNewColumnsWhereDeclared(
 	savedOrder: string[],
 	declaredOrder: string[],
 ): string[] {
 	const merged = [...savedOrder];
-	declaredOrder.forEach((field, index) => {
-		if (merged.includes(field)) return;
-		const predecessor = declaredOrder[index - 1];
-		merged.splice(
-			predecessor === undefined ? 0 : merged.indexOf(predecessor) + 1,
-			0,
-			field,
-		);
-	});
+	let afterPrevious = 0;
+	for (const field of declaredOrder) {
+		const saved = merged.indexOf(field);
+		if (saved === -1) {
+			merged.splice(afterPrevious, 0, field);
+			afterPrevious += 1;
+		} else {
+			afterPrevious = saved + 1;
+		}
+	}
 	return merged;
 }
 
