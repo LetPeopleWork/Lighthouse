@@ -35,9 +35,7 @@ type JudgedNeed = IRefinementNeed & {
 	horizonWorkingDays: number;
 };
 
-export const isJudged = (
-	need: IRefinementNeed | undefined,
-): need is JudgedNeed =>
+const isJudged = (need: IRefinementNeed | undefined): need is JudgedNeed =>
 	need?.verdict != null &&
 	need.low != null &&
 	need.high != null &&
@@ -48,6 +46,26 @@ export const isJudged = (
 const refinementDayOf = (nextRefinementDate: string | null | undefined) =>
 	nextRefinementDate == null ? null : parseLocalDate(nextRefinementDate);
 
+/** A verdict the tab can say in full: what is needed, how many are ready, and by which day. */
+export interface ShownVerdict {
+	need: JudgedNeed;
+	readyCount: number;
+	refinementDay: Date;
+}
+
+/** The verdict the tab shows, or null when one of the facts it is said with is missing. */
+export const shownVerdict = (
+	need: IRefinementNeed | undefined,
+	readyCount: number | undefined,
+	nextRefinementDate: string | null | undefined,
+): ShownVerdict | null => {
+	const refinementDay = refinementDayOf(nextRefinementDate);
+	if (!isJudged(need) || readyCount === undefined || refinementDay === null) {
+		return null;
+	}
+	return { need, readyCount, refinementDay };
+};
+
 /** Whether the tab shows a message about the need; one that shows carries the next Refinement as its title. */
 export const showsNeedMessage = (
 	need: IRefinementNeed | undefined,
@@ -57,11 +75,7 @@ export const showsNeedMessage = (
 	if (need?.unavailableReason != null) {
 		return UNAVAILABLE_MESSAGE[need.unavailableReason] !== null;
 	}
-	return (
-		isJudged(need) &&
-		readyCount !== undefined &&
-		refinementDayOf(nextRefinementDate) !== null
-	);
+	return shownVerdict(need, readyCount, nextRefinementDate) !== null;
 };
 
 interface NeedMessageProps {
@@ -117,32 +131,32 @@ const NeedVerdict: React.FC<Readonly<NeedVerdictProps>> = ({
 		);
 	}
 
-	const refinementDay = refinementDayOf(nextRefinementDate);
-	if (!isJudged(need) || readyCount === undefined || refinementDay === null) {
+	const verdict = shownVerdict(need, readyCount, nextRefinementDate);
+	if (verdict === null) {
 		return null;
 	}
 
 	const sentence = describeNeed({
-		verdict: need.verdict,
-		readyCount,
-		low: need.low,
-		high: need.high,
+		verdict: verdict.need.verdict,
+		readyCount: verdict.readyCount,
+		low: verdict.need.low,
+		high: verdict.need.high,
 		teamName,
 		workItemTerm: terms.workItem,
 		workItemsTerm: terms.workItems,
 	});
 	const origin = describeNeedOrigin({
 		teamName,
-		horizonWorkingDays: need.horizonWorkingDays,
-		refinementDay,
-		lowPercentile: need.lowPercentile,
-		highPercentile: need.highPercentile,
+		horizonWorkingDays: verdict.need.horizonWorkingDays,
+		refinementDay: verdict.refinementDay,
+		lowPercentile: verdict.need.lowPercentile,
+		highPercentile: verdict.need.highPercentile,
 		teamTerm: terms.team,
 		throughputTerm: terms.throughput,
 	});
 
 	return (
-		<NeedMessage severity={SEVERITY[need.verdict]} title={title}>
+		<NeedMessage severity={SEVERITY[verdict.need.verdict]} title={title}>
 			<span>{sentence}</span> <InfoTooltip text={origin} />
 		</NeedMessage>
 	);

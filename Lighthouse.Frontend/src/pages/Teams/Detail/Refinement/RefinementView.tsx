@@ -9,7 +9,7 @@ import type { Team } from "../../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { useTerminology } from "../../../../services/TerminologyContext";
 import { markEnoughFor } from "./EnoughForLine";
-import NeedVerdict, { showsNeedMessage } from "./NeedVerdict";
+import NeedVerdict, { shownVerdict, showsNeedMessage } from "./NeedVerdict";
 import NextRefinement, { NEXT_REFINEMENT_SLOT } from "./NextRefinement";
 import { describeNextRefinement } from "./nextRefinementWording";
 import RefinementGrid from "./RefinementGrid";
@@ -94,11 +94,19 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 		() =>
 			refinement === null
 				? null
-				: markEnoughFor(refinement.need, refinement.workItems.length, {
-						workItem: getTerm(TERMINOLOGY_KEYS.WORK_ITEM),
-						workItems: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
-						refinement: getTerm(TERMINOLOGY_KEYS.REFINEMENT),
-					}),
+				: markEnoughFor(
+						shownVerdict(
+							refinement.need,
+							refinement.readyCount,
+							refinement.nextRefinementDate,
+						),
+						refinement.workItems.length,
+						{
+							workItem: getTerm(TERMINOLOGY_KEYS.WORK_ITEM),
+							workItems: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
+							refinement: getTerm(TERMINOLOGY_KEYS.REFINEMENT),
+						},
+					),
 		[refinement, getTerm],
 	);
 

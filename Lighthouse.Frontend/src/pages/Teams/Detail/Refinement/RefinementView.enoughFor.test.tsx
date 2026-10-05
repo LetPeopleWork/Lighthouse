@@ -267,6 +267,25 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 		},
 	);
 
+	// @us-06 @slice-06 @error @contract-shape:pure-function
+	// The rows are marked exactly when the verdict above them is shown, so the two never disagree.
+	it.each([
+		["nothing ready is counted", { readyCount: undefined }],
+		["the next Refinement has no date", { nextRefinementDate: null }],
+	])(
+		"shows no # column and no line when the verdict is not shown because %s",
+		async (_why, overrides) => {
+			renderTheRefinementTab(gravityNeeding(3, overrides));
+
+			await theListAsShown();
+			expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("columnheader", { name: "#" }),
+			).not.toBeInTheDocument();
+			expect(screen.queryByText(/^enough for /)).not.toBeInTheDocument();
+		},
+	);
+
 	// @us-06 @slice-06 @boundary @contract-shape:pure-function
 	it("says the Team's own words on the line", async () => {
 		terms.current = {

@@ -7,14 +7,13 @@ import {
 } from "@mui/x-data-grid";
 import type React from "react";
 import { createContext, forwardRef, useContext, useMemo } from "react";
-import type { IRefinementNeed } from "../../../../models/Refinement/Refinement";
 import {
 	describeEnoughFor,
 	type EnoughForPlacement,
 	type EnoughForTerms,
 	placeEnoughForLine,
 } from "./enoughForPlacement";
-import { isJudged } from "./NeedVerdict";
+import type { ShownVerdict } from "./NeedVerdict";
 
 /** Where the line goes among the rows as shown, and what it says. */
 export interface EnoughForMarking {
@@ -22,21 +21,21 @@ export interface EnoughForMarking {
 	sentence: string;
 }
 
-/** Marks the rows only when the server judged the need, because only then is there a number to count up to. */
+/** Marks the rows only while the verdict is shown, so the list never counts up to a number the tab does not state. */
 export const markEnoughFor = (
-	need: IRefinementNeed | undefined,
+	verdict: ShownVerdict | null,
 	listed: number,
 	terms: EnoughForTerms,
 ): EnoughForMarking | null => {
-	if (!isJudged(need)) {
+	if (verdict === null) {
 		return null;
 	}
-	const placement = placeEnoughForLine(need.high, listed);
+	const placement = placeEnoughForLine(verdict.need.high, listed);
 	return {
 		placement,
 		sentence: describeEnoughFor(placement.says, {
 			listed,
-			highPercentile: need.highPercentile,
+			highPercentile: verdict.need.highPercentile,
 			terms,
 		}),
 	};
