@@ -1,4 +1,4 @@
-import { useCallback, useContext } from "react";
+import { useCallback, useContext, useRef, useState } from "react";
 import type { useVoterIdentity } from "../../../../hooks/useVoterIdentity";
 import type { IVotedRow } from "../../../../models/Refinement/Refinement";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
@@ -27,12 +27,27 @@ export const useCommentAdding = (
 	onFailure: (error: unknown) => void,
 ) => {
 	const { sizingLogService } = useContext(ApiServiceContext);
+	const sending = useRef(new Set<string>());
+	const [commentsBeingSent, setCommentsBeingSent] = useState<
+		ReadonlySet<string>
+	>(() => new Set());
+
+	// Pressing Send again before the server answers would post the same comment twice.
+	const showSending = useCallback(() => {
+		setCommentsBeingSent(new Set(sending.current));
+	}, []);
 
 	const send = useCallback(
 		(
 			{ referenceId, comment, onSent }: IPendingComment,
 			declared: IStoredVoter | null,
 		) => {
+			if (sending.current.has(referenceId)) {
+				return;
+			}
+			sending.current.add(referenceId);
+			showSending();
+
 			const signed = commentFor(comment, declared);
 			sizingLogService
 				.addComment(teamId, referenceId, signed.comment, signed.voterKey)
@@ -41,9 +56,13 @@ export const useCommentAdding = (
 					onAnswered({ ...answeredRow, madeReady: false });
 					onSent();
 				})
-				.catch(onFailure);
+				.catch(onFailure)
+				.finally(() => {
+					sending.current.delete(referenceId);
+					showSending();
+				});
 		},
-		[commentFor, sizingLogService, teamId, onAnswered, onFailure],
+		[commentFor, sizingLogService, teamId, onAnswered, onFailure, showSending],
 	);
 
 	const { submit, isAskingForName, submitUnderName, cancel } = useNameFirst(
@@ -53,6 +72,7 @@ export const useCommentAdding = (
 
 	return {
 		addComment: submit,
+		commentsBeingSent,
 		isAskingForName,
 		commentUnderName: submitUnderName,
 		cancelComment: cancel,

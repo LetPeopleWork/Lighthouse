@@ -25,6 +25,7 @@ describe("the votes and comments of one Work Item", () => {
 			<VotesAndCommentsDialog
 				workItem={aWorkItem({ split: undefined })}
 				log={AN_EMPTY_LOG}
+				isSendingAComment={false}
 				voterName={null}
 				onChangeName={vi.fn()}
 				onAddComment={vi.fn()}
@@ -42,6 +43,7 @@ describe("the votes and comments of one Work Item", () => {
 			<VotesAndCommentsDialog
 				workItem={aWorkItem({ split: { yes: 1, yesBut: 0, no: 0 } })}
 				log={AN_EMPTY_LOG}
+				isSendingAComment={false}
 				voterName={null}
 				onChangeName={vi.fn()}
 				onAddComment={vi.fn()}

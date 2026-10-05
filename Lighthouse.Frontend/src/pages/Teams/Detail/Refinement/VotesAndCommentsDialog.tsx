@@ -27,6 +27,7 @@ const NO_SPLIT = { yes: 0, yesBut: 0, no: 0 };
 interface VotesAndCommentsDialogProps {
 	workItem: IRefinementRow;
 	log: SizingLogState;
+	isSendingAComment: boolean;
 	/** The name this browser votes under, or null when there is none to change (sign-in, or no vote yet). */
 	voterName: string | null;
 	onChangeName: () => void;
@@ -36,8 +37,10 @@ interface VotesAndCommentsDialogProps {
 }
 
 const CommentBox: React.FC<
-	Readonly<Pick<VotesAndCommentsDialogProps, "onAddComment">>
-> = ({ onAddComment }) => {
+	Readonly<
+		Pick<VotesAndCommentsDialogProps, "onAddComment" | "isSendingAComment">
+	>
+> = ({ onAddComment, isSendingAComment }) => {
 	const [draft, setDraft] = useState<string | null>(null);
 
 	if (draft === null) {
@@ -59,11 +62,12 @@ const CommentBox: React.FC<
 				minRows={2}
 				fullWidth
 				autoFocus
+				disabled={isSendingAComment}
 			/>
 			<Button
 				variant="contained"
 				size="small"
-				disabled={comment === ""}
+				disabled={comment === "" || isSendingAComment}
 				onClick={() => onAddComment(comment, () => setDraft(null))}
 			>
 				Send
@@ -146,14 +150,25 @@ const SizingLog: React.FC<Readonly<{ log: SizingLogState }>> = ({ log }) => {
 /** How the votes on one Work Item split and what was said about it, shown to every reader whether they voted or not. */
 const VotesAndCommentsDialog: React.FC<
 	Readonly<VotesAndCommentsDialogProps>
-> = ({ workItem, log, voterName, onChangeName, onAddComment, onClose }) => (
+> = ({
+	workItem,
+	log,
+	isSendingAComment,
+	voterName,
+	onChangeName,
+	onAddComment,
+	onClose,
+}) => (
 	<Dialog open onClose={onClose} maxWidth="sm" fullWidth>
 		<DialogTitle>{`${workItem.referenceId} ${workItem.name} · Votes and comments`}</DialogTitle>
 		<DialogContent>
 			<Stack spacing={2} sx={{ alignItems: "flex-start" }}>
 				<Typography>{describeSplit(workItem.split ?? NO_SPLIT)}</Typography>
 				<SizingLog log={log} />
-				<CommentBox onAddComment={onAddComment} />
+				<CommentBox
+					onAddComment={onAddComment}
+					isSendingAComment={isSendingAComment}
+				/>
 			</Stack>
 		</DialogContent>
 		<DialogActions>

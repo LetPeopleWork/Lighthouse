@@ -310,6 +310,66 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		).toEqual([null, theStoredVoter()?.key]);
 	});
 
+	// @us-12 @slice-12 @error @contract-shape:bounded-change
+	it("sends a comment once, however often Send is pressed while it is on its way", async () => {
+		aBrowserThatVotedBefore(JONAS);
+		let answerTheComment: (row: IRefinementRow) => void = () => {};
+		const sizingLogService = aSizingLogService({
+			addComment: vi.fn().mockReturnValue(
+				new Promise<IRefinementRow>((resolve) => {
+					answerTheComment = resolve;
+				}),
+			),
+		});
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement({}, [
+				aRow(API_VERSIONING, "Public API versioning", "Analysing"),
+			]),
+			sizingLogService,
+		);
+
+		await user.type(await startACommentOn(user, API_VERSIONING), QUESTION);
+		await user.dblClick(screen.getByRole("button", { name: "Send" }));
+
+		expect(sizingLogService.addComment).toHaveBeenCalledTimes(1);
+		expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
+		expect(screen.getByRole("textbox", { name: "Comment" })).toBeDisabled();
+
+		await act(async () => {
+			answerTheComment(apiVersioningAsked());
+		});
+		await settle();
+
+		expect(sizingLogService.addComment).toHaveBeenCalledTimes(1);
+	});
+
+	// @us-12 @slice-12 @error @contract-shape:bounded-change
+	it("keeps a refused comment so it can be sent again", async () => {
+		aBrowserThatVotedBefore(JONAS);
+		const sizingLogService = aSizingLogService({
+			addComment: vi.fn().mockRejectedValue(new Error("Network Error")),
+		});
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement({}, [
+				aRow(API_VERSIONING, "Public API versioning", "Analysing"),
+			]),
+			sizingLogService,
+		);
+
+		await user.type(await startACommentOn(user, API_VERSIONING), QUESTION);
+		await user.click(screen.getByRole("button", { name: "Send" }));
+
+		expect(
+			await screen.findByRole("alert", { hidden: true }),
+		).toHaveTextContent("Network Error");
+		expect(screen.getByRole("textbox", { name: "Comment" })).toHaveValue(
+			QUESTION,
+		);
+		await waitFor(() =>
+			expect(screen.getByRole("button", { name: "Send" })).toBeEnabled(),
+		);
+	});
+
 	// @us-12 @slice-12 @error @contract-shape:unbounded-preservation
 	it("will not send an empty comment", async () => {
 		aBrowserThatVotedBefore(JONAS);

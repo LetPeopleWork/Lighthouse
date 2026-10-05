@@ -95,6 +95,7 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 
 	const {
 		addComment,
+		commentsBeingSent,
 		isAskingForName: isAskingWhoComments,
 		commentUnderName,
 		cancelComment,
@@ -207,6 +208,7 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 				<VotesAndCommentsDialog
 					workItem={votesShownOn}
 					log={log}
+					isSendingAComment={commentsBeingSent.has(votesShownOn.referenceId)}
 					voterName={changeableName}
 					onChangeName={() => setIsChangingName(true)}
 					onAddComment={(comment, onSent) => {
