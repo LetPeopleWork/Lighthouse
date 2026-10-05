@@ -47,6 +47,7 @@ const isJudged = (need: IRefinementNeed | undefined): need is JudgedNeed =>
 
 /** The words a Team has renamed that the verdict uses. */
 export interface NeedVerdictTerms {
+	workItem: string;
 	workItems: string;
 	team: string;
 	throughput: string;
@@ -90,6 +91,7 @@ const NeedVerdict: React.FC<Readonly<NeedVerdictProps>> = ({
 		high: need.high,
 		refinementDay,
 		teamName,
+		workItemTerm: terms.workItem,
 		workItemsTerm: terms.workItems,
 	});
 	const origin = describeNeedOrigin({

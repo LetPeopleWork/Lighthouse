@@ -9,6 +9,7 @@ export interface NeedFacts {
 	high: number;
 	refinementDay: Date;
 	teamName: string;
+	workItemTerm: string;
 	workItemsTerm: string;
 }
 
@@ -37,8 +38,13 @@ const theRange = (facts: NeedFacts): string =>
 		? `the ${facts.low}`
 		: `the range of ${facts.low}–${facts.high}`;
 
+const workItemsTermFor = (facts: NeedFacts): string =>
+	isOneNumber(facts) && facts.low === 1
+		? facts.workItemTerm
+		: facts.workItemsTerm;
+
 const describeBelow = (facts: NeedFacts, day: string): string =>
-	`below ${theRange(facts)} ${facts.workItemsTerm} ${facts.teamName} is likely to pull before ${day}. Refine ${howManyMore(facts)} more.`;
+	`below ${theRange(facts)} ${workItemsTermFor(facts)} ${facts.teamName} is likely to pull before ${day}. Refine ${howManyMore(facts)} more.`;
 
 const describeIn = (facts: NeedFacts, day: string): string => {
 	const where = isOneNumber(facts)

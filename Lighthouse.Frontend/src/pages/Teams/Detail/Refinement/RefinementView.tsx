@@ -132,6 +132,7 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 				nextRefinementDate={refinement.nextRefinementDate}
 				teamName={team.name}
 				terms={{
+					workItem: getTerm(TERMINOLOGY_KEYS.WORK_ITEM),
 					workItems: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
 					team: getTerm(TERMINOLOGY_KEYS.TEAM),
 					throughput: getTerm(TERMINOLOGY_KEYS.THROUGHPUT),

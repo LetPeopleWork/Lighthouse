@@ -28,6 +28,13 @@ describe("describeNeed", () => {
 			"3 ready — below the 5 Work Items Team Gravity is likely to pull before Thu 8 Oct. Refine 2 more.",
 		],
 		[
+			"Below",
+			0,
+			1,
+			1,
+			"0 ready — below the 1 Work Item Team Gravity is likely to pull before Thu 8 Oct. Refine 1 more.",
+		],
+		[
 			"In",
 			6,
 			5,
@@ -80,6 +87,7 @@ describe("describeNeed", () => {
 					high,
 					refinementDay: THURSDAY_THE_EIGHTH,
 					teamName: "Team Gravity",
+					workItemTerm: "Work Item",
 					workItemsTerm: "Work Items",
 				}),
 			).toBe(expected);
@@ -95,6 +103,7 @@ describe("describeNeed", () => {
 				high: 8,
 				refinementDay: THURSDAY_THE_EIGHTH,
 				teamName: "Team Gravity",
+				workItemTerm: "Ticket",
 				workItemsTerm: "Tickets",
 			}),
 		).toContain(
