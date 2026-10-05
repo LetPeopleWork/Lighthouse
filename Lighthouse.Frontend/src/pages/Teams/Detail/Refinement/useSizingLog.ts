@@ -5,12 +5,9 @@ import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 export type SizingLogState =
 	| { status: "reading" }
 	| { status: "read"; entries: ISizingLogEntry[] }
-	| { status: "failed"; message: string };
+	| { status: "failed"; error: unknown };
 
 const READING: SizingLogState = { status: "reading" };
-
-const messageOf = (error: unknown): string =>
-	error instanceof Error ? error.message : String(error);
 
 /**
  * The log of the Work Item whose votes and comments are open, read when it opens and again on request.
@@ -48,7 +45,7 @@ export const useSizingLog = (
 				})
 				.catch((error: unknown) => {
 					if (isLatest()) {
-						setLog({ status: "failed", message: messageOf(error) });
+						setLog({ status: "failed", error });
 					}
 				});
 		},

@@ -3,7 +3,11 @@ import type {
 	SizingAnswer,
 	SizingEntryKind,
 } from "../../../../models/Refinement/Refinement";
+import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
+import { ApiError } from "../../../../services/Api/ApiError";
 import { formatDayAndDate } from "./nextRefinementWording";
+
+const NOT_FOUND = 404;
 
 const ANSWER_WORDING: Record<SizingAnswer, string> = {
 	Yes: "Yes",
@@ -31,3 +35,15 @@ export const describeLogEntry = (entry: ISizingLogEntry): string =>
 /** The day an entry was recorded, as "Wed 7 Oct". */
 export const describeLogDay = ({ recordedAt }: ISizingLogEntry): string =>
 	formatDayAndDate(new Date(recordedAt));
+
+/** Why a Work Item's log could not be read; the server finds no log for a Work Item that left refinement. */
+export const describeLogFailure = (
+	error: unknown,
+	getTerm: (key: string) => string,
+): string => {
+	if (error instanceof ApiError && error.code === NOT_FOUND) {
+		return `That ${getTerm(TERMINOLOGY_KEYS.WORK_ITEM).toLowerCase()} is no longer in ${getTerm(TERMINOLOGY_KEYS.REFINEMENT).toLowerCase()}.`;
+	}
+
+	return error instanceof Error ? error.message : String(error);
+};

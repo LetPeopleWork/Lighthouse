@@ -5,6 +5,8 @@ import type {
 	ISizingLog,
 	ISizingLogEntry,
 } from "../../../../models/Refinement/Refinement";
+import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
+import { ApiError } from "../../../../services/Api/ApiError";
 import {
 	aBrowserThatVotedBefore,
 	aRow,
@@ -13,6 +15,7 @@ import {
 	GRAVITY_TEAM_ID,
 	gravitysRefinement,
 	openTheVotesAndCommentsOf,
+	REFINEMENT_KEY,
 	renderTheRefinementTab,
 	theButton,
 	theRowOf,
@@ -686,26 +689,39 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 	});
 
 	// @us-12 @slice-12 @error @contract-shape:pure-function
-	it("says why when a Work Item's log cannot be read", async () => {
-		aBrowserThatVotedBefore(ANA);
-		const sizingLogService = aSizingLogService({
-			getLog: vi
-				.fn()
-				.mockRejectedValue(
-					new Error("That Work Item is no longer in refinement"),
-				),
-		});
-		const { user } = renderTheRefinementTab(
-			advancedReportingWithComments(),
-			sizingLogService,
-		);
+	it.each([
+		{
+			why: "the Work Item left refinement",
+			refusal: new ApiError(404, "Request failed with status code 404"),
+			said: "That ticket is no longer in grooming.",
+		},
+		{
+			why: "the log could not be read",
+			refusal: new ApiError(500, "The sizing log could not be read"),
+			said: "The sizing log could not be read",
+		},
+	])(
+		"says why when a Work Item's log cannot be read because $why",
+		async ({ refusal, said }) => {
+			terms.current = {
+				...defaultRefinementTerms,
+				[TERMINOLOGY_KEYS.WORK_ITEM]: "Ticket",
+				[REFINEMENT_KEY]: "Grooming",
+			};
+			aBrowserThatVotedBefore(ANA);
+			const sizingLogService = aSizingLogService({
+				getLog: vi.fn().mockRejectedValue(refusal),
+			});
+			const { user } = renderTheRefinementTab(
+				advancedReportingWithComments(),
+				sizingLogService,
+			);
 
-		await user.click(
-			theButton(await theRowOf(ADVANCED_REPORTING), VOTES_AND_COMMENTS),
-		);
+			await user.click(
+				theButton(await theRowOf(ADVANCED_REPORTING), VOTES_AND_COMMENTS),
+			);
 
-		expect(await screen.findByRole("alert")).toHaveTextContent(
-			"That Work Item is no longer in refinement",
-		);
-	});
+			expect(await screen.findByRole("alert")).toHaveTextContent(said);
+		},
+	);
 });

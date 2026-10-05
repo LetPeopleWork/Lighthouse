@@ -13,6 +13,7 @@ import NeedVerdict, { shownVerdict, showsNeedMessage } from "./NeedVerdict";
 import NextRefinement, { NEXT_REFINEMENT_SLOT } from "./NextRefinement";
 import { describeNextRefinement } from "./nextRefinementWording";
 import RefinementGrid from "./RefinementGrid";
+import { describeLogFailure } from "./sizingLogWording";
 import { describeStageBreakdown } from "./stageBreakdown";
 import { useCommentAdding } from "./useCommentAdding";
 import { useRefinement } from "./useRefinement";
@@ -208,6 +209,7 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 				<VotesAndCommentsDialog
 					workItem={votesShownOn}
 					log={log}
+					describeFailure={(error) => describeLogFailure(error, getTerm)}
 					isSendingAComment={commentsBeingSent.has(votesShownOn.referenceId)}
 					voterName={changeableName}
 					onChangeName={() => setIsChangingName(true)}

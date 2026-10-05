@@ -27,6 +27,8 @@ const NO_SPLIT = { yes: 0, yesBut: 0, no: 0 };
 interface VotesAndCommentsDialogProps {
 	workItem: IRefinementRow;
 	log: SizingLogState;
+	/** Why the log could not be read, in words the reader can act on. */
+	describeFailure: (error: unknown) => string;
 	isSendingAComment: boolean;
 	/** The name this browser votes under, or null when there is none to change (sign-in, or no vote yet). */
 	voterName: string | null;
@@ -117,7 +119,9 @@ const LogEntry: React.FC<Readonly<{ entry: ISizingLogEntry }>> = ({
 );
 
 /** Comments are always shown as the plain text they are, never interpreted as markup. */
-const SizingLog: React.FC<Readonly<{ log: SizingLogState }>> = ({ log }) => {
+const SizingLog: React.FC<
+	Readonly<Pick<VotesAndCommentsDialogProps, "log" | "describeFailure">>
+> = ({ log, describeFailure }) => {
 	if (log.status === "reading") {
 		return null;
 	}
@@ -125,7 +129,7 @@ const SizingLog: React.FC<Readonly<{ log: SizingLogState }>> = ({ log }) => {
 	if (log.status === "failed") {
 		return (
 			<Alert severity="error" sx={{ width: "100%" }}>
-				{log.message}
+				{describeFailure(log.error)}
 			</Alert>
 		);
 	}
@@ -154,6 +158,7 @@ const VotesAndCommentsDialog: React.FC<
 > = ({
 	workItem,
 	log,
+	describeFailure,
 	isSendingAComment,
 	voterName,
 	onChangeName,
@@ -165,7 +170,7 @@ const VotesAndCommentsDialog: React.FC<
 		<DialogContent>
 			<Stack spacing={2} sx={{ alignItems: "flex-start" }}>
 				<Typography>{describeSplit(workItem.split ?? NO_SPLIT)}</Typography>
-				<SizingLog log={log} />
+				<SizingLog log={log} describeFailure={describeFailure} />
 				<CommentBox
 					onAddComment={onAddComment}
 					isSendingAComment={isSendingAComment}
