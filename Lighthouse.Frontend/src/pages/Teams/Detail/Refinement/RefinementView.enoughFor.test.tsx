@@ -301,4 +301,20 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 			),
 		).toBeInTheDocument();
 	});
+
+	// @us-06 @slice-06 @boundary @contract-shape:pure-function
+	it("says the Team's own word for Refinement on the enough-for line", async () => {
+		terms.current = {
+			...defaultRefinementTerms,
+			workItems: "Tickets",
+			refinement: "Grooming",
+		};
+		renderTheRefinementTab(gravityNeeding(3));
+
+		expect(
+			await screen.findByText(
+				/^enough for the next Grooming \(85%\) · not needed before then$/,
+			),
+		).toBeInTheDocument();
+	});
 });
