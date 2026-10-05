@@ -19,8 +19,8 @@ import {
 } from "../../../../tests/RefinementTabTestKit";
 
 /**
- * Comments, conditions and questions on the Refinement tab, and the log each Work Item keeps. Choosing
- * "Yes, if…" asks for the condition but does not insist on it. A question is asked from a Work Item's
+ * Comments, conditions and questions on the Refinement tab, and the log each Work Item keeps. "Yes, if…"
+ * records in one click like Yes and No; its condition is a comment like any other. A question is asked from a Work Item's
  * votes and comments, without voting; it marks the Work Item until the asker votes. Each Work Item's log
  * reads oldest first and says who said what, on which day and, for the command line or an assistant,
  * through which. Everybody reads it, voted or not.
@@ -81,8 +81,6 @@ const advancedReportingWithComments = () =>
 
 const openTheLogOf = openTheVotesAndCommentsOf;
 
-const theConditionPrompt = () => screen.findByRole("dialog", { name: YES_IF });
-
 /** Asks from the Work Item's votes and comments, wherever the question box then opens. */
 const startAQuestionOn = async (
 	user: ReturnType<typeof renderTheRefinementTab>["user"],
@@ -107,14 +105,13 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 	});
 
 	// @us-12 @slice-12 @driving_port @contract-shape:bounded-change
-	it.skip("asks for the condition when Yes, if… is chosen and sends it with the vote", async () => {
+	it("records Yes, if… in one click, like Yes and No, with no condition asked", async () => {
 		const key = aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService({
 			castVote: vi.fn().mockResolvedValue(
 				aRow(ADVANCED_REPORTING, "Advanced reporting module", "Analysing", {
 					voteCount: 1,
 					myVote: "YesBut",
-					hasComments: true,
 				}),
 			),
 		});
@@ -124,59 +121,25 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		);
 
 		await user.click(theButton(await theRowOf(ADVANCED_REPORTING), YES_IF));
-		const prompt = await theConditionPrompt();
-		expect(
-			within(prompt).getByRole("button", { name: "Cancel" }),
-		).toBeEnabled();
-		await user.type(
-			within(prompt).getByRole("textbox", { name: "Condition" }),
-			CONDITION,
-		);
-		await user.click(within(prompt).getByRole("button", { name: "Vote" }));
-
-		await waitFor(() =>
-			expect(sizingLogService.castVote).toHaveBeenCalledWith(
-				GRAVITY_TEAM_ID,
-				ADVANCED_REPORTING,
-				{
-					answer: "YesBut",
-					channel: "Web",
-					voterName: ANA,
-					comment: CONDITION,
-				},
-				key,
-			),
-		);
-	});
-
-	// @us-12 @slice-12 @boundary @contract-shape:bounded-change
-	it.skip("still takes a Yes, if… whose condition is left empty", async () => {
-		aBrowserThatVotedBefore(ANA);
-		const sizingLogService = aSizingLogService({
-			castVote: vi.fn().mockResolvedValue(
-				aRow(ADVANCED_REPORTING, "Advanced reporting module", "Analysing", {
-					voteCount: 1,
-					myVote: "YesBut",
-				}),
-			),
-		});
-		const { user } = renderTheRefinementTab(
-			gravitysRefinement(),
-			sizingLogService,
-		);
-
-		await user.click(theButton(await theRowOf(ADVANCED_REPORTING), YES_IF));
-		await user.click(
-			within(await theConditionPrompt()).getByRole("button", {
-				name: "Vote",
-			}),
-		);
 
 		await waitFor(() =>
 			expect(sizingLogService.castVote).toHaveBeenCalledTimes(1),
 		);
-		const [, , vote] = vi.mocked(sizingLogService.castVote).mock.calls[0];
-		expect(vote).toEqual({ answer: "YesBut", channel: "Web", voterName: ANA });
+		const [teamId, referenceId, vote, voterKey] = vi.mocked(
+			sizingLogService.castVote,
+		).mock.calls[0];
+		expect([teamId, referenceId, voterKey]).toEqual([
+			GRAVITY_TEAM_ID,
+			ADVANCED_REPORTING,
+			key,
+		]);
+		expect(vote).toStrictEqual({
+			answer: "YesBut",
+			channel: "Web",
+			voterName: ANA,
+		});
+		expect(vote).not.toHaveProperty("comment");
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	});
 
 	// @us-12 @slice-12 @driving_port @contract-shape:bounded-change
