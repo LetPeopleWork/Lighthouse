@@ -373,7 +373,7 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 
 		expect(entries).toHaveLength(3);
 		for (const entry of entries) {
-			expect(entry).not.toHaveTextContent(/via /);
+			expect(entry).not.toHaveTextContent(/via |command line|assistant|cli\b/i);
 		}
 	});
 
