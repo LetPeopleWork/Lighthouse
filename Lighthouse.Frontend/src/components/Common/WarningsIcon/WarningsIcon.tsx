@@ -12,20 +12,25 @@ type WarningsIconProps = {
  * turning "does this row need me" into a counting exercise. A row can collect several reasons, none of
  * them more urgent than the others, and they are all read in the one place.
  */
-const WarningsIcon: React.FC<WarningsIconProps> = ({ warnings }) => (
-	<Tooltip title={<WarningList warnings={warnings} />}>
-		<IconButton
-			size="small"
-			sx={{ ml: 1 }}
-			// One label carrying every reason: a screen reader announces the control once, and there is
-			// no hovering to reveal the rest of them.
-			aria-label={warnings.join(" ")}
-			data-testid="warnings"
-		>
-			<WarningAmberIcon sx={{ color: "warning.main" }} />
-		</IconButton>
-	</Tooltip>
-);
+const WarningsIcon: React.FC<WarningsIconProps> = ({ warnings }) => {
+	// Two causes can word themselves the same, such as two dependencies held up for the same reason;
+	// the reader learns nothing from the repeat.
+	const reasons = [...new Set(warnings)];
+	return (
+		<Tooltip title={<WarningList warnings={reasons} />}>
+			<IconButton
+				size="small"
+				sx={{ ml: 1 }}
+				// One label carrying every reason: a screen reader announces the control once, and there is
+				// no hovering to reveal the rest of them.
+				aria-label={reasons.join(" ")}
+				data-testid="warnings"
+			>
+				<WarningAmberIcon sx={{ color: "warning.main" }} />
+			</IconButton>
+		</Tooltip>
+	);
+};
 
 // One reason reads as a sentence; several read as a list, because a run-on paragraph leaves the reader
 // working out where one reason ends and the next begins.
