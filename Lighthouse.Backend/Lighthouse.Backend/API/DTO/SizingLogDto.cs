@@ -7,6 +7,17 @@ namespace Lighthouse.Backend.API.DTO
     public sealed class SizingLogDto(SizingLog log)
     {
         public List<SizingLogEntryDto> Entries { get; } = [.. log.Entries.Select(line => new SizingLogEntryDto(line))];
+
+        public SizingVotersDto Voters { get; } = new(log.Voters);
+    }
+
+    public sealed class SizingVotersDto(VoterNames voters)
+    {
+        public List<string> Yes { get; } = voters.Yes;
+
+        public List<string> YesBut { get; } = voters.YesBut;
+
+        public List<string> No { get; } = voters.No;
     }
 
     public sealed class SizingLogEntryDto(SizingLogLine line)

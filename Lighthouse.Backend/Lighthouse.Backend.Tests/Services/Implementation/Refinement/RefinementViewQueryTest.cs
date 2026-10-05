@@ -27,6 +27,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         private static readonly bool[] OnlyMosLatestCommentIsOpen = [false, true, false, false];
 
+        private static readonly string[] Nobody = [];
+
+        private static readonly string[] OnlyAna = ["Ana Lima"];
+
+        private static readonly string[] OnlyPriya = ["Priya Sharma"];
+
+        private static readonly string[] JonasWeberTwice = ["Jonas Weber", "Jonas Weber"];
+
         private static readonly DateTime VotedAt = new(2026, 10, 3, 9, 0, 0, DateTimeKind.Utc);
 
         private static readonly RowStanding[] StandingsWithOneYesOfOne =
@@ -283,6 +291,71 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
             Assert.That(log?.Entries.Select(entry => entry.IsOpenQuestion), Is.EqualTo(OnlyMosLatestCommentIsOpen));
         }
+
+        [TestCaseSource(nameof(LogsWithVoters))]
+        public void TheLogNamesWhoCurrentlyVotesEachAnswerAndAgreesWithTheRowsSplit(SizingLogEntry[] entries, string[] yes, string[] yesBut, string[] no)
+        {
+            GivenTheTeamRefinesGr1();
+            sizingLogMock
+                .Setup(log => log.ReadForTeam(TeamId, It.IsAny<IReadOnlyCollection<string>>()))
+                .Returns(entries);
+
+            var voters = subject.LogOf(TeamId, "GR-1", null)!.Voters;
+            var split = subject.ForTeam(TeamId, null)!.WorkItems.Single().Votes.Split;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(voters.Yes, Is.EqualTo(yes), "Yes");
+                Assert.That(voters.YesBut, Is.EqualTo(yesBut), "Yes, if");
+                Assert.That(voters.No, Is.EqualTo(no), "No");
+                Assert.That(new VoteSplit(voters.Yes.Count, voters.YesBut.Count, voters.No.Count), Is.EqualTo(split),
+                    "the log names exactly as many people under each answer as the row counts");
+            }
+        }
+
+        private static IEnumerable<TestCaseData> LogsWithVoters()
+        {
+            yield return new TestCaseData(Array.Empty<SizingLogEntry>(), Nobody, Nobody, Nobody)
+                .SetName("A Work Item nobody voted on names nobody");
+
+            yield return new TestCaseData(
+                    new[]
+                    {
+                        NamedEntry(1, "self:jonas", "Jonas Weber", SizingEntryKind.Vote, SizingAnswer.Yes),
+                        NamedEntry(2, "self:ana", "Ana Lima", SizingEntryKind.Vote, SizingAnswer.No),
+                        NamedEntry(3, "self:mo", "Mo Okafor", SizingEntryKind.Comment, null),
+                        NamedEntry(4, "self:priya", "Priya Sharma", SizingEntryKind.Vote, SizingAnswer.YesBut),
+                        NamedEntry(5, "self:other-jonas", "Jonas Weber", SizingEntryKind.Vote, SizingAnswer.Yes),
+                    },
+                    JonasWeberTwice, OnlyPriya, OnlyAna)
+                .SetName("Each answer names its voters, a shared name once per voter, and a question names nobody");
+
+            yield return new TestCaseData(
+                    new[]
+                    {
+                        NamedEntry(1, "self:ana", "Ana", SizingEntryKind.Vote, SizingAnswer.Yes),
+                        NamedEntry(2, "self:jonas", "Jonas Weber", SizingEntryKind.Vote, SizingAnswer.No),
+                        NamedEntry(3, "self:ana", "Ana Lima", SizingEntryKind.Vote, SizingAnswer.No),
+                        NamedEntry(4, "self:jonas", "Jonas Weber", SizingEntryKind.Revocation, null),
+                    },
+                    Nobody, Nobody, OnlyAna)
+                .SetName("A renamed voter who changed their mind is named once, and a vote taken back names nobody");
+        }
+
+        private static SizingLogEntry NamedEntry(int id, string voterKey, string displayName, SizingEntryKind kind, SizingAnswer? answer) => new()
+        {
+            Id = id,
+            TeamId = TeamId,
+            WorkItemReferenceId = "GR-1",
+            Kind = kind,
+            Answer = answer,
+            Comment = kind == SizingEntryKind.Comment ? "Which API version?" : null,
+            VoterKey = voterKey,
+            VoterDisplayName = displayName,
+            RecordedAt = VotedAt,
+            Channel = SizingChannel.Web,
+            YardstickSource = YardstickSource.CycleTimeFallback,
+        };
 
         [TestCase("GR-2")]
         [TestCase("GR-999")]

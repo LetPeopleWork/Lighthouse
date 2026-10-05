@@ -17,6 +17,9 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             return new RowVotes(current.Count, myVote, SplitOf(current));
         }
 
+        /// <summary>Each voter's name under the answer of their current vote, as that vote gave it.</summary>
+        public static VoterNames VotersOn(IEnumerable<SizingLogEntry> entries) => VotersOf(CurrentVotes(entries));
+
         /// <summary>A row has an open question exactly when one of its entries is one.</summary>
         public static RowConversation ConversationOn(IEnumerable<SizingLogEntry> entries)
         {
@@ -130,10 +133,16 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 .Select(byVoter => byVoter.MaxBy(entry => entry.Id)!)
                 .Where(latest => latest.Kind == SizingEntryKind.Vote)];
 
-        private static VoteSplit SplitOf(List<SizingLogEntry> currentVotes)
-            => new(
-                currentVotes.Count(vote => vote.Answer == SizingAnswer.Yes),
-                currentVotes.Count(vote => vote.Answer == SizingAnswer.YesBut),
-                currentVotes.Count(vote => vote.Answer == SizingAnswer.No));
+        // The split counts the same names a reader sees under each answer, so the two can never disagree.
+        private static VoteSplit SplitOf(List<SizingLogEntry> currentVotes) => VotersOf(currentVotes).Split;
+
+        private static VoterNames VotersOf(List<SizingLogEntry> currentVotes)
+        {
+            var oldestFirst = currentVotes.OrderBy(vote => vote.Id).ToList();
+            List<string> NamesSaying(SizingAnswer answer)
+                => [.. oldestFirst.Where(vote => vote.Answer == answer).Select(vote => vote.VoterDisplayName)];
+
+            return new VoterNames(NamesSaying(SizingAnswer.Yes), NamesSaying(SizingAnswer.YesBut), NamesSaying(SizingAnswer.No));
+        }
     }
 }

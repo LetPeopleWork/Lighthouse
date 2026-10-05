@@ -15,8 +15,17 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
         SizingLog? LogOf(int teamId, string workItemReference, string? presentedVoterKey);
     }
 
-    /// <summary>Everything said about one Work Item, oldest first. Every reader sees every entry.</summary>
-    public sealed record SizingLog(List<SizingLogLine> Entries);
+    /// <summary>Everything said about one Work Item, oldest first, and who currently votes each answer. Every reader sees every entry.</summary>
+    public sealed record SizingLog(List<SizingLogLine> Entries, VoterNames Voters);
+
+    /// <summary>
+    /// The names of the people whose current vote is each answer, in the order those votes were cast. Each list
+    /// holds one name per voter, never one per distinct name, because two people may give the same name.
+    /// </summary>
+    public sealed record VoterNames(List<string> Yes, List<string> YesBut, List<string> No)
+    {
+        public VoteSplit Split => new(Yes.Count, YesBut.Count, No.Count);
+    }
 
     /// <param name="VoterName">The name as it stood when the entry was written; the voter's key is never handed out.</param>
     /// <param name="RecordedAt">When the entry was written, in UTC.</param>

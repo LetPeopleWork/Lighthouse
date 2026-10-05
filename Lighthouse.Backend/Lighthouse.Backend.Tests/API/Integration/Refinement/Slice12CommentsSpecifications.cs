@@ -28,6 +28,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private static readonly string[] EverythingALogEntryCarries =
             ["kind", "answer", "comment", "voterName", "channel", "recordedAt", "isMine", "isOpenQuestion"];
 
+        private static readonly string[] EverythingALogCarries = ["entries", "voters"];
+
+        private static readonly string[] EveryAnswer = ["yes", "yesBut", "no"];
+
         /// <summary>Every entry in these scenarios is recorded on the instance's today.</summary>
         private static readonly string RecordedToday = Today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 
@@ -101,6 +105,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private async Task<JsonElement> WhenAnaOpensTheLogOf(TeamUnderTest team, string workItem)
             => await TheLogAsSeenBy(Ana, team, workItem);
 
+        private async Task WhenAnaChangesHerMindTo(TeamUnderTest team, string workItem, Answer answer)
+            => await HasVoted(Ana, team, workItem, answer);
+
         private async Task<(VotedRowReading Row, JsonElement Log)> WhenPriyaWhoNeverVotedLooksAt(TeamUnderTest team, string workItem)
         {
             var priya = ABrowserOf(PriyaSharma);
@@ -152,8 +159,33 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 Assert.That(entries.Select(entry => FlagOf(entry, "isOpenQuestion")), Is.EqualTo(OnlyTheThirdEntryIsOpen), $"Log: {log}");
                 Assert.That(entries.Select(entry => entry.EnumerateObject().Select(property => property.Name)),
                     Has.All.EquivalentTo(EverythingALogEntryCarries), "a log entry carries nothing else, and never the voter's key");
+                Assert.That(log.EnumerateObject().Select(property => property.Name), Is.EquivalentTo(EverythingALogCarries),
+                    "the log carries its entries and who votes what, nothing else");
+                Assert.That(log.GetProperty("voters").EnumerateObject().Select(property => property.Name), Is.EquivalentTo(EveryAnswer),
+                    "every answer is there, and nothing else is");
+                Assert.That(log.GetProperty("voters").EnumerateObject().SelectMany(answer => answer.Value.EnumerateArray()).Select(name => name.ValueKind),
+                    Has.All.EqualTo(JsonValueKind.String), "a voter is named, never handed out as a key or an object");
             }
         }
+
+        private async Task ThenPriyaReadsTheVoters(TeamUnderTest team, string workItem, VotersReading expected)
+        {
+            var log = await TheLogAsSeenBy(ABrowserOf(PriyaSharma), team, workItem);
+            var row = RowOf(await TheTabAsSeenBy(ABrowserOf(PriyaSharma), team), workItem);
+            var voters = log.GetProperty("voters");
+            string[] NamesUnder(string answer) => [.. voters.GetProperty(answer).EnumerateArray().Select(name => name.GetString()!)];
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(NamesUnder("yes"), Is.EqualTo(expected.Yes), $"Log: {log}");
+                Assert.That(NamesUnder("yesBut"), Is.EqualTo(expected.YesBut), $"Log: {log}");
+                Assert.That(NamesUnder("no"), Is.EqualTo(expected.No), $"Log: {log}");
+                Assert.That(new SplitReading(NamesUnder("yes").Length, NamesUnder("yesBut").Length, NamesUnder("no").Length), Is.EqualTo(row.Split),
+                    "the names under each answer and the row's split agree");
+            }
+        }
+
+        private sealed record VotersReading(string[] Yes, string[] YesBut, string[] No);
 
         private static void ThenPriyaReadsTheSplitAndTheLog(VotedRowReading row, JsonElement log, SplitReading split, params LogEntryReading[] expected)
         {

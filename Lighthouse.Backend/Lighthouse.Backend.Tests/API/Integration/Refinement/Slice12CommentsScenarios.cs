@@ -96,6 +96,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenOnlyMosQuestionIsMarkedOpenAndNoEntryCarriesAVoterKey(log);
         }
 
+        // @driving_port @real-io @us-11 @us-12 @slice-12 @contract-shape:pure-function
+        // The names travel beside the split so a reader can see who stands behind each count; a changed mind moves
+        // its voter, and each list keeps the order in which those current votes were cast.
+        [Test]
+        public async Task The_log_names_who_currently_votes_each_answer_in_the_order_they_voted()
+        {
+            var gravity = await GivenJonasVotedYesAnaVotedNoAndMoAskedAQuestionOnAdvancedReporting();
+            await HasVoted(Mo, gravity, AdvancedReporting, Answer.Yes);
+
+            await WhenAnaChangesHerMindTo(gravity, AdvancedReporting, Answer.Yes);
+
+            await ThenPriyaReadsTheVoters(gravity, AdvancedReporting,
+                new VotersReading(Yes: [JonasWeber, MoOkafor, AnaLima], YesBut: [], No: []));
+        }
+
         // @driving_port @real-io @us-11 @us-12 @slice-12 @boundary @contract-shape:pure-function
         // Nobody has to vote to read the others: the split and every comment are there for anyone.
         [Test]

@@ -26,6 +26,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         private static readonly DiscussionRules NoDiscussion = new() { No = null, YesIf = null };
 
+        private static readonly string[] Nobody = [];
+
+        private static readonly string[] OnlyJonas = ["Jonas Weber"];
+
+        private static readonly string[] OnlyAna = ["Ana Lima"];
+
+        private static readonly string[] AnaLimaTwice = ["Ana Lima", "Ana Lima"];
+
+        private static readonly string[] AnaThenPriyaThenJonas = ["Ana Lima", "Priya Sharma", "Jonas Weber"];
+
+        private static readonly string[] JonasThenPriya = ["Jonas Weber", "Priya Sharma"];
+
+        private static readonly string[] AnaAsSheVoted = ["Ana"];
+
         [TestCaseSource(nameof(Logs))]
         public void Each_voter_counts_once_with_their_latest_answer(SizingLogEntry[] log, string? readerKey, RowVotes expected)
         {
@@ -85,6 +99,74 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                     Jonas,
                     new RowVotes(1, null, new VoteSplit(1, 0, 0)))
                 .SetName("A vote taken back no longer counts");
+        }
+
+        [TestCaseSource(nameof(VoterLogs))]
+        public void Each_answer_names_the_people_whose_current_vote_it_is_in_the_order_they_cast_it(
+            SizingLogEntry[] log, string[] yes, string[] yesBut, string[] no)
+        {
+            var voters = RefinementResolution.VotersOn(log);
+            var split = RefinementResolution.VotesOn(log, null).Split;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(voters.Yes, Is.EqualTo(yes), "Yes");
+                Assert.That(voters.YesBut, Is.EqualTo(yesBut), "Yes, if");
+                Assert.That(voters.No, Is.EqualTo(no), "No");
+                Assert.That(voters.Split, Is.EqualTo(split), "the names under each answer and the split never disagree");
+            }
+        }
+
+        private static IEnumerable<TestCaseData> VoterLogs()
+        {
+            yield return new TestCaseData(Array.Empty<SizingLogEntry>(), Nobody, Nobody, Nobody)
+                .SetName("An empty log names nobody under any answer");
+
+            yield return new TestCaseData(
+                    new[] { VoteBy(Ana, 1, SizingAnswer.Yes, "Ana Lima"), VoteBy(OtherAna, 2, SizingAnswer.Yes, "Ana Lima") },
+                    AnaLimaTwice, Nobody, Nobody)
+                .SetName("Two voters giving the same name are named twice");
+
+            yield return new TestCaseData(
+                    new[] { VoteBy(Ana, 1, SizingAnswer.Yes, "Ana"), VoteBy(Ana, 2, SizingAnswer.Yes, "Ana Lima") },
+                    OnlyAna, Nobody, Nobody)
+                .SetName("A voter who renamed themselves is named once, as their current vote gives it");
+
+            yield return new TestCaseData(
+                    new[] { VoteBy(Ana, 1, SizingAnswer.No, "Ana"), CommentBy(Ana, 2, "Ana Lima") },
+                    Nobody, Nobody, AnaAsSheVoted)
+                .SetName("A comment under a new name does not rename the vote");
+
+            yield return new TestCaseData(
+                    new[] { VoteBy(Jonas, 1, SizingAnswer.Yes, "Jonas Weber"), VoteBy(Ana, 2, SizingAnswer.No, "Ana Lima"), RevocationBy(Jonas, 3) },
+                    Nobody, Nobody, OnlyAna)
+                .SetName("A vote taken back no longer names its voter");
+
+            yield return new TestCaseData(
+                    new[] { VoteBy(Jonas, 1, SizingAnswer.Yes, "Jonas Weber"), VoteBy(Ana, 2, SizingAnswer.Yes, "Ana Lima"), VoteBy(Jonas, 3, SizingAnswer.No, "Jonas Weber") },
+                    OnlyAna, Nobody, OnlyJonas)
+                .SetName("A changed mind moves the voter to their new answer");
+
+            yield return new TestCaseData(
+                    new[] { VoteBy(Jonas, 1, SizingAnswer.Yes, "Jonas Weber"), CommentBy(Ana, 2, "Ana Lima") },
+                    OnlyJonas, Nobody, Nobody)
+                .SetName("Somebody who only commented is named under no answer");
+
+            yield return new TestCaseData(
+                    new[]
+                    {
+                        VoteBy(Jonas, 1, SizingAnswer.Yes, "Jonas Weber"),
+                        VoteBy(Ana, 2, SizingAnswer.Yes, "Ana Lima"),
+                        VoteBy(Priya, 3, SizingAnswer.Yes, "Priya Sharma"),
+                        VoteBy(Jonas, 4, SizingAnswer.Yes, "Jonas Weber"),
+                    },
+                    AnaThenPriyaThenJonas, Nobody, Nobody)
+                .SetName("Voters are named in the order their current votes were cast");
+
+            yield return new TestCaseData(
+                    new[] { VoteBy(Priya, 9, SizingAnswer.YesBut, "Priya Sharma"), VoteBy(Jonas, 2, SizingAnswer.YesBut, "Jonas Weber") },
+                    Nobody, JonasThenPriya, Nobody)
+                .SetName("The order of names follows the log, not its arrival");
         }
 
         [TestCaseSource(nameof(Conversations))]

@@ -54,7 +54,9 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             var log = sizingLog.ReadForTeam(team.Id, [workItemReference]).OrderBy(entry => entry.Id).ToList();
             var openQuestions = RefinementResolution.OpenQuestionsIn(log);
 
-            return new SizingLog([.. log.Select(entry => LineFor(entry, readerKey, openQuestions.Contains(entry.Id)))]);
+            return new SizingLog(
+                [.. log.Select(entry => LineFor(entry, readerKey, openQuestions.Contains(entry.Id)))],
+                RefinementResolution.VotersOn(log));
         }
 
         private bool IsListed(Team team, string workItemReference)
