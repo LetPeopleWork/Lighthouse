@@ -101,7 +101,7 @@ export const useRefinement = (teamId: number) => {
 						setShown({
 							teamId,
 							view: [...answeredSinceRead.current.values()].reduce(
-								withAnsweredRow,
+								(view, answeredRow) => withAnsweredRow(view, answeredRow),
 								answer,
 							),
 						});
