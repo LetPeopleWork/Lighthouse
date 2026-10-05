@@ -1,0 +1,82 @@
+import { Alert, type AlertColor } from "@mui/material";
+import type React from "react";
+import type {
+	IRefinementNeed,
+	RefinementVerdict,
+} from "../../../../models/Refinement/Refinement";
+import { parseLocalDate } from "../../../../utils/date/localDate";
+import InfoTooltip from "./InfoTooltip";
+import { describeNeed, describeNeedOrigin } from "./needWording";
+
+// Too many ready is as much a reason to act as too few, so both warn; only in range reads as settled.
+const SEVERITY: Record<RefinementVerdict, AlertColor> = {
+	Below: "warning",
+	In: "success",
+	Above: "warning",
+};
+
+/** The words a Team has renamed that the verdict uses. */
+export interface NeedVerdictTerms {
+	workItems: string;
+	team: string;
+	throughput: string;
+}
+
+interface NeedVerdictProps {
+	need: IRefinementNeed | undefined;
+	readyCount: number | undefined;
+	nextRefinementDate: string | null | undefined;
+	teamName: string;
+	terms: NeedVerdictTerms;
+}
+
+/** Whether to refine more or stop, against the range the Team is likely to pull before its next Refinement. */
+const NeedVerdict: React.FC<Readonly<NeedVerdictProps>> = ({
+	need,
+	readyCount,
+	nextRefinementDate,
+	teamName,
+	terms,
+}) => {
+	const refinementDay =
+		nextRefinementDate == null ? null : parseLocalDate(nextRefinementDate);
+	if (
+		need?.verdict == null ||
+		need.low == null ||
+		need.high == null ||
+		need.horizonWorkingDays == null ||
+		need.lowPercentile == null ||
+		need.highPercentile == null ||
+		readyCount === undefined ||
+		refinementDay === null
+	) {
+		return null;
+	}
+
+	const sentence = describeNeed({
+		verdict: need.verdict,
+		readyCount,
+		low: need.low,
+		high: need.high,
+		refinementDay,
+		teamName,
+		workItemsTerm: terms.workItems,
+	});
+	const origin = describeNeedOrigin({
+		teamName,
+		horizonWorkingDays: need.horizonWorkingDays,
+		refinementDay,
+		lowPercentile: need.lowPercentile,
+		highPercentile: need.highPercentile,
+		teamTerm: terms.team,
+		throughputTerm: terms.throughput,
+	});
+
+	return (
+		<Alert severity={SEVERITY[need.verdict]} sx={{ alignItems: "center" }}>
+			{sentence} <InfoTooltip text={origin} />
+		</Alert>
+	);
+};
+
+export default NeedVerdict;

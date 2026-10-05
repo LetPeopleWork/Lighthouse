@@ -8,6 +8,7 @@ import type { IRefinementView } from "../../../../models/Refinement/Refinement";
 import type { Team } from "../../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { useTerminology } from "../../../../services/TerminologyContext";
+import NeedVerdict from "./NeedVerdict";
 import NextRefinement, { NEXT_REFINEMENT_SLOT } from "./NextRefinement";
 import RefinementGrid from "./RefinementGrid";
 import { describeStageBreakdown } from "./stageBreakdown";
@@ -122,6 +123,17 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 					workItems: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
 				}}
 				canChangeSettings={isTeamAdmin(team.id)}
+			/>
+			<NeedVerdict
+				need={refinement.need}
+				readyCount={refinement.readyCount}
+				nextRefinementDate={refinement.nextRefinementDate}
+				teamName={team.name}
+				terms={{
+					workItems: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
+					team: getTerm(TERMINOLOGY_KEYS.TEAM),
+					throughput: getTerm(TERMINOLOGY_KEYS.THROUGHPUT),
+				}}
 			/>
 			<RefinementGrid
 				teamId={team.id}

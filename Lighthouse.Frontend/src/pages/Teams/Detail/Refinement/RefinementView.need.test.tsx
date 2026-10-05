@@ -103,7 +103,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 	});
 
 	// @us-05 @slice-05 @driving_port @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:pure-function
-	it.skip("says how many more to refine when fewer are ready than the Team is likely to pull", async () => {
+	it("says how many more to refine when fewer are ready than the Team is likely to pull", async () => {
 		renderTheRefinementTab(gravityWithReady(3, "Below"));
 
 		const message = await theVerdict();
@@ -111,10 +111,15 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 			/^3 ready — below the range of 5–8 Work Items Team Gravity is likely to pull before Thu 8 Oct\. Refine 2 to 5 more\.$/,
 		);
 		expect(within(message).getByTestId(ACT_ICON)).toBeInTheDocument();
+		expect(
+			within(message).getByRole("button", {
+				name: /^Based on Team Gravity's .+: a How Many forecast for the 4 working days until Thu 8 Oct\./,
+			}),
+		).toBeInTheDocument();
 	});
 
 	// @us-05 @slice-05 @driving_port @contract-shape:pure-function
-	it.skip("says nothing more needs refining when the ready count is in range", async () => {
+	it("says nothing more needs refining when the ready count is in range", async () => {
 		renderTheRefinementTab(gravityWithReady(6, "In"));
 
 		const message = await theVerdict();
@@ -126,7 +131,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 
 	// @us-05 @slice-05 @driving_port @contract-shape:pure-function
 	// Stopping is as much an action as refining more, so it is said as loudly.
-	it.skip("says stop refining, as loudly as refine more, when more are ready than the Team is likely to pull", async () => {
+	it("says stop refining, as loudly as refine more, when more are ready than the Team is likely to pull", async () => {
 		renderTheRefinementTab(gravityWithReady(11, "Above"));
 
 		const message = await theVerdict();
@@ -137,7 +142,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 	});
 
 	// @us-05 @slice-05 @boundary @contract-shape:pure-function
-	it.skip("says the range ends inclusive: five ready is in range", async () => {
+	it("says the range ends inclusive: five ready is in range", async () => {
 		renderTheRefinementTab(gravityWithReady(5, "In"));
 
 		expect(await theVerdict()).toHaveTextContent(
