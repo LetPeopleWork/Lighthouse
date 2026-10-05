@@ -16,6 +16,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         private const string Priya = "priya-browser";
 
+        private static readonly int[] OpenAtOne = [1];
+
+        private static readonly int[] OpenAtTwo = [2];
+
+        private static readonly int[] OpenAtThree = [3];
+
+        private static readonly int[] OpenAtNineAndFive = [9, 5];
+
         private static readonly DiscussionRules NoDiscussion = new() { No = null, YesIf = null };
 
         [TestCaseSource(nameof(Logs))]
@@ -136,6 +144,72 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                     new[] { CommentBy(Jonas, 3), VoteBy(Jonas, 7, SizingAnswer.Yes) },
                     new RowConversation(HasComments: true, HasOpenQuestion: false))
                 .SetName("Whether a question is open follows the log's order, not its arrival");
+        }
+
+        [TestCaseSource(nameof(OpenQuestions))]
+        public void Only_the_askers_latest_comment_is_the_open_question(SizingLogEntry[] log, int[] openQuestionIds)
+        {
+            var marked = RefinementResolution.OpenQuestionsIn(log);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(marked, Is.EquivalentTo(openQuestionIds));
+                Assert.That(RefinementResolution.ConversationOn(log).HasOpenQuestion, Is.EqualTo(openQuestionIds.Length > 0),
+                    "the row has an open question exactly when one of its entries is marked as one");
+            }
+        }
+
+        private static IEnumerable<TestCaseData> OpenQuestions()
+        {
+            yield return new TestCaseData(Array.Empty<SizingLogEntry>(), Array.Empty<int>())
+                .SetName("An empty log marks nothing");
+
+            yield return new TestCaseData(new[] { CommentBy(Jonas, 1) }, OpenAtOne)
+                .SetName("A comment from somebody without a vote is marked");
+
+            yield return new TestCaseData(new[] { CommentBy(Jonas, 1), CommentBy(Jonas, 2) }, OpenAtTwo)
+                .SetName("Only the asker's latest comment is marked");
+
+            yield return new TestCaseData(new[] { CommentBy(Jonas, 1), VoteBy(Jonas, 2, SizingAnswer.Yes) }, Array.Empty<int>())
+                .SetName("The asker's vote unmarks their comment");
+
+            yield return new TestCaseData(new[] { VoteWithCommentBy(Jonas, 1, SizingAnswer.YesBut) }, Array.Empty<int>())
+                .SetName("A vote's own comment is never marked");
+
+            yield return new TestCaseData(
+                    new[] { CommentBy(Jonas, 1), VoteBy(Jonas, 2, SizingAnswer.Yes), RevocationBy(Jonas, 3) },
+                    Array.Empty<int>())
+                .SetName("A question answered by a vote that is then taken back stays closed");
+
+            yield return new TestCaseData(
+                    new[] { VoteBy(Jonas, 1, SizingAnswer.Yes), CommentBy(Jonas, 2), RevocationBy(Jonas, 3) },
+                    Array.Empty<int>())
+                .SetName("A comment followed by taking back the vote is not marked");
+
+            yield return new TestCaseData(
+                    new[] { VoteBy(Jonas, 1, SizingAnswer.Yes), RevocationBy(Jonas, 2), CommentBy(Jonas, 3) },
+                    OpenAtThree)
+                .SetName("A comment after taking back a vote is marked");
+
+            yield return new TestCaseData(
+                    new[] { CommentBy(Ana, 1, "Ana Lima"), VoteBy(OtherAna, 2, SizingAnswer.Yes, "Ana Lima") },
+                    OpenAtOne)
+                .SetName("Another voter declaring the same name does not unmark the question");
+
+            yield return new TestCaseData(
+                    new[] { CommentBy(Ana, 1, "Ana"), VoteBy(Ana, 2, SizingAnswer.Yes, "Ana Lima") },
+                    Array.Empty<int>())
+                .SetName("A voter who renamed themselves still closes their own question");
+
+            yield return new TestCaseData(
+                    new[] { CommentBy(Ana, 1, "Ana"), CommentBy(Ana, 2, "Ana Lima") },
+                    OpenAtTwo)
+                .SetName("A voter who renamed themselves has one open question");
+
+            yield return new TestCaseData(
+                    new[] { CommentBy(Jonas, 9), CommentBy(Jonas, 4), CommentBy(Ana, 5), VoteBy(Priya, 6, SizingAnswer.No) },
+                    OpenAtNineAndFive)
+                .SetName("Each asker's latest comment is marked whatever order the log arrives in");
         }
 
         [TestCase(0, 0, 0, 3, 3, RowReadiness.MoreYesNeeded, 3, TestName = "Nobody has voted, so every Yes is missing")]
@@ -351,8 +425,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         private static SizingLogEntry VoteBy(string voterKey, int id, SizingAnswer answer, string displayName = "Voter")
             => Entry(voterKey, id, SizingEntryKind.Vote, answer, displayName);
 
-        private static SizingLogEntry CommentBy(string voterKey, int id)
-            => Entry(voterKey, id, SizingEntryKind.Comment, null, "Voter");
+        private static SizingLogEntry CommentBy(string voterKey, int id, string displayName = "Voter")
+            => Entry(voterKey, id, SizingEntryKind.Comment, null, displayName, "Which API version?");
 
         private static SizingLogEntry VoteWithCommentBy(string voterKey, int id, SizingAnswer answer)
             => Entry(voterKey, id, SizingEntryKind.Vote, answer, "Voter", "Only if the export moves out");

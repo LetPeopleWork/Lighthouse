@@ -23,6 +23,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         private const string CommentTooLong = "comment-too-long";
 
+        private static readonly bool?[] OnlyTheThirdEntryIsOpen = [false, false, true];
+
+        private static readonly string[] EverythingALogEntryCarries =
+            ["kind", "answer", "comment", "voterName", "channel", "recordedAt", "isMine", "isOpenQuestion"];
+
         /// <summary>Every entry in these scenarios is recorded on the instance's today.</summary>
         private static readonly string RecordedToday = Today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 
@@ -135,6 +140,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             {
                 Assert.That(entries.Select(entry => entry with { RecordedAt = null }), Is.EqualTo(expected), $"Log: {log}");
                 Assert.That(entries.Select(entry => entry.RecordedAt), Has.All.StartsWith(RecordedToday), "every entry says when it was recorded");
+            }
+        }
+
+        private static void ThenOnlyMosQuestionIsMarkedOpenAndNoEntryCarriesAVoterKey(JsonElement log)
+        {
+            var entries = log.GetProperty("entries").EnumerateArray().ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(entries.Select(entry => FlagOf(entry, "isOpenQuestion")), Is.EqualTo(OnlyTheThirdEntryIsOpen), $"Log: {log}");
+                Assert.That(entries.Select(entry => entry.EnumerateObject().Select(property => property.Name)),
+                    Has.All.EquivalentTo(EverythingALogEntryCarries), "a log entry carries nothing else, and never the voter's key");
             }
         }
 

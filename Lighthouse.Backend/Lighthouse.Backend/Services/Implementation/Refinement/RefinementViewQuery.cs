@@ -51,25 +51,24 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             }
 
             var readerKey = voterIdentityResolver.ReaderKeyFrom(presentedVoterKey);
-            var entries = sizingLog.ReadForTeam(team.Id, [workItemReference])
-                .OrderBy(entry => entry.Id)
-                .Select(entry => LineFor(entry, readerKey))
-                .ToList();
+            var log = sizingLog.ReadForTeam(team.Id, [workItemReference]).OrderBy(entry => entry.Id).ToList();
+            var openQuestions = RefinementResolution.OpenQuestionsIn(log);
 
-            return new SizingLog(entries);
+            return new SizingLog([.. log.Select(entry => LineFor(entry, readerKey, openQuestions.Contains(entry.Id)))]);
         }
 
         private bool IsListed(Team team, string workItemReference)
             => refinementList.For(team).Exists(item => string.Equals(item.ReferenceId, workItemReference, StringComparison.Ordinal));
 
-        private static SizingLogLine LineFor(SizingLogEntry entry, string? readerKey) => new(
+        private static SizingLogLine LineFor(SizingLogEntry entry, string? readerKey, bool isOpenQuestion) => new(
             entry.Kind,
             entry.Answer,
             entry.Comment,
             entry.VoterDisplayName,
             entry.Channel,
             DateTime.SpecifyKind(entry.RecordedAt, DateTimeKind.Utc),
-            readerKey is not null && string.Equals(entry.VoterKey, readerKey, StringComparison.Ordinal));
+            readerKey is not null && string.Equals(entry.VoterKey, readerKey, StringComparison.Ordinal),
+            isOpenQuestion);
 
         private static RefinementRow RowFor(WorkItem item, List<SizingLogEntry> log, string? readerKey, ReadinessSetting readiness, StageMatches stages)
         {

@@ -20,6 +20,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
 
     /// <param name="VoterName">The name as it stood when the entry was written; the voter's key is never handed out.</param>
     /// <param name="RecordedAt">When the entry was written, in UTC.</param>
+    /// <param name="IsOpenQuestion">Whether this entry is a question still waiting for its asker's vote.</param>
     public sealed record SizingLogLine(
         SizingEntryKind Kind,
         SizingAnswer? Answer,
@@ -27,7 +28,8 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
         string VoterName,
         SizingChannel Channel,
         DateTime RecordedAt,
-        bool IsMine);
+        bool IsMine,
+        bool IsOpenQuestion);
 
     /// <param name="StagesConfigured">Whether the Team sets any stage rule; without one no row has a stage.</param>
     /// <param name="Calendar">When the Team next refines, and whether it does today; no date without a cadence.</param>

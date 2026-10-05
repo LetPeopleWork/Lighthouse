@@ -25,6 +25,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         private static readonly string[] OnlyGr1 = ["GR-1"];
 
+        private static readonly bool[] OnlyMosLatestCommentIsOpen = [false, true, false, false];
+
         private static readonly DateTime VotedAt = new(2026, 10, 3, 9, 0, 0, DateTimeKind.Utc);
 
         private static readonly RowStanding[] StandingsWithOneYesOfOne =
@@ -230,9 +232,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
             Assert.That(log?.Entries, Is.EqualTo(new[]
             {
-                new SizingLogLine(SizingEntryKind.Vote, SizingAnswer.Yes, null, "self:jonas", SizingChannel.Web, VotedAt, false),
-                new SizingLogLine(SizingEntryKind.Comment, null, "Which API version?", "self:mo", SizingChannel.Cli, DateTime.SpecifyKind(recordedWithoutAKind, DateTimeKind.Utc), false),
-                new SizingLogLine(SizingEntryKind.Vote, SizingAnswer.YesBut, "only if the export moves out", anaKey, SizingChannel.Web, VotedAt, true),
+                new SizingLogLine(SizingEntryKind.Vote, SizingAnswer.Yes, null, "self:jonas", SizingChannel.Web, VotedAt, false, false),
+                new SizingLogLine(SizingEntryKind.Comment, null, "Which API version?", "self:mo", SizingChannel.Cli, DateTime.SpecifyKind(recordedWithoutAKind, DateTimeKind.Utc), false, true),
+                new SizingLogLine(SizingEntryKind.Vote, SizingAnswer.YesBut, "only if the export moves out", anaKey, SizingChannel.Web, VotedAt, true, false),
             }));
         }
 
@@ -260,6 +262,26 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             var log = subject.LogOf(TeamId, "GR-1", null);
 
             Assert.That(log?.Entries.Select(entry => entry.IsMine), Has.All.False);
+        }
+
+        [Test]
+        public void OnlyTheAskersLatestCommentIsMarkedAsTheOpenQuestionUntilTheyVote()
+        {
+            GivenTheTeamRefinesGr1();
+            var askedAt = new DateTime(2026, 10, 3, 9, 15, 0, DateTimeKind.Utc);
+            sizingLogMock
+                .Setup(log => log.ReadForTeam(TeamId, It.IsAny<IReadOnlyCollection<string>>()))
+                .Returns(
+                [
+                    CommentOn("GR-1", 1, "self:mo", "Which API version?", askedAt),
+                    CommentOn("GR-1", 2, "self:mo", "And which client?", askedAt),
+                    CommentOn("GR-1", 3, "self:jonas", "Is the export in scope?", askedAt),
+                    VoteOn("GR-1", 4, "self:jonas", SizingAnswer.Yes),
+                ]);
+
+            var log = subject.LogOf(TeamId, "GR-1", null);
+
+            Assert.That(log?.Entries.Select(entry => entry.IsOpenQuestion), Is.EqualTo(OnlyMosLatestCommentIsOpen));
         }
 
         [TestCase("GR-2")]

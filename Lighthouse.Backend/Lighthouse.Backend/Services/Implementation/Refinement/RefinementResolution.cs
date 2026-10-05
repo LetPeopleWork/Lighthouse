@@ -17,21 +17,32 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             return new RowVotes(current.Count, myVote, SplitOf(current));
         }
 
-        /// <summary>
-        /// A comment from somebody without a vote is a question, and it stays open until they vote: an answer
-        /// from anybody else does not tell whether the asker is satisfied. A comment from somebody holding a vote
-        /// is a plain comment.
-        /// </summary>
+        /// <summary>A row has an open question exactly when one of its entries is one.</summary>
         public static RowConversation ConversationOn(IEnumerable<SizingLogEntry> entries)
         {
             var log = entries.ToList();
+
+            return new RowConversation(log.Exists(SaysSomething), OpenQuestionsIn(log).Count > 0);
+        }
+
+        /// <summary>
+        /// The entries that are open questions, by their id. A comment from somebody without a vote is a
+        /// question, and it stays open until they vote: an answer from anybody else does not tell whether the
+        /// asker is satisfied. Only somebody's latest entry can be their open question, so a vote taken back
+        /// does not reopen what they asked before it. Voters are told apart by their key, never by the name
+        /// they gave, which two people may share and one person may change.
+        /// </summary>
+        public static IReadOnlySet<int> OpenQuestionsIn(IEnumerable<SizingLogEntry> entries)
+        {
+            var log = entries.ToList();
             var voterKeys = CurrentVotes(log).Select(vote => vote.VoterKey).ToHashSet(StringComparer.Ordinal);
-            var hasOpenQuestion = log
+
+            return log
                 .GroupBy(entry => entry.VoterKey, StringComparer.Ordinal)
                 .Select(byVoter => byVoter.MaxBy(entry => entry.Id)!)
-                .Any(latest => latest.Kind == SizingEntryKind.Comment && !voterKeys.Contains(latest.VoterKey));
-
-            return new RowConversation(log.Exists(SaysSomething), hasOpenQuestion);
+                .Where(latest => SaysSomething(latest) && !voterKeys.Contains(latest.VoterKey))
+                .Select(latest => latest.Id)
+                .ToHashSet();
         }
 
         /// <summary>

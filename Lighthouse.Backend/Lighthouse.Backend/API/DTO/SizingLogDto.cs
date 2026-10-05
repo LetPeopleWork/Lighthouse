@@ -24,5 +24,7 @@ namespace Lighthouse.Backend.API.DTO
         public string RecordedAt { get; } = line.RecordedAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
 
         public bool IsMine { get; } = line.IsMine;
+
+        public bool IsOpenQuestion { get; } = line.IsOpenQuestion;
     }
 }

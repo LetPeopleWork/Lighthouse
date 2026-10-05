@@ -84,6 +84,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 new LogEntryReading("Comment", null, WhichApiVersion, MoOkafor, nameof(Channel.Web), null, IsMine: false));
         }
 
+        // @driving_port @real-io @us-12 @slice-12 @contract-shape:pure-function
+        // The server decides which entry is the open question, so every reader marks the same one.
+        [Test]
+        public async Task The_log_marks_the_question_still_waiting_for_its_askers_vote()
+        {
+            var gravity = await GivenJonasVotedYesAnaVotedNoAndMoAskedAQuestionOnAdvancedReporting();
+
+            var log = await WhenAnaOpensTheLogOf(gravity, AdvancedReporting);
+
+            ThenOnlyMosQuestionIsMarkedOpenAndNoEntryCarriesAVoterKey(log);
+        }
+
         // @driving_port @real-io @us-11 @us-12 @slice-12 @boundary @contract-shape:pure-function
         // Nobody has to vote to read the others: the split and every comment are there for anyone.
         [Test]
