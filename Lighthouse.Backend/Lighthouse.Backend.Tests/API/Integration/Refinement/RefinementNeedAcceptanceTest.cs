@@ -90,6 +90,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         private readonly NeedForecastScript forecasts = new();
 
+        // NUnit runs every scenario of a fixture on one instance, so a forecast one scenario scripted would
+        // otherwise answer the next scenario that asks about the same number of working days.
+        [SetUp]
+        public void ForgetTheScriptedForecasts() => forecasts.Forget();
+
         protected override void ConfigureAdditionalServices(IServiceCollection services)
         {
             var script = forecasts;
@@ -592,6 +597,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 lock (scripting)
                 {
                     byHorizon[workingDays] = [.. likelihoods.OrderBy(likelihood => likelihood.Percentile)];
+                }
+            }
+
+            public void Forget()
+            {
+                lock (scripting)
+                {
+                    byHorizon.Clear();
                 }
             }
 

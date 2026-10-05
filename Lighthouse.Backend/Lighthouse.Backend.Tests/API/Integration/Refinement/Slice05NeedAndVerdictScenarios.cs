@@ -89,7 +89,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // A Team that finishes two Work Items every day is forecast twelve over six working days, whatever the
         // engine draws - so both reads of the shipped engine must agree exactly.
         [Test]
-        [Ignore(PendingSlice05)]
         public async Task The_range_is_the_Teams_own_How_Many_forecast_for_the_next_Refinement()
         {
             var gravity = await GivenGravityFinishesTwoADayAndRefinesOnTuesdays();
@@ -102,7 +101,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-05 @slice-05 @boundary @contract-shape:pure-function
         // Monday 5 October is a blackout day, so only five of the six days to Thursday are working days.
         [Test]
-        [Ignore(PendingSlice05)]
         public async Task Blackout_days_before_the_next_Refinement_are_not_counted()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
@@ -117,7 +115,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-05 @us-04 @slice-05 @boundary @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:pure-function
         // On a Refinement day today's session is the moment to top up, so the count looks a week ahead.
         [Test]
-        [Ignore(PendingSlice05)]
         public async Task On_a_Refinement_day_the_number_is_for_the_following_Refinement()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
