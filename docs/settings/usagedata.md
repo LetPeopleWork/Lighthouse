@@ -52,7 +52,7 @@ The complete list of events:
 | A Team's refinement was set up | Somebody chose which states mean refinement for a Team that had none, and your server accepted it. **Changing the states of a Team that already has some is never reported** | Nothing. **Not which Team, not which states were chosen** |
 | A sizing vote was cast | Somebody voted on whether a Work Item in refinement is ready to be worked on, and your server took the vote | When it was cast, relative to the Team's Refinement: `OnRefinementDay` on a day the Team has a Refinement, `OnOtherDay` on any other day, and `NoCadence` while the Team has no Refinement cadence. **Never who voted, never their name or anything that tells one voter from another, never the answer or a comment, never which Team or which Work Item** |
 | A Work Item was made Ready by votes | A vote on a Work Item in refinement brought in enough Yes votes to make it Ready, and your server took the vote. **Counted once, by the browser that cast that vote; a Work Item that was already Ready, or is still short of votes, is never reported** | When it happened, relative to the Team's Refinement: `OnRefinementDay` on a day the Team has a Refinement, `OnOtherDay` on any other day, and `NoCadence` while the Team has no Refinement cadence. **Never who voted, never their name or anything that tells one voter from another, never how many votes there were, never which Team or which Work Item** |
-| A Refinement day's verdict was shown | Somebody opened the Refinement tab of a Team on a day the Team has a Refinement. **Counted once per opening, by that browser; on any other day nothing is reported** | Which verdict the tab showed: `Below` when fewer Work Items are ready than the Team needs, `In` when enough are, `Above` when more than enough are, and `None` when the tab shows no number. **Never the range, never how many Work Items are ready, never the date, never which Team or which Work Item** |
+| A Refinement day's verdict was shown | Somebody opened the Refinement tab of a Team on a day the Team has a Refinement. **Counted once per opening, by that browser, as soon as the tab shows its verdict — there is no five-second wait. On any other day, or while no Work Items are in the Team's Refinement, nothing is reported** | Which verdict the tab showed: `Below` when fewer Work Items are ready than the Team needs, `In` when enough are, `Above` when more than enough are, and `None` when the tab shows no number. **Never the range, never how many Work Items are ready, never the date, never which Team or which Work Item** |
 
 That is the whole vocabulary. It is a closed list in the code — not a pattern that quietly matches new
 things — and the build fails if anything outside it is sent.
@@ -67,10 +67,12 @@ ever be counted one way round, and a count of the veto being lifted with no coun
 place would tell us something untrue. So that switch is not on the list of settings at all, and a
 message naming it is refused.
 
-**A tab you pass through is not recorded.** Clicking through three tabs to find the one you want
-records one opening, not three: a tab you leave within five seconds never counts. Nothing about how
-long you stayed is measured or sent — the five seconds decides only whether an opening is recorded,
-not what it carries.
+**A tab you pass through is not recorded as a tab opening.** Clicking through three tabs to find the
+one you want records one opening, not three: a tab you leave within five seconds never counts as a Team
+or Portfolio tab opening. Nothing about how long you stayed is measured or sent — the five seconds
+decides only whether an opening is recorded, not what it carries. The Refinement day verdict is the
+exception: it is counted as soon as the tab shows it, so passing through that tab on a Refinement day
+does count.
 
 Every event carries these, attached by **your** server rather than by your browser:
 
