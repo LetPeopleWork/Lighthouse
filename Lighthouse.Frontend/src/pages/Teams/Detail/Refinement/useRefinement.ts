@@ -64,24 +64,39 @@ const movesTheVerdict = (
  * or out of Ready moves the ready count, and what that means against the need is the server's to say, so
  * that vote reads the Refinement again; the shown one stays until the answer arrives, so the grid does not
  * flash.
+ *
+ * Reads can answer out of order, so only the latest one is shown. A vote answered after that read set off
+ * may be missing from its answer, so the row that vote answered is laid over the answer again.
  */
 export const useRefinement = (teamId: number) => {
 	const { refinementService } = useContext(ApiServiceContext);
 	const { showError } = useErrorSnackbar();
 	const [refinement, setRefinement] = useState<IRefinementView | null>(null);
 	const shownTeamId = useRef(teamId);
+	const latestRead = useRef(0);
+	const answeredSinceRead = useRef(new Map<string, IRefinementRow>());
 
 	const read = useCallback(
 		(isCurrent: () => boolean) => {
+			latestRead.current += 1;
+			const thisRead = latestRead.current;
+			answeredSinceRead.current = new Map();
+			const isLatest = () => isCurrent() && thisRead === latestRead.current;
+
 			refinementService
 				.getRefinement(teamId)
 				.then((answer) => {
-					if (isCurrent()) {
-						setRefinement(answer);
+					if (isLatest()) {
+						setRefinement(
+							[...answeredSinceRead.current.values()].reduce(
+								withAnsweredRow,
+								answer,
+							),
+						);
 					}
 				})
 				.catch((error: unknown) => {
-					if (isCurrent()) {
+					if (isLatest()) {
 						showError(messageOf(error));
 					}
 				});
@@ -102,6 +117,7 @@ export const useRefinement = (teamId: number) => {
 	// A vote answered after the tab moved on to another Team must not bring the old Team's Refinement back.
 	const showAnsweredRow = useCallback(
 		(answeredRow: IVotedRow) => {
+			answeredSinceRead.current.set(answeredRow.referenceId, answeredRow);
 			setRefinement((current) =>
 				current === null ? current : withAnsweredRow(current, answeredRow),
 			);

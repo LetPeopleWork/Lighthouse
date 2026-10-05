@@ -1,10 +1,12 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
 	IRefinementRow,
 	IRefinementView,
+	IVotedRow,
 	RefinementVerdict,
 } from "../../../../models/Refinement/Refinement";
+import type { IRefinementService } from "../../../../services/Api/RefinementService";
 import {
 	aBrowserThatVotedBefore,
 	aNeedOfFiveToEight,
@@ -86,6 +88,55 @@ const gravityWithReady = (
 const theVerdict = async () => {
 	const message = await screen.findByRole("alert");
 	return message;
+};
+
+const CONFIGURATION_MANAGEMENT = "GR-073";
+const LOAD_TESTING = "GR-074";
+
+// Without stage rules the votes say what is ready.
+const aVotesTeamShowing = (
+	readyCount: number,
+	verdict: RefinementVerdict,
+	rows: IRefinementRow[],
+): IRefinementView =>
+	gravitysRefinement(
+		{
+			stagesConfigured: false,
+			readySource: "Votes",
+			readyCount,
+			readyByVotesCount: readyCount,
+			nextRefinementDate: THURSDAY_THE_EIGHTH,
+			daysUntilNextRefinement: 4,
+			need: aNeedOfFiveToEight({ verdict }),
+		},
+		rows,
+	);
+
+const aVotedRow = (
+	referenceId: string,
+	name: string,
+	answer: Partial<IVotedRow>,
+): IVotedRow => ({
+	...aRow(referenceId, name, "Backlog", answer),
+	madeReady: answer.madeReady ?? false,
+});
+
+/** The next read of the Refinement, held back until the test lets the server answer it. */
+const aReadStillOnItsWay = (
+	refinementService: Pick<IRefinementService, "getRefinement">,
+) => {
+	let answer: (view: IRefinementView) => void = () => {};
+	vi.mocked(refinementService.getRefinement).mockReturnValueOnce(
+		new Promise<IRefinementView>((resolve) => {
+			answer = resolve;
+		}),
+	);
+	return {
+		answer: (view: IRefinementView) =>
+			act(() => {
+				answer(view);
+			}),
+	};
 };
 
 describe("The Refinement tab says whether to refine more or stop", () => {
@@ -300,6 +351,150 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 				/^4 ready — below the range of 5–8/,
 			),
 		);
+	});
+
+	// @us-05 @us-13 @slice-05 @contract-shape:bounded-change
+	// The server read the Refinement before the second vote reached it, so its answer still holds that
+	// Work Item's old votes; the vote answered since then is the newer word on it.
+	it("keeps a vote answered while the Refinement is read again", async () => {
+		aBrowserThatVotedBefore("Jonas Weber");
+		const before = aVotesTeamShowing(4, "Below", [
+			aRow(CONFIGURATION_MANAGEMENT, "Configuration management", "Backlog", {
+				voteCount: 2,
+				missingVotes: 1,
+			}),
+			aRow(LOAD_TESTING, "Load testing framework", "Backlog"),
+		]);
+		const sizingLogService = aSizingLogService({
+			castVote: vi.fn((_teamId: number, referenceId: string) =>
+				Promise.resolve(
+					referenceId === CONFIGURATION_MANAGEMENT
+						? aVotedRow(CONFIGURATION_MANAGEMENT, "Configuration management", {
+								voteCount: 3,
+								readiness: "Ready",
+								missingVotes: null,
+								madeReady: true,
+							})
+						: aVotedRow(LOAD_TESTING, "Load testing framework", {
+								voteCount: 1,
+								missingVotes: 2,
+								madeReady: false,
+							}),
+				),
+			),
+		});
+		const { user, refinementService } = renderTheRefinementTab(
+			before,
+			sizingLogService,
+		);
+		const reread = aReadStillOnItsWay(refinementService);
+
+		expect(await theVerdict()).toHaveTextContent(/^4 ready — below/);
+		await user.click(
+			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
+		);
+		await waitFor(() =>
+			expect(refinementService.getRefinement).toHaveBeenCalledTimes(2),
+		);
+		await user.click(theButton(await theRowOf(LOAD_TESTING), "Yes"));
+		await waitFor(async () =>
+			expect(await theRowOf(LOAD_TESTING)).toHaveTextContent("1 vote"),
+		);
+
+		await reread.answer(
+			aVotesTeamShowing(5, "In", [
+				aRow(CONFIGURATION_MANAGEMENT, "Configuration management", "Backlog", {
+					voteCount: 3,
+					readiness: "Ready",
+					missingVotes: null,
+				}),
+				aRow(LOAD_TESTING, "Load testing framework", "Backlog"),
+			]),
+		);
+
+		await waitFor(async () =>
+			expect(await theVerdict()).toHaveTextContent(/^5 ready — in the range/),
+		);
+		expect(await theRowOf(LOAD_TESTING)).toHaveTextContent("1 vote");
+	});
+
+	// @us-05 @us-13 @slice-05 @contract-shape:bounded-change
+	it("keeps the newer read when an older one answers after it", async () => {
+		aBrowserThatVotedBefore("Jonas Weber");
+		const nearlyReady = { voteCount: 2, missingVotes: 1 };
+		const madeReady = {
+			voteCount: 3,
+			readiness: "Ready",
+			missingVotes: null,
+		} as const;
+		const before = aVotesTeamShowing(4, "Below", [
+			aRow(
+				CONFIGURATION_MANAGEMENT,
+				"Configuration management",
+				"Backlog",
+				nearlyReady,
+			),
+			aRow(LOAD_TESTING, "Load testing framework", "Backlog", nearlyReady),
+		]);
+		const sizingLogService = aSizingLogService({
+			castVote: vi.fn((_teamId: number, referenceId: string) =>
+				Promise.resolve(
+					aVotedRow(referenceId, "Some Work Item", {
+						...madeReady,
+						madeReady: true,
+					}),
+				),
+			),
+		});
+		const { user, refinementService } = renderTheRefinementTab(
+			before,
+			sizingLogService,
+		);
+		const olderRead = aReadStillOnItsWay(refinementService);
+		const newerRead = aReadStillOnItsWay(refinementService);
+
+		expect(await theVerdict()).toHaveTextContent(/^4 ready — below/);
+		await user.click(
+			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
+		);
+		await waitFor(() =>
+			expect(refinementService.getRefinement).toHaveBeenCalledTimes(2),
+		);
+		await user.click(theButton(await theRowOf(LOAD_TESTING), "Yes"));
+		await waitFor(() =>
+			expect(refinementService.getRefinement).toHaveBeenCalledTimes(3),
+		);
+
+		await newerRead.answer(
+			aVotesTeamShowing(6, "In", [
+				aRow(
+					CONFIGURATION_MANAGEMENT,
+					"Configuration management",
+					"Backlog",
+					madeReady,
+				),
+				aRow(LOAD_TESTING, "Load testing framework", "Backlog", madeReady),
+			]),
+		);
+		await waitFor(async () =>
+			expect(await theVerdict()).toHaveTextContent(/^6 ready — in the range/),
+		);
+		await olderRead.answer(
+			aVotesTeamShowing(5, "In", [
+				aRow(
+					CONFIGURATION_MANAGEMENT,
+					"Configuration management",
+					"Backlog",
+					madeReady,
+				),
+				aRow(LOAD_TESTING, "Load testing framework", "Backlog", nearlyReady),
+			]),
+		);
+		await act(async () => {
+			await Promise.resolve();
+		});
+
+		expect(await theVerdict()).toHaveTextContent(/^6 ready — in the range/);
 	});
 });
 
