@@ -4,7 +4,11 @@ import type { IRefinementRow } from "../../../../models/Refinement/Refinement";
 import type { SizingLogState } from "./useSizingLog";
 import VotesAndCommentsDialog from "./VotesAndCommentsDialog";
 
-const AN_EMPTY_LOG: SizingLogState = { status: "read", entries: [] };
+const AN_EMPTY_LOG: SizingLogState = {
+	status: "read",
+	entries: [],
+	voters: { yes: [], yesBut: [], no: [] },
+};
 
 const aWorkItem = (
 	overrides: Partial<IRefinementRow> = {},

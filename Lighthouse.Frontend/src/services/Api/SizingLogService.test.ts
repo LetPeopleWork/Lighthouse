@@ -151,6 +151,7 @@ describe("SizingLogService", () => {
 					isOpenQuestion: false,
 				},
 			],
+			voters: { yes: [], yesBut: ["Ana Lima"], no: [] },
 		};
 		mockedAxios.get.mockResolvedValueOnce({ data: log });
 

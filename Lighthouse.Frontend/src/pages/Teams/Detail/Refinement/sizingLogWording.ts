@@ -1,7 +1,6 @@
 import type {
 	ISizingLogEntry,
 	SizingAnswer,
-	SizingEntryKind,
 } from "../../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { ApiError } from "../../../../services/Api/ApiError";
@@ -15,22 +14,26 @@ const ANSWER_WORDING: Record<SizingAnswer, string> = {
 	No: "No",
 };
 
-const describeVote = ({ voterName, answer }: ISizingLogEntry): string =>
-	answer === null ? voterName : `${voterName} voted ${ANSWER_WORDING[answer]}`;
+export const describeAnswer = (answer: SizingAnswer): string =>
+	ANSWER_WORDING[answer];
 
-/** Where an entry came from is deliberately never worded: every reader sees the same log. */
-const ENTRY_WORDING: Record<
-	SizingEntryKind,
-	(entry: ISizingLogEntry) => string
-> = {
-	Vote: describeVote,
-	Comment: ({ voterName }) => voterName,
-	Revocation: ({ voterName }) => `${voterName} took back their vote`,
-};
+/**
+ * Whether an entry is something somebody wrote: a comment, or a vote that came with words. The list
+ * leaves out votes without words and votes taken back, since the split above it already says how
+ * everybody stands.
+ */
+export const isWritten = ({ kind, comment }: ISizingLogEntry): boolean =>
+	kind !== "Revocation" && comment !== null;
 
-/** Who did what, as "Ana Lima voted Yes, if…"; a comment's own text is shown beneath, not here. */
-export const describeLogEntry = (entry: ISizingLogEntry): string =>
-	ENTRY_WORDING[entry.kind](entry);
+/**
+ * Who wrote it, as "Ana Lima · Yes, if…" for a vote and "Ana Lima" for a comment. Where it came from is
+ * deliberately never worded: every reader sees the same list.
+ */
+export const describeWriter = ({
+	voterName,
+	answer,
+}: ISizingLogEntry): string =>
+	answer === null ? voterName : `${voterName} · ${describeAnswer(answer)}`;
 
 /** The day an entry was recorded, as "Wed 7 Oct". */
 export const describeLogDay = ({ recordedAt }: ISizingLogEntry): string =>

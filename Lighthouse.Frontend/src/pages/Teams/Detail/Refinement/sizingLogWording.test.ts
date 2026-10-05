@@ -3,7 +3,7 @@ import type {
 	ISizingLogEntry,
 	SizingChannel,
 } from "../../../../models/Refinement/Refinement";
-import { describeLogDay, describeLogEntry } from "./sizingLogWording";
+import { describeLogDay, describeWriter, isWritten } from "./sizingLogWording";
 
 const anEntry = (entry: Partial<ISizingLogEntry>): ISizingLogEntry => ({
 	kind: "Vote",
@@ -19,23 +19,39 @@ const anEntry = (entry: Partial<ISizingLogEntry>): ISizingLogEntry => ({
 
 const CHANNELS: SizingChannel[] = ["Web", "Cli", "Assistant"];
 
-describe("the wording of one log entry", () => {
+describe("what somebody wrote, as the votes and comments list it", () => {
 	it.each([
-		["Vote", "Yes", "Ana Lima voted Yes"],
-		["Vote", "YesBut", "Ana Lima voted Yes, if…"],
-		["Vote", "No", "Ana Lima voted No"],
+		["Vote", "Yes", "Ana Lima · Yes"],
+		["Vote", "YesBut", "Ana Lima · Yes, if…"],
+		["Vote", "No", "Ana Lima · No"],
 		["Comment", null, "Ana Lima"],
-		["Revocation", null, "Ana Lima took back their vote"],
-	] as const)("words a %s answering %s as '%s'", (kind, answer, wording) => {
-		expect(describeLogEntry(anEntry({ kind, answer }))).toBe(wording);
+	] as const)("heads a %s answering %s as '%s'", (kind, answer, wording) => {
+		expect(
+			describeWriter(anEntry({ kind, answer, comment: "some words" })),
+		).toBe(wording);
 	});
 
 	it.each(CHANNELS)(
-		"words an entry that came through %s like any other",
+		"heads an entry that came through %s like any other",
 		(channel) => {
-			expect(describeLogEntry(anEntry({ channel }))).toBe("Ana Lima voted Yes");
+			expect(describeWriter(anEntry({ channel, comment: "words" }))).toBe(
+				"Ana Lima · Yes",
+			);
 		},
 	);
+
+	it.each([
+		["a vote with words", anEntry({ comment: "only if…" }), true],
+		["a vote without words", anEntry({}), false],
+		[
+			"a comment",
+			anEntry({ kind: "Comment", answer: null, comment: "Why?" }),
+			true,
+		],
+		["a vote taken back", anEntry({ kind: "Revocation", answer: null }), false],
+	])("counts %s as written: %s", (_what, entry, written) => {
+		expect(isWritten(entry)).toBe(written);
+	});
 
 	it("names the day an entry was recorded", () => {
 		expect(describeLogDay(anEntry({}))).toBe("Wed 7 Oct");

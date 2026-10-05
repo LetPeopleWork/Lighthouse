@@ -1,7 +1,4 @@
-import type {
-	ISizingSplit,
-	RowReadiness,
-} from "../../../../models/Refinement/Refinement";
+import type { RowReadiness } from "../../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { ApiError } from "../../../../services/Api/ApiError";
 import { LONGEST_VOTER_NAME } from "./VoterNamePrompt";
@@ -13,9 +10,6 @@ export const describeVoteCount = (voteCount: number): string => {
 
 	return voteCount === 1 ? "1 vote" : `${voteCount} votes`;
 };
-
-export const describeSplit = ({ yes, yesBut, no }: ISizingSplit): string =>
-	`${yes} Yes · ${yesBut} Yes, if… · ${no} No`;
 
 export const LONGEST_COMMENT = 2000;
 

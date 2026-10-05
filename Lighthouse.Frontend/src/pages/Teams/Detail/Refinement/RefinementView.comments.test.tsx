@@ -4,6 +4,7 @@ import type {
 	IRefinementRow,
 	ISizingLog,
 	ISizingLogEntry,
+	ISizingVoters,
 } from "../../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { ApiError } from "../../../../services/Api/ApiError";
@@ -29,8 +30,9 @@ import {
  * Comments, conditions and questions on the Refinement tab, and the log each Work Item keeps. "Yes, if…"
  * records in one click like Yes and No; its condition is a comment like any other. Anybody adds a comment
  * from a Work Item's votes and comments, without voting; from somebody without a vote it is an open
- * question, which the Work Item's Warnings cell names until they vote. Each Work Item's log reads oldest first and says
- * who said what and on which day, never where it came from. Everybody reads it, voted or not.
+ * question, which the Work Item's Warnings cell names until they vote. A Work Item's votes and comments name who
+ * holds each answer, and list what people wrote, oldest first: who, on which day, never where it came from; a vote
+ * without words is not listed. Everybody reads it, voted or not.
  */
 
 const { terms, mockUseLicenseRestrictions, reporter } = vi.hoisted(() => ({
@@ -60,6 +62,7 @@ const ADVANCED_REPORTING = "GR-051";
 const API_VERSIONING = "GR-054";
 const JONAS = "Jonas Weber";
 const ANA = "Ana Lima";
+const MO = "Mo Okafor";
 const CONDITION = "only if the PDF export moves to its own Work Item";
 const QUESTION = "Which API version?";
 const RECORDED = "2026-10-07T09:00:00Z";
@@ -76,6 +79,13 @@ const anEntry = (entry: Partial<ISizingLogEntry>): ISizingLogEntry => ({
 	isOpenQuestion: false,
 	...entry,
 });
+
+const NOBODY: ISizingVoters = { yes: [], yesBut: [], no: [] };
+
+const aLog = (
+	entries: ISizingLogEntry[],
+	voters: ISizingVoters = NOBODY,
+): ISizingLog => ({ entries, voters });
 
 const advancedReportingWithComments = () =>
 	gravitysRefinement({}, [
@@ -110,8 +120,8 @@ const settle = () =>
 		await new Promise((resolve) => setTimeout(resolve, 0));
 	});
 
-const aQuestionFrom = (voterName: string): ISizingLog => ({
-	entries: [
+const aQuestionFrom = (voterName: string): ISizingLog =>
+	aLog([
 		anEntry({
 			voterName,
 			kind: "Comment",
@@ -119,8 +129,7 @@ const aQuestionFrom = (voterName: string): ISizingLog => ({
 			comment: QUESTION,
 			isOpenQuestion: true,
 		}),
-	],
-});
+	]);
 
 const apiVersioningAsked = () =>
 	aRow(API_VERSIONING, "Public API versioning", "Analysing", {
@@ -221,7 +230,7 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 			addComment: vi.fn().mockResolvedValue(apiVersioningAsked()),
 			getLog: vi
 				.fn()
-				.mockResolvedValueOnce({ entries: [] } satisfies ISizingLog)
+				.mockResolvedValueOnce(aLog([]))
 				.mockResolvedValue(aQuestionFrom(JONAS)),
 		});
 		const { user } = renderTheRefinementTab(
@@ -469,28 +478,29 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 	});
 
 	// @us-12 @slice-12 @driving_port @contract-shape:pure-function
-	it("opens a Work Item's log oldest first, naming who said what and on which day", async () => {
+	it("lists what people wrote oldest first, naming who and on which day, and leaves out votes without words", async () => {
 		const key = aBrowserThatVotedBefore(ANA);
-		const log: ISizingLog = {
-			entries: [
-				anEntry({ voterName: JONAS, answer: "Yes" }),
-				anEntry({
-					voterName: ANA,
-					answer: "YesBut",
-					comment: CONDITION,
-					isMine: true,
-				}),
-				anEntry({
-					voterName: "Mo Okafor",
-					kind: "Comment",
-					answer: null,
-					comment: QUESTION,
-					isOpenQuestion: true,
-				}),
-			],
-		};
 		const sizingLogService = aSizingLogService({
-			getLog: vi.fn().mockResolvedValue(log),
+			getLog: vi.fn().mockResolvedValue(
+				aLog([
+					anEntry({ voterName: JONAS, answer: "Yes" }),
+					anEntry({
+						voterName: ANA,
+						answer: "YesBut",
+						comment: CONDITION,
+						isMine: true,
+					}),
+					anEntry({ voterName: JONAS, kind: "Revocation", answer: null }),
+					anEntry({
+						voterName: MO,
+						kind: "Comment",
+						answer: null,
+						comment: QUESTION,
+						isOpenQuestion: true,
+						recordedAt: "2026-10-08T09:00:00Z",
+					}),
+				]),
+			),
 		});
 		const { user } = renderTheRefinementTab(
 			advancedReportingWithComments(),
@@ -505,16 +515,65 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 			ADVANCED_REPORTING,
 			key,
 		);
-		expect(entries).toHaveLength(3);
-		expect(entries[0]).toHaveTextContent(`${JONAS} voted Yes`);
+		expect(entries).toHaveLength(2);
+		expect(entries[0]).toHaveTextContent(`${ANA} · ${YES_IF}`);
+		expect(entries[0]).toHaveTextContent(CONDITION);
 		expect(entries[0]).toHaveTextContent("Wed 7 Oct");
 		expect(entries[0]).not.toHaveTextContent(/open question/i);
-		expect(entries[1]).toHaveTextContent(`${ANA} voted ${YES_IF}`);
-		expect(entries[1]).toHaveTextContent(CONDITION);
-		expect(entries[1]).not.toHaveTextContent(/open question/i);
-		expect(entries[2]).toHaveTextContent("Mo Okafor");
-		expect(entries[2]).toHaveTextContent(QUESTION);
-		expect(entries[2]).toHaveTextContent(/open question/i);
+		expect(entries[1]).toHaveTextContent(MO);
+		expect(entries[1]).not.toHaveTextContent("·");
+		expect(entries[1]).toHaveTextContent(QUESTION);
+		expect(entries[1]).toHaveTextContent(/open question/i);
+		expect(entries[1]).toHaveTextContent("Thu 8 Oct");
+		expect(dialog).not.toHaveTextContent(JONAS);
+		expect(dialog).not.toHaveTextContent(/voted|took back/);
+	});
+
+	// @us-12 @slice-12 @driving_port @contract-shape:pure-function
+	it("names the people whose current vote a count in the split is, on hovering or focusing it", async () => {
+		aBrowserThatVotedBefore(ANA);
+		const sizingLogService = aSizingLogService({
+			getLog: vi
+				.fn()
+				.mockResolvedValue(
+					aLog([], { yes: [JONAS, MO], yesBut: [ANA], no: [] }),
+				),
+		});
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement({}, [
+				aRow(ADVANCED_REPORTING, "Advanced reporting module", "Analysing", {
+					voteCount: 3,
+					myVote: "YesBut",
+					split: { yes: 2, yesBut: 1, no: 0 },
+				}),
+			]),
+			sizingLogService,
+		);
+
+		const dialog = await openTheLogOf(user, ADVANCED_REPORTING);
+		await within(dialog).findByText("No comments yet.");
+		const noCount = within(dialog).getByText("0 No");
+		await user.hover(noCount);
+		await settle();
+		expect(screen.queryByRole("tooltip")).toBeNull();
+		expect(noCount).not.toHaveAttribute("tabindex");
+
+		const yesCount = within(dialog).getByText("2 Yes");
+		await user.hover(yesCount);
+		const yesVoters = await screen.findByRole("tooltip");
+		expect(yesVoters).toHaveTextContent(JONAS);
+		expect(yesVoters).toHaveTextContent(MO);
+		expect(yesVoters).not.toHaveTextContent(ANA);
+		expect(yesCount).toHaveAccessibleDescription(
+			new RegExp(`${JONAS}\\s+${MO}`),
+		);
+		await user.unhover(yesCount);
+		await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+
+		const yesIfCount = within(dialog).getByText(`1 ${YES_IF}`);
+		act(() => yesIfCount.focus());
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(ANA);
+		expect(yesIfCount).toHaveAccessibleDescription(ANA);
 	});
 
 	// @us-12 @slice-12 @boundary @contract-shape:pure-function
@@ -543,9 +602,9 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 	it("marks as open questions the entries the server calls open, even between two people sharing a name", async () => {
 		aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService({
-			getLog: vi.fn().mockResolvedValue({
-				entries: [
-					anEntry({ voterName: JONAS, answer: "Yes" }),
+			getLog: vi.fn().mockResolvedValue(
+				aLog([
+					anEntry({ voterName: JONAS, answer: "Yes", comment: CONDITION }),
 					anEntry({
 						voterName: JONAS,
 						kind: "Comment",
@@ -554,14 +613,14 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 						isOpenQuestion: true,
 					}),
 					anEntry({
-						voterName: "Mo Okafor",
+						voterName: MO,
 						kind: "Comment",
 						answer: null,
 						comment: CONDITION,
 						isOpenQuestion: false,
 					}),
-				],
-			} satisfies ISizingLog),
+				]),
+			),
 		});
 		const { user } = renderTheRefinementTab(
 			advancedReportingWithComments(),
@@ -582,11 +641,13 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 	it("shows a comment as the text it is, never as markup", async () => {
 		aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService({
-			getLog: vi.fn().mockResolvedValue({
-				entries: [
-					anEntry({ comment: "<b>urgent</b> & <script>alert(1)</script>" }),
-				],
-			} satisfies ISizingLog),
+			getLog: vi
+				.fn()
+				.mockResolvedValue(
+					aLog([
+						anEntry({ comment: "<b>urgent</b> & <script>alert(1)</script>" }),
+					]),
+				),
 		});
 		const { user } = renderTheRefinementTab(
 			advancedReportingWithComments(),
@@ -607,13 +668,19 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 	it("never says where an entry came from", async () => {
 		aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService({
-			getLog: vi.fn().mockResolvedValue({
-				entries: [
-					anEntry({ voterName: ANA, channel: "Cli" }),
-					anEntry({ voterName: JONAS, channel: "Assistant" }),
-					anEntry({ voterName: "Mo Okafor", channel: "Web" }),
-				],
-			} satisfies ISizingLog),
+			getLog: vi.fn().mockResolvedValue(
+				aLog([
+					anEntry({ voterName: ANA, channel: "Cli", comment: CONDITION }),
+					anEntry({
+						voterName: JONAS,
+						kind: "Comment",
+						answer: null,
+						channel: "Assistant",
+						comment: QUESTION,
+					}),
+					anEntry({ voterName: MO, channel: "Web", comment: CONDITION }),
+				]),
+			),
 		});
 		const { user } = renderTheRefinementTab(
 			advancedReportingWithComments(),
@@ -634,12 +701,14 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 	it.skip("shows a vote that was taken back as taken back", async () => {
 		aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService({
-			getLog: vi.fn().mockResolvedValue({
-				entries: [
-					anEntry({ voterName: JONAS, answer: "Yes" }),
-					anEntry({ voterName: JONAS, kind: "Revocation", answer: null }),
-				],
-			} satisfies ISizingLog),
+			getLog: vi
+				.fn()
+				.mockResolvedValue(
+					aLog([
+						anEntry({ voterName: JONAS, answer: "Yes" }),
+						anEntry({ voterName: JONAS, kind: "Revocation", answer: null }),
+					]),
+				),
 		});
 		const { user } = renderTheRefinementTab(
 			advancedReportingWithComments(),
@@ -654,21 +723,24 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 	});
 
 	// @us-11 @us-12 @slice-12 @boundary @contract-shape:pure-function
-	it("lets a reader who never voted read how the votes split and every comment", async () => {
+	it("lets a reader who never voted read how the votes split, who cast them, and every comment", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const sizingLogService = aSizingLogService({
-			getLog: vi.fn().mockResolvedValue({
-				entries: [
-					anEntry({ voterName: ANA, answer: "YesBut", comment: CONDITION }),
-					anEntry({ voterName: "Mo Okafor", answer: "No" }),
-					anEntry({
-						voterName: "Priya Sharma",
-						kind: "Comment",
-						answer: null,
-						comment: QUESTION,
-					}),
-				],
-			} satisfies ISizingLog),
+			getLog: vi.fn().mockResolvedValue(
+				aLog(
+					[
+						anEntry({ voterName: ANA, answer: "YesBut", comment: CONDITION }),
+						anEntry({ voterName: MO, answer: "No" }),
+						anEntry({
+							voterName: "Priya Sharma",
+							kind: "Comment",
+							answer: null,
+							comment: QUESTION,
+						}),
+					],
+					{ yes: [], yesBut: [ANA], no: [MO] },
+				),
+			),
 		});
 		const { user } = renderTheRefinementTab(
 			gravitysRefinement({}, [
@@ -685,25 +757,33 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		const dialog = await openTheLogOf(user, ADVANCED_REPORTING);
 		const entries = await within(dialog).findAllByRole("listitem");
 
-		expect(dialog).toHaveTextContent("0 Yes · 1 Yes, if… · 1 No");
-		expect(entries).toHaveLength(3);
+		expect(dialog).toHaveTextContent(`0 Yes · 1 ${YES_IF} · 1 No`);
+		expect(entries).toHaveLength(2);
 		expect(entries[0]).toHaveTextContent(CONDITION);
-		expect(entries[2]).toHaveTextContent(QUESTION);
+		expect(entries[1]).toHaveTextContent(QUESTION);
+		await user.hover(within(dialog).getByText("1 No"));
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(MO);
 	});
 
 	// @us-12 @slice-12 @boundary @contract-shape:pure-function
-	it("says so when a Work Item's log is empty", async () => {
+	it("says so when nobody has written anything about a Work Item, even when it has votes", async () => {
 		aBrowserThatVotedBefore(ANA);
 		const { user } = renderTheRefinementTab(
 			advancedReportingWithComments(),
-			aSizingLogService(),
+			aSizingLogService({
+				getLog: vi.fn().mockResolvedValue(
+					aLog([anEntry({ voterName: JONAS, answer: "Yes" })], {
+						yes: [JONAS],
+						yesBut: [],
+						no: [],
+					}),
+				),
+			}),
 		);
 
 		const dialog = await openTheLogOf(user, ADVANCED_REPORTING);
 
-		expect(
-			await within(dialog).findByText("No votes or comments yet."),
-		).toBeVisible();
+		expect(await within(dialog).findByText("No comments yet.")).toBeVisible();
 		expect(within(dialog).queryAllByRole("listitem")).toHaveLength(0);
 	});
 

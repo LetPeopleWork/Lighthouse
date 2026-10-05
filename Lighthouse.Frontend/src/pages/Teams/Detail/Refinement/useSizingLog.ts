@@ -1,10 +1,13 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
-import type { ISizingLogEntry } from "../../../../models/Refinement/Refinement";
+import type {
+	ISizingLogEntry,
+	ISizingVoters,
+} from "../../../../models/Refinement/Refinement";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 
 export type SizingLogState =
 	| { status: "reading" }
-	| { status: "read"; entries: ISizingLogEntry[] }
+	| { status: "read"; entries: ISizingLogEntry[]; voters: ISizingVoters }
 	| { status: "failed"; error: unknown };
 
 const READING: SizingLogState = { status: "reading" };
@@ -38,9 +41,9 @@ export const useSizingLog = (
 			const isLatest = () => thisRead === latestRead.current;
 			sizingLogService
 				.getLog(teamId, workItemReference, currentReaderKey.current)
-				.then(({ entries }) => {
+				.then(({ entries, voters }) => {
 					if (isLatest()) {
-						setLog({ status: "read", entries });
+						setLog({ status: "read", entries, voters });
 					}
 				})
 				.catch((error: unknown) => {

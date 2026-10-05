@@ -142,6 +142,7 @@ export const aSizingLogService = (
 	takeBackMyVote: vi.fn(),
 	getLog: vi.fn().mockResolvedValue({
 		entries: [],
+		voters: { yes: [], yesBut: [], no: [] },
 	} satisfies ISizingLog),
 	...overrides,
 });

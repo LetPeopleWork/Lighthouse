@@ -1,6 +1,7 @@
-import HelpOutlineIcon from "@mui/icons-material/HelpOutlineOutlined";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
 	Alert,
+	Box,
 	Button,
 	Dialog,
 	DialogActions,
@@ -10,6 +11,7 @@ import {
 	ListItem,
 	Stack,
 	TextField,
+	Tooltip,
 	Typography,
 } from "@mui/material";
 import type React from "react";
@@ -17,12 +19,22 @@ import { useState } from "react";
 import type {
 	IRefinementRow,
 	ISizingLogEntry,
+	ISizingSplit,
+	ISizingVoters,
+	SizingAnswer,
 } from "../../../../models/Refinement/Refinement";
-import { describeLogDay, describeLogEntry } from "./sizingLogWording";
+import { useFocusTooltip } from "../useFocusTooltip";
+import {
+	describeAnswer,
+	describeLogDay,
+	describeWriter,
+	isWritten,
+} from "./sizingLogWording";
 import type { SizingLogState } from "./useSizingLog";
-import { describeSplit, LONGEST_COMMENT } from "./voteWording";
+import { LONGEST_COMMENT } from "./voteWording";
 
-const NO_SPLIT = { yes: 0, yesBut: 0, no: 0 };
+const NO_SPLIT: ISizingSplit = { yes: 0, yesBut: 0, no: 0 };
+const NOBODY: ISizingVoters = { yes: [], yesBut: [], no: [] };
 
 interface VotesAndCommentsDialogProps {
 	workItem: IRefinementRow;
@@ -79,6 +91,56 @@ const CommentBox: React.FC<
 	);
 };
 
+interface SplitCountProps {
+	count: number;
+	answer: SizingAnswer;
+	voters: readonly string[];
+}
+
+const NamedCount: React.FC<
+	Readonly<{ wording: string; voters: readonly string[] }>
+> = ({ wording, voters }) => {
+	const { tooltip, target } = useFocusTooltip();
+	return (
+		<Tooltip
+			describeChild
+			{...tooltip}
+			title={voters.join("\n")}
+			slotProps={{ tooltip: { sx: { whiteSpace: "pre-line" } } }}
+		>
+			<Box component="span" {...target}>
+				{wording}
+			</Box>
+		</Tooltip>
+	);
+};
+
+/** One count of the split; hovering or focusing it names the people whose current vote it is. */
+const SplitCount: React.FC<Readonly<SplitCountProps>> = ({
+	count,
+	answer,
+	voters,
+}) => {
+	const wording = `${count} ${describeAnswer(answer)}`;
+	if (count === 0 || voters.length === 0) {
+		return <span>{wording}</span>;
+	}
+
+	return <NamedCount wording={wording} voters={voters} />;
+};
+
+const VoteSplit: React.FC<
+	Readonly<{ split: ISizingSplit; voters: ISizingVoters }>
+> = ({ split, voters }) => (
+	<Typography>
+		<SplitCount count={split.yes} answer="Yes" voters={voters.yes} />
+		{" · "}
+		<SplitCount count={split.yesBut} answer="YesBut" voters={voters.yesBut} />
+		{" · "}
+		<SplitCount count={split.no} answer="No" voters={voters.no} />
+	</Typography>
+);
+
 const OpenQuestionMarker: React.FC = () => (
 	<Stack
 		component="span"
@@ -86,21 +148,19 @@ const OpenQuestionMarker: React.FC = () => (
 		spacing={0.5}
 		sx={{ alignItems: "center", color: "warning.main" }}
 	>
-		<HelpOutlineIcon fontSize="small" />
+		<WarningAmberIcon fontSize="small" />
 		<Typography component="span" variant="body2">
 			open question
 		</Typography>
 	</Stack>
 );
 
-const LogEntry: React.FC<Readonly<{ entry: ISizingLogEntry }>> = ({
+const WrittenEntry: React.FC<Readonly<{ entry: ISizingLogEntry }>> = ({
 	entry,
 }) => (
 	<ListItem disableGutters sx={{ display: "block" }}>
 		<Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-			<Typography sx={{ fontWeight: 500 }}>
-				{describeLogEntry(entry)}
-			</Typography>
+			<Typography sx={{ fontWeight: 500 }}>{describeWriter(entry)}</Typography>
 			{entry.isOpenQuestion && <OpenQuestionMarker />}
 			<Typography
 				variant="body2"
@@ -110,16 +170,14 @@ const LogEntry: React.FC<Readonly<{ entry: ISizingLogEntry }>> = ({
 				{describeLogDay(entry)}
 			</Typography>
 		</Stack>
-		{entry.comment !== null && (
-			<Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-				{entry.comment}
-			</Typography>
-		)}
+		<Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+			{entry.comment}
+		</Typography>
 	</ListItem>
 );
 
-/** Comments are always shown as the plain text they are, never interpreted as markup. */
-const SizingLog: React.FC<
+/** What people wrote, always shown as the plain text it is, never interpreted as markup. */
+const WhatPeopleWrote: React.FC<
 	Readonly<Pick<VotesAndCommentsDialogProps, "log" | "describeFailure">>
 > = ({ log, describeFailure }) => {
 	if (log.status === "reading") {
@@ -134,25 +192,26 @@ const SizingLog: React.FC<
 		);
 	}
 
-	if (log.entries.length === 0) {
-		return (
-			<Typography color="text.secondary">No votes or comments yet.</Typography>
-		);
-	}
-
 	// The log only ever grows at its end, so an entry's place in it never changes. Nothing else tells
 	// two entries apart: one person can say the same thing twice within a second.
-	const placed = log.entries.map((entry, place) => ({ entry, place }));
+	const written = log.entries
+		.map((entry, place) => ({ entry, place }))
+		.filter(({ entry }) => isWritten(entry));
+
+	if (written.length === 0) {
+		return <Typography color="text.secondary">No comments yet.</Typography>;
+	}
+
 	return (
 		<List dense disablePadding sx={{ width: "100%" }}>
-			{placed.map(({ entry, place }) => (
-				<LogEntry key={place} entry={entry} />
+			{written.map(({ entry, place }) => (
+				<WrittenEntry key={place} entry={entry} />
 			))}
 		</List>
 	);
 };
 
-/** How the votes on one Work Item split and what was said about it, shown to every reader whether they voted or not. */
+/** How the votes on one Work Item split and what was written about it, shown to every reader whether they voted or not. */
 const VotesAndCommentsDialog: React.FC<
 	Readonly<VotesAndCommentsDialogProps>
 > = ({
@@ -169,8 +228,11 @@ const VotesAndCommentsDialog: React.FC<
 		<DialogTitle>{`${workItem.referenceId} ${workItem.name} · Votes and comments`}</DialogTitle>
 		<DialogContent>
 			<Stack spacing={2} sx={{ alignItems: "flex-start" }}>
-				<Typography>{describeSplit(workItem.split ?? NO_SPLIT)}</Typography>
-				<SizingLog log={log} describeFailure={describeFailure} />
+				<VoteSplit
+					split={workItem.split ?? NO_SPLIT}
+					voters={log.status === "read" ? log.voters : NOBODY}
+				/>
+				<WhatPeopleWrote log={log} describeFailure={describeFailure} />
 				<CommentBox
 					onAddComment={onAddComment}
 					isSendingAComment={isSendingAComment}

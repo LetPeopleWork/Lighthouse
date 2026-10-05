@@ -174,9 +174,17 @@ export interface ISizingLogEntry {
 	isOpenQuestion: boolean;
 }
 
+/** Who currently holds each answer, keyed like the split's counts so the names and the counts agree. */
+export interface ISizingVoters {
+	yes: string[];
+	yesBut: string[];
+	no: string[];
+}
+
 /** One Work Item's log, oldest first, open to every reader whether they voted or not. */
 export interface ISizingLog {
 	entries: ISizingLogEntry[];
+	voters: ISizingVoters;
 }
 
 export interface ISizingVote {
