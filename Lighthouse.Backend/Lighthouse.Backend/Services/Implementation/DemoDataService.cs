@@ -62,6 +62,7 @@ namespace Lighthouse.Backend.Services.Implementation
             new("GR-073", MoOkafor, SizingAnswer.Yes, 3),
             new("GR-073", AnaLima, SizingAnswer.YesBut, 2),
             new("GR-054", AnaLima, SizingAnswer.No, 2),
+            new("GR-051", AnaLima, SizingAnswer.YesBut, 1, "only if the PDF export moves to its own Work Item"),
         ];
 
         private readonly List<DemoDataScenario> scenarios = [];
@@ -128,6 +129,7 @@ namespace Lighthouse.Backend.Services.Implementation
                     WorkItemReferenceId = vote.WorkItemReference,
                     Kind = SizingEntryKind.Vote,
                     Answer = vote.Answer,
+                    Comment = vote.Comment,
                     VoterKey = SizingLogEntry.SelfDeclaredVoterKeyOf(vote.Voter.BrowserKey),
                     VoterDisplayName = vote.Voter.Name,
                     RecordedAt = clock.Now.UtcDateTime.AddDays(-vote.DaysAgo),
@@ -507,6 +509,6 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private sealed record DemoVoter(string Name, string BrowserKey);
 
-        private sealed record DemoSizingVote(string WorkItemReference, DemoVoter Voter, SizingAnswer Answer, int DaysAgo);
+        private sealed record DemoSizingVote(string WorkItemReference, DemoVoter Voter, SizingAnswer Answer, int DaysAgo, string? Comment = null);
     }
 }

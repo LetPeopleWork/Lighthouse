@@ -438,7 +438,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(votesOnWorkItem, Is.EqualTo(expectedVotes));
-                Assert.That(appended, Has.Count.EqualTo(6));
+                Assert.That(appended, Has.Count.EqualTo(7));
                 Assert.That(appended, Has.All.Matches<SizingLogEntry>(entry => entry.TeamId == gravity.Id && entry.Kind == SizingEntryKind.Vote && entry.Channel == SizingChannel.Web));
                 Assert.That(appended, Has.All.Matches<SizingLogEntry>(entry => entry.RecordedAt < now && entry.RecordedAt > now.AddDays(-7)));
                 Assert.That(appended, Has.All.Matches<SizingLogEntry>(entry => entry.YardstickSource == YardstickSource.Sle && entry.YardstickDays == 7 && entry.YardstickProbability == 85));
@@ -446,6 +446,33 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(keysPerVoter.Keys, Is.EquivalentTo(DemoVoters));
                 Assert.That(keysPerVoter.Values, Has.All.Count.EqualTo(1));
                 Assert.That(keysPerVoter.Values.Select(keys => keys[0]).Distinct().Count(), Is.EqualTo(DemoVoters.Length));
+            }
+        }
+
+        [Test]
+        public async Task LoadScenarios_Gravity_AnaLimasYesButOnGr051CarriesItsCondition()
+        {
+            var gravity = new Team { Id = 51, Name = "Team Gravity", ServiceLevelExpectationProbability = 85, ServiceLevelExpectationRange = 7 };
+            demoDataFactoryMock.Setup(x => x.CreateDemoTeam("Team Gravity")).Returns(gravity);
+
+            var appended = new List<SizingLogEntry>();
+            sizingLogMock.Setup(x => x.Append(It.IsAny<SizingLogEntry>())).Callback((SizingLogEntry entry) => appended.Add(entry));
+
+            var subject = CreateSubject();
+            var dependencies = subject.GetAllScenarios().Single(x => x.Title == "Dependencies");
+            await subject.LoadScenarios(dependencies);
+
+            var onGr051 = appended.Where(entry => entry.WorkItemReferenceId == "GR-051").ToList();
+            var anaOnGr073 = appended.Single(entry => entry.WorkItemReferenceId == "GR-073" && entry.VoterDisplayName == "Ana Lima");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(onGr051, Has.Count.EqualTo(1));
+                Assert.That(onGr051[0].VoterDisplayName, Is.EqualTo("Ana Lima"));
+                Assert.That(onGr051[0].VoterKey, Is.EqualTo(anaOnGr073.VoterKey));
+                Assert.That(onGr051[0].Answer, Is.EqualTo(SizingAnswer.YesBut));
+                Assert.That(onGr051[0].Comment, Is.EqualTo("only if the PDF export moves to its own Work Item"));
+                Assert.That(appended.Where(entry => entry.WorkItemReferenceId != "GR-051").Select(entry => entry.Comment), Has.All.Null);
             }
         }
 
