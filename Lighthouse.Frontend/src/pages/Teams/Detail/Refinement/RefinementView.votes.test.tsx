@@ -680,6 +680,45 @@ describe("A voter casts a sizing vote from the list", () => {
 		});
 	});
 
+	// @us-12 @slice-12 @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:bounded-change
+	it("reports a 'Yes, if…' to usage data once, and never what its condition says", async () => {
+		const condition = "only if the PDF export moves to its own Work Item";
+		aBrowserThatVotedBefore(JONAS);
+		const sizingLogService = aSizingLogService({
+			castVote: vi.fn().mockResolvedValue(
+				theRowAfter(CONFIGURATION_MANAGEMENT, {
+					voteCount: 1,
+					myVote: "YesBut",
+				}),
+			),
+		});
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement(),
+			sizingLogService,
+		);
+
+		await user.click(
+			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), YES_IF),
+		);
+		const prompt = await screen.findByRole("dialog", { name: YES_IF });
+		await user.click(
+			within(prompt).getByRole("textbox", { name: "Condition" }),
+		);
+		await user.paste(condition);
+		await user.click(within(prompt).getByRole("button", { name: "Vote" }));
+
+		await waitFor(() => expect(reporter.current).toHaveBeenCalled());
+		expect(sizingLogService.castVote).toHaveBeenCalledOnce();
+		expect(reporter.current).toHaveBeenCalledOnce();
+		expect(reporter.current).toHaveBeenCalledWith({
+			name: VOTE_CAST,
+			sizingMoment: "NoCadence",
+		});
+		expect(JSON.stringify(reporter.current.mock.calls)).not.toContain(
+			condition,
+		);
+	});
+
 	// @us-11 @slice-11 @error @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:unbounded-preservation
 	it("reports nothing for a vote the server refused", async () => {
 		aBrowserThatVotedBefore(JONAS);
