@@ -68,6 +68,7 @@ export const useCommentAdding = (
 	const { submit, isAskingForName, submitUnderName, cancel } = useNameFirst(
 		naming,
 		send,
+		teamId,
 	);
 
 	return {

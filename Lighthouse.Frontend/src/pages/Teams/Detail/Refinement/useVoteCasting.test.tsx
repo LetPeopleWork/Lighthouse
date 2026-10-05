@@ -107,6 +107,45 @@ describe("casting a vote from the tab", () => {
 		);
 	});
 
+	it("drops a 'Yes, if…' still waiting for its condition when the Team changes", () => {
+		const { result, rerender, sizingLogService } = renderTheCasting(() =>
+			Promise.resolve(theRow),
+		);
+
+		act(() => {
+			result.current.onVote({ referenceId: "GR-073", answer: "YesBut" });
+		});
+		expect(result.current.conditionAskedOn).toBe("GR-073");
+
+		rerender({ team: 9 });
+		expect(result.current.conditionAskedOn).toBeNull();
+		act(() => {
+			result.current.voteWithCondition("the API is stable");
+		});
+
+		expect(sizingLogService.castVote).not.toHaveBeenCalled();
+	});
+
+	it("drops a vote still waiting for its voter's name when the Team changes", () => {
+		const { result, rerender, sizingLogService } = renderTheCasting(
+			() => Promise.resolve(theRow),
+			{ asksForName: true },
+		);
+
+		act(() => {
+			result.current.onVote({ referenceId: "GR-073", answer: "Yes" });
+		});
+		expect(result.current.isAskingForName).toBe(true);
+
+		rerender({ team: 9 });
+		expect(result.current.isAskingForName).toBe(false);
+		act(() => {
+			result.current.voteUnderName("Jonas");
+		});
+
+		expect(sizingLogService.castVote).not.toHaveBeenCalled();
+	});
+
 	it("casts nothing when a name is given with no vote waiting for it", () => {
 		const { result, sizingLogService } = renderTheCasting(
 			() => Promise.resolve(theRow),

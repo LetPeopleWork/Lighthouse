@@ -22,6 +22,7 @@ export interface IPendingVote {
 interface IVoteAwaitingCondition {
 	pending: IPendingVote;
 	declared: IStoredVoter | null;
+	teamId: number;
 }
 
 const awaitsCondition = ({ answer, condition }: IPendingVote): boolean =>
@@ -125,24 +126,28 @@ export const useVoteCasting = (
 		],
 	);
 
-	// The name comes first and the condition second, so a voter meets one dialog at a time.
-	const [awaitingCondition, setAwaitingCondition] =
+	// The name comes first and the condition second, so a voter meets one dialog at a time. A vote still
+	// waiting for its condition was meant for the Team it was asked on, so another Team drops it.
+	const [heldForCondition, setHeldForCondition] =
 		useState<IVoteAwaitingCondition | null>(null);
+	const awaitingCondition =
+		heldForCondition?.teamId === teamId ? heldForCondition : null;
 
 	const castOnceConditioned = useCallback(
 		(pending: IPendingVote, declared: IStoredVoter | null) => {
 			if (awaitsCondition(pending)) {
-				setAwaitingCondition({ pending, declared });
+				setHeldForCondition({ pending, declared, teamId });
 				return;
 			}
 			castVote(pending, declared);
 		},
-		[castVote],
+		[castVote, teamId],
 	);
 
 	const { submit, isAskingForName, submitUnderName, cancel } = useNameFirst(
 		naming,
 		castOnceConditioned,
+		teamId,
 	);
 
 	const voteWithCondition = (condition: string) => {
@@ -150,7 +155,7 @@ export const useVoteCasting = (
 			const { pending, declared } = awaitingCondition;
 			castVote({ ...pending, condition }, declared);
 		}
-		setAwaitingCondition(null);
+		setHeldForCondition(null);
 	};
 
 	return {
@@ -161,6 +166,6 @@ export const useVoteCasting = (
 		cancelVote: cancel,
 		conditionAskedOn: awaitingCondition?.pending.referenceId ?? null,
 		voteWithCondition,
-		cancelCondition: () => setAwaitingCondition(null),
+		cancelCondition: () => setHeldForCondition(null),
 	};
 };
