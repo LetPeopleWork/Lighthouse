@@ -78,6 +78,27 @@ namespace Lighthouse.Backend.Tests.Models.Refinement
             }
         }
 
+        [Test]
+        public void A_value_stored_before_the_band_existed_reads_the_range_at_50_and_85()
+        {
+            var settings = JsonSerializer.Deserialize<RefinementSettings>("""{"States":[{"State":"Backlog","Stage":0}]}""", StoredJson)!;
+
+            Assert.That(BandOf(settings), Is.EqualTo((50, 85)));
+        }
+
+        [Test]
+        public void A_band_round_trips()
+        {
+            var stored = new RefinementSettings { Band = new RefinementBand { LowPercentile = 60, HighPercentile = 95 } };
+
+            var read = JsonSerializer.Deserialize<RefinementSettings>(JsonSerializer.Serialize(stored, StoredJson), StoredJson)!;
+
+            Assert.That(BandOf(read), Is.EqualTo((60, 95)));
+        }
+
+        private static (int Low, int High) BandOf(RefinementSettings settings)
+            => (settings.Band.LowPercentile, settings.Band.HighPercentile);
+
         private static (int MinYes, int MinVoters, int? No, int? YesIf) ReadinessOf(RefinementSettings settings)
             => (settings.Readiness.MinYes, settings.Readiness.MinVoters, settings.Readiness.DiscussWhen.No, settings.Readiness.DiscussWhen.YesIf);
     }

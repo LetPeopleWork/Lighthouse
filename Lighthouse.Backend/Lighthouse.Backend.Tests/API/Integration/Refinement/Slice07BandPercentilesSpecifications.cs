@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             return gravity;
         }
 
-        private async Task<TeamUnderTest> GivenGravityHasTwoReadyAndIsLikelyToPullThreeToTenBeforeThursday()
+        private async Task<TeamUnderTest> GivenGravityHasTwoReadyAndIsLikelyToPullFiveToTenBeforeThursday()
             => await GravityWithTwoReadyLikelyToPullFiveToEightBeforeThursday();
 
         // --- When ---
@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-                Assert.That(reason, Does.Contain($"{lowPercentile}").And.Contain($"{highPercentile}"), "the refusal must name both values");
+                Assert.That(reason, Does.Contain($"'{lowPercentile}' to '{highPercentile}'"), "the refusal must name both values");
                 Assert.That(BandIn(settings), Is.EqualTo(SixtyAndNinetyFive), "the refused save changed the stored band");
             }
         }

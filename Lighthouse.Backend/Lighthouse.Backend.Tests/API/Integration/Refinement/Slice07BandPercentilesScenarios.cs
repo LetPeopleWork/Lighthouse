@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase(70, 95, 6, 10)]
         public async Task The_band_decides_where_the_range_is_read(int lowPercentile, int highPercentile, int low, int high)
         {
-            var gravity = await GivenGravityHasTwoReadyAndIsLikelyToPullThreeToTenBeforeThursday();
+            var gravity = await GivenGravityHasTwoReadyAndIsLikelyToPullFiveToTenBeforeThursday();
 
             await TheAdminHasSetTheBand(gravity, lowPercentile, highPercentile);
 
