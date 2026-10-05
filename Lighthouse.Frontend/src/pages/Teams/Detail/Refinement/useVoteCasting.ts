@@ -10,6 +10,7 @@ import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import { UsageDataEventName } from "../../../../services/Api/UsageDataService";
 import type { IStoredVoter } from "../../../../services/Refinement/voterStore";
 import { useUsageDataReporter } from "../../../../services/UsageData/usageDataReporter";
+import { useNameFirst } from "./useNameFirst";
 
 export interface IPendingVote {
 	referenceId: string;
@@ -42,19 +43,17 @@ export const sizingMomentOf = (
 };
 
 /**
- * Casting a vote from the tab. A voter without sign-in who has not named themselves yet is asked first, and
- * the vote they chose waits until they have.
+ * Casting a vote from the tab.
  */
 export const useVoteCasting = (
 	teamId: number,
-	{ voter, asksForName, declareName, ballotFor }: VoterIdentity,
+	{ ballotFor, ...naming }: VoterIdentity,
 	onAnswered: (answeredRow: IVotedRow) => void,
 	onFailure: (error: unknown) => void,
 	refinementFacts: RefinementFacts,
 ) => {
 	const { sizingLogService } = useContext(ApiServiceContext);
 	const reportUsage = useUsageDataReporter();
-	const [pendingVote, setPendingVote] = useState<IPendingVote | null>(null);
 	const sending = useRef(new Set<string>());
 	const [votesBeingSent, setVotesBeingSent] = useState<ReadonlySet<string>>(
 		() => new Set(),
@@ -111,30 +110,16 @@ export const useVoteCasting = (
 		],
 	);
 
-	const onVote = useCallback(
-		(chosen: IPendingVote) => {
-			if (asksForName) {
-				setPendingVote(chosen);
-				return;
-			}
-
-			castVote(chosen, voter);
-		},
-		[asksForName, castVote, voter],
+	const { submit, isAskingForName, submitUnderName, cancel } = useNameFirst(
+		naming,
+		castVote,
 	);
 
-	const voteUnderName = (name: string) => {
-		if (pendingVote !== null) {
-			castVote(pendingVote, declareName(name));
-		}
-		setPendingVote(null);
-	};
-
 	return {
-		onVote,
+		onVote: submit,
 		votesBeingSent,
-		isAskingForName: pendingVote !== null,
-		voteUnderName,
-		cancelVote: () => setPendingVote(null),
+		isAskingForName,
+		voteUnderName: submitUnderName,
+		cancelVote: cancel,
 	};
 };

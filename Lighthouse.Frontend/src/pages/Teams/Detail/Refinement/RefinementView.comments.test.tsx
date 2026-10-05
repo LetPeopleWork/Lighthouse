@@ -20,11 +20,10 @@ import {
 
 /**
  * Comments, conditions and questions on the Refinement tab, and the log each Work Item keeps. "Yes, if…"
- * records in one click like Yes and No; its condition is a comment like any other. Anybody adds a comment from a
- * Work Item's votes and comments, without voting; from somebody without a vote it is an open question, which marks
- * the Work Item until they vote. Each Work Item's log
- * reads oldest first and says who said what and on which day, never where it came from. Everybody reads it,
- * voted or not.
+ * records in one click like Yes and No; its condition is a comment like any other. Anybody adds a comment
+ * from a Work Item's votes and comments, without voting; from somebody without a vote it is an open
+ * question, which marks the Work Item until they vote. Each Work Item's log reads oldest first and says
+ * who said what and on which day, never where it came from. Everybody reads it, voted or not.
  */
 
 const { terms, mockUseLicenseRestrictions, reporter } = vi.hoisted(() => ({

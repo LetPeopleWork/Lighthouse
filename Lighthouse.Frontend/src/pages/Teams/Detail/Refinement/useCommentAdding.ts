@@ -1,8 +1,9 @@
-import { useCallback, useContext, useState } from "react";
+import { useCallback, useContext } from "react";
 import type { useVoterIdentity } from "../../../../hooks/useVoterIdentity";
 import type { IVotedRow } from "../../../../models/Refinement/Refinement";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import type { IStoredVoter } from "../../../../services/Refinement/voterStore";
+import { useNameFirst } from "./useNameFirst";
 
 export interface IPendingComment {
 	referenceId: string;
@@ -17,19 +18,15 @@ type CommenterIdentity = Pick<
 
 /**
  * Adding a comment to a Work Item without voting. Whether it is a plain comment or an open question is the
- * server's call: it knows whether the commenter holds a vote. A commenter without sign-in who has not named
- * themselves yet is asked first, and the comment waits until they have.
+ * server's call: it knows whether the commenter holds a vote.
  */
 export const useCommentAdding = (
 	teamId: number,
-	{ voter, asksForName, declareName, commentFor }: CommenterIdentity,
+	{ commentFor, ...naming }: CommenterIdentity,
 	onAnswered: (answeredRow: IVotedRow) => void,
 	onFailure: (error: unknown) => void,
 ) => {
 	const { sizingLogService } = useContext(ApiServiceContext);
-	const [pendingComment, setPendingComment] = useState<IPendingComment | null>(
-		null,
-	);
 
 	const send = useCallback(
 		(
@@ -49,29 +46,15 @@ export const useCommentAdding = (
 		[commentFor, sizingLogService, teamId, onAnswered, onFailure],
 	);
 
-	const addComment = useCallback(
-		(pending: IPendingComment) => {
-			if (asksForName) {
-				setPendingComment(pending);
-				return;
-			}
-
-			send(pending, voter);
-		},
-		[asksForName, send, voter],
+	const { submit, isAskingForName, submitUnderName, cancel } = useNameFirst(
+		naming,
+		send,
 	);
 
-	const commentUnderName = (name: string) => {
-		if (pendingComment !== null) {
-			send(pendingComment, declareName(name));
-		}
-		setPendingComment(null);
-	};
-
 	return {
-		addComment,
-		isAskingForName: pendingComment !== null,
-		commentUnderName,
-		cancelComment: () => setPendingComment(null),
+		addComment: submit,
+		isAskingForName,
+		commentUnderName: submitUnderName,
+		cancelComment: cancel,
 	};
 };
