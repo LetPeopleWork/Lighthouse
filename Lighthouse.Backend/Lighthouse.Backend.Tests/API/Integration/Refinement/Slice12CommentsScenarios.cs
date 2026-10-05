@@ -164,7 +164,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
             using var refused = await WhenJonasTriesToAsk(gravity, ApiVersioning, comment);
 
-            await ThenTheCommentIsRefusedAndTheRowIsUntouched(refused, gravity, ApiVersioning, HttpStatusCode.BadRequest, expectedCode: null);
+            await ThenTheCommentIsRefusedAndTheRowIsUntouched(refused, gravity, ApiVersioning, HttpStatusCode.BadRequest, CommentRequired);
         }
 
         // @driving_port @real-io @us-12 @slice-12 @boundary @contract-shape:bounded-change
@@ -187,7 +187,30 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
             using var refused = await WhenJonasTriesToAsk(gravity, ApiVersioning, new string('x', 2001));
 
-            await ThenTheCommentIsRefusedAndTheRowIsUntouched(refused, gravity, ApiVersioning, HttpStatusCode.BadRequest, expectedCode: null);
+            await ThenTheCommentIsRefusedAndTheRowIsUntouched(refused, gravity, ApiVersioning, HttpStatusCode.BadRequest, CommentTooLong);
+        }
+
+        // @driving_port @real-io @us-12 @slice-12 @boundary @contract-shape:bounded-change
+        [Test]
+        public async Task A_question_of_two_thousand_characters_is_kept_whole()
+        {
+            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+            var twoThousand = new string('x', 2000);
+
+            await WhenJonasAsks(gravity, ConfigurationManagement, twoThousand);
+
+            await ThenJonasReadsHisComment(gravity, twoThousand);
+        }
+
+        // @driving_port @real-io @us-12 @slice-12 @error @contract-shape:unbounded-preservation
+        [Test]
+        public async Task A_vote_whose_comment_is_longer_than_two_thousand_characters_is_refused()
+        {
+            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+
+            using var refused = await WhenJonasTriesToVoteYesWithTheComment(gravity, ApiVersioning, new string('x', 2001));
+
+            await ThenTheCommentIsRefusedAndTheRowIsUntouched(refused, gravity, ApiVersioning, HttpStatusCode.BadRequest, CommentTooLong);
         }
 
         // @driving_port @real-io @us-12 @slice-12 @error @contract-shape:unbounded-preservation

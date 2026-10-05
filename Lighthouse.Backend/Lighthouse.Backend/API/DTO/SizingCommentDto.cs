@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using Lighthouse.Backend.Models.Refinement;
 
@@ -7,7 +6,6 @@ namespace Lighthouse.Backend.API.DTO
     /// <summary>A comment without a vote, as the caller sends it.</summary>
     public sealed class SizingCommentDto
     {
-        [MaxLength(SizingLogEntry.LongestComment)]
         public string? Comment { get; set; }
 
         [JsonConverter(typeof(SizingVoteDto.NamesOnly<SizingChannel>))]

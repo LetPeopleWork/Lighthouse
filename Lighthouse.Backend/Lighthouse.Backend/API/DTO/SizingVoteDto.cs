@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Lighthouse.Backend.Models.Refinement;
@@ -16,7 +15,6 @@ namespace Lighthouse.Backend.API.DTO
         [JsonConverter(typeof(NamesOnly<SizingChannel>))]
         public SizingChannel? Channel { get; set; }
 
-        [MaxLength(SizingLogEntry.LongestComment)]
         public string? Comment { get; set; }
 
         /// <summary>The name a voter declares on an instance without sign-in; ignored with sign-in.</summary>

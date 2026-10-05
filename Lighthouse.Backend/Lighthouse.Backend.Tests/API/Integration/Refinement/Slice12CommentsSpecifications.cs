@@ -18,6 +18,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         private const string MarkupAndQuotes = "<b>bold</b> & \"quotes\" 'too'";
 
+        private const string CommentRequired = "comment-required";
+
+        private const string CommentTooLong = "comment-too-long";
+
         /// <summary>Every entry in these scenarios is recorded on the instance's today.</summary>
         private static readonly string RecordedToday = Today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 
@@ -97,6 +101,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         private async Task<HttpResponseMessage> WhenJonasTriesToAsk(TeamUnderTest team, string workItem, string question)
             => await Comments(Jonas, team, workItem, question);
+
+        private async Task<HttpResponseMessage> WhenJonasTriesToVoteYesWithTheComment(TeamUnderTest team, string workItem, string comment)
+            => await Votes(Jonas, team, workItem, Answer.Yes, comment);
 
         private async Task WhenTheyVote(Voter voter, TeamUnderTest team, string workItem, Answer answer)
             => await HasVoted(voter, team, workItem, answer);
@@ -191,6 +198,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                     Assert.That(code, Is.EqualTo(expectedCode));
                 }
 
+                Assert.That(row.VoteCount, Is.Zero, "a refused vote must not be counted");
                 Assert.That(row.HasComments, Is.False, "a refused comment must leave no trace on the row");
                 Assert.That(row.HasOpenQuestion, Is.False);
             }
