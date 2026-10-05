@@ -111,7 +111,7 @@ describe("SizingLogService", () => {
 	});
 
 	// @us-12 @slice-12 @driving_port @contract-shape:bounded-change
-	it.skip("sends a question to the Work Item's comments with the voter's key", async () => {
+	it("sends a question to the Work Item's comments with the voter's key", async () => {
 		mockedAxios.post.mockResolvedValueOnce({ data: theRow });
 
 		await sizingLogService.addComment(
@@ -137,7 +137,7 @@ describe("SizingLogService", () => {
 	});
 
 	// @us-12 @slice-12 @driving_port @contract-shape:pure-function
-	it.skip("reads a Work Item's log with the voter's key", async () => {
+	it("reads a Work Item's log with the voter's key", async () => {
 		const log: ISizingLog = {
 			entries: [
 				{

@@ -71,17 +71,20 @@ export class SizingLogService
 		});
 	}
 
-	public addComment(
+	public async addComment(
 		teamId: number,
 		workItemReference: string,
 		comment: ISizingComment,
 		voterKey: string | null,
 	): Promise<IRefinementRow> {
-		return Promise.reject(
-			new Error(
-				`${NOT_YET_IMPLEMENTED}: comment on ${workItemReference} of Team ${teamId} (${comment.channel}, ${voterKey === null ? "no key" : "key"})`,
-			),
-		);
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.post<IRefinementRow>(
+				`${workItemAddress(teamId, workItemReference)}/comments`,
+				comment,
+				withVoterKey(voterKey),
+			);
+			return response.data;
+		});
 	}
 
 	public takeBackMyVote(
@@ -96,15 +99,17 @@ export class SizingLogService
 		);
 	}
 
-	public getLog(
+	public async getLog(
 		teamId: number,
 		workItemReference: string,
 		voterKey: string | null,
 	): Promise<ISizingLog> {
-		return Promise.reject(
-			new Error(
-				`${NOT_YET_IMPLEMENTED}: log of ${workItemReference} of Team ${teamId} (${voterKey === null ? "no key" : "key"})`,
-			),
-		);
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<ISizingLog>(
+				`${workItemAddress(teamId, workItemReference)}/log`,
+				withVoterKey(voterKey),
+			);
+			return response.data;
+		});
 	}
 }
