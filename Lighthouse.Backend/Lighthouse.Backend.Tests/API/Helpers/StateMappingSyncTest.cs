@@ -325,6 +325,44 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             Assert.That(result, Is.False);
         }
 
+        /// <summary>The likelihoods the range is read at say nothing about which Work Items the Team fetches.</summary>
+        [Test]
+        public void WorkItemRelatedSettingsChanged_BandChanged_ReturnsFalse()
+        {
+            var team = new Team
+            {
+                DataRetrievalValue = "project = X",
+                WorkTrackingSystemConnectionId = 1,
+                WorkItemTypes = ["Bug"],
+                ToDoStates = ["Backlog"],
+                DoingStates = ["Analysing"],
+                DoneStates = ["Closed"],
+                RefinementSettings = new RefinementSettings
+                {
+                    States = [new RefinementStateSetting { State = "Backlog" }],
+                },
+            };
+
+            var dto = new TeamSettingDto
+            {
+                DataRetrievalValue = "project = X",
+                WorkTrackingSystemConnectionId = 1,
+                WorkItemTypes = ["Bug"],
+                ToDoStates = ["Backlog"],
+                DoingStates = ["Analysing"],
+                DoneStates = ["Closed"],
+                Refinement = new RefinementSettingsDto
+                {
+                    States = [new RefinementStateSettingDto { State = "Backlog" }],
+                    Band = new RefinementBandDto { LowPercentile = 60, HighPercentile = 95 },
+                },
+            };
+
+            var result = team.WorkItemRelatedSettingsChanged(dto);
+
+            Assert.That(result, Is.False);
+        }
+
         /// <summary>A cadence naming no weekday is no cadence, so it is stored as none rather than as an empty one.</summary>
         [Test]
         public void SyncTeamWithTeamSettings_CadenceWithoutWeekdays_LeavesTheTeamWithoutACadence()

@@ -11,17 +11,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     /// </summary>
     public partial class Slice07BandPercentilesTest
     {
-        private static readonly BandReading ThirtyAndNinetyFive = new(30, 95);
+        private static readonly BandReading SixtyAndNinetyFive = new(60, 95);
 
         // --- Given ---
 
         private async Task<TeamUnderTest> GivenGravityRefinesWithoutABand()
             => await GravityRefinesSixWorkItems();
 
-        private async Task<TeamUnderTest> GivenGravityReadsItsRangeAt30And95()
+        private async Task<TeamUnderTest> GivenGravityReadsItsRangeAt60And95()
         {
             var gravity = await GivenGravityRefinesWithoutABand();
-            await TheAdminHasSetTheBand(gravity, 30, 95);
+            await TheAdminHasSetTheBand(gravity, 60, 95);
             return gravity;
         }
 
@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             => Assert.That(NeedIn(tab), Is.EqualTo(expected));
 
         /// <summary>The refusal names both values it judged, so the admin can see which pair was wrong.</summary>
-        private async Task ThenTheSaveIsRefusedNamingAndTheBandIsStill30And95(HttpResponseMessage refused, TeamUnderTest team, int lowPercentile, int highPercentile)
+        private async Task ThenTheSaveIsRefusedNamingAndTheBandIsStill60And95(HttpResponseMessage refused, TeamUnderTest team, int lowPercentile, int highPercentile)
         {
             var reason = await refused.Content.ReadAsStringAsync();
             var settings = await ReadTheTeamSettings(team);
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             {
                 Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
                 Assert.That(reason, Does.Contain($"{lowPercentile}").And.Contain($"{highPercentile}"), "the refusal must name both values");
-                Assert.That(BandIn(settings), Is.EqualTo(ThirtyAndNinetyFive), "the refused save changed the stored band");
+                Assert.That(BandIn(settings), Is.EqualTo(SixtyAndNinetyFive), "the refused save changed the stored band");
             }
         }
 
@@ -76,14 +76,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        private async Task ThenTheTeamStillHoldsItsWorkItemsAndReadsItsRangeAt30And95(TeamUnderTest team, int workItemsBefore)
+        private async Task ThenTheTeamStillHoldsItsWorkItemsAndReadsItsRangeAt60And95(TeamUnderTest team, int workItemsBefore)
         {
             var settings = await ReadTheTeamSettings(team);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(WorkItemsStoredFor(team), Is.EqualTo(workItemsBefore));
-                Assert.That(BandIn(settings), Is.EqualTo(ThirtyAndNinetyFive), "the band was saved, so the kept Work Items prove something");
+                Assert.That(BandIn(settings), Is.EqualTo(SixtyAndNinetyFive), "the band was saved, so the kept Work Items prove something");
             }
         }
     }

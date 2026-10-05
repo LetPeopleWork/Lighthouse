@@ -17,6 +17,7 @@ namespace Lighthouse.Backend.API.DTO
             Readiness = new ReadinessSettingDto(settings.Readiness);
             StageRules = new StageRulesDto(settings.StageRules);
             Cadence = settings.Cadence is null ? null : new RefinementCadenceDto(settings.Cadence);
+            Band = new RefinementBandDto(settings.Band);
         }
 
         public List<RefinementStateSettingDto> States { get; set; } = [];
@@ -29,6 +30,36 @@ namespace Lighthouse.Backend.API.DTO
 
         /// <summary>Null on a save leaves the cadence the Team already has.</summary>
         public RefinementCadenceDto? Cadence { get; set; }
+
+        /// <summary>Null on a save leaves the band the Team already has.</summary>
+        public RefinementBandDto? Band { get; set; }
+    }
+
+    public class RefinementBandDto
+    {
+        public RefinementBandDto()
+        {
+        }
+
+        public RefinementBandDto(RefinementBand band)
+        {
+            LowPercentile = band.LowPercentile;
+            HighPercentile = band.HighPercentile;
+        }
+
+        public int? LowPercentile { get; set; }
+
+        public int? HighPercentile { get; set; }
+
+        /// <summary>The band a save results in: an end the save leaves out keeps the stored one.</summary>
+        public RefinementBand AppliedTo(RefinementBand stored)
+        {
+            return new RefinementBand
+            {
+                LowPercentile = LowPercentile ?? stored.LowPercentile,
+                HighPercentile = HighPercentile ?? stored.HighPercentile,
+            };
+        }
     }
 
     public class RefinementCadenceDto

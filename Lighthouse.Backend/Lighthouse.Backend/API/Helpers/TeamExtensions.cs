@@ -140,6 +140,7 @@ namespace Lighthouse.Backend.API.Helpers
             SyncReadiness(settings, teamSetting.Refinement?.Readiness);
             SyncStageRules(settings, teamSetting.Refinement?.StageRules);
             SyncCadence(settings, teamSetting.Refinement?.Cadence);
+            SyncBand(settings, teamSetting.Refinement?.Band);
 
             team.RefinementSettings = settings;
         }
@@ -172,6 +173,16 @@ namespace Lighthouse.Backend.API.Helpers
             }
 
             settings.Cadence = cadence.ToCadence();
+        }
+
+        private static void SyncBand(RefinementSettings settings, RefinementBandDto? band)
+        {
+            if (band is null)
+            {
+                return;
+            }
+
+            settings.Band = band.AppliedTo(settings.Band);
         }
 
         private static List<string> TrimListEntries(List<string> list)
