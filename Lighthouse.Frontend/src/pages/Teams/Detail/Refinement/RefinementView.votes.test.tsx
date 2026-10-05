@@ -786,6 +786,12 @@ describe("The votes and comments of a Work Item", () => {
 					split: { yes: 3, yesBut: 0, no: 1 },
 				}),
 			]),
+			aSizingLogService({
+				getLog: vi.fn().mockResolvedValue({
+					entries: [],
+					voters: { yes: [JONAS, "Ana", "Mo"], yesBut: [], no: ["Lea"] },
+				}),
+			}),
 		);
 
 		expect(await theRowOf(ADVANCED_REPORTING)).toHaveTextContent("4 votes");

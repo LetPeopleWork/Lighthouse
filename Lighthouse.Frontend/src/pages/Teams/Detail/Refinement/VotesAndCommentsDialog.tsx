@@ -129,6 +129,12 @@ const SplitCount: React.FC<Readonly<SplitCountProps>> = ({
 	return <NamedCount wording={wording} voters={voters} />;
 };
 
+const countsOf = (voters: ISizingVoters): ISizingSplit => ({
+	yes: voters.yes.length,
+	yesBut: voters.yesBut.length,
+	no: voters.no.length,
+});
+
 const VoteSplit: React.FC<
 	Readonly<{ split: ISizingSplit; voters: ISizingVoters }>
 > = ({ split, voters }) => (
@@ -228,10 +234,13 @@ const VotesAndCommentsDialog: React.FC<
 		<DialogTitle>{`${workItem.referenceId} ${workItem.name} · Votes and comments`}</DialogTitle>
 		<DialogContent>
 			<Stack spacing={2} sx={{ alignItems: "flex-start" }}>
-				<VoteSplit
-					split={workItem.split ?? NO_SPLIT}
-					voters={log.status === "read" ? log.voters : NOBODY}
-				/>
+				{/* The row's count was read when the tab loaded; once the log is in, the counts come from the
+				    same reading as the names behind them, so the two can never disagree. */}
+				{log.status === "read" ? (
+					<VoteSplit split={countsOf(log.voters)} voters={log.voters} />
+				) : (
+					<VoteSplit split={workItem.split ?? NO_SPLIT} voters={NOBODY} />
+				)}
 				<WhatPeopleWrote log={log} describeFailure={describeFailure} />
 				<CommentBox
 					onAddComment={onAddComment}
