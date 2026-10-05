@@ -73,18 +73,36 @@ const VERDICT_WORDING: Record<RefinementVerdict, (facts: NeedFacts) => string> =
 export const describeNeed = (facts: NeedFacts): string =>
 	`${facts.readyCount} ready — ${VERDICT_WORDING[facts.verdict](facts)}`;
 
+/** The likelihoods the ends of the range are read at, with the word the Team uses for a Team. */
+export interface LikelihoodFacts {
+	lowPercentile: number;
+	highPercentile: number;
+	teamTerm: string;
+}
+
+/** "The Team pulls at least the low end with 50% likelihood, and more than the high end with only 15% likelihood." */
+export const describeLikelihoods = ({
+	lowPercentile,
+	highPercentile,
+	teamTerm,
+}: LikelihoodFacts): string => {
+	// A How Many forecast read at a percentile p is the count reached in 100 - p of every 100 runs.
+	const lowEndLikelihood = 100 - lowPercentile;
+	const highEndLikelihood = 100 - highPercentile;
+	return (
+		`The ${teamTerm} pulls at least the low end with ${lowEndLikelihood}% likelihood, ` +
+		`and more than the high end with only ${highEndLikelihood}% likelihood.`
+	);
+};
+
 /** Where the range comes from: the Team's Throughput, forecast over the working days until the next Refinement. */
 export const describeNeedOrigin = (facts: NeedOriginFacts): string => {
 	const workingDays =
 		facts.horizonWorkingDays === 1 ? "working day" : "working days";
 	const day = formatDayAndDate(facts.refinementDay);
-	// A How Many forecast read at a percentile p is the count reached in 100 - p of every 100 runs.
-	const lowEndLikelihood = 100 - facts.lowPercentile;
-	const highEndLikelihood = 100 - facts.highPercentile;
 	return (
 		`Based on ${facts.teamName}'s ${facts.throughputTerm}: a How Many forecast for the ${facts.horizonWorkingDays} ${workingDays} until ${day}. ` +
-		`The ${facts.teamTerm} pulls at least the low end with ${lowEndLikelihood}% likelihood, ` +
-		`and more than the high end with only ${highEndLikelihood}% likelihood. ` +
+		`${describeLikelihoods(facts)} ` +
 		"Same forecast as on the Forecasts page."
 	);
 };

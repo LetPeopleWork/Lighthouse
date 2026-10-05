@@ -537,7 +537,6 @@ describe("The Refinement cadence in the Refinement section of a Team's settings"
 	});
 });
 
-// The band's labels and messages wait for the maintainer's sketch; the tests hold the behaviour.
 const LOW_END = /^Low end likelihood/;
 const HIGH_END = /^High end likelihood/;
 
@@ -555,7 +554,7 @@ describe("The band in the Refinement section of a Team's settings", () => {
 	});
 
 	// @us-07 @slice-07 @driving_port @contract-shape:pure-function
-	it.skip("shows the range read at 50% and 85% until the admin changes it", async () => {
+	it("shows the range read at 50% and 85% until the admin changes it", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
 		expect(
@@ -568,7 +567,7 @@ describe("The band in the Refinement section of a Team's settings", () => {
 	});
 
 	// @us-07 @slice-07 @driving_port @contract-shape:bounded-change
-	it.skip("saves a changed high end with the low end as it was", async () => {
+	it("saves a changed high end with the low end as it was", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
 		await replaceTheLikelihood(HIGH_END, "95");
