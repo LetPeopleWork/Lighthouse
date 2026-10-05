@@ -2919,7 +2919,8 @@ open for slice 05; the three sentences, the single MUI Alert and "above as loud 
   neutral info severity and icon: there is nothing for the Team to act on, it only has no number yet.
 - **An ⓘ at the end of the alert says where the range comes from** (proposed during DELIVER, accepted "ok fair"),
   reusing the tab's `InfoTooltip`: "Based on Team Gravity's Throughput: a How Many forecast for the 6 working days
-  until Thu 8 Oct. The low end is what the Team pulls with 50% likelihood; it pulls more than the high end with only
-  15% likelihood. Same forecast as on the Forecasts page." Built from facts already on the wire (percentiles,
+  until Thu 8 Oct. The Team pulls at least the low end with 50% likelihood, and more than the high end with only
+  15% likelihood. Same forecast as on the Forecasts page." (corrected 2026-10-05 after review: the low end is a
+  floor reached with (100 − low)% likelihood; the default reads the same) Built from facts already on the wire (percentiles,
   horizon, date); Team and Work Item words through Terminology. Only on the three verdict states, not on the
   minimum-data message.

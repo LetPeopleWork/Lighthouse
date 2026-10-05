@@ -74,11 +74,13 @@ export const describeNeedOrigin = (facts: NeedOriginFacts): string => {
 	const workingDays =
 		facts.horizonWorkingDays === 1 ? "working day" : "working days";
 	const day = formatDayAndDate(facts.refinementDay);
+	// A How Many forecast read at a percentile p is the count reached in 100 - p of every 100 runs.
+	const lowEndLikelihood = 100 - facts.lowPercentile;
 	const highEndLikelihood = 100 - facts.highPercentile;
 	return (
 		`Based on ${facts.teamName}'s ${facts.throughputTerm}: a How Many forecast for the ${facts.horizonWorkingDays} ${workingDays} until ${day}. ` +
-		`The low end is what the ${facts.teamTerm} pulls with ${facts.lowPercentile}% likelihood; ` +
-		`it pulls more than the high end with only ${highEndLikelihood}% likelihood. ` +
+		`The ${facts.teamTerm} pulls at least the low end with ${lowEndLikelihood}% likelihood, ` +
+		`and more than the high end with only ${highEndLikelihood}% likelihood. ` +
 		"Same forecast as on the Forecasts page."
 	);
 };

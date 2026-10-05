@@ -111,7 +111,7 @@ describe("describeNeedOrigin", () => {
 			85,
 			"Team",
 			"Throughput",
-			"Based on Team Gravity's Throughput: a How Many forecast for the 6 working days until Thu 8 Oct. The low end is what the Team pulls with 50% likelihood; it pulls more than the high end with only 15% likelihood. Same forecast as on the Forecasts page.",
+			"Based on Team Gravity's Throughput: a How Many forecast for the 6 working days until Thu 8 Oct. The Team pulls at least the low end with 50% likelihood, and more than the high end with only 15% likelihood. Same forecast as on the Forecasts page.",
 		],
 		[
 			1,
@@ -119,7 +119,7 @@ describe("describeNeedOrigin", () => {
 			85,
 			"Team",
 			"Throughput",
-			"Based on Team Gravity's Throughput: a How Many forecast for the 1 working day until Thu 8 Oct. The low end is what the Team pulls with 50% likelihood; it pulls more than the high end with only 15% likelihood. Same forecast as on the Forecasts page.",
+			"Based on Team Gravity's Throughput: a How Many forecast for the 1 working day until Thu 8 Oct. The Team pulls at least the low end with 50% likelihood, and more than the high end with only 15% likelihood. Same forecast as on the Forecasts page.",
 		],
 		[
 			4,
@@ -127,10 +127,10 @@ describe("describeNeedOrigin", () => {
 			95,
 			"Squad",
 			"Velocity",
-			"Based on Team Gravity's Velocity: a How Many forecast for the 4 working days until Thu 8 Oct. The low end is what the Squad pulls with 30% likelihood; it pulls more than the high end with only 5% likelihood. Same forecast as on the Forecasts page.",
+			"Based on Team Gravity's Velocity: a How Many forecast for the 4 working days until Thu 8 Oct. The Squad pulls at least the low end with 70% likelihood, and more than the high end with only 5% likelihood. Same forecast as on the Forecasts page.",
 		],
 	])(
-		"over %s working days at %s%% and %s%% for a %s with %s",
+		"over %s working days, read at %s and %s percent, for a %s with %s",
 		(horizonWorkingDays, lowPercentile, highPercentile, teamTerm, throughputTerm, expected) => {
 			expect(
 				describeNeedOrigin({
