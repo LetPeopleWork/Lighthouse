@@ -3000,3 +3000,15 @@ decision — comments instead of a condition prompt (2026-10-05)".**
   a vote optional (the command line and assistants may omit it). Yes and No stay one click.
 - **Comments cannot be deleted, and none is planned.** The log is append-only on purpose; a withdrawal would need its
   own decision about who may withdraw what with sign-in off. No Story is raised.
+
+## Wave: DELIVER / [REF] Maintainer decision — taking a vote back by clicking it again (2026-10-05)
+
+Sketched before slice 16 (#6154) was built and answered by the maintainer on 2026-10-05, after the Votes dialog lost its
+vote trail. **Supersedes the "Take back my vote" button in the Votes and comments dialog (2026-10-04) and the log line
+"<name> took back their vote".**
+
+- **Clicking your own pressed answer in the grid takes the vote back**, like un-toggling: the answer is no longer
+  pressed, the count, the split and its hover names and the readiness move to how the row now stands. A pressed answer
+  carries the tooltip "Click again to take back your vote". There is no button in the dialog.
+- Nothing is added to the dialog's list of what people wrote; the API log still records the take-back.
+- A browser without a name has no vote to take back, so it never meets "Who is voting?" for this.

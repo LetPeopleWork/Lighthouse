@@ -2558,7 +2558,7 @@
         },
         {
           "id": "16-04",
-          "name": "'Take back my vote' in Votes and comments returns the row to how it now stands, and the log says '<name> took back their vote'",
+          "name": "Clicking your own pressed answer takes the vote back and returns the row to how it now stands",
           "description": "SizingLogService.takeBackMyVote sends DELETE …/votes/mine with the key header. 'Votes and comments' offers 'Take back my vote' only where the reader has a vote; taking back shows the row as the server answered and the button goes; a failure keeps the vote in place and says why. A Revocation entry reads '<name> took back their vote'. SizingLogService loses its scaffold marker.",
           "agent": "nw-software-crafter",
           "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.votes.test.tsx",
@@ -2579,24 +2579,24 @@
           ],
           "criteria": [
             "takeBackMyVote(7, 'GR-073', key) deletes '/teams/7/refinement/work-items/GR-073/votes/mine' with the key header and returns the row",
-            "'Take back my vote' appears on GR-073 (myVote 'Yes') and not on GR-051 (no vote of the reader's)",
-            "Taking back calls takeBackMyVote(7, 'GR-073', key); the row reads 'No votes' and the button is gone",
-            "A rejected take-back shows the alert; the row still reads '1 vote' with Yes pressed",
-            "A Revocation by Jonas Weber reads 'Jonas Weber took back their vote'",
+            "On GR-073 (myVote 'Yes') the pressed Yes carries the tooltip 'Click again to take back your vote'; clicking it calls takeBackMyVote(7, 'GR-073', key), never castVote; the row then reads 'No votes' and no answer is pressed",
+            "A rejected take-back shows the page's error; the row still reads '1 vote' with Yes pressed",
+            "Clicking an answer that is not pressed still casts that vote (Yes and No one click, 'Yes, if…' through its condition dialog)",
+            "The Votes and comments dialog shows no take-back button and adds nothing to its list for a take-back",
             "__SCAFFOLD__ is gone from SizingLogService.ts (grep for other readers of it first); pnpm test green; pnpm build clean"
           ],
           "files_to_modify": [
             "Lighthouse.Frontend/src/services/Api/SizingLogService.ts",
-            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/VotesAndCommentsDialog.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/VoteControl.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/useVoteCasting.ts",
             "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.tsx",
             "Lighthouse.Frontend/src/services/Api/SizingLogService.test.ts",
-            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.votes.test.tsx",
-            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.comments.test.tsx"
+            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.votes.test.tsx"
           ],
           "dependencies": [
             "16-03"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: React/RTL and Vitest example-based assertions over exact copy. UI SKETCH: approved by the maintainer 2026-10-04 ('Take back my vote' in the Votes and comments dialog, Close beside it); build exactly this, show nothing new. Taking back is not a vote: it reports no usage-data event. The Revocation wording joins the exhaustive entry-kind map from 12-09. With the last method real, delete the scaffold's NOT_YET_IMPLEMENTED constant and the __SCAFFOLD__ export (grep the tree for __SCAFFOLD__ readers before deleting). No code comment may cite an internal id. Wire enums are string unions. Pre-apply docs/ci-learnings.md; prebuild runs biome check --write - review its rewrites. Commit: feat(refinement): take back your vote from the Votes dialog (story 6154)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/RTL and Vitest example-based assertions over exact copy. UI SKETCH: approved by the maintainer 2026-10-05 (feature-delta 'Maintainer decision — taking a vote back by clicking it again'): un-toggling the pressed answer in VoteControl takes the vote back; tooltip 'Click again to take back your vote' on the pressed answer; no dialog button, no list entry. Rewrite the DISTILL scenarios that pinned the dialog button and the '<name> took back their vote' line to this, keeping their intent. Taking back is not a vote: it reports no usage-data event. With the last method real, delete the scaffold's NOT_YET_IMPLEMENTED constant and the __SCAFFOLD__ export (grep the tree for __SCAFFOLD__ readers before deleting). No code comment may cite an internal id. Wire enums are string unions. Pre-apply docs/ci-learnings.md; prebuild runs biome check --write - review its rewrites. Commit: feat(refinement): click your answer again to take your vote back (story 6154)."
         }
       ]
     },
