@@ -546,6 +546,14 @@ const replaceTheLikelihood = async (label: RegExp, value: string) => {
 	await userEvent.type(field, value);
 };
 
+// What the info icon beside the band's heading says when the admin points at it.
+const theBandExplanation = async () => {
+	await userEvent.hover(
+		await screen.findByRole("button", { name: /^Based on the Team's / }),
+	);
+	return (await screen.findByRole("tooltip")).textContent ?? "";
+};
+
 describe("The band in the Refinement section of a Team's settings", () => {
 	beforeEach(() => {
 		terms.current = { ...defaultTerms };
@@ -624,6 +632,90 @@ describe("The band in the Refinement section of a Team's settings", () => {
 			expect(saveTeamSettings).not.toHaveBeenCalled();
 		},
 	);
+
+	// @us-07 @slice-07 @error @contract-shape:unbounded-preservation
+	it("refuses a decimal likelihood instead of saving it rounded, and saves nothing", async () => {
+		await renderGravitysSettingsForm(gravitysSettings());
+
+		await replaceTheLikelihood(HIGH_END, "85.5");
+		await pastTheAutosaveDelay();
+
+		const field = screen.getByRole("spinbutton", { name: HIGH_END });
+		expect(field).toHaveAttribute("aria-invalid", "true");
+		expect(field).toHaveAccessibleDescription("Between 50% and 95%.");
+		expect(saveTeamSettings).not.toHaveBeenCalled();
+	});
+
+	// @us-07 @slice-07 @error @a11y @contract-shape:unbounded-preservation
+	it("marks the high end being typed in when it falls below the low end, and explains why there", async () => {
+		await renderGravitysSettingsForm(
+			gravitysSettings({ band: { lowPercentile: 60, highPercentile: 85 } }),
+		);
+
+		await replaceTheLikelihood(HIGH_END, "55");
+
+		const inverted = "The low end (60%) must be below the high end (55%).";
+		const high = screen.getByRole("spinbutton", { name: HIGH_END });
+		expect(high).toHaveAttribute("aria-invalid", "true");
+		expect(high).toHaveAccessibleDescription(inverted);
+		const low = screen.getByRole("spinbutton", { name: LOW_END });
+		expect(low).toHaveAttribute("aria-invalid", "true");
+		expect(low).toHaveAccessibleDescription(inverted);
+		expect(screen.getAllByText(inverted)).toHaveLength(1);
+	});
+
+	// @us-07 @slice-07 @driving_port @contract-shape:pure-function
+	it("heads the band with the Team's words for work items and Refinement", async () => {
+		terms.current = {
+			...defaultTerms,
+			[TERMINOLOGY_KEYS.WORK_ITEMS]: "Tickets",
+			[TERMINOLOGY_KEYS.REFINEMENT]: "Grooming",
+		};
+		await renderGravitysSettingsForm(gravitysSettings());
+
+		expect(
+			await screen.findByText("Tickets needed before the next Grooming"),
+		).toBeVisible();
+	});
+
+	// @us-07 @slice-07 @driving_port @contract-shape:pure-function
+	it("explains the high end at 95 as reached with only 5% likelihood", async () => {
+		await renderGravitysSettingsForm(gravitysSettings());
+
+		await replaceTheLikelihood(HIGH_END, "95");
+
+		expect(await theBandExplanation()).toContain(
+			"The Team pulls at least the low end with 50% likelihood, " +
+				"and more than the high end with only 5% likelihood.",
+		);
+	});
+
+	// @us-07 @slice-07 @error @contract-shape:unbounded-preservation
+	it("keeps explaining the last valid band while the low end is cleared", async () => {
+		await renderGravitysSettingsForm(gravitysSettings());
+
+		await userEvent.clear(
+			await screen.findByRole("spinbutton", { name: LOW_END }),
+		);
+
+		const explanation = await theBandExplanation();
+		expect(explanation).toContain(
+			"low end with 50% likelihood, and more than the high end with only 15% likelihood.",
+		);
+		expect(explanation).not.toContain("NaN");
+	});
+
+	// @us-07 @slice-07 @driving_port @contract-shape:bounded-change
+	it("explains the band as last edited, not as it was when the form opened", async () => {
+		await renderGravitysSettingsForm(gravitysSettings());
+
+		await replaceTheLikelihood(HIGH_END, "90");
+		const afterTheEdit = "more than the high end with only 10% likelihood.";
+		expect(await theBandExplanation()).toContain(afterTheEdit);
+
+		await userEvent.clear(screen.getByRole("spinbutton", { name: LOW_END }));
+		expect(await theBandExplanation()).toContain(afterTheEdit);
+	});
 });
 
 describe("What holds back the save of the Refinement settings", () => {
@@ -651,6 +743,15 @@ describe("What holds back the save of the Refinement settings", () => {
 				"Grooming",
 			),
 		).toEqual(["Complete the stage rules", "Complete the Grooming cadence"]);
+	});
+
+	it("names likelihoods with the low end not below the high end", () => {
+		expect(
+			refinementSettingsBlockers(
+				{ states: [], band: { lowPercentile: 90, highPercentile: 85 } },
+				"Grooming",
+			),
+		).toEqual(["Correct the low and high end likelihoods"]);
 	});
 });
 

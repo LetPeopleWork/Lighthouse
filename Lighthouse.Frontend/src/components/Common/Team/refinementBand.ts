@@ -18,18 +18,23 @@ const isInRange = (likelihood: number): boolean =>
 	likelihood >= LOWEST_LIKELIHOOD &&
 	likelihood <= HIGHEST_LIKELIHOOD;
 
-// The same rule the server enforces, so a save it would refuse is never sent.
-export const bandErrors = ({
+/** Both ends are valid likelihoods, but the low end is not below the high end. */
+export const isBandInverted = ({
 	lowPercentile,
 	highPercentile,
-}: IRefinementBandSetting): BandErrors => {
-	const lowInRange = isInRange(lowPercentile);
+}: IRefinementBandSetting): boolean =>
+	isInRange(lowPercentile) &&
+	isInRange(highPercentile) &&
+	lowPercentile >= highPercentile;
+
+// The same rule the server enforces, so a save it would refuse is never sent.
+export const bandErrors = (band: IRefinementBandSetting): BandErrors => {
+	const { lowPercentile, highPercentile } = band;
 	const highInRange = isInRange(highPercentile);
-	const inverted = lowInRange && highInRange && lowPercentile >= highPercentile;
 	let lowError: string | null = null;
-	if (!lowInRange) {
+	if (!isInRange(lowPercentile)) {
 		lowError = OUT_OF_RANGE_ERROR;
-	} else if (inverted) {
+	} else if (isBandInverted(band)) {
 		lowError = `The low end (${lowPercentile}%) must be below the high end (${highPercentile}%).`;
 	}
 	return {
