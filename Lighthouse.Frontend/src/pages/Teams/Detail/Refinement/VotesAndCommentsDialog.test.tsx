@@ -1,7 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IRefinementRow } from "../../../../models/Refinement/Refinement";
+import type { SizingLogState } from "./useSizingLog";
 import VotesAndCommentsDialog from "./VotesAndCommentsDialog";
+
+const AN_EMPTY_LOG: SizingLogState = { status: "read", entries: [] };
 
 const aWorkItem = (
 	overrides: Partial<IRefinementRow> = {},
@@ -21,6 +24,7 @@ describe("the votes and comments of one Work Item", () => {
 		render(
 			<VotesAndCommentsDialog
 				workItem={aWorkItem({ split: undefined })}
+				log={AN_EMPTY_LOG}
 				voterName={null}
 				onChangeName={vi.fn()}
 				onAddComment={vi.fn()}
@@ -37,6 +41,7 @@ describe("the votes and comments of one Work Item", () => {
 		render(
 			<VotesAndCommentsDialog
 				workItem={aWorkItem({ split: { yes: 1, yesBut: 0, no: 0 } })}
+				log={AN_EMPTY_LOG}
 				voterName={null}
 				onChangeName={vi.fn()}
 				onAddComment={vi.fn()}

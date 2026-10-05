@@ -23,8 +23,8 @@ import {
  * records in one click like Yes and No; its condition is a comment like any other. Anybody adds a comment from a
  * Work Item's votes and comments, without voting; from somebody without a vote it is an open question, which marks
  * the Work Item until they vote. Each Work Item's log
- * reads oldest first and says who said what, on which day and, for the command line or an assistant,
- * through which. Everybody reads it, voted or not.
+ * reads oldest first and says who said what and on which day, never where it came from. Everybody reads it,
+ * voted or not.
  */
 
 const { terms, mockUseLicenseRestrictions, reporter } = vi.hoisted(() => ({
@@ -238,7 +238,7 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 	});
 
 	// @us-12 @slice-12 @driving_port @contract-shape:pure-function
-	it.skip("opens a Work Item's log oldest first, naming who said what and on which day", async () => {
+	it("opens a Work Item's log oldest first, naming who said what and on which day", async () => {
 		const key = aBrowserThatVotedBefore(ANA);
 		const log: ISizingLog = {
 			entries: [
@@ -274,18 +274,19 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 			key,
 		);
 		expect(entries).toHaveLength(3);
-		expect(entries[0]).toHaveTextContent(JONAS);
-		expect(entries[0]).toHaveTextContent("Yes");
+		expect(entries[0]).toHaveTextContent(`${JONAS} voted Yes`);
 		expect(entries[0]).toHaveTextContent("Wed 7 Oct");
-		expect(entries[1]).toHaveTextContent(ANA);
-		expect(entries[1]).toHaveTextContent(YES_IF);
+		expect(entries[0]).not.toHaveTextContent(/open question/i);
+		expect(entries[1]).toHaveTextContent(`${ANA} voted ${YES_IF}`);
 		expect(entries[1]).toHaveTextContent(CONDITION);
+		expect(entries[1]).not.toHaveTextContent(/open question/i);
 		expect(entries[2]).toHaveTextContent("Mo Okafor");
 		expect(entries[2]).toHaveTextContent(QUESTION);
+		expect(entries[2]).toHaveTextContent(/open question/i);
 	});
 
 	// @us-12 @slice-12 @error @contract-shape:pure-function
-	it.skip("shows a comment as the text it is, never as markup", async () => {
+	it("shows a comment as the text it is, never as markup", async () => {
 		aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService({
 			getLog: vi.fn().mockResolvedValue({
@@ -310,7 +311,7 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 	});
 
 	// @us-12 @us-17b @slice-12 @contract-shape:pure-function
-	it.skip("says when a vote came through the command line or an assistant", async () => {
+	it("never says where an entry came from", async () => {
 		aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService({
 			getLog: vi.fn().mockResolvedValue({
@@ -330,9 +331,10 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 			await openTheLogOf(user, ADVANCED_REPORTING),
 		).findAllByRole("listitem");
 
-		expect(entries[0]).toHaveTextContent("via the command line");
-		expect(entries[1]).toHaveTextContent("via an assistant");
-		expect(entries[2]).not.toHaveTextContent(/via /);
+		expect(entries).toHaveLength(3);
+		for (const entry of entries) {
+			expect(entry).not.toHaveTextContent(/via /);
+		}
 	});
 
 	// @us-12 @us-16 @slice-16 @contract-shape:pure-function
@@ -359,7 +361,7 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 	});
 
 	// @us-11 @us-12 @slice-12 @boundary @contract-shape:pure-function
-	it.skip("lets a reader who never voted read how the votes split and every comment", async () => {
+	it("lets a reader who never voted read how the votes split and every comment", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const sizingLogService = aSizingLogService({
 			getLog: vi.fn().mockResolvedValue({
@@ -396,8 +398,24 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		expect(entries[2]).toHaveTextContent(QUESTION);
 	});
 
+	// @us-12 @slice-12 @boundary @contract-shape:pure-function
+	it("says so when a Work Item's log is empty", async () => {
+		aBrowserThatVotedBefore(ANA);
+		const { user } = renderTheRefinementTab(
+			advancedReportingWithComments(),
+			aSizingLogService(),
+		);
+
+		const dialog = await openTheLogOf(user, ADVANCED_REPORTING);
+
+		expect(
+			await within(dialog).findByText("No votes or comments yet."),
+		).toBeVisible();
+		expect(within(dialog).queryAllByRole("listitem")).toHaveLength(0);
+	});
+
 	// @us-12 @slice-12 @error @contract-shape:pure-function
-	it.skip("says why when a Work Item's log cannot be read", async () => {
+	it("says why when a Work Item's log cannot be read", async () => {
 		aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService({
 			getLog: vi

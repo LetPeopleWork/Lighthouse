@@ -16,6 +16,7 @@ import RefinementGrid from "./RefinementGrid";
 import { describeStageBreakdown } from "./stageBreakdown";
 import { useCommentAdding } from "./useCommentAdding";
 import { useRefinement } from "./useRefinement";
+import { useSizingLog } from "./useSizingLog";
 import { useVerdictShownReporter } from "./useVerdictShownReporter";
 import { useVoteCasting } from "./useVoteCasting";
 import VoterNamePrompt from "./VoterNamePrompt";
@@ -76,6 +77,11 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 	const [isChangingName, setIsChangingName] = useState(false);
 	const voterIdentity = useVoterIdentity(refinement?.voterIdentity);
 	const { changeableName, declareName } = voterIdentity;
+	const { log, readAgain } = useSizingLog(
+		team.id,
+		votesShownFor,
+		voterIdentity.voter?.key ?? null,
+	);
 
 	const showVoteRefusal = useCallback(
 		(error: unknown) => showError(describeVoteRefusal(error, getTerm)),
@@ -204,13 +210,17 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 			{votesShownOn !== undefined && (
 				<VotesAndCommentsDialog
 					workItem={votesShownOn}
+					log={log}
 					voterName={changeableName}
 					onChangeName={() => setIsChangingName(true)}
 					onAddComment={(comment, onSent) =>
 						addComment({
 							referenceId: votesShownOn.referenceId,
 							comment,
-							onSent,
+							onSent: () => {
+								onSent();
+								readAgain();
+							},
 						})
 					}
 					onClose={() => setVotesShownFor(null)}

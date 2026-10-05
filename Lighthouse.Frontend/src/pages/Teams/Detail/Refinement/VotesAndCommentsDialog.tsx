@@ -1,22 +1,36 @@
+import HelpOutlineIcon from "@mui/icons-material/HelpOutlineOutlined";
 import {
+	Alert,
 	Button,
 	Dialog,
 	DialogActions,
 	DialogContent,
 	DialogTitle,
+	List,
+	ListItem,
 	Stack,
 	TextField,
 	Typography,
 } from "@mui/material";
 import type React from "react";
 import { useState } from "react";
-import type { IRefinementRow } from "../../../../models/Refinement/Refinement";
+import type {
+	IRefinementRow,
+	ISizingLogEntry,
+} from "../../../../models/Refinement/Refinement";
+import {
+	describeLogDay,
+	describeLogEntry,
+	findOpenQuestions,
+} from "./sizingLogWording";
+import type { SizingLogState } from "./useSizingLog";
 import { describeSplit } from "./voteWording";
 
 const NO_SPLIT = { yes: 0, yesBut: 0, no: 0 };
 
 interface VotesAndCommentsDialogProps {
 	workItem: IRefinementRow;
+	log: SizingLogState;
 	/** The name this browser votes under, or null when there is none to change (sign-in, or no vote yet). */
 	voterName: string | null;
 	onChangeName: () => void;
@@ -40,7 +54,7 @@ const CommentBox: React.FC<
 
 	const comment = draft.trim();
 	return (
-		<Stack spacing={1} sx={{ alignItems: "flex-end" }}>
+		<Stack spacing={1} sx={{ alignItems: "flex-end", width: "100%" }}>
 			<TextField
 				label="Comment"
 				value={draft}
@@ -62,15 +76,89 @@ const CommentBox: React.FC<
 	);
 };
 
-/** How the votes on one Work Item split, shown to every reader whether they voted or not. */
+const OpenQuestionMarker: React.FC = () => (
+	<Stack
+		component="span"
+		direction="row"
+		spacing={0.5}
+		sx={{ alignItems: "center", color: "warning.main" }}
+	>
+		<HelpOutlineIcon fontSize="small" />
+		<Typography component="span" variant="body2">
+			open question
+		</Typography>
+	</Stack>
+);
+
+const LogEntry: React.FC<
+	Readonly<{ entry: ISizingLogEntry; isOpenQuestion: boolean }>
+> = ({ entry, isOpenQuestion }) => (
+	<ListItem disableGutters sx={{ display: "block" }}>
+		<Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+			<Typography sx={{ fontWeight: 500 }}>
+				{describeLogEntry(entry)}
+			</Typography>
+			{isOpenQuestion && <OpenQuestionMarker />}
+			<Typography
+				variant="body2"
+				color="text.secondary"
+				sx={{ flexGrow: 1, textAlign: "right" }}
+			>
+				{describeLogDay(entry)}
+			</Typography>
+		</Stack>
+		{entry.comment !== null && (
+			<Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+				{entry.comment}
+			</Typography>
+		)}
+	</ListItem>
+);
+
+/** Comments are always shown as the plain text they are, never interpreted as markup. */
+const SizingLog: React.FC<Readonly<{ log: SizingLogState }>> = ({ log }) => {
+	if (log.status === "reading") {
+		return null;
+	}
+
+	if (log.status === "failed") {
+		return (
+			<Alert severity="error" sx={{ width: "100%" }}>
+				{log.message}
+			</Alert>
+		);
+	}
+
+	if (log.entries.length === 0) {
+		return (
+			<Typography color="text.secondary">No votes or comments yet.</Typography>
+		);
+	}
+
+	const openQuestions = findOpenQuestions(log.entries);
+	return (
+		<List dense disablePadding sx={{ width: "100%" }}>
+			{log.entries.map((entry, index) => (
+				<LogEntry
+					key={`${entry.kind}-${entry.voterName}-${entry.recordedAt}`}
+					entry={entry}
+					isOpenQuestion={openQuestions.has(index)}
+				/>
+			))}
+		</List>
+	);
+};
+
+/** How the votes on one Work Item split and what was said about it, shown to every reader whether they voted or not. */
 const VotesAndCommentsDialog: React.FC<
 	Readonly<VotesAndCommentsDialogProps>
-> = ({ workItem, voterName, onChangeName, onAddComment, onClose }) => (
+> = ({ workItem, log, voterName, onChangeName, onAddComment, onClose }) => (
 	<Dialog open onClose={onClose} maxWidth="sm" fullWidth>
 		<DialogTitle>{`${workItem.referenceId} ${workItem.name} · Votes and comments`}</DialogTitle>
 		<DialogContent>
 			<Stack spacing={2} sx={{ alignItems: "flex-start" }}>
 				<Typography>{describeSplit(workItem.split ?? NO_SPLIT)}</Typography>
+				<SizingLog log={log} />
 				<CommentBox onAddComment={onAddComment} />
 			</Stack>
 		</DialogContent>
