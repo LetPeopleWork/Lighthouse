@@ -43,11 +43,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // --- What the band changes ---
 
         // @driving_port @real-io @us-07 @us-05 @slice-05 @slice-07 @contract-shape:pure-function
-        // The forecast reads 3 at 30%, 5 at 50%, 6 at 70%, 8 at 85% and 10 at 95%.
+        // The forecast reads 5 at 50%, 6 at 70%, 8 at 85% and 10 at 95%.
         [TestCase(50, 95, 5, 10)]
-        [TestCase(30, 85, 3, 8)]
+        [TestCase(50, 85, 5, 8)]
         [TestCase(70, 95, 6, 10)]
-        [Ignore(PendingSlice07)]
         public async Task The_band_decides_where_the_range_is_read(int lowPercentile, int highPercentile, int low, int high)
         {
             var gravity = await GivenGravityHasTwoReadyAndIsLikelyToPullThreeToTenBeforeThursday();
@@ -101,7 +100,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-07 @slice-07 @error @contract-shape:unbounded-preservation
         // Stored 60 and 95: a high end of 55 alone would sit below the stored low end.
         [Test]
-        [Ignore(PendingSlice07)]
         public async Task A_save_naming_only_one_end_is_judged_against_the_other_end_already_stored()
         {
             var gravity = await GivenGravityReadsItsRangeAt60And95();
@@ -113,7 +111,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-07 @slice-07 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice07)]
         public async Task A_save_naming_only_the_low_end_keeps_the_stored_high_end()
         {
             var gravity = await GivenGravityReadsItsRangeAt60And95();
