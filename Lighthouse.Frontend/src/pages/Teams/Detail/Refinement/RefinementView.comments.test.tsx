@@ -810,14 +810,14 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 	});
 
 	// @us-12 @us-16 @slice-16 @contract-shape:pure-function
-	it.skip("shows a vote that was taken back as taken back", async () => {
+	it.skip("a taken-back vote adds nothing to what people wrote", async () => {
 		aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService({
 			getLog: vi
 				.fn()
 				.mockResolvedValue(
 					aLog([
-						anEntry({ voterName: JONAS, answer: "Yes" }),
+						anEntry({ voterName: JONAS, answer: "YesBut", comment: CONDITION }),
 						anEntry({ voterName: JONAS, kind: "Revocation", answer: null }),
 					]),
 				),
@@ -827,11 +827,12 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 			sizingLogService,
 		);
 
-		const entries = await within(
-			await openTheLogOf(user, ADVANCED_REPORTING),
-		).findAllByRole("listitem");
+		const dialog = await openTheLogOf(user, ADVANCED_REPORTING);
+		const entries = await within(dialog).findAllByRole("listitem");
 
-		expect(entries[1]).toHaveTextContent(`${JONAS} took back their vote`);
+		expect(entries).toHaveLength(1);
+		expect(entries[0]).toHaveTextContent(CONDITION);
+		expect(dialog).not.toHaveTextContent(/took back/i);
 	});
 
 	// @us-11 @us-12 @slice-12 @boundary @contract-shape:pure-function
