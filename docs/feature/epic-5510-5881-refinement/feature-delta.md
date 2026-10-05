@@ -2936,3 +2936,27 @@ all-needed sentence say "the next Refinement" instead of repeating the date**: "
 not needed before then" and "All 6 Work Items in Refinement are needed before the next Refinement." This supersedes
 the wording in "Maintainer decision — the E2 UI, and slice 08 folded into 03 (2026-10-04)" for slice 06; the
 "Refinement" word goes through Terminology like every other renameable term.
+
+## Wave: DELIVER / [REF] Maintainer decision — comments instead of a condition prompt (2026-10-05)
+
+Sketched before slice 12 (#6150) was built and answered by the maintainer on 2026-10-05. **Supersedes the "Yes, if…
+opens a dialog with an optional Condition textbox" and the "Ask a question" wording of "Maintainer decision — the
+voting UI, and slice 14 dropped (2026-10-04)", and the channel wording ("via the command line" / "via an assistant")
+in the log.**
+
+- **"Yes, if…" records in one click, like Yes and No.** There is no Condition dialog. A condition, a reason or a
+  question is a comment, and every comment is treated alike: "a condition is just a comment".
+- **"Votes and comments" has one "Add a comment" button** that opens a "Comment" box with Send, for everybody. A
+  comment from somebody who has no current vote is an **open question** (❓ in the grid) until they vote; from
+  somebody who has voted it is a plain comment.
+- **The log lists votes and comments in time order** — "Jonas Weber voted Yes · Wed 7 Oct", "Ana Lima · Wed 7 Oct"
+  with her comment beneath as plain text, an open question marked as such. A vote that arrives with a comment (the
+  command line and the assistant can still send one) shows as the vote with its comment beneath.
+- **The log does not say where an entry came from.** The channel stays on the wire and in the usage counts; the dialog
+  never shows it.
+- **Approved from the same sketches:** the Votes cell keeps "3 votes" and adds two small icons, a comment icon
+  ("Comments") and a warning-coloured question icon ("Open question"), both in the button's accessible name; the
+  column stays 120 px. The dialog shows the split on top, the log beneath, "Add a comment" under the log, and the
+  footer "Voting as … · Change your name" with Close; an empty log reads "No votes or comments yet."
+- The backend is unchanged by this: a vote may still carry a comment (the API, CLI and assistant use it), the open
+  question is still "the latest entry is a comment and that voter has no current vote".

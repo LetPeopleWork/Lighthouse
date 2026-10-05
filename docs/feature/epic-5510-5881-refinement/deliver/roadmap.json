@@ -841,7 +841,7 @@
         {
           "id": "02-10",
           "name": "The refinement answer carries each Work Item's parent, not its age or category",
-          "description": "Maintainer review of slice 02 (2026-10-03), sketch approved: heading + shared DataGrid (DataGridBase + toolbar search/filter/columns), columns '{Work Item} Name' (id+name one link, the Feature list's name cell), 'Parent' (the Feature list's ParentWorkItemCell, '\u2014' when none), 'State'; rows open in backlog order, header sorting allowed like the other grids; no age, no category, also not in the API. Backend half: rows become { referenceId, name, url, state, parentReferenceId }; workItemAge and stateCategory leave the wire.",
+          "description": "Maintainer review of slice 02 (2026-10-03), sketch approved: heading + shared DataGrid (DataGridBase + toolbar search/filter/columns), columns '{Work Item} Name' (id+name one link, the Feature list's name cell), 'Parent' (the Feature list's ParentWorkItemCell, '—' when none), 'State'; rows open in backlog order, header sorting allowed like the other grids; no age, no category, also not in the API. Backend half: rows become { referenceId, name, url, state, parentReferenceId }; workItemAge and stateCategory leave the wire.",
           "agent": "nw-software-crafter",
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice02RefinementListScenarios.cs",
           "scenario_name": "Each_row_names_the_Work_Item... and A_Doing_row_carries_its_Work_Item_Age... re-expressed (parent instead of age/category)",
@@ -865,7 +865,7 @@
         {
           "id": "02-11",
           "name": "The Refinement tab is a shared grid: Work Item Name, Parent, State",
-          "description": "Maintainer review of slice 02 (2026-10-03), sketch approved: heading + shared DataGrid (DataGridBase + toolbar search/filter/columns), columns '{Work Item} Name' (id+name one link, the Feature list's name cell), 'Parent' (the Feature list's ParentWorkItemCell, '\u2014' when none), 'State'; rows open in backlog order, header sorting allowed like the other grids; no age, no category, also not in the API. Frontend half: RefinementView keeps its counted heading and empty state, and renders the rows through DataGridBase with the Feature list's name and parent cells.",
+          "description": "Maintainer review of slice 02 (2026-10-03), sketch approved: heading + shared DataGrid (DataGridBase + toolbar search/filter/columns), columns '{Work Item} Name' (id+name one link, the Feature list's name cell), 'Parent' (the Feature list's ParentWorkItemCell, '—' when none), 'State'; rows open in backlog order, header sorting allowed like the other grids; no age, no category, also not in the API. Frontend half: RefinementView keeps its counted heading and empty state, and renders the rows through DataGridBase with the Feature list's name and parent cells.",
           "agent": "nw-software-crafter",
           "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.test.tsx",
           "scenario_name": "RefinementView cases re-expressed for the grid (name link, parent, state; no age/category)",
@@ -2229,8 +2229,8 @@
         },
         {
           "id": "12-07",
-          "name": "'Yes, if…' asks for an optional Condition and sends it with the vote",
-          "description": "Clicking 'Yes, if…' opens a dialog titled 'Yes, if…' with an optional 'Condition' textbox and Cancel / Vote; Vote casts YesBut with the condition as the comment, or without a comment when the box is left empty. Yes and No stay one click.",
+          "name": "'Yes, if…' records in one click like Yes and No; a condition is a comment",
+          "description": "Maintainer decision 2026-10-05: no Condition dialog. 'Yes, if…' stays the one-click answer slice 11 built. The two pending Condition-dialog scenarios are deleted and one scenario pins that 'Yes, if…' casts { answer: 'YesBut', channel: 'Web', voterName } in one click with no comment member and opens no dialog.",
           "agent": "nw-software-crafter",
           "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.comments.test.tsx",
           "scenario_name": "asks for the condition when Yes, if… is chosen and sends it with the vote",
@@ -2243,23 +2243,21 @@
             "RefinementView.comments.test.tsx :: still takes a Yes, if… whose condition is left empty"
           ],
           "criteria": [
-            "'Yes, if…' opens a dialog named 'Yes, if…' with an enabled Cancel; typing a condition and Vote casts { answer: 'YesBut', channel: 'Web', voterName: 'Ana Lima', comment: <condition> } with the stored key",
-            "Vote with an empty Condition casts exactly { answer: 'YesBut', channel: 'Web', voterName: 'Ana Lima' } - no comment member",
+            "Clicking 'Yes, if…' casts exactly { answer: 'YesBut', channel: 'Web', voterName: 'Ana Lima' } with the stored key - no comment member - and no dialog opens",
+            "The pending scenarios 'asks for the condition when Yes, if… is chosen…' and 'still takes a Yes, if… whose condition is left empty' are deleted, not left skipped",
             "RefinementView.votes.test.tsx stays green (Yes and No still one click)"
           ],
           "files_to_modify": [
-            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/VoteControl.tsx",
-            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/ConditionPrompt.tsx",
             "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.comments.test.tsx"
           ],
           "dependencies": [
             "12-06"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: React/RTL example-based DOM assertions over exact copy. UI SKETCH: approved by the maintainer 2026-10-04; build exactly this, show nothing new. A browser with no name yet still meets 'Who is voting?' first (slice 11 behaviour), then the Condition dialog - one dialog at a time. The condition is trimmed; empty means no comment member at all (not an empty string). Cancel casts nothing. No code comment may cite an internal id. Wire enums are string unions. Pre-apply docs/ci-learnings.md; prebuild runs biome check --write - review its rewrites. Commit: feat(refinement): 'Yes, if…' carries its condition (story 6150)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/RTL example-based. Test-only step: production code already records 'Yes, if…' in one click (VoteControl). Do NOT add a ConditionPrompt. If the new scenario passes at once, record that. No code comment may cite an internal id. Commit: test(refinement): 'Yes, if…' stays one click; a condition is a comment (story 6150)."
         },
         {
           "id": "12-08",
-          "name": "'Ask a question' sends a question without voting, and the Votes cell marks comments and an open question",
+          "name": "'Add a comment' sends a comment for anybody, and the Votes cell marks comments and an open question",
           "description": "Inside 'Votes and comments', 'Ask a question' opens a 'Question' textbox with Send (disabled while blank) that calls addComment and shows the row the server answered. The Votes cell shows a comments marker when hasComments and an 'Open question' marker when hasOpenQuestion; other rows show neither.",
           "agent": "nw-software-crafter",
           "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.comments.test.tsx",
@@ -2275,9 +2273,10 @@
             "RefinementView.comments.test.tsx :: marks a Work Item with an open question and leaves the others unmarked"
           ],
           "criteria": [
-            "Asking 'Which API version?' on GR-054 calls addComment(7, 'GR-054', { comment, channel: 'Web', voterName: 'Jonas Weber' }, key), never castVote, and 'Open question' becomes visible",
-            "A whitespace question keeps Send disabled and sends nothing",
-            "A row with hasOpenQuestion reads 'Open question'; a row without does not"
+            "Opening 'Votes and comments' on GR-054, clicking 'Add a comment', typing 'Which API version?' in the 'Comment' box and Send calls addComment(7, 'GR-054', { comment, channel: 'Web', voterName: 'Jonas Weber' }, key), never castVote, and the open-question marker ('Open question') becomes visible",
+            "A whitespace comment keeps Send disabled and sends nothing",
+            "A row with hasOpenQuestion carries the warning-coloured question icon with tooltip and accessible text 'Open question'; a row with hasComments carries the comment icon ('Comments'); a row without either shows only the count",
+            "The Votes button's accessible name still ends in 'Votes and comments' and includes the markers it shows, e.g. '3 votes, comments, open question - Votes and comments'"
           ],
           "files_to_modify": [
             "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/VotesAndCommentsDialog.tsx",
@@ -2287,7 +2286,7 @@
           "dependencies": [
             "12-07"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: React/RTL example-based DOM assertions over exact copy. UI SKETCH: approved by the maintainer 2026-10-04 (Votes cell '3 votes' with a comments marker and an open-question marker; 'Ask a question' in the dialog); build exactly this, show nothing new. The markers are part of the Votes cell, whose accessible name still contains 'Votes and comments'; the open-question marker carries the visible or accessible text 'Open question'. A comment added here by somebody with a current vote is a plain comment - that is how a Yes or No carries its optional reason from the UI; there is no comment prompt on Yes or No. Errors go through the page's snackbar. No code comment may cite an internal id. Wire enums are string unions. Pre-apply docs/ci-learnings.md; prebuild runs biome check --write - review its rewrites. Commit: feat(refinement): ask a question from the Votes dialog (story 6150)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/RTL example-based DOM assertions over exact copy. UI SKETCH: approved by the maintainer 2026-10-05 (feature-delta 'Maintainer decision — comments instead of a condition prompt'): 'Add a comment' button under the log opens a 'Comment' textbox with Send (replaces the 2026-10-04 'Ask a question' / 'Question' copy - update the pending scenarios' copy accordingly, keeping their intent); icons are MUI ChatBubbleOutline ('Comments') and HelpOutline in warning colour ('Open question') after the count, column stays 120 px. Every comment is alike: from somebody with a current vote it is a plain comment, from somebody without one it is an open question - the server decides. Errors go through the page's snackbar. No code comment may cite an internal id. Wire enums are string unions. Pre-apply docs/ci-learnings.md; prebuild runs biome check --write - review its rewrites. Commit: feat(refinement): add a comment from the Votes dialog (story 6150)."
         },
         {
           "id": "12-09",
@@ -2311,10 +2310,11 @@
             "RefinementView.comments.test.tsx :: says why when a Work Item's log cannot be read"
           ],
           "criteria": [
-            "getLog is called with (7, 'GR-051', key); three list items read Jonas Weber / Yes / 'Wed 7 Oct', Ana Lima / 'Yes, if…' / her condition, Mo Okafor / his question",
+            "getLog is called with (7, 'GR-051', key); the list items read, oldest first: 'Jonas Weber voted Yes' with 'Wed 7 Oct'; 'Ana Lima voted Yes, if…' with her comment beneath; Mo Okafor's comment marked as an open question",
             "'<b>urgent</b> & <script>alert(1)</script>' shows as that text and no b or script element exists in the dialog",
-            "Cli entries read 'via the command line', Assistant 'via an assistant', Web nothing starting 'via '",
-            "A reader with myVote null reads '0 Yes · 1 Yes, if… · 1 No' and all three entries",
+            "No entry says where it came from: nothing in the dialog starts 'via ' for Web, Cli or Assistant entries (the pending channel scenario is rewritten to pin that, not deleted)",
+            "A reader with myVote null reads '0 Yes · 1 Yes, if… · 1 No' and all entries",
+            "An empty log reads 'No votes or comments yet.'",
             "A rejected getLog shows an alert with its message",
             "pnpm test green; pnpm build clean"
           ],
@@ -2325,7 +2325,7 @@
           "dependencies": [
             "12-08"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: React/RTL example-based DOM assertions over exact copy. Compensate with a pure entry-wording helper case table (each kind x answer x channel; exhaustive Record<SizingChannel, …> and Record<SizingAnswer, …>, no default). UI SKETCH: approved by the maintainer 2026-10-04; build exactly this, show nothing new. Render comments as React text children only - never dangerouslySetInnerHTML or a markdown renderer. The day format 'Wed 7 Oct' comes from recordedAt in the instance's locale handling the app already uses for short dates (find the existing formatter; do not hand-roll). Revocation wording ('… took back their vote') is 16-04's; leave the kind handled in the exhaustive map with that copy only when 16-04 lands, or add it now if the exhaustive Record forces it - either way its test un-skips in 16-04. No code comment may cite an internal id. Wire enums are string unions. Pre-apply docs/ci-learnings.md; prebuild runs biome check --write - review its rewrites. Commit: feat(refinement): read a Work Item's votes and comments (story 6150)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/RTL example-based DOM assertions over exact copy. Compensate with a pure entry-wording helper case table (each kind x answer; exhaustive Record<SizingAnswer, …>, no default; channel is NOT worded). UI SKETCH: approved by the maintainer 2026-10-05: split on top, the log as a list beneath (name and what they did on the left, the day right-aligned, any comment as plain text beneath), 'Add a comment' under the log, footer 'Voting as … · Change your name' and Close. A vote that carries a comment shows as the vote with its comment beneath. Render comments as React text children only - never dangerouslySetInnerHTML or a markdown renderer. The day format 'Wed 7 Oct' comes from recordedAt via the app's existing short-date formatter (find it; do not hand-roll). Revocation wording ('… took back their vote') is 16-04's; add it now only if the exhaustive Record forces it - its test un-skips in 16-04. No code comment may cite an internal id. Wire enums are string unions. Pre-apply docs/ci-learnings.md; prebuild runs biome check --write - review its rewrites. Commit: feat(refinement): read a Work Item's votes and comments (story 6150)."
         }
       ]
     },
@@ -2599,8 +2599,7 @@
           "implementation_notes": "EXEMPT FROM PARADIGM: React/RTL and Vitest example-based assertions over exact copy. UI SKETCH: approved by the maintainer 2026-10-04 ('Take back my vote' in the Votes and comments dialog, Close beside it); build exactly this, show nothing new. Taking back is not a vote: it reports no usage-data event. The Revocation wording joins the exhaustive entry-kind map from 12-09. With the last method real, delete the scaffold's NOT_YET_IMPLEMENTED constant and the __SCAFFOLD__ export (grep the tree for __SCAFFOLD__ readers before deleting). No code comment may cite an internal id. Wire enums are string unions. Pre-apply docs/ci-learnings.md; prebuild runs biome check --write - review its rewrites. Commit: feat(refinement): take back your vote from the Votes dialog (story 6154)."
         }
       ]
-    }
-    ,
+    },
     {
       "id": "03",
       "name": "Slice 03 - optional stage rules; stage and votes as two signals (US-03, Story #6141; slice 08 #6146 folded in, Removed)",
