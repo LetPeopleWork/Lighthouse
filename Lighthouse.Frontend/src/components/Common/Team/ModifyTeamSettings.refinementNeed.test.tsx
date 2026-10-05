@@ -581,7 +581,7 @@ describe("The band in the Refinement section of a Team's settings", () => {
 	});
 
 	// @us-07 @slice-07 @error @contract-shape:unbounded-preservation
-	it.skip.each([
+	it.each([
 		["90", "85"],
 		["85", "85"],
 	])(
@@ -597,28 +597,30 @@ describe("The band in the Refinement section of a Team's settings", () => {
 			await pastTheAutosaveDelay();
 
 			expect(
-				await screen.findByText(new RegExp(`${low}.*${high}`)),
+				await screen.findByText(
+					`The low end (${low}%) must be below the high end (${high}%).`,
+				),
 			).toBeVisible();
 			expect(saveTeamSettings).not.toHaveBeenCalled();
 		},
 	);
 
 	// @us-07 @slice-07 @error @boundary @contract-shape:unbounded-preservation
-	it.skip.each([
-		[LOW_END, "0"],
-		[HIGH_END, "100"],
+	it.each([
+		["Low end likelihood", "49"],
+		["High end likelihood", "96"],
 	])(
-		"refuses %s at %s, outside 1 to 99, and saves nothing",
-		async (label, value) => {
+		"refuses %s at %s, outside 50 to 95, and saves nothing",
+		async (fieldName, value) => {
+			const label = new RegExp(`^${fieldName}`);
 			await renderGravitysSettingsForm(gravitysSettings());
 
 			await replaceTheLikelihood(label, value);
 			await pastTheAutosaveDelay();
 
-			expect(screen.getByRole("spinbutton", { name: label })).toHaveAttribute(
-				"aria-invalid",
-				"true",
-			);
+			const field = screen.getByRole("spinbutton", { name: label });
+			expect(field).toHaveAttribute("aria-invalid", "true");
+			expect(field).toHaveAccessibleDescription("Between 50% and 95%.");
 			expect(saveTeamSettings).not.toHaveBeenCalled();
 		},
 	);

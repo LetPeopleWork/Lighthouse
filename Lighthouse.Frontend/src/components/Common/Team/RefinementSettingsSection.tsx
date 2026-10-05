@@ -21,6 +21,7 @@ import ReadinessSettings, {
 import RefinementCadenceSettings, {
 	hasCadenceErrors,
 } from "./RefinementCadenceSettings";
+import { bandErrors, hasBandErrors } from "./refinementBand";
 import StageRulesSettings, {
 	hasIncompleteStageRule,
 	NO_STAGE_RULES,
@@ -42,6 +43,10 @@ export const refinementSettingsBlockers = (
 	const cadence = refinement?.cadence;
 	if (cadence && hasCadenceErrors(cadence)) {
 		reasons.push(`Complete the ${refinementTerm} cadence`);
+	}
+	const band = refinement?.band;
+	if (band && hasBandErrors(band)) {
+		reasons.push("Correct the low and high end likelihoods");
 	}
 	return reasons;
 };
@@ -73,10 +78,17 @@ const BandSettings: React.FC<Readonly<BandSettingsProps>> = ({
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const refinementTerm = getTerm(TERMINOLOGY_KEYS.REFINEMENT);
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
+	const errors = bandErrors(band);
+	const isValid = !hasBandErrors(band);
+	// A cleared or refused field must not reach the explanation as "NaN%" or a wrong likelihood.
+	const lastValidBand = useRef(isValid ? band : DEFAULT_BAND);
+	if (isValid) {
+		lastValidBand.current = band;
+	}
 	const origin =
 		`Based on the ${teamTerm}'s ${getTerm(TERMINOLOGY_KEYS.THROUGHPUT)}: ` +
 		`a How Many forecast for the working days until the next ${refinementTerm}. ` +
-		describeLikelihoods({ ...band, teamTerm });
+		describeLikelihoods({ ...lastValidBand.current, teamTerm });
 
 	return (
 		<>
@@ -96,6 +108,8 @@ const BandSettings: React.FC<Readonly<BandSettingsProps>> = ({
 						size="small"
 						sx={{ width: 180 }}
 						value={shownNumber(band[end])}
+						error={errors[end] !== null}
+						helperText={errors[end]}
 						onChange={(event) =>
 							onChange({
 								...band,
