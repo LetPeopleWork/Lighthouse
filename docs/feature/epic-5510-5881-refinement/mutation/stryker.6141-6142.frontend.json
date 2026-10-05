@@ -1,0 +1,63 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6141-6142.ts",
+    "related": false
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "playwright-report",
+    "reports"
+  ],
+  "mutate": [
+    "src/components/Common/Team/ModifyTeamSettings.tsx:87-92",
+    "src/components/Common/Team/ModifyTeamSettings.tsx:174-179",
+    "src/components/Common/Team/ModifyTeamSettings.tsx:276-280",
+    "src/components/Common/Team/ReadinessSettings.tsx",
+    "src/components/Common/Team/RefinementCadenceSettings.tsx",
+    "src/components/Common/Team/RefinementSettingsSection.tsx",
+    "src/components/Common/Team/StageRulesSettings.tsx",
+    "src/components/Common/WeeklyRecurrence/WeeklyRecurrenceFields.tsx",
+    "src/pages/Settings/System/BlackoutSettings.tsx:536-543",
+    "src/pages/Teams/Detail/Refinement/InfoTooltip.tsx",
+    "src/pages/Teams/Detail/Refinement/NextRefinement.tsx",
+    "src/pages/Teams/Detail/Refinement/RefinementGrid.tsx",
+    "src/pages/Teams/Detail/Refinement/RefinementView.tsx",
+    "src/pages/Teams/Detail/Refinement/StageCell.tsx",
+    "src/pages/Teams/Detail/Refinement/YardstickQuestion.tsx:44-77",
+    "src/pages/Teams/Detail/Refinement/nextRefinementWording.ts",
+    "src/pages/Teams/Detail/Refinement/refinementColumns.tsx:13-47",
+    "src/pages/Teams/Detail/Refinement/refinementColumns.tsx:66-72",
+    "src/pages/Teams/Detail/Refinement/stageBreakdown.ts",
+    "src/pages/Teams/Detail/Refinement/stageWording.ts",
+    "src/pages/Teams/Detail/Refinement/useRefinement.ts",
+    "src/pages/Teams/Detail/Refinement/useVoteCasting.ts:24-42",
+    "src/pages/Teams/Detail/Refinement/useVoteCasting.ts:53-53",
+    "src/pages/Teams/Detail/Refinement/useVoteCasting.ts:82-110",
+    "src/utils/numberField.ts"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "stryker-6141-6142-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6141-6142"
+}

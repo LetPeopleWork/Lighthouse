@@ -568,3 +568,97 @@ Frontend:
 - `models/Refinement/Refinement.ts` — types only.
 - `services/Api/UsageDataService.ts` — an enum member, pinned against its literal by `reports the vote
   the server says made a Work Item Ready to usage data`.
+
+# Mutation testing — 6141 + 6142 (stage rules and the Refinement cadence, E2 slices 03 and 04)
+
+Run 2026-10-05 against `main` @ `99114ac7f`, one run per stack for both slices. Gate is 80 % kill rate on both stacks.
+
+| stack | score | tested | killed | survived | no coverage | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 5.0.0) | **88.05 %** | 307 | 280 | 17 | 10 | 75 m 33 s |
+| Frontend (StrykerJS) | **83.60 %** | 634 | 530 | 94 | 10 | 66 m 27 s |
+
+After this pass's tests, checked by applying each closed mutant by hand: backend 285 / 307 (**92.8 %**), frontend
+560 / 634 (**88.3 %**).
+
+Configs: `stryker.6141-6142.backend.json`, `stryker.6141-6142.frontend.json`, `vitest.stryker.6141-6142.ts`.
+
+## Backend
+
+| file | killed | survived / no coverage |
+| --- | --- | --- |
+| `API/DTO/RefinementSettingsDto.cs` | 29 | 2 |
+| `API/DTO/RefinementViewDto.cs` | 1 | 0 |
+| `API/DTO/SaveField.cs` | 4 | 0 |
+| `API/Helpers/RefinementSettingsValidator.cs` | 54 | 0 |
+| `API/Helpers/RuleSetValidation.cs` | 13 | 8 |
+| `API/Helpers/TeamExtensions.cs` | 40 | 17 |
+| `Models/Refinement/RefinementSettings.cs` | 16 | 1 |
+| `Services/Implementation/RecurringBlackoutRuleExtensions.cs` | 14 | 4 |
+| `Services/Implementation/Refinement/RefinementCadenceCalendar.cs` | 18 | 5 |
+| `Services/Implementation/Refinement/RefinementCalendar.cs` | 3 | 1 |
+| `RefinementResolution.cs`, `RefinementViewQuery.cs`, `StageRuleHealing.cs`, `StageRuleMatcher.cs`, `WeeklyRecurrence.cs`, `IRefinementViewQuery.cs` | 88 | 0 |
+
+### Closed by this pass
+
+- **`RuleSetValidation.cs:51`** (Ready and Being-refined swapped) — `RuleSetValidationTest`: `When_both_stage_rules_are_invalid_the_Ready_rule_is_named`, `An_invalid_Being_refined_rule_is_named_when_the_Ready_rule_is_fine`.
+- **`RefinementCadenceCalendar.cs:51`** (`<` → `<=`, `- 1` → `+ 1`) — `A_search_that_ends_exactly_on_the_calendars_last_day_still_looks_a_whole_year`.
+- **`RefinementCadenceCalendar.cs:46, 60`** (no-cadence guard, `IntervalWeeks > 0` → `>= 0`) — `A_cadence_with_no_weekday_or_no_interval_searches_no_days`.
+- **`RecurringBlackoutRuleExtensions.cs:12`** (`>` → `>=`) — `ExpandToBlackoutDays_OneDayWindowOnAMatchingWeekday_MatchesThatDay`. The line predates the slice (the weekly rule was extracted from around it), but the gap was real: a one-day window lost its day.
+
+### Accepted survivors
+
+| line | mutant | why it survives |
+| --- | --- | --- |
+| `TeamExtensions.cs:15, 41, 42, 62, 63, 81, 105–131` (17) | various | code outside this change; Stryker.NET mutates the whole file. Every mutant in the lines the slices added (141–142, 157–176) is killed |
+| `RuleSetValidation.cs:27, 35, 57, 58, 64` (7) | various | the blocked and forecast-filter validation the slices did not touch, outside the test filter |
+| `RecurringBlackoutRuleExtensions.cs:9, 10` (3) | `>` → `>=`, forced `true` | equivalent: on the boundary both sides of the choice are the same day |
+| `RefinementCadenceCalendar.cs:66` | `>` → `>=` | equivalent: on equality both sides are the same day |
+| `RefinementCalendar.cs:13` | null-cadence guard removed | equivalent: a null cadence then searches no days and is no cadence day, which is the same `None` |
+| `RefinementSettingsDto.cs:135` | `Version ?? SchemaVersion` → `SchemaVersion` | equivalent while one rule-set schema version exists |
+| `RefinementSettingsDto.cs:153`, `RefinementSettings.cs:83` | `string.Empty` default → `"Stryker was here!"` | the default is always overwritten by binding or by the constructor |
+
+### Not mutated
+
+- `API/TeamController.cs`, `API/TeamsController.cs` — a handful of lines each (stage-rule healing on read, stage-rule validation on create and update) in large controllers. They are pinned end to end by the `Slice03StageRules` scenarios and `TeamControllerTest`; mutating the controllers whole would mostly score their older code.
+- `Factories/DemoDataFactory.cs` (one line: demo Team Gravity refines on Thursdays, pinned by `DemoDataFactoryTest`), `Program.cs` (DI registration), `Models/UsageData/UsageDataSizingMoment.cs` and `Services/Interfaces/Refinement/IRefinementCalendar.cs` (an enum and an interface).
+
+## Frontend
+
+Per file (killed / survived + no coverage) before this pass: `ModifyTeamSettings` 13/4, `ReadinessSettings` 100/12,
+`RefinementCadenceSettings` 51/12, `RefinementSettingsSection` 78/8, `StageRulesSettings` 51/25, `WeeklyRecurrenceFields`
+10/4, `BlackoutSettings` 5/0, `InfoTooltip` 1/1, `NextRefinement` 8/5, `nextRefinementWording` 27/1,
+`refinementColumns` 8/0, `RefinementGrid` 8/2, `RefinementView` 57/15, `stageBreakdown` 14/1, `StageCell` 14/7,
+`stageWording` 4/0, `useRefinement` 48/3, `useVoteCasting` 15/1, `YardstickQuestion` 3/2, `numberField` 15/1.
+
+### Closed by this pass (30 mutants, each checked by hand)
+
+- `RefinementSettingsSection.tsx:35, 39` — the two blocker reasons, `names an unfinished stage rule and a cadence with a mistake, in the Team's word`.
+- `RefinementSettingsSection.tsx:79, 85` — `leaves the chosen states alone while every one of them is still offered`.
+- `RefinementCadenceSettings.tsx:15` — `is shown with no weekday, every week and no starting week`; `:83` `keeps the starting week when a weekday is ticked`; `:89` `says Refinements are at least one week apart for fewer than one week`; `:93` `drops a ticked weekday when it is ticked again and keeps the others`; `:126` `asks for a day in the week of a Refinement when every second week has no starting week`.
+- `StageRulesSettings.tsx:60, 81` — `asks for no fields and offers no stages for a Team that is not saved yet`, `stops offering stages once the form is for a Team that is not saved yet`; `:67, 71–79` `offers no stages when the fields of the Team cannot be fetched`, `ignores the fields of a Team the form has already moved away from`; `:99` `saves the first condition of an empty stage as matching all conditions`; `:107` `saves a stage rule switched to match any condition`; `:46, 50, 136, 146` `says what each empty stage would do, in the Team's word for work items`.
+- `WeeklyRecurrenceFields.tsx:59` — `does not mark a valid number of weeks as invalid`.
+- `InfoTooltip.tsx:6` — `keeps a click on its info icon from reaching the header around it`.
+- `RefinementGrid.tsx:45` — `links the parents of the new Team's Work Items once it shows another Team`.
+
+### Accepted survivors
+
+| line | mutant | why it survives |
+| --- | --- | --- |
+| `RefinementView.tsx:22–33` (14) | the tab's grid layout object and its strings | layout only; jsdom does no grid layout. The heading-row placement is pinned by the Refinement E2E (`pin the next Refinement to the heading's row`) |
+| `ReadinessSettings.tsx`, `RefinementCadenceSettings.tsx:99, 129`, `RefinementSettingsSection.tsx:107`, `StageRulesSettings.tsx:102, 139`, `WeeklyRecurrenceFields.tsx:62–63`, `NextRefinement.tsx:43–44`, `StageCell.tsx:28, 37`, `YardstickQuestion.tsx:68`, `RefinementGrid.tsx:79` | `sx`, Grid `size`, `slotProps`, storage key | layout or column-width persistence only |
+| `ReadinessSettings.tsx:131, 180` (3) | as accepted for 6151 | the same code, moved out of `RefinementSettingsSection` unchanged |
+| `NextRefinement.tsx:34, 44` | the slot marker `true` → `false` | equivalent: the layout selector matches the attribute's presence, and `data-next-refinement="false"` is still present |
+| `RefinementSettingsSection.tsx:93` | `typed.trim()` → `typed` | equivalent through the UI: `ItemListManager` only ever hands over a trimmed value or a suggestion's exact text |
+| `RefinementCadenceSettings.tsx:115` | `?? ""` → `&& ""` / `"Stryker was here!"` | equivalent: a date input sanitises a value that is not a date to empty |
+| `nextRefinementWording.ts:24` | `== null ? null :` forced `false` | equivalent: parsing a null or undefined date already yields null |
+| `ModifyTeamSettings.tsx:176, 177` | `?.` → `.` | equivalent: the section renders only once the settings are loaded |
+| `ModifyTeamSettings.tsx:277, 278` (no coverage) | `\|\| []` → `["Stryker was here"]` | unreachable: the form already reads both lists unguarded before rendering the section |
+| `StageCell.tsx:21` | `!stage` guard forced `false` | renders an empty cell instead of none; nothing visible changes |
+| `stageBreakdown.ts:22` | `if (row.stage)` forced `true` | equivalent: a row without a stage counts under a key nothing reads |
+| `useRefinement.ts:13, 73, 75`, `useVoteCasting.ts:39` | `?.` → `.`, `current === null` → `false`, callback deps | as accepted for 6149 and 6151 (code moved into the hook), and `facts` is already known to be set on line 39 |
+| `numberField.ts:3` | `""` → `"Stryker was here!"` | equivalent: a number input shows any non-number as empty |
+
+### Not mutated
+
+- `models/Refinement/Refinement.ts`, `models/UsageData/UsageData.ts` — types and an enum member.

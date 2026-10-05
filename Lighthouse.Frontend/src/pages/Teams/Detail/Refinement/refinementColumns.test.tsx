@@ -1,8 +1,12 @@
+import type { GridColumnHeaderParams } from "@mui/x-data-grid";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { RefinementStage } from "../../../../models/Refinement/Refinement";
 import {
 	createRefinementColumns,
 	type RefinementColumnsOptions,
+	type RefinementGridRow,
 } from "./refinementColumns";
 import { describeDisagreement } from "./StageCell";
 
@@ -90,6 +94,26 @@ describe("the vote column's header", () => {
 		expect(column?.headerName).toBe("Doable within 12 days?");
 		expect(column?.renderHeader).toBeDefined();
 		expect(column?.minWidth).toBeGreaterThanOrEqual(220);
+	});
+
+	it("keeps a click on its info icon from reaching the header around it", async () => {
+		const column = voteColumn(VOTE_QUESTION);
+		const headerClicked = vi.fn();
+		render(
+			// biome-ignore lint/a11y/noStaticElementInteractions: stands in for the grid's clickable column header
+			// biome-ignore lint/a11y/useKeyWithClickEvents: only the click is under test
+			<div onClick={headerClicked}>
+				{column?.renderHeader?.(
+					{} as GridColumnHeaderParams<RefinementGridRow>,
+				)}
+			</div>,
+		);
+
+		await userEvent.click(
+			screen.getByRole("button", { name: VOTE_QUESTION.tooltip }),
+		);
+
+		expect(headerClicked).not.toHaveBeenCalled();
 	});
 });
 

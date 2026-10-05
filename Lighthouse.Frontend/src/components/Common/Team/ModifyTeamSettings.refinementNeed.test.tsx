@@ -1,4 +1,5 @@
 import {
+	act,
 	fireEvent,
 	render,
 	screen,
@@ -21,7 +22,15 @@ import type { ITeamService } from "../../../services/Api/TeamService";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import ModifyTeamSettings from "./ModifyTeamSettings";
-import { hasIncompleteStageRule, stageRuleOf } from "./StageRulesSettings";
+import RefinementCadenceSettings from "./RefinementCadenceSettings";
+import RefinementSettingsSection, {
+	refinementSettingsBlockers,
+} from "./RefinementSettingsSection";
+import StageRulesSettings, {
+	hasIncompleteStageRule,
+	NO_STAGE_RULES,
+	stageRuleOf,
+} from "./StageRulesSettings";
 
 /**
  * What a Team admin sets in the Refinement section so the tab can say how much to refine: the optional
@@ -614,4 +623,395 @@ describe("The band in the Refinement section of a Team's settings", () => {
 			expect(saveTeamSettings).not.toHaveBeenCalled();
 		},
 	);
+});
+
+describe("What holds back the save of the Refinement settings", () => {
+	it("names an unfinished stage rule and a cadence with a mistake, in the Team's word", () => {
+		expect(
+			refinementSettingsBlockers(
+				{
+					states: [],
+					stageRules: {
+						ready: {
+							version: 1,
+							mode: "and",
+							conditions: [
+								{ fieldKey: "workitem.tags", operator: "contains", value: "" },
+							],
+						},
+						beingRefined: null,
+					},
+					cadence: {
+						weekdays: ["Tuesday"],
+						intervalWeeks: 0,
+						anchorWeek: null,
+					},
+				},
+				"Grooming",
+			),
+		).toEqual(["Complete the stage rules", "Complete the Grooming cadence"]);
+	});
+});
+
+const withTeamService = (
+	getForecastFilterSchema: ITeamService["getForecastFilterSchema"],
+) => {
+	const context = createMockApiServiceContext({
+		teamService: { getForecastFilterSchema } as unknown as ITeamService,
+	});
+	return (ui: React.ReactElement) => (
+		<ApiServiceContext.Provider value={context}>
+			{ui}
+		</ApiServiceContext.Provider>
+	);
+};
+
+const STAGES_HEADING = "Stages (optional)";
+const READY_EMPTY = "Add a rule to mark work items as Ready.";
+const BEING_REFINED_EMPTY = "Add a rule to mark work items as being refined.";
+
+describe("The stage rules of a single Team", () => {
+	beforeEach(() => {
+		terms.current = { ...defaultTerms };
+	});
+
+	it("says what each empty stage would do, in the Team's word for work items", async () => {
+		const wrap = withTeamService(vi.fn().mockResolvedValue(workItemRuleSchema));
+		render(
+			wrap(
+				<StageRulesSettings
+					teamId={1}
+					stageRules={NO_STAGE_RULES}
+					onChange={vi.fn()}
+				/>,
+			),
+		);
+
+		expect(await screen.findByText(READY_EMPTY)).toBeVisible();
+		expect(screen.getByText(BEING_REFINED_EMPTY)).toBeVisible();
+	});
+
+	it("asks for no fields and offers no stages for a Team that is not saved yet", async () => {
+		const getSchema = vi.fn().mockResolvedValue(workItemRuleSchema);
+		render(
+			withTeamService(getSchema)(
+				<StageRulesSettings
+					teamId={0}
+					stageRules={NO_STAGE_RULES}
+					onChange={vi.fn()}
+				/>,
+			),
+		);
+
+		await act(async () => {
+			await Promise.resolve();
+		});
+
+		expect(getSchema).not.toHaveBeenCalled();
+		expect(screen.queryByText(STAGES_HEADING)).not.toBeInTheDocument();
+	});
+
+	it("stops offering stages once the form is for a Team that is not saved yet", async () => {
+		const wrap = withTeamService(vi.fn().mockResolvedValue(workItemRuleSchema));
+		const { rerender } = render(
+			wrap(
+				<StageRulesSettings
+					teamId={1}
+					stageRules={NO_STAGE_RULES}
+					onChange={vi.fn()}
+				/>,
+			),
+		);
+		await screen.findByText(STAGES_HEADING);
+
+		rerender(
+			wrap(
+				<StageRulesSettings
+					teamId={0}
+					stageRules={NO_STAGE_RULES}
+					onChange={vi.fn()}
+				/>,
+			),
+		);
+
+		expect(screen.queryByText(STAGES_HEADING)).not.toBeInTheDocument();
+	});
+
+	it("offers no stages when the fields of the Team cannot be fetched", async () => {
+		const wrap = withTeamService(
+			vi.fn((teamId: number) =>
+				teamId === 1
+					? Promise.resolve(workItemRuleSchema)
+					: Promise.reject(new Error("unreachable")),
+			),
+		);
+		const { rerender } = render(
+			wrap(
+				<StageRulesSettings
+					teamId={1}
+					stageRules={NO_STAGE_RULES}
+					onChange={vi.fn()}
+				/>,
+			),
+		);
+		await screen.findByText(STAGES_HEADING);
+
+		rerender(
+			wrap(
+				<StageRulesSettings
+					teamId={2}
+					stageRules={NO_STAGE_RULES}
+					onChange={vi.fn()}
+				/>,
+			),
+		);
+
+		await waitFor(() =>
+			expect(screen.queryByText(STAGES_HEADING)).not.toBeInTheDocument(),
+		);
+	});
+
+	it("ignores the fields of a Team the form has already moved away from", async () => {
+		let answerTheFirstTeam: (schema: IWorkItemRuleSchema) => void = () => {};
+		const wrap = withTeamService(
+			vi.fn((teamId: number) =>
+				teamId === 1
+					? new Promise<IWorkItemRuleSchema>((resolve) => {
+							answerTheFirstTeam = resolve;
+						})
+					: Promise.resolve(workItemRuleSchema),
+			),
+		);
+		const { rerender } = render(
+			wrap(
+				<StageRulesSettings
+					teamId={1}
+					stageRules={NO_STAGE_RULES}
+					onChange={vi.fn()}
+				/>,
+			),
+		);
+		rerender(
+			wrap(
+				<StageRulesSettings
+					teamId={2}
+					stageRules={NO_STAGE_RULES}
+					onChange={vi.fn()}
+				/>,
+			),
+		);
+		await screen.findByText(READY_EMPTY);
+
+		await act(async () => {
+			answerTheFirstTeam({ ...workItemRuleSchema, fields: [] });
+		});
+
+		expect(screen.getByText(READY_EMPTY)).toBeVisible();
+		expect(screen.queryByText(/^No fields available/)).not.toBeInTheDocument();
+	});
+
+	it("saves the first condition of an empty stage as matching all conditions", async () => {
+		const onChange = vi.fn();
+		render(
+			withTeamService(vi.fn().mockResolvedValue(workItemRuleSchema))(
+				<StageRulesSettings
+					teamId={1}
+					stageRules={NO_STAGE_RULES}
+					onChange={onChange}
+				/>,
+			),
+		);
+
+		await userEvent.click(
+			within(await theStageGroup(READY_WHEN)).getByRole("button", {
+				name: /^Add Rule$/i,
+			}),
+		);
+
+		expect(onChange).toHaveBeenLastCalledWith({
+			ready: {
+				version: 1,
+				mode: "and",
+				conditions: [
+					{ fieldKey: "workitem.tags", operator: "equals", value: "" },
+				],
+			},
+			beingRefined: null,
+		});
+	});
+
+	it("saves a stage rule switched to match any condition", async () => {
+		const onChange = vi.fn();
+		const twoTags = {
+			version: 1,
+			mode: "and" as const,
+			conditions: [
+				...tagsContain("ready").conditions,
+				...tagsContain("groomed").conditions,
+			],
+		};
+		render(
+			withTeamService(vi.fn().mockResolvedValue(workItemRuleSchema))(
+				<StageRulesSettings
+					teamId={1}
+					stageRules={{ ready: twoTags, beingRefined: null }}
+					onChange={onChange}
+				/>,
+			),
+		);
+
+		await userEvent.click(
+			within(await theStageGroup(READY_WHEN)).getByRole("button", {
+				name: "Match any rule (OR)",
+			}),
+		);
+
+		expect(onChange).toHaveBeenLastCalledWith({
+			ready: { ...twoTags, mode: "or" },
+			beingRefined: null,
+		});
+	});
+});
+
+describe("The Refinement states when the To Do and Doing states change", () => {
+	beforeEach(() => {
+		terms.current = { ...defaultTerms };
+	});
+
+	it("leaves the chosen states alone while every one of them is still offered", () => {
+		const onChange = vi.fn();
+		const refinement: IRefinementSettings = {
+			states: [{ state: "Backlog" }, { state: "Next" }],
+		};
+		const wrap = withTeamService(vi.fn());
+		const { rerender } = render(
+			wrap(
+				<RefinementSettingsSection
+					teamId={0}
+					toDoStates={["Backlog"]}
+					doingStates={["Next"]}
+					refinement={refinement}
+					onChange={onChange}
+				/>,
+			),
+		);
+
+		rerender(
+			wrap(
+				<RefinementSettingsSection
+					teamId={0}
+					toDoStates={["Backlog"]}
+					doingStates={["Next", "Analysing"]}
+					refinement={refinement}
+					onChange={onChange}
+				/>,
+			),
+		);
+
+		expect(onChange).not.toHaveBeenCalled();
+	});
+});
+
+describe("The Refinement cadence fields on their own", () => {
+	beforeEach(() => {
+		terms.current = { ...defaultTerms };
+	});
+
+	it("saves just the ticked weekday for a Team without a cadence", async () => {
+		const onChange = vi.fn();
+		render(<RefinementCadenceSettings cadence={null} onChange={onChange} />);
+
+		await userEvent.click(screen.getByRole("checkbox", { name: "Thursday" }));
+
+		expect(onChange).toHaveBeenLastCalledWith({
+			weekdays: ["Thursday"],
+			intervalWeeks: 1,
+			anchorWeek: null,
+		});
+	});
+
+	it("keeps the starting week when a weekday is ticked", async () => {
+		const onChange = vi.fn();
+		render(
+			<RefinementCadenceSettings
+				cadence={{
+					weekdays: ["Tuesday"],
+					intervalWeeks: 2,
+					anchorWeek: "2026-10-05",
+				}}
+				onChange={onChange}
+			/>,
+		);
+
+		await userEvent.click(screen.getByRole("checkbox", { name: "Thursday" }));
+
+		expect(onChange).toHaveBeenLastCalledWith({
+			weekdays: ["Tuesday", "Thursday"],
+			intervalWeeks: 2,
+			anchorWeek: "2026-10-05",
+		});
+	});
+
+	it("drops a ticked weekday when it is ticked again and keeps the others", async () => {
+		const onChange = vi.fn();
+		render(
+			<RefinementCadenceSettings
+				cadence={{
+					weekdays: ["Tuesday", "Thursday"],
+					intervalWeeks: 1,
+					anchorWeek: null,
+				}}
+				onChange={onChange}
+			/>,
+		);
+
+		await userEvent.click(screen.getByRole("checkbox", { name: "Tuesday" }));
+
+		expect(onChange).toHaveBeenLastCalledWith({
+			weekdays: ["Thursday"],
+			intervalWeeks: 1,
+			anchorWeek: null,
+		});
+	});
+
+	it("says Refinements are at least one week apart for fewer than one week", () => {
+		render(
+			<RefinementCadenceSettings
+				cadence={{ weekdays: ["Tuesday"], intervalWeeks: 0, anchorWeek: null }}
+				onChange={vi.fn()}
+			/>,
+		);
+
+		expect(
+			screen.getByText(/^Refinements are at least one week apart\.$/),
+		).toBeVisible();
+	});
+
+	it("asks for a day in the week of a Refinement when every second week has no starting week", () => {
+		render(
+			<RefinementCadenceSettings
+				cadence={{ weekdays: ["Tuesday"], intervalWeeks: 2, anchorWeek: null }}
+				onChange={vi.fn()}
+			/>,
+		);
+
+		expect(
+			screen.getByText(
+				/^Pick a day in the week of a Refinement to count the weeks from\.$/,
+			),
+		).toBeVisible();
+	});
+
+	it("does not mark a valid number of weeks as invalid", () => {
+		render(
+			<RefinementCadenceSettings
+				cadence={{ weekdays: ["Tuesday"], intervalWeeks: 1, anchorWeek: null }}
+				onChange={vi.fn()}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("spinbutton", { name: REPEAT_EVERY }),
+		).toHaveAttribute("aria-invalid", "false");
+	});
 });

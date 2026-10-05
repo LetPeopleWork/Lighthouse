@@ -336,6 +336,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             }
         }
 
+        [Test]
+        public void ExpandToBlackoutDays_OneDayWindowOnAMatchingWeekday_MatchesThatDay()
+        {
+            var rule = new RecurringBlackoutRule
+            {
+                Weekdays = [.. FridayOnly],
+                IntervalWeeks = 1,
+                Start = new DateOnly(2026, 6, 12),
+            };
+
+            var days = MatchedDays(rule, new DateOnly(2026, 6, 19), new DateOnly(2026, 6, 19));
+
+            Assert.That(days, Is.EqualTo(new[] { new DateOnly(2026, 6, 19) }));
+        }
+
         private static List<DateOnly> MatchedDays(RecurringBlackoutRule rule, DateOnly windowStart, DateOnly windowEnd)
         {
             return rule.ExpandToBlackoutDays(windowStart, windowEnd).Select(period => period.Start).ToList();

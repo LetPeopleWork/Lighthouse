@@ -1,0 +1,42 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/API/DTO/RefinementSettingsDto.cs",
+      "**/API/DTO/RefinementViewDto.cs",
+      "**/API/DTO/SaveField.cs",
+      "**/API/Helpers/RefinementSettingsValidator.cs",
+      "**/API/Helpers/RuleSetValidation.cs",
+      "**/API/Helpers/TeamExtensions.cs",
+      "**/Models/Refinement/RefinementSettings.cs",
+      "**/Services/Implementation/RecurringBlackoutRuleExtensions.cs",
+      "**/Services/Implementation/WeeklyRecurrence.cs",
+      "**/Services/Implementation/Refinement/RefinementCadenceCalendar.cs",
+      "**/Services/Implementation/Refinement/RefinementCalendar.cs",
+      "**/Services/Implementation/Refinement/RefinementResolution.cs",
+      "**/Services/Implementation/Refinement/RefinementViewQuery.cs",
+      "**/Services/Implementation/Refinement/StageRuleHealing.cs",
+      "**/Services/Implementation/Refinement/StageRuleMatcher.cs",
+      "**/Services/Interfaces/Refinement/IRefinementViewQuery.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Refinement|FullyQualifiedName~WeeklyRecurrence|FullyQualifiedName~RecurringBlackoutRuleExtensionsTest|FullyQualifiedName~BlackoutPeriodServiceTest|FullyQualifiedName~TeamControllerTest|FullyQualifiedName~TeamsControllerTest|FullyQualifiedName~StateMappingSyncTest|FullyQualifiedName~BaselineSettingsSyncTest|FullyQualifiedName~EstimationFieldSyncTest|FullyQualifiedName~BlockedRuleSetSyncTest|FullyQualifiedName~UsageDataEventShapesTests)&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~ArchUnit",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

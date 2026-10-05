@@ -101,6 +101,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         }
 
         [Test]
+        public void A_search_that_ends_exactly_on_the_calendars_last_day_still_looks_a_whole_year()
+        {
+            var today = DateOnly.MaxValue.AddDays(-366);
+
+            var daysSearched = RefinementCadenceCalendar.DaysSearched(Cadence("Thursday", 1, null), today);
+
+            Assert.That(daysSearched, Is.EqualTo((today.AddDays(1), DateOnly.MaxValue)));
+        }
+
+        [TestCase("", 1)]
+        [TestCase("Thursday", 0)]
+        public void A_cadence_with_no_weekday_or_no_interval_searches_no_days(string weekdays, int intervalWeeks)
+        {
+            var daysSearched = RefinementCadenceCalendar.DaysSearched(Cadence(weekdays, intervalWeeks, null), Day("2026-10-02"));
+
+            Assert.That(daysSearched, Is.Null);
+        }
+
+        [Test]
         public void ATeamWithoutACadenceHasNoNextRefinementAndNoRefinementDay()
         {
             var next = RefinementCadenceCalendar.NextAfter(null, Day("2026-10-08"), NoBlackouts);

@@ -1,6 +1,20 @@
 import { describe, expect, it } from "vitest";
 import type { DayOfWeek } from "../../../models/RecurringBlackoutRule";
-import { cadenceErrors, cadenceOf } from "./RefinementCadenceSettings";
+import {
+	cadenceErrors,
+	cadenceOf,
+	NO_CADENCE,
+} from "./RefinementCadenceSettings";
+
+describe("A Team without a Refinement cadence", () => {
+	it("is shown with no weekday, every week and no starting week", () => {
+		expect(NO_CADENCE).toEqual({
+			weekdays: [],
+			intervalWeeks: 1,
+			anchorWeek: null,
+		});
+	});
+});
 
 describe("What the Refinement cadence fields save as", () => {
 	it.each<{

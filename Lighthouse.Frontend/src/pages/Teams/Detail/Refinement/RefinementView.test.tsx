@@ -431,6 +431,56 @@ describe("The Refinement tab follows the Team it is showing", () => {
 		expect(screen.queryByText(/^GR-058: /)).toBeNull();
 	});
 
+	it("links the parents of the new Team's Work Items once it shows another Team", async () => {
+		const deepSea = {
+			referenceId: "OE-100",
+			name: "Deep sea survey",
+			url: "https://tracker.example/browse/OE-100",
+		} as IFeature;
+		const refinementService: IRefinementService = {
+			getRefinement: vi.fn((teamId: number) =>
+				Promise.resolve(
+					teamId === 7
+						? gravitysRefinement
+						: {
+								...oceansRefinement,
+								workItems: [
+									aRow("OE-001", "Sonar mapping", "Backlog", "OE-100"),
+								],
+							},
+				),
+			),
+		};
+		const featureService = createMockFeatureService();
+		featureService.getFeaturesByReferences = vi.fn((references: string[]) =>
+			Promise.resolve(references.includes("OE-100") ? [deepSea] : [payments]),
+		);
+		const tabFor = (team: Team) => (
+			<SnackbarErrorHandler>
+				<ApiServiceContext.Provider
+					value={createMockApiServiceContext({
+						refinementService,
+						featureService,
+					})}
+				>
+					<RefinementView team={team} />
+				</ApiServiceContext.Provider>
+			</SnackbarErrorHandler>
+		);
+		const { rerender } = render(tabFor(teamGravity()));
+		await within(await theRowOf("GR-051")).findByRole("link", {
+			name: "GR-010: Payments",
+		});
+
+		rerender(tabFor(teamOcean()));
+
+		expect(
+			await within(await theRowOf("OE-001")).findByRole("link", {
+				name: "OE-100: Deep sea survey",
+			}),
+		).toHaveAttribute("href", "https://tracker.example/browse/OE-100");
+	});
+
 	it("says nothing about the previous Team's read failing once it shows another Team", async () => {
 		const { settleGravity } = moveFromGravityToOceanBeforeGravitysReadAnswers();
 
