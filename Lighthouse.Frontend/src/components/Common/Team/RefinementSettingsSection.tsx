@@ -100,31 +100,43 @@ const BandSettings: React.FC<Readonly<BandSettingsProps>> = ({
 					<InfoTooltip text={origin} />
 				</Box>
 			</Grid>
-			{BAND_ENDS.map(({ end, label }) => (
-				<Grid key={end} size={{ xs: 12, sm: 6 }}>
-					<TextField
-						label={label}
-						type="number"
-						size="small"
-						sx={{ width: 180 }}
-						value={shownNumber(band[end])}
-						error={errors[end] !== null}
-						helperText={errors[end]}
-						onChange={(event) =>
-							onChange({
-								...band,
-								[end]: Number.parseInt(event.target.value, 10),
-							})
-						}
-						slotProps={{
-							input: {
-								endAdornment: <InputAdornment position="end">%</InputAdornment>,
-							},
-							htmlInput: { min: 50, max: 95, step: 1 },
-						}}
-					/>
-				</Grid>
-			))}
+			<Grid size={{ xs: 12 }}>
+				<Box
+					sx={{
+						display: "flex",
+						flexWrap: "wrap",
+						gap: 2,
+						alignItems: "flex-start",
+					}}
+				>
+					{BAND_ENDS.map(({ end, label }) => (
+						<TextField
+							key={end}
+							label={label}
+							type="number"
+							size="small"
+							sx={{ width: 180 }}
+							value={shownNumber(band[end])}
+							error={errors[end] !== null}
+							helperText={errors[end]}
+							onChange={(event) =>
+								onChange({
+									...band,
+									[end]: Number.parseInt(event.target.value, 10),
+								})
+							}
+							slotProps={{
+								input: {
+									endAdornment: (
+										<InputAdornment position="end">%</InputAdornment>
+									),
+								},
+								htmlInput: { min: 50, max: 95, step: 1 },
+							}}
+						/>
+					))}
+				</Box>
+			</Grid>
 		</>
 	);
 };
