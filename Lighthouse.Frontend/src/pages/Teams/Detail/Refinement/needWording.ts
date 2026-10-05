@@ -12,14 +12,18 @@ export interface NeedFacts {
 	workItemsTerm: string;
 }
 
-/** Where the range comes from, with the words the Team uses. */
-export interface NeedOriginFacts {
-	teamName: string;
-	horizonWorkingDays: number;
-	refinementDay: Date;
+/** The likelihoods the ends of the range are read at, with the word the Team uses for a Team. */
+export interface LikelihoodFacts {
 	lowPercentile: number;
 	highPercentile: number;
 	teamTerm: string;
+}
+
+/** Where the range comes from, with the words the Team uses. */
+export interface NeedOriginFacts extends LikelihoodFacts {
+	teamName: string;
+	horizonWorkingDays: number;
+	refinementDay: Date;
 	throughputTerm: string;
 }
 
@@ -72,13 +76,6 @@ const VERDICT_WORDING: Record<RefinementVerdict, (facts: NeedFacts) => string> =
  */
 export const describeNeed = (facts: NeedFacts): string =>
 	`${facts.readyCount} ready — ${VERDICT_WORDING[facts.verdict](facts)}`;
-
-/** The likelihoods the ends of the range are read at, with the word the Team uses for a Team. */
-export interface LikelihoodFacts {
-	lowPercentile: number;
-	highPercentile: number;
-	teamTerm: string;
-}
 
 /** "The Team pulls at least the low end with 50% likelihood, and more than the high end with only 15% likelihood." */
 export const describeLikelihoods = ({

@@ -1,9 +1,15 @@
 import type { IRefinementBandSetting } from "../../../models/Refinement/Refinement";
 
-const LOWEST_LIKELIHOOD = 50;
-const HIGHEST_LIKELIHOOD = 95;
+export const LOWEST_LIKELIHOOD = 50;
+export const HIGHEST_LIKELIHOOD = 95;
 
-export const OUT_OF_RANGE_ERROR = `Between ${LOWEST_LIKELIHOOD}% and ${HIGHEST_LIKELIHOOD}%.`;
+// What the server reads the Team's forecast at until the admin chooses otherwise.
+export const DEFAULT_BAND: IRefinementBandSetting = {
+	lowPercentile: 50,
+	highPercentile: 85,
+};
+
+const OUT_OF_RANGE_ERROR = `Between ${LOWEST_LIKELIHOOD}% and ${HIGHEST_LIKELIHOOD}%.`;
 
 type BandErrors = Record<keyof IRefinementBandSetting, string | null>;
 
