@@ -1,0 +1,33 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Services/Implementation/Refinement/NeedBand.cs",
+      "**/Services/Implementation/Refinement/RefinementNeedCalculator.cs",
+      "**/Services/Implementation/Refinement/RefinementViewQuery.cs",
+      "**/Services/Interfaces/Refinement/IRefinementViewQuery.cs",
+      "**/API/DTO/RefinementViewDto.cs",
+      "**/Models/Refinement/RefinementSettings.cs",
+      "**/Models/UsageData/UsageDataEventShapes.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Tests.Services.Implementation.Refinement|FullyQualifiedName~Slice05NeedAndVerdict|FullyQualifiedName~RefinementControllerTest|FullyQualifiedName~RefinementVotesControllerTest|FullyQualifiedName~UsageDataEventShapesTests)&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~ArchUnit",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

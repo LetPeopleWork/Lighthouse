@@ -662,3 +662,93 @@ Per file (killed / survived + no coverage) before this pass: `ModifyTeamSettings
 ### Not mutated
 
 - `models/Refinement/Refinement.ts`, `models/UsageData/UsageData.ts` — types and an enum member.
+
+---
+
+# Mutation testing — 6143 (need number and verdict, E2 slice 05)
+
+Run 2026-10-05 against `main` @ `f01e7ff80` (backend) and `73b2611a2` (frontend, after the kill tests). Production
+code was frozen between the runs. Gate is 80 % kill rate on both stacks.
+
+| stack | score | tested | killed | survived | timeout | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET) | **92.73 %** | 55 | 51 | 4 | 0 | 4 m 30 s |
+| Frontend (StrykerJS), first run | 86.62 % | 299 | 259 | 39 (+1 no coverage) | 0 | 13 m 8 s |
+| Frontend (StrykerJS), after kill tests | **95.32 %** | 299 | 285 | 14 | 0 | 11 m 17 s |
+
+Configs: `stryker.6143.backend.json`, `stryker.6143.frontend.json`, `vitest.stryker.6143.ts`.
+
+## Backend
+
+| file | mutants | killed | survived | score |
+| --- | --- | --- | --- | --- |
+| `Services/Implementation/Refinement/NeedBand.cs` | 9 | 9 | 0 | 100 % |
+| `Services/Implementation/Refinement/RefinementNeedCalculator.cs` | 8 | 8 | 0 | 100 % |
+| `Services/Implementation/Refinement/RefinementViewQuery.cs` | 8 | 8 | 0 | 100 % |
+| `Services/Interfaces/Refinement/IRefinementViewQuery.cs` | 1 | 1 | 0 | 100 % |
+| `API/DTO/RefinementViewDto.cs` | 1 | 1 | 0 | 100 % |
+| `Models/UsageData/UsageDataEventShapes.cs` | 11 | 11 | 0 | 100 % |
+| `Models/Refinement/RefinementSettings.cs` | 17 | 13 | 4 | 76.47 % |
+
+### Accepted survivors
+
+All four are in `RefinementSettings.cs` and outside this slice's change (which added only `Band` and its defaults):
+
+| mutant | reason |
+| --- | --- |
+| `:62` `OrderBy` → `OrderByDescending` (cadence weekdays) | slice-04 code; its tests (`Slice04RefinementCadenceTest`, `WeeklyRecurrence…`) are outside this run's filter and the 6141 + 6142 run covered the file |
+| `:64` anchor-week conditional → `false` | as above |
+| `:64` `-DaysFromMonday` → `+DaysFromMonday` | as above |
+| `:101` `State = string.Empty` → `"Stryker was here!"` | the same equivalent default the 6136 run accepted: only JSON this code never writes reaches it |
+
+### Not mutated
+
+- `API/UsageDataController.cs` (11 of 218 lines changed) and `Services/Implementation/UsageData/PostHogUsageDataPublisher.cs`
+  (18 of 298) — whole-file mutation would bury the change under unrelated code. The verdict part is pinned end to end by
+  `TeamRefinementNeedUsageEventsTests` (accepted with each of the four values, refused without one, with an unknown one,
+  with anything beside it, and on any other event) and by `UsageDataEventShapesTests` over every event name.
+- Enums (`RefinementVerdict`, `NeedUnavailableReason`, `UsageDataRefinementVerdict`, `UsageDataEventName`), the
+  `UsageDataEventReported` / batch DTO records and `Program.cs` (one registration) — no behaviour to mutate.
+
+## Frontend
+
+| file | mutants | killed | survived | score |
+| --- | --- | --- | --- | --- |
+| `needWording.ts` | 46 | 46 | 0 | 100 % |
+| `RefinementView.tsx` (changed lines) | 3 | 3 | 0 | 100 % |
+| `usageDataReporter.ts:63-91` | 15 | 15 | 0 | 100 % |
+| `useVerdictShownReporter.ts` | 40 | 39 | 1 | 97.50 % |
+| `useRefinement.ts` | 102 | 97 | 5 | 95.10 % |
+| `NeedVerdict.tsx` | 80 | 76 | 4 | 95.00 % |
+| `NextRefinement.tsx` | 13 | 9 | 4 | 69.23 % |
+
+### Closed by this pass (26 mutants, each checked by hand, commit `73b2611a2`)
+
+- The guard that decides a need is complete enough to judge: one case per missing fact (verdict, low, high, either
+  percentile, horizon), a need the server did not send, a missing ready count, and a judged need with no next
+  Refinement — each shows no verdict and keeps the next Refinement on the heading's row.
+- Too little history names the next Refinement once, as the message's title.
+- A vote answered for a Work Item the Refinement no longer lists leaves the Refinement as read; a read failing after
+  the tab closed says nothing.
+- Team moves: a vote that moved the last Team's message, answered after the move, does not bring that Team back; a
+  vote on a Work Item still on screen from the last Team does not count as the next Team's verdict report.
+- The verdict is reported once per Team the tab is opened on, however often that Team's Refinement is read again, and
+  not at all on a Refinement day with no Work Items in Refinement.
+- The next Refinement sits on the heading's row, beside the count, when there is no message to title.
+
+### Accepted survivors
+
+| mutant | reason |
+| --- | --- |
+| `useRefinement.ts:50` `shown?.need` → `shown.need` | only differs with nothing shown, and no row can be voted on before a Refinement is shown |
+| `useRefinement.ts:58` condition → `true` | unreachable: the vote's callback is captured with the view that holds the voted row |
+| `useRefinement.ts:92` read counter `+= 1` → `-= 1` | equivalent: a counter counting down is as unique and monotonic |
+| `useRefinement.ts:137` `current?.teamId` → `current.teamId` | only differs with nothing shown, when nothing can be voted on |
+| `useRefinement.ts:142` condition → `true` | equivalent: the read counter already drops a re-read once the Team moves |
+| `NeedVerdict.tsx:47` date guard → `false` | equivalent: `parseLocalDate` returns null for a missing date anyway |
+| `NeedVerdict.tsx:56` condition → `true` | with no cadence the heading shows the no-cadence hint whatever this says; without refinement states the empty message shows first |
+| `NeedVerdict.tsx:61` condition → `true` | equivalent: no next Refinement means no title text, so the hint shows either way |
+| `NeedVerdict.tsx:77` condition → `true` | unreachable: too little history without a cadence cannot happen — the calculator answers no cadence first |
+| `NextRefinement.tsx:30`, `:40` `true` → `false` | equivalent: React writes `data-next-refinement="false"` and the layout selector only checks the attribute is present |
+| `NextRefinement.tsx:39` `{ alignItems }` → `{}` / `""` | pure styling |
+| `useVerdictShownReporter.ts:35` initial opening `{…}` → `{}` | equivalent: the first run resets an opening without a Team |

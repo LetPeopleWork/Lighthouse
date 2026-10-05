@@ -1,0 +1,47 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6143.ts",
+    "related": false
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "playwright-report",
+    "reports"
+  ],
+  "mutate": [
+    "src/pages/Teams/Detail/Refinement/NeedVerdict.tsx",
+    "src/pages/Teams/Detail/Refinement/needWording.ts",
+    "src/pages/Teams/Detail/Refinement/useVerdictShownReporter.ts",
+    "src/pages/Teams/Detail/Refinement/useRefinement.ts",
+    "src/pages/Teams/Detail/Refinement/NextRefinement.tsx",
+    "src/pages/Teams/Detail/Refinement/RefinementView.tsx:23-25",
+    "src/pages/Teams/Detail/Refinement/RefinementView.tsx:71-72",
+    "src/pages/Teams/Detail/Refinement/RefinementView.tsx:116-153",
+    "src/services/UsageData/usageDataReporter.ts:63-91"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "stryker-6143-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6143"
+}
