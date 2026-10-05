@@ -28,36 +28,6 @@ namespace Lighthouse.Backend.API.Helpers
             ];
         }
 
-        // Like readiness, the band a save would leave behind is judged, so a save naming one end is checked
-        // against the end already stored.
-        private static List<string> ValidateBand(RefinementBandDto? sent, RefinementBand stored)
-        {
-            if (sent is null)
-            {
-                return [];
-            }
-
-            var band = sent.AppliedTo(stored);
-            var errors = new List<string>();
-
-            if (!IsBandPercentile(band.LowPercentile) || !IsBandPercentile(band.HighPercentile))
-            {
-                errors.Add($"'{band.LowPercentile}' to '{band.HighPercentile}' cannot be the range's likelihoods: each end must be between {LowestBandPercentile}% and {HighestBandPercentile}%.");
-            }
-
-            if (band.LowPercentile >= band.HighPercentile)
-            {
-                errors.Add($"'{band.LowPercentile}' to '{band.HighPercentile}' cannot be the range's likelihoods: the low end must be below the high end.");
-            }
-
-            return errors;
-        }
-
-        private static bool IsBandPercentile(int percentile)
-        {
-            return percentile is >= LowestBandPercentile and <= HighestBandPercentile;
-        }
-
         private static List<string> ValidateCadence(RefinementCadenceDto? cadence)
         {
             if (cadence is null)
@@ -140,6 +110,37 @@ namespace Lighthouse.Backend.API.Helpers
             }
 
             return errors;
+        }
+
+        // Like readiness, the band a save would leave behind is judged, so a save naming one end is checked
+        // against the end already stored.
+        private static List<string> ValidateBand(RefinementBandDto? sent, RefinementBand stored)
+        {
+            if (sent is null)
+            {
+                return [];
+            }
+
+            var band = sent.AppliedTo(stored);
+            var refused = $"'{band.LowPercentile}' to '{band.HighPercentile}' cannot be the range's likelihoods";
+            var errors = new List<string>();
+
+            if (!IsBandPercentile(band.LowPercentile) || !IsBandPercentile(band.HighPercentile))
+            {
+                errors.Add($"{refused}: each end must be between {LowestBandPercentile}% and {HighestBandPercentile}%.");
+            }
+
+            if (band.LowPercentile >= band.HighPercentile)
+            {
+                errors.Add($"{refused}: the low end must be below the high end.");
+            }
+
+            return errors;
+        }
+
+        private static bool IsBandPercentile(int percentile)
+        {
+            return percentile is >= LowestBandPercentile and <= HighestBandPercentile;
         }
 
         private static HashSet<string> NormalisedSet(IEnumerable<string> states)
