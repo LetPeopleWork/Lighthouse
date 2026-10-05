@@ -20,7 +20,7 @@ import type {
 } from "../../../../models/Refinement/Refinement";
 import { describeLogDay, describeLogEntry } from "./sizingLogWording";
 import type { SizingLogState } from "./useSizingLog";
-import { describeSplit } from "./voteWording";
+import { describeSplit, LONGEST_COMMENT } from "./voteWording";
 
 const NO_SPLIT = { yes: 0, yesBut: 0, no: 0 };
 
@@ -63,6 +63,7 @@ const CommentBox: React.FC<
 				fullWidth
 				autoFocus
 				disabled={isSendingAComment}
+				slotProps={{ htmlInput: { maxLength: LONGEST_COMMENT } }}
 			/>
 			<Button
 				variant="contained"

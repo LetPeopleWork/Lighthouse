@@ -38,9 +38,31 @@ describe("why a vote was refused", () => {
 
 	it.each([
 		[
-			"too many votes",
+			"too many votes or comments",
 			new ApiError(429, "Request failed with status code 429"),
-			"Too many votes from this browser. Try again in a minute.",
+			"Too many votes or comments from this browser. Try again in a minute.",
+		],
+		[
+			"a comment that is too long",
+			new ApiError(
+				400,
+				"Bad Request",
+				undefined,
+				undefined,
+				"comment-too-long",
+			),
+			"A comment is at most 2000 characters.",
+		],
+		[
+			"a comment without text",
+			new ApiError(
+				400,
+				"Bad Request",
+				undefined,
+				undefined,
+				"comment-required",
+			),
+			"A comment needs some text.",
 		],
 		[
 			"the work left refinement",

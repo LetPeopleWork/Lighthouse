@@ -345,7 +345,7 @@ describe("A voter casts a sizing vote from the list", () => {
 		await user.click(theButton(row, "Yes"));
 
 		expect(await screen.findByRole("alert")).toHaveTextContent(
-			"Too many votes from this browser. Try again in a minute.",
+			"Too many votes or comments from this browser. Try again in a minute.",
 		);
 		expect(row).toHaveTextContent("No votes");
 		expect(theButton(row, "Yes")).toHaveAttribute("aria-pressed", "false");

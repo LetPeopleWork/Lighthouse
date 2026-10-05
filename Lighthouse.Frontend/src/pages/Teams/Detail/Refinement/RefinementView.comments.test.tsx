@@ -370,6 +370,21 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		);
 	});
 
+	// @us-12 @slice-12 @boundary @contract-shape:pure-function
+	it("takes a comment of at most 2000 characters", async () => {
+		aBrowserThatVotedBefore(JONAS);
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement({}, [
+				aRow(API_VERSIONING, "Public API versioning", "Analysing"),
+			]),
+		);
+
+		expect(await startACommentOn(user, API_VERSIONING)).toHaveAttribute(
+			"maxlength",
+			"2000",
+		);
+	});
+
 	// @us-12 @slice-12 @error @contract-shape:unbounded-preservation
 	it("will not send an empty comment", async () => {
 		aBrowserThatVotedBefore(JONAS);
