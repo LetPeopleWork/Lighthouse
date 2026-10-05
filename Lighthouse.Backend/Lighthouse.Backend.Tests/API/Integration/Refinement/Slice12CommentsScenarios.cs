@@ -103,7 +103,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-12 @slice-12 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice12)]
         public async Task A_question_without_a_vote_flags_the_Work_Item_and_counts_as_no_vote()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -115,7 +114,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-12 @slice-12 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice12)]
         public async Task The_asker_voting_closes_their_own_question()
         {
             var gravity = await GivenJonasAskedWhichApiVersionOnApiVersioning();
@@ -127,7 +125,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-12 @slice-12 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice12)]
         public async Task Somebody_elses_vote_does_not_close_the_question()
         {
             var gravity = await GivenJonasAskedWhichApiVersionOnApiVersioning();
@@ -139,7 +136,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-12 @slice-12 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice12)]
         public async Task A_comment_from_somebody_who_has_voted_is_no_open_question_and_keeps_their_vote()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -152,7 +148,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-12 @us-13 @slice-12 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice12)]
         public async Task A_question_counts_for_nothing_towards_readiness()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();

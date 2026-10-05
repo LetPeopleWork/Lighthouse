@@ -51,7 +51,16 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
 
     /// <param name="Stage">The stage the Team's rules give the row; null when the Team sets no stage rule.</param>
     /// <param name="SignalsDisagree">Whether the stage and the votes cast differ on the row being Ready.</param>
-    public sealed record RefinementRow(WorkItem WorkItem, RowVotes Votes, RowStanding Standing, RefinementStage? Stage = null, bool SignalsDisagree = false);
+    public sealed record RefinementRow(WorkItem WorkItem, RowVotes Votes, RowStanding Standing, RefinementStage? Stage = null, bool SignalsDisagree = false)
+    {
+        public RowConversation Conversation { get; init; } = RowConversation.None;
+    }
+
+    /// <summary>Whether anybody has said something on the row, and whether somebody without a vote is waiting for an answer.</summary>
+    public sealed record RowConversation(bool HasComments, bool HasOpenQuestion)
+    {
+        public static RowConversation None { get; } = new(false, false);
+    }
 
     /// <summary>When the Team next refines, and how its ready Work Items compare with what it is likely to pull until then.</summary>
     public sealed record RefinementOutlook(RefinementCalendarFacts Calendar, RefinementNeed Need);

@@ -79,6 +79,65 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                 .SetName("A vote taken back no longer counts");
         }
 
+        [TestCaseSource(nameof(Conversations))]
+        public void A_question_stays_open_until_the_asker_votes(SizingLogEntry[] log, RowConversation expected)
+        {
+            var conversation = RefinementResolution.ConversationOn(log);
+
+            Assert.That(conversation, Is.EqualTo(expected));
+        }
+
+        private static IEnumerable<TestCaseData> Conversations()
+        {
+            yield return new TestCaseData(Array.Empty<SizingLogEntry>(), new RowConversation(HasComments: false, HasOpenQuestion: false))
+                .SetName("An empty log has neither comments nor a question");
+
+            yield return new TestCaseData(
+                    new[] { VoteBy(Jonas, 1, SizingAnswer.Yes) },
+                    new RowConversation(HasComments: false, HasOpenQuestion: false))
+                .SetName("A vote without a comment is no comment");
+
+            yield return new TestCaseData(
+                    new[] { VoteWithCommentBy(Jonas, 1, SizingAnswer.YesBut) },
+                    new RowConversation(HasComments: true, HasOpenQuestion: false))
+                .SetName("A vote's comment is a comment but no question");
+
+            yield return new TestCaseData(
+                    new[] { CommentBy(Jonas, 1) },
+                    new RowConversation(HasComments: true, HasOpenQuestion: true))
+                .SetName("A comment from somebody without a vote is an open question");
+
+            yield return new TestCaseData(
+                    new[] { CommentBy(Jonas, 1), VoteBy(Jonas, 2, SizingAnswer.Yes) },
+                    new RowConversation(HasComments: true, HasOpenQuestion: false))
+                .SetName("The asker voting closes their question");
+
+            yield return new TestCaseData(
+                    new[] { CommentBy(Jonas, 1), VoteBy(Ana, 2, SizingAnswer.Yes) },
+                    new RowConversation(HasComments: true, HasOpenQuestion: true))
+                .SetName("Somebody else's vote leaves the question open");
+
+            yield return new TestCaseData(
+                    new[] { VoteBy(Ana, 1, SizingAnswer.No), CommentBy(Ana, 2) },
+                    new RowConversation(HasComments: true, HasOpenQuestion: false))
+                .SetName("A comment after a vote is no question");
+
+            yield return new TestCaseData(
+                    new[] { CommentBy(Jonas, 1), VoteBy(Jonas, 2, SizingAnswer.Yes), CommentBy(Jonas, 3) },
+                    new RowConversation(HasComments: true, HasOpenQuestion: false))
+                .SetName("Commenting again while holding a vote opens no question");
+
+            yield return new TestCaseData(
+                    new[] { VoteBy(Jonas, 1, SizingAnswer.Yes), RevocationBy(Jonas, 2), CommentBy(Jonas, 3) },
+                    new RowConversation(HasComments: true, HasOpenQuestion: true))
+                .SetName("A comment after taking back a vote is an open question");
+
+            yield return new TestCaseData(
+                    new[] { CommentBy(Jonas, 3), VoteBy(Jonas, 7, SizingAnswer.Yes) },
+                    new RowConversation(HasComments: true, HasOpenQuestion: false))
+                .SetName("Whether a question is open follows the log's order, not its arrival");
+        }
+
         [TestCase(0, 0, 0, 3, 3, RowReadiness.MoreYesNeeded, 3, TestName = "Nobody has voted, so every Yes is missing")]
         [TestCase(1, 0, 0, 3, 3, RowReadiness.MoreYesNeeded, 2, TestName = "One Yes of three leaves two missing")]
         [TestCase(2, 0, 1, 3, 3, RowReadiness.MoreYesNeeded, 1, TestName = "A No does not count as a Yes")]
@@ -295,12 +354,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         private static SizingLogEntry CommentBy(string voterKey, int id)
             => Entry(voterKey, id, SizingEntryKind.Comment, null, "Voter");
 
+        private static SizingLogEntry VoteWithCommentBy(string voterKey, int id, SizingAnswer answer)
+            => Entry(voterKey, id, SizingEntryKind.Vote, answer, "Voter", "Only if the export moves out");
+
         private static SizingLogEntry RevocationBy(string voterKey, int id)
             => Entry(voterKey, id, SizingEntryKind.Revocation, null, "Voter");
 
-        private static SizingLogEntry Entry(string voterKey, int id, SizingEntryKind kind, SizingAnswer? answer, string displayName)
+        private static SizingLogEntry Entry(string voterKey, int id, SizingEntryKind kind, SizingAnswer? answer, string displayName, string? comment = null)
             => new()
             {
+                Comment = comment,
                 Id = id,
                 TeamId = 1,
                 WorkItemReferenceId = "GR-051",

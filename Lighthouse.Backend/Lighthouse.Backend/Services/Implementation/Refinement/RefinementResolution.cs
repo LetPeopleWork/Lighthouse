@@ -18,6 +18,23 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         }
 
         /// <summary>
+        /// A comment from somebody without a vote is a question, and it stays open until they vote: an answer
+        /// from anybody else does not tell whether the asker is satisfied. A comment from somebody holding a vote
+        /// is a plain comment.
+        /// </summary>
+        public static RowConversation ConversationOn(IEnumerable<SizingLogEntry> entries)
+        {
+            var log = entries.ToList();
+            var voterKeys = CurrentVotes(log).Select(vote => vote.VoterKey).ToHashSet(StringComparer.Ordinal);
+            var hasOpenQuestion = log
+                .GroupBy(entry => entry.VoterKey, StringComparer.Ordinal)
+                .Select(byVoter => byVoter.MaxBy(entry => entry.Id)!)
+                .Any(latest => latest.Kind == SizingEntryKind.Comment && !voterKeys.Contains(latest.VoterKey));
+
+            return new RowConversation(log.Exists(IsComment), hasOpenQuestion);
+        }
+
+        /// <summary>
         /// A "Yes, if…" counts as a Yes; a No does not, though every answer counts as a voter. A discussion
         /// rule that is met wins over everything else, because the doubt is what the meeting is for. Missing Yes
         /// votes are named before missing voters, because more Yes votes also bring more voters.
@@ -91,6 +108,9 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         // A rule that is off has no threshold, and a comparison with a missing threshold is never true.
         private static bool NeedsDiscussion(VoteSplit split, DiscussionRules rules)
             => split.No >= rules.No || split.YesBut >= rules.YesIf;
+
+        private static bool IsComment(SizingLogEntry entry)
+            => entry.Kind == SizingEntryKind.Comment || entry.Comment is not null;
 
         private static List<SizingLogEntry> CurrentVotes(IEnumerable<SizingLogEntry> entries)
             => [.. entries

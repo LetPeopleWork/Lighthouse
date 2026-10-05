@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.API.DTO
         /// <summary>The name a voter declares on an instance without sign-in; ignored with sign-in.</summary>
         public string? VoterName { get; set; }
 
-        private sealed class NamesOnly<TEnum> : JsonConverter<TEnum>
+        internal sealed class NamesOnly<TEnum> : JsonConverter<TEnum>
             where TEnum : struct, Enum
         {
             public override TEnum Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)

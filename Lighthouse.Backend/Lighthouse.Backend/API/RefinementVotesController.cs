@@ -46,7 +46,35 @@ namespace Lighthouse.Backend.API
             var workItemReference = WorkItemReferenceFrom(workItemId);
             var outcome = sizingLogCommands.Vote(teamId, workItemReference, new SizingVote(answer, channel, vote.Comment), voter);
 
-            return outcome switch
+            return Answered(outcome, teamId, workItemReference, voterKey);
+        }
+
+        [HttpPost("comments")]
+        public ActionResult<RefinementRowDto> AddComment(
+            int teamId,
+            string workItemId,
+            [FromBody] SizingCommentDto comment,
+            [FromHeader(Name = RefinementController.VoterKeyHeader)] string? voterKey)
+        {
+            if (comment.Comment is not { } text || comment.Channel is not { } channel)
+            {
+                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "A comment needs its text and the channel it was sent from.");
+            }
+
+            var resolution = voterIdentityResolver.ForWrite(comment.VoterName, voterKey);
+            if (resolution.Voter is not { } voter)
+            {
+                return RefusedWithoutAVoter(resolution.Refusal, teamId, channel);
+            }
+
+            var workItemReference = WorkItemReferenceFrom(workItemId);
+            var outcome = sizingLogCommands.Comment(teamId, workItemReference, new SizingComment(text, channel), voter);
+
+            return Answered(outcome, teamId, workItemReference, voterKey);
+        }
+
+        private ActionResult<RefinementRowDto> Answered(VoteOutcome outcome, int teamId, string workItemReference, string? voterKey)
+            => outcome switch
             {
                 VoteOutcome.Recorded => RowAsItNowStands(teamId, workItemReference, voterKey, madeReady: false),
                 VoteOutcome.RecordedAndMadeReady => RowAsItNowStands(teamId, workItemReference, voterKey, madeReady: true),
@@ -54,7 +82,6 @@ namespace Lighthouse.Backend.API
                 VoteOutcome.WorkItemNotInRefinement => Refused(StatusCodes.Status409Conflict, "That Work Item is not in refinement.", SizingRefusal.WorkItemNotInRefinement),
                 _ => throw new System.Diagnostics.UnreachableException($"No such vote outcome: {outcome}"),
             };
-        }
 
         // The server has already unescaped every part of the path except an escaped slash, which it leaves
         // as it came so that it cannot pass for a path separator. A reference holding a slash therefore

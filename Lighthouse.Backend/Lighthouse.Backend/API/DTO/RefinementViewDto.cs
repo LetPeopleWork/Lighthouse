@@ -83,6 +83,10 @@ namespace Lighthouse.Backend.API.DTO
         public RefinementStage? Stage { get; } = row.Stage;
 
         public bool SignalsDisagree { get; } = row.SignalsDisagree;
+
+        public bool HasComments { get; } = row.Conversation.HasComments;
+
+        public bool HasOpenQuestion { get; } = row.Conversation.HasOpenQuestion;
     }
 
     /// <summary>The row as a vote left it, and whether that vote is the one that made it Ready.</summary>

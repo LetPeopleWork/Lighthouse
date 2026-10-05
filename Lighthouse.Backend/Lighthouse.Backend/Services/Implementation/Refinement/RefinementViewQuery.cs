@@ -29,11 +29,12 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             }
 
             var workItems = refinementList.For(team);
-            var votes = CurrentVotesOn(team.Id, workItems, voterIdentityResolver.ReaderKeyFrom(presentedVoterKey));
+            var logs = LogsOn(team.Id, workItems);
+            var readerKey = voterIdentityResolver.ReaderKeyFrom(presentedVoterKey);
             var readiness = team.RefinementSettings?.Readiness ?? new ReadinessSetting();
             var stages = stageRuleMatcher.MatchFor(team, workItems);
             var rows = workItems
-                .Select(item => RowFor(item, votes.GetValueOrDefault(item.ReferenceId, RowVotes.None), readiness, stages))
+                .Select(item => RowFor(item, logs.GetValueOrDefault(item.ReferenceId, []), readerKey, readiness, stages))
                 .ToList();
 
             var outlook = needCalculator.For(team, RefinementResolution.ReadyCountOf(stages.StagesConfigured, rows));
@@ -70,21 +71,25 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             DateTime.SpecifyKind(entry.RecordedAt, DateTimeKind.Utc),
             readerKey is not null && string.Equals(entry.VoterKey, readerKey, StringComparison.Ordinal));
 
-        private static RefinementRow RowFor(WorkItem item, RowVotes votes, ReadinessSetting readiness, StageMatches stages)
+        private static RefinementRow RowFor(WorkItem item, List<SizingLogEntry> log, string? readerKey, ReadinessSetting readiness, StageMatches stages)
         {
+            var votes = RefinementResolution.VotesOn(log, readerKey);
             var standing = RefinementResolution.StandingOf(votes.Split, readiness);
             var stage = stages.StageOf(item);
 
-            return new(item, votes, standing, stage, RefinementResolution.SignalsDisagree(stage, votes, standing));
+            return new(item, votes, standing, stage, RefinementResolution.SignalsDisagree(stage, votes, standing))
+            {
+                Conversation = RefinementResolution.ConversationOn(log),
+            };
         }
 
-        private Dictionary<string, RowVotes> CurrentVotesOn(int teamId, List<WorkItem> workItems, string? readerKey)
+        private Dictionary<string, List<SizingLogEntry>> LogsOn(int teamId, List<WorkItem> workItems)
         {
             List<string> references = [.. workItems.Select(item => item.ReferenceId).Distinct(StringComparer.Ordinal)];
 
             return sizingLog.ReadForTeam(teamId, references)
                 .GroupBy(entry => entry.WorkItemReferenceId, StringComparer.Ordinal)
-                .ToDictionary(entries => entries.Key, entries => RefinementResolution.VotesOn(entries, readerKey), StringComparer.Ordinal);
+                .ToDictionary(entries => entries.Key, entries => entries.ToList(), StringComparer.Ordinal);
         }
     }
 }
