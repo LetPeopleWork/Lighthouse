@@ -2928,3 +2928,11 @@ open for slice 05; the three sentences, the single MUI Alert and "above as loud 
   'Next Refinement: Fri 9 Oct · in 4 days' and the date leaves the heading row; the sentences say 'by then' instead
   of repeating the date. Without a cadence there is no message and 'No Refinement cadence ⓘ' stays on the heading
   row.
+
+## Wave: DELIVER / [REF] Maintainer decision — the "enough for" line names the next Refinement (2026-10-05)
+
+Asked before slice 06 (#6144) was built, after the need message took the date as its title. **The line and the
+all-needed sentence say "the next Refinement" instead of repeating the date**: "enough for the next Refinement (85%) ·
+not needed before then" and "All 6 Work Items in Refinement are needed before the next Refinement." This supersedes
+the wording in "Maintainer decision — the E2 UI, and slice 08 folded into 03 (2026-10-04)" for slice 06; the
+"Refinement" word goes through Terminology like every other renameable term.
