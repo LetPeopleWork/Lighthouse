@@ -23,6 +23,7 @@ describe("the votes and comments of one Work Item", () => {
 				workItem={aWorkItem({ split: undefined })}
 				voterName={null}
 				onChangeName={vi.fn()}
+				onAddComment={vi.fn()}
 				onClose={vi.fn()}
 			/>,
 		);
@@ -38,6 +39,7 @@ describe("the votes and comments of one Work Item", () => {
 				workItem={aWorkItem({ split: { yes: 1, yesBut: 0, no: 0 } })}
 				voterName={null}
 				onChangeName={vi.fn()}
+				onAddComment={vi.fn()}
 				onClose={vi.fn()}
 			/>,
 		);

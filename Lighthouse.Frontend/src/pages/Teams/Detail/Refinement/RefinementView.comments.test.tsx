@@ -20,8 +20,9 @@ import {
 
 /**
  * Comments, conditions and questions on the Refinement tab, and the log each Work Item keeps. "Yes, if…"
- * records in one click like Yes and No; its condition is a comment like any other. A question is asked from a Work Item's
- * votes and comments, without voting; it marks the Work Item until the asker votes. Each Work Item's log
+ * records in one click like Yes and No; its condition is a comment like any other. Anybody adds a comment from a
+ * Work Item's votes and comments, without voting; from somebody without a vote it is an open question, which marks
+ * the Work Item until they vote. Each Work Item's log
  * reads oldest first and says who said what, on which day and, for the command line or an assistant,
  * through which. Everybody reads it, voted or not.
  */
@@ -81,16 +82,16 @@ const advancedReportingWithComments = () =>
 
 const openTheLogOf = openTheVotesAndCommentsOf;
 
-/** Asks from the Work Item's votes and comments, wherever the question box then opens. */
-const startAQuestionOn = async (
+/** Starts a comment from the Work Item's votes and comments, wherever the comment box then opens. */
+const startACommentOn = async (
 	user: ReturnType<typeof renderTheRefinementTab>["user"],
 	referenceId: string,
 ) => {
 	const votes = await openTheVotesAndCommentsOf(user, referenceId);
 	await user.click(
-		within(votes).getByRole("button", { name: "Ask a question" }),
+		within(votes).getByRole("button", { name: "Add a comment" }),
 	);
-	return await screen.findByRole("textbox", { name: "Question" });
+	return await screen.findByRole("textbox", { name: "Comment" });
 };
 
 describe("Comments, conditions and questions on the Refinement tab", () => {
@@ -143,7 +144,7 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 	});
 
 	// @us-12 @slice-12 @driving_port @contract-shape:bounded-change
-	it.skip("lets a voter ask a question without voting", async () => {
+	it("lets anybody add a comment without voting", async () => {
 		const key = aBrowserThatVotedBefore(JONAS);
 		const sizingLogService = aSizingLogService({
 			addComment: vi.fn().mockResolvedValue(
@@ -160,7 +161,7 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 			sizingLogService,
 		);
 
-		await user.type(await startAQuestionOn(user, API_VERSIONING), QUESTION);
+		await user.type(await startACommentOn(user, API_VERSIONING), QUESTION);
 		await user.click(screen.getByRole("button", { name: "Send" }));
 
 		await waitFor(() =>
@@ -176,7 +177,7 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 	});
 
 	// @us-12 @slice-12 @error @contract-shape:unbounded-preservation
-	it.skip("will not send an empty question", async () => {
+	it("will not send an empty comment", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const sizingLogService = aSizingLogService();
 		const { user } = renderTheRefinementTab(
@@ -186,28 +187,54 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 			sizingLogService,
 		);
 
-		await user.type(await startAQuestionOn(user, API_VERSIONING), "   ");
+		await user.type(await startACommentOn(user, API_VERSIONING), "   ");
 
 		expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
 		expect(sizingLogService.addComment).not.toHaveBeenCalled();
 	});
 
 	// @us-12 @slice-12 @contract-shape:pure-function
-	it.skip("marks a Work Item with an open question and leaves the others unmarked", async () => {
+	it("marks a Work Item with comments and an open question and leaves the others unmarked", async () => {
 		renderTheRefinementTab(
 			gravitysRefinement({}, [
 				aRow(API_VERSIONING, "Public API versioning", "Analysing", {
+					voteCount: 3,
 					hasComments: true,
 					hasOpenQuestion: true,
 				}),
-				aRow(ADVANCED_REPORTING, "Advanced reporting module", "Analysing"),
+				aRow(ADVANCED_REPORTING, "Advanced reporting module", "Analysing", {
+					voteCount: 2,
+					hasComments: true,
+				}),
+				aRow("GR-060", "Audit trail", "Analysing", { voteCount: 1 }),
 			]),
 		);
 
-		expect(await theRowOf(API_VERSIONING)).toHaveTextContent("Open question");
-		expect(await theRowOf(ADVANCED_REPORTING)).not.toHaveTextContent(
-			"Open question",
-		);
+		const asked = await theRowOf(API_VERSIONING);
+		const commented = await theRowOf(ADVANCED_REPORTING);
+		const quiet = await theRowOf("GR-060");
+
+		expect(asked).toHaveTextContent("Open question");
+		expect(asked).toHaveTextContent("Comments");
+		expect(
+			within(asked).getByRole("button", {
+				name: "3 votes, comments, open question - Votes and comments",
+			}),
+		).toBeInTheDocument();
+		expect(commented).toHaveTextContent("Comments");
+		expect(commented).not.toHaveTextContent("Open question");
+		expect(
+			within(commented).getByRole("button", {
+				name: "2 votes, comments - Votes and comments",
+			}),
+		).toBeInTheDocument();
+		expect(quiet).not.toHaveTextContent("Comments");
+		expect(quiet).not.toHaveTextContent("Open question");
+		expect(
+			within(quiet).getByRole("button", {
+				name: "1 vote - Votes and comments",
+			}),
+		).toBeInTheDocument();
 	});
 
 	// @us-12 @slice-12 @driving_port @contract-shape:pure-function

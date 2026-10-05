@@ -14,6 +14,7 @@ import NextRefinement, { NEXT_REFINEMENT_SLOT } from "./NextRefinement";
 import { describeNextRefinement } from "./nextRefinementWording";
 import RefinementGrid from "./RefinementGrid";
 import { describeStageBreakdown } from "./stageBreakdown";
+import { useCommentAdding } from "./useCommentAdding";
 import { useRefinement } from "./useRefinement";
 import { useVerdictShownReporter } from "./useVerdictShownReporter";
 import { useVoteCasting } from "./useVoteCasting";
@@ -89,6 +90,18 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 			showVoteRefusal,
 			refinement,
 		);
+
+	const {
+		addComment,
+		isAskingForName: isAskingWhoComments,
+		commentUnderName,
+		cancelComment,
+	} = useCommentAdding(
+		team.id,
+		voterIdentity,
+		showAnsweredRow,
+		showVoteRefusal,
+	);
 
 	const marking = useMemo(
 		() =>
@@ -193,7 +206,21 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 					workItem={votesShownOn}
 					voterName={changeableName}
 					onChangeName={() => setIsChangingName(true)}
+					onAddComment={(comment, onSent) =>
+						addComment({
+							referenceId: votesShownOn.referenceId,
+							comment,
+							onSent,
+						})
+					}
 					onClose={() => setVotesShownFor(null)}
+				/>
+			)}
+			{isAskingWhoComments && (
+				<VoterNamePrompt
+					confirmLabel="Send"
+					onCancel={cancelComment}
+					onConfirm={commentUnderName}
 				/>
 			)}
 			{isChangingName && changeableName !== null && (

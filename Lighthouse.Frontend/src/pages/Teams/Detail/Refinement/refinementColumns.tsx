@@ -1,5 +1,9 @@
-import { Button } from "@mui/material";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutlineOutlined";
+import type { SxProps, Theme } from "@mui/material";
+import { Box, Button, Tooltip } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
+import type React from "react";
 import type { DataGridColumn } from "../../../../components/Common/DataGrid/types";
 import { createNameColumn } from "../../../../components/Common/FeatureListDataGrid/columns";
 import ParentWorkItemCell from "../../../../components/Common/ParentWorkItemCell/ParentWorkItemCell";
@@ -16,6 +20,39 @@ import YardstickQuestion, {
 } from "./YardstickQuestion";
 
 export type RefinementGridRow = IRefinementRow & GridValidRowModel;
+
+// Read by screen readers and text search, never shown; the tooltip says the same to a pointer.
+const VISUALLY_HIDDEN: SxProps<Theme> = {
+	position: "absolute",
+	width: "1px",
+	height: "1px",
+	overflow: "hidden",
+	clip: "rect(0 0 0 0)",
+	whiteSpace: "nowrap",
+};
+
+const COMMENTS = "Comments";
+const OPEN_QUESTION = "Open question";
+
+const Marker: React.FC<
+	Readonly<{ label: string; children: React.ReactElement }>
+> = ({ label, children }) => (
+	<Tooltip title={label}>
+		<Box component="span" sx={{ display: "inline-flex", ml: 0.5 }}>
+			{children}
+			<Box component="span" sx={VISUALLY_HIDDEN}>
+				{label}
+			</Box>
+		</Box>
+	</Tooltip>
+);
+
+const describeVotesCell = (row: IRefinementRow, voteCount: string): string =>
+	[
+		voteCount,
+		...(row.hasComments ? [COMMENTS.toLowerCase()] : []),
+		...(row.hasOpenQuestion ? [OPEN_QUESTION.toLowerCase()] : []),
+	].join(", ");
 
 export interface RefinementColumnsOptions {
 	workItemTerm: string;
@@ -104,10 +141,20 @@ export const createRefinementColumns = ({
 			return (
 				<Button
 					size="small"
-					aria-label={`${voteCount} - Votes and comments`}
+					aria-label={`${describeVotesCell(row, voteCount)} - Votes and comments`}
 					onClick={() => onOpenVotes(row.referenceId)}
 				>
 					{voteCount}
+					{row.hasComments && (
+						<Marker label={COMMENTS}>
+							<ChatBubbleOutlineIcon fontSize="small" />
+						</Marker>
+					)}
+					{row.hasOpenQuestion && (
+						<Marker label={OPEN_QUESTION}>
+							<HelpOutlineIcon fontSize="small" color="warning" />
+						</Marker>
+					)}
 				</Button>
 			);
 		},

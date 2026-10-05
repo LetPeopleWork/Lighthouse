@@ -13,7 +13,7 @@ export const LONGEST_VOTER_NAME = 100;
 
 interface VoterNamePromptProps {
 	initialName?: string;
-	confirmLabel: "Vote" | "Save";
+	confirmLabel: "Vote" | "Save" | "Send";
 	onCancel: () => void;
 	onConfirm: (name: string) => void;
 }

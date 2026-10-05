@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import type {
+	ISizingComment,
 	ISizingVote,
 	SizingAnswer,
 	VoterIdentity,
@@ -12,6 +13,16 @@ import {
 
 export interface IVoterBallot {
 	vote: ISizingVote;
+	voterKey: string | null;
+}
+
+export interface IVoterComment {
+	comment: ISizingComment;
+	voterKey: string | null;
+}
+
+interface IVoterSignature {
+	voterName?: string;
 	voterKey: string | null;
 }
 
@@ -32,18 +43,28 @@ export const useVoterIdentity = (voterIdentity: VoterIdentity | undefined) => {
 		[voter],
 	);
 
+	const signatureFor = useCallback(
+		(declared: IStoredVoter | null): IVoterSignature =>
+			isAccount || declared === null
+				? { voterKey: null }
+				: { voterName: declared.name, voterKey: declared.key },
+		[isAccount],
+	);
+
 	const ballotFor = useCallback(
 		(answer: SizingAnswer, declared: IStoredVoter | null): IVoterBallot => {
-			if (isAccount || declared === null) {
-				return { vote: { answer, channel: "Web" }, voterKey: null };
-			}
-
-			return {
-				vote: { answer, channel: "Web", voterName: declared.name },
-				voterKey: declared.key,
-			};
+			const { voterKey, ...name } = signatureFor(declared);
+			return { vote: { answer, channel: "Web", ...name }, voterKey };
 		},
-		[isAccount],
+		[signatureFor],
+	);
+
+	const commentFor = useCallback(
+		(comment: string, declared: IStoredVoter | null): IVoterComment => {
+			const { voterKey, ...name } = signatureFor(declared);
+			return { comment: { comment, channel: "Web", ...name }, voterKey };
+		},
+		[signatureFor],
 	);
 
 	return {
@@ -52,5 +73,6 @@ export const useVoterIdentity = (voterIdentity: VoterIdentity | undefined) => {
 		changeableName: isAccount ? null : (voter?.name ?? null),
 		declareName,
 		ballotFor,
+		commentFor,
 	};
 };
