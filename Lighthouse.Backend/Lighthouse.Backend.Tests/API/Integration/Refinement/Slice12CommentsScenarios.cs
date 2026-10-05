@@ -72,7 +72,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-12 @slice-12 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice12)]
         public async Task The_log_says_who_said_what_when_and_from_where_oldest_first()
         {
             var gravity = await GivenJonasVotedYesAnaVotedNoAndMoAskedAQuestionOnAdvancedReporting();
@@ -88,7 +87,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-11 @us-12 @slice-12 @boundary @contract-shape:pure-function
         // Nobody has to vote to read the others: the split and every comment are there for anyone.
         [Test]
-        [Ignore(PendingSlice12)]
         public async Task Somebody_who_never_voted_reads_how_the_votes_split_and_every_comment()
         {
             var gravity = await GivenJonasVotedYesAnaVotedNoAndMoAskedAQuestionOnAdvancedReporting();
@@ -172,7 +170,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-12 @slice-12 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice12)]
         public async Task A_comment_of_two_thousand_characters_is_kept_whole()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -222,7 +219,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-12 @slice-12 @error @contract-shape:pure-function
         // The log opens for a listed Work Item first, so the refusal can only be about the Work Item.
         [Test]
-        [Ignore(PendingSlice12)]
         public async Task The_log_of_a_Work_Item_that_is_not_in_refinement_is_not_found()
         {
             var gravity = await GivenAnaVotedAndCanOpenTheLogOfAdvancedReporting();
@@ -235,7 +231,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-12 @slice-12 @boundary @contract-shape:bounded-change
         // Whatever somebody types is text: it is stored and handed back exactly, never interpreted.
         [Test]
-        [Ignore(PendingSlice12)]
         public async Task A_comment_comes_back_exactly_as_it_was_written()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
