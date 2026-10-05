@@ -204,6 +204,22 @@ export const theRowOf = async (referenceId: string): Promise<HTMLElement> => {
 	return row as HTMLElement;
 };
 
+/** A row's Warnings cell: one icon naming every reason the row needs attention, or nothing at all. */
+export const theWarningsCellOf = async (
+	referenceId: string,
+): Promise<HTMLElement> => {
+	const cell = (await theRowOf(referenceId)).querySelector<HTMLElement>(
+		'[role="gridcell"][data-field="warnings"]',
+	);
+	if (cell === null) {
+		throw new Error(`${referenceId} has no Warnings cell`);
+	}
+	return cell;
+};
+
+export const OPEN_QUESTION_WARNING =
+	"Somebody asked a question and has not voted yet.";
+
 export const theButton = (row: HTMLElement, name: string | RegExp) =>
 	within(row).getByRole("button", { name });
 

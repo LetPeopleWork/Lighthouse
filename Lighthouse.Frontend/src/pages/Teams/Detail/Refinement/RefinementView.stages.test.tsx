@@ -5,17 +5,21 @@ import {
 	aRow,
 	defaultRefinementTerms,
 	gravitysRefinement,
+	OPEN_QUESTION_WARNING,
 	renderTheRefinementTab,
 	theRowOf,
+	theWarningsCellOf,
 } from "../../../../tests/RefinementTabTestKit";
 import { describeStageBreakdown } from "./stageBreakdown";
+import { describeDisagreement } from "./stageWording";
 
 /**
  * Stages and votes are two signals the Refinement tab shows side by side. A Team that sets no stage rule
  * sees the tab as before: the votes alone say what is ready. Once the Team sets a stage rule, a Stage
  * column follows the State column, the votes column is headed "Votes say", and the heading is the list
  * broken down by stage, with no separate count. Where the two signals
- * tell a different story the row carries a marker that says so in words, not colour alone.
+ * tell a different story the row's Warnings cell says so in words, not colour alone; the Stage cell
+ * holds the stage and nothing else.
  */
 
 const { terms, mockUseLicenseRestrictions, reporter } = vi.hoisted(() => ({
@@ -41,8 +45,8 @@ vi.mock("../../../../services/UsageData/usageDataReporter", () => ({
 	useUsageDataReporter: () => reporter.current,
 }));
 
-// The marker's words are still to be approved with the sketch; the test holds the meaning, not the wording.
-const SIGNALS_DISAGREE = /stage and (the )?votes disagree/i;
+// Either way round the two signals disagree, the reason names the stage; no other warning does.
+const SIGNALS_DISAGREE = /the stage (says|is still)/i;
 
 const staged = (
 	referenceId: string,
@@ -153,12 +157,19 @@ describe("The Refinement tab shows stages beside the votes", () => {
 	});
 
 	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
-	it("marks a row whose stage and votes disagree, in words a screen reader reads too", async () => {
+	it("warns about a row whose stage and votes disagree, in words a screen reader reads too, and leaves the Stage cell to the stage", async () => {
 		renderTheRefinementTab(gravityWithStages());
 
 		expect(
-			within(await theRowOf("GR-059")).getByLabelText(SIGNALS_DISAGREE),
+			within(await theWarningsCellOf("GR-059")).getByRole("button", {
+				name: SIGNALS_DISAGREE,
+			}),
 		).toBeInTheDocument();
+		const stageCell = await theStageCellOf("GR-059");
+		expect(stageCell).toHaveTextContent(/^Ready$/);
+		expect(
+			within(stageCell).queryByLabelText(SIGNALS_DISAGREE),
+		).not.toBeInTheDocument();
 	});
 
 	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
@@ -184,14 +195,14 @@ describe("The Refinement tab shows stages beside the votes", () => {
 		);
 
 		expect(
-			within(await theRowOf("GR-059")).getByLabelText(
-				/^Stage and votes disagree\. The stage says Ready, but the votes don't agree yet\.$/,
-			),
+			within(await theWarningsCellOf("GR-059")).getByRole("button", {
+				name: "The stage says Ready, but the votes don't agree yet.",
+			}),
 		).toBeInTheDocument();
 		expect(
-			within(await theRowOf("GR-073")).getByLabelText(
-				/^Stage and votes disagree\. The votes say Ready, but the stage is still Waiting\.$/,
-			),
+			within(await theWarningsCellOf("GR-073")).getByRole("button", {
+				name: "The votes say Ready, but the stage is still Waiting.",
+			}),
 		).toBeInTheDocument();
 	});
 
@@ -302,6 +313,129 @@ describe("The Refinement tab shows stages beside the votes", () => {
 			}),
 		).toBeVisible();
 		expect(screen.queryByText(/ Tickets in Grooming/)).not.toBeInTheDocument();
+	});
+});
+
+/**
+ * One Warnings column, last in the grid, says what needs attention on a row: the stage and the votes
+ * disagree, or somebody asked a question and has not voted yet. A row with nothing to warn about shows
+ * nothing at all there, and sorting by it brings the rows that need attention together.
+ */
+describe("The Warnings column", () => {
+	beforeEach(() => {
+		localStorage.clear();
+		terms.current = { ...defaultRefinementTerms };
+		reporter.current = vi.fn();
+		mockUseLicenseRestrictions.mockReturnValue({
+			licenseStatus: { canUsePremiumFeatures: true },
+			isLoading: false,
+		});
+	});
+
+	const disagreeing = staged(
+		"GR-059",
+		"Advanced search filters",
+		"Next",
+		"Ready",
+		{
+			voteCount: 1,
+			readiness: "MoreYesNeeded",
+			missingVotes: 2,
+			signalsDisagree: true,
+		},
+	);
+	const asked = staged(
+		"GR-054",
+		"Public API versioning",
+		"Analysing",
+		"BeingRefined",
+		{
+			hasComments: true,
+			hasOpenQuestion: true,
+		},
+	);
+
+	// @us-12 @slice-12 @boundary @contract-shape:pure-function
+	it("shows nothing at all on a row with nothing to warn about", async () => {
+		renderTheRefinementTab(gravityWithStages());
+
+		const clean = await theWarningsCellOf("GR-058");
+		expect(within(clean).queryByRole("button")).not.toBeInTheDocument();
+		expect(clean).toHaveTextContent(/^$/);
+	});
+
+	// @us-03 @us-12 @slice-12 @driving_port @contract-shape:pure-function
+	it("lists every reason when a row has several, in one icon a screen reader reads whole", async () => {
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement({ stagesConfigured: true, readySource: "Stages" }, [
+				{ ...disagreeing, hasComments: true, hasOpenQuestion: true },
+			]),
+		);
+		const reasons = [describeDisagreement("Ready"), OPEN_QUESTION_WARNING];
+
+		const warning = within(await theWarningsCellOf("GR-059")).getByRole(
+			"button",
+			{ name: reasons.join(" ") },
+		);
+		await user.hover(warning);
+
+		const listed = within(await screen.findByRole("tooltip")).getAllByRole(
+			"listitem",
+		);
+		expect(listed.map((item) => item.textContent)).toEqual(reasons);
+	});
+
+	// @us-12 @slice-12 @driving_port @contract-shape:pure-function
+	it("says a single reason as one sentence", async () => {
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement({ stagesConfigured: true, readySource: "Stages" }, [
+				disagreeing,
+			]),
+		);
+
+		await user.hover(
+			within(await theWarningsCellOf("GR-059")).getByRole("button"),
+		);
+
+		const tooltip = await screen.findByRole("tooltip");
+		expect(tooltip).toHaveTextContent(
+			/^The stage says Ready, but the votes don't agree yet\.$/,
+		);
+		expect(within(tooltip).queryByRole("list")).not.toBeInTheDocument();
+	});
+
+	// @us-12 @slice-12 @driving_port @contract-shape:pure-function
+	it("brings the rows with warnings together when sorted by it", async () => {
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement({ stagesConfigured: true, readySource: "Stages" }, [
+				staged("GR-058", "User activity tracking", "Next", "Ready"),
+				disagreeing,
+				staged(
+					"GR-051",
+					"Advanced reporting module",
+					"Analysing",
+					"BeingRefined",
+				),
+				asked,
+				staged("GR-073", "Configuration management", "Backlog", "Waiting"),
+			]),
+		);
+		await theRowOf("GR-058");
+
+		await user.click(screen.getByRole("columnheader", { name: "Warnings" }));
+
+		const shown = screen
+			.getAllByRole("row")
+			.filter((row) => within(row).queryAllByRole("link").length > 0)
+			.map(
+				(row) =>
+					within(row).getAllByRole("link")[0].textContent?.split(":")[0] ?? "",
+			);
+		const warned = [shown.indexOf("GR-059"), shown.indexOf("GR-054")].sort(
+			(a, b) => a - b,
+		);
+		expect(shown).toHaveLength(5);
+		expect(warned[1] - warned[0]).toBe(1);
 	});
 });
 

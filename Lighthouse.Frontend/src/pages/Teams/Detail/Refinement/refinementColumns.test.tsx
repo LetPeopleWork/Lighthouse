@@ -8,7 +8,7 @@ import {
 	type RefinementColumnsOptions,
 	type RefinementGridRow,
 } from "./refinementColumns";
-import { describeDisagreement } from "./StageCell";
+import { describeDisagreement } from "./stageWording";
 
 const VOTE_QUESTION = {
 	question: "Doable within 12 days?",
@@ -32,7 +32,7 @@ const columnsFor = (stagesConfigured: boolean) =>
 	columnsWith({ stagesConfigured });
 
 describe("the Refinement tab's columns", () => {
-	it("sorts by name, state, vote count and readiness, but not by parent or by the reader's own vote", () => {
+	it("sorts by name, state, vote count, readiness and warnings, but not by parent or by the reader's own vote", () => {
 		expect(
 			columnsFor(false)
 				.slice(1)
@@ -43,6 +43,7 @@ describe("the Refinement tab's columns", () => {
 			{ field: "myVote", sortable: false },
 			{ field: "voteCount", sortable: true },
 			{ field: "readiness", sortable: true },
+			{ field: "warnings", sortable: true },
 		]);
 	});
 
@@ -55,6 +56,7 @@ describe("the Refinement tab's columns", () => {
 				["myVote", VOTE_QUESTION.question],
 				["voteCount", "Votes"],
 				["readiness", "Readiness"],
+				["warnings", "Warnings"],
 			],
 		},
 		{
@@ -66,6 +68,7 @@ describe("the Refinement tab's columns", () => {
 				["myVote", VOTE_QUESTION.question],
 				["voteCount", "Votes"],
 				["readiness", "Votes say"],
+				["warnings", "Warnings"],
 			],
 		},
 	])(
@@ -133,7 +136,7 @@ describe("the vote column's header", () => {
 	});
 });
 
-describe("the words behind the disagreement marker", () => {
+describe("the words behind the disagreement warning", () => {
 	it.each([
 		{
 			stage: "Ready",

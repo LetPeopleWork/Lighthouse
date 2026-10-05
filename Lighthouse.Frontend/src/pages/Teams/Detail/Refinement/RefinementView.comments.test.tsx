@@ -14,12 +14,14 @@ import {
 	defaultRefinementTerms,
 	GRAVITY_TEAM_ID,
 	gravitysRefinement,
+	OPEN_QUESTION_WARNING,
 	openTheVotesAndCommentsOf,
 	REFINEMENT_KEY,
 	renderTheRefinementTab,
 	theButton,
 	theRowOf,
 	theStoredVoter,
+	theWarningsCellOf,
 	VOTES_AND_COMMENTS,
 } from "../../../../tests/RefinementTabTestKit";
 
@@ -27,7 +29,7 @@ import {
  * Comments, conditions and questions on the Refinement tab, and the log each Work Item keeps. "Yes, if…"
  * records in one click like Yes and No; its condition is a comment like any other. Anybody adds a comment
  * from a Work Item's votes and comments, without voting; from somebody without a vote it is an open
- * question, which marks the Work Item until they vote. Each Work Item's log reads oldest first and says
+ * question, which the Work Item's Warnings cell names until they vote. Each Work Item's log reads oldest first and says
  * who said what and on which day, never where it came from. Everybody reads it, voted or not.
  */
 
@@ -196,8 +198,12 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		await user.type(await startACommentOn(user, API_VERSIONING), QUESTION);
 		await user.click(screen.getByRole("button", { name: "Send" }));
 
-		await waitFor(() =>
-			expect(screen.getByText("Open question")).toBeVisible(),
+		await waitFor(async () =>
+			expect(
+				within(await theWarningsCellOf(API_VERSIONING)).getByLabelText(
+					OPEN_QUESTION_WARNING,
+				),
+			).toBeInTheDocument(),
 		);
 		expect(sizingLogService.addComment).toHaveBeenCalledWith(
 			GRAVITY_TEAM_ID,
@@ -301,8 +307,12 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 			JONAS,
 		);
 		await user.click(within(prompt).getByRole("button", { name: "Send" }));
-		await waitFor(() =>
-			expect(screen.getByText("Open question")).toBeVisible(),
+		await waitFor(async () =>
+			expect(
+				within(await theWarningsCellOf(API_VERSIONING)).getByLabelText(
+					OPEN_QUESTION_WARNING,
+				),
+			).toBeInTheDocument(),
 		);
 		await settle();
 
@@ -406,7 +416,7 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 	});
 
 	// @us-12 @slice-12 @contract-shape:pure-function
-	it("marks a Work Item with comments and an open question and leaves the others unmarked", async () => {
+	it("marks a Work Item's comments in its Votes cell and warns of its open question in its Warnings cell, leaving the others unmarked", async () => {
 		renderTheRefinementTab(
 			gravitysRefinement({}, [
 				aRow(API_VERSIONING, "Public API versioning", "Analysing", {
@@ -426,22 +436,31 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		const commented = await theRowOf(ADVANCED_REPORTING);
 		const quiet = await theRowOf("GR-060");
 
-		expect(asked).toHaveTextContent("Open question");
 		expect(asked).toHaveTextContent("Comments");
 		expect(
 			within(asked).getByRole("button", {
-				name: "3 votes, comments, open question - Votes and comments",
+				name: "3 votes, comments - Votes and comments",
 			}),
 		).toBeInTheDocument();
+		expect(
+			within(await theWarningsCellOf(API_VERSIONING)).getByRole("button", {
+				name: OPEN_QUESTION_WARNING,
+			}),
+		).toBeInTheDocument();
+		expect(asked).not.toHaveTextContent("Open question");
 		expect(commented).toHaveTextContent("Comments");
-		expect(commented).not.toHaveTextContent("Open question");
+		expect(
+			within(commented).queryByLabelText(OPEN_QUESTION_WARNING),
+		).not.toBeInTheDocument();
 		expect(
 			within(commented).getByRole("button", {
 				name: "2 votes, comments - Votes and comments",
 			}),
 		).toBeInTheDocument();
 		expect(quiet).not.toHaveTextContent("Comments");
-		expect(quiet).not.toHaveTextContent("Open question");
+		expect(
+			within(quiet).queryByLabelText(OPEN_QUESTION_WARNING),
+		).not.toBeInTheDocument();
 		expect(
 			within(quiet).getByRole("button", {
 				name: "1 vote - Votes and comments",

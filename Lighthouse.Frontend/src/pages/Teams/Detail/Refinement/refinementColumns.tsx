@@ -1,5 +1,4 @@
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutlineOutlined";
 import type { SxProps, Theme } from "@mui/material";
 import { Box, Button, Tooltip } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
@@ -7,10 +6,12 @@ import type React from "react";
 import type { DataGridColumn } from "../../../../components/Common/DataGrid/types";
 import { createNameColumn } from "../../../../components/Common/FeatureListDataGrid/columns";
 import ParentWorkItemCell from "../../../../components/Common/ParentWorkItemCell/ParentWorkItemCell";
+import WarningsIcon from "../../../../components/Common/WarningsIcon/WarningsIcon";
 import type { ParentWorkItem } from "../../../../hooks/useParentWorkItems";
 import type { IRefinementRow } from "../../../../models/Refinement/Refinement";
 import { NeededNumber } from "./EnoughForLine";
 import ReadinessCell from "./ReadinessCell";
+import { describeRefinementWarnings } from "./refinementWarnings";
 import StageCell from "./StageCell";
 import type { IPendingVote } from "./useVoteCasting";
 import VoteControl from "./VoteControl";
@@ -32,7 +33,6 @@ const VISUALLY_HIDDEN: SxProps<Theme> = {
 };
 
 const COMMENTS = "Comments";
-const OPEN_QUESTION = "Open question";
 
 const Marker: React.FC<
 	Readonly<{ label: string; children: React.ReactElement }>
@@ -48,11 +48,7 @@ const Marker: React.FC<
 );
 
 const describeVotesCell = (row: IRefinementRow, voteCount: string): string =>
-	[
-		voteCount,
-		...(row.hasComments ? [COMMENTS.toLowerCase()] : []),
-		...(row.hasOpenQuestion ? [OPEN_QUESTION.toLowerCase()] : []),
-	].join(", ");
+	[voteCount, ...(row.hasComments ? [COMMENTS.toLowerCase()] : [])].join(", ");
 
 export interface RefinementColumnsOptions {
 	workItemTerm: string;
@@ -81,9 +77,21 @@ const stageColumn: DataGridColumn<RefinementGridRow> = {
 	field: "stage",
 	headerName: "Stage",
 	width: 160,
-	renderCell: ({ row }) => (
-		<StageCell stage={row.stage} signalsDisagree={row.signalsDisagree} />
-	),
+	renderCell: ({ row }) => <StageCell stage={row.stage} />,
+};
+
+// A clean row shows nothing, so the few rows that need attention stand out in a list where most do not.
+const warningsColumn: DataGridColumn<RefinementGridRow> = {
+	field: "warnings",
+	headerName: "Warnings",
+	type: "boolean",
+	width: 90,
+	// The sort sees every reason the icon shows, so all the rows with a warning sort together.
+	valueGetter: (_, row) => describeRefinementWarnings(row).length > 0,
+	renderCell: ({ row }) => {
+		const warnings = describeRefinementWarnings(row);
+		return warnings.length > 0 ? <WarningsIcon warnings={warnings} /> : null;
+	},
 };
 
 export const createRefinementColumns = ({
@@ -150,11 +158,6 @@ export const createRefinementColumns = ({
 							<ChatBubbleOutlineIcon fontSize="small" />
 						</Marker>
 					)}
-					{row.hasOpenQuestion && (
-						<Marker label={OPEN_QUESTION}>
-							<HelpOutlineIcon fontSize="small" color="warning" />
-						</Marker>
-					)}
 				</Button>
 			);
 		},
@@ -170,4 +173,5 @@ export const createRefinementColumns = ({
 			/>
 		),
 	},
+	warningsColumn,
 ];
