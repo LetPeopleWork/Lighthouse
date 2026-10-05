@@ -59,10 +59,10 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
-        [TestCase(null, BrowserKey, AuthMode.Disabled, "voter-name-required", "A vote needs the voter's name.", LogLevel.Information, true, TestName = "No name")]
-        [TestCase(Jonas, null, AuthMode.Disabled, "voter-key-required", "A vote needs the key the voter's browser keeps.", LogLevel.Information, true, TestName = "No key")]
-        [TestCase(NameOf101Characters, BrowserKey, AuthMode.Disabled, "voter-name-too-long", "A voter's name is at most 100 characters.", LogLevel.Information, false, TestName = "A name too long")]
-        [TestCase(Jonas, BrowserKey, AuthMode.Enabled, "vote-needs-a-person", "A vote needs a person to cast it.", LogLevel.Warning, false, TestName = "Nobody behind the credential")]
+        [TestCase(null, BrowserKey, AuthMode.Disabled, "voter-name-required", "A vote or comment needs the name of whoever sends it.", LogLevel.Information, true, TestName = "No name")]
+        [TestCase(Jonas, null, AuthMode.Disabled, "voter-key-required", "A vote or comment needs the key the sender's browser keeps.", LogLevel.Information, true, TestName = "No key")]
+        [TestCase(NameOf101Characters, BrowserKey, AuthMode.Disabled, "voter-name-too-long", "A name is at most 100 characters.", LogLevel.Information, false, TestName = "A name too long")]
+        [TestCase(Jonas, BrowserKey, AuthMode.Enabled, "vote-needs-a-person", "A vote or comment needs a person to send it.", LogLevel.Warning, false, TestName = "Nobody behind the credential")]
         public void AVoteWithoutAVoterIsRefusedSayingWhyAndLogsTheReason(
             string? name, string? key, AuthMode mode, string reason, string title, LogLevel level, bool namesTheReason)
         {

@@ -205,6 +205,107 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             Assert.That(outcome, Is.EqualTo(expected));
         }
 
+        [TestCase(1)]
+        [TestCase(SizingLogEntry.LongestComment)]
+        public void ACommentOfOneToTwoThousandCharactersIsRecordedWhole(int length)
+        {
+            GivenTheTeam(ATeamThatRefinesInBacklog(sleProbability: 85, sleDays: 7));
+            var text = new string('x', length);
+
+            var outcome = subject.Comment(TeamId, InRefinement, new SizingComment(text, SizingChannel.Web), Jonas);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome, Is.EqualTo(VoteOutcome.Recorded));
+                Assert.That(appended.Select(entry => (entry.Kind, entry.Answer, entry.Comment)), Is.EqualTo(new[] { (SizingEntryKind.Comment, (SizingAnswer?)null, (string?)text) }));
+            }
+        }
+
+        [TestCase("")]
+        [TestCase(" ")]
+        [TestCase("   ")]
+        [TestCase("\t\n")]
+        public void ACommentThatSaysNothingAppendsNothing(string text)
+        {
+            GivenTheTeam(ATeamThatRefinesInBacklog(sleProbability: 85, sleDays: 7));
+
+            var outcome = subject.Comment(TeamId, InRefinement, new SizingComment(text, SizingChannel.Web), Jonas);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome, Is.EqualTo(VoteOutcome.CommentMissing));
+                Assert.That(appended, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void ACommentLongerThanTwoThousandCharactersAppendsNothing()
+        {
+            GivenTheTeam(ATeamThatRefinesInBacklog(sleProbability: 85, sleDays: 7));
+
+            var outcome = subject.Comment(TeamId, InRefinement, new SizingComment(new string('x', SizingLogEntry.LongestComment + 1), SizingChannel.Web), Jonas);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome, Is.EqualTo(VoteOutcome.CommentTooLong));
+                Assert.That(appended, Is.Empty);
+            }
+        }
+
+        [TestCase(SizingAnswer.Yes)]
+        [TestCase(SizingAnswer.YesBut)]
+        [TestCase(SizingAnswer.No)]
+        public void AVoteWhoseCommentIsLongerThanTwoThousandCharactersAppendsNothing(SizingAnswer answer)
+        {
+            GivenTheTeam(ATeamThatRefinesInBacklog(sleProbability: 85, sleDays: 7));
+
+            var outcome = subject.Vote(TeamId, InRefinement, new SizingVote(answer, SizingChannel.Web, new string('x', SizingLogEntry.LongestComment + 1)), Jonas);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome, Is.EqualTo(VoteOutcome.CommentTooLong));
+                Assert.That(appended, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void AVoteWhoseCommentIsTwoThousandCharactersIsRecordedWhole()
+        {
+            GivenTheTeam(ATeamThatRefinesInBacklog(sleProbability: 85, sleDays: 7));
+            var text = new string('x', SizingLogEntry.LongestComment);
+
+            var outcome = subject.Vote(TeamId, InRefinement, new SizingVote(SizingAnswer.YesBut, SizingChannel.Web, text), Jonas);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome, Is.EqualTo(VoteOutcome.Recorded));
+                Assert.That(appended.Select(entry => entry.Comment), Is.EqualTo(new[] { text }));
+            }
+        }
+
+        [TestCase("   ", SizingChannel.Cli, "comment-required")]
+        [TestCase(null, SizingChannel.Assistant, "comment-too-long")]
+        public void ARefusedCommentLogsWhyForWhichTeamAndChannelButNeverWhoOrWhat(string? text, SizingChannel channel, string reason)
+        {
+            GivenTheTeam(ATeamThatRefinesInBacklog(sleProbability: 85, sleDays: 7));
+            var said = text ?? "too big " + new string('x', SizingLogEntry.LongestComment);
+
+            subject.Comment(TeamId, InRefinement, new SizingComment(said, channel), Jonas);
+
+            var lines = LoggedLines();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(lines.Select(line => line.Level), Is.EqualTo(new List<LogLevel> { LogLevel.Information }));
+                Assert.That(lines.Single().Fields, Is.EqualTo(new Dictionary<string, string?>
+                {
+                    ["Reason"] = reason,
+                    ["TeamId"] = TeamId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    ["Channel"] = channel.ToString(),
+                }));
+                Assert.That(lines.Single().Text, Does.Not.Contain(InRefinement).And.Not.Contain(Jonas.DisplayName).And.Not.Contain(Jonas.Key).And.Not.Contain("too big"));
+            }
+        }
+
         private static Team ATeamThatRefinesInBacklog(int sleProbability, int sleDays) => new()
         {
             Id = TeamId,

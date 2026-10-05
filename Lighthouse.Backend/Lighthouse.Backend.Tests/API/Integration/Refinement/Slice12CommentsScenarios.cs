@@ -158,7 +158,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-12 @slice-12 @error @contract-shape:unbounded-preservation
         [TestCase("")]
         [TestCase("   ")]
-        [Ignore(PendingSlice12)]
         public async Task An_empty_question_is_refused_and_nothing_is_recorded(string comment)
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -182,7 +181,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-12 @slice-12 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice12)]
         public async Task A_comment_longer_than_two_thousand_characters_is_refused()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -194,7 +192,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-12 @slice-12 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice12)]
         public async Task A_question_without_a_name_is_refused()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();
@@ -206,7 +203,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-12 @slice-12 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice12)]
         public async Task A_question_on_a_Work_Item_that_is_not_in_refinement_is_refused()
         {
             var gravity = await GivenGravityRefinesAndNobodyHasVoted();

@@ -38,6 +38,12 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 return VoteOutcome.TeamNotFound;
             }
 
+            if (WhatIsWrongWith(said) is (var refusedAs, var reason))
+            {
+                SizingRefusal.Log(logger, LogLevel.Information, reason, team.Id, said.Channel);
+                return refusedAs;
+            }
+
             if (!refinementList.For(team).Any(item => string.Equals(item.ReferenceId, workItemReference, StringComparison.Ordinal)))
             {
                 // A Work Item leaving refinement between reading the tab and writing to it is routine, not a fault.
@@ -68,6 +74,22 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             sizingLog.Append(entry);
 
             return recorded(team, entry);
+        }
+
+        // A vote stands on its answer, so its comment may be left blank; a comment on its own is only its text.
+        private static (VoteOutcome RefusedAs, string Reason)? WhatIsWrongWith(Said said)
+        {
+            if (said.Comment?.Length > SizingLogEntry.LongestComment)
+            {
+                return (VoteOutcome.CommentTooLong, SizingRefusal.CommentTooLong);
+            }
+
+            if (said.Kind == SizingEntryKind.Comment && string.IsNullOrWhiteSpace(said.Comment))
+            {
+                return (VoteOutcome.CommentMissing, SizingRefusal.CommentRequired);
+            }
+
+            return null;
         }
 
         private bool MadeReady(Team team, SizingLogEntry entry)

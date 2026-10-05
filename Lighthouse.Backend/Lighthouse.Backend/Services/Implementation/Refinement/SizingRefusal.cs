@@ -18,6 +18,10 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
 
         public const string VoteNeedsAPerson = "vote-needs-a-person";
 
+        public const string CommentRequired = "comment-required";
+
+        public const string CommentTooLong = "comment-too-long";
+
         /// <summary>
         /// Says why, for which Team and from where, and never who or on what: the declared name and the key
         /// speak for a person, and a Work Item's reference names the work.

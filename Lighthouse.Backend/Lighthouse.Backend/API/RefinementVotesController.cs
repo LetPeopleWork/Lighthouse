@@ -80,6 +80,8 @@ namespace Lighthouse.Backend.API
                 VoteOutcome.RecordedAndMadeReady => RowAsItNowStands(teamId, workItemReference, voterKey, madeReady: true),
                 VoteOutcome.TeamNotFound => NotFound(),
                 VoteOutcome.WorkItemNotInRefinement => Refused(StatusCodes.Status409Conflict, "That Work Item is not in refinement.", SizingRefusal.WorkItemNotInRefinement),
+                VoteOutcome.CommentMissing => Refused(StatusCodes.Status400BadRequest, "A comment needs some text.", SizingRefusal.CommentRequired),
+                VoteOutcome.CommentTooLong => Refused(StatusCodes.Status400BadRequest, $"A comment is at most {SizingLogEntry.LongestComment} characters.", SizingRefusal.CommentTooLong),
                 _ => throw new System.Diagnostics.UnreachableException($"No such vote outcome: {outcome}"),
             };
 
@@ -96,10 +98,10 @@ namespace Lighthouse.Backend.API
         {
             var (level, reason, title, namesTheReason) = refusal switch
             {
-                VoterRefusal.NameRequired => (LogLevel.Information, SizingRefusal.VoterNameRequired, "A vote needs the voter's name.", true),
-                VoterRefusal.KeyRequired => (LogLevel.Information, SizingRefusal.VoterKeyRequired, "A vote needs the key the voter's browser keeps.", true),
-                VoterRefusal.NameTooLong => (LogLevel.Information, SizingRefusal.VoterNameTooLong, $"A voter's name is at most {VoterIdentityResolver.LongestVoterName} characters.", false),
-                VoterRefusal.NeedsAPerson => (LogLevel.Warning, SizingRefusal.VoteNeedsAPerson, "A vote needs a person to cast it.", false),
+                VoterRefusal.NameRequired => (LogLevel.Information, SizingRefusal.VoterNameRequired, "A vote or comment needs the name of whoever sends it.", true),
+                VoterRefusal.KeyRequired => (LogLevel.Information, SizingRefusal.VoterKeyRequired, "A vote or comment needs the key the sender's browser keeps.", true),
+                VoterRefusal.NameTooLong => (LogLevel.Information, SizingRefusal.VoterNameTooLong, $"A name is at most {VoterIdentityResolver.LongestVoterName} characters.", false),
+                VoterRefusal.NeedsAPerson => (LogLevel.Warning, SizingRefusal.VoteNeedsAPerson, "A vote or comment needs a person to send it.", false),
                 _ => throw new System.Diagnostics.UnreachableException($"No such voter refusal: {refusal}"),
             };
             SizingRefusal.Log(logger, level, reason, teamId, channel);

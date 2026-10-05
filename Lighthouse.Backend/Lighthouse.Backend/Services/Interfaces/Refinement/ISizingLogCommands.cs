@@ -24,5 +24,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
         TeamNotFound,
         WorkItemNotInRefinement,
         RecordedAndMadeReady,
+        CommentMissing,
+        CommentTooLong,
     }
 }
