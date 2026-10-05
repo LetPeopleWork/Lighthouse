@@ -1,6 +1,7 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
+	IRefinementRow,
 	ISizingLog,
 	ISizingLogEntry,
 } from "../../../../models/Refinement/Refinement";
@@ -15,6 +16,7 @@ import {
 	renderTheRefinementTab,
 	theButton,
 	theRowOf,
+	theStoredVoter,
 	VOTES_AND_COMMENTS,
 } from "../../../../tests/RefinementTabTestKit";
 
@@ -93,6 +95,33 @@ const startACommentOn = async (
 	);
 	return await screen.findByRole("textbox", { name: "Comment" });
 };
+
+const theOpenDialog = () =>
+	screen.getByRole("dialog", { name: VOTES_AND_COMMENTS });
+
+/** Lets every answer already given reach the screen. */
+const settle = () =>
+	act(async () => {
+		await new Promise((resolve) => setTimeout(resolve, 0));
+	});
+
+const aQuestionFrom = (voterName: string): ISizingLog => ({
+	entries: [
+		anEntry({
+			voterName,
+			kind: "Comment",
+			answer: null,
+			comment: QUESTION,
+			isOpenQuestion: true,
+		}),
+	],
+});
+
+const apiVersioningAsked = () =>
+	aRow(API_VERSIONING, "Public API versioning", "Analysing", {
+		hasComments: true,
+		hasOpenQuestion: true,
+	});
 
 describe("Comments, conditions and questions on the Refinement tab", () => {
 	beforeEach(() => {
@@ -174,6 +203,111 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 			key,
 		);
 		expect(sizingLogService.castVote).not.toHaveBeenCalled();
+	});
+
+	// @us-12 @slice-12 @driving_port @contract-shape:bounded-change
+	it("reads the log again once a comment is sent, so the comment shows in it", async () => {
+		aBrowserThatVotedBefore(JONAS);
+		const sizingLogService = aSizingLogService({
+			addComment: vi.fn().mockResolvedValue(apiVersioningAsked()),
+			getLog: vi
+				.fn()
+				.mockResolvedValueOnce({ entries: [] } satisfies ISizingLog)
+				.mockResolvedValue(aQuestionFrom(JONAS)),
+		});
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement({}, [
+				aRow(API_VERSIONING, "Public API versioning", "Analysing"),
+			]),
+			sizingLogService,
+		);
+
+		await user.type(await startACommentOn(user, API_VERSIONING), QUESTION);
+		await user.click(screen.getByRole("button", { name: "Send" }));
+
+		expect(await within(theOpenDialog()).findByText(QUESTION)).toBeVisible();
+		expect(within(theOpenDialog()).getAllByRole("listitem")).toHaveLength(1);
+	});
+
+	// @us-12 @slice-12 @error @contract-shape:unbounded-preservation
+	it("shows the log of the Work Item now open when a comment sent on another one is answered late", async () => {
+		aBrowserThatVotedBefore(JONAS);
+		let answerTheComment: (row: IRefinementRow) => void = () => {};
+		const sizingLogService = aSizingLogService({
+			addComment: vi.fn().mockReturnValue(
+				new Promise<IRefinementRow>((resolve) => {
+					answerTheComment = resolve;
+				}),
+			),
+			getLog: vi
+				.fn()
+				.mockImplementation((_teamId: number, referenceId: string) =>
+					Promise.resolve(
+						aQuestionFrom(referenceId === API_VERSIONING ? "Mo Okafor" : ANA),
+					),
+				),
+		});
+		const { user } = renderTheRefinementTab(
+			advancedReportingWithComments(),
+			sizingLogService,
+		);
+
+		await user.type(await startACommentOn(user, ADVANCED_REPORTING), QUESTION);
+		await user.click(screen.getByRole("button", { name: "Send" }));
+		await user.click(
+			within(theOpenDialog()).getByRole("button", { name: "Close" }),
+		);
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		const apiVersioning = await openTheLogOf(user, API_VERSIONING);
+		expect(await within(apiVersioning).findByText("Mo Okafor")).toBeVisible();
+
+		await act(async () => {
+			answerTheComment(
+				aRow(ADVANCED_REPORTING, "Advanced reporting module", "Analysing", {
+					voteCount: 2,
+					myVote: "Yes",
+					hasComments: true,
+				}),
+			);
+		});
+		await settle();
+
+		expect(within(apiVersioning).getByText("Mo Okafor")).toBeVisible();
+		expect(within(apiVersioning).queryByText(ANA)).toBeNull();
+	});
+
+	// @us-12 @slice-12 @boundary @contract-shape:bounded-change
+	it("reads the log once more, not twice, when somebody names themselves to comment", async () => {
+		const sizingLogService = aSizingLogService({
+			addComment: vi.fn().mockResolvedValue(apiVersioningAsked()),
+		});
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement({}, [
+				aRow(API_VERSIONING, "Public API versioning", "Analysing"),
+			]),
+			sizingLogService,
+		);
+
+		await user.type(await startACommentOn(user, API_VERSIONING), QUESTION);
+		await user.click(screen.getByRole("button", { name: "Send" }));
+		const prompt = await screen.findByRole("dialog", {
+			name: "Who is voting?",
+		});
+		await user.type(
+			within(prompt).getByRole("textbox", { name: "Your name" }),
+			JONAS,
+		);
+		await user.click(within(prompt).getByRole("button", { name: "Send" }));
+		await waitFor(() =>
+			expect(screen.getByText("Open question")).toBeVisible(),
+		);
+		await settle();
+
+		expect(
+			vi
+				.mocked(sizingLogService.getLog)
+				.mock.calls.map(([, , voterKey]) => voterKey),
+		).toEqual([null, theStoredVoter()?.key]);
 	});
 
 	// @us-12 @slice-12 @error @contract-shape:unbounded-preservation

@@ -213,16 +213,17 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 					log={log}
 					voterName={changeableName}
 					onChangeName={() => setIsChangingName(true)}
-					onAddComment={(comment, onSent) =>
+					onAddComment={(comment, onSent) => {
+						const { referenceId } = votesShownOn;
 						addComment({
-							referenceId: votesShownOn.referenceId,
+							referenceId,
 							comment,
 							onSent: () => {
 								onSent();
-								readAgain();
+								readAgain(referenceId);
 							},
-						})
-					}
+						});
+					}}
 					onClose={() => setVotesShownFor(null)}
 				/>
 			)}
