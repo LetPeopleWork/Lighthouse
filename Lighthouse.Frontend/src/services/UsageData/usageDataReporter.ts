@@ -60,11 +60,13 @@ export const usageDataWorkTrackingSystemFor = (
  * who asked us not to.
  *
  * Handing a call site a function that quietly does nothing is the point: every screen calls it the
- * same way, and none of them has to carry a branch about consent that could be got wrong.
+ * same way, and none of them has to carry a branch about consent that could be got wrong. It answers
+ * whether the use was recorded, for a screen that reports something once and must not spend that once
+ * before this browser's answer has arrived.
  */
 export const useUsageDataReporter = (): ((
 	use: UsageDataCapabilityUse,
-) => void) => {
+) => boolean) => {
 	const consent = useUsageDataConsentIfKnown();
 
 	// What decides is the answer the server gave about this browser, never whether a token is lying
@@ -73,12 +75,13 @@ export const useUsageDataReporter = (): ((
 	const isSending = consent?.indicatorState === "sending";
 
 	return useCallback(
-		(use: UsageDataCapabilityUse): void => {
+		(use: UsageDataCapabilityUse): boolean => {
 			if (!isSending) {
-				return;
+				return false;
 			}
 
 			notice({ ...use, noticedAt: Date.now() });
+			return true;
 		},
 		[isSending],
 	);

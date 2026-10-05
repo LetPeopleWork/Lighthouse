@@ -57,16 +57,16 @@ export const useVerdictShownReporter = (
 			return;
 		}
 
-		opening.current.hasReported = true;
 		const verdict = refinementDayVerdict(
 			refinement.isRefinementDay,
 			refinement.need,
 		);
-		if (verdict !== undefined) {
+		// Consent can arrive after the verdict is shown; until the event could go, the opening is not used up.
+		opening.current.hasReported =
+			verdict === undefined ||
 			reportUsage({
 				name: UsageDataEventName.TeamRefinementDayVerdictShown,
 				refinementVerdict: verdict,
 			});
-		}
 	}, [teamId, refinement, reportUsage]);
 };

@@ -502,7 +502,8 @@ describe("A Refinement day reports which verdict the tab showed", () => {
 	beforeEach(() => {
 		localStorage.clear();
 		terms.current = { ...defaultRefinementTerms };
-		reporter.current = vi.fn();
+		// A browser that agreed, so every report goes.
+		reporter.current = vi.fn(() => true);
 		mockUseLicenseRestrictions.mockReturnValue({
 			licenseStatus: { canUsePremiumFeatures: true },
 			isLoading: false,
