@@ -123,6 +123,22 @@ export const UsageDataSizingMoment = {
 export type UsageDataSizingMoment =
 	(typeof UsageDataSizingMoment)[keyof typeof UsageDataSizingMoment];
 
+/**
+ * Which verdict the Refinement tab showed on a Refinement day, said as a choice from this list.
+ *
+ * `None` is the tab showing no number at all. The verdict travels alone: never the range it was
+ * judged against, never how many Work Items were ready, never the day or the Team.
+ */
+export const UsageDataRefinementVerdict = {
+	Below: "Below",
+	In: "In",
+	Above: "Above",
+	None: "None",
+} as const;
+
+export type UsageDataRefinementVerdict =
+	(typeof UsageDataRefinementVerdict)[keyof typeof UsageDataRefinementVerdict];
+
 export const USAGE_DATA_DOCS_URL =
 	"https://docs.lighthouse.letpeople.work/settings/usagedata.html";
 

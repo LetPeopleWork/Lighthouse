@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useUsageDataConsentIfKnown } from "../../hooks/useUsageDataConsent";
 import type {
 	UsageDataOptionalFeature,
+	UsageDataRefinementVerdict,
 	UsageDataSizingMoment,
 	UsageDataWorkTrackingSystem,
 } from "../../models/UsageData/UsageData";
@@ -22,6 +23,7 @@ export interface UsageDataCapabilityUse {
 	optionalFeature?: UsageDataOptionalFeature;
 	enabled?: boolean;
 	sizingMoment?: UsageDataSizingMoment;
+	refinementVerdict?: UsageDataRefinementVerdict;
 }
 
 /**

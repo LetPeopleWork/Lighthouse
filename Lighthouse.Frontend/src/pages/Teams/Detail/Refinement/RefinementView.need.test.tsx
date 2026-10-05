@@ -21,6 +21,7 @@ import {
 	theRowOf,
 } from "../../../../tests/RefinementTabTestKit";
 import { INSUFFICIENT_FORECAST_DATA_MESSAGE } from "../../../../utils/forecast/insufficientForecastData";
+import { refinementDayVerdict } from "./useVerdictShownReporter";
 
 /**
  * Under the heading the tab says whether to refine more or stop, in one message that keeps its size and
@@ -259,7 +260,7 @@ describe("A Refinement day reports which verdict the tab showed", () => {
 	});
 
 	// @us-05 @slice-05 @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:bounded-change
-	it.skip.each([
+	it.each([
 		["Below", 3],
 		["In", 6],
 		["Above", 11],
@@ -286,7 +287,7 @@ describe("A Refinement day reports which verdict the tab showed", () => {
 	);
 
 	// @us-05 @slice-05 @boundary @contract-shape:bounded-change
-	it.skip("reports None on a Refinement day when there is no number to judge against", async () => {
+	it("reports None on a Refinement day when there is no number to judge against", async () => {
 		renderTheRefinementTab(
 			gravityWithReady(2, "Below", {
 				isRefinementDay: true,
@@ -304,7 +305,7 @@ describe("A Refinement day reports which verdict the tab showed", () => {
 	});
 
 	// @us-05 @slice-05 @error @contract-shape:unbounded-preservation
-	it.skip("reports nothing about the verdict on any other day", async () => {
+	it("reports nothing about the verdict on any other day", async () => {
 		renderTheRefinementTab(
 			gravityWithReady(3, "Below", { isRefinementDay: false }),
 		);
@@ -316,5 +317,73 @@ describe("A Refinement day reports which verdict the tab showed", () => {
 				([event]) => event.name === VERDICT_SHOWN,
 			),
 		).toHaveLength(0);
+	});
+});
+
+describe("Which verdict a Refinement day reports", () => {
+	it.each([
+		[
+			"Below",
+			"a Refinement day showing Below",
+			true,
+			aNeedOfFiveToEight({ verdict: "Below" }),
+		],
+		[
+			"In",
+			"a Refinement day showing In",
+			true,
+			aNeedOfFiveToEight({ verdict: "In" }),
+		],
+		[
+			"Above",
+			"a Refinement day showing Above",
+			true,
+			aNeedOfFiveToEight({ verdict: "Above" }),
+		],
+		[
+			"None",
+			"a Refinement day without a number",
+			true,
+			noNeedBecause("InsufficientData"),
+		],
+		[
+			"None",
+			"a Refinement day the server said nothing about the need on",
+			true,
+			undefined,
+		],
+		[
+			undefined,
+			"another day showing Below",
+			false,
+			aNeedOfFiveToEight({ verdict: "Below" }),
+		],
+		[
+			undefined,
+			"another day showing In",
+			false,
+			aNeedOfFiveToEight({ verdict: "In" }),
+		],
+		[
+			undefined,
+			"another day showing Above",
+			false,
+			aNeedOfFiveToEight({ verdict: "Above" }),
+		],
+		[
+			undefined,
+			"another day without a number",
+			false,
+			noNeedBecause("InsufficientData"),
+		],
+		[undefined, "a Team without a cadence", false, noNeedBecause("NoCadence")],
+		[
+			undefined,
+			"a day the server did not say was a Refinement day",
+			undefined,
+			aNeedOfFiveToEight({ verdict: "In" }),
+		],
+	] as const)("reports %s for %s", (expected, _day, isRefinementDay, need) => {
+		expect(refinementDayVerdict(isRefinementDay, need)).toBe(expected);
 	});
 });

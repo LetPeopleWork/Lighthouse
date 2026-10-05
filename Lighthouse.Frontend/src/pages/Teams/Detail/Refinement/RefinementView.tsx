@@ -13,6 +13,7 @@ import NextRefinement, { NEXT_REFINEMENT_SLOT } from "./NextRefinement";
 import RefinementGrid from "./RefinementGrid";
 import { describeStageBreakdown } from "./stageBreakdown";
 import { useRefinement } from "./useRefinement";
+import { useVerdictShownReporter } from "./useVerdictShownReporter";
 import { useVoteCasting } from "./useVoteCasting";
 import VoterNamePrompt from "./VoterNamePrompt";
 import VotesAndCommentsDialog from "./VotesAndCommentsDialog";
@@ -66,6 +67,7 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 	const { getTerm } = useTerminology();
 	const { isTeamAdmin } = useRbac();
 	const { refinement, showAnsweredRow } = useRefinement(team.id);
+	useVerdictShownReporter(team.id, refinement);
 	const [votesShownFor, setVotesShownFor] = useState<string | null>(null);
 	const [isChangingName, setIsChangingName] = useState(false);
 	const voterIdentity = useVoterIdentity(refinement?.voterIdentity);

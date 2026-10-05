@@ -2,6 +2,7 @@ import type {
 	IUsageDataState,
 	UsageDataDecisionValue,
 	UsageDataOptionalFeature,
+	UsageDataRefinementVerdict,
 	UsageDataRouteKey,
 	UsageDataSizingMoment,
 	UsageDataWorkTrackingSystem,
@@ -33,6 +34,7 @@ export const UsageDataEventName = {
 	TeamRefinementConfigured: "TeamRefinementConfigured",
 	TeamSizingVoteCast: "TeamSizingVoteCast",
 	TeamSizingReadinessReached: "TeamSizingReadinessReached",
+	TeamRefinementDayVerdictShown: "TeamRefinementDayVerdictShown",
 } as const;
 
 export type UsageDataEventName =
@@ -57,6 +59,8 @@ export interface IUsageDataEvent {
 	enabled?: boolean;
 	/** Only on a sizing vote and on the vote that made a Work Item Ready: when it happened relative to the Team's refinement. */
 	sizingMoment?: UsageDataSizingMoment;
+	/** Only on a Refinement day's verdict being shown: which verdict the Refinement tab showed. */
+	refinementVerdict?: UsageDataRefinementVerdict;
 	/** How long before this batch was handed in the thing happened, so a reader can order them. */
 	offsetMs: number;
 	sequence: number;
