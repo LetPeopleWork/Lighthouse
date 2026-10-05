@@ -7,6 +7,10 @@ namespace Lighthouse.Backend.API.Helpers
     {
         private const string DiscussionRuleNeedsAVote = "a discussion rule needs at least 1 vote.";
 
+        private const int LowestBandPercentile = 50;
+
+        private const int HighestBandPercentile = 95;
+
         public static List<string> ValidateSettings(TeamSettingDto teamSetting, RefinementSettings? stored)
         {
             var refinement = teamSetting.Refinement;
@@ -20,7 +24,38 @@ namespace Lighthouse.Backend.API.Helpers
                 .. ValidateStates(teamSetting, refinement, stored?.States.Select(chosen => chosen.State) ?? []),
                 .. ValidateReadiness(refinement.Readiness, stored?.Readiness ?? new ReadinessSetting()),
                 .. ValidateCadence(refinement.Cadence),
+                .. ValidateBand(refinement.Band, stored?.Band ?? new RefinementBand()),
             ];
+        }
+
+        // Like readiness, the band a save would leave behind is judged, so a save naming one end is checked
+        // against the end already stored.
+        private static List<string> ValidateBand(RefinementBandDto? sent, RefinementBand stored)
+        {
+            if (sent is null)
+            {
+                return [];
+            }
+
+            var band = sent.AppliedTo(stored);
+            var errors = new List<string>();
+
+            if (!IsBandPercentile(band.LowPercentile) || !IsBandPercentile(band.HighPercentile))
+            {
+                errors.Add($"'{band.LowPercentile}' to '{band.HighPercentile}' cannot be the range's likelihoods: each end must be between {LowestBandPercentile}% and {HighestBandPercentile}%.");
+            }
+
+            if (band.LowPercentile >= band.HighPercentile)
+            {
+                errors.Add($"'{band.LowPercentile}' to '{band.HighPercentile}' cannot be the range's likelihoods: the low end must be below the high end.");
+            }
+
+            return errors;
+        }
+
+        private static bool IsBandPercentile(int percentile)
+        {
+            return percentile is >= LowestBandPercentile and <= HighestBandPercentile;
         }
 
         private static List<string> ValidateCadence(RefinementCadenceDto? cadence)

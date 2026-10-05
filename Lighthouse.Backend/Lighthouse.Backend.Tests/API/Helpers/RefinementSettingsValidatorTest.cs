@@ -371,6 +371,105 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             }));
         }
 
+        private static TeamSettingDto SettingsWithBand(int? lowPercentile, int? highPercentile)
+        {
+            var settings = SettingsChoosing(Backlog);
+            settings.Refinement!.Band = new RefinementBandDto { LowPercentile = lowPercentile, HighPercentile = highPercentile };
+            return settings;
+        }
+
+        private static RefinementSettings StoredBand(int lowPercentile, int highPercentile)
+            => new() { Band = new RefinementBand { LowPercentile = lowPercentile, HighPercentile = highPercentile } };
+
+        private static string BandOutOfRange(int lowPercentile, int highPercentile)
+            => $"'{lowPercentile}' to '{highPercentile}' cannot be the range's likelihoods: each end must be between 50% and 95%.";
+
+        private static string BandNotRising(int lowPercentile, int highPercentile)
+            => $"'{lowPercentile}' to '{highPercentile}' cannot be the range's likelihoods: the low end must be below the high end.";
+
+        [TestCase(50, 95)]
+        [TestCase(50, 51)]
+        [TestCase(94, 95)]
+        [TestCase(60, 85)]
+        public void A_band_within_50_and_95_with_the_low_end_below_the_high_end_is_accepted(int lowPercentile, int highPercentile)
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithBand(lowPercentile, highPercentile), NothingStored);
+
+            Assert.That(errors, Is.Empty);
+        }
+
+        [TestCase(49, 85)]
+        [TestCase(0, 85)]
+        [TestCase(-5, 85)]
+        [TestCase(50, 96)]
+        [TestCase(50, 100)]
+        public void A_likelihood_outside_50_to_95_is_refused_naming_both_ends(int lowPercentile, int highPercentile)
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithBand(lowPercentile, highPercentile), NothingStored);
+
+            Assert.That(errors, Is.EqualTo(new List<string> { BandOutOfRange(lowPercentile, highPercentile) }));
+        }
+
+        [TestCase(85, 85)]
+        [TestCase(90, 85)]
+        [TestCase(51, 50)]
+        public void A_low_end_not_below_the_high_end_is_refused_naming_both_ends(int lowPercentile, int highPercentile)
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithBand(lowPercentile, highPercentile), NothingStored);
+
+            Assert.That(errors, Is.EqualTo(new List<string> { BandNotRising(lowPercentile, highPercentile) }));
+        }
+
+        [Test]
+        public void A_band_breaking_both_rules_is_refused_for_each()
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithBand(96, 49), NothingStored);
+
+            Assert.That(errors, Is.EqualTo(new List<string> { BandOutOfRange(96, 49), BandNotRising(96, 49) }));
+        }
+
+        [Test]
+        public void A_high_end_sent_alone_below_the_stored_low_end_is_refused_naming_both()
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithBand(null, 55), StoredBand(60, 95));
+
+            Assert.That(errors, Is.EqualTo(new List<string> { BandNotRising(60, 55) }));
+        }
+
+        [Test]
+        public void A_high_end_sent_alone_above_95_is_refused_naming_the_stored_low_end_too()
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithBand(null, 96), StoredBand(60, 95));
+
+            Assert.That(errors, Is.EqualTo(new List<string> { BandOutOfRange(60, 96) }));
+        }
+
+        [Test]
+        public void A_band_save_for_a_Team_without_refinement_is_judged_with_the_default_ends()
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithBand(null, 50), NothingStored);
+
+            Assert.That(errors, Is.EqualTo(new List<string> { BandNotRising(50, 50) }));
+        }
+
+        [TestCase(null, null)]
+        [TestCase(70, null)]
+        [TestCase(null, 90)]
+        public void A_band_save_leaving_out_ends_is_accepted_when_the_stored_ends_agree(int? lowPercentile, int? highPercentile)
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsWithBand(lowPercentile, highPercentile), StoredBand(60, 95));
+
+            Assert.That(errors, Is.Empty);
+        }
+
+        [Test]
+        public void A_save_without_a_band_is_not_judged_against_an_invalid_stored_band()
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsChoosing(Backlog), StoredBand(90, 60));
+
+            Assert.That(errors, Is.Empty);
+        }
+
         [Test]
         public void Every_broken_readiness_rule_is_named_after_a_refused_state()
         {

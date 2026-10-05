@@ -63,7 +63,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-07 @slice-07 @error @contract-shape:unbounded-preservation
         [TestCase(90, 85)]
         [TestCase(85, 85)]
-        [Ignore(PendingSlice07)]
         public async Task A_low_end_not_below_the_high_end_is_refused_naming_both_and_nothing_is_saved(int lowPercentile, int highPercentile)
         {
             var gravity = await GivenGravityReadsItsRangeAt60And95();
@@ -74,11 +73,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         }
 
         // @driving_port @real-io @us-07 @slice-07 @error @boundary @contract-shape:unbounded-preservation
+        [TestCase(49, 85)]
         [TestCase(0, 85)]
-        [TestCase(-5, 85)]
+        [TestCase(50, 96)]
         [TestCase(50, 100)]
-        [Ignore(PendingSlice07)]
-        public async Task A_likelihood_outside_1_to_99_is_refused_and_nothing_is_saved(int lowPercentile, int highPercentile)
+        public async Task A_likelihood_outside_50_to_95_is_refused_and_nothing_is_saved(int lowPercentile, int highPercentile)
         {
             var gravity = await GivenGravityReadsItsRangeAt60And95();
 
