@@ -215,8 +215,8 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         /// <summary>
         /// The address this product publishes for a page somebody opened, or nothing at all for an
         /// event that happened on no particular page. Nothing is written out rather than written as
-        /// an empty value, so the collector does not end up holding a column of blanks for the eight
-        /// events out of ten that never had a page to name.
+        /// an empty value, so the collector does not end up holding a column of blanks for every event
+        /// that never had a page to name.
         /// </summary>
         private static string? TheAddressPublishedFor(UsageDataRouteKey? route)
         {
