@@ -67,3 +67,10 @@ export const describeEnoughFor = (
 	says === "AllNeeded"
 		? describeAllNeeded(facts)
 		: `enough for the next ${facts.terms.refinement} (${facts.highPercentile}%) · not needed before then`;
+
+/** What a number in the "#" column counts, for a reader who cannot see the line. */
+export const describeNeededNumber = (
+	number: number,
+	high: number,
+	terms: EnoughForTerms,
+): string => `${number} of ${high} needed before the next ${terms.refinement}`;

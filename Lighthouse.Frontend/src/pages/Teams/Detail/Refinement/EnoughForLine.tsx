@@ -1,4 +1,4 @@
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, useTheme } from "@mui/material";
 import {
 	GridRow,
 	type GridRowProps,
@@ -9,6 +9,7 @@ import type React from "react";
 import { createContext, forwardRef, useContext, useMemo } from "react";
 import {
 	describeEnoughFor,
+	describeNeededNumber,
 	type EnoughForTerms,
 	isNumbered,
 	type LineSide,
@@ -41,8 +42,6 @@ export const EnoughForContext = createContext<EnoughForMarking | null>(null);
 const ShownIndexContext = createContext(-1);
 
 const LINE_HEIGHT_PX = 36;
-
-const BELOW_THE_LINE_OPACITY = 0.6;
 
 const SPACE_FOR_THE_LINE: Record<LineSide, GridRowSpacing> = {
 	above: { top: LINE_HEIGHT_PX },
@@ -81,6 +80,7 @@ const Line: React.FC<Readonly<{ sentence: string; side: LineSide }>> = ({
 	side,
 }) => (
 	<Box
+		aria-hidden
 		sx={{
 			height: LINE_HEIGHT_PX,
 			...INTO_THE_RESERVED_SPACE[side],
@@ -102,6 +102,7 @@ const Line: React.FC<Readonly<{ sentence: string; side: LineSide }>> = ({
 const EnoughForRow = forwardRef<HTMLDivElement, GridRowProps>(
 	function EnoughForRow(props, ref) {
 		const marking = useContext(EnoughForContext);
+		const theme = useTheme();
 		if (marking === null) {
 			return <GridRow ref={ref} {...props} />;
 		}
@@ -123,7 +124,7 @@ const EnoughForRow = forwardRef<HTMLDivElement, GridRowProps>(
 			);
 		const style = isNumbered(marking.high, props.index)
 			? props.style
-			: { ...props.style, opacity: BELOW_THE_LINE_OPACITY };
+			: { ...props.style, color: theme.palette.text.secondary };
 		return (
 			<ShownIndexContext.Provider value={props.index}>
 				{beside?.side === "above" && line}
@@ -153,5 +154,14 @@ export const NeededNumber: React.FC = () => {
 	if (marking === null || !isNumbered(marking.high, index)) {
 		return null;
 	}
-	return index + 1;
+	const number = index + 1;
+	return (
+		<Box
+			component="span"
+			role="img"
+			aria-label={describeNeededNumber(number, marking.high, marking.terms)}
+		>
+			{number}
+		</Box>
+	);
 };

@@ -1,4 +1,10 @@
-import { cleanup, screen, waitFor, within } from "@testing-library/react";
+import {
+	cleanup,
+	isInaccessible,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IRefinementView } from "../../../../models/Refinement/Refinement";
@@ -349,6 +355,86 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 	);
 
 	// @us-06 @slice-06 @boundary @contract-shape:pure-function
+	// The grid places every row from the heights it knows, so the line has to sit in space it reserved.
+	it("reserves the space the line takes after the last needed row", async () => {
+		renderTheRefinementTab(gravityNeeding(5));
+
+		const list = await theListAsShown();
+
+		expect(list.map((shown) => shown.row.style.marginBottom)).toEqual([
+			"",
+			"",
+			"",
+			"",
+			"36px",
+			"",
+		]);
+	});
+
+	// @us-06 @slice-06 @boundary @contract-shape:pure-function
+	it("reserves the space the line takes before the first row when nothing is needed", async () => {
+		renderTheRefinementTab(gravityNeeding(0, { readyCount: 2 }));
+
+		const list = await theListAsShown();
+
+		expect(list.map((shown) => shown.row.style.marginTop)).toEqual([
+			"36px",
+			"",
+			"",
+			"",
+			"",
+			"",
+		]);
+	});
+
+	// @us-06 @slice-06 @boundary @contract-shape:pure-function
+	// Muting the whole row would also dim the vote buttons below readable contrast; only the text is muted.
+	it("mutes the text of the rows below the line and leaves their controls at full strength", async () => {
+		renderTheRefinementTab(gravityNeeding(3));
+
+		const list = await theListAsShown();
+
+		expect(list.map((shown) => shown.row.style.color !== "")).toEqual([
+			false,
+			false,
+			false,
+			true,
+			true,
+			true,
+		]);
+		expect(list.map((shown) => shown.row.style.opacity)).toEqual([
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+		]);
+	});
+
+	// @us-06 @slice-06 @boundary @contract-shape:pure-function
+	// The line sits among the rows, where a screen reader would read it as a row of its own, so it is
+	// hidden from one and each number says what it counts instead.
+	it("tells a screen reader what each number counts instead of reading the line", async () => {
+		renderTheRefinementTab(gravityNeeding(5));
+		await theListAsShown();
+
+		expect(
+			isInaccessible(screen.getByText(ENOUGH_FOR_THE_NEXT_REFINEMENT)),
+		).toBe(true);
+		expect(
+			screen.getByRole("gridcell", {
+				name: "1 of 5 needed before the next Refinement",
+			}),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("gridcell", {
+				name: "5 of 5 needed before the next Refinement",
+			}),
+		).toBeInTheDocument();
+	});
+
+	// @us-06 @slice-06 @boundary @contract-shape:pure-function
 	it("says the Team's own words on the line", async () => {
 		terms.current = {
 			...defaultRefinementTerms,
@@ -377,6 +463,11 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 			await screen.findByText(
 				/^enough for the next Grooming \(85%\) · not needed before then$/,
 			),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("gridcell", {
+				name: "1 of 3 needed before the next Grooming",
+			}),
 		).toBeInTheDocument();
 	});
 });
