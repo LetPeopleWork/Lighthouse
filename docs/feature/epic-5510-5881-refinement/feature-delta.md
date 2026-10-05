@@ -2910,10 +2910,10 @@ open for slice 05; the three sentences, the single MUI Alert and "above as loud 
   "N Work Items in Refinement · R ready by votes" (slice 13's) and the alert opens with "R ready —". The heading
   still carries the number when there is no alert (no cadence, too little history).
 - **Equal ends collapse to one number.** When low = high the range reads as one number and "Refine X to Y more"
-  drops "to Y": "3 ready — below the 5 Work Items Team Gravity is likely to pull before Thu 8 Oct. Refine 2 more."
-  · above: "2 ready — above the 0 likely to be pulled. Stop refining: nothing more is needed before Thu 8 Oct."
+  drops "to Y": "3 ready — below the 5 Work Items Team Gravity is likely to pull by then. Refine 2 more."
+  · above: "2 ready — above the 0 likely to be pulled. Stop refining: nothing more is needed by then."
   · in range: "5 ready — exactly the 5 likely to be pulled. Nothing more needs refining
-  before Thu 8 Oct." (the in-range and above wordings were the orchestrator's, written to the rule; open to change at
+  by then." (the in-range and above wordings were the orchestrator's, written to the rule; open to change at
   review). The browser decides this from the facts; the wire is unchanged.
 - **Too little history is `info`, not `warning`.** The alert shows the forecasts' minimum-data message with the
   neutral info severity and icon: there is nothing for the Team to act on, it only has no number yet.
@@ -2924,3 +2924,7 @@ open for slice 05; the three sentences, the single MUI Alert and "above as loud 
   floor reached with (100 − low)% likelihood; the default reads the same) Built from facts already on the wire (percentiles,
   horizon, date); Team and Work Item words through Terminology. Only on the three verdict states, not on the
   minimum-data message.
+- **Next Refinement titles the message** (manual review, 2026-10-05): when the need message shows, its title is
+  'Next Refinement: Fri 9 Oct · in 4 days' and the date leaves the heading row; the sentences say 'by then' instead
+  of repeating the date. Without a cadence there is no message and 'No Refinement cadence ⓘ' stays on the heading
+  row.

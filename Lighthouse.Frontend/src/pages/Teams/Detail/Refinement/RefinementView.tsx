@@ -8,8 +8,9 @@ import type { IRefinementView } from "../../../../models/Refinement/Refinement";
 import type { Team } from "../../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { useTerminology } from "../../../../services/TerminologyContext";
-import NeedVerdict from "./NeedVerdict";
+import NeedVerdict, { showsNeedMessage } from "./NeedVerdict";
 import NextRefinement, { NEXT_REFINEMENT_SLOT } from "./NextRefinement";
+import { describeNextRefinement } from "./nextRefinementWording";
 import RefinementGrid from "./RefinementGrid";
 import { describeStageBreakdown } from "./stageBreakdown";
 import { useRefinement } from "./useRefinement";
@@ -19,8 +20,9 @@ import VoterNamePrompt from "./VoterNamePrompt";
 import VotesAndCommentsDialog from "./VotesAndCommentsDialog";
 import { describeVoteRefusal } from "./voteWording";
 
-// The heading and the next Refinement share the first row while every other part of the tab spans the
-// full width beneath them; a grid does that without wrapping the two in a row of their own.
+// The heading and the next Refinement (or the lack of a cadence) share the first row while every other
+// part of the tab spans the full width beneath them; a grid does that without wrapping the two in a row of
+// their own.
 const TAB_LAYOUT: SxProps<Theme> = {
 	display: "grid",
 	gridTemplateColumns: "1fr auto",
@@ -111,14 +113,24 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 		(row) => row.referenceId === votesShownFor,
 	);
 
+	const nextRefinement = describeNextRefinement(
+		refinement.nextRefinementDate,
+		refinement.daysUntilNextRefinement,
+		refinementTerm,
+	);
+
 	return (
 		<Box sx={TAB_LAYOUT}>
 			<Typography variant="h6" component="h2">
 				{describeHeading(refinement, getTerm)}
 			</Typography>
 			<NextRefinement
-				nextRefinementDate={refinement.nextRefinementDate}
-				daysUntilNextRefinement={refinement.daysUntilNextRefinement}
+				nextRefinement={nextRefinement}
+				titlesTheNeedMessage={showsNeedMessage(
+					refinement.need,
+					refinement.readyCount,
+					refinement.nextRefinementDate,
+				)}
 				terms={{
 					team: getTerm(TERMINOLOGY_KEYS.TEAM),
 					refinement: refinementTerm,
@@ -130,6 +142,7 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 				need={refinement.need}
 				readyCount={refinement.readyCount}
 				nextRefinementDate={refinement.nextRefinementDate}
+				title={nextRefinement}
 				teamName={team.name}
 				terms={{
 					workItem: getTerm(TERMINOLOGY_KEYS.WORK_ITEM),

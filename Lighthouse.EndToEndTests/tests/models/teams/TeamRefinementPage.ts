@@ -1,5 +1,8 @@
 import type { Locator, Page } from "@playwright/test";
 
+const NEXT_REFINEMENT =
+	/^Next Refinement: \w{3} \d{1,2} \w{3} · (tomorrow|in \d+ days)$/;
+
 /**
  * A Team's Refinement tab: the heading - the count of Work Items in refinement, or the stage breakdown
  * once the Team has stage rules - and the grid's rows in backlog order. Rows are found by role and by
@@ -27,16 +30,24 @@ export class TeamRefinementPage {
 		return this.page.getByText("No Refinement cadence", { exact: true });
 	}
 
-	/** The next Refinement named beside the heading: the day, the date and how far off it is. */
+	/** The next Refinement: the day, the date and how far off it is. */
 	get nextRefinement(): Locator {
-		return this.page.getByText(
-			/^Next Refinement: \w{3} \d{1,2} \w{3} · (tomorrow|in \d+ days)$/,
-		);
+		return this.page.getByText(NEXT_REFINEMENT);
 	}
 
-	/** Whether to refine more or stop, or why the tab cannot say. */
-	get verdict(): Locator {
+	/** Whether to refine more or stop, or why the tab cannot say, titled with the next Refinement. */
+	get needMessage(): Locator {
 		return this.page.getByRole("alert");
+	}
+
+	/** The next Refinement as the need message's title. */
+	get needMessageTitle(): Locator {
+		return this.needMessage.getByText(NEXT_REFINEMENT);
+	}
+
+	/** The verdict beneath the need message's title. */
+	get verdict(): Locator {
+		return this.needMessage.getByText(/^\d+ ready — /);
 	}
 
 	/** The line after the Work Items needed before the next Refinement. */

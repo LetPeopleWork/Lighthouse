@@ -30,10 +30,10 @@ import { refinementDayVerdict } from "./useVerdictShownReporter";
  * Under the heading the tab says whether to refine more or stop, in one message that keeps its size and
  * place whatever it says. Below the range and above it are equally loud - stopping matters as much as
  * refining more - and in range reads as settled; each says so with an icon as well as a colour. The
- * words come from the server's facts: the ready count, the range, the Team and the date. With too little
- * history the message is the one forecasts already give; without a cadence there is no message, because
- * the heading's hint already says what is missing. A tab opened on a Refinement day reports which verdict
- * it showed, once.
+ * message's title names the next Refinement, and the words beneath it come from the server's facts: the
+ * ready count, the range and the Team. With too little history the message is the one forecasts already
+ * give; without a cadence there is no message, because the heading's hint already says what is missing.
+ * A tab opened on a Refinement day reports which verdict it showed, once.
  */
 
 const { terms, mockUseLicenseRestrictions, reporter } = vi.hoisted(() => ({
@@ -88,6 +88,20 @@ const gravityWithReady = (
 
 const theVerdict = async () => {
 	const message = await screen.findByRole("alert");
+	return message;
+};
+
+/** The verdict beneath the message's title. */
+const theVerdictSentence = async () =>
+	within(await theVerdict()).getByText(/ ready — /);
+
+const NEXT_REFINEMENT_TITLE = /^Next Refinement: Thu 8 Oct · in 4 days$/;
+
+/** The message names the next Refinement as its title and says the verdict beneath it. */
+const expectTheVerdictToRead = async (sentence: RegExp) => {
+	const message = await theVerdict();
+	expect(within(message).getByText(NEXT_REFINEMENT_TITLE)).toBeVisible();
+	expect(within(message).getByText(sentence)).toBeVisible();
 	return message;
 };
 
@@ -174,9 +188,8 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 	it("says how many more to refine when fewer are ready than the Team is likely to pull", async () => {
 		renderTheRefinementTab(gravityWithReady(3, "Below"));
 
-		const message = await theVerdict();
-		expect(message).toHaveTextContent(
-			/^3 ready — below the range of 5–8 Work Items Team Gravity is likely to pull before Thu 8 Oct\. Refine 2 to 5 more\.$/,
+		const message = await expectTheVerdictToRead(
+			/^3 ready — below the range of 5–8 Work Items Team Gravity is likely to pull by then\. Refine 2 to 5 more\.$/,
 		);
 		expect(within(message).getByTestId(ACT_ICON)).toBeInTheDocument();
 		expect(
@@ -190,9 +203,8 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 	it("says nothing more needs refining when the ready count is in range", async () => {
 		renderTheRefinementTab(gravityWithReady(6, "In"));
 
-		const message = await theVerdict();
-		expect(message).toHaveTextContent(
-			/^6 ready — in the range of 5–8\. Nothing more needs refining before Thu 8 Oct\.$/,
+		const message = await expectTheVerdictToRead(
+			/^6 ready — in the range of 5–8\. Nothing more needs refining by then\.$/,
 		);
 		expect(within(message).getByTestId(SETTLED_ICON)).toBeInTheDocument();
 	});
@@ -202,9 +214,8 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 	it("says stop refining, as loudly as refine more, when more are ready than the Team is likely to pull", async () => {
 		renderTheRefinementTab(gravityWithReady(11, "Above"));
 
-		const message = await theVerdict();
-		expect(message).toHaveTextContent(
-			/^11 ready — above the range of 5–8\. Stop refining: nothing more is needed before Thu 8 Oct\.$/,
+		const message = await expectTheVerdictToRead(
+			/^11 ready — above the range of 5–8\. Stop refining: nothing more is needed by then\.$/,
 		);
 		expect(within(message).getByTestId(ACT_ICON)).toBeInTheDocument();
 	});
@@ -213,9 +224,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 	it("says five ready against 5–8 in the in-range words", async () => {
 		renderTheRefinementTab(gravityWithReady(5, "In"));
 
-		expect(await theVerdict()).toHaveTextContent(
-			/^5 ready — in the range of 5–8\./,
-		);
+		await expectTheVerdictToRead(/^5 ready — in the range of 5–8\./);
 	});
 
 	// @us-05 @slice-05 @boundary @contract-shape:pure-function
@@ -228,7 +237,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		renderTheRefinementTab(gravityWithReady(3, "Below"));
 
 		expect(await theVerdict()).toHaveTextContent(
-			/below the range of 5–8 Tickets Team Gravity is likely to pull before Thu 8 Oct/,
+			/below the range of 5–8 Tickets Team Gravity is likely to pull by then/,
 		);
 	});
 
@@ -239,6 +248,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		);
 
 		const message = await theVerdict();
+		expect(within(message).getByText(NEXT_REFINEMENT_TITLE)).toBeVisible();
 		expect(message).toHaveTextContent(INSUFFICIENT_FORECAST_DATA_MESSAGE);
 		expect(within(message).getByTestId(INFO_ICON)).toBeInTheDocument();
 		expect(screen.queryByText(/ ready — /)).not.toBeInTheDocument();
@@ -302,11 +312,11 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		);
 		vi.mocked(refinementService.getRefinement).mockResolvedValue(after);
 
-		expect(await theVerdict()).toHaveTextContent(/^4 ready — below/);
+		expect(await theVerdictSentence()).toHaveTextContent(/^4 ready — below/);
 		await user.click(theButton(await theRowOf("GR-073"), "Yes"));
 
 		await waitFor(async () =>
-			expect(await theVerdict()).toHaveTextContent(
+			expect(await theVerdictSentence()).toHaveTextContent(
 				/^5 ready — in the range of 5–8\./,
 			),
 		);
@@ -357,11 +367,13 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		);
 		vi.mocked(refinementService.getRefinement).mockResolvedValue(after);
 
-		expect(await theVerdict()).toHaveTextContent(/^5 ready — in the range/);
+		expect(await theVerdictSentence()).toHaveTextContent(
+			/^5 ready — in the range/,
+		);
 		await user.click(theButton(await theRowOf("GR-073"), "No"));
 
 		await waitFor(async () =>
-			expect(await theVerdict()).toHaveTextContent(
+			expect(await theVerdictSentence()).toHaveTextContent(
 				/^4 ready — below the range of 5–8/,
 			),
 		);
@@ -435,7 +447,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		);
 		const reread = aReadStillOnItsWay(refinementService);
 
-		expect(await theVerdict()).toHaveTextContent(/^4 ready — below/);
+		expect(await theVerdictSentence()).toHaveTextContent(/^4 ready — below/);
 		await user.click(
 			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
 		);
@@ -459,7 +471,9 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		);
 
 		await waitFor(async () =>
-			expect(await theVerdict()).toHaveTextContent(/^5 ready — in the range/),
+			expect(await theVerdictSentence()).toHaveTextContent(
+				/^5 ready — in the range/,
+			),
 		);
 		expect(await theRowOf(LOAD_TESTING)).toHaveTextContent("1 vote");
 	});
@@ -499,7 +513,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		const olderRead = aReadStillOnItsWay(refinementService);
 		const newerRead = aReadStillOnItsWay(refinementService);
 
-		expect(await theVerdict()).toHaveTextContent(/^4 ready — below/);
+		expect(await theVerdictSentence()).toHaveTextContent(/^4 ready — below/);
 		await user.click(
 			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
 		);
@@ -523,7 +537,9 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 			]),
 		);
 		await waitFor(async () =>
-			expect(await theVerdict()).toHaveTextContent(/^6 ready — in the range/),
+			expect(await theVerdictSentence()).toHaveTextContent(
+				/^6 ready — in the range/,
+			),
 		);
 		await olderRead.answer(
 			aVotesTeamShowing(5, "In", [
@@ -540,7 +556,9 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 			await Promise.resolve();
 		});
 
-		expect(await theVerdict()).toHaveTextContent(/^6 ready — in the range/);
+		expect(await theVerdictSentence()).toHaveTextContent(
+			/^6 ready — in the range/,
+		);
 	});
 });
 
@@ -652,12 +670,14 @@ describe("A Refinement day reports which verdict the tab showed", () => {
 			isRefinementDay: true,
 		});
 
-		expect(await theVerdict()).toHaveTextContent(/^4 ready — below/);
+		expect(await theVerdictSentence()).toHaveTextContent(/^4 ready — below/);
 		await user.click(
 			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
 		);
 		await waitFor(async () =>
-			expect(await theVerdict()).toHaveTextContent(/^5 ready — in the range/),
+			expect(await theVerdictSentence()).toHaveTextContent(
+				/^5 ready — in the range/,
+			),
 		);
 
 		expect(refinementService.getRefinement).toHaveBeenCalledTimes(2);

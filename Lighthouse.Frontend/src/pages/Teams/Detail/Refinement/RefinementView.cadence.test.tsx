@@ -1,8 +1,9 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IRefinementRow } from "../../../../models/Refinement/Refinement";
 import {
 	aBrowserThatVotedBefore,
+	aNeedOfFiveToEight,
 	aRow,
 	aSizingLogService,
 	defaultRefinementTerms,
@@ -17,12 +18,13 @@ import {
 import { NEXT_REFINEMENT_SLOT } from "./NextRefinement";
 
 /**
- * The Refinement tab names the Team's next Refinement on the heading's row, to the right of the count:
- * the day and date, and how far off it is in calendar days - "tomorrow" for one day, never "today",
- * because the next Refinement is always after today. Without a cadence the same spot says there is no
- * cadence, and the info icon beside it says how to get one: a Team admin is pointed to Settings, anybody
- * else is told a Team admin can set it. The two sizing
- * events say whether they happened on a Refinement day or another day once the Team has a cadence.
+ * The Refinement tab names the Team's next Refinement: the day and date, and how far off it is in
+ * calendar days - "tomorrow" for one day, never "today", because the next Refinement is always after
+ * today. When the tab says whether to refine more or stop, the next Refinement is that message's title.
+ * Without a cadence the heading's row says there is no cadence, to the right of the count, and the info
+ * icon beside it says how to get one: a Team admin is pointed to Settings, anybody else is told a Team
+ * admin can set it. The two sizing events say whether they happened on a Refinement day or another day
+ * once the Team has a cadence.
  */
 
 const { terms, mockUseLicenseRestrictions, reporter } = vi.hoisted(() => ({
@@ -195,16 +197,33 @@ describe("The Refinement tab names the next Refinement", () => {
 	});
 
 	// @us-04 @slice-04 @boundary @contract-shape:pure-function
-	it("names the next Refinement on the heading's row, beside the count", async () => {
-		renderTheRefinementTab(refiningOnThursdayTheEighth());
+	it("titles the need message with the next Refinement instead of naming it on the heading's row", async () => {
+		renderTheRefinementTab(
+			gravitysRefinement({
+				nextRefinementDate: THURSDAY_THE_EIGHTH,
+				daysUntilNextRefinement: 4,
+				readyCount: 3,
+				need: aNeedOfFiveToEight(),
+			}),
+		);
+
+		const message = await screen.findByRole("alert");
+		expect(
+			within(message).getByText(/^Next Refinement: Thu 8 Oct · in 4 days$/),
+		).toBeVisible();
+		expect(screen.getAllByText(/^Next Refinement: /)).toHaveLength(1);
+	});
+
+	// @us-04 @slice-04 @boundary @contract-shape:pure-function
+	it("says there is no cadence on the heading's row, beside the count", async () => {
+		renderTheRefinementTab(withoutACadence(), aSizingLogService(), "Reader");
 
 		const heading = await screen.findByRole("heading", {
 			name: /^3 Work Items in Refinement/,
 		});
-		const nextRefinement = screen.getByText(/^Next Refinement: /);
-		const placedBesideTheHeading = nextRefinement.closest(
-			`[${NEXT_REFINEMENT_SLOT}]`,
-		);
+		const placedBesideTheHeading = screen
+			.getByText(NO_CADENCE)
+			.closest(`[${NEXT_REFINEMENT_SLOT}]`);
 		expect(placedBesideTheHeading).not.toBeNull();
 		expect(heading.nextElementSibling).toBe(placedBesideTheHeading);
 	});

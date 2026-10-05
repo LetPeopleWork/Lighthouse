@@ -1,4 +1,4 @@
-import { Alert, type AlertColor } from "@mui/material";
+import { Alert, type AlertColor, AlertTitle } from "@mui/material";
 import type React from "react";
 import type {
 	IRefinementNeed,
@@ -25,8 +25,6 @@ const UNAVAILABLE_MESSAGE: Record<NeedUnavailableReason, string | null> = {
 	NoRefinementStates: null,
 };
 
-const ALERT_LAYOUT = { alignItems: "center" };
-
 /** A need the server gave a verdict and a range for. */
 type JudgedNeed = IRefinementNeed & {
 	verdict: RefinementVerdict;
@@ -45,6 +43,42 @@ const isJudged = (need: IRefinementNeed | undefined): need is JudgedNeed =>
 	need.highPercentile != null &&
 	need.horizonWorkingDays != null;
 
+const refinementDayOf = (nextRefinementDate: string | null | undefined) =>
+	nextRefinementDate == null ? null : parseLocalDate(nextRefinementDate);
+
+/** Whether the tab shows a message about the need; one that shows carries the next Refinement as its title. */
+export const showsNeedMessage = (
+	need: IRefinementNeed | undefined,
+	readyCount: number | undefined,
+	nextRefinementDate: string | null | undefined,
+): boolean => {
+	if (need?.unavailableReason != null) {
+		return UNAVAILABLE_MESSAGE[need.unavailableReason] !== null;
+	}
+	return (
+		isJudged(need) &&
+		readyCount !== undefined &&
+		refinementDayOf(nextRefinementDate) !== null
+	);
+};
+
+interface NeedMessageProps {
+	severity: AlertColor;
+	title: string | null;
+	children: React.ReactNode;
+}
+
+const NeedMessage: React.FC<Readonly<NeedMessageProps>> = ({
+	severity,
+	title,
+	children,
+}) => (
+	<Alert severity={severity}>
+		{title !== null && <AlertTitle>{title}</AlertTitle>}
+		{children}
+	</Alert>
+);
+
 /** The words a Team has renamed that the verdict uses. */
 export interface NeedVerdictTerms {
 	workItem: string;
@@ -57,6 +91,8 @@ interface NeedVerdictProps {
 	need: IRefinementNeed | undefined;
 	readyCount: number | undefined;
 	nextRefinementDate: string | null | undefined;
+	/** The next Refinement as the tab names it, so the sentences can say "by then". */
+	title: string | null;
 	teamName: string;
 	terms: NeedVerdictTerms;
 }
@@ -66,20 +102,20 @@ const NeedVerdict: React.FC<Readonly<NeedVerdictProps>> = ({
 	need,
 	readyCount,
 	nextRefinementDate,
+	title,
 	teamName,
 	terms,
 }) => {
 	if (need?.unavailableReason != null) {
 		const message = UNAVAILABLE_MESSAGE[need.unavailableReason];
 		return message === null ? null : (
-			<Alert severity="info" sx={ALERT_LAYOUT}>
+			<NeedMessage severity="info" title={title}>
 				{message}
-			</Alert>
+			</NeedMessage>
 		);
 	}
 
-	const refinementDay =
-		nextRefinementDate == null ? null : parseLocalDate(nextRefinementDate);
+	const refinementDay = refinementDayOf(nextRefinementDate);
 	if (!isJudged(need) || readyCount === undefined || refinementDay === null) {
 		return null;
 	}
@@ -89,7 +125,6 @@ const NeedVerdict: React.FC<Readonly<NeedVerdictProps>> = ({
 		readyCount,
 		low: need.low,
 		high: need.high,
-		refinementDay,
 		teamName,
 		workItemTerm: terms.workItem,
 		workItemsTerm: terms.workItems,
@@ -105,9 +140,9 @@ const NeedVerdict: React.FC<Readonly<NeedVerdictProps>> = ({
 	});
 
 	return (
-		<Alert severity={SEVERITY[need.verdict]} sx={ALERT_LAYOUT}>
-			{sentence} <InfoTooltip text={origin} />
-		</Alert>
+		<NeedMessage severity={SEVERITY[need.verdict]} title={title}>
+			<span>{sentence}</span> <InfoTooltip text={origin} />
+		</NeedMessage>
 	);
 };
 

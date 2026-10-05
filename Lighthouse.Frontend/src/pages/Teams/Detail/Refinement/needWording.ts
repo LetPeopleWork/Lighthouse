@@ -7,7 +7,6 @@ export interface NeedFacts {
 	readyCount: number;
 	low: number;
 	high: number;
-	refinementDay: Date;
 	teamName: string;
 	workItemTerm: string;
 	workItemsTerm: string;
@@ -43,37 +42,36 @@ const workItemsTermFor = (facts: NeedFacts): string =>
 		? facts.workItemTerm
 		: facts.workItemsTerm;
 
-const describeBelow = (facts: NeedFacts, day: string): string =>
-	`below ${theRange(facts)} ${workItemsTermFor(facts)} ${facts.teamName} is likely to pull before ${day}. Refine ${howManyMore(facts)} more.`;
+const describeBelow = (facts: NeedFacts): string =>
+	`below ${theRange(facts)} ${workItemsTermFor(facts)} ${facts.teamName} is likely to pull by then. Refine ${howManyMore(facts)} more.`;
 
-const describeIn = (facts: NeedFacts, day: string): string => {
+const describeIn = (facts: NeedFacts): string => {
 	const where = isOneNumber(facts)
 		? `exactly the ${facts.low} likely to be pulled`
 		: `in ${theRange(facts)}`;
-	return `${where}. Nothing more needs refining before ${day}.`;
+	return `${where}. Nothing more needs refining by then.`;
 };
 
-const describeAbove = (facts: NeedFacts, day: string): string => {
+const describeAbove = (facts: NeedFacts): string => {
 	const where = isOneNumber(facts)
 		? `above the ${facts.high} likely to be pulled`
 		: `above ${theRange(facts)}`;
-	return `${where}. Stop refining: nothing more is needed before ${day}.`;
+	return `${where}. Stop refining: nothing more is needed by then.`;
 };
 
-const VERDICT_WORDING: Record<
-	RefinementVerdict,
-	(facts: NeedFacts, day: string) => string
-> = {
-	Below: describeBelow,
-	In: describeIn,
-	Above: describeAbove,
-};
+const VERDICT_WORDING: Record<RefinementVerdict, (facts: NeedFacts) => string> =
+	{
+		Below: describeBelow,
+		In: describeIn,
+		Above: describeAbove,
+	};
 
-/** "3 ready — below the range of 5–8 Work Items Team Gravity is likely to pull before Thu 8 Oct. Refine 2 to 5 more." */
-export const describeNeed = (facts: NeedFacts): string => {
-	const day = formatDayAndDate(facts.refinementDay);
-	return `${facts.readyCount} ready — ${VERDICT_WORDING[facts.verdict](facts, day)}`;
-};
+/**
+ * "3 ready — below the range of 5–8 Work Items Team Gravity is likely to pull by then. Refine 2 to 5 more."
+ * "Then" is the next Refinement, which the message names in its title.
+ */
+export const describeNeed = (facts: NeedFacts): string =>
+	`${facts.readyCount} ready — ${VERDICT_WORDING[facts.verdict](facts)}`;
 
 /** Where the range comes from: the Team's Throughput, forecast over the working days until the next Refinement. */
 export const describeNeedOrigin = (facts: NeedOriginFacts): string => {

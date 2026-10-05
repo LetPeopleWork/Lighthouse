@@ -115,15 +115,15 @@ testWithDemo.fixme(
 
 		const refinement = await gravity.goToRefinement();
 
-		await test.step("the tab names the next Thursday", async () => {
-			await expect(refinement.nextRefinement).toContainText(
+		await test.step("the tab names the next Thursday as the title of whether to refine more or stop", async () => {
+			await expect(refinement.needMessageTitle).toContainText(
 				"Next Refinement: Thu ",
 			);
 		});
 
 		await test.step("the tab says whether to refine more or stop", async () => {
 			await expect(refinement.verdict).toHaveText(
-				/^\d+ ready — (below|in|above) the range of \d+–\d+/,
+				/^\d+ ready — (below|in|above|exactly) the /,
 			);
 		});
 

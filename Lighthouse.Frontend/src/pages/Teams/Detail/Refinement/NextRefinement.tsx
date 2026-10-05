@@ -4,33 +4,29 @@ import InfoTooltip from "./InfoTooltip";
 import {
 	type CadenceHintTerms,
 	describeHowToGetACadence,
-	describeNextRefinement,
 } from "./nextRefinementWording";
 
 /** Marks the text so the tab's layout can place it at the end of the heading's row. */
 export const NEXT_REFINEMENT_SLOT = "data-next-refinement";
 
 interface NextRefinementProps {
-	nextRefinementDate: string | null | undefined;
-	daysUntilNextRefinement: number | null | undefined;
+	/** "Next Refinement: Thu 8 Oct · in 4 days", or null for a Team without a cadence. */
+	nextRefinement: string | null;
+	/** The need message names the next Refinement as its title, so the heading's row does not repeat it. */
+	titlesTheNeedMessage: boolean;
 	terms: CadenceHintTerms;
 	canChangeSettings: boolean;
 }
 
 /** The next Refinement, or, for a Team without a cadence, that it has none and how to get one. */
 const NextRefinement: React.FC<Readonly<NextRefinementProps>> = ({
-	nextRefinementDate,
-	daysUntilNextRefinement,
+	nextRefinement,
+	titlesTheNeedMessage,
 	terms,
 	canChangeSettings,
 }) => {
-	const nextRefinement = describeNextRefinement(
-		nextRefinementDate,
-		daysUntilNextRefinement,
-		terms.refinement,
-	);
 	if (nextRefinement !== null) {
-		return (
+		return titlesTheNeedMessage ? null : (
 			<Typography color="text.secondary" {...{ [NEXT_REFINEMENT_SLOT]: true }}>
 				{nextRefinement}
 			</Typography>
