@@ -30,6 +30,21 @@ describe("lineBeside", () => {
 			expect(whereTheLineGoes(high, shown)).toEqual([{ index, side, says }]);
 		},
 	);
+
+	// The grid keeps a focused row rendered, out of sight, after it scrolls away; a line drawn with it
+	// would show up where that row is not.
+	it.each([
+		[3, 2, false],
+		[8, 5, true],
+		[0, 0, false],
+	])(
+		"draws no line beside a row kept out of sight (high %i, row %i)",
+		(high, index, isLastShown) => {
+			expect(
+				lineBeside(high, { index, isLastShown, isOutOfSight: true }),
+			).toBeNull();
+		},
+	);
 });
 
 describe("isNumbered", () => {

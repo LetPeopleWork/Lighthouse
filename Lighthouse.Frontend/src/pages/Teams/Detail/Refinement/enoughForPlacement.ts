@@ -6,6 +6,8 @@ export type LineSide = "above" | "below";
 export interface ShownRow {
 	index: number;
 	isLastShown: boolean;
+	/** Kept rendered while scrolled away, because it holds the focus. */
+	isOutOfSight?: boolean;
 }
 
 /** Which side of a row the line sits on, and what it says there. */
@@ -22,6 +24,9 @@ export const isNumbered = (high: number, index: number) =>
  * follows the last one shown and says all of them are needed; when none are needed, it comes first.
  */
 export const lineBeside = (high: number, row: ShownRow): LineBeside | null => {
+	if (row.isOutOfSight) {
+		return null;
+	}
 	if (high === 0) {
 		return row.index === 0 ? { side: "above", says: "EnoughFor" } : null;
 	}

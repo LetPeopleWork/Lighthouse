@@ -108,6 +108,7 @@ const EnoughForRow = forwardRef<HTMLDivElement, GridRowProps>(
 		const beside = lineBeside(marking.high, {
 			index: props.index,
 			isLastShown: props.isLastVisible,
+			isOutOfSight: props.isNotVisible,
 		});
 		const line =
 			beside === null ? null : (
