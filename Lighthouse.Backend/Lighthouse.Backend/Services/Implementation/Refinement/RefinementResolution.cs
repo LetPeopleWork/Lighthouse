@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 .Select(byVoter => byVoter.MaxBy(entry => entry.Id)!)
                 .Any(latest => latest.Kind == SizingEntryKind.Comment && !voterKeys.Contains(latest.VoterKey));
 
-            return new RowConversation(log.Exists(IsComment), hasOpenQuestion);
+            return new RowConversation(log.Exists(SaysSomething), hasOpenQuestion);
         }
 
         /// <summary>
@@ -109,7 +109,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         private static bool NeedsDiscussion(VoteSplit split, DiscussionRules rules)
             => split.No >= rules.No || split.YesBut >= rules.YesIf;
 
-        private static bool IsComment(SizingLogEntry entry)
+        private static bool SaysSomething(SizingLogEntry entry)
             => entry.Kind == SizingEntryKind.Comment || entry.Comment is not null;
 
         private static List<SizingLogEntry> CurrentVotes(IEnumerable<SizingLogEntry> entries)

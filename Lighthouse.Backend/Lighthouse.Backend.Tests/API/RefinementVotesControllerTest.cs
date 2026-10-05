@@ -90,7 +90,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             sizingLogCommandsMock
                 .Setup(commands => commands.Vote(TeamId, reference, new SizingVote(SizingAnswer.YesBut, SizingChannel.Web, "if it stays small"), It.IsAny<Voter>()))
-                .Returns(VoteOutcome.Recorded);
+                .Returns(SizingOutcome.Recorded);
             GivenTheRows(Row("GR-0", 3), Row(reference, 2, SizingAnswer.YesBut));
 
             var result = CastVote(routeValue, new SizingVoteDto { Answer = SizingAnswer.YesBut, Channel = SizingChannel.Web, Comment = "if it stays small", VoterName = Jonas });
@@ -105,9 +105,9 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
-        [TestCase(VoteOutcome.Recorded, false)]
-        [TestCase(VoteOutcome.RecordedAndMadeReady, true)]
-        public void ARecordedVoteSaysWhetherItIsTheVoteThatMadeItsRowReady(VoteOutcome outcome, bool madeReady)
+        [TestCase(SizingOutcome.Recorded, false)]
+        [TestCase(SizingOutcome.RecordedAndMadeReady, true)]
+        public void ARecordedVoteSaysWhetherItIsTheVoteThatMadeItsRowReady(SizingOutcome outcome, bool madeReady)
         {
             sizingLogCommandsMock
                 .Setup(commands => commands.Vote(TeamId, InRefinement, It.IsAny<SizingVote>(), It.IsAny<Voter>()))
@@ -130,7 +130,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             sizingLogCommandsMock
                 .Setup(commands => commands.Vote(TeamId, InRefinement, It.IsAny<SizingVote>(), It.IsAny<Voter>()))
-                .Returns(VoteOutcome.Recorded);
+                .Returns(SizingOutcome.Recorded);
             GivenTheRows(Row(InRefinement, 1));
 
             CastVote(InRefinement, new SizingVoteDto { Answer = SizingAnswer.No, Channel = SizingChannel.Web, VoterName = "  Jonas  " });
@@ -147,7 +147,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             sizingLogCommandsMock
                 .Setup(commands => commands.Vote(TeamId, InRefinement, It.IsAny<SizingVote>(), It.IsAny<Voter>()))
-                .Returns(VoteOutcome.Recorded);
+                .Returns(SizingOutcome.Recorded);
             GivenTheRows(Row("GR-0", 1));
 
             var result = CastVote(InRefinement, new SizingVoteDto { Answer = SizingAnswer.Yes, Channel = SizingChannel.Web, VoterName = Jonas });
@@ -160,7 +160,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             sizingLogCommandsMock
                 .Setup(commands => commands.Vote(TeamId, InRefinement, It.IsAny<SizingVote>(), It.IsAny<Voter>()))
-                .Returns(VoteOutcome.TeamNotFound);
+                .Returns(SizingOutcome.TeamNotFound);
 
             var result = CastVote(InRefinement, new SizingVoteDto { Answer = SizingAnswer.Yes, Channel = SizingChannel.Web, VoterName = Jonas });
 
@@ -172,7 +172,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             sizingLogCommandsMock
                 .Setup(commands => commands.Vote(TeamId, InRefinement, It.IsAny<SizingVote>(), It.IsAny<Voter>()))
-                .Returns(VoteOutcome.WorkItemNotInRefinement);
+                .Returns(SizingOutcome.WorkItemNotInRefinement);
 
             var result = CastVote(InRefinement, new SizingVoteDto { Answer = SizingAnswer.Yes, Channel = SizingChannel.Web, VoterName = Jonas });
 

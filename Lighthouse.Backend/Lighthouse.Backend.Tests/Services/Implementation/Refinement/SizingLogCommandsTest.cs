@@ -84,7 +84,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(outcome, Is.EqualTo(VoteOutcome.Recorded));
+                Assert.That(outcome, Is.EqualTo(SizingOutcome.Recorded));
                 Assert.That(appended, Has.Count.EqualTo(1));
                 Assert.That(appended.Select(Summary), Has.All.EqualTo(new EntrySummary(
                     TeamId, InRefinement, SizingEntryKind.Vote, answer, comment, Jonas.Key, null, Jonas.DisplayName, CastAt.UtcDateTime, channel)));
@@ -112,7 +112,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(outcome, Is.EqualTo(VoteOutcome.Recorded));
+                Assert.That(outcome, Is.EqualTo(SizingOutcome.Recorded));
                 Assert.That(appended.Select(entry => entry.WorkItemReferenceId), Is.EqualTo(new[] { workItem }));
             }
         }
@@ -141,7 +141,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(outcome, Is.EqualTo(VoteOutcome.WorkItemNotInRefinement));
+                Assert.That(outcome, Is.EqualTo(SizingOutcome.WorkItemNotInRefinement));
                 sizingLogMock.Verify(log => log.Append(It.IsAny<SizingLogEntry>()), Times.Never);
             }
         }
@@ -185,15 +185,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(outcome, Is.EqualTo(VoteOutcome.TeamNotFound));
+                Assert.That(outcome, Is.EqualTo(SizingOutcome.TeamNotFound));
                 Assert.That(appended, Is.Empty);
             }
         }
 
-        [TestCase(SizingAnswer.Yes, VoteOutcome.RecordedAndMadeReady)]
-        [TestCase(SizingAnswer.YesBut, VoteOutcome.RecordedAndMadeReady)]
-        [TestCase(SizingAnswer.No, VoteOutcome.Recorded)]
-        public void AVoteSaysWhetherItMadeTheWorkItemReadyUnderTheTeamsOwnReadiness(SizingAnswer answer, VoteOutcome expected)
+        [TestCase(SizingAnswer.Yes, SizingOutcome.RecordedAndMadeReady)]
+        [TestCase(SizingAnswer.YesBut, SizingOutcome.RecordedAndMadeReady)]
+        [TestCase(SizingAnswer.No, SizingOutcome.Recorded)]
+        public void AVoteSaysWhetherItMadeTheWorkItemReadyUnderTheTeamsOwnReadiness(SizingAnswer answer, SizingOutcome expected)
         {
             var team = ATeamThatRefinesInBacklog(sleProbability: 85, sleDays: 7);
             team.RefinementSettings!.Readiness = new ReadinessSetting { MinYes = 1, MinVoters = 1 };
@@ -216,7 +216,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(outcome, Is.EqualTo(VoteOutcome.Recorded));
+                Assert.That(outcome, Is.EqualTo(SizingOutcome.Recorded));
                 Assert.That(appended.Select(entry => (entry.Kind, entry.Answer, entry.Comment)), Is.EqualTo(new[] { (SizingEntryKind.Comment, (SizingAnswer?)null, (string?)text) }));
             }
         }
@@ -233,7 +233,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(outcome, Is.EqualTo(VoteOutcome.CommentMissing));
+                Assert.That(outcome, Is.EqualTo(SizingOutcome.CommentMissing));
                 Assert.That(appended, Is.Empty);
             }
         }
@@ -247,7 +247,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(outcome, Is.EqualTo(VoteOutcome.CommentTooLong));
+                Assert.That(outcome, Is.EqualTo(SizingOutcome.CommentTooLong));
                 Assert.That(appended, Is.Empty);
             }
         }
@@ -263,7 +263,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(outcome, Is.EqualTo(VoteOutcome.CommentTooLong));
+                Assert.That(outcome, Is.EqualTo(SizingOutcome.CommentTooLong));
                 Assert.That(appended, Is.Empty);
             }
         }
@@ -278,7 +278,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(outcome, Is.EqualTo(VoteOutcome.Recorded));
+                Assert.That(outcome, Is.EqualTo(SizingOutcome.Recorded));
                 Assert.That(appended.Select(entry => entry.Comment), Is.EqualTo(new[] { text }));
             }
         }

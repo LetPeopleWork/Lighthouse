@@ -73,16 +73,16 @@ namespace Lighthouse.Backend.API
             return Answered(outcome, teamId, workItemReference, voterKey);
         }
 
-        private ActionResult<RefinementRowDto> Answered(VoteOutcome outcome, int teamId, string workItemReference, string? voterKey)
+        private ActionResult<RefinementRowDto> Answered(SizingOutcome outcome, int teamId, string workItemReference, string? voterKey)
             => outcome switch
             {
-                VoteOutcome.Recorded => RowAsItNowStands(teamId, workItemReference, voterKey, madeReady: false),
-                VoteOutcome.RecordedAndMadeReady => RowAsItNowStands(teamId, workItemReference, voterKey, madeReady: true),
-                VoteOutcome.TeamNotFound => NotFound(),
-                VoteOutcome.WorkItemNotInRefinement => Refused(StatusCodes.Status409Conflict, "That Work Item is not in refinement.", SizingRefusal.WorkItemNotInRefinement),
-                VoteOutcome.CommentMissing => Refused(StatusCodes.Status400BadRequest, "A comment needs some text.", SizingRefusal.CommentRequired),
-                VoteOutcome.CommentTooLong => Refused(StatusCodes.Status400BadRequest, $"A comment is at most {SizingLogEntry.LongestComment} characters.", SizingRefusal.CommentTooLong),
-                _ => throw new System.Diagnostics.UnreachableException($"No such vote outcome: {outcome}"),
+                SizingOutcome.Recorded => RowAsItNowStands(teamId, workItemReference, voterKey, madeReady: false),
+                SizingOutcome.RecordedAndMadeReady => RowAsItNowStands(teamId, workItemReference, voterKey, madeReady: true),
+                SizingOutcome.TeamNotFound => NotFound(),
+                SizingOutcome.WorkItemNotInRefinement => Refused(StatusCodes.Status409Conflict, "That Work Item is not in refinement.", SizingRefusal.WorkItemNotInRefinement),
+                SizingOutcome.CommentMissing => Refused(StatusCodes.Status400BadRequest, "A comment needs some text.", SizingRefusal.CommentRequired),
+                SizingOutcome.CommentTooLong => Refused(StatusCodes.Status400BadRequest, $"A comment is at most {SizingLogEntry.LongestComment} characters.", SizingRefusal.CommentTooLong),
+                _ => throw new System.Diagnostics.UnreachableException($"No such sizing outcome: {outcome}"),
             };
 
         // The server has already unescaped every part of the path except an escaped slash, which it leaves

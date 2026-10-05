@@ -14,28 +14,28 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         ILighthouseClock clock,
         ILogger<SizingLogCommands> logger) : ISizingLogCommands
     {
-        public VoteOutcome Vote(int teamId, string workItemReference, SizingVote vote, Voter voter)
+        public SizingOutcome Vote(int teamId, string workItemReference, SizingVote vote, Voter voter)
             => Append(
                 teamId,
                 workItemReference,
                 new Said(SizingEntryKind.Vote, vote.Answer, vote.Comment, vote.Channel),
                 voter,
-                (team, entry) => MadeReady(team, entry) ? VoteOutcome.RecordedAndMadeReady : VoteOutcome.Recorded);
+                (team, entry) => MadeReady(team, entry) ? SizingOutcome.RecordedAndMadeReady : SizingOutcome.Recorded);
 
-        public VoteOutcome Comment(int teamId, string workItemReference, SizingComment comment, Voter voter)
+        public SizingOutcome Comment(int teamId, string workItemReference, SizingComment comment, Voter voter)
             => Append(
                 teamId,
                 workItemReference,
                 new Said(SizingEntryKind.Comment, null, comment.Comment, comment.Channel),
                 voter,
-                (_, _) => VoteOutcome.Recorded);
+                (_, _) => SizingOutcome.Recorded);
 
-        private VoteOutcome Append(int teamId, string workItemReference, Said said, Voter voter, Func<Team, SizingLogEntry, VoteOutcome> recorded)
+        private SizingOutcome Append(int teamId, string workItemReference, Said said, Voter voter, Func<Team, SizingLogEntry, SizingOutcome> recorded)
         {
             var team = teamRepository.GetById(teamId);
             if (team is null)
             {
-                return VoteOutcome.TeamNotFound;
+                return SizingOutcome.TeamNotFound;
             }
 
             if (WhatIsWrongWith(said) is (var refusedAs, var reason))
@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             {
                 // A Work Item leaving refinement between reading the tab and writing to it is routine, not a fault.
                 SizingRefusal.Log(logger, LogLevel.Information, SizingRefusal.WorkItemNotInRefinement, team.Id, said.Channel);
-                return VoteOutcome.WorkItemNotInRefinement;
+                return SizingOutcome.WorkItemNotInRefinement;
             }
 
             // The yardstick is kept with every entry: the SLE may change later, and a vote only means
@@ -77,16 +77,16 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         }
 
         // A vote stands on its answer, so its comment may be left blank; a comment on its own is only its text.
-        private static (VoteOutcome RefusedAs, string Reason)? WhatIsWrongWith(Said said)
+        private static (SizingOutcome RefusedAs, string Reason)? WhatIsWrongWith(Said said)
         {
             if (said.Comment?.Length > SizingLogEntry.LongestComment)
             {
-                return (VoteOutcome.CommentTooLong, SizingRefusal.CommentTooLong);
+                return (SizingOutcome.CommentTooLong, SizingRefusal.CommentTooLong);
             }
 
             if (said.Kind == SizingEntryKind.Comment && string.IsNullOrWhiteSpace(said.Comment))
             {
-                return (VoteOutcome.CommentMissing, SizingRefusal.CommentRequired);
+                return (SizingOutcome.CommentMissing, SizingRefusal.CommentRequired);
             }
 
             return null;
