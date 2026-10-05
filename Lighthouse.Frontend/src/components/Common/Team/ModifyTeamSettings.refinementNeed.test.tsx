@@ -716,6 +716,69 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		await userEvent.clear(screen.getByRole("spinbutton", { name: LOW_END }));
 		expect(await theBandExplanation()).toContain(afterTheEdit);
 	});
+
+	// @us-07 @slice-07 @driving_port @contract-shape:bounded-change
+	it("explains the band as last edited when only the low end changed", async () => {
+		await renderGravitysSettingsForm(gravitysSettings());
+
+		await replaceTheLikelihood(LOW_END, "60");
+		const afterTheEdit = "pulls at least the low end with 40% likelihood";
+		expect(await theBandExplanation()).toContain(afterTheEdit);
+
+		await userEvent.clear(screen.getByRole("spinbutton", { name: HIGH_END }));
+		expect(await theBandExplanation()).toContain(afterTheEdit);
+	});
+
+	// @us-07 @slice-07 @driving_port @contract-shape:pure-function
+	it("explains the range as a How Many forecast up to the next Refinement, in the Team's word", async () => {
+		terms.current = {
+			...defaultTerms,
+			[TERMINOLOGY_KEYS.REFINEMENT]: "Grooming",
+		};
+		await renderGravitysSettingsForm(gravitysSettings());
+
+		expect(await theBandExplanation()).toContain(
+			"a How Many forecast for the working days until the next Grooming.",
+		);
+	});
+
+	// @us-07 @slice-07 @error @contract-shape:unbounded-preservation
+	it("shows a cleared low end as empty, not as 0, and says what it takes", async () => {
+		await renderGravitysSettingsForm(gravitysSettings());
+
+		const low = await screen.findByRole("spinbutton", { name: LOW_END });
+		await userEvent.clear(low);
+
+		expect(low).toHaveValue(null);
+		expect(low).toHaveAccessibleDescription("Between 50% and 95%.");
+	});
+
+	// @us-07 @slice-07 @driving_port @a11y @contract-shape:pure-function
+	it("marks neither end while the band is valid, and shows each end in percent", async () => {
+		await renderGravitysSettingsForm(gravitysSettings());
+
+		for (const label of [LOW_END, HIGH_END]) {
+			const field = await screen.findByRole("spinbutton", { name: label });
+			expect(field).not.toHaveAttribute("aria-invalid", "true");
+			expect(
+				within(field.parentElement as HTMLElement).getByText("%"),
+			).toBeVisible();
+		}
+	});
+
+	// @us-07 @slice-07 @error @a11y @contract-shape:unbounded-preservation
+	it("marks only the low end when it is out of range above the high end, since that is not an inverted band", async () => {
+		await renderGravitysSettingsForm(gravitysSettings());
+
+		await replaceTheLikelihood(LOW_END, "96");
+
+		const low = screen.getByRole("spinbutton", { name: LOW_END });
+		expect(low).toHaveAttribute("aria-invalid", "true");
+		expect(low).toHaveAccessibleDescription("Between 50% and 95%.");
+		expect(
+			screen.getByRole("spinbutton", { name: HIGH_END }),
+		).not.toHaveAttribute("aria-invalid", "true");
+	});
 });
 
 describe("What holds back the save of the Refinement settings", () => {

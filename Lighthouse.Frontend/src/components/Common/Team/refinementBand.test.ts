@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bandErrors, hasBandErrors } from "./refinementBand";
+import { bandErrors, hasBandErrors, isBandInverted } from "./refinementBand";
 
 const OUT_OF_RANGE = "Between 50% and 95%.";
 
@@ -28,6 +28,24 @@ describe("What is wrong with the likelihoods the band is read at", () => {
 				highPercentile: high,
 			});
 			expect(hasBandErrors(band)).toBe(low !== null || high !== null);
+		},
+	);
+});
+
+// An end outside 50 to 95 is reported as out of range on its own field, never as an inverted band.
+describe("Whether the band is inverted", () => {
+	it.each([
+		[50, 85, false],
+		[90, 85, true],
+		[85, 85, true],
+		[96, 85, false],
+		[90, 96, false],
+		[96, 49, false],
+		[Number.NaN, 85, false],
+	])(
+		"low %s and high %s: inverted is %s",
+		(lowPercentile, highPercentile, inverted) => {
+			expect(isBandInverted({ lowPercentile, highPercentile })).toBe(inverted);
 		},
 	);
 });
