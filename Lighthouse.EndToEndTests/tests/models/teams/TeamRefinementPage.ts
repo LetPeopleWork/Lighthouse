@@ -53,7 +53,7 @@ export class TeamRefinementPage {
 	/** The line after the Work Items needed before the next Refinement. */
 	get enoughForLine(): Locator {
 		return this.page.getByText(
-			/^(enough for \w{3} \d{1,2} \w{3} \(\d+%\) · not needed before then|All \d+ Work Items in Refinement are needed before \w{3} \d{1,2} \w{3}\.)$/,
+			/^(enough for the next Refinement \(\d+%\) · not needed before then|All \d+ Work Items in Refinement are needed before the next Refinement\.|The only Work Item in Refinement is needed before the next Refinement\.)$/,
 		);
 	}
 

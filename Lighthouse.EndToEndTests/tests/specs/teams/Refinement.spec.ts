@@ -101,7 +101,7 @@ testWithDemo(
 // the tab names the next Thursday, says whether to refine more or stop against the Team's own forecast,
 // and marks where the Work Items needed before then end. The numbers depend on the day the run happens,
 // so only their shape is checked.
-testWithDemo.fixme(
+testWithDemo(
 	"a Team admin sets the Refinement cadence and the tab says how many Work Items to refine before the next Refinement",
 	async ({ testData, overviewPage }) => {
 		expect(testData.teams.map((team) => team.name)).toContain(CONFIGURED_TEAM);
