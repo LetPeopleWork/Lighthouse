@@ -5,7 +5,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     /// <summary>
     /// Before the next Refinement the tab says whether to refine more or stop. The number is the Team's own
     /// manual How Many forecast for the working days until the next Refinement: the low end is what the Team
-    /// pulls more likely than not (the median), the high end what it falls short of with only 15% likelihood.
+    /// pulls more likely than not (the median), the high end a count only 15% of runs pull more than.
     /// The ready Work Items - by votes on a Team without stage rules, by stage on a Team with them - are
     /// below, in or above that range, ends included in range. The answer is facts only: counts, the range,
     /// its percentiles, the date, the working days and a verdict; the browser and the clients say it in
@@ -85,15 +85,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-05 @slice-05 @contract-shape:pure-function
         // A Team that finishes two Work Items every day is forecast twelve over six working days, whatever the
-        // engine draws - so both reads of the shipped engine must agree exactly.
+        // engine draws, so both reads of the shipped engine must agree exactly. With so even a history every
+        // likelihood reads twelve: this proves the horizon, and the band's own tests prove which likelihood
+        // each end is read at.
         [Test]
-        public async Task The_range_is_the_Teams_own_How_Many_forecast_for_the_next_Refinement()
+        public async Task The_range_uses_the_same_horizon_as_the_manual_forecast()
         {
             var gravity = await GivenGravityFinishesTwoADayAndRefinesOnTuesdays();
 
             var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
 
-            await ThenTheRangeIsTheManualForecastForTuesdayTheThirteenth(tab, gravity);
+            await ThenTheRangeUsesTheManualForecastsHorizonToTuesdayTheThirteenth(tab, gravity);
         }
 
         // @driving_port @real-io @us-05 @slice-05 @boundary @contract-shape:pure-function

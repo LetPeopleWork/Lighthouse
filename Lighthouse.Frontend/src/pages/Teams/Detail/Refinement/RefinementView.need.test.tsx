@@ -210,7 +210,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 	});
 
 	// @us-05 @slice-05 @boundary @contract-shape:pure-function
-	it("says the range ends inclusive: five ready is in range", async () => {
+	it("says five ready against 5–8 in the in-range words", async () => {
 		renderTheRefinementTab(gravityWithReady(5, "In"));
 
 		expect(await theVerdict()).toHaveTextContent(

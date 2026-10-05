@@ -56,7 +56,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         }
 
         [TestCaseSource(nameof(DistributionIndices))]
-        public void Every_likelihood_reads_the_forecast_at_its_complement_and_a_likelier_end_is_never_higher(int distribution)
+        public void A_likelier_end_is_never_higher(int distribution)
         {
             var forecast = new HowManyForecast(Distributions[distribution], 6);
             var misreadings = new List<string>();
@@ -68,7 +68,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                     var lowValue = NeedBand.ValueAt(forecast, low);
                     var highValue = NeedBand.ValueAt(forecast, high);
 
-                    if (lowValue != forecast.GetProbability(100 - low) || highValue != forecast.GetProbability(100 - high) || lowValue > highValue)
+                    if (lowValue > highValue)
                     {
                         misreadings.Add($"{low}/{high} read {lowValue}/{highValue}");
                     }

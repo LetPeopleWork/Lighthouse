@@ -124,7 +124,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 "the range must be the forecast over exactly the working days to the next Refinement");
         }
 
-        private async Task ThenTheRangeIsTheManualForecastForTuesdayTheThirteenth(JsonElement tab, TeamUnderTest team)
+        private async Task ThenTheRangeUsesTheManualForecastsHorizonToTuesdayTheThirteenth(JsonElement tab, TeamUnderTest team)
         {
             var need = NeedIn(tab);
             var manual = await TheManualForecastFor(team, new DateOnly(2026, 10, 13));
