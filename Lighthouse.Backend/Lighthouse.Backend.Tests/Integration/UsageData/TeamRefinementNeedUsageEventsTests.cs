@@ -19,10 +19,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     [Category("epic-5510-5881-refinement")]
     public class TeamRefinementNeedUsageEventsTests : UsageDataCollectorObservationTest
     {
-        private const string PendingSlice04 = "Epic #5881 slice 04 (#6142) - pending DELIVER";
-
-        private const string PendingSlice05 = "Epic #5881 slice 05 (#6143) - pending DELIVER";
-
         private const string TeamSizingVoteCast = "TeamSizingVoteCast";
 
         private const string TeamSizingReadinessReached = "TeamSizingReadinessReached";
@@ -109,7 +105,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [TestCase(",\"refinementVerdict\":\"5-8\"")]
         [TestCase(",\"refinementVerdict\":\"In\",\"sizingMoment\":\"" + OnRefinementDay + "\"")]
         [TestCase(",\"refinementVerdict\":\"In\",\"route\":\"" + TeamMetricsTab + "\"")]
-        [Ignore(PendingSlice05)]
         public async Task The_verdict_event_without_a_verdict_from_the_list_or_carrying_anything_more_is_refused(string parts)
         {
             var token = await ABrowserThatAgreedAsync();
@@ -123,7 +118,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // @driving_port @real-io @us-05 @slice-05 @error @contract-shape:unbounded-preservation
         // Only the verdict event may carry a verdict.
         [Test]
-        [Ignore(PendingSlice05)]
         public async Task A_sizing_event_carrying_a_verdict_is_refused()
         {
             var token = await ABrowserThatAgreedAsync();
