@@ -27,6 +27,24 @@ const UNAVAILABLE_MESSAGE: Record<NeedUnavailableReason, string | null> = {
 
 const ALERT_LAYOUT = { alignItems: "center" };
 
+/** A need the server gave a verdict and a range for. */
+type JudgedNeed = IRefinementNeed & {
+	verdict: RefinementVerdict;
+	low: number;
+	high: number;
+	lowPercentile: number;
+	highPercentile: number;
+	horizonWorkingDays: number;
+};
+
+const isJudged = (need: IRefinementNeed | undefined): need is JudgedNeed =>
+	need?.verdict != null &&
+	need.low != null &&
+	need.high != null &&
+	need.lowPercentile != null &&
+	need.highPercentile != null &&
+	need.horizonWorkingDays != null;
+
 /** The words a Team has renamed that the verdict uses. */
 export interface NeedVerdictTerms {
 	workItems: string;
@@ -61,16 +79,7 @@ const NeedVerdict: React.FC<Readonly<NeedVerdictProps>> = ({
 
 	const refinementDay =
 		nextRefinementDate == null ? null : parseLocalDate(nextRefinementDate);
-	if (
-		need?.verdict == null ||
-		need.low == null ||
-		need.high == null ||
-		need.horizonWorkingDays == null ||
-		need.lowPercentile == null ||
-		need.highPercentile == null ||
-		readyCount === undefined ||
-		refinementDay === null
-	) {
+	if (!isJudged(need) || readyCount === undefined || refinementDay === null) {
 		return null;
 	}
 

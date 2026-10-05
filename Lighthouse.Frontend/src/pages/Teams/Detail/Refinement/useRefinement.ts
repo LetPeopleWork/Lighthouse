@@ -10,8 +10,7 @@ import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 const messageOf = (error: unknown): string =>
 	error instanceof Error ? error.message : String(error);
 
-const readyCount = (row: IRefinementRow | undefined): number =>
-	row?.readiness === "Ready" ? 1 : 0;
+const isReady = (row: IRefinementRow): boolean => row.readiness === "Ready";
 
 const withAnsweredRow = (
 	current: IRefinementView,
@@ -27,8 +26,8 @@ const withAnsweredRow = (
 		current.readyByVotesCount === undefined
 			? undefined
 			: current.readyByVotesCount -
-				readyCount(shownRow) +
-				readyCount(answeredRow);
+				Number(isReady(shownRow)) +
+				Number(isReady(answeredRow));
 
 	return {
 		...current,
