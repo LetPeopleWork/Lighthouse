@@ -190,6 +190,20 @@ function DataGridBase<T extends GridValidRowModel>({
 		});
 	}, [columns, columnWidths]);
 
+	const orderedColumns = useMemo(() => {
+		const byField = new Map(gridColumns.map((c) => [c.field, c]));
+		const declaredOrder = [...byField.keys()];
+		return withNewColumnsWhereDeclared(
+			columnOrder ?? declaredOrder,
+			declaredOrder,
+		).flatMap((field) => byField.get(field) ?? []);
+	}, [gridColumns, columnOrder]);
+
+	const shownColumnOrder = useMemo(
+		() => orderedColumns.map((c) => c.field),
+		[orderedColumns],
+	);
+
 	return (
 		<Box
 			sx={{
@@ -220,7 +234,7 @@ function DataGridBase<T extends GridValidRowModel>({
 					open={isColumnOrderDialogOpen}
 					onClose={() => setIsColumnOrderDialogOpen(false)}
 					columns={gridColumns}
-					columnOrder={columnOrder}
+					columnOrder={shownColumnOrder}
 					onSave={(order: string[]) => {
 						setColumnOrder(order);
 						updateState((prev) => ({ ...prev, columnOrder: order }));
@@ -229,17 +243,7 @@ function DataGridBase<T extends GridValidRowModel>({
 				<DataGrid
 					apiRef={apiRef}
 					rows={rows}
-					columns={
-						// Apply ordering based on columnOrder state
-						((): GridColDef<T>[] => {
-							const map = new Map(gridColumns.map((c) => [c.field, c]));
-							const order = columnOrder ?? gridColumns.map((c) => c.field);
-							return withNewColumnsWhereDeclared(
-								order,
-								gridColumns.map((c) => c.field),
-							).flatMap((f) => map.get(f) ?? []);
-						})()
-					}
+					columns={orderedColumns}
 					getRowId={(row) => row[idField]}
 					loading={loading}
 					initialState={{

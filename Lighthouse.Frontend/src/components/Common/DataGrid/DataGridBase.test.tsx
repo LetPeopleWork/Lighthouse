@@ -828,4 +828,26 @@ describe("Persistence (Order & Widths)", () => {
 		// Ensure 'name' appears somewhere in array (changes may vary depending on UI state)
 		expect(stored.columnOrder).toContain("name");
 	});
+
+	it("offers every current column, and only those, for reordering when the saved order is out of date", async () => {
+		const storageKey = "test-grid";
+		localStorage.setItem(
+			`lighthouse:datagrid:${storageKey}:state`,
+			JSON.stringify({ columnOrder: ["email", "age", "retired", "name"] }),
+		);
+		render(
+			<DataGridBase
+				rows={mockRows}
+				columns={mockColumns}
+				storageKey={storageKey}
+			/>,
+		);
+
+		await userEvent.click(screen.getByTestId("open-column-order-button"));
+
+		const offered = within(screen.getByRole("dialog"))
+			.getAllByRole("listitem")
+			.map((item) => item.textContent?.trim());
+		expect(offered).toEqual(["ID", "Email", "Age", "Name"]);
+	});
 });
