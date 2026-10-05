@@ -80,6 +80,21 @@ describe("the Refinement tab's columns", () => {
 	);
 });
 
+describe("the # column", () => {
+	// It numbers the rows as they are shown, so sorting or filtering by it would have nothing to go by.
+	it("comes first, headed #, and offers no sorting, filtering or column menu", () => {
+		const [first] = columnsWith({ numbersNeeded: true });
+
+		expect(first).toMatchObject({
+			field: "neededNumber",
+			headerName: "#",
+			sortable: false,
+			filterable: false,
+			disableColumnMenu: true,
+		});
+	});
+});
+
 describe("the vote column's header", () => {
 	const voteColumn = (question: { question: string; tooltip: string }) =>
 		columnsWith({ voteQuestion: question }).find(

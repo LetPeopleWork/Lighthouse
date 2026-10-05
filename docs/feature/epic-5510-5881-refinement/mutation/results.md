@@ -752,3 +752,50 @@ All four are in `RefinementSettings.cs` and outside this slice's change (which a
 | `NextRefinement.tsx:30`, `:40` `true` → `false` | equivalent: React writes `data-next-refinement="false"` and the layout selector only checks the attribute is present |
 | `NextRefinement.tsx:39` `{ alignItems }` → `{}` / `""` | pure styling |
 | `useVerdictShownReporter.ts:35` initial opening `{…}` → `{}` | equivalent: the first run resets an opening without a Team |
+
+# Mutation testing — 6144 (the enough-for line, E2 slice 06)
+
+Run 2026-10-05 against `main` @ `e2d4a3e73`, production code frozen between the runs. Gate is 80 % kill rate.
+
+| stack | score | tested | killed | survived | timeout | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend | N/A | — | — | — | — | — |
+| Frontend (StrykerJS), first run | 87.10 % | 217 | 189 | 28 | 0 | 15 m 7 s |
+| Frontend (StrykerJS), after kill tests, ranges narrowed | **92.93 %** | 198 | 184 | 14 | 0 | 11 m 45 s |
+
+Backend: N/A, the slice changed no backend file. Configs: `stryker.6144.frontend.json`, `vitest.stryker.6144.ts`.
+
+The first run's `DataGridBase.tsx:237-259` and `RefinementGrid.tsx:12-97` ranges also covered lines this slice did not
+touch (the grid's `initialState`, `pageSizeOptions`, `getRowHeight`, the dialog's `setColumnOrder`, the grid's
+`storageKey`); seven of its survivors sat there. The second run mutates only the changed lines.
+
+## Frontend
+
+| file | mutants | killed | survived | score |
+| --- | --- | --- | --- | --- |
+| `enoughForPlacement.ts` | 58 | 58 | 0 | 100 % |
+| `NeedVerdict.tsx` (changed lines) | 24 | 24 | 0 | 100 % |
+| `refinementColumns.tsx` (changed lines) | 13 | 13 | 0 | 100 % |
+| `RefinementGrid.tsx` (changed lines) | 3 | 3 | 0 | 100 % |
+| `RefinementView.tsx` (changed lines) | 6 | 6 | 0 | 100 % |
+| `DataGridBase.tsx` (changed lines) | 24 | 23 | 1 | 95.83 % |
+| `EnoughForLine.tsx` | 70 | 57 | 13 | 81.43 % |
+
+### Closed by this pass (each checked by hand against the mutant)
+
+- Two columns added since a column order was saved keep their declared order, not just the first of them.
+- A Team with a cadence but no Refinement states names the next Refinement on the heading's row; there is no message
+  for it to title.
+- The # column is headed `#` and offers no sorting, filtering or column menu: it numbers the rows as shown, so there
+  is nothing to sort or filter it by.
+- The space the grid keeps for the line moves with the number needed when the Refinement is read again.
+
+### Accepted survivors
+
+| mutant | reason |
+| --- | --- |
+| `DataGridBase.tsx:204` `useMemo` deps → `[]` | the dialog's order is read when it opens; columns change only with the page, which remounts the grid |
+| `EnoughForLine.tsx:42` default shown index `-1` → `+1` | equivalent: the number is only ever rendered inside a row, which provides its own index |
+| `EnoughForLine.tsx:73-75`, `:84-92` (9) | pure styling of the line (negative margins, flex, padding, border, overflow); jsdom lays nothing out |
+| `EnoughForLine.tsx:144` no-marking guard → `false` | equivalent: without a marking `lineBeside` places no line, so the spacing is `{}` either way |
+| `EnoughForLine.tsx:154` no-marking guard → `false` | unreachable: the # column is only declared while rows are marked |

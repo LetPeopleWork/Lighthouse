@@ -714,6 +714,27 @@ describe("Persistence (Order & Widths)", () => {
 		expect(headerTexts).toEqual(["Email", "Name", "Age", "ID"]);
 	});
 
+	it("keeps two columns added since the order was saved in the order they are declared", () => {
+		const storageKey = "test-grid";
+		localStorage.setItem(
+			`lighthouse:datagrid:${storageKey}:state`,
+			JSON.stringify({ columnOrder: ["age", "email"] }),
+		);
+
+		const { container } = render(
+			<DataGridBase
+				rows={mockRows}
+				columns={mockColumns}
+				storageKey={storageKey}
+			/>,
+		);
+
+		const headerTexts = Array.from(
+			container.querySelectorAll('[role="columnheader"]'),
+		).map((h) => h.textContent?.trim() || "");
+		expect(headerTexts).toEqual(["ID", "Name", "Age", "Email"]);
+	});
+
 	it("should always show reset layout and column order buttons even when export is disabled", async () => {
 		render(
 			<DataGridBase

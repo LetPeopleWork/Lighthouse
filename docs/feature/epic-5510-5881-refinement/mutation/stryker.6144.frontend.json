@@ -1,0 +1,54 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6144.ts",
+    "related": false
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "playwright-report",
+    "reports"
+  ],
+  "mutate": [
+    "src/pages/Teams/Detail/Refinement/EnoughForLine.tsx",
+    "src/pages/Teams/Detail/Refinement/enoughForPlacement.ts",
+    "src/pages/Teams/Detail/Refinement/NeedVerdict.tsx:49-78",
+    "src/pages/Teams/Detail/Refinement/RefinementGrid.tsx:12-43",
+    "src/pages/Teams/Detail/Refinement/RefinementGrid.tsx:58-58",
+    "src/pages/Teams/Detail/Refinement/RefinementGrid.tsx:66-66",
+    "src/pages/Teams/Detail/Refinement/RefinementGrid.tsx:77-91",
+    "src/pages/Teams/Detail/Refinement/RefinementGrid.tsx:93-97",
+    "src/pages/Teams/Detail/Refinement/RefinementView.tsx:93-111",
+    "src/pages/Teams/Detail/Refinement/RefinementView.tsx:179-179",
+    "src/pages/Teams/Detail/Refinement/refinementColumns.tsx:26-62",
+    "src/components/Common/DataGrid/DataGridBase.tsx:22-44",
+    "src/components/Common/DataGrid/DataGridBase.tsx:72-73",
+    "src/components/Common/DataGrid/DataGridBase.tsx:193-206",
+    "src/components/Common/DataGrid/DataGridBase.tsx:237-237",
+    "src/components/Common/DataGrid/DataGridBase.tsx:258-259"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "stryker-6144-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6144"
+}

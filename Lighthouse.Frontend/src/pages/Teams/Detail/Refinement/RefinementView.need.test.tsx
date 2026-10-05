@@ -619,6 +619,17 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	});
 
+	// @us-05 @slice-05 @boundary @contract-shape:pure-function
+	it("names the next Refinement on the heading's row when the Team has a cadence but no Refinement states", async () => {
+		renderTheRefinementTab(
+			gravityWithReady(0, "Below", {
+				need: noNeedBecause("NoRefinementStates"),
+			}),
+		);
+
+		await expectNoMessageAndTheNextRefinementOnTheHeadingsRow();
+	});
+
 	// @us-05 @slice-05 @error @contract-shape:pure-function
 	it("names the next Refinement only once, as the title of the too-little-history message", async () => {
 		renderTheRefinementTab(
