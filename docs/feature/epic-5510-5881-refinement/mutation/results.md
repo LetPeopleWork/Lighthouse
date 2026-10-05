@@ -872,3 +872,69 @@ records once their length attribute went.
 | `VotesAndCommentsDialog.tsx:125` `count === 0` | equivalent: once read the count is the number of names; while reading there are none |
 | `refinementColumns.tsx:87` `type: "boolean"` | the sort order is the same either way; it only swaps the column's yes/no filter for a text filter |
 | `refinementColumns.tsx:26-32`, `:41`; `WarningsIcon.tsx:23`, `:29`, `:43`; `VotesAndCommentsDialog.tsx` 25 `sx` literals | pure styling (visually-hidden label, margins, colours, widths, `whiteSpace`); every accessible name and every piece of copy is asserted |
+
+# Mutation testing — 6145 (the band's two likelihoods, E2 slice 07)
+
+Run 2026-10-05 on `main`, production code frozen after the maintainer's layout review, the refactor and the review
+fixes. Gate is 80 % kill rate on both stacks.
+
+| stack | score | tested | killed | survived | no coverage | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET) | **80.59 %** | 170 | 137 | 22 | 11 | 4 m 57 s |
+| Frontend (StrykerJS), first run | 84.35 % | 115 | 97 | 18 | 0 | 8 m 8 s |
+| Frontend (StrykerJS), after kill tests | **91.30 %** | 115 | 105 | 10 | 0 | 7 m 43 s |
+
+Configs: `stryker.6145.backend.json`, `stryker.6145.frontend.json`, `vitest.stryker.6145.ts`.
+
+## Backend
+
+Whole-file mutation (Stryker.NET ignores line ranges), so two of the three files carry earlier slices' code. The
+filter is scoped to unit namespaces: an earlier attempt that included the acceptance suites ran 18 minutes without
+finishing a single mutant batch.
+
+| file | killed | survived | no coverage | score |
+| --- | --- | --- | --- | --- |
+| `RefinementSettingsValidator.cs` | 75 | 0 | 0 | 100 % |
+| `RefinementSettingsDto.cs` | 26 | 7 | 2 | 74.3 % |
+| `TeamExtensions.cs` | 36 | 15 | 9 | 60.0 % |
+
+### Survivors inside the slice's own lines — killed by the acceptance suite, proven by hand
+
+The slice changed `RefinementSettingsDto.cs` lines 20 and 33–62 and `TeamExtensions.cs` lines 143 and 178–187. Two
+survivors fall there, and both are lines only the host-level scenarios reach:
+
+- `RefinementSettingsDto.cs:45` — the read mapping into `RefinementBandDto` (block removal). Probe: assigning `null`
+  to both ends fails 15 of the 18 `Slice07BandPercentiles` scenarios.
+- `TeamExtensions.cs:143` — the `SyncBand` call (statement removal). Probe: passing `null` instead of the saved band
+  fails 16 of the 18.
+
+### Accepted survivors — earlier slices' code in the same files
+
+The other 20 survivors and all 11 no-coverage mutants sit in code this slice did not touch: Team throughput and
+process-behaviour date conversion, cycle-time definition ids, refinement state merging, stage-rule and cadence DTO
+mappings. Each is covered by its own slice's acceptance scenarios, which this unit-scoped run leaves out.
+
+## Frontend
+
+| file | killed | survived | score |
+| --- | --- | --- | --- |
+| `refinementBand.ts` | 39 | 0 | 100 % |
+| `RefinementBandSettings.tsx` | 51 | 10 | 83.6 % |
+| `RefinementSettingsSection.tsx` (band lines) | 10 | 0 | 100 % |
+| `needWording.ts` (band lines) | 5 | 0 | 100 % |
+
+### Closed by this pass (`e0b793702`)
+
+- `isBandInverted`'s range guard (`true`, `&&` → `||`): low 96 against high 85 is out of range, not inverted — only
+  the low field is marked.
+- An emptied field read as 0: a cleared low end shows empty and says "Between 50% and 95%.".
+- The band-equality check ignoring the low end: after a low-only change the tooltip follows the new low end.
+- The forecast sentence of the tooltip, in the Team's own word for Refinement.
+- `error={true}`: a valid band marks neither field.
+- The `%` adornment.
+
+### Accepted survivors
+
+All 10 are layout styling jsdom does not observe: the `Grid size` objects, the heading row's and the fields row's
+`sx` (flex, wrap, gap, alignment) and the fields' `width: 180`. The side-by-side layout was checked by the maintainer
+in the browser.

@@ -1,0 +1,45 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6145.ts",
+    "related": false
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "off",
+  "concurrency": 4,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "playwright-report",
+    "reports"
+  ],
+  "mutate": [
+    "src/components/Common/Team/RefinementBandSettings.tsx",
+    "src/components/Common/Team/refinementBand.ts",
+    "src/components/Common/Team/RefinementSettingsSection.tsx:43-46",
+    "src/components/Common/Team/RefinementSettingsSection.tsx:136-139",
+    "src/pages/Teams/Detail/Refinement/needWording.ts:15-23",
+    "src/pages/Teams/Detail/Refinement/needWording.ts:80-94",
+    "src/pages/Teams/Detail/Refinement/needWording.ts:102"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "stryker-6145-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6145"
+}
