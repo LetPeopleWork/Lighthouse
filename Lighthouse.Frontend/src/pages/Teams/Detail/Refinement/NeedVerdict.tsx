@@ -2,9 +2,11 @@ import { Alert, type AlertColor } from "@mui/material";
 import type React from "react";
 import type {
 	IRefinementNeed,
+	NeedUnavailableReason,
 	RefinementVerdict,
 } from "../../../../models/Refinement/Refinement";
 import { parseLocalDate } from "../../../../utils/date/localDate";
+import { INSUFFICIENT_FORECAST_DATA_MESSAGE } from "../../../../utils/forecast/insufficientForecastData";
 import InfoTooltip from "./InfoTooltip";
 import { describeNeed, describeNeedOrigin } from "./needWording";
 
@@ -14,6 +16,16 @@ const SEVERITY: Record<RefinementVerdict, AlertColor> = {
 	In: "success",
 	Above: "warning",
 };
+
+// Too little history gets the message forecasts give. Without a cadence the heading already says what is
+// missing, and a Team without Refinement states never sees this tab, so neither gets a message here.
+const UNAVAILABLE_MESSAGE: Record<NeedUnavailableReason, string | null> = {
+	InsufficientData: INSUFFICIENT_FORECAST_DATA_MESSAGE,
+	NoCadence: null,
+	NoRefinementStates: null,
+};
+
+const ALERT_LAYOUT = { alignItems: "center" };
 
 /** The words a Team has renamed that the verdict uses. */
 export interface NeedVerdictTerms {
@@ -38,6 +50,15 @@ const NeedVerdict: React.FC<Readonly<NeedVerdictProps>> = ({
 	teamName,
 	terms,
 }) => {
+	if (need?.unavailableReason != null) {
+		const message = UNAVAILABLE_MESSAGE[need.unavailableReason];
+		return message === null ? null : (
+			<Alert severity="info" sx={ALERT_LAYOUT}>
+				{message}
+			</Alert>
+		);
+	}
+
 	const refinementDay =
 		nextRefinementDate == null ? null : parseLocalDate(nextRefinementDate);
 	if (
@@ -73,7 +94,7 @@ const NeedVerdict: React.FC<Readonly<NeedVerdictProps>> = ({
 	});
 
 	return (
-		<Alert severity={SEVERITY[need.verdict]} sx={{ alignItems: "center" }}>
+		<Alert severity={SEVERITY[need.verdict]} sx={ALERT_LAYOUT}>
 			{sentence} <InfoTooltip text={origin} />
 		</Alert>
 	);

@@ -1,8 +1,8 @@
 import { useCallback, useContext, useRef, useState } from "react";
 import type { useVoterIdentity } from "../../../../hooks/useVoterIdentity";
 import type {
-	IRefinementRow,
 	IRefinementView,
+	IVotedRow,
 	SizingAnswer,
 } from "../../../../models/Refinement/Refinement";
 import { UsageDataSizingMoment } from "../../../../models/UsageData/UsageData";
@@ -48,7 +48,7 @@ export const sizingMomentOf = (
 export const useVoteCasting = (
 	teamId: number,
 	{ voter, asksForName, declareName, ballotFor }: VoterIdentity,
-	onAnswered: (answeredRow: IRefinementRow) => void,
+	onAnswered: (answeredRow: IVotedRow) => void,
 	onFailure: (error: unknown) => void,
 	refinementFacts: RefinementFacts,
 ) => {

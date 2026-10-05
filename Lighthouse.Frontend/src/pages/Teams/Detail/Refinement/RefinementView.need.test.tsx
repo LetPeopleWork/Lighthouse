@@ -60,6 +60,8 @@ const VERDICT_SHOWN = "TeamRefinementDayVerdictShown";
 // The icons the message shows for "act" and for "settled"; colour alone would not reach everybody.
 const ACT_ICON = "ReportProblemOutlinedIcon";
 const SETTLED_ICON = "SuccessOutlinedIcon";
+// Too little history is information, not a call to act.
+const INFO_ICON = "InfoOutlinedIcon";
 
 const gravityWithReady = (
 	readyCount: number,
@@ -151,7 +153,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 	});
 
 	// @us-05 @slice-05 @boundary @contract-shape:pure-function
-	it.skip("says the Team's own words for Work Items, the Team and Refinement", async () => {
+	it("says the Team's own words for Work Items, the Team and Refinement", async () => {
 		terms.current = {
 			...defaultRefinementTerms,
 			workItems: "Tickets",
@@ -165,19 +167,19 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 	});
 
 	// @us-05 @slice-05 @error @contract-shape:pure-function
-	it.skip("gives the message forecasts give when the Team has too little history", async () => {
+	it("gives the message forecasts give when the Team has too little history", async () => {
 		renderTheRefinementTab(
 			gravityWithReady(2, "Below", { need: noNeedBecause("InsufficientData") }),
 		);
 
-		expect(await theVerdict()).toHaveTextContent(
-			INSUFFICIENT_FORECAST_DATA_MESSAGE,
-		);
+		const message = await theVerdict();
+		expect(message).toHaveTextContent(INSUFFICIENT_FORECAST_DATA_MESSAGE);
+		expect(within(message).getByTestId(INFO_ICON)).toBeInTheDocument();
 		expect(screen.queryByText(/ ready — /)).not.toBeInTheDocument();
 	});
 
 	// @us-05 @us-04 @slice-05 @error @contract-shape:pure-function
-	it.skip("shows no message without a cadence; the heading's hint says what is missing", async () => {
+	it("shows no message without a cadence; the heading's hint says what is missing", async () => {
 		renderTheRefinementTab(
 			gravityWithReady(2, "Below", {
 				nextRefinementDate: null,
@@ -193,7 +195,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 	// @us-05 @us-13 @slice-05 @contract-shape:bounded-change
 	// Without stage rules the votes say what is ready, so the vote that makes a Work Item Ready moves the
 	// message; the tab reads the need again rather than working it out itself.
-	it.skip("moves the message on a Team without stages when a vote makes a Work Item Ready", async () => {
+	it("moves the message on a Team without stages when a vote makes a Work Item Ready", async () => {
 		aBrowserThatVotedBefore("Jonas Weber");
 		const before = gravitysRefinement(
 			{
