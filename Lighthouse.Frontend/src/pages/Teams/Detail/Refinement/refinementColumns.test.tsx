@@ -21,6 +21,7 @@ const columnsWith = (options: Partial<RefinementColumnsOptions>) =>
 		parentMap: new Map(),
 		voteQuestion: VOTE_QUESTION,
 		stagesConfigured: false,
+		numbersNeeded: false,
 		votesBeingSent: new Set(),
 		onVote: vi.fn(),
 		onOpenVotes: vi.fn(),

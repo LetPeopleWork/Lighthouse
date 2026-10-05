@@ -46,8 +46,8 @@ vi.mock("../../../../services/UsageData/usageDataReporter", () => ({
 	useUsageDataReporter: () => reporter.current,
 }));
 
-const ENOUGH_FOR_THURSDAY =
-	/^enough for Thu 8 Oct \(85%\) · not needed before then$/;
+const ENOUGH_FOR_THE_NEXT_REFINEMENT =
+	/^enough for the next Refinement \(85%\) · not needed before then$/;
 
 const gravityNeeding = (
 	high: number,
@@ -104,11 +104,11 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 	});
 
 	// @us-06 @slice-06 @driving_port @contract-shape:pure-function
-	it.skip("numbers the first rows up to the high end and draws the line after them", async () => {
+	it("numbers the first rows up to the high end and draws the line after them", async () => {
 		renderTheRefinementTab(gravityNeeding(3));
 
 		const list = await theListAsShown();
-		const line = screen.getByText(ENOUGH_FOR_THURSDAY);
+		const line = screen.getByText(ENOUGH_FOR_THE_NEXT_REFINEMENT);
 
 		expect(screen.getByRole("columnheader", { name: "#" })).toBeInTheDocument();
 		expect(list.map((shown) => shown.number)).toEqual([
@@ -132,7 +132,7 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 		await user.click(screen.getByRole("columnheader", { name: "State" }));
 
 		const list = await theListAsShown();
-		const line = screen.getByText(ENOUGH_FOR_THURSDAY);
+		const line = screen.getByText(ENOUGH_FOR_THE_NEXT_REFINEMENT);
 		expect(list.map((shown) => shown.referenceId).slice(0, 3)).toEqual([
 			"GR-051",
 			"GR-054",
@@ -178,12 +178,12 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 	});
 
 	// @us-06 @slice-06 @boundary @contract-shape:pure-function
-	it.skip("says all of them are needed, after the last row, when fewer are in refinement than needed", async () => {
+	it("says all of them are needed, after the last row, when fewer are in refinement than needed", async () => {
 		renderTheRefinementTab(gravityNeeding(8));
 
 		const list = await theListAsShown();
 		const line = screen.getByText(
-			/^All 6 Work Items in Refinement are needed before Thu 8 Oct\.$/,
+			/^All 6 Work Items in Refinement are needed before the next Refinement\.$/,
 		);
 
 		expect(list.map((shown) => shown.number)).toEqual([
@@ -195,15 +195,17 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 			"6",
 		]);
 		expect(comesBefore(list[5].row, line)).toBe(true);
-		expect(screen.queryByText(ENOUGH_FOR_THURSDAY)).not.toBeInTheDocument();
+		expect(
+			screen.queryByText(ENOUGH_FOR_THE_NEXT_REFINEMENT),
+		).not.toBeInTheDocument();
 	});
 
 	// @us-06 @slice-06 @boundary @contract-shape:pure-function
-	it.skip("draws the line after the last row when exactly as many are listed as needed", async () => {
+	it("draws the line after the last row when exactly as many are listed as needed", async () => {
 		renderTheRefinementTab(gravityNeeding(6));
 
 		const list = await theListAsShown();
-		const line = screen.getByText(ENOUGH_FOR_THURSDAY);
+		const line = screen.getByText(ENOUGH_FOR_THE_NEXT_REFINEMENT);
 
 		expect(list.map((shown) => shown.number)).toEqual([
 			"1",
@@ -217,11 +219,11 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 	});
 
 	// @us-06 @slice-06 @boundary @contract-shape:pure-function
-	it.skip("numbers nothing and draws the line before the first row when nothing is needed", async () => {
+	it("numbers nothing and draws the line before the first row when nothing is needed", async () => {
 		renderTheRefinementTab(gravityNeeding(0, { readyCount: 2 }));
 
 		const list = await theListAsShown();
-		const line = screen.getByText(ENOUGH_FOR_THURSDAY);
+		const line = screen.getByText(ENOUGH_FOR_THE_NEXT_REFINEMENT);
 
 		expect(list.map((shown) => shown.number)).toEqual(["", "", "", "", "", ""]);
 		expect(comesBefore(line, list[0].row)).toBe(true);
@@ -266,7 +268,7 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 	);
 
 	// @us-06 @slice-06 @boundary @contract-shape:pure-function
-	it.skip("says the Team's own words on the line", async () => {
+	it("says the Team's own words on the line", async () => {
 		terms.current = {
 			...defaultRefinementTerms,
 			workItems: "Tickets",
@@ -276,7 +278,7 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 
 		expect(
 			await screen.findByText(
-				/^All 6 Tickets in Grooming are needed before Thu 8 Oct\.$/,
+				/^All 6 Tickets in Grooming are needed before the next Grooming\.$/,
 			),
 		).toBeInTheDocument();
 	});

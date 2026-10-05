@@ -2,8 +2,10 @@ import type {
 	GridColDef,
 	GridFilterModel,
 	GridRowId,
+	GridSlotsComponent,
 	GridSortModel,
 	GridValidRowModel,
+	DataGridProps as MuiDataGridProps,
 } from "@mui/x-data-grid";
 import type React from "react";
 
@@ -69,6 +71,10 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	allowColumnReorder?: boolean;
 	/** Custom actions to display in the toolbar */
 	toolbarActions?: React.ReactNode;
+	/** Replaces parts of the grid, such as how a row renders. */
+	slots?: Partial<GridSlotsComponent>;
+	/** Space to leave above or below a row, which the grid counts when it lays the rows out. */
+	getRowSpacing?: MuiDataGridProps<T>["getRowSpacing"];
 }
 
 /**

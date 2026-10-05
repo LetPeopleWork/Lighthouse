@@ -46,6 +46,8 @@ function DataGridBase<T extends GridValidRowModel>({
 	exportTable,
 	allowColumnReorder = true,
 	toolbarActions,
+	slots,
+	getRowSpacing,
 }: Readonly<DataGridBaseProps<T>>): React.ReactElement {
 	// Check license status for premium features
 	const { licenseStatus } = useLicenseRestrictions();
@@ -233,6 +235,8 @@ function DataGridBase<T extends GridValidRowModel>({
 					disableRowSelectionOnClick
 					hideFooter={hidePagination}
 					getRowHeight={() => "auto"}
+					slots={slots}
+					getRowSpacing={getRowSpacing}
 					disableColumnResize={false}
 					columnVisibilityModel={columnVisibilityModel}
 					onColumnVisibilityModelChange={(newModel) => {

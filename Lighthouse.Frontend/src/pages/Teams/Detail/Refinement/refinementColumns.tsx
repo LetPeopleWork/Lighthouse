@@ -5,6 +5,7 @@ import { createNameColumn } from "../../../../components/Common/FeatureListDataG
 import ParentWorkItemCell from "../../../../components/Common/ParentWorkItemCell/ParentWorkItemCell";
 import type { ParentWorkItem } from "../../../../hooks/useParentWorkItems";
 import type { IRefinementRow } from "../../../../models/Refinement/Refinement";
+import { NeededNumber } from "./EnoughForLine";
 import ReadinessCell from "./ReadinessCell";
 import StageCell from "./StageCell";
 import type { IPendingVote } from "./useVoteCasting";
@@ -22,10 +23,22 @@ export interface RefinementColumnsOptions {
 	/** The question every vote answers; it heads the vote column. */
 	voteQuestion: YardstickQuestionWords;
 	stagesConfigured: boolean;
+	/** Whether a "#" column numbers the rows needed before the next Refinement. */
+	numbersNeeded: boolean;
 	votesBeingSent: ReadonlySet<string>;
 	onVote: (vote: IPendingVote) => void;
 	onOpenVotes: (referenceId: string) => void;
 }
+
+const neededNumberColumn: DataGridColumn<RefinementGridRow> = {
+	field: "neededNumber",
+	headerName: "#",
+	width: 56,
+	sortable: false,
+	filterable: false,
+	disableColumnMenu: true,
+	renderCell: () => <NeededNumber />,
+};
 
 const stageColumn: DataGridColumn<RefinementGridRow> = {
 	field: "stage",
@@ -41,10 +54,12 @@ export const createRefinementColumns = ({
 	parentMap,
 	voteQuestion,
 	stagesConfigured,
+	numbersNeeded,
 	votesBeingSent,
 	onVote,
 	onOpenVotes,
 }: RefinementColumnsOptions): DataGridColumn<RefinementGridRow>[] => [
+	...(numbersNeeded ? [neededNumberColumn] : []),
 	createNameColumn<RefinementGridRow>(workItemTerm),
 	{
 		field: "parentReferenceId",

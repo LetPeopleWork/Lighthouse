@@ -26,7 +26,7 @@ const UNAVAILABLE_MESSAGE: Record<NeedUnavailableReason, string | null> = {
 };
 
 /** A need the server gave a verdict and a range for. */
-type JudgedNeed = IRefinementNeed & {
+export type JudgedNeed = IRefinementNeed & {
 	verdict: RefinementVerdict;
 	low: number;
 	high: number;
@@ -35,7 +35,9 @@ type JudgedNeed = IRefinementNeed & {
 	horizonWorkingDays: number;
 };
 
-const isJudged = (need: IRefinementNeed | undefined): need is JudgedNeed =>
+export const isJudged = (
+	need: IRefinementNeed | undefined,
+): need is JudgedNeed =>
 	need?.verdict != null &&
 	need.low != null &&
 	need.high != null &&

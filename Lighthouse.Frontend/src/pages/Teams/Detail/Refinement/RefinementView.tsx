@@ -1,6 +1,6 @@
 import { Box, type SxProps, type Theme, Typography } from "@mui/material";
 import type React from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useErrorSnackbar } from "../../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useRbac } from "../../../../hooks/useRbac";
 import { useVoterIdentity } from "../../../../hooks/useVoterIdentity";
@@ -8,6 +8,7 @@ import type { IRefinementView } from "../../../../models/Refinement/Refinement";
 import type { Team } from "../../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { useTerminology } from "../../../../services/TerminologyContext";
+import { markEnoughFor } from "./EnoughForLine";
 import NeedVerdict, { showsNeedMessage } from "./NeedVerdict";
 import NextRefinement, { NEXT_REFINEMENT_SLOT } from "./NextRefinement";
 import { describeNextRefinement } from "./nextRefinementWording";
@@ -89,6 +90,18 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 			refinement,
 		);
 
+	const marking = useMemo(
+		() =>
+			refinement === null
+				? null
+				: markEnoughFor(refinement.need, refinement.workItems.length, {
+						workItem: getTerm(TERMINOLOGY_KEYS.WORK_ITEM),
+						workItems: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
+						refinement: getTerm(TERMINOLOGY_KEYS.REFINEMENT),
+					}),
+		[refinement, getTerm],
+	);
+
 	if (refinement === null) {
 		return null;
 	}
@@ -156,6 +169,7 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 				workItems={workItems}
 				yardstick={refinement.yardstick}
 				stagesConfigured={refinement.stagesConfigured ?? false}
+				marking={marking}
 				votesBeingSent={votesBeingSent}
 				onVote={onVote}
 				onOpenVotes={setVotesShownFor}
