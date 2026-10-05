@@ -22,8 +22,9 @@ namespace Lighthouse.Backend.Models.Refinement
     }
 
     /// <summary>
-    /// The two likelihoods the range to refine towards is read at: the low end is what the Team pulls with
-    /// <see cref="LowPercentile"/> likelihood, the high end what it pulls with <see cref="HighPercentile"/>.
+    /// The two likelihoods the range to refine towards is read at, the way a How Many forecast reads them: the
+    /// Team pulls at least the low end in (100 - <see cref="LowPercentile"/>)% of runs, and more than the
+    /// high end in only (100 - <see cref="HighPercentile"/>)%.
     /// </summary>
     public class RefinementBand
     {

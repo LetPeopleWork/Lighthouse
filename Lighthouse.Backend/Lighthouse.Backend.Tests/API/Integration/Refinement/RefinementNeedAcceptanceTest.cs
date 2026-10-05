@@ -197,8 +197,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         /// <summary>
         /// Over this many working days the Team is likely to pull the given number of Work Items at each given
-        /// likelihood, read the way the band reads them: "at 85%" is the count the Team falls short of with only
-        /// 15% likelihood. Between two given likelihoods the higher one's count holds.
+        /// likelihood, read the way the band reads them: "at 85%" is a count only 15% of runs pull more than.
+        /// Between two given likelihoods the higher one's count holds.
         /// </summary>
         protected void TheTeamIsLikelyToPull(int overWorkingDays, params (int Percentile, int Count)[] likelihoods)
             => forecasts.Script(overWorkingDays, likelihoods);
