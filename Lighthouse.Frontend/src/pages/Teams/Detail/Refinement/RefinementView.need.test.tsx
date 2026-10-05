@@ -367,6 +367,38 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		);
 	});
 
+	// @us-05 @us-13 @slice-05 @contract-shape:unbounded-preservation
+	// With stage rules the stage says what is ready, so no vote can move the message and none reads again.
+	it("reads nothing again on a Team with stages when a vote makes a Work Item Ready", async () => {
+		aBrowserThatVotedBefore("Jonas Weber");
+		const sizingLogService = aSizingLogService({
+			castVote: vi.fn().mockResolvedValue(
+				aVotedRow(CONFIGURATION_MANAGEMENT, "Configuration management", {
+					voteCount: 3,
+					readiness: "Ready",
+					missingVotes: null,
+					madeReady: true,
+				}),
+			),
+		});
+		const { user, refinementService } = renderTheRefinementTab(
+			gravityWithReady(3, "Below"),
+			sizingLogService,
+		);
+
+		await theVerdict();
+		await user.click(
+			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
+		);
+		await waitFor(async () =>
+			expect(await theRowOf(CONFIGURATION_MANAGEMENT)).toHaveTextContent(
+				"3 votes",
+			),
+		);
+
+		expect(refinementService.getRefinement).toHaveBeenCalledTimes(1);
+	});
+
 	// @us-05 @us-13 @slice-05 @contract-shape:bounded-change
 	// The server read the Refinement before the second vote reached it, so its answer still holds that
 	// Work Item's old votes; the vote answered since then is the newer word on it.

@@ -40,13 +40,14 @@ const withAnsweredRow = (
 
 /**
  * Whether the vote moved the ready count the shown verdict is judged on: the Work Item went into or out of
- * Ready. Without a verdict on screen the count decides nothing, so there is nothing to read again for.
+ * Ready. Without a verdict on screen the count decides nothing, and on a Team whose stages say what is
+ * ready no vote moves it, so there is nothing to read again for.
  */
 const movesTheVerdict = (
 	shown: IRefinementView | null,
 	answeredRow: IVotedRow,
 ): boolean => {
-	if (shown?.need?.verdict == null) {
+	if (shown?.need?.verdict == null || shown.readySource === "Stages") {
 		return false;
 	}
 	const shownRow = shown.workItems.find(
