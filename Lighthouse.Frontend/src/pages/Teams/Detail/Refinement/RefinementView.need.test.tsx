@@ -585,6 +585,54 @@ describe("A Refinement day reports which verdict the tab showed", () => {
 	});
 
 	// @us-05 @slice-05 @boundary @contract-shape:bounded-change
+	// Usage data counts openings, not reads: the vote that moves the message reads the Refinement again,
+	// and that read reports nothing more.
+	it("reports once when a vote on a Refinement day reads the Refinement again", async () => {
+		aBrowserThatVotedBefore("Jonas Weber");
+		const nearlyReady = aRow(
+			CONFIGURATION_MANAGEMENT,
+			"Configuration management",
+			"Backlog",
+			{ voteCount: 2, missingVotes: 1 },
+		);
+		const madeReady = {
+			voteCount: 3,
+			readiness: "Ready",
+			missingVotes: null,
+		} as const;
+		const sizingLogService = aSizingLogService({
+			castVote: vi.fn().mockResolvedValue(
+				aVotedRow(CONFIGURATION_MANAGEMENT, "Configuration management", {
+					...madeReady,
+					madeReady: true,
+				}),
+			),
+		});
+		const { user, refinementService } = renderTheRefinementTab(
+			{
+				...aVotesTeamShowing(4, "Below", [nearlyReady]),
+				isRefinementDay: true,
+			},
+			sizingLogService,
+		);
+		vi.mocked(refinementService.getRefinement).mockResolvedValue({
+			...aVotesTeamShowing(5, "In", [{ ...nearlyReady, ...madeReady }]),
+			isRefinementDay: true,
+		});
+
+		expect(await theVerdict()).toHaveTextContent(/^4 ready — below/);
+		await user.click(
+			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
+		);
+		await waitFor(async () =>
+			expect(await theVerdict()).toHaveTextContent(/^5 ready — in the range/),
+		);
+
+		expect(refinementService.getRefinement).toHaveBeenCalledTimes(2);
+		expect(verdictsReported()).toEqual(["Below"]);
+	});
+
+	// @us-05 @slice-05 @boundary @contract-shape:bounded-change
 	// The Team page keeps the tab mounted when the address moves to another Team, so a vote cast on the
 	// Team before can be answered while the next Team's Refinement is still being read.
 	it("reports the next Team's verdict, not the last one's, when a vote cast before the move is answered after it", async () => {
