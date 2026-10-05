@@ -20,6 +20,28 @@ import {
 import type { DataGridBaseProps } from "./types";
 
 /**
+ * A saved column order predates any column added since, so each such column goes right after the
+ * column declared before it (or first, when it is declared first) rather than at the end, where a
+ * leading column like a row number would make no sense.
+ */
+function withNewColumnsWhereDeclared(
+	savedOrder: string[],
+	declaredOrder: string[],
+): string[] {
+	const merged = [...savedOrder];
+	declaredOrder.forEach((field, index) => {
+		if (merged.includes(field)) return;
+		const predecessor = declaredOrder[index - 1];
+		merged.splice(
+			predecessor === undefined ? 0 : merged.indexOf(predecessor) + 1,
+			0,
+			field,
+		);
+	});
+	return merged;
+}
+
+/**
  * DataGridBase - A reusable data grid component with consistent functionality
  * Built on top of @mui/x-data-grid with additional features:
  * - Sorting on all columns
@@ -210,18 +232,11 @@ function DataGridBase<T extends GridValidRowModel>({
 						// Apply ordering based on columnOrder state
 						((): GridColDef<T>[] => {
 							const map = new Map(gridColumns.map((c) => [c.field, c]));
-							const ordered: GridColDef<T>[] = [];
 							const order = columnOrder ?? gridColumns.map((c) => c.field);
-							const orderSet = new Set(order);
-							for (const f of order) {
-								const col = map.get(f);
-								if (col) ordered.push(col);
-							}
-							// Append any columns missing in order
-							for (const c of gridColumns) {
-								if (!orderSet.has(c.field)) ordered.push(c);
-							}
-							return ordered;
+							return withNewColumnsWhereDeclared(
+								order,
+								gridColumns.map((c) => c.field),
+							).flatMap((f) => map.get(f) ?? []);
 						})()
 					}
 					getRowId={(row) => row[idField]}

@@ -672,6 +672,48 @@ describe("Persistence (Order & Widths)", () => {
 		expect(ageIdx).toBeLessThan(nameIdx);
 	});
 
+	it("shows a column added since the order was saved where it is declared, not last", () => {
+		const storageKey = "test-grid";
+		localStorage.setItem(
+			`lighthouse:datagrid:${storageKey}:state`,
+			JSON.stringify({ columnOrder: ["email", "age", "name"] }),
+		);
+
+		const { container } = render(
+			<DataGridBase
+				rows={mockRows}
+				columns={mockColumns}
+				storageKey={storageKey}
+			/>,
+		);
+
+		const headerTexts = Array.from(
+			container.querySelectorAll('[role="columnheader"]'),
+		).map((h) => h.textContent?.trim() || "");
+		expect(headerTexts).toEqual(["ID", "Email", "Age", "Name"]);
+	});
+
+	it("puts a newly declared column right after the column declared before it", () => {
+		const storageKey = "test-grid";
+		localStorage.setItem(
+			`lighthouse:datagrid:${storageKey}:state`,
+			JSON.stringify({ columnOrder: ["email", "name", "id"] }),
+		);
+
+		const { container } = render(
+			<DataGridBase
+				rows={mockRows}
+				columns={mockColumns}
+				storageKey={storageKey}
+			/>,
+		);
+
+		const headerTexts = Array.from(
+			container.querySelectorAll('[role="columnheader"]'),
+		).map((h) => h.textContent?.trim() || "");
+		expect(headerTexts).toEqual(["Email", "Name", "Age", "ID"]);
+	});
+
 	it("should always show reset layout and column order buttons even when export is disabled", async () => {
 		render(
 			<DataGridBase
