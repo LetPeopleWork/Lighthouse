@@ -2977,3 +2977,26 @@ exposed for the first time in this slice), so there is nothing to migrate.
 - **Fields:** "Low end likelihood" and "High end likelihood", small number fields with a % adornment, prefilled 50 and 85.
 - **Errors, under the field, nothing saves while one shows:** inverted or equal — "The low end (90%) must be below the
   high end (85%)."; out of range — "Between 50% and 95%."
+
+## Wave: DELIVER / [REF] Maintainer review of slice 12 (2026-10-05)
+
+Reviewed in the browser on 2026-10-05, before slice 12 (#6150) was pushed. **Supersedes, for slice 12, the one-click
+"Yes, if…", the open-question icon in the Votes cell, the stage ⚠ in the Stage cell and the log list of "Maintainer
+decision — comments instead of a condition prompt (2026-10-05)".**
+
+- **A Warnings column**, last in the grid, reusing the Features list's one-icon idea: a single ⚠ when the row has
+  anything to warn about, every reason in the tooltip (a list when several), **nothing at all on a clean row**, sortable
+  so the rows with warnings come together. Its reasons today: the stage and the votes disagree (the ⚠ leaves the Stage
+  cell), and somebody asked a question and has not voted yet (the question icon leaves the Votes cell). The Votes cell
+  keeps "3 votes" and the comment icon only.
+- **"Votes and comments" shows no vote trail.** Hovering a count in the split ("2 Yes · 1 Yes, if… · 0 No") lists the
+  people whose current vote it is; the server sends those names, keyed per voter like the counts, so the two never
+  disagree. Beneath the split only what people **wrote**: comments, and a vote's condition shown as "Ana Lima · Yes, if…"
+  with its text; an open question is marked as one. An empty list reads "No comments yet." The log in the API keeps
+  every entry.
+- **"Yes, if…" asks for its condition, and the UI requires one.** Clicking it opens a small "Yes, if…" dialog with the
+  Work Item, a "Condition" box with the placeholder "What has to be true for a Yes?", Cancel and Vote; Vote stays
+  disabled while the box is blank; the condition travels with the vote in one request. The server keeps the comment on
+  a vote optional (the command line and assistants may omit it). Yes and No stay one click.
+- **Comments cannot be deleted, and none is planned.** The log is append-only on purpose; a withdrawal would need its
+  own decision about who may withdraw what with sign-in off. No Story is raised.
