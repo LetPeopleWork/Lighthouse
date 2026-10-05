@@ -799,3 +799,76 @@ touch (the grid's `initialState`, `pageSizeOptions`, `getRowHeight`, the dialog'
 | `EnoughForLine.tsx:73-75`, `:84-92` (9) | pure styling of the line (negative margins, flex, padding, border, overflow); jsdom lays nothing out |
 | `EnoughForLine.tsx:144` no-marking guard → `false` | equivalent: without a marking `lineBeside` places no line, so the spacing is `{}` either way |
 | `EnoughForLine.tsx:154` no-marking guard → `false` | unreachable: the # column is only declared while rows are marked |
+
+# Mutation testing — 6150 (comments, questions and a Work Item's log, E3 slice 12)
+
+Run 2026-10-05 on `main`, production code frozen after the maintainer's review changes and the second review pass.
+Gate is 80 % kill rate on both stacks.
+
+| stack | score | tested | killed | survived | no coverage | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET) | **93.43 %** | 133 | 124 | 5 | 4 | 23 m 19 s |
+| Frontend (StrykerJS), first run | 83.17 % | 398 | 331 | 66 | 1 | 14 m 5 s |
+| Frontend (StrykerJS), after kill tests | **89.20 %** | 398 | 355 | 43 | 0 | 12 m 53 s |
+
+Configs: `stryker.6150.backend.json`, `stryker.6150.frontend.json`, `vitest.stryker.6150.ts`.
+
+## Backend
+
+| file | killed / tested |
+| --- | --- |
+| `RefinementResolution.cs` | 56 / 56 |
+| `SizingLogCommands.cs` | 25 / 25 |
+| `RefinementViewQuery.cs` | 18 / 18 |
+| `RefinementVotesController.cs` | 22 / 27 |
+| `RefinementController.cs` | 3 / 4 |
+| `WorkItemRouteReference.cs`, `SizingLogDto.cs`, `SizingRefusal.cs` | 4 / 4 |
+| `IRefinementViewQuery.cs` | 0 / 3 |
+
+Not mutated: `DemoDataService.cs` (4 of 514 lines changed; the seeded condition is pinned by
+`LoadScenarios_Gravity_AnaLimasYesButOnGr051CarriesItsCondition`); `SizingCommentDto.cs` / `SizingVoteDto.cs` are plain
+records once their length attribute went.
+
+### Accepted survivors
+
+| mutant | reason |
+| --- | --- |
+| `RefinementVotesController.cs:62`, `:84`, `:85` problem titles → `""` | the title is not user copy (the browser words refusals from the `code`, which the scenarios assert) |
+| `RefinementVotesController.cs:86`, `:99` unreachable-switch messages | the switches are total over their enums |
+| `RefinementController.cs:23` view `NotFound` | slice-11 code; the unknown-Team case is covered by tests outside this run's filter |
+| `IRefinementViewQuery.cs:54` calendar default | slice-04 code |
+| `IRefinementViewQuery.cs:73` `RowConversation.None` → `true` (×2) | the default is never read: every row the query builds carries the conversation it worked out |
+
+## Frontend
+
+| file | killed / tested |
+| --- | --- |
+| `useSizingLog.ts`, `useNameFirst.ts`, `useVoterIdentity.ts` (changed lines), `ConditionPrompt.tsx`, `RefinementView.tsx` (changed lines), `refinementWarnings.ts`, `sizingLogWording.ts`, `stageWording.ts` (changed lines), `SizingLogService.ts` (changed lines) | all killed |
+| `useVoteCasting.ts` (changed lines) | 38 / 39 |
+| `useCommentAdding.ts` | 19 / 20 |
+| `voteWording.ts` (changed lines) | 12 / 13 |
+| `VotesAndCommentsDialog.tsx` (changed lines) | 71 / 97 |
+| `refinementColumns.tsx` (changed lines) | 26 / 36 |
+| `WarningsIcon.tsx` | 9 / 13 |
+
+### Closed by this pass (commit `09e396480`, each checked by hand against its mutant)
+
+- The log's read guards: an answer for the Work Item open before, an answer after the dialog closed, a failure of the
+  earlier read, a re-read for the Team the tab moved to, and nothing of the previous Work Item shown while the next is read.
+- A second comment on a Work Item waits for the first to be answered; a commented row is never counted as just made
+  ready; comments go to the Team the tab shows now.
+- A "Yes, if…" that already carries its condition is cast without asking; a condition prompt keeps naming its Work Item
+  after the Refinement is read again without it.
+- Counts read while the voters are still being read name nobody; a Work Item without a split reads as nobody voted.
+- The Warnings column sorts clean rows first one way and warned rows first the other.
+
+### Accepted survivors
+
+| mutant | reason |
+| --- | --- |
+| `useCommentAdding.ts:38` `showSending` deps | equivalent: the callback reads only a ref and a state setter |
+| `useVoteCasting.ts:92` no-condition branch | equivalent: `comment: undefined` is dropped from the JSON body |
+| `voteWording.ts:41` `?? ""` | equivalent: neither lookup has the key |
+| `VotesAndCommentsDialog.tsx:125` `count === 0` | equivalent: once read the count is the number of names; while reading there are none |
+| `refinementColumns.tsx:87` `type: "boolean"` | the sort order is the same either way; it only swaps the column's yes/no filter for a text filter |
+| `refinementColumns.tsx:26-32`, `:41`; `WarningsIcon.tsx:23`, `:29`, `:43`; `VotesAndCommentsDialog.tsx` 25 `sx` literals | pure styling (visually-hidden label, margins, colours, widths, `whiteSpace`); every accessible name and every piece of copy is asserted |

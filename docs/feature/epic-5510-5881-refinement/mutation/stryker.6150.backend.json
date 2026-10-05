@@ -1,0 +1,37 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/API/DTO/SizingCommentDto.cs",
+      "**/API/DTO/SizingLogDto.cs",
+      "**/API/Helpers/WorkItemRouteReference.cs",
+      "**/API/RefinementController.cs",
+      "**/API/RefinementVotesController.cs",
+      "**/Services/Implementation/Refinement/RefinementResolution.cs",
+      "**/Services/Implementation/Refinement/RefinementViewQuery.cs",
+      "**/Services/Implementation/Refinement/SizingLogCommands.cs",
+      "**/Services/Implementation/Refinement/SizingRefusal.cs",
+      "**/Services/Interfaces/Refinement/IRefinementViewQuery.cs",
+      "**/Services/Interfaces/Refinement/ISizingLogCommands.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Tests.Services.Implementation.Refinement|FullyQualifiedName~Slice12Comments|FullyQualifiedName~Slice11|FullyQualifiedName~Slice13|FullyQualifiedName~SizingVotes|FullyQualifiedName~RefinementControllerTest|FullyQualifiedName~RefinementVotesControllerTest)&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~ArchUnit",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

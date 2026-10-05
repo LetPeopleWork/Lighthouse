@@ -1,0 +1,67 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6150.ts",
+    "related": false
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "off",
+  "concurrency": 4,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "playwright-report",
+    "reports"
+  ],
+  "mutate": [
+    "src/components/Common/WarningsIcon/WarningsIcon.tsx",
+    "src/hooks/useVoterIdentity.ts:19-28",
+    "src/hooks/useVoterIdentity.ts:46-53",
+    "src/hooks/useVoterIdentity.ts:56-67",
+    "src/hooks/useVoterIdentity.ts:74-75",
+    "src/pages/Teams/Detail/Refinement/ConditionPrompt.tsx",
+    "src/pages/Teams/Detail/Refinement/RefinementView.tsx:71-80",
+    "src/pages/Teams/Detail/Refinement/RefinementView.tsx:94-95",
+    "src/pages/Teams/Detail/Refinement/RefinementView.tsx:102-130",
+    "src/pages/Teams/Detail/Refinement/RefinementView.tsx:230-265",
+    "src/pages/Teams/Detail/Refinement/VoteControl.tsx:33-35",
+    "src/pages/Teams/Detail/Refinement/VotesAndCommentsDialog.tsx:18-249",
+    "src/pages/Teams/Detail/Refinement/refinementColumns.tsx:25-52",
+    "src/pages/Teams/Detail/Refinement/refinementColumns.tsx:80-94",
+    "src/pages/Teams/Detail/Refinement/refinementColumns.tsx:152-160",
+    "src/pages/Teams/Detail/Refinement/refinementWarnings.ts",
+    "src/pages/Teams/Detail/Refinement/sizingLogWording.ts",
+    "src/pages/Teams/Detail/Refinement/stageWording.ts:8-12",
+    "src/pages/Teams/Detail/Refinement/useCommentAdding.ts",
+    "src/pages/Teams/Detail/Refinement/useNameFirst.ts",
+    "src/pages/Teams/Detail/Refinement/useSizingLog.ts",
+    "src/pages/Teams/Detail/Refinement/useVoteCasting.ts:18-30",
+    "src/pages/Teams/Detail/Refinement/useVoteCasting.ts:57-61",
+    "src/pages/Teams/Detail/Refinement/useVoteCasting.ts:80-94",
+    "src/pages/Teams/Detail/Refinement/useVoteCasting.ts:129-169",
+    "src/pages/Teams/Detail/Refinement/voteWording.ts:19-22",
+    "src/pages/Teams/Detail/Refinement/voteWording.ts:38-43",
+    "src/services/Api/SizingLogService.ts:74-87",
+    "src/services/Api/SizingLogService.ts:102-113"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "stryker-6150-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6150"
+}
