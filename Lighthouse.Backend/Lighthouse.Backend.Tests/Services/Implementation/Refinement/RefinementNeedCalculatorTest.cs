@@ -136,6 +136,45 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             forecastServiceMock.Verify(service => service.HowMany(It.IsAny<RunChartData>(), It.IsAny<int>()), Times.Never);
         }
 
+        [TestCase(false, false, false, NeedUnavailableReason.NoRefinementStates)]
+        [TestCase(false, false, true, NeedUnavailableReason.NoRefinementStates)]
+        [TestCase(false, true, false, NeedUnavailableReason.NoRefinementStates)]
+        [TestCase(false, true, true, NeedUnavailableReason.NoRefinementStates)]
+        [TestCase(true, false, false, NeedUnavailableReason.NoCadence)]
+        [TestCase(true, false, true, NeedUnavailableReason.NoCadence)]
+        [TestCase(true, true, false, NeedUnavailableReason.InsufficientData)]
+        [TestCase(true, true, true, null)]
+        public void The_most_basic_missing_piece_names_why_there_is_no_range(
+            bool hasRefinementStates, bool hasCadence, bool hasSufficientData, NeedUnavailableReason? expected)
+        {
+            var reason = RefinementNeedCalculator.UnavailableReasonFor(hasRefinementStates, hasCadence, () => hasSufficientData);
+
+            Assert.That(reason, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void The_Throughput_history_is_not_read_while_set_up_is_missing()
+        {
+            var asked = false;
+
+            RefinementNeedCalculator.UnavailableReasonFor(true, false, () => asked = true);
+
+            Assert.That(asked, Is.False);
+        }
+
+        [Test]
+        public void A_Team_without_refinement_states_gives_no_range_and_its_history_is_never_read()
+        {
+            var team = ATeam();
+            team.RefinementSettings!.States = [];
+
+            var outlook = subject.For(team, 0);
+
+            Assert.That(outlook.Need, Is.EqualTo(RefinementNeed.Unavailable(NeedUnavailableReason.NoRefinementStates)));
+            teamMetricsServiceMock.Verify(service => service.GetForecastThroughputStatus(It.IsAny<Team>(), It.IsAny<ThroughputFilterMode>()), Times.Never);
+            forecastServiceMock.Verify(service => service.HowMany(It.IsAny<RunChartData>(), It.IsAny<int>()), Times.Never);
+        }
+
         [Test]
         public void The_calendar_is_asked_about_the_Teams_own_cadence()
         {

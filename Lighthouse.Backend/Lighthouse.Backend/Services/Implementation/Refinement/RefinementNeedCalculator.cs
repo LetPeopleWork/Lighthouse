@@ -23,29 +23,46 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         {
             var calendar = refinementCalendar.FactsFor(team.RefinementSettings?.Cadence);
 
-            return new RefinementOutlook(calendar, NeedFor(team, calendar, readyCount));
+            return new RefinementOutlook(calendar, NeedFor(team, calendar.NextRefinementDate, readyCount));
         }
 
-        private RefinementNeed NeedFor(Team team, RefinementCalendarFacts calendar, int readyCount)
+        /// <summary>
+        /// Why there is no range, or null when there is one. The most basic missing piece of set-up is named
+        /// first, and the Throughput history is only looked at when it is the last thing left to ask.
+        /// </summary>
+        public static NeedUnavailableReason? UnavailableReasonFor(bool hasRefinementStates, bool hasCadence, Func<bool> hasSufficientData)
         {
-            if (calendar.NextRefinementDate is not { } nextRefinement)
+            if (!hasRefinementStates)
             {
-                return RefinementNeed.Unavailable(NeedUnavailableReason.NoCadence);
+                return NeedUnavailableReason.NoRefinementStates;
             }
 
-            var status = teamMetricsService.GetForecastThroughputStatus(team, ThroughputFilterMode.RespectTeamSetting);
-            if (!status.HasSufficientData)
+            if (!hasCadence)
             {
-                return RefinementNeed.Unavailable(NeedUnavailableReason.InsufficientData);
+                return NeedUnavailableReason.NoCadence;
+            }
+
+            return hasSufficientData() ? null : NeedUnavailableReason.InsufficientData;
+        }
+
+        private RefinementNeed NeedFor(Team team, DateOnly? nextRefinement, int readyCount)
+        {
+            var status = new Lazy<ForecastThroughputStatus>(
+                () => teamMetricsService.GetForecastThroughputStatus(team, ThroughputFilterMode.RespectTeamSetting));
+
+            var reason = UnavailableReasonFor(team.HasRefinementStates, nextRefinement.HasValue, () => status.Value.HasSufficientData);
+            if (reason is { } unavailable)
+            {
+                return RefinementNeed.Unavailable(unavailable);
             }
 
             var forecastWindowStart = clock.TodayAsUtcMidnight;
-            var targetDate = InstanceCalendar.AsUtcMidnight(nextRefinement);
+            var targetDate = InstanceCalendar.AsUtcMidnight(nextRefinement.GetValueOrDefault());
             var workingDays = blackoutPeriodService
                 .GetEffectiveBlackoutDays(forecastWindowStart, targetDate)
                 .CountWorkingDays(forecastWindowStart, targetDate);
 
-            var forecast = forecastService.HowMany(status.Throughput, workingDays);
+            var forecast = forecastService.HowMany(status.Value.Throughput, workingDays);
             var band = team.RefinementSettings?.Band ?? new RefinementBand();
             var range = new NeedRange(
                 NeedBand.ValueAt(forecast, band.LowPercentile),

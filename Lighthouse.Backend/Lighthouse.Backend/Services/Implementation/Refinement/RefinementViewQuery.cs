@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             var voterIdentity = voterIdentityResolver.Kind;
             if (!team.HasRefinementStates)
             {
-                return new RefinementView(false, [], Yardstick.None, voterIdentity);
+                return new RefinementView(false, [], Yardstick.None, voterIdentity, Need: needCalculator.For(team, 0).Need);
             }
 
             var workItems = refinementList.For(team);

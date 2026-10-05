@@ -131,7 +131,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-05 @slice-05 @error @contract-shape:pure-function
         // The guard forecasts use: at least five days with finished Work Items.
         [Test]
-        [Ignore(PendingSlice05)]
         public async Task Too_little_Throughput_history_gives_the_familiar_guard_instead_of_a_number()
         {
             var gravity = await GivenGravityFinishedWorkOnOnlyFourDaysAndRefinesOnThursdays();
@@ -143,7 +142,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-05 @us-04 @slice-05 @error @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice05)]
         public async Task Without_a_cadence_there_is_no_number_and_the_list_stays()
         {
             var gravity = await GivenGravityHasTwoReadyWithoutACadence();
@@ -156,7 +154,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-05 @us-01 @slice-05 @error @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice05)]
         public async Task A_Team_nobody_set_up_has_no_number_because_it_has_no_refinement_states()
         {
             var zenith = GivenATeamWithoutRefinementStates();
