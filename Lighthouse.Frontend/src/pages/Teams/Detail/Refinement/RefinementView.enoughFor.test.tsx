@@ -1,4 +1,5 @@
-import { cleanup, screen, within } from "@testing-library/react";
+import { cleanup, screen, waitFor, within } from "@testing-library/react";
+import type { UserEvent } from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IRefinementView } from "../../../../models/Refinement/Refinement";
 import {
@@ -52,6 +53,7 @@ const ENOUGH_FOR_THE_NEXT_REFINEMENT =
 const gravityNeeding = (
 	high: number,
 	overrides: Partial<IRefinementView> = {},
+	rows = gravitysSixWorkItems(),
 ) =>
 	gravitysRefinement(
 		{
@@ -64,7 +66,7 @@ const gravityNeeding = (
 			need: aNeedOfFiveToEight({ low: Math.min(5, high), high }),
 			...overrides,
 		},
-		gravitysSixWorkItems(),
+		rows,
 	);
 
 /** The Work Items in the order the list shows them, each with the number in its "#" cell or "". */
@@ -79,6 +81,27 @@ const theListAsShown = async () => {
 				within(row).getAllByRole("link")[0].textContent?.split(":")[0] ?? "",
 			number: within(row).getAllByRole("gridcell")[0].textContent?.trim() ?? "",
 		}));
+};
+
+/** Gravity's six, three of them Next and two Analysing, so a filter on State can leave three or five. */
+const sixToFilterByState = () =>
+	gravitysSixWorkItems().map((row, index) => ({
+		...row,
+		state: ["Next", "Next", "Next", "Analysing", "Analysing", "Backlog"][index],
+	}));
+
+/** Filters the list through the column menu, the way a reader would. */
+const filterStateBy = async (
+	user: UserEvent,
+	value: string,
+	leaving: number,
+) => {
+	await user.click(screen.getByLabelText("State column menu"));
+	await user.click(await screen.findByRole("menuitem", { name: "Filter" }));
+	await user.type(await screen.findByRole("textbox", { name: "Value" }), value);
+	await waitFor(async () =>
+		expect(await theListAsShown()).toHaveLength(leaving),
+	);
 };
 
 const comesBefore = (earlier: Element, later: Element) =>
@@ -175,6 +198,45 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 			"GR-059",
 			"GR-051",
 		]);
+	});
+
+	// @us-06 @slice-06 @driving_port @contract-shape:pure-function
+	// A filter is one more way of choosing what is shown, so the numbering follows it as it follows a sort.
+	it("says all the shown ones are needed when a filter leaves fewer than needed", async () => {
+		const { user } = renderTheRefinementTab(
+			gravityNeeding(5, {}, sixToFilterByState()),
+		);
+		await theListAsShown();
+
+		await filterStateBy(user, "Next", 3);
+
+		const line = await screen.findByText(
+			/^All 3 Work Items in Refinement are needed before the next Refinement\.$/,
+		);
+		const list = await theListAsShown();
+		expect(list.map((shown) => shown.number)).toEqual(["1", "2", "3"]);
+		expect(comesBefore(list[2].row, line)).toBe(true);
+	});
+
+	// @us-06 @slice-06 @driving_port @contract-shape:pure-function
+	it("draws the line after the last shown row when a filter leaves exactly as many as needed", async () => {
+		const { user } = renderTheRefinementTab(
+			gravityNeeding(5, {}, sixToFilterByState()),
+		);
+		await theListAsShown();
+
+		await filterStateBy(user, "n", 5);
+
+		const line = await screen.findByText(ENOUGH_FOR_THE_NEXT_REFINEMENT);
+		const list = await theListAsShown();
+		expect(list.map((shown) => shown.number)).toEqual([
+			"1",
+			"2",
+			"3",
+			"4",
+			"5",
+		]);
+		expect(comesBefore(list[4].row, line)).toBe(true);
 	});
 
 	// @us-06 @slice-06 @boundary @contract-shape:pure-function

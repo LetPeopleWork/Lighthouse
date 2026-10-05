@@ -100,7 +100,6 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 							refinement.readyCount,
 							refinement.nextRefinementDate,
 						),
-						refinement.workItems.length,
 						{
 							workItem: getTerm(TERMINOLOGY_KEYS.WORK_ITEM),
 							workItems: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),

@@ -1,22 +1,37 @@
 export type EnoughForSentence = "EnoughFor" | "AllNeeded";
 
-/** How many of the shown rows are numbered, after which row the line goes (-1: before the first), and what it says. */
-export interface EnoughForPlacement {
-	numbered: number;
-	lineAfterRow: number;
+export type LineSide = "above" | "below";
+
+/** A row where the grid shows it: its place among the shown rows, and whether it is the last of them. */
+export interface ShownRow {
+	index: number;
+	isLastShown: boolean;
+}
+
+/** Which side of a row the line sits on, and what it says there. */
+export interface LineBeside {
+	side: LineSide;
 	says: EnoughForSentence;
 }
 
-export const placeEnoughForLine = (
-	high: number,
-	listed: number,
-): EnoughForPlacement => {
-	const numbered = Math.min(high, listed);
-	return {
-		numbered,
-		lineAfterRow: numbered - 1,
-		says: high > listed ? "AllNeeded" : "EnoughFor",
-	};
+export const isNumbered = (high: number, index: number) =>
+	index >= 0 && index < high;
+
+/**
+ * The line follows the row that makes up the number needed. When fewer rows are shown than that, it
+ * follows the last one shown and says all of them are needed; when none are needed, it comes first.
+ */
+export const lineBeside = (high: number, row: ShownRow): LineBeside | null => {
+	if (high === 0) {
+		return row.index === 0 ? { side: "above", says: "EnoughFor" } : null;
+	}
+	if (row.index === high - 1) {
+		return { side: "below", says: "EnoughFor" };
+	}
+	if (row.isLastShown && row.index < high) {
+		return { side: "below", says: "AllNeeded" };
+	}
+	return null;
 };
 
 /** The words a Team has renamed that the line uses. */
@@ -27,17 +42,17 @@ export interface EnoughForTerms {
 }
 
 export interface EnoughForFacts {
-	listed: number;
+	shown: number;
 	highPercentile: number;
 	terms: EnoughForTerms;
 }
 
-const describeAllNeeded = ({ listed, terms }: EnoughForFacts): string => {
+const describeAllNeeded = ({ shown, terms }: EnoughForFacts): string => {
 	const where = `in ${terms.refinement}`;
 	const when = `before the next ${terms.refinement}.`;
-	return listed === 1
+	return shown === 1
 		? `The only ${terms.workItem} ${where} is needed ${when}`
-		: `All ${listed} ${terms.workItems} ${where} are needed ${when}`;
+		: `All ${shown} ${terms.workItems} ${where} are needed ${when}`;
 };
 
 export const describeEnoughFor = (

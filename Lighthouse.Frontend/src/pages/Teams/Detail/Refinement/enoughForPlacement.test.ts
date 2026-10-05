@@ -1,21 +1,46 @@
 import { describe, expect, it } from "vitest";
 import {
 	describeEnoughFor,
-	type EnoughForPlacement,
-	placeEnoughForLine,
+	type EnoughForSentence,
+	isNumbered,
+	type LineSide,
+	lineBeside,
 } from "./enoughForPlacement";
 
-describe("placeEnoughForLine", () => {
-	it.each<[number, number, EnoughForPlacement]>([
-		[3, 6, { numbered: 3, lineAfterRow: 2, says: "EnoughFor" }],
-		[1, 6, { numbered: 1, lineAfterRow: 0, says: "EnoughFor" }],
-		[6, 6, { numbered: 6, lineAfterRow: 5, says: "EnoughFor" }],
-		[8, 6, { numbered: 6, lineAfterRow: 5, says: "AllNeeded" }],
-		[7, 6, { numbered: 6, lineAfterRow: 5, says: "AllNeeded" }],
-		[0, 6, { numbered: 0, lineAfterRow: -1, says: "EnoughFor" }],
-		[2, 1, { numbered: 1, lineAfterRow: 0, says: "AllNeeded" }],
-	])("high %i of %i listed", (high, listed, expected) => {
-		expect(placeEnoughForLine(high, listed)).toEqual(expected);
+/** Every shown row asked where the line is; the line should be beside exactly one of them. */
+const whereTheLineGoes = (high: number, shown: number) =>
+	Array.from({ length: shown }, (_, index) => ({
+		index,
+		line: lineBeside(high, { index, isLastShown: index === shown - 1 }),
+	})).flatMap(({ index, line }) => (line === null ? [] : [{ index, ...line }]));
+
+describe("lineBeside", () => {
+	it.each<[number, number, number, LineSide, EnoughForSentence]>([
+		[3, 6, 2, "below", "EnoughFor"],
+		[1, 6, 0, "below", "EnoughFor"],
+		[6, 6, 5, "below", "EnoughFor"],
+		[8, 6, 5, "below", "AllNeeded"],
+		[7, 6, 5, "below", "AllNeeded"],
+		[0, 6, 0, "above", "EnoughFor"],
+		[2, 1, 0, "below", "AllNeeded"],
+		[5, 3, 2, "below", "AllNeeded"],
+	])(
+		"high %i of %i shown: beside row %i, %s, saying %s",
+		(high, shown, index, side, says) => {
+			expect(whereTheLineGoes(high, shown)).toEqual([{ index, side, says }]);
+		},
+	);
+});
+
+describe("isNumbered", () => {
+	it.each([
+		[3, 0, true],
+		[3, 2, true],
+		[3, 3, false],
+		[0, 0, false],
+		[3, -1, false],
+	])("high %i, row %i: %s", (high, index, numbered) => {
+		expect(isNumbered(high, index)).toBe(numbered);
 	});
 });
 
@@ -28,13 +53,13 @@ describe("describeEnoughFor", () => {
 
 	it("says what the numbered ones are enough for", () => {
 		expect(
-			describeEnoughFor("EnoughFor", { listed: 6, highPercentile: 85, terms }),
+			describeEnoughFor("EnoughFor", { shown: 6, highPercentile: 85, terms }),
 		).toBe("enough for the next Refinement (85%) · not needed before then");
 	});
 
 	it("says all of them are needed", () => {
 		expect(
-			describeEnoughFor("AllNeeded", { listed: 6, highPercentile: 85, terms }),
+			describeEnoughFor("AllNeeded", { shown: 6, highPercentile: 85, terms }),
 		).toBe(
 			"All 6 Work Items in Refinement are needed before the next Refinement.",
 		);
@@ -42,7 +67,7 @@ describe("describeEnoughFor", () => {
 
 	it("says the only one is needed", () => {
 		expect(
-			describeEnoughFor("AllNeeded", { listed: 1, highPercentile: 85, terms }),
+			describeEnoughFor("AllNeeded", { shown: 1, highPercentile: 85, terms }),
 		).toBe(
 			"The only Work Item in Refinement is needed before the next Refinement.",
 		);

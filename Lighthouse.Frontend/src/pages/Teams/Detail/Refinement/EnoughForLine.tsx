@@ -9,37 +9,32 @@ import type React from "react";
 import { createContext, forwardRef, useContext, useMemo } from "react";
 import {
 	describeEnoughFor,
-	type EnoughForPlacement,
 	type EnoughForTerms,
-	placeEnoughForLine,
+	isNumbered,
+	type LineSide,
+	lineBeside,
 } from "./enoughForPlacement";
 import type { ShownVerdict } from "./NeedVerdict";
 
-/** Where the line goes among the rows as shown, and what it says. */
+/** How many rows are needed before the next Refinement, and what the line says about them. */
 export interface EnoughForMarking {
-	placement: EnoughForPlacement;
-	sentence: string;
+	high: number;
+	highPercentile: number;
+	terms: EnoughForTerms;
 }
 
 /** Marks the rows only while the verdict is shown, so the list never counts up to a number the tab does not state. */
 export const markEnoughFor = (
 	verdict: ShownVerdict | null,
-	listed: number,
 	terms: EnoughForTerms,
-): EnoughForMarking | null => {
-	if (verdict === null) {
-		return null;
-	}
-	const placement = placeEnoughForLine(verdict.need.high, listed);
-	return {
-		placement,
-		sentence: describeEnoughFor(placement.says, {
-			listed,
-			highPercentile: verdict.need.highPercentile,
-			terms,
-		}),
-	};
-};
+): EnoughForMarking | null =>
+	verdict === null
+		? null
+		: {
+				high: verdict.need.high,
+				highPercentile: verdict.need.highPercentile,
+				terms,
+			};
 
 export const EnoughForContext = createContext<EnoughForMarking | null>(null);
 
@@ -49,22 +44,6 @@ const LINE_HEIGHT_PX = 36;
 
 const BELOW_THE_LINE_OPACITY = 0.6;
 
-type LineSide = "above" | "below";
-
-/** The side of the shown row the line sits on, or null when the line is not next to that row. */
-const lineBeside = (lineAfterRow: number, index: number): LineSide | null => {
-	if (index === lineAfterRow) {
-		return "below";
-	}
-	if (lineAfterRow === -1 && index === 0) {
-		return "above";
-	}
-	return null;
-};
-
-const isNumberedRow = (placement: EnoughForPlacement, index: number) =>
-	index >= 0 && index < placement.numbered;
-
 const SPACE_FOR_THE_LINE: Record<LineSide, GridRowSpacing> = {
 	above: { top: LINE_HEIGHT_PX },
 	below: { bottom: LINE_HEIGHT_PX },
@@ -73,12 +52,19 @@ const SPACE_FOR_THE_LINE: Record<LineSide, GridRowSpacing> = {
 /**
  * The grid lays its rows out from the heights it knows about, so the line lives in space the grid reserves
  * as row spacing; otherwise every row after it would be drawn a line lower than the grid thinks it is.
+ * Both the space and the line are placed from the rows as shown, sorted and filtered, so they agree.
  */
 const spaceForTheLine =
-	(lineAfterRow: number) =>
-	({ indexRelativeToCurrentPage }: GridRowSpacingParams): GridRowSpacing => {
-		const side = lineBeside(lineAfterRow, indexRelativeToCurrentPage);
-		return side === null ? {} : SPACE_FOR_THE_LINE[side];
+	(high: number) =>
+	({
+		indexRelativeToCurrentPage,
+		isLastVisible,
+	}: GridRowSpacingParams): GridRowSpacing => {
+		const line = lineBeside(high, {
+			index: indexRelativeToCurrentPage,
+			isLastShown: isLastVisible,
+		});
+		return line === null ? {} : SPACE_FOR_THE_LINE[line.side];
 	};
 
 /** The line pulls itself back into the space reserved for it rather than pushing the next row down. */
@@ -119,17 +105,29 @@ const EnoughForRow = forwardRef<HTMLDivElement, GridRowProps>(
 		if (marking === null) {
 			return <GridRow ref={ref} {...props} />;
 		}
-		const side = lineBeside(marking.placement.lineAfterRow, props.index);
+		const beside = lineBeside(marking.high, {
+			index: props.index,
+			isLastShown: props.isLastVisible,
+		});
 		const line =
-			side === null ? null : <Line sentence={marking.sentence} side={side} />;
-		const style = isNumberedRow(marking.placement, props.index)
+			beside === null ? null : (
+				<Line
+					side={beside.side}
+					sentence={describeEnoughFor(beside.says, {
+						shown: props.index + 1,
+						highPercentile: marking.highPercentile,
+						terms: marking.terms,
+					})}
+				/>
+			);
+		const style = isNumbered(marking.high, props.index)
 			? props.style
 			: { ...props.style, opacity: BELOW_THE_LINE_OPACITY };
 		return (
 			<ShownIndexContext.Provider value={props.index}>
-				{side === "above" && line}
+				{beside?.side === "above" && line}
 				<GridRow ref={ref} {...props} style={style} />
-				{side === "below" && line}
+				{beside?.side === "below" && line}
 			</ShownIndexContext.Provider>
 		);
 	},
@@ -139,11 +137,10 @@ const ROW_SLOTS = { row: EnoughForRow };
 
 /** What the grid needs to draw the line: rows that can carry it, and the space to carry it in. */
 export const useEnoughForLine = (marking: EnoughForMarking | null) => {
-	const lineAfterRow = marking?.placement.lineAfterRow;
+	const high = marking?.high;
 	const getRowSpacing = useMemo(
-		() =>
-			lineAfterRow === undefined ? undefined : spaceForTheLine(lineAfterRow),
-		[lineAfterRow],
+		() => (high === undefined ? undefined : spaceForTheLine(high)),
+		[high],
 	);
 	return { slots: ROW_SLOTS, getRowSpacing };
 };
@@ -152,7 +149,7 @@ export const useEnoughForLine = (marking: EnoughForMarking | null) => {
 export const NeededNumber: React.FC = () => {
 	const marking = useContext(EnoughForContext);
 	const index = useContext(ShownIndexContext);
-	if (marking === null || !isNumberedRow(marking.placement, index)) {
+	if (marking === null || !isNumbered(marking.high, index)) {
 		return null;
 	}
 	return index + 1;
