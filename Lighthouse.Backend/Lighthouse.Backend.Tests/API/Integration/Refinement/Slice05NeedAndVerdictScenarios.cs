@@ -58,7 +58,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-05 @us-13 @slice-05 @contract-shape:bounded-change
         // Without stage rules the votes make Work Items Ready, and so they move the verdict.
         [Test]
-        [Ignore(PendingSlice05)]
         public async Task On_a_Team_without_stages_a_vote_that_makes_a_Work_Item_Ready_moves_the_verdict()
         {
             var gravity = await GivenGravityWithoutStagesRefinesOnThursdayTheEighthAndIsLikelyToPullOneToThree();
@@ -72,7 +71,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-05 @us-03 @slice-05 @boundary @contract-shape:bounded-change
         // With stage rules the tracker decides what is ready; votes are shown, not counted.
         [Test]
-        [Ignore(PendingSlice05)]
         public async Task On_a_Team_with_stages_votes_do_not_move_the_verdict()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
@@ -199,7 +197,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-05 @slice-05 @boundary @kpi-OUT-5510-K2-refinement-tab-weekly @contract-shape:pure-function
         // Second, warm read; the shipped forecast engine runs.
         [Test]
-        [Ignore(PendingSlice05)]
         public async Task Three_hundred_Work_Items_in_refinement_still_answer_with_a_verdict_within_two_seconds()
         {
             var team = await GivenATeamWithThreeHundredWorkItemsInRefinementRefiningOnTuesdays();
