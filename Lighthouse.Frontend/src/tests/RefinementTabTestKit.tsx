@@ -173,23 +173,26 @@ export const renderTheRefinementTab = (
 	const featureService = createMockFeatureService();
 	featureService.getFeaturesByReferences = vi.fn().mockResolvedValue([]);
 	const user = userEvent.setup();
-
-	render(
+	const services = createMockApiServiceContext({
+		refinementService,
+		sizingLogService,
+		featureService,
+		rbacService: anRbacServiceFor(onlooker),
+	});
+	const tabOf = (team: Team) => (
 		<SnackbarErrorHandler>
-			<ApiServiceContext.Provider
-				value={createMockApiServiceContext({
-					refinementService,
-					sizingLogService,
-					featureService,
-					rbacService: anRbacServiceFor(onlooker),
-				})}
-			>
-				<RefinementView team={teamGravity()} />
+			<ApiServiceContext.Provider value={services}>
+				<RefinementView team={team} />
 			</ApiServiceContext.Provider>
-		</SnackbarErrorHandler>,
+		</SnackbarErrorHandler>
 	);
 
-	return { refinementService, sizingLogService, user };
+	const { rerender } = render(tabOf(teamGravity()));
+
+	// The Team page keeps the tab mounted when the address moves to another Team; only the Team changes.
+	const moveToTeam = (team: Team) => rerender(tabOf(team));
+
+	return { refinementService, sizingLogService, user, moveToTeam };
 };
 
 export const theRowOf = async (referenceId: string): Promise<HTMLElement> => {

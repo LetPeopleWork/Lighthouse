@@ -68,7 +68,10 @@ const renderWithConsentStillOnItsWay = (refinement: IRefinementView) => {
 
 	const rendered = renderHook(
 		({ shown }: { shown: IRefinementView }) =>
-			useVerdictShownReporter(GRAVITY_TEAM_ID, shown),
+			useVerdictShownReporter(GRAVITY_TEAM_ID, {
+				teamId: GRAVITY_TEAM_ID,
+				view: shown,
+			}),
 		{ wrapper, initialProps: { shown: refinement } },
 	);
 

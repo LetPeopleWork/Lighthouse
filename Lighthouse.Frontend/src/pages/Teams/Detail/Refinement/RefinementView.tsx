@@ -66,8 +66,8 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 	const { showError } = useErrorSnackbar();
 	const { getTerm } = useTerminology();
 	const { isTeamAdmin } = useRbac();
-	const { refinement, showAnsweredRow } = useRefinement(team.id);
-	useVerdictShownReporter(team.id, refinement);
+	const { refinement, shown, showAnsweredRow } = useRefinement(team.id);
+	useVerdictShownReporter(team.id, shown);
 	const [votesShownFor, setVotesShownFor] = useState<string | null>(null);
 	const [isChangingName, setIsChangingName] = useState(false);
 	const voterIdentity = useVoterIdentity(refinement?.voterIdentity);

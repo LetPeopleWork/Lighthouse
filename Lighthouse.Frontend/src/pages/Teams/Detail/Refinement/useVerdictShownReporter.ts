@@ -1,11 +1,9 @@
 import { useEffect, useRef } from "react";
-import type {
-	IRefinementNeed,
-	IRefinementView,
-} from "../../../../models/Refinement/Refinement";
+import type { IRefinementNeed } from "../../../../models/Refinement/Refinement";
 import type { UsageDataRefinementVerdict } from "../../../../models/UsageData/UsageData";
 import { UsageDataEventName } from "../../../../services/Api/UsageDataService";
 import { useUsageDataReporter } from "../../../../services/UsageData/usageDataReporter";
+import type { ShownRefinement } from "./useRefinement";
 
 /** The verdict worth reporting, or nothing: only a Refinement day reports, and a missing number is `None`. */
 export const refinementDayVerdict = (
@@ -20,46 +18,36 @@ export const refinementDayVerdict = (
 
 interface Opening {
 	teamId: number;
-	// What was on screen when the tab moved to this Team still belongs to the Team before it.
-	previousTeamsRefinement: IRefinementView | null;
 	hasReported: boolean;
 }
 
 /**
  * Reports which verdict the tab showed on a Refinement day, once per Team the tab is opened on. A vote that
- * reads the Refinement again does not report again: usage data counts openings, not reads.
+ * reads the Refinement again does not report again: usage data counts openings, not reads. Until the
+ * Refinement of the Team the tab moved to arrives, what is on screen is the Team before's and reports
+ * nothing.
  */
 export const useVerdictShownReporter = (
 	teamId: number,
-	refinement: IRefinementView | null,
+	shown: ShownRefinement | null,
 ): void => {
 	const reportUsage = useUsageDataReporter();
-	const opening = useRef<Opening>({
-		teamId,
-		previousTeamsRefinement: null,
-		hasReported: false,
-	});
+	const opening = useRef<Opening>({ teamId, hasReported: false });
 
 	useEffect(() => {
 		if (opening.current.teamId !== teamId) {
-			opening.current = {
-				teamId,
-				previousTeamsRefinement: refinement,
-				hasReported: false,
-			};
+			opening.current = { teamId, hasReported: false };
 		}
 
 		const isShowingThisTeam =
-			refinement !== null &&
-			refinement !== opening.current.previousTeamsRefinement &&
-			refinement.workItems.length > 0;
+			shown?.teamId === teamId && shown.view.workItems.length > 0;
 		if (opening.current.hasReported || !isShowingThisTeam) {
 			return;
 		}
 
 		const verdict = refinementDayVerdict(
-			refinement.isRefinementDay,
-			refinement.need,
+			shown.view.isRefinementDay,
+			shown.view.need,
 		);
 		// Consent can arrive after the verdict is shown; until the event could go, the opening is not used up.
 		opening.current.hasReported =
@@ -68,5 +56,5 @@ export const useVerdictShownReporter = (
 				name: UsageDataEventName.TeamRefinementDayVerdictShown,
 				refinementVerdict: verdict,
 			});
-	}, [teamId, refinement, reportUsage]);
+	}, [teamId, shown, reportUsage]);
 };

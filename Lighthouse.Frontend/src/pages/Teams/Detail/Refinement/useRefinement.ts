@@ -58,6 +58,12 @@ const movesTheVerdict = (
 	);
 };
 
+/** A Refinement together with the Team it was read for. */
+export interface ShownRefinement {
+	teamId: number;
+	view: IRefinementView;
+}
+
 /**
  * The Team's Refinement as the server last told it, null until it has. A row a vote answered replaces the
  * row shown, so the tab does not read everything again after each vote. A vote that takes a Work Item into
@@ -67,11 +73,15 @@ const movesTheVerdict = (
  *
  * Reads can answer out of order, so only the latest one is shown. A vote answered after that read set off
  * may be missing from its answer, so the row that vote answered is laid over the answer again.
+ *
+ * Moving to another Team keeps the last Team's Refinement on screen until the next one is read, so what is
+ * shown carries the Team it belongs to.
  */
 export const useRefinement = (teamId: number) => {
 	const { refinementService } = useContext(ApiServiceContext);
 	const { showError } = useErrorSnackbar();
-	const [refinement, setRefinement] = useState<IRefinementView | null>(null);
+	const [shown, setShown] = useState<ShownRefinement | null>(null);
+	const refinement = shown?.view ?? null;
 	const shownTeamId = useRef(teamId);
 	const latestRead = useRef(0);
 	const answeredSinceRead = useRef(new Map<string, IRefinementRow>());
@@ -87,12 +97,13 @@ export const useRefinement = (teamId: number) => {
 				.getRefinement(teamId)
 				.then((answer) => {
 					if (isLatest()) {
-						setRefinement(
-							[...answeredSinceRead.current.values()].reduce(
+						setShown({
+							teamId,
+							view: [...answeredSinceRead.current.values()].reduce(
 								withAnsweredRow,
 								answer,
 							),
-						);
+						});
 					}
 				})
 				.catch((error: unknown) => {
@@ -117,9 +128,14 @@ export const useRefinement = (teamId: number) => {
 	// A vote answered after the tab moved on to another Team must not bring the old Team's Refinement back.
 	const showAnsweredRow = useCallback(
 		(answeredRow: IVotedRow) => {
+			if (shownTeamId.current !== teamId) {
+				return;
+			}
 			answeredSinceRead.current.set(answeredRow.referenceId, answeredRow);
-			setRefinement((current) =>
-				current === null ? current : withAnsweredRow(current, answeredRow),
+			setShown((current) =>
+				current?.teamId === teamId
+					? { teamId, view: withAnsweredRow(current.view, answeredRow) }
+					: current,
 			);
 			if (movesTheVerdict(refinement, answeredRow)) {
 				read(() => shownTeamId.current === teamId);
@@ -128,5 +144,5 @@ export const useRefinement = (teamId: number) => {
 		[read, teamId, refinement],
 	);
 
-	return { refinement, showAnsweredRow };
+	return { refinement, shown, showAnsweredRow };
 };

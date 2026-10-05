@@ -6,6 +6,7 @@ import type {
 	IVotedRow,
 	RefinementVerdict,
 } from "../../../../models/Refinement/Refinement";
+import { Team } from "../../../../models/Team/Team";
 import type { IRefinementService } from "../../../../services/Api/RefinementService";
 import {
 	aBrowserThatVotedBefore,
@@ -120,6 +121,19 @@ const aVotedRow = (
 	...aRow(referenceId, name, "Backlog", answer),
 	madeReady: answer.madeReady ?? false,
 });
+
+const teamNebula = () => {
+	const team = new Team();
+	team.id = 8;
+	team.name = "Team Nebula";
+	return team;
+};
+
+/** Which verdicts the tab reported, in order. */
+const verdictsReported = () =>
+	reporter.current.mock.calls
+		.filter(([event]) => event.name === VERDICT_SHOWN)
+		.map(([event]) => event.refinementVerdict);
 
 /** The next read of the Refinement, held back until the test lets the server answer it. */
 const aReadStillOnItsWay = (
@@ -568,6 +582,54 @@ describe("A Refinement day reports which verdict the tab showed", () => {
 				([event]) => event.name === VERDICT_SHOWN,
 			),
 		).toHaveLength(0);
+	});
+
+	// @us-05 @slice-05 @boundary @contract-shape:bounded-change
+	// The Team page keeps the tab mounted when the address moves to another Team, so a vote cast on the
+	// Team before can be answered while the next Team's Refinement is still being read.
+	it("reports the next Team's verdict, not the last one's, when a vote cast before the move is answered after it", async () => {
+		aBrowserThatVotedBefore("Jonas Weber");
+		let answerTheVote: (row: IVotedRow) => void = () => {};
+		const sizingLogService = aSizingLogService({
+			castVote: vi.fn(
+				() =>
+					new Promise<IVotedRow>((resolve) => {
+						answerTheVote = resolve;
+					}),
+			),
+		});
+		const { user, refinementService, moveToTeam } = renderTheRefinementTab(
+			{
+				...aVotesTeamShowing(4, "Below", [
+					aRow(CONFIGURATION_MANAGEMENT, "Configuration management", "Backlog"),
+				]),
+				isRefinementDay: true,
+			},
+			sizingLogService,
+		);
+		const nebulasRead = aReadStillOnItsWay(refinementService);
+
+		await theVerdict();
+		await user.click(
+			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
+		);
+		moveToTeam(teamNebula());
+		await act(async () => {
+			answerTheVote(
+				aVotedRow(CONFIGURATION_MANAGEMENT, "Configuration management", {
+					voteCount: 1,
+					missingVotes: 2,
+				}),
+			);
+		});
+		await nebulasRead.answer({
+			...aVotesTeamShowing(6, "In", [
+				aRow("NB-012", "Telemetry export", "Backlog"),
+			]),
+			isRefinementDay: true,
+		});
+
+		await waitFor(() => expect(verdictsReported()).toEqual(["Below", "In"]));
 	});
 });
 
