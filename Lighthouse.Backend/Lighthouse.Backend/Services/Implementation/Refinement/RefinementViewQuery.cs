@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             var voterIdentity = voterIdentityResolver.Kind;
             if (!team.HasRefinementStates)
             {
-                return new RefinementView(false, [], Yardstick.None, voterIdentity, Need: needCalculator.For(team, 0).Need);
+                return new RefinementView(false, [], Yardstick.None, voterIdentity, needCalculator.For(team, 0).Need);
             }
 
             var workItems = refinementList.For(team);
@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
 
             var outlook = needCalculator.For(team, RefinementResolution.ReadyCountOf(stages.StagesConfigured, rows));
 
-            return new RefinementView(true, rows, yardstickResolver.For(team), voterIdentity, stages.StagesConfigured, outlook.Calendar, outlook.Need);
+            return new RefinementView(true, rows, yardstickResolver.For(team), voterIdentity, outlook.Need, stages.StagesConfigured, outlook.Calendar);
         }
 
         private static RefinementRow RowFor(WorkItem item, RowVotes votes, ReadinessSetting readiness, StageMatches stages)

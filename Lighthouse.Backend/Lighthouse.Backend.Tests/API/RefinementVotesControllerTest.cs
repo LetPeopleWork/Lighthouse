@@ -204,10 +204,12 @@ namespace Lighthouse.Backend.Tests.API
             return controller.CastVote(TeamId, routeValue, vote, voterKey);
         }
 
+        private static readonly RefinementNeed NoNeed = RefinementNeed.Unavailable(NeedUnavailableReason.NoCadence);
+
         private void GivenTheRows(params RefinementRow[] rows)
             => refinementViewQueryMock
                 .Setup(query => query.ForTeam(TeamId, It.IsAny<string?>()))
-                .Returns(new RefinementView(true, [.. rows], Yardstick.None, VoterIdentityKind.SelfDeclared));
+                .Returns(new RefinementView(true, [.. rows], Yardstick.None, VoterIdentityKind.SelfDeclared, NoNeed));
 
         private static RefinementRow Row(string reference, int voteCount, SizingAnswer? myVote = null)
             => new(

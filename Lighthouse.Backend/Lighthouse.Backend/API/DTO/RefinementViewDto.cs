@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.API.DTO
 
         public int? DaysUntilNextRefinement { get; } = view.CalendarFacts.DaysUntilNextRefinement;
 
-        public RefinementNeedDto Need { get; } = new(view.NeedFacts);
+        public RefinementNeedDto Need { get; } = new(view.Need);
     }
 
     /// <summary>The need as facts only; the browser and the clients put them into words and place the line.</summary>

@@ -18,14 +18,11 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
         List<RefinementRow> WorkItems,
         Yardstick Yardstick,
         VoterIdentityKind VoterIdentity,
+        RefinementNeed Need,
         bool StagesConfigured = false,
-        RefinementCalendarFacts? Calendar = null,
-        RefinementNeed? Need = null)
+        RefinementCalendarFacts? Calendar = null)
     {
         public RefinementCalendarFacts CalendarFacts => Calendar ?? RefinementCalendarFacts.None;
-
-        /// <summary>A Team that refines in no state has nothing to count, so it has no range either.</summary>
-        public RefinementNeed NeedFacts => Need ?? RefinementNeed.Unavailable(NeedUnavailableReason.NoRefinementStates);
 
         public int ReadyByVotesCount => RefinementResolution.ReadyByVotesCountOf(WorkItems);
 
