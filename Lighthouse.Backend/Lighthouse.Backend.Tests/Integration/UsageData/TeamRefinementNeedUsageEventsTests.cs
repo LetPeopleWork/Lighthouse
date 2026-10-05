@@ -92,7 +92,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [TestCase("In")]
         [TestCase("Above")]
         [TestCase("None")]
-        [Ignore(PendingSlice05)]
         public async Task A_browser_that_agreed_reports_the_verdict_a_Refinement_day_showed_and_nothing_else(string verdict)
         {
             var token = await ABrowserThatAgreedAsync();
@@ -137,7 +136,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @us-05 @slice-05 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice05)]
         public void The_verdict_event_is_appended_to_the_list_of_names_never_inserted()
             => ThenIsAppendedAfter("UsageDataEventName", TeamRefinementDayVerdictShown, TeamSizingReadinessReached);
 

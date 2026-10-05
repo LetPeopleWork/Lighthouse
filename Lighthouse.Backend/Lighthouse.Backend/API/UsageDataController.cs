@@ -177,9 +177,10 @@ namespace Lighthouse.Backend.API
         /// What else a message carries is not the same for every event. Two events say which page
         /// somebody opened and must name one of this product's own; the rest happen on no particular
         /// page and must name none, and the same holds for which kind of system was connected, which
-        /// setting was switched and when a sizing vote was cast. A part on an event that has no
-        /// business carrying it is refused rather than ignored - whoever sent it believed it would be
-        /// counted, and a message half accepted is the one nobody notices.
+        /// setting was switched, when a sizing vote was cast and which verdict a Refinement day
+        /// showed. A part on an event that has no business carrying it is refused rather than
+        /// ignored - whoever sent it believed it would be counted, and a message half accepted is the
+        /// one nobody notices.
         ///
         /// Reading and checking are one act here rather than two passes, and the shape is judged on
         /// the very event handed on, so there is no arrangement in which something got past the
@@ -193,6 +194,7 @@ namespace Lighthouse.Backend.API
                 || (reported.WorkTrackingSystem is { } system && !Enum.IsDefined(system))
                 || (reported.OptionalFeature is { } setting && !Enum.IsDefined(setting))
                 || (reported.SizingMoment is { } moment && !Enum.IsDefined(moment))
+                || (reported.RefinementVerdict is { } verdict && !Enum.IsDefined(verdict))
                 || reported.OffsetMs is not { } offset || offset < 0
                 || reported.Sequence is not { } sequence || sequence < 0)
             {
@@ -207,7 +209,8 @@ namespace Lighthouse.Backend.API
                 reported.Enabled,
                 reported.SizingMoment,
                 offset,
-                sequence);
+                sequence,
+                reported.RefinementVerdict);
 
             return UsageDataEventShapes.Fits(taken) ? taken : null;
         }

@@ -8,7 +8,8 @@ namespace Lighthouse.Backend.Models.UsageData
     /// Most parts are absent for most of these, and that is the shape rather than a gap. Two events
     /// say which page somebody opened, one says which kind of work tracking system was connected,
     /// one says which setting was switched and whether it is now on or off, and a sizing vote says
-    /// when it was cast relative to the Team's Refinement; the rest say only that somebody did
+    /// when it was cast relative to the Team's Refinement, and a Refinement day says which verdict
+    /// its tab showed; the rest say only that somebody did
     /// something. Which event may carry which part is declared in
     /// <see cref="UsageDataEventShapes"/>.
     ///
@@ -24,5 +25,6 @@ namespace Lighthouse.Backend.Models.UsageData
         bool? Enabled,
         UsageDataSizingMoment? SizingMoment,
         int OffsetMs,
-        int Sequence);
+        int Sequence,
+        UsageDataRefinementVerdict? RefinementVerdict = null);
 }

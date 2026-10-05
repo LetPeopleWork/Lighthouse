@@ -38,5 +38,7 @@ namespace Lighthouse.Backend.Models.UsageData
         TeamSizingVoteCast = 13,
 
         TeamSizingReadinessReached = 14,
+
+        TeamRefinementDayVerdictShown = 15,
     }
 }

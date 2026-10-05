@@ -53,6 +53,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "licence_tier",
             "optional_feature",
             "properties",
+            "refinement_verdict",
             "route",
             "sizing_moment",
             "timestamp",

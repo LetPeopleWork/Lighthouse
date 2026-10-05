@@ -3,7 +3,8 @@ using Lighthouse.Backend.Models.UsageData;
 namespace Lighthouse.Backend.Tests.Models.UsageData
 {
     /// <summary>
-    /// When a vote was cast is the one thing a sizing event says, and nothing else may say it. Checked
+    /// When a vote was cast is the one thing a sizing event says, and which verdict a Refinement day
+    /// showed is the one thing the verdict event says; nothing else may say either. Checked
     /// over every name on the list, each otherwise in the shape it is sent in, so a name appended later
     /// is covered without anybody remembering to add it here. The other parts are judged alongside it,
     /// so an event short of any one of them must still not fit.
@@ -28,6 +29,26 @@ namespace Lighthouse.Backend.Tests.Models.UsageData
                     $"{name} without a sizing moment");
             }
         }
+
+        [TestCaseSource(nameof(EveryName))]
+        public void A_refinement_verdict_is_carried_exactly_by_the_verdict_event(UsageDataEventName name)
+        {
+            var isTheVerdictEvent = name is UsageDataEventName.TeamRefinementDayVerdictShown;
+            var inItsOwnShape = InItsOwnShape(name, SizingMomentOf(name));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(UsageDataEventShapes.Fits(inItsOwnShape with { RefinementVerdict = UsageDataRefinementVerdict.In }), Is.EqualTo(isTheVerdictEvent),
+                    $"{name} carrying a verdict");
+                Assert.That(UsageDataEventShapes.Fits(inItsOwnShape with { RefinementVerdict = null }), Is.EqualTo(!isTheVerdictEvent),
+                    $"{name} without a verdict");
+            }
+        }
+
+        private static UsageDataSizingMoment? SizingMomentOf(UsageDataEventName name)
+            => name is UsageDataEventName.TeamSizingVoteCast or UsageDataEventName.TeamSizingReadinessReached
+                ? UsageDataSizingMoment.NoCadence
+                : null;
 
         private static IEnumerable<TestCaseData> EventsMissingOrMisplacingAPart()
         {
@@ -69,6 +90,7 @@ namespace Lighthouse.Backend.Tests.Models.UsageData
                 UsageDataEventName.PortfolioTabOpened => nameOnly with { Route = UsageDataRouteKey.PortfolioDetail_Metrics },
                 UsageDataEventName.WorkTrackingSystemConnected => nameOnly with { WorkTrackingSystem = UsageDataWorkTrackingSystem.Jira },
                 UsageDataEventName.OptionalFeatureToggled => nameOnly with { OptionalFeature = UsageDataOptionalFeature.FeatureOrder, Enabled = true },
+                UsageDataEventName.TeamRefinementDayVerdictShown => nameOnly with { RefinementVerdict = UsageDataRefinementVerdict.None },
                 _ => nameOnly,
             };
         }

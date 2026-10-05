@@ -28,5 +28,6 @@ namespace Lighthouse.Backend.API.DTO
         bool? Enabled,
         UsageDataSizingMoment? SizingMoment,
         int? OffsetMs,
-        int? Sequence);
+        int? Sequence,
+        UsageDataRefinementVerdict? RefinementVerdict = null);
 }
