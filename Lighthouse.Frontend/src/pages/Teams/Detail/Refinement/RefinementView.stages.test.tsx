@@ -437,6 +437,40 @@ describe("The Warnings column", () => {
 		expect(shown).toHaveLength(5);
 		expect(warned[1] - warned[0]).toBe(1);
 	});
+
+	// @us-12 @slice-12 @driving_port @contract-shape:pure-function
+	it("puts the clean rows first when sorted by it, and the rows with warnings first when sorted again", async () => {
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement({ stagesConfigured: true, readySource: "Stages" }, [
+				disagreeing,
+				staged("GR-058", "User activity tracking", "Next", "Ready"),
+				asked,
+				staged("GR-073", "Configuration management", "Backlog", "Waiting"),
+			]),
+		);
+		await theRowOf("GR-058");
+		const shownInOrder = () =>
+			screen
+				.getAllByRole("row")
+				.filter((row) => within(row).queryAllByRole("link").length > 0)
+				.map(
+					(row) =>
+						within(row).getAllByRole("link")[0].textContent?.split(":")[0] ??
+						"",
+				);
+		const inAnyOrder = (referenceIds: string[]) =>
+			[...referenceIds].sort((a, b) => a.localeCompare(b));
+		const theWarned = ["GR-054", "GR-059"];
+		const warningsHeader = screen.getByRole("columnheader", {
+			name: "Warnings",
+		});
+
+		await user.click(warningsHeader);
+		expect(inAnyOrder(shownInOrder().slice(2))).toEqual(theWarned);
+
+		await user.click(warningsHeader);
+		expect(inAnyOrder(shownInOrder().slice(0, 2))).toEqual(theWarned);
+	});
 });
 
 describe("The stage breakdown line", () => {

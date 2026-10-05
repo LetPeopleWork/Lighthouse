@@ -109,4 +109,44 @@ describe("the votes and comments of one Work Item", () => {
 			"1 Yes · 2 Yes, if… · 0 No",
 		);
 	});
+
+	it("reads a Work Item the server sent no split for as nobody having voted while the voters are still being read", () => {
+		render(
+			<VotesAndCommentsDialog
+				workItem={aWorkItem({ split: undefined })}
+				log={{ status: "reading" }}
+				describeFailure={vi.fn()}
+				isSendingAComment={false}
+				voterName={null}
+				onChangeName={vi.fn()}
+				onAddComment={vi.fn()}
+				onClose={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByRole("dialog")).toHaveTextContent(
+			"0 Yes · 0 Yes, if… · 0 No",
+		);
+	});
+
+	// A count only becomes a keyboard stop once there are names behind it to show.
+	it("names nobody behind a count while the voters are still being read", () => {
+		render(
+			<VotesAndCommentsDialog
+				workItem={aWorkItem({ split: { yes: 1, yesBut: 2, no: 3 } })}
+				log={{ status: "reading" }}
+				describeFailure={vi.fn()}
+				isSendingAComment={false}
+				voterName={null}
+				onChangeName={vi.fn()}
+				onAddComment={vi.fn()}
+				onClose={vi.fn()}
+			/>,
+		);
+
+		const dialog = screen.getByRole("dialog");
+		for (const count of ["1 Yes", "2 Yes, if…", "3 No"]) {
+			expect(within(dialog).getByText(count)).not.toHaveAttribute("tabindex");
+		}
+	});
 });

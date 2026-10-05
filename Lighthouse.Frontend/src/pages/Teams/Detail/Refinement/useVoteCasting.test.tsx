@@ -126,6 +126,33 @@ describe("casting a vote from the tab", () => {
 		expect(sizingLogService.castVote).not.toHaveBeenCalled();
 	});
 
+	it("casts a 'Yes, if…' that already carries its condition without asking for one", async () => {
+		const { result, sizingLogService } = renderTheCasting(() =>
+			Promise.resolve(theRow),
+		);
+
+		act(() => {
+			result.current.onVote({
+				referenceId: "GR-073",
+				answer: "YesBut",
+				condition: "the API is stable",
+			});
+		});
+
+		expect(result.current.conditionAskedOn).toBeNull();
+		await waitFor(() =>
+			expect(sizingLogService.castVote).toHaveBeenCalledWith(
+				7,
+				"GR-073",
+				expect.objectContaining({
+					answer: "YesBut",
+					comment: "the API is stable",
+				}),
+				JONAS.key,
+			),
+		);
+	});
+
 	it("drops a vote still waiting for its voter's name when the Team changes", () => {
 		const { result, rerender, sizingLogService } = renderTheCasting(
 			() => Promise.resolve(theRow),

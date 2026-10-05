@@ -1,10 +1,14 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { IRefinementRow } from "../../../../models/Refinement/Refinement";
+import type {
+	IRefinementRow,
+	IVotedRow,
+} from "../../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { ApiError } from "../../../../services/Api/ApiError";
 import {
 	aBrowserThatVotedBefore,
+	aNeedOfFiveToEight,
 	aRow,
 	aSizingLogService,
 	defaultRefinementTerms,
@@ -13,6 +17,7 @@ import {
 	openTheVotesAndCommentsOf,
 	REFINEMENT_KEY,
 	renderTheRefinementTab,
+	THURSDAY_THE_EIGHTH,
 	theButton,
 	theRowOf,
 	theStoredVoter,
@@ -740,6 +745,67 @@ describe("A voter casts a sizing vote from the list", () => {
 
 		await screen.findByRole("alert");
 		expect(reporter.current).not.toHaveBeenCalled();
+	});
+
+	// @us-11 @slice-11 @boundary @contract-shape:pure-function
+	it("still names the Work Item a condition is asked for once it has left refinement", async () => {
+		aBrowserThatVotedBefore(JONAS);
+		let answer: (row: IVotedRow) => void = () => {};
+		const sizingLogService = aSizingLogService({
+			castVote: vi.fn(
+				() =>
+					new Promise<IVotedRow>((resolve) => {
+						answer = resolve;
+					}),
+			),
+		});
+		const votesSayReady = {
+			readySource: "Votes" as const,
+			nextRefinementDate: THURSDAY_THE_EIGHTH,
+			daysUntilNextRefinement: 4,
+			need: aNeedOfFiveToEight({ verdict: "Below" }),
+		};
+		const { user, refinementService } = renderTheRefinementTab(
+			gravitysRefinement(votesSayReady),
+			sizingLogService,
+		);
+
+		await user.click(
+			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
+		);
+		await user.click(theButton(await theRowOf(ADVANCED_REPORTING), YES_IF));
+		const prompt = await screen.findByRole("dialog", { name: YES_IF });
+		expect(prompt).toHaveTextContent(
+			`${ADVANCED_REPORTING} Advanced reporting module`,
+		);
+
+		// The Yes made its Work Item ready, so the tab reads the Refinement again, and somebody has
+		// taken the other Work Item out of refinement in the meantime.
+		vi.mocked(refinementService.getRefinement).mockResolvedValue(
+			gravitysRefinement(votesSayReady, [
+				aRow(CONFIGURATION_MANAGEMENT, "Configuration management", "Backlog", {
+					voteCount: 1,
+					readiness: "Ready",
+				}),
+			]),
+		);
+		answer({
+			...theRowAfter(CONFIGURATION_MANAGEMENT, {
+				voteCount: 1,
+				readiness: "Ready",
+			}),
+			madeReady: true,
+		});
+
+		await waitFor(() =>
+			expect(refinementService.getRefinement).toHaveBeenCalledTimes(2),
+		);
+		await waitFor(() =>
+			expect(screen.queryByText(/^GR-051: /)).not.toBeInTheDocument(),
+		);
+		const stillAsking = screen.getByRole("dialog", { name: YES_IF });
+		expect(stillAsking).toHaveTextContent(ADVANCED_REPORTING);
+		expect(stillAsking).not.toHaveTextContent("Advanced reporting module");
 	});
 });
 

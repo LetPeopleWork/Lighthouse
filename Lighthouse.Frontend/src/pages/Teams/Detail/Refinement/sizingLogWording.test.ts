@@ -49,6 +49,11 @@ describe("what somebody wrote, as the votes and comments list it", () => {
 			true,
 		],
 		["a vote taken back", anEntry({ kind: "Revocation", answer: null }), false],
+		[
+			"a vote taken back that still carries the words it had",
+			anEntry({ kind: "Revocation", answer: null, comment: "only if…" }),
+			false,
+		],
 	])("counts %s as written: %s", (_what, entry, written) => {
 		expect(isWritten(entry)).toBe(written);
 	});

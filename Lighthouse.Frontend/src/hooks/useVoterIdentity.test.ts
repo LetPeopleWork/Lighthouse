@@ -74,6 +74,22 @@ describe("who a vote from this browser is cast as", () => {
 		});
 	});
 
+	it("comments as the account once the tab says it signs voters in", () => {
+		aBrowserThatKeeps(JONAS);
+		const { result, rerender } = renderHook(
+			({ identity }: { identity: VoterIdentity | undefined }) =>
+				useVoterIdentity(identity),
+			{ initialProps: { identity: undefined as VoterIdentity | undefined } },
+		);
+
+		rerender({ identity: "Account" });
+
+		expect(result.current.commentFor("Which API version?", JONAS)).toEqual({
+			comment: { comment: "Which API version?", channel: "Web" },
+			voterKey: null,
+		});
+	});
+
 	it("sends no name and no key for a vote with nobody declared", () => {
 		const { result } = renderHook(() => useVoterIdentity("SelfDeclared"));
 
