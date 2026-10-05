@@ -1267,6 +1267,11 @@ get re-applied.
 - **Root cause**: The scaffold's methods were `public async x(): Promise<T> { throw new Error(...) }`, which awaits nothing; Sonar counts the scaffold as new code even though every test using it is skipped.
 - **Fix**: each method dropped `async` and returns `Promise.reject(new Error(...))`, which keeps the rejected-promise behaviour the pending tests expect.
 - **Rule going forward**: A scaffold or stub that stands in for a promise-returning method must be a plain method returning `Promise.reject(new Error(...))` (or `Promise.resolve(...)`), never `async` with only a `throw` — that applies to DISTILL scaffolds too, since Sonar judges them as new code.
+### 2026-10-05 — typescript:S7727: a named function passed straight to `.reduce(…)`
+- **Symptom**: `sonar-gates` red on run 37301728078 (`be3f48b3f`, Story #6143), every other job green. Frontend `new_violations=1`, `new_reliability_rating=C`: `typescript:S7727` MAJOR (type BUG) "Do not pass function `withAnsweredRow` directly to `.reduce(…)`" on `src/pages/Teams/Detail/Refinement/useRefinement.ts:104`. Tests, build and Biome were clean locally.
+- **Root cause**: An array method calls its callback with extra arguments (`reduce` passes index and array too); Sonar flags handing it a named function by reference because a later optional parameter on that function would silently receive them.
+- **Fix**: `useRefinement.ts:104` → `.reduce((view, answeredRow) => withAnsweredRow(view, answeredRow), answer)`.
+- **Rule going forward**: Never pass a named function by reference to `map`/`filter`/`reduce`/`forEach`/`find`/`some`/`every`/`flatMap` — wrap it in an arrow that forwards exactly the arguments it takes. Not added to the ledger-check patterns: the reference usually sits on its own line under a multi-line call, which a per-line grep cannot see.
 
 ## EF migrations
 
