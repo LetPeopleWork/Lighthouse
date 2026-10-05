@@ -1,4 +1,5 @@
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Refinement;
@@ -29,7 +30,7 @@ namespace Lighthouse.Backend.API
         [HttpGet("work-items/{workItemReference}/log")]
         public ActionResult<SizingLogDto> GetLog(int teamId, string workItemReference, [FromHeader(Name = VoterKeyHeader)] string? voterKey)
         {
-            var log = refinementViewQuery.LogOf(teamId, workItemReference, voterKey);
+            var log = refinementViewQuery.LogOf(teamId, WorkItemRouteReference.From(workItemReference), voterKey);
             if (log is null)
             {
                 return NotFound();

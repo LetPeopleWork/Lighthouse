@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Lighthouse.Backend.Models;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Refinement
@@ -35,6 +36,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         private async Task<TeamUnderTest> GivenGravityRefinesAndNobodyHasVoted()
             => await GravityRefinesSixWorkItemsNobodyHasVotedOn();
+
+        private async Task<TeamUnderTest> GivenGravityAlsoRefinesAWorkItemReferencedAs(string reference)
+        {
+            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+            SeedWorkItem(gravity, reference, "Imported requirement", Backlog, StateCategories.ToDo, "7");
+            return gravity;
+        }
 
         private async Task<TeamUnderTest> GivenJonasVotedYesOnConfigurationManagement()
         {

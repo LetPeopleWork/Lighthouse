@@ -247,6 +247,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
         }
 
+        // @driving_port @real-io @us-12 @slice-12 @boundary @contract-shape:pure-function
+        // A reference is whatever text the tracker uses; a slash in it travels escaped, as a browser sends it.
+        [TestCase("REQ/12")]
+        [TestCase("REQ/12#3")]
+        public async Task The_log_of_a_Work_Item_whose_reference_holds_a_slash_opens(string reference)
+        {
+            var gravity = await GivenGravityAlsoRefinesAWorkItemReferencedAs(reference);
+            await HasCommented(Jonas, gravity, reference, WhichApiVersion);
+
+            var log = await WhenAnaOpensTheLogOf(gravity, reference);
+
+            ThenTheLogReads(log,
+                new LogEntryReading("Comment", null, WhichApiVersion, JonasWeber, nameof(Channel.Web), null, IsMine: false));
+        }
+
         // @driving_port @real-io @us-12 @slice-12 @boundary @contract-shape:bounded-change
         // Whatever somebody types is text: it is stored and handed back exactly, never interpreted.
         [Test]
