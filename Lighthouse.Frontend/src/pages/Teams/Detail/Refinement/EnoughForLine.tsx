@@ -99,7 +99,7 @@ const Line: React.FC<Readonly<{ sentence: string; side: LineSide }>> = ({
 );
 
 /** A grid row that knows where it is shown, with the line before or after it when that is where the line goes. */
-const EnoughForRow = forwardRef<HTMLDivElement, GridRowProps>(
+const EnoughForRow = forwardRef<HTMLDivElement, Readonly<GridRowProps>>(
 	function EnoughForRow(props, ref) {
 		const marking = useContext(EnoughForContext);
 		const theme = useTheme();

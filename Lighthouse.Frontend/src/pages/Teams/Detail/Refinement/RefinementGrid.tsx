@@ -34,7 +34,7 @@ interface RefinementGridProps {
 }
 
 /** The Work Items in refinement, one row each, with the vote every reader can cast on it. */
-const RefinementGrid: React.FC<RefinementGridProps> = ({
+const RefinementGrid: React.FC<Readonly<RefinementGridProps>> = ({
 	teamId,
 	workItems,
 	yardstick,
