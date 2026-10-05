@@ -246,6 +246,61 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 			),
 		);
 	});
+
+	// @us-05 @us-13 @slice-05 @contract-shape:bounded-change
+	// A vote can take a Work Item out of Ready as well as into it, and the ready count moves either way.
+	it("moves the message on a Team without stages when a vote takes a Work Item out of Ready", async () => {
+		aBrowserThatVotedBefore("Jonas Weber");
+		const before = gravitysRefinement(
+			{
+				stagesConfigured: false,
+				readySource: "Votes",
+				readyCount: 5,
+				readyByVotesCount: 5,
+				nextRefinementDate: THURSDAY_THE_EIGHTH,
+				daysUntilNextRefinement: 4,
+				need: aNeedOfFiveToEight({ verdict: "In" }),
+			},
+			[
+				aRow("GR-073", "Configuration management", "Backlog", {
+					voteCount: 3,
+					readiness: "Ready",
+					missingVotes: null,
+				}),
+			],
+		);
+		const after: IRefinementView = {
+			...before,
+			readyCount: 4,
+			readyByVotesCount: 4,
+			need: aNeedOfFiveToEight({ verdict: "Below" }),
+		};
+		const sizingLogService = aSizingLogService({
+			castVote: vi.fn().mockResolvedValue({
+				...aRow("GR-073", "Configuration management", "Backlog", {
+					voteCount: 4,
+					myVote: "No",
+					readiness: "NeedsDiscussion",
+					missingVotes: null,
+				}),
+				madeReady: false,
+			} satisfies IRefinementRow & { madeReady: boolean }),
+		});
+		const { user, refinementService } = renderTheRefinementTab(
+			before,
+			sizingLogService,
+		);
+		vi.mocked(refinementService.getRefinement).mockResolvedValue(after);
+
+		expect(await theVerdict()).toHaveTextContent(/^5 ready — in the range/);
+		await user.click(theButton(await theRowOf("GR-073"), "No"));
+
+		await waitFor(async () =>
+			expect(await theVerdict()).toHaveTextContent(
+				/^4 ready — below the range of 5–8/,
+			),
+		);
+	});
 });
 
 describe("A Refinement day reports which verdict the tab showed", () => {
