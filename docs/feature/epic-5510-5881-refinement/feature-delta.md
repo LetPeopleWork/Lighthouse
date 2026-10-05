@@ -2960,3 +2960,20 @@ in the log.**
   footer "Voting as … · Change your name" with Close; an empty log reads "No votes or comments yet."
 - The backend is unchanged by this: a vote may still carry a comment (the API, CLI and assistant use it), the open
   question is still "the latest entry is a comment and that voter has no current vote".
+
+## Wave: DELIVER / [REF] Maintainer decision — the band's fields and its range (2026-10-05)
+
+Sketched before slice 07 (#6145) was built and answered by the maintainer on 2026-10-05. **Supersedes AC-7.1's
+"Percentiles 1–99"**: each end of the band is a likelihood **between 50% and 95%**, both included, and the low end stays
+strictly below the high end. Below 50% is not a sensible floor to plan by, and above 95% is not realistic. Defaults stay
+50/85. The rule holds on the server and in the form alike; no band was ever stored outside the defaults (the setting is
+exposed for the first time in this slice), so there is nothing to migrate.
+
+- **Layout:** a block after the cadence in Settings → Refinement, styled like "Readiness by votes", headed
+  "{Work Items} needed before the next {Refinement}" with an ⓘ (the tab's `InfoTooltip`) that says where the range comes
+  from, in the same words as the need message's ⓘ: the Team's How Many forecast up to the next Refinement; the Team pulls
+  at least the low end with the low likelihood, and more than the high end with only (100 − high)% likelihood. No helper
+  line under the fields.
+- **Fields:** "Low end likelihood" and "High end likelihood", small number fields with a % adornment, prefilled 50 and 85.
+- **Errors, under the field, nothing saves while one shows:** inverted or equal — "The low end (90%) must be below the
+  high end (85%)."; out of range — "Between 50% and 95%."

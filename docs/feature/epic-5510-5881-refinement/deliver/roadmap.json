@@ -3865,8 +3865,8 @@
           ],
           "criteria": [
             "A Team that never chose reads band { lowPercentile: 50, highPercentile: 85 }",
-            "Saving 30/95 reads back 30/95; 1/99 is accepted",
-            "A save without the section or the member keeps 30/95",
+            "Saving 60/95 reads back 60/95; 50/95 and 94/95 are accepted (both bounds included)",
+            "A save without the section or the member keeps 60/95",
             "A band-only change leaves WorkItemRelatedSettingsChanged false and the Work Item count unchanged"
           ],
           "files_to_modify": [
@@ -3879,11 +3879,11 @@
             "06-03",
             "12-09"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: single-example acceptance over the real host. MIGRATION: none (ADR-214); RefinementSettings.Band with defaults exists since 05-01 - this step exposes it. DTO members nullable (S6964) so one end may be absent (07-03). Admin-only through the existing TeamWrite settings write. Commit: feat(refinement): a Team admin sets the band percentiles (story 6145). No code comment may cite an internal id (DSN-, DST-, DD-, AC-, ADR-, US-). Enums serialise as strings out. Pre-apply docs/ci-learnings.md."
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-example acceptance over the real host. MIGRATION: none (ADR-214); RefinementSettings.Band with defaults exists since 05-01 - this step exposes it. DTO members nullable (S6964) so one end may be absent (07-03). Admin-only through the existing TeamWrite settings write. Commit: feat(refinement): a Team admin sets the band percentiles (story 6145). No code comment may cite an internal id (DSN-, DST-, DD-, AC-, ADR-, US-). Enums serialise as strings out. Pre-apply docs/ci-learnings.md. Maintainer decision 2026-10-05: each end lies between 50% and 95%, both included (supersedes 1-99); rewrite the DISTILL scenario values accordingly (30/95 -> 60/95, 1/99 -> 50/95 and 94/95), keeping their intent."
         },
         {
           "id": "07-02",
-          "name": "A low end not below the high end, or a likelihood outside 1 to 99, is refused naming both values and nothing is saved",
+          "name": "A low end not below the high end, or a likelihood outside 50 to 95, is refused naming both values and nothing is saved",
           "description": "RefinementSettingsValidator gains the band rules: 1 <= low, high <= 99, low < high; the refusal names both values.",
           "agent": "nw-software-crafter",
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice07BandPercentilesScenarios.cs",
@@ -3897,8 +3897,8 @@
             "Slice07BandPercentilesScenarios.cs :: A_likelihood_outside_1_to_99_is_refused_and_nothing_is_saved"
           ],
           "criteria": [
-            "90/85 and 85/85 -> 400 whose message names both values; band still 30/95",
-            "0/85, -5/85, 50/100 -> 400 naming both values; band still 30/95",
+            "90/85 and 85/85 -> 400 whose message names both values; band still 60/95",
+            "49/85, 0/85, 50/96 and 50/100 -> 400 naming both values; band still 60/95",
             "RefinementSettingsValidator stays static and pure"
           ],
           "files_to_modify": [
@@ -3909,7 +3909,7 @@
           "dependencies": [
             "07-01"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: single-example acceptance over the real host. Compensate with parametrised RefinementSettingsValidatorTest boundaries (0/1, 99/100, low = high, low = high - 1). The server message is not user copy (the frontend words its own), but it must contain both numbers - the scenario reads them. Commit: feat(refinement): the band stays within 1 to 99 with the low end below the high (story 6145). No code comment may cite an internal id. Enums as strings out. Pre-apply docs/ci-learnings.md (CA1861)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-example acceptance over the real host. Compensate with parametrised RefinementSettingsValidatorTest boundaries (49/50, 95/96, low = high, low = high - 1). Maintainer decision 2026-10-05: each end between 50% and 95%, both included (supersedes 1-99) - rewrite the DISTILL scenario values to the criteria here, keeping their intent. The server message is not user copy (the frontend words its own), but it must contain both numbers - the scenario reads them. Commit: feat(refinement): the band stays within 50 to 95 with the low end below the high (story 6145). No code comment may cite an internal id. Enums as strings out. Pre-apply docs/ci-learnings.md (CA1861)."
         },
         {
           "id": "07-03",
@@ -3929,9 +3929,9 @@
             "Slice07BandPercentilesScenarios.cs :: The_band_decides_where_the_range_is_read"
           ],
           "criteria": [
-            "Stored 30/95, a save of high 20 alone -> 400 naming 30 and 20; still 30/95",
-            "Stored 30/95, a save of low 60 alone -> 200; 60/95",
-            "Band 50/95 -> need low 5, high 10, percentiles 50/95; 30/85 -> 3/8; 70/95 -> 6/10; verdict 'Below', horizon 6",
+            "Stored 60/95, a save of high 55 alone -> 400 naming 60 and 55; still 60/95",
+            "Stored 60/95, a save of low 70 alone -> 200; 70/95",
+            "Band 50/95 -> need low 5, high 10, percentiles 50/95; 50/85 -> 5/8; 70/95 -> 6/10; verdict 'Below', horizon 6",
             "dotnet build zero warnings; connector-excluded backend suite green"
           ],
           "files_to_modify": [
@@ -3944,7 +3944,7 @@
           "dependencies": [
             "07-02"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: single-example acceptance over the real host. Merge then validate: the validator judges the completed band (stored end + saved end), so it needs the stored band as an input - pass it in, keeping the validator pure (the slice-13 readiness rule already checks a partial save against stored values; follow that precedent). The_band_decides_where_the_range_is_read may pass at once (05-01 already reads Band) - record. Commit: feat(refinement): one end of the band is judged against the other as stored (story 6145). No code comment may cite an internal id. Enums as strings out. Pre-apply docs/ci-learnings.md."
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-example acceptance over the real host. Merge then validate: the validator judges the completed band (stored end + saved end), so it needs the stored band as an input - pass it in, keeping the validator pure (the slice-13 readiness rule already checks a partial save against stored values; follow that precedent). The_band_decides_where_the_range_is_read may pass at once (05-01 already reads Band) - record. Commit: feat(refinement): one end of the band is judged against the other as stored (story 6145). No code comment may cite an internal id. Enums as strings out. Pre-apply docs/ci-learnings.md. Maintainer decision 2026-10-05: each end between 50% and 95% - rewrite the DISTILL scenario values to the criteria here (30/95 -> 60/95, 30/85 -> 50/85), keeping their intent."
         },
         {
           "id": "07-04",
@@ -3962,8 +3962,9 @@
             "ModifyTeamSettings.refinementNeed.test.tsx :: saves a changed high end with the low end as it was"
           ],
           "criteria": [
-            "Spinbuttons whose names start 'Low end likelihood' and 'High end likelihood' read 50 and 85; nothing saved past the autosave delay",
-            "High end 95 saves band { lowPercentile: 50, highPercentile: 95 }"
+            "Under the heading '{Work Items} needed before the next {Refinement}' with an info icon, spinbuttons whose names start 'Low end likelihood' and 'High end likelihood' read 50 and 85; nothing saved past the autosave delay",
+            "High end 95 saves band { lowPercentile: 50, highPercentile: 95 }",
+            "The info tooltip says the range comes from the Team's How Many forecast up to the next Refinement: the Team pulls at least the low end with the low likelihood, and more than the high end with only (100 - high)% likelihood"
           ],
           "files_to_modify": [
             "Lighthouse.Frontend/src/components/Common/Team/RefinementSettingsSection.tsx",
@@ -3972,11 +3973,11 @@
           "dependencies": [
             "07-02"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: React/RTL example-based form assertions. PROVISIONAL COPY (DST-48): the band's field labels ('Low end likelihood…', 'High end likelihood…') and its refusal wording are not approved. SKETCH FIRST: before building, show the maintainer an ASCII sketch of the two fields with proposed labels and both error texts; the tests pin only the label starts and that an error names both values. Absent band in the settings payload shows 50/85 (the defaults) and saves nothing until changed. No code comment may cite an internal id. Wire enums are string unions; renameable words through getTerm. Pre-apply docs/ci-learnings.md; prebuild runs biome check --write - review its rewrites. Commit: feat(refinement): set the band in Team settings (story 6145)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/RTL example-based form assertions. UI SKETCH: approved by the maintainer 2026-10-05 (feature-delta 'Maintainer decision — the band's fields and its range'): a block after the cadence styled like 'Readiness by votes' (ReadinessSettings), heading '{Work Items} needed before the next {Refinement}' with the tab's InfoTooltip, two small number fields with a % adornment labelled 'Low end likelihood' and 'High end likelihood', no helper line; reuse the need message's info wording (needWording.ts describeNeedOrigin) rather than writing a second copy if it fits. Absent band in the settings payload shows 50/85 (the defaults) and saves nothing until changed. No code comment may cite an internal id. Wire enums are string unions; renameable words through getTerm. Pre-apply docs/ci-learnings.md; prebuild runs biome check --write - review its rewrites. Commit: feat(refinement): set the band in Team settings (story 6145)."
         },
         {
           "id": "07-05",
-          "name": "The band fields refuse a low end not below the high end, naming both, and a likelihood outside 1 to 99, and save nothing",
+          "name": "The band fields refuse a low end not below the high end, naming both, and a likelihood outside 50 to 95, and save nothing",
           "description": "Low 90 or 85 against high 85 shows an error naming both values and saves nothing; low 0 or high 100 marks the field aria-invalid and saves nothing.",
           "agent": "nw-software-crafter",
           "test_file": "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx",
@@ -3992,8 +3993,8 @@
             "ModifyTeamSettings.refinementNeed.test.tsx :: refuses High end likelihood at 100, outside 1 to 99, and saves nothing"
           ],
           "criteria": [
-            "Low 90 / high 85 and 85 / 85: visible text matching /90.*85/ and /85.*85/; nothing saved",
-            "Low 0 or high 100: that spinbutton has aria-invalid 'true'; nothing saved",
+            "Low 90 / high 85 and 85 / 85: 'The low end (90%) must be below the high end (85%).' (resp. 85/85) under the low field; nothing saved",
+            "Low 49 or high 96: that spinbutton has aria-invalid 'true' and reads 'Between 50% and 95%.'; nothing saved",
             "pnpm test green; pnpm build clean (tsc -b and vite build, zero errors and warnings; Biome clean on ./src)"
           ],
           "files_to_modify": [
@@ -4003,7 +4004,7 @@
           "dependencies": [
             "07-04"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: React/RTL example-based form assertions. Compensate with a pure band-validation helper mirroring the server rule (low, high -> error or none). The autosave validity gate treats a band error as invalid so nothing is sent. Use the wording the maintainer approved in 07-04's sketch, keeping both numbers in the text. Last frontend step of the phase: run pnpm test, pnpm build (tsc -b + vite build) and pnpm biome check ./src. No code comment may cite an internal id. Pre-apply docs/ci-learnings.md; prebuild runs biome check --write - review its rewrites. Commit: feat(refinement): the band refuses an inverted or out-of-range likelihood (story 6145)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/RTL example-based form assertions. Compensate with a pure band-validation helper mirroring the server rule (each end 50..95 inclusive, low < high). The autosave validity gate treats a band error as invalid so nothing is sent. Approved wording (2026-10-05): inverted or equal 'The low end (90%) must be below the high end (85%).'; out of range 'Between 50% and 95%.' Rewrite the DISTILL frontend scenarios' values (0/100 -> 49/96) keeping their intent. Last frontend step of the phase: run pnpm test, pnpm build (tsc -b + vite build) and pnpm biome check ./src. No code comment may cite an internal id. Pre-apply docs/ci-learnings.md; prebuild runs biome check --write - review its rewrites. Commit: feat(refinement): the band refuses an inverted or out-of-range likelihood (story 6145)."
         }
       ]
     },
