@@ -105,6 +105,12 @@ const expectTheVerdictToRead = async (sentence: RegExp) => {
 	return message;
 };
 
+/** No message under the heading, so the heading's row names the next Refinement itself. */
+const expectNoMessageAndTheNextRefinementOnTheHeadingsRow = async () => {
+	expect(await screen.findByText(NEXT_REFINEMENT_TITLE)).toBeVisible();
+	expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+};
+
 const CONFIGURATION_MANAGEMENT = "GR-073";
 const LOAD_TESTING = "GR-074";
 
@@ -560,6 +566,194 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 			/^6 ready — in the range/,
 		);
 	});
+
+	// @us-05 @slice-05 @boundary @contract-shape:pure-function
+	// A verdict rests on every number the server sends with it; one missing and there is no verdict to say.
+	it.each([
+		"verdict",
+		"low",
+		"high",
+		"lowPercentile",
+		"highPercentile",
+		"horizonWorkingDays",
+	] as const)(
+		"says no verdict and names the next Refinement on the heading's row when the need comes without its %s",
+		async (missing) => {
+			renderTheRefinementTab(
+				gravityWithReady(3, "Below", {
+					need: aNeedOfFiveToEight({ [missing]: null }),
+				}),
+			);
+
+			await expectNoMessageAndTheNextRefinementOnTheHeadingsRow();
+		},
+	);
+
+	// @us-05 @slice-05 @boundary @contract-shape:pure-function
+	it("says no verdict and names the next Refinement on the heading's row when the server sent no ready count", async () => {
+		renderTheRefinementTab(
+			gravityWithReady(3, "Below", { readyCount: undefined }),
+		);
+
+		await expectNoMessageAndTheNextRefinementOnTheHeadingsRow();
+	});
+
+	// @us-05 @slice-05 @boundary @contract-shape:pure-function
+	it("says no verdict and names the next Refinement on the heading's row when the server said nothing about the need", async () => {
+		renderTheRefinementTab(gravityWithReady(3, "Below", { need: undefined }));
+
+		await expectNoMessageAndTheNextRefinementOnTheHeadingsRow();
+	});
+
+	// @us-05 @slice-05 @boundary @contract-shape:pure-function
+	// "By then" needs a then: without a next Refinement the verdict has nothing to be judged by.
+	it("says no verdict when the server judged the need but named no next Refinement", async () => {
+		renderTheRefinementTab(
+			gravityWithReady(3, "Below", {
+				nextRefinementDate: null,
+				daysUntilNextRefinement: null,
+			}),
+		);
+
+		expect(await screen.findByText(/^No Refinement cadence$/)).toBeVisible();
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+	});
+
+	// @us-05 @slice-05 @error @contract-shape:pure-function
+	it("names the next Refinement only once, as the title of the too-little-history message", async () => {
+		renderTheRefinementTab(
+			gravityWithReady(2, "Below", { need: noNeedBecause("InsufficientData") }),
+		);
+
+		const message = await theVerdict();
+		expect(within(message).getByText(NEXT_REFINEMENT_TITLE)).toBeVisible();
+		expect(screen.getAllByText(/^Next Refinement: /)).toHaveLength(1);
+	});
+
+	// @us-05 @us-13 @slice-05 @contract-shape:unbounded-preservation
+	// Somebody can take a Work Item out of Refinement while this browser's vote on it is on its way. The
+	// Refinement read since no longer lists it, so the late answer has nothing left to change.
+	it("keeps the Refinement as read when a vote is answered for a Work Item it no longer lists", async () => {
+		aBrowserThatVotedBefore("Jonas Weber");
+		const madeReady = {
+			voteCount: 3,
+			readiness: "Ready",
+			missingVotes: null,
+		} as const;
+		let answerTheLoadTestingVote: (row: IVotedRow) => void = () => {};
+		const sizingLogService = aSizingLogService({
+			castVote: vi.fn((_teamId: number, referenceId: string) =>
+				referenceId === LOAD_TESTING
+					? new Promise<IVotedRow>((resolve) => {
+							answerTheLoadTestingVote = resolve;
+						})
+					: Promise.resolve(
+							aVotedRow(CONFIGURATION_MANAGEMENT, "Configuration management", {
+								...madeReady,
+								madeReady: true,
+							}),
+						),
+			),
+		});
+		const { user, refinementService } = renderTheRefinementTab(
+			aVotesTeamShowing(4, "Below", [
+				aRow(CONFIGURATION_MANAGEMENT, "Configuration management", "Backlog", {
+					voteCount: 2,
+					missingVotes: 1,
+				}),
+				aRow(LOAD_TESTING, "Load testing framework", "Backlog"),
+			]),
+			sizingLogService,
+		);
+		vi.mocked(refinementService.getRefinement).mockResolvedValue(
+			aVotesTeamShowing(5, "In", [
+				aRow(
+					CONFIGURATION_MANAGEMENT,
+					"Configuration management",
+					"Backlog",
+					madeReady,
+				),
+			]),
+		);
+
+		expect(await theVerdictSentence()).toHaveTextContent(/^4 ready — below/);
+		await user.click(theButton(await theRowOf(LOAD_TESTING), "Yes"));
+		await user.click(
+			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
+		);
+		await waitFor(async () =>
+			expect(await theVerdictSentence()).toHaveTextContent(
+				/^5 ready — in the range/,
+			),
+		);
+		await act(async () => {
+			answerTheLoadTestingVote(
+				aVotedRow(LOAD_TESTING, "Load testing framework", {
+					voteCount: 1,
+					missingVotes: 2,
+				}),
+			);
+		});
+
+		expect(await theVerdictSentence()).toHaveTextContent(
+			/^5 ready — in the range/,
+		);
+		expect(screen.getAllByRole("alert")).toHaveLength(1);
+		expect(screen.queryByText(/^GR-074: /)).not.toBeInTheDocument();
+		expect(refinementService.getRefinement).toHaveBeenCalledTimes(2);
+	});
+
+	// @us-05 @us-13 @slice-05 @contract-shape:bounded-change
+	// The Team page keeps the tab mounted when the address moves to another Team, so a vote cast before the
+	// move can be answered after it. Even one that moved the last Team's message must not hold the next
+	// Team's Refinement back.
+	it("shows the next Team's Refinement when a vote that moved the last Team's message is answered after the move", async () => {
+		aBrowserThatVotedBefore("Jonas Weber");
+		let answerTheVote: (row: IVotedRow) => void = () => {};
+		const sizingLogService = aSizingLogService({
+			castVote: vi.fn(
+				() =>
+					new Promise<IVotedRow>((resolve) => {
+						answerTheVote = resolve;
+					}),
+			),
+		});
+		const { user, refinementService, moveToTeam } = renderTheRefinementTab(
+			aVotesTeamShowing(4, "Below", [
+				aRow(CONFIGURATION_MANAGEMENT, "Configuration management", "Backlog", {
+					voteCount: 2,
+					missingVotes: 1,
+				}),
+			]),
+			sizingLogService,
+		);
+		const nebulasRead = aReadStillOnItsWay(refinementService);
+
+		await theVerdict();
+		await user.click(
+			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
+		);
+		moveToTeam(teamNebula());
+		await act(async () => {
+			answerTheVote(
+				aVotedRow(CONFIGURATION_MANAGEMENT, "Configuration management", {
+					voteCount: 3,
+					readiness: "Ready",
+					missingVotes: null,
+					madeReady: true,
+				}),
+			);
+		});
+		await nebulasRead.answer(
+			aVotesTeamShowing(6, "In", [
+				aRow("NB-012", "Telemetry export", "Backlog"),
+			]),
+		);
+
+		expect(await theRowOf("NB-012")).toBeVisible();
+		expect(screen.queryByText(/^GR-073: /)).not.toBeInTheDocument();
+		expect(refinementService.getRefinement).toHaveBeenCalledTimes(2);
+	});
 });
 
 describe("A Refinement day reports which verdict the tab showed", () => {
@@ -721,6 +915,51 @@ describe("A Refinement day reports which verdict the tab showed", () => {
 					missingVotes: 2,
 				}),
 			);
+		});
+		await nebulasRead.answer({
+			...aVotesTeamShowing(6, "In", [
+				aRow("NB-012", "Telemetry export", "Backlog"),
+			]),
+			isRefinementDay: true,
+		});
+
+		await waitFor(() => expect(verdictsReported()).toEqual(["Below", "In"]));
+	});
+
+	// @us-05 @slice-05 @boundary @contract-shape:bounded-change
+	// Until the next Team's Refinement arrives the last Team's Work Items stay on screen and can still be
+	// voted on. That answer belongs to them, and must not pass for the next Team's opening.
+	it("reports the next Team's verdict when a Work Item still on screen from the last Team is voted on during the move", async () => {
+		aBrowserThatVotedBefore("Jonas Weber");
+		const sizingLogService = aSizingLogService({
+			castVote: vi.fn().mockResolvedValue(
+				aVotedRow(CONFIGURATION_MANAGEMENT, "Configuration management", {
+					voteCount: 1,
+					missingVotes: 2,
+				}),
+			),
+		});
+		const { user, refinementService, moveToTeam } = renderTheRefinementTab(
+			{
+				...aVotesTeamShowing(4, "Below", [
+					aRow(CONFIGURATION_MANAGEMENT, "Configuration management", "Backlog"),
+				]),
+				isRefinementDay: true,
+			},
+			sizingLogService,
+		);
+		const nebulasRead = aReadStillOnItsWay(refinementService);
+
+		await theVerdict();
+		moveToTeam(teamNebula());
+		await user.click(
+			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
+		);
+		await waitFor(() =>
+			expect(sizingLogService.castVote).toHaveBeenCalledTimes(1),
+		);
+		await act(async () => {
+			await Promise.resolve();
 		});
 		await nebulasRead.answer({
 			...aVotesTeamShowing(6, "In", [

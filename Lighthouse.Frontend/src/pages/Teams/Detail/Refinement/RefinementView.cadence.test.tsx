@@ -229,6 +229,20 @@ describe("The Refinement tab names the next Refinement", () => {
 	});
 
 	// @us-04 @slice-04 @boundary @contract-shape:pure-function
+	it("names the next Refinement on the heading's row, beside the count", async () => {
+		renderTheRefinementTab(refiningOnThursdayTheEighth());
+
+		const heading = await screen.findByRole("heading", {
+			name: /^3 Work Items in Refinement/,
+		});
+		const placedBesideTheHeading = screen
+			.getByText(/^Next Refinement: Thu 8 Oct · in 4 days$/)
+			.closest(`[${NEXT_REFINEMENT_SLOT}]`);
+		expect(placedBesideTheHeading).not.toBeNull();
+		expect(heading.nextElementSibling).toBe(placedBesideTheHeading);
+	});
+
+	// @us-04 @slice-04 @boundary @contract-shape:pure-function
 	it("reads the heading first and the next Refinement after it", async () => {
 		renderTheRefinementTab(refiningOnThursdayTheEighth());
 

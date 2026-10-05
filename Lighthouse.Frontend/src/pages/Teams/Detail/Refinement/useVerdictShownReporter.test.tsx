@@ -2,7 +2,10 @@ import { act, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { UsageDataConsentProvider } from "../../../../hooks/useUsageDataConsent";
-import type { IRefinementView } from "../../../../models/Refinement/Refinement";
+import type {
+	IRefinementView,
+	RefinementVerdict,
+} from "../../../../models/Refinement/Refinement";
 import type { IUsageDataState } from "../../../../models/UsageData/UsageData";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import {
@@ -20,6 +23,7 @@ import {
 	gravitysRefinement,
 	THURSDAY_THE_EIGHTH,
 } from "../../../../tests/RefinementTabTestKit";
+import type { ShownRefinement } from "./useRefinement";
 import { useVerdictShownReporter } from "./useVerdictShownReporter";
 
 /**
@@ -27,14 +31,23 @@ import { useVerdictShownReporter } from "./useVerdictShownReporter";
  * already shown its verdict. The opening still counts once the answer says yes.
  */
 
-const aRefinementDayShowing = (readyCount: number): IRefinementView =>
-	gravitysRefinement({
-		readyCount,
-		nextRefinementDate: THURSDAY_THE_EIGHTH,
-		daysUntilNextRefinement: 0,
-		isRefinementDay: true,
-		need: aNeedOfFiveToEight({ verdict: "Below" }),
-	});
+const NEBULA_TEAM_ID = 8;
+
+const aRefinementDayShowing = (
+	readyCount: number,
+	verdict: RefinementVerdict = "Below",
+	rows?: IRefinementView["workItems"],
+): IRefinementView =>
+	gravitysRefinement(
+		{
+			readyCount,
+			nextRefinementDate: THURSDAY_THE_EIGHTH,
+			daysUntilNextRefinement: 0,
+			isRefinementDay: true,
+			need: aNeedOfFiveToEight({ verdict }),
+		},
+		rows,
+	);
 
 const aBrowserThatAgreed: IUsageDataState = {
 	sending: true,
@@ -44,26 +57,36 @@ const aBrowserThatAgreed: IUsageDataState = {
 	administratorDisabled: false,
 };
 
-const renderWithConsentStillOnItsWay = (refinement: IRefinementView) => {
-	let answerConsent: (state: IUsageDataState) => void = () => {};
-	const usageDataService: IUsageDataService = {
-		getState: vi.fn(
-			() =>
-				new Promise<IUsageDataState>((resolve) => {
-					answerConsent = resolve;
-				}),
-		),
-		recordDecision: vi.fn(),
-		revoke: vi.fn(),
-		acknowledgeAsked: vi.fn(),
-		postEvents: vi.fn(),
-	};
-	const wrapper = ({ children }: { children: ReactNode }) => (
-		<ApiServiceContext.Provider
-			value={createMockApiServiceContext({ usageDataService })}
-		>
+const aUsageDataService = (
+	getState: IUsageDataService["getState"],
+): IUsageDataService => ({
+	getState,
+	recordDecision: vi.fn(),
+	revoke: vi.fn(),
+	acknowledgeAsked: vi.fn(),
+	postEvents: vi.fn(),
+});
+
+const consentFrom = (usageDataService: IUsageDataService) => {
+	const services = createMockApiServiceContext({ usageDataService });
+	return ({ children }: { children: ReactNode }) => (
+		<ApiServiceContext.Provider value={services}>
 			<UsageDataConsentProvider>{children}</UsageDataConsentProvider>
 		</ApiServiceContext.Provider>
+	);
+};
+
+const renderWithConsentStillOnItsWay = (refinement: IRefinementView) => {
+	let answerConsent: (state: IUsageDataState) => void = () => {};
+	const wrapper = consentFrom(
+		aUsageDataService(
+			vi.fn(
+				() =>
+					new Promise<IUsageDataState>((resolve) => {
+						answerConsent = resolve;
+					}),
+			),
+		),
 	);
 
 	const rendered = renderHook(
@@ -82,6 +105,28 @@ const renderWithConsentStillOnItsWay = (refinement: IRefinementView) => {
 				answerConsent(state);
 			}),
 	};
+};
+
+/** The tab as a browser that already agreed sees it, with nothing read yet. */
+const renderOnABrowserThatAgreed = async () => {
+	const wrapper = consentFrom(
+		aUsageDataService(vi.fn().mockResolvedValue(aBrowserThatAgreed)),
+	);
+	const rendered = renderHook(
+		({ teamId, shown }: { teamId: number; shown: ShownRefinement | null }) =>
+			useVerdictShownReporter(teamId, shown),
+		{
+			wrapper,
+			initialProps: {
+				teamId: GRAVITY_TEAM_ID,
+				shown: null as ShownRefinement | null,
+			},
+		},
+	);
+	await act(async () => {
+		await Promise.resolve();
+	});
+	return rendered;
 };
 
 const verdictsReported = () =>
@@ -109,5 +154,47 @@ describe("useVerdictShownReporter", () => {
 		expect(verdictsReported()).toEqual([
 			expect.objectContaining({ refinementVerdict: "Below" }),
 		]);
+	});
+
+	it("reports once per Team the tab is opened on, however often that Team's Refinement is read again", async () => {
+		const { rerender } = await renderOnABrowserThatAgreed();
+		const gravitys = aRefinementDayShowing(3, "Below");
+
+		rerender({
+			teamId: GRAVITY_TEAM_ID,
+			shown: { teamId: GRAVITY_TEAM_ID, view: gravitys },
+		});
+		rerender({
+			teamId: NEBULA_TEAM_ID,
+			shown: { teamId: GRAVITY_TEAM_ID, view: gravitys },
+		});
+		rerender({
+			teamId: NEBULA_TEAM_ID,
+			shown: { teamId: NEBULA_TEAM_ID, view: aRefinementDayShowing(6, "In") },
+		});
+		rerender({
+			teamId: NEBULA_TEAM_ID,
+			shown: { teamId: NEBULA_TEAM_ID, view: aRefinementDayShowing(7, "In") },
+		});
+
+		expect(verdictsReported()).toEqual([
+			expect.objectContaining({ refinementVerdict: "Below" }),
+			expect.objectContaining({ refinementVerdict: "In" }),
+		]);
+	});
+
+	// With no Work Items in Refinement the tab says so instead of showing a verdict, so there is none to count.
+	it("reports nothing on a Refinement day with no Work Items in Refinement", async () => {
+		const { rerender } = await renderOnABrowserThatAgreed();
+
+		rerender({
+			teamId: GRAVITY_TEAM_ID,
+			shown: {
+				teamId: GRAVITY_TEAM_ID,
+				view: aRefinementDayShowing(0, "Below", []),
+			},
+		});
+
+		expect(verdictsReported()).toEqual([]);
 	});
 });
