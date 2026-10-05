@@ -18,11 +18,7 @@ import type {
 	IRefinementRow,
 	ISizingLogEntry,
 } from "../../../../models/Refinement/Refinement";
-import {
-	describeLogDay,
-	describeLogEntry,
-	findOpenQuestions,
-} from "./sizingLogWording";
+import { describeLogDay, describeLogEntry } from "./sizingLogWording";
 import type { SizingLogState } from "./useSizingLog";
 import { describeSplit } from "./voteWording";
 
@@ -90,15 +86,15 @@ const OpenQuestionMarker: React.FC = () => (
 	</Stack>
 );
 
-const LogEntry: React.FC<
-	Readonly<{ entry: ISizingLogEntry; isOpenQuestion: boolean }>
-> = ({ entry, isOpenQuestion }) => (
+const LogEntry: React.FC<Readonly<{ entry: ISizingLogEntry }>> = ({
+	entry,
+}) => (
 	<ListItem disableGutters sx={{ display: "block" }}>
 		<Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
 			<Typography sx={{ fontWeight: 500 }}>
 				{describeLogEntry(entry)}
 			</Typography>
-			{isOpenQuestion && <OpenQuestionMarker />}
+			{entry.isOpenQuestion && <OpenQuestionMarker />}
 			<Typography
 				variant="body2"
 				color="text.secondary"
@@ -135,15 +131,13 @@ const SizingLog: React.FC<Readonly<{ log: SizingLogState }>> = ({ log }) => {
 		);
 	}
 
-	const openQuestions = findOpenQuestions(log.entries);
+	// The log only ever grows at its end, so an entry's place in it never changes. Nothing else tells
+	// two entries apart: one person can say the same thing twice within a second.
+	const placed = log.entries.map((entry, place) => ({ entry, place }));
 	return (
 		<List dense disablePadding sx={{ width: "100%" }}>
-			{log.entries.map((entry, index) => (
-				<LogEntry
-					key={`${entry.kind}-${entry.voterName}-${entry.recordedAt}`}
-					entry={entry}
-					isOpenQuestion={openQuestions.has(index)}
-				/>
+			{placed.map(({ entry, place }) => (
+				<LogEntry key={place} entry={entry} />
 			))}
 		</List>
 	);

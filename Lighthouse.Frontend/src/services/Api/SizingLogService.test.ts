@@ -148,6 +148,7 @@ describe("SizingLogService", () => {
 					channel: "Web",
 					recordedAt: "2026-10-07T09:00:00Z",
 					isMine: false,
+					isOpenQuestion: false,
 				},
 			],
 		};

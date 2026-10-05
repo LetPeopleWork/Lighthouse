@@ -66,6 +66,7 @@ const anEntry = (entry: Partial<ISizingLogEntry>): ISizingLogEntry => ({
 	channel: "Web",
 	recordedAt: RECORDED,
 	isMine: false,
+	isOpenQuestion: false,
 	...entry,
 });
 
@@ -253,6 +254,7 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 					kind: "Comment",
 					answer: null,
 					comment: QUESTION,
+					isOpenQuestion: true,
 				}),
 			],
 		};
@@ -282,6 +284,45 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		expect(entries[2]).toHaveTextContent("Mo Okafor");
 		expect(entries[2]).toHaveTextContent(QUESTION);
 		expect(entries[2]).toHaveTextContent(/open question/i);
+	});
+
+	// @us-12 @slice-12 @contract-shape:pure-function
+	it("marks as open questions the entries the server calls open, even between two people sharing a name", async () => {
+		aBrowserThatVotedBefore(ANA);
+		const sizingLogService = aSizingLogService({
+			getLog: vi.fn().mockResolvedValue({
+				entries: [
+					anEntry({ voterName: JONAS, answer: "Yes" }),
+					anEntry({
+						voterName: JONAS,
+						kind: "Comment",
+						answer: null,
+						comment: QUESTION,
+						isOpenQuestion: true,
+					}),
+					anEntry({
+						voterName: "Mo Okafor",
+						kind: "Comment",
+						answer: null,
+						comment: CONDITION,
+						isOpenQuestion: false,
+					}),
+				],
+			} satisfies ISizingLog),
+		});
+		const { user } = renderTheRefinementTab(
+			advancedReportingWithComments(),
+			sizingLogService,
+		);
+
+		const entries = await within(
+			await openTheLogOf(user, ADVANCED_REPORTING),
+		).findAllByRole("listitem");
+
+		expect(entries).toHaveLength(3);
+		expect(entries[0]).not.toHaveTextContent(/open question/i);
+		expect(entries[1]).toHaveTextContent(/open question/i);
+		expect(entries[2]).not.toHaveTextContent(/open question/i);
 	});
 
 	// @us-12 @slice-12 @error @contract-shape:pure-function

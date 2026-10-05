@@ -170,6 +170,8 @@ export interface ISizingLogEntry {
 	channel: SizingChannel;
 	recordedAt: string;
 	isMine: boolean;
+	/** The server's call: whether this comment still waits for its author to vote. */
+	isOpenQuestion: boolean;
 }
 
 /** One Work Item's log, oldest first, open to every reader whether they voted or not. */

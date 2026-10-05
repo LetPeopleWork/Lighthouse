@@ -31,28 +31,3 @@ export const describeLogEntry = (entry: ISizingLogEntry): string =>
 /** The day an entry was recorded, as "Wed 7 Oct". */
 export const describeLogDay = ({ recordedAt }: ISizingLogEntry): string =>
 	formatDayAndDate(new Date(recordedAt));
-
-/**
- * Which entries are open questions: each commenter without a current vote has their latest comment
- * marked. A later vote answers the question; taking that vote back opens it again.
- */
-export const findOpenQuestions = (
-	entries: readonly ISizingLogEntry[],
-): ReadonlySet<number> => {
-	const holdsAVote = new Map<string, boolean>();
-	const latestComment = new Map<string, number>();
-
-	entries.forEach(({ kind, voterName }, index) => {
-		if (kind === "Comment") {
-			latestComment.set(voterName, index);
-			return;
-		}
-		holdsAVote.set(voterName, kind === "Vote");
-	});
-
-	return new Set(
-		[...latestComment]
-			.filter(([voterName]) => holdsAVote.get(voterName) !== true)
-			.map(([, index]) => index),
-	);
-};
