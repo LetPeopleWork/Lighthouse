@@ -28,7 +28,7 @@ import {
 
 /**
  * Comments, conditions and questions on the Refinement tab, and the log each Work Item keeps. "Yes, if…"
- * records in one click like Yes and No; its condition is a comment like any other. Anybody adds a comment
+ * asks for its condition and sends it with the vote; Yes and No stay one click. Anybody adds a comment
  * from a Work Item's votes and comments, without voting; from somebody without a vote it is an open
  * question, which the Work Item's Warnings cell names until they vote. A Work Item's votes and comments name who
  * holds each answer, and list what people wrote, oldest first: who, on which day, never where it came from; a vote
@@ -111,6 +111,8 @@ const startACommentOn = async (
 	return await screen.findByRole("textbox", { name: "Comment" });
 };
 
+const theConditionPrompt = () => screen.findByRole("dialog", { name: YES_IF });
+
 const theOpenDialog = () =>
 	screen.getByRole("dialog", { name: VOTES_AND_COMMENTS });
 
@@ -149,7 +151,7 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 	});
 
 	// @us-12 @slice-12 @driving_port @contract-shape:bounded-change
-	it("records Yes, if… in one click, like Yes and No, with no condition asked", async () => {
+	it("asks for the condition of a Yes, if… and sends it, trimmed, with the vote in one request", async () => {
 		const key = aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService({
 			castVote: vi.fn().mockResolvedValue(
@@ -165,25 +167,135 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		);
 
 		await user.click(theButton(await theRowOf(ADVANCED_REPORTING), YES_IF));
+		const prompt = await theConditionPrompt();
+		const condition = within(prompt).getByRole("textbox", {
+			name: "Condition",
+		});
+
+		expect(prompt).toHaveTextContent(
+			`${ADVANCED_REPORTING} Advanced reporting module`,
+		);
+		expect(condition).toHaveAttribute(
+			"placeholder",
+			"What has to be true for a Yes?",
+		);
+		expect(condition).toHaveAttribute("maxlength", "2000");
+		expect(sizingLogService.castVote).not.toHaveBeenCalled();
+
+		await user.click(condition);
+		await user.paste(`  ${CONDITION}  `);
+		await user.click(within(prompt).getByRole("button", { name: "Vote" }));
 
 		await waitFor(() =>
 			expect(sizingLogService.castVote).toHaveBeenCalledTimes(1),
 		);
-		const [teamId, referenceId, vote, voterKey] = vi.mocked(
-			sizingLogService.castVote,
-		).mock.calls[0];
-		expect([teamId, referenceId, voterKey]).toEqual([
+		expect(sizingLogService.castVote).toHaveBeenCalledWith(
 			GRAVITY_TEAM_ID,
 			ADVANCED_REPORTING,
+			{
+				answer: "YesBut",
+				channel: "Web",
+				voterName: ANA,
+				comment: CONDITION,
+			},
 			key,
-		]);
-		expect(vote).toStrictEqual({
-			answer: "YesBut",
-			channel: "Web",
-			voterName: ANA,
+		);
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+	});
+
+	// @us-12 @slice-12 @error @contract-shape:unbounded-preservation
+	it("will not cast a Yes, if… whose condition is blank", async () => {
+		aBrowserThatVotedBefore(ANA);
+		const sizingLogService = aSizingLogService();
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement(),
+			sizingLogService,
+		);
+
+		await user.click(theButton(await theRowOf(ADVANCED_REPORTING), YES_IF));
+		const prompt = await theConditionPrompt();
+		const vote = within(prompt).getByRole("button", { name: "Vote" });
+
+		expect(vote).toBeDisabled();
+		await user.type(
+			within(prompt).getByRole("textbox", { name: "Condition" }),
+			"   ",
+		);
+		expect(vote).toBeDisabled();
+		expect(sizingLogService.castVote).not.toHaveBeenCalled();
+	});
+
+	// @us-12 @slice-12 @error @contract-shape:unbounded-preservation
+	it("casts nothing when the condition of a Yes, if… is cancelled", async () => {
+		aBrowserThatVotedBefore(ANA);
+		const sizingLogService = aSizingLogService();
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement(),
+			sizingLogService,
+		);
+
+		await user.click(theButton(await theRowOf(ADVANCED_REPORTING), YES_IF));
+		const prompt = await theConditionPrompt();
+		await user.type(
+			within(prompt).getByRole("textbox", { name: "Condition" }),
+			CONDITION,
+		);
+		await user.click(within(prompt).getByRole("button", { name: "Cancel" }));
+
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		await settle();
+		expect(sizingLogService.castVote).not.toHaveBeenCalled();
+	});
+
+	// @us-12 @slice-12 @boundary @contract-shape:bounded-change
+	it("asks a browser without a name who is voting first, then the condition of its Yes, if…", async () => {
+		const sizingLogService = aSizingLogService({
+			castVote: vi.fn().mockResolvedValue(
+				aRow(ADVANCED_REPORTING, "Advanced reporting module", "Analysing", {
+					voteCount: 1,
+					myVote: "YesBut",
+				}),
+			),
 		});
-		expect(vote).not.toHaveProperty("comment");
-		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement(),
+			sizingLogService,
+		);
+
+		await user.click(theButton(await theRowOf(ADVANCED_REPORTING), YES_IF));
+		const namePrompt = await screen.findByRole("dialog", {
+			name: "Who is voting?",
+		});
+		expect(screen.getAllByRole("dialog")).toHaveLength(1);
+		await user.type(
+			within(namePrompt).getByRole("textbox", { name: "Your name" }),
+			ANA,
+		);
+		await user.click(within(namePrompt).getByRole("button", { name: "Vote" }));
+
+		const prompt = await theConditionPrompt();
+		await waitFor(() => expect(screen.getAllByRole("dialog")).toHaveLength(1));
+		expect(sizingLogService.castVote).not.toHaveBeenCalled();
+		await user.type(
+			within(prompt).getByRole("textbox", { name: "Condition" }),
+			CONDITION,
+		);
+		await user.click(within(prompt).getByRole("button", { name: "Vote" }));
+
+		await waitFor(() =>
+			expect(sizingLogService.castVote).toHaveBeenCalledWith(
+				GRAVITY_TEAM_ID,
+				ADVANCED_REPORTING,
+				{
+					answer: "YesBut",
+					channel: "Web",
+					voterName: ANA,
+					comment: CONDITION,
+				},
+				theStoredVoter()?.key,
+			),
+		);
+		expect(sizingLogService.castVote).toHaveBeenCalledTimes(1);
 	});
 
 	// @us-12 @slice-12 @driving_port @contract-shape:bounded-change

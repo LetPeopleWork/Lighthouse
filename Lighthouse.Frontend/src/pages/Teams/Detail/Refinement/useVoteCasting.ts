@@ -15,7 +15,17 @@ import { useNameFirst } from "./useNameFirst";
 export interface IPendingVote {
 	referenceId: string;
 	answer: SizingAnswer;
+	/** What has to be true for a "Yes, if…" to become a Yes; asked for before such a vote is cast. */
+	condition?: string;
 }
+
+interface IVoteAwaitingCondition {
+	pending: IPendingVote;
+	declared: IStoredVoter | null;
+}
+
+const awaitsCondition = ({ answer, condition }: IPendingVote): boolean =>
+	answer === "YesBut" && condition === undefined;
 
 type VoterIdentity = Pick<
 	ReturnType<typeof useVoterIdentity>,
@@ -66,7 +76,10 @@ export const useVoteCasting = (
 	}, []);
 
 	const castVote = useCallback(
-		({ referenceId, answer }: IPendingVote, declared: IStoredVoter | null) => {
+		(
+			{ referenceId, answer, condition }: IPendingVote,
+			declared: IStoredVoter | null,
+		) => {
 			if (sending.current.has(referenceId)) {
 				return;
 			}
@@ -74,8 +87,10 @@ export const useVoteCasting = (
 			showSending();
 
 			const { vote, voterKey } = ballotFor(answer, declared);
+			const conditioned =
+				condition === undefined ? vote : { ...vote, comment: condition };
 			sizingLogService
-				.castVote(teamId, referenceId, vote, voterKey)
+				.castVote(teamId, referenceId, conditioned, voterKey)
 				.then((answeredRow) => {
 					onAnswered(answeredRow);
 					const sizingMoment = sizingMomentOf(refinementFacts);
@@ -110,10 +125,33 @@ export const useVoteCasting = (
 		],
 	);
 
+	// The name comes first and the condition second, so a voter meets one dialog at a time.
+	const [awaitingCondition, setAwaitingCondition] =
+		useState<IVoteAwaitingCondition | null>(null);
+
+	const castOnceConditioned = useCallback(
+		(pending: IPendingVote, declared: IStoredVoter | null) => {
+			if (awaitsCondition(pending)) {
+				setAwaitingCondition({ pending, declared });
+				return;
+			}
+			castVote(pending, declared);
+		},
+		[castVote],
+	);
+
 	const { submit, isAskingForName, submitUnderName, cancel } = useNameFirst(
 		naming,
-		castVote,
+		castOnceConditioned,
 	);
+
+	const voteWithCondition = (condition: string) => {
+		if (awaitingCondition !== null) {
+			const { pending, declared } = awaitingCondition;
+			castVote({ ...pending, condition }, declared);
+		}
+		setAwaitingCondition(null);
+	};
 
 	return {
 		onVote: submit,
@@ -121,5 +159,8 @@ export const useVoteCasting = (
 		isAskingForName,
 		voteUnderName: submitUnderName,
 		cancelVote: cancel,
+		conditionAskedOn: awaitingCondition?.pending.referenceId ?? null,
+		voteWithCondition,
+		cancelCondition: () => setAwaitingCondition(null),
 	};
 };

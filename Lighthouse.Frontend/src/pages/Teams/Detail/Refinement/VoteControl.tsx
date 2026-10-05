@@ -1,12 +1,9 @@
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import type React from "react";
 import type { SizingAnswer } from "../../../../models/Refinement/Refinement";
+import { describeAnswer } from "./sizingLogWording";
 
-const ANSWERS: { answer: SizingAnswer; label: string }[] = [
-	{ answer: "Yes", label: "Yes" },
-	{ answer: "YesBut", label: "Yes, if…" },
-	{ answer: "No", label: "No" },
-];
+const ANSWERS: SizingAnswer[] = ["Yes", "YesBut", "No"];
 
 interface VoteControlProps {
 	referenceId: string;
@@ -33,9 +30,9 @@ const VoteControl: React.FC<Readonly<VoteControlProps>> = ({
 			}
 		}}
 	>
-		{ANSWERS.map(({ answer, label }) => (
+		{ANSWERS.map((answer) => (
 			<ToggleButton key={answer} value={answer}>
-				{label}
+				{describeAnswer(answer)}
 			</ToggleButton>
 		))}
 	</ToggleButtonGroup>

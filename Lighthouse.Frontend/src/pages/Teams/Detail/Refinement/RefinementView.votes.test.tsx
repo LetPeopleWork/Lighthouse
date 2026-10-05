@@ -21,7 +21,8 @@ import {
 
 /**
  * Casting, seeing and taking back a sizing vote on the Refinement tab. Every row in refinement offers
- * Yes, "Yes, if…" and No in its own column; once a name is known one click casts the vote. Without
+ * Yes, "Yes, if…" and No in its own column; once a name is known one click casts a Yes or a No, while a
+ * "Yes, if…" first asks for its condition. Without
  * sign-in the first vote asks who is voting, and the browser keeps that name and a random key so later
  * votes need no name and stay this browser's. With sign-in nobody is asked anything. The grid shows how
  * many have voted; clicking that opens the votes and comments, where everybody, voted or not, reads how

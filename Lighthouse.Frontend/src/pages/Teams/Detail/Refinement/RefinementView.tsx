@@ -4,10 +4,14 @@ import { useCallback, useMemo, useState } from "react";
 import { useErrorSnackbar } from "../../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useRbac } from "../../../../hooks/useRbac";
 import { useVoterIdentity } from "../../../../hooks/useVoterIdentity";
-import type { IRefinementView } from "../../../../models/Refinement/Refinement";
+import type {
+	IRefinementRow,
+	IRefinementView,
+} from "../../../../models/Refinement/Refinement";
 import type { Team } from "../../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { useTerminology } from "../../../../services/TerminologyContext";
+import ConditionPrompt from "./ConditionPrompt";
 import { markEnoughFor } from "./EnoughForLine";
 import NeedVerdict, { shownVerdict, showsNeedMessage } from "./NeedVerdict";
 import NextRefinement, { NEXT_REFINEMENT_SLOT } from "./NextRefinement";
@@ -64,6 +68,16 @@ const describeHeading = (
 	return `${count} ${workItemsTerm} in ${getTerm(TERMINOLOGY_KEYS.REFINEMENT)}${describeReadyByVotes(refinement)}`;
 };
 
+const describeWorkItem = (
+	workItems: IRefinementRow[],
+	referenceId: string,
+): string => {
+	const row = workItems.find(
+		(workItem) => workItem.referenceId === referenceId,
+	);
+	return row === undefined ? referenceId : `${row.referenceId} ${row.name}`;
+};
+
 interface RefinementViewProps {
 	team: Team;
 }
@@ -85,14 +99,22 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 		[showError, getTerm],
 	);
 
-	const { onVote, votesBeingSent, isAskingForName, voteUnderName, cancelVote } =
-		useVoteCasting(
-			team.id,
-			voterIdentity,
-			showAnsweredRow,
-			showVoteRefusal,
-			refinement,
-		);
+	const {
+		onVote,
+		votesBeingSent,
+		isAskingForName,
+		voteUnderName,
+		cancelVote,
+		conditionAskedOn,
+		voteWithCondition,
+		cancelCondition,
+	} = useVoteCasting(
+		team.id,
+		voterIdentity,
+		showAnsweredRow,
+		showVoteRefusal,
+		refinement,
+	);
 
 	const {
 		addComment,
@@ -203,6 +225,13 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 					confirmLabel="Vote"
 					onCancel={cancelVote}
 					onConfirm={voteUnderName}
+				/>
+			)}
+			{conditionAskedOn !== null && (
+				<ConditionPrompt
+					workItem={describeWorkItem(workItems, conditionAskedOn)}
+					onCancel={cancelCondition}
+					onConfirm={voteWithCondition}
 				/>
 			)}
 			{votesShownOn !== undefined && (
