@@ -76,12 +76,8 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 	const [votesShownFor, setVotesShownFor] = useState<string | null>(null);
 	const [isChangingName, setIsChangingName] = useState(false);
 	const voterIdentity = useVoterIdentity(refinement?.voterIdentity);
-	const { changeableName, declareName } = voterIdentity;
-	const { log, readAgain } = useSizingLog(
-		team.id,
-		votesShownFor,
-		voterIdentity.voter?.key ?? null,
-	);
+	const { changeableName, declareName, readerKey } = voterIdentity;
+	const { log, readAgain } = useSizingLog(team.id, votesShownFor, readerKey);
 
 	const showVoteRefusal = useCallback(
 		(error: unknown) => showError(describeVoteRefusal(error, getTerm)),

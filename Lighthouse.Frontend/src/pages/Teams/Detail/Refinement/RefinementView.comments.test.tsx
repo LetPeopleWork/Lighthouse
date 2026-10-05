@@ -420,6 +420,28 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		expect(entries[2]).toHaveTextContent(/open question/i);
 	});
 
+	// @us-12 @slice-12 @boundary @contract-shape:pure-function
+	it("reads the log without the browser's key for somebody signed in", async () => {
+		aBrowserThatVotedBefore(ANA);
+		const sizingLogService = aSizingLogService();
+		const { user } = renderTheRefinementTab(
+			gravitysRefinement({ voterIdentity: "Account" }, [
+				aRow(ADVANCED_REPORTING, "Advanced reporting module", "Analysing"),
+			]),
+			sizingLogService,
+		);
+
+		await openTheLogOf(user, ADVANCED_REPORTING);
+
+		await waitFor(() =>
+			expect(sizingLogService.getLog).toHaveBeenCalledWith(
+				GRAVITY_TEAM_ID,
+				ADVANCED_REPORTING,
+				null,
+			),
+		);
+	});
+
 	// @us-12 @slice-12 @contract-shape:pure-function
 	it("marks as open questions the entries the server calls open, even between two people sharing a name", async () => {
 		aBrowserThatVotedBefore(ANA);

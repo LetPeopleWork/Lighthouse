@@ -71,6 +71,8 @@ export const useVoterIdentity = (voterIdentity: VoterIdentity | undefined) => {
 		voter,
 		asksForName: !isAccount && voter === null,
 		changeableName: isAccount ? null : (voter?.name ?? null),
+		/** The key reads go out with; an account is known to the server without it. */
+		readerKey: isAccount ? null : (voter?.key ?? null),
 		declareName,
 		ballotFor,
 		commentFor,
