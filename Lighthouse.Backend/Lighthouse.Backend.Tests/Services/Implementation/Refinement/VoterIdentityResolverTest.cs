@@ -140,7 +140,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(resolution, Is.EqualTo(new VoterKeyResolution(stored, refusal)));
+                Assert.That((resolution.VoterKey, resolution.Refusal), Is.EqualTo((stored, refusal)));
                 Assert.That(personLookups, Is.EqualTo(1));
             }
         }
@@ -155,7 +155,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(resolution, Is.EqualTo(new VoterKeyResolution(stored, refusal)));
+                Assert.That((resolution.VoterKey, resolution.Refusal), Is.EqualTo((stored, refusal)));
                 Assert.That(personLookups, Is.Zero);
             }
         }

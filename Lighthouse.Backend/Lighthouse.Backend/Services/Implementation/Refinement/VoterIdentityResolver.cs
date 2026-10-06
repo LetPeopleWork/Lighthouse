@@ -60,13 +60,14 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         {
             if (SignInIsOn)
             {
-                var signedIn = await SignedInVoterAsync(signedInPerson);
-                return new VoterKeyResolution(signedIn.Voter?.Key, signedIn.Refusal);
+                return await signedInPerson() is { } person
+                    ? VoterKeyResolution.Of(AccountVoter(person).Key)
+                    : VoterKeyResolution.RefusedFor(VoterRefusal.NeedsAPerson);
             }
 
             return SelfDeclaredKeyOf(presentedVoterKey) is { } key
-                ? new VoterKeyResolution(key, null)
-                : new VoterKeyResolution(null, VoterRefusal.KeyRequired);
+                ? VoterKeyResolution.Of(key)
+                : VoterKeyResolution.RefusedFor(VoterRefusal.KeyRequired);
         }
 
         private bool SignInIsOn => Kind == VoterIdentityKind.Account;
@@ -122,15 +123,40 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
     }
 
     /// <summary>Exactly one of the two is set: the voter, or why there is none.</summary>
-    public sealed record VoterResolution(Voter? Voter, VoterRefusal? Refusal)
+    public sealed record VoterResolution
     {
+        private VoterResolution(Voter? voter, VoterRefusal? refusal)
+        {
+            Voter = voter;
+            Refusal = refusal;
+        }
+
+        public Voter? Voter { get; }
+
+        public VoterRefusal? Refusal { get; }
+
         public static VoterResolution Of(Voter voter) => new(voter, null);
 
         public static VoterResolution RefusedFor(VoterRefusal refusal) => new(null, refusal);
     }
 
     /// <summary>Exactly one of the two is set: the voter's stored key, or why there is none.</summary>
-    public sealed record VoterKeyResolution(string? VoterKey, VoterRefusal? Refusal);
+    public sealed record VoterKeyResolution
+    {
+        private VoterKeyResolution(string? voterKey, VoterRefusal? refusal)
+        {
+            VoterKey = voterKey;
+            Refusal = refusal;
+        }
+
+        public string? VoterKey { get; }
+
+        public VoterRefusal? Refusal { get; }
+
+        public static VoterKeyResolution Of(string voterKey) => new(voterKey, null);
+
+        public static VoterKeyResolution RefusedFor(VoterRefusal refusal) => new(null, refusal);
+    }
 
     public enum VoterRefusal
     {
