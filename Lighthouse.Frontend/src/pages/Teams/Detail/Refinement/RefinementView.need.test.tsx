@@ -206,6 +206,18 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		).toBeInTheDocument();
 	});
 
+	// @need-over-one-cycle @boundary @contract-shape:pure-function
+	// A view that does not say whether today is a Refinement day is read as an ordinary day.
+	it("reads the cycle as ending at the Refinement after when the view does not say whether today is a Refinement day", async () => {
+		renderTheRefinementTab(
+			gravityWithReady(3, "Below", { isRefinementDay: undefined }),
+		);
+
+		await expectTheVerdictToRead(
+			/is likely to pull until the Refinement after\. Refine 2 to 5 more\.$/,
+		);
+	});
+
 	// @need-over-one-cycle @driving_port @boundary @contract-shape:pure-function
 	// On a Refinement day the cycle starts today, so the first date the tooltip names is today's.
 	it("names today as the cycle's first Refinement when today is a Refinement day", async () => {
@@ -637,6 +649,24 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 			renderTheRefinementTab(
 				gravityWithReady(3, "Below", {
 					need: aNeedOfFiveToEight({ [missing]: null }),
+				}),
+			);
+
+			await expectNoMessageAndTheNextRefinementOnTheHeadingsRow();
+		},
+	);
+
+	// @need-over-one-cycle @boundary @contract-shape:pure-function
+	// A cycle date that is not a real calendar day cannot be named either, even when the other one can.
+	it.each([
+		["cycleStart", "2026-10-32"],
+		["cycleEnd", "2026-10-32"],
+	] as const)(
+		"says no verdict and names the next Refinement on the heading's row when the need's %s is %s",
+		async (field, unreadable) => {
+			renderTheRefinementTab(
+				gravityWithReady(3, "Below", {
+					need: aNeedOfFiveToEight({ [field]: unreadable }),
 				}),
 			);
 

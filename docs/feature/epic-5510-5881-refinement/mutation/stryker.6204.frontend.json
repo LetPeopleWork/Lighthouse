@@ -1,0 +1,49 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6204.ts",
+    "related": false
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "off",
+  "concurrency": 4,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "playwright-report",
+    "reports"
+  ],
+  "mutate": [
+    "src/components/Common/Team/RefinementBandSettings.tsx:67-67",
+    "src/pages/Teams/Detail/Refinement/NeedVerdict.tsx:46-48",
+    "src/pages/Teams/Detail/Refinement/NeedVerdict.tsx:64-76",
+    "src/pages/Teams/Detail/Refinement/NeedVerdict.tsx:155-155",
+    "src/pages/Teams/Detail/Refinement/NeedVerdict.tsx:162-162",
+    "src/pages/Teams/Detail/Refinement/NeedVerdict.tsx:167-168",
+    "src/pages/Teams/Detail/Refinement/NeedVerdict.tsx:173-173",
+    "src/pages/Teams/Detail/Refinement/RefinementView.tsx:205-205",
+    "src/pages/Teams/Detail/Refinement/RefinementView.tsx:213-214",
+    "src/pages/Teams/Detail/Refinement/needWording.ts:53-59",
+    "src/pages/Teams/Detail/Refinement/needWording.ts:109-112"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "stryker-6204-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6204"
+}
