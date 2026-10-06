@@ -821,7 +821,7 @@ describe("A signed-in voter votes under their account", () => {
 	});
 
 	// @us-15 @slice-15 @driving_port @contract-shape:bounded-change
-	it.skip("casts the vote at once without asking for a name, and keeps nothing in the browser", async () => {
+	it("casts the vote at once without asking for a name, and keeps nothing in the browser", async () => {
 		const sizingLogService = aSizingLogService({
 			castVote: vi.fn().mockResolvedValue(
 				theRowAfter(CONFIGURATION_MANAGEMENT, {
@@ -849,7 +849,7 @@ describe("A signed-in voter votes under their account", () => {
 	});
 
 	// @us-15 @slice-15 @boundary @contract-shape:pure-function
-	it.skip("offers no way to change a name, because the account is the name", async () => {
+	it("offers no way to change a name, because the account is the name", async () => {
 		const { user } = renderTheRefinementTab(
 			gravitysRefinement({ voterIdentity: "Account" }),
 		);

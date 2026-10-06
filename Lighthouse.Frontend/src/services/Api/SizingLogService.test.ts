@@ -62,7 +62,7 @@ describe("SizingLogService", () => {
 	});
 
 	// @us-15 @slice-15 @boundary @contract-shape:bounded-change
-	it.skip("sends no voter key header when the browser holds none", async () => {
+	it("sends no voter key header when the browser holds none", async () => {
 		mockedAxios.post.mockResolvedValueOnce({ data: theRow });
 
 		await sizingLogService.castVote(
