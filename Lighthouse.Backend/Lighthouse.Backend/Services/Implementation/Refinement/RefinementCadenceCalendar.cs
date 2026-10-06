@@ -36,14 +36,18 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         /// </summary>
         public static RefinementCycle? CycleFrom(RefinementCadence? cadence, DateOnly today, Func<DateOnly, bool> isBlackedOut)
         {
-            var start = IsCadenceDay(cadence, today, isBlackedOut) ? today : NextAfter(cadence, today, isBlackedOut);
-            if (start is not { } cycleStart || NextAfter(cadence, cycleStart, isBlackedOut) is not { } cycleEnd)
+            if (CycleStartFrom(cadence, today, isBlackedOut) is not { } cycleStart
+                || NextAfter(cadence, cycleStart, isBlackedOut) is not { } cycleEnd)
             {
                 return null;
             }
 
             return new RefinementCycle(cycleStart, cycleEnd);
         }
+
+        /// <summary>Today on a Refinement day, otherwise the next Refinement; null when there is neither.</summary>
+        public static DateOnly? CycleStartFrom(RefinementCadence? cadence, DateOnly today, Func<DateOnly, bool> isBlackedOut)
+            => IsCadenceDay(cadence, today, isBlackedOut) ? today : NextAfter(cadence, today, isBlackedOut);
 
         public static bool IsCadenceDay(RefinementCadence? cadence, DateOnly day, Func<DateOnly, bool> isBlackedOut)
         {

@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.API.DTO
 
         public ReadySource ReadySource { get; } = view.ReadySource;
 
-        public string? NextRefinementDate { get; } = view.CalendarFacts.NextRefinementDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        public string? NextRefinementDate { get; } = CalendarDay.Of(view.CalendarFacts.NextRefinementDate);
 
         public bool IsRefinementDay { get; } = view.CalendarFacts.IsRefinementDay;
 
@@ -48,9 +48,14 @@ namespace Lighthouse.Backend.API.DTO
 
         public int? HorizonWorkingDays { get; } = need.Range?.HorizonWorkingDays;
 
-        public string? CycleStart { get; } = need.Range?.Cycle.Start.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        public string? CycleStart { get; } = CalendarDay.Of(need.Range?.Cycle.Start);
 
-        public string? CycleEnd { get; } = need.Range?.Cycle.End.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        public string? CycleEnd { get; } = CalendarDay.Of(need.Range?.Cycle.End);
+    }
+
+    file static class CalendarDay
+    {
+        public static string? Of(DateOnly? day) => day?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
     }
 
     public sealed class YardstickDto(Yardstick yardstick)

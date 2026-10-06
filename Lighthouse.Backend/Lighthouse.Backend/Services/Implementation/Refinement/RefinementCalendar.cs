@@ -22,7 +22,8 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
 
             var next = RefinementCadenceCalendar.NextAfter(cadence, today, IsBlackedOut);
             var isRefinementDay = RefinementCadenceCalendar.IsCadenceDay(cadence, today, IsBlackedOut);
-            blackoutDays.AddRange(BlackoutDaysTheCycleEndSearchAdds(cadence, isRefinementDay ? today : next, firstSearch));
+            var cycleStart = RefinementCadenceCalendar.CycleStartFrom(cadence, today, IsBlackedOut);
+            blackoutDays.AddRange(BlackoutDaysTheCycleEndSearchAdds(cadence, cycleStart, firstSearch));
 
             return new RefinementCalendarFacts(next, isRefinementDay, next?.DayNumber - today.DayNumber)
             {
