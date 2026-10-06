@@ -103,6 +103,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             }
         }
 
+        [TestCase(" ", "e@x", "e@x")]
+        [TestCase("", "e@x", "e@x")]
+        [TestCase(" ", "", "s")]
+        [TestCase(null, " ", "s")]
+        [TestCase("  Ana Lima  ", "e@x", "Ana Lima")]
+        [TestCase(null, "  e@x  ", "e@x")]
+        public async Task WithSignInABlankAccountNameFallsBackToTheEmailThenTheSubject(string? displayName, string? email, string shownAs)
+        {
+            var person = new UserProfile { Id = 9, Subject = "s", DisplayName = displayName, Email = email };
+
+            var resolution = await ResolverWhere(AuthMode.Enabled).ForWriteAsync(null, null, ThePerson(person));
+
+            Assert.That(resolution.Voter?.DisplayName, Is.EqualTo(shownAs));
+        }
+
         [Test]
         public async Task WithSignInACredentialNoPersonStandsBehindIsRefused()
         {

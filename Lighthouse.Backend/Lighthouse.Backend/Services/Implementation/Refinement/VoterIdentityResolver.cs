@@ -79,9 +79,11 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         // An identity provider need not send a name or an email address, but every account has a subject.
         private static Voter AccountVoter(UserProfile person)
         {
-            var shownAs = person.DisplayName ?? person.Email ?? person.Subject;
+            var shownAs = Filled(person.DisplayName) ?? Filled(person.Email) ?? person.Subject;
             return new Voter(SizingLogEntry.AccountVoterKeyOf(person.Subject), shownAs, person.Id);
         }
+
+        private static string? Filled(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
 
         // A short key could be guessed, and a guessed key speaks for somebody else's votes. A browser's key
         // is hex, so whitespace or a control character means it is not one; a key of nothing but spaces
