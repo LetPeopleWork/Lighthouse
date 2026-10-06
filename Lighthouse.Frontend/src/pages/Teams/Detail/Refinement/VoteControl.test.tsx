@@ -66,3 +66,45 @@ describe("a row's answers", () => {
 		},
 	);
 });
+
+describe("the take-back hint", () => {
+	const CLICK_AGAIN = "Click again to take back your vote";
+
+	it("sits on the voter's own answer and on no other", () => {
+		render(
+			<VoteControl
+				referenceId="GR-073"
+				myVote="Yes"
+				isSending={false}
+				onVote={vi.fn()}
+				onTakeBack={vi.fn()}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("button", { name: "Yes" }),
+		).toHaveAccessibleDescription(CLICK_AGAIN);
+		expect(
+			screen.getByRole("button", { name: "Yes, if…" }),
+		).not.toHaveAccessibleDescription();
+		expect(
+			screen.getByRole("button", { name: "No" }),
+		).not.toHaveAccessibleDescription();
+	});
+
+	it("is not offered while the vote is being sent", () => {
+		render(
+			<VoteControl
+				referenceId="GR-073"
+				myVote="Yes"
+				isSending
+				onVote={vi.fn()}
+				onTakeBack={vi.fn()}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("button", { name: "Yes" }),
+		).not.toHaveAccessibleDescription();
+	});
+});

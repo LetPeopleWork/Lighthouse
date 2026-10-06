@@ -327,6 +327,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             }
         }
 
+        [Test]
+        public void TakingBackKeepsTheAccountTheVoteWasCastUnder()
+        {
+            GivenTheTeam(ATeamThatRefinesInBacklog(sleProbability: 85, sleDays: 7));
+            GivenTheLogHolds(LoggedBy(Jonas, 1, SizingEntryKind.Vote), LoggedBy(Ana, 2, SizingEntryKind.Vote));
+
+            var outcome = subject.TakeBack(TeamId, InRefinement, SizingChannel.Web, Ana.Key, null);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome, Is.EqualTo(SizingOutcome.Recorded));
+                Assert.That(appended.Select(Summary), Is.EqualTo(new[]
+                {
+                    new EntrySummary(TeamId, InRefinement, SizingEntryKind.Revocation, null, null, "account:ana", 7, "Ana Lima", CastAt.UtcDateTime, SizingChannel.Web),
+                }));
+            }
+        }
+
         [TestCase(SizingAnswer.Yes, SizingOutcome.NothingTakenBack, 0)]
         [TestCase(SizingAnswer.YesBut, SizingOutcome.NothingTakenBack, 0)]
         [TestCase(SizingAnswer.No, SizingOutcome.Recorded, 1)]
