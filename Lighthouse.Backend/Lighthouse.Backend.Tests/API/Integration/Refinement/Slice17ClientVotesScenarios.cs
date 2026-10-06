@@ -24,7 +24,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-17a @slice-17a @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice17a)]
         public async Task A_client_is_told_which_Work_Items_need_discussion_and_which_are_Ready()
         {
             var gravity = await GivenApiVersioningNeedsDiscussionAndConfigurationManagementIsReady();
@@ -36,7 +35,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-17a @slice-17a @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice17a)]
         public async Task A_client_is_told_how_the_votes_split()
         {
             var gravity = await GivenApiVersioningNeedsDiscussionAndConfigurationManagementIsReady();
