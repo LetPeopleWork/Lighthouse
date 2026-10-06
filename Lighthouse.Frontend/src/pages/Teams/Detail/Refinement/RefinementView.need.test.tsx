@@ -190,19 +190,47 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		vi.useRealTimers();
 	});
 
-	// @us-05 @slice-05 @driving_port @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:pure-function
-	it("says how many more to refine when fewer are ready than the Team is likely to pull", async () => {
+	// @us-05 @need-over-one-cycle @slice-05 @driving_port @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:pure-function
+	// The number covers one Refinement cycle: what the Team pulls from the next Refinement until the one after.
+	it.skip("says how many more to refine when fewer are ready than the Team is likely to pull until the Refinement after", async () => {
 		renderTheRefinementTab(gravityWithReady(3, "Below"));
 
 		const message = await expectTheVerdictToRead(
-			/^3 ready — below the range of 5–8 Work Items Team Gravity is likely to pull by then\. Refine 2 to 5 more\.$/,
+			/^3 ready — below the range of 5–8 Work Items Team Gravity is likely to pull until the Refinement after\. Refine 2 to 5 more\.$/,
 		);
 		expect(within(message).getByTestId(ACT_ICON)).toBeInTheDocument();
 		expect(
 			within(message).getByRole("button", {
-				name: /^Based on Team Gravity's .+: a How Many forecast for the 4 working days until Thu 8 Oct\./,
+				name: /^Based on Team Gravity's .+: a How Many forecast for the 5 working days between the Refinements on Thu 8 Oct and Thu 15 Oct\. .+ Same forecast as on the Forecasts page\.$/,
 			}),
 		).toBeInTheDocument();
+	});
+
+	// @need-over-one-cycle @driving_port @boundary @contract-shape:pure-function
+	// On a Refinement day the cycle starts today, so the first date the tooltip names is today's.
+	it.skip("names today as the cycle's first Refinement when today is a Refinement day", async () => {
+		vi.setSystemTime(new Date(2026, 9, 8, 9, 0, 0));
+		renderTheRefinementTab(
+			gravityWithReady(3, "Below", {
+				nextRefinementDate: "2026-10-15",
+				daysUntilNextRefinement: 7,
+				isRefinementDay: true,
+				need: aNeedOfFiveToEight({
+					cycleStart: THURSDAY_THE_EIGHTH,
+					cycleEnd: "2026-10-15",
+				}),
+			}),
+		);
+
+		const message = await theVerdict();
+		expect(
+			within(message).getByRole("button", {
+				name: /a How Many forecast for the 5 working days between the Refinements on Thu 8 Oct and Thu 15 Oct\./,
+			}),
+		).toBeInTheDocument();
+		expect(message).toHaveTextContent(
+			/Next Refinement: Thu 15 Oct · in 7 days/,
+		);
 	});
 
 	// @us-05 @slice-05 @driving_port @contract-shape:pure-function
@@ -233,18 +261,26 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		await expectTheVerdictToRead(/^5 ready — in the range of 5–8\./);
 	});
 
-	// @us-05 @slice-05 @boundary @contract-shape:pure-function
-	it("says the Team's own words for Work Items, the Team and Refinement", async () => {
+	// @us-05 @need-over-one-cycle @slice-05 @boundary @contract-shape:pure-function
+	it.skip("says the Team's own words for Work Items, the Team and Refinement", async () => {
 		terms.current = {
 			...defaultRefinementTerms,
 			workItems: "Tickets",
 			team: "Squad",
+			refinement: "Grooming",
+			refinements: "Groomings",
 		};
 		renderTheRefinementTab(gravityWithReady(3, "Below"));
 
-		expect(await theVerdict()).toHaveTextContent(
-			/below the range of 5–8 Tickets Team Gravity is likely to pull by then/,
+		const message = await theVerdict();
+		expect(message).toHaveTextContent(
+			/below the range of 5–8 Tickets Team Gravity is likely to pull until the Grooming after\. Refine 2 to 5 more\./,
 		);
+		expect(
+			within(message).getByRole("button", {
+				name: /between the Groomings on Thu 8 Oct and Thu 15 Oct\. The Squad pulls/,
+			}),
+		).toBeInTheDocument();
 	});
 
 	// @us-05 @slice-05 @error @contract-shape:pure-function
@@ -577,6 +613,21 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		"highPercentile",
 		"horizonWorkingDays",
 	] as const)(
+		"says no verdict and names the next Refinement on the heading's row when the need comes without its %s",
+		async (missing) => {
+			renderTheRefinementTab(
+				gravityWithReady(3, "Below", {
+					need: aNeedOfFiveToEight({ [missing]: null }),
+				}),
+			);
+
+			await expectNoMessageAndTheNextRefinementOnTheHeadingsRow();
+		},
+	);
+
+	// @need-over-one-cycle @boundary @contract-shape:pure-function
+	// The tooltip names the cycle's two Refinements; without either date there is no verdict to explain.
+	it.skip.each(["cycleStart", "cycleEnd"] as const)(
 		"says no verdict and names the next Refinement on the heading's row when the need comes without its %s",
 		async (missing) => {
 			renderTheRefinementTab(

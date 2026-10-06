@@ -19,8 +19,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // --- Given ---
 
-        private async Task<TeamUnderTest> GivenGravityHasTwoReadyAndIsLikelyToPullFiveToEightBeforeThursday()
-            => await GravityWithTwoReadyLikelyToPullFiveToEightBeforeThursday();
+        private async Task<TeamUnderTest> GivenGravityHasTwoReadyAndIsLikelyToPullFiveToEightOverItsCycle()
+            => await GravityWithTwoReadyLikelyToPullFiveToEightOverItsCycle();
 
         private async Task<TeamUnderTest> GivenGravityHasTwoReadyWithoutACadence()
         {
@@ -47,7 +47,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         {
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(NeedIn(tab), Is.EqualTo(new NeedReading(Below, null, 5, 8, 50, 85, 6)));
+                Assert.That(NeedIn(tab), Is.EqualTo(new NeedReading(Below, null, 5, 8, 50, 85, GravitysCycleWorkingDays)));
+                Assert.That(CycleIn(tab), Is.EqualTo(new CycleReading("2026-10-08", "2026-10-15")));
                 Assert.That(CadenceFactsIn(tab), Is.EqualTo(new CadenceFactsReading("2026-10-08", false)));
                 Assert.That((ReadyCountIn(tab), ReadySourceIn(tab)), Is.EqualTo(((int?)2, (string?)FromStages)));
             }
@@ -84,14 +85,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
     public partial class Slice09ClientNeedWithAnApiKeyTest
     {
-        private async Task<TeamUnderTest> GivenGravityHasTwoReadyAndIsLikelyToPullFiveToEightBeforeThursday()
-            => await GravityWithTwoReadyLikelyToPullFiveToEightBeforeThursday();
+        private async Task<TeamUnderTest> GivenGravityHasTwoReadyAndIsLikelyToPullFiveToEightOverItsCycle()
+            => await GravityWithTwoReadyLikelyToPullFiveToEightOverItsCycle();
 
         private static void ThenTheKeyIsToldBelowFiveToEightForThursday(JsonElement tab)
         {
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(NeedIn(tab), Is.EqualTo(new NeedReading(Below, null, 5, 8, 50, 85, 6)));
+                Assert.That(NeedIn(tab), Is.EqualTo(new NeedReading(Below, null, 5, 8, 50, 85, GravitysCycleWorkingDays)));
                 Assert.That(CadenceFactsIn(tab), Is.EqualTo(new CadenceFactsReading("2026-10-08", false)));
             }
         }

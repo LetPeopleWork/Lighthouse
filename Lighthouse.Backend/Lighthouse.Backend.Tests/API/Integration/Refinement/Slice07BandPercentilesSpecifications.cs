@@ -25,8 +25,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             return gravity;
         }
 
-        private async Task<TeamUnderTest> GivenGravityHasTwoReadyAndIsLikelyToPullFiveToTenBeforeThursday()
-            => await GravityWithTwoReadyLikelyToPullFiveToEightBeforeThursday();
+        private async Task<TeamUnderTest> GivenGravityHasTwoReadyAndIsLikelyToPullFiveToTenOverItsCycle()
+            => await GravityWithTwoReadyLikelyToPullFiveToEightOverItsCycle();
 
         // --- When ---
 

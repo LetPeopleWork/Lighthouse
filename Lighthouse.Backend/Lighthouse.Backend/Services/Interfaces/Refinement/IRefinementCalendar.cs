@@ -17,5 +17,12 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
     public sealed record RefinementCalendarFacts(DateOnly? NextRefinementDate, bool IsRefinementDay, int? DaysUntilNextRefinement)
     {
         public static RefinementCalendarFacts None { get; } = new(null, false, null);
+
+        /// <summary>The Refinement cycle the need covers; null without a cadence or when no Refinement follows its start.</summary>
+        public RefinementCycle? Cycle { get; init; }
     }
+
+    /// <param name="Start">Today on a Refinement day, otherwise the next Refinement.</param>
+    /// <param name="End">The first Refinement after <paramref name="Start"/> that is not blacked out.</param>
+    public sealed record RefinementCycle(DateOnly Start, DateOnly End);
 }

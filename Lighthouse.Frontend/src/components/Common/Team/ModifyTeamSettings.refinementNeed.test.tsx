@@ -729,17 +729,20 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		expect(await theBandExplanation()).toContain(afterTheEdit);
 	});
 
-	// @us-07 @slice-07 @driving_port @contract-shape:pure-function
-	it("explains the range as a How Many forecast up to the next Refinement, in the Team's word", async () => {
+	// @us-07 @need-over-one-cycle @slice-07 @driving_port @contract-shape:pure-function
+	// The band is read over one Refinement cycle, so the explanation names that cycle, not the days until the next.
+	it.skip("explains the range as a How Many forecast between the next Refinement and the one after, in the Team's word", async () => {
 		terms.current = {
 			...defaultTerms,
 			[TERMINOLOGY_KEYS.REFINEMENT]: "Grooming",
 		};
 		await renderGravitysSettingsForm(gravitysSettings());
 
-		expect(await theBandExplanation()).toContain(
-			"a How Many forecast for the working days until the next Grooming.",
+		const explanation = await theBandExplanation();
+		expect(explanation).toContain(
+			"a How Many forecast for the working days between the next Grooming and the one after. ",
 		);
+		expect(explanation).not.toContain("until the next");
 	});
 
 	// @us-07 @slice-07 @error @contract-shape:unbounded-preservation

@@ -41,6 +41,7 @@ export const defaultRefinementTerms: Record<string, string> = {
 	[TERMINOLOGY_KEYS.SLE]: "SLE",
 	[TERMINOLOGY_KEYS.CYCLE_TIME]: "Cycle Time",
 	[REFINEMENT_KEY]: "Refinement",
+	[TERMINOLOGY_KEYS.REFINEMENTS]: "Refinements",
 	[TERMINOLOGY_KEYS.TEAM]: "Team",
 };
 
@@ -94,7 +95,10 @@ export const gravitysSixWorkItems = (): IRefinementRow[] => [
 	aRow("GR-074", "Load testing framework", "Backlog"),
 ];
 
-/** Likely to pull 5 to 8 Work Items before Gravity's next Refinement, read at 50% and 85%. */
+/**
+ * Likely to pull 5 to 8 Work Items over Gravity's cycle, read at 50% and 85%: the five working days from
+ * its next Refinement, Thursday 8 October, to the one after, Thursday 15 October, weekends blacked out.
+ */
 export const aNeedOfFiveToEight = (
 	overrides: Partial<IRefinementNeed> = {},
 ): IRefinementNeed => ({
@@ -104,7 +108,9 @@ export const aNeedOfFiveToEight = (
 	high: 8,
 	lowPercentile: 50,
 	highPercentile: 85,
-	horizonWorkingDays: 4,
+	horizonWorkingDays: 5,
+	cycleStart: "2026-10-08",
+	cycleEnd: "2026-10-15",
 	...overrides,
 });
 
@@ -119,6 +125,8 @@ export const noNeedBecause = (
 	lowPercentile: null,
 	highPercentile: null,
 	horizonWorkingDays: null,
+	cycleStart: null,
+	cycleEnd: null,
 });
 
 /** Gravity refines on Thursdays; today is Sunday 4 October 2026, so the next Refinement is in four days. */

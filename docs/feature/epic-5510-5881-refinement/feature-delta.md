@@ -3213,3 +3213,165 @@ the approved copy does not cover it and it is user-visible:
   with no data to undo.
 - **Clients (CLI/MCP):** no change; no client reads the need yet, and the fields are additive.
 - **CI:** existing pipelines cover it; the forecast-match check from the DESIGN amendment runs in the backend suite.
+
+## Wave: DISTILL / [REF] Scope and Reconciliation — Story #6204
+
+**Agent**: Quinn (`nw-acceptance-designer`) · **Date**: 2026-10-06 · **Mode**: autonomous subagent, maintainer AFK.
+**Scope**: Story #6204 only (under Epic #5881), the need covers one Refinement cycle. The behaviour and every user-visible
+sentence are the two maintainer decisions of 2026-10-06 above plus DESIGN's AFK decision on the settings ⓘ; DISTILL pins them
+and re-decides none. No UI sketch walk was owed at the start of DISTILL: the copy was sketched and approved before DESIGN, and the
+settings ⓘ wording was taken in AFK mode at DESIGN, to be confirmed at the hold.
+
+**Reconciliation passed — 0 contradictions** across the two maintainer decisions, DESIGN (DSN-23..DSN-30 and the AFK decision) and
+DEVOPS (no deployment, no usage-data event, no client change). DESIGN's "approved example reads 5 working days only with weekend
+blackouts" is a fact about the working-day rule, not a contradiction: the scenarios pin both (7 days on a calendar without blackouts,
+5 with weekends blacked out). DSN-26's "no cycle reads as `NoCadence`" and the decision's "a Refinement on a blackout day is skipped"
+are pinned together by the year-of-blackouts scenario.
+
+## Wave: DISTILL / [REF] Scenario list with tags — Story #6204
+
+Every case is pending (`[Ignore(PendingStory6204)]`, `it.skip`). Tags in the source use the plain name `@need-over-one-cycle`, never
+a ticket number; NUnit category `need-over-one-cycle`. **Backend 675 cases** (22 HTTP scenarios, 16 re-pinned shipped scenarios, 35
+unit examples, 602 swept property cases); **frontend 14 cases**. Error / boundary share of the HTTP scenarios: 21 of 22.
+
+**Backend — `NeedOverOneCycleTest` (new pair, real host)**, every case `@driving_port @real-io`:
+
+| Scenario | Cases | Tags |
+|---|---|---|
+| The need covers the working days from the next Refinement to the one after (Fri 2 Oct: Below 5–8 over 7 days, cycle 8 → 15 Oct, heading still Thu 8, ready count 2) | 1 | `@walking_skeleton @contract-shape:pure-function` |
+| Every day before the next Refinement reads the same number (Fri, Mon, Tue, Wed) | 4 | `@boundary` |
+| With weekends blacked out Monday and Tuesday both read the five working days of the cycle | 2 | `@boundary` |
+| On a Refinement day the cycle runs from today to the next Refinement | 1 | `@boundary` |
+| A Team refining on two weekdays plans for the gap between its next two Refinements (Mon/Thu: 3 and 4 days, incl. both Refinement days) | 4 | `@boundary` |
+| Only a blackout day inside the cycle shortens it (Mon 12 → 6; Mon 5, before the next Refinement → still 7) | 2 | `@boundary` |
+| A blacked-out Refinement after the next is skipped and the cycle runs to the one that happens (8 → 22 Oct, 13 days) | 1 | `@boundary` |
+| A blacked-out next Refinement is skipped and the cycle starts at the one that happens (15 → 22 Oct) | 1 | `@boundary` |
+| Today a blacked-out Refinement day starts no cycle and the next Refinement does | 1 | `@boundary` |
+| A blackout on the Refinement after the next is honoured even a year ahead (the tail-fetch invariant) | 1 | `@boundary` |
+| A year of blacked-out Refinements after the next leaves no cycle and no number (`NoCadence`, heading still Thu 8) | 1 | `@error` |
+| Without a number the need names no cycle (`NoCadence`, `InsufficientData`, `NoRefinementStates`) | 3 | `@error` |
+
+**Backend — re-pinned shipped scenarios** (see "Existing tests re-pinned" below): `Slice05NeedAndVerdictTest` 8 methods / 13 cases,
+`Slice07BandPercentilesTest.The_band_decides_where_the_range_is_read` 3 cases.
+
+**Backend — unit, pure calendar and composer** (layer 1; swept `TestCaseSource` in place of a PBT library, which this repo has not):
+
+| Fixture | Cases |
+|---|---|
+| `RefinementCadenceCalendarTest` | cycle examples (weekly, Mon/Thu, every second week, a starting week to come) 12 · a blacked-out Refinement at either end 5 · no weekday / no interval 2 · no cadence 1 · no Refinement after the next for a year 1 · **property sweep**: every day of six weeks × six cadences × {no blackouts, scattered blackouts}: the cycle starts today on a Refinement day and at the next Refinement otherwise, ends at the Refinement after its start, holds none in between (504) · **property sweep**: a weekly cycle is seven days whatever day today is (98) |
+| `RefinementCalendarTest` | facts name the cycle (4) · no cadence, no cycle · a blackout past the first year's search is honoured · the blackout days fetched stay within the first window plus the second search's tail (2) · a blacked-out today re-pinned with its cycle |
+| `RefinementNeedCalculatorTest` | the range over the cycle's 7 working days, the blackout lookup over the cycle · blackout inside the cycle (Tue 13–Wed 14 → 5) · blackout before the next Refinement no longer counts · the band over the cycle · a next Refinement without a cycle gives `NoCadence` |
+
+**Frontend**
+
+| File | Cases | Tags |
+|---|---|---|
+| `pages/Teams/Detail/Refinement/needWording.test.ts` | four Below sentences "…until the Refinement after. Refine … more." · the Team's word for Refinement · tooltip for five working days, for one working day, in a Team's own words and band | `@need-over-one-cycle` |
+| `pages/Teams/Detail/Refinement/RefinementView.need.test.tsx` | the Below alert and its tooltip with both dates · on a Refinement day the first date is today · the Team's own words in both sentences · no verdict without `cycleStart` / `cycleEnd` (×2) | `@need-over-one-cycle`, 2 `@boundary` |
+| `components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx` | the band ⓘ: "…for the working days between the next Grooming and the one after." and no longer "until the next" | `@need-over-one-cycle` |
+
+## Wave: DISTILL / [REF] Existing tests re-pinned — Story #6204
+
+Rewritten, not deleted, and marked pending with the same constant so DELIVER flips them with the change that makes them true. Each
+was green on `main` before this commit.
+
+| Test | What changed |
+|---|---|
+| `Slice05…Below_range_says_how_many_are_ready_against_the_range_the_Team_is_likely_to_pull` | scripted and read over Gravity's 7-day cycle |
+| `Slice05…The_verdict_compares_the_ready_count_with_both_ends_of_the_range` (4) | same |
+| `Slice05…On_a_Team_without_stages_a_vote_that_makes_a_Work_Item_Ready_moves_the_verdict` | same |
+| `Slice05…On_a_Team_with_stages_votes_do_not_move_the_verdict` | same, and now scripted 1–2 expecting `In`, so the old window cannot pass it |
+| `Slice05…The_range_uses_the_same_horizon_as_the_manual_forecast` | cycle Tue 13 → Tue 20 = 7 working days → 14; the manual forecast is asked for Wed 14 Oct, seven working days from Wed 7 Oct; names the cycle |
+| `Slice05…Blackout_days_before_the_next_Refinement_are_not_counted` → `Blackout_days_inside_the_cycle_are_not_counted` | Tue 13–Wed 14 blacked out → 5 |
+| `Slice05…The_high_end_is_stated_as_forecast…` (3) and `A_range_of_nothing_says_stop_with_two_ready` | over the cycle |
+| `Slice07…The_band_decides_where_the_range_is_read` (3) | over the cycle |
+| `RefinementCalendarTest.A_cadence_day_blacked_out_today_is_no_Refinement_day` | its expected facts carry the cycle 15 → 22 Oct |
+| `RefinementNeedCalculatorTest` (3 shipped cases) | the range over the cycle; the blackout case moved inside the cycle; the band case over the cycle |
+| `needWording.test.ts` (4 Below rows, 3 tooltip rows) | the cycle copy; In and Above rows stay running |
+| `RefinementView.need.test.tsx` (2) | the Below copy and tooltip; the Team's own words |
+| `ModifyTeamSettings.refinementNeed.test.tsx` (1) | the band ⓘ |
+
+Left running because the cycle does not change them: `On_a_Refinement_day_the_number_is_for_the_following_Refinement` (already 7),
+the no-number and the 300-row scenarios, every slice 04 scenario (`nextRefinementDate`, `isRefinementDay`,
+`daysUntilNextRefinement` keep their meaning), and the In / Above copy. Slice 09's client scenarios (still `PendingSlice09`) now expect
+7 working days and the cycle dates, because 6204 ships before 09.
+
+## Wave: DISTILL / [REF] WS strategy — Story #6204
+
+Architecture of Reference + project policy, inherited; nothing appended. The walking skeleton is the backend HTTP scenario *The need
+covers the working days from the next Refinement to the one after*, over the production composition root
+(`WebApplicationFactory<Program>`, real EF). Faked, as for E2: the instance clock and, per horizon a scenario scripts, the How Many
+forecast; an unscripted horizon runs the shipped engine. No new E2E: the E2E skeleton pins no need copy (DESIGN) and the project keeps
+E2E to one thin walk per flow. Tier B: not declared (one read, no state machine).
+
+## Wave: DISTILL / [REF] Test placement — Story #6204
+
+| Where | Why (precedent) |
+|---|---|
+| `Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleScenarios.cs` + `…Specifications.cs`, on the `RefinementNeedAcceptanceTest` harness (gains `PendingStory6204`, `GravitysCycleWorkingDays`, `BlackoutDaysFrom`, `WeekendsAreBlackedOut`, `CycleIn` / `CycleReading`) | the slice pairs' folder and partial-class split |
+| `Lighthouse.Backend.Tests/Services/Implementation/Refinement/RefinementCadenceCalendarTest.cs`, `RefinementCalendarTest.cs`, `RefinementNeedCalculatorTest.cs` | the existing unit fixtures of the three classes DESIGN extends |
+| `Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/needWording.test.ts`, `RefinementView.need.test.tsx`; `src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx`; kit `src/tests/RefinementTabTestKit.tsx` (need builders carry `cycleStart` 2026-10-08 / `cycleEnd` 2026-10-15 over 5 working days, and the `Refinements` term) | the shipped need and band tests |
+
+## Wave: DISTILL / [REF] Driving adapter coverage — Story #6204
+
+| Driving adapter (DESIGN) | Covered by |
+|---|---|
+| `GET /teams/{teamId}/refinement` → `need.horizonWorkingDays`, `need.cycleStart`, `need.cycleEnd`, `nextRefinementDate`, `isRefinementDay` | every `NeedOverOneCycleTest` case; re-pinned slice 05 / 07; slice 09 (pending) |
+| `PUT /teams/{teamId}` (cadence) | Givens of every scenario |
+| `POST /api/latest/blackout-periods`, `POST /api/latest/recurring-blackout-rules` (calendar preconditions) | blackout and weekend scenarios |
+| `POST /api/latest/forecast/manual/{teamId}` (parity reference) | `The_range_uses_the_same_horizon_as_the_manual_forecast` |
+
+## Wave: DISTILL / [REF] Adapter coverage — Story #6204
+
+| Driven adapter | Real I/O scenario |
+|---|---|
+| `IBlackoutPeriodService.GetEffectiveBlackoutDays` (one-off and recurring) | weekend, inside-the-cycle, skipped-Refinement and a-year-ahead scenarios; the bounded-fetch unit cases |
+| `IForecastService.HowMany` | every scripted horizon (the horizon asked is checked); the parity scenario on the shipped engine |
+| `ILighthouseClock` | `TodayIs` in every scenario; time zones stay covered by slice 04 |
+
+No new driven adapter, no migration, no usage-data event (DEVOPS).
+
+## Wave: DISTILL / [REF] Scaffolds — Story #6204
+
+| File | Marker | Behaviour until DELIVER |
+|---|---|---|
+| `Lighthouse.Backend/Services/Implementation/Refinement/RefinementCadenceCalendar.cs` | `// SCAFFOLD:` on `CycleFrom` | answers no cycle (null), so every cycle assertion fails on an assertion, not a crash |
+| `Lighthouse.Backend/Services/Interfaces/Refinement/IRefinementCalendar.cs` | additive | `RefinementCycle(Start, End)` record; `RefinementCalendarFacts.Cycle` init-only, null until set |
+| `Lighthouse.Frontend/src/models/Refinement/Refinement.ts` | types only | `IRefinementNeed.cycleStart` / `cycleEnd` optional |
+| `Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/needWording.ts` | types only | `NeedFacts.refinementTerm`, `NeedOriginFacts.cycleStart` / `cycleEnd` / `refinementsTerm` optional; `refinementDay` stays until 6204-03 removes it |
+
+No production behaviour changed: the backend and frontend suites are green with every new case pending.
+
+## Wave: DISTILL / [REF] Pre-requisites — Story #6204
+
+DESIGN: DSN-23..DSN-30 and the settings ⓘ AFK decision. DEVOPS: nothing to deploy, no event, no client change. DELIVER owns: dropping
+`RefinementNeedCalculator`'s clock once today no longer feeds the window (the DISTILL spike hit CS9113); rewording the code comments
+that still say "until the next Refinement"; ARCHITECTURE.md §4 row 8 and the ADR-215 amendment; the maintainer's confirmation of the
+settings ⓘ at the hold; Stryker on the touched files last, on frozen code.
+
+## Wave: DISTILL / [REF] RED classification — Story #6204
+
+Backend: 675 pending cases un-ignored once → **668 fail, 7 pass by design** (five no-cycle guards that the null scaffold already
+satisfies, two cases whose expected value the old window happens to give while their siblings fail). Three cases that first passed
+vacuously were rewritten to discriminate and re-run RED. Frontend: 14 of 14 fail. Every failure is `MISSING_FUNCTIONALITY`; none
+broken. A throwaway spike (reverted) turned every pending case in both stacks green, so the expected numbers are reachable. Detail:
+`distill/red-classification.md` → "Story #6204".
+
+## Wave: DISTILL / [REF] Completeness audit — Story #6204
+
+15-item checklist: **14 / 15, COMPLETE**. C1 boundaries (today a Refinement day / the day before, a 1-working-day cycle, 3- vs 4-day
+gaps) ✓✓ · C2 states (cycle / no cycle; Refinement day / not; blacked-out Refinement at either end) ✓✓ · C3 counts (no, one, many and a
+year of blackout days; 1 and N working days) ✓ · C4 read-only, no lifecycle: N/A with rationale ✓✓ · C5 Refinement day × blackouts ×
+cadence shape (weekly, two weekdays, every N weeks, starting week to come) ✓✓ · C6 no cadence, too little history, no refinement
+states, no Refinement after the next, a need without cycle dates in the browser ✓✓✓ · C7 resource starvation (the bounded blackout
+fetch) ✓, interruption N/A ✓, **the instance time zone with the cycle — gap, documented**: slice 04 already pins which day today is in
+the instance's zone, and the cycle is derived from that same day, so no new case was added. No `SPECIFICATION_AMBIGUITY`.
+Mandate-12 (informational): step bodies delegate to the harness; one Given (`GivenATeamWithout`) dispatches on a closed enum with a
+switch, kept for the three-row parametrised error scenario.
+
+## Wave: DISTILL / [REF] Delivery order — Story #6204
+
+Roadmap phase `6204`, after 16 and before 09: **6204-01** the cycle on the calendar, the calculator's window and the wire fields
+(un-ignores `NeedOverOneCycleTest` and the cycle unit cases) → **6204-02** the re-pinned slice 05 / 07 scenarios → **6204-03** the
+verdict and tooltip copy (`needWording.test.ts`, `RefinementView.need.test.tsx`) → **6204-04** the settings ⓘ
+(`ModifyTeamSettings.refinementNeed.test.tsx`). One scenario at a time within each step.

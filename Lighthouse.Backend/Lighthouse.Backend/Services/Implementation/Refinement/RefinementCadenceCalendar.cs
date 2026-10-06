@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Lighthouse.Backend.Models.Refinement;
+using Lighthouse.Backend.Services.Interfaces.Refinement;
 
 namespace Lighthouse.Backend.Services.Implementation.Refinement
 {
@@ -28,6 +29,10 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 .Select(day => (DateOnly?)day)
                 .FirstOrDefault();
         }
+
+        // SCAFFOLD: the cycle is not worked out yet, so every cadence reads as having none.
+        public static RefinementCycle? CycleFrom(RefinementCadence? cadence, DateOnly today, Func<DateOnly, bool> isBlackedOut)
+            => null;
 
         public static bool IsCadenceDay(RefinementCadence? cadence, DateOnly day, Func<DateOnly, bool> isBlackedOut)
         {

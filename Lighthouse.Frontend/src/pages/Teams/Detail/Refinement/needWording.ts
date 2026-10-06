@@ -10,6 +10,7 @@ export interface NeedFacts {
 	teamName: string;
 	workItemTerm: string;
 	workItemsTerm: string;
+	refinementTerm?: string;
 }
 
 /** The likelihoods the ends of the range are read at, with the word the Team uses for a Team. */
@@ -24,7 +25,10 @@ export interface NeedOriginFacts extends LikelihoodFacts {
 	teamName: string;
 	horizonWorkingDays: number;
 	refinementDay: Date;
+	cycleStart?: Date;
+	cycleEnd?: Date;
 	throughputTerm: string;
+	refinementsTerm?: string;
 }
 
 // Equal ends are one number, not a range of one.

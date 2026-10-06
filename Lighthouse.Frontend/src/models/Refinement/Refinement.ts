@@ -124,6 +124,10 @@ export interface IRefinementNeed {
 	lowPercentile: number | null;
 	highPercentile: number | null;
 	horizonWorkingDays: number | null;
+	/** The first Refinement of the cycle the need covers, as "yyyy-MM-dd"; today on a Refinement day. Null without a range. */
+	cycleStart?: string | null;
+	/** The Refinement after the cycle's first, as "yyyy-MM-dd". Null without a range. */
+	cycleEnd?: string | null;
 }
 
 /** The row as a vote left it, and whether that vote is the one that moved it to Ready. */

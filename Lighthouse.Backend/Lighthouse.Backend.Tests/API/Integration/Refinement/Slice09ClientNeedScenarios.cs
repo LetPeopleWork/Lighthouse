@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [Ignore(PendingSlice09)]
         public async Task A_client_is_told_whether_to_refine_more_or_stop()
         {
-            var gravity = await GivenGravityHasTwoReadyAndIsLikelyToPullFiveToEightBeforeThursday();
+            var gravity = await GivenGravityHasTwoReadyAndIsLikelyToPullFiveToEightOverItsCycle();
 
             var tab = await WhenPriyasClientReadsTheRefinement(gravity);
 
@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [Ignore(PendingSlice09)]
         public async Task The_need_joins_the_answer_without_taking_away_what_older_clients_read()
         {
-            var gravity = await GivenGravityHasTwoReadyAndIsLikelyToPullFiveToEightBeforeThursday();
+            var gravity = await GivenGravityHasTwoReadyAndIsLikelyToPullFiveToEightOverItsCycle();
             await GivenThreeVotersSaidYesOn(gravity, ConfigurationManagement);
 
             var tab = await WhenPriyasClientReadsTheRefinement(gravity);
@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [Ignore(PendingSlice09)]
         public async Task A_personal_API_key_is_told_the_same_need_as_a_browser()
         {
-            var gravity = await GivenGravityHasTwoReadyAndIsLikelyToPullFiveToEightBeforeThursday();
+            var gravity = await GivenGravityHasTwoReadyAndIsLikelyToPullFiveToEightOverItsCycle();
             var anasKey = await APersonalApiKeyOf("ana", AnaLima);
 
             var tab = await TheTabAsSeenBy(anasKey, gravity);

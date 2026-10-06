@@ -1,6 +1,7 @@
 using System.Globalization;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Services.Implementation.Refinement;
+using Lighthouse.Backend.Services.Interfaces.Refinement;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 {
@@ -131,6 +132,156 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                 Assert.That(isCadenceDay, Is.False);
             }
         }
+
+        // --- The Refinement cycle the need covers ---
+
+        // Thursdays every week
+        [TestCase("Thursday", 1, null, "2026-10-02", "2026-10-08", "2026-10-15")]
+        [TestCase("Thursday", 1, null, "2026-10-07", "2026-10-08", "2026-10-15")]
+        [TestCase("Thursday", 1, null, "2026-10-08", "2026-10-08", "2026-10-15")]
+        [TestCase("Thursday", 1, null, "2026-10-09", "2026-10-15", "2026-10-22")]
+        // Mondays and Thursdays: the gap is three days, then four
+        [TestCase("Monday,Thursday", 1, null, "2026-10-02", "2026-10-05", "2026-10-08")]
+        [TestCase("Monday,Thursday", 1, null, "2026-10-05", "2026-10-05", "2026-10-08")]
+        [TestCase("Monday,Thursday", 1, null, "2026-10-06", "2026-10-08", "2026-10-12")]
+        [TestCase("Monday,Thursday", 1, null, "2026-10-08", "2026-10-08", "2026-10-12")]
+        // Tuesdays every second week from the week of Monday 5 October
+        [TestCase("Tuesday", 2, "2026-10-05", "2026-10-02", "2026-10-06", "2026-10-20")]
+        [TestCase("Tuesday", 2, "2026-10-05", "2026-10-06", "2026-10-06", "2026-10-20")]
+        [TestCase("Tuesday", 2, "2026-10-05", "2026-10-13", "2026-10-20", "2026-11-03")]
+        // A starting week still to come
+        [TestCase("Tuesday", 2, "2026-10-19", "2026-10-02", "2026-10-20", "2026-11-03")]
+        [Ignore(PendingStory6204)]
+        public void The_cycle_runs_from_the_next_Refinement_or_from_today_on_a_Refinement_day_to_the_Refinement_after_it(
+            string weekdays, int intervalWeeks, string? anchorWeek, string today, string start, string end)
+        {
+            var cycle = RefinementCadenceCalendar.CycleFrom(Cadence(weekdays, intervalWeeks, anchorWeek), Day(today), NoBlackouts);
+
+            Assert.That(cycle, Is.EqualTo(new RefinementCycle(Day(start), Day(end))));
+        }
+
+        // Thursdays every week
+        [TestCase("2026-10-15", "2026-10-02", "2026-10-08", "2026-10-22")]
+        [TestCase("2026-10-08", "2026-10-02", "2026-10-15", "2026-10-22")]
+        [TestCase("2026-10-08", "2026-10-08", "2026-10-15", "2026-10-22")]
+        [TestCase("2026-10-15,2026-10-22", "2026-10-02", "2026-10-08", "2026-10-29")]
+        [TestCase("2026-10-12", "2026-10-02", "2026-10-08", "2026-10-15")]
+        [Ignore(PendingStory6204)]
+        public void A_blacked_out_Refinement_is_skipped_at_either_end_of_the_cycle(string blackoutDays, string today, string start, string end)
+        {
+            var blackedOut = blackoutDays.Split(',').Select(Day).ToHashSet();
+
+            var cycle = RefinementCadenceCalendar.CycleFrom(ThursdaysEveryWeek, Day(today), blackedOut.Contains);
+
+            Assert.That(cycle, Is.EqualTo(new RefinementCycle(Day(start), Day(end))));
+        }
+
+        [TestCase("", 1)]
+        [TestCase("Thursday", 0)]
+        [Ignore(PendingStory6204)]
+        public void A_cadence_with_no_weekday_or_no_interval_has_no_cycle(string weekdays, int intervalWeeks)
+        {
+            var cycle = RefinementCadenceCalendar.CycleFrom(Cadence(weekdays, intervalWeeks, null), FridayTheSecond, NoBlackouts);
+
+            Assert.That(cycle, Is.Null);
+        }
+
+        [Test]
+        [Ignore(PendingStory6204)]
+        public void A_Team_without_a_cadence_has_no_cycle()
+        {
+            Assert.That(RefinementCadenceCalendar.CycleFrom(null, FridayTheSecond, NoBlackouts), Is.Null);
+        }
+
+        // The next Refinement happens, but every one in the year after it is blacked out.
+        [Test]
+        [Ignore(PendingStory6204)]
+        public void A_next_Refinement_with_none_after_it_for_as_far_as_the_calendar_looks_has_no_cycle()
+        {
+            var nextRefinement = Day("2026-10-08");
+
+            var cycle = RefinementCadenceCalendar.CycleFrom(ThursdaysEveryWeek, FridayTheSecond, day => day > nextRefinement);
+
+            Assert.That(cycle, Is.Null);
+        }
+
+        // For every day over six weeks, under every cadence, with and without blackout days scattered across
+        // the calendar: the cycle starts today when today is a Refinement day and at the next Refinement
+        // otherwise, ends at the Refinement after its start, and holds no other Refinement in between.
+        [TestCaseSource(nameof(EveryDayUnderEveryCadence))]
+        [Ignore(PendingStory6204)]
+        public void The_cycle_is_the_gap_between_two_Refinements_in_a_row(string weekdays, int intervalWeeks, string? anchorWeek, string blackouts, string today)
+        {
+            var cadence = Cadence(weekdays, intervalWeeks, anchorWeek);
+            var isBlackedOut = BlackoutPatterns[blackouts];
+            var day = Day(today);
+            var expectedStart = RefinementCadenceCalendar.IsCadenceDay(cadence, day, isBlackedOut)
+                ? day
+                : RefinementCadenceCalendar.NextAfter(cadence, day, isBlackedOut);
+
+            var cycle = RefinementCadenceCalendar.CycleFrom(cadence, day, isBlackedOut);
+
+            Assert.That(cycle, Is.Not.Null);
+            var refinementsInside = Enumerable.Range(1, cycle!.End.DayNumber - cycle.Start.DayNumber - 1)
+                .Select(cycle.Start.AddDays)
+                .Where(inside => RefinementCadenceCalendar.IsCadenceDay(cadence, inside, isBlackedOut));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(cycle.Start, Is.EqualTo(expectedStart));
+                Assert.That(cycle.End, Is.EqualTo(RefinementCadenceCalendar.NextAfter(cadence, cycle.Start, isBlackedOut)));
+                Assert.That(cycle.End, Is.GreaterThan(cycle.Start));
+                Assert.That(refinementsInside, Is.Empty);
+            }
+        }
+
+        // Which day of the week it is never changes a weekly cycle: without blackout days it is always one week.
+        [TestCaseSource(nameof(EveryDayUnderEveryWeeklyCadence))]
+        [Ignore(PendingStory6204)]
+        public void A_weekly_cycle_is_one_week_whatever_day_today_is(string weekday, string today)
+        {
+            var cycle = RefinementCadenceCalendar.CycleFrom(Cadence(weekday, 1, null), Day(today), NoBlackouts);
+
+            Assert.That(cycle?.End.DayNumber - cycle?.Start.DayNumber, Is.EqualTo(7));
+        }
+
+        private const string PendingStory6204 = "Story #6204, the need covers one Refinement cycle - pending DELIVER";
+
+        private static readonly DateOnly FridayTheSecond = new(2026, 10, 2);
+
+        private static readonly RefinementCadence ThursdaysEveryWeek = RefinementCadence.Of([DayOfWeek.Thursday], 1, null);
+
+        private static readonly DateOnly FirstDaySwept = new(2026, 9, 28);
+
+        private const int DaysSwept = 42;
+
+        private static readonly Dictionary<string, Func<DateOnly, bool>> BlackoutPatterns = new()
+        {
+            ["none"] = _ => false,
+            ["scattered"] = day => day.DayNumber % 5 == 0 || day.DayNumber % 11 == 3,
+        };
+
+        private static readonly (string Weekdays, int IntervalWeeks, string? AnchorWeek)[] CadencesSwept =
+        [
+            ("Thursday", 1, null),
+            ("Monday,Thursday", 1, null),
+            ("Sunday", 1, null),
+            ("Tuesday", 2, "2026-10-05"),
+            ("Friday", 3, "2026-10-05"),
+            ("Tuesday,Thursday", 2, "2026-10-19"),
+        ];
+
+        private static IEnumerable<TestCaseData> EveryDayUnderEveryCadence()
+            => from cadence in CadencesSwept
+               from blackouts in BlackoutPatterns.Keys
+               from offset in Enumerable.Range(0, DaysSwept)
+               select new TestCaseData(cadence.Weekdays, cadence.IntervalWeeks, cadence.AnchorWeek, blackouts, IsoDay(FirstDaySwept.AddDays(offset)));
+
+        private static IEnumerable<TestCaseData> EveryDayUnderEveryWeeklyCadence()
+            => from weekday in Enum.GetNames<DayOfWeek>()
+               from offset in Enumerable.Range(0, 14)
+               select new TestCaseData(weekday, IsoDay(FirstDaySwept.AddDays(offset)));
+
+        private static string IsoDay(DateOnly day) => day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
         private static RefinementCadence Cadence(string weekdays, int intervalWeeks, string? anchorWeek)
         {

@@ -25,8 +25,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private async Task<TeamUnderTest> GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth()
             => await GravityWithTwoReadyRefiningOnThursdaysOnFridayTheSecond();
 
-        private void GivenTheTeamIsLikelyToPullFiveToEightBeforeThursday()
-            => TheTeamIsLikelyToPullFiveToEightBeforeThursday();
+        private void GivenTheTeamIsLikelyToPullFiveToEightOverItsCycle()
+            => TheTeamIsLikelyToPullFiveToEightOverGravitysCycle();
 
         private async Task<TeamUnderTest> GivenGravityWithoutStagesRefinesOnThursdayTheEighthAndIsLikelyToPullOneToThree()
         {
@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             TheTeamFinishedWorkEveryDay(gravity, 1);
             await TheAdminHasSetTheCadence(gravity, [Thursday], 1, null);
             TodayIs(2026, 10, 2);
-            TheTeamIsLikelyToPull(6, (50, 1), (85, 3));
+            TheTeamIsLikelyToPull(GravitysCycleWorkingDays, (50, 1), (85, 3));
             return gravity;
         }
 
@@ -121,19 +121,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         {
             var need = NeedIn(tab);
             Assert.That((need.Low, need.High, need.HorizonWorkingDays), Is.EqualTo(((int?)low, (int?)high, (int?)horizonWorkingDays)),
-                "the range must be the forecast over exactly the working days to the next Refinement");
+                "the range must be the forecast over exactly the working days of the Refinement cycle");
         }
 
-        private async Task ThenTheRangeUsesTheManualForecastsHorizonToTuesdayTheThirteenth(JsonElement tab, TeamUnderTest team)
+        /// <summary>
+        /// The cycle runs from Tuesday 13 to Tuesday 20 October, seven working days; the manual forecast for
+        /// seven working days from Wednesday 7 October targets Wednesday 14 October.
+        /// </summary>
+        private async Task ThenTheRangeIsTheManualForecastForTheSevenWorkingDaysOfTheCycleAfterTuesdayTheThirteenth(JsonElement tab, TeamUnderTest team)
         {
             var need = NeedIn(tab);
-            var manual = await TheManualForecastFor(team, new DateOnly(2026, 10, 13));
+            var manual = await TheManualForecastFor(team, new DateOnly(2026, 10, 14));
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(need.Low, Is.EqualTo(HowManyAt(manual, 50)), "the low end is the manual forecast's median");
-                Assert.That((need.Low, need.High, need.HorizonWorkingDays), Is.EqualTo(((int?)12, (int?)12, (int?)6)),
-                    "two a day over six working days, read at both ends");
+                Assert.That((need.Low, need.High, need.HorizonWorkingDays), Is.EqualTo(((int?)14, (int?)14, (int?)7)),
+                    "two a day over the seven working days of the cycle, read at both ends");
+                Assert.That(CycleIn(tab), Is.EqualTo(new CycleReading("2026-10-13", "2026-10-20")));
             }
         }
 

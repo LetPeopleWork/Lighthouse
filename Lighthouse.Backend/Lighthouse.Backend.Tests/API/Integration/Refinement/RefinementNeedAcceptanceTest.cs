@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     /// about a verdict has to choose the forecast it is judged against, or it asserts sampling noise. A
     /// horizon the scenario did not script runs the shipped forecast engine over the Team's real finished
     /// Work Items - which is also how the scenarios prove that the tab asks the forecast for exactly the
-    /// working days until the next Refinement: a scripted range only appears when the tab asks for the
+    /// working days of one Refinement cycle: a scripted range only appears when the tab asks for the
     /// horizon it was scripted for.
     /// </summary>
     public abstract class RefinementNeedAcceptanceTest : SizingVotesAcceptanceTest
@@ -39,6 +39,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         protected const string PendingSlice07 = "Epic #5881 slice 07 (#6145) - pending DELIVER";
 
         protected const string PendingSlice09 = "Epic #5881 slice 09 (#6147) - pending DELIVER";
+
+        protected const string PendingStory6204 = "Story #6204, the need covers one Refinement cycle - pending DELIVER";
+
+        /// <summary>
+        /// Gravity refines every Thursday. From any day up to Thursday 8 October its cycle runs from that
+        /// Thursday to Thursday 15 October: the seven days after the 8th, none of them blacked out.
+        /// </summary>
+        protected const int GravitysCycleWorkingDays = 7;
 
         protected const string AdvancedSearch = "GR-059";
 
@@ -225,28 +233,31 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         }
 
         /// <summary>
-        /// Over the six working days to Thursday the Team is likely to pull a different number at every
+        /// Over the working days of Gravity's cycle the Team is likely to pull a different number at every
         /// likelihood: 3 at 30%, 5 at the median, 6 at 70%, 8 at 85% and 10 at 95%.
         /// </summary>
-        protected void TheTeamIsLikelyToPullFiveToEightBeforeThursday()
-            => TheTeamIsLikelyToPull(6, (30, 3), (50, 5), (70, 6), (85, 8), (95, 10));
+        protected void TheTeamIsLikelyToPullFiveToEightOverGravitysCycle()
+            => TheTeamIsLikelyToPull(GravitysCycleWorkingDays, (30, 3), (50, 5), (70, 6), (85, 8), (95, 10));
 
-        protected async Task<TeamUnderTest> GravityWithTwoReadyLikelyToPullFiveToEightBeforeThursday()
+        protected async Task<TeamUnderTest> GravityWithTwoReadyLikelyToPullFiveToEightOverItsCycle()
         {
             var gravity = await GravityWithTwoReadyRefiningOnThursdaysOnFridayTheSecond();
-            TheTeamIsLikelyToPullFiveToEightBeforeThursday();
+            TheTeamIsLikelyToPullFiveToEightOverGravitysCycle();
             return gravity;
         }
 
         /// <summary>A system admin has declared this day a blackout day for the whole instance.</summary>
-        protected async Task ABlackoutDayOn(DateOnly day)
+        protected async Task ABlackoutDayOn(DateOnly day) => await BlackoutDaysFrom(day, day);
+
+        /// <summary>A system admin has declared every day from the first to the last a blackout day for the whole instance.</summary>
+        protected async Task BlackoutDaysFrom(DateOnly first, DateOnly last)
         {
             TheCallerAdministersTheWholeInstance();
 
             var body = new JsonObject
             {
-                ["start"] = day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                ["end"] = day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                ["start"] = first.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                ["end"] = last.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 ["description"] = "Company offsite",
             };
 
@@ -255,6 +266,26 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json"));
             Assert.That(created.IsSuccessStatusCode, Is.True,
                 $"The blackout day was not declared, so the scenario describes a calendar without it. {await created.Content.ReadAsStringAsync()}");
+        }
+
+        /// <summary>A system admin has blacked out every Saturday and Sunday, from the week before October 2026 on.</summary>
+        protected async Task WeekendsAreBlackedOut()
+        {
+            TheCallerAdministersTheWholeInstance();
+
+            var body = new JsonObject
+            {
+                ["weekdays"] = new JsonArray((int)DayOfWeek.Saturday, (int)DayOfWeek.Sunday),
+                ["intervalWeeks"] = 1,
+                ["start"] = "2026-09-28",
+                ["description"] = "Weekend",
+            };
+
+            using var created = await Client.PostAsync(
+                "/api/latest/recurring-blackout-rules",
+                new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json"));
+            Assert.That(created.IsSuccessStatusCode, Is.True,
+                $"The weekends were not blacked out, so the scenario describes a calendar with them. {await created.Content.ReadAsStringAsync()}");
         }
 
         // --- The admin's saves ---
@@ -467,6 +498,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 NumberOf(need, "horizonWorkingDays"));
         }
 
+        /// <summary>
+        /// The Refinement cycle the need covers, from the first Refinement to the one after it. The need must
+        /// name both ends, as null when it has no range.
+        /// </summary>
+        protected static CycleReading CycleIn(JsonElement tab)
+        {
+            var need = tab.GetProperty("need");
+            Assert.That(need.TryGetProperty("cycleStart", out _) && need.TryGetProperty("cycleEnd", out _), Is.True,
+                $"The need does not say which Refinement cycle it covers. Body: {need}");
+
+            return new CycleReading(TextOf(need, "cycleStart"), TextOf(need, "cycleEnd"));
+        }
+
         protected static List<string> ReferencesListedIn(JsonElement tab)
             => [.. RowsIn(tab).Select(row => row.ReferenceId ?? string.Empty)];
 
@@ -556,6 +600,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         protected sealed record StageRowReading(string ReferenceId, string? Stage, string? VotesSay, int? MissingVotes, bool? SignalsDisagree);
 
         protected sealed record CadenceFactsReading(string? NextRefinementDate, bool? IsRefinementDay);
+
+        /// <summary>The first Refinement of the cycle and the one after it, as days; both null without a range.</summary>
+        protected sealed record CycleReading(string? Start, string? End);
 
         protected sealed record CadenceReading(string? Weekdays, int? IntervalWeeks, string? AnchorWeek);
 

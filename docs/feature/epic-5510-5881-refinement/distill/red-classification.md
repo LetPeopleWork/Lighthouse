@@ -194,3 +194,52 @@ against a live instance before committing it un-fixme'd**; it assumes demo Gravi
 number.
 
 **Amendment 2026-10-04 (maintainer answer):** a stage-Ready row nobody has voted on carries no ⚠. *A Ready stage the votes cast do not back yet is marked as disagreeing* now casts one Yes first; the new boundary case *A Ready stage nobody has voted on shows no disagreement* (backend) and *marks no row whose stage is Ready when nobody has voted on it yet* (frontend) were un-skipped once: both fail on missing behaviour (the tab carries no `stage` / `signalsDisagree`; no ⚠ label on GR-059), then re-skipped.
+
+# RED classification — Story #6204, the need covers one Refinement cycle
+
+**Wave**: DISTILL · **Date**: 2026-10-06 · **Scope**: Story #6204 (under Epic #5881), on `main` at `ff8fc783d` plus this
+commit's test files and scaffold.
+
+Every pending case was un-ignored / un-skipped once, run, classified, and pending again.
+
+## Backend — `Lighthouse.Backend.Tests` (NUnit, `WebApplicationFactory`, real EF)
+
+Run: the six fixtures below with every `[Ignore(PendingStory6204)]` removed → **675 pending cases: 668 fail, 7 pass**.
+
+| Fixture | Cases | Fails because | Class |
+|---|---|---|---|
+| `NeedOverOneCycleTest` (new) | 22 | "The need does not say which Refinement cycle it covers" (no `cycleStart` / `cycleEnd` members), or the range is asked for the old horizon so the scripted cycle forecast never answers | MISSING_FUNCTIONALITY |
+| `Slice05NeedAndVerdictTest` (re-pinned) | 13 (11 RED) | scripted for the cycle's 7 working days; the tab still asks for 6, so the shipped engine answers instead | MISSING_FUNCTIONALITY |
+| `Slice07BandPercentilesTest.The_band_decides_where_the_range_is_read` (re-pinned) | 3 | same as slice 05 | MISSING_FUNCTIONALITY |
+| `RefinementCadenceCalendarTest` (cycle cases) | 623 (619 RED) | `CycleFrom` is a scaffold that answers no cycle | MISSING_FUNCTIONALITY |
+| `RefinementCalendarTest` (cycle cases) | 9 (8 RED) | `RefinementCalendarFacts.Cycle` is never set; the tail past the first year is never fetched | MISSING_FUNCTIONALITY |
+| `RefinementNeedCalculatorTest` (cycle cases) | 5 | the window still runs from today to the next Refinement; a missing cycle is not read as `NoCadence` | MISSING_FUNCTIONALITY |
+
+The 7 that pass before the work, none of them hiding the rule:
+
+- **No-cycle guards (5 unit cases):** `A_cadence_with_no_weekday_or_no_interval_has_no_cycle` (×2), `A_Team_without_a_cadence_has_no_cycle`,
+  `A_next_Refinement_with_none_after_it_for_as_far_as_the_calendar_looks_has_no_cycle`, `Without_a_cadence_there_is_no_cycle`: the
+  scaffold already answers "no cycle"; they guard the implementation.
+- **Same answer under the old window (2 cases):** `The_high_end_is_stated_as_forecast…(6)` and `The_verdict_compares…(3, 8, Below)`:
+  the shipped engine, asked for the old six days, happens to give the expected value; their sibling cases fail.
+
+Three cases first passed vacuously and were rewritten to discriminate, then re-run RED: the slice 05 scenario where votes do not move
+the verdict (now scripted 1–2 and expecting `In`, which the old window cannot give), the slice 05 blackout scenario and the calculator's
+blackout case (now Tuesday 13 and Wednesday 14 blacked out, 5 working days in the cycle, against the old window's 6).
+
+## Frontend — `Lighthouse.Frontend` (Vitest + RTL)
+
+Run: `npx vitest run` over the three files with every `it.skip` turned into `it` → **14 pending cases: 14 fail**.
+
+| File | Cases | Fails because | Class |
+|---|---|---|---|
+| `pages/Teams/Detail/Refinement/needWording.test.ts` | 8 | Below still ends "by then"; the tooltip still reads "until Thu 8 Oct" | MISSING_FUNCTIONALITY |
+| `pages/Teams/Detail/Refinement/RefinementView.need.test.tsx` | 5 | the alert and its tooltip carry the old copy; a need without cycle dates is still judged | MISSING_FUNCTIONALITY |
+| `components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx` | 1 | the band ⓘ still says "until the next Grooming" | MISSING_FUNCTIONALITY |
+
+## Achievability check
+
+A throwaway spike (not committed) built the cycle, the tail fetch, the calculator window, the two wire members and the frontend copy;
+with it every pending case in both stacks went green (backend Refinement fixtures 1476 passed, frontend Refinement and Team settings
+files 502 passed). It surfaced one fact the crafter needs: once today no longer feeds the window, `RefinementNeedCalculator`'s clock
+parameter is unread (CS9113). The spike's code was reverted; the scaffold remains.

@@ -4,7 +4,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 {
     /// <summary>
     /// Before the next Refinement the tab says whether to refine more or stop. The number is the Team's own
-    /// manual How Many forecast for the working days until the next Refinement: the low end is what the Team
+    /// manual How Many forecast for the working days of one Refinement cycle, from the next Refinement up to
+    /// and including the one after it (from today, on a Refinement day): the low end is what the Team
     /// pulls more likely than not (the median), the high end a count only 15% of runs pull more than.
     /// The ready Work Items - by votes on a Team without stage rules, by stage on a Team with them - are
     /// below, in or above that range, ends included in range. The answer is facts only: counts, the range,
@@ -28,14 +29,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-05 @slice-05 @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:pure-function
         // The forecast differs at every likelihood, so only the median and the 85% reading give 5 and 8.
         [Test]
+        [Ignore(PendingStory6204)]
         public async Task Below_range_says_how_many_are_ready_against_the_range_the_Team_is_likely_to_pull()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
-            GivenTheTeamIsLikelyToPullFiveToEightBeforeThursday();
+            GivenTheTeamIsLikelyToPullFiveToEightOverItsCycle();
 
             var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
 
-            ThenTheNeedIs(tab, new NeedReading(Below, null, 5, 8, 50, 85, 6));
+            ThenTheNeedIs(tab, new NeedReading(Below, null, 5, 8, 50, 85, GravitysCycleWorkingDays));
             ThenTheNextRefinementIsThursdayTheEighthWithTwoReady(tab);
         }
 
@@ -45,10 +47,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase(2, 8, InRange)]
         [TestCase(1, 2, InRange)]
         [TestCase(0, 1, Above)]
+        [Ignore(PendingStory6204)]
         public async Task The_verdict_compares_the_ready_count_with_both_ends_of_the_range(int low, int high, string verdict)
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
-            TheTeamIsLikelyToPull(6, (50, low), (85, high));
+            TheTeamIsLikelyToPull(GravitysCycleWorkingDays, (50, low), (85, high));
 
             var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
 
@@ -58,6 +61,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-05 @us-13 @slice-05 @contract-shape:bounded-change
         // Without stage rules the votes make Work Items Ready, and so they move the verdict.
         [Test]
+        [Ignore(PendingStory6204)]
         public async Task On_a_Team_without_stages_a_vote_that_makes_a_Work_Item_Ready_moves_the_verdict()
         {
             var gravity = await GivenGravityWithoutStagesRefinesOnThursdayTheEighthAndIsLikelyToPullOneToThree();
@@ -69,42 +73,48 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         }
 
         // @driving_port @real-io @us-05 @us-03 @slice-05 @boundary @contract-shape:bounded-change
-        // With stage rules the tracker decides what is ready; votes are shown, not counted.
+        // With stage rules the tracker decides what is ready; votes are shown, not counted. Were they counted,
+        // the three Yes votes would make a third Work Item ready and lift the count above the range of 1-2.
         [Test]
+        [Ignore(PendingStory6204)]
         public async Task On_a_Team_with_stages_votes_do_not_move_the_verdict()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
-            TheTeamIsLikelyToPull(6, (50, 3), (85, 5));
+            TheTeamIsLikelyToPull(GravitysCycleWorkingDays, (50, 1), (85, 2));
 
             await WhenThreeVotersSayYesOn(gravity, ConfigurationManagement);
 
-            ThenTheVerdictIs(await WhenTheCoachOpensTheRefinementTab(gravity), Below);
+            ThenTheVerdictIs(await WhenTheCoachOpensTheRefinementTab(gravity), InRange);
         }
 
         // --- The number behind it ---
 
         // @driving_port @real-io @us-05 @slice-05 @contract-shape:pure-function
-        // A Team that finishes two Work Items every day is forecast twelve over six working days, whatever the
-        // engine draws, so both reads of the shipped engine must agree exactly. With so even a history every
-        // likelihood reads twelve: this proves the horizon, and the band's own tests prove which likelihood
-        // each end is read at.
+        // A Team that finishes two Work Items every day is forecast fourteen over the seven working days of its
+        // cycle, whatever the engine draws, so both reads of the shipped engine must agree exactly. The manual
+        // forecast is asked for the day as many working days ahead as the cycle has. With so even a history
+        // every likelihood reads fourteen: this proves the horizon, and the band's own tests prove which
+        // likelihood each end is read at.
         [Test]
+        [Ignore(PendingStory6204)]
         public async Task The_range_uses_the_same_horizon_as_the_manual_forecast()
         {
             var gravity = await GivenGravityFinishesTwoADayAndRefinesOnTuesdays();
 
             var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
 
-            await ThenTheRangeUsesTheManualForecastsHorizonToTuesdayTheThirteenth(tab, gravity);
+            await ThenTheRangeIsTheManualForecastForTheSevenWorkingDaysOfTheCycleAfterTuesdayTheThirteenth(tab, gravity);
         }
 
         // @driving_port @real-io @us-05 @slice-05 @boundary @contract-shape:pure-function
-        // Monday 5 October is a blackout day, so only five of the six days to Thursday are working days.
+        // Tuesday 13 and Wednesday 14 October are blackout days, so only five of the seven days after
+        // Thursday the 8th up to Thursday the 15th are working days.
         [Test]
-        public async Task Blackout_days_before_the_next_Refinement_are_not_counted()
+        [Ignore(PendingStory6204)]
+        public async Task Blackout_days_inside_the_cycle_are_not_counted()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
-            await ABlackoutDayOn(new DateOnly(2026, 10, 5));
+            await BlackoutDaysFrom(new DateOnly(2026, 10, 13), new DateOnly(2026, 10, 14));
             TheTeamIsLikelyToPull(5, (50, 4), (85, 7));
 
             var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
@@ -171,10 +181,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase(3)]
         [TestCase(6)]
         [TestCase(11)]
+        [Ignore(PendingStory6204)]
         public async Task The_high_end_is_stated_as_forecast_whatever_number_of_Work_Items_is_listed(int high)
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
-            TheTeamIsLikelyToPull(6, (50, 1), (85, high));
+            TheTeamIsLikelyToPull(GravitysCycleWorkingDays, (50, 1), (85, high));
 
             var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
 
@@ -182,16 +193,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         }
 
         // @driving_port @real-io @us-06 @slice-05 @boundary @contract-shape:pure-function
-        // A Team likely to pull nothing at all before the next Refinement needs nothing refined.
+        // A Team likely to pull nothing at all over the cycle needs nothing refined.
         [Test]
+        [Ignore(PendingStory6204)]
         public async Task A_range_of_nothing_says_stop_with_two_ready()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
-            TheTeamIsLikelyToPull(6, (50, 0), (85, 0));
+            TheTeamIsLikelyToPull(GravitysCycleWorkingDays, (50, 0), (85, 0));
 
             var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
 
-            ThenTheNeedIs(tab, new NeedReading(Above, null, 0, 0, 50, 85, 6));
+            ThenTheNeedIs(tab, new NeedReading(Above, null, 0, 0, 50, 85, GravitysCycleWorkingDays));
         }
 
         // --- Guardrail ---

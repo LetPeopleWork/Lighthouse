@@ -19,9 +19,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         private static readonly DateTime TodayAtMidnight = new(2026, 10, 2, 0, 0, 0, DateTimeKind.Utc);
 
+        private static readonly DateOnly ThursdayAfter = new(2026, 10, 15);
+
         private static readonly DateTime NextThursdayAtMidnight = new(2026, 10, 8, 0, 0, 0, DateTimeKind.Utc);
 
-        private static readonly RefinementCalendarFacts RefiningOnThursday = new(NextThursday, false, 6);
+        private static readonly DateTime ThursdayAfterAtMidnight = new(2026, 10, 15, 0, 0, 0, DateTimeKind.Utc);
+
+        private const string PendingStory6204 = "Story #6204, the need covers one Refinement cycle - pending DELIVER";
+
+        private static readonly RefinementCalendarFacts RefiningOnThursday = new(NextThursday, false, 6)
+        {
+            Cycle = new RefinementCycle(NextThursday, ThursdayAfter),
+        };
 
         // Five of a hundred runs pull 10, ten pull 8, twenty pull 6, fifteen pull 5 and the rest 3.
         private static readonly Dictionary<int, int> FiveToEight = new() { [10] = 5, [8] = 10, [6] = 20, [5] = 15, [3] = 50 };
@@ -67,26 +76,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                 forecastServiceMock.Object);
         }
 
+        // The cycle runs from Thursday 8 to Thursday 15 October: seven working days after the 8th, the 15th included.
         [Test]
-        public void The_range_is_the_How_Many_for_the_working_days_to_the_next_Refinement_read_at_the_default_band()
+        [Ignore(PendingStory6204)]
+        public void The_range_is_the_How_Many_for_the_working_days_of_the_cycle_read_at_the_default_band()
         {
             var outlook = subject.For(ATeam(), 2);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(outlook.Need, Is.EqualTo(new RefinementNeed(RefinementVerdict.Below, null, new NeedRange(5, 8, 50, 85, 6))));
+                Assert.That(outlook.Need.Verdict, Is.EqualTo(RefinementVerdict.Below));
+                Assert.That(RangeOf(outlook), Is.EqualTo(((int?)5, (int?)8, (int?)50, (int?)85, (int?)7)));
                 Assert.That(outlook.Calendar, Is.EqualTo(RefiningOnThursday));
             }
 
-            forecastServiceMock.Verify(service => service.HowMany(throughput, 6), Times.Once);
-            blackoutPeriodServiceMock.Verify(service => service.GetEffectiveBlackoutDays(TodayAtMidnight, NextThursdayAtMidnight));
+            forecastServiceMock.Verify(service => service.HowMany(throughput, 7), Times.Once);
+            blackoutPeriodServiceMock.Verify(service => service.GetEffectiveBlackoutDays(NextThursdayAtMidnight, ThursdayAfterAtMidnight));
             teamMetricsServiceMock.Verify(service => service.GetForecastThroughputStatus(It.IsAny<Team>(), ThroughputFilterMode.RespectTeamSetting));
         }
 
         [Test]
-        public void A_blackout_day_before_the_next_Refinement_is_not_a_working_day()
+        [Ignore(PendingStory6204)]
+        public void A_blackout_day_inside_the_cycle_is_not_a_working_day()
         {
-            blackoutDays = [new BlackoutPeriod { Start = new DateOnly(2026, 10, 5), End = new DateOnly(2026, 10, 5) }];
+            blackoutDays = [new BlackoutPeriod { Start = new DateOnly(2026, 10, 13), End = new DateOnly(2026, 10, 14) }];
 
             var outlook = subject.For(ATeam(), 2);
 
@@ -95,6 +108,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         }
 
         [Test]
+        [Ignore(PendingStory6204)]
+        public void A_blackout_day_before_the_next_Refinement_no_longer_changes_the_number()
+        {
+            blackoutDays = [new BlackoutPeriod { Start = new DateOnly(2026, 10, 5), End = new DateOnly(2026, 10, 5) }];
+
+            var outlook = subject.For(ATeam(), 2);
+
+            Assert.That(outlook.Need.Range?.HorizonWorkingDays, Is.EqualTo(7));
+        }
+
+        [Test]
+        [Ignore(PendingStory6204)]
         public void The_Teams_band_chooses_the_likelihoods_the_range_is_read_at()
         {
             var team = ATeam();
@@ -102,7 +127,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
             var outlook = subject.For(team, 11);
 
-            Assert.That(outlook.Need, Is.EqualTo(new RefinementNeed(RefinementVerdict.Above, null, new NeedRange(3, 10, 30, 95, 6))));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outlook.Need.Verdict, Is.EqualTo(RefinementVerdict.Above));
+                Assert.That(RangeOf(outlook), Is.EqualTo(((int?)3, (int?)10, (int?)30, (int?)95, (int?)7)));
+            }
+        }
+
+        // A next Refinement with none after it for a year is no Refinement worth planning for, as with no cadence.
+        [Test]
+        [Ignore(PendingStory6204)]
+        public void A_next_Refinement_without_a_cycle_gives_no_range_because_there_is_no_cadence()
+        {
+            calendarMock.Setup(calendar => calendar.FactsFor(It.IsAny<RefinementCadence?>())).Returns(new RefinementCalendarFacts(NextThursday, false, 6));
+
+            var outlook = subject.For(ATeam(), 2);
+
+            Assert.That(outlook.Need, Is.EqualTo(RefinementNeed.Unavailable(NeedUnavailableReason.NoCadence)));
+            forecastServiceMock.Verify(service => service.HowMany(It.IsAny<RunChartData>(), It.IsAny<int>()), Times.Never);
         }
 
         [TestCase(4, RefinementVerdict.Below)]
@@ -186,6 +228,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
             calendarMock.Verify(calendar => calendar.FactsFor(cadence), Times.Once);
         }
+
+        /// <summary>The range's ends, their likelihoods and the working days it covers; all null without a range.</summary>
+        private static (int? Low, int? High, int? LowPercentile, int? HighPercentile, int? HorizonWorkingDays) RangeOf(RefinementOutlook outlook)
+            => (outlook.Need.Range?.Low, outlook.Need.Range?.High, outlook.Need.Range?.LowPercentile, outlook.Need.Range?.HighPercentile, outlook.Need.Range?.HorizonWorkingDays);
 
         private void TheThroughputHistoryIsSufficient(bool sufficient)
         {

@@ -47,14 +47,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase(50, 95, 5, 10)]
         [TestCase(50, 85, 5, 8)]
         [TestCase(70, 95, 6, 10)]
+        [Ignore(PendingStory6204)]
         public async Task The_band_decides_where_the_range_is_read(int lowPercentile, int highPercentile, int low, int high)
         {
-            var gravity = await GivenGravityHasTwoReadyAndIsLikelyToPullFiveToTenBeforeThursday();
+            var gravity = await GivenGravityHasTwoReadyAndIsLikelyToPullFiveToTenOverItsCycle();
 
             await TheAdminHasSetTheBand(gravity, lowPercentile, highPercentile);
 
             ThenTheNeedIs(await WhenTheCoachOpensTheRefinementTab(gravity),
-                new NeedReading(Below, null, low, high, lowPercentile, highPercentile, 6));
+                new NeedReading(Below, null, low, high, lowPercentile, highPercentile, GravitysCycleWorkingDays));
         }
 
         // --- What is refused ---
