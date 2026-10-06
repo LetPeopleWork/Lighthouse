@@ -1027,3 +1027,52 @@ Closed by commit `0fb45ff41`:
 | accepted survivor | reason |
 | --- | --- |
 | `VoteControl.tsx:35` `myVote !== null` → `true` | equivalent: the toggle group reports null only when the clicked answer is the pressed one, so `myVote` is never null there; the check only narrows the type |
+
+# E2 Story 6204 — the need covers one Refinement cycle
+
+Configs: `stryker.6204.backend.json` (whole files), `stryker.6204.frontend.json` with `vitest.stryker.6204.ts` (the
+changed hunks only). Both run on the code after the refactor and the review fixes.
+
+## Backend — 86.96 %
+
+| file | killed / valid |
+| --- | --- |
+| `RefinementNeedCalculator.cs` | 9 / 9 (100 %) |
+| `RefinementCadenceCalendar.cs` | 24 / 25 (96.0 %) |
+| `RefinementCalendar.cs` | 6 / 7 (85.7 %) |
+| `IRefinementCalendar.cs` | 1 / 1 (100 %) |
+| `IRefinementViewQuery.cs` | 0 / 3 |
+| `RefinementViewDto.cs` | 0 / 1 (no coverage) |
+
+No kill tests were written; every survivor is accepted:
+
+| accepted survivor | reason |
+| --- | --- |
+| `RefinementCadenceCalendar.cs:86` `anchorWeek > tomorrow` → `>=` | equivalent: when the two are equal both branches return the same day |
+| `RefinementViewDto.cs:58` the cycle dates' `"yyyy-MM-dd"` format (no coverage) | covered by the HTTP scenarios, which pin `cycleStart`/`cycleEnd` as `2026-10-08`/`2026-10-15`; Stryker runs only the unit tests |
+| `RefinementCalendar.cs:13` the no-cadence early return | older code from the cadence slice; the whole file is mutated |
+| `IRefinementViewQuery.cs:54`, `:73` | older code from slices 03 and 12; the whole file is mutated |
+
+## Frontend — 77.14 % → 94.29 %
+
+| file | before | after |
+| --- | --- | --- |
+| `NeedVerdict.tsx` | 19 / 26 | 24 / 26 |
+| `needWording.ts` | 6 / 6 | 6 / 6 |
+| `RefinementView.tsx` | 1 / 2 | 2 / 2 |
+| `RefinementBandSettings.tsx` | 1 / 1 | 1 / 1 |
+
+Closed by commit `c77621f21`:
+
+- `NeedVerdict.tsx:73` (six mutants) — a cycle date that is not a real calendar day shows no verdict and names the next
+  Refinement on the heading's row.
+- `RefinementView.tsx:205` `?? false` → `?? true` — a view that does not say whether today is a Refinement day reads
+  "until the Refinement after".
+
+| accepted survivor | reason |
+| --- | --- |
+| `NeedVerdict.tsx:47`, `:48` the null checks in `isJudged` | equivalent: a null date fails `parseLocalDate` and the guard at `:73` withholds the verdict anyway; the checks narrow the type |
+
+StrykerJS drops a single-line `mutate` entry such as `file.tsx:67` with only a warning; every single line is written
+`67-67` here. The slice 16 config (`stryker.6154.frontend.json`) used the bare form for prop pass-through lines, so
+those lines were not mutated in that run; they carry no logic.
