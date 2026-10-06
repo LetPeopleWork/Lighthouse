@@ -3375,3 +3375,10 @@ Roadmap phase `6204`, after 16 and before 09: **6204-01** the cycle on the calen
 (un-ignores `NeedOverOneCycleTest` and the cycle unit cases) → **6204-02** the re-pinned slice 05 / 07 scenarios → **6204-03** the
 verdict and tooltip copy (`needWording.test.ts`, `RefinementView.need.test.tsx`) → **6204-04** the settings ⓘ
 (`ModifyTeamSettings.refinementNeed.test.tsx`). One scenario at a time within each step.
+
+## Wave: DELIVER / [REF] Story #6204 — decision taken in AFK mode after review (2026-10-06)
+
+- **On a Refinement day the verdict below the range ends "…likely to pull until the next {Refinement}. Refine 2 to 5
+  more."** instead of "…until the {Refinement} after". On that day the alert's title already names the following
+  Refinement (the cycle runs from today to it), so "the one after" would point one cycle too far. Every other day keeps
+  the approved "until the {Refinement} after". To be confirmed by the maintainer at the hold.
