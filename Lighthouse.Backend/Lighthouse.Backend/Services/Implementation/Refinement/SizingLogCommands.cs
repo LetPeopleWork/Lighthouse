@@ -35,9 +35,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 teamId,
                 workItemReference,
                 new Said(SizingEntryKind.Revocation, null, null, channel),
-                team => RefinementResolution.CurrentVoteOf(sizingLog.ReadForTeam(team.Id, [workItemReference]), voterKey) is { } vote
-                    ? new Voter(vote.VoterKey, vote.VoterDisplayName, vote.VoterProfileId)
-                    : null,
+                team => HolderOfCurrentVote(team, workItemReference, voterKey),
                 (_, _) => SizingOutcome.Recorded);
 
         /// <param name="voterOf">Who the entry is written for; nobody means there is nothing to write.</param>
@@ -107,6 +105,12 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
 
             return null;
         }
+
+        // Written under the name and account the vote was cast with, whatever the voter calls themselves now.
+        private Voter? HolderOfCurrentVote(Team team, string workItemReference, string voterKey)
+            => RefinementResolution.CurrentVoteOf(sizingLog.ReadForTeam(team.Id, [workItemReference]), voterKey) is { } vote
+                ? new Voter(vote.VoterKey, vote.VoterDisplayName, vote.VoterProfileId)
+                : null;
 
         private bool MadeReady(Team team, SizingLogEntry entry)
         {

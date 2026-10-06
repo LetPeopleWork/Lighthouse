@@ -12,13 +12,12 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         public static RowVotes VotesOn(IEnumerable<SizingLogEntry> entries, string? readerKey)
         {
             var current = CurrentVotes(entries);
-            var myVote = current.FirstOrDefault(vote => readerKey is not null && vote.VoterKey == readerKey)?.Answer;
 
-            return new RowVotes(current.Count, myVote, SplitOf(current));
+            return new RowVotes(current.Count, VoteBy(current, readerKey)?.Answer, SplitOf(current));
         }
 
         public static SizingLogEntry? CurrentVoteOf(IEnumerable<SizingLogEntry> entries, string voterKey)
-            => CurrentVotes(entries).Find(vote => string.Equals(vote.VoterKey, voterKey, StringComparison.Ordinal));
+            => VoteBy(CurrentVotes(entries), voterKey);
 
         /// <summary>Each voter's name under the answer of their current vote, as that vote gave it.</summary>
         public static VoterNames VotersOn(IEnumerable<SizingLogEntry> entries) => VotersOf(CurrentVotes(entries));
@@ -135,6 +134,9 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 .GroupBy(entry => entry.VoterKey, StringComparer.Ordinal)
                 .Select(byVoter => byVoter.MaxBy(entry => entry.Id)!)
                 .Where(latest => latest.Kind == SizingEntryKind.Vote)];
+
+        private static SizingLogEntry? VoteBy(List<SizingLogEntry> currentVotes, string? voterKey)
+            => voterKey is null ? null : currentVotes.Find(vote => string.Equals(vote.VoterKey, voterKey, StringComparison.Ordinal));
 
         // The split counts the same names a reader sees under each answer, so the two can never disagree.
         private static VoteSplit SplitOf(List<SizingLogEntry> currentVotes) => VotersOf(currentVotes).Split;

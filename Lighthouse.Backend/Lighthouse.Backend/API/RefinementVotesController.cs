@@ -110,9 +110,8 @@ namespace Lighthouse.Backend.API
         private ActionResult<RefinementRowDto> Answered(SizingOutcome outcome, int teamId, string workItemReference, string? voterKey)
             => outcome switch
             {
-                SizingOutcome.Recorded => RowAsItNowStands(teamId, workItemReference, voterKey, madeReady: false),
+                SizingOutcome.Recorded or SizingOutcome.NothingTakenBack => RowAsItNowStands(teamId, workItemReference, voterKey, madeReady: false),
                 SizingOutcome.RecordedAndMadeReady => RowAsItNowStands(teamId, workItemReference, voterKey, madeReady: true),
-                SizingOutcome.NothingTakenBack => RowAsItNowStands(teamId, workItemReference, voterKey, madeReady: false),
                 SizingOutcome.TeamNotFound => NotFound(),
                 SizingOutcome.WorkItemNotInRefinement => Refused(StatusCodes.Status409Conflict, "That Work Item is not in refinement.", SizingRefusal.WorkItemNotInRefinement),
                 SizingOutcome.CommentMissing => Refused(StatusCodes.Status400BadRequest, "A comment needs some text.", SizingRefusal.CommentRequired),

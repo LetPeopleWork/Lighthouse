@@ -33,10 +33,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         protected const string PendingSlice13 = "Epic #5510 slice 13 (#6151) - pending DELIVER";
 
-        protected const string PendingSlice15 = "Epic #5510 slice 15 (#6153) - pending DELIVER";
-
-        protected const string PendingSlice16 = "Epic #5510 slice 16 (#6154) - pending DELIVER";
-
         protected const string PendingSlice17a = "Epic #5510 slice 17a (#6155) - pending DELIVER";
 
         protected const string PendingSlice17b = "Epic #5510 slice 17b (#6156) - pending DELIVER";
