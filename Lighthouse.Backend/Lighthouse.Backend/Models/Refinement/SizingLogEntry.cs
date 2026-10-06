@@ -13,12 +13,17 @@ namespace Lighthouse.Backend.Models.Refinement
 
         private const string SelfDeclaredKeyPrefix = "self:";
 
+        private const string AccountKeyPrefix = "account:";
+
         /// <summary>
         /// How the log keys a voter who signed in nowhere: only a hash of the key their browser keeps, so the
         /// log never holds anything that could speak for them.
         /// </summary>
         public static string SelfDeclaredVoterKeyOf(string browserKey)
             => SelfDeclaredKeyPrefix + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(browserKey)));
+
+        /// <summary>How the log keys a voter who signed in: the subject their account is known by.</summary>
+        public static string AccountVoterKeyOf(string subject) => AccountKeyPrefix + subject;
 
         public int Id { get; init; }
 

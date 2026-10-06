@@ -61,6 +61,9 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
             return existingProfile;
         }
 
+        /// <summary>The subject a profile is keyed by, read off the session without touching the store.</summary>
+        public static string? StableSubjectOf(ClaimsPrincipal principal) => ResolveStableSubject(principal)?.subject;
+
         private static (string subject, string claimType)? ResolveStableSubject(ClaimsPrincipal principal)
         {
             var subClaim = principal.FindFirst("sub")?.Value;

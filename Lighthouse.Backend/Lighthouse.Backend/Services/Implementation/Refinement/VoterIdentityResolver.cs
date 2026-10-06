@@ -1,6 +1,6 @@
-using System.Security.Claims;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Refinement;
+using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Refinement;
 
@@ -19,12 +19,6 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
 
         public const int LongestVoterName = 100;
 
-        private const string AccountKeyPrefix = "account:";
-
-        // The claims a profile is keyed by when it is created, in the same order, so a read finds the key a
-        // write stored.
-        private static readonly string[] SubjectClaimTypes = ["sub", "oid"];
-
         public VoterIdentityKind Kind => authModeResolver.Resolve().Mode == AuthMode.Enabled
             ? VoterIdentityKind.Account
             : VoterIdentityKind.SelfDeclared;
@@ -38,7 +32,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         {
             if (Kind == VoterIdentityKind.Account)
             {
-                return SubjectOf(httpContextAccessor.HttpContext?.User) is { } subject ? AccountKeyPrefix + subject : null;
+                return SignedInSubject is { } subject ? SizingLogEntry.AccountVoterKeyOf(subject) : null;
             }
 
             return IsUsable(presentedVoterKey) ? SizingLogEntry.SelfDeclaredVoterKeyOf(presentedVoterKey!) : null;
@@ -51,7 +45,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             if (Kind == VoterIdentityKind.Account)
             {
                 return await signedInPerson() is { } person
-                    ? VoterResolution.Of(new Voter(AccountKeyPrefix + person.Subject, person.DisplayName ?? person.Email ?? person.Subject, person.Id))
+                    ? VoterResolution.Of(AccountVoter(person))
                     : VoterResolution.RefusedFor(VoterRefusal.NeedsAPerson);
             }
 
@@ -79,10 +73,15 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             return VoterResolution.Of(new Voter(SizingLogEntry.SelfDeclaredVoterKeyOf(presentedVoterKey!), name, null));
         }
 
-        private static string? SubjectOf(ClaimsPrincipal? principal)
-            => SubjectClaimTypes
-                .Select(claimType => principal?.FindFirst(claimType)?.Value)
-                .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+        private string? SignedInSubject
+            => httpContextAccessor.HttpContext?.User is { } user ? CurrentUserProfileService.StableSubjectOf(user) : null;
+
+        // An identity provider need not send a name or an email address, but every account has a subject.
+        private static Voter AccountVoter(UserProfile person)
+        {
+            var shownAs = person.DisplayName ?? person.Email ?? person.Subject;
+            return new Voter(SizingLogEntry.AccountVoterKeyOf(person.Subject), shownAs, person.Id);
+        }
 
         // A short key could be guessed, and a guessed key speaks for somebody else's votes. A browser's key
         // is hex, so whitespace or a control character means it is not one; a key of nothing but spaces
