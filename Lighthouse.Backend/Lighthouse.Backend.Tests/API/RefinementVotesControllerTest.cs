@@ -34,6 +34,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<ISizingLogCommands> sizingLogCommandsMock;
         private Mock<IRefinementViewQuery> refinementViewQueryMock;
         private Mock<ILogger<RefinementVotesController>> loggerMock;
+        private Mock<ICurrentUserProfileService> currentUserProfileServiceMock;
         private AuthMode authMode;
 
         [SetUp]
@@ -42,6 +43,7 @@ namespace Lighthouse.Backend.Tests.API
             sizingLogCommandsMock = new Mock<ISizingLogCommands>();
             refinementViewQueryMock = new Mock<IRefinementViewQuery>();
             loggerMock = new Mock<ILogger<RefinementVotesController>>();
+            currentUserProfileServiceMock = new Mock<ICurrentUserProfileService>();
             authMode = AuthMode.Disabled;
         }
 
@@ -76,7 +78,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(StatusOf(result), Is.EqualTo(status));
                 Assert.That(problem.Title, Is.EqualTo(title));
                 Assert.That(problem.Extensions.TryGetValue("code", out var code) ? code : null, Is.EqualTo(namesTheReason ? reason : null),
-                    "only a refusal the voter can put right names its reason to the browser");
+                    "every refusal of the voter but a name too long names its reason in a code a client can act on");
                 Assert.That(LoggedLines(), Is.EqualTo(new[] { (level, reason, TeamId.ToString(System.Globalization.CultureInfo.InvariantCulture), "Cli") }));
                 sizingLogCommandsMock.VerifyNoOtherCalls();
             }
@@ -257,6 +259,43 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [TestCase("Web", SizingChannel.Web)]
+        [TestCase("LiveSession", SizingChannel.LiveSession)]
+        [TestCase("Cli", SizingChannel.Cli)]
+        [TestCase("Assistant", SizingChannel.Assistant)]
+        public async Task ATakeBackIsRecordedFromTheChannelItNames(string named, SizingChannel channel)
+        {
+            GivenATakeBackIsHeard();
+
+            var result = await TakeBack(null, channel: named);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(StatusOf(result), Is.EqualTo(StatusCodes.Status200OK));
+                sizingLogCommandsMock.Verify(commands => commands.TakeBack(
+                    TeamId, InRefinement, channel, SizingLogEntry.SelfDeclaredVoterKeyOf(BrowserKey), null));
+            }
+        }
+
+        [Test]
+        public async Task ASignedInTakeBackTakesBackTheAccountsVoteWhateverKeyTheRequestCarries()
+        {
+            authMode = AuthMode.Enabled;
+            currentUserProfileServiceMock
+                .Setup(service => service.GetOrCreateFromPrincipalAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UserProfile { Id = 7, Subject = "jonas-subject", DisplayName = Jonas });
+            GivenATakeBackIsHeard();
+
+            var result = await TakeBack(SizingAnswer.Yes.ToString(), channel: "Cli");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(StatusOf(result), Is.EqualTo(StatusCodes.Status200OK));
+                sizingLogCommandsMock.Verify(commands => commands.TakeBack(
+                    TeamId, InRefinement, SizingChannel.Cli, SizingLogEntry.AccountVoterKeyOf("jonas-subject"), SizingAnswer.Yes));
+            }
+        }
+
         [TestCase("Phone")]
         [TestCase("cli")]
         [TestCase("1")]
@@ -289,7 +328,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(StatusOf(result), Is.EqualTo(status));
                 Assert.That(problem.Title, Is.EqualTo(title));
                 Assert.That(problem.Extensions.TryGetValue("code", out var code) ? code : null, Is.EqualTo(namesTheReason ? reason : null),
-                    "only a refusal the reader can put right names its reason to the browser");
+                    "every refusal of the voter but a name too long names its reason in a code a client can act on");
                 Assert.That(LoggedLines(), Is.EqualTo(new[] { (level, reason, TeamId.ToString(System.Globalization.CultureInfo.InvariantCulture), "Web") }));
                 sizingLogCommandsMock.VerifyNoOtherCalls();
             }
@@ -314,12 +353,20 @@ namespace Lighthouse.Backend.Tests.API
                 sizingLogCommandsMock.Object,
                 refinementViewQueryMock.Object,
                 new VoterIdentityResolver(authModeResolver, Mock.Of<IHttpContextAccessor>()),
-                Mock.Of<ICurrentUserProfileService>(),
+                currentUserProfileServiceMock.Object,
                 loggerMock.Object)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
                 ProblemDetailsFactory = new PlainProblemDetailsFactory(),
             };
+        }
+
+        private void GivenATakeBackIsHeard()
+        {
+            sizingLogCommandsMock
+                .Setup(commands => commands.TakeBack(TeamId, InRefinement, It.IsAny<SizingChannel>(), It.IsAny<string>(), It.IsAny<SizingAnswer?>()))
+                .Returns(SizingOutcome.NothingTakenBack);
+            GivenTheRows(Row(InRefinement, 1));
         }
 
         private static readonly RefinementNeed NoNeed = RefinementNeed.Unavailable(NeedUnavailableReason.NoCadence);
