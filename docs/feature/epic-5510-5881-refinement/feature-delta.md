@@ -3032,3 +3032,10 @@ Refinement".**
   on its own. No forecast of what gets pulled before then.
 - **The "Next Refinement" heading keeps saying when.** The ⓘ text changes to say which cycle the number covers; its
   copy is sketched before it is built.
+
+## Wave: DELIVER / [REF] Maintainer decision — voting with sign-in asks for nothing (2026-10-06)
+
+Sketched before slice 15's frontend step (#6153) and approved by the maintainer on 2026-10-06. With sign-in on, the
+first click on an answer records the vote under the account: no "Who is voting?" dialog, nothing kept in the browser,
+and the Votes and comments dialog shows neither a "Voting as" line nor "Change your name". With sign-in off nothing
+changes.
