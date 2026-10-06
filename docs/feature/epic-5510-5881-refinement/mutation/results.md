@@ -938,3 +938,43 @@ mappings. Each is covered by its own slice's acceptance scenarios, which this un
 All 10 are layout styling jsdom does not observe: the `Grid size` objects, the heading row's and the fields row's
 `sx` (flex, wrap, gap, alignment) and the fields' `width: 180`. The side-by-side layout was checked by the maintainer
 in the browser.
+
+# Mutation testing — 6153 (votes with an account, E3 slice 15)
+
+Run 2026-10-06 on `main`, production code frozen at `545cf1c45`. Gate is 80 % kill rate.
+
+| stack | score | tested | killed | survived | no coverage | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET), first run | 86.02 % | 93 | 80 | 8 | 5 | ~3 m |
+| Backend (Stryker.NET), after kill tests | **97.85 %** | 93 | 91 | 0 | 2 | 4 m 9 s |
+| Frontend | N/A — no production frontend file changed in this slice | | | | | |
+
+Config: `stryker.6153.backend.json`.
+
+## Backend
+
+| file | before | after |
+| --- | --- | --- |
+| `VoterIdentityResolver.cs` | 34 / 34 (100 %) | 34 / 34 (100 %) |
+| `CurrentUserProfileService.cs` | 24 / 32 (75.0 %) | 32 / 32 (100 %) |
+| `RefinementVotesController.cs` | 22 / 27 (81.5 %) | 25 / 27 (92.6 %) |
+| `SizingLogEntry.cs` | no testable mutants | no testable mutants |
+
+### Closed by this pass (commit `f7ba4a49a`, each checked by hand against its mutant)
+
+- `CurrentUserProfileService.cs:20` — the missing-subject warning (statement and string): a principal without `sub`
+  or `oid` logs exactly that line at Warning.
+- `CurrentUserProfileService.cs:55`, `:56` — the update of an existing profile (statement removal, `==` → `!=`): the
+  new name and email are read back from a fresh context, and a second, unrelated profile keeps its own.
+- `CurrentUserProfileService.cs:79` — `"sub"` → `""`: it is the stored `SubjectClaimType`, now asserted on a profile
+  created from `sub`.
+- `CurrentUserProfileService.cs:96`, `:101` — the name and email fallbacks (swap, remove-right): with both claims
+  present `name` and `ClaimTypes.Email` win; with only the other one present, that one is used.
+- `RefinementVotesController.cs:66`, `:94`, `:95` (no coverage) — a comment without text or channel, and the log's
+  comment-required and comment-too-long refusals, each answer 400 with their title and code.
+
+### Accepted survivors
+
+| mutant | reason |
+| --- | --- |
+| `RefinementVotesController.cs:96`, `:109` unreachable-switch messages | equivalent: the switches are total over their enums, so the throw cannot be reached |
