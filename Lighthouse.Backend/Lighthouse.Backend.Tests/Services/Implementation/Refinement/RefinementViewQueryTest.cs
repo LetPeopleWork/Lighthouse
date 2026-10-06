@@ -88,7 +88,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                     new ForecastFilterRuleService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider(), Mock.Of<ILicenseService>())),
                 new RefinementNeedCalculator(
                     new RefinementCalendar(clockMock.Object, blackoutPeriodService),
-                    clockMock.Object,
                     blackoutPeriodService,
                     teamMetricsServiceMock.Object,
                     Mock.Of<IForecastService>()));

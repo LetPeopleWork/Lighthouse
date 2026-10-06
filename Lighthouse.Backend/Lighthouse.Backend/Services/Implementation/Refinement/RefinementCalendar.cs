@@ -15,16 +15,35 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             }
 
             var today = clock.Today;
-            var blackoutDays = BlackoutDaysLookedAt(today, RefinementCadenceCalendar.DaysSearched(cadence, today));
+            var firstSearch = RefinementCadenceCalendar.DaysSearched(cadence, today);
+            var blackoutDays = BlackoutDaysLookedAt(today, firstSearch);
 
             bool IsBlackedOut(DateOnly day) => blackoutDays.IsBlackoutDay(day);
 
             var next = RefinementCadenceCalendar.NextAfter(cadence, today, IsBlackedOut);
+            var isRefinementDay = RefinementCadenceCalendar.IsCadenceDay(cadence, today, IsBlackedOut);
+            blackoutDays.AddRange(BlackoutDaysTheCycleEndSearchAdds(cadence, isRefinementDay ? today : next, firstSearch));
 
-            return new RefinementCalendarFacts(
-                next,
-                RefinementCadenceCalendar.IsCadenceDay(cadence, today, IsBlackedOut),
-                next?.DayNumber - today.DayNumber);
+            return new RefinementCalendarFacts(next, isRefinementDay, next?.DayNumber - today.DayNumber)
+            {
+                Cycle = RefinementCadenceCalendar.CycleFrom(cadence, today, IsBlackedOut),
+            };
+        }
+
+        // The end of the cycle is searched for from its start, so that search runs a few days past the first one.
+        // Only those few days are fetched, never a second year.
+        private List<BlackoutPeriod> BlackoutDaysTheCycleEndSearchAdds(
+            RefinementCadence cadence, DateOnly? cycleStart, (DateOnly First, DateOnly Last)? firstSearch)
+        {
+            if (cycleStart is not { } start
+                || firstSearch is not { } first
+                || RefinementCadenceCalendar.DaysSearched(cadence, start) is not { } second
+                || second.Last <= first.Last)
+            {
+                return [];
+            }
+
+            return BlackoutDaysBetween(first.Last.AddDays(1), second.Last);
         }
 
         // A starting week far ahead puts the search years away from today. Fetching everything in between would

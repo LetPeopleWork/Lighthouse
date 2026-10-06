@@ -47,6 +47,10 @@ namespace Lighthouse.Backend.API.DTO
         public int? HighPercentile { get; } = need.Range?.HighPercentile;
 
         public int? HorizonWorkingDays { get; } = need.Range?.HorizonWorkingDays;
+
+        public string? CycleStart { get; } = need.Range?.Cycle.Start.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        public string? CycleEnd { get; } = need.Range?.Cycle.End.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
     }
 
     public sealed class YardstickDto(Yardstick yardstick)

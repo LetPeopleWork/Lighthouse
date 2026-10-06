@@ -30,9 +30,20 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 .FirstOrDefault();
         }
 
-        // SCAFFOLD: the cycle is not worked out yet, so every cadence reads as having none.
+        /// <summary>
+        /// From today on a Refinement day, otherwise from the next Refinement, to the Refinement after that. Null without
+        /// a cadence, or when no Refinement follows the start for as far as the calendar looks.
+        /// </summary>
         public static RefinementCycle? CycleFrom(RefinementCadence? cadence, DateOnly today, Func<DateOnly, bool> isBlackedOut)
-            => null;
+        {
+            var start = IsCadenceDay(cadence, today, isBlackedOut) ? today : NextAfter(cadence, today, isBlackedOut);
+            if (start is not { } cycleStart || NextAfter(cadence, cycleStart, isBlackedOut) is not { } cycleEnd)
+            {
+                return null;
+            }
+
+            return new RefinementCycle(cycleStart, cycleEnd);
+        }
 
         public static bool IsCadenceDay(RefinementCadence? cadence, DateOnly day, Func<DateOnly, bool> isBlackedOut)
         {

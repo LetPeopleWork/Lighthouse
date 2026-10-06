@@ -8,13 +8,13 @@ using Lighthouse.Backend.Services.Interfaces.Refinement;
 namespace Lighthouse.Backend.Services.Implementation.Refinement
 {
     /// <summary>
-    /// When the Team next refines, and how many Work Items it is likely to pull until then. The range is the
-    /// Team's own manual How Many forecast with that day as its target date, worked out the way the Forecasts
-    /// tab does, so the two never disagree.
+    /// When the Team next refines, and how many Work Items it is likely to pull over one Refinement cycle: what a
+    /// Refinement has to leave ready to last until the Refinement after it. The range is the Team's own manual How
+    /// Many forecast over the working days of that cycle, worked out the way the Forecasts tab does, so the two
+    /// never disagree.
     /// </summary>
     public sealed class RefinementNeedCalculator(
         IRefinementCalendar refinementCalendar,
-        ILighthouseClock clock,
         IBlackoutPeriodService blackoutPeriodService,
         ITeamMetricsService teamMetricsService,
         IForecastService forecastService)
@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         {
             var calendar = refinementCalendar.FactsFor(team.RefinementSettings?.Cadence);
 
-            return new RefinementOutlook(calendar, NeedFor(team, calendar.NextRefinementDate, readyCount));
+            return new RefinementOutlook(calendar, NeedFor(team, calendar.Cycle, readyCount));
         }
 
         /// <summary>
@@ -45,22 +45,23 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             return hasSufficientData() ? null : NeedUnavailableReason.InsufficientData;
         }
 
-        private RefinementNeed NeedFor(Team team, DateOnly? nextRefinement, int readyCount)
+        private RefinementNeed NeedFor(Team team, RefinementCycle? cycle, int readyCount)
         {
             var status = new Lazy<ForecastThroughputStatus>(
                 () => teamMetricsService.GetForecastThroughputStatus(team, ThroughputFilterMode.RespectTeamSetting));
 
-            var reason = UnavailableReasonFor(team.HasRefinementStates, nextRefinement.HasValue, () => status.Value.HasSufficientData);
+            // A next Refinement with none after it is no Refinement to plan for, the same as having no cadence.
+            var reason = UnavailableReasonFor(team.HasRefinementStates, cycle is not null, () => status.Value.HasSufficientData);
             if (reason is { } unavailable)
             {
                 return RefinementNeed.Unavailable(unavailable);
             }
 
-            var forecastWindowStart = clock.TodayAsUtcMidnight;
-            var targetDate = InstanceCalendar.AsUtcMidnight(nextRefinement.GetValueOrDefault());
+            var cycleStart = InstanceCalendar.AsUtcMidnight(cycle!.Start);
+            var cycleEnd = InstanceCalendar.AsUtcMidnight(cycle.End);
             var workingDays = blackoutPeriodService
-                .GetEffectiveBlackoutDays(forecastWindowStart, targetDate)
-                .CountWorkingDays(forecastWindowStart, targetDate);
+                .GetEffectiveBlackoutDays(cycleStart, cycleEnd)
+                .CountWorkingDays(cycleStart, cycleEnd);
 
             var forecast = forecastService.HowMany(status.Value.Throughput, workingDays);
             var band = team.RefinementSettings?.Band ?? new RefinementBand();
@@ -69,7 +70,8 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 NeedBand.ValueAt(forecast, band.HighPercentile),
                 band.LowPercentile,
                 band.HighPercentile,
-                workingDays);
+                workingDays,
+                cycle);
 
             return new RefinementNeed(NeedBand.VerdictFor(readyCount, range.Low, range.High), null, range);
         }

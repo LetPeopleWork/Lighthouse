@@ -26,7 +26,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @walking_skeleton @driving_port @real-io @need-over-one-cycle @contract-shape:pure-function
         // Friday 2 October: the next Refinement is Thursday the 8th and the one after it Thursday the 15th.
         [Test]
-        [Ignore(PendingStory6204)]
         public async Task The_need_covers_the_working_days_from_the_next_Refinement_to_the_one_after()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
@@ -44,7 +43,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase(5)]
         [TestCase(6)]
         [TestCase(7)]
-        [Ignore(PendingStory6204)]
         public async Task Every_day_before_the_next_Refinement_reads_the_same_number(int todayInOctober)
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
@@ -61,7 +59,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // and Monday to Thursday the following week.
         [TestCase(5)]
         [TestCase(6)]
-        [Ignore(PendingStory6204)]
         public async Task With_weekends_blacked_out_Monday_and_Tuesday_both_read_the_five_working_days_of_the_cycle(int todayInOctober)
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
@@ -77,7 +74,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @need-over-one-cycle @us-04 @boundary @contract-shape:pure-function
         // Today's session is the moment to top up, so the cycle starts today and runs to the next Refinement.
         [Test]
-        [Ignore(PendingStory6204)]
         public async Task On_a_Refinement_day_the_cycle_runs_from_today_to_the_next_Refinement()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
@@ -100,7 +96,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase(5, MondayTheFifth, ThursdayTheEighth, 3)]
         [TestCase(6, ThursdayTheEighth, MondayTheTwelfth, 4)]
         [TestCase(8, ThursdayTheEighth, MondayTheTwelfth, 4)]
-        [Ignore(PendingStory6204)]
         public async Task A_Team_refining_on_two_weekdays_plans_for_the_gap_between_its_next_two_Refinements(
             int todayInOctober, string cycleStart, string cycleEnd, int workingDays)
         {
@@ -119,7 +114,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // Refinement and no longer changes the number.
         [TestCase(12, 6)]
         [TestCase(5, 7)]
-        [Ignore(PendingStory6204)]
         public async Task Only_a_blackout_day_inside_the_cycle_shortens_it(int blackoutDayInOctober, int workingDays)
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
@@ -135,7 +129,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // Nobody refines on Thursday the 15th, so the cycle runs on to Thursday the 22nd: fourteen days, one
         // of them blacked out.
         [Test]
-        [Ignore(PendingStory6204)]
         public async Task A_blacked_out_Refinement_after_the_next_is_skipped_and_the_cycle_runs_to_the_one_that_happens()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
@@ -150,7 +143,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @need-over-one-cycle @us-04 @boundary @contract-shape:pure-function
         // Nobody refines on Thursday the 8th, so the next Refinement is the 15th and the cycle runs to the 22nd.
         [Test]
-        [Ignore(PendingStory6204)]
         public async Task A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
@@ -166,7 +158,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @need-over-one-cycle @us-04 @boundary @contract-shape:pure-function
         // A Thursday blacked out is no Refinement day, so the cycle does not start today but at the next one.
         [Test]
-        [Ignore(PendingStory6204)]
         public async Task Today_a_blacked_out_Refinement_day_starts_no_cycle_and_the_next_Refinement_does()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
@@ -185,7 +176,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // 30th, almost a year ahead. The one after it would be Thursday 7 October 2027, a blackout day too, so
         // the cycle runs to Thursday 14 October 2027. A Refinement that far ahead still counts as blacked out.
         [Test]
-        [Ignore(PendingStory6204)]
         public async Task A_blackout_on_the_Refinement_after_the_next_is_honoured_even_a_year_ahead()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
@@ -204,7 +194,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // Thursday the 8th happens, but every Thursday in the year after it is blacked out: there is no
         // Refinement worth planning for, as with no cadence at all. The heading still names the 8th.
         [Test]
-        [Ignore(PendingStory6204)]
         public async Task A_year_of_blacked_out_Refinements_after_the_next_leaves_no_cycle_and_no_number()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
@@ -221,7 +210,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase(MissingSetUp.Cadence, NoCadence)]
         [TestCase(MissingSetUp.ThroughputHistory, InsufficientData)]
         [TestCase(MissingSetUp.RefinementStates, NoRefinementStates)]
-        [Ignore(PendingStory6204)]
         public async Task Without_a_number_the_need_names_no_cycle(MissingSetUp missing, string reason)
         {
             var team = await GivenATeamWithout(missing);

@@ -12,7 +12,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
     [Category("epic-5510-5881-refinement")]
     public class RefinementCalendarTest
     {
-        private const string PendingStory6204 = "Story #6204, the need covers one Refinement cycle - pending DELIVER";
 
         private static readonly RefinementCadence ThursdaysEveryWeek = RefinementCadence.Of([DayOfWeek.Thursday], 1, null);
 
@@ -70,7 +69,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         }
 
         [Test]
-        [Ignore(PendingStory6204)]
         public void A_cadence_day_blacked_out_today_is_no_Refinement_day()
         {
             var today = new DateOnly(2026, 10, 8);
@@ -90,7 +88,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         [TestCase(7, 8, 15)]
         [TestCase(8, 8, 15)]
         [TestCase(9, 15, 22)]
-        [Ignore(PendingStory6204)]
         public void The_facts_name_the_cycle_from_the_next_Refinement_or_today_to_the_one_after(int todayInOctober, int startInOctober, int endInOctober)
         {
             var calendar = CalendarOn(new DateOnly(2026, 10, todayInOctober), new RecordingBlackoutPeriodService());
@@ -101,7 +98,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         }
 
         [Test]
-        [Ignore(PendingStory6204)]
         public void Without_a_cadence_there_is_no_cycle()
         {
             var calendar = CalendarOn(new DateOnly(2026, 10, 2), new RecordingBlackoutPeriodService());
@@ -113,7 +109,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         // near the end of the year searched for it. The Refinement after it, 7 October 2027, lies past that year
         // and is blacked out as well, so the cycle has to run on to 14 October 2027.
         [Test]
-        [Ignore(PendingStory6204)]
         public void A_blackout_day_on_the_Refinement_after_the_next_is_honoured_past_the_year_searched_for_the_next()
         {
             var blackouts = new RecordingBlackoutPeriodService(
@@ -130,7 +125,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         // adds only the few days it looks at beyond the first year, never a second year.
         [TestCase(2)]
         [TestCase(8)]
-        [Ignore(PendingStory6204)]
         public void Only_the_days_the_second_search_adds_are_fetched_beyond_the_first_year(int todayInOctober)
         {
             var blackouts = new RecordingBlackoutPeriodService();

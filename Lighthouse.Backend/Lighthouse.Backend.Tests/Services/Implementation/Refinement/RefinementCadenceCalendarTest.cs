@@ -151,7 +151,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         [TestCase("Tuesday", 2, "2026-10-05", "2026-10-13", "2026-10-20", "2026-11-03")]
         // A starting week still to come
         [TestCase("Tuesday", 2, "2026-10-19", "2026-10-02", "2026-10-20", "2026-11-03")]
-        [Ignore(PendingStory6204)]
         public void The_cycle_runs_from_the_next_Refinement_or_from_today_on_a_Refinement_day_to_the_Refinement_after_it(
             string weekdays, int intervalWeeks, string? anchorWeek, string today, string start, string end)
         {
@@ -166,7 +165,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         [TestCase("2026-10-08", "2026-10-08", "2026-10-15", "2026-10-22")]
         [TestCase("2026-10-15,2026-10-22", "2026-10-02", "2026-10-08", "2026-10-29")]
         [TestCase("2026-10-12", "2026-10-02", "2026-10-08", "2026-10-15")]
-        [Ignore(PendingStory6204)]
         public void A_blacked_out_Refinement_is_skipped_at_either_end_of_the_cycle(string blackoutDays, string today, string start, string end)
         {
             var blackedOut = blackoutDays.Split(',').Select(Day).ToHashSet();
@@ -178,7 +176,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         [TestCase("", 1)]
         [TestCase("Thursday", 0)]
-        [Ignore(PendingStory6204)]
         public void A_cadence_with_no_weekday_or_no_interval_has_no_cycle(string weekdays, int intervalWeeks)
         {
             var cycle = RefinementCadenceCalendar.CycleFrom(Cadence(weekdays, intervalWeeks, null), FridayTheSecond, NoBlackouts);
@@ -187,7 +184,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         }
 
         [Test]
-        [Ignore(PendingStory6204)]
         public void A_Team_without_a_cadence_has_no_cycle()
         {
             Assert.That(RefinementCadenceCalendar.CycleFrom(null, FridayTheSecond, NoBlackouts), Is.Null);
@@ -195,7 +191,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         // The next Refinement happens, but every one in the year after it is blacked out.
         [Test]
-        [Ignore(PendingStory6204)]
         public void A_next_Refinement_with_none_after_it_for_as_far_as_the_calendar_looks_has_no_cycle()
         {
             var nextRefinement = Day("2026-10-08");
@@ -209,7 +204,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         // the calendar: the cycle starts today when today is a Refinement day and at the next Refinement
         // otherwise, ends at the Refinement after its start, and holds no other Refinement in between.
         [TestCaseSource(nameof(EveryDayUnderEveryCadence))]
-        [Ignore(PendingStory6204)]
         public void The_cycle_is_the_gap_between_two_Refinements_in_a_row(string weekdays, int intervalWeeks, string? anchorWeek, string blackouts, string today)
         {
             var cadence = Cadence(weekdays, intervalWeeks, anchorWeek);
@@ -236,7 +230,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         // Which day of the week it is never changes a weekly cycle: without blackout days it is always one week.
         [TestCaseSource(nameof(EveryDayUnderEveryWeeklyCadence))]
-        [Ignore(PendingStory6204)]
         public void A_weekly_cycle_is_one_week_whatever_day_today_is(string weekday, string today)
         {
             var cycle = RefinementCadenceCalendar.CycleFrom(Cadence(weekday, 1, null), Day(today), NoBlackouts);
@@ -244,7 +237,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             Assert.That(cycle?.End.DayNumber - cycle?.Start.DayNumber, Is.EqualTo(7));
         }
 
-        private const string PendingStory6204 = "Story #6204, the need covers one Refinement cycle - pending DELIVER";
 
         private static readonly DateOnly FridayTheSecond = new(2026, 10, 2);
 

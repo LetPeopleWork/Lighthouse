@@ -13,11 +13,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
     [TestFixture]
     public class RefinementNeedCalculatorTest
     {
-        private static readonly DateOnly Today = new(2026, 10, 2);
-
         private static readonly DateOnly NextThursday = new(2026, 10, 8);
-
-        private static readonly DateTime TodayAtMidnight = new(2026, 10, 2, 0, 0, 0, DateTimeKind.Utc);
 
         private static readonly DateOnly ThursdayAfter = new(2026, 10, 15);
 
@@ -25,7 +21,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         private static readonly DateTime ThursdayAfterAtMidnight = new(2026, 10, 15, 0, 0, 0, DateTimeKind.Utc);
 
-        private const string PendingStory6204 = "Story #6204, the need covers one Refinement cycle - pending DELIVER";
 
         private static readonly RefinementCalendarFacts RefiningOnThursday = new(NextThursday, false, 6)
         {
@@ -49,10 +44,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             calendarMock = new Mock<IRefinementCalendar>();
             calendarMock.Setup(calendar => calendar.FactsFor(It.IsAny<RefinementCadence?>())).Returns(RefiningOnThursday);
 
-            var clockMock = new Mock<ILighthouseClock>();
-            clockMock.Setup(clock => clock.Today).Returns(Today);
-            clockMock.Setup(clock => clock.TodayAsUtcMidnight).Returns(TodayAtMidnight);
-
             blackoutDays = [];
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             blackoutPeriodServiceMock
@@ -70,7 +61,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
             subject = new RefinementNeedCalculator(
                 calendarMock.Object,
-                clockMock.Object,
                 blackoutPeriodServiceMock.Object,
                 teamMetricsServiceMock.Object,
                 forecastServiceMock.Object);
@@ -78,7 +68,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         // The cycle runs from Thursday 8 to Thursday 15 October: seven working days after the 8th, the 15th included.
         [Test]
-        [Ignore(PendingStory6204)]
         public void The_range_is_the_How_Many_for_the_working_days_of_the_cycle_read_at_the_default_band()
         {
             var outlook = subject.For(ATeam(), 2);
@@ -96,7 +85,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         }
 
         [Test]
-        [Ignore(PendingStory6204)]
         public void A_blackout_day_inside_the_cycle_is_not_a_working_day()
         {
             blackoutDays = [new BlackoutPeriod { Start = new DateOnly(2026, 10, 13), End = new DateOnly(2026, 10, 14) }];
@@ -108,7 +96,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         }
 
         [Test]
-        [Ignore(PendingStory6204)]
         public void A_blackout_day_before_the_next_Refinement_no_longer_changes_the_number()
         {
             blackoutDays = [new BlackoutPeriod { Start = new DateOnly(2026, 10, 5), End = new DateOnly(2026, 10, 5) }];
@@ -119,7 +106,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         }
 
         [Test]
-        [Ignore(PendingStory6204)]
         public void The_Teams_band_chooses_the_likelihoods_the_range_is_read_at()
         {
             var team = ATeam();
@@ -136,7 +122,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         // A next Refinement with none after it for a year is no Refinement worth planning for, as with no cadence.
         [Test]
-        [Ignore(PendingStory6204)]
         public void A_next_Refinement_without_a_cycle_gives_no_range_because_there_is_no_cadence()
         {
             calendarMock.Setup(calendar => calendar.FactsFor(It.IsAny<RefinementCadence?>())).Returns(new RefinementCalendarFacts(NextThursday, false, 6));

@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
         public static RowConversation None { get; } = new(false, false);
     }
 
-    /// <summary>When the Team next refines, and how its ready Work Items compare with what it is likely to pull until then.</summary>
+    /// <summary>When the Team next refines, and how its ready Work Items compare with what it is likely to pull over one Refinement cycle.</summary>
     public sealed record RefinementOutlook(RefinementCalendarFacts Calendar, RefinementNeed Need);
 
     /// <param name="Verdict">Null exactly when <paramref name="UnavailableReason"/> says why there is no range.</param>
@@ -83,10 +83,11 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
     }
 
     /// <summary>
-    /// How many Work Items the Team is likely to pull over <paramref name="HorizonWorkingDays"/>, read at the two
-    /// likelihoods of its band. The high end is stated as forecast, never cut down to the Work Items listed.
+    /// How many Work Items the Team is likely to pull over the <paramref name="HorizonWorkingDays"/> of one
+    /// Refinement <paramref name="Cycle"/>, read at the two likelihoods of its band. The high end is stated as
+    /// forecast, never cut down to the Work Items listed.
     /// </summary>
-    public sealed record NeedRange(int Low, int High, int LowPercentile, int HighPercentile, int HorizonWorkingDays);
+    public sealed record NeedRange(int Low, int High, int LowPercentile, int HighPercentile, int HorizonWorkingDays, RefinementCycle Cycle);
 
     /// <summary>Which signal the tab's ready count follows.</summary>
     public enum ReadySource
