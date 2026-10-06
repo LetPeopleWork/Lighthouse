@@ -48,7 +48,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-17b @slice-17b @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice17b)]
         public async Task A_voter_casts_a_Yes_but_with_its_condition_from_the_command_line()
         {
             var gravity = await GravityRefinesSixWorkItemsNobodyHasVotedOn();
@@ -60,7 +59,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-17b @slice-17b @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice17b)]
         public async Task A_vote_cast_through_an_assistant_is_marked_as_cast_through_an_assistant()
         {
             var gravity = await GravityRefinesSixWorkItemsNobodyHasVotedOn();
@@ -73,7 +71,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-17b @slice-17b @error @contract-shape:unbounded-preservation
         // A client never makes a name up for its user; the server refuses a nameless vote anyway.
         [Test]
-        [Ignore(PendingSlice17b)]
         public async Task A_client_vote_without_a_name_is_refused_and_nothing_is_recorded()
         {
             var gravity = await GravityRefinesSixWorkItemsNobodyHasVotedOn();
