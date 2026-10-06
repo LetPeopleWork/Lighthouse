@@ -28,6 +28,16 @@ const theRow: IVotedRow = {
 	madeReady: false,
 };
 
+const theRowTakenBack: IRefinementRow = {
+	referenceId: "GR-073",
+	name: "Configuration management",
+	url: null,
+	state: "Backlog",
+	parentReferenceId: "",
+	voteCount: 0,
+	myVote: null,
+};
+
 const aVoterIdentity = (asksForName: boolean) => ({
 	voter: asksForName ? null : JONAS,
 	readerKey: asksForName ? null : JONAS.key,
@@ -52,10 +62,13 @@ const renderTheCasting = (
 	const sizingLogService = {
 		castVote: vi.fn(castVote),
 		addComment: vi.fn(),
-		takeBackMyVote: vi.fn(),
+		takeBackMyVote: vi.fn<ISizingLogService["takeBackMyVote"]>(() =>
+			Promise.resolve(theRowTakenBack),
+		),
 		getLog: vi.fn(),
 	} satisfies ISizingLogService;
 	const identity = aVoterIdentity(asksForName);
+	const onAnswered = vi.fn();
 	const wrapper = ({ children }: { children: React.ReactNode }) => (
 		<ApiServiceContext.Provider
 			value={createMockApiServiceContext({ sizingLogService })}
@@ -65,10 +78,10 @@ const renderTheCasting = (
 	);
 	const hook = renderHook(
 		({ team }: { team: number }) =>
-			useVoteCasting(team, identity, vi.fn(), vi.fn(), null),
+			useVoteCasting(team, identity, onAnswered, vi.fn(), null),
 		{ wrapper, initialProps: { team: teamId } },
 	);
-	return { ...hook, sizingLogService };
+	return { ...hook, sizingLogService, onAnswered };
 };
 
 describe("casting a vote from the tab", () => {
@@ -186,6 +199,45 @@ describe("casting a vote from the tab", () => {
 
 		expect(sizingLogService.castVote).not.toHaveBeenCalled();
 		expect(result.current.isAskingForName).toBe(false);
+	});
+});
+
+describe("taking one's own vote back from the tab", () => {
+	it("takes it back on the Team the tab shows now, not the one it opened on", async () => {
+		const { result, rerender, sizingLogService } = renderTheCasting(() =>
+			Promise.resolve(theRow),
+		);
+
+		rerender({ team: 9 });
+		act(() => {
+			result.current.takeBack("GR-073", "Yes");
+		});
+
+		await waitFor(() =>
+			expect(sizingLogService.takeBackMyVote).toHaveBeenCalledExactlyOnceWith(
+				9,
+				"GR-073",
+				"Yes",
+				JONAS.key,
+			),
+		);
+	});
+
+	it("never counts the row it answers as just made Ready", async () => {
+		const { result, onAnswered } = renderTheCasting(() =>
+			Promise.resolve(theRow),
+		);
+
+		act(() => {
+			result.current.takeBack("GR-073", "Yes");
+		});
+
+		await waitFor(() =>
+			expect(onAnswered).toHaveBeenCalledExactlyOnceWith({
+				...theRowTakenBack,
+				madeReady: false,
+			}),
+		);
 	});
 });
 
