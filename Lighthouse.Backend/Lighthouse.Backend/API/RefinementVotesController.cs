@@ -1,6 +1,7 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Configuration;
+using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Services.Implementation.Authorization;
@@ -85,12 +86,13 @@ namespace Lighthouse.Backend.API
         /// The answer the reader saw pressed may be named, so a vote changed since in another session stays.
         /// </summary>
         [HttpDelete("votes/mine")]
-        public ActionResult<RefinementRowDto> TakeBackVote(
+        public async Task<ActionResult<RefinementRowDto>> TakeBackVote(
             int teamId,
             string workItemId,
             [FromQuery] string? answer,
             [FromQuery] string? channel,
-            [FromHeader(Name = RefinementController.VoterKeyHeader)] string? voterKey)
+            [FromHeader(Name = RefinementController.VoterKeyHeader)] string? voterKey,
+            CancellationToken cancellationToken)
         {
             if (!TryReadTheName<SizingAnswer>(answer, out var named))
             {
@@ -103,10 +105,10 @@ namespace Lighthouse.Backend.API
             }
 
             var declared = namedChannel ?? SizingChannel.Web;
-            if (voterIdentityResolver.ReaderKeyFrom(voterKey) is not { } key)
+            var resolution = await voterIdentityResolver.ForTakeBackAsync(voterKey, () => SignedInPersonAsync(cancellationToken));
+            if (resolution.VoterKey is not { } key)
             {
-                var refusal = voterIdentityResolver.Kind == VoterIdentityKind.Account ? VoterRefusal.NeedsAPerson : VoterRefusal.KeyRequired;
-                return RefusedWithoutAVoter(refusal, teamId, declared);
+                return RefusedWithoutAVoter(resolution.Refusal, teamId, declared);
             }
 
             var workItemReference = WorkItemRouteReference.From(workItemId);
@@ -135,10 +137,10 @@ namespace Lighthouse.Backend.API
         }
 
         private Task<VoterResolution> VoterOf(string? declaredName, string? voterKey, CancellationToken cancellationToken)
-            => voterIdentityResolver.ForWriteAsync(
-                declaredName,
-                voterKey,
-                () => currentUserProfileService.GetOrCreateFromPrincipalAsync(User, cancellationToken));
+            => voterIdentityResolver.ForWriteAsync(declaredName, voterKey, () => SignedInPersonAsync(cancellationToken));
+
+        private Task<UserProfile?> SignedInPersonAsync(CancellationToken cancellationToken)
+            => currentUserProfileService.GetOrCreateFromPrincipalAsync(User, cancellationToken);
 
         private ActionResult<RefinementRowDto> Answered(SizingOutcome outcome, int teamId, string workItemReference, string? voterKey)
             => outcome switch
@@ -153,20 +155,21 @@ namespace Lighthouse.Backend.API
             };
 
         // A missing name or key is routine (a browser that lost its key, a blank name) and the caller can put it
-        // right, so the answer names it. A credential no person stands behind is for an administrator to fix.
+        // right, so the answer names it. A credential no person stands behind is forbidden rather than malformed:
+        // only an administrator can link it to someone, and the code lets a client tell its user so.
         private ObjectResult RefusedWithoutAVoter(VoterRefusal? refusal, int teamId, SizingChannel channel)
         {
-            var (level, reason, title, namesTheReason) = refusal switch
+            var (level, status, reason, title, namesTheReason) = refusal switch
             {
-                VoterRefusal.NameRequired => (LogLevel.Information, SizingRefusal.VoterNameRequired, "A vote or comment needs the name of whoever sends it.", true),
-                VoterRefusal.KeyRequired => (LogLevel.Information, SizingRefusal.VoterKeyRequired, "A vote or comment needs the key the sender's browser keeps.", true),
-                VoterRefusal.NameTooLong => (LogLevel.Information, SizingRefusal.VoterNameTooLong, $"A name is at most {VoterIdentityResolver.LongestVoterName} characters.", false),
-                VoterRefusal.NeedsAPerson => (LogLevel.Warning, SizingRefusal.VoteNeedsAPerson, "A vote or comment needs a person to send it.", false),
+                VoterRefusal.NameRequired => (LogLevel.Information, StatusCodes.Status400BadRequest, SizingRefusal.VoterNameRequired, "A vote or comment needs the name of whoever sends it.", true),
+                VoterRefusal.KeyRequired => (LogLevel.Information, StatusCodes.Status400BadRequest, SizingRefusal.VoterKeyRequired, "A vote or comment needs the key the sender's browser keeps.", true),
+                VoterRefusal.NameTooLong => (LogLevel.Information, StatusCodes.Status400BadRequest, SizingRefusal.VoterNameTooLong, $"A name is at most {VoterIdentityResolver.LongestVoterName} characters.", false),
+                VoterRefusal.NeedsAPerson => (LogLevel.Warning, StatusCodes.Status403Forbidden, SizingRefusal.VoteNeedsAPerson, "A vote or comment needs a person to send it.", true),
                 _ => throw new System.Diagnostics.UnreachableException($"No such voter refusal: {refusal}"),
             };
             SizingRefusal.Log(logger, level, reason, teamId, channel);
 
-            return Refused(StatusCodes.Status400BadRequest, title, namesTheReason ? reason : null);
+            return Refused(status, title, namesTheReason ? reason : null);
         }
 
         private ObjectResult Refused(int statusCode, string title, string? code)

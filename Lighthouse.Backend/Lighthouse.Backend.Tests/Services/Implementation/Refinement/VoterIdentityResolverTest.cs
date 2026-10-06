@@ -130,6 +130,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             }
         }
 
+        [TestCase(true, ThirtyTwoCharacterKey, "account:jonas-subject", null)]
+        [TestCase(true, null, "account:jonas-subject", null)]
+        [TestCase(false, ThirtyTwoCharacterKey, null, VoterRefusal.NeedsAPerson)]
+        [TestCase(false, null, null, VoterRefusal.NeedsAPerson)]
+        public async Task WithSignInATakeBackIsThePersonsWhateverKeyIsSent(bool aPersonStandsBehind, string? presentedKey, string? stored, VoterRefusal? refusal)
+        {
+            var resolution = await ResolverWhere(AuthMode.Enabled).ForTakeBackAsync(presentedKey, ThePerson(aPersonStandsBehind ? Jonas : null));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resolution, Is.EqualTo(new VoterKeyResolution(stored, refusal)));
+                Assert.That(personLookups, Is.EqualTo(1));
+            }
+        }
+
+        [TestCase(ThirtyTwoCharacterKey, StoredFormOfThatKey, null)]
+        [TestCase(null, null, VoterRefusal.KeyRequired)]
+        [TestCase(ThirtyOneCharacterKey, null, VoterRefusal.KeyRequired)]
+        [TestCase(ThirtyTwoSpaces, null, VoterRefusal.KeyRequired)]
+        public async Task WithoutSignInATakeBackNeedsOnlyAUsableKey(string? presentedKey, string? stored, VoterRefusal? refusal)
+        {
+            var resolution = await ResolverWhere(AuthMode.Disabled).ForTakeBackAsync(presentedKey, ThePerson(Jonas));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resolution, Is.EqualTo(new VoterKeyResolution(stored, refusal)));
+                Assert.That(personLookups, Is.Zero);
+            }
+        }
+
         [Test]
         public async Task TwoAccountsWithOneNameAreTwoVoters()
         {

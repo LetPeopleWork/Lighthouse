@@ -132,7 +132,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-15 @us-17b @slice-17b @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice17b)]
         public async Task A_personal_API_key_votes_under_its_owners_name()
         {
             var gravity = await GravityRefinesSixWorkItemsNobodyHasVotedOn();
@@ -151,7 +150,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase("vote")]
         [TestCase("comment")]
         [TestCase("take back")]
-        [Ignore(PendingSlice17b)]
         public async Task A_credential_that_belongs_to_no_person_cannot_add_to_the_log(string action)
         {
             var gravity = await GravityRefinesSixWorkItemsNobodyHasVotedOn();

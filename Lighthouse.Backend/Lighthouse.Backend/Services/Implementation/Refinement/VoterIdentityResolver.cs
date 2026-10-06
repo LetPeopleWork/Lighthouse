@@ -44,13 +44,34 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         {
             if (Kind == VoterIdentityKind.Account)
             {
-                return await signedInPerson() is { } person
-                    ? VoterResolution.Of(AccountVoter(person))
-                    : VoterResolution.RefusedFor(VoterRefusal.NeedsAPerson);
+                return await SignedInVoterAsync(signedInPerson);
             }
 
             return SelfDeclared(declaredName, presentedVoterKey);
         }
+
+        /// <summary>
+        /// Whose vote is taken back. Taking back writes to the log too, so signed in it asks for the person
+        /// exactly as a vote does, and a credential nobody stands behind is refused before the log is read.
+        /// Without sign-in the browser's key alone is enough: the take-back reuses the name the vote was cast with.
+        /// </summary>
+        public async Task<VoterKeyResolution> ForTakeBackAsync(string? presentedVoterKey, Func<Task<UserProfile?>> signedInPerson)
+        {
+            if (Kind == VoterIdentityKind.Account)
+            {
+                var signedIn = await SignedInVoterAsync(signedInPerson);
+                return new VoterKeyResolution(signedIn.Voter?.Key, signedIn.Refusal);
+            }
+
+            return IsUsable(presentedVoterKey)
+                ? new VoterKeyResolution(SizingLogEntry.SelfDeclaredVoterKeyOf(presentedVoterKey!), null)
+                : new VoterKeyResolution(null, VoterRefusal.KeyRequired);
+        }
+
+        private static async Task<VoterResolution> SignedInVoterAsync(Func<Task<UserProfile?>> signedInPerson)
+            => await signedInPerson() is { } person
+                ? VoterResolution.Of(AccountVoter(person))
+                : VoterResolution.RefusedFor(VoterRefusal.NeedsAPerson);
 
         private static VoterResolution SelfDeclared(string? declaredName, string? presentedVoterKey)
         {
@@ -101,6 +122,9 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
 
         public static VoterResolution RefusedFor(VoterRefusal refusal) => new(null, refusal);
     }
+
+    /// <summary>Exactly one of the two is set: the voter's stored key, or why there is none.</summary>
+    public sealed record VoterKeyResolution(string? VoterKey, VoterRefusal? Refusal);
 
     public enum VoterRefusal
     {

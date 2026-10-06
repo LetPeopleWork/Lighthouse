@@ -59,12 +59,12 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
-        [TestCase(null, BrowserKey, AuthMode.Disabled, "voter-name-required", "A vote or comment needs the name of whoever sends it.", LogLevel.Information, true, TestName = "No name")]
-        [TestCase(Jonas, null, AuthMode.Disabled, "voter-key-required", "A vote or comment needs the key the sender's browser keeps.", LogLevel.Information, true, TestName = "No key")]
-        [TestCase(NameOf101Characters, BrowserKey, AuthMode.Disabled, "voter-name-too-long", "A name is at most 100 characters.", LogLevel.Information, false, TestName = "A name too long")]
-        [TestCase(Jonas, BrowserKey, AuthMode.Enabled, "vote-needs-a-person", "A vote or comment needs a person to send it.", LogLevel.Warning, false, TestName = "Nobody behind the credential")]
+        [TestCase(null, BrowserKey, AuthMode.Disabled, "voter-name-required", "A vote or comment needs the name of whoever sends it.", LogLevel.Information, true, StatusCodes.Status400BadRequest, TestName = "No name")]
+        [TestCase(Jonas, null, AuthMode.Disabled, "voter-key-required", "A vote or comment needs the key the sender's browser keeps.", LogLevel.Information, true, StatusCodes.Status400BadRequest, TestName = "No key")]
+        [TestCase(NameOf101Characters, BrowserKey, AuthMode.Disabled, "voter-name-too-long", "A name is at most 100 characters.", LogLevel.Information, false, StatusCodes.Status400BadRequest, TestName = "A name too long")]
+        [TestCase(Jonas, BrowserKey, AuthMode.Enabled, "vote-needs-a-person", "A vote or comment needs a person to send it.", LogLevel.Warning, true, StatusCodes.Status403Forbidden, TestName = "Nobody behind the credential")]
         public async Task AVoteWithoutAVoterIsRefusedSayingWhyAndLogsTheReason(
-            string? name, string? key, AuthMode mode, string reason, string title, LogLevel level, bool namesTheReason)
+            string? name, string? key, AuthMode mode, string reason, string title, LogLevel level, bool namesTheReason, int status)
         {
             authMode = mode;
 
@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.Tests.API
             var problem = ProblemOf(result);
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(StatusOf(result), Is.EqualTo(StatusCodes.Status400BadRequest));
+                Assert.That(StatusOf(result), Is.EqualTo(status));
                 Assert.That(problem.Title, Is.EqualTo(title));
                 Assert.That(problem.Extensions.TryGetValue("code", out var code) ? code : null, Is.EqualTo(namesTheReason ? reason : null),
                     "only a refusal the voter can put right names its reason to the browser");
@@ -222,14 +222,14 @@ namespace Lighthouse.Backend.Tests.API
         [TestCase("YesBut", SizingAnswer.YesBut)]
         [TestCase("No", SizingAnswer.No)]
         [TestCase(null, null)]
-        public void ATakeBackTakesBackOnlyTheAnswerItNames(string? named, SizingAnswer? answer)
+        public async Task ATakeBackTakesBackOnlyTheAnswerItNames(string? named, SizingAnswer? answer)
         {
             sizingLogCommandsMock
                 .Setup(commands => commands.TakeBack(TeamId, InRefinement, SizingChannel.Web, It.IsAny<string>(), It.IsAny<SizingAnswer?>()))
                 .Returns(SizingOutcome.NothingTakenBack);
             GivenTheRows(Row(InRefinement, 1, SizingAnswer.No));
 
-            var result = TakeBack(named);
+            var result = await TakeBack(named);
 
             using (Assert.EnterMultipleScope())
             {
@@ -243,9 +243,9 @@ namespace Lighthouse.Backend.Tests.API
         [TestCase("yes")]
         [TestCase("0")]
         [TestCase("Yes, No")]
-        public void ATakeBackNamingNoAnswerThereIsIsABadRequest(string named)
+        public async Task ATakeBackNamingNoAnswerThereIsIsABadRequest(string named)
         {
-            var result = TakeBack(named);
+            var result = await TakeBack(named);
 
             using (Assert.EnterMultipleScope())
             {
@@ -256,9 +256,9 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void ATakeBackNamingNoChannelThereIsIsABadRequest()
+        public async Task ATakeBackNamingNoChannelThereIsIsABadRequest()
         {
-            var result = TakeBack(null, channel: "Phone");
+            var result = await TakeBack(null, channel: "Phone");
 
             using (Assert.EnterMultipleScope())
             {
@@ -268,19 +268,19 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
-        [TestCase(AuthMode.Disabled, "voter-key-required", "A vote or comment needs the key the sender's browser keeps.", LogLevel.Information, true, TestName = "Take-back without a browser key")]
-        [TestCase(AuthMode.Enabled, "vote-needs-a-person", "A vote or comment needs a person to send it.", LogLevel.Warning, false, TestName = "Take-back with nobody signed in")]
-        public void ATakeBackWithoutAReaderIsRefusedSayingWhyAndLogsTheReason(
-            AuthMode mode, string reason, string title, LogLevel level, bool namesTheReason)
+        [TestCase(AuthMode.Disabled, "voter-key-required", "A vote or comment needs the key the sender's browser keeps.", LogLevel.Information, true, StatusCodes.Status400BadRequest, TestName = "Take-back without a browser key")]
+        [TestCase(AuthMode.Enabled, "vote-needs-a-person", "A vote or comment needs a person to send it.", LogLevel.Warning, true, StatusCodes.Status403Forbidden, TestName = "Take-back with nobody signed in")]
+        public async Task ATakeBackWithoutAReaderIsRefusedSayingWhyAndLogsTheReason(
+            AuthMode mode, string reason, string title, LogLevel level, bool namesTheReason, int status)
         {
             authMode = mode;
 
-            var result = TakeBack(null, voterKey: null);
+            var result = await TakeBack(null, voterKey: null);
 
             var problem = ProblemOf(result);
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(StatusOf(result), Is.EqualTo(StatusCodes.Status400BadRequest));
+                Assert.That(StatusOf(result), Is.EqualTo(status));
                 Assert.That(problem.Title, Is.EqualTo(title));
                 Assert.That(problem.Extensions.TryGetValue("code", out var code) ? code : null, Is.EqualTo(namesTheReason ? reason : null),
                     "only a refusal the reader can put right names its reason to the browser");
@@ -298,8 +298,8 @@ namespace Lighthouse.Backend.Tests.API
         private Task<ActionResult<RefinementRowDto>> AddComment(SizingCommentDto comment)
             => Controller().AddComment(TeamId, InRefinement, comment, BrowserKey, CancellationToken.None);
 
-        private ActionResult<RefinementRowDto> TakeBack(string? answer, string? voterKey = BrowserKey, string? channel = null)
-            => Controller().TakeBackVote(TeamId, InRefinement, answer, channel, voterKey);
+        private Task<ActionResult<RefinementRowDto>> TakeBack(string? answer, string? voterKey = BrowserKey, string? channel = null)
+            => Controller().TakeBackVote(TeamId, InRefinement, answer, channel, voterKey, CancellationToken.None);
 
         private RefinementVotesController Controller()
         {
