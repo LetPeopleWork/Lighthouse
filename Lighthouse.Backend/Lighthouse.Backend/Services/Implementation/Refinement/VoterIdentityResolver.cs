@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Services.Implementation.Auth;
@@ -30,19 +31,19 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         /// </summary>
         public string? ReaderKeyFrom(string? presentedVoterKey)
         {
-            if (Kind == VoterIdentityKind.Account)
+            if (SignInIsOn)
             {
                 return SignedInSubject is { } subject ? SizingLogEntry.AccountVoterKeyOf(subject) : null;
             }
 
-            return IsUsable(presentedVoterKey) ? SizingLogEntry.SelfDeclaredVoterKeyOf(presentedVoterKey!) : null;
+            return SelfDeclaredKeyOf(presentedVoterKey);
         }
 
         /// <param name="signedInPerson">Looks up the caller's profile; asked only when sign-in is on.</param>
         /// <returns>The voter, or what the caller still has to say about who they are before they may write.</returns>
         public async Task<VoterResolution> ForWriteAsync(string? declaredName, string? presentedVoterKey, Func<Task<UserProfile?>> signedInPerson)
         {
-            if (Kind == VoterIdentityKind.Account)
+            if (SignInIsOn)
             {
                 return await SignedInVoterAsync(signedInPerson);
             }
@@ -57,16 +58,18 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         /// </summary>
         public async Task<VoterKeyResolution> ForTakeBackAsync(string? presentedVoterKey, Func<Task<UserProfile?>> signedInPerson)
         {
-            if (Kind == VoterIdentityKind.Account)
+            if (SignInIsOn)
             {
                 var signedIn = await SignedInVoterAsync(signedInPerson);
                 return new VoterKeyResolution(signedIn.Voter?.Key, signedIn.Refusal);
             }
 
-            return IsUsable(presentedVoterKey)
-                ? new VoterKeyResolution(SizingLogEntry.SelfDeclaredVoterKeyOf(presentedVoterKey!), null)
+            return SelfDeclaredKeyOf(presentedVoterKey) is { } key
+                ? new VoterKeyResolution(key, null)
                 : new VoterKeyResolution(null, VoterRefusal.KeyRequired);
         }
+
+        private bool SignInIsOn => Kind == VoterIdentityKind.Account;
 
         private static async Task<VoterResolution> SignedInVoterAsync(Func<Task<UserProfile?>> signedInPerson)
             => await signedInPerson() is { } person
@@ -86,13 +89,16 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 return VoterResolution.RefusedFor(VoterRefusal.NameTooLong);
             }
 
-            if (!IsUsable(presentedVoterKey))
+            if (SelfDeclaredKeyOf(presentedVoterKey) is not { } key)
             {
                 return VoterResolution.RefusedFor(VoterRefusal.KeyRequired);
             }
 
-            return VoterResolution.Of(new Voter(SizingLogEntry.SelfDeclaredVoterKeyOf(presentedVoterKey!), name, null));
+            return VoterResolution.Of(new Voter(key, name, null));
         }
+
+        private static string? SelfDeclaredKeyOf(string? presentedVoterKey)
+            => IsUsable(presentedVoterKey) ? SizingLogEntry.SelfDeclaredVoterKeyOf(presentedVoterKey) : null;
 
         private string? SignedInSubject
             => httpContextAccessor.HttpContext?.User is { } user ? CurrentUserProfileService.StableSubjectOf(user) : null;
@@ -109,7 +115,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         // A short key could be guessed, and a guessed key speaks for somebody else's votes. A browser's key
         // is hex, so whitespace or a control character means it is not one; a key of nothing but spaces
         // is also what the rate limiter counts as no key at all.
-        private static bool IsUsable(string? presentedVoterKey)
+        private static bool IsUsable([NotNullWhen(true)] string? presentedVoterKey)
             => presentedVoterKey is not null
                 && presentedVoterKey.Length >= ShortestVoterKey
                 && !presentedVoterKey.Any(character => char.IsWhiteSpace(character) || char.IsControl(character));

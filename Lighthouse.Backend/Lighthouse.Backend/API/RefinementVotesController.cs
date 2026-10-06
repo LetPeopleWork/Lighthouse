@@ -94,7 +94,7 @@ namespace Lighthouse.Backend.API
             [FromHeader(Name = RefinementController.VoterKeyHeader)] string? voterKey,
             CancellationToken cancellationToken)
         {
-            if (!TryReadTheName<SizingAnswer>(answer, out var named))
+            if (!TryReadTheName<SizingAnswer>(answer, out var takenBackAnswer))
             {
                 return Problem(statusCode: StatusCodes.Status400BadRequest, title: "A vote is taken back as Yes, YesBut or No, or without naming its answer.");
             }
@@ -104,15 +104,15 @@ namespace Lighthouse.Backend.API
                 return Problem(statusCode: StatusCodes.Status400BadRequest, title: "A vote is taken back from Web, LiveSession, Cli or Assistant, or without naming its channel.");
             }
 
-            var declared = namedChannel ?? SizingChannel.Web;
-            var resolution = await voterIdentityResolver.ForTakeBackAsync(voterKey, () => SignedInPersonAsync(cancellationToken));
-            if (resolution.VoterKey is not { } key)
+            var takenBackFrom = namedChannel ?? SizingChannel.Web;
+            var resolution = await TakingBackVoterOf(voterKey, cancellationToken);
+            if (resolution.VoterKey is not { } takingBackVoterKey)
             {
-                return RefusedWithoutAVoter(resolution.Refusal, teamId, declared);
+                return RefusedWithoutAVoter(resolution.Refusal, teamId, takenBackFrom);
             }
 
             var workItemReference = WorkItemRouteReference.From(workItemId);
-            var outcome = sizingLogCommands.TakeBack(teamId, workItemReference, declared, key, named);
+            var outcome = sizingLogCommands.TakeBack(teamId, workItemReference, takenBackFrom, takingBackVoterKey, takenBackAnswer);
 
             return Answered(outcome, teamId, workItemReference, voterKey);
         }
@@ -138,6 +138,9 @@ namespace Lighthouse.Backend.API
 
         private Task<VoterResolution> VoterOf(string? declaredName, string? voterKey, CancellationToken cancellationToken)
             => voterIdentityResolver.ForWriteAsync(declaredName, voterKey, () => SignedInPersonAsync(cancellationToken));
+
+        private Task<VoterKeyResolution> TakingBackVoterOf(string? voterKey, CancellationToken cancellationToken)
+            => voterIdentityResolver.ForTakeBackAsync(voterKey, () => SignedInPersonAsync(cancellationToken));
 
         private Task<UserProfile?> SignedInPersonAsync(CancellationToken cancellationToken)
             => currentUserProfileService.GetOrCreateFromPrincipalAsync(User, cancellationToken);
