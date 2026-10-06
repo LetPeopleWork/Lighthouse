@@ -731,7 +731,7 @@ describe("The band in the Refinement section of a Team's settings", () => {
 
 	// @us-07 @need-over-one-cycle @slice-07 @driving_port @contract-shape:pure-function
 	// The band is read over one Refinement cycle, so the explanation names that cycle, not the days until the next.
-	it.skip("explains the range as a How Many forecast between the next Refinement and the one after, in the Team's word", async () => {
+	it("explains the range as a How Many forecast between the next Refinement and the one after, in the Team's word", async () => {
 		terms.current = {
 			...defaultTerms,
 			[TERMINOLOGY_KEYS.REFINEMENT]: "Grooming",

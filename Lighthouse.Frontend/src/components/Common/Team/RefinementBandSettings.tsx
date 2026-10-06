@@ -64,7 +64,7 @@ const RefinementBandSettings: React.FC<
 
 	const origin =
 		`Based on the ${teamTerm}'s ${getTerm(TERMINOLOGY_KEYS.THROUGHPUT)}: ` +
-		`a How Many forecast for the working days until the next ${refinementTerm}. ` +
+		`a How Many forecast for the working days between the next ${refinementTerm} and the one after. ` +
 		describeLikelihoods({ ...explainedBand, teamTerm });
 
 	const messageId = (end: BandEnd) => `${messageIdPrefix}-${end}-message`;
