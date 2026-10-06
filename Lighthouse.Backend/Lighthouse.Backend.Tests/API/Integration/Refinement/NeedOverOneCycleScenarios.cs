@@ -175,12 +175,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // Every day up to Wednesday 29 September 2027 is blacked out, so the next Refinement is Thursday the
         // 30th, almost a year ahead. The one after it would be Thursday 7 October 2027, a blackout day too, so
         // the cycle runs to Thursday 14 October 2027. A Refinement that far ahead still counts as blacked out.
+        // The 7th is blacked out by a weekly rule, because a rule is only worked out for the days asked about,
+        // and the 7th lies past the year looked at for the next Refinement.
         [Test]
         public async Task A_blackout_on_the_Refinement_after_the_next_is_honoured_even_a_year_ahead()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
             await GivenEveryDayIsBlackedOutFrom(new DateOnly(2026, 10, 3), new DateOnly(2027, 9, 29));
-            await GivenABlackoutDayOn(new DateOnly(2027, 10, 7));
+            await GivenOnlyThursdayIsBlackedOutByAWeeklyRule(new DateOnly(2027, 10, 7));
             GivenTheTeamIsLikelyToPull(13, (50, 9), (85, 14));
 
             var tab = await WhenTheCoachOpensTheRefinementTab(gravity);

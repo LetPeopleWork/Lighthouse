@@ -268,22 +268,31 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         /// <summary>A system admin has blacked out every Saturday and Sunday, from the week before October 2026 on.</summary>
         protected async Task WeekendsAreBlackedOut()
+            => await ARecurringBlackout(
+                new JsonArray((int)DayOfWeek.Saturday, (int)DayOfWeek.Sunday), new DateOnly(2026, 9, 28), last: null, "Weekend");
+
+        /// <summary>A system admin has blacked out every Thursday from the first day to the last, by a weekly rule.</summary>
+        protected async Task ThursdaysAreBlackedOutFrom(DateOnly first, DateOnly last)
+            => await ARecurringBlackout(new JsonArray((int)DayOfWeek.Thursday), first, last, "Thursday offsite");
+
+        private async Task ARecurringBlackout(JsonArray weekdays, DateOnly first, DateOnly? last, string description)
         {
             TheCallerAdministersTheWholeInstance();
 
             var body = new JsonObject
             {
-                ["weekdays"] = new JsonArray((int)DayOfWeek.Saturday, (int)DayOfWeek.Sunday),
+                ["weekdays"] = weekdays,
                 ["intervalWeeks"] = 1,
-                ["start"] = "2026-09-28",
-                ["description"] = "Weekend",
+                ["start"] = first.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                ["end"] = last?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                ["description"] = description,
             };
 
             using var created = await Client.PostAsync(
                 "/api/latest/recurring-blackout-rules",
                 new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json"));
             Assert.That(created.IsSuccessStatusCode, Is.True,
-                $"The weekends were not blacked out, so the scenario describes a calendar with them. {await created.Content.ReadAsStringAsync()}");
+                $"The {description} rule was not saved, so the scenario describes a calendar without it. {await created.Content.ReadAsStringAsync()}");
         }
 
         // --- The admin's saves ---

@@ -75,6 +75,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         private async Task GivenEveryDayIsBlackedOutFrom(DateOnly first, DateOnly last) => await BlackoutDaysFrom(first, last);
 
+        private async Task GivenOnlyThursdayIsBlackedOutByAWeeklyRule(DateOnly thursday) => await ThursdaysAreBlackedOutFrom(thursday, thursday);
+
         // --- When ---
 
         private async Task<JsonElement> WhenTheCoachOpensTheRefinementTab(TeamUnderTest team)

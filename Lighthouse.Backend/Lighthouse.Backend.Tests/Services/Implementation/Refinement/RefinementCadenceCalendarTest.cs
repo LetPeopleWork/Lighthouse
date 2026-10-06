@@ -209,20 +209,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             var cadence = Cadence(weekdays, intervalWeeks, anchorWeek);
             var isBlackedOut = BlackoutPatterns[blackouts];
             var day = Day(today);
-            var expectedStart = RefinementCadenceCalendar.IsCadenceDay(cadence, day, isBlackedOut)
+            var expectedStart = IsRefinementDayCountedByHand(cadence, day, isBlackedOut)
                 ? day
-                : RefinementCadenceCalendar.NextAfter(cadence, day, isBlackedOut);
+                : FirstRefinementDayCountedByHandAfter(cadence, day, isBlackedOut);
 
             var cycle = RefinementCadenceCalendar.CycleFrom(cadence, day, isBlackedOut);
 
             Assert.That(cycle, Is.Not.Null);
             var refinementsInside = Enumerable.Range(1, cycle!.End.DayNumber - cycle.Start.DayNumber - 1)
                 .Select(cycle.Start.AddDays)
-                .Where(inside => RefinementCadenceCalendar.IsCadenceDay(cadence, inside, isBlackedOut));
+                .Where(inside => IsRefinementDayCountedByHand(cadence, inside, isBlackedOut));
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(cycle.Start, Is.EqualTo(expectedStart));
-                Assert.That(cycle.End, Is.EqualTo(RefinementCadenceCalendar.NextAfter(cadence, cycle.Start, isBlackedOut)));
+                Assert.That(cycle.End, Is.EqualTo(FirstRefinementDayCountedByHandAfter(cadence, expectedStart, isBlackedOut)));
                 Assert.That(cycle.End, Is.GreaterThan(cycle.Start));
                 Assert.That(refinementsInside, Is.Empty);
             }
@@ -272,6 +272,47 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             => from weekday in Enum.GetNames<DayOfWeek>()
                from offset in Enumerable.Range(0, 14)
                select new TestCaseData(weekday, IsoDay(FirstDaySwept.AddDays(offset)));
+
+        // The calendar's rule worked out again day by day, without any of its code, so the sweep cannot agree with
+        // a mistake only because it makes the same one: the weekday is one the Team refines on, the day falls in a
+        // week a whole number of intervals on from the starting week (any week, without one), and it is not blacked out.
+        private static bool IsRefinementDayCountedByHand(RefinementCadence cadence, DateOnly day, Func<DateOnly, bool> isBlackedOut)
+        {
+            if (!cadence.Weekdays.Contains(day.DayOfWeek) || isBlackedOut(day))
+            {
+                return false;
+            }
+
+            if (cadence.AnchorWeek is not { } anchor)
+            {
+                return true;
+            }
+
+            var weeksOn = (MondayOfTheWeekOf(day).DayNumber - MondayOfTheWeekOf(anchor).DayNumber) / 7;
+            return weeksOn >= 0 && weeksOn % cadence.IntervalWeeks == 0;
+        }
+
+        private static DateOnly FirstRefinementDayCountedByHandAfter(RefinementCadence cadence, DateOnly day, Func<DateOnly, bool> isBlackedOut)
+        {
+            var candidate = day.AddDays(1);
+            while (!IsRefinementDayCountedByHand(cadence, candidate, isBlackedOut))
+            {
+                candidate = candidate.AddDays(1);
+            }
+
+            return candidate;
+        }
+
+        private static DateOnly MondayOfTheWeekOf(DateOnly day)
+        {
+            var candidate = day;
+            while (candidate.DayOfWeek != DayOfWeek.Monday)
+            {
+                candidate = candidate.AddDays(-1);
+            }
+
+            return candidate;
+        }
 
         private static string IsoDay(DateOnly day) => day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
