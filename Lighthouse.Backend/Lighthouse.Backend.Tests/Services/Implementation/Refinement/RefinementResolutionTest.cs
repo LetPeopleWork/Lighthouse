@@ -99,6 +99,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                     Jonas,
                     new RowVotes(1, null, new VoteSplit(1, 0, 0)))
                 .SetName("A vote taken back no longer counts");
+
+            yield return new TestCaseData(
+                    new[] { VoteBy(Jonas, 1, SizingAnswer.Yes), RevocationBy(Jonas, 2), VoteBy(Jonas, 3, SizingAnswer.No) },
+                    Jonas,
+                    new RowVotes(1, SizingAnswer.No, new VoteSplit(0, 0, 1)))
+                .SetName("Voting again after taking back counts again");
+
+            yield return new TestCaseData(
+                    new[] { VoteBy(Jonas, 1, SizingAnswer.Yes), RevocationBy(Jonas, 2), CommentBy(Jonas, 3) },
+                    Jonas,
+                    new RowVotes(0, null, new VoteSplit(0, 0, 0)))
+                .SetName("A comment after taking back leaves the vote taken back");
         }
 
         [TestCaseSource(nameof(VoterLogs))]

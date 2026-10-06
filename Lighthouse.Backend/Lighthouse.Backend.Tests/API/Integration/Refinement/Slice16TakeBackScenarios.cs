@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         // @driving_port @real-io @us-16 @slice-16 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice16)]
         public async Task A_taken_back_vote_stops_counting_and_the_log_keeps_both()
         {
             var gravity = await GivenJonasAndAnaSaidYesOnConfigurationManagement();
@@ -32,7 +31,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-16 @slice-16 @boundary @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice16)]
         public async Task Taking_back_a_vote_you_do_not_have_records_nothing()
         {
             var gravity = await GivenOnlyAnaSaidYesOnConfigurationManagement();
@@ -44,7 +42,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-16 @slice-16 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice16)]
         public async Task Taking_back_twice_records_one_take_back()
         {
             var gravity = await GivenJonasAndAnaSaidYesOnConfigurationManagement();
@@ -119,7 +116,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-16 @slice-16 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice16)]
         public async Task Taking_back_takes_the_vote_out_of_the_split()
         {
             var gravity = await GivenJonasAndAnaSaidYesOnConfigurationManagement();

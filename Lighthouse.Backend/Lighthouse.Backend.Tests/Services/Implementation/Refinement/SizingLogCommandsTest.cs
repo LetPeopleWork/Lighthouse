@@ -25,6 +25,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 
         private static readonly Voter Jonas = new("self:jonas", "Jonas Weber", null);
 
+        private static readonly Voter Ana = new("account:ana", "Ana Lima", 7);
+
         private static readonly string?[] NoComment = [null];
 
         private Mock<IRepository<Team>> teamRepositoryMock;
@@ -306,6 +308,65 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             }
         }
 
+        [TestCase(SizingChannel.Web)]
+        [TestCase(SizingChannel.Cli)]
+        public void TakingBackACurrentVoteAppendsExactlyOneRevocationUnderTheVotersName(SizingChannel channel)
+        {
+            GivenTheTeam(ATeamThatRefinesInBacklog(sleProbability: 85, sleDays: 7));
+            GivenTheLogHolds(LoggedBy(Jonas, 1, SizingEntryKind.Vote), LoggedBy(Ana, 2, SizingEntryKind.Vote));
+
+            var outcome = subject.TakeBack(TeamId, InRefinement, channel, Jonas.Key);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome, Is.EqualTo(SizingOutcome.Recorded));
+                Assert.That(appended.Select(Summary), Is.EqualTo(new[]
+                {
+                    new EntrySummary(TeamId, InRefinement, SizingEntryKind.Revocation, null, null, Jonas.Key, Jonas.ProfileId, Jonas.DisplayName, CastAt.UtcDateTime, channel),
+                }));
+            }
+        }
+
+        [TestCaseSource(nameof(LogsWithoutJonassVote))]
+        public void TakingBackWithoutACurrentVoteAppendsNothing(SizingLogEntry[] log)
+        {
+            GivenTheTeam(ATeamThatRefinesInBacklog(sleProbability: 85, sleDays: 7));
+            GivenTheLogHolds(log);
+
+            var outcome = subject.TakeBack(TeamId, InRefinement, SizingChannel.Web, Jonas.Key);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome, Is.EqualTo(SizingOutcome.NothingTakenBack));
+                Assert.That(appended, Is.Empty);
+            }
+        }
+
+        private static IEnumerable<TestCaseData> LogsWithoutJonassVote()
+        {
+            yield return new TestCaseData(arg: Array.Empty<SizingLogEntry>()).SetName("An empty log");
+            yield return new TestCaseData(arg: new[] { LoggedBy(Ana, 1, SizingEntryKind.Vote) }).SetName("Only somebody else voted");
+            yield return new TestCaseData(arg: new[] { LoggedBy(Jonas, 1, SizingEntryKind.Comment) }).SetName("He only commented");
+            yield return new TestCaseData(arg: new[] { LoggedBy(Jonas, 1, SizingEntryKind.Vote), LoggedBy(Jonas, 2, SizingEntryKind.Revocation) })
+                .SetName("He already took it back");
+        }
+
+        private static SizingLogEntry LoggedBy(Voter voter, int id, SizingEntryKind kind) => new()
+        {
+            Id = id,
+            TeamId = TeamId,
+            WorkItemReferenceId = InRefinement,
+            Kind = kind,
+            Answer = kind == SizingEntryKind.Vote ? SizingAnswer.Yes : null,
+            Comment = kind == SizingEntryKind.Comment ? "why?" : null,
+            VoterKey = voter.Key,
+            VoterProfileId = voter.ProfileId,
+            VoterDisplayName = voter.DisplayName,
+            RecordedAt = CastAt.UtcDateTime,
+            Channel = SizingChannel.Web,
+            YardstickSource = YardstickSource.Sle,
+        };
+
         private static Team ATeamThatRefinesInBacklog(int sleProbability, int sleDays) => new()
         {
             Id = TeamId,
@@ -342,6 +403,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             => sizingLogMock
                 .Setup(log => log.ReadForTeam(TeamId, It.IsAny<IReadOnlyCollection<string>>()))
                 .Returns(() => appended);
+
+        private void GivenTheLogHolds(params SizingLogEntry[] log)
+            => sizingLogMock
+                .Setup(sizingLog => sizingLog.ReadForTeam(TeamId, It.Is<IReadOnlyCollection<string>>(references => references.Contains(InRefinement))))
+                .Returns(log);
 
         private sealed record LoggedLine(LogLevel Level, Dictionary<string, string?> Fields, string Text);
 

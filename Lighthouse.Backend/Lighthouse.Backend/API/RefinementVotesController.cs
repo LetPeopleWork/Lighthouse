@@ -78,6 +78,29 @@ namespace Lighthouse.Backend.API
             return Answered(outcome, teamId, workItemReference, voterKey);
         }
 
+        /// <summary>
+        /// Taking back needs only the voter's key, never a name: the take-back is recorded under the name the vote
+        /// was cast with. Only the web page takes a vote back so far, and the request has no body to name a channel.
+        /// </summary>
+        [HttpDelete("votes/mine")]
+        public ActionResult<RefinementRowDto> TakeBackVote(
+            int teamId,
+            string workItemId,
+            [FromHeader(Name = RefinementController.VoterKeyHeader)] string? voterKey)
+        {
+            const SizingChannel channel = SizingChannel.Web;
+            if (voterIdentityResolver.ReaderKeyFrom(voterKey) is not { } key)
+            {
+                var refusal = voterIdentityResolver.Kind == VoterIdentityKind.Account ? VoterRefusal.NeedsAPerson : VoterRefusal.KeyRequired;
+                return RefusedWithoutAVoter(refusal, teamId, channel);
+            }
+
+            var workItemReference = WorkItemRouteReference.From(workItemId);
+            var outcome = sizingLogCommands.TakeBack(teamId, workItemReference, channel, key);
+
+            return Answered(outcome, teamId, workItemReference, voterKey);
+        }
+
         private Task<VoterResolution> VoterOf(string? declaredName, string? voterKey, CancellationToken cancellationToken)
             => voterIdentityResolver.ForWriteAsync(
                 declaredName,
@@ -89,6 +112,7 @@ namespace Lighthouse.Backend.API
             {
                 SizingOutcome.Recorded => RowAsItNowStands(teamId, workItemReference, voterKey, madeReady: false),
                 SizingOutcome.RecordedAndMadeReady => RowAsItNowStands(teamId, workItemReference, voterKey, madeReady: true),
+                SizingOutcome.NothingTakenBack => RowAsItNowStands(teamId, workItemReference, voterKey, madeReady: false),
                 SizingOutcome.TeamNotFound => NotFound(),
                 SizingOutcome.WorkItemNotInRefinement => Refused(StatusCodes.Status409Conflict, "That Work Item is not in refinement.", SizingRefusal.WorkItemNotInRefinement),
                 SizingOutcome.CommentMissing => Refused(StatusCodes.Status400BadRequest, "A comment needs some text.", SizingRefusal.CommentRequired),

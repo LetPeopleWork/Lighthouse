@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 teamId,
                 workItemReference,
                 new Said(SizingEntryKind.Vote, vote.Answer, vote.Comment, vote.Channel),
-                voter,
+                _ => voter,
                 (team, entry) => MadeReady(team, entry) ? SizingOutcome.RecordedAndMadeReady : SizingOutcome.Recorded);
 
         public SizingOutcome Comment(int teamId, string workItemReference, SizingComment comment, Voter voter)
@@ -27,10 +27,21 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 teamId,
                 workItemReference,
                 new Said(SizingEntryKind.Comment, null, comment.Comment, comment.Channel),
-                voter,
+                _ => voter,
                 (_, _) => SizingOutcome.Recorded);
 
-        private SizingOutcome Append(int teamId, string workItemReference, Said said, Voter voter, Func<Team, SizingLogEntry, SizingOutcome> recorded)
+        public SizingOutcome TakeBack(int teamId, string workItemReference, SizingChannel channel, string voterKey)
+            => Append(
+                teamId,
+                workItemReference,
+                new Said(SizingEntryKind.Revocation, null, null, channel),
+                team => RefinementResolution.CurrentVoteOf(sizingLog.ReadForTeam(team.Id, [workItemReference]), voterKey) is { } vote
+                    ? new Voter(vote.VoterKey, vote.VoterDisplayName, vote.VoterProfileId)
+                    : null,
+                (_, _) => SizingOutcome.Recorded);
+
+        /// <param name="voterOf">Who the entry is written for; nobody means there is nothing to write.</param>
+        private SizingOutcome Append(int teamId, string workItemReference, Said said, Func<Team, Voter?> voterOf, Func<Team, SizingLogEntry, SizingOutcome> recorded)
         {
             var team = teamRepository.GetById(teamId);
             if (team is null)
@@ -49,6 +60,11 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 // A Work Item leaving refinement between reading the tab and writing to it is routine, not a fault.
                 SizingRefusal.Log(logger, LogLevel.Information, SizingRefusal.WorkItemNotInRefinement, team.Id, said.Channel);
                 return SizingOutcome.WorkItemNotInRefinement;
+            }
+
+            if (voterOf(team) is not { } voter)
+            {
+                return SizingOutcome.NothingTakenBack;
             }
 
             // The yardstick is kept with every entry: the SLE may change later, and a vote only means

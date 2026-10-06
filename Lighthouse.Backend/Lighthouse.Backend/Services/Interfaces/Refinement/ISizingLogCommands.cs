@@ -9,6 +9,12 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
 
         /// <summary>A comment never changes anybody's vote, so it can never make a Work Item Ready.</summary>
         SizingOutcome Comment(int teamId, string workItemReference, SizingComment comment, Voter voter);
+
+        /// <summary>
+        /// Takes back the vote the voter with this key currently holds, under the name that vote was cast with.
+        /// Without a current vote there is nothing to take back, and nothing is written.
+        /// </summary>
+        SizingOutcome TakeBack(int teamId, string workItemReference, SizingChannel channel, string voterKey);
     }
 
     public sealed record SizingVote(SizingAnswer Answer, SizingChannel Channel, string? Comment);
@@ -26,5 +32,6 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
         RecordedAndMadeReady,
         CommentMissing,
         CommentTooLong,
+        NothingTakenBack,
     }
 }

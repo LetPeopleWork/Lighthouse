@@ -17,6 +17,9 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             return new RowVotes(current.Count, myVote, SplitOf(current));
         }
 
+        public static SizingLogEntry? CurrentVoteOf(IEnumerable<SizingLogEntry> entries, string voterKey)
+            => CurrentVotes(entries).Find(vote => string.Equals(vote.VoterKey, voterKey, StringComparison.Ordinal));
+
         /// <summary>Each voter's name under the answer of their current vote, as that vote gave it.</summary>
         public static VoterNames VotersOn(IEnumerable<SizingLogEntry> entries) => VotersOf(CurrentVotes(entries));
 
