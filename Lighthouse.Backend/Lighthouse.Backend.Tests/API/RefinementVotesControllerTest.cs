@@ -62,9 +62,9 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [TestCase(null, BrowserKey, AuthMode.Disabled, "voter-name-required", "A vote or comment needs the name of whoever sends it.", LogLevel.Information, true, StatusCodes.Status400BadRequest, TestName = "No name")]
-        [TestCase(Jonas, null, AuthMode.Disabled, "voter-key-required", "A vote or comment needs the key the sender's browser keeps.", LogLevel.Information, true, StatusCodes.Status400BadRequest, TestName = "No key")]
+        [TestCase(Jonas, null, AuthMode.Disabled, "voter-key-required", "A vote, comment or take-back needs the key the sender's browser keeps.", LogLevel.Information, true, StatusCodes.Status400BadRequest, TestName = "No key")]
         [TestCase(NameOf101Characters, BrowserKey, AuthMode.Disabled, "voter-name-too-long", "A name is at most 100 characters.", LogLevel.Information, false, StatusCodes.Status400BadRequest, TestName = "A name too long")]
-        [TestCase(Jonas, BrowserKey, AuthMode.Enabled, "vote-needs-a-person", "A vote or comment needs a person to send it.", LogLevel.Warning, true, StatusCodes.Status403Forbidden, TestName = "Nobody behind the credential")]
+        [TestCase(Jonas, BrowserKey, AuthMode.Enabled, "vote-needs-a-person", "A vote, comment or take-back needs a person to send it.", LogLevel.Warning, true, StatusCodes.Status403Forbidden, TestName = "Nobody behind the credential")]
         public async Task AVoteWithoutAVoterIsRefusedSayingWhyAndLogsTheReason(
             string? name, string? key, AuthMode mode, string reason, string title, LogLevel level, bool namesTheReason, int status)
         {
@@ -313,8 +313,8 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
-        [TestCase(AuthMode.Disabled, "voter-key-required", "A vote or comment needs the key the sender's browser keeps.", LogLevel.Information, true, StatusCodes.Status400BadRequest, TestName = "Take-back without a browser key")]
-        [TestCase(AuthMode.Enabled, "vote-needs-a-person", "A vote or comment needs a person to send it.", LogLevel.Warning, true, StatusCodes.Status403Forbidden, TestName = "Take-back with nobody signed in")]
+        [TestCase(AuthMode.Disabled, "voter-key-required", "A vote, comment or take-back needs the key the sender's browser keeps.", LogLevel.Information, true, StatusCodes.Status400BadRequest, TestName = "Take-back without a browser key")]
+        [TestCase(AuthMode.Enabled, "vote-needs-a-person", "A vote, comment or take-back needs a person to send it.", LogLevel.Warning, true, StatusCodes.Status403Forbidden, TestName = "Take-back with nobody signed in")]
         public async Task ATakeBackWithoutAReaderIsRefusedSayingWhyAndLogsTheReason(
             AuthMode mode, string reason, string title, LogLevel level, bool namesTheReason, int status)
         {

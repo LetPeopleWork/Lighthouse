@@ -165,9 +165,9 @@ namespace Lighthouse.Backend.API
             var (level, status, reason, title, namesTheReason) = refusal switch
             {
                 VoterRefusal.NameRequired => (LogLevel.Information, StatusCodes.Status400BadRequest, SizingRefusal.VoterNameRequired, "A vote or comment needs the name of whoever sends it.", true),
-                VoterRefusal.KeyRequired => (LogLevel.Information, StatusCodes.Status400BadRequest, SizingRefusal.VoterKeyRequired, "A vote or comment needs the key the sender's browser keeps.", true),
+                VoterRefusal.KeyRequired => (LogLevel.Information, StatusCodes.Status400BadRequest, SizingRefusal.VoterKeyRequired, "A vote, comment or take-back needs the key the sender's browser keeps.", true),
                 VoterRefusal.NameTooLong => (LogLevel.Information, StatusCodes.Status400BadRequest, SizingRefusal.VoterNameTooLong, $"A name is at most {VoterIdentityResolver.LongestVoterName} characters.", false),
-                VoterRefusal.NeedsAPerson => (LogLevel.Warning, StatusCodes.Status403Forbidden, SizingRefusal.VoteNeedsAPerson, "A vote or comment needs a person to send it.", true),
+                VoterRefusal.NeedsAPerson => (LogLevel.Warning, StatusCodes.Status403Forbidden, SizingRefusal.VoteNeedsAPerson, "A vote, comment or take-back needs a person to send it.", true),
                 _ => throw new System.Diagnostics.UnreachableException($"No such voter refusal: {refusal}"),
             };
             SizingRefusal.Log(logger, level, reason, teamId, channel);
