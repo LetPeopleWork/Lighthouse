@@ -192,7 +192,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 
 	// @us-05 @need-over-one-cycle @slice-05 @driving_port @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:pure-function
 	// The number covers one Refinement cycle: what the Team pulls from the next Refinement until the one after.
-	it.skip("says how many more to refine when fewer are ready than the Team is likely to pull until the Refinement after", async () => {
+	it("says how many more to refine when fewer are ready than the Team is likely to pull until the Refinement after", async () => {
 		renderTheRefinementTab(gravityWithReady(3, "Below"));
 
 		const message = await expectTheVerdictToRead(
@@ -208,7 +208,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 
 	// @need-over-one-cycle @driving_port @boundary @contract-shape:pure-function
 	// On a Refinement day the cycle starts today, so the first date the tooltip names is today's.
-	it.skip("names today as the cycle's first Refinement when today is a Refinement day", async () => {
+	it("names today as the cycle's first Refinement when today is a Refinement day", async () => {
 		vi.setSystemTime(new Date(2026, 9, 8, 9, 0, 0));
 		renderTheRefinementTab(
 			gravityWithReady(3, "Below", {
@@ -262,7 +262,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 	});
 
 	// @us-05 @need-over-one-cycle @slice-05 @boundary @contract-shape:pure-function
-	it.skip("says the Team's own words for Work Items, the Team and Refinement", async () => {
+	it("says the Team's own words for Work Items, the Team and Refinement", async () => {
 		terms.current = {
 			...defaultRefinementTerms,
 			workItems: "Tickets",
@@ -627,7 +627,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 
 	// @need-over-one-cycle @boundary @contract-shape:pure-function
 	// The tooltip names the cycle's two Refinements; without either date there is no verdict to explain.
-	it.skip.each(["cycleStart", "cycleEnd"] as const)(
+	it.each(["cycleStart", "cycleEnd"] as const)(
 		"says no verdict and names the next Refinement on the heading's row when the need comes without its %s",
 		async (missing) => {
 			renderTheRefinementTab(

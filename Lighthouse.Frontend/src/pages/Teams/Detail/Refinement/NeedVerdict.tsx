@@ -43,14 +43,15 @@ const isJudged = (need: IRefinementNeed | undefined): need is JudgedNeed =>
 	need.highPercentile != null &&
 	need.horizonWorkingDays != null;
 
-const refinementDayOf = (nextRefinementDate: string | null | undefined) =>
-	nextRefinementDate == null ? null : parseLocalDate(nextRefinementDate);
+const dayOf = (date: string | null): Date | null =>
+	date === null ? null : parseLocalDate(date);
 
-/** A verdict the tab can say in full: what is needed, how many are ready, and by which day. */
+/** A verdict the tab can say in full: what is needed, how many are ready, and over which cycle. */
 export interface ShownVerdict {
 	need: JudgedNeed;
 	readyCount: number;
-	refinementDay: Date;
+	cycleStart: Date;
+	cycleEnd: Date;
 }
 
 /** The verdict the tab shows, or null when one of the facts it is said with is missing. */
@@ -59,11 +60,19 @@ export const shownVerdict = (
 	readyCount: number | undefined,
 	nextRefinementDate: string | null | undefined,
 ): ShownVerdict | null => {
-	const refinementDay = refinementDayOf(nextRefinementDate);
-	if (!isJudged(need) || readyCount === undefined || refinementDay === null) {
+	if (
+		!isJudged(need) ||
+		readyCount === undefined ||
+		nextRefinementDate == null
+	) {
 		return null;
 	}
-	return { need, readyCount, refinementDay };
+	const cycleStart = dayOf(need.cycleStart);
+	const cycleEnd = dayOf(need.cycleEnd);
+	if (cycleStart === null || cycleEnd === null) {
+		return null;
+	}
+	return { need, readyCount, cycleStart, cycleEnd };
 };
 
 /** Whether the tab shows a message about the need; one that shows carries the next Refinement as its title. */
@@ -101,19 +110,21 @@ export interface NeedVerdictTerms {
 	workItems: string;
 	team: string;
 	throughput: string;
+	refinement: string;
+	refinements: string;
 }
 
 interface NeedVerdictProps {
 	need: IRefinementNeed | undefined;
 	readyCount: number | undefined;
 	nextRefinementDate: string | null | undefined;
-	/** The next Refinement as the tab names it, so the sentences can say "by then". */
+	/** The next Refinement as the tab names it, where the cycle the sentences speak of starts. */
 	title: string | null;
 	teamName: string;
 	terms: NeedVerdictTerms;
 }
 
-/** Whether to refine more or stop, against the range the Team is likely to pull before its next Refinement. */
+/** Whether to refine more or stop, against the range the Team is likely to pull from its next Refinement to the one after. */
 const NeedVerdict: React.FC<Readonly<NeedVerdictProps>> = ({
 	need,
 	readyCount,
@@ -144,15 +155,18 @@ const NeedVerdict: React.FC<Readonly<NeedVerdictProps>> = ({
 		teamName,
 		workItemTerm: terms.workItem,
 		workItemsTerm: terms.workItems,
+		refinementTerm: terms.refinement,
 	});
 	const origin = describeNeedOrigin({
 		teamName,
 		horizonWorkingDays: verdict.need.horizonWorkingDays,
-		refinementDay: verdict.refinementDay,
+		cycleStart: verdict.cycleStart,
+		cycleEnd: verdict.cycleEnd,
 		lowPercentile: verdict.need.lowPercentile,
 		highPercentile: verdict.need.highPercentile,
 		teamTerm: terms.team,
 		throughputTerm: terms.throughput,
+		refinementsTerm: terms.refinements,
 	});
 
 	return (

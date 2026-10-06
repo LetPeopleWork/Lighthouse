@@ -113,7 +113,7 @@ export type NeedUnavailableReason =
 	| "NoRefinementStates";
 
 /**
- * How many Work Items the Team is likely to pull before its next Refinement, and what the ready count
+ * How many Work Items the Team is likely to pull from its next Refinement to the one after, and what the ready count
  * makes of it. Facts only; the words are the browser's.
  */
 export interface IRefinementNeed {
@@ -125,9 +125,9 @@ export interface IRefinementNeed {
 	highPercentile: number | null;
 	horizonWorkingDays: number | null;
 	/** The first Refinement of the cycle the need covers, as "yyyy-MM-dd"; today on a Refinement day. Null without a range. */
-	cycleStart?: string | null;
+	cycleStart: string | null;
 	/** The Refinement after the cycle's first, as "yyyy-MM-dd". Null without a range. */
-	cycleEnd?: string | null;
+	cycleEnd: string | null;
 }
 
 /** The row as a vote left it, and whether that vote is the one that moved it to Ready. */

@@ -209,6 +209,8 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 					workItems: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
 					team: getTerm(TERMINOLOGY_KEYS.TEAM),
 					throughput: getTerm(TERMINOLOGY_KEYS.THROUGHPUT),
+					refinement: refinementTerm,
+					refinements: getTerm(TERMINOLOGY_KEYS.REFINEMENTS),
 				}}
 			/>
 			<RefinementGrid

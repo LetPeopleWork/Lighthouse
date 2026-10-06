@@ -32,7 +32,6 @@ const gravitysCycle = (
 ): NeedOriginFacts => ({
 	teamName: "Team Gravity",
 	horizonWorkingDays: 5,
-	refinementDay: THURSDAY_THE_EIGHTH,
 	cycleStart: THURSDAY_THE_EIGHTH,
 	cycleEnd: THURSDAY_THE_FIFTEENTH,
 	lowPercentile: 50,
@@ -49,7 +48,7 @@ const LIKELIHOODS_AT_50_AND_85 =
 describe("describeNeed", () => {
 	// @need-over-one-cycle @contract-shape:pure-function
 	// Below the range the number is what the Team pulls until the Refinement after the next one.
-	it.skip.each<[number, number, number, string]>([
+	it.each<[number, number, number, string]>([
 		[
 			3,
 			5,
@@ -148,7 +147,7 @@ describe("describeNeed", () => {
 	});
 
 	// @need-over-one-cycle @contract-shape:pure-function
-	it.skip("says the Team's own word for Refinement", () => {
+	it("says the Team's own word for Refinement", () => {
 		expect(
 			describeNeed({
 				...gravitysNeed("Below", 3, 5, 8),
@@ -162,7 +161,7 @@ describe("describeNeedOrigin", () => {
 	// @need-over-one-cycle @contract-shape:pure-function
 	// The forecast covers the working days between two Refinements in a row; on a Refinement day the first
 	// of them is today, so the dates read the same way whichever day it is.
-	it.skip.each<[string, Partial<NeedOriginFacts>, string]>([
+	it.each<[string, Partial<NeedOriginFacts>, string]>([
 		[
 			"five working days from the next Refinement",
 			{},
@@ -173,7 +172,6 @@ describe("describeNeedOrigin", () => {
 			{
 				horizonWorkingDays: 1,
 				cycleStart: new Date(2026, 9, 12),
-				refinementDay: new Date(2026, 9, 12),
 				cycleEnd: new Date(2026, 9, 13),
 			},
 			`Based on Team Gravity's Throughput: a How Many forecast for the 1 working day between the Refinements on Mon 12 Oct and Tue 13 Oct. ${LIKELIHOODS_AT_50_AND_85} Same forecast as on the Forecasts page.`,
