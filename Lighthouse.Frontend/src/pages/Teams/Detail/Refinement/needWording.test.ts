@@ -24,6 +24,7 @@ const gravitysNeed = (
 	workItemTerm: "Work Item",
 	workItemsTerm: "Work Items",
 	refinementTerm: "Refinement",
+	isRefinementDay: false,
 });
 
 // The cycle from Gravity's next Refinement to the one after it, read at the default band.
@@ -79,6 +80,33 @@ describe("describeNeed", () => {
 			expect(describeNeed(gravitysNeed("Below", readyCount, low, high))).toBe(
 				expected,
 			);
+		},
+	);
+
+	// @need-over-one-cycle @contract-shape:pure-function
+	// On a Refinement day the cycle runs from today to the next Refinement, which the message's title names.
+	it.each<[number, number, number, string]>([
+		[
+			3,
+			5,
+			8,
+			"3 ready — below the range of 5–8 Work Items Team Gravity is likely to pull until the next Refinement. Refine 2 to 5 more.",
+		],
+		[
+			0,
+			1,
+			1,
+			"0 ready — below the 1 Work Item Team Gravity is likely to pull until the next Refinement. Refine 1 more.",
+		],
+	])(
+		"Below on a Refinement day with %s ready against %s–%s reads %s",
+		(readyCount, low, high, expected) => {
+			expect(
+				describeNeed({
+					...gravitysNeed("Below", readyCount, low, high),
+					isRefinementDay: true,
+				}),
+			).toBe(expected);
 		},
 	);
 
@@ -154,6 +182,17 @@ describe("describeNeed", () => {
 				refinementTerm: "Grooming",
 			}),
 		).toContain("is likely to pull until the Grooming after. Refine");
+	});
+
+	// @need-over-one-cycle @contract-shape:pure-function
+	it("says the Team's own word for Refinement on a Refinement day", () => {
+		expect(
+			describeNeed({
+				...gravitysNeed("Below", 3, 5, 8),
+				refinementTerm: "Grooming",
+				isRefinementDay: true,
+			}),
+		).toContain("is likely to pull until the next Grooming. Refine");
 	});
 });
 

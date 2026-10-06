@@ -4,6 +4,7 @@ import { formatDayAndDate } from "./nextRefinementWording";
 /** What the server knows about the ready count against the range, with the words the Team uses. */
 export interface NeedFacts {
 	verdict: RefinementVerdict;
+	isRefinementDay: boolean;
 	readyCount: number;
 	low: number;
 	high: number;
@@ -49,8 +50,13 @@ const workItemsTermFor = (facts: NeedFacts): string =>
 		? facts.workItemTerm
 		: facts.workItemsTerm;
 
+const whereTheCycleEnds = (facts: NeedFacts): string =>
+	facts.isRefinementDay
+		? `the next ${facts.refinementTerm}`
+		: `the ${facts.refinementTerm} after`;
+
 const describeBelow = (facts: NeedFacts): string =>
-	`below ${theRange(facts)} ${workItemsTermFor(facts)} ${facts.teamName} is likely to pull until the ${facts.refinementTerm} after. Refine ${howManyMore(facts)} more.`;
+	`below ${theRange(facts)} ${workItemsTermFor(facts)} ${facts.teamName} is likely to pull until ${whereTheCycleEnds(facts)}. Refine ${howManyMore(facts)} more.`;
 
 const describeIn = (facts: NeedFacts): string => {
 	const where = isOneNumber(facts)
@@ -76,6 +82,7 @@ const VERDICT_WORDING: Record<RefinementVerdict, (facts: NeedFacts) => string> =
 /**
  * "3 ready — below the range of 5–8 Work Items Team Gravity is likely to pull until the Refinement after. Refine 2 to 5 more."
  * The need covers one cycle: from the next Refinement, which the message names in its title, to the one after it.
+ * On a Refinement day the cycle runs from today to the Refinement the title names, so the sentence ends "until the next Refinement".
  */
 export const describeNeed = (facts: NeedFacts): string =>
 	`${facts.readyCount} ready — ${VERDICT_WORDING[facts.verdict](facts)}`;

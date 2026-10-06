@@ -119,6 +119,7 @@ interface NeedVerdictProps {
 	need: IRefinementNeed | undefined;
 	readyCount: number | undefined;
 	nextRefinementDate: string | null | undefined;
+	isRefinementDay: boolean;
 	/** The next Refinement as the tab names it, where the cycle the sentences speak of starts. */
 	title: string | null;
 	teamName: string;
@@ -130,6 +131,7 @@ const NeedVerdict: React.FC<Readonly<NeedVerdictProps>> = ({
 	need,
 	readyCount,
 	nextRefinementDate,
+	isRefinementDay,
 	title,
 	teamName,
 	terms,
@@ -150,6 +152,7 @@ const NeedVerdict: React.FC<Readonly<NeedVerdictProps>> = ({
 
 	const sentence = describeNeed({
 		verdict: verdict.need.verdict,
+		isRefinementDay,
 		readyCount: verdict.readyCount,
 		low: verdict.need.low,
 		high: verdict.need.high,

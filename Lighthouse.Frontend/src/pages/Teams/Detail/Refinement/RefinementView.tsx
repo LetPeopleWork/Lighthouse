@@ -202,6 +202,7 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 				need={refinement.need}
 				readyCount={refinement.readyCount}
 				nextRefinementDate={refinement.nextRefinementDate}
+				isRefinementDay={refinement.isRefinementDay ?? false}
 				title={nextRefinement}
 				teamName={team.name}
 				terms={{

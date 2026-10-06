@@ -231,6 +231,10 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		expect(message).toHaveTextContent(
 			/Next Refinement: Thu 15 Oct · in 7 days/,
 		);
+		expect(message).toHaveTextContent(
+			/is likely to pull until the next Refinement\. Refine 2 to 5 more\./,
+		);
+		expect(message).not.toHaveTextContent(/until the Refinement after/);
 	});
 
 	// @us-05 @slice-05 @driving_port @contract-shape:pure-function
