@@ -3039,3 +3039,16 @@ Sketched before slice 15's frontend step (#6153) and approved by the maintainer 
 first click on an answer records the vote under the account: no "Who is voting?" dialog, nothing kept in the browser,
 and the Votes and comments dialog shows neither a "Voting as" line nor "Change your name". With sign-in off nothing
 changes.
+
+## Wave: DELIVER / [REF] Maintainer decision — the cycle's copy (2026-10-06)
+
+Sketched for Story #6204 and approved by the maintainer on 2026-10-06, so the Story can run without them.
+
+- **The verdict below the range** reads "3 ready — below the range of 5–8 {Work Items} Team Gravity is likely to pull
+  until the {Refinement} after. Refine 2 to 5 more." The alert's title still names the next Refinement. "Nothing more
+  needs refining by then." and "Stop refining: nothing more is needed by then." are unchanged.
+- **The ⓘ text** reads "Based on Team Gravity's {Throughput}: a How Many forecast for the 5 working days between the
+  {Refinements} on Wed 8 Oct and Wed 15 Oct." followed by the likelihood sentence and "Same forecast as on the
+  Forecasts page." When today is a Refinement day, the first date is today. One working day reads "working day".
+- Every term in braces is the Team's configured Terminology.
+- **DEVOPS:** no new usage-data event; the need is already counted by the existing refinement events.
