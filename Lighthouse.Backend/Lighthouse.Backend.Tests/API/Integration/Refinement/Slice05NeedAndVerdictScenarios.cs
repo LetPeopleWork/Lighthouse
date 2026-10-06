@@ -29,7 +29,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-05 @slice-05 @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:pure-function
         // The forecast differs at every likelihood, so only the median and the 85% reading give 5 and 8.
         [Test]
-        [Ignore(PendingStory6204)]
         public async Task Below_range_says_how_many_are_ready_against_the_range_the_Team_is_likely_to_pull()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
@@ -47,7 +46,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase(2, 8, InRange)]
         [TestCase(1, 2, InRange)]
         [TestCase(0, 1, Above)]
-        [Ignore(PendingStory6204)]
         public async Task The_verdict_compares_the_ready_count_with_both_ends_of_the_range(int low, int high, string verdict)
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
@@ -61,7 +59,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-05 @us-13 @slice-05 @contract-shape:bounded-change
         // Without stage rules the votes make Work Items Ready, and so they move the verdict.
         [Test]
-        [Ignore(PendingStory6204)]
         public async Task On_a_Team_without_stages_a_vote_that_makes_a_Work_Item_Ready_moves_the_verdict()
         {
             var gravity = await GivenGravityWithoutStagesRefinesOnThursdayTheEighthAndIsLikelyToPullOneToThree();
@@ -76,7 +73,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // With stage rules the tracker decides what is ready; votes are shown, not counted. Were they counted,
         // the three Yes votes would make a third Work Item ready and lift the count above the range of 1-2.
         [Test]
-        [Ignore(PendingStory6204)]
         public async Task On_a_Team_with_stages_votes_do_not_move_the_verdict()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
@@ -96,7 +92,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // every likelihood reads fourteen: this proves the horizon, and the band's own tests prove which
         // likelihood each end is read at.
         [Test]
-        [Ignore(PendingStory6204)]
         public async Task The_range_uses_the_same_horizon_as_the_manual_forecast()
         {
             var gravity = await GivenGravityFinishesTwoADayAndRefinesOnTuesdays();
@@ -110,7 +105,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // Tuesday 13 and Wednesday 14 October are blackout days, so only five of the seven days after
         // Thursday the 8th up to Thursday the 15th are working days.
         [Test]
-        [Ignore(PendingStory6204)]
         public async Task Blackout_days_inside_the_cycle_are_not_counted()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
@@ -181,7 +175,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase(3)]
         [TestCase(6)]
         [TestCase(11)]
-        [Ignore(PendingStory6204)]
         public async Task The_high_end_is_stated_as_forecast_whatever_number_of_Work_Items_is_listed(int high)
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
@@ -195,7 +188,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-06 @slice-05 @boundary @contract-shape:pure-function
         // A Team likely to pull nothing at all over the cycle needs nothing refined.
         [Test]
-        [Ignore(PendingStory6204)]
         public async Task A_range_of_nothing_says_stop_with_two_ready()
         {
             var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();

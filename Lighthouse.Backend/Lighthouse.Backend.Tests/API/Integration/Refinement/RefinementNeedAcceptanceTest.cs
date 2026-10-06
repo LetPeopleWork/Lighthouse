@@ -40,8 +40,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         protected const string PendingSlice09 = "Epic #5881 slice 09 (#6147) - pending DELIVER";
 
-        protected const string PendingStory6204 = "Story #6204, the need covers one Refinement cycle - pending DELIVER";
-
         /// <summary>
         /// Gravity refines every Thursday. From any day up to Thursday 8 October its cycle runs from that
         /// Thursday to Thursday 15 October: the seven days after the 8th, none of them blacked out.
