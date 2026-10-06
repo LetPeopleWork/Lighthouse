@@ -135,7 +135,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-15 @us-16 @slice-16 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice16)]
         public async Task Any_session_of_the_account_that_voted_can_take_the_vote_back()
         {
             var gravity = await GravityRefinesSixWorkItemsNobodyHasVotedOn();
@@ -157,7 +156,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-15 @us-16 @slice-16 @error @contract-shape:unbounded-preservation
         // A reader's own take-back is answered first, so the refusal can only be about the role.
         [Test]
-        [Ignore(PendingSlice16)]
         public async Task Somebody_without_a_role_on_the_Team_cannot_take_anything_back()
         {
             var gravity = await GravityRefinesSixWorkItemsNobodyHasVotedOn();
