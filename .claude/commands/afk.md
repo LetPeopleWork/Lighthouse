@@ -108,7 +108,26 @@ answer arrives, record it and resume from `position` — still in AFK mode.
   quotes against a re-run when in doubt). Never report a result you have not seen.
 - Follow `CLAUDE.md`, `docs/ci-learnings.md` and the project memory; they override this command
   where they are more specific.
-- Keep the user-visible output lean: one or two lines per milestone, not per tool call.
+- Keep the user-visible output lean: the status update below at each step, not per tool call.
+
+## Status updates — every step, and every 15 minutes
+
+The maintainer checks in from a phone, so every update reads on its own. Post one **whenever a step
+completes** (a DELIVER step, a wave, a gate, a fix round) **and every 15 minutes when nothing else has
+been posted**. On entry, schedule the heartbeat with `CronCreate` (`*/15 * * * *`, recurring, prompt:
+"AFK heartbeat: post the AFK status update"); on a heartbeat, skip it if an update went out in the last
+10 minutes. Delete the job (`CronDelete`) at the hold, on a stop, and on exit; recreate it on resume.
+
+The update is only this, nothing more:
+
+```
+🌙 AFK MODE · <feature-id>
+Now:  <slice / Story> · <step id> — <what it does, in a few words> (<agent running | gate running | …>)
+Next: <the next step>, then <what follows it>
+```
+
+Add one `Done:` line only when a step just finished (its commit and key numbers). A stop or the hold
+replaces the update with its own message.
 
 ## At the hold — what the summary contains
 
