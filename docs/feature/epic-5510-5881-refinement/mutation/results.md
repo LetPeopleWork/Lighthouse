@@ -978,3 +978,52 @@ Config: `stryker.6153.backend.json`.
 | mutant | reason |
 | --- | --- |
 | `RefinementVotesController.cs:96`, `:109` unreachable-switch messages | equivalent: the switches are total over their enums, so the throw cannot be reached |
+
+# E3 slice 16 — take back my vote (Story 6154)
+
+Configs: `stryker.6154.backend.json` (whole files), `stryker.6154.frontend.json` with `vitest.stryker.6154.ts` (the
+changed hunks only). Both run on the code after the refactor and the review fixes.
+
+## Backend — 93.75 % → 97.66 %
+
+| file | before | after |
+| --- | --- | --- |
+| `SizingVoteDto.cs` | 8 / 9 (88.9 %) | 9 / 9 (100 %) |
+| `RefinementVotesController.cs` | 30 / 36 (83.3 %) | 34 / 36 (94.4 %) |
+| `RefinementResolution.cs` | 55 / 56 (98.2 %) | 55 / 56 (98.2 %) |
+| `SizingLogCommands.cs` | 27 / 27 (100 %) | 27 / 27 (100 %) |
+
+Closed by commit `8963d5e9b`:
+
+- `RefinementVotesController.cs:96` — the take-back's invalid-answer title is asserted word for word.
+- `RefinementVotesController.cs:101` (no coverage ×3) — a take-back without a reader is refused in both modes: with
+  sign-in off 400 `voter-key-required`, with sign-in 400 "A vote or comment needs a person to send it.", each with its
+  log line and no command called.
+- `SizingVoteDto.cs:28` — an answer that is not a string (number, boolean, object, array) is refused naming the
+  answers there are; the old `"answer":0` case only checked the exception type, which the mutant also throws.
+
+| accepted survivor | reason |
+| --- | --- |
+| `RefinementResolution.cs:139` `voterKey is null ? null : …` | equivalent: a stored vote's key is required, so a null key finds nothing either way |
+| `RefinementVotesController.cs:144`, `:157` unreachable-switch messages | equivalent: the switches are total over their enums |
+
+## Frontend — 93.02 % → 97.67 %
+
+| file | before | after |
+| --- | --- | --- |
+| `useVoteCasting.ts` | 19 / 21 (90.5 %) | 21 / 21 (100 %) |
+| `VoteControl.tsx` | 19 / 20 (95.0 %) | 19 / 20 (95.0 %) |
+| `SizingLogService.ts` | 2 / 2 (100 %) | 2 / 2 (100 %) |
+
+The changed lines in `RefinementGrid.tsx`, `RefinementView.tsx` and `refinementColumns.tsx` only pass props through;
+Stryker makes no mutants of them.
+
+Closed by commit `0fb45ff41`:
+
+- `useVoteCasting.ts:144` — a take-back never reports its row as just made Ready (that would re-read the Refinement
+  for nothing).
+- `useVoteCasting.ts:147` — the take-back follows the Team the tab shows now, not the one it opened on.
+
+| accepted survivor | reason |
+| --- | --- |
+| `VoteControl.tsx:35` `myVote !== null` → `true` | equivalent: the toggle group reports null only when the clicked answer is the pressed one, so `myVote` is never null there; the check only narrows the type |
