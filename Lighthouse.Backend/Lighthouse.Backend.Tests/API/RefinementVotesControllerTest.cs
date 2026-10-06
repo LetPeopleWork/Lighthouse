@@ -47,9 +47,9 @@ namespace Lighthouse.Backend.Tests.API
 
         [TestCase(null, SizingChannel.Web)]
         [TestCase(SizingAnswer.Yes, null)]
-        public void AVoteWithoutAnAnswerOrAChannelIsABadRequest(SizingAnswer? answer, SizingChannel? channel)
+        public async Task AVoteWithoutAnAnswerOrAChannelIsABadRequest(SizingAnswer? answer, SizingChannel? channel)
         {
-            var result = CastVote(InRefinement, new SizingVoteDto { Answer = answer, Channel = channel, VoterName = Jonas });
+            var result = await CastVote(InRefinement, new SizingVoteDto { Answer = answer, Channel = channel, VoterName = Jonas });
 
             using (Assert.EnterMultipleScope())
             {
@@ -63,12 +63,12 @@ namespace Lighthouse.Backend.Tests.API
         [TestCase(Jonas, null, AuthMode.Disabled, "voter-key-required", "A vote or comment needs the key the sender's browser keeps.", LogLevel.Information, true, TestName = "No key")]
         [TestCase(NameOf101Characters, BrowserKey, AuthMode.Disabled, "voter-name-too-long", "A name is at most 100 characters.", LogLevel.Information, false, TestName = "A name too long")]
         [TestCase(Jonas, BrowserKey, AuthMode.Enabled, "vote-needs-a-person", "A vote or comment needs a person to send it.", LogLevel.Warning, false, TestName = "Nobody behind the credential")]
-        public void AVoteWithoutAVoterIsRefusedSayingWhyAndLogsTheReason(
+        public async Task AVoteWithoutAVoterIsRefusedSayingWhyAndLogsTheReason(
             string? name, string? key, AuthMode mode, string reason, string title, LogLevel level, bool namesTheReason)
         {
             authMode = mode;
 
-            var result = CastVote(InRefinement, new SizingVoteDto { Answer = SizingAnswer.Yes, Channel = SizingChannel.Cli, VoterName = name }, key);
+            var result = await CastVote(InRefinement, new SizingVoteDto { Answer = SizingAnswer.Yes, Channel = SizingChannel.Cli, VoterName = name }, key);
 
             var problem = ProblemOf(result);
             using (Assert.EnterMultipleScope())
@@ -86,14 +86,14 @@ namespace Lighthouse.Backend.Tests.API
         [TestCase("ABC%2F7", "ABC/7")]
         [TestCase("abc%2f7", "abc/7")]
         [TestCase("A%25B", "A%25B")]
-        public void ARecordedVoteIsAnsweredWithItsRowAsItNowStands(string routeValue, string reference)
+        public async Task ARecordedVoteIsAnsweredWithItsRowAsItNowStands(string routeValue, string reference)
         {
             sizingLogCommandsMock
                 .Setup(commands => commands.Vote(TeamId, reference, new SizingVote(SizingAnswer.YesBut, SizingChannel.Web, "if it stays small"), It.IsAny<Voter>()))
                 .Returns(SizingOutcome.Recorded);
             GivenTheRows(Row("GR-0", 3), Row(reference, 2, SizingAnswer.YesBut));
 
-            var result = CastVote(routeValue, new SizingVoteDto { Answer = SizingAnswer.YesBut, Channel = SizingChannel.Web, Comment = "if it stays small", VoterName = Jonas });
+            var result = await CastVote(routeValue, new SizingVoteDto { Answer = SizingAnswer.YesBut, Channel = SizingChannel.Web, Comment = "if it stays small", VoterName = Jonas });
 
             var row = (result.Result as OkObjectResult)?.Value as RefinementRowDto;
             using (Assert.EnterMultipleScope())
@@ -107,14 +107,14 @@ namespace Lighthouse.Backend.Tests.API
 
         [TestCase(SizingOutcome.Recorded, false)]
         [TestCase(SizingOutcome.RecordedAndMadeReady, true)]
-        public void ARecordedVoteSaysWhetherItIsTheVoteThatMadeItsRowReady(SizingOutcome outcome, bool madeReady)
+        public async Task ARecordedVoteSaysWhetherItIsTheVoteThatMadeItsRowReady(SizingOutcome outcome, bool madeReady)
         {
             sizingLogCommandsMock
                 .Setup(commands => commands.Vote(TeamId, InRefinement, It.IsAny<SizingVote>(), It.IsAny<Voter>()))
                 .Returns(outcome);
             GivenTheRows(Row(InRefinement, 3));
 
-            var result = CastVote(InRefinement, new SizingVoteDto { Answer = SizingAnswer.Yes, Channel = SizingChannel.Web, VoterName = Jonas });
+            var result = await CastVote(InRefinement, new SizingVoteDto { Answer = SizingAnswer.Yes, Channel = SizingChannel.Web, VoterName = Jonas });
 
             var row = (result.Result as OkObjectResult)?.Value as VotedRowDto;
             using (Assert.EnterMultipleScope())
@@ -126,14 +126,14 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void ARecordedVoteIsCastAsTheVoterTheBrowserNamed()
+        public async Task ARecordedVoteIsCastAsTheVoterTheBrowserNamed()
         {
             sizingLogCommandsMock
                 .Setup(commands => commands.Vote(TeamId, InRefinement, It.IsAny<SizingVote>(), It.IsAny<Voter>()))
                 .Returns(SizingOutcome.Recorded);
             GivenTheRows(Row(InRefinement, 1));
 
-            CastVote(InRefinement, new SizingVoteDto { Answer = SizingAnswer.No, Channel = SizingChannel.Web, VoterName = "  Jonas  " });
+            await CastVote(InRefinement, new SizingVoteDto { Answer = SizingAnswer.No, Channel = SizingChannel.Web, VoterName = "  Jonas  " });
 
             sizingLogCommandsMock.Verify(commands => commands.Vote(
                 TeamId,
@@ -143,38 +143,38 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void ARecordedVoteOnARowThatIsGoneByTheTimeItIsReadIsNotFound()
+        public async Task ARecordedVoteOnARowThatIsGoneByTheTimeItIsReadIsNotFound()
         {
             sizingLogCommandsMock
                 .Setup(commands => commands.Vote(TeamId, InRefinement, It.IsAny<SizingVote>(), It.IsAny<Voter>()))
                 .Returns(SizingOutcome.Recorded);
             GivenTheRows(Row("GR-0", 1));
 
-            var result = CastVote(InRefinement, new SizingVoteDto { Answer = SizingAnswer.Yes, Channel = SizingChannel.Web, VoterName = Jonas });
+            var result = await CastVote(InRefinement, new SizingVoteDto { Answer = SizingAnswer.Yes, Channel = SizingChannel.Web, VoterName = Jonas });
 
             Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
         }
 
         [Test]
-        public void AVoteForATeamThatDoesNotExistIsNotFound()
+        public async Task AVoteForATeamThatDoesNotExistIsNotFound()
         {
             sizingLogCommandsMock
                 .Setup(commands => commands.Vote(TeamId, InRefinement, It.IsAny<SizingVote>(), It.IsAny<Voter>()))
                 .Returns(SizingOutcome.TeamNotFound);
 
-            var result = CastVote(InRefinement, new SizingVoteDto { Answer = SizingAnswer.Yes, Channel = SizingChannel.Web, VoterName = Jonas });
+            var result = await CastVote(InRefinement, new SizingVoteDto { Answer = SizingAnswer.Yes, Channel = SizingChannel.Web, VoterName = Jonas });
 
             Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
         }
 
         [Test]
-        public void AVoteOnAWorkItemOutOfRefinementIsAConflictThatNamesWhy()
+        public async Task AVoteOnAWorkItemOutOfRefinementIsAConflictThatNamesWhy()
         {
             sizingLogCommandsMock
                 .Setup(commands => commands.Vote(TeamId, InRefinement, It.IsAny<SizingVote>(), It.IsAny<Voter>()))
                 .Returns(SizingOutcome.WorkItemNotInRefinement);
 
-            var result = CastVote(InRefinement, new SizingVoteDto { Answer = SizingAnswer.Yes, Channel = SizingChannel.Web, VoterName = Jonas });
+            var result = await CastVote(InRefinement, new SizingVoteDto { Answer = SizingAnswer.Yes, Channel = SizingChannel.Web, VoterName = Jonas });
 
             var problem = ProblemOf(result);
             using (Assert.EnterMultipleScope())
@@ -188,20 +188,21 @@ namespace Lighthouse.Backend.Tests.API
         private const string NameOf101Characters =
             "Jonas Weber Jonas Weber Jonas Weber Jonas Weber Jonas Weber Jonas Weber Jonas Weber Jonas Weber Jonas";
 
-        private ActionResult<RefinementRowDto> CastVote(string routeValue, SizingVoteDto vote, string? voterKey = BrowserKey)
+        private Task<ActionResult<RefinementRowDto>> CastVote(string routeValue, SizingVoteDto vote, string? voterKey = BrowserKey)
         {
             var authModeResolver = Mock.Of<IAuthModeResolver>(resolver => resolver.Resolve() == new RuntimeAuthStatus { Mode = authMode });
             var controller = new RefinementVotesController(
                 sizingLogCommandsMock.Object,
                 refinementViewQueryMock.Object,
-                new VoterIdentityResolver(authModeResolver),
+                new VoterIdentityResolver(authModeResolver, Mock.Of<IHttpContextAccessor>()),
+                Mock.Of<ICurrentUserProfileService>(),
                 loggerMock.Object)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
                 ProblemDetailsFactory = new PlainProblemDetailsFactory(),
             };
 
-            return controller.CastVote(TeamId, routeValue, vote, voterKey);
+            return controller.CastVote(TeamId, routeValue, vote, voterKey, CancellationToken.None);
         }
 
         private static readonly RefinementNeed NoNeed = RefinementNeed.Unavailable(NeedUnavailableReason.NoCadence);

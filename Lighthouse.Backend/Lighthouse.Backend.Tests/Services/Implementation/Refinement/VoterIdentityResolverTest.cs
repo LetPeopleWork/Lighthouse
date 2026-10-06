@@ -1,7 +1,9 @@
+using System.Security.Claims;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Services.Implementation.Refinement;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Refinement;
+using Microsoft.AspNetCore.Http;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
@@ -22,6 +24,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         private static readonly string OneHundredCharacterName = new('a', VoterIdentityResolver.LongestVoterName);
 
         private static readonly string OneHundredAndOneCharacterName = new('a', VoterIdentityResolver.LongestVoterName + 1);
+
+        private static readonly UserProfile Jonas = new() { Id = 7, Subject = "jonas-subject", DisplayName = "Jonas Weber" };
+
+        private ClaimsPrincipal signedIn = new(new ClaimsIdentity());
+
+        private int personLookups;
+
+        [SetUp]
+        public void SetUp()
+        {
+            signedIn = new ClaimsPrincipal(new ClaimsIdentity());
+            personLookups = 0;
+        }
 
         private static IEnumerable<TestCaseData> WhatADeclaredNameAndAKeyAmountTo()
         {
@@ -51,31 +66,47 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         }
 
         [TestCaseSource(nameof(WhatADeclaredNameAndAKeyAmountTo))]
-        public void WithoutSignInANameAndAKeyMakeAVoterOrSayWhatIsMissing(string? declaredName, string? presentedKey, VoterRefusal? expectedRefusal)
+        public async Task WithoutSignInANameAndAKeyMakeAVoterOrSayWhatIsMissing(string? declaredName, string? presentedKey, VoterRefusal? expectedRefusal)
         {
-            var resolution = ResolverWhere(AuthMode.Disabled).ForWrite(declaredName, presentedKey);
+            var resolution = await ResolverWhere(AuthMode.Disabled).ForWriteAsync(declaredName, presentedKey, ThePerson(Jonas));
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(resolution.Refusal, Is.EqualTo(expectedRefusal));
                 Assert.That(resolution.Voter is null, Is.EqualTo(expectedRefusal is not null));
+                Assert.That(personLookups, Is.Zero, "without sign-in there is no account to look up");
             }
         }
 
         [TestCase("Jonas Weber", "Jonas Weber")]
         [TestCase("  Jonas Weber  ", "Jonas Weber")]
         [TestCase("J", "J")]
-        public void WithoutSignInTheDeclaredNameIsTrimmedAndKept(string declared, string kept)
+        public async Task WithoutSignInTheDeclaredNameIsTrimmedAndKept(string declared, string kept)
         {
-            var resolution = ResolverWhere(AuthMode.Disabled).ForWrite(declared, ThirtyTwoCharacterKey);
+            var resolution = await ResolverWhere(AuthMode.Disabled).ForWriteAsync(declared, ThirtyTwoCharacterKey, ThePerson(Jonas));
 
             Assert.That(resolution.Voter, Is.EqualTo(new Voter(StoredFormOfThatKey, kept, null)));
         }
 
-        [Test]
-        public void WithSignInNobodyIsYetAVoter()
+        [TestCase(null, null)]
+        [TestCase("Ana Lima", ThirtyTwoCharacterKey)]
+        [TestCase("", ThirtyOneCharacterKey)]
+        public async Task WithSignInTheVoterIsTheAccountWhateverNameOrKeyIsSent(string? declaredName, string? presentedKey)
         {
-            var resolution = ResolverWhere(AuthMode.Enabled).ForWrite("Jonas Weber", ThirtyTwoCharacterKey);
+            var resolution = await ResolverWhere(AuthMode.Enabled).ForWriteAsync(declaredName, presentedKey, ThePerson(Jonas));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resolution.Voter, Is.EqualTo(new Voter("account:jonas-subject", "Jonas Weber", 7)));
+                Assert.That(resolution.Refusal, Is.Null);
+                Assert.That(personLookups, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public async Task WithSignInACredentialNoPersonStandsBehindIsRefused()
+        {
+            var resolution = await ResolverWhere(AuthMode.Enabled).ForWriteAsync("Jonas Weber", ThirtyTwoCharacterKey, ThePerson(null));
 
             using (Assert.EnterMultipleScope())
             {
@@ -84,27 +115,65 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             }
         }
 
+        [Test]
+        public async Task TwoAccountsWithOneNameAreTwoVoters()
+        {
+            var resolver = ResolverWhere(AuthMode.Enabled);
+
+            var zurich = await resolver.ForWriteAsync(null, null, ThePerson(new UserProfile { Id = 1, Subject = "ana-zurich", DisplayName = "Ana Lima" }));
+            var lisbon = await resolver.ForWriteAsync(null, null, ThePerson(new UserProfile { Id = 2, Subject = "ana-lisbon", DisplayName = "Ana Lima" }));
+
+            Assert.That(zurich.Voter?.Key, Is.Not.EqualTo(lisbon.Voter?.Key));
+        }
+
         [TestCase(ThirtyTwoCharacterKey, StoredFormOfThatKey)]
         [TestCase(null, null)]
         [TestCase(ThirtyOneCharacterKey, null)]
         [TestCase(ThirtyTwoSpaces, null)]
-        public void OnAReadTheKeyRecognisesTheReadersOwnVotes(string? presented, string? stored)
+        public void WithoutSignInOnAReadTheKeyRecognisesTheReadersOwnVotes(string? presented, string? stored)
         {
             Assert.That(ResolverWhere(AuthMode.Disabled).ReaderKeyFrom(presented), Is.EqualTo(stored));
         }
 
+        [TestCase("sub", "account:jonas-subject")]
+        [TestCase("oid", "account:jonas-subject")]
+        [TestCase("name", null)]
+        public void WithSignInOnAReadTheSessionsSubjectRecognisesTheReadersOwnVotes(string claimType, string? stored)
+        {
+            signedIn = new ClaimsPrincipal(new ClaimsIdentity([new Claim(claimType, "jonas-subject")], "test"));
+
+            Assert.That(ResolverWhere(AuthMode.Enabled).ReaderKeyFrom(ThirtyTwoCharacterKey), Is.EqualTo(stored));
+        }
+
         [Test]
-        public void TwoBrowsersWithOneNameAreTwoVoters()
+        public void WithSignInTheSubjectClaimWinsOverTheObjectId()
+        {
+            signedIn = new ClaimsPrincipal(new ClaimsIdentity([new Claim("oid", "object-id"), new Claim("sub", "jonas-subject")], "test"));
+
+            Assert.That(ResolverWhere(AuthMode.Enabled).ReaderKeyFrom(null), Is.EqualTo("account:jonas-subject"));
+        }
+
+        [Test]
+        public async Task TwoBrowsersWithOneNameAreTwoVoters()
         {
             var resolver = ResolverWhere(AuthMode.Disabled);
 
-            var first = resolver.ForWrite("Ana Lima", ThirtyTwoCharacterKey);
-            var second = resolver.ForWrite("Ana Lima", "fedcba9876543210fedcba9876543210");
+            var first = await resolver.ForWriteAsync("Ana Lima", ThirtyTwoCharacterKey, ThePerson(null));
+            var second = await resolver.ForWriteAsync("Ana Lima", "fedcba9876543210fedcba9876543210", ThePerson(null));
 
             Assert.That(first.Voter?.Key, Is.Not.EqualTo(second.Voter?.Key));
         }
 
-        private static VoterIdentityResolver ResolverWhere(AuthMode mode)
-            => new(Mock.Of<IAuthModeResolver>(resolver => resolver.Resolve() == new RuntimeAuthStatus { Mode = mode }));
+        private Func<Task<UserProfile?>> ThePerson(UserProfile? person)
+            => () =>
+            {
+                personLookups++;
+                return Task.FromResult(person);
+            };
+
+        private VoterIdentityResolver ResolverWhere(AuthMode mode)
+            => new(
+                Mock.Of<IAuthModeResolver>(resolver => resolver.Resolve() == new RuntimeAuthStatus { Mode = mode }),
+                Mock.Of<IHttpContextAccessor>(accessor => accessor.HttpContext == new DefaultHttpContext { User = signedIn }));
     }
 }

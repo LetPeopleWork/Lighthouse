@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using System.Linq.Expressions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
@@ -80,7 +81,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                 new RefinementList(workItemRepositoryMock.Object),
                 new SleYardstickResolver(teamMetricsServiceMock.Object, clockMock.Object),
                 sizingLogMock.Object,
-                new VoterIdentityResolver(Mock.Of<IAuthModeResolver>(resolver => resolver.Resolve() == new RuntimeAuthStatus { Mode = AuthMode.Disabled })),
+                new VoterIdentityResolver(Mock.Of<IAuthModeResolver>(resolver => resolver.Resolve() == new RuntimeAuthStatus { Mode = AuthMode.Disabled }), Mock.Of<IHttpContextAccessor>()),
                 new StageRuleMatcher(
                     new RuleEvaluator<WorkItem>(),
                     new WorkItemFieldProvider(),

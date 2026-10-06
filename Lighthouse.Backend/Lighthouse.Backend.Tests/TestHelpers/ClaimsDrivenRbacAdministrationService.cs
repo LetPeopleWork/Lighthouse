@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 RbacGuardRequirement.SystemAdmin => isSystemAdmin,
                 RbacGuardRequirement.SystemAdminOrBootstrap => isSystemAdmin,
                 RbacGuardRequirement.AnyScopedAdmin => isSystemAdmin || hasAnyScopedAdminGrant,
-                RbacGuardRequirement.TeamRead => isSystemAdmin
+                RbacGuardRequirement.TeamRead or RbacGuardRequirement.TeamContribute => isSystemAdmin
                     || (scopeId.HasValue
                         && (grants.Contains($"{TeamAdminGrantPrefix}{scopeId.Value}")
                             || grants.Contains($"{ViewerTeamGrantPrefix}{scopeId.Value}"))),

@@ -22,7 +22,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-15 @slice-15 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice15)]
         public async Task A_signed_in_reader_votes_under_their_account_without_giving_a_name()
         {
             var (gravity, jonas) = await GivenJonasReadsTeamGravity();
@@ -35,7 +34,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-15 @slice-15 @error @contract-shape:bounded-change
         // With sign-in, who you are comes from the session; a name in the request cannot change it.
         [Test]
-        [Ignore(PendingSlice15)]
         public async Task A_name_sent_with_a_signed_in_vote_is_ignored()
         {
             var (gravity, jonas) = await GivenJonasReadsTeamGravity();
@@ -47,7 +45,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-15 @slice-15 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice15)]
         public async Task One_account_is_one_voter_whichever_browser_it_votes_from()
         {
             var (gravity, jonas) = await GivenJonasReadsTeamGravity();
@@ -62,7 +59,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-11 @us-15 @slice-15 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice15)]
         public async Task A_Team_admin_votes_like_any_reader()
         {
             var gravity = await GravityRefinesSixWorkItemsNobodyHasVotedOn();
@@ -75,7 +71,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-15 @slice-15 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice15)]
         public async Task Two_accounts_with_the_same_name_are_two_voters()
         {
             var gravity = await GravityRefinesSixWorkItemsNobodyHasVotedOn();
@@ -117,7 +112,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-15 @slice-15 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice15)]
         public async Task With_sign_in_the_tab_says_a_voter_is_known_by_their_account()
         {
             var (gravity, jonas) = await GivenJonasReadsTeamGravity();

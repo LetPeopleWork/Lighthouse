@@ -5,6 +5,7 @@ using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Refinement;
+using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Refinement;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -24,21 +25,23 @@ namespace Lighthouse.Backend.API
         ISizingLogCommands sizingLogCommands,
         IRefinementViewQuery refinementViewQuery,
         VoterIdentityResolver voterIdentityResolver,
+        ICurrentUserProfileService currentUserProfileService,
         ILogger<RefinementVotesController> logger) : ControllerBase
     {
         [HttpPost("votes")]
-        public ActionResult<RefinementRowDto> CastVote(
+        public async Task<ActionResult<RefinementRowDto>> CastVote(
             int teamId,
             string workItemId,
             [FromBody] SizingVoteDto vote,
-            [FromHeader(Name = RefinementController.VoterKeyHeader)] string? voterKey)
+            [FromHeader(Name = RefinementController.VoterKeyHeader)] string? voterKey,
+            CancellationToken cancellationToken)
         {
             if (vote.Answer is not { } answer || vote.Channel is not { } channel)
             {
                 return Problem(statusCode: StatusCodes.Status400BadRequest, title: "A vote needs an answer and the channel it was cast from.");
             }
 
-            var resolution = voterIdentityResolver.ForWrite(vote.VoterName, voterKey);
+            var resolution = await VoterOf(vote.VoterName, voterKey, cancellationToken);
             if (resolution.Voter is not { } voter)
             {
                 return RefusedWithoutAVoter(resolution.Refusal, teamId, channel);
@@ -51,18 +54,19 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("comments")]
-        public ActionResult<RefinementRowDto> AddComment(
+        public async Task<ActionResult<RefinementRowDto>> AddComment(
             int teamId,
             string workItemId,
             [FromBody] SizingCommentDto comment,
-            [FromHeader(Name = RefinementController.VoterKeyHeader)] string? voterKey)
+            [FromHeader(Name = RefinementController.VoterKeyHeader)] string? voterKey,
+            CancellationToken cancellationToken)
         {
             if (comment.Comment is not { } text || comment.Channel is not { } channel)
             {
                 return Problem(statusCode: StatusCodes.Status400BadRequest, title: "A comment needs its text and the channel it was sent from.");
             }
 
-            var resolution = voterIdentityResolver.ForWrite(comment.VoterName, voterKey);
+            var resolution = await VoterOf(comment.VoterName, voterKey, cancellationToken);
             if (resolution.Voter is not { } voter)
             {
                 return RefusedWithoutAVoter(resolution.Refusal, teamId, channel);
@@ -73,6 +77,12 @@ namespace Lighthouse.Backend.API
 
             return Answered(outcome, teamId, workItemReference, voterKey);
         }
+
+        private Task<VoterResolution> VoterOf(string? declaredName, string? voterKey, CancellationToken cancellationToken)
+            => voterIdentityResolver.ForWriteAsync(
+                declaredName,
+                voterKey,
+                () => currentUserProfileService.GetOrCreateFromPrincipalAsync(User, cancellationToken));
 
         private ActionResult<RefinementRowDto> Answered(SizingOutcome outcome, int teamId, string workItemReference, string? voterKey)
             => outcome switch

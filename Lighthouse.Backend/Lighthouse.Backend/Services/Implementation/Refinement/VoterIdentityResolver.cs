@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Services.Interfaces.Auth;
@@ -8,33 +9,57 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
     /// <summary>
     /// Who is voting. Without sign-in a voter is the name they declare plus a random key their browser
     /// keeps; only a hash of the key is stored, so the log never holds anything that could speak for them.
+    /// With sign-in a voter is their account, whatever name or key the request carries.
     /// Whether sign-in is on is asked of the auth mode, never guessed from a missing profile: without
     /// sign-in every request still carries one shared placeholder subject.
     /// </summary>
-    public sealed class VoterIdentityResolver(IAuthModeResolver authModeResolver)
+    public sealed class VoterIdentityResolver(IAuthModeResolver authModeResolver, IHttpContextAccessor httpContextAccessor)
     {
         public const int ShortestVoterKey = 32;
 
         public const int LongestVoterName = 100;
 
+        private const string AccountKeyPrefix = "account:";
+
+        // The claims a profile is keyed by when it is created, in the same order, so a read finds the key a
+        // write stored.
+        private static readonly string[] SubjectClaimTypes = ["sub", "oid"];
+
         public VoterIdentityKind Kind => authModeResolver.Resolve().Mode == AuthMode.Enabled
             ? VoterIdentityKind.Account
             : VoterIdentityKind.SelfDeclared;
 
-        /// <summary>The stored key of whoever presents this browser key, to recognise their own votes on a read.</summary>
+        /// <summary>
+        /// The stored key of whoever is reading, to recognise their own votes. Signed in, it is read off the
+        /// session's subject rather than the profile, because looking the profile up creates it when missing
+        /// and a read must not write.
+        /// </summary>
         public string? ReaderKeyFrom(string? presentedVoterKey)
-            => Kind == VoterIdentityKind.SelfDeclared && IsUsable(presentedVoterKey)
-                ? SizingLogEntry.SelfDeclaredVoterKeyOf(presentedVoterKey!)
-                : null;
-
-        /// <returns>The voter, or what the caller still has to say about who they are before they may write.</returns>
-        public VoterResolution ForWrite(string? declaredName, string? presentedVoterKey)
         {
-            if (Kind != VoterIdentityKind.SelfDeclared)
+            if (Kind == VoterIdentityKind.Account)
             {
-                return VoterResolution.RefusedFor(VoterRefusal.NeedsAPerson);
+                return SubjectOf(httpContextAccessor.HttpContext?.User) is { } subject ? AccountKeyPrefix + subject : null;
             }
 
+            return IsUsable(presentedVoterKey) ? SizingLogEntry.SelfDeclaredVoterKeyOf(presentedVoterKey!) : null;
+        }
+
+        /// <param name="signedInPerson">Looks up the caller's profile; asked only when sign-in is on.</param>
+        /// <returns>The voter, or what the caller still has to say about who they are before they may write.</returns>
+        public async Task<VoterResolution> ForWriteAsync(string? declaredName, string? presentedVoterKey, Func<Task<UserProfile?>> signedInPerson)
+        {
+            if (Kind == VoterIdentityKind.Account)
+            {
+                return await signedInPerson() is { } person
+                    ? VoterResolution.Of(new Voter(AccountKeyPrefix + person.Subject, person.DisplayName ?? person.Email ?? person.Subject, person.Id))
+                    : VoterResolution.RefusedFor(VoterRefusal.NeedsAPerson);
+            }
+
+            return SelfDeclared(declaredName, presentedVoterKey);
+        }
+
+        private static VoterResolution SelfDeclared(string? declaredName, string? presentedVoterKey)
+        {
             var name = declaredName?.Trim();
             if (string.IsNullOrEmpty(name))
             {
@@ -53,6 +78,11 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
 
             return VoterResolution.Of(new Voter(SizingLogEntry.SelfDeclaredVoterKeyOf(presentedVoterKey!), name, null));
         }
+
+        private static string? SubjectOf(ClaimsPrincipal? principal)
+            => SubjectClaimTypes
+                .Select(claimType => principal?.FindFirst(claimType)?.Value)
+                .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
         // A short key could be guessed, and a guessed key speaks for somebody else's votes. A browser's key
         // is hex, so whitespace or a control character means it is not one; a key of nothing but spaces
