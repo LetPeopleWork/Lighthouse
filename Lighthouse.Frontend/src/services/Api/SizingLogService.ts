@@ -5,6 +5,7 @@ import type {
 	ISizingLog,
 	ISizingVote,
 	IVotedRow,
+	SizingAnswer,
 } from "../../models/Refinement/Refinement";
 import { BaseApiService } from "./BaseApiService";
 
@@ -35,9 +36,11 @@ export interface ISizingLogService {
 		comment: ISizingComment,
 		voterKey: string | null,
 	): Promise<IRefinementRow>;
+	/** Names the answer the voter saw pressed, so a vote they changed since on another device stays. */
 	takeBackMyVote(
 		teamId: number,
 		workItemReference: string,
+		answer: SizingAnswer,
 		voterKey: string | null,
 	): Promise<IRefinementRow>;
 	getLog(
@@ -86,11 +89,12 @@ export class SizingLogService
 	public async takeBackMyVote(
 		teamId: number,
 		workItemReference: string,
+		answer: SizingAnswer,
 		voterKey: string | null,
 	): Promise<IRefinementRow> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.delete<IRefinementRow>(
-				`${workItemAddress(teamId, workItemReference)}/votes/mine`,
+				`${workItemAddress(teamId, workItemReference)}/votes/mine?answer=${answer}`,
 				withVoterKey(voterKey),
 			);
 			return response.data;

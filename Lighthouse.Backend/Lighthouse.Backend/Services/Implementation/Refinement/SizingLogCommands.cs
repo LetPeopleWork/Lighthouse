@@ -30,12 +30,12 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
                 _ => voter,
                 (_, _) => SizingOutcome.Recorded);
 
-        public SizingOutcome TakeBack(int teamId, string workItemReference, SizingChannel channel, string voterKey)
+        public SizingOutcome TakeBack(int teamId, string workItemReference, SizingChannel channel, string voterKey, SizingAnswer? answer)
             => Append(
                 teamId,
                 workItemReference,
                 new Said(SizingEntryKind.Revocation, null, null, channel),
-                team => HolderOfCurrentVote(team, workItemReference, voterKey),
+                team => HolderOfCurrentVote(team, workItemReference, voterKey, answer),
                 (_, _) => SizingOutcome.Recorded);
 
         /// <param name="voterOf">Who the entry is written for; nobody means there is nothing to write.</param>
@@ -107,8 +107,9 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
         }
 
         // Written under the name and account the vote was cast with, whatever the voter calls themselves now.
-        private Voter? HolderOfCurrentVote(Team team, string workItemReference, string voterKey)
+        private Voter? HolderOfCurrentVote(Team team, string workItemReference, string voterKey, SizingAnswer? answer)
             => RefinementResolution.CurrentVoteOf(sizingLog.ReadForTeam(team.Id, [workItemReference]), voterKey) is { } vote
+                && (answer is null || vote.Answer == answer)
                 ? new Voter(vote.VoterKey, vote.VoterDisplayName, vote.VoterProfileId)
                 : null;
 

@@ -6,6 +6,7 @@ import { useParentWorkItems } from "../../../../hooks/useParentWorkItems";
 import type {
 	IRefinementRow,
 	IYardstick,
+	SizingAnswer,
 } from "../../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { useTerminology } from "../../../../services/TerminologyContext";
@@ -30,7 +31,7 @@ interface RefinementGridProps {
 	marking: EnoughForMarking | null;
 	votesBeingSent: ReadonlySet<string>;
 	onVote: (vote: IPendingVote) => void;
-	onTakeBack: (referenceId: string) => void;
+	onTakeBack: (referenceId: string, answer: SizingAnswer) => void;
 	onOpenVotes: (referenceId: string) => void;
 }
 

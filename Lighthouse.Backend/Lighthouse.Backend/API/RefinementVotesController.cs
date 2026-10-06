@@ -81,14 +81,21 @@ namespace Lighthouse.Backend.API
         /// <summary>
         /// Taking back needs only the voter's key, never a name: the take-back is recorded under the name the vote
         /// was cast with. Only the web page takes a vote back so far, and the request has no body to name a channel.
+        /// The answer the reader saw pressed may be named, so a vote changed since in another session stays.
         /// </summary>
         [HttpDelete("votes/mine")]
         public ActionResult<RefinementRowDto> TakeBackVote(
             int teamId,
             string workItemId,
+            [FromQuery] string? answer,
             [FromHeader(Name = RefinementController.VoterKeyHeader)] string? voterKey)
         {
             const SizingChannel channel = SizingChannel.Web;
+            if (!TryReadTheAnswer(answer, out var named))
+            {
+                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "A vote is taken back as Yes, YesBut or No, or without naming its answer.");
+            }
+
             if (voterIdentityResolver.ReaderKeyFrom(voterKey) is not { } key)
             {
                 var refusal = voterIdentityResolver.Kind == VoterIdentityKind.Account ? VoterRefusal.NeedsAPerson : VoterRefusal.KeyRequired;
@@ -96,9 +103,27 @@ namespace Lighthouse.Backend.API
             }
 
             var workItemReference = WorkItemRouteReference.From(workItemId);
-            var outcome = sizingLogCommands.TakeBack(teamId, workItemReference, channel, key);
+            var outcome = sizingLogCommands.TakeBack(teamId, workItemReference, channel, key, named);
 
             return Answered(outcome, teamId, workItemReference, voterKey);
+        }
+
+        // Read by the same names-only rule as a vote's answer, so "0" or "yes" is refused here as it is there.
+        private static bool TryReadTheAnswer(string? answer, out SizingAnswer? named)
+        {
+            named = null;
+            if (answer is null)
+            {
+                return true;
+            }
+
+            if (!SizingVoteDto.NamesOnly<SizingAnswer>.TryRead(answer, out var value))
+            {
+                return false;
+            }
+
+            named = value;
+            return true;
         }
 
         private Task<VoterResolution> VoterOf(string? declaredName, string? voterKey, CancellationToken cancellationToken)

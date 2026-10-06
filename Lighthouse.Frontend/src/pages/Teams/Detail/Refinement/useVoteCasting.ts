@@ -137,10 +137,10 @@ export const useVoteCasting = (
 	// Only a browser that holds a vote is offered this, so nobody is asked for a name to take one back.
 	// Taking a vote back is not a vote: it reports nothing and never counts as reaching Ready.
 	const takeBack = useCallback(
-		(referenceId: string) => {
+		(referenceId: string, answer: SizingAnswer) => {
 			sendOnce(referenceId, () =>
 				sizingLogService
-					.takeBackMyVote(teamId, referenceId, readerKey)
+					.takeBackMyVote(teamId, referenceId, answer, readerKey)
 					.then((row) => onAnswered({ ...row, madeReady: false })),
 			);
 		},

@@ -165,17 +165,25 @@ describe("SizingLogService", () => {
 	});
 
 	// @us-16 @slice-16 @driving_port @contract-shape:bounded-change
-	it("takes back the voter's own vote with their key", async () => {
-		mockedAxios.delete.mockResolvedValueOnce({
-			data: { ...theRow, voteCount: 0, myVote: null },
-		});
+	it.each(["Yes", "YesBut", "No"] as const)(
+		"takes back the voter's own %s with their key, naming the answer it takes back",
+		async (answer) => {
+			mockedAxios.delete.mockResolvedValueOnce({
+				data: { ...theRow, voteCount: 0, myVote: null },
+			});
 
-		const row = await sizingLogService.takeBackMyVote(7, "GR-073", VOTER_KEY);
+			const row = await sizingLogService.takeBackMyVote(
+				7,
+				"GR-073",
+				answer,
+				VOTER_KEY,
+			);
 
-		expect(row.voteCount).toBe(0);
-		expect(mockedAxios.delete).toHaveBeenCalledWith(
-			`${VOTES_ADDRESS}/mine`,
-			WITH_THE_KEY,
-		);
-	});
+			expect(row.voteCount).toBe(0);
+			expect(mockedAxios.delete).toHaveBeenCalledWith(
+				`${VOTES_ADDRESS}/mine?answer=${answer}`,
+				WITH_THE_KEY,
+			);
+		},
+	);
 });

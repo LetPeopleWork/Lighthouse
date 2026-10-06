@@ -1001,6 +1001,7 @@ describe("A voter takes back their own vote", () => {
 			expect(sizingLogService.takeBackMyVote).toHaveBeenCalledExactlyOnceWith(
 				GRAVITY_TEAM_ID,
 				CONFIGURATION_MANAGEMENT,
+				myVote,
 				key,
 			);
 			expect(sizingLogService.castVote).not.toHaveBeenCalled();

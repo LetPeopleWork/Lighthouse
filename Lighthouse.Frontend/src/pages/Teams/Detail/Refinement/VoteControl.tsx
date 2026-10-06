@@ -12,7 +12,7 @@ interface VoteControlProps {
 	myVote: SizingAnswer | null;
 	isSending: boolean;
 	onVote: (answer: SizingAnswer) => void;
-	onTakeBack: () => void;
+	onTakeBack: (answer: SizingAnswer) => void;
 }
 
 const VoteControl: React.FC<Readonly<VoteControlProps>> = ({
@@ -29,9 +29,12 @@ const VoteControl: React.FC<Readonly<VoteControlProps>> = ({
 		disabled={isSending}
 		aria-label={`Your vote on ${referenceId}`}
 		onChange={(_event, answer: SizingAnswer | null) => {
-			// An exclusive group answers null when its pressed button is clicked again.
+			// An exclusive group answers null when its pressed button - the voter's own answer - is
+			// clicked again.
 			if (answer === null) {
-				onTakeBack();
+				if (myVote !== null) {
+					onTakeBack(myVote);
+				}
 			} else {
 				onVote(answer);
 			}

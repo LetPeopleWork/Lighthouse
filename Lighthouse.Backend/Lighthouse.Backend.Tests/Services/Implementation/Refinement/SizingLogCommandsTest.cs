@@ -315,7 +315,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             GivenTheTeam(ATeamThatRefinesInBacklog(sleProbability: 85, sleDays: 7));
             GivenTheLogHolds(LoggedBy(Jonas, 1, SizingEntryKind.Vote), LoggedBy(Ana, 2, SizingEntryKind.Vote));
 
-            var outcome = subject.TakeBack(TeamId, InRefinement, channel, Jonas.Key);
+            var outcome = subject.TakeBack(TeamId, InRefinement, channel, Jonas.Key, null);
 
             using (Assert.EnterMultipleScope())
             {
@@ -327,13 +327,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             }
         }
 
+        [TestCase(SizingAnswer.Yes, SizingOutcome.NothingTakenBack, 0)]
+        [TestCase(SizingAnswer.YesBut, SizingOutcome.NothingTakenBack, 0)]
+        [TestCase(SizingAnswer.No, SizingOutcome.Recorded, 1)]
+        public void TakingBackANamedAnswerTakesBackOnlyAVoteThatStillGivesIt(SizingAnswer asked, SizingOutcome expected, int revocations)
+        {
+            GivenTheTeam(ATeamThatRefinesInBacklog(sleProbability: 85, sleDays: 7));
+            GivenTheLogHolds(LoggedBy(Jonas, 1, SizingEntryKind.Vote, SizingAnswer.Yes), LoggedBy(Jonas, 2, SizingEntryKind.Vote, SizingAnswer.No));
+
+            var outcome = subject.TakeBack(TeamId, InRefinement, SizingChannel.Web, Jonas.Key, asked);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome, Is.EqualTo(expected));
+                Assert.That(appended.Select(entry => entry.Kind), Is.EqualTo(Enumerable.Repeat(SizingEntryKind.Revocation, revocations)));
+            }
+        }
+
         [TestCaseSource(nameof(LogsWithoutJonassVote))]
         public void TakingBackWithoutACurrentVoteAppendsNothing(SizingLogEntry[] log)
         {
             GivenTheTeam(ATeamThatRefinesInBacklog(sleProbability: 85, sleDays: 7));
             GivenTheLogHolds(log);
 
-            var outcome = subject.TakeBack(TeamId, InRefinement, SizingChannel.Web, Jonas.Key);
+            var outcome = subject.TakeBack(TeamId, InRefinement, SizingChannel.Web, Jonas.Key, null);
 
             using (Assert.EnterMultipleScope())
             {
@@ -351,13 +368,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
                 .SetName("He already took it back");
         }
 
-        private static SizingLogEntry LoggedBy(Voter voter, int id, SizingEntryKind kind) => new()
+        private static SizingLogEntry LoggedBy(Voter voter, int id, SizingEntryKind kind, SizingAnswer answer = SizingAnswer.Yes) => new()
         {
             Id = id,
             TeamId = TeamId,
             WorkItemReferenceId = InRefinement,
             Kind = kind,
-            Answer = kind == SizingEntryKind.Vote ? SizingAnswer.Yes : null,
+            Answer = kind == SizingEntryKind.Vote ? answer : null,
             Comment = kind == SizingEntryKind.Comment ? "why?" : null,
             VoterKey = voter.Key,
             VoterProfileId = voter.ProfileId,

@@ -153,6 +153,28 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
+        // @driving_port @real-io @us-15 @us-16 @slice-16 @boundary @contract-shape:unbounded-preservation
+        // The laptop still shows the Yes it cast; the No cast since on the phone is not what it meant to take back.
+        [Test]
+        public async Task Taking_back_an_answer_the_account_has_since_changed_elsewhere_changes_nothing()
+        {
+            var gravity = await GravityRefinesSixWorkItemsNobodyHasVotedOn();
+            var jonas = ASignedInReaderOf(gravity, "jonas", JonasWeber);
+            var jonasOnHisPhone = jonas with { Key = NewVoterKey() };
+            await HasVoted(jonas, gravity, ConfigurationManagement, Answer.Yes);
+            await HasVoted(jonasOnHisPhone, gravity, ConfigurationManagement, Answer.No);
+
+            using var takeBack = await TakesBackTheirVote(jonas, gravity, ConfigurationManagement, nameof(Answer.Yes));
+            var row = RowOf(await TheTabAsSeenBy(jonas, gravity), ConfigurationManagement);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(takeBack.IsSuccessStatusCode, Is.True);
+                Assert.That(row.VoteCount, Is.EqualTo(1));
+                Assert.That(row.MyVote, Is.EqualTo(nameof(Answer.No)));
+            }
+        }
+
         // @driving_port @real-io @us-15 @us-16 @slice-16 @error @contract-shape:unbounded-preservation
         // A reader's own take-back is answered first, so the refusal can only be about the role.
         [Test]

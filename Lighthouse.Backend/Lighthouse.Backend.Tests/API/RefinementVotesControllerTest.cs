@@ -218,6 +218,42 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [TestCase("Yes", SizingAnswer.Yes)]
+        [TestCase("YesBut", SizingAnswer.YesBut)]
+        [TestCase("No", SizingAnswer.No)]
+        [TestCase(null, null)]
+        public void ATakeBackTakesBackOnlyTheAnswerItNames(string? named, SizingAnswer? answer)
+        {
+            sizingLogCommandsMock
+                .Setup(commands => commands.TakeBack(TeamId, InRefinement, SizingChannel.Web, It.IsAny<string>(), It.IsAny<SizingAnswer?>()))
+                .Returns(SizingOutcome.NothingTakenBack);
+            GivenTheRows(Row(InRefinement, 1, SizingAnswer.No));
+
+            var result = TakeBack(named);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(StatusOf(result), Is.EqualTo(StatusCodes.Status200OK));
+                sizingLogCommandsMock.Verify(commands => commands.TakeBack(
+                    TeamId, InRefinement, SizingChannel.Web, SizingLogEntry.SelfDeclaredVoterKeyOf(BrowserKey), answer));
+            }
+        }
+
+        [TestCase("Maybe")]
+        [TestCase("yes")]
+        [TestCase("0")]
+        [TestCase("Yes, No")]
+        public void ATakeBackNamingNoAnswerThereIsIsABadRequest(string named)
+        {
+            var result = TakeBack(named);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(StatusOf(result), Is.EqualTo(StatusCodes.Status400BadRequest));
+                sizingLogCommandsMock.VerifyNoOtherCalls();
+            }
+        }
+
         private const string NameOf101Characters =
             "Jonas Weber Jonas Weber Jonas Weber Jonas Weber Jonas Weber Jonas Weber Jonas Weber Jonas Weber Jonas";
 
@@ -226,6 +262,9 @@ namespace Lighthouse.Backend.Tests.API
 
         private Task<ActionResult<RefinementRowDto>> AddComment(SizingCommentDto comment)
             => Controller().AddComment(TeamId, InRefinement, comment, BrowserKey, CancellationToken.None);
+
+        private ActionResult<RefinementRowDto> TakeBack(string? answer)
+            => Controller().TakeBackVote(TeamId, InRefinement, answer, BrowserKey);
 
         private RefinementVotesController Controller()
         {

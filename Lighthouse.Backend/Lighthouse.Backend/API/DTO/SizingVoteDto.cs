@@ -26,13 +26,16 @@ namespace Lighthouse.Backend.API.DTO
             public override TEnum Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
             {
                 var name = reader.TokenType == JsonTokenType.String ? reader.GetString() : null;
-                if (Enum.TryParse(name, out TEnum value) && string.Equals(value.ToString(), name, StringComparison.Ordinal))
+                if (TryRead(name, out var value))
                 {
                     return value;
                 }
 
                 throw new JsonException($"Expected one of {string.Join(", ", Enum.GetNames<TEnum>())}.");
             }
+
+            public static bool TryRead(string? name, out TEnum value)
+                => Enum.TryParse(name, out value) && string.Equals(value.ToString(), name, StringComparison.Ordinal);
 
             public override void Write(Utf8JsonWriter writer, TEnum value, JsonSerializerOptions options)
                 => writer.WriteStringValue(value.ToString());

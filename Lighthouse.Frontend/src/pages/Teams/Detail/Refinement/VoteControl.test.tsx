@@ -41,4 +41,28 @@ describe("a row's answers", () => {
 
 		expect(onVote).not.toHaveBeenCalled();
 	});
+
+	it.each([
+		["Yes", "Yes"],
+		["Yes, if…", "YesBut"],
+		["No", "No"],
+	] as const)(
+		"takes back the '%s' the voter clicks again, naming it",
+		async (label, answer) => {
+			const onTakeBack = vi.fn();
+			render(
+				<VoteControl
+					referenceId="GR-073"
+					myVote={answer}
+					isSending={false}
+					onVote={vi.fn()}
+					onTakeBack={onTakeBack}
+				/>,
+			);
+
+			await userEvent.click(screen.getByRole("button", { name: label }));
+
+			expect(onTakeBack).toHaveBeenCalledExactlyOnceWith(answer);
+		},
+	);
 });

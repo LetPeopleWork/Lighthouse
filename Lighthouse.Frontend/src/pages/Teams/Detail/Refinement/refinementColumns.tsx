@@ -8,7 +8,10 @@ import { createNameColumn } from "../../../../components/Common/FeatureListDataG
 import ParentWorkItemCell from "../../../../components/Common/ParentWorkItemCell/ParentWorkItemCell";
 import WarningsIcon from "../../../../components/Common/WarningsIcon/WarningsIcon";
 import type { ParentWorkItem } from "../../../../hooks/useParentWorkItems";
-import type { IRefinementRow } from "../../../../models/Refinement/Refinement";
+import type {
+	IRefinementRow,
+	SizingAnswer,
+} from "../../../../models/Refinement/Refinement";
 import { NeededNumber } from "./EnoughForLine";
 import ReadinessCell from "./ReadinessCell";
 import { describeRefinementWarnings } from "./refinementWarnings";
@@ -60,7 +63,7 @@ export interface RefinementColumnsOptions {
 	numbersNeeded: boolean;
 	votesBeingSent: ReadonlySet<string>;
 	onVote: (vote: IPendingVote) => void;
-	onTakeBack: (referenceId: string) => void;
+	onTakeBack: (referenceId: string, answer: SizingAnswer) => void;
 	onOpenVotes: (referenceId: string) => void;
 }
 
@@ -139,7 +142,7 @@ export const createRefinementColumns = ({
 				myVote={row.myVote ?? null}
 				isSending={votesBeingSent.has(row.referenceId)}
 				onVote={(answer) => onVote({ referenceId: row.referenceId, answer })}
-				onTakeBack={() => onTakeBack(row.referenceId)}
+				onTakeBack={(answer) => onTakeBack(row.referenceId, answer)}
 			/>
 		),
 	},

@@ -12,9 +12,11 @@ namespace Lighthouse.Backend.Services.Interfaces.Refinement
 
         /// <summary>
         /// Takes back the vote the voter with this key currently holds, under the name that vote was cast with.
-        /// Without a current vote there is nothing to take back, and nothing is written.
+        /// Without a current vote there is nothing to take back, and nothing is written. Given an answer, only a
+        /// current vote giving that answer is taken back: one session of an account may have changed the vote
+        /// since another session showed it.
         /// </summary>
-        SizingOutcome TakeBack(int teamId, string workItemReference, SizingChannel channel, string voterKey);
+        SizingOutcome TakeBack(int teamId, string workItemReference, SizingChannel channel, string voterKey, SizingAnswer? answer);
     }
 
     public sealed record SizingVote(SizingAnswer Answer, SizingChannel Channel, string? Comment);
