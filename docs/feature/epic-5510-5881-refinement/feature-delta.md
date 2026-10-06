@@ -3201,3 +3201,15 @@ the approved copy does not cover it and it is user-visible:
   the cycle ships.
 - "enough for the next {Refinement} (85%) · not needed before then" stays as it is: the line still names what the
   next Refinement must leave ready.
+
+## Wave: DEVOPS / [REF] Story #6204 — the need over one Refinement cycle (2026-10-06)
+
+- **Deployment and infrastructure:** none. No migration (the cycle is computed, nothing is stored), no new setting,
+  no feature flag, no new endpoint; the Refinement view gains two additive fields.
+- **Usage-data event:** N/A, because the need is already counted by the existing refinement events and this Story
+  changes how the number is worked out, not whether people use it (maintainer, 2026-10-06).
+- **Observability:** none needed; the calculation is pure and runs on read.
+- **Rollout and rollback:** ships with the next release; rolling back restores the "until the next Refinement" window
+  with no data to undo.
+- **Clients (CLI/MCP):** no change; no client reads the need yet, and the fields are additive.
+- **CI:** existing pipelines cover it; the forecast-match check from the DESIGN amendment runs in the backend suite.
