@@ -16,16 +16,20 @@ export const LONGEST_COMMENT = 2000;
 const TOO_MANY_REQUESTS = 429;
 const BAD_REQUEST = 400;
 const NAME_REFUSALS = new Set(["voter-name-required", "voter-name-too-long"]);
-const COMMENT_REFUSALS = new Map([
+const REFUSALS_BY_CODE = new Map([
 	["comment-too-long", `A comment is at most ${LONGEST_COMMENT} characters.`],
 	["comment-required", "A comment needs some text."],
+	[
+		"vote-needs-a-person",
+		"Your sign-in isn't linked to a person in Lighthouse, so it can't vote. Ask an admin to link your account.",
+	],
 ]);
 
 const isARefusedName = ({ code, problemCode, fieldName }: ApiError): boolean =>
 	(problemCode !== undefined && NAME_REFUSALS.has(problemCode)) ||
 	(code === BAD_REQUEST && fieldName?.toLowerCase() === "votername");
 
-/** Why the server would not take a vote or a comment, in words the voter can act on. */
+/** Why the server would not take a vote, a comment or a take-back, in words the voter can act on. */
 export const describeVoteRefusal = (
 	error: unknown,
 	getTerm: (key: string) => string,
@@ -38,9 +42,9 @@ export const describeVoteRefusal = (
 		return "Too many votes or comments from this browser. Try again in a minute.";
 	}
 
-	const commentRefusal = COMMENT_REFUSALS.get(error.problemCode ?? "");
-	if (commentRefusal !== undefined) {
-		return commentRefusal;
+	const refusalByCode = REFUSALS_BY_CODE.get(error.problemCode ?? "");
+	if (refusalByCode !== undefined) {
+		return refusalByCode;
 	}
 
 	if (error.problemCode === "work-item-not-in-refinement") {

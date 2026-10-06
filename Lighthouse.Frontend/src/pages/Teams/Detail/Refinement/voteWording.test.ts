@@ -67,6 +67,17 @@ describe("why a vote was refused", () => {
 			"This ticket is no longer in grooming.",
 		],
 		[
+			"a sign-in with no person behind it",
+			new ApiError(
+				403,
+				"Request failed with status code 403",
+				undefined,
+				undefined,
+				"vote-needs-a-person",
+			),
+			"Your sign-in isn't linked to a person in Lighthouse, so it can't vote. Ask an admin to link your account.",
+		],
+		[
 			"a refused name, by its code",
 			new ApiError(
 				400,
