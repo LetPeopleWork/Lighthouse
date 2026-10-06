@@ -3012,3 +3012,23 @@ vote trail. **Supersedes the "Take back my vote" button in the Votes and comment
   carries the tooltip "Click again to take back your vote". There is no button in the dialog.
 - Nothing is added to the dialog's list of what people wrote; the API log still records the take-back.
 - A browser without a name has no vote to take back, so it never meets "Who is voting?" for this.
+
+## Wave: DELIVER / [REF] Maintainer decision — the need covers one Refinement cycle (2026-10-06)
+
+Answered by the maintainer on 2026-10-06, after slices 05 and 06 shipped. Raised as Story #6204 (under #5881, state
+Next), to be built after slices 15 and 16. **Supersedes the need's forecast window "from today to the next
+Refinement".**
+
+- **The need is a replenishment target.** A Refinement must put enough on the shelf to last until the following one,
+  so the How Many forecast runs over **one Refinement cycle**: the working days after the next Refinement up to and
+  including the one after it. Weekly on Wednesdays gives Thursday to the following Wednesday, 5 working days. Which
+  day of the week it is does not change the number; Monday and Tuesday read the same.
+- **Several refinement weekdays:** the cycle is the gap between the next two Refinements, so the number follows the
+  gap sizes (Monday and Thursday alternate between 3 and 4 days).
+- **When today is a Refinement day,** the cycle runs from today to the next Refinement.
+- **Blackout days** are not working days in the cycle. A Refinement on a blackout day is skipped (unchanged), so the
+  cycle runs to the next Refinement that happens.
+- **Work Items pulled before the Refinement are fine.** The ready count drops, and the number still to refine goes up
+  on its own. No forecast of what gets pulled before then.
+- **The "Next Refinement" heading keeps saying when.** The ⓘ text changes to say which cycle the number covers; its
+  copy is sketched before it is built.
