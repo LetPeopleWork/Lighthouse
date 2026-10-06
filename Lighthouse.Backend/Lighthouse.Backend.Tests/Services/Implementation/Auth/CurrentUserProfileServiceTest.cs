@@ -1,7 +1,10 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Services.Implementation.Auth;
+using Lighthouse.Backend.Services.Implementation.Refinement;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Auth;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -142,6 +145,81 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
                 Assert.That(context.UserProfiles.Count(), Is.EqualTo(1));
             }
         }
+
+        [Test]
+        public async Task GetOrCreateFromPrincipalAsync_ApiKeyPrincipal_LeavesTheOwnersProfileAsItWas()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            await AnasProfileWithoutADisplayName(context);
+            var service = new CurrentUserProfileService(context, serviceLogger.Object);
+
+            var profile = await service.GetOrCreateFromPrincipalAsync(AnasApiKey(), CancellationToken.None);
+            var stored = await context.UserProfiles.AsNoTracking().SingleAsync(p => p.Subject == "ana");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(profile?.DisplayName, Is.Null);
+                Assert.That(profile?.Email, Is.EqualTo("ana@example.com"));
+                Assert.That(stored.DisplayName, Is.Null);
+                Assert.That(stored.Email, Is.EqualTo("ana@example.com"));
+            }
+        }
+
+        [Test]
+        public async Task GetOrCreateFromPrincipalAsync_ApiKeyPrincipalWhoseOwnerHasNoProfile_ReturnsNullAndDoesNotPersist()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            var service = new CurrentUserProfileService(context, serviceLogger.Object);
+
+            var profile = await service.GetOrCreateFromPrincipalAsync(AnasApiKey(), CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(profile, Is.Null);
+                Assert.That(context.UserProfiles.Count(), Is.Zero);
+            }
+        }
+
+        [Test]
+        public async Task AVoteCastWithAnApiKeyIsShownUnderItsOwnerNotUnderTheKey()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            await AnasProfileWithoutADisplayName(context);
+            var service = new CurrentUserProfileService(context, serviceLogger.Object);
+            var principal = AnasApiKey();
+            var resolver = new VoterIdentityResolver(
+                Mock.Of<IAuthModeResolver>(modes => modes.Resolve() == new RuntimeAuthStatus { Mode = AuthMode.Enabled }),
+                Mock.Of<IHttpContextAccessor>(accessor => accessor.HttpContext == new DefaultHttpContext { User = principal }));
+
+            var resolution = await resolver.ForWriteAsync(null, null, () => service.GetOrCreateFromPrincipalAsync(principal, CancellationToken.None));
+
+            Assert.That(resolution.Voter?.DisplayName, Is.EqualTo("ana@example.com"));
+        }
+
+        private static async Task AnasProfileWithoutADisplayName(LighthouseAppContext context)
+        {
+            context.UserProfiles.Add(new UserProfile
+            {
+                Subject = "ana",
+                SubjectClaimType = "sub",
+                DisplayName = null,
+                Email = "ana@example.com",
+                CreatedAt = DateTime.UtcNow.AddDays(-10),
+                LastSeenAt = DateTime.UtcNow.AddDays(-1),
+            });
+            await context.SaveChangesAsync();
+        }
+
+        private static ClaimsPrincipal AnasApiKey()
+            => ApiKeyPrincipalFactory.Create(
+                new ApiKeyValidationResult
+                {
+                    IsValid = true,
+                    ApiKeyId = 3,
+                    OwnerResolutionState = ApiKeyOwnerResolutionState.Resolved,
+                    OwnerSubject = "ana",
+                },
+                "ApiKey");
 
         private static ClaimsPrincipal BuildPrincipal(params Claim[] claims)
         {

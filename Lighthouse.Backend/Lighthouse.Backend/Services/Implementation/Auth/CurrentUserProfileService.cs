@@ -24,6 +24,13 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
             var existingProfile = await context.UserProfiles
                 .SingleOrDefaultAsync(p => p.Subject == stableSubject.Value.subject, cancellationToken);
 
+            // An API key carries none of its owner's name or email, only the key's placeholder name, so
+            // copying it over would wipe the owner's account details. It speaks for an existing person only.
+            if (IsApiKeyCall(principal))
+            {
+                return existingProfile;
+            }
+
             if (existingProfile is null)
             {
                 var createdProfile = new UserProfile
@@ -80,6 +87,9 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
 
             return null;
         }
+
+        private static bool IsApiKeyCall(ClaimsPrincipal principal)
+            => principal.HasClaim(ApiKeyPrincipalFactory.AuthMethodClaimType, ApiKeyPrincipalFactory.AuthMethodValue);
 
         private static string? ResolveDisplayName(ClaimsPrincipal principal)
         {
