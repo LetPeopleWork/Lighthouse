@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         // @driving_port @real-io @us-09 @slice-09 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice09)]
         public async Task A_client_is_told_whether_to_refine_more_or_stop()
         {
             var gravity = await GivenGravityHasTwoReadyAndIsLikelyToPullFiveToEightOverItsCycle();
@@ -32,7 +31,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-09 @slice-09 @error @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice09)]
         public async Task A_client_is_told_why_there_is_no_number()
         {
             var gravity = await GivenGravityHasTwoReadyWithoutACadence();
@@ -45,7 +43,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-09 @us-17a @slice-09 @boundary @contract-shape:unbounded-preservation
         // A client released before the need existed still finds every vote fact it reads today.
         [Test]
-        [Ignore(PendingSlice09)]
         public async Task The_need_joins_the_answer_without_taking_away_what_older_clients_read()
         {
             var gravity = await GivenGravityHasTwoReadyAndIsLikelyToPullFiveToEightOverItsCycle();
@@ -70,7 +67,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-09 @us-15 @slice-09 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice09)]
         public async Task A_personal_API_key_is_told_the_same_need_as_a_browser()
         {
             var gravity = await GivenGravityHasTwoReadyAndIsLikelyToPullFiveToEightOverItsCycle();
