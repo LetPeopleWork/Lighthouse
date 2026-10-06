@@ -1282,3 +1282,382 @@ Open for DESIGN, in order of consequence:
 4. **Whether delete/refresh keep today's text under `--json`/`--toon`** (US-08 note) — constraint 1
    says the formats' bytes do not change; today those commands print the same hand-written line in all
    three formats.
+
+---
+
+## Wave: DISCUSS / [REF] Maintainer decisions (2026-10-06)
+
+Relayed by the coordinator during DESIGN, 2026-10-06.
+
+| # | Decision | Verdict |
+|---|---|---|
+| C1–C12 | Slice order; instance words over web literals; one-line over-time summaries; no `workDistribution`; backtest without `Average:`; portfolio list hint; write verbs; delete names the id; 85% cell; `--detail epics` latest day; date formats; minor bump per slice | **Accepted as recommended** |
+| C13 | MCP unchanged; `summary` fields a follow-up | **Reversed.** MCP summaries are **in this story**: every MCP tool a slice touches also returns a `summary` with the same heading and sentence(s) the CLI prints, as `lighthouse_team_refinement_get` does, built by the same wording functions in `client`. MCP facts are unchanged apart from the added summary. `lighthouse-mcp-core` gets a **minor** bump per slice. |
+| C14–C19 | Heading fallback `{Term} [id: n]`; Team Throughput line with dates; health/blackout/secret wording; new job; no Lighthouse release-notes line; no ADO child items yet | **Accepted as recommended** |
+| Sketches | `discuss/cli-sketches.md`, the whole page, including all 14 CHOSEN WORDING spots (~16:55) | **Approved as written, no changes.** DELIVER no longer waits on a sketch review; DISTILL pins the sketches' copy and layout as they stand. MCP summaries use the same approved headings and sentences. |
+
+What C13's reversal changes upstream is listed under `Wave: DESIGN / [REF] Changed Assumptions`: D17, the
+Driving Ports row "MCP tools: None", the Out of Scope item, the versioning row, and one MCP AC per story.
+
+---
+
+## Wave: DESIGN / [REF] Prior-Wave Reading Confirmation
+
+**Agent**: Morgan (`nw-solution-architect`) · **Date**: 2026-10-06 · **Mode**: PROPOSE, AFK (every engineering
+call taken on the recommended option; anything a user sees or is told is listed under "Open for the maintainer").
+**Scope**: application, clients only (`lighthouse-clients` packages `client`, `cli`, `mcp-core`). No Lighthouse
+server or web change.
+
+| Read | Status |
+|---|---|
+| This file, DISCUSS S1–S14, D0–D18, US-01…US-09, C1–C19, handoff questions 1–4 | ✓ (all 1284 lines, paged) |
+| `discuss/cli-sketches.md` §1–§10, `slices/slice-01-forecast.md` | ✓ (other slice briefs: their goals are restated in the stories) |
+| `lighthouse-clients/ARCHITECTURE.md` §1–§10 | ✓ |
+| `cli/src/{index.ts (group handlers, `buildMetricsPayload`, health, version, router), output.ts, commandResult.ts, refinementOutput.ts, refinementCommands.ts}` | ✓ |
+| `client/src/{index.ts (`LighthouseClient` type, typed views), refinementWording.ts, refinementVoteWording.ts, refinementWording.timezone.test.ts}` | ✓ |
+| `mcp-core/src/{index.ts (tool names, `callTool` branches), refinementTools.ts (summary precedent), toolResult.ts}` | ✓ (after the C13 reversal) |
+| `skill/SKILL.md` (output passages), `.github/workflows/ci.yml` smoke jobs (`--json` only) | ✓ |
+| Server DTOs: `ManualForecastDto`, `WhenForecastDto`, `ForecastDto`, `BacktestResultDto`, `TeamDto`, `SettingsOwnerDtoBase`, `WorkTrackingSystemOptionsOwnerDtoBase`, `DeliveryWithLikelihoodDto`, `FeatureDto` (members), `WorkTrackingSystemConnectionOptionDto` | ✓ |
+| Web rules: `utils/forecast/{formatLikelihood,cannotForecast,insufficientForecastData}.ts`, `formatLikelihood.enforcement.test.ts`, `components/Common/Forecasts/ForecastLevel.ts`, `models/TerminologyKeys.ts`, `models/Team/Team.ts`, `DataOverviewTable.tsx` (columns) | ✓ |
+| `docs/product/architecture/brief.md` (map + tail), ADR index (highest **222**), ADR-121 (the clients-side ADR precedent) | ✓ |
+| `docs/product/outcomes/registry.yaml` | ✓ — no CLI / pretty / summary outcome; no collision by inspection. `nwave-ai outcomes check-delta` **not run** (no shell in this agent) — run it before DISTILL. |
+| Density | `lean` + `ask-intelligent` (`~/.nwave/global-config.json`). DESIGN declares no triggers → no menu. Telemetry event not written (no shell). |
+
+**Contradictions with DISCUSS**: none blocking. Two desk findings change what a slice learns (Changed Assumptions).
+
+---
+
+## Wave: DESIGN / [REF] Architecture summary
+
+**Style unchanged**: the clients' package boundaries (`ARCHITECTURE.md` §2–§3) — words in `client`, layout in
+`cli`, tool behaviour in `mcp-core`; dependencies point at `client`. Inside that, **pure core, thin shell**:
+readers, wording, display rules and renderers are pure functions of facts; the only effects are the reads the
+group handlers and tool branches already make, plus the listed `--pretty`/summary reads. No new package,
+transport, endpoint, runtime dependency or flag.
+
+Four shapes carry the whole design:
+
+1. **A narrow reader in front of every renderer.** Each answer gets a small view type and a reader
+   `unknown → view | null` in `client`. The client's method types stay as they are; `--json`/`--toon` never
+   pass through a reader. A reader that does not recognise the answer returns `null`, and the generic view
+   prints instead ([ADR-223](../../product/architecture/adr-223-a-pretty-view-reads-the-answer-through-a-narrow-reader-and-falls-back-to-the-generic-view.md)).
+2. **One wording function per answer, two callers.** `describe<Answer>Summary(view, wording)` in `client` is the
+   heading and sentence(s); the CLI renderer prints it above its tables, the MCP tool returns it as `summary`.
+   Tables exist only in `cli`.
+3. **One Terminology resolver, one date module, one rules module** in `client`, shared by every group.
+4. **The summary rides beside unchanged facts** in MCP: a `summary` field on an object answer (the refinement
+   precedent), a second text block on a list or scalar answer, whose facts block stays byte-identical
+   ([ADR-224](../../product/architecture/adr-224-an-mcp-summary-rides-beside-unchanged-facts.md)).
+
+---
+
+## Wave: DESIGN / [REF] Decisions (DSN-n)
+
+Numbered DSN to avoid clashing with DISCUSS D-n and C-n.
+
+| # | Decision | Options weighed → verdict | ADR |
+|---|---|---|---|
+| DSN-1 | **Shapes come from narrow readers, not from typing the client.** Per answer: a view type holding only the fields its renderer reads, and `read<Answer>(value: unknown): <View> \| null` in `client`. `LighthouseClient` signatures unchanged. Where a typed view already exists (`CumulativeStateTimeResult`, `BlockedCountSnapshot`, `RecurringBlackoutRule`, `DeliveryMetricsHistory`, `PercentilesOverTimeSnapshot`, `ProcessBehaviorSnapshot`, `WorkItemAgeOverTimeResult`, `TotalWorkItemAgeOverTimeResult`), the reader returns that type after checking the fields it uses — those types are casts today too. | (a) type the client methods — a compile-time claim nothing checks (`requestJson` casts), inherited by `mcp-core`, false against an older server, and D5's fallback would still need a runtime check; (b) zod schemas in `client` — a new runtime dependency for every client consumer (CLI Bun binary included) to check ~20 narrow views; (c) guards private to `cli` — MCP could not reuse them for `summary`; (d) **narrow readers in `client`** ✓. | 223 |
+| DSN-2 | **Required vs optional facts.** A reader returns `null` when a fact the answer cannot be stated without is missing or mistyped (→ generic view, exit 0). A fact D5 calls "merely absent" (`isOverdue`, `hasSufficientData`, `tags`, one table cell) is `undefined` in the view, and the renderer says nothing / prints `—`. In a list every item needs `id` and `name`; one item without them sends the whole list to the generic view (AC-05.4). Readers never reshape, round or sort facts; they only check and pick. | — | 223 |
+| DSN-3 | **The fallback lives once, in `output.ts`.** `PrettyRenderer<T>` becomes `(value: T) => string \| null`; `formatPayload` prints the generic view when the renderer returns `null`. The refinement renderer (returns `string`) still type-checks and prints the same bytes. | (a) each renderer calls `formatPretty` itself — 20 copies of one rule; (b) **one place** ✓. | 223 |
+| DSN-4 | **Where code lives.** `client/src/<group>Wording.ts` per command group — `forecastWording`, `metricsWording`, `ownerWording` (Teams and Portfolios), `deliveryWording`, `featureWording`, `writeWording`, `housekeepingWording` — each holding that group's views, readers and `describe…` functions, exported from `client/src/index.ts`. `cli/src/<group>Output.ts` per group holds the renderers: line order, blank lines, table columns. Shared: `client/src/terminology.ts`, `client/src/calendarDates.ts`, `client/src/forecastDisplayRules.ts`, `cli/src/table.ts`. MCP: the existing `callTool` branches call the same `describe…Summary`. | Mirrors `refinementWording.ts` / `refinementOutput.ts` / `refinementTools.ts` (`ARCHITECTURE.md` §7 "one source file per concern"). | — |
+| DSN-5 | **One Terminology resolver.** `terminology.ts`: `TerminologyKey`, a closed union of the 23 keys in `TerminologyKeys.ts`; `SEEDED_TERMS`, the defaults from `TerminologySeeder.cs`; `resolveTerms(entries \| null)` = instance value → entry default → seeded word; `readTerms(source)` never fails. Refinement: `resolveRefinementTerms` becomes a 4-key projection of `resolveTerms` in a separate `refactor(refinement)` commit, its exports and output unchanged (pinned by refinement's tests). | (a) widen `resolveRefinementTerms` in place — every group's words in the refinement file; (b) **extract and project** ✓. | — |
+| DSN-6 | **The web's display rules live once, in `forecastDisplayRules.ts`.** `levelOf(chance)` (thresholds 50/70/85, `≤` boundaries as `ForecastLevel.ts`, `null` → no level); `formatLikelihood(value, {hasRemainingWork, precision: "round" \| "fixed2"})` (`>95%` cap as `formatLikelihood.ts`); `likelihoodAnswer(...)` with the exclusive order of `whatTheHeaderChipSays` (Cannot forecast → Not enough data → the number; `Overdue` only when the server says so); the insufficient-data sentence verbatim. Display arithmetic the web does (per-day average, done = total − remaining, a Feature's per-Team work summed) is restated in the group's wording module with a parity case — nothing the web does not compute. | (a) the server sends level/label — a Lighthouse change, out of scope (S14); (b) import from the frontend — another repo, another package; (c) a shared case file read by both repos' CIs — couples two pipelines; (d) **restate in `client`, pin with parity cases** ✓. | — |
+| DSN-7 | **Parity is pinned case for case.** `forecastDisplayRules.parity.test.ts` holds the web tests' own boundary cases (50, 50.01, 70, 85, 85.01, 95, 95.01 with and without remaining work, `null`, cannot-forecast beating thin history), each row naming the web file it mirrors. Residual risk, accepted: a web rule change does not fail the clients' CI. | — | — |
+| DSN-8 | **Dates without `Intl`.** `calendarDates.ts`: `formatCalendarDay(wire)` → `Fri 30 Oct 2026` from the `yyyy-mm-dd` prefix (accepts `2026-10-30` and `2026-10-30T00:00:00Z`), via fixed English name tables, invalid calendar day → `null`; `formatTimestamp(wire)` → `Tue 6 Oct 2026, 07:14` from the reader's local clock (`Date` local getters). Which fields are calendar days is declared by each reader (forecast `expectedDate`, delivery `date`, backtest dates, day keys) and never guessed from the string; `lastUpdated` is a timestamp. `isCalendarDay` moves here from `refinementWording.ts` (exported, same behaviour). Refinement keeps its year-less `formatDayAndDate`. | (a) `toLocaleDateString("en-GB")` as refinement does — depends on the runtime's ICU data, which a Bun-compiled binary need not carry in full; (b) **fixed tables** ✓ — same bytes in Node, Bun and any locale. | — |
+| DSN-9 | **The table helper moves unchanged** to `cli/src/table.ts` (exported `toTableLines`); `refinementOutput.ts` imports it. Precondition kept: never called with no rows; a renderer with nothing to list prints its empty-state sentence. A two-column block without a header (metrics headline, R-LABEL lines) is the same function over rows without a header row. | — | — |
+| DSN-10 | **No renderer registry object.** A renderer is passed at the call site through the existing `mapApiResultToCliResult(result, format, renderer)` seam. KPI-1 is proven by behaviour: `prettyForms.test.ts` lists every form (the 42 changing, the 12 unchanged-on-purpose with their reason) and, per changing form, asserts the pretty output differs from the generic view of the same facts. Completeness: the list is checked against the subcommands each group's help prints and against `METRIC_KEYS`. | (a) `Record<CommandForm, Renderer>` — each renderer needs its own context (names, words, connection URL), so the map becomes a second dispatcher beside the group handlers; (b) **seam + behavioural contract test** ✓. | — |
+| DSN-11 | **`--pretty`-only reads (CLI).** A handler branches on `outputFormat !== "pretty"` first and runs exactly today's code (the `runRefinementGet` shape). Under `--pretty`: the main read and its extra reads in parallel; the main read's failure is today's error; an extra read's failure never fails the command (Terminology → seeded words; heading name → `{Term} [id: n]`, C14). One client helper, `readAnswerWording(source, subject)`, returns `{ terms, name }` and never fails; CLI and MCP both use it. At most two extra reads per command: Terminology, and one of `getTeam` (forecast, metrics team — name, `systemWIPLimit`, cycle-time definition names), `getPortfolio` (metrics portfolio, delivery list), `getFeaturesByIds([id])` (feature workitems). Each extra read also runs the client's connectivity check, so ≤ 4 extra HTTP requests, in parallel. | — | — |
+| DSN-12 | **Delete, refresh and health keep today's text under `--json`/`--toon`** (`Team deleted: 3`, `Team refreshed: 3`, `Recurring blackout rule deleted: 5`, `success`); only `--pretty` changes (handoff question 4). | (a) a JSON object under `--json` — breaks every script reading today's line, against constraint 1; (b) **keep** ✓. That these lines are not JSON is a known oddity, recorded and left. | — |
+| DSN-13 | **Metrics: the composite stays the `--json` payload.** `buildMetricsPayload` is unchanged. Its section values stay raw server facts or the CLI's error/unavailable markers; section readers live in `metricsWording.ts`, the walk over the CLI-owned composite in `cli/src/metricsOutput.ts`. A refused section prints its refusal in place (AC-02.4); `workDistribution` is ignored (D8). A section whose shape is not recognised sends the whole view to the generic view (D5 as written; per-section alternative is open for the maintainer). | — | — |
+| DSN-14 | **MCP summary (C13 reversed).** Every MCP tool a slice converts calls the same `read<Answer>` + `readAnswerWording` + `describe<Answer>Summary` as the CLI. Object answer → `label: encode({ summary, ...facts })` (refinement precedent). List or scalar answer → the existing facts block byte-identical, plus a second text block `summary: <text>`. Reader returns `null` → no summary, facts exactly as today. Summary reads never fail the tool (unlike refinement, which stays as it is). Tool descriptions gain one sentence naming `summary`; annotations unchanged. One helper `withSummary(label, facts, summary)` in `mcp-core/src/toolResult.ts`. | (a) wrap lists as `{ summary, items }` — changes the facts' shape every agent reads; (b) a `summary:` line inside the facts block — a JSON-fallback consumer would choke; (c) **field on objects, second block on lists** ✓. | 224 |
+| DSN-15 | **MCP coverage per slice.** 01 `forecast_manual`, `forecast_backtest`; 02 none (MCP has no headline tool); 03 the per-metric tools (`throughput`, `cycleTimePercentiles`, `workItemAgePercentiles`, `workItemAge`, `totalWorkItemAge`, `blockedCountHistory`, `percentilesOverTime`, `processBehaviorOverTime`, Team and Portfolio); 04 `cumulativeStateTime`, `cumulativeStateTimeItems` (`…Candidates`: open); 05 `team_list/get`, `portfolio_list/get`; 06 `delivery_list`, `delivery_metrics`; 07 `feature_get`, `feature_workitems`; 08 `team_refresh`, `portfolio_refresh`, `blackout_create/update/delete` (MCP has no Team/Portfolio create, update or delete); 09 `health_check`, `version_get`, `worktracking_list/get`, `blackout_list`. | — | — |
+| DSN-16 | **Versioning.** Per slice: minor `lighthouse-cli`, minor `lighthouse-client` (wording exports), minor `lighthouse-mcp-core` (summary added, descriptions changed), automatic patch for `mcp-stdio`/`mcp-http`. Slice 02 has no MCP change, so no `mcp-core` bump. | — | — |
+| DSN-17 | **No server-version gate.** No new endpoint. A server without the Terminology route answers with an error, which falls back to seeded words. | — | — |
+| DSN-18 | **Agents and the skill.** `skill/SKILL.md` changes in slice 01 (the forecast example at line 297 is the first pretty call to change): the forecast example gains `--json`; the output rule (line 255) says `--pretty` is for people and may change in any minor, scripts and agents use `--json`/`--toon` or MCP's facts; the MCP reference says each tool's `summary` states the answer as the web does. No legacy flag. CI smoke reads `--json` only, so nothing else reads pretty. | (a) a `--legacy-pretty` flag — new surface for a format documented as human-readable; (b) **document and move on** ✓. | — |
+| DSN-19 | **Sequencing.** Slice 01 edits `refinementOutput.ts` (table move) and `refinementWording.ts` (resolver projection, `isCalendarDay` move), which the in-flight refinement-votes fix is changing now. DELIVER slice 01 starts only after that work is committed on the clients' `main`. | — | — |
+| DSN-20 | **Paradigm**: unchanged — TypeScript, functions over data, as the refinement precedent; the Lighthouse project's OOP line does not reach these packages. | — | — |
+
+---
+
+## Wave: DESIGN / [REF] Component decomposition
+
+Paths under `lighthouse-clients/packages/`.
+
+| Component | Path | Change | Contract shape |
+|---|---|---|---|
+| Terminology resolver | `client/src/terminology.ts` | NEW (extracted from `refinementWording.ts`) | pure; `readTerms` reads one, never fails |
+| Calendar dates | `client/src/calendarDates.ts` | NEW (+ `isCalendarDay` moved in) | pure |
+| Forecast display rules | `client/src/forecastDisplayRules.ts` | NEW | pure |
+| Answer wording read | `client/src/answerWording.ts` (`readAnswerWording`, `nameOrFallback`) | NEW (generalises `readRefinementWording`'s two reads, without its fail-on-Team) | ≤ 2 reads, never fails |
+| Group wording + readers | `client/src/{forecast,metrics,owner,delivery,feature,write,housekeeping}Wording.ts` | NEW, one per slice | pure |
+| Client exports | `client/src/index.ts` | EXTEND (re-exports only; `LighthouseClient` untouched) | — |
+| Refinement wording | `client/src/refinementWording.ts` | EXTEND (refactor: projection of `resolveTerms`, imports `isCalendarDay`) | unchanged bytes |
+| Pretty seam | `cli/src/output.ts` | EXTEND (`PrettyRenderer` may return `null`) | pure |
+| Table helper | `cli/src/table.ts` | NEW (moved from `refinementOutput.ts`) | pure |
+| Refinement renderer | `cli/src/refinementOutput.ts` | EXTEND (imports `table.ts`) | unchanged bytes |
+| Group renderers | `cli/src/{forecast,metrics,owner,delivery,feature,write,housekeeping}Output.ts` | NEW, one per slice | pure |
+| Group handlers | `cli/src/index.ts` (`run<Group>Group`, `runManualForecastCommand`, `runBacktestForecastCommand`, `runHealthGroup`, `runVersionGroup`) | EXTEND (pretty branch, extra reads, renderer at the seam) | effects: the listed reads, result text |
+| MCP result helper | `mcp-core/src/toolResult.ts` (`withSummary`) | EXTEND | pure |
+| MCP tool branches + descriptions | `mcp-core/src/index.ts` (`callTool`, `toolDefinitions`, `McpRuntimeClient` gains any read it lacks) | EXTEND | effects: the listed reads |
+| Skill, README, ARCHITECTURE | `skill/SKILL.md`, `packages/cli/README.md`, `packages/mcp-*/README.md` (summary), `ARCHITECTURE.md` §2 (wording modules), §7 | EXTEND (docs) | — |
+
+---
+
+## Wave: DESIGN / [REF] Driving ports
+
+| Port | Change |
+|---|---|
+| `runCliCommand(args, dependencies)` — `lh <group> <subcommand> --pretty` (default) | 42 forms render per `cli-sketches.md`. The test driving port. |
+| `lh … --json` / `--toon` | None: same bytes, same calls (DSN-11, DSN-12). |
+| `createMcpCoreRuntime().callTool(name, args)` | Converted tools add `summary` (DSN-14, DSN-15); facts unchanged. |
+| `@letpeoplework/lighthouse-client` exports | New: `resolveTerms`, `readTerms`, `TerminologyKey`, `formatCalendarDay`, `formatTimestamp`, `isCalendarDay`, the display rules, `readAnswerWording`, and per group `read<Answer>` + `describe<Answer>Summary`. Existing refinement exports unchanged. |
+
+## Wave: DESIGN / [REF] Driven ports and adapters
+
+| Port | Adapter | Change |
+|---|---|---|
+| `LighthouseClient` reads (`getTeam`, `getPortfolio`, `getFeaturesByIds`, `getTerminology`) | `createLighthouseClient` over REST `/api/v1` | None — existing reads, made only under `--pretty` (CLI) and for summaries (MCP). |
+| Reader's clock and time zone | `Date` local getters | Used only by `formatTimestamp`. |
+| stdout / stderr | `bin.ts` | None. |
+
+No new adapter, so no new `probe()`. **Earned Trust** for the substrates this design leans on:
+
+| What may lie | How the design finds out |
+|---|---|
+| The server's answer shape (older or newer Lighthouse than the fixtures) | Every reader is a per-call probe; a mismatch prints the generic view / omits the summary rather than a wrong number. DEVOPS: `smoke-integration` (real demo-seeded container) runs each converted group once with `--pretty` and greps one known heading or column title — the only check that the fixtures match the real wire. |
+| The reader's time zone | Date tests run under `America/Adak` (UTC−10) and `Pacific/Kiritimati` (UTC+14), as `refinementWording.timezone.test.ts` does. |
+| The runtime's ICU / locale | Not used by the new date code (DSN-8). |
+| Terminology endpoint missing or refused | Seeded words; tested with a refusing stub. |
+| The console's character set (`·`, `—`, `→`, `──`) | Accepted: refinement already ships them. |
+
+---
+
+## Wave: DESIGN / [REF] Technology choices
+
+TypeScript 7, Node ≥ 22, Vitest, Biome, tsdown, Bun-compiled binaries — all as today. **No new dependency** (zod
+considered and rejected for `client`, DSN-1). `@toon-format/toon` (MIT) unchanged. StrykerJS run ephemerally,
+as the precedent did (`epic-5510-5881-refinement/mutation/clients-slice-09.md`).
+
+---
+
+## Wave: DESIGN / [REF] Reuse analysis (HARD GATE)
+
+| Existing component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `PrettyRenderer` / `formatPayload` | `cli/src/output.ts` | The per-command pretty seam | EXTEND | Return `string \| null`; the fallback joins it (DSN-3). |
+| `mapApiResultToCliResult` | `cli/src/commandResult.ts` | Format + error mapping | REUSE | Unchanged. |
+| `formatPretty` (generic view) | `cli/src/output.ts` | Fallback view | REUSE | It is D5's fallback. |
+| `toTableLines` | `cli/src/refinementOutput.ts` | R-TABLE | EXTEND (move) | Moved unchanged; one table style (DSN-9). |
+| `resolveRefinementTerms` / `readRefinementTerms` | `client/src/refinementWording.ts` | Terminology fallback | EXTEND (extract) | Generalised to 23 keys in `terminology.ts`; refinement projects it (DSN-5). |
+| `readRefinementWording` / `nameTheTeam` | `client/src/refinementWording.ts` | Team name + words read | CREATE NEW `readAnswerWording` | The precedent **fails** on an unreadable Team; C14 says never fail. Changing it would change refinement's behaviour, which must not move. |
+| `formatDayAndDate` | `client/src/refinementWording.ts` | Day formatting | CREATE NEW `formatCalendarDay` | Needs the year (D15) and no ICU (DSN-8); refinement's output must not change by a byte. |
+| `isCalendarDay` | `client/src/refinementWording.ts` | Calendar-day check | EXTEND (move, export) | Same behaviour, now shared. |
+| Existing typed views (8, listed in DSN-1) | `client/src/index.ts` | Answer shapes | REUSE | As reader return types. |
+| `isMetricErrorValue`, `getMetricUnavailableValue`, `buildMetricsPayload`, `METRIC_KEYS` | `cli/src/index.ts` | Metrics composite | REUSE | The `--json` contract; the renderer walks it (DSN-13). |
+| `describeRecordedVote` etc. | `client/src/refinementVoteWording.ts` | One-line confirmations | REUSE the style only | Different nouns and verbs; DRY of knowledge, not of shape. |
+| `encodePayload`, `getSuccessToolResult` | `mcp-core/src/toolResult.ts` | MCP text result | EXTEND (`withSummary`) | DSN-14. |
+| Refinement summary in MCP | `mcp-core/src/refinementTools.ts` | `{ summary, ...facts }` | REUSE the convention | Object answers follow it exactly. |
+| Web rules (`formatLikelihood`, `ForecastLevel`, `cannotForecast`, …) | `Lighthouse.Frontend/src/...` | Display rules | Restate + parity test | Another repo; cannot import (DSN-6, DSN-7). |
+| zod | `mcp-core` dependency | Runtime validation | Not reused | DSN-1 (b). |
+
+Zero unjustified CREATE NEW.
+
+---
+
+## Wave: DESIGN / [REF] Test strategy
+
+- **Driving ports**: `runCliCommand` with a stub `RunCliCommandDependencies` and a stub client that records each
+  call (the precedent's style); `callTool` with a stub `createClient`.
+- **Fixtures**: the server DTOs as they serialise — camelCase, enums as strings, `DateTime` as ISO with `Z`,
+  `DateOnly` as `yyyy-mm-dd`. One builder per answer with defaults, so a test states only what it is about.
+- **Characterisation first, per slice**: before any production change, one commit captures the slice's
+  commands' `--json` and `--toon` stdout and call logs (and the converted MCP tools' text) on unchanged code as
+  inline snapshots. Afterwards they must still match (KPI-2). Slice 01 also captures `lh refinement get` before
+  the table move (DoD 4).
+- **Readers**: for each, every required field removed or mistyped → generic view / no summary, exit 0; every
+  optional field removed → not mentioned. Never `undefined` or `NaN` in output.
+- **Wording and rules**: `client` unit tests; the parity table (DSN-7); TZ tests (DSN-8); KPI-5 — one test per
+  renderer and summary with all 23 terms renamed, asserting no seeded word appears.
+- **KPI-1**: `prettyForms.test.ts` (DSN-10). **KPI-3**: line count in slice 02's test.
+- **MCP**: per converted tool, the facts part equals today's (object: the payload minus `summary`; list: the
+  first block byte-identical), the summary equals the CLI's heading/sentence for the same facts, and
+  `runtime.test.ts`'s annotations stay pinned. One `mcp-http` e2e asserts a second text block reaches an SDK client.
+- **Mutation**: StrykerJS, ephemeral, ≥ 80 % on each slice's new wording, readers, rules, renderers and the
+  changed handler lines; run last on frozen code.
+
+---
+
+## Wave: DESIGN / [REF] Architectural enforcement
+
+Source-scanning Vitest tests (the frontend's `formatLikelihood.enforcement.test.ts` is the precedent); no new tool.
+
+| Rule | Check |
+|---|---|
+| E1 renderers are pure | `cli/src/*Output.ts` import nothing from `./index` and call no client method. |
+| E2 one table style | `padEnd(` appears in `cli/src/table.ts` only. |
+| E3 no layout in `client` | `client/src/*Wording.ts` contain no `padEnd(` and no column joins. |
+| E4 no `Intl` in new date code | `calendarDates.ts` uses no `toLocale*` / `Intl`. |
+| E5 one Terminology source | No seeded term literal (`"Work Items"`, `"Feature"`, …) outside `terminology.ts` and refinement's projection. |
+| E6 formats untouched | The characterisation snapshots (behavioural). |
+| E7 every form converted or excused | `prettyForms.test.ts` (behavioural). |
+
+---
+
+## Wave: DESIGN / [REF] C4
+
+### L1 — System Context
+
+```mermaid
+C4Context
+  title System Context — readable lh output and MCP summaries
+  Person(person, "Delivery lead, coach, product owner, admin", "Reads answers in a terminal")
+  Person(agent, "AI assistant or script", "Reads facts; may quote summary")
+  System(clients, "Lighthouse clients", "lh CLI and MCP servers")
+  System_Ext(lighthouse, "Lighthouse server", "REST /api/v1, the answers and the instance's Terminology")
+  Rel(person, clients, "Asks questions through lh --pretty")
+  Rel(agent, clients, "Calls lh --json / --toon or MCP tools")
+  Rel(clients, lighthouse, "Reads answers, names and Terminology from")
+```
+
+### L2 — Container
+
+```mermaid
+C4Container
+  title Container — lighthouse-clients
+  Person(person, "Terminal user")
+  Person(agent, "AI assistant")
+  Container(cli, "lighthouse-cli (lh)", "TypeScript, Node/Bun", "Parses commands; lays out tables; picks pretty/json/toon")
+  Container(core, "lighthouse-mcp-core", "TypeScript", "Tool catalogue; adds summary beside facts")
+  Container(transports, "mcp-stdio / mcp-http", "TypeScript", "Carry the tools; unchanged")
+  Container(client, "lighthouse-client", "TypeScript library", "HTTP calls; readers; wording; Terminology; dates; display rules")
+  System_Ext(lighthouse, "Lighthouse server", "REST /api/v1")
+  Rel(person, cli, "Runs commands with")
+  Rel(agent, transports, "Calls tools through")
+  Rel(transports, core, "Dispatch tool calls to")
+  Rel(cli, client, "Reads answers and wording through")
+  Rel(core, client, "Reads answers and wording through")
+  Rel(client, lighthouse, "Sends HTTP requests to")
+```
+
+### L3 — Component (the `--pretty` / summary path)
+
+```mermaid
+C4Component
+  title Component — one answer, two surfaces
+  Container_Boundary(cliB, "lighthouse-cli") {
+    Component(handler, "Group handler", "run<Group>Group", "Branches on format; makes the main and extra reads")
+    Component(renderer, "Group renderer", "<group>Output.ts", "Summary lines, then tables")
+    Component(table, "Table helper", "table.ts", "R-TABLE layout")
+    Component(seam, "Pretty seam", "output.ts", "Renderer or generic view; json/toon untouched")
+  }
+  Container_Boundary(clientB, "lighthouse-client") {
+    Component(reader, "Reader", "read<Answer>", "unknown -> view or null")
+    Component(wording, "Wording", "describe<Answer>Summary", "Heading and sentences")
+    Component(answerWording, "Answer wording read", "readAnswerWording", "Name and terms, never fails")
+    Component(terms, "Terminology", "terminology.ts", "23 keys, seeded fallback")
+    Component(dates, "Calendar dates", "calendarDates.ts", "Days unshifted, timestamps local")
+    Component(rules, "Display rules", "forecastDisplayRules.ts", "Levels, cap, exclusive answers")
+    Component(api, "LighthouseClient", "index.ts", "REST calls")
+  }
+  Container_Boundary(coreB, "lighthouse-mcp-core") {
+    Component(tool, "Tool branch", "callTool", "Facts plus summary")
+  }
+  Rel(handler, api, "Reads the answer and extra facts through")
+  Rel(handler, answerWording, "Reads name and terms through")
+  Rel(handler, seam, "Hands facts and renderer to")
+  Rel(seam, renderer, "Calls for --pretty")
+  Rel(renderer, reader, "Checks the answer with")
+  Rel(renderer, wording, "Takes the summary lines from")
+  Rel(renderer, table, "Lays rows out with")
+  Rel(tool, api, "Reads the answer through")
+  Rel(tool, reader, "Checks the answer with")
+  Rel(tool, wording, "Takes the summary from")
+  Rel(wording, terms, "Words configurable terms with")
+  Rel(wording, dates, "Writes dates with")
+  Rel(wording, rules, "States levels and likelihoods with")
+  Rel(answerWording, api, "Reads names and Terminology through")
+```
+
+---
+
+## Wave: DESIGN / [REF] Quality attributes
+
+| Attribute | Strategy |
+|---|---|
+| Compatibility | `--json`/`--toon` bytes and calls unchanged (characterisation per slice); MCP facts unchanged; no version gate needed. |
+| Reliability | Unknown shape → generic view / no summary; extra-read failure → fallback, exit 0. |
+| Maintainability | One wording function, two surfaces; one resolver; one rules module; one table helper; E1–E7. |
+| Usability | Sketch-defined output; KPI-1/3/5. |
+| Performance | ≤ 2 extra reads (≤ 4 HTTP requests) per `--pretty` command or converted MCP call, in parallel; `--json`/`--toon` add none. Accepted for an interactive CLI; MCP-http callers pay it per call (refinement precedent). |
+| Security | `(secret, not shown)` whatever the server sends for an option marked secret (AC-09.2) — a reader rule, tested; summaries never include option values. RBAC: no new gate (DISCUSS checklist). |
+| Contract testing (Pact) | **N/A** — the only external system is Lighthouse, whose shapes are pinned by DTO-shaped fixtures plus the real-container smoke (Earned Trust table). |
+
+---
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+| Original (quoted) | Source | New assumption | Why |
+|---|---|---|---|
+| "D17 — MCP unchanged in this story" and Driving Ports "MCP tools: **None** (D17)" | this file, D17; DISCUSS Driving Ports | MCP tools gain `summary` per slice (DSN-14, DSN-15) | Maintainer reversed C13. |
+| D16 / checklist: "automatic patch for `mcp-core`/`mcp-stdio`/`mcp-http`" | this file, D16 and the versioning row | Minor `mcp-core` per slice with an MCP change (DSN-16) | Tool output and descriptions change. |
+| Out of Scope: "MCP `summary` fields … a follow-up story" | this file, Out of Scope | In scope | C13. |
+| US-05 learning hypothesis: "the list answer carries `remainingFeatures`, `tags`, `lastUpdated`" | US-05 Technical Notes | Answered at the desk: `TeamDto`/`PortfolioDto` send `lastUpdated` (UTC) and `features` (count = length, as the web's `remainingFeatures` getter does) but **no `tags`**; the web defaults tags to `[]`, so its Tags column is always empty | Read of `WorkTrackingSystemOptionsOwnerDtoBase.cs`, `TeamDto.cs`, `models/Team/Team.ts`. What the CLI shows is open for the maintainer. |
+| Slice 01 learning hypothesis: the rules may need facts the forecast answer lacks | `slices/slice-01-forecast.md` | Holds on paper: `ManualForecastDto` carries `likelihood` (nullable), `hasSufficientData`, `remainingItems`, `whenForecasts{probability, expectedDate}`, `howManyForecasts{probability, value}`, `filterApplied` | DTO read; still to be proven by the production-data AC. |
+| DoD 7: "`docs/product/architecture/brief.md`: **N/A**, because no Lighthouse component changes" | this file, DoD | A short per-feature section is added to the brief, with ADR-223/224 | The SSOT keeps a section per feature, including client-only ones (`epic-size-and-count-over-time`, ADR-121). |
+
+**Upstream changes for DISTILL** (not edited in the DISCUSS sections): each story US-01, US-03…US-09 gains one
+MCP AC — "the converted tools return `summary` equal to the CLI's heading and sentence(s) for the same facts;
+their facts are unchanged" — and AC-0x "`--json`/`--toon` unchanged" extends to "and the MCP facts". US-02 has
+no MCP tool.
+
+---
+
+## Wave: DESIGN / [REF] Open for the maintainer
+
+Everything here changes what a user or an agent sees; DESIGN took no position. None of it blocks DISTILL of the
+CLI side — the approved sketches answer the CLI copy; items 2–6 are what the sketch page does not cover.
+
+1. **Tags column** (`lh team list`, `lh portfolio list`, sketch §5) — **settled by the sketch approval: kept.**
+   FYI: the server sends no tags today, so the column prints empty, as it is on the web. Raise it only if an
+   always-empty column was not what you meant to approve.
+2. **A shape `lh` does not recognise**: today's generic view prints silently. Add a one-line note on stderr (exit
+   still 0) such as "Shown as raw facts: this Lighthouse answered in a shape lh does not know"? Wording yours.
+3. **Metrics headline with one unrecognised section**: the whole headline falls back to the generic view (D5 as
+   written, the default taken). Alternative: render the rest and print one line for that section — wording
+   needed.
+4. **MCP summary wording where the CLI has only a table title**: the list tools (`team_list`, `portfolio_list`,
+   `worktracking_list`, `blackout_list`, `feature_get`, `delivery_list`) would get a `summary` of just "Teams"
+   etc. Suggest a count sentence ("7 Teams")? And `…cumulativeStateTimeCandidates`, which the CLI never prints:
+   no summary, or one?
+5. **MCP `health_check` summary**: `mcp-core` does not know the URL (the transport does), so it cannot say the
+   CLI's "Lighthouse at <url> is reachable." Proposed default if unanswered: "Lighthouse is reachable." — confirm.
+6. **The summary convention for list answers** (DSN-14): a second text block `summary: …`, so the facts block
+   stays byte-identical. Agents that show only the first block would miss it. Confirm, or prefer wrapping lists
+   as `{ summary, items }` (changes the facts' shape).
+7. **FYI, no decision needed**: a forecast date on the wire is the instance's day at UTC midnight; the CLI prints
+   that day (D15). If the web formats it in the browser's zone, a reader west of UTC sees the web one day
+   earlier than `lh` — worth knowing when running AC-01.7 side by side.
+
+---
+
+## Wave: DESIGN / [REF] Open items for DISTILL / DELIVER
+
+- Run `nwave-ai outcomes check-delta` on this file (not run here).
+- Verify each sketch's fields against the DTOs while writing fixtures (forecast, Team and Delivery verified here;
+  Feature, Portfolio, connection, metrics sections not field by field).
+- DEVOPS: the `smoke-integration` `--pretty` greps (Earned Trust table); usage data stays the #6193 pointer.
+- DELIVER: slice 01 after the in-flight refinement-votes work is on the clients' `main` (DSN-19).
+
+## Wave: DESIGN / [REF] ADRs
+
+[ADR-223](../../product/architecture/adr-223-a-pretty-view-reads-the-answer-through-a-narrow-reader-and-falls-back-to-the-generic-view.md) ·
+[ADR-224](../../product/architecture/adr-224-an-mcp-summary-rides-beside-unchanged-facts.md). Cross-refs: ADR-121
+(client-side shaping of a server answer). SSOT: `brief.md` → "Application Architecture —
+story-6218-readable-cli-output".
+
+## Wave: DESIGN / [REF] Peer review
+
+Per-wave review **skipped** (nw-design default): no security boundary moves, no performance budget is unverified,
+and both ADRs follow existing precedents (ADR-121, the refinement summary). The consolidated review at the end of
+DISTILL covers this wave.

@@ -9446,3 +9446,54 @@ refusal and interruption scenarios.
 System Context and Container views: **no new container at system level.** The change sits inside the
 existing bundled Postgres StatefulSet. The pod-level container view is in the feature delta.
 `c4-diagrams.md` carries no chart or Postgres-pod view, so it is unchanged.
+
+---
+
+## Application Architecture — story-6218-readable-cli-output
+
+Feature: story-6218-readable-cli-output (ADO User Story #6218): every `lh` command that answers a question or
+confirms a change reads like the web page in `--pretty`, and every MCP tool it converts adds a `summary` with the
+same words. Repo `lighthouse-clients` only; no Lighthouse server or web change. DESIGN 2026-10-06, PROPOSE, AFK.
+Full design: `docs/feature/story-6218-readable-cli-output/feature-delta.md` → "Wave: DESIGN / …" (DSN-1…DSN-20).
+
+### Key invariants introduced
+
+- **I1 — formats untouched.** `--json`/`--toon` print the same bytes and make the same calls; MCP facts are
+  unchanged apart from the added `summary`. Pinned by per-slice characterisation snapshots.
+- **I2 — a renderer reads through a narrow reader.** `read<Answer>(unknown) → view | null` in `client`; `null` →
+  the generic view (CLI) or no summary (MCP). The client's method types are not changed. (ADR-223)
+- **I3 — one wording function, two surfaces.** `describe<Answer>Summary` in `client` is the CLI's heading and
+  sentences and the MCP `summary`; tables live only in `cli`.
+- **I4 — one source each** for Terminology (23 keys, seeded fallback), calendar dates (never re-zoned, no `Intl`)
+  and the web's forecast display rules (levels, `>95%` cap, exclusive answers), all in `client`.
+- **I5 — extra reads never fail an answer.** Name and Terminology reads happen only under `--pretty` (CLI) or for
+  a summary (MCP) and fall back to `{Term} [id: n]` or to the seeded words.
+
+### Component decomposition (headline)
+
+`client`: NEW `terminology.ts`, `calendarDates.ts`, `forecastDisplayRules.ts`, `answerWording.ts`, one
+`<group>Wording.ts` per command group; EXTEND `refinementWording.ts` (behaviour-preserving projection). `cli`: NEW
+`table.ts` (moved from `refinementOutput.ts`), one `<group>Output.ts` per group; EXTEND `output.ts`
+(`PrettyRenderer` may return `null`) and the group handlers. `mcp-core`: EXTEND `toolResult.ts` (`withSummary`)
+and the converted tool branches and descriptions.
+
+### Architectural Enforcement (this feature)
+
+Source-scanning Vitest tests: renderers pure; `padEnd` only in `table.ts`; no layout in `client` wording; no
+`Intl` in the date module; seeded words only in `terminology.ts`. Behavioural: characterisation snapshots
+(I1), `prettyForms.test.ts` (every form converted or excused), forecast-rule parity cases mirroring the web's
+tests, time-zone tests at UTC−10 and UTC+14, a renamed-Terminology test per renderer. Earned Trust: one `--pretty`
+grep per converted group in `smoke-integration` against the real demo-seeded container.
+
+### ADR References (this feature)
+
+- [ADR-223](./adr-223-a-pretty-view-reads-the-answer-through-a-narrow-reader-and-falls-back-to-the-generic-view.md)
+  — narrow readers, fallback to the generic view, client types unchanged. **Proposed.**
+- [ADR-224](./adr-224-an-mcp-summary-rides-beside-unchanged-facts.md) — `summary` as a field on objects and as a
+  second text block on lists and scalars. **Proposed.**
+- Cross-ref: [ADR-121](./adr-121-delivery-metrics-history-client-projection.md) (client-side shaping).
+
+### C4
+
+L1, L2 and L3 (the `--pretty` / summary path) are in the feature delta. No Lighthouse container changes, so
+`c4-diagrams.md` is unchanged.
