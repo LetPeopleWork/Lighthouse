@@ -22,9 +22,22 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [TestCase("""{"answer":"Yes","channel":"1"}""")]
         [TestCase("""{"answer":"Yes","channel":3}""")]
         [TestCase("""{"answer":"Yes","channel":"Email"}""")]
+        [TestCase("""{"answer":"99","channel":"Web"}""")]
+        [TestCase("""{"answer":"-1","channel":"Web"}""")]
+        [TestCase("""{"answer":"Yes","channel":"99"}""")]
+        [TestCase("""{"answer":"Yes","channel":"-1"}""")]
         public void An_answer_or_channel_that_is_not_one_of_the_names_is_refused(string body)
         {
             Assert.That(() => JsonSerializer.Deserialize<SizingVoteDto>(body, HostOptions), Throws.InstanceOf<JsonException>());
+        }
+
+        [TestCase("""{"comment":"is the export in scope?","channel":"Email"}""")]
+        [TestCase("""{"comment":"is the export in scope?","channel":"1"}""")]
+        [TestCase("""{"comment":"is the export in scope?","channel":"99"}""")]
+        [TestCase("""{"comment":"is the export in scope?","channel":"-1"}""")]
+        public void A_comment_channel_that_is_not_one_of_the_names_is_refused(string body)
+        {
+            Assert.That(() => JsonSerializer.Deserialize<SizingCommentDto>(body, HostOptions), Throws.InstanceOf<JsonException>());
         }
 
         [Test]

@@ -243,6 +243,8 @@ namespace Lighthouse.Backend.Tests.API
         [TestCase("yes")]
         [TestCase("0")]
         [TestCase("Yes, No")]
+        [TestCase("99")]
+        [TestCase("-1")]
         public async Task ATakeBackNamingNoAnswerThereIsIsABadRequest(string named)
         {
             var result = await TakeBack(named);
@@ -255,10 +257,14 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
-        [Test]
-        public async Task ATakeBackNamingNoChannelThereIsIsABadRequest()
+        [TestCase("Phone")]
+        [TestCase("cli")]
+        [TestCase("1")]
+        [TestCase("99")]
+        [TestCase("-1")]
+        public async Task ATakeBackNamingNoChannelThereIsIsABadRequest(string named)
         {
-            var result = await TakeBack(null, channel: "Phone");
+            var result = await TakeBack(null, channel: named);
 
             using (Assert.EnterMultipleScope())
             {

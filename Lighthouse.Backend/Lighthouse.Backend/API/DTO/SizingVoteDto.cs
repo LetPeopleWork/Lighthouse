@@ -35,7 +35,9 @@ namespace Lighthouse.Backend.API.DTO
             }
 
             public static bool TryRead(string? name, out TEnum value)
-                => Enum.TryParse(name, out value) && string.Equals(value.ToString(), name, StringComparison.Ordinal);
+                => Enum.TryParse(name, out value)
+                    && Enum.IsDefined(value)
+                    && string.Equals(value.ToString(), name, StringComparison.Ordinal);
 
             public override void Write(Utf8JsonWriter writer, TEnum value, JsonSerializerOptions options)
                 => writer.WriteStringValue(value.ToString());
