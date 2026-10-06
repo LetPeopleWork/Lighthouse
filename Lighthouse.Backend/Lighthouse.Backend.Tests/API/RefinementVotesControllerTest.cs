@@ -185,13 +185,52 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [TestCase(null, SizingChannel.Web)]
+        [TestCase("too vague to size", null)]
+        public async Task ACommentWithoutItsTextOrAChannelIsABadRequest(string? text, SizingChannel? channel)
+        {
+            var result = await AddComment(new SizingCommentDto { Comment = text, Channel = channel, VoterName = Jonas });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(StatusOf(result), Is.EqualTo(StatusCodes.Status400BadRequest));
+                Assert.That(ProblemOf(result).Title, Is.EqualTo("A comment needs its text and the channel it was sent from."));
+                sizingLogCommandsMock.VerifyNoOtherCalls();
+            }
+        }
+
+        [TestCase(SizingOutcome.CommentMissing, "A comment needs some text.", "comment-required")]
+        [TestCase(SizingOutcome.CommentTooLong, "A comment is at most 2000 characters.", "comment-too-long")]
+        public async Task ACommentTheLogRefusesIsABadRequestThatNamesWhy(SizingOutcome outcome, string title, string code)
+        {
+            sizingLogCommandsMock
+                .Setup(commands => commands.Comment(TeamId, InRefinement, It.IsAny<SizingComment>(), It.IsAny<Voter>()))
+                .Returns(outcome);
+
+            var result = await AddComment(new SizingCommentDto { Comment = "is the export in scope?", Channel = SizingChannel.Web, VoterName = Jonas });
+
+            var problem = ProblemOf(result);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(StatusOf(result), Is.EqualTo(StatusCodes.Status400BadRequest));
+                Assert.That(problem.Title, Is.EqualTo(title));
+                Assert.That(problem.Extensions["code"], Is.EqualTo(code));
+            }
+        }
+
         private const string NameOf101Characters =
             "Jonas Weber Jonas Weber Jonas Weber Jonas Weber Jonas Weber Jonas Weber Jonas Weber Jonas Weber Jonas";
 
         private Task<ActionResult<RefinementRowDto>> CastVote(string routeValue, SizingVoteDto vote, string? voterKey = BrowserKey)
+            => Controller().CastVote(TeamId, routeValue, vote, voterKey, CancellationToken.None);
+
+        private Task<ActionResult<RefinementRowDto>> AddComment(SizingCommentDto comment)
+            => Controller().AddComment(TeamId, InRefinement, comment, BrowserKey, CancellationToken.None);
+
+        private RefinementVotesController Controller()
         {
             var authModeResolver = Mock.Of<IAuthModeResolver>(resolver => resolver.Resolve() == new RuntimeAuthStatus { Mode = authMode });
-            var controller = new RefinementVotesController(
+            return new RefinementVotesController(
                 sizingLogCommandsMock.Object,
                 refinementViewQueryMock.Object,
                 new VoterIdentityResolver(authModeResolver, Mock.Of<IHttpContextAccessor>()),
@@ -201,8 +240,6 @@ namespace Lighthouse.Backend.Tests.API
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
                 ProblemDetailsFactory = new PlainProblemDetailsFactory(),
             };
-
-            return controller.CastVote(TeamId, routeValue, vote, voterKey, CancellationToken.None);
         }
 
         private static readonly RefinementNeed NoNeed = RefinementNeed.Unavailable(NeedUnavailableReason.NoCadence);

@@ -67,6 +67,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
             {
                 Assert.That(profile, Is.Not.Null);
                 Assert.That(profile!.Subject, Is.EqualTo("auth0|abc123"));
+                Assert.That(profile.SubjectClaimType, Is.EqualTo("sub"));
                 Assert.That(profile.DisplayName, Is.EqualTo("Story User"));
                 Assert.That(profile.Email, Is.EqualTo("story.user@example.com"));
                 Assert.That(context.UserProfiles.Count(), Is.EqualTo(1));
@@ -109,6 +110,54 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
             {
                 Assert.That(profile, Is.Null);
                 Assert.That(context.UserProfiles.Count(), Is.Zero);
+                serviceLogger.Verify(logger => logger.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((state, _) => state.ToString() == "Current user profile rejected due to missing stable subject claim"),
+                    It.IsAny<Exception?>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
+            }
+        }
+
+        [Test]
+        public async Task GetOrCreateFromPrincipalAsync_BothNameAndBothEmailClaims_PrefersTheShortNameAndTheSchemaEmail()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            var service = new CurrentUserProfileService(context, serviceLogger.Object);
+
+            var principal = BuildPrincipal(
+                new Claim("sub", "auth0|both"),
+                new Claim(ClaimTypes.Name, "Schema Name"),
+                new Claim("name", "Short Name"),
+                new Claim("email", "short@example.com"),
+                new Claim(ClaimTypes.Email, "schema@example.com"));
+
+            var profile = await service.GetOrCreateFromPrincipalAsync(principal, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(profile?.DisplayName, Is.EqualTo("Short Name"));
+                Assert.That(profile?.Email, Is.EqualTo("schema@example.com"));
+            }
+        }
+
+        [Test]
+        public async Task GetOrCreateFromPrincipalAsync_OnlyTheOtherNameAndEmailClaims_FallsBackToThem()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            var service = new CurrentUserProfileService(context, serviceLogger.Object);
+
+            var principal = BuildPrincipal(
+                new Claim("sub", "auth0|fallback"),
+                new Claim(ClaimTypes.Name, "Schema Name"),
+                new Claim("email", "short@example.com"));
+
+            var profile = await service.GetOrCreateFromPrincipalAsync(principal, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(profile?.DisplayName, Is.EqualTo("Schema Name"));
+                Assert.That(profile?.Email, Is.EqualTo("short@example.com"));
             }
         }
 
@@ -126,6 +175,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
                 CreatedAt = DateTime.UtcNow.AddDays(-10),
                 LastSeenAt = DateTime.UtcNow.AddDays(-1),
             });
+            context.UserProfiles.Add(new UserProfile
+            {
+                Subject = "auth0|someone-else",
+                SubjectClaimType = "sub",
+                DisplayName = "Someone Else",
+                Email = "someone.else@example.com",
+                CreatedAt = DateTime.UtcNow.AddDays(-10),
+                LastSeenAt = DateTime.UtcNow.AddDays(-1),
+            });
             await context.SaveChangesAsync();
 
             var service = new CurrentUserProfileService(context, serviceLogger.Object);
@@ -137,12 +195,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
 
             var profile = await service.GetOrCreateFromPrincipalAsync(principal, CancellationToken.None);
 
+            using var freshContext = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            var stored = await freshContext.UserProfiles.SingleAsync(p => p.Subject == "auth0|existing");
+            var untouched = await freshContext.UserProfiles.SingleAsync(p => p.Subject == "auth0|someone-else");
+
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(profile, Is.Not.Null);
                 Assert.That(profile!.DisplayName, Is.EqualTo("New Name"));
                 Assert.That(profile.Email, Is.EqualTo("new@example.com"));
-                Assert.That(context.UserProfiles.Count(), Is.EqualTo(1));
+                Assert.That(freshContext.UserProfiles.Count(), Is.EqualTo(2));
+                Assert.That(stored.DisplayName, Is.EqualTo("New Name"));
+                Assert.That(stored.Email, Is.EqualTo("new@example.com"));
+                Assert.That(untouched.DisplayName, Is.EqualTo("Someone Else"));
+                Assert.That(untouched.Email, Is.EqualTo("someone.else@example.com"));
             }
         }
 
