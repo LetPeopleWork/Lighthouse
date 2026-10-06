@@ -255,6 +255,19 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public void ATakeBackNamingNoChannelThereIsIsABadRequest()
+        {
+            var result = TakeBack(null, channel: "Phone");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(StatusOf(result), Is.EqualTo(StatusCodes.Status400BadRequest));
+                Assert.That(ProblemOf(result).Title, Is.EqualTo("A vote is taken back from Web, LiveSession, Cli or Assistant, or without naming its channel."));
+                sizingLogCommandsMock.VerifyNoOtherCalls();
+            }
+        }
+
         [TestCase(AuthMode.Disabled, "voter-key-required", "A vote or comment needs the key the sender's browser keeps.", LogLevel.Information, true, TestName = "Take-back without a browser key")]
         [TestCase(AuthMode.Enabled, "vote-needs-a-person", "A vote or comment needs a person to send it.", LogLevel.Warning, false, TestName = "Take-back with nobody signed in")]
         public void ATakeBackWithoutAReaderIsRefusedSayingWhyAndLogsTheReason(
@@ -285,8 +298,8 @@ namespace Lighthouse.Backend.Tests.API
         private Task<ActionResult<RefinementRowDto>> AddComment(SizingCommentDto comment)
             => Controller().AddComment(TeamId, InRefinement, comment, BrowserKey, CancellationToken.None);
 
-        private ActionResult<RefinementRowDto> TakeBack(string? answer, string? voterKey = BrowserKey)
-            => Controller().TakeBackVote(TeamId, InRefinement, answer, voterKey);
+        private ActionResult<RefinementRowDto> TakeBack(string? answer, string? voterKey = BrowserKey, string? channel = null)
+            => Controller().TakeBackVote(TeamId, InRefinement, answer, channel, voterKey);
 
         private RefinementVotesController Controller()
         {

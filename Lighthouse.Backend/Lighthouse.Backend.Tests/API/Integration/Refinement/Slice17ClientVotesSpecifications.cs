@@ -110,5 +110,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 Assert.That(entries.Select(entry => entry.Kind), Is.EqualTo(kinds));
             }
         }
+
+        private async Task ThenTheTakeBackIsMarkedAsFrom(TeamUnderTest team, string channel)
+        {
+            var revocations = EntriesIn(await TheLogAsSeenBy(Jonas, team, AdvancedReporting))
+                .Where(entry => entry.Kind == "Revocation")
+                .Select(entry => (entry.VoterName, entry.Channel));
+
+            Assert.That(revocations, Is.EqualTo(new[] { ((string?)AnaLima, (string?)channel) }));
+        }
     }
 }

@@ -289,10 +289,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json"));
         }
 
-        protected async Task<HttpResponseMessage> TakesBackTheirVote(Voter voter, TeamUnderTest team, string workItem, string? answer = null)
-            => await ConnectionOf(voter).DeleteAsync(
+        protected async Task<HttpResponseMessage> TakesBackTheirVote(Voter voter, TeamUnderTest team, string workItem, string? answer = null, Channel? channel = null)
+        {
+            string[] query =
+            [
+                .. answer is null ? [] : new[] { $"answer={Uri.EscapeDataString(answer)}" },
+                .. channel is null ? [] : new[] { $"channel={channel}" },
+            ];
+
+            return await ConnectionOf(voter).DeleteAsync(
                 $"{RefinementOf(team.TeamId)}/work-items/{Uri.EscapeDataString(workItem)}/votes/mine"
-                + (answer is null ? string.Empty : $"?answer={Uri.EscapeDataString(answer)}"));
+                + (query.Length == 0 ? string.Empty : $"?{string.Join('&', query)}"));
+        }
 
         protected async Task<HttpResponseMessage> OpensTheRefinementTab(Voter voter, int teamId)
             => await ConnectionOf(voter).GetAsync(RefinementOf(teamId));

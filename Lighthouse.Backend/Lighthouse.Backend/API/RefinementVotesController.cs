@@ -80,7 +80,8 @@ namespace Lighthouse.Backend.API
 
         /// <summary>
         /// Taking back needs only the voter's key, never a name: the take-back is recorded under the name the vote
-        /// was cast with. Only the web page takes a vote back so far, and the request has no body to name a channel.
+        /// was cast with. A client names the channel it takes back from, as it does when it votes; the web page
+        /// names none and is recorded as the web.
         /// The answer the reader saw pressed may be named, so a vote changed since in another session stays.
         /// </summary>
         [HttpDelete("votes/mine")]
@@ -88,36 +89,43 @@ namespace Lighthouse.Backend.API
             int teamId,
             string workItemId,
             [FromQuery] string? answer,
+            [FromQuery] string? channel,
             [FromHeader(Name = RefinementController.VoterKeyHeader)] string? voterKey)
         {
-            const SizingChannel channel = SizingChannel.Web;
-            if (!TryReadTheAnswer(answer, out var named))
+            if (!TryReadTheName<SizingAnswer>(answer, out var named))
             {
                 return Problem(statusCode: StatusCodes.Status400BadRequest, title: "A vote is taken back as Yes, YesBut or No, or without naming its answer.");
             }
 
+            if (!TryReadTheName<SizingChannel>(channel, out var namedChannel))
+            {
+                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "A vote is taken back from Web, LiveSession, Cli or Assistant, or without naming its channel.");
+            }
+
+            var declared = namedChannel ?? SizingChannel.Web;
             if (voterIdentityResolver.ReaderKeyFrom(voterKey) is not { } key)
             {
                 var refusal = voterIdentityResolver.Kind == VoterIdentityKind.Account ? VoterRefusal.NeedsAPerson : VoterRefusal.KeyRequired;
-                return RefusedWithoutAVoter(refusal, teamId, channel);
+                return RefusedWithoutAVoter(refusal, teamId, declared);
             }
 
             var workItemReference = WorkItemRouteReference.From(workItemId);
-            var outcome = sizingLogCommands.TakeBack(teamId, workItemReference, channel, key, named);
+            var outcome = sizingLogCommands.TakeBack(teamId, workItemReference, declared, key, named);
 
             return Answered(outcome, teamId, workItemReference, voterKey);
         }
 
-        // Read by the same names-only rule as a vote's answer, so "0" or "yes" is refused here as it is there.
-        private static bool TryReadTheAnswer(string? answer, out SizingAnswer? named)
+        // Read by the same names-only rule as a vote's body, so "0", "yes" or "cli" is refused here as it is there.
+        private static bool TryReadTheName<TEnum>(string? name, out TEnum? named)
+            where TEnum : struct, Enum
         {
             named = null;
-            if (answer is null)
+            if (name is null)
             {
                 return true;
             }
 
-            if (!SizingVoteDto.NamesOnly<SizingAnswer>.TryRead(answer, out var value))
+            if (!SizingVoteDto.NamesOnly<TEnum>.TryRead(name, out var value))
             {
                 return false;
             }

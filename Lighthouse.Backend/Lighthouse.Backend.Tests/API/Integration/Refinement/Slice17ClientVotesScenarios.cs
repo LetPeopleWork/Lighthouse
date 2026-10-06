@@ -82,7 +82,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-12 @us-17b @slice-17b @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice17b)]
         public async Task A_question_asked_through_an_assistant_flags_the_Work_Item()
         {
             var gravity = await GravityRefinesSixWorkItemsNobodyHasVotedOn();
@@ -94,20 +93,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-16 @us-17b @slice-17b @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice17b)]
         public async Task A_client_takes_back_the_vote_it_cast()
         {
             var gravity = await GivenAnasCommandLineVotedYesAndJonasVotedYesOnAdvancedReporting();
 
-            using var takeBack = await TakesBackTheirVote(AnasClient, gravity, AdvancedReporting);
+            using var takeBack = await TakesBackTheirVote(AnasClient, gravity, AdvancedReporting, channel: Channel.Cli);
 
             await ThenJonasReadsTheLogKinds(takeBack, gravity, "Vote", "Vote", "Revocation");
+            await ThenTheTakeBackIsMarkedAsFrom(gravity, nameof(Channel.Cli));
         }
 
         // @driving_port @real-io @us-16 @us-17b @slice-17b @error @contract-shape:unbounded-preservation
         // The command line keeps a key of its own: it is not the browser, even under the same name.
         [Test]
-        [Ignore(PendingSlice17b)]
         public async Task A_client_cannot_take_back_a_vote_its_user_cast_from_a_browser()
         {
             var gravity = await GravityRefinesSixWorkItemsNobodyHasVotedOn();
