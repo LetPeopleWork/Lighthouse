@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-10-02
+updated: 2026-10-06
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -60,6 +60,7 @@ feature_context:
   - epic-5806-initiatives
   - epic-5510-5881-refinement
   - epic-5878-baseline
+  - story-6218-readable-cli-output
 
 jobs:
   - id: job-rbac-bootstrap
@@ -7948,3 +7949,51 @@ jobs:
       rationale: >
         Importance 4 - every bundled install hits this on the release that moves the default, and the
         failure is a full outage. Satisfaction 1 - only a documented manual dump/restore exists. Gap 3.
+
+  - id: job-read-lighthouse-answers-in-the-terminal
+    title: Read a Lighthouse answer in the terminal the way the web page states it
+    persona: delivery-forecaster
+    feature_context: story-6218-readable-cli-output
+    created: 2026-10-06
+    note: >
+      NEW in DISCUSS of story-6218-readable-cli-output (ADO #6218, no parent). DISCOVER and DIVERGE skipped
+      by the maintainer. Shared by every persona who uses `lh` - delivery-forecaster (primary), flow-coach,
+      product-owner, config-admin, platform-operator - because the job is the surface, not the domain
+      question: each command group's own domain job (forecast, flow, delivery) is already served by the web.
+      Grew out of story #6147, whose `lh refinement get` was the first command to answer in the web's words
+      and whose decision 5 deferred the other commands to a later story. Scores are DESK ESTIMATES; the
+      clients have no usage data until #6193.
+    job_story: >
+      When I ask Lighthouse a question from the terminal - when will these be done, how is the Team flowing,
+      what is in this Delivery -
+      I want the answer stated the way the web page states it,
+      so I can act on it or paste it without decoding a dump of field names.
+    dimensions:
+      functional: >
+        The same question gets the same answer, in the same words, columns and Terminology, on the web and in
+        `lh --pretty`; the raw facts stay one flag away (`--json`, `--toon`), unchanged.
+      emotional: >
+        From squinting ("which of these fields is the 85th percentile?") to reading.
+      social: >
+        An answer pasted from the terminal into a chat or a meeting note reads as Lighthouse's answer, not as a
+        debug print.
+    forces:
+      push: >
+        The generic pretty view prints every field under its wire name, nested; `lh metrics team` prints every
+        daily point of every series.
+      pull: >
+        `lh refinement get` already answers in the web's words, and the maintainer approved its style for
+        every command.
+      anxiety: >
+        Scripts or agents that read the default `--pretty` output break; the CLI's copy of the web's words
+        drifts from the web.
+      habit: >
+        Piping `--json` through jq, or opening the web page instead of asking the terminal.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance 3 - the web already answers every one of these questions; the terminal is the second
+        surface. Satisfaction 1 - only refinement reads well today. Gap 2, desk estimate, until #6193's usage
+        data shows how `lh` is used.

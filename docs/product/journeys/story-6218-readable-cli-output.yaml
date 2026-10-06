@@ -1,0 +1,82 @@
+schema_version: 1
+feature_id: story-6218-readable-cli-output
+updated: 2026-10-06
+note: >
+  ADO User Story #6218, no parent. The Lighthouse CLI (`lh`, in lighthouse-clients) answers every
+  question in its default --pretty format through a generic formatter that prints every field under its
+  wire name, nested. Story #6147 gave `lh refinement get` its own renderer, in the web's words and the
+  instance's Terminology, and the maintainer approved that style for every command: lists become the
+  web's tables, a single answer becomes the web's sentence plus a compact table, ids read [id: n], and
+  --json / --toon stay byte-for-byte the facts. DISCOVER and DIVERGE skipped by the maintainer. DISCUSS
+  ran with the maintainer away; every product call it took is listed for confirmation in
+  docs/feature/story-6218-readable-cli-output/feature-delta.md, and every command's new output is
+  sketched in discuss/cli-sketches.md for one review before DELIVER.
+
+journeys:
+
+  - name: read-an-answer-in-the-terminal-and-act-on-it
+    goal: >
+      Someone in a terminal asks Lighthouse a question - when will these be done, how is the Team flowing,
+      what is in this Delivery - and acts on the answer or pastes it, without opening the web page and
+      without decoding field names.
+    persona: "delivery-forecaster (primary); flow-coach, product-owner, config-admin, platform-operator"
+    job_id: job-read-lighthouse-answers-in-the-terminal
+
+    emotional_arc:
+      start: Squinting - "which of these two hundred lines is the 85th percentile, and is that timestamp
+        UTC?"
+      middle: Reading - "Gravity, 25 Work Items: 85% by Mon 9 Nov 2026. Likelihood by the 30th, 48%."
+      end: Done - the answer goes into the meeting note as it was printed.
+
+    steps:
+      - step: Find the thing
+        command: lh team list | lh portfolio list | lh feature get --refs …
+        output: The Overview's table - Name [id: n], the Features count, Tags, Last Updated - one line per
+          Team or Portfolio.
+      - step: Ask the question
+        command: lh forecast manual … | lh metrics team --id n | lh delivery list --portfolio-id n
+        output: A heading naming the Team or Portfolio, the web's sentence for the answer, and a compact
+          table - the forecast's chances with their levels, the dashboard's headline numbers, one row per
+          Delivery.
+      - step: Drill in
+        command: lh metrics team --id n --metrics <name> | lh feature workitems --id n
+        output: Every day of one metric, or every Work Item of one Feature, as one table.
+      - step: Change it
+        command: lh team update … | lh blackout create … | lh team refresh …
+        output: One line - "Updated: Team Gravity [id: 3]." / "Refresh queued: Team [id: 3]. Lighthouse
+          updates it in the background."
+
+    error_paths:
+      - situation: Lighthouse refuses the request
+        recovery: Unchanged - category and reason on stderr, exit 1; a refusal Lighthouse words itself is
+          shown as Lighthouse words it.
+      - situation: The instance's Terminology cannot be read
+        recovery: The seeded words stand (Work Item, Feature, Team, …) and the answer still prints, exit 0.
+      - situation: A name a heading needs cannot be read (Team, Portfolio, Feature)
+        recovery: The heading says "{Term} [id: n]" and the answer still prints, exit 0.
+      - situation: An older or newer Lighthouse sends a shape the renderer does not recognise
+        recovery: The generic view, exactly as before this story, exit 0 - never a crash, never
+          "undefined" in a cell.
+      - situation: An older Lighthouse omits a field a rule depends on (isOverdue, hasSufficientData,
+          isBlocked)
+        recovery: The renderer says nothing about it rather than guess - no "Overdue", no thin-history
+          sentence, no blocked count.
+      - situation: A script or an agent reads the default pretty output
+        recovery: It changes; that is the point. --json and --toon do not change by a byte, the changesets
+          say so, and the agent skill tells agents to use them.
+
+    shared_artifacts:
+      - artifact: every configurable word (Work Item, Feature, Team, Portfolio, Cycle Time, Throughput,
+          WIP, Blocked, Service Level Expectation, Delivery, Work Tracking System, Work Item Age)
+        source: the instance's Terminology through one resolver in lighthouse-client - instance value,
+          else the entry's default, else the seeded word; read only under --pretty.
+      - artifact: the Team, Portfolio or Feature name in a heading
+        source: the existing read of that entity, under --pretty only, with the "{Term} [id: n]" fallback.
+      - artifact: each forecast level and the likelihood cap
+        source: the web's display rules (ForecastLevel.ts 50/70/85; formatLikelihood.ts >95% while work
+          remains; cannot-forecast before thin history) restated in lighthouse-client and pinned by tests
+          against the same cases.
+      - artifact: a calendar day
+        source: the wire's day, written "Fri 30 Oct 2026", never shifted by the reader's time zone.
+      - artifact: the facts themselves
+        source: the client's answer, handed over untouched by --json and --toon.
