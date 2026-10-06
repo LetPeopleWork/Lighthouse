@@ -70,12 +70,12 @@ export const useVoteCasting = (
 		() => new Set(),
 	);
 
-	// Two votes on one row in flight could land in either order, leaving the grid showing an answer
-	// the server does not hold; the row waits for its answer before it takes another.
 	const showSending = useCallback(() => {
 		setVotesBeingSent(new Set(sending.current));
 	}, []);
 
+	// Two writes on one row in flight could land in either order, leaving the grid showing an answer
+	// the server does not hold; the row waits for its answer before it takes another.
 	const sendOnce = useCallback(
 		(referenceId: string, send: () => Promise<void>) => {
 			if (sending.current.has(referenceId)) {
