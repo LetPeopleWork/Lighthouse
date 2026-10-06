@@ -9169,8 +9169,11 @@ integration, no push channel; presenter mode needs no SignalR.
   (`WorkItemRelatedSettingsChanged`). Members are only ever added, with defaults. (ADR-214)
 - **I2 — the tab is derived on read.** List, stage, readiness, yardstick, next Refinement date and band are computed
   per request; nothing but settings and the log is stored. (ADR-215)
-- **I3 — the band is the manual forecast's How Many for target date = next Refinement, at `GetProbability(100 − p)`**,
-  because `HowManyForecast` sorts descending. (ADR-215)
+- **I3 — the band is the manual forecast's How Many over one Refinement cycle, at `GetProbability(100 − p)`**,
+  because `HowManyForecast` sorts descending. The cycle is the working days after the next Refinement up to and
+  including the one after it (from today when today is a Refinement day); Story #6204 replaced the earlier window
+  "from today to the next Refinement", and the response's `need` gains `cycleStart` / `cycleEnd`. (ADR-215, amended
+  2026-10-06; DSN-23..DSN-30)
 - **I4 — the sizing log is append-only**; current vote = latest Vote/Revocation per voter key; no update or delete
   path exists. (ADR-216)
 - **I5 — identity is derived on the server**: `account:<sub>` with auth on (refused when the credential has no

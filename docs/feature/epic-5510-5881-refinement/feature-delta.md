@@ -3052,3 +3052,152 @@ Sketched for Story #6204 and approved by the maintainer on 2026-10-06, so the St
   Forecasts page." When today is a Refinement day, the first date is today. One working day reads "working day".
 - Every term in braces is the Team's configured Terminology.
 - **DEVOPS:** no new usage-data event; the need is already counted by the existing refinement events.
+
+## Wave: DESIGN / [REF] Story #6204 — the need covers one Refinement cycle (2026-10-06)
+
+DESIGN for Story #6204 only, PROPOSE, maintainer AFK; behaviour and copy are the two maintainer decisions above and
+are not re-decided here. Scope: application/components. **No container or component topology change**: no new
+module, port, controller, route, table, migration, RBAC requirement, usage-data event or external integration, so the
+C4 L1/L2/L3 diagrams for this feature in `c4-diagrams.md` stay valid. **Contract testing (Pact): N/A**, nothing
+external is touched. Style unchanged (modular monolith, ports-and-adapters, OOP).
+
+Facts read in the code that shape the design:
+
+- `IForecastService.HowMany(RunChartData throughput, int days)` takes **a day count only**: no start date enters the
+  simulation. Moving the window from "today → next" to "next → the one after" changes only the count passed in.
+- `CountWorkingDays(start, target)` counts calendar days **after** `start` up to and including `target`, minus
+  blackout days in that span. A working day is a day that is not a blackout day; weekends are excluded only where
+  the instance blacks them out. The approved example's "5 working days" from Wed to Wed assumes weekend blackouts;
+  with none it reads 7. This is the manual forecast's rule and stays, because the copy promises "Same forecast as on
+  the Forecasts page".
+- `RefinementCalendarFacts.IsRefinementDay` already uses `IsCadenceDay` **with** the blackout predicate, so a
+  blacked-out Refinement day is not a Refinement day. That is exactly the approved rule.
+- On a Refinement day the shipped window (today → next) **is** the new cycle, so that case keeps its number.
+- `RefinementCalendar` fetches blackout days only for today and for `DaysSearched(cadence, today)` (a 366-day window
+  that starts at tomorrow, or at a far starting week), so it never expands recurring blackouts across the gap to a
+  starting week years ahead. Its predicate answers "not blacked out" for any day it did not fetch.
+- Terminology keys `refinement` and `refinements` both exist (`TerminologyKeys.ts:27-28`, DSN-20), so the ⓘ's
+  "{Refinements}" needs nothing new.
+- No Lighthouse-Clients package reads the need yet (zero references to `horizonWorkingDays`, `nextRefinementDate` or
+  `daysUntilNextRefinement` in `lighthouse-clients`); slice 09 will be the first reader.
+
+## Wave: DESIGN / [REF] Story #6204 — decisions (DSN-23..DSN-30)
+
+| # | Decision | Options weighed → verdict | ADR |
+|---|---|---|---|
+| DSN-23 | **The cycle is a calendar fact.** `RefinementCalendarFacts` gains `Cycle` (start, end; null without a cadence or when no Refinement follows the start within the search horizon). Start = today when `IsRefinementDay`, else `NextRefinementDate`; end = `NextAfter(cadence, start, isBlackedOut)`. The derivation is one pure member of the static `RefinementCadenceCalendar` built from `IsCadenceDay` and `NextAfter`, so the cadence rule stays in one place and E3 purity holds. `NextRefinementDate`, `IsRefinementDay` and `DaysUntilNextRefinement` keep their meaning. | (a) the need calculator calls `NextAfter` a second time itself: it would then need the blackout predicate and the "today is a Refinement day" rule, spreading calendar knowledge into the forecast composer; (b) the browser derives the cycle from the next date: the server owns the instance's today and the blackout days, and every client would repeat the rule; (c) **calendar fact, pure derivation** ✓. | 215 (amended) |
+| DSN-24 | **The blackout lookup reaches the end of the cycle.** Invariant: the blackout predicate is never asked about a day that was not fetched. The second search (from start + 1) may run past the first fetched window, so `RefinementCalendar` also fetches **only the tail** beyond it, up to the last day the second search looks at. On a Refinement day the second search is the first search, so nothing more is fetched; otherwise the tail is `start − firstSearched + 1` days, a few days for any real cadence. The far-starting-week optimisation is kept: the gap between today and a later starting week is still never fetched. | (a) one fixed window of two years: doubles the recurring-blackout expansion on every tab read; (b) leave the predicate as it is: a blackout on the Refinement after next that falls past the first window reads as a Refinement, which is a silently wrong number; (c) **fetch the tail only** ✓. | — |
+| DSN-25 | **The need's horizon is the cycle's working days**: `CountWorkingDays(cycle.Start, cycle.End)` over the blackout days fetched for that span (the call shape the calculator already uses, new bounds). Start is excluded and end included, so a weekly Wednesday cadence counts Thursday through the following Wednesday. Throughput call (`RespectTeamSetting`), `HowMany`, reading at `GetProbability(100 − p)`, verdict and the `HasSufficientData` guard are unchanged. **The ready count is unchanged** (pulled Work Items leave the list and lower it on their own). | — (one way follows from DSN-23 and the approved rule) | 215 (amended) |
+| DSN-26 | **No cycle → the existing `NoCadence` reason.** This happens only when a cadence has a next Refinement but no Refinement in the following 366 days that is not blacked out (the existing "a year of blacked-out Refinement days is no Refinement worth naming" rule, applied once more). The reason order is unchanged: `NoRefinementStates` → `NoCadence` → `InsufficientData`; `UnavailableReasonFor`'s cadence test becomes "has a cycle". | (a) a new `NoCycle` member: new copy for a case nobody can meet in practice, and a wire enum change for clients; (b) **reuse `NoCadence`** ✓. As today for `NoCadence`, the tab shows no need message, and the heading still names the next Refinement. | — |
+| DSN-27 | **Wire delta is additive and lives on the need.** `NeedRange` carries the cycle; `RefinementNeedDto` gains `cycleStart` and `cycleEnd` (`"yyyy-MM-dd"`, invariant culture like `nextRefinementDate`; null exactly when `low`/`high` are null). **`horizonWorkingDays` keeps its name** and now counts the cycle's working days: it was always "the working days the How Many forecast runs over", and no client reads it yet. View-level `nextRefinementDate`, `isRefinementDay`, `daysUntilNextRefinement` are unchanged. | (a) rename to `cycleWorkingDays`: breaks a shipped field for a name; (b) keep `horizonWorkingDays` on its old meaning and add a second count: computes a window nothing shows; (c) send only `refinementAfterNext` and let clients choose the start from `isRefinementDay`: every client repeats the Refinement-day rule; (d) **cycle dates on the need, horizon renamed in meaning only** ✓. | — |
+| DSN-28 | **The browser composes the approved copy from these facts.** `NeedFacts` gains the `{Refinement}` term and `describeBelow` ends "is likely to pull until the {Refinement} after. Refine … more."; In and Above keep "by then". `NeedOriginFacts` swaps the single `refinementDay` for the cycle's start and end and gains the `{Refinements}` term: "a How Many forecast for the N working day(s) between the {Refinements} on {start} and {end}." (dates through the existing `formatDayAndDate`, parsed with `parseLocalDate`), then the likelihood sentence and "Same forecast as on the Forecasts page." unchanged. `NeedVerdictTerms` gains `refinement` and `refinements`, passed from `RefinementView` via `getTerm(TERMINOLOGY_KEYS.REFINEMENT / REFINEMENTS)`. `isJudged` also requires the two dates. The alert title (the next Refinement) is unchanged. | — (copy approved) | — |
+| DSN-29 | **The "enough for" line and the "#" column keep using `high`**, which now is the cycle's high end. No code change there. | — | — |
+| DSN-30 | **ADR-215 is amended, not replaced.** Decision 1's window ("target date = next Refinement", "from now until the next Refinement") is superseded by the cycle; decisions 2–6 stand. E9 (band parity) is restated: the band equals the manual How Many over the same throughput for the cycle's working-day count (equivalently, the manual forecast for a target date that many working days ahead). | (a) a new ADR for one window change; (b) **an amendment note on ADR-215**, as the 2026-10-04 amendment did ✓. | 215 |
+
+## Wave: DESIGN / [REF] Story #6204 — component decomposition
+
+Paths relative to `Lighthouse.Backend/Lighthouse.Backend/` and `Lighthouse.Frontend/src/`.
+
+| Component | Path | Change |
+|---|---|---|
+| `RefinementCadenceCalendar` (pure, static) | `Services/Implementation/Refinement/` | **EXTEND**: the cycle (start, end) from cadence, today and the blackout predicate (DSN-23) |
+| `RefinementCalendarFacts` (+ the cycle value; a record or named tuple, crafter's choice) | `Services/Interfaces/Refinement/IRefinementCalendar.cs` | **EXTEND**: a `Cycle` member, null in `None` |
+| `RefinementCalendar` | `Services/Implementation/Refinement/` | **EXTEND**: computes the cycle; fetches the blackout tail beyond the first window (DSN-24) |
+| `RefinementNeedCalculator` | `Services/Implementation/Refinement/` | **EXTEND**: horizon over the cycle; "has a cycle" for the reason (DSN-25, DSN-26) |
+| `NeedRange` | `Services/Interfaces/Refinement/IRefinementViewQuery.cs` | **EXTEND**: carries the cycle |
+| `RefinementNeedDto` | `API/DTO/RefinementViewDto.cs` | **EXTEND**: `CycleStart`, `CycleEnd` (DSN-27) |
+| `IRefinementNeed` | `models/Refinement/Refinement.ts` | **EXTEND**: `cycleStart`, `cycleEnd` (`string \| null`) |
+| `needWording.ts` | `pages/Teams/Detail/Refinement/` | **EXTEND**: Below sentence and origin sentence (DSN-28) |
+| `NeedVerdict.tsx` | same | **EXTEND**: judged need needs the cycle dates; terms gain `refinement`, `refinements` |
+| `RefinementView.tsx` | same | **EXTEND**: passes the two terms |
+| `RefinementTabTestKit.tsx` | `tests/` | **EXTEND**: the need builders carry cycle dates |
+| Code comments that say "until the next Refinement" (`RefinementNeedCalculator`, `NeedRange`, `RefinementOutlook`, `RefinementVerdict`, `IRefinementNeed`, `NeedVerdict`, `needWording`) | as listed | **EXTEND**: reworded in the same change (stale comments otherwise) |
+| `ARCHITECTURE.md` §4 row 8 and §10 row 214–218 | repo root | **EXTEND in DELIVER**, in the commit that ships the cycle (it describes what is built) |
+
+## Wave: DESIGN / [REF] Story #6204 — ports
+
+- **Driving**: `GET /teams/{teamId}/refinement` (`IRefinementViewQuery`, TeamRead): unchanged route and guard, two
+  additive response members. No write port is touched. The read path stays write-free (E6).
+- **Driven**: `IBlackoutPeriodService.GetEffectiveBlackoutDays` (one more, small range on non-Refinement days),
+  `IForecastService.HowMany`, `ITeamMetricsService.GetForecastThroughputStatus`, `ILighthouseClock`: all reused
+  unchanged. No new driven dependency, so no new probe is owed (Earned Trust); the invariant this Story adds (DSN-24)
+  is proved by a test, below.
+
+## Wave: DESIGN / [REF] Story #6204 — reuse analysis
+
+| Existing | Overlap | Decision | Contract shape / how the crafter asserts it |
+|---|---|---|---|
+| `RefinementCadenceCalendar.NextAfter` / `IsCadenceDay` | finding a Refinement, skipping blacked-out ones | **EXTEND** (called twice; no second cadence rule) | pure function: return-only, property-style cases over cadences and blackout sets |
+| `RefinementCadenceCalendar.DaysSearched` | which days a search reads | **REUSE** to size the tail fetch | pure function |
+| `RefinementCalendar` | today, blackout fetch, facts | **EXTEND** | bounded read: only `GetEffectiveBlackoutDays` calls, asserted ranges |
+| `BlackoutDaysExtensions.CountWorkingDays` | working days in a span | **REUSE** unchanged | pure |
+| `RefinementNeedCalculator` + `NeedBand` | horizon, How Many, band, verdict | **EXTEND** the calculator; `NeedBand` unchanged | read-only composition |
+| `NeedUnavailableReason.NoCadence` | "no Refinement to plan for" | **REUSE** (DSN-26) | closed enum, unchanged |
+| `RefinementNeedDto.HorizonWorkingDays` | the forecast's day count | **REUSE** name, new span (DSN-27) | additive wire |
+| `formatDayAndDate`, `parseLocalDate` | "Wed 8 Oct" from `yyyy-MM-dd` | **REUSE** | pure |
+| Terminology `refinement` / `refinements` | the words in braces | **REUSE** | — |
+
+No CREATE NEW beyond the cycle value carried on the facts.
+
+## Wave: DESIGN / [REF] Story #6204 — wire-contract delta
+
+`GET …/teams/{teamId}/refinement` → `need`:
+
+| Member | Before | After |
+|---|---|---|
+| `horizonWorkingDays` | working days from today to the next Refinement | working days of the cycle (start excluded, end included) |
+| `cycleStart` | — | **NEW** `"yyyy-MM-dd"`: today on a Refinement day, else the next Refinement; null with no range |
+| `cycleEnd` | — | **NEW** `"yyyy-MM-dd"`: the Refinement after `cycleStart`; null with no range |
+| `low`, `high`, percentiles, `verdict`, `unavailableReason` | — | unchanged shape; `low`/`high` now cover the cycle |
+
+Additive only; enums still serialise as strings. **Lighthouse-Clients: N/A for this Story**, because no client reads the
+need yet; slice 09's `lh refinement get` / MCP tool read the new members from the start.
+
+## Wave: DESIGN / [REF] Story #6204 — test impact
+
+Scenarios pin the old window and are **rewritten, not deleted** (DISTILL owns the wording):
+
+- `Slice05NeedAndVerdictScenarios` / `…Specifications`: the scripted forecasts are keyed by day count, and today is
+  Fri 2 Oct with the next Refinement Thu 8 Oct. The cycle Thu 8 → Thu 15 is 7 days, not 6, so every
+  `TheTeamIsLikelyToPull(6, …)` and `NeedReading(…, 6)` moves to the cycle's count. `Blackout_days_before_the_next_Refinement_are_not_counted`
+  (Mon 5 Oct) becomes "a blackout day inside the cycle is not counted" (for example Mon 12 Oct → 6), plus one case
+  pinning that a blackout **before** the next Refinement no longer changes the number.
+  `On_a_Refinement_day_the_number_is_for_the_following_Refinement` keeps 7. `The_range_uses_the_same_horizon_as_the_manual_forecast`
+  is restated per DSN-30.
+- `RefinementNeedCalculatorTest.A_blackout_day_before_the_next_Refinement_is_not_a_working_day` (5): same move.
+- `RefinementNeedAcceptanceTest`: the fake forecast "per horizon" and its doc comment ("working days until the next
+  Refinement").
+- New cases owed: Monday and Tuesday read the same number (day-of-week independence); two refinement weekdays
+  alternate gap sizes (Mon/Thu: 3 and 4 with weekend blackouts); a blacked-out Refinement after next extends the cycle
+  to the next one that happens; today a blacked-out Refinement day is not a Refinement day; **DSN-24's invariant**: a
+  blackout on the Refinement after next that lies past the first 366-day window is still honoured (the test that
+  fails if the tail fetch is dropped); no cycle → `NoCadence`; `cycleStart`/`cycleEnd` null exactly when the range
+  is.
+- Frontend: `needWording.test.ts` (four Below rows, three origin rows, one Terminology row);
+  `RefinementView.need.test.tsx` (lines ~198, ~203, ~246 and the field list at ~578); `RefinementTabTestKit`. E2E
+  pins no need copy; nothing to change there. `RefinementView.cadence.test.tsx` and slice 04's scenarios
+  (next date, days until) are unaffected.
+- Mutation (Stryker, both stacks) on the touched files after the code is frozen.
+
+## Wave: DESIGN / [REF] Story #6204 — open questions
+
+None blocks DISTILL or DELIVER. **One copy question only the maintainer can answer**, left open on purpose because
+the approved copy does not cover it and it is user-visible:
+
+- **MQ-6204-1: the Settings → Refinement band block.** Its ⓘ reads "Based on the {Team}'s {Throughput}: a How Many
+  forecast for the working days until the next {Refinement}." (`RefinementBandSettings.tsx:65-68`), which is **false
+  once #6204 ships**. Its heading "{Work Items} needed before the next {Refinement}" still reads true. Suggested,
+  not chosen: "…a How Many forecast for the working days between the next {Refinement} and the one after." Until
+  answered, DELIVER leaves both unchanged and should not close #6204 with the ⓘ still saying "until".
+- The "enough for the next {Refinement} (85%) · not needed before then" line (maintainer decision 2026-10-05) is
+  not named in the cycle copy decision. DESIGN reads it as still correct (the rows above the line are what the next
+  Refinement must leave on the shelf) and changes nothing. Worth one line of confirmation alongside MQ-6204-1.
+
+## Wave: DESIGN / [REF] Story #6204 — decision taken in AFK mode (2026-10-06)
+
+- **MQ-6204-1, settings ⓘ:** taken as recommended, to be confirmed by the maintainer at the hold. The ⓘ next to the
+  band in Settings → Refinement reads "…a How Many forecast for the working days between the next {Refinement} and
+  the one after." It follows the approved tooltip wording; the old "until the next {Refinement}" would be false once
+  the cycle ships.
+- "enough for the next {Refinement} (85%) · not needed before then" stays as it is: the line still names what the
+  next Refinement must leave ready.

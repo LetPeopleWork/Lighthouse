@@ -4,6 +4,7 @@
   **Amended 2026-10-04**: decision 6 no longer holds for `lineAfterPosition` and `fewerListedThanHigh` — the maintainer
   moved the "enough for" line to the browser, which places it after the high end's count of rows in whatever order it
   shows them, so the response carries neither.
+  **Amended 2026-10-06 (Story #6204)**: decision 1's window is superseded. See "Amendment 2026-10-06" below.
 - **Date**: 2026-10-02
 - **Feature**: epic-5510-5881-refinement (ADO Epic #5881 slices 02, 04, 05, 06, 07; Epic #5510 slice 10)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)
@@ -52,6 +53,23 @@ Facts from the code that the band must respect:
    (`ARCHITECTURE.md` §6). The response carries facts only — counts, band, percentiles, date, horizon,
    `isRefinementDay`, verdict or reason, `lineAfterPosition` and `fewerListedThanHigh` — and every client composes
    its own sentence with the instance's Terminology.
+
+## Amendment 2026-10-06 — the window is one Refinement cycle (Story #6204)
+
+The maintainer redefined the need as a replenishment target: a Refinement must leave enough on the shelf to last
+until the following one. **Decision 1's window "target date = next Refinement, from today" no longer holds.** The
+How Many now runs over **one Refinement cycle**: the working days after the next Refinement up to and including the
+Refinement after it, or from today to the next Refinement when today is a (not blacked-out) Refinement day. A
+Refinement on a blackout day is skipped, so the cycle runs to the next one that happens; blackout days inside the
+cycle are not working days. The engine, the throughput call, the reading at `GetProbability(100 − p)`, the verdict,
+the reasons and decisions 2–6 are unchanged. `HowMany` takes a day count only, so moving the window's start changes
+nothing but that count.
+
+The cycle is a fact of the calendar (`RefinementCadenceCalendar`, pure), the blackout lookup is extended to the end
+of the cycle so no unfetched day is ever judged, a cadence with no Refinement after the next one reads `NoCadence`,
+and the response's `need` gains `cycleStart` / `cycleEnd` while `horizonWorkingDays` keeps its name and counts the
+cycle. **Enforcement E9 is restated**: the band equals the manual How Many over the same throughput for the cycle's
+working-day count. Full decisions: feature delta, DSN-23..DSN-30.
 
 ## Alternatives considered
 
