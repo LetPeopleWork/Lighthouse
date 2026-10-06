@@ -55,7 +55,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-16 @slice-16 @error @contract-shape:unbounded-preservation
         // Declaring somebody else's name in another browser does not make their vote yours.
         [Test]
-        [Ignore(PendingSlice16)]
         public async Task Nobody_can_take_back_somebody_elses_vote_even_under_their_name()
         {
             var gravity = await GivenOnlyAnaSaidYesOnConfigurationManagement();
@@ -67,7 +66,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-16 @slice-16 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice16)]
         public async Task Taking_back_without_a_voter_key_is_refused()
         {
             var gravity = await GivenOnlyAnaSaidYesOnConfigurationManagement();
@@ -79,7 +77,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-16 @slice-16 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice16)]
         public async Task Taking_back_on_a_Work_Item_that_is_not_in_refinement_is_refused()
         {
             var gravity = await GivenOnlyAnaSaidYesOnConfigurationManagement();
@@ -91,7 +88,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-13 @us-16 @slice-16 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice16)]
         public async Task Taking_back_a_Yes_can_cost_a_Work_Item_its_Ready()
         {
             var gravity = await GivenJonasMoAndAnaSaidYesSoConfigurationManagementIsReady();
@@ -103,7 +99,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-16 @slice-16 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice16)]
         public async Task Voting_again_after_taking_back_counts_again()
         {
             var gravity = await GivenJonasMoAndAnaSaidYesSoConfigurationManagementIsReady();
