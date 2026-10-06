@@ -101,6 +101,7 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 
 	const {
 		onVote,
+		takeBack,
 		votesBeingSent,
 		isAskingForName,
 		voteUnderName,
@@ -218,6 +219,7 @@ const RefinementView: React.FC<Readonly<RefinementViewProps>> = ({ team }) => {
 				marking={marking}
 				votesBeingSent={votesBeingSent}
 				onVote={onVote}
+				onTakeBack={takeBack}
 				onOpenVotes={setVotesShownFor}
 			/>
 			{isAskingForName && (

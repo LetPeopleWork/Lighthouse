@@ -24,6 +24,7 @@ const columnsWith = (options: Partial<RefinementColumnsOptions>) =>
 		numbersNeeded: false,
 		votesBeingSent: new Set(),
 		onVote: vi.fn(),
+		onTakeBack: vi.fn(),
 		onOpenVotes: vi.fn(),
 		...options,
 	});

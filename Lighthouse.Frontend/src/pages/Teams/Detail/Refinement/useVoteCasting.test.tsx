@@ -30,6 +30,7 @@ const theRow: IVotedRow = {
 
 const aVoterIdentity = (asksForName: boolean) => ({
 	voter: asksForName ? null : JONAS,
+	readerKey: asksForName ? null : JONAS.key,
 	asksForName,
 	declareName: vi.fn((name: string) => ({ ...JONAS, name })),
 	ballotFor: vi.fn(

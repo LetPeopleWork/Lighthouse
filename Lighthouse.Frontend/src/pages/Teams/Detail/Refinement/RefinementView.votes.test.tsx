@@ -31,7 +31,8 @@ import {
  * sign-in the first vote asks who is voting, and the browser keeps that name and a random key so later
  * votes need no name and stay this browser's. With sign-in nobody is asked anything. The grid shows how
  * many have voted; clicking that opens the votes and comments, where everybody, voted or not, reads how
- * the votes split, and where a voter changes their name or takes back their own vote.
+ * the votes split, and where a voter changes their name. Clicking one's own pressed answer again takes
+ * the vote back.
  */
 
 const { terms, mockUseLicenseRestrictions, reporter } = vi.hoisted(() => ({
@@ -66,7 +67,8 @@ const CONFIGURATION_MANAGEMENT = "GR-073";
 const ADVANCED_REPORTING = "GR-051";
 const JONAS = "Jonas Weber";
 const YES_IF = "Yes, if…";
-const TAKE_BACK = "Take back my vote";
+const TAKE_BACK = /take back/i;
+const CLICK_AGAIN = "Click again to take back your vote";
 const ONE_VOTE = "1 vote";
 const VOTE_CAST = "TeamSizingVoteCast";
 
@@ -936,69 +938,82 @@ describe("A voter takes back their own vote", () => {
 		});
 	});
 
-	const jonasVotedOnConfigurationManagementOnly = () =>
+	const jonasVotedOnConfigurationManagement = (
+		myVote: IRefinementRow["myVote"] = "Yes",
+	) =>
 		gravitysRefinement({}, [
 			aRow(ADVANCED_REPORTING, "Advanced reporting module", "Analysing", {
 				voteCount: 2,
 			}),
-			theRowAfter(CONFIGURATION_MANAGEMENT, { voteCount: 1, myVote: "Yes" }),
+			theRowAfter(CONFIGURATION_MANAGEMENT, { voteCount: 1, myVote }),
 		]);
 
 	// @us-16 @slice-16 @contract-shape:pure-function
-	it.skip("offers to take back a vote only where the reader has one", async () => {
+	it("offers to take back a vote only where the reader has one", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const { user } = renderTheRefinementTab(
-			jonasVotedOnConfigurationManagementOnly(),
+			jonasVotedOnConfigurationManagement(),
 		);
 
-		const onTheirOwn = await openTheVotesAndCommentsOf(
-			user,
-			CONFIGURATION_MANAGEMENT,
-		);
 		expect(
-			within(onTheirOwn).getByRole("button", { name: TAKE_BACK }),
-		).toBeEnabled();
-		await closeTheVotesAndComments(user, onTheirOwn);
+			theButton(await theRowOf(ADVANCED_REPORTING), "Yes"),
+		).not.toHaveAccessibleDescription();
 
-		const onAnother = await openTheVotesAndCommentsOf(user, ADVANCED_REPORTING);
-		expect(
-			within(onAnother).queryByRole("button", { name: TAKE_BACK }),
-		).toBeNull();
-	});
-
-	// @us-16 @slice-16 @driving_port @contract-shape:bounded-change
-	it.skip("takes the vote back from this browser and shows the row as it now stands", async () => {
-		const key = aBrowserThatVotedBefore(JONAS);
-		const sizingLogService = aSizingLogService({
-			takeBackMyVote: vi
-				.fn()
-				.mockResolvedValue(
-					theRowAfter(CONFIGURATION_MANAGEMENT, { voteCount: 0, myVote: null }),
-				),
-		});
-		const { user } = renderTheRefinementTab(
-			jonasVotedOnConfigurationManagementOnly(),
-			sizingLogService,
+		await user.hover(
+			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
 		);
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(CLICK_AGAIN);
 
 		const votes = await openTheVotesAndCommentsOf(
 			user,
 			CONFIGURATION_MANAGEMENT,
 		);
-		await user.click(within(votes).getByRole("button", { name: TAKE_BACK }));
-
-		const row = await theRowOf(CONFIGURATION_MANAGEMENT);
-		await waitFor(() => expect(row).toHaveTextContent("No votes"));
-		expect(sizingLogService.takeBackMyVote).toHaveBeenCalledWith(
-			GRAVITY_TEAM_ID,
-			CONFIGURATION_MANAGEMENT,
-			key,
-		);
-		expect(screen.queryByRole("button", { name: TAKE_BACK })).toBeNull();
+		expect(within(votes).queryByRole("button", { name: TAKE_BACK })).toBeNull();
 	});
 
+	// @us-16 @slice-16 @driving_port @contract-shape:bounded-change
+	it.each([
+		["Yes", "Yes"],
+		[YES_IF, "YesBut"],
+	] as const)(
+		"takes the vote back from this browser when its pressed '%s' is clicked again, and shows the row as it now stands",
+		async (label, myVote) => {
+			const key = aBrowserThatVotedBefore(JONAS);
+			const sizingLogService = aSizingLogService({
+				takeBackMyVote: vi.fn().mockResolvedValue(
+					theRowAfter(CONFIGURATION_MANAGEMENT, {
+						voteCount: 0,
+						myVote: null,
+					}),
+				),
+			});
+			const { user } = renderTheRefinementTab(
+				jonasVotedOnConfigurationManagement(myVote),
+				sizingLogService,
+			);
+
+			await user.click(
+				theButton(await theRowOf(CONFIGURATION_MANAGEMENT), label),
+			);
+
+			const row = await theRowOf(CONFIGURATION_MANAGEMENT);
+			await waitFor(() => expect(row).toHaveTextContent("No votes"));
+			expect(sizingLogService.takeBackMyVote).toHaveBeenCalledExactlyOnceWith(
+				GRAVITY_TEAM_ID,
+				CONFIGURATION_MANAGEMENT,
+				key,
+			);
+			expect(sizingLogService.castVote).not.toHaveBeenCalled();
+			expect(screen.queryByRole("dialog")).toBeNull();
+			for (const answer of ["Yes", YES_IF, "No"]) {
+				expect(theButton(row, answer)).toHaveAttribute("aria-pressed", "false");
+			}
+			expect(reporter.current).not.toHaveBeenCalled();
+		},
+	);
+
 	// @us-16 @slice-16 @error @contract-shape:unbounded-preservation
-	it.skip("keeps the vote in place and says why when taking it back fails", async () => {
+	it("keeps the vote in place and says why when taking it back fails", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const sizingLogService = aSizingLogService({
 			takeBackMyVote: vi
@@ -1008,20 +1023,17 @@ describe("A voter takes back their own vote", () => {
 				),
 		});
 		const { user } = renderTheRefinementTab(
-			jonasVotedOnConfigurationManagementOnly(),
+			jonasVotedOnConfigurationManagement(),
 			sizingLogService,
 		);
 
-		const votes = await openTheVotesAndCommentsOf(
-			user,
-			CONFIGURATION_MANAGEMENT,
+		await user.click(
+			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
 		);
-		await user.click(within(votes).getByRole("button", { name: TAKE_BACK }));
 
 		expect(await screen.findByRole("alert")).toHaveTextContent(
 			"That Work Item is no longer in refinement",
 		);
-		await closeTheVotesAndComments(user, votes);
 		const row = await theRowOf(CONFIGURATION_MANAGEMENT);
 		expect(row).toHaveTextContent(ONE_VOTE);
 		expect(theButton(row, "Yes")).toHaveAttribute("aria-pressed", "true");

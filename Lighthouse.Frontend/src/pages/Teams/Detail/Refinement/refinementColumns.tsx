@@ -60,6 +60,7 @@ export interface RefinementColumnsOptions {
 	numbersNeeded: boolean;
 	votesBeingSent: ReadonlySet<string>;
 	onVote: (vote: IPendingVote) => void;
+	onTakeBack: (referenceId: string) => void;
 	onOpenVotes: (referenceId: string) => void;
 }
 
@@ -102,6 +103,7 @@ export const createRefinementColumns = ({
 	numbersNeeded,
 	votesBeingSent,
 	onVote,
+	onTakeBack,
 	onOpenVotes,
 }: RefinementColumnsOptions): DataGridColumn<RefinementGridRow>[] => [
 	...(numbersNeeded ? [neededNumberColumn] : []),
@@ -137,6 +139,7 @@ export const createRefinementColumns = ({
 				myVote={row.myVote ?? null}
 				isSending={votesBeingSent.has(row.referenceId)}
 				onVote={(answer) => onVote({ referenceId: row.referenceId, answer })}
+				onTakeBack={() => onTakeBack(row.referenceId)}
 			/>
 		),
 	},

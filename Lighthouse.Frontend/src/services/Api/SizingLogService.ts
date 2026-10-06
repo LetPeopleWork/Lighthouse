@@ -18,10 +18,6 @@ export const withVoterKey = (voterKey: string | null): AxiosRequestConfig =>
 const workItemAddress = (teamId: number, workItemReference: string): string =>
 	`/teams/${teamId}/refinement/work-items/${encodeURIComponent(workItemReference)}`;
 
-export const __SCAFFOLD__ = true;
-
-const NOT_YET_IMPLEMENTED = "Not yet implemented -- RED scaffold";
-
 /**
  * The writes to a Team's sizing log - a vote, a comment, taking one's vote back - and one Work Item's
  * log. Without sign-in the browser's voter key travels with every call; with sign-in it is ignored.
@@ -87,16 +83,18 @@ export class SizingLogService
 		});
 	}
 
-	public takeBackMyVote(
+	public async takeBackMyVote(
 		teamId: number,
 		workItemReference: string,
 		voterKey: string | null,
 	): Promise<IRefinementRow> {
-		return Promise.reject(
-			new Error(
-				`${NOT_YET_IMPLEMENTED}: take back on ${workItemReference} of Team ${teamId} (${voterKey === null ? "no key" : "key"})`,
-			),
-		);
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.delete<IRefinementRow>(
+				`${workItemAddress(teamId, workItemReference)}/votes/mine`,
+				withVoterKey(voterKey),
+			);
+			return response.data;
+		});
 	}
 
 	public async getLog(

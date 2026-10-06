@@ -30,6 +30,7 @@ interface RefinementGridProps {
 	marking: EnoughForMarking | null;
 	votesBeingSent: ReadonlySet<string>;
 	onVote: (vote: IPendingVote) => void;
+	onTakeBack: (referenceId: string) => void;
 	onOpenVotes: (referenceId: string) => void;
 }
 
@@ -42,6 +43,7 @@ const RefinementGrid: React.FC<Readonly<RefinementGridProps>> = ({
 	marking,
 	votesBeingSent,
 	onVote,
+	onTakeBack,
 	onOpenVotes,
 }) => {
 	const { getTerm } = useTerminology();
@@ -66,6 +68,7 @@ const RefinementGrid: React.FC<Readonly<RefinementGridProps>> = ({
 				numbersNeeded,
 				votesBeingSent,
 				onVote,
+				onTakeBack,
 				onOpenVotes,
 			}),
 		[
@@ -77,6 +80,7 @@ const RefinementGrid: React.FC<Readonly<RefinementGridProps>> = ({
 			numbersNeeded,
 			votesBeingSent,
 			onVote,
+			onTakeBack,
 			onOpenVotes,
 		],
 	);

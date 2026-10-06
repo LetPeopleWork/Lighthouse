@@ -165,7 +165,7 @@ describe("SizingLogService", () => {
 	});
 
 	// @us-16 @slice-16 @driving_port @contract-shape:bounded-change
-	it.skip("takes back the voter's own vote with their key", async () => {
+	it("takes back the voter's own vote with their key", async () => {
 		mockedAxios.delete.mockResolvedValueOnce({
 			data: { ...theRow, voteCount: 0, myVote: null },
 		});

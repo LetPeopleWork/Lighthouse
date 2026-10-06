@@ -810,7 +810,7 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 	});
 
 	// @us-12 @us-16 @slice-16 @contract-shape:pure-function
-	it.skip("a taken-back vote adds nothing to what people wrote", async () => {
+	it("shows a vote that was taken back as taken back", async () => {
 		aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService({
 			getLog: vi
@@ -832,7 +832,11 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 
 		expect(entries).toHaveLength(1);
 		expect(entries[0]).toHaveTextContent(CONDITION);
+		expect(dialog).toHaveTextContent(`0 Yes · 0 ${YES_IF} · 0 No`);
 		expect(dialog).not.toHaveTextContent(/took back/i);
+		expect(
+			within(dialog).queryByRole("button", { name: /take back/i }),
+		).toBeNull();
 	});
 
 	// @us-11 @us-12 @slice-12 @boundary @contract-shape:pure-function

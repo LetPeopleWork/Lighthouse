@@ -30,7 +30,7 @@ const awaitsCondition = ({ answer, condition }: IPendingVote): boolean =>
 
 type VoterIdentity = Pick<
 	ReturnType<typeof useVoterIdentity>,
-	"voter" | "asksForName" | "declareName" | "ballotFor"
+	"voter" | "asksForName" | "declareName" | "ballotFor" | "readerKey"
 >;
 
 export type RefinementFacts = Pick<
@@ -54,11 +54,11 @@ export const sizingMomentOf = (
 };
 
 /**
- * Casting a vote from the tab.
+ * Casting a vote from the tab, and taking one's own vote back.
  */
 export const useVoteCasting = (
 	teamId: number,
-	{ ballotFor, ...naming }: VoterIdentity,
+	{ ballotFor, readerKey, ...naming }: VoterIdentity,
 	onAnswered: (answeredRow: IVotedRow) => void,
 	onFailure: (error: unknown) => void,
 	refinementFacts: RefinementFacts,
@@ -76,54 +76,75 @@ export const useVoteCasting = (
 		setVotesBeingSent(new Set(sending.current));
 	}, []);
 
-	const castVote = useCallback(
-		(
-			{ referenceId, answer, condition }: IPendingVote,
-			declared: IStoredVoter | null,
-		) => {
+	const sendOnce = useCallback(
+		(referenceId: string, send: () => Promise<void>) => {
 			if (sending.current.has(referenceId)) {
 				return;
 			}
 			sending.current.add(referenceId);
 			showSending();
 
-			const { vote, voterKey } = ballotFor(answer, declared);
-			const conditioned =
-				condition === undefined ? vote : { ...vote, comment: condition };
-			sizingLogService
-				.castVote(teamId, referenceId, conditioned, voterKey)
-				.then((answeredRow) => {
-					onAnswered(answeredRow);
-					const sizingMoment = sizingMomentOf(refinementFacts);
-					reportUsage({
-						name: UsageDataEventName.TeamSizingVoteCast,
-						sizingMoment,
-					});
-					// Only the server knows which vote moved the row to Ready; this browser's copy of the
-					// row may be older than other people's votes, and the event must be counted once.
-					if (answeredRow.madeReady) {
-						reportUsage({
-							name: UsageDataEventName.TeamSizingReadinessReached,
-							sizingMoment,
-						});
-					}
-				})
+			send()
 				.catch(onFailure)
 				.finally(() => {
 					sending.current.delete(referenceId);
 					showSending();
 				});
 		},
+		[onFailure, showSending],
+	);
+
+	const castVote = useCallback(
+		(
+			{ referenceId, answer, condition }: IPendingVote,
+			declared: IStoredVoter | null,
+		) => {
+			const { vote, voterKey } = ballotFor(answer, declared);
+			const conditioned =
+				condition === undefined ? vote : { ...vote, comment: condition };
+			sendOnce(referenceId, () =>
+				sizingLogService
+					.castVote(teamId, referenceId, conditioned, voterKey)
+					.then((answeredRow) => {
+						onAnswered(answeredRow);
+						const sizingMoment = sizingMomentOf(refinementFacts);
+						reportUsage({
+							name: UsageDataEventName.TeamSizingVoteCast,
+							sizingMoment,
+						});
+						// Only the server knows which vote moved the row to Ready; this browser's copy of the
+						// row may be older than other people's votes, and the event must be counted once.
+						if (answeredRow.madeReady) {
+							reportUsage({
+								name: UsageDataEventName.TeamSizingReadinessReached,
+								sizingMoment,
+							});
+						}
+					}),
+			);
+		},
 		[
 			ballotFor,
 			sizingLogService,
 			teamId,
 			onAnswered,
-			onFailure,
 			reportUsage,
-			showSending,
+			sendOnce,
 			refinementFacts,
 		],
+	);
+
+	// Only a browser that holds a vote is offered this, so nobody is asked for a name to take one back.
+	// Taking a vote back is not a vote: it reports nothing and never counts as reaching Ready.
+	const takeBack = useCallback(
+		(referenceId: string) => {
+			sendOnce(referenceId, () =>
+				sizingLogService
+					.takeBackMyVote(teamId, referenceId, readerKey)
+					.then((row) => onAnswered({ ...row, madeReady: false })),
+			);
+		},
+		[sendOnce, sizingLogService, teamId, readerKey, onAnswered],
 	);
 
 	// The name comes first and the condition second, so a voter meets one dialog at a time. A vote still
@@ -160,6 +181,7 @@ export const useVoteCasting = (
 
 	return {
 		onVote: submit,
+		takeBack,
 		votesBeingSent,
 		isAskingForName,
 		voteUnderName: submitUnderName,

@@ -16,6 +16,7 @@ describe("a row's answers", () => {
 				myVote={null}
 				isSending={false}
 				onVote={onVote}
+				onTakeBack={vi.fn()}
 			/>,
 		);
 
@@ -32,6 +33,7 @@ describe("a row's answers", () => {
 				myVote="YesBut"
 				isSending={false}
 				onVote={onVote}
+				onTakeBack={vi.fn()}
 			/>,
 		);
 
