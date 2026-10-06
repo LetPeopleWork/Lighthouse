@@ -84,7 +84,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-15 @slice-15 @error @contract-shape:unbounded-preservation
         // The tab opens and a vote is taken for a reader first, so the refusal can only be about the role.
         [Test]
-        [Ignore(PendingSlice15)]
         public async Task Somebody_without_a_role_on_the_Team_can_neither_open_the_tab_nor_vote()
         {
             var (gravity, jonas) = await GivenJonasReadsTeamGravityAndHasVotedYes();
@@ -98,7 +97,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-12 @us-15 @slice-15 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice15)]
         public async Task Somebody_without_a_role_on_the_Team_can_neither_read_the_log_nor_comment()
         {
             var (gravity, jonas) = await GivenJonasReadsTeamGravityAndHasVotedYes();
@@ -135,7 +133,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-15 @slice-15 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice15)]
         public async Task Every_signed_in_person_votes_when_roles_are_not_enforced()
         {
             var gravity = await GravityRefinesSixWorkItemsNobodyHasVotedOn();

@@ -96,7 +96,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             {
                 Assert.That(log.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
                 Assert.That(comment.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
-                Assert.That(entries.Select(entry => entry.VoterName), Has.All.EqualTo(JonasWeber).And.Count.EqualTo(1));
+                Assert.That(entries.Select(entry => entry.VoterName).ToList(), Has.Count.EqualTo(1).And.All.EqualTo(JonasWeber));
             }
         }
     }

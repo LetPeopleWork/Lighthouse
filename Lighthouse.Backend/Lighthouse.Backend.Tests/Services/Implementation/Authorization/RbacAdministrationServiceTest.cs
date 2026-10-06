@@ -577,6 +577,78 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             Assert.That(result, Is.False);
         }
 
+        public enum CallerOnTeam
+        {
+            NoRole,
+            ViewerOfTheTeam,
+            AdminOfTheTeam,
+            ViewerOfAnotherTeam,
+            SystemAdmin,
+            EmergencyAdmin,
+        }
+
+        public enum CallerSignIn
+        {
+            SignedIn,
+            Anonymous,
+        }
+
+        // Voting carries no permission of its own: whoever may read a Team may vote on it, and nobody else,
+        // whatever their role, whether roles are enforced and whether they are signed in.
+        [Test]
+        public async Task CanSatisfyRequirementAsync_TeamContribute_EvaluatesExactlyAsTeamRead(
+            [Values] CallerOnTeam role,
+            [Values] bool rolesEnforced,
+            [Values] CallerSignIn signIn)
+        {
+            const int teamId = 44;
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|system-admin", SubjectClaimType = "sub" });
+            context.UserProfiles.Add(new UserProfile { Id = 2, Subject = "auth0|caller", SubjectClaimType = "sub" });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
+            if (PermissionOfCaller(role, teamId) is { } permission)
+            {
+                context.UserPermissions.Add(permission);
+            }
+
+            await context.SaveChangesAsync();
+
+            var principal = signIn == CallerSignIn.SignedIn
+                ? BuildPrincipal(new Claim("sub", "auth0|caller"))
+                : new ClaimsPrincipal(new ClaimsIdentity());
+            if (signIn == CallerSignIn.SignedIn)
+            {
+                currentUserProfileService
+                    .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(context.UserProfiles.Single(x => x.Id == 2));
+            }
+
+            string[] emergencySubjects = role == CallerOnTeam.EmergencyAdmin ? ["auth0|caller"] : [];
+            var subject = CreateSubject(context, emergencySubjects, enabled: rolesEnforced);
+
+            var read = await subject.CanSatisfyRequirementAsync(principal, RbacGuardRequirement.TeamRead, teamId, CancellationToken.None);
+            var contribute = await subject.CanSatisfyRequirementAsync(principal, RbacGuardRequirement.TeamContribute, teamId, CancellationToken.None);
+
+            var readsTheTeam = !rolesEnforced
+                || (signIn == CallerSignIn.SignedIn && role is not (CallerOnTeam.NoRole or CallerOnTeam.ViewerOfAnotherTeam));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(contribute, Is.EqualTo(read));
+                Assert.That(read, Is.EqualTo(readsTheTeam));
+            }
+        }
+
+        private static UserPermission? PermissionOfCaller(CallerOnTeam role, int teamId) => role switch
+        {
+            CallerOnTeam.ViewerOfTheTeam => new UserPermission { UserProfileId = 2, Role = UserRole.Viewer, ScopeType = PermissionScopeType.Team, ScopeId = teamId },
+            CallerOnTeam.AdminOfTheTeam => new UserPermission { UserProfileId = 2, Role = UserRole.TeamAdmin, ScopeType = PermissionScopeType.Team, ScopeId = teamId },
+            CallerOnTeam.ViewerOfAnotherTeam => new UserPermission { UserProfileId = 2, Role = UserRole.Viewer, ScopeType = PermissionScopeType.Team, ScopeId = teamId + 1 },
+            CallerOnTeam.SystemAdmin => new UserPermission { UserProfileId = 2, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System },
+            _ => null,
+        };
+
         [Test]
         public async Task CanSatisfyRequirementAsync_PortfolioWrite_WithoutScopeId_ReturnsFalse()
         {

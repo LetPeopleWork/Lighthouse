@@ -531,6 +531,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                     configuration.AddInMemoryCollection(new Dictionary<string, string?>
                     {
                         ["Authentication:Enabled"] = "true",
+                        ["Authentication:Authority"] = "https://example.test/oidc",
+                        ["Authentication:ClientId"] = "lighthouse-test",
+                        ["Authentication:ClientSecret"] = "test-secret",
+                        ["Authentication:MetadataAddress"] = "https://example.test/oidc/.well-known/openid-configuration",
+                        ["Authentication:RequireHttpsMetadata"] = "false",
                         ["Authorization:Enabled"] = "false",
                     });
                 });
