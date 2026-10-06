@@ -1,0 +1,31 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/API/DTO/SizingVoteDto.cs",
+      "**/API/RefinementVotesController.cs",
+      "**/Services/Implementation/Refinement/RefinementResolution.cs",
+      "**/Services/Implementation/Refinement/SizingLogCommands.cs",
+      "**/Services/Interfaces/Refinement/ISizingLogCommands.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Tests.Services.Implementation.Refinement|FullyQualifiedName~RefinementVotesControllerTest|FullyQualifiedName~SizingVoteDto)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~ArchUnit",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

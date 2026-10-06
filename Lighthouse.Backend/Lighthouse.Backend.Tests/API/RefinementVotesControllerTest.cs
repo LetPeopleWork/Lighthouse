@@ -250,6 +250,28 @@ namespace Lighthouse.Backend.Tests.API
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(StatusOf(result), Is.EqualTo(StatusCodes.Status400BadRequest));
+                Assert.That(ProblemOf(result).Title, Is.EqualTo("A vote is taken back as Yes, YesBut or No, or without naming its answer."));
+                sizingLogCommandsMock.VerifyNoOtherCalls();
+            }
+        }
+
+        [TestCase(AuthMode.Disabled, "voter-key-required", "A vote or comment needs the key the sender's browser keeps.", LogLevel.Information, true, TestName = "Take-back without a browser key")]
+        [TestCase(AuthMode.Enabled, "vote-needs-a-person", "A vote or comment needs a person to send it.", LogLevel.Warning, false, TestName = "Take-back with nobody signed in")]
+        public void ATakeBackWithoutAReaderIsRefusedSayingWhyAndLogsTheReason(
+            AuthMode mode, string reason, string title, LogLevel level, bool namesTheReason)
+        {
+            authMode = mode;
+
+            var result = TakeBack(null, voterKey: null);
+
+            var problem = ProblemOf(result);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(StatusOf(result), Is.EqualTo(StatusCodes.Status400BadRequest));
+                Assert.That(problem.Title, Is.EqualTo(title));
+                Assert.That(problem.Extensions.TryGetValue("code", out var code) ? code : null, Is.EqualTo(namesTheReason ? reason : null),
+                    "only a refusal the reader can put right names its reason to the browser");
+                Assert.That(LoggedLines(), Is.EqualTo(new[] { (level, reason, TeamId.ToString(System.Globalization.CultureInfo.InvariantCulture), "Web") }));
                 sizingLogCommandsMock.VerifyNoOtherCalls();
             }
         }
@@ -263,8 +285,8 @@ namespace Lighthouse.Backend.Tests.API
         private Task<ActionResult<RefinementRowDto>> AddComment(SizingCommentDto comment)
             => Controller().AddComment(TeamId, InRefinement, comment, BrowserKey, CancellationToken.None);
 
-        private ActionResult<RefinementRowDto> TakeBack(string? answer)
-            => Controller().TakeBackVote(TeamId, InRefinement, answer, BrowserKey);
+        private ActionResult<RefinementRowDto> TakeBack(string? answer, string? voterKey = BrowserKey)
+            => Controller().TakeBackVote(TeamId, InRefinement, answer, voterKey);
 
         private RefinementVotesController Controller()
         {

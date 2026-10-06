@@ -35,6 +35,17 @@ namespace Lighthouse.Backend.Tests.API.DTO
             Assert.That(refusal!.Message, Does.Contain("Expected one of Yes, YesBut, No."));
         }
 
+        [TestCase("""{"answer":0,"channel":"Web"}""")]
+        [TestCase("""{"answer":true,"channel":"Web"}""")]
+        [TestCase("""{"answer":{},"channel":"Web"}""")]
+        [TestCase("""{"answer":["Yes"],"channel":"Web"}""")]
+        public void An_answer_that_is_not_a_string_is_refused_naming_the_answers_there_are(string body)
+        {
+            var refusal = Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<SizingVoteDto>(body, HostOptions));
+
+            Assert.That(refusal!.Message, Does.Contain("Expected one of Yes, YesBut, No."));
+        }
+
         [TestCase("Yes", "Web", SizingAnswer.Yes, SizingChannel.Web)]
         [TestCase("YesBut", "LiveSession", SizingAnswer.YesBut, SizingChannel.LiveSession)]
         [TestCase("No", "Cli", SizingAnswer.No, SizingChannel.Cli)]
