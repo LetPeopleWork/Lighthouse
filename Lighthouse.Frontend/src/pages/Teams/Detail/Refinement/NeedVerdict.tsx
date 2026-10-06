@@ -33,6 +33,8 @@ type JudgedNeed = IRefinementNeed & {
 	lowPercentile: number;
 	highPercentile: number;
 	horizonWorkingDays: number;
+	cycleStart: string;
+	cycleEnd: string;
 };
 
 const isJudged = (need: IRefinementNeed | undefined): need is JudgedNeed =>
@@ -41,10 +43,9 @@ const isJudged = (need: IRefinementNeed | undefined): need is JudgedNeed =>
 	need.high != null &&
 	need.lowPercentile != null &&
 	need.highPercentile != null &&
-	need.horizonWorkingDays != null;
-
-const dayOf = (date: string | null): Date | null =>
-	date === null ? null : parseLocalDate(date);
+	need.horizonWorkingDays != null &&
+	need.cycleStart != null &&
+	need.cycleEnd != null;
 
 /** A verdict the tab can say in full: what is needed, how many are ready, and over which cycle. */
 export interface ShownVerdict {
@@ -67,8 +68,8 @@ export const shownVerdict = (
 	) {
 		return null;
 	}
-	const cycleStart = dayOf(need.cycleStart);
-	const cycleEnd = dayOf(need.cycleEnd);
+	const cycleStart = parseLocalDate(need.cycleStart);
+	const cycleEnd = parseLocalDate(need.cycleEnd);
 	if (cycleStart === null || cycleEnd === null) {
 		return null;
 	}
