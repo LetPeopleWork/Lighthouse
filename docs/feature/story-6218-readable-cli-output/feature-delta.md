@@ -5,7 +5,7 @@
 parent Epic.
 
 **Waves**: DISCUSS (2026-10-06, maintainer AFK — every product call taken here is listed under
-"Decisions for the maintainer to confirm"), DESIGN (2026-10-06), DEVOPS (2026-10-07). DISCOVER and DIVERGE
+"Decisions for the maintainer to confirm"), DESIGN (2026-10-06), DEVOPS (2026-10-07), DISTILL (2026-10-07). DISCOVER and DIVERGE
 skipped by the maintainer, explicitly.
 
 **One line**: `lh refinement get` already answers in the web's words; every other `lh` command still
@@ -2047,3 +2047,150 @@ The sketch page (`discuss/cli-sketches.md`) was approved as written in DESIGN. T
 | M7 | DISCUSS C1–C12, C14–C19 | **Confirmed as taken.** |
 | M8 | ADO child items (C19) | **None.** Track on #6218 only. |
 | M9 | `lh delivery list` for a Portfolio with no Delivery (DEVOPS copy gap) | Not asked; DISTILL mirrors the web's empty-state wording per D1. |
+
+---
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation
+
+Read in full before any scenario: this file's DISCUSS (US-01…US-09, AC-01.x…AC-09.x, KPI-1…KPI-5, the
+C1–C19 confirm table), DESIGN (DSN-1…DSN-19, the reader / renderer / summary seams, Earned Trust),
+DEVOPS (environment matrix, smoke anchors, mutation strategy, pre-requisites) and the maintainer
+decisions M1–M9 above; `discuss/cli-sketches.md` (the approved copy); `slices/slice-01…09`;
+`environments.yaml`; ADR-223 and ADR-224; `docs/product/architecture/brief.md`. Precedent followed:
+`epic-5510-5881-refinement/distill/` and clients commits `a4d9a0a` / `8004dfd` (colocated Vitest specs,
+pending scenarios as `it.skip`, an empty changeset). Also read, to settle copy against the real shapes:
+the clients' DTOs, `lh` help texts, the MCP tool table, and the web components the sketch names
+(`DeliveriesChips.tsx`, `ForecastedStartCell.tsx`, `forecastLevel`, `BlackoutSettings.tsx`,
+`EditConnection.tsx`).
+
+## Wave: DISTILL / [REF] Reconciliation
+
+**Reconciliation passed — 0 contradictions.** DISCUSS, DESIGN and DEVOPS agree once M1–M9 are applied;
+the places where earlier text disagreed (C13 reversed in DESIGN, D5's whole-headline fallback narrowed by
+M2, the Delivery empty state left open by DEVOPS and closed by M9) are already settled by the later,
+binding decision. The disagreements found are between the sketch and the DTOs or the web, not between
+waves; they are listed under Upstream issues.
+
+## Wave: DISTILL / [REF] Scenario list
+
+All scenarios live in `/storage/repos/lighthouse-clients`, commit `f942462`. Every one carries
+`@US-0n` and a `@contract-shape:` tag in its comment; error and edge cases carry `@error`, `@boundary`,
+`@version-skew`, `@infrastructure-failure` or `@security`; KPI scenarios carry `@kpi`. Counts are test
+cases (each `.each` row counts once).
+
+| Slice | Pending (skipped) | Active guards | Notes |
+|---|---|---|---|
+| Walking skeleton | — | 1 | `lh refinement get` in the web's words, GREEN (`@walking_skeleton @driving_port`) |
+| 01 forecasts | 58 (+2 KPI-1 rows) | 6 | CLI 32, web-rule parity 19, MCP 7 |
+| 02 metrics headline | 12 (+2) | 3 | SHA-256 guards on `--json` / `--toon` |
+| 03 one metric, every day | 33 (+10) | 1 | CLI 23, MCP 10 |
+| 04 Time in State | 9 (+1) | 2 | M4 guard |
+| 05 Teams and Portfolios | 26 (+4) | 4 | includes one mcp-http e2e over real HTTP |
+| 06 Deliveries | 18 (+3) | 2 | M9 empty list |
+| 07 Features | 14 (+3) | 2 | |
+| 08 writes | 20 (+11) | 10 | DSN-12 lines guarded |
+| 09 housekeeping | 21 (+6) | 9 + 2 KPI-1 completeness | AC-09.2 leaked-secret scenario |
+| **Total** | **253** (211 + 42 KPI-1 rows) | **44** | |
+
+Error/edge share: **74 of 160 test definitions (46 %)** carry an error or edge tag. Every AC of US-01…US-09
+maps to at least one scenario (the per-slice notes list them); AC-0n.5 ("production data") is DEVOPS's
+smoke step, not a unit scenario. The MCP summary ACs, the `--json` / `--toon` byte-identity guards and the
+no-extra-reads guards are covered in every slice that has them. fast-check is not a dependency of the
+clients repo, so finite domains are parametrised examples (`it.each`).
+
+Per-slice detail: `distill/clients-slice-01.md` … `clients-slice-09.md`. RED evidence:
+`distill/red-classification.md`.
+
+## Wave: DISTILL / [REF] Test placement
+
+- Colocated `*.test.ts` next to the module each slice adds, one file per view or summary family (the
+  repo's convention; Vitest picks up `packages/*/src/**/*.test.ts`).
+- Shared fixtures in the clients repo root `test-support/` (`lighthouseAnswers.ts`, `metricsAnswers.ts`,
+  no dependencies, DTO-shaped). Harnesses per package: `packages/cli/test-support/cliHarness.ts` and
+  `packages/mcp-core/test-support/mcpHarness.ts` (the latter needs `@toon-format/toon`).
+- KPI-1: `packages/cli/src/prettyForms.test.ts`, one row per form tagged with its slice.
+- Test files are outside `tsc -b` (as today); Biome checks them.
+
+## Wave: DISTILL / [REF] Driving adapter coverage
+
+| Driving port | How the scenarios enter |
+|---|---|
+| `lh` CLI | `runCliCommand(args, dependencies)` with production routing; only the Lighthouse client is a stub |
+| MCP tools | `createMcpCoreRuntime({ createClient }).callTool(name, args)` |
+| MCP over HTTP | `startMcpHttpServer` against a `node:http` fake Lighthouse (one e2e, slice 05) |
+| Client rules | `forecastDisplayRules.ts` exports (`levelOf`, `formatLikelihood`) — parity with the web |
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+The only driven adapter is the Lighthouse HTTP client, which this story does not change except for one
+new read (`getTeamSettings`, slice 03). The stub client answers per read and records each read, so the
+"no extra reads under `--json` / `--toon`" guards and the "≤ 2 extra reads" budget are asserted on every
+form. Real HTTP is exercised once (the mcp-http e2e) and by DEVOPS's live `smoke-integration` step.
+
+## Wave: DISTILL / [REF] Scaffolds
+
+One: `packages/client/src/forecastDisplayRules.ts` (`__SCAFFOLD__ = true`; `levelOf` and
+`formatLikelihood` throw `Not yet implemented -- RED scaffold`). Every other new module (readers,
+renderers, `terminology.ts`, `calendarDates.ts`, `table.ts`, `withSummary`) is reached through the driving
+ports, so the scenarios need no scaffold for it; DELIVER creates them. An empty changeset accompanies the
+commit, as in the precedent.
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- DELIVER un-skips one slice at a time, in order 01 → 09, each slice's rows in `prettyForms.test.ts`
+  with it. The 44 active cases must stay green throughout; a changed hash in a metrics guard means the
+  composite moved and is a bug, never a re-capture.
+- Slice 03 needs the new client read `getTeamSettings` (see Upstream issues).
+- `nwave-ai outcomes check-delta` (DEVOPS pre-requisite) is still owed; not run here.
+
+## Wave: DISTILL / [REF] Copy decided in DISTILL
+
+Engineering and copy calls the artifacts did not settle, taken here and pinned in the scenarios:
+
+1. Empty Delivery list: the heading, then `No Deliveries` (`DeliveriesChips.tsx`, M9).
+2. MCP summaries are a heading plus sentence lines joined by newlines, never tables.
+3. Backtest: on a tie the actual-result line goes after the equal percentile row.
+4. The headline's "(n days)" is the inclusive range.
+5. Time in State "across n" is the number of candidates, or the `--item-ids` count.
+6. Version: `Lighthouse ` + the version as Lighthouse sends it (no extra `v`).
+7. A blackout rule without a description: no parentheses in the confirmation; an empty cell in the list.
+8. The Team / Portfolio Tags line is left out when no tags are sent; the list's Tags cell stays empty.
+9. `Feature WIP: Not set` for a Portfolio without involved Teams.
+10. Connection option labels come from the authentication method's labels; the key is the fallback.
+11. Count sentence `2 recurring blackout rules` / `1 recurring blackout rule`.
+12. MCP blackout create/update carry their confirmation in a second block (see Upstream issues).
+
+## Wave: DISTILL / [REF] Upstream issues
+
+**DTO or web against the sketch** (the scenarios follow the web or the DTO; the sketch should be
+corrected):
+
+| Item | Sketch | What the scenarios pin, and why |
+|---|---|---|
+| Blackout schedule | `Every 2 weeks on Friday, from Fri 9 Oct 2026` | The server's `summary` verbatim, `Every Friday — every 2 weeks — from 2026-10-09 — no end` (the sketch's own rule: not re-worded) |
+| Blackout MCP `summary` | ADR-224 object `summary` field | `RecurringBlackoutRuleDto` already has `summary`; a second block instead (DESIGN) |
+| OE-007 Forecasted Start | a date | `Cannot forecast`: the web rule only lets an observed start outrank it |
+| Option labels | `Url`, `Username`, `Api Token` | `Jira URL`, `Username (Email)`, `API Token`, the editor's labels |
+| Overdue | in the Likelihood cell | Pinned in the cell, as sketched; the web shows a separate chip |
+| Metrics "(30 days)" | default range | The default is 31 inclusive days; the scenarios pass explicit dates |
+| Cycle time definition name | from the Team | `TeamDto` has none; a new read `getTeamSettings`, a third read on `--definition-id` against DSN-11 (DESIGN) |
+
+**Open product questions** (not pinned; DELIVER asks before writing the copy):
+
+1. The "Owned by" column on a Feature's Work Items: `WorkItemDto` has no owning Team.
+2. The `--metrics predictabilityScore` percentile table: the composite keeps only the score, so the table
+   would change `--json`.
+3. A Delivery both overdue and impossible to forecast: which word wins.
+4. The MCP Time in State bar summary sentence.
+5. The MCP work item age summary.
+6. The headline's Time in State line once slice 04 lands.
+7. The MCP count for an empty list: `0 Deliveries` or `No Deliveries`.
+8. `--metrics <name>` when that section's read is refused, outside the headline.
+9. Delivery metrics for a Delivery with no recorded days.
+10. A Time in State answer with no states.
+11. The MCP Portfolio drill-down wording.
+12. The forecast heading when only `--remaining` or only `--target-date` is given.
+
+**Active guards by decision**: the `--json` / `--toon`, reads and error guards are characterisation tests,
+active and green now rather than pending, so DELIVER cannot break them silently while un-skipping a
+slice.
