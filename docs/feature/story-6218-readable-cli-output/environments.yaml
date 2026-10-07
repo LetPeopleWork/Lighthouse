@@ -1,0 +1,239 @@
+# environments.yaml - consumed by DISTILL for Mandate 4 (Environmental Realism)
+#
+# story-6218-readable-cli-output (ADO User Story #6218). Clients only: lighthouse-clients packages
+# cli, client and mcp-core (mcp-stdio / mcp-http get the automatic patch). No Lighthouse server, web,
+# database, chart or container change. The deliverable is an npm package the user runs against their
+# own Lighthouse, so the environments below are the axes along which `--pretty` (and the MCP summary)
+# can come out differently - the server it talks to, the instance's words, the reader's clock - not
+# deployment targets to stand up.
+#
+# Axes considered and deliberately left OUT:
+#   - Node version. engines says >= 22, but every CI job runs Node 24 only (verify, smoke-platform,
+#     smoke-integration). Not widened here: the new code is pure string work with no Intl/ICU use
+#     (DSN-8, enforcement rule E4), so nothing in it differs between Node 22 and 24. Existing gap,
+#     not introduced by this story.
+#   - Terminal width and colour. The renderers emit no colour codes, detect no TTY and never wrap;
+#     the output is the same bytes on a terminal and in a pipe. A narrow terminal wraps long rows,
+#     as `lh refinement get` already does.
+#   - Operating system for the new views. Pure functions plus Date local getters (tested under two
+#     extreme time zones). smoke-platform (Linux / macOS / Windows) is left on its fake server and
+#     its `--json` call; its fixture does not carry the fields a pretty Team list reads.
+#   - The Bun-compiled release binaries. Never executed in CI today (built, attached, not run).
+#     DSN-8 removed the one thing that could differ (ICU data); E4 keeps it removed.
+#   - Licence tier on the real container. The smoke container is unlicensed (Community); blackout
+#     rules are Premium-only on the server, so blackout views cannot be smoked there.
+
+schema_version: 1
+feature_id: story-6218-readable-cli-output
+updated: 2026-10-07
+wave: DEVOPS
+
+target_environments:
+  - name: unit-fixtures
+    description: >
+      The Vitest suite in lighthouse-clients (verify job and the pre-commit hook). runCliCommand with
+      a stub client recording each call; callTool with a stub createClient. Fixtures are the server
+      DTOs as they serialise today (camelCase, enums as strings, DateTime ISO with Z, DateOnly
+      yyyy-mm-dd). Where every acceptance criterion, KPI-1/2/3/5 and the characterisation snapshots run.
+    platform: [linux]
+    preconditions: ["pnpm install --frozen-lockfile", "No live Lighthouse (stubs only)"]
+
+  - name: server-latest-demo
+    description: >
+      smoke-integration: the newest released Lighthouse image (ghcr.io/letpeoplework/lighthouse:latest),
+      SQLite, authentication off, unlicensed, free demo scenario 2 loaded (Team Zenith, Team Voyager,
+      Project Orion, connection "Demo Data CSV Connector", no Delivery, no blackout rule). The only
+      place the readers meet the real wire. Runs on main AFTER the release job publishes to npm.
+    platform: [linux]
+    preconditions:
+      - "Release approved and published; the CLI under test is the npm version in packages/cli/package.json"
+      - "Seeded Terminology (a fresh container; nobody renamed a term)"
+      - "Demo scenario 2 loaded; Team Zenith's forecast answers before the forecast step runs"
+      - "Demo scenario 0 reloaded for the Delivery step only (it is the free scenario that seeds a Delivery); that reload wipes scenario 2, so the Delivery step runs last"
+
+  - name: server-older
+    description: >
+      A Lighthouse older than the fixtures: fields the renderers treat as optional are absent
+      (isOverdue, hasSufficientData, tags), or the Terminology route does not exist. Expected: the
+      field is not mentioned; the seeded words stand; exit 0. Simulated in unit-fixtures by removing
+      each optional field; no older container is run.
+    platform: [linux]
+    preconditions: ["Reader tests with each optional field removed", "Terminology stub answering 404"]
+
+  - name: server-newer-reshaped
+    description: >
+      A Lighthouse newer than the CLI that renamed or retyped a field a reader requires. Expected:
+      the generic view (today's output), exit 0, never undefined or NaN; in MCP, no summary and the
+      facts as today. Simulated in unit-fixtures with each required field removed or mistyped;
+      server-latest-demo catches the real case, but only on the next clients release.
+    platform: [linux]
+    preconditions: ["Reader tests with each required field removed and mistyped"]
+
+  - name: renamed-terminology
+    description: >
+      An instance with every one of the 23 configurable terms renamed (KPI-5). The only environment
+      that catches a hard-coded seeded word in a renderer or a summary.
+    platform: [linux]
+    preconditions: ["Terminology stub returning a renamed value for every key"]
+
+  - name: terminology-unreadable
+    description: >
+      The Terminology read refused (403) or failing (network). Seeded words; the command still
+      answers, exit 0. Same for a heading's name read: `{Term} [id: n]`.
+    platform: [linux]
+    preconditions: ["Stub client refusing getTerminology, getTeam, getPortfolio, getFeaturesByIds in turn"]
+
+  - name: reader-time-zone
+    description: >
+      The reader's local zone at both extremes. Calendar days never move; timestamps (Last Updated)
+      follow the reader's clock.
+    platform: [linux]
+    preconditions: ["TZ=America/Adak (UTC-10)", "TZ=Pacific/Kiritimati (UTC+14)", "as refinementWording.timezone.test.ts does"]
+
+  - name: mcp-transports
+    description: >
+      mcp-core via callTool (stub client) for every converted tool, and one in-process mcp-http e2e
+      test proving the second text block (the summary on a list answer) reaches an MCP SDK client.
+    platform: [linux]
+    preconditions: ["mcp-http e2e harness (bin.*.e2e.test.ts style)"]
+
+  - name: standalone-connection
+    description: >
+      A CLI connected to the standalone (desktop) Lighthouse through its lockfile. Only `lh health
+      check` words differ ("The standalone Lighthouse is reachable."). Unit-tested.
+    platform: [linux]
+    preconditions: ["Connection mode standalone in the stub dependencies"]
+
+scenario_axes:
+  format_compatibility:
+    slices: ["01", "02", "03", "04", "05", "06", "07", "08", "09"]
+    vary_over: [unit-fixtures, server-latest-demo]
+    rationale: "Byte identity of --json/--toon and the call log is pinned by characterisation snapshots in unit-fixtures (blocking, before publish). server-latest-demo only checks --json is still the facts on a real wire (valid JSON with no pretty wording in it, or today's literal line for refresh and health)."
+  real_wire_shape:
+    slices: ["01", "02", "05", "06", "07", "08", "09"]
+    vary_over: [server-latest-demo]
+    rationale: "One --pretty call per converted command group, one anchor each. Slices 03 and 04 ride on slice 02's metrics step: the headline reads every section through the same readers and falls back whole on any it does not recognise."
+  version_skew:
+    slices: ["01", "02", "03", "04", "05", "06", "07", "08", "09"]
+    vary_over: [server-older, server-newer-reshaped]
+    rationale: "Every reader: required field missing or mistyped -> generic view; optional field missing -> not mentioned."
+  terminology:
+    slices: ["01", "02", "03", "04", "05", "06", "07", "08", "09"]
+    vary_over: [renamed-terminology, terminology-unreadable]
+    rationale: "KPI-5 and the never-fail rule for the --pretty-only reads."
+  dates:
+    slices: ["01", "03", "05", "06", "07"]
+    vary_over: [reader-time-zone]
+    rationale: "The slices that print a calendar day or a Last Updated timestamp."
+  mcp_summary:
+    slices: ["01", "03", "04", "05", "06", "07", "08", "09"]
+    vary_over: [mcp-transports]
+    rationale: "Slice 02 has no MCP tool. Object answers gain a summary field; list and scalar answers keep their facts block byte-identical and add a second block."
+  health_wording:
+    slices: ["09"]
+    vary_over: [standalone-connection]
+    rationale: "The only connection-mode-dependent sentence."
+
+smoke_integration_pretty_checks:
+  # One --pretty call per converted command group against server-latest-demo. Anchors are fixed
+  # strings (grep -F) that the generic view cannot print: it prints wire names in camelCase, never
+  # spaced Title Case. Anchors holding a configurable word use the seeded default (fresh container).
+  - slice: "01"
+    group: forecast
+    command: "lh forecast manual --team-id <Team Zenith> --remaining 10"
+    anchor: "When will 10 Work Items be done?"
+    json_check: "valid JSON, anchor absent"
+  - slice: "02"
+    group: metrics
+    command: "lh metrics team --id <Team Zenith>"
+    anchor: "Predictability Score"
+    json_check: "valid JSON, anchor absent"
+    also: "print the line count to the log (KPI-3 on real data; advisory, not gated)"
+  - slice: "03"
+    group: metrics
+    command: "none added - covered by slice 02's step"
+  - slice: "04"
+    group: metrics
+    command: "none added - covered by slice 02's step"
+  - slice: "05"
+    group: team
+    command: "lh team list"
+    anchor: "Last Updated"
+    json_check: "valid JSON, anchor absent"
+  - slice: "05"
+    group: portfolio
+    command: "lh portfolio list"
+    anchor: "Deliveries per Portfolio:"
+    json_check: "valid JSON, anchor absent"
+  - slice: "06"
+    group: delivery
+    command: "lh delivery list --portfolio-id <Project Apollo> (after reloading demo scenario 0; last in the step)"
+    anchor: "Delivery Date"
+    json_check: "valid JSON, anchor absent"
+  - slice: "07"
+    group: feature
+    command: "lh feature get --ids <first Feature id of Project Orion>"
+    anchor: "Forecasted Start"
+    json_check: "valid JSON, anchor absent"
+  - slice: "08"
+    group: "writes (team)"
+    command: "lh team refresh --id <Team Zenith>"
+    anchor: "Refresh queued:"
+    json_check: "exactly today's line: Team refreshed: <id>"
+  - slice: "09"
+    group: worktracking
+    command: "lh worktracking list"
+    anchor: "Work Tracking Systems"
+    json_check: "valid JSON, anchor absent"
+  - slice: "09"
+    group: version
+    command: "lh version get"
+    anchor: "Lighthouse v"
+    json_check: "anchor absent"
+  - slice: "09"
+    group: health
+    command: "lh health check"
+    anchor: "is reachable."
+    json_check: "exactly today's line: success"
+  - slice: "08, 09"
+    group: blackout
+    command: "none - recurring blackout rules are Premium on the server and the smoke container is unlicensed"
+
+coexistence_matrix:
+  - tool: "Scripts and agents reading lh --json / --toon"
+    must_not_break: true
+    note: "Same bytes, same calls. Characterisation snapshots per slice, written as literals before any production change."
+  - tool: "lh refinement get"
+    must_not_break: true
+    note: "Its table helper moves and its resolver becomes a projection in slice 01; its output must not move by a byte."
+  - tool: "Delete, refresh and health lines under --json / --toon"
+    must_not_break: true
+    note: "Team deleted: n, Team refreshed: n, Recurring blackout rule deleted: n, success - kept as they are (DSN-12)."
+  - tool: "MCP tool facts and annotations"
+    must_not_break: true
+    note: "List and scalar answers: first text block byte-identical, summary in a second block. Object answers: the same keys plus summary. runtime.test.ts keeps every annotation pinned."
+  - tool: "Existing smoke-integration and smoke-platform --json checks"
+    must_not_break: true
+    note: "Team Zenith / Team Voyager / Project Orion and FixtureTeam greps unchanged; the new checks are appended after them."
+  - tool: "Unreleased refinement changesets in .changeset/"
+    must_not_break: true
+    note: "Ride in whichever release comes first; release:version folds them in."
+  - tool: "Older skill zip (skill/SKILL.md) with a newer CLI"
+    must_not_break: false
+    note: "Its forecast example omits --json, so an agent following it reads the new pretty view. Accepted: pretty is for people; slice 01 adds --json to the example."
+  - tool: "Story #6193 (clients usage data)"
+    must_not_break: true
+    note: "Will touch the CLI's command dispatch later; no overlap with output.ts or the wording modules."
+
+platform_coverage:
+  Linux: [ubuntu-latest, Node 24 (verify, smoke-integration, smoke-platform)]
+  macOS: [macos-latest, Node 24, smoke-platform only (fake server, --json)]
+  Windows: [windows-latest, Node 24, smoke-platform only (fake server, --json)]
+  CI: [GitHub Actions, lighthouse-clients .github/workflows/ci.yml]
+
+deployment_assumptions:
+  - "Ships as npm packages via changesets: minor lighthouse-cli and lighthouse-client per slice, minor lighthouse-mcp-core per slice with an MCP change (not 02), automatic patch for mcp-stdio and mcp-http. Bun binaries, MCPB bundle and skill zip on the GitHub Release; mcp-http image on GHCR."
+  - "No Lighthouse server change, no new endpoint, no version gate. The --pretty-only reads use existing routes."
+  - "The release job publishes only versions not yet on npm. A push without pnpm release:version publishes nothing, and smoke-integration then installs the previous CLI - with a new slice's anchor in ci.yml it goes red."
+  - "smoke-integration runs after publish: it detects, it cannot prevent. A red check means the version is on npm already; the remedy is a patch release. The generic-view fallback keeps such a failure to today's output, never a crash."
+  - "Rollback: publish a patch that reverts the slice, or pin the previous version. Nothing is persisted by this story (no config-file or store change), so a downgrade is safe."

@@ -5,7 +5,8 @@
 parent Epic.
 
 **Waves**: DISCUSS (2026-10-06, maintainer AFK — every product call taken here is listed under
-"Decisions for the maintainer to confirm"). DISCOVER and DIVERGE skipped by the maintainer, explicitly.
+"Decisions for the maintainer to confirm"), DESIGN (2026-10-06), DEVOPS (2026-10-07). DISCOVER and DIVERGE
+skipped by the maintainer, explicitly.
 
 **One line**: `lh refinement get` already answers in the web's words; every other `lh` command still
 prints the generic indented dump of field names. This story gives every command that answers a
@@ -1661,3 +1662,388 @@ story-6218-readable-cli-output".
 Per-wave review **skipped** (nw-design default): no security boundary moves, no performance budget is unverified,
 and both ADRs follow existing precedents (ADR-121, the refinement summary). The consolidated review at the end of
 DISTILL covers this wave.
+
+---
+
+## Wave: DEVOPS / [REF] Prior-Wave Reading Confirmation
+
+**Agent**: Apex (`nw-platform-architect`) · **Date**: 2026-10-07 · **Mode**: autonomous subagent, documents only
+(no code, no `ci.yml` edit, no commit, no ADO). **Density**: lean, Tier-1 `[REF]` only, no expansion menu.
+
+**The nine decisions were not asked.** The maintainer's context already settles each one:
+
+| # | Decision | Answer for this story | Source |
+|---|---|---|---|
+| 1 | Deployment target | npm-published client packages (`lh`, the MCP stdio and http servers) that users run against their own Lighthouse, self-hosted or SaaS. No server change | DISCUSS Driving Ports; DESIGN scope |
+| 2 | Container orchestration | None for the deliverable. CI starts a Lighthouse container only inside `smoke-integration` | `lighthouse-clients/.github/workflows/ci.yml` |
+| 3 | CI/CD | GitHub Actions, the existing single `ci.yml` ("Client CI"). **Extend it; no new workflow** | maintainer rule: consolidate CI, keep E2E minimal |
+| 4 | Existing infrastructure | Yes: `verify`, `release` (changesets publish behind the `Release` approval), `smoke-platform`, `smoke-integration`, the pre-commit hook | `ci.yml`, root `package.json`, `.changeset/config.json` |
+| 5 | Observability | None at runtime. The clients have no usage-data pipe; that is Story #6193 | DISCUSS checklist |
+| 6 | Deployment strategy | Changesets release, a minor per slice (D16, DSN-16). Rollback = a patch, or pin the previous version | D16 |
+| 7 | Continuous learning | No | maintainer |
+| 8 | Branching | Trunk-based, direct pushes to `main` in both repositories | `CLAUDE.md`; memory *trunk-based on main* |
+| 9 | Mutation testing | Per-feature, ≥ 80 %, StrykerJS on the changed client files. Already recorded in `CLAUDE.md`; not edited | `CLAUDE.md` § Mutation Testing Strategy |
+
+| Read | Status |
+|---|---|
+| This file: DISCUSS (S1–S14, D0–D18, checklist, KPIs, DoD, DoR, C1–C19, maintainer decisions incl. the C13 reversal), DESIGN (DSN-1..20, components, ports, Earned Trust, test strategy, enforcement E1–E7, quality attributes, changed assumptions, open items) | ✓ (paged) |
+| `slices/slice-01..09`, `discuss/cli-sketches.md` | ✓ (sketches read for the anchors; briefs skimmed) |
+| `lighthouse-clients/.github/workflows/ci.yml` | ✓ all 347 lines, `smoke-integration` and `smoke-platform` in full |
+| `lighthouse-clients/package.json`, `pnpm-workspace.yaml` (7-day `minimumReleaseAge`), `.changeset/config.json` + pending changesets, `scripts/check-changeset.mjs`, `ARCHITECTURE.md` §7, §9, §10 | ✓ |
+| StrykerJS config in `lighthouse-clients` | **None exists** (no `stryker*` file, no `@stryker-mutator` dependency). The precedent ran it ephemerally from a scratch directory (`epic-5510-5881-refinement/mutation/clients-slice-09.md`) |
+| Lighthouse `DemoDataService.cs`, `DemoDataFactory.cs`, `DemoController.cs` | ✓ scenario 2 = Team Zenith, Team Voyager, Project Orion, no Delivery; scenario 0 seeds the "Apollo Release" Delivery; a load wipes the previous scenario |
+| `RecurringBlackoutRulesController.cs` | ✓ every action `[LicenseGuard(RequirePremium = true)]` |
+| Precedent: `epic-5510-5881-refinement` DEVOPS sections + `environments.yaml`; `docs/product/kpi-contracts.yaml` | ✓ |
+| `CLAUDE.md` § DISCUSS, DEVOPS & DELIVER Waves; `docs/ci-learnings.md` (StrykerJS exit-0 trap, same-reduction assertions) | ✓ |
+
+**Contradictions with DESIGN: four, none blocking.** Listed under *Changed Assumptions*.
+
+---
+
+## Wave: DEVOPS / [REF] Environment Matrix
+
+Machine artifact: `environments.yaml` beside this file (environments, `scenario_axes`, the smoke checks, coexistence,
+deployment assumptions).
+
+| Environment | Why it exists here |
+|---|---|
+| `unit-fixtures` | Vitest with stub clients and DTO-shaped fixtures. Every acceptance criterion, KPI-1/2/3/5 and the characterisation snapshots run here, in `verify` and in the pre-commit hook |
+| `server-latest-demo` | `smoke-integration`: the newest released Lighthouse image, SQLite, auth off, unlicensed, demo scenario 2. The only place the readers meet the real wire |
+| `server-older` | Optional fields absent, Terminology route missing → not mentioned, seeded words. Simulated in unit tests |
+| `server-newer-reshaped` | A required field renamed or retyped → generic view, exit 0; MCP: no summary. Simulated in unit tests |
+| `renamed-terminology` | All 23 terms renamed (KPI-5) |
+| `terminology-unreadable` | Terminology or a heading's name read refused → seeded words / `{Term} [id: n]`, exit 0 |
+| `reader-time-zone` | `America/Adak` and `Pacific/Kiritimati`: calendar days never move, `Last Updated` follows the reader |
+| `mcp-transports` | `callTool` per converted tool; one in-process `mcp-http` e2e for the second text block |
+| `standalone-connection` | The one sentence that depends on connection mode (`lh health check`) |
+
+**What CI covers today, and what this story does not widen**
+
+| Axis | Today | This story |
+|---|---|---|
+| Node | 24 only, in every job (`engines`: ≥ 22) | Unchanged. The new code is string work with no `Intl` (DSN-8, E4), so Node 22 cannot render differently. An existing gap, not introduced here |
+| OS | `verify` and `smoke-integration` on Ubuntu; `smoke-platform` on Ubuntu, macOS, Windows against a fake server with `--json` | Unchanged. The renderers are pure; the only OS input is the local clock, covered by the two time zones |
+| Bun binaries | Built and attached to the GitHub Release, never run | Unchanged. DSN-8 removed the ICU dependency that could have made them differ |
+| Terminal width / colour | n/a | No colour codes, no TTY detection, no wrapping: the same bytes on a terminal and in a pipe. A narrow terminal wraps long rows, as `lh refinement get` already does. The console character set (`·`, `—`, `→`, `──`) is DESIGN's accepted Earned Trust row |
+| Server version | `:latest` in `smoke-integration` only | Older and newer-reshaped servers are unit-simulated per reader. No older-image leg: older images carry other demo data, and the fallback makes the failure benign |
+
+---
+
+## Wave: DEVOPS / [REF] CI/CD Pipeline Outline
+
+**One workflow, one job extended, no new job, runner, secret or file.** Everything else passes through as it is.
+
+| Stage | Where | What it does for this story |
+|---|---|---|
+| Local gate | `simple-git-hooks` pre-commit: `pnpm run ci` (lint, test, typecheck, build) + `check-changeset.mjs` | Every slice's unit suite before the commit lands; a `src/` change without a staged changeset is refused. The `ci.yml` edit itself needs no changeset |
+| Commit stage | `verify` (every push and PR, Ubuntu, Node 24) | Biome, Vitest (acceptance criteria, readers, wording, parity, TZ, KPI-1/2/3/5, E1–E7 enforcement, MCP tools, the `mcp-http` e2e), `tsc -b`, tsdown build, the MCP bin-launch smoke. **This is the blocking gate**: it runs before anything is published |
+| Release | `release` (main only, `Release` environment approval) | `changeset publish` (only versions not on npm yet), Bun binaries, MCPB, skill zip, GitHub Release, `mcp-http` image. Unchanged |
+| Post-release, fake server | `smoke-platform` (3 OS) | Unchanged |
+| Post-release, real server | `smoke-integration` | **Extended: one new step, "Verify --pretty views"**, after "Verify portfolios" and before the failure-logs step. Created by slice 01; each later slice appends its line(s) |
+
+### The byte-identity guard (KPI-2): unit tests, not smoke
+
+As DESIGN's test strategy says: **characterisation first, per slice.** Before any production change, one commit captures
+the slice's commands' `--json` and `--toon` stdout and call logs (and the converted MCP tools' text) on unchanged code,
+as inline snapshots. They must still match afterwards. This runs in `verify` and in the pre-commit hook, so it blocks
+before publish. Two rules from `docs/ci-learnings.md`:
+
+- Snapshot **literals**, never "new output equals old output computed in the same test": two sides reduced the same way
+  agree with each other even when both are empty (the same-reduction trap).
+- Slice 01 also snapshots `lh refinement get` before the table helper moves (DoD 4).
+
+**Why smoke does not compare bytes**: a real server's answers move between two calls (forecasts are simulated on
+read, `lastUpdated` changes when a refresh finishes), so comparing against the previous release's `--json` on the live
+container would flake. Smoke checks the weaker property that only a real wire can show: **`--json` is still the
+facts**, meaning valid JSON with none of the pretty wording in it. For refresh and health the check is exact, because
+their `--json` output is a fixed line today (DSN-12).
+
+### The `--pretty` smoke checks (Earned Trust)
+
+One function in the step, one line per converted command group, one anchor each. Anchors are fixed strings
+(`grep -F`) that the generic view cannot print: it prints wire names in camelCase (`lastUpdated:`), never spaced
+Title Case (`Last Updated`). So a reader that fails to recognise the real answer falls back to the generic view, and
+the check goes red. That silent fallback is the one failure unit tests cannot see. Anchors holding a configurable word
+use the seeded default; the container is fresh and nobody renamed anything. The data is demo scenario 2 (Team Zenith,
+Team Voyager, Project Orion), not the sketches' Gravity / Ocean Explorer, so no anchor depends on a number or a name.
+
+| Slice | Group | Command (ids looked up by name from `--json`) | Anchor (`grep -F`) | `--json` check |
+|---|---|---|---|---|
+| 01 | forecast | `lh forecast manual --team-id <Team Zenith> --remaining 10` | `When will 10 Work Items be done?` | valid JSON, anchor absent |
+| 02 | metrics | `lh metrics team --id <Team Zenith>` | `Predictability Score` | valid JSON, anchor absent. Also prints the line count to the log (KPI-3 on real data; advisory) |
+| 03 | metrics | none added | — | — |
+| 04 | metrics | none added | — | — |
+| 05 | team | `lh team list` | `Last Updated` | valid JSON, anchor absent |
+| 05 | portfolio | `lh portfolio list` | `Deliveries per Portfolio:` | valid JSON, anchor absent |
+| 06 | delivery | `lh delivery list --portfolio-id <Project Apollo>`, **after reloading demo scenario 0, last in the step** | `Delivery Date` | valid JSON, anchor absent |
+| 07 | feature | `lh feature get --ids <first Feature of Project Orion>` | `Forecasted Start` | valid JSON, anchor absent |
+| 08 | team (writes) | `lh team refresh --id <Team Zenith>` | `Refresh queued:` | exactly `Team refreshed: <id>` |
+| 09 | worktracking | `lh worktracking list` | `Work Tracking Systems` | valid JSON, anchor absent |
+| 09 | version | `lh version get` | `Lighthouse v` | anchor absent |
+| 09 | health | `lh health check` | `is reachable.` | exactly `success` |
+| 08, 09 | blackout | none | — | Recurring blackout rules are Premium on the server; the smoke container is unlicensed |
+
+Why some groups have no line:
+
+- **03 and 04 ride on 02.** The headline walks every section of the metrics composite (`METRIC_KEYS` includes the
+  over-time series and `cumulativeStateTime`), and an unrecognised section sends the whole view to the generic view
+  (DSN-13). So slice 02's one anchor proves every section reader on the real wire. This holds only while the headline
+  and `--metrics <name>` share one reader per section, as DSN-13 places them in `metricsWording.ts`. The `--state`
+  drill-down's endpoint is not smoked (accepted).
+- **06 needs a reload.** Scenario 2 seeds no Delivery, and an empty list proves nothing about a row. Scenario 0 is the
+  free scenario that seeds one ("Apollo Release", with its recorded history). Loading it wipes scenario 2, so the
+  Delivery lines stay at the bottom of the step, and slices 07–09 insert theirs above them.
+- **08 uses refresh.** It is the one write that is safe to run against the shared container. It has no reader, so it
+  proves the write path's wiring and DSN-12's unchanged `--json` line, not a wire shape. Create and update would need
+  payload files for a check the unit tests already make.
+
+Step outline for DELIVER (bash; GitHub's default `-eo pipefail`). DELIVER confirms the `jq` paths against the live
+`--json`:
+
+```bash
+expect_pretty() {   # expect_pretty <anchor> <json-mode: facts|"exact:<line>"> <lh args…>
+  anchor="$1"; mode="$2"; shift 2
+  pretty=$(lh "$@");        printf '%s\n' "$pretty"
+  grep -qF -- "$anchor" <<<"$pretty" || { echo "FAIL: '$anchor' not in: lh $* (generic view?)"; exit 1; }
+  json=$(lh "$@" --json)
+  case "$mode" in
+    exact:*) [ "$json" = "${mode#exact:}" ] || { echo "FAIL: lh $* --json changed: $json"; exit 1; } ;;
+    *) jq -e . >/dev/null <<<"$json" || { echo "FAIL: lh $* --json is not JSON"; exit 1; }
+       ! grep -qF -- "$anchor" <<<"$json" || { echo "FAIL: pretty wording leaked into lh $* --json"; exit 1; } ;;
+  esac
+}
+ZENITH=$(lh team list --json | jq -r '.[] | select(.name == "Team Zenith") | .id')
+# slice 01 also waits until Team Zenith's forecast answers (whenForecasts non-empty, read with --json)
+expect_pretty "When will 10 Work Items be done?" facts forecast manual --team-id "$ZENITH" --remaining 10
+# … one line per slice …
+# slice 06, always last: POST /api/v1/demo/scenarios/0/load, wait for Project Apollo's Delivery, then expect_pretty
+```
+
+Cost: ~12 extra `lh` calls plus one scenario reload, under 3 minutes added to a job that runs after publish.
+
+**Local parity for the smoke**: none needed by default; the smoke checks the real wire, which a laptop has only with
+a running Lighthouse. To try a line before pushing, run it against the dev instance with `pnpm lh …`.
+
+---
+
+## Wave: DEVOPS / [REF] Monitoring Contracts (KPI → instrument)
+
+No runtime telemetry: every KPI but one is enforced by a test in `verify`, and KPI-4 waits for #6193.
+
+| KPI | Instrument | Where it runs / when it is read | Gate | As specified? |
+|---|---|---|---|---|
+| **KPI-1** north star: 0 forms left on the generic view (from 21) | `prettyForms.test.ts` (DSN-10): every form listed; each changing form's pretty output must differ from the generic view of the same facts; the list is checked against each group's help and `METRIC_KEYS`. Real-wire confirmation: the smoke anchors above | `verify` on every push; progress read at each slice's push as forms converted / 42; done at slice 09 | Blocking (unit); detecting (smoke, after publish) | Yes. The unit test proves a renderer is chosen; only the smoke proves it is still chosen on a real answer |
+| **KPI-2** guardrail: 0 byte differences, 0 extra calls on `--json`/`--toon` (and MCP facts) | Characterisation inline snapshots of stdout and call logs, per slice, captured before the change | `verify` + pre-commit | Blocking | Yes. Smoke adds "still the facts on a real wire" (see CI outline) |
+| **KPI-3**: headline ≤ 30 lines on demo data | Line count in slice 02's walking-skeleton test. Baseline: today's `lh metrics team --id <id>` line count on the dev instance, taken at slice 02's start (S8) and recorded in slice 02's deliver notes | `verify` (gated); the smoke step also prints the real headline's line count for Team Zenith (advisory) | Blocking (unit) | Yes, plus a real-data reading |
+| **KPI-4**: share of `--pretty` invocations up | **Deferred to #6193.** No clients usage-data pipe exists | — | — | No, by design; see Usage data |
+| **KPI-5** guardrail: 0 seeded words when every term is renamed | One test per renderer and per MCP summary with all 23 terms renamed; enforcement rule E5 (no seeded literal outside `terminology.ts`) | `verify` | Blocking | Yes. Not in smoke: renaming terms is Premium and the container is unlicensed |
+
+**`docs/product/kpi-contracts.yaml`: N/A, not extended**, because the precedent added entries only for outcomes
+measured in or about a running Lighthouse (`opt_in_telemetry_required`, `per_instance`), and no clients-only feature
+has an entry there. KPI-1/2/3/5 are not outcomes to observe after release: they are test gates that make a slice
+unshippable when they fail, and this file plus `prettyForms.test.ts` already holds them. KPI-4 is the one true outcome,
+and it gets its entry when #6193 gives it an event to count.
+
+---
+
+## Wave: DEVOPS / [REF] Usage data
+
+**N/A, because** the clients have no usage-data pipe yet; it is Story **#6193**. The Lighthouse pipe starts in a
+consenting browser, and nothing `lh` or an MCP server does ever reaches it. No event is added to
+`UsageDataEventName`, and `docs/settings/usagedata.md` does not change.
+
+**Forward pointer for #6193** (recorded, not decided here): one **name-only event per command group** (forecast,
+metrics, team, portfolio, delivery, feature, blackout, worktracking, version, health), each carrying one closed enum,
+**output format ∈ {`pretty`, `json`, `toon`}**. That property is the only one KPI-4 needs: its numerator is `pretty` and
+its denominator is all three. Never free text, ids, counts, names, URLs or Terminology values. Whether MCP tool calls
+count, and how consent works in a terminal, are #6193's questions.
+
+---
+
+## Wave: DEVOPS / [REF] Deployment Strategy
+
+**Rollback first.** Nothing in this story is persisted: no config-file key, no store, no server state. So rolling back
+any slice is only a matter of which package version runs.
+
+| What | Rollback | Why it is safe |
+|---|---|---|
+| `lighthouse-cli` / `lighthouse-client` / `lighthouse-mcp-core` on npm | `git revert` the slice's commits on `main`, add a **patch** changeset, `pnpm release:version`, push, approve the release. Users who cannot wait: `npm install -g @letpeoplework/lighthouse-cli@<previous>` | `--json`/`--toon` never changed, so a script cannot tell the versions apart; `--pretty` is documented as human-readable |
+| Bun binaries, MCPB bundle, skill zip | The previous GitHub Release's assets stay downloadable | Each release is tagged `v<date>.<run>` |
+| `mcp-http` image on GHCR | Redeploy the previous version tag; `latest` moves with the next release | Tags per version are kept |
+| A bad npm version | `npm deprecate` it with a pointer to the fix. **Never `npm unpublish`**: it breaks pinned installs and is time-limited | — |
+
+**Rollout**: a minor per slice (D16, DSN-16): `lighthouse-cli` and `lighthouse-client` minor, `lighthouse-mcp-core`
+minor where the slice changes MCP (not slice 02), automatic patch for `mcp-stdio`/`mcp-http`. Each changeset says in
+one sentence that `--pretty` changed and `--json`/`--toon` did not. Batching releases is the maintainer's call. No
+canary or progressive exposure: there is no fleet to steer, and every user chooses when to upgrade.
+
+**Two rules that follow from how `ci.yml` works:**
+
+1. **A slice's smoke line ships in the same release as its code.** The release job publishes only versions that are not
+   on npm yet, and `smoke-integration` installs the version written in `packages/cli/package.json`. A push that carries
+   a new anchor but no `pnpm release:version` commit publishes nothing, and the smoke then runs the **previous** CLI
+   against the new anchor and goes red. So approve a `Release` run only when its head carries the
+   `chore(release): version packages — …` commit. If slices are batched, their smoke lines wait in `ci.yml` until that
+   release, which is harmless: without approval the smoke jobs never run.
+2. **A red smoke means a published bad version.** `smoke-integration` needs `release`. It detects; it cannot prevent.
+   The generic-view fallback keeps such a failure to today's output, never a crash or a wrong number, and the remedy is
+   the patch above.
+
+**Rollback rehearsal (owed, slice 01, once)**: after slice 01's release, install the previous CLI version from npm,
+run `lh team list --json` and `lh forecast manual … --json` against the dev instance, then reinstall the new version
+and confirm the `--json` output matches. Record the result in slice 01's deliver notes. It is the only part of this plan
+that is otherwise an assumption.
+
+---
+
+## Wave: DEVOPS / [REF] Mutation Testing Strategy
+
+**`per-feature`, ≥ 80 % kill rate**: the project setting, not re-decided, and `CLAUDE.md` is not edited.
+**lighthouse-clients has no StrykerJS config and no Stryker dependency**, so the precedent's ephemeral run applies:
+`@stryker-mutator/core` + `@stryker-mutator/vitest-runner` installed into a scratch directory, never into
+`package.json` or the lockfile. The version must be older than the repository's 7-day `minimumReleaseAge`.
+
+- **When**: once per slice, as the slice's last DELIVER step before its push, **on frozen code**. Each slice releases
+  on its own, so the score is taken on each slice's own code. Any later edit shifts the line ranges.
+- **Scope**: whole files for the files a slice creates (`client/src/<group>Wording.ts`, `cli/src/<group>Output.ts`;
+  in slice 01 also `terminology.ts`, `calendarDates.ts`, `forecastDisplayRules.ts`, `answerWording.ts`, `table.ts`).
+  Line ranges for the changed lines of `cli/src/index.ts` handlers, `cli/src/output.ts`'s seam,
+  `mcp-core/src/index.ts` tool branches and `toolResult.ts`'s `withSummary`. StrykerJS honours line ranges.
+- **Runner**: a scratch Vitest config limited to the `client`, `cli` and `mcp-core` unit tests; exclude
+  `*.e2e.test.ts` (they start servers). Set `"related": false` and list `"plugins"` explicitly.
+- **Trust the score line, not the exit code.** StrykerJS exits 0 after a config error having tested nothing
+  (`docs/ci-learnings.md`). Run the scratch Vitest config standalone first and confirm it prints a test count.
+- **Copy literals**: wording lives in module constants and functions, which StrykerJS does mutate, so a blanking mutant
+  catches a loose substring assertion. Pin sentences against the full literal.
+- **Evidence**: `docs/feature/story-6218-readable-cli-output/mutation/clients-slice-0N.md` (per-file table, before
+  and after, survivors classified), in the precedent's format. Force-add any Stryker config kept there, and say so in
+  the commit (the `mutation/stryker-*.json` ignore pattern).
+
+---
+
+## Wave: DEVOPS / [REF] Observability Stack
+
+**None added.** The clients have no telemetry, and a CLI has no runtime of its own to watch. What a user sees is the
+observable surface:
+
+- A failed Lighthouse read: `category: reason` on stderr, exit 1 (unchanged).
+- A reader that does not recognise the answer: today's generic view, exit 0. Whether to add a one-line stderr note is
+  DESIGN's open item 2, a wording call for the maintainer, not a platform one.
+- A `--pretty`-only read that fails: seeded words or `{Term} [id: n]`, silently, exit 0 (D4).
+
+CI is the only place a mismatch is seen across users: `smoke-integration`'s anchors against `:latest`. **Known blind
+spot, accepted**: a Lighthouse release that reshapes an answer triggers no clients run. It is seen at the next clients
+release, and until then users get the generic view, which is today's output.
+
+---
+
+## Wave: DEVOPS / [REF] Branching Strategy
+
+**Trunk-based on `main`, both repositories**, unchanged. The code and the `ci.yml` edit are in `lighthouse-clients`;
+this workspace is in the Lighthouse repository. Slice ritual: a focused commit per step (characterisation snapshots
+first, then refactor commits apart from feature commits), push at slice end only when green, never push red. In
+`lighthouse-clients` every push to `main` runs `verify` and parks a `Release` run awaiting approval; the newest pending
+run supersedes older ones. Sequencing (DSN-19): slice 01 starts only once the refinement-votes work is on the clients'
+`main`. On 2026-10-07 `main` is level with `origin/main` and the working tree is clean, so that precondition holds.
+No autonomous rebase.
+
+---
+
+## Wave: DEVOPS / [REF] Coexistence Matrix
+
+Full table in `environments.yaml`. What must keep working while this ships:
+
+| Must not break | Why it is at risk | Guard |
+|---|---|---|
+| Scripts and agents on `--json` / `--toon` | Every handler gains a `--pretty` branch and extra reads | Characterisation snapshots (bytes + call log) per slice; smoke "still the facts" |
+| `lh refinement get` | Its table helper moves; its resolver becomes a projection (slice 01) | Snapshot taken before the move (DoD 4) |
+| `Team deleted: n`, `Team refreshed: n`, `Recurring blackout rule deleted: n`, `success` under `--json`/`--toon` | Their `--pretty` lines change | DSN-12; the smoke checks refresh and health exactly |
+| MCP facts and tool annotations | Summaries added (C13 reversed) | List/scalar: first block byte-identical. Object: the same keys plus `summary`, an additive key a strict consumer will see. `runtime.test.ts` pins annotations |
+| Existing smoke checks (`Team Zenith`, `Team Voyager`, `Project Orion`, `FixtureTeam`) | Same job extended | The new step is appended after them; scenario 0's reload is the last thing the job does |
+| Pending refinement changesets in `.changeset/` | First release of this story folds them in | `release:version` applies all pending changesets; review the bumped CHANGELOGs |
+| An older skill zip with the new CLI | Its forecast example omits `--json` (S9) | Accepted: pretty is for people; slice 01 adds `--json` to the example |
+| Lighthouse server | — | No change; the extra reads are existing routes |
+| Story #6193 | Later touches the CLI dispatch | No overlap with `output.ts` or the wording modules |
+
+---
+
+## Wave: DEVOPS / [REF] Pre-requisites
+
+| From DESIGN | Platform answer |
+|---|---|
+| Earned Trust: "`smoke-integration` runs each converted group once with `--pretty`" | The anchor table above. Blackout cannot run (Premium); 03/04 ride on 02; 06 reloads scenario 0 last |
+| DSN-11 ≤ 2 extra reads per `--pretty` command | No platform consequence; the smoke step's run time stays under 3 minutes |
+| DSN-16 versioning | Changeset per slice; `pnpm release:version` (with `GITHUB_TOKEN_CHANGESET`) committed before the releasing push; approve only that run |
+| DSN-18 skill and docs | Ship in the slice that changes them; the skill zip is rebuilt by the release job |
+| DSN-19 sequencing | Satisfied on 2026-10-07 (clients `main` clean and level with origin) |
+| Test strategy: characterisation first | First commit of every slice, before production code |
+| Mutation ≥ 80 % | Ephemeral StrykerJS per slice, evidence under `mutation/` |
+| `nwave-ai outcomes check-delta` (DESIGN open item) | Still owed before DISTILL; not run here (documents only) |
+
+---
+
+## Wave: DEVOPS / [REF] Changed Assumptions
+
+| Was (DESIGN) | Now | Why |
+|---|---|---|
+| DSN-18: "CI smoke reads `--json` only, so nothing else reads pretty" | The smoke reads one `--pretty` anchor per group | This wave adds the Earned Trust checks. A slice that changes an anchor's wording updates its smoke line in the same commit. Pretty is still not a contract for users; the anchors are a heading or a column title, not layout |
+| Earned Trust: smoke "runs each converted group once" | Every group except blackout. Metrics once, for 02–04 together; delivery after a scenario reload | Blackout rules are Premium-guarded on the server and the container is unlicensed. Scenario 2 seeds no Delivery. The headline reads every metrics section |
+| Earned Trust: smoke is "the only check that the fixtures match the real wire" (read as a gate) | True, but it runs **after** publish | `smoke-integration` needs `release`. It detects and cannot prevent; the fallback keeps the damage to today's output; the remedy is a patch |
+| (implicit) any push can be released | Approve a `Release` run only when it carries the version-bump commit | Without one, nothing is published and the smoke tests the previous CLI against new anchors |
+
+**For DISTILL (copy gap found while choosing the data)**: no sketch says what `lh delivery list` prints for a
+Portfolio with no Delivery. Scenario 2's Project Orion has none, so a real user meets it. DSN-9 says "a renderer with
+nothing to list prints its empty-state sentence" but none is worded. Route it to DISTILL's sketch walk with the
+maintainer (house rule: sketch UI, then ask).
+
+---
+
+## Wave: DEVOPS / [REF] Open for the maintainer
+
+**None for this wave.** Every platform call follows from the maintainer's nine answers and the existing `ci.yml`. The
+copy gap above belongs to DISTILL's sketch walk. DESIGN's open items 2–6 (stderr note, partial headline, MCP list
+summaries, MCP health wording, the second-block convention) are still open and unaffected by this wave.
+
+---
+
+## Wave: DEVOPS / [REF] Wave Decisions Summary
+
+- **Infrastructure**: none new. npm packages via the existing changesets release; no server, container, secret or
+  workflow added.
+- **CI**: `smoke-integration` gains one step, "Verify --pretty views", with one `--pretty` anchor per converted command
+  group (table above). Slice 01 creates it, each later slice appends, and the Delivery lines stay last.
+- **Byte identity**: guarded in unit tests by per-slice characterisation snapshots (blocking, before publish). Smoke
+  checks only that `--json` is still the facts on a real wire.
+- **KPIs**: KPI-1/2/3/5 are test gates in `verify`, and KPI-3 also gets a real-data reading in the smoke log. KPI-4 is
+  deferred to #6193. `kpi-contracts.yaml` is not extended (N/A, reason above).
+- **Usage data**: N/A, because there is no clients pipe (#6193). The forward pointer is one name-only event per command
+  group with output format ∈ {pretty, json, toon}.
+- **Deployment**: a minor per slice. Rollback is a patch release or pinning the previous version; nothing is persisted.
+  Approve only versioned releases.
+- **Mutation**: per slice, ephemeral StrykerJS, ≥ 80 %, frozen code, evidence under `mutation/`. The repository has
+  no config of its own.
+- **Branching**: trunk-based, both repositories.
+- **Per-wave peer review: skipped** (default; no trigger applies). There is no new deployment target, CI framework,
+  secret or observability stack: one existing job gains one step. The consolidated review at the end of DISTILL covers
+  this wave.
+- **Handoff** to `nw-acceptance-designer` (DISTILL): `environments.yaml` (`scenario_axes`, the smoke checks), the
+  KPI → instrument table, the characterisation-first rule, and the Delivery empty-state copy gap.
+
+---
+
+## Wave: DISTILL / [REF] Maintainer decisions (taken 2026-10-07, before AFK)
+
+The sketch page (`discuss/cli-sketches.md`) was approved as written in DESIGN. These answer DESIGN's
+"Open for the maintainer" items 2–6 and the DISCUSS confirm table; DISTILL pins them in the scenarios.
+
+| # | Question | Decision |
+|---|---|---|
+| M1 | A shape `lh` does not recognise (DESIGN open item 2) | **Silent.** The generic view prints as today; no stderr note. |
+| M2 | Metrics headline with one unrecognised section (item 3) | **Render the rest, one line for that section.** Supersedes D5's whole-headline fallback for the headline only; wording follows the sketch: `<Metric>  shown only with --json (unknown shape)`. |
+| M3 | MCP summary for list tools (item 4) | **A count sentence** in the instance's words, e.g. `7 Teams`, `1 Delivery`. |
+| M4 | `…cumulativeStateTimeCandidates` summary (item 4) | No summary — the CLI never prints that answer. Taken by default, not asked. |
+| M5 | MCP `health_check` summary (item 5) | `Lighthouse is reachable.` |
+| M6 | Summary convention for list answers (item 6) | **A second text block** `summary: …`; the facts block stays byte-identical. |
+| M7 | DISCUSS C1–C12, C14–C19 | **Confirmed as taken.** |
+| M8 | ADO child items (C19) | **None.** Track on #6218 only. |
+| M9 | `lh delivery list` for a Portfolio with no Delivery (DEVOPS copy gap) | Not asked; DISTILL mirrors the web's empty-state wording per D1. |
