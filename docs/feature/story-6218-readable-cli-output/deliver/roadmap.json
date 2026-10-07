@@ -1,0 +1,1415 @@
+{
+  "roadmap": {
+    "project_id": "story-6218-readable-cli-output",
+    "created_at": "2026-10-07",
+    "total_steps": 34,
+    "total_phases": 9,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "scope": "ADO Story #6218 (no parent Epic, no child items - M8): every `lh` command that answers a question or confirms a change gets a --pretty view in the web's words and columns, and the MCP tools the slice converts return the same heading/sentence as a summary beside unchanged facts. Nine slices, one phase each, delivered in order 01 -> 09; each slice is releasable alone (D18). All code is in /storage/repos/lighthouse-clients (packages cli, client, mcp-core; mcp-http only for one e2e). No Lighthouse-repo code change and no server change.",
+    "goal": "Every pending DISTILL scenario in lighthouse-clients (253 skipped cases at clients commit f942462: 211 view/summary/parity cases + 42 KPI-1 rows) is un-skipped and green, slice by slice; the 44 active guards (--json/--toon byte identity, reads, refusals, the walking skeleton, the KPI-1 completeness checks, M4) stay green in every step; KPI-1 reaches 0 forms on the generic view after phase 09; each slice carries one changeset (minor cli, minor client, minor mcp-core where MCP changes) and its smoke-integration --pretty line in .github/workflows/ci.yml; `pnpm run ci` (biome, vitest, tsc -b, build) exits 0 after every step.",
+    "paradigm_note": "The Hypothesis + state-delta property-based unit mandate from nw-roadmap does not apply, and leaving it out is a decision. The code is TypeScript (functions over data, DSN-20) tested with Vitest; there is no Hypothesis and fast-check is not a clients dependency, so DISTILL wrote finite domains as it.each example tables. The project-level paradigm line (object-oriented, CLAUDE.md) does not reach these packages; the crafter is nw-software-crafter as the project instructs. The acceptance scenarios were written at DISTILL and the crafter authors none of them. RED = turn it.skip into it (or move a slice's rows from the skipped to the active table), one scenario at a time, and watch it fail for the reason distill/red-classification.md records (generic view / no summary / scaffold throws - MISSING_FUNCTIONALITY for all 253). A test that fails for any other reason is a harness problem, fixed before production code. GREEN = production code. Crafter-written tests beyond DISTILL's are limited to: value-in/value-out unit cases on the pure client modules (terminology, calendarDates, forecastDisplayRules, each <group>Wording reader and describe...Summary) so StrykerJS has inner-loop kills, and the source-scanning enforcement test for DESIGN's E1-E5 (01-02)."
+  },
+  "validation": {
+    "status": "approved",
+    "notes": "Scenario ownership counted against the DISTILL test files at clients commit f942462 (253 skipped cases, 44 active). Each pending case is claimed by exactly one step; none orphaned, none claimed twice. Counts are test cases (each it.each row counts once). SLICE 01 = 60: forecastDisplayRules.parity.test.ts 19 -> 01-01:19 (2 definitions, 10 + 9 rows); forecastView.test.ts 32 -> 01-02:5, 01-03:8, 01-04:8, 01-05:6, 01-06:5; prettyForms.test.ts slice-01 rows 2 -> 01-06:2; forecastSummary.test.ts 7 -> 01-07:7. SLICE 02 = 14: metricsHeadlineView.test.ts 12 -> 02-01:7, 02-02:5; prettyForms slice-02 rows 2 -> 02-02. SLICE 03 = 43: metricDailyView.test.ts 23 -> 03-01:6, 03-02:10 (one definition, 10 rows), 03-03:6, 03-04:1; prettyForms slice-03 rows 10 -> 03-04; metricSummaries.test.ts 10 -> 03-05:10. SLICE 04 = 10: timeInStateView.test.ts 7 + prettyForms slice-04 row 1 -> 04-01:8; timeInStateSummary.test.ts 2 -> 04-02:2. SLICE 05 = 30: teamsAndPortfoliosView.test.ts 13 -> 05-01:6, 05-02:4, 05-03:3; prettyForms slice-05 rows 4 -> 05-03; ownerSummaries.test.ts 12 -> 05-04:6, 05-05:6; answerSummaries.e2e.test.ts 1 -> 05-04. SLICE 06 = 21: deliveriesView.test.ts 14 -> 06-01:7, 06-02:5, 06-03:2; prettyForms slice-06 rows 3 -> 06-03; deliverySummaries.test.ts 4 -> 06-04:4. SLICE 07 = 17: featuresView.test.ts 11 -> 07-01:8, 07-02:3; prettyForms slice-07 rows 3 -> 07-02; featureSummaries.test.ts 3 -> 07-03:3. SLICE 08 = 31: writeConfirmations.test.ts 15 -> 08-01:11 (one definition over WRITES), 08-02:4; prettyForms slice-08 rows 11 -> 08-02; writeSummaries.test.ts 5 -> 08-03:5 (one definition). SLICE 09 = 27: housekeepingView.test.ts 13 -> 09-01:6, 09-02:7; prettyForms slice-09 rows 5 + standalone health 1 -> 09-01:4 (blackout list, version get, health check, standalone health), 09-02:2 (worktracking list, worktracking get); housekeepingSummaries.test.ts 8 -> 09-03:8. Sum 60+14+43+10+30+21+17+31+27 = 253. Steps above 8 cases are one-definition parametrised tables that cannot be split without rewriting DISTILL's tests (01-01, 03-02, 08-01) or carry a slice's KPI-1 rows, which only assert 'not the generic view' for forms already converted in the same step (03-04, 08-02, 09-01, 09-02). Active guards per file are not claimed: they stay active and green in every step. Not yet peer-reviewed; the orchestrator runs the reviewer.",
+    "coverage": {
+      "/storage/repos/lighthouse-clients/packages/client/src/forecastDisplayRules.parity.test.ts": ["01-01"],
+      "/storage/repos/lighthouse-clients/packages/cli/src/forecastView.test.ts": ["01-02", "01-03", "01-04", "01-05", "01-06"],
+      "/storage/repos/lighthouse-clients/packages/mcp-core/src/forecastSummary.test.ts": ["01-07"],
+      "/storage/repos/lighthouse-clients/packages/cli/src/metricsHeadlineView.test.ts": ["02-01", "02-02"],
+      "/storage/repos/lighthouse-clients/packages/cli/src/metricDailyView.test.ts": ["03-01", "03-02", "03-03", "03-04"],
+      "/storage/repos/lighthouse-clients/packages/mcp-core/src/metricSummaries.test.ts": ["03-05"],
+      "/storage/repos/lighthouse-clients/packages/cli/src/timeInStateView.test.ts": ["04-01"],
+      "/storage/repos/lighthouse-clients/packages/mcp-core/src/timeInStateSummary.test.ts": ["04-02"],
+      "/storage/repos/lighthouse-clients/packages/cli/src/teamsAndPortfoliosView.test.ts": ["05-01", "05-02", "05-03"],
+      "/storage/repos/lighthouse-clients/packages/mcp-core/src/ownerSummaries.test.ts": ["05-04", "05-05"],
+      "/storage/repos/lighthouse-clients/packages/mcp-http/src/answerSummaries.e2e.test.ts": ["05-04"],
+      "/storage/repos/lighthouse-clients/packages/cli/src/deliveriesView.test.ts": ["06-01", "06-02", "06-03"],
+      "/storage/repos/lighthouse-clients/packages/mcp-core/src/deliverySummaries.test.ts": ["06-04"],
+      "/storage/repos/lighthouse-clients/packages/cli/src/featuresView.test.ts": ["07-01", "07-02"],
+      "/storage/repos/lighthouse-clients/packages/mcp-core/src/featureSummaries.test.ts": ["07-03"],
+      "/storage/repos/lighthouse-clients/packages/cli/src/writeConfirmations.test.ts": ["08-01", "08-02"],
+      "/storage/repos/lighthouse-clients/packages/mcp-core/src/writeSummaries.test.ts": ["08-03"],
+      "/storage/repos/lighthouse-clients/packages/cli/src/housekeepingView.test.ts": ["09-01", "09-02"],
+      "/storage/repos/lighthouse-clients/packages/mcp-core/src/housekeepingSummaries.test.ts": ["09-03"],
+      "/storage/repos/lighthouse-clients/packages/cli/src/prettyForms.test.ts": ["01-06", "02-02", "03-04", "04-01", "05-03", "06-03", "07-02", "08-02", "09-01", "09-02"]
+    }
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-6218-readable-cli-output/feature-delta.md (DISCUSS D0-D18, US-01..US-09, KPI-1..KPI-5, system constraints 1-8; DESIGN DSN-1..DSN-20, component decomposition, reuse analysis, test strategy, enforcement E1-E7; DEVOPS smoke anchors per slice, characterisation-first rule; DISTILL maintainer decisions M1-M9, scenario list, copy decided in DISTILL 1-12, upstream issues; final gate: amendments DSN-14a, DSN-11a and AFK copy defaults A1-A12 - all binding)",
+    "distill_slices": "docs/feature/story-6218-readable-cli-output/distill/clients-slice-01.md .. clients-slice-09.md",
+    "red_classification": "docs/feature/story-6218-readable-cli-output/distill/red-classification.md",
+    "sketches": "docs/feature/story-6218-readable-cli-output/discuss/cli-sketches.md (approved as written; the scenarios win where DISTILL's upstream-issues table says the DTO or the web differs)",
+    "adrs": "docs/product/architecture/adr-223-a-pretty-view-reads-the-answer-through-a-narrow-reader-and-falls-back-to-the-generic-view.md; docs/product/architecture/adr-224-an-mcp-summary-rides-beside-unchanged-facts.md (amended by DSN-14a)",
+    "code": "/storage/repos/lighthouse-clients at f942462 (DISTILL commit); ARCHITECTURE.md section 2 (words in client, layout in cli) and section 7",
+    "ado": "User Story #6218 only; no parent Epic, no child items (M8)"
+  },
+  "user_decisions": [
+    "RD-1 (roadmap default, maintainer AFK): one phase per slice, steps cut by behaviour inside a slice (core view, edges, wording/fallbacks, KPI-1 rows, MCP summary). A slice's KPI-1 rows in prettyForms.test.ts un-skip in the step that converts the slice's last CLI form; the MCP step is the slice's last step and carries the slice's ci.yml smoke line, the final changeset text and the docs check.",
+    "RD-2: prettyForms.test.ts holds the 42 KPI-1 rows in one it.skip.each over CHANGING_FORMS. Un-skipping per slice means splitting that table by slice (for example an it.each over the delivered slices' rows beside an it.skip.each over the rest), keeping the test title 'slice $slice: `lh $args` no longer prints the generic view' and the two active completeness guards untouched. Phase 09 ends with no skipped row left (KPI-1 = 0).",
+    "RD-3: changesets. The pre-commit hook (scripts/check-changeset.mjs) refuses any commit touching packages/*/src/** (tests included) without a staged .changeset/*.md. So each slice's FIRST step creates .changeset/readable-cli-NN-<topic>.md with the slice's bumps (DSN-16: minor @letpeoplework/lighthouse-cli, minor @letpeoplework/lighthouse-client, minor @letpeoplework/lighthouse-mcp-core when the slice changes MCP; mcp-stdio/mcp-http get the automatic patch), and every later step of the slice edits and re-stages that same file; the slice's last step finalises its text, including D16's one sentence that --pretty is for people and --json/--toon are the contract. Slice 02 has no MCP change, so no mcp-core bump. The existing empty changeset from DISTILL stays.",
+    "RD-4: smoke-integration. 01-07 creates the 'Verify --pretty views' step in .github/workflows/ci.yml (after 'Verify portfolios (Project Orion)', before the failure-logs step) with DEVOPS's expect_pretty function and the forecast line; later slices append their lines: 02-02 metrics (also logs the line count, KPI-3 advisory), 05-05 team list + portfolio list, 06-04 delivery list (after reloading demo scenario 0, always last in the step), 07-03 feature get (inserted above the delivery lines), 08-03 team refresh (exact `Team refreshed: <id>` under --json), 09-03 worktracking list, version get (anchor `Lighthouse v`, the reviewer's blocker was dismissed at the final gate), health check (exact `success` under --json). Slices 03 and 04 add no line: N/A, because slice 02's headline anchor walks every section reader (DSN-13). Blackout has no line: N/A, because recurring blackout rules are Premium and the smoke container is unlicensed. The ci.yml edit needs no changeset. DELIVER confirms the jq id-lookup paths against the live --json.",
+    "RD-5: docs (DSN-18, DISCUSS checklist). 01-07 updates skill/SKILL.md (the forecast example gains --json; the output rule says --pretty is for people and may change in any minor, scripts and agents use --json/--toon or MCP's facts; the MCP reference says each tool's summary states the answer as the web does), packages/cli/README.md 'Output Formats' (S10), ARCHITECTURE.md sections 2 and 7 (wording modules; 'only lh refinement get has one' becomes false), and packages/mcp-stdio/README.md + packages/mcp-http/README.md (summary beside facts). Every later slice's last step checks those passages and either updates them or records 'N/A, because the passage already covers it' in the commit body - no silent N/A. Lighthouse docs/aiintegration.md: N/A, because it shows --json only (S11).",
+    "RD-6: copy defaults A1-A12 (final gate, binding) are applied in these steps: A12 in 01-05; A8 in 03-01; A2 in 03-03; A5 and A11 in 03-05; A6 and A10 in 04-01; A4 in 04-02; A3 in 06-01; A9 in 06-03; A7 in every MCP list-count step that can see an empty list (05-04, 06-04, 07-03, 09-03); A1 in 07-02. Design amendments: DSN-11a in 03-04, DSN-14a in 08-03. Maintainer decisions: M1 in every unknown-shape scenario (first in 01-02), M2 in 02-01, M3/M6 in every list-summary step (first second block in 03-05), M4 in 04-02, M5 in 09-03, M9 in 06-01.",
+    "RD-7: A6 adds a Time in State line to the metrics headline in slice 04. If slice 02's exact-lines headline scenarios pin the line set, 04-01 updates that pin in the same commit with the reason in the commit body (a binding copy default, not a regression); the --json/--toon SHA-256 guards must not move, because the composite is unchanged (DSN-13).",
+    "RD-8: no refactor, review, mutation (StrykerJS, ephemeral, >= 80% on new wording/readers/rules/renderers and changed handler lines, last on frozen code), release-versioning, finalize or ADO steps; the orchestrator runs those. The website grep for pasted `lh` output (DISCUSS checklist, slice 01) is the orchestrator's check, recorded in feature-delta.md, not a step.",
+    "RD-9: precondition (DSN-19): slice 01 edits refinementOutput.ts and refinementWording.ts; 01-02 starts only after any in-flight refinement-votes work is committed on the clients' main. 01-01 touches neither file and may start at once.",
+    "RD-10: open DISTILL questions 1-12 are closed by A1-A12; no step asks the maintainer. The open copy is recorded as 'AFK default, revisit at the hold' in each affected step's commit body."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 01 - the forecast reads like the Forecast tab (US-01)",
+      "description": "The thinnest end-to-end slice and the shared pieces every later slice reuses (D3): the web's display rules (replaces the scaffold), the one Terminology resolver, the calendar-date module, the answer-wording read, the table helper moved out of refinement, the PrettyRenderer null fallback; then `lh forecast manual` and `lh forecast backtest` in the web's words, and the MCP forecast tools' summary field.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The web's forecast levels and likelihood rule, restated in client",
+          "description": "Replace the RED scaffold packages/client/src/forecastDisplayRules.ts with the web's rules (DSN-6): levelOf (thresholds 50/70/85 with the web's boundaries, null -> no level) and formatLikelihood (the >95% cap only while work remains; round or two decimals), plus likelihoodAnswer's exclusive order (Cannot forecast -> Not enough data -> the number) for the next steps. Export them from the client package.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/client/src/forecastDisplayRules.parity.test.ts",
+          "scenario_name": "names a chance of $chance '$level' (ForecastLevel.ts)",
+          "unskips": [
+            "it.skip.each -> it.each (forecastDisplayRules.parity.test.ts) :: names a chance of $chance '$level' (ForecastLevel.ts) - 10 rows",
+            "it.skip.each -> it.each (forecastDisplayRules.parity.test.ts) :: reads $value ($precision, work remaining: $hasRemainingWork) as '$reads' (formatLikelihood.ts) - 9 rows"
+          ],
+          "red_to_green_tests": [
+            "forecastDisplayRules.parity.test.ts :: names a chance of $chance '$level' (ForecastLevel.ts)",
+            "forecastDisplayRules.parity.test.ts :: reads $value ($precision, work remaining: $hasRemainingWork) as '$reads' (formatLikelihood.ts)"
+          ],
+          "criteria": [
+            "Every levelOf parity row gives the web's level word for its chance (Risky up to 50, Realistic up to 70, Confident up to 85, Certain above), and no level for null",
+            "Every formatLikelihood parity row reads as the web reads it: '>95%' only above 95 with work remaining, the exact value otherwise, in the precision asked",
+            "The scaffold is gone: the module carries no __SCAFFOLD__ marker and no call throws 'Not yet implemented'; the rules are importable from @letpeoplework/lighthouse-client",
+            "Every active guard stays green: the --json / --toon byte-identity guards, the reads guards, refusals passed through as 'category: reason' with exit 1, and the walking skeleton `lh refinement get`",
+            "`pnpm run ci` exits 0 in /storage/repos/lighthouse-clients (biome check, vitest run, tsc -b, build)"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/forecastDisplayRules.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/forecastDisplayRules.parity.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-01-forecasts.md"
+          ],
+          "dependencies": [],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TypeScript + Vitest; the parity tables are DISTILL's it.each example rows naming the web file each mirrors (DSN-7), no fast-check in the repo. Compensate with value-in/value-out unit cases on likelihoodAnswer's exclusive order (built here, first exercised by 01-04). Each parity row names the web file it mirrors (ForecastLevel.ts, formatLikelihood.ts); keep those names. DSN-7's residual risk is accepted: a web rule change does not fail the clients' CI. Create .changeset/readable-cli-01-forecasts.md here (RD-3): minor lighthouse-cli, minor lighthouse-client, minor lighthouse-mcp-core. RED: un-skip one table at a time; both fail on 'scaffold throws'. Commit: feat(client): the web's forecast levels and likelihood rule, restated (story 6218)."
+        },
+        {
+          "id": "01-02",
+          "name": "Lena reads Gravity's forecast as the Forecast tab says it",
+          "description": "The shared pieces plus the first view. Move toTableLines unchanged to cli/src/table.ts (DSN-9); extract client/src/terminology.ts (23 keys, seeded defaults, resolveTerms/readTerms) and make resolveRefinementTerms a 4-key projection of it (DSN-5); add client/src/calendarDates.ts (formatCalendarDay without Intl, formatTimestamp, isCalendarDay moved in, DSN-8); add client/src/answerWording.ts (readAnswerWording: Terminology + one name read, never fails, DSN-11); PrettyRenderer may return null and formatPayload then prints the generic view (DSN-3). Then client/src/forecastWording.ts (readManualForecast, describeManualForecastSummary) and cli/src/forecastOutput.ts, wired in runManualForecastCommand behind the pretty branch.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/forecastView.test.ts",
+          "scenario_name": "tells Lena when Gravity's 25 Work Items will be done, in the Forecast tab's words and levels",
+          "unskips": [
+            "it.skip -> it (forecastView.test.ts) :: tells Lena when Gravity's 25 Work Items will be done, in the Forecast tab's words and levels",
+            "it.skip.each -> it.each (forecastView.test.ts) :: shows the facts as they came when $reshaped - 2 rows",
+            "it.skip.each -> it.each (forecastView.test.ts) :: prints Lighthouse's days unshifted for a reader in %s - 2 rows (America/Adak, Pacific/Kiritimati)"
+          ],
+          "red_to_green_tests": [
+            "forecastView.test.ts :: tells Lena when Gravity's 25 Work Items will be done, in the Forecast tab's words and levels",
+            "forecastView.test.ts :: shows the facts as they came when $reshaped",
+            "forecastView.test.ts :: prints Lighthouse's days unshifted for a reader in %s"
+          ],
+          "criteria": [
+            "`lh forecast manual --team-id 3 --remaining 25 --target-date 2026-10-30` prints, exit 0, exactly the lines the scenario pins: the heading with the Team's name, the When table with level words and dates like 'Mon 9 Nov 2026', and the likelihood sentence",
+            "A forecast answer in a shape the reader does not recognise prints today's generic view, exit 0, with no stderr note (M1) - and the same test proves the recognised shape renders the new view",
+            "Forecast days print as Lighthouse sent them for a reader in UTC-10 and in UTC+14",
+            "Under --pretty the command makes at most two extra reads (Terminology and the Team), in parallel; neither is made under --json or --toon",
+            "`lh refinement get` prints byte-for-byte what it printed before the table helper moved and the resolver became a projection (refinement's tests unchanged and green)",
+            "The source-scanning enforcement test holds E1 (cli/src/*Output.ts import nothing from ./index and call no client method), E2 (padEnd( only in cli/src/table.ts), E3 (no padEnd( or column joins in client/src/*Wording.ts), E4 (no toLocale*/Intl in calendarDates.ts), E5 (no seeded term literal in this story's new wording/output modules outside terminology.ts)",
+            "Every active guard stays green: the manual and backtest --json / --toon byte-identity guards, the reads guards (only runManualForecast / runBacktest under the facts formats), refusals passed through as 'category: reason' with exit 1, and the walking skeleton",
+            "`pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/cli/src/table.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/refinementOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/output.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/forecastOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/terminology.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/calendarDates.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/answerWording.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/forecastWording.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/refinementWording.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/readableOutput.enforcement.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/forecastView.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-01-forecasts.md"
+          ],
+          "dependencies": ["01-01"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TypeScript + Vitest driving runCliCommand through cliHarness (aLighthouse); single-example wiring checks plus DISTILL's it.each rows. Compensate with value-in/value-out unit cases on terminology (blank -> entry default -> seeded word), calendarDates (both wire forms, invalid day -> null) and the manual-forecast reader (each required field removed -> null; optional absent -> undefined). Precondition RD-9 (DSN-19). Order of commits (DSN-5, DoD 4): (1) confirm refinement's existing tests pin `lh refinement get`'s pretty output literally - if any line is unpinned, add a literal inline snapshot first in a test-only commit (snapshot literals, never old-equals-new computed in the same test; staged changeset still required by the hook); (2) refactor(refinement): table move + resolver projection + isCalendarDay move, refinement bytes unchanged; (3) feat. Readers check and pick; they never reshape, round or sort (DSN-2). readAnswerWording never fails: a refused Terminology read leaves seeded words, a refused name read gives '{Term} [id: n]' (D4). The handler branches on outputFormat !== 'pretty' first and runs exactly today's code (the runRefinementGet shape, DSN-11). Enforcement test: one source-scanning Vitest file (the frontend's formatLikelihood.enforcement.test.ts is the precedent), reading both packages' src by path; E6/E7 are behavioural and already exist. Some of the edge scenarios may pass the moment the first is green; un-skip them one at a time anyway and record it in the commit body. Commits: refactor(refinement): the table helper and Terminology resolver become shared (story 6218); feat(cli): lh forecast manual reads like the Forecast tab (story 6218)."
+        },
+        {
+          "id": "01-03",
+          "name": "Every chance carries the Forecast tab's level word",
+          "description": "The manual forecast's When table names each row's level as the web's icon does, through levelOf, for every chance band.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/forecastView.test.ts",
+          "scenario_name": "names a $chance% chance $level, as the Forecast tab's icon does",
+          "unskips": [
+            "it.skip.each -> it.each (forecastView.test.ts) :: names a $chance% chance $level, as the Forecast tab's icon does - 8 rows"
+          ],
+          "red_to_green_tests": [
+            "forecastView.test.ts :: names a $chance% chance $level, as the Forecast tab's icon does"
+          ],
+          "criteria": [
+            "For each of the 8 chances the forecast prints the row '<chance>% <Level> Mon 9 Nov 2026' with the level the web gives that chance (Risky, Realistic, Confident, Certain), exit 0",
+            "Every active guard stays green: --json / --toon byte identity and reads for both forecast forms, refusals, the walking skeleton",
+            "`pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/forecastWording.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/forecastOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/forecastView.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-01-forecasts.md"
+          ],
+          "dependencies": ["01-02"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: DISTILL's it.each example table over the level bands. Compensate with the levelOf parity rows from 01-01. Rows may pass on first un-skip once 01-02 draws levels from levelOf; un-skip anyway, record it honestly in the commit body (they guard the boundaries at the CLI port). Commit: feat(cli): each forecast row carries the web's level word (story 6218)."
+        },
+        {
+          "id": "01-04",
+          "name": "The likelihood sentence says what the web says, including when it cannot",
+          "description": "The likelihood line follows the web's exclusive order: Cannot forecast, then the insufficient-data sentence verbatim, then the number with the >95% cap while work remains; an older server without hasSufficientData gets the number as usual.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/forecastView.test.ts",
+          "scenario_name": "reads a likelihood of $likelihood with $remaining Work Items left as '$reads'",
+          "unskips": [
+            "it.skip.each -> it.each (forecastView.test.ts) :: reads a likelihood of $likelihood with $remaining Work Items left as '$reads' - 5 rows",
+            "it.skip -> it (forecastView.test.ts) :: says it cannot forecast when Lighthouse has no likelihood to give",
+            "it.skip -> it (forecastView.test.ts) :: says a Team with too little history needs more days instead of giving a number",
+            "it.skip -> it (forecastView.test.ts) :: states the likelihood as usual when an older Lighthouse does not say whether the history is enough"
+          ],
+          "red_to_green_tests": [
+            "forecastView.test.ts :: reads a likelihood of $likelihood with $remaining Work Items left as '$reads'",
+            "forecastView.test.ts :: says it cannot forecast when Lighthouse has no likelihood to give",
+            "forecastView.test.ts :: says a Team with too little history needs more days instead of giving a number",
+            "forecastView.test.ts :: states the likelihood as usual when an older Lighthouse does not say whether the history is enough"
+          ],
+          "criteria": [
+            "'Likelihood to close <n> Work Items by Fri 30 Oct 2026: <reads>' prints the web's reading for each row, '>95%' only with work remaining",
+            "With no likelihood from Lighthouse the line ends 'Cannot forecast'; with too little history it prints the web's insufficient-data sentence instead of a number",
+            "When the answer has no hasSufficientData field the likelihood is stated as usual - nothing is said about history (D5)",
+            "Every active guard stays green: forecast --json / --toon byte identity and reads, refusals, the walking skeleton",
+            "`pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/forecastWording.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/forecastDisplayRules.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/forecastOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/forecastView.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-01-forecasts.md"
+          ],
+          "dependencies": ["01-03"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: example rows and single edge cases at the CLI port. Compensate with unit cases on likelihoodAnswer's exclusive order (Cannot forecast beats thin history; Overdue only when the server says so). The insufficient-data sentence is the web's verbatim (insufficientForecastData.ts) - copy it from the scenario, do not paraphrase. Commit: feat(cli): the forecast's likelihood reads as the web states it (story 6218)."
+        },
+        {
+          "id": "01-05",
+          "name": "The forecast heading says what was asked, in the instance's words, and never fails on a name",
+          "description": "The heading and tables follow the inputs given (only --remaining: When table only; only --target-date: How Many table only - A12 for the heading), name filtered Throughput, use the instance's renamed terms, fall back to seeded words when Terminology cannot be read, and to 'Team [id: 3]' when the Team cannot be read.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/forecastView.test.ts",
+          "scenario_name": "shows only the When table when Lena asks only how long 25 Work Items take",
+          "unskips": [
+            "it.skip -> it (forecastView.test.ts) :: shows only the When table when Lena asks only how long 25 Work Items take",
+            "it.skip -> it (forecastView.test.ts) :: shows only the How Many table when Lena asks only what fits by a date",
+            "it.skip -> it (forecastView.test.ts) :: says in the heading when the forecast used the Team's filtered Throughput",
+            "it.skip -> it (forecastView.test.ts) :: says it in the words an instance has renamed every term to",
+            "it.skip -> it (forecastView.test.ts) :: falls back to the seeded words when the instance's terms cannot be read",
+            "it.skip -> it (forecastView.test.ts) :: heads the forecast with the Team's id when its name cannot be read"
+          ],
+          "red_to_green_tests": [
+            "forecastView.test.ts :: shows only the When table when Lena asks only how long 25 Work Items take",
+            "forecastView.test.ts :: shows only the How Many table when Lena asks only what fits by a date",
+            "forecastView.test.ts :: says in the heading when the forecast used the Team's filtered Throughput",
+            "forecastView.test.ts :: says it in the words an instance has renamed every term to",
+            "forecastView.test.ts :: falls back to the seeded words when the instance's terms cannot be read",
+            "forecastView.test.ts :: heads the forecast with the Team's id when its name cannot be read"
+          ],
+          "criteria": [
+            "Asked only --remaining, the output shows the When table and no How Many table; asked only --target-date, the reverse; the heading leaves out the part not given (A12: 'Gravity · 25 Work Items' or 'Gravity · target Fri 30 Oct 2026')",
+            "A forecast on filtered Throughput says so in the heading",
+            "With all 23 terms renamed no seeded word appears in the output (KPI-5); with the Terminology read refused the seeded words appear and exit is 0",
+            "With the Team read refused the heading reads 'Team [id: 3] · ...' and exit is 0 (D4)",
+            "Every active guard stays green: forecast --json / --toon byte identity and reads, refusals, the walking skeleton",
+            "`pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/forecastWording.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/answerWording.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/forecastOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/forecastView.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-01-forecasts.md"
+          ],
+          "dependencies": ["01-04"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-example scenarios at the CLI port. Compensate with unit cases on describeManualForecastSummary for each input combination. A12 is an AFK copy default (revisit at the hold): the scenarios pin the lines that follow the heading, not the one-input heading itself; build the heading as A12 says and add a unit case for it. Commit: feat(cli): the forecast heading says what was asked, in the instance's words (story 6218)."
+        },
+        {
+          "id": "01-06",
+          "name": "Lena sees where September's actual landed among the backtest percentiles",
+          "description": "`lh forecast backtest` in the web's words: heading and period, the percentile rows with the actual result drawn as an R-LINE between them (a tie goes after the equal row; no Average bar, D9), the Team-id fallback. Both slice-01 KPI-1 rows un-skip with it.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/forecastView.test.ts",
+          "scenario_name": "shows Lena where September's actual landed among the forecast percentiles",
+          "unskips": [
+            "it.skip -> it (forecastView.test.ts) :: shows Lena where September's actual landed among the forecast percentiles",
+            "it.skip.each -> it.each (forecastView.test.ts) :: draws an actual of $actual between '$after' and '$before' - 3 rows (30, 19, 10)",
+            "it.skip -> it (forecastView.test.ts) :: heads the backtest with the Team's id when its name cannot be read",
+            "KPI-1 rows -> active (prettyForms.test.ts) :: slice 01: `lh $args` no longer prints the generic view - forecast manual, forecast backtest (2 rows)"
+          ],
+          "red_to_green_tests": [
+            "forecastView.test.ts :: shows Lena where September's actual landed among the forecast percentiles",
+            "forecastView.test.ts :: draws an actual of $actual between '$after' and '$before'",
+            "forecastView.test.ts :: heads the backtest with the Team's id when its name cannot be read",
+            "prettyForms.test.ts :: slice $slice: `lh $args` no longer prints the generic view (slice 01 rows)"
+          ],
+          "criteria": [
+            "`lh forecast backtest ...` prints the pinned lines, exit 0: heading, period, percentile rows, and '── Actual Throughput: <n> Work Items ──' placed first, between, or last as the actual falls; a tie goes after the equal row",
+            "With the Team read refused the backtest heading uses 'Team [id: 3]', exit 0",
+            "Both slice-01 forms' pretty output differs from the generic view of the same facts and contains no 'undefined' (KPI-1 rows)",
+            "Every active guard stays green: backtest and manual --json / --toon byte identity and reads, refusals, the KPI-1 completeness guards, the walking skeleton",
+            "`pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/forecastWording.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/forecastOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/forecastView.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/prettyForms.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-01-forecasts.md"
+          ],
+          "dependencies": ["01-05"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: example rows for the actual's placement. Compensate with unit cases on the placement rule (first / between / last / tie). The CLI orders rows it was given and places the actual; it never recomputes a percentile (constraint 8). prettyForms.test.ts: split CHANGING_FORMS by delivered slice as RD-2 describes; the two completeness guards stay untouched. Commit: feat(cli): lh forecast backtest places the actual among the percentiles (story 6218)."
+        },
+        {
+          "id": "01-07",
+          "name": "An assistant gets the forecast's heading and sentence beside its facts; slice 01 ships",
+          "description": "lighthouse_forecast_manual and lighthouse_forecast_backtest return { summary, ...facts } (object answers, the refinement precedent, DSN-14) through the same reader, readAnswerWording and describe...Summary as the CLI; descriptions name `summary`. Slice wrap-up: the 'Verify --pretty views' smoke step with the forecast line, the final changeset text, and the docs passages (DSN-18).",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-core/src/forecastSummary.test.ts",
+          "scenario_name": "hands an assistant the manual forecast's facts together with the heading and sentence lh prints",
+          "unskips": [
+            "it.skip -> it (forecastSummary.test.ts) :: hands an assistant the manual forecast's facts together with the heading and sentence lh prints",
+            "it.skip -> it (forecastSummary.test.ts) :: hands an assistant the backtest's facts together with its heading and period",
+            "it.skip -> it (forecastSummary.test.ts) :: words the summary with the seeded words and the Team's id when neither can be read",
+            "it.skip -> it (forecastSummary.test.ts) :: words the summary in the instance's renamed terms",
+            "it.skip -> it (forecastSummary.test.ts) :: adds no summary to an answer it does not recognise, and hands the facts over as they came",
+            "it.skip.each -> it.each (forecastSummary.test.ts) :: tells an assistant in %s's description that `summary` states the answer as the web does - 2 rows"
+          ],
+          "red_to_green_tests": [
+            "forecastSummary.test.ts :: hands an assistant the manual forecast's facts together with the heading and sentence lh prints",
+            "forecastSummary.test.ts :: hands an assistant the backtest's facts together with its heading and period",
+            "forecastSummary.test.ts :: words the summary with the seeded words and the Team's id when neither can be read",
+            "forecastSummary.test.ts :: words the summary in the instance's renamed terms",
+            "forecastSummary.test.ts :: adds no summary to an answer it does not recognise, and hands the facts over as they came",
+            "forecastSummary.test.ts :: tells an assistant in %s's description that `summary` states the answer as the web does"
+          ],
+          "criteria": [
+            "The manual and backtest tool answers carry a summary equal to the heading and sentence lh prints for the same facts; the answer minus summary equals today's facts",
+            "With Terminology and the Team both refused the summary uses seeded words and 'Team [id: 3]' and the tool does not error; with terms renamed the summary uses them",
+            "An unrecognised answer gets no summary and its facts exactly as today",
+            "Both tools' descriptions mention `summary`; tool annotations unchanged (runtime.test.ts stays pinned)",
+            "ci.yml smoke-integration has a 'Verify --pretty views' step after 'Verify portfolios (Project Orion)' with expect_pretty and the line `When will 10 Work Items be done?` for `lh forecast manual --team-id <Team Zenith> --remaining 10` (waiting until the forecast answers), checking --json is valid JSON without the anchor",
+            "The slice's changeset names minor lighthouse-cli, lighthouse-client and lighthouse-mcp-core and says in one sentence that --pretty is for people and --json/--toon are the contract",
+            "skill/SKILL.md's forecast example carries --json and its output rule says --pretty may change in any minor; packages/cli/README.md 'Output Formats', ARCHITECTURE.md sections 2 and 7, and the mcp-stdio / mcp-http READMEs describe the views and the summary",
+            "Every active guard stays green, including the MCP errors-without-summary guard; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/toolResult.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/forecastSummary.test.ts",
+            "/storage/repos/lighthouse-clients/.github/workflows/ci.yml",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-01-forecasts.md",
+            "/storage/repos/lighthouse-clients/skill/SKILL.md",
+            "/storage/repos/lighthouse-clients/packages/cli/README.md",
+            "/storage/repos/lighthouse-clients/packages/mcp-stdio/README.md",
+            "/storage/repos/lighthouse-clients/packages/mcp-http/README.md",
+            "/storage/repos/lighthouse-clients/ARCHITECTURE.md"
+          ],
+          "dependencies": ["01-06"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: MCP tool calls through mcpHarness (anAssistantOn) are single-example wiring checks; the CI smoke is a live wiring check. Compensate: the summary is the same describe...Summary already unit-tested in client. DSN-14 object path: label: encode({ summary, ...facts }); summary reads never fail the tool (unlike refinement's tool, which stays as it is). withSummary in toolResult.ts may start here for the object case or wait for 03-05's second block - one helper either way. Smoke: DEVOPS's expect_pretty verbatim (bash, -eo pipefail); look up Team Zenith's id from `lh team list --json`; the ci.yml edit needs no changeset (RD-4). Docs per RD-5 (DSN-18). Commits: feat(mcp): the forecast tools state their answer as the web does (story 6218); ci(smoke): verify the forecast's --pretty view on a real Lighthouse (story 6218); docs(cli): --pretty is for people, --json and --toon for scripts (story 6218)."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice 02 - the metrics headline fits one screen (US-02)",
+      "description": "`lh metrics team|portfolio` with no --metrics prints the dashboard's headline numbers, the percentile table and one line per over-time metric (D7), at most 30 lines (KPI-3). The composite stays the --json payload (DSN-13). No MCP change (DSN-15), so no mcp-core bump.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Priya sees Gravity's headline numbers, percentiles and one line per over-time metric on one screen",
+          "description": "client/src/metricsWording.ts holds one section reader per METRIC_KEYS section and the headline wording; cli/src/metricsOutput.ts walks the CLI-owned composite. A refused section prints its reason in place; an unrecognised section prints '<Metric>  shown only with --json (unknown shape)' and the rest renders (M2); workDistribution is never printed (D8).",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/metricsHeadlineView.test.ts",
+          "scenario_name": "shows Priya Gravity's headline numbers and percentiles on one screen",
+          "unskips": [
+            "it.skip -> it (metricsHeadlineView.test.ts) :: shows Priya Gravity's headline numbers and percentiles on one screen",
+            "it.skip -> it (metricsHeadlineView.test.ts) :: summarises each over-time metric in one line and says where every day is",
+            "it.skip -> it (metricsHeadlineView.test.ts) :: says why an over-time metric with nothing recorded has no line of numbers",
+            "it.skip -> it (metricsHeadlineView.test.ts) :: shows a refused metric's reason in its own line and every other number around it",
+            "it.skip -> it (metricsHeadlineView.test.ts) :: names a metric it cannot read as shown only with --json, and renders the rest",
+            "it.skip -> it (metricsHeadlineView.test.ts) :: says '1 day' for a single day and '—' where a percentile is missing",
+            "it.skip -> it (metricsHeadlineView.test.ts) :: does not print the work distribution placeholder"
+          ],
+          "red_to_green_tests": [
+            "metricsHeadlineView.test.ts :: shows Priya Gravity's headline numbers and percentiles on one screen",
+            "metricsHeadlineView.test.ts :: summarises each over-time metric in one line and says where every day is",
+            "metricsHeadlineView.test.ts :: says why an over-time metric with nothing recorded has no line of numbers",
+            "metricsHeadlineView.test.ts :: shows a refused metric's reason in its own line and every other number around it",
+            "metricsHeadlineView.test.ts :: names a metric it cannot read as shown only with --json, and renders the rest",
+            "metricsHeadlineView.test.ts :: says '1 day' for a single day and '—' where a percentile is missing",
+            "metricsHeadlineView.test.ts :: does not print the work distribution placeholder"
+          ],
+          "criteria": [
+            "`lh metrics team --id 3 --start-date ... --end-date ...` prints the heading, the six headline lines in order and the percentile table in at most 30 lines (KPI-3), exit 0",
+            "Each over-time metric gets one line: first recorded day -> last and how many days ('(n days)' is the inclusive range; '1 day' for one); an empty series reads as a sentence; a missing percentile reads '—'",
+            "A refused section prints its reason in its own line and every other number still prints; a section in an unknown shape prints '<Metric>  shown only with --json (unknown shape)' and the rest renders (M2)",
+            "The workDistribution placeholder never appears in the pretty output",
+            "Every active guard stays green: the metrics composite's --json and --toon SHA-256 hashes captured on unchanged code (a changed hash is a bug, never a re-capture), the reads guard (exactly the metric reads under the facts formats), the forecast guards, the walking skeleton",
+            "`pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/metricsWording.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/metricsOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/metricsHeadlineView.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-02-metrics-headline.md"
+          ],
+          "dependencies": ["01-07"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-example scenarios at the CLI port over test-support/metricsAnswers.ts. Compensate with unit cases on each section reader (required field removed -> null; absent optional -> undefined). DSN-13: buildMetricsPayload is unchanged; the renderer walks the composite and the section values stay raw server facts or the CLI's markers (isMetricErrorValue, getMetricUnavailableValue). M2 supersedes D5's whole-headline fallback for the headline only. One reader per section, shared by the headline and --metrics <name> (slice 03) - DEVOPS relies on this so that slice 02's smoke anchor proves every section reader. Create .changeset/readable-cli-02-metrics-headline.md: minor lighthouse-cli and lighthouse-client, no mcp-core (RD-3). Commit: feat(cli): lh metrics headline fits one screen (story 6218)."
+        },
+        {
+          "id": "02-02",
+          "name": "The headline leaves out what a Team lacks, speaks the instance's words, and works for a Portfolio; slice 02 ships",
+          "description": "No WIP limit -> no limit wording; no blocked flag from the server -> no blocked count; renamed and refused terms; Team name and terms both refused; the Portfolio headline (Features in Progress against the System WIP Limit, total throughput per day). KPI-1 rows for both headline forms. The metrics smoke line and the final changeset.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/metricsHeadlineView.test.ts",
+          "scenario_name": "counts Features for Ocean Explorer over its 90 days",
+          "unskips": [
+            "it.skip -> it (metricsHeadlineView.test.ts) :: leaves out the WIP limit for a Team that has none",
+            "it.skip -> it (metricsHeadlineView.test.ts) :: leaves out the blocked count when Lighthouse does not say which Work Items are blocked",
+            "it.skip -> it (metricsHeadlineView.test.ts) :: says it in the words an instance has renamed every term to",
+            "it.skip -> it (metricsHeadlineView.test.ts) :: heads the headline with the Team's id, in the seeded words, when neither name nor terms can be read",
+            "it.skip -> it (metricsHeadlineView.test.ts) :: counts Features for Ocean Explorer over its 90 days",
+            "KPI-1 rows -> active (prettyForms.test.ts) :: slice 02: `lh $args` no longer prints the generic view - metrics team, metrics portfolio (2 rows)"
+          ],
+          "red_to_green_tests": [
+            "metricsHeadlineView.test.ts :: leaves out the WIP limit for a Team that has none",
+            "metricsHeadlineView.test.ts :: leaves out the blocked count when Lighthouse does not say which Work Items are blocked",
+            "metricsHeadlineView.test.ts :: says it in the words an instance has renamed every term to",
+            "metricsHeadlineView.test.ts :: heads the headline with the Team's id, in the seeded words, when neither name nor terms can be read",
+            "metricsHeadlineView.test.ts :: counts Features for Ocean Explorer over its 90 days",
+            "prettyForms.test.ts :: slice $slice: `lh $args` no longer prints the generic view (slice 02 rows)"
+          ],
+          "criteria": [
+            "A Team without a WIP limit gets no limit wording; a server that flags no Work Item as blocked gets no blocked count (D5)",
+            "With every term renamed no seeded word appears; with name and terms both refused the heading reads 'Team [id: 3]' in seeded words, exit 0",
+            "`lh metrics portfolio --id 2 ...` heads with 'Ocean Explorer · Thu 9 Jul 2026 – Tue 6 Oct 2026 (90 days)' and counts Features in Progress against the System WIP Limit",
+            "Both headline forms' pretty output differs from the generic view and contains no 'undefined' (KPI-1 rows)",
+            "ci.yml 'Verify --pretty views' gains the line for `lh metrics team --id <Team Zenith>` with anchor `Predictability Score`, --json valid without the anchor, and prints the pretty line count to the log (KPI-3 on real data, advisory)",
+            "The slice changeset names minor lighthouse-cli and lighthouse-client only; skill/README/ARCHITECTURE passages checked and updated or recorded N/A with the reason in the commit body",
+            "Every active guard stays green (metrics SHA-256 hashes unchanged, reads, slice-01 guards, the walking skeleton); `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/metricsWording.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/metricsOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/metricsHeadlineView.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/prettyForms.test.ts",
+            "/storage/repos/lighthouse-clients/.github/workflows/ci.yml",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-02-metrics-headline.md"
+          ],
+          "dependencies": ["02-01"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-example scenarios at the CLI port. Compensate with unit cases on the headline wording for optional fields absent. The Portfolio headline needs getPortfolio as its one name read (DSN-11), only under --pretty. Per-day average and similar display arithmetic the web does are restated in metricsWording.ts with a unit case (DSN-6); nothing the web does not compute. Smoke per RD-4. Commits: feat(cli): the metrics headline for Portfolios and the instance's words (story 6218); ci(smoke): verify the metrics headline's --pretty view (story 6218)."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Slice 03 - one metric, every day (US-03)",
+      "description": "`lh metrics team|portfolio --metrics <name>` prints that metric's every day in the dashboard's words and columns, through the same section readers as the headline; --definition-id names the cycle time definition through the new getTeamSettings read (DSN-11a). MCP: the per-metric tools for Team and Portfolio gain a summary (second block for list answers, field for object answers).",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Priya sees each day's throughput, and every metric stays honest about empty, unknown and time-zoned days",
+          "description": "The --metrics day view: heading, sentence and day table, beginning with throughput; an empty history says why it has no rows; an unknown shape prints the generic view (M1); days are dated as Lighthouse recorded them in any time zone. A --metrics read refused outside the headline keeps today's refusal (A8).",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/metricDailyView.test.ts",
+          "scenario_name": "shows Priya each day's throughput under the total",
+          "unskips": [
+            "it.skip -> it (metricDailyView.test.ts) :: shows Priya each day's throughput under the total",
+            "it.skip.each -> it.each (metricDailyView.test.ts) :: says why --metrics $metric has no rows when Lighthouse has recorded no day yet - 2 rows",
+            "it.skip -> it (metricDailyView.test.ts) :: shows the facts as they came when the one metric asked for has a shape lh does not know",
+            "it.skip.each -> it.each (metricDailyView.test.ts) :: dates each day as Lighthouse recorded it for a reader in %s - 2 rows"
+          ],
+          "red_to_green_tests": [
+            "metricDailyView.test.ts :: shows Priya each day's throughput under the total",
+            "metricDailyView.test.ts :: says why --metrics $metric has no rows when Lighthouse has recorded no day yet",
+            "metricDailyView.test.ts :: shows the facts as they came when the one metric asked for has a shape lh does not know",
+            "metricDailyView.test.ts :: dates each day as Lighthouse recorded it for a reader in %s"
+          ],
+          "criteria": [
+            "`lh metrics team --id 3 ... --metrics throughput` prints the total and one row per day under it, exit 0",
+            "A metric with no recorded day prints its sentence and no table (never an empty table)",
+            "A metric asked for in an unknown shape prints today's generic view, exit 0, no stderr note (M1)",
+            "Day keys print unshifted for readers in UTC-10 and UTC+14",
+            "A --metrics <name> whose read Lighthouse refuses prints 'category: reason' on stderr, exit 1, as today (A8)",
+            "Every active guard stays green: the metrics --json / --toon SHA-256 hashes and the `--metrics percentilesOverTime --json` hash, reads, earlier slices' guards, the walking skeleton",
+            "`pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/metricsWording.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/metricsOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/metricDailyView.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-03-metric-every-day.md"
+          ],
+          "dependencies": ["02-02"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-example and it.each scenarios at the CLI port. Compensate with unit cases on the day-table wording. Reuse the slice-02 section readers (one reader per section, DSN-13); do not add a second reader for the same section. A8 is an AFK copy default: keep today's error path for a single refused metric (no scenario pins it; add a unit/CLI case only if the crafter changes that branch). Create .changeset/readable-cli-03-metric-every-day.md: minor lighthouse-cli, lighthouse-client, lighthouse-mcp-core (RD-3). Commit: feat(cli): one metric, every day, in the dashboard's words (story 6218)."
+        },
+        {
+          "id": "03-02",
+          "name": "Every metric name lh accepts gets the dashboard's heading, sentence and columns",
+          "description": "The ten remaining --metrics names each get their heading, sentence and columns from the dashboard; predictabilityScore gets the score line only (A2).",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/metricDailyView.test.ts",
+          "scenario_name": "says '$says' for --metrics $metric",
+          "unskips": [
+            "it.skip.each -> it.each (metricDailyView.test.ts) :: says '$says' for --metrics $metric - 10 rows"
+          ],
+          "red_to_green_tests": [
+            "metricDailyView.test.ts :: says '$says' for --metrics $metric"
+          ],
+          "criteria": [
+            "For each of the 10 metric names the output contains the pinned heading/sentence, exit 0, and never 'undefined' or 'NaN'",
+            "`--metrics predictabilityScore` prints the score line and no percentile table (A2: the table would need facts --json does not carry)",
+            "Every active guard stays green (metrics hashes, reads, earlier slices, the walking skeleton); `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/metricsWording.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/metricsOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/metricDailyView.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-03-metric-every-day.md"
+          ],
+          "dependencies": ["03-01"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: one DISTILL it.each definition with 10 rows (above the 8-case guide because a single parametrised definition cannot be split without rewriting the test). Compensate with a unit case per section's describe... wording. A2 is an AFK copy default (revisit at the hold). Commit: feat(cli): every metric name has the dashboard's heading (story 6218)."
+        },
+        {
+          "id": "03-03",
+          "name": "The day views list Work Items, explain predictability, keep the order asked and speak the instance's words",
+          "description": "WIP lists the Work Items in progress with age and since-when blocked; cycle time lists each closed Work Item with its close day and Cycle Time; predictability is explained in the dashboard's own words; several names print in the order given; renamed terms.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/metricDailyView.test.ts",
+          "scenario_name": "lists the Work Items in progress with their age and since when they are blocked",
+          "unskips": [
+            "it.skip -> it (metricDailyView.test.ts) :: lists the Work Items in progress with their age and since when they are blocked",
+            "it.skip -> it (metricDailyView.test.ts) :: lists each closed Work Item with the day it closed and its Cycle Time",
+            "it.skip -> it (metricDailyView.test.ts) :: explains the predictability score in the dashboard's own words",
+            "it.skip.each -> it.each (metricDailyView.test.ts) :: shows --metrics $asked in the order Priya named them - 2 rows",
+            "it.skip -> it (metricDailyView.test.ts) :: says it in the words an instance has renamed every term to"
+          ],
+          "red_to_green_tests": [
+            "metricDailyView.test.ts :: lists the Work Items in progress with their age and since when they are blocked",
+            "metricDailyView.test.ts :: lists each closed Work Item with the day it closed and its Cycle Time",
+            "metricDailyView.test.ts :: explains the predictability score in the dashboard's own words",
+            "metricDailyView.test.ts :: shows --metrics $asked in the order Priya named them",
+            "metricDailyView.test.ts :: says it in the words an instance has renamed every term to"
+          ],
+          "criteria": [
+            "--metrics wip lists each in-progress Work Item with its age and, when blocked, since when; --metrics cycleTime lists each closed Work Item with its close day and Cycle Time",
+            "--metrics predictabilityScore prints the dashboard's explanation verbatim under the score line (A2)",
+            "Several --metrics names print their sections in the order given",
+            "With every term renamed no seeded word appears",
+            "Every active guard stays green (metrics hashes, reads, earlier slices, the walking skeleton); `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/metricsWording.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/metricsOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/metricDailyView.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-03-metric-every-day.md"
+          ],
+          "dependencies": ["03-02"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-example scenarios at the CLI port. Compensate with unit cases on the Work Item row wording. The CLI orders and counts rows it was given; it never recomputes Cycle Time or the score (constraint 8). Commit: feat(cli): the metric day views list Work Items as the dashboard does (story 6218)."
+        },
+        {
+          "id": "03-04",
+          "name": "Priya's chosen cycle time definition is named; every slice-03 form has its own view",
+          "description": "--definition-id names the cycle time definition through a new client read getTeamSettings (GET /teams/{id}/settings), a third --pretty read on that one form, in parallel and never failing the command (DSN-11a). KPI-1 rows for the 10 slice-03 forms.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/metricDailyView.test.ts",
+          "scenario_name": "names the cycle time definition Priya chose",
+          "unskips": [
+            "it.skip -> it (metricDailyView.test.ts) :: names the cycle time definition Priya chose",
+            "KPI-1 rows -> active (prettyForms.test.ts) :: slice 03: `lh $args` no longer prints the generic view - --metrics throughput, wip, cycleTime, workItemAge, totalWorkItemAge, arrivals, predictabilityScore, blocked, percentilesOverTime, processBehaviorOverTime (10 rows)"
+          ],
+          "red_to_green_tests": [
+            "metricDailyView.test.ts :: names the cycle time definition Priya chose",
+            "prettyForms.test.ts :: slice $slice: `lh $args` no longer prints the generic view (slice 03 rows)"
+          ],
+          "criteria": [
+            "`lh metrics team --id 3 ... --metrics cycleTime --definition-id 4` names the definition ('Lead Time Percentiles...') in its heading, exit 0",
+            "That form makes at most three extra reads under --pretty (Terminology, Team, Team settings) in parallel, and none under --json / --toon; if the settings read is refused the heading drops the definition's name and the command still answers, exit 0 (DSN-11a)",
+            "Every other --pretty command still makes two or fewer extra reads",
+            "All ten slice-03 forms' pretty output differs from the generic view and contains no 'undefined' (KPI-1 rows)",
+            "Every active guard stays green, including both KPI-1 completeness guards; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/metricsWording.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/metricsOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/metricDailyView.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/prettyForms.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-03-metric-every-day.md"
+          ],
+          "dependencies": ["03-03"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: one scenario plus KPI-1 rows (rows above the 8-case guide only assert 'not the generic view' for forms converted in 03-01..03-03). Compensate with a unit case on the definition-name lookup (found / not found / settings refused). getTeamSettings is a new LighthouseClient read over the existing REST route; it is the one new driven call this story adds (Adapter coverage) - extend the cliHarness stub only if the scenario's stub lacks it, and keep the reads guards' expected lists unchanged for the facts formats. Commit: feat(cli): --definition-id names the cycle time definition (story 6218)."
+        },
+        {
+          "id": "03-05",
+          "name": "An assistant gets each per-metric answer's sentence beside its facts; slice 03 ships",
+          "description": "The per-metric MCP tools (Team and Portfolio) call the same section readers and describe...Summary: list answers keep their facts block byte-identical and add a second text block 'summary: ...' via withSummary (M6, DSN-14); object answers gain a summary field; an unrecognised answer gets none. Work Item Age and Portfolio drill-down summaries take A5 and A11.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-core/src/metricSummaries.test.ts",
+          "scenario_name": "keeps $tool's facts as they are and adds '$says' in a second block",
+          "unskips": [
+            "it.skip.each -> it.each (metricSummaries.test.ts) :: keeps $tool's facts as they are and adds '$says' in a second block - 5 rows",
+            "it.skip -> it (metricSummaries.test.ts) :: says nothing is recorded yet, in the web's words, for an empty percentile history",
+            "it.skip.each -> it.each (metricSummaries.test.ts) :: hands $tool's facts over with a summary that says '$says' - 3 rows",
+            "it.skip -> it (metricSummaries.test.ts) :: adds no summary to a percentile history it does not recognise"
+          ],
+          "red_to_green_tests": [
+            "metricSummaries.test.ts :: keeps $tool's facts as they are and adds '$says' in a second block",
+            "metricSummaries.test.ts :: says nothing is recorded yet, in the web's words, for an empty percentile history",
+            "metricSummaries.test.ts :: hands $tool's facts over with a summary that says '$says'",
+            "metricSummaries.test.ts :: adds no summary to a percentile history it does not recognise"
+          ],
+          "criteria": [
+            "Each of the 5 list-answer tools returns its facts block exactly as today, then a second block with the pinned summary (e.g. 'Cycle Time Percentiles: 50th 5 days · 70th 8 days · 85th 12 days · 95th 21 days')",
+            "An empty percentile history keeps 'team percentilesOverTime: []' and says nothing is recorded yet in the web's words",
+            "The 3 object-answer tools return their facts plus a summary field; an unrecognised blocked/percentile history gets no summary and today's facts",
+            "The Work Item Age tool's summary is the CLI's heading plus its one sentence (A5); the Portfolio per-metric tools' summary is the CLI's heading plus its sentence (A11)",
+            "smoke-integration: no line added - N/A, because slice 02's headline anchor walks every section reader (RD-4); the changeset names minor lighthouse-cli, lighthouse-client, lighthouse-mcp-core; docs passages checked (RD-5)",
+            "Every active guard stays green, including the MCP errors-without-summary guard; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/toolResult.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/metricsWording.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/metricSummaries.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-03-metric-every-day.md"
+          ],
+          "dependencies": ["03-04"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: MCP tool calls through mcpHarness, single examples and DISTILL's it.each rows. Compensate: the summary is the client's describe...Summary, unit-tested there. withSummary(label, facts, summary) in toolResult.ts is the one helper for the second block (DSN-14); summary reads never fail the tool. A5 / A11 are AFK copy defaults (revisit at the hold) - add unit cases on those summaries since no MCP scenario pins them. Tool descriptions of converted tools gain one sentence naming `summary`; annotations unchanged. Commit: feat(mcp): the per-metric tools state their answer as the dashboard does (story 6218)."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Slice 04 - Time in State (US-04)",
+      "description": "`lh metrics ... --metrics cumulativeStateTime` prints one row per state in workflow order, with the --state drill-down and --item-ids narrowing; the headline gains its Time in State line (A6). MCP cumulativeStateTime and cumulativeStateTimeItems gain summaries; the candidates tool stays without one (M4).",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Priya sees where Gravity's time goes, one state per row, and the Work Items behind a state",
+          "description": "Rows 'State · Total days · Work Items · Completed · Ongoing · Mean · Median' in workflow order; '—' for a missing median; the candidate list is never printed; --state Review adds the contributing Work Items; --item-ids narrows the count; renamed terms; no workflow order -> generic view. A10 for no states; A6 adds the headline line.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/timeInStateView.test.ts",
+          "scenario_name": "shows Priya where Gravity's time goes, one state per row in workflow order",
+          "unskips": [
+            "it.skip -> it (timeInStateView.test.ts) :: shows Priya where Gravity's time goes, one state per row in workflow order",
+            "it.skip -> it (timeInStateView.test.ts) :: says '—' for a state without a median",
+            "it.skip -> it (timeInStateView.test.ts) :: does not print the list of Work Items the web offers to pick from",
+            "it.skip -> it (timeInStateView.test.ts) :: lists the Work Items contributing to Review with their days",
+            "it.skip -> it (timeInStateView.test.ts) :: counts only the Work Items Priya picked",
+            "it.skip -> it (timeInStateView.test.ts) :: says it in the words an instance has renamed every term to",
+            "it.skip -> it (timeInStateView.test.ts) :: shows the facts as they came when the states arrive without their workflow order",
+            "KPI-1 row -> active (prettyForms.test.ts) :: slice 04: `lh $args` no longer prints the generic view - --metrics cumulativeStateTime (1 row)"
+          ],
+          "red_to_green_tests": [
+            "timeInStateView.test.ts :: shows Priya where Gravity's time goes, one state per row in workflow order",
+            "timeInStateView.test.ts :: says '—' for a state without a median",
+            "timeInStateView.test.ts :: does not print the list of Work Items the web offers to pick from",
+            "timeInStateView.test.ts :: lists the Work Items contributing to Review with their days",
+            "timeInStateView.test.ts :: counts only the Work Items Priya picked",
+            "timeInStateView.test.ts :: says it in the words an instance has renamed every term to",
+            "timeInStateView.test.ts :: shows the facts as they came when the states arrive without their workflow order",
+            "prettyForms.test.ts :: slice $slice: `lh $args` no longer prints the generic view (slice 04 row)"
+          ],
+          "criteria": [
+            "--metrics cumulativeStateTime prints one row per state in workflow order (e.g. 'To Do 96 18 12 6 5.3 days 4 days'), '—' where a median is missing, and never the candidate list",
+            "--state Review adds the Work Items contributing to Review with their days; --item-ids narrows the count ('across n' = candidates, or the --item-ids count)",
+            "With every term renamed no seeded word appears; states without their workflow order print the generic view, exit 0 (M1)",
+            "A Time in State answer with no states prints the heading, then 'No data yet.' (A10)",
+            "The metrics headline gains one line 'Time in State  <n> states across <m> {Work Items}' (A6); if slice 02's pinned headline lines change, that pin is updated in the same commit (RD-7) and the composite hashes do not move",
+            "The cumulativeStateTime form's pretty output differs from the generic view (KPI-1 row)",
+            "Every active guard stays green: the `--state Review --json` SHA-256 reading the three cumulative reads, the metrics hashes, earlier slices' guards, the walking skeleton; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/metricsWording.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/metricsOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/timeInStateView.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/metricsHeadlineView.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/prettyForms.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-04-time-in-state.md"
+          ],
+          "dependencies": ["03-05"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-example scenarios at the CLI port. Compensate with unit cases on the Time in State reader (no workflow order -> null) and on A6 / A10, which no scenario pins (AFK copy defaults, revisit at the hold). The reader returns the existing CumulativeStateTimeResult type after checking the fields it uses (DSN-1). Create .changeset/readable-cli-04-time-in-state.md: minor lighthouse-cli, lighthouse-client, lighthouse-mcp-core. Commit: feat(cli): Time in State reads like the dashboard's bar (story 6218)."
+        },
+        {
+          "id": "04-02",
+          "name": "An assistant gets Time in State's heading and sentence; slice 04 ships",
+          "description": "lighthouse_*_cumulativeStateTime and lighthouse_*_cumulativeStateTimeItems gain a summary beside unchanged facts (A4: the CLI's heading plus its one sentence); the candidates tool keeps no summary (M4).",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-core/src/timeInStateSummary.test.ts",
+          "scenario_name": "hands an assistant the drill-down's facts with the dialog's title as its summary",
+          "unskips": [
+            "it.skip -> it (timeInStateSummary.test.ts) :: hands an assistant the drill-down's facts with the dialog's title as its summary",
+            "it.skip -> it (timeInStateSummary.test.ts) :: hands an assistant the bar's facts unchanged with a summary beside them"
+          ],
+          "red_to_green_tests": [
+            "timeInStateSummary.test.ts :: hands an assistant the drill-down's facts with the dialog's title as its summary",
+            "timeInStateSummary.test.ts :: hands an assistant the bar's facts unchanged with a summary beside them"
+          ],
+          "criteria": [
+            "The drill-down tool's summary is the dialog's title naming the state's contributing Work Items; its facts are unchanged",
+            "The bar tool's facts are unchanged and a summary string sits beside them: the CLI's heading plus its one sentence (A4)",
+            "The candidates tool answers its facts with no summary (M4 guard stays green)",
+            "smoke-integration: no line added - N/A, because the headline anchor of slice 02 walks cumulativeStateTime too (RD-4); changeset finalised (minor cli, client, mcp-core); docs passages checked (RD-5)",
+            "Every active guard stays green; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/metricsWording.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/timeInStateSummary.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-04-time-in-state.md"
+          ],
+          "dependencies": ["04-01"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: two MCP wiring checks. Compensate with a unit case pinning A4's sentence (AFK default; the scenario only asserts a string). Its 'across n' count needs the candidates read only in the CLI; the MCP bar summary states what the bar answer carries. Commit: feat(mcp): Time in State tools state their answer (story 6218)."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Slice 05 - Teams and Portfolios (US-05)",
+      "description": "`lh team list|get` and `lh portfolio list|get` read like the Overview tables and the settings pages; the Portfolio list points at `lh delivery list` instead of fetching Deliveries (D10). MCP list tools add a count sentence (M3) as a second block, get tools a summary field; one mcp-http e2e proves the second block over real HTTP.",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "Lena sees every Team in the Overview's table, with the id beside the name",
+          "description": "Team list table with tags, Last Updated as a local timestamp (D15), '—' when never updated; one Team without name or id sends the whole list to the generic view (AC-05.4, DSN-2).",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/teamsAndPortfoliosView.test.ts",
+          "scenario_name": "shows Lena every Team in the Overview's table, with the id beside the name",
+          "unskips": [
+            "it.skip -> it (teamsAndPortfoliosView.test.ts) :: shows Lena every Team in the Overview's table, with the id beside the name",
+            "it.skip -> it (teamsAndPortfoliosView.test.ts) :: lists a Team's tags when Lighthouse sends them",
+            "it.skip -> it (teamsAndPortfoliosView.test.ts) :: says '—' for a Team Lighthouse sent without a last update",
+            "it.skip -> it (teamsAndPortfoliosView.test.ts) :: shows the list as it came when a Team in it has no name or id",
+            "it.skip.each -> it.each (teamsAndPortfoliosView.test.ts) :: shows the last update at $reads for a reader in $zone - 2 rows"
+          ],
+          "red_to_green_tests": [
+            "teamsAndPortfoliosView.test.ts :: shows Lena every Team in the Overview's table, with the id beside the name",
+            "teamsAndPortfoliosView.test.ts :: lists a Team's tags when Lighthouse sends them",
+            "teamsAndPortfoliosView.test.ts :: says '—' for a Team Lighthouse sent without a last update",
+            "teamsAndPortfoliosView.test.ts :: shows the list as it came when a Team in it has no name or id",
+            "teamsAndPortfoliosView.test.ts :: shows the last update at $reads for a reader in $zone"
+          ],
+          "criteria": [
+            "`lh team list` prints the pinned first lines of the table ('Name [id: n]' rows, Last Updated as 'Tue 6 Oct 2026, 07:14' in the reader's zone), reading only listTeams and Terminology, exit 0",
+            "Tags show when Lighthouse sends them and the Tags cell stays empty when it does not; a Team never updated reads '—'",
+            "A list containing one Team without name or id prints today's generic view, exit 0 (M1)",
+            "Every active guard stays green: team list/get and portfolio list/get --json / --toon and reads, earlier slices' guards, the walking skeleton; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/ownerWording.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/ownerOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/teamsAndPortfoliosView.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-05-teams-and-portfolios.md"
+          ],
+          "dependencies": ["04-02"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-example scenarios at the CLI port. Compensate with unit cases on the list reader (one item missing id/name -> null) and formatTimestamp. Copy decided in DISTILL 8: no Tags line when none are sent. Create .changeset/readable-cli-05-teams-and-portfolios.md: minor lighthouse-cli, lighthouse-client, lighthouse-mcp-core. Commit: feat(cli): lh team list reads like the Overview (story 6218)."
+        },
+        {
+          "id": "05-02",
+          "name": "Lena reads Gravity's settings as the Team page states them",
+          "description": "`lh team get` prints the Team page's settings in nine lines: 'Not set' for each unset setting, fixed Throughput dates said so, a single Feature WIP in the singular, the instance's words.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/teamsAndPortfoliosView.test.ts",
+          "scenario_name": "tells Lena Gravity's settings as the Team page states them",
+          "unskips": [
+            "it.skip -> it (teamsAndPortfoliosView.test.ts) :: tells Lena Gravity's settings as the Team page states them",
+            "it.skip -> it (teamsAndPortfoliosView.test.ts) :: says 'Not set' for each setting Meridian has left unset",
+            "it.skip -> it (teamsAndPortfoliosView.test.ts) :: says the Throughput dates are fixed, and counts a single Feature WIP in the singular",
+            "it.skip -> it (teamsAndPortfoliosView.test.ts) :: says it in the words an instance has renamed every term to"
+          ],
+          "red_to_green_tests": [
+            "teamsAndPortfoliosView.test.ts :: tells Lena Gravity's settings as the Team page states them",
+            "teamsAndPortfoliosView.test.ts :: says 'Not set' for each setting Meridian has left unset",
+            "teamsAndPortfoliosView.test.ts :: says the Throughput dates are fixed, and counts a single Feature WIP in the singular",
+            "teamsAndPortfoliosView.test.ts :: says it in the words an instance has renamed every term to"
+          ],
+          "criteria": [
+            "`lh team get --id 3` prints exactly the nine pinned lines, exit 0",
+            "A Team without SLE or WIP settings reads 'Not set' for each; fixed Throughput dates are stated as fixed; 'Feature WIP: 1 Feature' in the singular",
+            "With every term renamed no seeded word appears",
+            "Every active guard stays green (team/portfolio --json / --toon and reads, earlier slices, the walking skeleton); `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/ownerWording.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/ownerOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/teamsAndPortfoliosView.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-05-teams-and-portfolios.md"
+          ],
+          "dependencies": ["05-01"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-example scenarios at the CLI port. Compensate with unit cases on describeTeamSummary for each optional setting absent. The Team page heading/settings wording is shared with the MCP team_get summary (05-05) - put it in ownerWording.ts, not in the renderer. Commit: feat(cli): lh team get reads like the Team page (story 6218)."
+        },
+        {
+          "id": "05-03",
+          "name": "Lena sees the Portfolios with a pointer to their Deliveries, and Ocean Explorer's settings",
+          "description": "`lh portfolio list` with its hint line to `lh delivery list --portfolio-id <id>` and no Delivery read (D10); `lh portfolio get` in seven lines, 'Feature WIP: Not set' without involved Teams. KPI-1 rows for the four slice-05 forms.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/teamsAndPortfoliosView.test.ts",
+          "scenario_name": "lists the Portfolios and points at their Deliveries without fetching them",
+          "unskips": [
+            "it.skip -> it (teamsAndPortfoliosView.test.ts) :: lists the Portfolios and points at their Deliveries without fetching them",
+            "it.skip -> it (teamsAndPortfoliosView.test.ts) :: tells Lena Ocean Explorer's settings as the Portfolio page states them",
+            "it.skip -> it (teamsAndPortfoliosView.test.ts) :: says 'Not set' for the Feature WIP of a Portfolio no Team works on",
+            "KPI-1 rows -> active (prettyForms.test.ts) :: slice 05: `lh $args` no longer prints the generic view - team list, team get, portfolio list, portfolio get (4 rows)"
+          ],
+          "red_to_green_tests": [
+            "teamsAndPortfoliosView.test.ts :: lists the Portfolios and points at their Deliveries without fetching them",
+            "teamsAndPortfoliosView.test.ts :: tells Lena Ocean Explorer's settings as the Portfolio page states them",
+            "teamsAndPortfoliosView.test.ts :: says 'Not set' for the Feature WIP of a Portfolio no Team works on",
+            "prettyForms.test.ts :: slice $slice: `lh $args` no longer prints the generic view (slice 05 rows)"
+          ],
+          "criteria": [
+            "`lh portfolio list` prints the table and the 'Deliveries per Portfolio:' hint, and makes no Delivery read",
+            "`lh portfolio get --id 2` prints exactly the seven pinned lines; a Portfolio no Team works on reads 'Feature WIP: Not set'",
+            "The four slice-05 forms' pretty output differs from the generic view (KPI-1 rows)",
+            "Every active guard stays green; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/ownerWording.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/ownerOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/teamsAndPortfoliosView.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/prettyForms.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-05-teams-and-portfolios.md"
+          ],
+          "dependencies": ["05-02"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-example scenarios and KPI-1 rows. Compensate with unit cases on describePortfolioSummary. A Portfolio's Feature WIP counts its involved Teams (Decided in DISTILL). Copy decided in DISTILL 9: 'Feature WIP: Not set'. Commit: feat(cli): lh portfolio list and get read like the web (story 6218)."
+        },
+        {
+          "id": "05-04",
+          "name": "An assistant gets a count of Teams and Portfolios beside the list's facts, also over real HTTP",
+          "description": "lighthouse_team_list and lighthouse_portfolio_list keep their facts block and add 'summary: 7 Teams' style counts in the instance's words (M3, M6); seeded words when Terminology fails; no count for an unrecognised list; the mcp-http e2e shows an SDK client receives both blocks. A7 for an empty list.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-core/src/ownerSummaries.test.ts",
+          "scenario_name": "keeps $tool's facts as they are and adds '$says'",
+          "unskips": [
+            "it.skip.each -> it.each (ownerSummaries.test.ts) :: keeps $tool's facts as they are and adds '$says' - 4 rows (7 Teams, 1 Team, 7 Squads, 5 Portfolios)",
+            "it.skip -> it (ownerSummaries.test.ts) :: counts in the seeded words when the instance's terms cannot be read",
+            "it.skip -> it (ownerSummaries.test.ts) :: adds no count to a list whose Teams it does not recognise",
+            "it.skip -> it (answerSummaries.e2e.test.ts) :: hands an assistant's MCP client the Team list's facts and then its summary, as two blocks"
+          ],
+          "red_to_green_tests": [
+            "ownerSummaries.test.ts :: keeps $tool's facts as they are and adds '$says'",
+            "ownerSummaries.test.ts :: counts in the seeded words when the instance's terms cannot be read",
+            "ownerSummaries.test.ts :: adds no count to a list whose Teams it does not recognise",
+            "answerSummaries.e2e.test.ts :: hands an assistant's MCP client the Team list's facts and then its summary, as two blocks"
+          ],
+          "criteria": [
+            "The team and portfolio list tools return their facts block exactly as today, then 'summary: 7 Teams' / '1 Team' / '7 Squads' (renamed) / '5 Portfolios'",
+            "With Terminology refused the count uses seeded words and the tool does not error; an unrecognised list returns only today's facts block",
+            "Over real HTTP (mcp-http against a node:http fake Lighthouse) lighthouse_team_list answers two text blocks, the second 'summary: 1 Team'",
+            "An empty list's count reads 'No Teams' / 'No Portfolios' (A7)",
+            "Every active guard stays green; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/ownerWording.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/ownerSummaries.test.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-http/src/answerSummaries.e2e.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-05-teams-and-portfolios.md"
+          ],
+          "dependencies": ["05-03"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: MCP wiring checks and one e2e over real HTTP (single example by nature). Compensate with unit cases on the count sentence (0 / 1 / many, renamed) - A7 is an AFK copy default not pinned by a scenario. The mcp-http e2e needs no mcp-http production change if mcp-core's second block passes through; if it does need one, the changeset adds mcp-http (patch). Commit: feat(mcp): Team and Portfolio lists carry a count (story 6218)."
+        },
+        {
+          "id": "05-05",
+          "name": "An assistant gets the Team and Portfolio page's heading and settings; slice 05 ships",
+          "description": "lighthouse_team_get and lighthouse_portfolio_get return { summary, ...facts } with the page's heading and settings; the four tools' descriptions say what `summary` holds. Smoke lines for team list and portfolio list.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-core/src/ownerSummaries.test.ts",
+          "scenario_name": "hands $tool's facts over with the page's heading and settings as its summary",
+          "unskips": [
+            "it.skip.each -> it.each (ownerSummaries.test.ts) :: hands $tool's facts over with the page's heading and settings as its summary - 2 rows",
+            "it.skip.each -> it.each (ownerSummaries.test.ts) :: tells an assistant in %s's description what `summary` holds - 4 rows"
+          ],
+          "red_to_green_tests": [
+            "ownerSummaries.test.ts :: hands $tool's facts over with the page's heading and settings as its summary",
+            "ownerSummaries.test.ts :: tells an assistant in %s's description what `summary` holds"
+          ],
+          "criteria": [
+            "team_get's answer minus summary equals today's Team facts and its summary contains 'Gravity [id: 3]' and the SLE sentence; portfolio_get's contains 'Ocean Explorer [id: 2]' and 'Feature WIP: 3 Teams'",
+            "The team/portfolio list and get tool descriptions mention `summary`; annotations unchanged",
+            "ci.yml 'Verify --pretty views' gains `lh team list` (anchor `Last Updated`) and `lh portfolio list` (anchor `Deliveries per Portfolio:`), each with --json valid and anchor-free",
+            "The changeset is finalised (minor cli, client, mcp-core); docs passages checked (RD-5)",
+            "Every active guard stays green; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/ownerSummaries.test.ts",
+            "/storage/repos/lighthouse-clients/.github/workflows/ci.yml",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-05-teams-and-portfolios.md"
+          ],
+          "dependencies": ["05-04"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: MCP wiring checks. Compensate: the summary is describeTeamSummary / describePortfolioSummary, unit-tested in 05-02 / 05-03. Object answers follow the refinement precedent ({ summary, ...facts }, DSN-14). Smoke per RD-4. Commits: feat(mcp): Team and Portfolio get tools state the page's settings (story 6218); ci(smoke): verify Team and Portfolio --pretty views (story 6218)."
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "name": "Slice 06 - Deliveries (US-06)",
+      "description": "`lh delivery list` reads like the Deliveries chips with the card's answer per Delivery (85% date, likelihood or Overdue / Cannot forecast / Not enough data), and `lh delivery metrics` shows each recorded day, with the latest day's Features and chances under --detail epics (D14). MCP delivery_list counts, delivery_metrics headings.",
+      "steps": [
+        {
+          "id": "06-01",
+          "name": "Lena sees every Delivery of Ocean Explorer in one table, each with the card's answer",
+          "description": "The Delivery table with the card's answer per row through the shared display rules: Cannot forecast; a finished Delivery's likelihood even on thin history; Overdue only when the server says so (absent on an older server = never); '—' for no 85% date; an empty list prints the heading and 'No Deliveries' (M9). A3 for overdue and cannot forecast together.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/deliveriesView.test.ts",
+          "scenario_name": "shows Lena every Delivery of Ocean Explorer in one table, each with the card's answer",
+          "unskips": [
+            "it.skip -> it (deliveriesView.test.ts) :: shows Lena every Delivery of Ocean Explorer in one table, each with the card's answer",
+            "it.skip.each -> it.each (deliveriesView.test.ts) :: says 'Cannot forecast' when $why - 2 rows",
+            "it.skip -> it (deliveriesView.test.ts) :: states the likelihood of a finished Delivery even on thin history",
+            "it.skip -> it (deliveriesView.test.ts) :: never calls a Delivery overdue when an older Lighthouse does not say",
+            "it.skip -> it (deliveriesView.test.ts) :: says '—' for the 85% forecast when Lighthouse sends none",
+            "it.skip -> it (deliveriesView.test.ts) :: says Ocean Explorer has no Deliveries when the list is empty"
+          ],
+          "red_to_green_tests": [
+            "deliveriesView.test.ts :: shows Lena every Delivery of Ocean Explorer in one table, each with the card's answer",
+            "deliveriesView.test.ts :: says 'Cannot forecast' when $why",
+            "deliveriesView.test.ts :: states the likelihood of a finished Delivery even on thin history",
+            "deliveriesView.test.ts :: never calls a Delivery overdue when an older Lighthouse does not say",
+            "deliveriesView.test.ts :: says '—' for the 85% forecast when Lighthouse sends none",
+            "deliveriesView.test.ts :: says Ocean Explorer has no Deliveries when the list is empty"
+          ],
+          "criteria": [
+            "`lh delivery list --portfolio-id 2` prints the pinned table (Q4 Release 78%, Pilot Launch >95%, Beta Drop Overdue, Spring Rollout Not enough data with —), exit 0",
+            "Both 'Cannot forecast' cases, a finished Delivery's '100%' on thin history, no Overdue without isOverdue, and '—' for a missing 85% date print as pinned",
+            "An empty list prints the heading, then 'No Deliveries' (M9)",
+            "A Delivery both overdue and impossible to forecast reads 'Overdue · Cannot forecast' in the Likelihood cell (A3)",
+            "Every active guard stays green: delivery list --json / --toon and reads, earlier slices' guards, the walking skeleton; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/deliveryWording.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/forecastDisplayRules.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/deliveryOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/deliveriesView.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-06-deliveries.md"
+          ],
+          "dependencies": ["05-05"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-example scenarios at the CLI port. Compensate with unit cases on likelihoodAnswer for the Delivery card (including A3, an AFK copy default no scenario pins). The 85% date cell is D13's shrink, named in the header. Create .changeset/readable-cli-06-deliveries.md: minor lighthouse-cli, lighthouse-client, lighthouse-mcp-core. Commit: feat(cli): lh delivery list reads like the Deliveries chips (story 6218)."
+        },
+        {
+          "id": "06-02",
+          "name": "The Delivery list never fails on its heading, speaks the instance's words and dates days unshifted",
+          "description": "Portfolio name refused -> 'Portfolio [id: 2] · Deliveries'; renamed terms ('Ocean Explorer · Releases'); days dated as Lighthouse does in any time zone; a Delivery without its date -> generic view.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/deliveriesView.test.ts",
+          "scenario_name": "heads the list with the Portfolio's id when its name cannot be read",
+          "unskips": [
+            "it.skip -> it (deliveriesView.test.ts) :: heads the list with the Portfolio's id when its name cannot be read",
+            "it.skip -> it (deliveriesView.test.ts) :: says it in the words an instance has renamed every term to",
+            "it.skip.each -> it.each (deliveriesView.test.ts) :: dates each Delivery as Lighthouse does for a reader in %s - 2 rows",
+            "it.skip -> it (deliveriesView.test.ts) :: shows the list as it came when a Delivery arrives without its date"
+          ],
+          "red_to_green_tests": [
+            "deliveriesView.test.ts :: heads the list with the Portfolio's id when its name cannot be read",
+            "deliveriesView.test.ts :: says it in the words an instance has renamed every term to",
+            "deliveriesView.test.ts :: dates each Delivery as Lighthouse does for a reader in %s",
+            "deliveriesView.test.ts :: shows the list as it came when a Delivery arrives without its date"
+          ],
+          "criteria": [
+            "With the Portfolio read refused the heading reads 'Portfolio [id: 2] · Deliveries', exit 0",
+            "With every term renamed the heading reads 'Ocean Explorer · Releases' and no seeded word appears",
+            "Delivery dates print unshifted for readers in UTC-10 and UTC+14",
+            "A Delivery without its date sends the list to today's generic view, exit 0 (M1)",
+            "Every active guard stays green; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/deliveryWording.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/deliveryOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/deliveriesView.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-06-deliveries.md"
+          ],
+          "dependencies": ["06-01"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-example scenarios at the CLI port. Compensate with unit cases on the Delivery list reader (date missing -> null). Commit: feat(cli): the Delivery list's heading never fails the answer (story 6218)."
+        },
+        {
+          "id": "06-03",
+          "name": "Lena sees the Q4 Release day by day, and the latest day in detail",
+          "description": "`lh delivery metrics --delivery-id 11` heads with the Delivery Date and first recorded day and prints one row per recorded day; --detail epics adds 'On <latest day>', the Feature table and the chance table (D14; the output says Features). No recorded days -> heading, then 'No data yet.' (A9). KPI-1 rows for the three slice-06 forms.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/deliveriesView.test.ts",
+          "scenario_name": "shows Lena the Q4 Release day by day",
+          "unskips": [
+            "it.skip -> it (deliveriesView.test.ts) :: shows Lena the Q4 Release day by day",
+            "it.skip -> it (deliveriesView.test.ts) :: adds the latest day's Features and chances with --detail epics",
+            "KPI-1 rows -> active (prettyForms.test.ts) :: slice 06: `lh $args` no longer prints the generic view - delivery list, delivery metrics, delivery metrics --detail epics (3 rows)"
+          ],
+          "red_to_green_tests": [
+            "deliveriesView.test.ts :: shows Lena the Q4 Release day by day",
+            "deliveriesView.test.ts :: adds the latest day's Features and chances with --detail epics",
+            "prettyForms.test.ts :: slice $slice: `lh $args` no longer prints the generic view (slice 06 rows)"
+          ],
+          "criteria": [
+            "`lh delivery metrics --delivery-id 11` heads 'Delivery [id: 11] · Delivery Date Tue 15 Dec 2026 · recorded since Tue 15 Sep 2026' and prints one row per recorded day",
+            "With --detail epics it adds 'On Tue 6 Oct 2026', the Feature table and the chance table for the latest recorded day only",
+            "A Delivery with no recorded days prints the heading, then 'No data yet.' (A9)",
+            "The three slice-06 forms' pretty output differs from the generic view (KPI-1 rows)",
+            "Every active guard stays green: delivery metrics summarised and detailed --json, delivery list --json / --toon, earlier slices' guards; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/deliveryWording.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/deliveryOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/deliveriesView.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/prettyForms.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-06-deliveries.md"
+          ],
+          "dependencies": ["06-02"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-example scenarios and KPI-1 rows. Compensate with a unit case on A9 (AFK copy default, no scenario pins it) and on the latest-day pick. The metrics heading comes from the full history; summarised rows carry no dates (Decided in DISTILL). The read lacks the Delivery's name (S13); the heading uses 'Delivery [id: n]' as pinned. The reader returns the existing DeliveryMetricsHistory type after checking its fields (DSN-1). Commit: feat(cli): lh delivery metrics day by day (story 6218)."
+        },
+        {
+          "id": "06-04",
+          "name": "An assistant gets the Delivery count and the metrics heading beside the facts; slice 06 ships",
+          "description": "lighthouse_delivery_list adds 'summary: 4 Deliveries' / '1 Delivery' as a second block (A7 for empty: 'No Deliveries'); summarised delivery_metrics adds its heading in a second block; the detailed answer gains a summary field. Smoke line for delivery list after reloading demo scenario 0, last in the step.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-core/src/deliverySummaries.test.ts",
+          "scenario_name": "keeps the Delivery list's facts as they are and adds '$says'",
+          "unskips": [
+            "it.skip.each -> it.each (deliverySummaries.test.ts) :: keeps the Delivery list's facts as they are and adds '$says' - 2 rows",
+            "it.skip -> it (deliverySummaries.test.ts) :: keeps the summarised recorded days as they are and adds their heading in a second block",
+            "it.skip -> it (deliverySummaries.test.ts) :: hands the detailed recorded days over with their heading as a summary field"
+          ],
+          "red_to_green_tests": [
+            "deliverySummaries.test.ts :: keeps the Delivery list's facts as they are and adds '$says'",
+            "deliverySummaries.test.ts :: keeps the summarised recorded days as they are and adds their heading in a second block",
+            "deliverySummaries.test.ts :: hands the detailed recorded days over with their heading as a summary field"
+          ],
+          "criteria": [
+            "delivery_list returns today's facts block, then 'summary: 4 Deliveries' or 'summary: 1 Delivery'; an empty list's summary is 'No Deliveries' (A7)",
+            "Summarised delivery_metrics keeps its facts block and adds the heading in a second block; the detailed answer minus summary equals today's facts",
+            "ci.yml 'Verify --pretty views' ends with: load demo scenario 0, wait for Project Apollo's Delivery, then `lh delivery list --portfolio-id <Project Apollo>` with anchor `Delivery Date`, --json valid and anchor-free - always the last lines of the step",
+            "The changeset is finalised (minor cli, client, mcp-core); docs passages checked (RD-5)",
+            "Every active guard stays green; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/deliveryWording.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/deliverySummaries.test.ts",
+            "/storage/repos/lighthouse-clients/.github/workflows/ci.yml",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-06-deliveries.md"
+          ],
+          "dependencies": ["06-03"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: MCP wiring checks; the smoke is a live wiring check. Compensate with a unit case on the empty-list count (A7, AFK default). Scenario 0 wipes scenario 2, so the Delivery lines stay at the bottom of the step and slices 07-09 insert theirs above (RD-4). Commits: feat(mcp): Delivery tools state their answer (story 6218); ci(smoke): verify the Delivery list's --pretty view (story 6218)."
+        }
+      ]
+    },
+    {
+      "id": "07",
+      "name": "Slice 07 - Features (US-07)",
+      "description": "`lh feature get` reads like the Feature list (Progress, Forecasted Start per ForecastedStartCell.tsx, Forecasted Completion (85%), State); `lh feature workitems` heads with the Feature's name and lists its Work Items without the 'Owned by' column (A1). MCP feature_get counts, feature_workitems heading.",
+      "steps": [
+        {
+          "id": "07-01",
+          "name": "Marco sees his Features as the Feature list shows them",
+          "description": "The Feature table 'Feature · Name · Progress · Forecasted Start · Forecasted Completion (85%) · State'; Forecasted Start follows the web rule (an observed date outranks Cannot forecast; else the 85% start; '—' when unknown; Cannot forecast with no history); '—' for no 85% date; renamed terms; a Feature without per-Team work -> generic view.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/featuresView.test.ts",
+          "scenario_name": "shows Marco his Features as the Feature list shows them",
+          "unskips": [
+            "it.skip -> it (featuresView.test.ts) :: shows Marco his Features as the Feature list shows them",
+            "it.skip.each -> it.each (featuresView.test.ts) :: reads the Forecasted Start of a Feature with $start as '$reads' - 4 rows",
+            "it.skip -> it (featuresView.test.ts) :: says '—' for the completion when Lighthouse sends no 85% date",
+            "it.skip -> it (featuresView.test.ts) :: says it in the words an instance has renamed every term to",
+            "it.skip -> it (featuresView.test.ts) :: shows the Features as they came when one arrives without its per-Team work"
+          ],
+          "red_to_green_tests": [
+            "featuresView.test.ts :: shows Marco his Features as the Feature list shows them",
+            "featuresView.test.ts :: reads the Forecasted Start of a Feature with $start as '$reads'",
+            "featuresView.test.ts :: says '—' for the completion when Lighthouse sends no 85% date",
+            "featuresView.test.ts :: says it in the words an instance has renamed every term to",
+            "featuresView.test.ts :: shows the Features as they came when one arrives without its per-Team work"
+          ],
+          "criteria": [
+            "`lh feature get --refs OE-001,OE-002,OE-007` prints the pinned table: OE-001 done, OE-002 in progress, OE-007 'Cannot forecast' as Forecasted Start",
+            "Each Forecasted Start row reads as the web's rule gives it, and a missing 85% completion reads '—'",
+            "With every term renamed no seeded word appears; a Feature without per-Team work sends the answer to today's generic view, exit 0 (M1)",
+            "Every active guard stays green: feature get --json / --toon and reads, earlier slices' guards, the walking skeleton; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/featureWording.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/featureOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/featuresView.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-07-features.md"
+          ],
+          "dependencies": ["06-04"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: scenarios and example rows at the CLI port. Compensate with unit cases on the Forecasted Start rule and on Progress (a Feature's per-Team work summed - display arithmetic the web does, DSN-6). OE-007 follows the web's rule, not the sketch (upstream issue). Parent, Dependencies and Warnings columns are out of scope. Create .changeset/readable-cli-07-features.md: minor lighthouse-cli, lighthouse-client, lighthouse-mcp-core. Commit: feat(cli): lh feature get reads like the Feature list (story 6218)."
+        },
+        {
+          "id": "07-02",
+          "name": "Marco sees OE-002's Work Items under the Feature's name",
+          "description": "`lh feature workitems --id 2` heads 'OE-002 Deep-sea camera stream · 3 Work Items' (getFeaturesByIds as the one name read, --pretty only) and lists 'ID Name Type State ...'; the name refused or not found -> 'Feature [id: 2] · 3 Work Items'; no 'Owned by' column (A1). KPI-1 rows for the three slice-07 forms.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/featuresView.test.ts",
+          "scenario_name": "shows Marco the Work Items of OE-002 under the Feature's name",
+          "unskips": [
+            "it.skip -> it (featuresView.test.ts) :: shows Marco the Work Items of OE-002 under the Feature's name",
+            "it.skip.each -> it.each (featuresView.test.ts) :: heads the Work Items with the Feature's id when the name read $why - 2 rows",
+            "KPI-1 rows -> active (prettyForms.test.ts) :: slice 07: `lh $args` no longer prints the generic view - feature get --ids, feature get --refs, feature workitems (3 rows)"
+          ],
+          "red_to_green_tests": [
+            "featuresView.test.ts :: shows Marco the Work Items of OE-002 under the Feature's name",
+            "featuresView.test.ts :: heads the Work Items with the Feature's id when the name read $why",
+            "prettyForms.test.ts :: slice $slice: `lh $args` no longer prints the generic view (slice 07 rows)"
+          ],
+          "criteria": [
+            "`lh feature workitems --id 2` heads 'OE-002 Deep-sea camera stream · 3 Work Items' and its table starts with the columns 'ID Name Type State', with no 'Owned by' column (A1)",
+            "When the Feature-name read is refused or finds nothing the heading reads 'Feature [id: 2] · 3 Work Items', exit 0",
+            "Under --json / --toon feature workitems makes no Feature-name read (guard)",
+            "The three slice-07 forms' pretty output differs from the generic view (KPI-1 rows)",
+            "Every active guard stays green; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/featureWording.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/featureOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/featuresView.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/prettyForms.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-07-features.md"
+          ],
+          "dependencies": ["07-01"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: scenarios and KPI-1 rows. Compensate with unit cases on the heading fallback. A1 is an AFK copy default (revisit at the hold): WorkItemDto carries no owning Team, so the column is dropped rather than printed empty. readAnswerWording with getFeaturesByIds([id]) as the subject read (DSN-11). Commit: feat(cli): a Feature's Work Items under its name (story 6218)."
+        },
+        {
+          "id": "07-03",
+          "name": "An assistant gets the Feature count and the Work Items heading beside the facts; slice 07 ships",
+          "description": "lighthouse_feature_get adds 'summary: 3 Features' as a second block (A7 for empty); lighthouse_feature_workitems adds the heading lh prints as a second block, with the id fallback. Smoke line for feature get, inserted above the Delivery lines.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-core/src/featureSummaries.test.ts",
+          "scenario_name": "keeps the Features' facts as they are and adds a count",
+          "unskips": [
+            "it.skip -> it (featureSummaries.test.ts) :: keeps the Features' facts as they are and adds a count",
+            "it.skip -> it (featureSummaries.test.ts) :: keeps the Work Items' facts as they are and adds the heading lh prints",
+            "it.skip -> it (featureSummaries.test.ts) :: heads the Work Items with the Feature's id when its name cannot be read"
+          ],
+          "red_to_green_tests": [
+            "featureSummaries.test.ts :: keeps the Features' facts as they are and adds a count",
+            "featureSummaries.test.ts :: keeps the Work Items' facts as they are and adds the heading lh prints",
+            "featureSummaries.test.ts :: heads the Work Items with the Feature's id when its name cannot be read"
+          ],
+          "criteria": [
+            "feature_get returns today's facts block, then 'summary: 3 Features'; an empty answer's count reads 'No Features' (A7)",
+            "feature_workitems returns today's facts block, then the heading lh prints; with the name unreadable, the 'Feature [id: 2]' heading",
+            "ci.yml 'Verify --pretty views' gains `lh feature get --ids <first Feature of Project Orion>` with anchor `Forecasted Start`, inserted above the Delivery lines, --json valid and anchor-free",
+            "The changeset is finalised (minor cli, client, mcp-core); docs passages checked (RD-5)",
+            "Every active guard stays green; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/featureSummaries.test.ts",
+            "/storage/repos/lighthouse-clients/.github/workflows/ci.yml",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-07-features.md"
+          ],
+          "dependencies": ["07-02"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: MCP wiring checks. Compensate: the summaries are featureWording's describe... functions, unit-tested in 07-01/07-02. McpRuntimeClient gains getFeaturesByIds only if it lacks it. Commits: feat(mcp): Feature tools state their answer (story 6218); ci(smoke): verify the Feature list's --pretty view (story 6218)."
+        }
+      ]
+    },
+    {
+      "id": "08",
+      "name": "Slice 08 - writes confirm in one line (US-08)",
+      "description": "The 11 write forms confirm '<Verb>: <thing> [id: n].' (D11): Created / Updated / Deleted / 'Refresh queued: ... Lighthouse updates it in the background.' (S7 corrected); blackout rules confirmed with the server's summary verbatim. Under --json / --toon the five no-record writes keep today's lines (DSN-12). MCP refresh and blackout tools add the confirmation as a second block (DSN-14a for blackout create/update).",
+      "steps": [
+        {
+          "id": "08-01",
+          "name": "Sofia reads every write's confirmation in one line",
+          "description": "All 11 write forms (team create/update/delete/refresh, portfolio create/update/delete/refresh, blackout create/update/delete) print their one-line confirmation under --pretty through client/src/writeWording.ts and cli/src/writeOutput.ts.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/writeConfirmations.test.ts",
+          "scenario_name": "confirms `lh $args` in one line: '$reads'",
+          "unskips": [
+            "it.skip.each -> it.each (writeConfirmations.test.ts) :: confirms `lh $args` in one line: '$reads' - 11 rows"
+          ],
+          "red_to_green_tests": [
+            "writeConfirmations.test.ts :: confirms `lh $args` in one line: '$reads'"
+          ],
+          "criteria": [
+            "Each of the 11 write forms prints exactly its pinned line under --pretty, exit 0 - e.g. 'Created: Team Lightspeed [id: 9].', 'Refresh queued: Team [id: 3]. Lighthouse updates it in the background.', 'Created: recurring blackout rule [id: 5] — Every Friday — every 2 weeks — from 2026-10-09 — no end (Focus Friday).', 'Deleted: recurring blackout rule [id: 5].'",
+            "A delete names the id only (D12); a blackout rule is confirmed with the server's summary verbatim, not re-worded",
+            "Every active guard stays green: today's lines under --json / --toon for the five no-record writes ('Team deleted: 9', 'Team refreshed: 3', ...), the written record unchanged for create/update under --json / --toon, a refused delete passed through, earlier slices' guards; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/writeWording.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/writeOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/writeConfirmations.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-08-writes.md"
+          ],
+          "dependencies": ["07-03"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: one DISTILL it.each definition over WRITES with 11 rows (above the 8-case guide; one parametrised definition is not split). Compensate with unit cases on each describe...Confirmation. DSN-12: delete, refresh and health keep today's text under --json / --toon; only --pretty changes. The refinement vote lines (refinementVoteWording.ts) are the style reused, not the code (DRY of knowledge, not shape). Create .changeset/readable-cli-08-writes.md: minor lighthouse-cli, lighthouse-client, lighthouse-mcp-core. Commit: feat(cli): every write confirms in one line (story 6218)."
+        },
+        {
+          "id": "08-02",
+          "name": "Confirmations name what they can, in the instance's words, and never fail on a word",
+          "description": "An answer without a name -> 'Created: Team [id: 9].'; a rule without a description -> no parentheses; renamed Team and Portfolio ('Squad', 'Programme'); Terminology refused -> seeded words. KPI-1 rows for the 11 slice-08 forms.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/writeConfirmations.test.ts",
+          "scenario_name": "names the new Team by its id when Lighthouse's answer carries no name",
+          "unskips": [
+            "it.skip -> it (writeConfirmations.test.ts) :: names the new Team by its id when Lighthouse's answer carries no name",
+            "it.skip -> it (writeConfirmations.test.ts) :: confirms a blackout rule without a description by its schedule alone",
+            "it.skip -> it (writeConfirmations.test.ts) :: names the Team and Portfolio in the words an instance has renamed them to",
+            "it.skip -> it (writeConfirmations.test.ts) :: confirms in the seeded words when the instance's terms cannot be read",
+            "KPI-1 rows -> active (prettyForms.test.ts) :: slice 08: `lh $args` no longer prints the generic view - team create/update/delete/refresh, portfolio create/update/delete/refresh, blackout create/update/delete (11 rows)"
+          ],
+          "red_to_green_tests": [
+            "writeConfirmations.test.ts :: names the new Team by its id when Lighthouse's answer carries no name",
+            "writeConfirmations.test.ts :: confirms a blackout rule without a description by its schedule alone",
+            "writeConfirmations.test.ts :: names the Team and Portfolio in the words an instance has renamed them to",
+            "writeConfirmations.test.ts :: confirms in the seeded words when the instance's terms cannot be read",
+            "prettyForms.test.ts :: slice $slice: `lh $args` no longer prints the generic view (slice 08 rows)"
+          ],
+          "criteria": [
+            "A create answer without a name confirms 'Created: Team [id: 9].'; a blackout rule without a description has no parentheses (Copy decided in DISTILL 7)",
+            "With Team and Portfolio renamed the lines say 'Squad' / 'Programme'; with Terminology refused they use seeded words and exit 0",
+            "All 11 slice-08 forms' pretty output differs from the generic view (KPI-1 rows)",
+            "Every active guard stays green (DSN-12 lines, written records, refusals, earlier slices); `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/writeWording.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/writeOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/writeConfirmations.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/prettyForms.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-08-writes.md"
+          ],
+          "dependencies": ["08-01"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: four scenarios plus 11 KPI-1 rows (above the 8-case guide only through the rows, which assert 'not the generic view' for forms converted in 08-01). Compensate with unit cases on the name and description fallbacks. Writes read Terminology only under --pretty. Commit: feat(cli): write confirmations in the instance's words (story 6218)."
+        },
+        {
+          "id": "08-03",
+          "name": "An assistant gets the write's confirmation beside today's answer; slice 08 ships",
+          "description": "lighthouse_team_refresh, lighthouse_portfolio_refresh, lighthouse_blackout_create/update/delete keep today's block and add the confirmation as a second block - for blackout create/update because the rule already carries a summary of its own (DSN-14a). Smoke line for team refresh.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-core/src/writeSummaries.test.ts",
+          "scenario_name": "keeps $tool's answer as it is and adds '$says'",
+          "unskips": [
+            "it.skip.each -> it.each (writeSummaries.test.ts) :: keeps $tool's answer as it is and adds '$says' - 5 rows"
+          ],
+          "red_to_green_tests": [
+            "writeSummaries.test.ts :: keeps $tool's answer as it is and adds '$says'"
+          ],
+          "criteria": [
+            "Each of the five tools returns today's facts block exactly (e.g. 'team refreshed: 3', 'recurringBlackoutRule: <encoded rule>') and then 'summary: <the CLI's confirmation>'",
+            "A blackout rule's own summary field stays untouched inside the facts; the confirmation travels only in the second block (DSN-14a)",
+            "ci.yml 'Verify --pretty views' gains `lh team refresh --id <Team Zenith>` with anchor `Refresh queued:` and --json exactly `Team refreshed: <id>`, above the Delivery lines; blackout has no smoke line (Premium, unlicensed container)",
+            "The changeset is finalised (minor cli, client, mcp-core); docs passages checked (RD-5)",
+            "Every active guard stays green, including the MCP errors-without-summary guard; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/writeSummaries.test.ts",
+            "/storage/repos/lighthouse-clients/.github/workflows/ci.yml",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-08-writes.md"
+          ],
+          "dependencies": ["08-02"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: one DISTILL it.each over five tools (MCP wiring). Compensate: the confirmations are writeWording's functions, unit-tested in 08-01/08-02. MCP has no Team/Portfolio create, update or delete tools (DSN-15). Copy decided in DISTILL 12 / DSN-14a: second block for blackout create/update. Commits: feat(mcp): write tools confirm in one line (story 6218); ci(smoke): verify the refresh confirmation (story 6218)."
+        }
+      ]
+    },
+    {
+      "id": "09",
+      "name": "Slice 09 - housekeeping, and every form converted (US-09, KPI-1)",
+      "description": "`lh blackout list`, `lh worktracking list|get`, `lh version get` and `lh health check` read like the web (secrets never shown, AC-09.2); MCP health/version/worktracking/blackout list summaries. Every KPI-1 row is active at the end: 0 forms left on the generic view.",
+      "steps": [
+        {
+          "id": "09-01",
+          "name": "Sofia sees the blackout rules, the version and reachability as the web states them",
+          "description": "`lh blackout list` as the settings page lists it ('Recurring blackout rules', 'Schedule · Description', '[id: 5] <server summary>'; none -> 'No recurring blackout rules.'; no description -> empty cell); `lh version get` -> 'Lighthouse v26.10.3.6' (the version as sent); `lh health check` -> 'Lighthouse at https://... is reachable.' or 'The standalone Lighthouse is reachable.'. KPI-1 rows for those forms and the standalone health check.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/housekeepingView.test.ts",
+          "scenario_name": "shows Sofia the recurring blackout rules as the settings page lists them",
+          "unskips": [
+            "it.skip -> it (housekeepingView.test.ts) :: shows Sofia the recurring blackout rules as the settings page lists them",
+            "it.skip -> it (housekeepingView.test.ts) :: says so when there are no recurring blackout rules",
+            "it.skip -> it (housekeepingView.test.ts) :: leaves the Description cell empty for a rule without one",
+            "it.skip -> it (housekeepingView.test.ts) :: shows the version as the footer does",
+            "it.skip -> it (housekeepingView.test.ts) :: says the Lighthouse it is connected to is reachable",
+            "it.skip -> it (housekeepingView.test.ts) :: says the standalone Lighthouse is reachable",
+            "KPI-1 rows -> active (prettyForms.test.ts) :: slice 09: `lh $args` no longer prints the generic view - blackout list, version get, health check (3 rows)",
+            "it.skip -> it (prettyForms.test.ts) :: slice 09: `lh health check` on a standalone Lighthouse no longer prints today's line"
+          ],
+          "red_to_green_tests": [
+            "housekeepingView.test.ts :: shows Sofia the recurring blackout rules as the settings page lists them",
+            "housekeepingView.test.ts :: says so when there are no recurring blackout rules",
+            "housekeepingView.test.ts :: leaves the Description cell empty for a rule without one",
+            "housekeepingView.test.ts :: shows the version as the footer does",
+            "housekeepingView.test.ts :: says the Lighthouse it is connected to is reachable",
+            "housekeepingView.test.ts :: says the standalone Lighthouse is reachable",
+            "prettyForms.test.ts :: slice $slice: `lh $args` no longer prints the generic view (slice 09 rows: blackout list, version get, health check)",
+            "prettyForms.test.ts :: slice 09: `lh health check` on a standalone Lighthouse no longer prints today's line"
+          ],
+          "criteria": [
+            "`lh blackout list` prints 'Recurring blackout rules', the 'Schedule · Description' table with the server's summary verbatim, an empty Description cell for a rule without one, and 'No recurring blackout rules.' when there are none",
+            "`lh version get` prints 'Lighthouse v26.10.3.6' - 'Lighthouse ' plus the version as Lighthouse sends it (Copy decided in DISTILL 6)",
+            "`lh health check` prints 'Lighthouse at <url> is reachable.' connected, and 'The standalone Lighthouse is reachable.' standalone, exit 0",
+            "These forms' pretty output differs from the generic view / today's line (KPI-1 rows, including the standalone health check)",
+            "Every active guard stays green: 'success' under --json / --toon, an unreachable Lighthouse reports 'unreachable: connection refused' with exit 1, --json / --toon for the housekeeping forms, earlier slices' guards; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/housekeepingWording.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/housekeepingOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/housekeepingView.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/prettyForms.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-09-housekeeping.md"
+          ],
+          "dependencies": ["08-03"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: six scenarios plus four KPI-1 cases (above the 8-case guide only through the rows for forms converted in this step). Compensate with unit cases on the count and empty-state sentences. The reader returns the existing RecurringBlackoutRule type after checking its fields (DSN-1). DSN-12: health keeps 'success' under the facts formats. Create .changeset/readable-cli-09-housekeeping.md: minor lighthouse-cli, lighthouse-client, lighthouse-mcp-core. Commit: feat(cli): blackout rules, version and health read like the web (story 6218)."
+        },
+        {
+          "id": "09-02",
+          "name": "Sofia sees the Work Tracking Systems and one connection's options, never a secret",
+          "description": "`lh worktracking list` ('Work Tracking Systems', 'Name · Type'); `lh worktracking get` with 'Type: Jira' and 'Option · Value' labelled as the editor labels them (from availableAuthenticationMethods; the key is the fallback); a secret reads '(secret, not shown)' even when the server wrongly sends its value (AC-09.2, the risk carrier); renamed and refused terms; a connection without options -> generic view. KPI-1 rows for both forms.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/housekeepingView.test.ts",
+          "scenario_name": "never prints a secret's value, even when Lighthouse wrongly sends it",
+          "unskips": [
+            "it.skip -> it (housekeepingView.test.ts) :: shows Sofia the Work Tracking Systems as the Overview lists them",
+            "it.skip -> it (housekeepingView.test.ts) :: shows Sofia one connection with its options as the editor labels them",
+            "it.skip -> it (housekeepingView.test.ts) :: never prints a secret's value, even when Lighthouse wrongly sends it",
+            "it.skip -> it (housekeepingView.test.ts) :: labels an option by its key when the connection's method does not name it",
+            "it.skip -> it (housekeepingView.test.ts) :: titles the list in the word an instance has renamed Work Tracking Systems to",
+            "it.skip -> it (housekeepingView.test.ts) :: titles the list in the seeded words when the instance's terms cannot be read",
+            "it.skip -> it (housekeepingView.test.ts) :: shows a connection as it came when it arrives without its options",
+            "KPI-1 rows -> active (prettyForms.test.ts) :: slice 09: `lh $args` no longer prints the generic view - worktracking list, worktracking get (2 rows)"
+          ],
+          "red_to_green_tests": [
+            "housekeepingView.test.ts :: shows Sofia the Work Tracking Systems as the Overview lists them",
+            "housekeepingView.test.ts :: shows Sofia one connection with its options as the editor labels them",
+            "housekeepingView.test.ts :: never prints a secret's value, even when Lighthouse wrongly sends it",
+            "housekeepingView.test.ts :: labels an option by its key when the connection's method does not name it",
+            "housekeepingView.test.ts :: titles the list in the word an instance has renamed Work Tracking Systems to",
+            "housekeepingView.test.ts :: titles the list in the seeded words when the instance's terms cannot be read",
+            "housekeepingView.test.ts :: shows a connection as it came when it arrives without its options",
+            "prettyForms.test.ts :: slice $slice: `lh $args` no longer prints the generic view (slice 09 rows: worktracking list, worktracking get)"
+          ],
+          "criteria": [
+            "`lh worktracking list` prints 'Work Tracking Systems', 'Name · Type' and 'Letpeoplework Jira [id: 1] Jira'",
+            "`lh worktracking get --id 1` prints the name and id, 'Type: Jira' and the 'Option · Value' table with the editor's labels ('Jira URL', 'Username (Email)', 'API Token'); an unnamed option is labelled by its key",
+            "A secret option reads '(secret, not shown)' in both list and get even when Lighthouse sends its value; the value never appears anywhere in stdout (AC-09.2)",
+            "The list title follows the instance's renamed word ('Trackers'), or the seeded words when Terminology is refused; a connection without options prints today's generic view, exit 0 (M1)",
+            "Both forms' pretty output differs from the generic view (KPI-1 rows)",
+            "Every active guard stays green: the facts formats hand a connection over exactly as sent, worktracking --json / --toon and reads, refusals, earlier slices' guards; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/housekeepingWording.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/housekeepingOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/housekeepingView.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/prettyForms.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-09-housekeeping.md"
+          ],
+          "dependencies": ["09-01"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: seven scenarios plus two KPI-1 rows. Compensate with unit cases on the option reader: the secret flag decides, never the value's presence (@security). Under --json / --toon the connection passes through exactly as sent - masking is a --pretty display rule only, so the facts guard must stay green. Copy decided in DISTILL 10: labels from availableAuthenticationMethods, key as fallback. Commit: feat(cli): Work Tracking Systems read like the Overview, secrets never shown (story 6218)."
+        },
+        {
+          "id": "09-03",
+          "name": "An assistant gets reachability, version and counts beside the facts; slice 09 ships and KPI-1 is 0",
+          "description": "lighthouse_health_check adds 'summary: Lighthouse is reachable.' (M5); version_get the footer's words; worktracking_list and blackout_list a count in the instance's words with singulars (M3; A7 for empty); worktracking_get a summary field naming the connection and its type, never an option value. Smoke lines for worktracking list, version and health. No skipped KPI-1 row remains.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-core/src/housekeepingSummaries.test.ts",
+          "scenario_name": "keeps the health answer as it is and adds that Lighthouse is reachable",
+          "unskips": [
+            "it.skip -> it (housekeepingSummaries.test.ts) :: keeps the health answer as it is and adds that Lighthouse is reachable",
+            "it.skip -> it (housekeepingSummaries.test.ts) :: keeps the version as it is and adds the footer's words",
+            "it.skip.each -> it.each (housekeepingSummaries.test.ts) :: keeps $tool's answer as it is and adds '$says' - 2 rows",
+            "it.skip.each -> it.each (housekeepingSummaries.test.ts) :: counts a single entry in the singular: '$says' - 2 rows",
+            "it.skip -> it (housekeepingSummaries.test.ts) :: counts the Work Tracking Systems in the words an instance has renamed them to",
+            "it.skip -> it (housekeepingSummaries.test.ts) :: names a connection and its type, and leaves every option value out of the summary"
+          ],
+          "red_to_green_tests": [
+            "housekeepingSummaries.test.ts :: keeps the health answer as it is and adds that Lighthouse is reachable",
+            "housekeepingSummaries.test.ts :: keeps the version as it is and adds the footer's words",
+            "housekeepingSummaries.test.ts :: keeps $tool's answer as it is and adds '$says'",
+            "housekeepingSummaries.test.ts :: counts a single entry in the singular: '$says'",
+            "housekeepingSummaries.test.ts :: counts the Work Tracking Systems in the words an instance has renamed them to",
+            "housekeepingSummaries.test.ts :: names a connection and its type, and leaves every option value out of the summary"
+          ],
+          "criteria": [
+            "health_check keeps today's answer and adds 'summary: Lighthouse is reachable.' (M5); version_get adds 'summary: Lighthouse v26.10.3.6'",
+            "worktracking_list and blackout_list keep their facts blocks and add '3 Work Tracking Systems' / '2 recurring blackout rules', singular for one ('1 Work Tracking System', '1 recurring blackout rule'), in renamed words when the instance renamed them; an empty list reads 'No ...' (A7)",
+            "worktracking_get's summary names the connection and its type and contains no option value",
+            "ci.yml 'Verify --pretty views' gains `lh worktracking list` (anchor `Work Tracking Systems`, --json valid and anchor-free), `lh version get` (anchor `Lighthouse v`, absent from --json) and `lh health check` (anchor `is reachable.`, --json exactly `success`), all above the Delivery lines",
+            "prettyForms.test.ts has no skipped row left: all 42 forms differ from the generic view (KPI-1 = 0) and both completeness guards stay green",
+            "The changeset is finalised (minor cli, client, mcp-core); skill/README/ARCHITECTURE passages re-checked against the final set of views (RD-5)",
+            "Every active guard stays green, including MCP errors without a summary block; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/housekeepingWording.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/housekeepingSummaries.test.ts",
+            "/storage/repos/lighthouse-clients/.github/workflows/ci.yml",
+            "/storage/repos/lighthouse-clients/.changeset/readable-cli-09-housekeeping.md",
+            "/storage/repos/lighthouse-clients/ARCHITECTURE.md"
+          ],
+          "dependencies": ["09-02"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: MCP wiring checks; the smoke is a live wiring check. Compensate with unit cases on the count sentence (0 / 1 / many) and on the connection summary never carrying a value (@security). Version anchor: the server returns 'v{version}', so the printed line is 'Lighthouse v26.10.3.6' and the anchor `Lighthouse v` matches (the final-gate blocker on it was dismissed). Copy decided in DISTILL 11: '2 recurring blackout rules' / '1 recurring blackout rule'. Commits: feat(mcp): housekeeping tools state their answer (story 6218); ci(smoke): verify the housekeeping --pretty views (story 6218)."
+        }
+      ]
+    }
+  ],
+  "implementation_scope": {
+    "source_directories": [
+      "/storage/repos/lighthouse-clients/packages/client/src",
+      "/storage/repos/lighthouse-clients/packages/cli/src",
+      "/storage/repos/lighthouse-clients/packages/mcp-core/src",
+      "/storage/repos/lighthouse-clients/packages/mcp-http/src",
+      "/storage/repos/lighthouse-clients/.github/workflows",
+      "/storage/repos/lighthouse-clients/.changeset",
+      "/storage/repos/lighthouse-clients/skill",
+      "/storage/repos/lighthouse-clients/ARCHITECTURE.md",
+      "/storage/repos/lighthouse-clients/packages/cli/README.md",
+      "/storage/repos/lighthouse-clients/packages/mcp-stdio/README.md",
+      "/storage/repos/lighthouse-clients/packages/mcp-http/README.md"
+    ],
+    "excluded": [
+      "Lighthouse repo code (no server change; the HTTP API, the web and docs/aiintegration.md stay as they are)",
+      "MCP tools outside DSN-15's per-slice list (refinement tools stay as they are)",
+      "Release versioning (pnpm release:version) and publishing - the maintainer's",
+      "StrykerJS runs (orchestrator, last, on frozen code), refactor and review passes, finalize",
+      "Usage-data events (Story #6193)"
+    ]
+  }
+}
