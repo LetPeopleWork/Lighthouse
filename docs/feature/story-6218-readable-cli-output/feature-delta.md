@@ -2231,7 +2231,7 @@ existing copy already uses; a constraint that leaves one option decides it.
 | A5 | MCP Work Item Age summary | The CLI's heading plus its one sentence (ADR-224's rule). |
 | A6 | Headline Time in State line after slice 04 | One line like its neighbours: `Time in State  <n> states across <m> {Work Items}`. |
 | A7 | MCP count for an empty list | `No Deliveries` (and `No {Teams}` …), matching M9's CLI empty state. |
-| A8 | `--metrics <name>` refused, outside the headline | Today's refusal: `category: reason`, exit 1 — one metric asked for and not given is an error, unlike one line in a summary. |
+| A8 | `--metrics <name>` refused, outside the headline | Today's behaviour, unchanged: the refusal shows inside the generic view, exit 0. (Corrected in DELIVER 03-01: this row first claimed today prints `category: reason` with exit 1; the CLI has never done that for a refused metric section.) |
 | A9 | Delivery metrics with no recorded days | The heading, then `No data yet.` |
 | A10 | Time in State with no states | The heading, then `No data yet.` |
 | A11 | MCP Portfolio drill-down | The CLI's heading plus its sentence (ADR-224's rule). |
