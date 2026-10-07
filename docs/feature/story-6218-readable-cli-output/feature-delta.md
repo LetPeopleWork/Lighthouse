@@ -2194,3 +2194,45 @@ corrected):
 **Active guards by decision**: the `--json` / `--toon`, reads and error guards are characterisation tests,
 active and green now rather than pending, so DELIVER cannot break them silently while un-skipping a
 slice.
+
+---
+
+## Wave: DISTILL / [REF] Final wave review gate (2026-10-07)
+
+| Reviewer | Scope | Verdict | Findings |
+|---|---|---|---|
+| Eclipse (`nw-product-owner-reviewer`) | DISCUSS | approved | 2 low: the DISCUSS-time review's weak citations (superseded by this gate); `outcomes check-delta` owed — now run: 0 collisions |
+| Architect (`nw-solution-architect-reviewer`) | DESIGN | conditionally approved | 2 high, both the DISTILL upstream issues; resolved as DSN-14a and DSN-11a below |
+| Forge (`nw-platform-architect-reviewer`) | DEVOPS | 1 blocker, **dismissed** | Claimed the version anchor `Lighthouse v` no longer matches. False: `GetCurrentVersion()` returns `v{version}`, so the printed line is `Lighthouse v26.10.3.6` (pinned in `housekeepingView.test.ts`) and the anchor matches. The other nine anchors were verified as matching. |
+| Sentinel (`nw-acceptance-designer-reviewer`) | DISTILL | approved | 1 low (no change). Spot-checked by the orchestrator: forecast copy pinned line by line, MCP summary beside unchanged facts, no extra reads under `--json`. |
+
+Clients `pnpm run ci` re-run independently: 572 passed, 253 skipped, exit 0.
+
+### Design amendments
+
+- **DSN-14a** — An object answer that already carries a `summary` of its own (`RecurringBlackoutRuleDto`) keeps
+  it untouched; the MCP summary for it travels as a second text block, as lists do. The facts stay
+  byte-identical, which is the rule DSN-14 exists to protect.
+- **DSN-11a** — `--definition-id` may make one more read (`getTeamSettings`) for the definition's name, three in
+  all, run in parallel with the others and, like every pretty read, never failing the command. Every other
+  `--pretty` command stays at two or fewer.
+
+### Copy defaults taken in AFK (the open product questions above; revisit at the hold)
+
+Rule applied: say what the web says (D1); where the web is silent, use the shortest sentence the
+existing copy already uses; a constraint that leaves one option decides it.
+
+| # | Question | Default |
+|---|---|---|
+| A1 | "Owned by" column | Dropped from the Work Items table — the answer carries no owning Team, and a column that is always empty says nothing. |
+| A2 | `--metrics predictabilityScore` table | The score line only; the table would need facts `--json` does not carry (constraint 1). |
+| A3 | Overdue and cannot-forecast together | Both, overdue first: `Overdue · Cannot forecast` — the web shows both chips. |
+| A4 | MCP Time in State summary | The CLI's heading plus its one sentence (ADR-224's rule). |
+| A5 | MCP Work Item Age summary | The CLI's heading plus its one sentence (ADR-224's rule). |
+| A6 | Headline Time in State line after slice 04 | One line like its neighbours: `Time in State  <n> states across <m> {Work Items}`. |
+| A7 | MCP count for an empty list | `No Deliveries` (and `No {Teams}` …), matching M9's CLI empty state. |
+| A8 | `--metrics <name>` refused, outside the headline | Today's refusal: `category: reason`, exit 1 — one metric asked for and not given is an error, unlike one line in a summary. |
+| A9 | Delivery metrics with no recorded days | The heading, then `No data yet.` |
+| A10 | Time in State with no states | The heading, then `No data yet.` |
+| A11 | MCP Portfolio drill-down | The CLI's heading plus its sentence (ADR-224's rule). |
+| A12 | Forecast heading with one input only | The part not given is left out: `Gravity · 25 Work Items` or `Gravity · target Fri 30 Oct 2026`. |
