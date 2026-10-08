@@ -8041,3 +8041,37 @@ jobs:
       rationale: >
         Importance 3 - a hosted MCP server is a minority deployment today. Satisfaction 1 - no switch exists.
         Gap 2, desk estimate.
+  - id: job-assistant-user-get-sound-flow-answers
+    title: Get a sound flow answer from my assistant
+    persona: flow-coach
+    job_story: >
+      When I ask my assistant about my Team's flow or a forecast,
+      I want it to fetch the answer from Lighthouse and say it the way a good flow coach would,
+      so I can act on it without checking the assistant's work.
+    dimensions:
+      functional: Every Lighthouse read the clients offer is used; answers quote Lighthouse's own summary; probabilistic phrasing
+      emotional: From double-checking the bot to trusting it like a colleague
+      social: Answers that can be pasted into a team channel without embarrassment
+    forces:
+      push: The skill names only part of what shipped since June and contradicts ProKanban in nine places
+      pull: Lighthouse already states every answer in summary, in the instance's terminology
+      anxiety: The assistant invents a capability, or lectures
+      habit: Asking for one date; velocity
+    opportunity_score: {importance: 4, current_satisfaction: 2, gap: 2}
+  - id: job-facilitator-run-the-daily-from-the-work
+    title: Run the daily from the work, not from a status round
+    persona: flow-coach
+    job_story: >
+      When I facilitate my Team's daily,
+      I want to open it with what the work needs us to decide and discuss today,
+      so the Team spends the time getting Work Items done instead of reporting status.
+    dimensions:
+      functional: A short, ordered list of decisions and discussion prompts drawn from Lighthouse data
+      emotional: From dreading the round-robin to a daily that ends with something unblocked
+      social: A facilitator who never puts a person on the spot
+    forces:
+      push: Everybody prepares a statement and justifies what they did
+      pull: Blocked, SLE Risk, WIP against its limit and PBC signals already exist in Lighthouse
+      anxiety: A tool that ranks people or tells the Team what to do
+      habit: Yesterday / today / impediments
+    opportunity_score: {importance: 5, current_satisfaction: 1, gap: 4}
