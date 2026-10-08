@@ -201,7 +201,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
                 + "one anyway, which is an identity minted for somebody who asked not to have one");
         }
 
-        // Slice 02 (#5835). Everything below is the cadence arithmetic, and it lives here rather
+        // Everything below is the cadence arithmetic, and it lives here rather
         // than beside the endpoint tests for the reason this class exists at all: the endpoints
         // answer at one instant, so which direction a window points and which tier makes a refusal
         // final are invisible to them. Flip either and every endpoint test still passes.

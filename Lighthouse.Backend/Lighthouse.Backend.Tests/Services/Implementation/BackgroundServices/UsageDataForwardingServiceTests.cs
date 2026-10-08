@@ -8,7 +8,7 @@ using Moq;
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 {
     /// <summary>
-    /// Epic 5733 slice 01c (ADO #5980) - what the part that sends promises, at its own seam.
+    /// What the part that sends promises, at its own seam.
     ///
     /// Not through HTTP like the scenarios beside it, and deliberately: the integration host removes
     /// every background service, so nothing there can say what this does when the thing it calls

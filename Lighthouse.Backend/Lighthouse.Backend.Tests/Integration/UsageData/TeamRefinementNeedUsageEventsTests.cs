@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             VerdictOnTheWire,
         ];
 
-        // --- When a vote happened (slice 04) ---
+        // --- When a vote happened ---
 
         // @driving_port @real-io @us-04 @us-11 @slice-04 @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:bounded-change
         [TestCase(TeamSizingVoteCast, OnRefinementDay)]
@@ -83,7 +83,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         public void The_new_moments_are_appended_to_their_list_never_inserted(string moment, string namedBefore)
             => ThenIsAppendedAfter("UsageDataSizingMoment", moment, namedBefore);
 
-        // --- Which verdict a Refinement day showed (slice 05) ---
+        // --- Which verdict a Refinement day showed ---
 
         // @driving_port @real-io @us-05 @slice-05 @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:bounded-change
         [TestCase("Below")]

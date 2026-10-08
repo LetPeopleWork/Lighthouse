@@ -11,7 +11,7 @@ using Moq;
 namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
 {
     /// <summary>
-    /// Epic 5733 slice 01c (ADO #5980) - what happens to the one setting an operator is invited to
+    /// What happens to the one setting an operator is invited to
     /// touch when they get it wrong.
     ///
     /// Where to send is the only thing about this feature anybody configures, and the way to get it

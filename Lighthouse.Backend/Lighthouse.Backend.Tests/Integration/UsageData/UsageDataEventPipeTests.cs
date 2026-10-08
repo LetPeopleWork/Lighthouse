@@ -13,9 +13,9 @@ using Serilog.Extensions.Logging;
 namespace Lighthouse.Backend.Tests.Integration.UsageData
 {
     /// <summary>
-    /// Epic 5733 slice 01c (ADO #5980) - the event pipe, black box over HTTP.
+    /// The event pipe, black box over HTTP.
     ///
-    /// Black box for the reason the slice 01 fixture beside this one already gives: C# is compiled,
+    /// Black box because C# is compiled,
     /// so a pending test naming the ingest message, the gate, the queue or the publisher would break
     /// the whole test assembly's build. A broken build is not a failing test - it stops every other
     /// suite in the project from running and it trips the zero-warning gate. Everything here names

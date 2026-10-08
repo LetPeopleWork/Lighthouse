@@ -6,7 +6,7 @@ using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
-    /// Epic 5733 slice 01c (ADO #5980) - the structural half of the promise.
+    /// The structural half of the promise.
     ///
     /// The scenarios in the integration fixtures watch what leaves through the client the framework
     /// hands out. That is only the whole story while nothing builds a client of its own, and this is

@@ -9,16 +9,14 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     /// outside the three is refused. The state endpoint tells a client which sources this Lighthouse
     /// labels, so a client never sends to one that would count it as a browser.
     ///
-    /// Black box over HTTP for the reason the pipe fixture beside this one gives: a pending scenario that
-    /// named a type the slice has not added yet would stop the whole test assembly from building. Every
-    /// source travels here as the text a client puts on the wire.
+    /// Black box over HTTP: every source travels here as the text a client puts on the wire, so a scenario
+    /// reads what a client sends rather than a type the code happens to have.
     ///
     /// Driving ports: the events, consent and state endpoints, and the usage data page the consent links to.
     /// Observed through the recorder in front of every outbound client, so "the collector received" is what
     /// actually left the instance.
     ///
-    /// The three guards are active: they hold today and must keep holding. Every other scenario ships
-    /// [Ignore]d; DELIVER un-ignores one at a time, and each is one TDD cycle.
+    /// The three guards held before a client could name its source and must keep holding now that it can.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
@@ -27,7 +25,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     public partial class Story6193EveryEventSaysItsSourceTest
     {
         // @US-01 @driving_port @real-io @guard @contract-shape:unbounded-preservation
-        // Green today and green after the slice: the web sends no source and must keep being taken in.
+        // The web sends no source and must keep being taken in.
         [Test]
         public async Task Todays_browser_batch_is_still_taken_in_and_forwarded()
         {
@@ -46,7 +44,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         // @US-01 @driving_port @real-io @kpi @contract-shape:bounded-change
-        // KPI-1: a Browser count is browsers only, and the web needs no change to stay in it.
+        // A Browser count is browsers only, and the web needs no change to stay in it.
         [Test]
         [TestCase(SourceLeftOut)]
         [TestCase(SourceSentAsNull)]
@@ -100,7 +98,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         // @US-01 @driving_port @real-io @kpi @contract-shape:bounded-change
-        // KPI-1, north star: one source per batch, written on every message the batch becomes.
+        // One source per batch, written on every message the batch becomes, so every count splits by surface.
         [Test]
         public async Task Every_message_a_batch_becomes_carries_the_source_of_that_batch()
         {
@@ -145,7 +143,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @US-01 @driving_port @real-io @error @guard @contract-shape:unbounded-preservation
         // The administrator's stop is the server's guarantee, so no client has to check before it sends.
-        // Active: it holds today, when a declared source is ignored, and must keep holding once it is read.
         [Test]
         [TestCase(Cli)]
         [TestCase(Mcp)]
@@ -167,7 +164,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         // @US-01 @driving_port @real-io @error @guard @contract-shape:unbounded-preservation
-        // Active for the same reason: declaring a client source must never open a way past the gate.
+        // Declaring a client source must never open a way past the gate.
         [Test]
         [TestCase(WithNoToken)]
         [TestCase(WithATokenNeverMintedHere)]

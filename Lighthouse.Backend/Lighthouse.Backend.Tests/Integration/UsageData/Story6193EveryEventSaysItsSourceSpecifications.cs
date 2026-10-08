@@ -4,9 +4,9 @@ using System.Text.Json.Nodes;
 namespace Lighthouse.Backend.Tests.Integration.UsageData
 {
     /// <summary>
-    /// Step definitions for story 6193 on the Lighthouse side. Everything is read off what crosses the
-    /// instance's edges: the status a caller is answered with, the state body it is served, the messages
-    /// the recorder saw leave for the collector, and the usage data page.
+    /// Step definitions for the source every usage data event carries, on the Lighthouse side. Everything
+    /// is read off what crosses the instance's edges: the status a caller is answered with, the state body
+    /// it is served, the messages the recorder saw leave for the collector, and the usage data page.
     /// </summary>
     public partial class Story6193EveryEventSaysItsSourceTest : UsageDataCollectorObservationTest
     {

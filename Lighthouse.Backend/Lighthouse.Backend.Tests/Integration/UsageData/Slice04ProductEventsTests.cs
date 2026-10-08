@@ -4,8 +4,7 @@ using System.Text.Json;
 namespace Lighthouse.Backend.Tests.Integration.UsageData
 {
     /// <summary>
-    /// DISTILL acceptance scenarios (Epic 5733 slice 04, ADO #5837) - the vocabulary stops being one
-    /// navigation event. US-08 (AC-08.1, AC-08.2, AC-08.3).
+    /// The vocabulary stops being one navigation event.
     ///
     /// Every scenario here names its event as text rather than as a member of the list in the code,
     /// because that list does not exist yet and must not: a name added to it without a line on the

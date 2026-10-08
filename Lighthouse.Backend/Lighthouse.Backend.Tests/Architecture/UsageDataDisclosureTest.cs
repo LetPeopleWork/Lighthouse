@@ -3,7 +3,7 @@ using Lighthouse.Backend.Models.UsageData;
 namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
-    /// Epic 5733 slice 01c (ADO #5980) - the page and the product have to say the same thing.
+    /// The page and the product have to say the same thing.
     ///
     /// The consent dialog deliberately carries no list of fields: a list inside a dialog goes stale
     /// silently while still looking authoritative. It links to the usage data page instead, which
