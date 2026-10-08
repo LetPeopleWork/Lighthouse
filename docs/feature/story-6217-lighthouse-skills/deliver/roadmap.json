@@ -1,0 +1,791 @@
+{
+  "roadmap": {
+    "project_id": "story-6217-lighthouse-skills",
+    "created_at": "2026-10-08",
+    "total_steps": 18,
+    "total_phases": 10,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "scope": "ADO User Stories #6245 (general skill, slices 01-03), #6217 (Refinement skill and the skills/ layout, slices 04-05) and #6246 (WIP, SLE Risk and Process Behaviour Chart reads plus the Daily Flow Review skill, slices 06-10); no parent Epic. Ten slices, one phase each, delivered story by story, never interleaved: 01 -> 10. All code is in /storage/repos/lighthouse-clients: skill text (skill/ until 04, then skills/<name>/), scripts/eval-fixture.mjs, scripts/pack-skills.sh, .github/workflows/ci.yml, skills/README.md, ARCHITECTURE.md (the committed target patch, applied in 04-01), and for #6246 packages client, cli and mcp-core. No Lighthouse code, no backend, web or RBAC change (DSN-22); the Lighthouse docs (docs/aiintegration.md, docs/concepts/concepts.md:85) belong to feature finalization, not to a step.",
+    "goal": "Every pending DISTILL test in lighthouse-clients (commit 0bf7e0e) is un-skipped and green, slice by slice: 61 it.skip cases (7 in skills/, 12 for slice 06, 18 for slice 07, 24 for slice 08); the 19 active tests (drift machinery, eval and fixture integrity, the three output characterisations) stay green in every step; every skill-text step leaves the drift check and the eval-case integrity tests green and states the eval case ids its text must satisfy (53 cases over three skills, run by hand by the maintainer before the release); every step ends with `pnpm run ci` exit 0 in /storage/repos/lighthouse-clients.",
+    "paradigm_note": "The Hypothesis + state-delta property-based unit mandate from nw-roadmap does not apply, and leaving it out is a decision, as in story-6193 (DSN-25 there, DSN-23 here). lighthouse-clients is TypeScript / Vitest with no fast-check dependency, and DESIGN adds no dependency; DISTILL wrote finite domains as it.each rows. Two kinds of step exist. (1) Skill-text steps (01-02, 02-01, 03-01, 04-02, 05-01, 09-01, 10-01) ship Markdown an assistant reads, so they carry the plugin/skill STRUCTURAL VERIFICATION directive: the automated guard is skills/skills.drift.test.ts (every name a skill uses exists; the general skill names everything; frontmatter name = folder) plus skills/skills.evals.test.ts (cases and fixtures well formed and runnable); behaviour is specified by eval case ids, scored by hand (DSN-10, three runs per case, guardrails 3/3, others >= 90 %). (2) Code steps (01-01, 04-01, 06-*, 07-*, 08-*) follow RED -> GREEN: turn the named it.skip into it (it.skip.each into it.each), watch it fail for the reason DISTILL's Red Classification records (all MISSING_FUNCTIONALITY; evalFixture fails on the RED scaffold), then write production code. A failure for any other reason is a harness problem, fixed first. The crafter (nw-software-crafter) authors no acceptance test; crafter-written tests are limited to value-in/value-out Vitest cases on the new pure readers and describe-functions in client/src/metricsWording.ts and the 70 % parity test (DSN-14), so StrykerJS has inner-loop kills."
+  },
+  "validation": {
+    "status": "approved",
+    "notes": "Scenario ownership counted against the test files at lighthouse-clients 0bf7e0e. it.each rows count once each. Every it.skip case is claimed by exactly one step; none orphaned, none claimed twice. Active tests are not claimed: they stay active and green in every step. SKILLS (slice 01) = 7: 01-01:5 (evalFixture.test.ts, whole describe), 01-02:2 (skills.drift.test.ts 'no skill names ...' walking skeleton and 'the general skill names every ...'). The eighth skills/ skip, skills.evals.test.ts 'every tool a case names exists in the clients', needs all four new tools and is claimed by 08-03. SLICE 06 = 12: 06-01:5 (currentWip.test.ts: receives each Work Item (walking skeleton), reads as of today, refused read, still returns the Work Items, blockedCountHistory descriptions), 06-02:7 (currentWip.test.ts: no WIP limit, Blocked not known, nothing in progress, instance's own words; currentWipView.test.ts: the three lh cases). SLICE 07 = 18: 07-01:5 (sleRiskView.test.ts: --json unchanged, Portfolio, upgrade; metricsSelections.test.ts: sleRisk / slerisk 2 rows), 07-02:6 (sleRiskView.test.ts: how many then every Work Item, age and evidence, 70/69, own words, no SLE, names unreadable), 07-03:7 (sleRisk.test.ts, all). SLICE 08 = 24: 08-01:6 (processBehaviorChart.test.ts: signal and days, no signals, default range, Portfolio Feature Size, Team Feature Size refused, no metricType refused), 08-02:5 (processBehaviorChart.test.ts: no baseline, statusReason, blackout, older payload, unreadable signal), 08-03:8 (processBehaviorChartView.test.ts: five charts once, --json by type, Portfolio six, 3 alias rows; metricsSelections.test.ts help line; skills.evals.test.ts every tool a case names exists), 08-04:5 (processBehaviorChartView.test.ts: one line per chart, no baseline, blackout, own words, other charts when one fails). Sum 7 + 12 + 18 + 24 = 61, matching DISTILL's '80 tests, 19 active, 61 skipped'. Steps that un-skip nothing (02-01, 03-01, 04-01, 04-02, 05-01, 09-01, 10-01) are skill-text or packaging steps; their acceptance is the eval case ids (validation.eval_cases) and the active guards named in each step. Decomposition: 18 steps over 21 production files (validation.production_files) = 0.86. Self-check of the six roadmap gates, 2026-10-08 (no shell, so roadmap_gate.py was not run): step ids NN-NN with NN = phase id - pass; no validation-only step (every step changes production text or code) - pass; every step has test_file and scenario_name - pass; no criterion names a private _method() - pass; ratio 0.86 <= 2.5 - pass; no 3+ steps of identical shape - pass, with the caveat in user_decisions RD-9.",
+    "coverage": {
+      "/storage/repos/lighthouse-clients/skills/evalFixture.test.ts": ["01-01"],
+      "/storage/repos/lighthouse-clients/skills/skills.drift.test.ts": ["01-02"],
+      "/storage/repos/lighthouse-clients/skills/skills.evals.test.ts": ["08-03"],
+      "/storage/repos/lighthouse-clients/packages/mcp-core/src/currentWip.test.ts": ["06-01", "06-02"],
+      "/storage/repos/lighthouse-clients/packages/cli/src/currentWipView.test.ts": ["06-02"],
+      "/storage/repos/lighthouse-clients/packages/cli/src/sleRiskView.test.ts": ["07-01", "07-02"],
+      "/storage/repos/lighthouse-clients/packages/cli/src/metricsSelections.test.ts": ["07-01", "08-03"],
+      "/storage/repos/lighthouse-clients/packages/mcp-core/src/sleRisk.test.ts": ["07-03"],
+      "/storage/repos/lighthouse-clients/packages/mcp-core/src/processBehaviorChart.test.ts": ["08-01", "08-02"],
+      "/storage/repos/lighthouse-clients/packages/cli/src/processBehaviorChartView.test.ts": ["08-03", "08-04"]
+    },
+    "case_counts": {
+      "01-01": 5, "01-02": 2,
+      "02-01": 0,
+      "03-01": 0,
+      "04-01": 0, "04-02": 0,
+      "05-01": 0,
+      "06-01": 5, "06-02": 7,
+      "07-01": 5, "07-02": 6, "07-03": 7,
+      "08-01": 6, "08-02": 5, "08-03": 8, "08-04": 5,
+      "09-01": 0,
+      "10-01": 0,
+      "total": 61
+    },
+    "eval_cases": {
+      "_rule": "53 cases (DISTILL). Each skill-text step's text must satisfy the case ids listed against it; the integrity tests in skills/skills.evals.test.ts keep them runnable on every commit; the maintainer scores them by hand before the release (DSN-10). (g) = guardrail, 3/3 required.",
+      "01-02": ["time-in-state-is-read-not-guessed", "lh-output-is-parsed-as-facts", "an-older-lighthouse-is-reported-honestly", "a-read-only-lh-offers-is-named-not-invented"],
+      "02-01": ["the-refinement-verdict-is-explained-from-the-teams-numbers", "a-missing-refinement-number-comes-with-its-fix", "signal-types-are-named-as-lighthouse-names-them", "sle-risk-is-the-share-of-finished-work-items-that-went-past", "the-usage-data-answer-stays-the-persons (g)"],
+      "03-01": ["a-forecast-is-a-choice-of-confidence", "a-hidden-plural-is-a-forecast", "one-work-item-is-answered-with-the-sle-and-its-age", "an-open-question-leads-with-aging", "a-velocity-question-gets-throughput-and-no-lecture", "noise-is-left-alone", "a-throughput-rise-prompts-a-size-check", "the-instances-own-words-are-used", "planning-my-week-is-not-a-lighthouse-question", "running-the-daily-is-not-the-general-skills-question", "a-csv-of-the-board-is-not-read-from-lighthouse"],
+      "04-02": ["the-po-sees-whether-to-refine-more", "above-range-means-stop", "refinement-day-is-said-as-such", "no-number-no-guess", "readiness-stays-the-teams (g)", "ready-by-stage-is-worded-as-such", "a-forecast-is-not-the-refinement-skills-question", "an-older-general-skill-does-not-take-refinement-prep"],
+      "05-01": ["the-developer-sees-what-waits-for-their-view", "a-vote-is-cast-only-after-the-person-confirms-it (g)", "too-big-becomes-a-no-with-a-split-to-confirm (g)", "cannot-size-yet-becomes-a-question (g)", "nobody-votes-in-bulk-on-someones-behalf (g)", "the-voter-name-is-asked-never-guessed (g)", "nothing-waits-for-the-developers-view", "a-work-item-is-a-link-not-a-fetch (g)"],
+      "09-01": ["the-daily-opens-with-one-thing-to-decide", "a-calm-day-says-so-in-one-line", "people-are-never-the-subject (g)", "who-works-on-a-work-item-is-not-looked-up (g)", "the-skill-proposes-the-team-decides (g)", "without-sle-risk-the-estimate-from-age-is-labelled", "without-an-sle-there-is-nothing-past-it", "older-clients-fall-back-to-lh-and-say-so", "a-forecast-is-not-the-dailys-question", "an-older-general-skill-does-not-take-the-daily"],
+      "10-01": ["a-work-item-just-under-the-line-is-a-question", "a-signal-is-raised-as-a-question-without-a-cause (g)", "a-lagging-signal-goes-to-a-flow-retro", "no-baseline-no-signal", "a-persisting-signal-suggests-a-flow-retro", "a-blackout-day-is-never-a-signal", "inside-the-limits-nothing-is-said"],
+      "total": 53,
+      "guardrails": 12
+    },
+    "production_files": [
+      "scripts/eval-fixture.mjs",
+      "skill/SKILL.md -> skills/lighthouse/SKILL.md",
+      "skill/references/tools-and-commands.md -> skills/lighthouse/references/tools-and-commands.md",
+      "skill/references/flow-metrics.md",
+      "skill/references/lighthouse-mechanics.md",
+      "skill/references/coaching-patterns.md",
+      "scripts/pack-skills.sh",
+      ".github/workflows/ci.yml",
+      "skills/README.md",
+      "ARCHITECTURE.md",
+      "skills/lighthouse-refinement/SKILL.md",
+      "skills/lighthouse-refinement/references/voting.md",
+      "skills/lighthouse-daily-flow-review/SKILL.md",
+      "skills/lighthouse-daily-flow-review/references/signals.md",
+      "packages/client/src/index.ts",
+      "packages/client/src/metricsWording.ts",
+      "packages/cli/src/index.ts",
+      "packages/cli/src/metricsOutput.ts",
+      "packages/mcp-core/src/index.ts",
+      ".changeset/lighthouse-skills-reads-for-the-daily.md",
+      "the moved eval folders (skills/lighthouse-refinement/evals, skills/lighthouse-daily-flow-review/evals)"
+    ]
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-6217-lighthouse-skills/feature-delta.md (DISCUSS M1-M8, D0-D13, US-01..US-10, Story Map, Prioritization, KPI-1..KPI-6, DoD; DESIGN DSN-1..DSN-23, Component Decomposition, Reuse Analysis, Test Strategy per Slice, Architectural Enforcement, Earned Trust Probes, Contract Shapes, OQ-1..OQ-3, MQ-1..MQ-3; DEVOPS pipeline outline, pack-skills.sh contract, Release Flow, Changed Assumptions, MD-1..MD-4; DISTILL SK-1..SK-4, Scenario List, Eval Cases, Copy Pinned by the Tests, Scaffolds, Red Classification, D-1..D-8 - all binding)",
+    "environments": "docs/feature/story-6217-lighthouse-skills/devops/environments.yaml",
+    "architecture_patch": "docs/feature/story-6217-lighthouse-skills/design/clients-architecture-target.patch (clients ARCHITECTURE.md target state, applied in 04-01)",
+    "adrs": "docs/product/architecture/adr-229 (skill packing), adr-230 (drift check), adr-231 (eval cases and fixtures), adr-232 (SLE Risk and PBC selections)",
+    "code": "/storage/repos/lighthouse-clients at 0bf7e0e (DISTILL commit): skills/{skills.drift,skills.evals,evalFixture}.test.ts, scripts/eval-fixture.mjs (RED scaffold), packages/mcp-core/src/{currentWip,sleRisk,processBehaviorChart}.test.ts, packages/cli/src/{currentWipView,sleRiskView,processBehaviorChartView,metricsSelections}.test.ts, packages/cli/src/__snapshots__/metricsDefaultView.{team,portfolio}.txt, test-support/dailyFlowAnswers.ts, eval cases in skill/evals/ and test-support/pending-skill-evals/{lighthouse-refinement,lighthouse-daily-flow-review}/",
+    "ado": "User Stories #6245, #6217, #6246; no parent Epic"
+  },
+  "user_decisions": [
+    "RD-1 (roadmap default): one phase per slice, phases in slice order 01 -> 10, story by story (#6245 = 01-03, #6217 = 04-05, #6246 = 06-10), never interleaved. DISCUSS Prioritization had preferred 09 before 08 inside #6246 (the decide list ships value without PBC); the brief asked for the Story Map's order, all three stories ship in ONE clients release (DEVOPS Release Flow), and every Story Map dependency (09 needs 06, 07; 10 needs 08, 09) holds in numeric order, so nothing is lost by 08 before 09. The repository is /storage/repos/lighthouse-clients throughout.",
+    "RD-2: the drift test lands active for both rules in 01-02 and stays active, so every later step that adds a tool, an lh subcommand or a --metrics key must name it in the general skill IN THE SAME COMMIT, or `pnpm run ci` (pre-commit hook) goes red: lighthouse_team_metrics_wip in 06-01; --metrics sleRisk in 07-01; lighthouse_team_metrics_sleRisk in 07-03; lighthouse_team_metrics_processBehaviorChart and lighthouse_portfolio_metrics_processBehaviorChart in 08-01; --metrics processBehaviorChart in 08-03. Each of those steps lists skills/lighthouse/references/tools-and-commands.md (or SKILL.md) in files_to_modify. The drift test needs no edit when the general skill moves (D-5: it resolves skills/lighthouse/ when SKILL.md is there, else skill/).",
+    "RD-3: changesets (DSN-21, DEVOPS Release Flow). #6245 and #6217 (01-05): none - skills/, scripts/, root config and ci.yml are outside packages/*/src, so scripts/check-changeset.mjs never fires; no step of 01-05 touches packages/*/src, so not even an empty changeset is needed. #6246: one changeset, .changeset/lighthouse-skills-reads-for-the-daily.md, created in 06-01 with `@letpeoplework/lighthouse-mcp-core: minor` (06-01 is the first step touching mcp-core/src); 06-02 adds `@letpeoplework/lighthouse-client: minor` (metricsWording.ts) and `@letpeoplework/lighthouse-cli: minor` if it touches cli/src/metricsOutput.ts, otherwise 07-01 adds the cli line (first step that changes cli/src/index.ts); mcp-stdio / mcp-http get their patch through updateInternalDependencies. Because un-skipping a test in packages/*/src also stages packages/*/src, every step of 06-08 edits and re-stages that one file; 08-04 finalises its text. The text never claims more than is built and says that `lh metrics team|portfolio` without --metrics prints and reads exactly what it did. 09 and 10 touch only skills/ and ci.yml: no changeset.",
+    "RD-4 (OQ-1, settled in 07-01, not guessed): the sleRisk gate baseline is found from the Lighthouse repository. In /storage/repos/Lighthouse: (a) `git log --reverse --format='%h %as %s' -S'HttpGet(\"sleRisk\")' -- Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs` names the commit that introduced the route; (b) `git log --reverse --format='%h %as %s' -S'finishedItemsThatWentOnToMiss' -- Lighthouse.Backend` (or the epic-4127 round-2 slice-02 commit, whose route takes no date parameters) names the round-2 commit; (c) `git tag --contains <commit> --sort=v:refname` for each - the first tag listed is the first release carrying it; (d) the gate value is the newest tag in `git tag --sort=v:refname` that does NOT contain the round-2 commit (if the route and round 2 first shipped in the same release, that is the release before the route). DESIGN's working value v26.9.9.9 is replaced if the tags say otherwise; the value is written in the same `vYY.M.D.N` form as the existing FEATURE_REQUIRES_SERVER_NEWER_THAN entries; the commit body quotes the commands and their output. If the result differs from v26.9.9.9, the refused version in sleRiskView.test.ts / sleRisk.test.ts and the gravity-older-lighthouse fixture's version (v26.9.9.9) are checked still to be at or below the new baseline - a test refusing v26.9.9.9 stays correct for any baseline >= v26.9.9.9; a lower baseline means those tests' 'older Lighthouse' is no longer refused and is a harness problem to raise with the maintainer, not to patch silently.",
+    "RD-5 (slice 04 split, deliberate): DEVOPS requires `git mv skill skills/lighthouse`, scripts/pack-skills.sh, both ci.yml edits (verify dry-run pack, release pack step moved and files: glob) and the drift-test root in ONE commit so main never holds a half-moved layout; that commit is 04-01 (the drift-test root needs no edit, D-5), and the target-state ARCHITECTURE.md patch goes in it. The Refinement skill folder (and its eval cases' git mv out of test-support/pending-skill-evals, D-1) is 04-02, which also adds lighthouse-refinement to verify's expected-name list. DEVOPS wrote that list as 'lighthouse lighthouse-refinement' for slice 04; it lists only lighthouse in 04-01 because the folder does not exist until 04-02 and a skills/ folder without SKILL.md fails both the frontmatter test and the pack contract. Both commits are inside slice 04; nothing between them is released (DEVOPS holds every release until the checklist is done).",
+    "RD-6 (ARCHITECTURE.md patch): the committed patch describes the target state of the whole feature (three skills, the sleRisk / processBehaviorChart opt-in rule), so after 04-01 the clients ARCHITECTURE.md is ahead of the code until 09. The brief asked for it in slice 04; it is applied as is with `git apply`, after `git apply --check`. If it does not apply cleanly (ARCHITECTURE.md moved since index 8f412da), the step applies its hunks by hand to the same effect and says so in the commit body; it is not re-written.",
+    "RD-7 (docs): per the brief, docs belong to feature finalization, not to steps: packages/cli/README.md and the MCP READMEs for 06-08, Lighthouse docs/aiintegration.md (the two new zips, the Daily Flow Review paragraph; never a skill the release lacks, DoD 5) and docs/concepts/concepts.md:85, and the website card / llms.txt change (MD-1) at release. The finalization writes the Lighthouse docs commit and holds it unpushed until the clients release that carries the zips is published (DEVOPS release checklist step 8). The only document inside a step is the clients ARCHITECTURE.md patch (04-01) and skills/README.md (04-01), which is the eval procedure itself (DSN-10) rather than user documentation.",
+    "RD-8 (pack-skills.sh has no Vitest test): `zip` is not installed on the maintainer's machine, so the pack check stays out of `pnpm test` and the pre-commit hook (DEVOPS). Precondition for 04-01 and 09-01: `zip` installed (`pacman -S zip`). 04-01 and 09-01 probe the script red-first by hand - a temp skills/x/ without SKILL.md (exit != 0), one whose frontmatter name differs (exit != 0), one with evals/ (the zip holds no evals/) - and run `bash scripts/pack-skills.sh \"$(mktemp -d)\"` green, and say so in the commit body. shellcheck runs with the CI-pinned image (`docker run --rm -v \"$PWD:/mnt\" -w /mnt koalaman/shellcheck:v0.9.0 scripts/pack-skills.sh`); actionlint (`~/go/bin/actionlint .github/workflows/ci.yml`) on every ci.yml edit (04-01, 04-02, 07-02, 08-04, 09-01).",
+    "RD-9 (shape check): three steps add one MCP tool each (06-01 wip, 07-03 sleRisk, 08-01 the two chart tools) and two pairs share the 'lh selection facts' / 'pretty view' split (07-01/08-03, 07-02/08-04). They are not batched because each belongs to a different slice that must ship and release on its own (CLAUDE.md: each slice a phase, no interleaving), they read different routes, and 08-01 also adds the client reads and the chart wording. No phase holds two steps of the same shape.",
+    "RD-10 (copy): the strings in DISTILL 'Copy Pinned by the Tests' are binding, including the DISTILL-chosen ones: `No System WIP Limit is set.` / `Lighthouse does not say which Work Items are Blocked.` / `No Work Items are in progress.` (the approved sketch's wording, Final review gate), `team metrics: invalid metricType`, the facts labels `team wip: `, `team sleRisk: `, `team processBehaviorChart: `, `Voyager has no SLE, so there is no SLE Risk.`, `SLE Risk is for Teams.`, the help line ending `processBehaviorOverTime, sleRisk, processBehaviorChart`, and the chart titles `<web title> Process Behaviour Chart`. Every new sentence goes through Terms (DSN-20): `${terms.sle} Risk`, never a literal 'SLE Risk' in client code; the four signal names stay literal.",
+    "RD-11: not crafter steps, owned by the orchestrator / maintainer: refactor and review passes, StrykerJS on the new client/cli/mcp-core code of 06-08 (>= 80 %, last, on frozen code), the eval run (KPI-2) recorded under docs/feature/story-6217-lighthouse-skills/evals/, Liz Rettig's review of the Daily Flow Review skill (Q4), every production-data / dogfood AC, finalization (docs, RD-7), release versioning (`pnpm release:version`) and approval, the post-release zip check, the website change (MD-1) and ADO transitions. Skill text: mutation N/A, because prose cannot be mutated; pack-skills.sh: N/A, because Stryker does not mutate bash (RD-8's probes are its gate).",
+    "RD-12 (CI learnings pre-applied): comments are written for a stranger, never citing DSN-/US-/ADR-/D- ids (the drift test's exemption list states each reason in words); no gate output piped through grep -q/head/tail under pipefail (here-strings instead); new JSON Biome-formatted; no new dependency; shell style per the house rule (named locals, explicit return, `*)` in every case, literals used three times lifted to readonly constants)."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 01 - an assistant reaches every Lighthouse answer the clients offer (US-01, #6245)",
+      "description": "The eval fixture server the maintainer runs evals against, and the general skill (still at skill/) brought up to every MCP tool, lh subcommand and --metrics key, with the drift check that keeps it so switched fully on. No changeset.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The eval fixture server plays the Lighthouse a fixture describes",
+          "description": "Replace the RED scaffold scripts/eval-fixture.mjs with a plain-Node http server (DSN-9): `node scripts/eval-fixture.mjs <fixture.json>` reads a fixture `{ version, routes: { \"GET /api/v1/...\": <body> } }`, listens on a free local port, prints its URL, answers by method + path ignoring the query, answers the fixture's version as its own, answers 404 to any unlisted route, and logs every request line (writes included) to stdout. A sibling of smoke-fixture.mjs, not an extension of it (Reuse Analysis).",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/skills/evalFixture.test.ts",
+          "scenario_name": "answers a listed read with the fixture's body, whatever its query",
+          "unskips": [
+            "it.skip -> it (evalFixture.test.ts) :: answers a listed read with the fixture's body, whatever its query",
+            "it.skip -> it (evalFixture.test.ts) :: reports the fixture's version as its own",
+            "it.skip -> it (evalFixture.test.ts) :: answers 404 to a route the fixture does not list, and prints that request",
+            "it.skip -> it (evalFixture.test.ts) :: prints every write it receives",
+            "it.skip -> it (evalFixture.test.ts) :: serves the general skill's Northwind fixture to lh, which reads Gravity's Work Items in progress from it"
+          ],
+          "red_to_green_tests": [
+            "evalFixture.test.ts :: the eval fixture server plays the Lighthouse a fixture describes (5)"
+          ],
+          "criteria": [
+            "Started with a fixture path, the server prints its URL on stdout and answers a listed GET with the fixture's body whatever the query string",
+            "It reports the fixture's version as the Lighthouse version it answers",
+            "An unlisted route answers 404 and its request line is printed",
+            "Every POST, PUT and DELETE it receives is printed, so a write shows in the request log",
+            "lh connected to it reads Gravity's Work Items in progress from skill/evals/fixtures/northwind.json",
+            "The scaffold markers (`// SCAFFOLD: true`, `export const __SCAFFOLD__`) are gone; the server writes no file and has no dependency beyond Node",
+            "The active fixture integrity tests in skills/skills.evals.test.ts stay green",
+            "`pnpm run ci` in /storage/repos/lighthouse-clients exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/scripts/eval-fixture.mjs",
+            "/storage/repos/lighthouse-clients/skills/evalFixture.test.ts"
+          ],
+          "dependencies": [],
+          "implementation_notes": "EXEMPT FROM PARADIGM: the tests spawn the server as its own process on a real port (@real-io @adapter-integration); single-example wiring checks by nature. Compensate with the fixture integrity tests already active in skills.evals.test.ts. Contract shape: read-only server; never writes files except its port line on stdout (Contract Shapes). Earned trust: the request log is the probe the eval run reads for writes. No changeset (scripts/ is outside packages/*/src). Commit: feat(skills): a fixture server the skill evals run against (story 6245)."
+        },
+        {
+          "id": "01-02",
+          "name": "The general skill names every read the clients offer, and nothing that does not exist",
+          "description": "Bring skill/SKILL.md and its references up to the 45 MCP tools, every `lh <group> <subcommand>` the help prints and every --metrics key, each with when to use it (US-01, S1); remove `lh feature list` (skill/SKILL.md:279), which lh never had; and switch on the drift check's two pending rules. The full command and tool reference lives in a new reference file the skill loads on a named condition, so SKILL.md stays short; the ID-resolution table covers every tool.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/skills/skills.drift.test.ts",
+          "scenario_name": "no skill names a tool, an lh command or a metric that does not exist",
+          "unskips": [
+            "it.skip -> it (skills.drift.test.ts) :: no skill names a tool, an lh command or a metric that does not exist (@walking_skeleton for #6245)",
+            "it.skip -> it (skills.drift.test.ts) :: the general skill names every MCP tool, every lh command and every metric key"
+          ],
+          "red_to_green_tests": [
+            "skills.drift.test.ts :: no skill names a tool, an lh command or a metric that does not exist",
+            "skills.drift.test.ts :: the general skill names every MCP tool, every lh command and every metric key"
+          ],
+          "criteria": [
+            "Un-skipped first, the walking skeleton fails naming `lh feature list (skill/SKILL.md:279)` and the second rule fails listing the missing names (about 42, e.g. lighthouse_team_metrics_cumulativeStateTime, lh blackout list, --metrics blocked) - the red-first run DESIGN asks for",
+            "Every MCP tool listTools() announces, every lh subcommand and every --metrics key appears in skill/SKILL.md or a skill/references/*.md file, with when to use it",
+            "No skill text names a lighthouse_* tool, an lh command or a --metrics key that does not exist",
+            "The skill tells the assistant to request lh output it parses with --json, to relay a version refusal as 'upgrade Lighthouse', and to name the lh command for a CLI-only read over MCP instead of inventing a tool",
+            "The text satisfies eval cases time-in-state-is-read-not-guessed, lh-output-is-parsed-as-facts, an-older-lighthouse-is-reported-honestly, a-read-only-lh-offers-is-named-not-invented (scored by hand before the release)",
+            "The commit body carries the coverage table US-01 asks for: every item shipped since 2026-06-06 (S1) as covered or deliberately omitted",
+            "The six active drift-machinery tests, the frontmatter test and every skills.evals.test.ts integrity test stay green",
+            "`pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/skill/SKILL.md",
+            "/storage/repos/lighthouse-clients/skill/references/tools-and-commands.md",
+            "/storage/repos/lighthouse-clients/skill/references/lighthouse-mechanics.md",
+            "/storage/repos/lighthouse-clients/skills/skills.drift.test.ts"
+          ],
+          "dependencies": ["01-01"],
+          "implementation_notes": "STRUCTURAL VERIFICATION (mandatory, plugin/skill): This step ships prompt text / config / docs, not application code, so the Hypothesis + state-delta unit mandate does not apply. Verify the deliverable structurally - a golden assertion (skill-lint) over the changed markdown/config asserting the required block is present and correctly shaped - gated at CI + pre-push. Here the golden assertion is the drift test (both rules plus non-vacuity anchors) and the eval-case integrity tests, run by the pre-commit hook. The new reference's file name is the crafter's call; the drift test reads every skill/references/*.md. Write the seeded default terms (Feature, Work Item, Team, ...) and tell the assistant to use the words of each tool's summary (DSN-20). Do not add the four tools #6246 brings: they do not exist yet and rule 2 would refuse them. No changeset. Commit: feat(skills): the general skill names every read the clients offer (story 6245)."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice 02 - an assistant explains what Lighthouse shipped since June in plain words (US-02, #6245)",
+      "description": "The general skill's references explain the newer concepts in Lighthouse's own product wording, loaded on a named condition. Skill text only; no changeset.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "The general skill explains the newer concepts as Lighthouse defines them",
+          "description": "Extend the general skill's references (loaded on a named condition from SKILL.md) with quoted product wording, not re-derived (US-02 Technical Notes): the Refinement need band, verdict Below/In/Above and the three unavailableReasons with their fixes; the yardstick (SLE, Cycle Time fallback); readiness by Votes or Stages and the four row readiness values; SLE Risk; Blocked; Stale; Flow Efficiency; Time in State; Features Worked On; Load Balance; percentiles and PBC over time; the four PBC signal types and baselines; Delivery history; named cycle times; recurring blackout rules; the backfill Preview. 'Above range' is explained from refinement_get numbers and never framed as an achievement. The usage-data rule (S2) stays: inform and link, never answer the question or run lh config usage-data.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/skills/skills.drift.test.ts",
+          "scenario_name": "eval the-refinement-verdict-is-explained-from-the-teams-numbers (+ drift guard: no skill names a tool, an lh command or a metric that does not exist)",
+          "unskips": [],
+          "red_to_green_tests": [],
+          "criteria": [
+            "Every concept in US-02's first AC is explained in skill/SKILL.md or a reference it loads on a named condition, in Lighthouse's own wording (docs/metrics/*, epic-5510 docs)",
+            "The text satisfies eval cases the-refinement-verdict-is-explained-from-the-teams-numbers, a-missing-refinement-number-comes-with-its-fix, signal-types-are-named-as-lighthouse-names-them, sle-risk-is-the-share-of-finished-work-items-that-went-past and the guardrail the-usage-data-answer-stays-the-persons",
+            "Both drift rules and the frontmatter test stay green: every name the new text uses exists, and the general skill still names everything",
+            "Every skills.evals.test.ts integrity test stays green",
+            "`pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/skill/SKILL.md",
+            "/storage/repos/lighthouse-clients/skill/references/flow-metrics.md",
+            "/storage/repos/lighthouse-clients/skill/references/lighthouse-mechanics.md"
+          ],
+          "dependencies": ["01-02"],
+          "implementation_notes": "STRUCTURAL VERIFICATION (mandatory, plugin/skill): This step ships prompt text / config / docs, not application code, so the Hypothesis + state-delta unit mandate does not apply. Verify the deliverable structurally - a golden assertion (skill-lint) over the changed markdown/config asserting the required block is present and correctly shaped - gated at CI + pre-push. Here: the drift test and the eval-case integrity tests. Un-skips nothing: DISTILL wrote no automated test for prose; acceptance is the five eval cases, scored by hand before the release. SLE Risk is described as the share of finished Work Items of that age that went past the SLE, at risk from 70 % (the web's line). No changeset. Commit: feat(skills): the general skill explains what Lighthouse shipped since June (story 6245)."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Slice 03 - an assistant answers like a ProKanban coach, without lecturing (US-03, #6245)",
+      "description": "The general skill's stance: D6 items 1-9, a never/instead table, a pre-answer checklist, the blog summaries moved out of the always-loaded text, and a description that names its neighbours. Last in #6245 because it restructures text 01 and 02 wrote. Skill text only; no changeset.",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "The general skill answers like a ProKanban coach and knows where its job ends",
+          "description": "Apply DISCUSS D6 items 1-9 to skill/SKILL.md: forecasts carry at least two likelihoods with 'on or before' (dates) or 'or more' (counts) and ask which to plan against, 'certain' only for 100 %; one-Work-Item questions use the SLE and its age, many-Work-Item questions (hidden plurals included) the forecast; open questions lead with aging and Blocked; velocity / points / hours are answered with Throughput or the SLE plus at most one sentence on the trade-off, no lecture words; inside-the-limits variation is noise, a Throughput rise prompts a Work Item size check. Add a never/instead table and a pre-answer checklist; move the blog summaries to references/coaching-patterns.md; rewrite the frontmatter description to name its neighbours (D4: Refinement prep, the daily, work from a file brought by the person).",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/skills/skills.drift.test.ts",
+          "scenario_name": "eval a-forecast-is-a-choice-of-confidence (+ drift guard: every skill folder has a SKILL.md whose name is the name it ships under)",
+          "unskips": [],
+          "red_to_green_tests": [],
+          "criteria": [
+            "SKILL.md holds a never/instead table and a pre-answer checklist; D6 items 1-9 are applied and none of the nine contradictions remains",
+            "The blog summaries live in skill/references/coaching-patterns.md, loaded on a named condition, not in SKILL.md",
+            "The frontmatter keeps name: lighthouse and a description that excludes Refinement prep, running the daily and reading a CSV the person brought",
+            "The text satisfies eval cases a-forecast-is-a-choice-of-confidence, a-hidden-plural-is-a-forecast, one-work-item-is-answered-with-the-sle-and-its-age, an-open-question-leads-with-aging, a-velocity-question-gets-throughput-and-no-lecture, noise-is-left-alone, a-throughput-rise-prompts-a-size-check, the-instances-own-words-are-used, and the neighbours planning-my-week-is-not-a-lighthouse-question, running-the-daily-is-not-the-general-skills-question, a-csv-of-the-board-is-not-read-from-lighthouse",
+            "Moving text keeps every tool, subcommand and metric key named somewhere in the general skill: both drift rules and the frontmatter test stay green",
+            "`pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/skill/SKILL.md",
+            "/storage/repos/lighthouse-clients/skill/references/coaching-patterns.md"
+          ],
+          "dependencies": ["02-01"],
+          "implementation_notes": "STRUCTURAL VERIFICATION (mandatory, plugin/skill): This step ships prompt text / config / docs, not application code, so the Hypothesis + state-delta unit mandate does not apply. Verify the deliverable structurally - a golden assertion (skill-lint) over the changed markdown/config asserting the required block is present and correctly shaped - gated at CI + pre-push. Here: the drift test (frontmatter rule guards the description) and the eval-case integrity tests. Restated, not copied (D5); wording from research section 6 'Lands / Puts people off'. A neighbour skill may be named in prose: the drift check only refuses tool, lh and metric names. No changeset. Commit: feat(skills): the general skill answers like a ProKanban coach (story 6245)."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Slice 04 - a Product Owner sees whether the Team is ready for its next Refinement, and skills ship one zip each (US-04, #6217)",
+      "description": "The layout move skill/ -> skills/lighthouse/, the packer, both CI edits and the clients ARCHITECTURE.md target in one commit (04-01); then the Refinement skill's PO half with its eval cases moved in beside it (04-02). No changeset.",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Skills live under skills/ and each folder ships as its own zip",
+          "description": "In ONE commit (DEVOPS Changed Assumptions): `git mv skill skills/lighthouse` (history kept; skill/evals moves with it, D-1); new scripts/pack-skills.sh to the DEVOPS contract (set -euo pipefail; out-dir made absolute before any cd; nullglob over skills/*/, zero folders fails; per folder SKILL.md present and frontmatter name = folder, else fail; `zip -qr -X \"$out/$name-skill.zip\" . -x 'evals/*'`; post-check with `unzip -Z1` captured and tested by here-strings: SKILL.md at the root, no evals/ entry, else delete the zip and fail; print the entries; write nothing but <out-dir>/*-skill.zip); ci.yml verify gains 'Pack skills (dry run)' right after Test, expecting lighthouse-skill.zip; ci.yml release replaces 'Pack skill folder' with `bash scripts/pack-skills.sh release-assets`, moved directly after Build and before 'Publish npm packages', and 'Create GitHub release' files: lists `release-assets/*-skill.zip` with `fail_on_unmatched_files: true`; new skills/README.md (layout, zip names, the drift check, the eval procedure of DSN-10); and the clients ARCHITECTURE.md target applied from the committed patch.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/skills/skills.drift.test.ts",
+          "scenario_name": "every skill folder has a SKILL.md whose name is the name it ships under (+ skills.evals.test.ts: finds the cases of all three skills)",
+          "unskips": [],
+          "red_to_green_tests": [],
+          "criteria": [
+            "skills/lighthouse/ holds the general skill with its history (git log --follow shows the skill/ commits); skill/ no longer exists",
+            "The drift test resolves the general skill at skills/lighthouse/ without an edit (D-5) and every drift test stays green; skills.evals.test.ts finds the general skill's cases at skills/lighthouse/evals/cases.json and stays green",
+            "pack-skills.sh probed red-first by hand (precondition: zip installed): a temp skills/x/ without SKILL.md exits non-zero; one whose name differs exits non-zero; one with evals/ yields a zip without evals/; on the real tree it writes only lighthouse-skill.zip into a mktemp dir, SKILL.md at its root, no evals/ - each result in the commit body",
+            "shellcheck v0.9.0 (CI-pinned image) reports nothing on pack-skills.sh; actionlint reports nothing on ci.yml",
+            "verify's new step runs the script into a temp dir and fails when lighthouse-skill.zip is missing; nothing pipes a gate's output into grep -q, head or tail",
+            "release packs before 'Publish npm packages'; files: carries release-assets/*-skill.zip with fail_on_unmatched_files: true, and every other pattern in that files: list is checked to match an artefact the release job produces, so the flag cannot fail a good release",
+            "`git apply --check` then `git apply` of /storage/repos/Lighthouse/docs/feature/story-6217-lighthouse-skills/design/clients-architecture-target.patch on /storage/repos/lighthouse-clients/ARCHITECTURE.md (hunks applied by hand to the same effect if it does not apply cleanly, said in the commit body)",
+            "skills/README.md states the layout, the three zip names, how the drift check reads the clients, and the eval run procedure (fixture server, fresh conversation, three runs, guardrails 3/3, record under docs/feature/story-6217-lighthouse-skills/evals/)",
+            "No changeset; `pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/skill -> /storage/repos/lighthouse-clients/skills/lighthouse (git mv)",
+            "/storage/repos/lighthouse-clients/scripts/pack-skills.sh",
+            "/storage/repos/lighthouse-clients/.github/workflows/ci.yml",
+            "/storage/repos/lighthouse-clients/skills/README.md",
+            "/storage/repos/lighthouse-clients/ARCHITECTURE.md"
+          ],
+          "dependencies": ["03-01"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: packaging and CI are bash and workflow YAML; no Vitest test runs the packer because zip is missing locally and a pnpm test needing it would red every local run (DEVOPS, RD-8). Compensate with the hand probes above, the same script run by verify on every push and by release before npm publish, and fail_on_unmatched_files. Contract shape: bounded change - writes only <out-dir>/*-skill.zip. Shell house style (RD-12). One git revert of this commit restores skill/ and the old release step together. The ARCHITECTURE patch describes the feature's target state (RD-6). No changeset. Commit: feat(skills): each skill folder ships as its own zip (story 6217)."
+        },
+        {
+          "id": "04-02",
+          "name": "A Product Owner sees whether the Team is ready for its next Refinement",
+          "description": "New skills/lighthouse-refinement/SKILL.md (frontmatter name lighthouse-refinement, a description that excludes forecasts and the daily, names lighthouse as its companion) covering the PO half of US-04: quote refinement_get's summary; state ready count, range, verdict and next Refinement date in the instance's words; Below -> the summary's own 'Refine X to Y more', quoted, never recomputed; In -> enough; Above -> stop refining; list Work Items with readiness NeedsDiscussion, any No or hasOpenQuestion with their url and summarise the rest in one line; no number without a verdict, each unavailableReason with its fix; 'ready by stage' wording for readySource Stages; never call a write tool for a PO. In the same commit `git mv test-support/pending-skill-evals/lighthouse-refinement skills/lighthouse-refinement/evals` (D-1) and add lighthouse-refinement to verify's expected zip names.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/skills/skills.evals.test.ts",
+          "scenario_name": "eval the-po-sees-whether-to-refine-more (+ finds the cases of all three skills; drift: every skill folder has a SKILL.md whose name is the name it ships under)",
+          "unskips": [],
+          "red_to_green_tests": [],
+          "criteria": [
+            "skills/lighthouse-refinement/SKILL.md exists with name: lighthouse-refinement and a description; the frontmatter test is green for both folders",
+            "The Refinement skill names only tools, lh commands and metric keys that exist: the walking-skeleton drift test is green over both folders",
+            "The 16 Refinement cases and 5 fixtures live in skills/lighthouse-refinement/evals/ (moved with git mv); test-support/pending-skill-evals/lighthouse-refinement/ is gone; every skills.evals.test.ts integrity test is green, 'finds the cases of all three skills' included",
+            "The text satisfies eval cases the-po-sees-whether-to-refine-more, above-range-means-stop, refinement-day-is-said-as-such, no-number-no-guess, the guardrail readiness-stays-the-teams, ready-by-stage-is-worded-as-such, and the neighbours a-forecast-is-not-the-refinement-skills-question, an-older-general-skill-does-not-take-refinement-prep",
+            "verify expects lighthouse-skill.zip and lighthouse-refinement-skill.zip; actionlint clean; by hand, pack-skills.sh writes lighthouse-refinement-skill.zip with SKILL.md at its root and no evals/",
+            "The general skill's description and never/instead table hand Refinement prep to this skill (both drift rules still green)",
+            "No changeset; `pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/skills/lighthouse-refinement/SKILL.md",
+            "/storage/repos/lighthouse-clients/test-support/pending-skill-evals/lighthouse-refinement -> /storage/repos/lighthouse-clients/skills/lighthouse-refinement/evals (git mv)",
+            "/storage/repos/lighthouse-clients/.github/workflows/ci.yml",
+            "/storage/repos/lighthouse-clients/skills/lighthouse/SKILL.md"
+          ],
+          "dependencies": ["04-01"],
+          "implementation_notes": "STRUCTURAL VERIFICATION (mandatory, plugin/skill): This step ships prompt text / config / docs, not application code, so the Hypothesis + state-delta unit mandate does not apply. Verify the deliverable structurally - a golden assertion (skill-lint) over the changed markdown/config asserting the required block is present and correctly shaped - gated at CI + pre-push. Here: the drift test's frontmatter and unknown-name rules over the new folder, the eval-case integrity tests over the moved cases, and the hand pack. The answer's shape is the approved sketch SK-2 (next Refinement and days to it; ready count by Votes, need range and verdict; how many more to refine; the Work Items worth the session's time with their votes and links; the closing line; no 'still waiting for votes' count). The PO-facing docs (docs/aiintegration.md, concepts.md:85) are finalization (RD-7). No changeset. Commit: feat(skills): a Refinement skill tells the Product Owner whether the Team is ready (story 6217)."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Slice 05 - a developer preps for Refinement in a minute and gives their own view (US-05, #6217)",
+      "description": "The Refinement skill's developer half: what waits for my view, in the Team's terms, and votes cast only after the person confirms each one. Skill text only; no changeset.",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "A developer sees what waits for their view and votes only what they confirmed",
+          "description": "Extend skills/lighthouse-refinement with the developer half of US-05: waiting Work Items = rows with myVote null, in workItems order, each with its url; the yardstick question from yardstick.days / probability (or says it is the Cycle Time fallback); when Lighthouse cannot tell which votes are the person's, say so and list every row needing votes; no vote, comment or take-back tool before the person has confirmed answer and comment per Work Item; 'Yes, if...' always carries its condition as the comment; 'too big' -> No with a split proposal to confirm; 'can't size yet' -> Yes, if... or No with the question, and 'who will chase this?' asked without naming anyone; the voter name asked, never inferred; Work Item content never fetched beyond its link; over MCP HTTP without sign-in, say where a vote can be cast instead. Voting rules live in a reference the SKILL.md loads when a vote is in play.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/skills/skills.evals.test.ts",
+          "scenario_name": "eval a-vote-is-cast-only-after-the-person-confirms-it (+ every case names only tools that exist or that this release adds; drift: no skill names a tool, an lh command or a metric that does not exist)",
+          "unskips": [],
+          "red_to_green_tests": [],
+          "criteria": [
+            "The text satisfies eval cases the-developer-sees-what-waits-for-their-view, nothing-waits-for-the-developers-view and the guardrails a-vote-is-cast-only-after-the-person-confirms-it, too-big-becomes-a-no-with-a-split-to-confirm, cannot-size-yet-becomes-a-question, nobody-votes-in-bulk-on-someones-behalf, the-voter-name-is-asked-never-guessed, a-work-item-is-a-link-not-a-fetch",
+            "Every vote, comment and take-back tool or lh command the skill names exists (walking-skeleton drift test green); the frontmatter test stays green",
+            "Every skills.evals.test.ts integrity test stays green",
+            "The two US-05 ACs no static fixture can express (cannot tell which votes are his; a vote refused over shared MCP without sign-in) are written into the skill and left as production checks for the maintainer (DISTILL Completeness Audit)",
+            "No changeset; `pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/skills/lighthouse-refinement/SKILL.md",
+            "/storage/repos/lighthouse-clients/skills/lighthouse-refinement/references/voting.md"
+          ],
+          "dependencies": ["04-02"],
+          "implementation_notes": "STRUCTURAL VERIFICATION (mandatory, plugin/skill): This step ships prompt text / config / docs, not application code, so the Hypothesis + state-delta unit mandate does not apply. Verify the deliverable structurally - a golden assertion (skill-lint) over the changed markdown/config asserting the required block is present and correctly shaped - gated at CI + pre-push. Here: the drift test (both folders) and the eval-case integrity tests. Mapping of Rettig's three answers onto Yes / Yes, if... / No: research section 4.2; SLE Poker Planning may be named neutrally (section 8). Six of this step's eight cases are guardrails (3/3 required, KPI-6). No changeset. Commit: feat(skills): the Refinement skill preps a developer and votes only what they confirm (story 6217)."
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "name": "Slice 06 - an assistant sees what is in progress right now, what is Blocked and since when (US-06, #6246)",
+      "description": "MCP lighthouse_team_metrics_wip over the CLI's existing WIP read (DSN-11), and three shared sentences that both the MCP summary and `lh metrics team --metrics wip` gain (MQ-2). Opens the #6246 changeset.",
+      "steps": [
+        {
+          "id": "06-01",
+          "name": "An assistant reads a Team's Work Items in progress through MCP",
+          "description": "Add lighthouse_team_metrics_wip({ id }) to mcp-core (name union, definition, toolInputSchemas entry, McpRuntimeClient pick, callTool branch): reads getTeamWip(id, today) with today = getDefaultMetricsDateRange().endDate; facts = the server's list unchanged, labelled `team wip: `; second block `summary:` from the existing describeAsOfHeading + describeInProgressNow + describeBlockedNow (ADR-224); summary reads (Terminology, the Team) are best-effort and never fail the tool; a refused read answers `team metrics: <category> (<reason>)` with no summary. Teams only, no version gate. Both blockedCountHistory descriptions are corrected: the Team one names lighthouse_team_metrics_wip, the Portfolio one `lh metrics portfolio --metrics wip`. The general skill names the new tool (drift rule 1). Create the #6246 changeset.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-core/src/currentWip.test.ts",
+          "scenario_name": "receives each Work Item with its age, state, whether it is Blocked and since when, and its link",
+          "unskips": [
+            "it.skip -> it (currentWip.test.ts) :: receives each Work Item with its age, state, whether it is Blocked and since when, and its link (@walking_skeleton for #6246)",
+            "it.skip -> it (currentWip.test.ts) :: reads the Team's Work Items in progress as of today",
+            "it.skip -> it (currentWip.test.ts) :: passes a refused read on as the error it is, with no summary",
+            "it.skip -> it (currentWip.test.ts) :: still returns the Work Items when the Team or the Terminology cannot be read",
+            "it.skip -> it (currentWip.test.ts) :: names the Team read and, for a Portfolio, the lh command"
+          ],
+          "red_to_green_tests": [
+            "currentWip.test.ts :: an assistant reads what is in progress right now through MCP (2)",
+            "currentWip.test.ts :: when Lighthouse cannot answer (2)",
+            "currentWip.test.ts :: the tools that count Blocked Work Items per day point to this read (1)"
+          ],
+          "criteria": [
+            "lighthouse_team_metrics_wip returns each Work Item exactly as the server sent it (age, state, Blocked and since when, link) beside a summary block",
+            "It reads the Team's WIP as of the same day every other metric tool defaults to",
+            "A refused read answers isError with `team metrics: forbidden (No access)` and no summary; a failed Team or Terminology read still returns the facts",
+            "The blockedCountHistory descriptions name lighthouse_team_metrics_wip (Team) and `lh metrics portfolio --metrics wip` (Portfolio)",
+            "runtime.test.ts's pinned annotations hold the new tool as read-only by its name suffix; metricSummaries.everyTool.test.ts covers it",
+            "The general skill names lighthouse_team_metrics_wip with when to use it; both drift rules stay green",
+            ".changeset/lighthouse-skills-reads-for-the-daily.md exists with `@letpeoplework/lighthouse-mcp-core: minor` and is staged",
+            "`pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/currentWip.test.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/metricSummaries.everyTool.test.ts",
+            "/storage/repos/lighthouse-clients/skills/lighthouse/references/tools-and-commands.md",
+            "/storage/repos/lighthouse-clients/.changeset/lighthouse-skills-reads-for-the-daily.md"
+          ],
+          "dependencies": ["05-01"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: MCP tool wiring over a stub client keyed by read name (mcpHarness); the input domain is one id. Compensate with value-in/value-out cases on any new pure helper. Contract shape: read-only tool; summary reads best-effort. No usage-data mapping (DSN-19). The path of the general skill's tools reference follows 01-02's choice under skills/lighthouse/. Commit: feat(mcp): an assistant reads a Team's Work Items in progress (story 6246)."
+        },
+        {
+          "id": "06-02",
+          "name": "Both surfaces say when there is less to say about WIP",
+          "description": "Add three sentences to client/src/metricsWording.ts, shared by the MCP summary and the lh pretty WIP view (one function per answer, ADR-224, MQ-2): `No System WIP Limit is set.` when the Team has none; `Lighthouse does not say which Work Items are Blocked.` when the WIP list carries no Blocked facts (an older server) - never read as none Blocked; `No Work Items are in progress.` for an empty list. All through Terms (DSN-20). `lh metrics team --metrics wip` for a Team with everything to say prints exactly what it printed before.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/currentWipView.test.ts",
+          "scenario_name": "lh: says Lighthouse does not tell which Work Items are Blocked, rather than showing none Blocked",
+          "unskips": [
+            "it.skip -> it (currentWip.test.ts) :: tells a Team without a System WIP Limit that none is set",
+            "it.skip -> it (currentWip.test.ts) :: does not read a Lighthouse that says nothing about Blocked as nothing Blocked",
+            "it.skip -> it (currentWip.test.ts) :: says nothing is in progress when nothing is",
+            "it.skip -> it (currentWip.test.ts) :: says it in the instance's own words",
+            "it.skip -> it (currentWipView.test.ts) :: tells a Team without a System WIP Limit that none is set",
+            "it.skip -> it (currentWipView.test.ts) :: says Lighthouse does not tell which Work Items are Blocked, rather than showing none Blocked",
+            "it.skip -> it (currentWipView.test.ts) :: says nothing is in progress when nothing is"
+          ],
+          "red_to_green_tests": [
+            "currentWip.test.ts :: what the summary says when there is less to say (4)",
+            "currentWipView.test.ts :: lh says what an assistant is told when there is less to say about WIP (3)"
+          ],
+          "criteria": [
+            "The MCP summary and the lh pretty view carry the same pinned sentences: `No System WIP Limit is set.`, `Lighthouse does not say which Work Items are Blocked.`, `No Work Items are in progress.`",
+            "A WIP list without Blocked facts is never summarised as zero Blocked; the facts are handed over unchanged",
+            "With renamed terms the summary says `No System Load Limit is set.` and `Lighthouse does not say which Tickets are Stuck.`",
+            "The active characterisation 'adds none of them when there is everything to say' and both default-view characterisations in metricsSelections.test.ts stay green, unedited",
+            "Crafter unit cases in metricsWording.test.ts cover each sentence's condition value-in/value-out",
+            "The changeset gains `@letpeoplework/lighthouse-client: minor`, and `@letpeoplework/lighthouse-cli: minor` if cli/src/metricsOutput.ts changed; re-staged",
+            "`pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/metricsWording.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/metricsWording.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/metricsOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/currentWip.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/currentWipView.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/lighthouse-skills-reads-for-the-daily.md"
+          ],
+          "dependencies": ["06-01"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: exact pinned copy (golden strings) over three conditions; DISTILL wrote single-example cases. Compensate with value-in/value-out unit cases on the wording function. Contract shape: pure function (wording), unbounded preservation of the everything-to-say view (active characterisation). ADR-223's source-scan tests keep layout out of client wording and seeded words in terminology.ts only. Commit: feat(client): WIP answers say when no limit is set, Blocked is unknown, or nothing is in progress (story 6246)."
+        }
+      ]
+    },
+    {
+      "id": "07",
+      "name": "Slice 07 - SLE Risk per Work Item, from lh and MCP (US-07, #6246)",
+      "description": "The version-gated client read getTeamSleRisk (gate baseline settled from the Lighthouse tags, OQ-1), the opt-in `--metrics sleRisk` selection, the shared SLE Risk wording with the web's 70 % line restated once under a parity test, and MCP lighthouse_team_metrics_sleRisk.",
+      "steps": [
+        {
+          "id": "07-01",
+          "name": "lh hands over Lighthouse's SLE Risk when asked for it, and only then",
+          "description": "Settle OQ-1 first (RD-4) and set FEATURE_REQUIRES_SERVER_NEWER_THAN.sleRisk. Add getTeamSleRisk(teamId) -> GET /v1/teams/{id}/metrics/sleRisk (no query) -> readonly SleRiskEntry[] { referenceId, risk, finishedItemsStillOpenAtThisAge, finishedItemsThatWentOnToMiss: number | null }, behind ensureServerSupports('sleRisk'). In the CLI add the opt-in selection sleRisk (alias slerisk) to METRIC_KEYS / aliases / buildMetricsPayload: payload key sleRisk = the server's array unchanged for --json / --toon; for a Portfolio the section's unavailable value `SLE Risk is for Teams.` with no request; fetched only when named (DSN-18), so the default view's reads and text stay byte for byte. The help's Allowed metrics line gains sleRisk after processBehaviorOverTime. The general skill names --metrics sleRisk (drift rule 1).",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/sleRiskView.test.ts",
+          "scenario_name": "lh: hands over Lighthouse's numbers unchanged with --json",
+          "unskips": [
+            "it.skip -> it (sleRiskView.test.ts) :: hands over Lighthouse's numbers unchanged with --json",
+            "it.skip -> it (sleRiskView.test.ts) :: says SLE Risk is for Teams when asked for a Portfolio, without asking Lighthouse for it",
+            "it.skip -> it (sleRiskView.test.ts) :: tells Priya to upgrade a Lighthouse that has no SLE Risk yet, and does not ask it",
+            "it.skip.each -> it.each (metricsSelections.test.ts) :: reads SLE Risk, and nothing it was not asked for, for --metrics %s - 2 rows (sleRisk, slerisk)"
+          ],
+          "red_to_green_tests": [
+            "sleRiskView.test.ts :: hands over Lighthouse's numbers unchanged with --json",
+            "sleRiskView.test.ts :: says SLE Risk is for Teams when asked for a Portfolio, without asking Lighthouse for it",
+            "sleRiskView.test.ts :: tells Priya to upgrade a Lighthouse that has no SLE Risk yet, and does not ask it",
+            "metricsSelections.test.ts :: reads SLE Risk, and nothing it was not asked for, for --metrics sleRisk / slerisk"
+          ],
+          "criteria": [
+            "The sleRisk gate value is the newest Lighthouse tag without the round-2 sleRisk route, found with git log on TeamMetricsController.cs and git tag --contains (RD-4); commands and output quoted in the commit body",
+            "A server at or below the gate gets no sleRisk request and lh tells Priya to upgrade Lighthouse",
+            "`lh metrics team --id 3 --metrics sleRisk --json` hands over the server's array unchanged and reads nothing it was not asked for; `slerisk` is taken as the same selection",
+            "For a Portfolio the section says `SLE Risk is for Teams.` and Lighthouse is not asked",
+            "Both active default-view characterisations (Team and Portfolio, recorded snapshots) stay green, unedited",
+            "The general skill names --metrics sleRisk; both drift rules stay green",
+            "Crafter unit cases cover the gate entry and the SleRiskEntry reader's tolerance of a null finishedItemsThatWentOnToMiss",
+            "The changeset holds `@letpeoplework/lighthouse-cli: minor` (added here if 06-02 did not), re-staged",
+            "`pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/sleRiskView.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/metricsSelections.test.ts",
+            "/storage/repos/lighthouse-clients/skills/lighthouse/references/tools-and-commands.md",
+            "/storage/repos/lighthouse-clients/.changeset/lighthouse-skills-reads-for-the-daily.md"
+          ],
+          "dependencies": ["06-02"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: lh through runCliSession against aFakeLighthouse on a real socket (@real-io), every request observed; the selection domain is two spellings (it.each rows). Compensate with value-in/value-out unit cases on the reader. Contract shapes: getTeamSleRisk bounded change (one GET plus version read and connectivity check; a too-old server gets zero requests); the default metrics view unbounded preservation. Earned trust: the gate is the probe for an older Lighthouse; the round-1 route that wanted dates is below it. The 'lists them after the existing metrics' help test waits for 08-03 because it pins both new keys. Commit: feat(cli): lh metrics team --metrics sleRisk hands over Lighthouse's SLE Risk (story 6246)."
+        },
+        {
+          "id": "07-02",
+          "name": "lh says which Work Items are at risk of missing the SLE, highest risk first",
+          "description": "Add readSleRisk and one describeSleRisk... to client/src/metricsWording.ts (shared with the MCP summary in 07-03) and SLE_RISK_AT_RISK_FROM = 70 with a parity test copying the web's sleRiskAtRiskSummary cases (Lighthouse.Frontend/src/utils/charts/sleRisk.test.ts: 55 not at risk, 100 at risk, 0, the boundary), as forecastDisplayRules.parity.test.ts does (DSN-14). The pretty view (SK-3): describeAsOfHeading, a line `${terms.sle} Risk`, one sentence counting risk >= 70 against the Team's SLE days and probability, then every Work Item highest risk first with name, age, percentage and its evidence ('6 of 11 finished Work Items that reached this age went past 7 days'), or 'past the SLE' when finishedItemsThatWentOnToMiss is null. Summary reads: Terminology, the Team (name, SLE), today's WIP for names and ages; a failed WIP read leaves only the referenceId. Empty list + no SLE -> `Voyager has no SLE, so there is no SLE Risk.`; empty list + an SLE -> nothing in progress. smoke-integration's --pretty grep gains `--metrics sleRisk` against the real demo-seeded image.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/sleRiskView.test.ts",
+          "scenario_name": "lh: names how many are at risk, then every Work Item highest risk first",
+          "unskips": [
+            "it.skip -> it (sleRiskView.test.ts) :: names how many are at risk, then every Work Item highest risk first",
+            "it.skip -> it (sleRiskView.test.ts) :: shows each Work Item's age and risk with the finished Work Items behind it, or that it is past the SLE",
+            "it.skip -> it (sleRiskView.test.ts) :: counts a Work Item at 70% as at risk and one at 69% as not",
+            "it.skip -> it (sleRiskView.test.ts) :: says it in the instance's own words",
+            "it.skip -> it (sleRiskView.test.ts) :: tells a Team without an SLE that it has no SLE Risk",
+            "it.skip -> it (sleRiskView.test.ts) :: keeps every risk when the Work Items' names cannot be read"
+          ],
+          "red_to_green_tests": [
+            "sleRiskView.test.ts :: Priya sees which Work Items are at risk of missing Gravity's SLE (4 of 5; --json in 07-01)",
+            "sleRiskView.test.ts :: when there is no SLE Risk to show (2 of 4; Portfolio and upgrade in 07-01)"
+          ],
+          "criteria": [
+            "The pretty view prints `Gravity · as of Thu 8 Oct 2026`, a line `SLE Risk`, `2 of 8 Work Items in progress are at risk of missing the SLE (85% within 7 days).`, then each Work Item highest risk first starting with its reference and holding name, age, `55%` and `6 of 11 finished Work Items that reached this age went past 7 days`; a past-SLE line ends `past the SLE`",
+            "A Work Item at 70 % counts as at risk and one at 69 % does not; SLE_RISK_AT_RISK_FROM is the only place in the clients that decides 'at risk', and its parity test with the web's cases is green",
+            "Renamed terms give `PRM Risk` and `2 of 8 Tickets in progress are at risk of missing the PRM (85% within 7 days).`",
+            "Voyager without an SLE prints `Voyager has no SLE, so there is no SLE Risk.`; when the Work Items' names cannot be read every risk is still shown by reference",
+            "ci.yml smoke-integration greps the --pretty output of `--metrics sleRisk` (here-strings, no grep -q on a pipe); actionlint clean",
+            "Crafter unit cases on readSleRisk / describeSleRisk... in metricsWording.test.ts; ADR-223 source-scan tests green",
+            "The changeset is re-staged; `pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/metricsWording.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/metricsWording.test.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/sleRiskAtRisk.parity.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/metricsOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/sleRiskView.test.ts",
+            "/storage/repos/lighthouse-clients/.github/workflows/ci.yml",
+            "/storage/repos/lighthouse-clients/.changeset/lighthouse-skills-reads-for-the-daily.md"
+          ],
+          "dependencies": ["07-01"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: pinned copy (SK-3) and one boundary (70/69) are golden strings and a single threshold. Compensate with value-in/value-out cases on the wording and the parity table. Contract shape: readSleRisk and describeSleRisk... pure functions; summary reads best-effort. The parity test's file name follows the forecastDisplayRules precedent; the crafter may place it differently. Commit: feat(client): SLE Risk is said per Work Item, highest risk first, at the web's 70% line (story 6246)."
+        },
+        {
+          "id": "07-03",
+          "name": "An assistant reads SLE Risk per Work Item through MCP",
+          "description": "Add lighthouse_team_metrics_sleRisk({ id }) to mcp-core: facts = the server's array unchanged, labelled `team sleRisk: `, beside a `summary:` block from 07-02's describeSleRisk... (the same text lh prints); an older Lighthouse's gate refusal passed on as the upgrade it asks for; summary reads best-effort. The general skill names the tool (drift rule 1).",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-core/src/sleRisk.test.ts",
+          "scenario_name": "receives Lighthouse's own risk for each Work Item and the summary lh prints",
+          "unskips": [
+            "it.skip -> it (sleRisk.test.ts) :: receives Lighthouse's own risk for each Work Item and the summary lh prints",
+            "it.skip -> it (sleRisk.test.ts) :: lists every Work Item highest risk first, with the finished Work Items behind each number",
+            "it.skip -> it (sleRisk.test.ts) :: counts a Work Item at 70% as at risk and one at 69% as not",
+            "it.skip -> it (sleRisk.test.ts) :: tells a Team without an SLE that it has no SLE Risk",
+            "it.skip -> it (sleRisk.test.ts) :: says nothing is in progress when a Team with an SLE has nothing in progress",
+            "it.skip -> it (sleRisk.test.ts) :: passes on an older Lighthouse's refusal as the upgrade it asks for",
+            "it.skip -> it (sleRisk.test.ts) :: keeps every risk when the Work Items' names cannot be read"
+          ],
+          "red_to_green_tests": [
+            "sleRisk.test.ts :: an assistant reads which Work Items are at risk of missing the SLE (3)",
+            "sleRisk.test.ts :: when there is no risk to read (4)"
+          ],
+          "criteria": [
+            "The tool returns the server's entries unchanged and a summary identical to the lh pretty text for the same data",
+            "70 % counts as at risk, 69 % does not; a Team without an SLE is told it has no SLE Risk; a Team with an SLE and nothing in progress is told nothing is in progress",
+            "An older Lighthouse's refusal comes back as the upgrade it asks for; unreadable names still leave every risk",
+            "The tool is read-only by name suffix in runtime.test.ts and covered by metricSummaries.everyTool.test.ts",
+            "The general skill names lighthouse_team_metrics_sleRisk; both drift rules stay green",
+            "The changeset is re-staged; `pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/sleRisk.test.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/metricSummaries.everyTool.test.ts",
+            "/storage/repos/lighthouse-clients/skills/lighthouse/references/tools-and-commands.md",
+            "/storage/repos/lighthouse-clients/.changeset/lighthouse-skills-reads-for-the-daily.md"
+          ],
+          "dependencies": ["07-02"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: MCP wiring over the stub client; the wording it reuses was unit-tested in 07-02. Contract shape: read-only tool; summary reads best-effort. No usage-data mapping (DSN-19). Commit: feat(mcp): an assistant reads SLE Risk per Work Item (story 6246)."
+        }
+      ]
+    },
+    {
+      "id": "08",
+      "name": "Slice 08 - Process Behaviour Charts with their signals, from lh and MCP (US-08, #6246)",
+      "description": "Client reads for every chart type routed by ProcessBehaviorMetricType (DSN-15), the shared chart summary rules (DSN-17), the two MCP chart tools with metricType required (DSN-16), and the opt-in `--metrics processBehaviorChart` selection with its aliases and pretty lines. Closes the #6246 changeset.",
+      "steps": [
+        {
+          "id": "08-01",
+          "name": "An assistant reads one chart and the signals Lighthouse found on it",
+          "description": "Add getTeamProcessBehaviorChart(teamId, range, metricType) and getPortfolioProcessBehaviorChart(portfolioId, range, metricType) over the existing ProcessBehaviorMetricType union, routed Throughput -> throughput/pbc, Arrivals -> arrivals/pbc, Wip -> wipOverTime/pbc, WorkItemAge -> totalWorkItemAge/pbc, CycleTime -> cycleTime/pbc, FeatureSize -> featureSize/pbc (Portfolio only); type ProcessBehaviorChart as DSN-15; no version gate. Add readProcessBehaviorChart (accepts signal names only) and the base of describeProcessBehaviorChart... (each signal type with the days it fired, 'No signals' otherwise). Add MCP lighthouse_team_metrics_processBehaviorChart and lighthouse_portfolio_metrics_processBehaviorChart({ id, metricType, startDate?, endDate? }): metricType required (the Team enum without FeatureSize), dates defaulting as every metric tool; facts = the server's chart unchanged labelled `team processBehaviorChart: ` with a summary field beside them; a Team asking for FeatureSize, or no metricType, answers `team metrics: invalid metricType` and sends no request. The general skill names both tools.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-core/src/processBehaviorChart.test.ts",
+          "scenario_name": "names the signal and the days it fired, beside the server's chart unchanged",
+          "unskips": [
+            "it.skip -> it (processBehaviorChart.test.ts) :: names the signal and the days it fired, beside the server's chart unchanged",
+            "it.skip -> it (processBehaviorChart.test.ts) :: says there are no signals when every day is inside the limits",
+            "it.skip -> it (processBehaviorChart.test.ts) :: reads the range every metric tool reads when no dates are given",
+            "it.skip -> it (processBehaviorChart.test.ts) :: reads a Portfolio's Feature Size chart",
+            "it.skip -> it (processBehaviorChart.test.ts) :: refuses a Team's Feature Size chart without asking Lighthouse",
+            "it.skip -> it (processBehaviorChart.test.ts) :: asks which chart when none is named, without asking Lighthouse"
+          ],
+          "red_to_green_tests": [
+            "processBehaviorChart.test.ts :: an assistant reads a chart and the signals Lighthouse found on it (4)",
+            "processBehaviorChart.test.ts :: a question the chart tools cannot take (2)"
+          ],
+          "criteria": [
+            "Each chart type reads its own route once; the facts are the server's chart unchanged and the summary names each signal type with its days (`7 Oct`, `8 Oct`) or says `No signals`",
+            "Without dates the tools read the range every metric tool defaults to (Team last 30 days, Portfolio last 90)",
+            "A Portfolio's Feature Size chart is read from featureSize/pbc; a Team's Feature Size, or a call without metricType, answers `team metrics: invalid metricType` and sends no request",
+            "Both tools are read-only by name suffix in runtime.test.ts; toolInputSchemas has their schemas (a missing one does not compile)",
+            "The general skill names both tools; both drift rules stay green",
+            "Crafter unit cases: the route-per-type table and the signal reader accepting names only (ordinals yield no summary)",
+            "The changeset is re-staged; `pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/metricsWording.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/metricsWording.test.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/processBehaviorChart.test.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/metricSummaries.everyTool.test.ts",
+            "/storage/repos/lighthouse-clients/skills/lighthouse/references/tools-and-commands.md",
+            "/storage/repos/lighthouse-clients/.changeset/lighthouse-skills-reads-for-the-daily.md"
+          ],
+          "dependencies": ["07-03"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: MCP wiring over the stub client; the type domain is six members, covered by the crafter's route table cases. Contract shapes: get...ProcessBehaviorChart bounded change (one GET each; Team+FeatureSize and missing metricType -> zero requests); readers pure. Earned trust: Lighthouse's global JsonStringEnumConverter sends signal names; the reader accepts names only and yields no summary otherwise (the enums-as-strings trap). Refusal text follows the existing `team metrics: <category> (<reason>)` convention. Commit: feat(mcp): an assistant reads a Process Behaviour Chart and its signals (story 6246)."
+        },
+        {
+          "id": "08-02",
+          "name": "A chart whose limits mean little claims no signal",
+          "description": "Complete describeProcessBehaviorChart... with DSN-17's rules: status not Ready -> the status and the server's statusReason verbatim, no signal named; baselineConfigured === false -> says no baseline is set and the limits come from the range shown, no signal named; blackout days (isBlackout) never named as a signal and listed as blackout days; a payload from a Lighthouse without isBlackout / baselineConfigured still has its signals named (tolerant reader); a signal it cannot read is not named, and the chart is still handed over. Facts are never filtered.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-core/src/processBehaviorChart.test.ts",
+          "scenario_name": "says no baseline is set and the limits come from the range shown, and names no signal",
+          "unskips": [
+            "it.skip -> it (processBehaviorChart.test.ts) :: says no baseline is set and the limits come from the range shown, and names no signal",
+            "it.skip -> it (processBehaviorChart.test.ts) :: passes on why Lighthouse could not compute the chart",
+            "it.skip -> it (processBehaviorChart.test.ts) :: lists a blackout day as one and never as a signal",
+            "it.skip -> it (processBehaviorChart.test.ts) :: still names the signals on a chart from a Lighthouse that predates blackout days and baselines",
+            "it.skip -> it (processBehaviorChart.test.ts) :: names no signal it cannot read, and still hands over the chart"
+          ],
+          "red_to_green_tests": [
+            "processBehaviorChart.test.ts :: a chart whose limits mean little claims no signal (5)"
+          ],
+          "criteria": [
+            "A chart without a baseline says so (`no baseline`), says the limits come from the range shown, and names no signal",
+            "A chart that is not Ready passes on the server's statusReason verbatim and names no signal",
+            "A blackout day is listed as `blackout` and never as a signal",
+            "An older payload without isBlackout / baselineConfigured still has its signals named; the summary never claims what the payload does not carry",
+            "An unreadable signal is not named; the facts are the server's chart unchanged in every case",
+            "Crafter unit cases in metricsWording.test.ts for each rule",
+            "The changeset is re-staged; `pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/metricsWording.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/metricsWording.test.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/processBehaviorChart.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/lighthouse-skills-reads-for-the-daily.md"
+          ],
+          "dependencies": ["08-01"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: five distinct rules over one pure function, each a single example by nature. Compensate with value-in/value-out cases per rule. Contract shape: pure function. Whether a run of signal days 'persists' is the skill's call (A3), not the client's - the summary lists days only. Commit: feat(client): a chart without a baseline, not ready, or with blackout days claims no signal (story 6246)."
+        },
+        {
+          "id": "08-03",
+          "name": "lh hands over every chart of a Team or Portfolio when asked for them",
+          "description": "Add the opt-in selection processBehaviorChart (aliases pbc, processbehaviorchart, processbehaviourchart) to lh metrics team|portfolio: fetches every chart type of the scope in parallel (five for a Team, six with Feature Size for a Portfolio), payload `processBehaviorChart: { startDate, endDate, charts: { <Type>: <server chart or refusal value> } }`, fetched only when named (DSN-18). The help's Allowed metrics line ends `processBehaviorOverTime, sleRisk, processBehaviorChart`. The general skill names --metrics processBehaviorChart. With all four new tools now in the clients, the eval integrity test 'every tool a case names exists in the clients' is switched on.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/processBehaviorChartView.test.ts",
+          "scenario_name": "lh: reads each of the Team's five charts once",
+          "unskips": [
+            "it.skip -> it (processBehaviorChartView.test.ts) :: reads each of the Team's five charts once",
+            "it.skip -> it (processBehaviorChartView.test.ts) :: hands over every chart unchanged with --json, by chart type",
+            "it.skip -> it (processBehaviorChartView.test.ts) :: reads a Portfolio's six charts, Feature Size among them",
+            "it.skip.each -> it.each (processBehaviorChartView.test.ts) :: takes pbc / processbehaviorchart / processbehaviourchart for the charts too - 3 rows",
+            "it.skip -> it (metricsSelections.test.ts) :: lists them after the existing metrics",
+            "it.skip -> it (skills.evals.test.ts) :: every tool a case names exists in the clients"
+          ],
+          "red_to_green_tests": [
+            "processBehaviorChartView.test.ts :: reads each of the Team's five charts once",
+            "processBehaviorChartView.test.ts :: hands over every chart unchanged with --json, by chart type",
+            "processBehaviorChartView.test.ts :: reads a Portfolio's six charts, Feature Size among them",
+            "processBehaviorChartView.test.ts :: the three alias rows",
+            "metricsSelections.test.ts :: lists them after the existing metrics",
+            "skills.evals.test.ts :: every tool a case names exists in the clients"
+          ],
+          "criteria": [
+            "`--metrics processBehaviorChart` reads each of a Team's five chart routes exactly once and a Portfolio's six, Feature Size among them; pbc, processbehaviorchart and processbehaviourchart select the same",
+            "--json hands every chart over unchanged, keyed by chart type, with the range",
+            "The help prints `Allowed metrics: throughput, wip, cycleTime, workItemAge, totalWorkItemAge, arrivals, predictabilityScore, cumulativeStateTime, blocked, percentilesOverTime, processBehaviorOverTime, sleRisk, processBehaviorChart`",
+            "Both default-view characterisations stay green, unedited: no chart is read without --metrics",
+            "Every tool an eval case names exists in the clients; the drift test's alias probe takes the three aliases; both drift rules stay green with the general skill naming --metrics processBehaviorChart",
+            "The changeset is re-staged; `pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/processBehaviorChartView.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/metricsSelections.test.ts",
+            "/storage/repos/lighthouse-clients/skills/skills.evals.test.ts",
+            "/storage/repos/lighthouse-clients/skills/lighthouse/references/tools-and-commands.md",
+            "/storage/repos/lighthouse-clients/.changeset/lighthouse-skills-reads-for-the-daily.md"
+          ],
+          "dependencies": ["08-02"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: lh over a real socket (@real-io) with every request observed; the alias domain is three rows (it.each). Compensate with the route table unit cases from 08-01. Contract shape: unbounded preservation of the default view; bounded change of 5 / 6 parallel GETs only when named. TOOLS_STILL_TO_COME in skills.evals.test.ts may stay as it is (it only widens the other integrity test); emptying it is optional and, if done, done here. Commit: feat(cli): lh metrics --metrics processBehaviorChart hands over every chart (story 6246)."
+        },
+        {
+          "id": "08-04",
+          "name": "lh prints one line per chart, titled as the web titles it",
+          "description": "Add the pretty renderer for the processBehaviorChart selection (SK-4): a range heading and one line per chart type starting with the web's title (`Throughput`, `Arrivals`, `Work In Progress`, `Total Work Item Age`, `Cycle Time`, `Feature Size` + ` Process Behaviour Chart`, through Terms) followed by describeProcessBehaviorChart...'s sentence: `No signals`, no baseline, signal and days, or not ready and its reason; a chart that cannot be read leaves the other charts shown. smoke-integration's --pretty grep gains `--metrics processBehaviorChart` against the real demo-seeded image. Finalise the #6246 changeset text.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/processBehaviorChartView.test.ts",
+          "scenario_name": "lh: prints one line per chart under the range, each titled as the web titles it",
+          "unskips": [
+            "it.skip -> it (processBehaviorChartView.test.ts) :: prints one line per chart under the range, each titled as the web titles it",
+            "it.skip -> it (processBehaviorChartView.test.ts) :: says no baseline is set and names no signal",
+            "it.skip -> it (processBehaviorChartView.test.ts) :: lists a blackout day as one and never as a signal",
+            "it.skip -> it (processBehaviorChartView.test.ts) :: titles the charts in the instance's own words",
+            "it.skip -> it (processBehaviorChartView.test.ts) :: shows the other charts when one cannot be read"
+          ],
+          "red_to_green_tests": [
+            "processBehaviorChartView.test.ts :: Priya sees every chart of Gravity's and whether Lighthouse found a signal on it (1 of 5 remaining)",
+            "processBehaviorChartView.test.ts :: a chart whose limits mean little claims no signal (4)"
+          ],
+          "criteria": [
+            "The pretty view prints the range heading and one line per chart starting with the web's chart title plus ` Process Behaviour Chart`, then `No signals`, the signal names and days, `no baseline`, or the server's statusReason verbatim",
+            "A blackout day is named `blackout`, never a signal; renamed terms title the charts in the instance's words",
+            "One unreadable chart leaves every other chart's line in place",
+            "ci.yml smoke-integration greps the --pretty output of `--metrics processBehaviorChart` (here-strings); actionlint clean",
+            "The changeset names client, cli and mcp-core minor, states the four tools and two selections, and that `lh metrics` without --metrics prints and reads what it did; it claims nothing unbuilt",
+            "`pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/cli/src/metricsOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/processBehaviorChartView.test.ts",
+            "/storage/repos/lighthouse-clients/.github/workflows/ci.yml",
+            "/storage/repos/lighthouse-clients/.changeset/lighthouse-skills-reads-for-the-daily.md"
+          ],
+          "dependencies": ["08-03"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: pinned copy per chart title (golden strings). Compensate with the wording unit cases from 08-01 / 08-02, which this renderer only lays out. ADR-223 keeps layout in cli, wording in client. The chart heading follows the web's own widget titles (BaseMetricsView.tsx). Commit: feat(cli): lh prints one line per Process Behaviour Chart (story 6246)."
+        }
+      ]
+    },
+    {
+      "id": "09",
+      "name": "Slice 09 - the facilitator opens the daily with what the Team should decide today (US-09, #6246)",
+      "description": "The Daily Flow Review skill with its decide list, its eval cases moved in beside it, and its zip expected by verify. Skill text and CI only; no changeset.",
+      "steps": [
+        {
+          "id": "09-01",
+          "name": "The daily opens with what the Team should decide today",
+          "description": "New skills/lighthouse-daily-flow-review/SKILL.md (frontmatter name lighthouse-daily-flow-review; a description that excludes forecasts and Refinement; names lighthouse as its companion and carries D3's rules). The answer (SK-1, D9): 'Decide first' + at most 3 decisions, ordered Blocked (longest first) -> past the SLE -> SLE Risk >= 70 % -> WIP over its limit, then 'Everything else is flowing.'; every Work Item with its link, no Work Item content fetched; no person's name, assignee or per-person count; it proposes swarming, splitting or unblocking and never assigns an action to a person; a calm day is one line. D7 / MD-4 fallbacks: without SLE Risk (older Lighthouse) Work Items past the 70th percentile of Cycle Time are listed and labelled an estimate from age; without an SLE nothing is past it; on clients too old for the WIP / SLE Risk / chart reads it falls back to `lh metrics team --metrics wip` and Work Item age, and says so. Reads lighthouse_team_metrics_wip and lighthouse_team_metrics_sleRisk (or `lh metrics team --metrics wip,sleRisk --json`). In the same commit `git mv test-support/pending-skill-evals/lighthouse-daily-flow-review skills/lighthouse-daily-flow-review/evals` (D-1) and add lighthouse-daily-flow-review to verify's expected zip names.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/skills/skills.evals.test.ts",
+          "scenario_name": "eval the-daily-opens-with-one-thing-to-decide (+ finds the cases of all three skills; drift: no skill names a tool, an lh command or a metric that does not exist)",
+          "unskips": [],
+          "red_to_green_tests": [],
+          "criteria": [
+            "skills/lighthouse-daily-flow-review/SKILL.md exists with name: lighthouse-daily-flow-review and a description; the frontmatter test is green for all three folders",
+            "Every tool, lh command and metric key the skill names exists: the walking-skeleton drift test is green over all three folders",
+            "The 17 cases and 8 fixtures live in skills/lighthouse-daily-flow-review/evals/; test-support/pending-skill-evals/ is empty and removed; every skills.evals.test.ts integrity test is green",
+            "The text satisfies eval cases the-daily-opens-with-one-thing-to-decide, a-calm-day-says-so-in-one-line, the guardrails people-are-never-the-subject, who-works-on-a-work-item-is-not-looked-up, the-skill-proposes-the-team-decides, and without-sle-risk-the-estimate-from-age-is-labelled, without-an-sle-there-is-nothing-past-it, older-clients-fall-back-to-lh-and-say-so, the neighbours a-forecast-is-not-the-dailys-question, an-older-general-skill-does-not-take-the-daily",
+            "verify expects lighthouse, lighthouse-refinement and lighthouse-daily-flow-review zips; actionlint clean; by hand, pack-skills.sh writes all three zips, each with SKILL.md at the root and no evals/ (RD-8 probe repeated)",
+            "No changeset; `pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/skills/lighthouse-daily-flow-review/SKILL.md",
+            "/storage/repos/lighthouse-clients/test-support/pending-skill-evals/lighthouse-daily-flow-review -> /storage/repos/lighthouse-clients/skills/lighthouse-daily-flow-review/evals (git mv)",
+            "/storage/repos/lighthouse-clients/.github/workflows/ci.yml"
+          ],
+          "dependencies": ["08-04"],
+          "implementation_notes": "STRUCTURAL VERIFICATION (mandatory, plugin/skill): This step ships prompt text / config / docs, not application code, so the Hypothesis + state-delta unit mandate does not apply. Verify the deliverable structurally - a golden assertion (skill-lint) over the changed markdown/config asserting the required block is present and correctly shaped - gated at CI + pre-push. Here: the drift test over the new folder, the eval-case integrity tests over the moved cases, and the hand pack of all three zips. Liz Rettig's review (Q4) and the docs/aiintegration.md paragraph are outside this step (RD-7, RD-11). No changeset. Commit: feat(skills): a Daily Flow Review skill opens the daily with what to decide (story 6246)."
+        }
+      ]
+    },
+    {
+      "id": "10",
+      "name": "Slice 10 - the daily also gets what is worth discussing, PBC signals included (US-10, #6246)",
+      "description": "The Daily Flow Review skill's discussion prompts: Work Items just under the line and WIP / Total Work Item Age signals raised as questions, lagging signals sent to a flow retro. Skill text only; no changeset.",
+      "steps": [
+        {
+          "id": "10-01",
+          "name": "The daily gets at most two questions worth discussing, signals raised without a cause",
+          "description": "Extend skills/lighthouse-daily-flow-review with US-10 (D8), the chart rules in a reference loaded when a chart is read: at most 2 discussion prompts after the decisions - SLE Risk 50-69 % (or the 50th-percentile fallback) as 'what would help it finish?', and WIP / Total Work Item Age signals phrased as 'the chart shows ... since ...' plus a question, never a cause and never 'out of control'; Throughput, Cycle Time and Arrivals signals -> 'worth a flow retro', not today's daily; no baseline -> no signal and one line on setting a baseline; a blackout day never a signal; inside the limits -> silence; a signal on 3 consecutive working days (A3) -> suggests a flow retro. Reads lighthouse_team_metrics_processBehaviorChart with the metricType it needs (Wip, WorkItemAge) or `lh metrics team --metrics processBehaviorChart --json`.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/skills/skills.drift.test.ts",
+          "scenario_name": "eval a-signal-is-raised-as-a-question-without-a-cause (+ drift: no skill names a tool, an lh command or a metric that does not exist)",
+          "unskips": [],
+          "red_to_green_tests": [],
+          "criteria": [
+            "The text satisfies eval cases a-work-item-just-under-the-line-is-a-question, the guardrail a-signal-is-raised-as-a-question-without-a-cause, a-lagging-signal-goes-to-a-flow-retro, no-baseline-no-signal, a-persisting-signal-suggests-a-flow-retro, a-blackout-day-is-never-a-signal, inside-the-limits-nothing-is-said",
+            "The skill names the chart tools and metricType values that exist; both drift rules and the frontmatter test stay green",
+            "US-09's decide list is unchanged in order and limit; the answer stays 'Decide first' + at most 3 decisions + at most 2 discussion prompts + 'Everything else is flowing.'",
+            "Every skills.evals.test.ts integrity test stays green",
+            "No changeset; `pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/skills/lighthouse-daily-flow-review/SKILL.md",
+            "/storage/repos/lighthouse-clients/skills/lighthouse-daily-flow-review/references/signals.md"
+          ],
+          "dependencies": ["09-01"],
+          "implementation_notes": "STRUCTURAL VERIFICATION (mandatory, plugin/skill): This step ships prompt text / config / docs, not application code, so the Hypothesis + state-delta unit mandate does not apply. Verify the deliverable structurally - a golden assertion (skill-lint) over the changed markdown/config asserting the required block is present and correctly shaped - gated at CI + pre-push. Here: the drift test and the eval-case integrity tests. PBC stance and quotes: research sections 4.3 and 2.2; the four signal names stay literal (product names). The fixtures pin the day as Thu 8 Oct 2026 with the Total Work Item Age signal on Wed 7 and Thu 8 Oct (D-8). No changeset. Commit: feat(skills): the Daily Flow Review raises what is worth discussing (story 6246)."
+        }
+      ]
+    }
+  ],
+  "implementation_scope": {
+    "source_directories": [
+      "/storage/repos/lighthouse-clients/skill",
+      "/storage/repos/lighthouse-clients/skills",
+      "/storage/repos/lighthouse-clients/scripts/eval-fixture.mjs",
+      "/storage/repos/lighthouse-clients/scripts/pack-skills.sh",
+      "/storage/repos/lighthouse-clients/test-support/pending-skill-evals",
+      "/storage/repos/lighthouse-clients/.github/workflows/ci.yml",
+      "/storage/repos/lighthouse-clients/ARCHITECTURE.md",
+      "/storage/repos/lighthouse-clients/packages/client/src",
+      "/storage/repos/lighthouse-clients/packages/cli/src",
+      "/storage/repos/lighthouse-clients/packages/mcp-core/src",
+      "/storage/repos/lighthouse-clients/.changeset"
+    ],
+    "excluded": [
+      "Lighthouse backend, frontend, RBAC and any Lighthouse code (DSN-22)",
+      "mcp-stdio and mcp-http source (they pick the new tools up through registerMcpTools; patch via internal dependency)",
+      "Usage-data mappings or new UsageDataEventName members (DSN-19, DEVOPS: N/A)",
+      "Docs: packages READMEs, Lighthouse docs/aiintegration.md and docs/concepts/concepts.md:85, website card and llms.txt (feature finalization and release, RD-7)",
+      "Eval runs, Liz Rettig's review, dogfood / production-data ACs, KPI baselines (maintainer, RD-11)",
+      "StrykerJS, refactor and review passes, release versioning and approval, ADO transitions (orchestrator / maintainer, RD-11)"
+    ]
+  }
+}
