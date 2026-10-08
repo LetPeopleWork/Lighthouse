@@ -1255,3 +1255,18 @@ Open for DESIGN, in order of consequence:
    migration-free for existing voter keys.
 4. **D6's grant refresh** — when a client re-reads `state`, and how a lapsed grant is re-granted.
 5. **The elicitation's place** in the first tool call (US-05 note) and the client time-out behaviour.
+
+## Maintainer decisions after DISCUSS (2026-10-08, in conversation)
+
+- **Open question 1 (legal basis for `mcp-http`) — answered:** the operator decides for the users of a
+  shared server. `docs/settings/usagedata.md` and `packages/mcp-http/README.md` say plainly that whoever
+  runs the server makes this decision for its users and should tell them. Nothing personal is sent
+  either way. Slice 05 stays in scope.
+- **A12 and A15 — copy approved as proposed** in "Proposed copy" above: the `lh config usage-data`
+  answer and instance lines, the `DO_NOT_TRACK` line, the MCP elicitation text and the `mcp-http`
+  start-up line, exactly as written. No copy walk-through is owed at DISTILL for these.
+- **A3 confirmed:** `lh` asks after the first successful command has printed its answer, never during
+  `config`, `connection` or help; Ctrl-C or end of input = asked again next time.
+- **A14 confirmed:** `DO_NOT_TRACK=1` turns usage data off in every client, whatever is stored.
+- **A16 confirmed:** one stored answer per Lighthouse per machine, shared by `lh` and the local MCP server.
+- The remaining AFK defaults (A1, A2, A4–A11, A13, A17) stand as recorded; revisit at the hold.
