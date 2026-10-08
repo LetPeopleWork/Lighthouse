@@ -1,0 +1,1055 @@
+{
+  "roadmap": {
+    "project_id": "story-6193-usage-data-from-clients",
+    "created_at": "2026-10-08",
+    "total_steps": 26,
+    "total_phases": 5,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "scope": "ADO User Story #6193 (no parent Epic): every usage event says which surface it came from (Browser, Cli, Mcp), `lh` asks once per Lighthouse and reports the web's events after success, the local MCP server asks once through the assistant, and the shared MCP server follows its operator's LIGHTHOUSE_USAGE_DATA. Five slices, one phase each, delivered in order 01 -> 05 (D18). Slice 01 is code in /storage/repos/Lighthouse (backend usage data pipe, docs page, ARCHITECTURE.md). Slices 02-05 are code in /storage/repos/lighthouse-clients (packages client, cli, mcp-core, mcp-stdio, mcp-http, the clients ci.yml) plus each slice's docs passages in both repositories. No frontend change (absent source = Browser), no new event name (M9), no EF migration, no Program.cs line.",
+    "goal": "Every pending DISTILL case is un-ignored / un-skipped and green, slice by slice: 18 [Ignore]d NUnit cases in Lighthouse (commit 42bcd476c) and 213 it.skip cases in lighthouse-clients (commit 96df092) - 231 in total; the 15 active guards (6 Lighthouse, 8 usageDataGuards.test.ts, 1 mcp-http) stay green in every step; the 67 absence-only cases are un-skipped only beside a positive scenario of their own describe; each clients slice carries one changeset (D17) and the slice-02 smoke step 'Verify usage-data status (never sends)' lands in the clients ci.yml; Lighthouse steps end with `dotnet build` at 0 warnings and the filtered `dotnet test` green, clients steps with `pnpm run ci` exit 0.",
+    "paradigm_note": "The Hypothesis + state-delta property-based unit mandate from nw-roadmap does not apply, and leaving it out is a decision (DSN-25). Lighthouse is C# / NUnit 4.6: the closed domains (three sources, five refused wire values, three callers) are DISTILL's [TestCase] rows; there is no Hypothesis in .NET and no property library is adopted for one nullable enum. lighthouse-clients is TypeScript / Vitest: fast-check is not a dependency, so DISTILL wrote finite domains as it.each example tables. The project paradigm line (object-oriented, CLAUDE.md) holds for the backend; the clients keep their pure-core / injected-shell factory style (DSN-9, DSN-25). The crafter is nw-software-crafter. The acceptance scenarios were written at DISTILL and the crafter authors none of them. RED = lift one [Ignore] / turn one it.skip into it (or it.skip.each into it.each) and watch it fail for the reason distill/red-classification.md records (MISSING_FUNCTIONALITY for all 231; clients cases first throw on the RED scaffolds cliSession.ts / localServer.ts until 02-02 / 04-01 replace them). A failure for any other reason is a harness problem, fixed before production code. GREEN = production code. Crafter-written tests beyond DISTILL's are limited to: NUnit unit cases in UsageDataControllerTests, UsageDataConsentServiceTests and UsageDataPublishedMessageTests (DESIGN test strategy, slice 01) so Stryker.NET has inner-loop kills; value-in/value-out Vitest cases on the pure client modules (planUsageDataStep, sizingMomentOf, the verdict rule, the DO_NOT_TRACK reading, the question's answer mapping) and the store's compare-and-set, so StrykerJS has inner-loop kills; and the source-scan enforcement test for DESIGN's Architectural Enforcement rules (02-02, extended in 04-01)."
+  },
+  "validation": {
+    "status": "approved",
+    "review": "nw-solution-architect-reviewer, 2026-10-08. Iteration 1: conditionally_approved (0 critical, 1 high, 2 medium, 1 low). Addressed: the high finding asked for a machine-readable RD-2 encoding, so validation.absence_map was added (the unskips strings already marked absence rows and anchors); 'Cannot split further' reasons were added to 02-03, 02-04, 02-05 and 03-04; 02-10 gained a criterion that the smoke's printed URL and jq path are checked against the code before the ci.yml commit. Not adopted, and the reviewer accepted both: a DSN/DVO cross-check step (review passes are the orchestrator's, RD-8) and a read/write port-split AC (DESIGN fixed the port shapes). Iteration 2: approved, 0 critical, 0 high. Treat the approval as moderately weak: iteration 1 cited a non-existent DSN-27 and line numbers past the file's end, so the coverage counts rest on the architect's own row-by-row count of the six test files.",
+    "notes": "Scenario ownership counted against the test files at Lighthouse 42bcd476c and clients 96df092. Counts are test cases ([TestCase] rows and it.each rows count once each). Every pending case is claimed by exactly one step; none orphaned, none claimed twice. Active guards are not claimed: they stay active and green in every step. SLICE 01 = 18 (Story6193EveryEventSaysItsSourceScenarios.cs): 01-01:4 (state tells any caller 3 rows, state adds nothing else 1), 01-02:6 (browser batch names no source 2, client batch declared source 2, lower case 1, every message 1), 01-03:7 (source outside the three 5 rows, contract batch 1, contract state 1), 01-04:1 (docs page). SLICE 02 = 88: usageDataQuestion.test.ts 61 -> 02-02:5 (asks once 1, next forecast 1, Ctrl-C 1, stdout unchanged 1, token never shown 1), 02-03:14 (yes spellings 6, No spellings 8), 02-04:15 (no full terminal 7 A, DO_NOT_TRACK 4 A, DO_NOT_TRACK not a stop 4), 02-05:13 (Lighthouse may not be asked 6 A, never answers 1, nothing after help/config/connection/refused 5 A, second Lighthouse 1), 02-06:6 (grant could not be recorded 1, two answers at once 1, owner-only file 1, unreadable file 3 A), 02-07:8 (23 h 1, day-old 1, renewed after 31 days 1, rolled back 1 A, Marco's No 1 A, output unchanged per format 3); usageDataConfig.test.ts 27 -> 02-08:10 (yes shown 1, never asked / No 2, instance lines 6, DO_NOT_TRACK named 1), 02-09:10 (unreadable refused 1, not connected 1, unknown argument 1, group help 1, off withdraws 1, off offline 2, off always allowed 3), 02-10:7 (on: build agent 1, replaces a No 1, veto 1, DO_NOT_TRACK 1, predating 1, cannot be asked 1; token never shown 1); 02-01 and 02-11 claim none (refactor, docs). SLICE 03 = 68 (usageDataEvents.test.ts): 03-01:7 (mapped commands, one definition), 03-02:6 (contract vote 1, moment 4, pre-vote read refused 1 A), 03-03:6 (verdict 4, no verdict 2 A), 03-04:13 (one verdict per run 1, refused/failed 3 A, unmapped 9 A), 03-05:36 (output identity 27 = 9 commands x 3 formats, one definition; reads unchanged 9 A, one definition). SLICE 04 = 30 (mcp-stdio usageData.test.ts): 04-01:6 (whole describe 'asks once'), 04-02:11 (whole describe 'the stored answer decides': 2 positive, 9 A), 04-03:13 (mapped tools 6, unmapped 5 A, refused refresh 1 A, returns at once 1 A). SLICE 05 = 27 (mcp-http usageData.e2e.test.ts): 05-01:11 (off line 1, on 3, off values 3, typo 4), 05-02:9 (DO_NOT_TRACK 2, switched-on describe 7), 05-03:7 (whole describe 'never does'). Sum 18 + 88 + 68 + 30 + 27 = 231 (Lighthouse 18 + clients 213, matching red-classification.md). Absence-only (A) = 67 = 27 question + 24 events + 16 stdio; each sits in a step that also un-skips a positive case of the same describe (RD-2). Steps above 12 cases are one-definition parametrised tables that cannot be split without rewriting DISTILL's tests (02-03 two tables, 02-04 three tables, 02-05 two tables plus two singles, 03-04 two tables plus its one positive, 03-05 two tables over the same nine commands) or are held together by RD-2's absence rule. Peer-reviewed: see validation.review.",
+    "coverage": {
+      "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/Story6193EveryEventSaysItsSourceScenarios.cs": ["01-01", "01-02", "01-03", "01-04"],
+      "/storage/repos/lighthouse-clients/packages/cli/src/usageDataQuestion.test.ts": ["02-02", "02-03", "02-04", "02-05", "02-06", "02-07"],
+      "/storage/repos/lighthouse-clients/packages/cli/src/usageDataConfig.test.ts": ["02-08", "02-09", "02-10"],
+      "/storage/repos/lighthouse-clients/packages/cli/src/usageDataEvents.test.ts": ["03-01", "03-02", "03-03", "03-04", "03-05"],
+      "/storage/repos/lighthouse-clients/packages/mcp-stdio/src/usageData.test.ts": ["04-01", "04-02", "04-03"],
+      "/storage/repos/lighthouse-clients/packages/mcp-http/src/usageData.e2e.test.ts": ["05-01", "05-02", "05-03"]
+    },
+    "case_counts": {
+      "01-01": 4, "01-02": 6, "01-03": 7, "01-04": 1,
+      "02-01": 0, "02-02": 5, "02-03": 14, "02-04": 15, "02-05": 13, "02-06": 6, "02-07": 8, "02-08": 10, "02-09": 10, "02-10": 7, "02-11": 0,
+      "03-01": 7, "03-02": 6, "03-03": 6, "03-04": 13, "03-05": 36,
+      "04-01": 6, "04-02": 11, "04-03": 13,
+      "05-01": 11, "05-02": 9, "05-03": 7,
+      "total": 231
+    },
+    "absence_map": {
+      "_rule": "RD-2. Per step: absence-only cases un-skipped, and the positive cases of the SAME describe that anchor them in the same commit. Sum of absence = 67 (27 question + 24 events + 16 stdio). Steps not listed un-skip no absence-only case.",
+      "02-04": { "absence": 11, "describe": "lh asks only where a person can answer, and only where it may", "absence_cases": ["asks nothing and makes no usage data request with %s (7)", "asks nothing and makes no usage data request under DO_NOT_TRACK=%s (4)"], "anchors": ["asks as usual when DO_NOT_TRACK=%j, which is not a request to stop (4)"] },
+      "02-05": { "absence": 11, "describe": "lh asks only where a person can answer, and only where it may", "absence_cases": ["asks nothing, sends nothing and prints nothing extra when the Lighthouse %s (6)", "asks nothing after %s (5)"], "anchors": ["asks nothing this time when the Lighthouse never answers about usage data, and asks the next time", "asks again for a second Lighthouse, and leaves the first one's answer as it was"] },
+      "02-06": { "absence": 3, "describe": "the answers file", "absence_cases": ["asks nothing, sends nothing and leaves an answers file it cannot read (%s) as it was (3)"], "anchors": ["is readable by its owner only, beside the command line's config, and leaves the voter keys alone"] },
+      "02-07": { "absence": 2, "describe": "a yes outlives a long gap without a new question", "absence_cases": ["sends nothing once a day-old check finds the Lighthouse rolled back to one that cannot label lh", "sends nothing for Marco, whose No is on file, whatever he runs"], "anchors": ["sends with a yes confirmed 23 hours ago without asking Lighthouse anything first", "checks a day-old yes with Lighthouse, then sends and notes it as confirmed now", "renews the grant Lighthouse let lapse after 31 days away, without asking Lena again"] },
+      "03-02": { "absence": 1, "describe": "each mapped command reports its web event once, after it succeeded", "absence_cases": ["reports nothing when the read before Priya's vote is refused, and the vote is refused as today"], "anchors": ["reports a vote cast on %s as cast %s (4)", "reports a Refinement-day vote that made GR-061 Ready as exactly the batch Lighthouse's own test takes in"] },
+      "03-03": { "absence": 2, "describe": "each mapped command reports its web event once, after it succeeded", "absence_cases": ["reports no verdict %s (2)"], "anchors": ["reports the Refinement day's verdict %s as %s when lh refinement get shows it (4)"] },
+      "03-04": { "absence": 12, "describe": "refused, failed and unmapped commands report nothing", "absence_cases": ["reports nothing for %s (3)", "reports nothing for lh %s (9)"], "anchors": ["reports one verdict for one lh refinement get, however many Work Items it lists"] },
+      "03-05": { "absence": 9, "describe": "usage data changes nothing lh prints, and costs nothing when it is off", "absence_cases": ["lh %s reads from Lighthouse exactly what it reads with usage data off (9)"], "anchors": ["lh %s %s prints the same and exits the same with usage data on as off (27; each asserts an event was handed in)"] },
+      "04-02": { "absence": 9, "describe": "the stored answer decides, wherever it was given", "absence_cases": ["asks nothing in the assistant once lh holds %s for that Lighthouse - row 'a No'", "asks nothing and sends nothing when the assistant cannot ask and nobody has answered", "does not ask when lh answered since the server started", "asks nothing and sends nothing when %s (6)"], "anchors": ["reports Lena's refresh with source Mcp after she ran lh config usage-data on, though her assistant cannot ask", "asks nothing in the assistant once lh holds %s for that Lighthouse - row 'a yes' (expects one batch)"] },
+      "04-03": { "absence": 7, "describe": "the six mapped tools report the web's events with source Mcp", "absence_cases": ["%s reports nothing (no web event to mirror, or not a Refinement day) (5)", "reports nothing for a refresh Lighthouse refused", "returns Priya's refresh at once though her Lighthouse never takes the event"], "anchors": ["%s reports its events once, after Lighthouse answered (6)"] },
+      "total_absence": 67
+    }
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-6193-usage-data-from-clients/feature-delta.md (DISCUSS M1-M11, D0-D18, US-01..US-06, KPI-1..KPI-7, project checklist; DESIGN DSN-1..DSN-25, component decomposition, reuse analysis, test strategy per slice, architectural enforcement, earned trust probes, contract fixtures, CI-learnings pre-applied; DEVOPS DVO-1..DVO-14, smoke step, env-injection and zero-request rules, docs per slice, mutation strategy; DISTILL scenario list, copy decided in DISTILL 1-3, upstream issues 1-3; Final Wave Review Gate outcome - all binding)",
+    "distill_slices": "docs/feature/story-6193-usage-data-from-clients/distill/backend-slice-01.md, clients-slice-02.md .. clients-slice-05.md",
+    "red_classification": "docs/feature/story-6193-usage-data-from-clients/distill/red-classification.md (the 67 absence-only cases)",
+    "environments": "docs/feature/story-6193-usage-data-from-clients/environments.yaml",
+    "adrs": "docs/product/architecture/adr-225-every-usage-event-carries-a-declared-source-and-state-advertises-the-sources-it-labels.md; adr-226-a-client-keeps-one-usage-data-answer-per-lighthouse-in-its-own-file-beside-the-voter-keys.md; adr-227-a-client-reports-usage-as-a-plan-settled-after-the-answer-silent-and-bounded-at-one-second.md; adr-228-mcp-consent-is-elicited-in-the-first-successful-tool-call-or-set-by-the-operator-and-held-in-memory.md",
+    "code": "/storage/repos/Lighthouse at 42bcd476c (DISTILL commit; docs commits after it); /storage/repos/lighthouse-clients at 96df092 (DISTILL commit) with G1/G2 already in .github/workflows/ci.yml since c9c2332; scaffolds packages/cli/src/cliSession.ts and packages/mcp-stdio/src/localServer.ts; contract fixtures test-support/usageDataContract/ (clients) and Lighthouse.Backend.Tests/Integration/UsageData/Fixtures/ (byte-identical)",
+    "ado": "User Story #6193 only; no parent Epic"
+  },
+  "user_decisions": [
+    "RD-1 (roadmap default, maintainer AFK): one phase per slice, steps cut by behaviour inside a slice. Phase 01 runs in /storage/repos/Lighthouse; phases 02-05 in /storage/repos/lighthouse-clients, with each slice's Lighthouse docs commit made from its last step. Phases run strictly in order 01 -> 05. D18's dependencies are 02 on 01, 03 on 02, 04 on 02, 05 on 04; 04 is nevertheless sequenced after 03 because the MCP vote and verdict rows (04-03) reuse the sizing-moment and verdict rules slice 03 adds to client/src/usageData.ts.",
+    "RD-2: the 67 absence-only cases (red-classification.md: 27 in usageDataQuestion.test.ts, 24 in usageDataEvents.test.ts, 16 in mcp-stdio usageData.test.ts) hold the moment a scaffold is replaced and cannot drive code alone. Each is un-skipped ONLY in the same step as a positive scenario of its own describe, and each step's `unskips` marks them '(absence)' and names its positive anchor. Anchors: 02-04 'asks as usual when DO_NOT_TRACK=...' anchors the no-terminal and DO_NOT_TRACK rows; 02-05 'asks the next time' and 'asks again for a second Lighthouse' anchor the Lighthouse-state and after-help rows; 02-06 'is readable by its owner only' anchors the unreadable-file rows; 02-07 the 23 h / day-old / renewed cases anchor the rollback and Marco rows; 03-02 the moment rows anchor the refused pre-vote read; 03-03 the verdict rows anchor 'reports no verdict'; 03-04 'reports one verdict for one lh refinement get' anchors the refused/failed/unmapped rows; 03-05 the output-identity table (which asserts an event was handed in) anchors the reads rows; 04-02 'reports Lena's refresh ... after lh config usage-data on' and the 'a yes' row anchor the rest of its describe; 04-03 the six mapped-tool rows anchor the unmapped, refused and returns-at-once cases. If an absence case is un-skipped and its anchor is not green in the same commit, the step is not done. mcp-http has no absence-only case (all 27 red against today's server).",
+    "RD-3: changesets (D17). The clients pre-commit hook (scripts/check-changeset.mjs) refuses any commit staging packages/*/src/** or a package.json without a staged .changeset/*.md. Each clients slice's FIRST step creates its changeset and every later step of the slice edits and re-stages the same file; the slice's last step finalises its text. 02: .changeset/usage-data-02-lh-asks-once.md (minor @letpeoplework/lighthouse-client, minor @letpeoplework/lighthouse-cli). 03: .changeset/usage-data-03-lh-reports-the-rest.md (minor lighthouse-client, minor lighthouse-cli). 04: .changeset/usage-data-04-local-mcp-asks-once.md (minor @letpeoplework/lighthouse-mcp-core, minor @letpeoplework/lighthouse-mcp-stdio). 05: .changeset/usage-data-05-shared-mcp-operators-call.md (minor @letpeoplework/lighthouse-mcp-http). Dependents get the automatic patch. If a step in 04 or 05 must also touch another package's src, that package gets a patch line in the same changeset and the commit body says why. The text never claims more than is built; it is the clients CHANGELOG and states that nothing is sent or asked without a yes (or the operator's on), and that output and exit codes are unchanged (D10). The empty DISTILL changeset usage-data-from-clients-acceptance-scenarios.md stays. ci.yml-only and docs-only commits need no changeset. Lighthouse has no changesets (calver at release, M11).",
+    "RD-4: smoke-integration (DVO-6). G1 (job-level DO_NOT_TRACK: \"1\") and G2 (UsageData__CollectorBaseUrl=http://127.0.0.1:9 on the smoke container) are already in the clients ci.yml since c9c2332 (Final Wave Review Gate); they are not re-added. 02-10 adds the one step 'Verify usage-data status (never sends)' from the DEVOPS outline, placed after 'Verify portfolios (Project Orion)' and before 'Verify --pretty views' (so it is after 'Connect CLI to Lighthouse' and the #6218 step's scenario-0 reload stays last). Anchors are the approved copy matched with grep -F on here-strings (ci-learnings: printf | grep -q under pipefail fails on an early match). DELIVER confirms the exact URL the answer line prints and the jq path into ~/.config/lighthouse-clients/usage-data.json; DO_NOT_TRACK= (empty) is 'unset' under DSN-20, or env -u inside the function. No event-bearing command with a live grant, no MCP smoke. The ci.yml edit needs no changeset and ships in the release that carries slice 02's code.",
+    "RD-5: docs per slice (DVO-11, DISCUSS checklist), inside each slice's Definition of Done and not held for 'docs wait for confirmation' (the page is the disclosure the consent links to). 01-04: docs/settings/usagedata.md Source row; Lighthouse ARCHITECTURE.md usage-data concept names three sources. 02-11: usagedata.md browser-only promises rewritten for 'a browser, lh, or an MCP server' (S13), what lh stores (usage-data.json, owner-only), lh config usage-data, DO_NOT_TRACK; docs/aiintegration.md one paragraph; clients packages/cli/README.md, skill/SKILL.md D15 rule ('never run lh config usage-data on|off unless the user asked for exactly that'), clients ARCHITECTURE.md section 5 (the consent store beside the voter keys). 03-05: usagedata.md lh column if the page lists surfaces per event, else N/A. 04-03: usagedata.md sentence on the local MCP server (asks once through the assistant, shares lh's answer, use lh config usage-data on when the assistant cannot ask); packages/mcp-stdio/README.md. 05-03: usagedata.md (a shared MCP server is one counted unit per process, decided by whoever runs it; chart users stay off until a chart value exists); packages/mcp-http/README.md LIGHTHOUSE_USAGE_DATA row. Every slice's last step re-checks packages READMEs, skill/SKILL.md and clients ARCHITECTURE.md section 5 and either updates them or writes 'N/A, because ...' in the commit body - no silent N/A. Lighthouse docs-only pushes (02, 03, 04, 05) run locally first (DVO-4): dotnet test --filter \"FullyQualifiedName~UsageDataDisclosureTest|FullyQualifiedName~TeamForecastRealityCheckRunEventTests|FullyQualifiedName~TeamRefinementUsageEventsTests\". The Lighthouse docs commit of a clients slice is pushed before that clients release is approved (DEVOPS branching).",
+    "RD-6: website marketing surface (DISCUSS checklist) is a step item in 02-11: grep /storage/repos/website for 'telemetry', 'usage data', 'tracks' and 'phone home' near lh / CLI / MCP claims; fix each hit there (separate commit in that repository) or list it, and record 'no hit' otherwise in 02-11's commit body. The claim to protect: nothing is sent without a yes.",
+    "RD-7: copy. M1's question is verbatim; the config lines, the elicitation text and the mcp-http start-up line are the approved set (A12, A15). The three lines the approved set did not cover are DISTILL's AFK copy defaults, binding here and revisited at the hold: (1) off when the withdrawal cannot reach Lighthouse adds 'Could not tell this Lighthouse; the yes it holds lapses by itself within 30 days.' exit 0 (02-09); (2) unreadable answers file 'The usage data file <path> cannot be read; fix or remove it.' exit 1, file untouched (02-09); (3) on when Lighthouse cannot be asked prints the approved 'Could not ask this Lighthouse whether it allows usage data.' and exits 1 (02-10). Affected commit bodies say 'AFK copy default, revisit at the hold'.",
+    "RD-8: no refactor-pass, review, mutation (Stryker.NET for slice 01, ephemeral StrykerJS for 02-05, >= 80%, last on frozen code, evidence under mutation/), finalize, release-versioning (pnpm release:version, calver) or ADO steps; the orchestrator runs those. The DSN-5 extraction (02-01) is a design-mandated behaviour-preserving step, not a refactor pass. Also not crafter steps, owned by the orchestrator / maintainer: the production-data ACs on the dev instance against a capture stub (AC-01.6 browser forecast with source Browser, AC-02.7 lh forecast with source Cli, the slice-04 equivalent), the slice-02 rollback rehearsal (DEVOPS deployment strategy), the PostHog saved insights and kpi-contracts readings, and the chart follow-up for LIGHTHOUSE_USAGE_DATA (A13, DVO-14).",
+    "RD-9: the answers file's owner-only permissions case is un-skipped as it.skipIf(process.platform === \"win32\") (DISTILL upstream issue 3), as the voter key test does, in 02-06.",
+    "RD-10: test environment (DVO-5). No test reads ambient process.env.CI, DO_NOT_TRACK or a real HOME; every env-dependent case injects its env. The zero-request rule holds throughout: a non-interactive run with no stored yes makes no /usagedata/ request at all. Active guards stay green in every step: Lighthouse's 6 (today's browser batch, the veto for Cli and Mcp, no live grant three ways), usageDataGuards.test.ts's 8 (which run today's runCli and the built bin; 02-02 makes runCli delegate to runCliSession with the process's own env, terminal and clock, and the guards must pass unedited) and mcp-http's 'makes no usage data request when LIGHTHOUSE_USAGE_DATA is not set'.",
+    "RD-11: Lighthouse gates for every slice-01 step: pre-apply docs/ci-learnings.md (DESIGN's list: S6964 nullable enum on the [FromBody] DTO without [JsonRequired]; CA1859; CA1861 hoisted expected arrays; NUnit2045 Assert.EnterMultipleScope; CA1869 one cached JsonSerializerOptions; S1192 private const for repeated literals; comments carry no ADR, slice or decision ids); `dotnet build` with 0 warnings; `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"` green. No Program.cs edit is needed (the global JsonStringEnumConverter exists); if one is added anyway, ci_backend runs the full live Integration suite (DVO-3) and the commit body says so. Before editing AcceptedUsageDataBatch (a shared contract), grep its usages and extend the test builders first. The two contract fixtures change in both repositories together, never in one (DISTILL pre-requisite); no step here is expected to change them.",
+    "RD-12: precondition (M11, DISCUSS pre-requisites): slice 02 edits packages/cli/src/index.ts dispatch and bin.ts; 02-02 starts only after any in-flight #6218 work is committed on the clients' main. Slice 01 ships (is on lighthouse:latest) before the slice-02 clients release is approved, because the smoke step's 'allows usage data' anchor needs acceptedSources on the real image (DVO-7); the code order in this roadmap already guarantees the commit order."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 01 - every event says its source (US-01, Lighthouse)",
+      "description": "The backend half: a closed UsageDataSource enum, an optional source on the posted batch (absent or null = Browser, anything outside the three = 400), the resolved source carried on the accepted batch and written on every published message, acceptedSources on the state answer, and the usage data page's Source row. Repository /storage/repos/Lighthouse. No frontend change.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "A client can read which sources this Lighthouse labels",
+          "description": "Add the closed enum UsageDataSource { Browser = 0, Cli = 1, Mcp = 2 } (append-only, DSN-1) and AcceptedSources on UsageDataState, derived from the enum's member names and the same for every caller (DSN-3); the state answer serialises it as \"acceptedSources\": [\"Browser\", \"Cli\", \"Mcp\"]. In the same commit extend UsageDataEventPipeTests.EverythingTheStateAnswerCarries with acceptedSources (the DISTILL pre-requisite): that active test pins today's five state fields and turns red the moment the field exists.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/Story6193EveryEventSaysItsSourceScenarios.cs",
+          "scenario_name": "The_state_tells_any_caller_which_sources_this_Lighthouse_labels",
+          "unskips": [
+            "[Ignore] lifted (Story6193EveryEventSaysItsSourceScenarios.cs) :: The_state_tells_any_caller_which_sources_this_Lighthouse_labels - 3 rows (WithNoToken, WithATokenNeverMintedHere, WithAGrantedToken)",
+            "[Ignore] lifted (Story6193EveryEventSaysItsSourceScenarios.cs) :: The_state_adds_the_labelled_sources_and_nothing_else_to_what_it_already_said"
+          ],
+          "red_to_green_tests": [
+            "Story6193EveryEventSaysItsSourceScenarios.cs :: The_state_tells_any_caller_which_sources_this_Lighthouse_labels",
+            "Story6193EveryEventSaysItsSourceScenarios.cs :: The_state_adds_the_labelled_sources_and_nothing_else_to_what_it_already_said"
+          ],
+          "criteria": [
+            "GET /api/latest/usagedata/state answers acceptedSources = [Browser, Cli, Mcp] as names for a caller with no token, an unknown token and a granted token alike",
+            "The state answer carries exactly its five existing fields plus acceptedSources; no other field is added",
+            "UsageDataEventPipeTests.EverythingTheStateAnswerCarries lists acceptedSources and is green in this commit",
+            "UsageDataConsentServiceTests gains a unit case: AcceptedSources is every member of UsageDataSource",
+            "The 6 active guards in Story6193EveryEventSaysItsSourceScenarios.cs stay green",
+            "`dotnet build` in /storage/repos/Lighthouse/Lighthouse.Backend exits 0 with 0 warnings; the filtered `dotnet test` (RD-11) is green"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataSource.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataState.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/UsageData/UsageDataConsentService.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/UsageData/UsageDataConsentServiceTests.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/UsageDataEventPipeTests.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/Story6193EveryEventSaysItsSourceScenarios.cs"
+          ],
+          "dependencies": [],
+          "implementation_notes": "EXEMPT FROM PARADIGM: WebApplicationFactory scenarios are single-example wiring checks and the source domain is three enum members (DISTILL's [TestCase] rows). Compensate with the unit case on UsageDataConsentService (AcceptedSources = every member, read from the enum, never a hand-written list). Pre-apply RD-11 (CA1861: hoist the expected source list; CA1859). The list is a version fact identical for every caller, so it discloses nothing about anyone. Commit: feat(usagedata): the state says which sources this Lighthouse labels (story 6193)."
+        },
+        {
+          "id": "01-02",
+          "name": "Every forwarded event says where it came from",
+          "description": "UsageDataEventBatchDto gains an optional nullable UsageDataSource? Source (no [JsonRequired], S6964); the controller resolves it (absent or null -> Browser) and passes it on the accepted batch; AcceptedUsageDataBatch carries the resolved source; PostHogUsageDataPublisher writes source (the member's name) on every message, never omitted (DSN-1, DSN-2). The controller's class comment 'nothing but our own page posts here' becomes 'our own page and our own clients'.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/Story6193EveryEventSaysItsSourceScenarios.cs",
+          "scenario_name": "A_client_batch_reaches_the_collector_labelled_with_the_source_it_declared",
+          "unskips": [
+            "[Ignore] lifted (Story6193EveryEventSaysItsSourceScenarios.cs) :: A_browser_batch_that_names_no_source_reaches_the_collector_labelled_Browser - 2 rows (SourceLeftOut, SourceSentAsNull)",
+            "[Ignore] lifted (Story6193EveryEventSaysItsSourceScenarios.cs) :: A_client_batch_reaches_the_collector_labelled_with_the_source_it_declared - 2 rows (Cli, Mcp)",
+            "[Ignore] lifted (Story6193EveryEventSaysItsSourceScenarios.cs) :: A_source_named_in_lower_case_is_read_as_the_source_it_names",
+            "[Ignore] lifted (Story6193EveryEventSaysItsSourceScenarios.cs) :: Every_message_a_batch_becomes_carries_the_source_of_that_batch"
+          ],
+          "red_to_green_tests": [
+            "Story6193EveryEventSaysItsSourceScenarios.cs :: A_browser_batch_that_names_no_source_reaches_the_collector_labelled_Browser",
+            "Story6193EveryEventSaysItsSourceScenarios.cs :: A_client_batch_reaches_the_collector_labelled_with_the_source_it_declared",
+            "Story6193EveryEventSaysItsSourceScenarios.cs :: A_source_named_in_lower_case_is_read_as_the_source_it_names",
+            "Story6193EveryEventSaysItsSourceScenarios.cs :: Every_message_a_batch_becomes_carries_the_source_of_that_batch"
+          ],
+          "criteria": [
+            "A batch with no source, or source null, reaches the collector with source Browser on every message (KPI-1: 100% of forwarded events carry source)",
+            "A batch declaring Cli or Mcp (any letter case) reaches the collector with that source on every message the batch becomes",
+            "The gate, the budget, the drain re-check and the closed-vocabulary rule are unchanged; the veto and no-live-grant guards stay green whatever the source",
+            "UsageDataControllerTests: absent -> Browser queued; Cli / Mcp carried. UsageDataPublishedMessageTests: source written on every message",
+            "UsageDataPayloadPurityTest still finds no free string on the DTO; the 6 active guards stay green",
+            "`dotnet build` 0 warnings; the filtered `dotnet test` (RD-11) is green"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/API/DTO/UsageDataEventBatchDto.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/API/UsageDataController.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/UsageData/IUsageDataEventQueue.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/UsageData/PostHogUsageDataPublisher.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/API/UsageDataControllerTests.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/UsageData/UsageDataPublishedMessageTests.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/Story6193EveryEventSaysItsSourceScenarios.cs"
+          ],
+          "dependencies": ["01-01"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-example WAF wiring over three enum members; compensate with the controller and publisher unit cases named in the criteria. AcceptedUsageDataBatch is a shared contract (RD-11): grep its constructors (UsageDataEventQueue, UsageDataForwardingService and their tests, any builder) and extend the test builders first so existing tests default to Browser. source rides on the batch, not on each event and not in UsageDataInstanceProperties (it describes the caller, not the instance). Lower-case names bind through the global JsonStringEnumConverter (case-insensitive read); verify, do not add a converter. Commit: feat(usagedata): every forwarded event says where it came from (story 6193)."
+        },
+        {
+          "id": "01-03",
+          "name": "A source outside the three is refused, and the clients' exact requests are taken in",
+          "description": "Any source that is not Browser, Cli or Mcp is answered 400 and nothing from the batch is queued: an unknown name or a wrong JSON type fails binding; an undefined number (7) is refused at the read site, checked before the gate like the events (DSN-1). Then the cross-repository contract on the provider side: the exact batch lh sends for a Refinement-day vote that made GR-061 Ready is taken in and forwarded as declared, and the state a client reads after its grant is, field for field, the state the clients parse (both fixtures read from the source tree, byte-identical to the clients' copies).",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/Story6193EveryEventSaysItsSourceScenarios.cs",
+          "scenario_name": "A_source_outside_the_three_is_refused_and_nothing_from_its_batch_is_forwarded",
+          "unskips": [
+            "[Ignore] lifted (Story6193EveryEventSaysItsSourceScenarios.cs) :: A_source_outside_the_three_is_refused_and_nothing_from_its_batch_is_forwarded - 5 rows (\"Shell\", 7, \"\", true, [\"Cli\"])",
+            "[Ignore] lifted (Story6193EveryEventSaysItsSourceScenarios.cs) :: The_batch_lh_sends_for_a_vote_is_taken_in_and_forwarded_as_lh_declared_it",
+            "[Ignore] lifted (Story6193EveryEventSaysItsSourceScenarios.cs) :: The_state_a_client_reads_after_its_grant_is_the_one_the_clients_parse"
+          ],
+          "red_to_green_tests": [
+            "Story6193EveryEventSaysItsSourceScenarios.cs :: A_source_outside_the_three_is_refused_and_nothing_from_its_batch_is_forwarded",
+            "Story6193EveryEventSaysItsSourceScenarios.cs :: The_batch_lh_sends_for_a_vote_is_taken_in_and_forwarded_as_lh_declared_it",
+            "Story6193EveryEventSaysItsSourceScenarios.cs :: The_state_a_client_reads_after_its_grant_is_the_one_the_clients_parse"
+          ],
+          "criteria": [
+            "A batch declaring \"Shell\", 7, \"\", true or [\"Cli\"] as source is answered 400 and the collector receives nothing from it",
+            "The fixture batch-lh-sends-for-a-vote-that-made-ready.json is answered 204 and forwarded with source Cli, its event names and sizing_moment as declared",
+            "The state a granted client reads equals state-a-client-reads-after-its-grant.json field for field; neither fixture is edited",
+            "UsageDataControllerTests gains the undefined-number case (7 -> 400, nothing queued)",
+            "The 6 active guards stay green; `dotnet build` 0 warnings; the filtered `dotnet test` (RD-11) is green"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/API/UsageDataController.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/API/UsageDataControllerTests.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/Story6193EveryEventSaysItsSourceScenarios.cs"
+          ],
+          "dependencies": ["01-02"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: exact HTTP status per wire value and two golden contract fixtures; compensate with the controller unit case on the undefined number. Some rows (the binding failures) may already pass once 01-02 binds the field; un-skip them anyway and say so in the commit body. The fixtures change in both repositories together, never in one (RD-11): a red contract scenario is a provider bug to fix, not a fixture to edit. Commit: feat(usagedata): a source outside the three is refused, and the clients' exact requests are taken in (story 6193)."
+        },
+        {
+          "id": "01-04",
+          "name": "The usage data page says every event carries its source",
+          "description": "docs/settings/usagedata.md gains Source in 'Every event carries these': three values (Browser, Cli, Mcp), attached by your server from what the client declares, declared and not verified. UsageDataDisclosureTest lists every UsageDataSource member on the page. Lighthouse ARCHITECTURE.md's usage-data concept names three sources (browser, lh, MCP server). Last step of the slice: the docs passages.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/Story6193EveryEventSaysItsSourceScenarios.cs",
+          "scenario_name": "The_usage_data_page_lists_the_source_among_what_every_event_carries",
+          "unskips": [
+            "[Ignore] lifted (Story6193EveryEventSaysItsSourceScenarios.cs) :: The_usage_data_page_lists_the_source_among_what_every_event_carries"
+          ],
+          "red_to_green_tests": [
+            "Story6193EveryEventSaysItsSourceScenarios.cs :: The_usage_data_page_lists_the_source_among_what_every_event_carries"
+          ],
+          "criteria": [
+            "usagedata.md lists Source with Browser, Cli and Mcp in 'Every event carries these' and says the server attaches it from what the client declares, declared and not verified",
+            "UsageDataDisclosureTest fails if any UsageDataSource member is missing from the page",
+            "Lighthouse ARCHITECTURE.md's usage-data concept says events come from the browser, lh or an MCP server and are labelled by source",
+            "No other browser-only promise on the page is rewritten here (that is slice 02, D13); the page uses the seeded Terminology words",
+            "Story6193EveryEventSaysItsSourceScenarios.cs has no [Ignore] left; all 24 cases green; `dotnet build` 0 warnings; the filtered `dotnet test` (RD-11) is green"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/docs/settings/usagedata.md",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/UsageDataDisclosureTest.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/Story6193EveryEventSaysItsSourceScenarios.cs",
+            "/storage/repos/Lighthouse/ARCHITECTURE.md"
+          ],
+          "dependencies": ["01-03"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: a docs-parity check over a markdown page. Compensate with UsageDataDisclosureTest iterating the enum's members, so a fourth source cannot ship undisclosed. Keep ARCHITECTURE.md current in the same change (maintainer rule). Commits: docs(usagedata): the usage data page lists the source every event carries (story 6193)."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice 02 - lh asks once, and the answer can be checked and changed (US-02, US-03)",
+      "description": "The thinnest end-to-end client path and the shared pieces every later slice reuses: the owner-only file mechanics extracted from the voter key store, the per-Lighthouse usage-data store, the pure planUsageDataStep rules, the silent 1 s reporter, four LighthouseClient usage-data methods, runCliSession (replacing the scaffold) with the stderr question; then the answer spellings, where lh may and may not ask, liveness, and lh config usage-data [on|off]; then the smoke step and the docs in both repositories. Repository /storage/repos/lighthouse-clients (packages client, cli) plus Lighthouse docs.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "The voter key store's owner-only file handling becomes shared",
+          "description": "Behaviour-preserving extraction (DSN-5): the voter key store's lock file, re-read under the lock, rename-over write and unreadable-file refusal move to packages/client/src/ownerOnlyJsonFile.ts; voterKeyStore.ts uses it. Messages, file format and behaviour unchanged; the voter key tests are not edited. Creates the slice's changeset.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/client/src/voterKeyStore.test.ts",
+          "scenario_name": "voter key store tests, unedited, stay green after the extraction",
+          "unskips": [],
+          "red_to_green_tests": [],
+          "criteria": [
+            "packages/client/src/voterKeyStore.test.ts and voterKeyStore.atomicWrite.test.ts are byte-for-byte unedited and green",
+            "voter-keys.json keeps its format ({ version: 1, keys }) and its refusal messages",
+            "ownerOnlyJsonFile.ts is the only module that opens a .lock with 'wx' (checked by reading the source; the enforcement test lands in 02-02)",
+            ".changeset/usage-data-02-lh-asks-once.md exists with minor @letpeoplework/lighthouse-client and minor @letpeoplework/lighthouse-cli",
+            "No pending case is un-skipped; usageDataGuards.test.ts's 8 guards stay green; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/ownerOnlyJsonFile.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/voterKeyStore.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-02-lh-asks-once.md"
+          ],
+          "dependencies": ["01-04"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: a pure move guarded by the existing voter key characterisation tests, which must not change. Compensate with those tests staying unedited. Its own commit, apart from any feature commit (DEVOPS branching, CLAUDE.md). The pre-commit hook needs a staged changeset because packages/client/src changes (RD-3): create the slice changeset here with a first sentence that claims only what exists; later steps rewrite it. Commit: refactor(client): the voter key store's owner-only file handling becomes shared (story 6193)."
+        },
+        {
+          "id": "02-02",
+          "name": "Lena is asked once after her forecast, and her next forecast is reported",
+          "description": "Replace the cliSession.ts scaffold (remove __SCAFFOLD__) and make runCli delegate to runCliSession with the process's env, terminal and clock. Build the shared pieces: client/src/usageDataStore.ts (usage-data.json beside voter-keys.json, keyed by getVoterKeyScope, answers yes{token, confirmedAt} / no{decidedAt}, compare-and-set for a question's answer, replace for the config command, DSN-4/6); client/src/usageData.ts (vocabulary, DO_NOT_TRACK reading DSN-20, pure planUsageDataStep DSN-9); client/src/usageDataReporter.ts (executes a plan, one 1000 ms AbortSignal over the whole send, never prints, never throws, no credential, DSN-10/11/12); LighthouseClient getUsageDataState / grantUsageData / revokeUsageData / handInUsageData plus signal on RequestOptions (not version-gated); CliCommandResult.usage set by lh forecast manual after success (DSN-13); cli/src/usageDataQuestion.ts (M1 copy, answer mapping); bin.ts prints, then asks on stderr under DSN-15's full-terminal rule, then settles the plan, then returns the command's own exit code (DSN-14).",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/usageDataQuestion.test.ts",
+          "scenario_name": "asks Lena once, after her forecast, and keeps her yes for that Lighthouse",
+          "unskips": [
+            "it.skip -> it (usageDataQuestion.test.ts, describe 'lh asks once, after the answer, in the approved words') :: asks Lena once, after her forecast, and keeps her yes for that Lighthouse",
+            "it.skip -> it (same describe) :: reports Lena's next forecast as TeamManualForecastRun from the command line, and never asks her again there",
+            "it.skip -> it (same describe) :: leaves a question Tomás closed with Ctrl-C unanswered, and asks again on his next command",
+            "it.skip -> it (same describe) :: prints on stdout exactly what the same forecast prints when nobody is asked",
+            "it.skip -> it (same describe) :: never shows the consent token, in the run that granted it or in the next"
+          ],
+          "red_to_green_tests": [
+            "usageDataQuestion.test.ts :: asks Lena once, after her forecast, and keeps her yes for that Lighthouse",
+            "usageDataQuestion.test.ts :: reports Lena's next forecast as TeamManualForecastRun from the command line, and never asks her again there",
+            "usageDataQuestion.test.ts :: leaves a question Tomás closed with Ctrl-C unanswered, and asks again on his next command",
+            "usageDataQuestion.test.ts :: prints on stdout exactly what the same forecast prints when nobody is asked",
+            "usageDataQuestion.test.ts :: never shows the consent token, in the run that granted it or in the next"
+          ],
+          "criteria": [
+            "In a full terminal, Lena's first `lh forecast manual --team-id 3 --remaining 25` prints the forecast on stdout, then M1's five lines on stderr, then '(change any time: lh config usage-data on|off)' after her y; one grant is posted and her yes is kept for that Lighthouse with token and confirmedAt; the run that asked reports nothing",
+            "Her next forecast is reported as one batch { source: Cli, TeamManualForecastRun } with her token, and nobody is asked",
+            "Ctrl-C or end of input at the question records nothing, posts nothing, keeps the forecast's exit code, and the next interactive command asks again",
+            "stdout and the exit code are those of the same forecast run with nobody asked; the consent token never appears on stdout or stderr",
+            "A source-scan enforcement test holds DESIGN's rules: only packages/client/src calls /usagedata/; no console. or process.stdout/process.stderr in client/src/usageData*.ts; only ownerOnlyJsonFile.ts opens a .lock with 'wx'; every field of the client's event type is a literal union, boolean or number (expectTypeOf)",
+            "The client reads the backend's exact state fixture (test-support/usageDataContract/state-a-client-reads-after-its-grant.json, served by the fake Lighthouse) unedited",
+            "usageDataGuards.test.ts's 8 guards stay green unedited; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/usageDataStore.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/usageData.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/usageDataReporter.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/usageData.test.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/usageData.enforcement.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/cliSession.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/bin.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/commandResult.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/usageDataQuestion.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/usageDataQuestion.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-02-lh-asks-once.md"
+          ],
+          "dependencies": ["02-01"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TypeScript + Vitest driving runCliSession through test-support lhSession.ts against aFakeLighthouse on a real socket; single-example end-to-end wiring. Compensate with value-in/value-out unit cases in client/src/usageData.test.ts on planUsageDataStep (DO_NOT_TRACK, unreadable store, no, yes fresh/stale, undecided x interactive x MayAsk x acceptedSources) and on the DO_NOT_TRACK reading (DSN-20). Precondition RD-12. Effect isolation: planUsageDataStep returns a plan value and never touches the store or the network; the reporter is the only shell (contract shapes table). The question is asked only when stdin, stdout and stderr are TTYs and CI is unset; the pre-question state read shares the 1 s budget; the interactive grant after a yes has 5 s. The existing prompt dependency writes to stdout and lets Ctrl-C exit 130, so the stderr variant must catch SIGINT/EOF itself (reuse analysis). Never read ambient CI / DO_NOT_TRACK / HOME in tests (RD-10). Extend the slice changeset. Commit: feat(cli): lh asks once after the answer and reports the next forecast (story 6193)."
+        },
+        {
+          "id": "02-03",
+          "name": "Every yes is a yes, and everything else is a final No that is never posted",
+          "description": "The question's answer mapping at the CLI port: y / yes in any case and with surrounding spaces is a yes and grants; Enter or anything else is the default No, kept with decidedAt, never posted, and final for that Lighthouse.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/usageDataQuestion.test.ts",
+          "scenario_name": "takes %j as a final No that is kept and never posted",
+          "unskips": [
+            "it.skip.each -> it.each (usageDataQuestion.test.ts, describe 'lh asks once, after the answer, in the approved words') :: takes %j as a yes - 6 rows (y, Y, yes, YES, Yes, ' y ')",
+            "it.skip.each -> it.each (same describe) :: takes %j as a final No that is kept and never posted - 8 rows ('', n, no, N, nope, sure, yep, ja)"
+          ],
+          "red_to_green_tests": [
+            "usageDataQuestion.test.ts :: takes %j as a yes",
+            "usageDataQuestion.test.ts :: takes %j as a final No that is kept and never posted"
+          ],
+          "criteria": [
+            "Each yes spelling posts one 'granted' and keeps answer yes for that Lighthouse",
+            "Each other input keeps { answer: no, decidedAt } for that Lighthouse, posts nothing, hands in nothing, shows the change-any-time line, and `lh team list` a week later asks nothing",
+            "usageDataGuards.test.ts's 8 guards stay green; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/cli/src/usageDataQuestion.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/usageDataQuestion.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-02-lh-asks-once.md"
+          ],
+          "dependencies": ["02-02"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: DISTILL's it.each example tables over the answer domain. Compensate with value-in/value-out unit cases on the answer mapping in usageDataQuestion.ts. Cannot split further: two one-definition DISTILL tables (14 rows), and DISTILL's parametrisation is not rewritten. A No is never posted (A2, DSN-8). Rows may pass on first un-skip once 02-02 maps answers; un-skip anyway and record it honestly in the commit body (they pin the mapping at the CLI port). Commit: feat(cli): lh reads each yes and No the question allows (story 6193)."
+        },
+        {
+          "id": "02-04",
+          "name": "lh asks only in a full terminal, and never under DO_NOT_TRACK",
+          "description": "No question and zero usage-data requests without all three terminals, under CI=true / CI=1, or under DO_NOT_TRACK set to anything but 0 / false (read first, DSN-20); 0, false, FALSE and empty are not a request to stop and the question is asked as usual.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/usageDataQuestion.test.ts",
+          "scenario_name": "asks as usual when DO_NOT_TRACK=%j, which is not a request to stop",
+          "unskips": [
+            "it.skip.each -> it.each (usageDataQuestion.test.ts, describe 'lh asks only where a person can answer, and only where it may') :: asks as usual when DO_NOT_TRACK=%j, which is not a request to stop - 4 rows (positive anchor for this step's absence rows)",
+            "it.skip.each -> it.each (same describe) :: asks nothing and makes no usage data request with %s - 7 rows (absence)",
+            "it.skip.each -> it.each (same describe) :: asks nothing and makes no usage data request under DO_NOT_TRACK=%s - 4 rows (absence)"
+          ],
+          "red_to_green_tests": [
+            "usageDataQuestion.test.ts :: asks as usual when DO_NOT_TRACK=%j, which is not a request to stop",
+            "usageDataQuestion.test.ts :: asks nothing and makes no usage data request with %s",
+            "usageDataQuestion.test.ts :: asks nothing and makes no usage data request under DO_NOT_TRACK=%s"
+          ],
+          "criteria": [
+            "Under DO_NOT_TRACK 0, false, FALSE or empty, in a full terminal, the question is asked once (positive anchor, RD-2)",
+            "With no terminal, stdin only (docker run -i), stdout piped, stderr redirected, stdin piped, or a full terminal under CI=true / CI=1, `lh team refresh --id 3` exits 0, asks nothing, makes no /usagedata/ request and keeps no answer (KPI-5, zero-request rule)",
+            "Under DO_NOT_TRACK 1, true, TRUE or yes nothing is asked and no /usagedata/ request is made",
+            "usageDataGuards.test.ts's 8 guards stay green; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/usageData.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/bin.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/cliSession.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/usageDataQuestion.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-02-lh-asks-once.md"
+          ],
+          "dependencies": ["02-03"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: DISTILL's example tables over terminal shapes and env values. Compensate with planUsageDataStep unit rows for each terminal shape and the DO_NOT_TRACK truthy/falsy table. Cannot split further: three one-definition DISTILL tables, and the 11 absence rows cannot leave without their anchor. RD-2: the 11 absence rows are un-skipped only together with the 4 'asks as usual' rows, which prove the question exists under a full terminal; un-skip the positive rows first and see them red or green for the right reason. The zero-request rule means the decision to stay silent is taken before any network call. Commit: feat(cli): lh asks only in a full terminal and never under DO_NOT_TRACK (story 6193)."
+        },
+        {
+          "id": "02-05",
+          "name": "lh asks only a Lighthouse that may be asked, after a command that reached it",
+          "description": "No question, no send and no extra output when the Lighthouse is vetoed, freshly installed (MayAsk false), predates acceptedSources, lists no Cli source, has no usage-data endpoints (404) or fails the state read; a Lighthouse that never answers costs at most the 1 s budget and the question is asked next time; never after help, the output-format setting, the config group, connection status or a refused command; a second Lighthouse is asked separately and the first answer is untouched.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/usageDataQuestion.test.ts",
+          "scenario_name": "asks again for a second Lighthouse, and leaves the first one's answer as it was",
+          "unskips": [
+            "it.skip -> it (usageDataQuestion.test.ts, describe 'lh asks only where a person can answer, and only where it may') :: asks nothing this time when the Lighthouse never answers about usage data, and asks the next time (positive anchor)",
+            "it.skip -> it (same describe) :: asks again for a second Lighthouse, and leaves the first one's answer as it was (positive anchor)",
+            "it.skip.each -> it.each (same describe) :: asks nothing, sends nothing and prints nothing extra when the Lighthouse %s - 6 rows (absence)",
+            "it.skip.each -> it.each (same describe) :: asks nothing after %s - 5 rows (help, config output get, config, connection status, a refused team delete) (absence)"
+          ],
+          "red_to_green_tests": [
+            "usageDataQuestion.test.ts :: asks nothing this time when the Lighthouse never answers about usage data, and asks the next time",
+            "usageDataQuestion.test.ts :: asks again for a second Lighthouse, and leaves the first one's answer as it was",
+            "usageDataQuestion.test.ts :: asks nothing, sends nothing and prints nothing extra when the Lighthouse %s",
+            "usageDataQuestion.test.ts :: asks nothing after %s"
+          ],
+          "criteria": [
+            "Against a Lighthouse that never answers about usage data the forecast exits 0 within 2.5 s with no question, and the next run against a normal answer asks once (KPI-7)",
+            "A second Lighthouse is asked separately and the first one's stored answer is byte-equal to before",
+            "Vetoed, MayAsk false, acceptedSources missing, no Cli in acceptedSources, 404 on usage data, failing state read: no question, stderr equal to a scripted run's, no decision posted, nothing handed in, no answer kept (KPI-4)",
+            "After help, config output get, config, connection status and a refused command: no question, no decision posted",
+            "usageDataGuards.test.ts's 8 guards stay green; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/usageData.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/usageDataReporter.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/usageDataQuestion.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-02-lh-asks-once.md"
+          ],
+          "dependencies": ["02-04"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: DISTILL's example tables over Lighthouse states and command kinds. Compensate with planUsageDataStep unit rows over (MayAsk, administratorDisabled, acceptedSources with and without Cli, state unavailable). Cannot split further without separating absence rows from their anchors. RD-2: the 11 absence rows go in only with the two positive anchors of the same describe. config, connection and help never set usage.reached (DSN-13); a refused command reaches nothing. KPI-4: a client never sends to a Lighthouse that would count it as a browser (D3). Commit: feat(cli): lh asks only a Lighthouse that may be asked, after a command that reached it (story 6193)."
+        },
+        {
+          "id": "02-06",
+          "name": "A yes that cannot be recorded, two answers at once, and the answers file",
+          "description": "A grant that fails after a yes prints the journey's one stderr line and keeps nothing, leaving the forecast's exit code alone; when two terminals answer, the first answer given is kept (compare-and-set under the lock); the answers file is owner-only (0600) beside the CLI config and leaves the voter keys alone; an answers file lh cannot read is never written over, and nothing is asked or sent.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/usageDataQuestion.test.ts",
+          "scenario_name": "is readable by its owner only, beside the command line's config, and leaves the voter keys alone",
+          "unskips": [
+            "it.skip -> it (usageDataQuestion.test.ts, describe 'a yes Lighthouse could not record') :: tells Lena her answer was not recorded, keeps nothing, and leaves the forecast's exit code alone",
+            "it.skip -> it (describe 'two answers at once: the first one given is the one kept') :: keeps the yes Lena gave in one terminal over the no she gave a moment later in another",
+            "it.skip -> it.skipIf(process.platform === \"win32\") (describe 'the answers file') :: is readable by its owner only, beside the command line's config, and leaves the voter keys alone (positive anchor; RD-9)",
+            "it.skip.each -> it.each (describe 'the answers file') :: asks nothing, sends nothing and leaves an answers file it cannot read (%s) as it was - 3 rows (absence)"
+          ],
+          "red_to_green_tests": [
+            "usageDataQuestion.test.ts :: tells Lena her answer was not recorded, keeps nothing, and leaves the forecast's exit code alone",
+            "usageDataQuestion.test.ts :: keeps the yes Lena gave in one terminal over the no she gave a moment later in another",
+            "usageDataQuestion.test.ts :: is readable by its owner only, beside the command line's config, and leaves the voter keys alone",
+            "usageDataQuestion.test.ts :: asks nothing, sends nothing and leaves an answers file it cannot read (%s) as it was"
+          ],
+          "criteria": [
+            "A failing grant prints 'Could not record your answer at <url>; nothing is sent. Try lh config usage-data on.' on stderr only, keeps nothing, hands in nothing, exit 0",
+            "Two concurrent runs answering y then n keep { answer: yes, token } (first answer wins)",
+            "On POSIX usage-data.json is mode 0600 beside the CLI config and voter-keys.json is byte-identical to before; the case is skipped on win32 only",
+            "An answers file that is not JSON, has version 2 or a list of answers is left byte-identical; nothing is asked and no /usagedata/ request is made; exit 0",
+            "usageDataGuards.test.ts's 8 guards stay green; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/usageDataStore.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/usageDataStore.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/bin.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/usageDataQuestion.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-02-lh-asks-once.md"
+          ],
+          "dependencies": ["02-05"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: filesystem and concurrency wiring over real files under a temp home. Compensate with store unit cases in usageDataStore.test.ts: compare-and-set keeps the first answer, replace overwrites, a foreign shape is unreadable and never rewritten, and (DESIGN test strategy) two real child processes recording different answers leave the first. Earned Trust probe: the mode is read back as 0600, not assumed. A widened voter-keys.json is not an option (ADR-226): released clients would rewrite it and erase a stored No. Commit: feat(client): the usage data answers file is owner-only, keeps the first answer and is never written over unread (story 6193)."
+        },
+        {
+          "id": "02-07",
+          "name": "A yes outlives a long gap, and usage data never changes what lh answers",
+          "description": "Grant liveness (DSN-7): a yes confirmed under 24 h ago sends without a state read; an older one reads state with the token first - Granted refreshes confirmedAt and sends, a lapsed grant is renewed silently (new token) and sends, a Lighthouse that no longer lists Cli sends nothing and the yes is kept. A No on file sends nothing whatever runs. With a yes and a Lighthouse that never takes events, the forecast prints in --json, --toon and --pretty exactly as with usage data off and ends within the 1 s budget.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/usageDataQuestion.test.ts",
+          "scenario_name": "renews the grant Lighthouse let lapse after 31 days away, without asking Lena again",
+          "unskips": [
+            "it.skip -> it (usageDataQuestion.test.ts, describe 'a yes outlives a long gap without a new question') :: sends with a yes confirmed 23 hours ago without asking Lighthouse anything first (positive anchor)",
+            "it.skip -> it (same describe) :: checks a day-old yes with Lighthouse, then sends and notes it as confirmed now (positive anchor)",
+            "it.skip -> it (same describe) :: renews the grant Lighthouse let lapse after 31 days away, without asking Lena again (positive anchor)",
+            "it.skip -> it (same describe) :: sends nothing once a day-old check finds the Lighthouse rolled back to one that cannot label lh (absence)",
+            "it.skip -> it (same describe) :: sends nothing for Marco, whose No is on file, whatever he runs (absence)",
+            "it.skip.each -> it.each (describe 'usage data never changes what lh answers') :: prints the forecast %s exactly as with usage data off, and waits at most a second for a Lighthouse that never takes the event - 3 rows (--json, --toon, --pretty)"
+          ],
+          "red_to_green_tests": [
+            "usageDataQuestion.test.ts :: sends with a yes confirmed 23 hours ago without asking Lighthouse anything first",
+            "usageDataQuestion.test.ts :: checks a day-old yes with Lighthouse, then sends and notes it as confirmed now",
+            "usageDataQuestion.test.ts :: renews the grant Lighthouse let lapse after 31 days away, without asking Lena again",
+            "usageDataQuestion.test.ts :: sends nothing once a day-old check finds the Lighthouse rolled back to one that cannot label lh",
+            "usageDataQuestion.test.ts :: sends nothing for Marco, whose No is on file, whatever he runs",
+            "usageDataQuestion.test.ts :: prints the forecast %s exactly as with usage data off, and waits at most a second for a Lighthouse that never takes the event"
+          ],
+          "criteria": [
+            "23 h: no state read, one batch with the earlier token. 25 h: a state read with the token, one batch, confirmedAt moved to now. 31 days and a forgotten grant: no question, a second 'granted', the batch carries the new token, which is stored",
+            "After a rollback to a Lighthouse without acceptedSources the day-old check sends nothing and the stored yes is unchanged (KPI-4); Marco's No: no question and no /usagedata/ request (KPI-5)",
+            "With a yes and a never-answering Lighthouse, stdout, stderr and exit code equal the usage-data-off run in each format, and the run takes under 1.5 s longer (KPI-7, D10)",
+            "usageDataQuestion.test.ts has no it.skip left; usageDataGuards.test.ts's 8 guards stay green; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/usageData.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/usageDataReporter.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/usageDataReporter.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/usageDataQuestion.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-02-lh-asks-once.md"
+          ],
+          "dependencies": ["02-06"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: clock-boundary examples (23 h / 25 h / 31 days) with a pinned now. Compensate with reporter unit cases over an injected fetch and clock: settles within 1 s against a never-answering fetch, the token absent from every outcome value, re-grant on an unrecognised token. RD-2: the rollback and Marco rows go in with the three liveness positives of their describe. The 24 h threshold bounds the post-rollback mislabel window (ADR-225 residual). Commit: feat(client): a yes outlives a long gap, and usage data never changes what lh answers (story 6193)."
+        },
+        {
+          "id": "02-08",
+          "name": "lh config usage-data says what Lena answered and what her Lighthouse allows",
+          "description": "The config group's new status command: the answer line ('Usage data from lh to <url>: on | off | not asked yet (off)') and the instance line (allows / administrator has stopped / predates it / could not ask), and the DO_NOT_TRACK line when it is in force, in the approved copy (A15).",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/usageDataConfig.test.ts",
+          "scenario_name": "shows Lena her yes and that her Lighthouse allows usage data",
+          "unskips": [
+            "it.skip -> it (usageDataConfig.test.ts, describe 'lh config usage-data says what Lena answered and what her Lighthouse allows') :: shows Lena her yes and that her Lighthouse allows usage data",
+            "it.skip.each -> it.each (same describe) :: shows an answer that was %s as %j - 2 rows (never asked, said No)",
+            "it.skip.each -> it.each (same describe) :: says so when the Lighthouse %s - 6 rows",
+            "it.skip -> it (same describe) :: names DO_NOT_TRACK when it is in force, whatever is stored"
+          ],
+          "red_to_green_tests": [
+            "usageDataConfig.test.ts :: shows Lena her yes and that her Lighthouse allows usage data",
+            "usageDataConfig.test.ts :: shows an answer that was %s as %j",
+            "usageDataConfig.test.ts :: says so when the Lighthouse %s",
+            "usageDataConfig.test.ts :: names DO_NOT_TRACK when it is in force, whatever is stored"
+          ],
+          "criteria": [
+            "`lh config usage-data` prints exactly two lines, exit 0, and asks nothing: the answer line (on / off / not asked yet (off)) and the instance line",
+            "Vetoed -> 'This Lighthouse's administrator has stopped usage data, so nothing is sent.'; no acceptedSources, no Cli source or no usage data -> 'This Lighthouse does not take usage data from lh (it predates it).'; never answers or fails -> 'Could not ask this Lighthouse whether it allows usage data.'",
+            "Under DO_NOT_TRACK=1 the output contains 'DO_NOT_TRACK is set, so lh sends no usage data whatever is stored.'",
+            "usageDataGuards.test.ts's 8 guards stay green; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/usageDataQuestion.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/usageDataConfig.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-02-lh-asks-once.md"
+          ],
+          "dependencies": ["02-07"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: exact approved copy per state (golden lines). Compensate with a pure unit table mapping (stored answer, state outcome, DO_NOT_TRACK) to the two lines, beside the question's copy. The status read shares the 1 s budget; a state read that times out is 'could not ask'. Commit: feat(cli): lh config usage-data says what was answered and what the Lighthouse allows (story 6193)."
+        },
+        {
+          "id": "02-09",
+          "name": "lh config usage-data refuses what it cannot do, and off withdraws the yes",
+          "description": "The status command refuses an unreadable answers file by name (exit 1, file untouched, DSN-22), needs a connection like every other command, answers any argument but on/off with the group's help (exit 1), and is listed in the config group's help. off revokes the grant at Lighthouse with the token, stores No and forgets the token (DSN-8); when the revoke cannot reach Lighthouse it is off all the same and says so (AFK copy default 1); off is always allowed, posting nothing, before anyone asked, under the veto and under DO_NOT_TRACK.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/usageDataConfig.test.ts",
+          "scenario_name": "withdraws Lena's grant at her Lighthouse, forgets the token, and sends nothing afterwards",
+          "unskips": [
+            "it.skip -> it (usageDataConfig.test.ts, describe 'lh config usage-data says what Lena answered and what her Lighthouse allows') :: refuses, naming the file, when the answers file cannot be read, and leaves it as it was",
+            "it.skip -> it (same describe) :: needs a connection, as every other command that names a Lighthouse does",
+            "it.skip -> it (same describe) :: answers anything but on or off with the group's help, exit 1",
+            "it.skip -> it (same describe) :: is listed in the config group's help",
+            "it.skip -> it (describe 'lh config usage-data off withdraws the yes and stops sending') :: withdraws Lena's grant at her Lighthouse, forgets the token, and sends nothing afterwards",
+            "it.skip.each -> it.each (same describe) :: turns usage data off even when the withdrawal cannot reach Lighthouse (it answers %s), and says so - 2 rows (by-failing, never)",
+            "it.skip.each -> it.each (same describe) :: records off %s, without posting anything - 3 rows"
+          ],
+          "red_to_green_tests": [
+            "usageDataConfig.test.ts :: refuses, naming the file, when the answers file cannot be read, and leaves it as it was",
+            "usageDataConfig.test.ts :: needs a connection, as every other command that names a Lighthouse does",
+            "usageDataConfig.test.ts :: answers anything but on or off with the group's help, exit 1",
+            "usageDataConfig.test.ts :: is listed in the config group's help",
+            "usageDataConfig.test.ts :: withdraws Lena's grant at her Lighthouse, forgets the token, and sends nothing afterwards",
+            "usageDataConfig.test.ts :: turns usage data off even when the withdrawal cannot reach Lighthouse (it answers %s), and says so",
+            "usageDataConfig.test.ts :: records off %s, without posting anything"
+          ],
+          "criteria": [
+            "Unreadable answers file: stderr contains 'The usage data file <path> cannot be read; fix or remove it.', exit 1, file byte-identical (AFK copy default 2)",
+            "Not connected: today's 'Not connected. Run \"lh connection connect\" ...' hint, exit 1. 'lh config usage-data maybe': 'Unknown config usage-data subcommand: maybe', exit 1, no /usagedata/ request. `lh config` lists 'lh config usage-data'",
+            "off after a yes prints '<answer line off>. Nothing more is sent.', revokes with the stored token, stores { answer: no, decidedAt }, and the next forecast asks nothing and hands in nothing (KPI-5)",
+            "off when the revoke fails or never answers prints the off line then 'Could not tell this Lighthouse; the yes it holds lapses by itself within 30 days.', exit 0, answer no",
+            "off before anyone asked, under the veto and under DO_NOT_TRACK stores no, exit 0, posts no decision and hands in nothing",
+            "usageDataGuards.test.ts's 8 guards stay green; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/usageDataReporter.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/usageDataStore.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/usageDataConfig.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-02-lh-asks-once.md"
+          ],
+          "dependencies": ["02-08"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: exact refusal and confirmation copy per case. Compensate with store unit cases on replace (off overwrites yes, drops the token) and a reporter case that a failing revoke still returns 'off, Lighthouse not told'. The revoke timeout reuses the 1 s budget. The token is a capability: never in output, log or error (ADR-226). AFK copy defaults 1 and 2 (RD-7) are named in the commit body. Commit: feat(cli): lh config usage-data off withdraws the yes, and refuses what it cannot read (story 6193)."
+        },
+        {
+          "id": "02-10",
+          "name": "lh config usage-data on records a yes without a question, and the smoke reads the real image",
+          "description": "on grants and stores a yes without a question, in or out of a terminal (Sofia's build agent), replacing an earlier No; records nothing under the veto (exit 0, A8), under DO_NOT_TRACK (exit 0, DSN-21) or against a predating Lighthouse (exit 0); a Lighthouse that cannot be asked records nothing and exits 1 (AFK copy default 3); the token is never shown by status, on or off. Then the clients ci.yml smoke step 'Verify usage-data status (never sends)' (DVO-6).",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/usageDataConfig.test.ts",
+          "scenario_name": "switches Sofia's build agent on, so its later forecasts are reported from the command line",
+          "unskips": [
+            "it.skip -> it (usageDataConfig.test.ts, describe 'lh config usage-data on records a yes without a question') :: switches Sofia's build agent on, so its later forecasts are reported from the command line",
+            "it.skip -> it (same describe) :: replaces Marco's earlier No with a yes",
+            "it.skip -> it (same describe) :: records nothing under the administrator's stop, says why, and exits 0",
+            "it.skip -> it (same describe) :: records nothing under DO_NOT_TRACK, prints the DO_NOT_TRACK line and makes no request",
+            "it.skip -> it (same describe) :: records nothing against a Lighthouse that predates labelled sources, and says so",
+            "it.skip -> it (same describe) :: records nothing when the Lighthouse cannot be asked, says so, and exits 1",
+            "it.skip -> it (describe 'the consent token stays a secret') :: is never shown by status, on or off"
+          ],
+          "red_to_green_tests": [
+            "usageDataConfig.test.ts :: switches Sofia's build agent on, so its later forecasts are reported from the command line",
+            "usageDataConfig.test.ts :: replaces Marco's earlier No with a yes",
+            "usageDataConfig.test.ts :: records nothing under the administrator's stop, says why, and exits 0",
+            "usageDataConfig.test.ts :: records nothing under DO_NOT_TRACK, prints the DO_NOT_TRACK line and makes no request",
+            "usageDataConfig.test.ts :: records nothing against a Lighthouse that predates labelled sources, and says so",
+            "usageDataConfig.test.ts :: records nothing when the Lighthouse cannot be asked, says so, and exits 1",
+            "usageDataConfig.test.ts :: is never shown by status, on or off"
+          ],
+          "criteria": [
+            "on with no terminal and CI=true prints '<answer line on>.' and 'Details: https://docs.lighthouse.letpeople.work/settings/usagedata.html', posts one 'granted', asks nothing, and the next nightly forecast hands in { source: Cli, TeamManualForecastRun } with that token",
+            "on replaces a stored No with { answer: yes, token, confirmedAt }",
+            "Under the veto: only 'This Lighthouse's administrator has stopped usage data; nothing was changed.', exit 0, nothing posted or stored. Under DO_NOT_TRACK: the DO_NOT_TRACK line, exit 0, no /usagedata/ request. Predating: only the predates line, exit 0. State read failing: 'Could not ask this Lighthouse whether it allows usage data.' on stderr, exit 1, nothing stored",
+            "The consent token never appears in the stdout or stderr of on, status or off",
+            "ci.yml smoke-integration gains 'Verify usage-data status (never sends)' after 'Verify portfolios (Project Orion)' and before 'Verify --pretty views', exactly the DEVOPS outline: the DO_NOT_TRACK refusal twice, then status, allows, on, token present in usage-data.json, off, status off, token never printed; G1/G2 untouched (RD-4)",
+            "Before the ci.yml commit, the smoke's anchors are checked against what the code actually does: the answer line's printed URL for the smoke's connection (https://localhost:8443 as lh resolves it) and the jq path ~/.config/lighthouse-clients/usage-data.json are the path and URL the store and the status command really use (run once locally against a container or confirm from the store's path resolution)",
+            "usageDataConfig.test.ts has no it.skip left; usageDataGuards.test.ts's 8 guards stay green; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/usageDataReporter.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/usageDataConfig.test.ts",
+            "/storage/repos/lighthouse-clients/.github/workflows/ci.yml",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-02-lh-asks-once.md"
+          ],
+          "dependencies": ["02-09"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: exact copy per case; the smoke is a live wiring check on lighthouse:latest. Compensate with a unit table for on's outcome over (DO_NOT_TRACK, state outcome, administratorDisabled, acceptedSources). on under DO_NOT_TRACK makes no request at all (checked before anything else, DSN-20/21). The smoke uses grep -F on here-strings (ci-learnings), never printf | grep -q under pipefail; confirm the exact URL the answer line prints for https://localhost:8443 and the jq path into ~/.config/lighthouse-clients/usage-data.json before committing (RD-4). AFK copy default 3 named in the commit body. Commits: feat(cli): lh config usage-data on records a yes without a question (story 6193); ci(usagedata): verify the usage-data status on the real image, never sending (story 6193)."
+        },
+        {
+          "id": "02-11",
+          "name": "The docs say what lh asks, keeps and sends",
+          "description": "Slice 02's docs passages in both repositories (RD-5) and the website check (RD-6). Lighthouse: docs/settings/usagedata.md rewrites every browser-only promise (S13: 'No event is sent unless a browser...', 'Browser identifier', 'Counting browsers, not installations', 'Your browser never contacts the collector') for 'a browser, lh, or an MCP server', and says what lh stores (usage-data.json, owner-only), how lh config usage-data shows and changes it, and that DO_NOT_TRACK is honoured; docs/aiintegration.md gains one paragraph (the clients ask, link to the page). Clients: packages/cli/README.md (the question, lh config usage-data, DO_NOT_TRACK), skill/SKILL.md gains D15's rule, ARCHITECTURE.md section 5 (the consent store beside the voter keys, shared by lh and the local MCP server). The changeset text is finalised.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/UsageDataDisclosureTest.cs",
+          "scenario_name": "the usage data page still discloses every event, property and source after the rewrite",
+          "unskips": [],
+          "red_to_green_tests": [],
+          "criteria": [
+            "usagedata.md no longer promises anything only of browsers that lh now makes false; it names usage-data.json, lh config usage-data [on|off] and DO_NOT_TRACK, and keeps the docs URL the question links",
+            "docs/aiintegration.md has one paragraph saying lh and the MCP servers ask before sending usage data, linking the page",
+            "skill/SKILL.md says: never run lh config usage-data on|off unless the user asked for exactly that (D15)",
+            "packages/cli/README.md documents the question and lh config usage-data; clients ARCHITECTURE.md section 5 describes usage-data.json beside voter-keys.json and the shared ownerOnlyJsonFile mechanics",
+            "Website grep over /storage/repos/website done; each hit fixed or listed, or 'no hit' recorded in the commit body (RD-6)",
+            "The changeset .changeset/usage-data-02-lh-asks-once.md states what slice 02 delivers, that nothing is sent without a yes and that output and exit codes are unchanged",
+            "Lighthouse: the DVO-4 filter (UsageDataDisclosureTest, TeamForecastRealityCheckRunEventTests, TeamRefinementUsageEventsTests) is green locally; clients: `pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/docs/settings/usagedata.md",
+            "/storage/repos/Lighthouse/docs/aiintegration.md",
+            "/storage/repos/lighthouse-clients/packages/cli/README.md",
+            "/storage/repos/lighthouse-clients/skill/SKILL.md",
+            "/storage/repos/lighthouse-clients/ARCHITECTURE.md",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-02-lh-asks-once.md"
+          ],
+          "dependencies": ["02-10"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: docs passages; verified by the page-reading test classes (DVO-4) and a read-through. Use the seeded Terminology words (Team, Portfolio, Work Item). Any passage left unchanged gets 'N/A, because ...' in the commit body (no silent N/A). The Lighthouse docs commit is pushed before the slice-02 clients release is approved. Commits: docs(usagedata): the usage data page says lh asks once and what it keeps (story 6193) in /storage/repos/Lighthouse; docs(cli): lh's usage data question, its config command and the agent rule (story 6193) in /storage/repos/lighthouse-clients."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Slice 03 - lh reports the rest (US-04)",
+      "description": "With a stored yes, the nine remaining D8 lh rows report the web's own event after Lighthouse answered successfully, with source Cli and closed fields only: team and portfolio create / delete / refresh, the vote with its moment from the pre-vote read (DSN-16) and readiness, the Refinement day's verdict once per run (DSN-23); refused, failed and unmapped commands report nothing; nothing lh prints or reads changes. Repository /storage/repos/lighthouse-clients (client, cli).",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Team and Portfolio writes and refreshes report their web events",
+          "description": "Each group handler for team create / delete / refresh and portfolio create / delete / refresh attaches its occurrence to CliCommandResult.usage after success (DSN-13); the forecast row slice 02 delivered is pinned at the same time. Creates the slice's changeset.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/usageDataEvents.test.ts",
+          "scenario_name": "lh %s reports %s from the command line",
+          "unskips": [
+            "it.skip.each -> it.each (usageDataEvents.test.ts, describe 'each mapped command reports its web event once, after it succeeded') :: lh %s reports %s from the command line - 7 rows (team create, team delete, team refresh, portfolio create, portfolio delete, portfolio refresh, forecast manual)"
+          ],
+          "red_to_green_tests": [
+            "usageDataEvents.test.ts :: lh %s reports %s from the command line"
+          ],
+          "criteria": [
+            "Each of the seven commands exits 0 and hands in exactly one batch { source: Cli, events: [<its web event>] } with Lena's token: TeamCreated, TeamDeleted, TeamRefreshTriggered, PortfolioCreated, PortfolioDeleted, PortfolioRefreshTriggered, TeamManualForecastRun",
+            "Event names come from the client's closed vocabulary; no id, name, URL or count is sent",
+            ".changeset/usage-data-03-lh-reports-the-rest.md exists with minor @letpeoplework/lighthouse-client and minor @letpeoplework/lighthouse-cli",
+            "usageDataGuards.test.ts's 8 guards and every slice-02 case stay green; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/usageData.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/usageDataEvents.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-03-lh-reports-the-rest.md"
+          ],
+          "dependencies": ["02-11"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: DISTILL's example table over the mapped commands. Compensate with a pure unit case pinning which command paths produce which occurrence (the characterisation DESIGN asks for: the list of commands that set usage.reached). Handlers return occurrences as values and never send (unbounded-preservation for usage data). The forecast row may pass on first un-skip (slice 02); record it. Commit: feat(cli): Team and Portfolio writes and refreshes report their web events (story 6193)."
+        },
+        {
+          "id": "03-02",
+          "name": "A vote reports itself and its moment, read from the read before it",
+          "description": "lh refinement vote reports TeamSizingVoteCast with sizingMoment computed from the Team's Refinement read the vote already makes (NoCadence when there is no next Refinement date, whatever the day says; OnRefinementDay; OnOtherDay), and TeamSizingReadinessReached when the answer says madeReady (DSN-16). A refused pre-vote read refuses the vote as today and reports nothing.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/usageDataEvents.test.ts",
+          "scenario_name": "reports a vote cast on %s as cast %s",
+          "unskips": [
+            "it.skip -> it (usageDataEvents.test.ts, describe 'each mapped command reports its web event once, after it succeeded') :: reports a Refinement-day vote that made GR-061 Ready as exactly the batch Lighthouse's own test takes in",
+            "it.skip.each -> it.each (same describe) :: reports a vote cast on %s as cast %s - 4 rows (positive anchor)",
+            "it.skip -> it (same describe) :: reports nothing when the read before Priya's vote is refused, and the vote is refused as today (absence)"
+          ],
+          "red_to_green_tests": [
+            "usageDataEvents.test.ts :: reports a Refinement-day vote that made GR-061 Ready as exactly the batch Lighthouse's own test takes in",
+            "usageDataEvents.test.ts :: reports a vote cast on %s as cast %s",
+            "usageDataEvents.test.ts :: reports nothing when the read before Priya's vote is refused, and the vote is refused as today"
+          ],
+          "criteria": [
+            "A Refinement-day vote that made GR-061 Ready hands in exactly test-support/usageDataContract/batch-lh-sends-for-a-vote-that-made-ready.json (the bytes Lighthouse's own scenario takes in, 01-03); the fixture is not edited",
+            "A vote reports TeamSizingVoteCast with sizingMoment NoCadence / OnRefinementDay / OnOtherDay per the web's rule, including NoCadence when there is no next date on a Refinement day",
+            "When GET /teams/3/refinement answers 503 the vote is not posted, the command exits 1 as today, and nothing is handed in",
+            "No extra Lighthouse read is made for the moment; usageDataGuards.test.ts's 8 guards stay green; `pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/usageData.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/usageData.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/refinementCommands.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/usageDataEvents.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-03-lh-reports-the-rest.md"
+          ],
+          "dependencies": ["03-01"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: the moment rule is a three-value table; DISTILL's rows plus a golden contract fixture. Compensate with sizingMomentOf parity unit cases restating the web's own test cases (useVoteCasting.ts rule). The contract fixture changes in both repositories together, never in one (RD-11). RD-2: the refused-read row goes in with the moment rows. Commit: feat(cli): lh refinement vote reports the vote and its moment (story 6193)."
+        },
+        {
+          "id": "03-03",
+          "name": "lh refinement get reports the Refinement day's verdict",
+          "description": "On the Team's Refinement day with at least one Work Item listed, lh refinement get reports TeamRefinementDayVerdictShown with refinementVerdict Below / In / Above, or None when the Refinement shows no number, derived from the answer the command already holds with the web's shown-verdict rule restated in client (DSN-23, A10); no verdict on another day or with no Work Item listed.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/usageDataEvents.test.ts",
+          "scenario_name": "reports the Refinement day's verdict %s as %s when lh refinement get shows it",
+          "unskips": [
+            "it.skip.each -> it.each (usageDataEvents.test.ts, describe 'each mapped command reports its web event once, after it succeeded') :: reports the Refinement day's verdict %s as %s when lh refinement get shows it - 4 rows (positive anchor)",
+            "it.skip.each -> it.each (same describe) :: reports no verdict %s - 2 rows (absence)"
+          ],
+          "red_to_green_tests": [
+            "usageDataEvents.test.ts :: reports the Refinement day's verdict %s as %s when lh refinement get shows it",
+            "usageDataEvents.test.ts :: reports no verdict %s"
+          ],
+          "criteria": [
+            "On a Refinement day with Work Items listed, lh refinement get exits 0 and hands in one batch { source: Cli, TeamRefinementDayVerdictShown, refinementVerdict } with Below, In, Above, or None for no number",
+            "On a non-Refinement day, or with no Work Item listed, nothing is handed in",
+            "The verdict is read from the answer lh refinement get already holds; no extra read; usageDataGuards.test.ts's 8 guards stay green; `pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/usageData.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/usageData.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/usageDataEvents.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-03-lh-reports-the-rest.md"
+          ],
+          "dependencies": ["03-02"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: a four-value verdict table plus two absence rows. Compensate with verdict-rule parity unit cases from the web's useVerdictShownReporter tests. Reuse refinementWording.ts's shownVerdictOf for the facts; keep the reporting rule apart from the wording rule (reuse analysis). RD-2: 'reports no verdict' goes in with the verdict rows. Commit: feat(cli): lh refinement get reports the Refinement day's verdict (story 6193)."
+        },
+        {
+          "id": "03-04",
+          "name": "Refused, failed and unmapped commands report nothing, and one run reports one verdict",
+          "description": "A delete Lighthouse refuses, a forecast Lighthouse refuses and a refresh Lighthouse fails report nothing; the commands with no web event to mirror (forecast backtest, refinement comment, take-back, team and portfolio update, team list, team get, portfolio list, version get) report nothing; one lh refinement get reports one verdict however many Work Items it lists.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/usageDataEvents.test.ts",
+          "scenario_name": "reports one verdict for one lh refinement get, however many Work Items it lists",
+          "unskips": [
+            "it.skip -> it (usageDataEvents.test.ts, describe 'refused, failed and unmapped commands report nothing') :: reports one verdict for one lh refinement get, however many Work Items it lists (positive anchor)",
+            "it.skip.each -> it.each (same describe) :: reports nothing for %s - 3 rows (absence)",
+            "it.skip.each -> it.each (same describe) :: reports nothing for lh %s - 9 rows (absence)"
+          ],
+          "red_to_green_tests": [
+            "usageDataEvents.test.ts :: reports one verdict for one lh refinement get, however many Work Items it lists",
+            "usageDataEvents.test.ts :: reports nothing for %s",
+            "usageDataEvents.test.ts :: reports nothing for lh %s"
+          ],
+          "criteria": [
+            "lh refinement get listing three Work Items on a Refinement day hands in exactly one verdict",
+            "A refused team delete (id 99), a refused forecast (400) and a failing team refresh (500) exit 1 and hand in nothing",
+            "forecast backtest, refinement comment, refinement take-back, team update, portfolio update, team list, team get, portfolio list and version get hand in nothing (KPI-3's guard: no new meaning under an old name, M9)",
+            "usageDataGuards.test.ts's 8 guards stay green; `pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/cli/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/usageDataEvents.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-03-lh-reports-the-rest.md"
+          ],
+          "dependencies": ["03-03"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: example tables of commands that must stay silent. Compensate with the occurrence characterisation unit case from 03-01 extended to the unmapped paths. Cannot split further: the describe's only positive is the one-verdict case, and its 12 absence rows go with it. RD-2: the 12 absence rows go in only with the one-verdict positive of their describe. If every row passes on first un-skip, no production code changes and the commit is test-only: test(cli): refused, failed and unmapped commands report nothing (story 6193); otherwise feat(cli): refused, failed and unmapped commands report nothing (story 6193). Either way the commit body says which rows passed on un-skip. A test-only commit touching packages/cli/src still needs the staged slice changeset (RD-3)."
+        },
+        {
+          "id": "03-05",
+          "name": "Usage data changes nothing lh prints or reads",
+          "description": "For each of the nine mapped commands in --pretty, --json and --toon, stdout, stderr and exit code with usage data on equal those with it off (with a positive control that an event was handed in); and each reads from Lighthouse exactly what it reads with usage data off, the only extra requests being usage data ones (DSN-14, D10). Last step of the slice: docs passages.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/usageDataEvents.test.ts",
+          "scenario_name": "lh %s %s prints the same and exits the same with usage data on as off",
+          "unskips": [
+            "it.skip.each -> it.each (usageDataEvents.test.ts, describe 'usage data changes nothing lh prints, and costs nothing when it is off') :: lh %s %s prints the same and exits the same with usage data on as off - 27 rows (9 mapped commands x --pretty, --json, --toon; positive anchor: each asserts an event was handed in)",
+            "it.skip.each -> it.each (same describe) :: lh %s reads from Lighthouse exactly what it reads with usage data off - 9 rows (absence)"
+          ],
+          "red_to_green_tests": [
+            "usageDataEvents.test.ts :: lh %s %s prints the same and exits the same with usage data on as off",
+            "usageDataEvents.test.ts :: lh %s reads from Lighthouse exactly what it reads with usage data off"
+          ],
+          "criteria": [
+            "For team create / delete / refresh, portfolio create / delete / refresh, forecast manual, refinement vote and refinement get, in each of --pretty, --json and --toon, stdout, stderr and exit code with a yes equal those with no answer, and at least one batch was handed in (KPI: D10)",
+            "With usage data off no /usagedata/ request is made; with it on the non-usage-data Lighthouse operations equal the off run's",
+            "usageDataEvents.test.ts has no it.skip left; usageDataGuards.test.ts's 8 guards stay green; `pnpm run ci` exits 0",
+            "The changeset is finalised (minor client, minor cli); usagedata.md gets the lh column if the page lists surfaces per event, else 'N/A, because ...' in the commit body; packages/cli/README.md, skill/SKILL.md and clients ARCHITECTURE.md section 5 re-checked and updated or N/A with the reason (RD-5)"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/cli/src/usageDataEvents.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-03-lh-reports-the-rest.md",
+            "/storage/repos/lighthouse-clients/packages/cli/README.md",
+            "/storage/repos/Lighthouse/docs/settings/usagedata.md"
+          ],
+          "dependencies": ["03-04"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: byte-identity characterisation (golden comparisons) over a 9 x 3 table, and read-set equality. Compensate with the planUsageDataStep and occurrence unit cases already in place. 36 cases in one step because both tables are one definition each over the same MAPPED list and the 9 reads rows are absence-only (RD-2), anchored by the identity table. If both tables pass on first un-skip, the code commit is test-only: test(cli): usage data changes nothing lh prints or reads (story 6193). Docs commits as needed: docs(cli): ... (story 6193) in clients; docs(usagedata): ... (story 6193) in Lighthouse, after running the DVO-4 filter locally."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Slice 04 - the local MCP server asks once (US-05)",
+      "description": "The local MCP server (mcp-stdio) asks once through MCP elicitation inside the first successful tool call, shares lh's answers file, and with a yes the six mapped tools report the web's events with source Mcp, detached from the result. Repository /storage/repos/lighthouse-clients (mcp-core, mcp-stdio).",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "The local MCP server asks Priya once, through her assistant",
+          "description": "Replace the localServer.ts scaffold (remove __SCAFFOLD__); runMcpStdioRuntime connects what createLocalLighthouseMcpServer returns. Add mcp-core/src/usageDataPort.ts (the optional usage-data port, the elicitation helper and the A12 copy) and widen registerMcpTools to hand occurrences to the port after the result is computed, without awaiting the send (DSN-17); forecast manual, team refresh and portfolio refresh produce occurrences on result.ok. The elicitation flow (DSN-18): inside the first successful call, when DO_NOT_TRACK is unset, the re-read store is undecided, state lists Mcp and says MayAsk, the client declared elicitation and nothing was asked in this process; empty-object schema; accept -> yes (grant + compare-and-set), decline -> No (final), cancel / close / error / 50 s -> no answer, not asked again this process; concurrent calls never wait for it or start a second one. Creates the slice's changeset.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-stdio/src/usageData.test.ts",
+          "scenario_name": "asks Priya once in her assistant, in the approved words, while her forecast reaches her unchanged",
+          "unskips": [
+            "it.skip -> it (mcp-stdio usageData.test.ts, describe 'the local MCP server asks once, through the assistant') :: asks Priya once in her assistant, in the approved words, while her forecast reaches her unchanged",
+            "it.skip -> it (same describe) :: reports Priya's later tool calls with source Mcp and never asks her again",
+            "it.skip -> it (same describe) :: keeps Marco's decline, and his lh asks nothing afterwards",
+            "it.skip -> it (same describe) :: keeps nothing when Priya closes the question, does not ask again this session, and asks in the next",
+            "it.skip -> it (same describe) :: hands Priya her forecast after 50 seconds of silence, and keeps nothing",
+            "it.skip -> it (same describe) :: asks once when Priya's assistant makes three calls at once"
+          ],
+          "red_to_green_tests": [
+            "usageData.test.ts :: asks Priya once in her assistant, in the approved words, while her forecast reaches her unchanged",
+            "usageData.test.ts :: reports Priya's later tool calls with source Mcp and never asks her again",
+            "usageData.test.ts :: keeps Marco's decline, and his lh asks nothing afterwards",
+            "usageData.test.ts :: keeps nothing when Priya closes the question, does not ask again this session, and asks in the next",
+            "usageData.test.ts :: hands Priya her forecast after 50 seconds of silence, and keeps nothing",
+            "usageData.test.ts :: asks once when Priya's assistant makes three calls at once"
+          ],
+          "criteria": [
+            "The first forecast through an assistant that declares elicitation returns the same result as with DO_NOT_TRACK=1, asks once with the A12 message (M1's words for tools, the docs URL, the change-any-time line) and an empty-object schema, posts one grant and stores the yes in the same usage-data.json lh reads; the call that asked reports nothing",
+            "Later calls report { source: Mcp } batches (TeamRefreshTriggered, TeamManualForecastRun) with that token, and the next session asks nothing",
+            "A decline stores No and lh on the same laptop asks nothing afterwards; a cancel keeps nothing, is not asked again this session and is asked in the next; 50 s of silence returns the forecast without error and keeps nothing; three concurrent calls ask once and grant once",
+            "The source-scan enforcement test covers mcp-core/src/usageDataPort.ts (no console. or process.stdout/stderr - stdout is the protocol stream)",
+            ".changeset/usage-data-04-local-mcp-asks-once.md exists with minor @letpeoplework/lighthouse-mcp-core and minor @letpeoplework/lighthouse-mcp-stdio",
+            "Every earlier slice's cases and the active guards stay green; `pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/mcp-stdio/src/localServer.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-stdio/src/runtime.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/usageDataPort.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/usageData.enforcement.test.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-stdio/src/usageData.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-04-local-mcp-asks-once.md"
+          ],
+          "dependencies": ["03-05"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: in-process SDK Client over InMemoryTransport; single-example protocol wiring, fake timers for 50 s. Compensate with unit cases on the port's decision (asked-this-process flag, capability absent, single-flight) over an injected ask. The 50 s bound sits under the SDK's 60 s default request timeout (Earned Trust probe). No port supplied = today's behaviour exactly (refuseVoting / voterKeyRequired injection pattern reused). The enforcement test lives in packages/client/src; editing it needs the staged changeset - add a patch line for lighthouse-client only if client src (not just the test) changes (RD-3). Commit: feat(mcp): the local MCP server asks once through the assistant (story 6193)."
+        },
+        {
+          "id": "04-02",
+          "name": "The stored answer decides, wherever it was given",
+          "description": "The local server reads the shared answers file again just before it would ask: a yes lh recorded (even with an assistant that cannot ask) is used and reported with source Mcp; a No or a yes held by lh means no question; an answer lh gave since the server started is read, not asked for again; nothing is asked or sent under the veto, a young install, a predating, Mcp-less or usage-data-less Lighthouse, or DO_NOT_TRACK, nor when the assistant cannot ask and nobody answered.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-stdio/src/usageData.test.ts",
+          "scenario_name": "reports Lena's refresh with source Mcp after she ran lh config usage-data on, though her assistant cannot ask",
+          "unskips": [
+            "it.skip -> it (mcp-stdio usageData.test.ts, describe 'the stored answer decides, wherever it was given') :: reports Lena's refresh with source Mcp after she ran lh config usage-data on, though her assistant cannot ask (positive anchor)",
+            "it.skip.each -> it.each (same describe) :: asks nothing in the assistant once lh holds %s for that Lighthouse - 2 rows ('a yes' expects one batch: positive anchor; 'a No': absence)",
+            "it.skip -> it (same describe) :: asks nothing and sends nothing when the assistant cannot ask and nobody has answered (absence)",
+            "it.skip -> it (same describe) :: does not ask when lh answered since the server started (absence)",
+            "it.skip.each -> it.each (same describe) :: asks nothing and sends nothing when %s - 6 rows (absence)"
+          ],
+          "red_to_green_tests": [
+            "usageData.test.ts :: reports Lena's refresh with source Mcp after she ran lh config usage-data on, though her assistant cannot ask",
+            "usageData.test.ts :: asks nothing in the assistant once lh holds %s for that Lighthouse",
+            "usageData.test.ts :: asks nothing and sends nothing when the assistant cannot ask and nobody has answered",
+            "usageData.test.ts :: does not ask when lh answered since the server started",
+            "usageData.test.ts :: asks nothing and sends nothing when %s"
+          ],
+          "criteria": [
+            "After `lh config usage-data on`, a team refresh through an assistant without elicitation hands in { source: Mcp, TeamRefreshTriggered } with lh's token",
+            "With lh's yes the assistant is not asked and one batch is handed in; with lh's No it is not asked and nothing is handed in (KPI-5: 0 repeat questions across surfaces)",
+            "An assistant without elicitation and no stored answer: no decision posted, nothing handed in; an answer lh stored after the server started is honoured without a question",
+            "Vetoed, MayAsk false, no acceptedSources, no Mcp source, no usage data, DO_NOT_TRACK=1: no question, no decision, nothing handed in",
+            "Every earlier case and the active guards stay green; `pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/mcp-stdio/src/runtime.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-stdio/src/localServer.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/usageDataPort.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-stdio/src/usageData.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-04-local-mcp-asks-once.md"
+          ],
+          "dependencies": ["04-01"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: in-process protocol wiring over Lighthouse states. Compensate with planUsageDataStep rows for source Mcp (acceptedSources with and without Mcp) in client's unit table. RD-2: the 9 absence cases go in only with the two positives of their describe. The store is the one per-Lighthouse file under the same scope as the voter key (ADR-226); an old mcp-stdio beside a new lh ignores it. Commit: feat(mcp): the stored answer decides, wherever it was given (story 6193)."
+        },
+        {
+          "id": "04-03",
+          "name": "The six mapped tools report the web's events with source Mcp",
+          "description": "forecast manual, team refresh, portfolio refresh, the refinement vote (moment from the pre-vote read; readiness when madeReady) and refinement get (verdict on a Refinement day) report once after Lighthouse answered, detached from the result; backtest, comment, take-back, team list and a non-Refinement-day get report nothing; a refused refresh reports nothing; a Lighthouse that never takes events delays no result. Last step of the slice: docs passages.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-stdio/src/usageData.test.ts",
+          "scenario_name": "%s reports its events once, after Lighthouse answered",
+          "unskips": [
+            "it.skip.each -> it.each (mcp-stdio usageData.test.ts, describe 'the six mapped tools report the web's events with source Mcp') :: %s reports its events once, after Lighthouse answered - 6 rows (positive anchor)",
+            "it.skip.each -> it.each (same describe) :: %s reports nothing (no web event to mirror, or not a Refinement day) - 5 rows (absence)",
+            "it.skip -> it (same describe) :: reports nothing for a refresh Lighthouse refused (absence)",
+            "it.skip -> it (same describe) :: returns Priya's refresh at once though her Lighthouse never takes the event (absence)"
+          ],
+          "red_to_green_tests": [
+            "usageData.test.ts :: %s reports its events once, after Lighthouse answered",
+            "usageData.test.ts :: %s reports nothing (no web event to mirror, or not a Refinement day)",
+            "usageData.test.ts :: reports nothing for a refresh Lighthouse refused",
+            "usageData.test.ts :: returns Priya's refresh at once though her Lighthouse never takes the event"
+          ],
+          "criteria": [
+            "lighthouse_forecast_manual, lighthouse_team_refresh, lighthouse_portfolio_refresh, lighthouse_team_refinement_vote (OnOtherDay; OnRefinementDay with TeamSizingReadinessReached when madeReady) and lighthouse_team_refinement_get (verdict In) each hand in one { source: Mcp } batch with exactly the web's events",
+            "lighthouse_forecast_backtest, lighthouse_team_refinement_comment, lighthouse_team_refinement_voteTakeBack, lighthouse_team_list and a non-Refinement-day lighthouse_team_refinement_get hand in nothing; a refused refresh returns isError and hands in nothing",
+            "A refresh against a Lighthouse that never takes events returns without error in under 900 ms (KPI-7, DSN-17)",
+            "mcp-stdio usageData.test.ts has no it.skip left; every earlier case and the active guards stay green; `pnpm run ci` exits 0",
+            "Docs: packages/mcp-stdio/README.md (asks once through the assistant, shares lh's answer, lh config usage-data on when the assistant cannot ask); usagedata.md one sentence to that effect; skill/SKILL.md MCP reference and clients ARCHITECTURE.md sections 5/7 updated or 'N/A, because ...' in the commit body; changeset finalised (RD-5)"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/refinementTools.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-stdio/src/usageData.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-04-local-mcp-asks-once.md",
+            "/storage/repos/lighthouse-clients/packages/mcp-stdio/README.md",
+            "/storage/repos/lighthouse-clients/ARCHITECTURE.md",
+            "/storage/repos/Lighthouse/docs/settings/usagedata.md"
+          ],
+          "dependencies": ["04-02"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: example tables over tools; the moment and verdict rules are slice 03's pure functions, already unit-tested. Compensate with a unit case that tool branches produce occurrences only on result.ok. Reuse sizingMomentOf and the verdict rule from client/src/usageData.ts (no second copy). RD-2: the 7 absence cases go in only with the six mapped rows. Run the DVO-4 filter locally before the Lighthouse docs push. Commits: feat(mcp): the six mapped tools report the web's events (story 6193); docs(mcp): the local MCP server's usage data question (story 6193) in clients; docs(usagedata): the local MCP server asks through the assistant once (story 6193) in Lighthouse."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Slice 05 - the shared MCP server, the operator's call (US-06)",
+      "description": "mcp-http follows LIGHTHOUSE_USAGE_DATA (on in any case = on; unset / off / empty = off; anything else = off with one warning), honours DO_NOT_TRACK, logs one start-up line, holds one grant per process in memory requested on the first event, never asks anyone, never sends a credential on a usage-data call and never writes a file. Repository /storage/repos/lighthouse-clients (mcp-http).",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "The shared MCP server is off unless its operator says on",
+          "description": "runMcpHttpRuntime reads LIGHTHOUSE_USAGE_DATA once at start-up (DSN-19): on / ON / On -> on and the start-up line 'Usage data: on (LIGHTHOUSE_USAGE_DATA)' once; unset, off, OFF or empty -> 'Usage data: off' with no warning; any other value -> off and exactly one warning naming LIGHTHOUSE_USAGE_DATA, on and off, and the server still starts. Creates the slice's changeset.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-http/src/usageData.e2e.test.ts",
+          "scenario_name": "starts with usage data off and one warning naming on and off for LIGHTHOUSE_USAGE_DATA=%s",
+          "unskips": [
+            "it.skip -> it (mcp-http usageData.e2e.test.ts, describe 'off unless the operator says on') :: says usage data is off at start-up when LIGHTHOUSE_USAGE_DATA is not set",
+            "it.skip.each -> it.each (same describe) :: switches usage data on for LIGHTHOUSE_USAGE_DATA=%s and says so once at start-up - 3 rows (on, ON, On)",
+            "it.skip.each -> it.each (same describe) :: keeps usage data off without a warning for LIGHTHOUSE_USAGE_DATA=%j - 3 rows (off, OFF, '')",
+            "it.skip.each -> it.each (same describe) :: starts with usage data off and one warning naming on and off for LIGHTHOUSE_USAGE_DATA=%s - 4 rows (yes, true, 1, enabled)"
+          ],
+          "red_to_green_tests": [
+            "usageData.e2e.test.ts :: says usage data is off at start-up when LIGHTHOUSE_USAGE_DATA is not set",
+            "usageData.e2e.test.ts :: switches usage data on for LIGHTHOUSE_USAGE_DATA=%s and says so once at start-up",
+            "usageData.e2e.test.ts :: keeps usage data off without a warning for LIGHTHOUSE_USAGE_DATA=%j",
+            "usageData.e2e.test.ts :: starts with usage data off and one warning naming on and off for LIGHTHOUSE_USAGE_DATA=%s"
+          ],
+          "criteria": [
+            "Unset: start-up lines contain 'Usage data: off' and no warning. on / ON / On: exactly one 'Usage data: on (LIGHTHOUSE_USAGE_DATA)' and no warning",
+            "off / OFF / empty: 'Usage data: off', no warning, and a refresh makes no /usagedata/ request",
+            "yes / true / 1 / enabled: exit code 0, 'Usage data: off', exactly one warning matching LIGHTHOUSE_USAGE_DATA, on and off, and no /usagedata/ request",
+            "The active guard 'makes no usage data request when LIGHTHOUSE_USAGE_DATA is not set' stays green",
+            ".changeset/usage-data-05-shared-mcp-operators-call.md exists with minor @letpeoplework/lighthouse-mcp-http",
+            "`pnpm run ci` exits 0 in /storage/repos/lighthouse-clients"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/mcp-http/src/bin.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-http/src/usageData.e2e.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-05-shared-mcp-operators-call.md"
+          ],
+          "dependencies": ["04-03"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: exact start-up copy per environment value (e2e over a real port). Compensate with a pure unit table on the variable's parsing (value -> on / off / off-with-warning). A typo never breaks a deployment (D12). Never read the ambient environment in tests; the runtime takes env explicitly (RD-10). Commit: feat(mcp): the shared MCP server is off unless its operator says on (story 6193)."
+        },
+        {
+          "id": "05-02",
+          "name": "Switched on, the shared MCP server reports for its callers without asking them",
+          "description": "With LIGHTHOUSE_USAGE_DATA=on: one grant per process, requested single-flight on the first event and held in memory only, only when state lists Mcp and is not vetoed (no MayAsk rule - nobody is asked, so a young install still reports); refresh, forecast and portfolio refresh report with source Mcp; every caller gets the same result as with usage data off; three callers at once cause one grant; a restart requests a fresh grant. DO_NOT_TRACK overrides on (start-up says off, nothing sent).",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-http/src/usageData.e2e.test.ts",
+          "scenario_name": "reports Priya's refresh through the shared server with source Mcp, and never asks her",
+          "unskips": [
+            "it.skip.each -> it.each (mcp-http usageData.e2e.test.ts, describe 'off unless the operator says on') :: sends nothing under DO_NOT_TRACK=%s even with LIGHTHOUSE_USAGE_DATA=on - 2 rows (1, true)",
+            "it.skip -> it (describe 'switched on, the shared server reports for its callers without asking them') :: reports Priya's refresh through the shared server with source Mcp, and never asks her",
+            "it.skip.each -> it.each (same describe) :: reports %s as %s - 2 rows (lighthouse_forecast_manual, lighthouse_portfolio_refresh)",
+            "it.skip -> it (same describe) :: hands every caller the same result it gives with usage data off",
+            "it.skip -> it (same describe) :: requests one grant for three callers arriving at once",
+            "it.skip -> it (same describe) :: requests a fresh grant after a restart",
+            "it.skip -> it (same describe) :: reports on an instance installed less than three days ago"
+          ],
+          "red_to_green_tests": [
+            "usageData.e2e.test.ts :: sends nothing under DO_NOT_TRACK=%s even with LIGHTHOUSE_USAGE_DATA=on",
+            "usageData.e2e.test.ts :: reports Priya's refresh through the shared server with source Mcp, and never asks her",
+            "usageData.e2e.test.ts :: reports %s as %s",
+            "usageData.e2e.test.ts :: hands every caller the same result it gives with usage data off",
+            "usageData.e2e.test.ts :: requests one grant for three callers arriving at once",
+            "usageData.e2e.test.ts :: requests a fresh grant after a restart",
+            "usageData.e2e.test.ts :: reports on an instance installed less than three days ago"
+          ],
+          "criteria": [
+            "Under DO_NOT_TRACK 1 or true with LIGHTHOUSE_USAGE_DATA=on the start-up line says off and no /usagedata/ request is made",
+            "A refresh through the switched-on server hands in { source: Mcp, TeamRefreshTriggered } with the minted token after one 'granted', and no elicitation is put to the caller; forecast manual and portfolio refresh report their events",
+            "A forecast returns the same result with usage data on as off, and the on server did hand an event in",
+            "Three concurrent callers cause exactly one grant and three batches; a restart mints a second, different token; MayAsk false still reports",
+            "The active guard stays green; `pnpm run ci` exits 0"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/mcp-http/src/bin.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-http/src/usageData.e2e.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-05-shared-mcp-operators-call.md"
+          ],
+          "dependencies": ["05-01"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: e2e protocol wiring over a real port and SDK clients over HTTP. Compensate with a unit case on the in-memory grant holder's single-flight (three concurrent requests -> one grant). The grant holder is bounded-change over process memory only (contract shapes); inject it into mcp-core's port the way refuseVoting / voterKeyRequired are injected. Commit: feat(mcp): switched on, the shared MCP server reports for its callers (story 6193)."
+        },
+        {
+          "id": "05-03",
+          "name": "What the shared MCP server never does",
+          "description": "No grant and no send against a vetoed, predating, Mcp-less or usage-data-less Lighthouse (the start-up line still says on); a vetoed Lighthouse is asked again only after an hour and reported to once the veto is lifted; no API key and no bearer token on any usage-data call (DSN-12); nothing written under its home directory. Last step of the slice: docs passages.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-http/src/usageData.e2e.test.ts",
+          "scenario_name": "sends no API key and no bearer token on any usage data call",
+          "unskips": [
+            "it.skip.each -> it.each (mcp-http usageData.e2e.test.ts, describe 'what the shared server never does') :: requests no grant and sends nothing when %s - 4 rows",
+            "it.skip -> it (same describe) :: asks a vetoed Lighthouse again only after an hour, and reports once the veto is lifted",
+            "it.skip -> it (same describe) :: sends no API key and no bearer token on any usage data call",
+            "it.skip -> it (same describe) :: writes nothing under its home directory"
+          ],
+          "red_to_green_tests": [
+            "usageData.e2e.test.ts :: requests no grant and sends nothing when %s",
+            "usageData.e2e.test.ts :: asks a vetoed Lighthouse again only after an hour, and reports once the veto is lifted",
+            "usageData.e2e.test.ts :: sends no API key and no bearer token on any usage data call",
+            "usageData.e2e.test.ts :: writes nothing under its home directory"
+          ],
+          "criteria": [
+            "Vetoed, no acceptedSources, no Mcp source, no usage data: start-up says on, yet no decision is posted and nothing is handed in",
+            "Under a veto, one state read on the first call, none more within the hour, and once the veto is lifted and an hour has passed one { source: Mcp, TeamRefreshTriggered } batch is handed in",
+            "No usage-data request carries x-api-key or authorization, whether the operator set LIGHTHOUSE_API_KEY or the caller sent its own key or bearer token",
+            "The server's HOME directory is empty after a reported call",
+            "mcp-http usageData.e2e.test.ts has no it.skip left; the active guard stays green; `pnpm run ci` exits 0",
+            "Docs: packages/mcp-http/README.md gains the LIGHTHOUSE_USAGE_DATA row (on / off / typo warning, DO_NOT_TRACK wins, one counted unit per process, chart users stay off until a chart value exists - no kubectl set env stop-gap); usagedata.md says a shared MCP server is one counted unit per process decided by whoever runs it; skill/SKILL.md and clients ARCHITECTURE.md re-checked, updated or 'N/A, because ...'; changeset finalised (RD-5)"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/mcp-http/src/bin.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-http/src/usageData.e2e.test.ts",
+            "/storage/repos/lighthouse-clients/.changeset/usage-data-05-shared-mcp-operators-call.md",
+            "/storage/repos/lighthouse-clients/packages/mcp-http/README.md",
+            "/storage/repos/lighthouse-clients/ARCHITECTURE.md",
+            "/storage/repos/Lighthouse/docs/settings/usagedata.md"
+          ],
+          "dependencies": ["05-02"],
+          "implementation_notes": "EXEMPT FROM PARADIGM: e2e security and filesystem checks with a fake Date for the hourly re-read. Compensate with a unit case on the re-read throttle (now - lastRead < 1 h -> no read) over an injected clock. Usage data is never bound to an account: the reporter sends no credential (DSN-12), and mcp-http never forwards a caller's. Run the DVO-4 filter locally before the Lighthouse docs push. Commits: feat(mcp): the shared MCP server never sends a credential or writes a file for usage data (story 6193); docs(mcp): LIGHTHOUSE_USAGE_DATA for the shared MCP server (story 6193) in clients; docs(usagedata): a shared MCP server is decided by whoever runs it (story 6193) in Lighthouse."
+        }
+      ]
+    }
+  ],
+  "implementation_scope": {
+    "source_directories": [
+      "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/Models/UsageData",
+      "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/API",
+      "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/UsageData",
+      "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/UsageData",
+      "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests",
+      "/storage/repos/Lighthouse/docs/settings/usagedata.md",
+      "/storage/repos/Lighthouse/docs/aiintegration.md",
+      "/storage/repos/Lighthouse/ARCHITECTURE.md",
+      "/storage/repos/lighthouse-clients/packages/client/src",
+      "/storage/repos/lighthouse-clients/packages/cli/src",
+      "/storage/repos/lighthouse-clients/packages/mcp-core/src",
+      "/storage/repos/lighthouse-clients/packages/mcp-stdio/src",
+      "/storage/repos/lighthouse-clients/packages/mcp-http/src",
+      "/storage/repos/lighthouse-clients/.github/workflows/ci.yml",
+      "/storage/repos/lighthouse-clients/.changeset",
+      "/storage/repos/lighthouse-clients/skill/SKILL.md",
+      "/storage/repos/lighthouse-clients/ARCHITECTURE.md",
+      "/storage/repos/lighthouse-clients/packages/cli/README.md",
+      "/storage/repos/lighthouse-clients/packages/mcp-stdio/README.md",
+      "/storage/repos/lighthouse-clients/packages/mcp-http/README.md"
+    ],
+    "excluded": [
+      "Lighthouse.Frontend (absent source = Browser; the web dialog and footer are unchanged)",
+      "New UsageDataEventName members or event properties beyond source (M9)",
+      "Program.cs, EF migrations, the Lighthouse chart (LIGHTHOUSE_USAGE_DATA chart value is follow-up A13 / DVO-14)",
+      "Per-user consent on mcp-http, an env variable answering the question for lh or mcp-stdio",
+      "The contract fixtures in both repositories (unchanged; they change together or not at all)",
+      "Release versioning (pnpm release:version, calver) and publishing - the maintainer's (M11)",
+      "Stryker.NET / StrykerJS runs, refactor and review passes, finalize, ADO transitions (orchestrator)",
+      "Production-data ACs on the dev instance, the slice-02 rollback rehearsal, PostHog insights (orchestrator / maintainer, RD-8)"
+    ]
+  }
+}
