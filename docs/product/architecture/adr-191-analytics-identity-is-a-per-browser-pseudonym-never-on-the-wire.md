@@ -3,6 +3,10 @@
 - **Status**: **Proposed** (DESIGN, 2026-09-12)
 - **Supersedes**: [ADR-175](./adr-175-instance-identifier-as-an-appsettings-scalar-minted-on-first-grant.md)
 - **Date**: 2026-09-12
+- **Amended by**: [ADR-225](./adr-225-every-usage-event-carries-a-declared-source-and-state-advertises-the-sources-it-labels.md)
+  and [ADR-226](./adr-226-a-client-keeps-one-usage-data-answer-per-lighthouse-in-its-own-file-beside-the-voter-keys.md)
+  (2026-10-08) — the unit is a consenting client: a browser, `lh` and the local MCP server together per Lighthouse
+  per machine, or one `mcp-http` process
 - **Feature**: epic-5733-opt-in-usage-data (ADO Epic #5733, slice 01c)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)
 

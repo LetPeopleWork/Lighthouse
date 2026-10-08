@@ -1270,3 +1270,368 @@ Open for DESIGN, in order of consequence:
 - **A14 confirmed:** `DO_NOT_TRACK=1` turns usage data off in every client, whatever is stored.
 - **A16 confirmed:** one stored answer per Lighthouse per machine, shared by `lh` and the local MCP server.
 - The remaining AFK defaults (A1, A2, A4–A11, A13, A17) stand as recorded; revisit at the hold.
+
+---
+
+## Wave: DESIGN / [REF] Prior-Wave Reading
+
+DESIGN 2026-10-08, application scope, interaction mode **propose**, maintainer AFK: every engineering option was
+taken at its recommended value and is recorded below. Architect: Morgan (`nw-solution-architect`).
+
+| File | Read |
+|---|---|
+| This file (DISCUSS D0–D18, M1–M11, US-01..06, A1–A17, maintainer decisions after DISCUSS) | ✓ |
+| `slices/slice-01` … `slice-05` | ✓ — slice 01 leaves the `state` signal's shape to DESIGN; nothing else open |
+| `docs/product/journeys/story-6193-usage-data-from-clients.yaml` | ✓ (restated in the Journey section above) |
+| `docs/product/architecture/brief.md` (`story-6218-readable-cli-output` section, house format) | ✓ |
+| ADR-190, ADR-191, ADR-216 §4, ADR-223, ADR-224 | ✓ |
+| `API/UsageDataController.cs`, `API/DTO/UsageDataEventBatchDto.cs`, `Models/UsageData/UsageDataState.cs`, `Services/Implementation/UsageData/{UsageDataConsentService,PostHogUsageDataPublisher}.cs`, `Interfaces/UsageData/IUsageDataEventQueue.cs` (`AcceptedUsageDataBatch`), `BackgroundServices/UsageDataForwardingService.cs`, `Program.cs` (global `JsonStringEnumConverter`) | ✓ |
+| clients `ARCHITECTURE.md` (all), `client/src/voterKeyStore.ts` (all), `client/src/index.ts` (request helpers, version gating, `TeamRefinement`), `cli/src/bin.ts` (all), `cli/src/refinementCommands.ts` (pre-vote read), `mcp-core/src/index.ts` (`McpCoreRuntimeDependencies`, `registerMcpTools`), `mcp-stdio/src/runtime.ts` (all), `mcp-http/src/bin.ts` (server + runtime) | ✓ |
+| `docs/ci-learnings.md` (preflight rules) | ✓ — pre-applied below |
+| `discuss/wave-decisions.md`, `spike/` | ⊘ — this story keeps DISCUSS in this file; no spike |
+
+**Contradictions with DISCUSS**: none blocking. Two refinements, both towards fewer questions and fewer requests,
+are written up under DESIGN Changed Assumptions (D5's "terminal" now includes stderr and excludes `CI`; D9's extra
+read is replaced by the read the vote already makes).
+
+---
+
+## Wave: DESIGN / [REF] Design Decisions
+
+| # | Decision | ADR |
+|---|---|---|
+| DSN-1 | **`source` wire contract**: closed enum `UsageDataSource { Browser = 0, Cli = 1, Mcp = 2 }`, append-only; optional nullable `Source` on the batch body (no `[JsonRequired]`, S6964); absent or `null` = `Browser`; an undefined number → `400` at the read site, an unknown name → `400` from binding; checked before the gate like the events. | ADR-225 |
+| DSN-2 | **`source` travels on the batch**: `AcceptedUsageDataBatch` gains the resolved source; the publisher writes `source` (the member's name) on every message, never omitted. Not per event, not an instance property. | ADR-225 |
+| DSN-3 | **D3 signal**: `UsageDataState` gains `AcceptedSources` (member names, derived from the enum, same for every caller). A client asks and sends only when the list contains its source; a missing field or a `404` = never ask, never send, nothing printed (the config command says so). | ADR-225 |
+| DSN-4 | **Consent store**: a second owner-only file `usage-data.json` beside `voter-keys.json`, keyed by `getVoterKeyScope`; `{ version: 1, answers: { scope: { answer: "yes", token, confirmedAt } \| { answer: "no", decidedAt } } }`; no entry = not asked; foreign shape = unreadable = never written over, no question, no send. | ADR-226 |
+| DSN-5 | **Locking and atomic write reused by extraction**: the voter key store's lock file, re-read under lock, rename-over write and unreadable-file refusal move to `client/src/ownerOnlyJsonFile.ts` in a behaviour-preserving refactor commit (voter key tests unedited); both stores use it. | ADR-226 |
+| DSN-6 | **First answer wins**: an answer from a question is a compare-and-set under the lock (written only if still undecided); `lh config usage-data on\|off` replaces unconditionally. | ADR-226 |
+| DSN-7 | **Grant liveness (D6)**: `confirmedAt` older than **24 h** before a send → `GET state` with the token: source not accepted → send nothing; `Granted` → refreshed, send; otherwise → silent re-grant (new token, new pseudonym), send. Sends keep the grant alive in between. | ADR-226 |
+| DSN-8 | **Revoke**: `DELETE consent` with the token, then the entry becomes `no` and the token is dropped; unreachable → still `no`, the orphan ages out. A No is never posted (A2). | ADR-226 |
+| DSN-9 | **Reporter placement**: vocabulary, the web's moment and verdict rules, `DO_NOT_TRACK` and a pure `planUsageDataStep(facts) → plan` in `client/src/usageData.ts`; the effects in `client/src/usageDataReporter.ts`; four `LighthouseClient` methods (`getUsageDataState`, `grantUsageData`, `revokeUsageData`, `handInUsageData`) on the existing request helpers, not version-gated. `cli` and `mcp-*` hold only wiring. | ADR-227 |
+| DSN-10 | **Send timeout**: one `AbortSignal` of **1000 ms** over everything a send needs (connectivity check, at most one `state` read, at most one re-grant, the post). Abort or any failure → give up, no retry, no output, no log. | ADR-227 |
+| DSN-11 | **Never prints, never throws**: the reporter returns an outcome value; it has no access to stdout/stderr (a source-scan test forbids `console`/`process.std*` in `usageData*.ts`). This also protects `mcp-stdio`, whose stdout is the protocol stream. | ADR-227 |
+| DSN-12 | **No credential on usage-data calls**: the consent and ingest endpoints are anonymous; the reporter sends no API key or bearer token, so usage data is never bound to an account and `mcp-http` never forwards a caller's credential for it. | ADR-227 |
+| DSN-13 | **Emit only after success, as a plan value**: each CLI group handler attaches `usage: { reached, occurrences }` to `CliCommandResult`; `stdout`/`stderr`/`exitCode` are computed exactly as today; `config`, `connection` and help never set `reached`. MCP tool branches produce occurrences only on `result.ok`. Refused or failed calls report nothing. | ADR-227 |
+| DSN-14 | **`--json`/`--toon` byte-identical by construction**: output is produced before and independently of usage data; `bin.ts` prints, then settles the plan, then returns the command's own exit code. Pinned per mapped command by characterisation tests with usage data on vs off. | ADR-227 |
+| DSN-15 | **Prompt on stderr, full terminal only**: asked only when stdin, stdout **and** stderr are TTYs and `CI` is unset; `readline` on stderr; `y`/`yes` any case = yes, anything else = No; Ctrl-C/EOF caught by the question itself = no answer, exit code unchanged. The pre-question `state` read shares the 1 s budget; the grant after a yes has 5 s and on failure prints the journey's one stderr line. The run that asked reports nothing. | ADR-227 |
+| DSN-16 | **Vote moment from the pre-vote read**: `lh refinement vote` and `lighthouse_team_refinement_vote` already read the Team's Refinement before voting; `sizingMoment` is computed from that answer. No extra read; a failed read already fails the vote. | ADR-227 |
+| DSN-17 | **MCP send is detached**: `registerMcpTools` hands occurrences to an optional usage-data port after the result is computed and returns without awaiting the send (1 s bounded in the background). No port supplied = today's behaviour exactly. | ADR-227 |
+| DSN-18 | **Elicitation flow (stdio)**: inside the first successful tool call, after the result is in hand, when `DO_NOT_TRACK` is unset, the store (re-read) is undecided, `state` lists `Mcp` and says `MayAsk`, the client declared `elicitation`, and nothing was asked in this process. Empty-object schema; accept → yes (grant + compare-and-set), decline → No (final), cancel/close/error/**50 s** → no answer, not asked again this process. Concurrent calls never wait for it or start a second one. | ADR-228 |
+| DSN-19 | **`mcp-http`**: `LIGHTHOUSE_USAGE_DATA` read once at start-up (`on` any case = on; unset/`off` = off; other = off + one stderr warning); `DO_NOT_TRACK` overrides; one start-up line (approved copy). One grant per process, in memory, single-flight on the first event, only when `state` lists `Mcp` and is not `AdministratorDisabled` (no `MayAsk` young-install rule — nobody is asked); without a grant `state` is re-read at most hourly. | ADR-228 |
+| DSN-20 | **`DO_NOT_TRACK`**: honoured when set to any non-empty value other than `0` or `false` (any case) — the convention's `1` and every common truthy spelling. Checked first; overrides a stored yes and `LIGHTHOUSE_USAGE_DATA=on`. | ADR-227 |
+| DSN-21 | **`lh config usage-data on` under `DO_NOT_TRACK`** records nothing and prints the approved `DO_NOT_TRACK` line, exit 0 — D14's "no client records" read literally, mirroring A8 under the veto. `off` is always allowed. | — |
+| DSN-22 | **`lh config usage-data` against an unreadable store**: today's voter-key style refusal naming the file, exit 1, file left untouched (the one place the store's state is the command's answer). | ADR-226 |
+| DSN-23 | **Verdict once per run / per call**: `TeamRefinementDayVerdictShown` is derived from the answer `lh refinement get` / `lighthouse_team_refinement_get` already holds, with the web's rule restated in `client` (A10). | ADR-227 |
+| DSN-24 | **Batch shape from clients**: one batch per settle, `source` = `Cli` or `Mcp` as a name, events by name, `offsetMs` 0, `sequence` 0..n-1, no `route`. | ADR-225 |
+| DSN-25 | **Paradigm**: unchanged — OOP ports-and-adapters on the backend; the clients' existing factory-and-dependencies style (pure core, injected shell) in TypeScript. | — |
+
+---
+
+## Wave: DESIGN / [REF] Component Decomposition
+
+**Lighthouse (slice 01)**
+
+| Component | Path | Change |
+|---|---|---|
+| `UsageDataSource` | `Lighthouse.Backend/Models/UsageData/UsageDataSource.cs` | NEW enum (3 members) |
+| `UsageDataEventBatchDto` | `API/DTO/UsageDataEventBatchDto.cs` | EXTEND: `UsageDataSource? Source` |
+| `UsageDataController.HandInEvents` | `API/UsageDataController.cs` | EXTEND: resolve source (absent → `Browser`, undefined → `400`), pass it to the batch; class comment "nothing but our own page" becomes "our own page and our own clients" |
+| `AcceptedUsageDataBatch` | `Services/Interfaces/UsageData/IUsageDataEventQueue.cs` | EXTEND: source member |
+| `PostHogUsageDataPublisher.WhatEachMessageCarries` | `Services/Implementation/UsageData/PostHogUsageDataPublisher.cs` | EXTEND: `source` property, always written |
+| `UsageDataState` / `UsageDataConsentService.GetStateAsync` | `Models/UsageData/UsageDataState.cs`, `Services/Implementation/UsageData/UsageDataConsentService.cs` | EXTEND: `AcceptedSources` |
+| Usage data page | `docs/settings/usagedata.md` | EXTEND: `Source` row (01); browser-only promises rewritten (02); operator decides for a shared server (05) |
+| Frontend | `Lighthouse.Frontend/src/...UsageData` | **No change** — absent = `Browser` |
+
+**lighthouse-clients (slices 02–05)**
+
+| Component | Package / path | Change | Slice |
+|---|---|---|---|
+| `ownerOnlyJsonFile` (lock, re-read under lock, atomic rename, unreadable refusal) | `client/src/ownerOnlyJsonFile.ts` | NEW by extraction from `voterKeyStore.ts` (refactor commit) | 02 |
+| `voterKeyStore` | `client/src/voterKeyStore.ts` | EXTEND (uses the extracted module; behaviour and messages unchanged) | 02 |
+| `usageDataStore` (per-scope answer, compare-and-set, replace) | `client/src/usageDataStore.ts` | NEW | 02 |
+| `usageData` (vocabulary, `sizingMomentOf`, verdict rule, `DO_NOT_TRACK`, `planUsageDataStep`) | `client/src/usageData.ts` | NEW (pure) | 02 (rules for votes/verdict in 03) |
+| `usageDataReporter` (executes a plan; 1 s; silent) | `client/src/usageDataReporter.ts` | NEW | 02 |
+| `LighthouseClient` usage-data methods + `signal` in `RequestOptions` | `client/src/index.ts` | EXTEND | 02 |
+| `CliCommandResult.usage` | `cli/src/commandResult.ts` | EXTEND (never printed) | 02 |
+| Group handlers (forecast manual in 02; the other 9 rows in 03) | `cli/src/index.ts`, `cli/src/refinementCommands.ts` | EXTEND: attach occurrences after success | 02, 03 |
+| `runConfigGroup` → `usage-data [on\|off]` + help | `cli/src/index.ts` | EXTEND | 02 |
+| Question (copy M1, answer mapping) | `cli/src/usageDataQuestion.ts` | NEW (pure copy + mapping; I/O injected) | 02 |
+| `RunCliCommandDependencies` (store, `isInteractive`, `ask`, env) | `cli/src/index.ts` | EXTEND | 02 |
+| `bin.ts` settle-after-print, TTY/`CI` check, stderr `readline`, SIGINT/EOF | `cli/src/bin.ts` | EXTEND | 02 |
+| Usage-data port, elicitation helper and copy | `mcp-core/src/usageDataPort.ts` | NEW | 04 |
+| `registerMcpTools` / tool branches (6 rows) | `mcp-core/src/index.ts`, `mcp-core/src/refinementTools.ts` | EXTEND: occurrences on success; call the port; `server` widened to reach client capabilities | 04 |
+| Store-backed elicitation policy | `mcp-stdio/src/runtime.ts` | EXTEND | 04 |
+| Operator policy, env parsing, start-up line, in-memory grant | `mcp-http/src/bin.ts` | EXTEND | 05 |
+| Docs | `cli/README.md`, `mcp-stdio/README.md`, `mcp-http/README.md`, `skill/SKILL.md` (D15), `ARCHITECTURE.md` §5/§7 | EXTEND | 02, 04, 05 |
+
+---
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Existing component | File | Overlap | Decision | Justification · contract shape |
+|---|---|---|---|---|
+| Consent endpoints (`state`, `consent`, `DELETE consent`) | `API/UsageDataController.cs` | Recording and revoking a client's answer | **EXTEND** (state only) | Used by clients exactly as by browsers (D4); only `state` gains a field. Bounded-change: `AcceptedSources` is a constant. |
+| Ingest DTO + `AsTakenIn` | `API/DTO/UsageDataEventBatchDto.cs`, controller | Closed-vocabulary read | **EXTEND** | One nullable enum; the existing read-or-refuse rule covers it. Pure read. |
+| `AcceptedUsageDataBatch` → forwarder → publisher | `IUsageDataEventQueue.cs`, `UsageDataForwardingService.cs`, `PostHogUsageDataPublisher.cs` | Carrying a server-attached property to the collector | **EXTEND** | One member, one property; gate, budget, drain re-check untouched. Publisher stays bounded-change (ADR-190 §3 universe unchanged). |
+| `UsageDataInstanceProperties` | `Services/Implementation/UsageData/UsageDataInstanceProperties.cs` | Server-attached properties | **Not used** | It describes the instance; `source` describes the caller. |
+| `voterKeyStore.ts` | `client/src/voterKeyStore.ts` | Owner-only per-Lighthouse secret shared by `lh` and `mcp-stdio`, lock, atomic write | **EXTEND by extraction** (`ownerOnlyJsonFile.ts`) + **CREATE NEW** `usageDataStore.ts` | A widened `voter-keys.json` would be rewritten by every released client as `{version:1, keys}`, erasing a stored No (ADR-226). The mechanics are reused, not copied. Store contract shape: bounded-change — universe = one file + its `.lock`; declared delta = one scope's entry. |
+| `getVoterKeyScope` | `client/src/voterKeyStore.ts` | "Which Lighthouse" | **REUSE** | One scope rule for both stores is what makes the answer shared. |
+| Request helpers `requestJson` / `requestNoContent`, connectivity check | `client/src/index.ts` | HTTP to Lighthouse, endpoint resolution, standalone discovery, TLS | **EXTEND** (`signal`) | A second HTTP path would duplicate standalone discovery and the insecure dispatcher. |
+| `FEATURE_REQUIRES_SERVER_NEWER_THAN` | `client/src/index.ts` | "Does this server support X" | **Not used** | An unparsable version means "do not block", which here would mislabel events (ADR-225). |
+| `refinementWording.ts` verdict logic (`shownVerdictOf`) | `client/src/refinementWording.ts` | Refinement-day verdict | **REUSE** for the verdict facts; the web's shown-verdict *event* rule restated in `usageData.ts` with parity cases | Reporting rule ≠ wording rule; the web keeps them apart too (`useVerdictShownReporter`). |
+| Pre-vote refinement read | `cli/src/refinementCommands.ts`, `mcp-core/src/refinementTools.ts` | `sizingMoment` facts | **REUSE** | Removes D9's extra read. |
+| `prompt` dependency | `cli/src/bin.ts` | Asking a question | **EXTEND** (a stderr variant with SIGINT/EOF → no answer) | The existing one writes to stdout and lets Ctrl-C kill the process (exit 130), which would change the command's exit code. |
+| `mapApiResultToCliResult` / `CliCommandResult` | `cli/src/output.ts`, `commandResult.ts` | Result of a command | **EXTEND** (`usage` field) | Keeps output pure; the plan travels beside it. |
+| `McpCoreRuntimeDependencies` / `registerMcpTools` | `mcp-core/src/index.ts` | Per-tool hook point | **EXTEND** | Optional port; absent = today. |
+| `refuseVoting` / `voterKeyRequired` transport policies | `mcp-http/src/bin.ts` | Transport-specific behaviour injected into `mcp-core` | **Pattern reused** | The usage-data policy is injected the same way (stdio: store + elicitation; http: operator + memory). |
+| `UsageDataEventName` | `Models/UsageData/UsageDataEventName.cs` | Event vocabulary | **REUSE, unchanged** | M9: no new names. |
+
+Zero unjustified CREATE NEW: the four new client files are a store over reused mechanics, a pure rules module, a
+shell that executes it, and the question's copy — none duplicates an existing responsibility.
+
+---
+
+## Wave: DESIGN / [REF] Driving Ports
+
+| Port | Contract |
+|---|---|
+| `POST /api/latest/usagedata/events` | Body `{ source?: "Browser"\|"Cli"\|"Mcp", events: [...] }`; absent = `Browser`; unknown → `400`; otherwise unchanged (`204` always). |
+| `GET /api/latest/usagedata/state` | Adds `acceptedSources: ["Browser","Cli","Mcp"]`; other fields unchanged. |
+| `lh <any command reaching Lighthouse>` | Output and exit code unchanged; may ask once after output (stderr); may send ≤ 1 s after. |
+| `lh config usage-data [on\|off]` | Approved copy (A15); unknown argument → group help, exit 1. |
+| MCP tools (stdio, http) | Results unchanged; stdio may elicit once inside the first successful call. |
+| `mcp-http` environment | `LIGHTHOUSE_USAGE_DATA`, `DO_NOT_TRACK`. |
+| `@letpeoplework/lighthouse-client` exports | `createFileUsageDataStore`, `createUsageDataReporter`, `planUsageDataStep` and the vocabulary types. |
+
+## Wave: DESIGN / [REF] Driven Ports and Adapters
+
+| Port | Adapter | Notes |
+|---|---|---|
+| Usage-data HTTP (`state`, `consent`, `events`) | `LighthouseClient` methods over `fetch` (undici; insecure dispatcher where the surface already uses one) | Anonymous; `AbortSignal` 1 s (5 s for an interactive grant). |
+| Consent store | `createFileUsageDataStore(path)` over `ownerOnlyJsonFile` (lh, mcp-stdio); in-memory record (mcp-http) | Contract shape: bounded-change; universe = `usage-data.json` + `.lock`. |
+| Terminal question | `bin.ts` `readline` on stderr | Injected as `ask`; `isInteractive` injected. |
+| Elicitation | SDK `elicitInput` related to the tool request | Injected as `ask` into the port; 50 s. |
+| Collector | `PostHogUsageDataPublisher` (unchanged adapter) | Gains one property. |
+
+## Wave: DESIGN / [REF] Technology Choices
+
+No new dependency in either repository. Backend: .NET 10, System.Text.Json (global `JsonStringEnumConverter`), NUnit
+4.6. Clients: Node ≥ 22 `node:readline/promises`, `node:fs/promises`, `AbortSignal.timeout`; `undici` (existing);
+`@modelcontextprotocol/sdk` ^1.26 (existing; `getClientCapabilities`, `elicitInput`); Vitest (existing). Licences
+unchanged (all existing, MIT/Apache-2.0).
+
+---
+
+## Wave: DESIGN / [REF] C4 — System Context (L1)
+
+```mermaid
+C4Context
+  title System Context — usage data from the clients (story 6193)
+  Person(lena, "Lena (terminal)", "Uses lh against her Lighthouse")
+  Person(priya, "Priya (assistant)", "Uses an assistant with the local MCP server")
+  Person(tomas, "Tomás (operator)", "Runs the shared MCP server")
+  Person(sofia, "Sofia (System Admin)", "Can stop usage data for the instance")
+  Person(maint, "Maintainer", "Reads usage data split by source")
+  System(clients, "Lighthouse clients", "lh, local MCP server, shared MCP server")
+  System(lh_server, "Lighthouse", "Records consent, checks the gate, forwards events")
+  System_Ext(posthog, "PostHog (EU)", "Usage data collector")
+  Rel(lena, clients, "answers the question once in")
+  Rel(priya, clients, "answers the elicitation once in")
+  Rel(tomas, clients, "sets LIGHTHOUSE_USAGE_DATA for")
+  Rel(clients, lh_server, "records consent with and hands events to")
+  Rel(sofia, lh_server, "switches usage data off in")
+  Rel(lh_server, posthog, "forwards events with source to")
+  Rel(maint, posthog, "breaks events down by source in")
+```
+
+## Wave: DESIGN / [REF] C4 — Container (L2)
+
+```mermaid
+C4Container
+  title Container — usage data from the clients (story 6193)
+  Person(lena, "Lena (terminal)")
+  Person(priya, "Priya (assistant)")
+  Person(tomas, "Tomás (operator)")
+  System_Boundary(machine, "Lena's / Priya's machine") {
+    Container(lh, "lh", "Node / Bun binary", "Prints the answer, then settles the usage plan")
+    Container(stdio, "mcp-stdio", "Node", "Elicits once, sends after results")
+    ContainerDb(store, "usage-data.json", "Owner-only JSON", "One answer and token per Lighthouse")
+    ContainerDb(voterkeys, "voter-keys.json", "Owner-only JSON", "Unchanged; shares the scope rule")
+  }
+  Container(http, "mcp-http", "Node container", "Operator decides; grant in memory")
+  System_Boundary(lhb, "Lighthouse") {
+    Container(api, "UsageDataController", "ASP.NET Core", "state / consent / events; reads source")
+    Container(fwd, "Forwarder + publisher", "BackgroundService", "Re-checks the gate, adds source")
+    ContainerDb(db, "UsageDataConsent", "SQLite / Postgres", "Token hash, pseudonym, liveness")
+  }
+  System_Ext(posthog, "PostHog (EU)")
+  Rel(lena, lh, "runs commands in")
+  Rel(priya, stdio, "calls tools through")
+  Rel(tomas, http, "configures")
+  Rel(lh, store, "reads and records the answer in")
+  Rel(stdio, store, "reads and records the answer in")
+  Rel(lh, api, "reads state from, grants with, hands Cli events to")
+  Rel(stdio, api, "reads state from, grants with, hands Mcp events to")
+  Rel(http, api, "reads state from, grants with, hands Mcp events to")
+  Rel(api, db, "resolves tokens against")
+  Rel(api, fwd, "queues accepted batches for")
+  Rel(fwd, posthog, "publishes events with source to")
+```
+
+## Wave: DESIGN / [REF] C4 — Component (L3, `lighthouse-client` usage data)
+
+```mermaid
+C4Component
+  title Component — usage data in lighthouse-client and its callers
+  Container(cli, "lh bin.ts", "cli", "Prints, asks on stderr, awaits settle")
+  Container(core, "registerMcpTools", "mcp-core", "Calls the usage-data port after each tool")
+  Container_Boundary(client, "lighthouse-client") {
+    Component(rules, "usageData", "pure", "Vocabulary, moment and verdict rules, DO_NOT_TRACK, planUsageDataStep")
+    Component(reporter, "usageDataReporter", "shell", "Executes a plan; 1 s; silent")
+    Component(ustore, "usageDataStore", "adapter", "Per-scope answer; compare-and-set")
+    Component(vstore, "voterKeyStore", "adapter", "Unchanged behaviour")
+    Component(file, "ownerOnlyJsonFile", "adapter", "Lock, re-read, atomic rename, unreadable refusal")
+    Component(api, "LighthouseClient usage-data methods", "adapter", "state / consent / events with AbortSignal")
+  }
+  System_Ext(lhs, "Lighthouse")
+  Rel(cli, rules, "asks for a plan from")
+  Rel(cli, reporter, "settles the plan with")
+  Rel(core, reporter, "settles occurrences with")
+  Rel(reporter, rules, "re-plans after a state read with")
+  Rel(reporter, ustore, "reads and records answers in")
+  Rel(reporter, api, "calls Lighthouse through")
+  Rel(ustore, file, "writes through")
+  Rel(vstore, file, "writes through")
+  Rel(api, lhs, "sends anonymous requests to")
+```
+
+---
+
+## Wave: DESIGN / [REF] Quality Attributes
+
+| Attribute | Strategy |
+|---|---|
+| Performance | ≤ 1 s added (DSN-10), a single abort over the whole send; at most one `state` read per Lighthouse per day; MCP sends detached (DSN-17). Interactive grant 5 s, only after a yes. |
+| Reliability | Reporter never throws; every failure ends silently; output produced before usage data (DSN-14); Ctrl-C/EOF at the question keeps the exit code (DSN-15). |
+| Security / privacy | Closed vocabulary end to end (DSN-1, DSN-24); token only in a `0600` file or memory, never in output (ADR-226 §9); no credential on usage-data calls (DSN-12); `DO_NOT_TRACK` first (DSN-20); no question without a full terminal or the capability; agents never answer (D15, `skill/SKILL.md`). `source` is advisory, not a control. |
+| Compatibility | New server + old web bundle → `Browser`; old server + new client → never asked/sent; new server + old client → nothing changes; old `mcp-stdio` beside new `lh` → ignores `usage-data.json`. Residual: ≤ 24 h mislabel window after an image rollback (ADR-225). |
+| Maintainability | Rules in one pure module; transport policies injected as for voting; the lock code exists once (DSN-5). |
+| Testability | Pure `planUsageDataStep` table; reporter and stores over injected `fetch`, clock and paths; CLI over `RunCliCommandDependencies`; MCP over in-process SDK clients. |
+| Observability | Backend unchanged (ADR-190 §8 counters; `source` needs none). Clients emit nothing by design; `mcp-http` logs its start-up state once. |
+
+---
+
+## Wave: DESIGN / [REF] Test Strategy per Slice
+
+| Slice | Level | What pins it |
+|---|---|---|
+| 01 (Lighthouse) | NUnit unit | `UsageDataControllerTests`: absent → `Browser` queued; `Cli`/`Mcp` carried; `7` → `400`, nothing queued. `UsageDataConsentServiceTests`: `AcceptedSources` = all members. `UsageDataPublishedMessageTests`: `source` on every message. |
+| 01 | WebApplicationFactory | `UsageDataEventPipeTests`: a `"Shell"` body → `400` through real binding; a `Cli` batch under a live grant reaches the capture collector with `source: Cli`; veto → `204`, nothing forwarded. `UsageDataConsentEndpointsTests`: `state` JSON carries `acceptedSources` as names. A fixture holding the **exact JSON the clients send** is posted, so the cross-repo shape is pinned on the provider side. |
+| 01 | Architecture / docs | `UsageDataDisclosureTest` lists every `UsageDataSource` member on the page; `UsageDataPayloadPurityTest` still finds no free string on the DTO. Stryker.NET on the changed files. |
+| 02 | Vitest unit (`client`) | Store: two real processes recording different answers → first wins; unreadable file left byte-identical; mode `0600`; voter key tests unedited and green after the extraction. `planUsageDataStep` table (DNT, unreadable, no, yes fresh/stale, undecided × interactive × `MayAsk` × `AcceptedSources`). Reporter over a fake `fetch`: never-answering Lighthouse → settles within 1 s; token absent from every outcome. The client parses the **exact `state` JSON** the backend test emits. |
+| 02 | Vitest CLI harness | Fake terminal: `y`/`yes`/`YES` → yes; Enter/`n`/other → No; EOF and SIGINT → no answer, exit code preserved; non-TTY stdin/stdout/stderr or `CI` → never asked. `lh forecast manual` stdout + exit code identical with usage data on/off in `--pretty`/`--json`/`--toon`. Config command copy (A15). Token never in stdout/stderr. |
+| 03 | Vitest | One case per D8 `lh` row (10) and every N/A command (nothing); moment and verdict parity with the web's test cases; votes report nothing when the pre-vote read fails. Characterisation: the list of commands that set `usage.reached` is pinned. |
+| 04 | Vitest (`mcp-core`, `mcp-stdio`) | Runtime with a stub port: the 6 tools emit on success, never on error. In-process SDK `Client` linked to the stdio server: without `elicitation` → never asked; with it → accept / decline / cancel / 50 s time-out; concurrent calls ask once; answer written to the same file `lh` reads. |
+| 05 | Vitest e2e (`mcp-http`) | In-process upstream recording usage-data requests: unset/`off`/typo (one warning)/`on`; `DO_NOT_TRACK`; vetoed `state` → no grant, re-read hourly with a fake clock; no file under a temp `HOME`; no `X-Api-Key`/`Authorization` on usage-data calls; start-up lines. |
+| 02–05 | StrykerJS | ≥ 80% on the new client files, evidence under `mutation/`. |
+
+## Wave: DESIGN / [REF] Architectural Enforcement
+
+| Rule | Mechanism |
+|---|---|
+| No free text on the wire (backend) | Existing ArchUnitNET `UsageDataPayloadPurityTest`; `UsageDataDisclosureTest` extended to `UsageDataSource`. |
+| No free text on the wire (clients) | Vitest `expectTypeOf`: every field of the client's event type is a literal union, boolean or number. |
+| Only `client` calls `/usagedata/` | Source-scan test over `packages/*/src`. |
+| Usage-data code is silent | Source-scan test: no `console.` or `process.stdout`/`process.stderr` in `client/src/usageData*.ts` or `mcp-core/src/usageDataPort.ts`. |
+| Output untouched | Characterisation snapshots per mapped command, usage data on vs off. |
+| Lock code exists once | Source-scan test: only `ownerOnlyJsonFile.ts` opens a `.lock` with `wx`. |
+
+## Wave: DESIGN / [REF] Earned Trust Probes
+
+| Dependency | The lie it might tell | Probe |
+|---|---|---|
+| The terminal | `isTTY` true on stdin only (`docker run -i`), stderr redirected, a CI pseudo-terminal | Harness cases for each; `CI` set → never asked. |
+| The filesystem | Two writers at once; a crash mid-write; a foreign file; permissions | Two-process test; rename-over write; unreadable left byte-identical; mode read back as `0600` (POSIX). |
+| Lighthouse | Accepts the socket and never answers; answers `204` to everything; predates `source` | Never-answering fake → ≤ 1 s; a `state` without `acceptedSources` → no question, no send; clients' `smoke-integration` runs `lh config usage-data` against the real `lighthouse:latest` image (instance line matches the release under test). |
+| The MCP client | Declares no elicitation; never answers; times the call out | In-process SDK client cases; the 50 s bound below the SDK's 60 s default. |
+| The collector | Unchanged | ADR-176 / ADR-190 probes. |
+
+## Wave: DESIGN / [REF] External Integrations and Contract Testing
+
+- **PostHog (EU)**: unchanged adapter; gains one property, pinned by `UsageDataPublishedMessageTests`. Contract
+  testing as already decided in ADR-176.
+- **Lighthouse ↔ lighthouse-clients** (same team, two repositories): consumer-driven contract recommended for the
+  `state` response and the `events` request. Realised without a broker: the backend posts the clients' exact request
+  fixture (slice 01) and the clients parse the backend's exact `state` fixture (slice 02); the clients'
+  `smoke-integration` exercises the real image. Pact (PactJS / PactNet) considered and not adopted: no broker exists
+  and both sides are released by one maintainer.
+- **Fixture locations**: the clients' request body lives as a JSON resource beside the backend's
+  `UsageDataEventPipeTests` (copied from the clients' reporter test, which asserts it sends exactly that body);
+  the backend's `state` body lives beside the clients' `usageDataReporter` tests (copied from the backend's
+  `UsageDataConsentEndpointsTests`, which asserts it serves exactly that body). Each side's own test fails when its
+  half drifts from the fixture, so a drift is caught in the repository that caused it.
+
+## Wave: DESIGN / [REF] Contract Shapes
+
+| Component | Shape | Universe / delta |
+|---|---|---|
+| `planUsageDataStep`, `sizingMomentOf`, verdict rule, `DO_NOT_TRACK` reading | pure function | returns a plan / value; no effect |
+| `usageDataQuestion` copy and answer mapping | pure function | — |
+| `usageDataStore`, `ownerOnlyJsonFile`, `voterKeyStore` | bounded-change | universe = its file + `.lock`; delta = one scope's entry |
+| `usageDataReporter` | bounded-change | universe = the store + four anonymous Lighthouse calls; delta = at most one store entry and one batch |
+| `mcp-http` grant holder | bounded-change | universe = process memory + the same calls; no file |
+| CLI group handlers, MCP tool branches | unbounded-preservation for usage data | return occurrences as values; never send or record anything themselves |
+| Backend controller read of `source` | pure read | refuses or resolves; the queue write is unchanged |
+
+## Wave: DESIGN / [REF] Chart position for slice 05
+
+Slice 05 is **not blocked** on the chart. It ships with `LIGHTHOUSE_USAGE_DATA` documented for any deployment that
+sets the container's environment; chart users stay off until a chart value exists (A13, follow-up), and the
+`mcp-http` README says so. No `kubectl set env` stop-gap is documented (a `helm upgrade` would undo it).
+
+## Wave: DESIGN / [REF] CI-Learnings Pre-Applied
+
+S6964 (nullable enum on the `[FromBody]` DTO, no `[JsonRequired]`); CA1859 (concrete types on new non-public
+members and test helpers); CA1861 (no inline arrays in NUnit assertions — hoist the expected source list); NUnit2045
+(`Assert.EnterMultipleScope` for the controller's multi-assert cases); CA1869 (one cached `JsonSerializerOptions` in
+any new test helper); S1192 (a `private const` for any repeated literal in new tests); comments follow CLAUDE.md —
+no ADR or slice ids in code comments.
+
+---
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+- **D5** — original: *"stdin and stdout are terminals (M4)"*. New: stdin, stdout **and stderr** are terminals and
+  `CI` is unset. Rationale: the question is written to stderr (DSN-15), so a redirected stderr would leave the person
+  waiting on a question they cannot see. Fewer questions, never more.
+- **D9** — original: *"after a successful vote, and only when usage data is on, it reads the Team's Refinement"*.
+  New: the moment is taken from the Refinement read the vote already makes before voting (DSN-16). Same rule, same
+  facts the web uses, one request fewer, and "a failed read sends no vote events" still holds because a failed read
+  fails the vote.
+- No story or acceptance criterion changes; no `upstream-changes.md` is needed.
+
+## Wave: DESIGN / [REF] Open Questions (deferred, none blocking)
+
+1. **Copy not covered by the approved set** — DISTILL pins it from the nearest approved line, no new wording:
+   `lh config usage-data off` when the revoke could not reach Lighthouse (AC-03.2 says "the Lighthouse was not
+   told"), and the store-unreadable refusal (DSN-22, voter-key style). Neither changes behaviour.
+2. **Assistant-rendered elicitation controls** — the assistant labels accept/decline itself; the approved
+   `[ Send usage data ] [ No ]` line states the intent (ADR-228 consequences). Nothing to decide.
+
+## Wave: DESIGN / [REF] Handoff
+
+**To DEVOPS** (`nw-platform-architect`): no new container, infrastructure or dependency. Usage-data event question:
+**N/A as a new event, because** `source` on the existing events is the signal (KPI-1..3); no `UsageDataEventName`
+change. Chart passthrough for `LIGHTHOUSE_USAGE_DATA` stays a follow-up (A13). Contract-test annotation above.
+**To DISTILL**: DSN-1..25, ADR-225..228, the test strategy table and the two copy gaps above.
+Paradigm: OOP backend; clients' existing pure-core / injected-shell TypeScript style.
+
+## Wave: DESIGN / [REF] Review
+
+`nw-solution-architect-reviewer`, iteration 1 of 2, 2026-10-08: **approved**, 0 critical, 0 high, 3 medium, 1 low.
+Addressed: contract shapes now tabulated; contract fixture locations stated; slice 05 stated as not blocked on the
+chart. Not adopted: a runbook entry for the post-rollback window — its premise (client events identifiable in
+PostHog by user agent) is false, since no user agent is forwarded, and the residual is already stated in ADR-225.
+Treat the approval as moderately weak: the review cited no code it had read, so the factual claims rest on this
+wave's own reading (Prior-Wave Reading table). The consolidated review at the end of DISTILL is the one to rely on.

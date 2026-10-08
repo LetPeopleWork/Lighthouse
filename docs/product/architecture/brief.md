@@ -9497,3 +9497,76 @@ grep per converted group in `smoke-integration` against the real demo-seeded con
 
 L1, L2 and L3 (the `--pretty` / summary path) are in the feature delta. No Lighthouse container changes, so
 `c4-diagrams.md` is unchanged.
+
+---
+
+## Application Architecture — story-6193-usage-data-from-clients
+
+Feature: story-6193-usage-data-from-clients (ADO User Story #6193): `lh` and the two MCP servers ask for the browser's
+opt-in once per Lighthouse, report the web's events for the same actions, and every event — the browser's included —
+says which surface it came from (`Browser`, `Cli`, `Mcp`). Repos: Lighthouse (slice 01, backend + usage data page)
+and `lighthouse-clients` (slices 02–05). DESIGN 2026-10-08, PROPOSE, AFK. Full design:
+`docs/feature/story-6193-usage-data-from-clients/feature-delta.md` → "Wave: DESIGN / …" (DSN-1…DSN-25).
+
+Pattern unchanged: the usage-data pipe of ADR-190 (browser or client detects, backend verifies, enriches, forwards)
+gains a declared source; the clients keep their pure-core / injected-shell structure. No new container, dependency
+or external integration.
+
+### Key invariants introduced
+
+- **I1 — every forwarded event carries `source`.** A closed enum on the batch body; absent = `Browser`; anything
+  else `400`; written on every PostHog message. Declared, not verified; no control depends on it. (ADR-225)
+- **I2 — a client sends only to a Lighthouse that labels it.** `state.acceptedSources` must list the client's source;
+  otherwise nobody is asked and nothing is sent. (ADR-225)
+- **I3 — one answer, one token, one pseudonym per Lighthouse per machine.** `usage-data.json` beside
+  `voter-keys.json`, same scope rule, lock and atomic write shared by extraction; first answer wins; a No stays
+  local and is final. (ADR-226)
+- **I4 — usage data never changes an answer.** The command's output and exit code are computed before and
+  independently of usage data; the reporter is silent, never throws, sends no credential and is bounded at one
+  second; `lh` asks on stderr only with a full terminal and `CI` unset. (ADR-227)
+- **I5 — MCP consent**: elicited once inside the first successful tool call where the assistant supports it (50 s
+  bound), else the shared stored answer; `mcp-http` follows `LIGHTHOUSE_USAGE_DATA` with a grant held in memory.
+  (ADR-228)
+- **I6 — `DO_NOT_TRACK` wins everywhere**, ahead of any stored yes or operator setting.
+
+### Component decomposition (headline)
+
+Lighthouse: NEW `UsageDataSource`; EXTEND `UsageDataEventBatchDto`, `UsageDataController.HandInEvents`,
+`AcceptedUsageDataBatch`, `PostHogUsageDataPublisher` (`source`), `UsageDataState` (`AcceptedSources`), usage data
+page. Frontend unchanged. `client`: NEW `ownerOnlyJsonFile.ts` (extracted), `usageDataStore.ts`, `usageData.ts`
+(pure rules and `planUsageDataStep`), `usageDataReporter.ts`; EXTEND `voterKeyStore.ts`, `index.ts` (four methods,
+`AbortSignal`). `cli`: EXTEND `CliCommandResult` (`usage`), group handlers, `runConfigGroup` (`usage-data`), `bin.ts`
+(settle after print); NEW `usageDataQuestion.ts`. `mcp-core`: NEW `usageDataPort.ts`; EXTEND `registerMcpTools` and the
+six mapped tool branches. `mcp-stdio` / `mcp-http`: EXTEND runtimes with their consent policy.
+
+### Architectural Enforcement (this feature)
+
+ArchUnitNET `UsageDataPayloadPurityTest` (unchanged, still no free string) and `UsageDataDisclosureTest` (extended to
+`UsageDataSource`). Vitest: `expectTypeOf` that the client's event type has no free string; source-scan tests that only
+`client` calls `/usagedata/`, that usage-data modules never touch `console`/`process.std*`, and that only
+`ownerOnlyJsonFile.ts` takes a lock; characterisation snapshots of every mapped command with usage data on vs off.
+Earned Trust: never-answering fake Lighthouse (≤ 1 s), partial-TTY and `CI` cases, two-process store race, in-process
+MCP client with and without elicitation, `smoke-integration` against the real image.
+
+### Contract testing
+
+Lighthouse ↔ clients: provider-side test posts the clients' exact request fixture; consumer-side test parses the
+backend's exact `state` fixture; `smoke-integration` exercises the real image. Pact not adopted (no broker, one
+maintainer). PostHog: unchanged (ADR-176).
+
+### ADR References (this feature)
+
+- [ADR-225](./adr-225-every-usage-event-carries-a-declared-source-and-state-advertises-the-sources-it-labels.md) —
+  `source` on the batch, `acceptedSources` on `state`; amends ADR-190 and ADR-191. **Proposed.**
+- [ADR-226](./adr-226-a-client-keeps-one-usage-data-answer-per-lighthouse-in-its-own-file-beside-the-voter-keys.md) —
+  the shared per-Lighthouse consent store and its liveness refresh. **Proposed.**
+- [ADR-227](./adr-227-a-client-reports-usage-as-a-plan-settled-after-the-answer-silent-and-bounded-at-one-second.md) —
+  plan value, reporter, one-second bound, stderr question. **Proposed.**
+- [ADR-228](./adr-228-mcp-consent-is-elicited-in-the-first-successful-tool-call-or-set-by-the-operator-and-held-in-memory.md)
+  — elicitation (stdio) and operator variable in memory (HTTP). **Proposed.**
+- Cross-refs: ADR-190, ADR-191, ADR-216 §4 (declared channel), ADR-223 (rules restated in `client`), ADR-176 (collector).
+
+### C4
+
+L1, L2 and L3 (the `lighthouse-client` usage-data components) are in the feature delta. No Lighthouse container
+changes, so `c4-diagrams.md` is unchanged.

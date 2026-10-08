@@ -4,6 +4,8 @@
 - **Supersedes**: [ADR-174](./adr-174-the-emit-gate-is-uncached-fail-closed-and-mints-a-permit.md)
   (partially — see "What this inherits from ADR-174")
 - **Date**: 2026-09-12
+- **Amended by**: [ADR-225](./adr-225-every-usage-event-carries-a-declared-source-and-state-advertises-the-sources-it-labels.md)
+  (2026-10-08) — our own clients post here too, and every event carries a declared `source`
 - **Feature**: epic-5733-opt-in-usage-data (ADO Epic #5733, slice 01c and slice 04)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)
 
