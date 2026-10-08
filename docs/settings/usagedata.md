@@ -46,16 +46,16 @@ The complete list of events:
 | A Team was deleted | Somebody confirmed deleting a Team, or with `lh team delete` | Nothing. **Not its name, not its identifier** |
 | A Portfolio was created | Somebody finished creating a Portfolio, or with `lh portfolio create` | Nothing. **Not its name, not its identifier** |
 | A Portfolio was deleted | Somebody confirmed deleting a Portfolio, or with `lh portfolio delete` | Nothing. **Not its name, not its identifier** |
-| A forecast was run by hand | Somebody asked for a forecast on a Team page, or with `lh forecast manual`. **Never the forecasts Lighthouse runs on its own** | Nothing. **Not what was asked, not what came back** |
+| A forecast was run by hand | Somebody asked for a forecast on a Team page, or with `lh forecast manual` or the MCP tool `lighthouse_forecast_manual`. **Never the forecasts Lighthouse runs on its own** | Nothing. **Not what was asked, not what came back** |
 | A work tracking system was connected | Somebody finished setting up a connection | Which kind it is — one of `Azure DevOps`, `Jira`, `Linear`, `CSV`, `ServiceNow`. **Never its address, never its name, never anything typed while setting it up** |
-| A Team's data was refreshed by hand | Somebody pressed refresh on a Team, or ran `lh team refresh`, rather than waiting for the next automatic one | Nothing |
-| A Portfolio's data was refreshed by hand | Somebody pressed refresh on a Portfolio, or ran `lh portfolio refresh`, rather than waiting for the next automatic one | Nothing |
+| A Team's data was refreshed by hand | Somebody pressed refresh on a Team, or ran `lh team refresh` or the MCP tool `lighthouse_team_refresh`, rather than waiting for the next automatic one | Nothing |
+| A Portfolio's data was refreshed by hand | Somebody pressed refresh on a Portfolio, or ran `lh portfolio refresh` or the MCP tool `lighthouse_portfolio_refresh`, rather than waiting for the next automatic one | Nothing |
 | A setting was switched | Somebody switched a setting under **Settings → System** and your server accepted the change. **Never a switch your server refused** | Which setting it was — only *Let Lighthouse own the order of your Features* — and whether it is now on or off. **Never the setting's key, its name or its description** |
 | A forecast reality check was run | Somebody ran a forecast reality check on a Team page and got an answer back. **A check whose history was too thin to judge still counts; a check that failed to come back never does** | Nothing. **Not which Team, not its sampling window, not what the check found** |
 | A Team's refinement was set up | Somebody chose which states mean refinement for a Team that had none, and your server accepted it. **Changing the states of a Team that already has some is never reported** | Nothing. **Not which Team, not which states were chosen** |
-| A sizing vote was cast | Somebody voted on whether a Work Item in refinement is ready to be worked on, on the Refinement tab or with `lh refinement vote`, and your server took the vote | When it was cast, relative to the Team's Refinement: `OnRefinementDay` on a day the Team has a Refinement, `OnOtherDay` on any other day, and `NoCadence` while the Team has no Refinement cadence. **Never who voted, never their name or anything that tells one voter from another, never the answer or a comment, never which Team or which Work Item** |
-| A Work Item was made Ready by votes | A vote on a Work Item in refinement brought in enough Yes votes to make it Ready, and your server took the vote. **Counted once, by the browser or the `lh` that cast that vote; a Work Item that was already Ready, or is still short of votes, is never reported** | When it happened, relative to the Team's Refinement: `OnRefinementDay` on a day the Team has a Refinement, `OnOtherDay` on any other day, and `NoCadence` while the Team has no Refinement cadence. **Never who voted, never their name or anything that tells one voter from another, never how many votes there were, never which Team or which Work Item** |
-| A Refinement day's verdict was shown | Somebody opened the Refinement tab of a Team, or ran `lh refinement get`, on a day the Team has a Refinement. **Counted once per opening or run, by that browser or `lh`, as soon as the verdict is shown — there is no five-second wait. On any other day, or while no Work Items are in the Team's Refinement, nothing is reported** | Which verdict the tab showed: `Below` when fewer Work Items are ready than the Team needs, `In` when enough are, `Above` when more than enough are, and `None` when the tab shows no number. **Never the range, never how many Work Items are ready, never the date, never which Team or which Work Item** |
+| A sizing vote was cast | Somebody voted on whether a Work Item in refinement is ready to be worked on, on the Refinement tab or with `lh refinement vote` or the MCP tool `lighthouse_team_refinement_vote`, and your server took the vote | When it was cast, relative to the Team's Refinement: `OnRefinementDay` on a day the Team has a Refinement, `OnOtherDay` on any other day, and `NoCadence` while the Team has no Refinement cadence. **Never who voted, never their name or anything that tells one voter from another, never the answer or a comment, never which Team or which Work Item** |
+| A Work Item was made Ready by votes | A vote on a Work Item in refinement brought in enough Yes votes to make it Ready, and your server took the vote. **Counted once, by the browser, the `lh` or the MCP server that cast that vote; a Work Item that was already Ready, or is still short of votes, is never reported** | When it happened, relative to the Team's Refinement: `OnRefinementDay` on a day the Team has a Refinement, `OnOtherDay` on any other day, and `NoCadence` while the Team has no Refinement cadence. **Never who voted, never their name or anything that tells one voter from another, never how many votes there were, never which Team or which Work Item** |
+| A Refinement day's verdict was shown | Somebody opened the Refinement tab of a Team, or ran `lh refinement get` or the MCP tool `lighthouse_team_refinement_get`, on a day the Team has a Refinement. **Counted once per opening or run, by that browser, `lh` or MCP server, as soon as the verdict is shown — there is no five-second wait. On any other day, or while no Work Items are in the Team's Refinement, nothing is reported** | Which verdict the tab showed: `Below` when fewer Work Items are ready than the Team needs, `In` when enough are, `Above` when more than enough are, and `None` when the tab shows no number. **Never the range, never how many Work Items are ready, never the date, never which Team or which Work Item** |
 
 That is the whole vocabulary. It is a closed list in the code — not a pattern that quietly matches new
 things — and the build fails if anything outside it is sent.
@@ -273,6 +273,16 @@ whatever you answered, and `on` records nothing.
 
 Usage data never changes what `lh` prints or its exit code, and a Lighthouse that is slow to answer
 about usage data delays a command by at most a second.
+
+### Through the local MCP server
+
+The local MCP server (`lighthouse-mcp-stdio`) asks **once**, through your assistant, after a tool call
+that reached your Lighthouse and succeeded, when your assistant supports questions from an MCP server;
+your tool result reaches you unchanged either way. It shares `lh`'s answer for that Lighthouse, so
+answering in either place stops both asking. When your assistant cannot ask, `lh config usage-data on`
+is the way to say yes. Its events carry the source `Mcp`, are sent after the tool's result is returned,
+and `DO_NOT_TRACK` is honoured here too. A shared MCP server (`lighthouse-mcp-http`) asks nothing and
+sends nothing.
 
 ## Something Lighthouse already sends, which this does not cover
 
