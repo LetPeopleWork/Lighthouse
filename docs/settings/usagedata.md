@@ -32,8 +32,8 @@ ever use the thing we spent a month on" unanswerable.
 ## What is sent
 
 An **event** — a named thing that happened — plus a small, fixed set of facts about the instance. No
-event is sent unless the browser or the `lh` it came from holds live consent on that instance at the
-moment it happens, and that check runs on your own server, against your own database, every single
+event is sent unless the browser, the `lh` or the shared MCP server it came from holds live consent on that
+instance at the moment it happens, and that check runs on your own server, against your own database, every single
 time.
 
 The complete list of events:
@@ -81,7 +81,7 @@ Every event carries these, attached by **your** server rather than by your brows
 
 | Field | What it is | Example |
 |---|---|---|
-| Identifier | A random value your Lighthouse generates and stores **on your own server**, against the record of one answer — a browser's, or `lh`'s on one machine — the first time somebody agrees there. Derived from nothing — not your hostname, not your licence key, not your account. Neither your browser nor `lh` ever sees it or sends it | `a7f2…` |
+| Identifier | A random value your Lighthouse generates and stores **on your own server**, against the record of one answer — a browser's, `lh`'s on one machine, or one running shared MCP server's — the first time somebody agrees there. Derived from nothing — not your hostname, not your licence key, not your account. Neither your browser nor `lh` ever sees it or sends it | `a7f2…` |
 | Source | Where the event came from, as one of `Browser`, `Cli` and `Mcp`: the web page, the `lh` command line, or an MCP server. Your server attaches it from what the client declares when it hands the event in. It is declared, not verified: your server has no way to check which client is really talking to it | `Browser`, `Cli`, `Mcp` |
 | Which tab was opened | **Only on the two tab openings above.** One of eleven addresses this product publishes about itself, listed in full below. Your browser never sends an address; it sends a label, and your server looks the published address up. On the other fourteen events this field is not empty — it is not there at all | `/teams/:id/metrics` |
 | Which setting was switched | **Only on a setting being switched.** A fixed word this product publishes for the setting, and there is one: `FeatureOrder`, for *Let Lighthouse own the order of your Features*. **Never the key the setting is stored under, and never its name as you see it on screen.** On the other fifteen events this field is not empty — it is not there at all | `FeatureOrder` |
@@ -157,7 +157,8 @@ shape of activity, not its content.
 
 **Lighthouse cannot count how many installations exist, and that is deliberate.**
 
-The identifier above belongs to one answer: a browser's, or `lh`'s on one machine. Nothing in the
+The identifier above belongs to one answer: a browser's, `lh`'s on one machine, or one running shared MCP
+server's, however many people it serves. Nothing in the
 message says which instance sent it, so two colleagues consenting on the same Lighthouse count as two,
 exactly as two people at different companies would. There is no field that could join them — not even
 one person who said yes both in their browser and in `lh`, who counts as two as well.
@@ -205,8 +206,8 @@ database. None of it is ever sent anywhere — not to the collector, not to us.
 
 | What | Where | Why |
 |---|---|---|
-| One consent row per browser, and per `lh` that said yes | Your Lighthouse database | So your answer survives a page reload, and so a browser that already answered is not asked again |
-| An opaque token | Your browser's local storage, or `lh`'s answers file (below) | How this browser, or this `lh`, proves which consent row is its own |
+| One consent row per browser, per `lh` that said yes, and per running shared MCP server switched on | Your Lighthouse database | So your answer survives a page reload, and so a browser that already answered is not asked again |
+| An opaque token | Your browser's local storage, `lh`'s answers file (below), or a shared MCP server's memory | How this browser, this `lh` or this server proves which consent row is its own |
 | An identifier | Your Lighthouse database, on the same consent row | The random value that travels with events. It is **not** stored in your browser or by `lh`, and it is never sent to either or accepted from either — each presents its token, and the server looks the identifier up. Deliberately kept apart from the token: the token can revoke your consent, so it must never reach anybody else, while this value exists precisely to leave |
 
 The consent row holds the **hash** of that token, never the token itself, along with your decision,
@@ -281,8 +282,15 @@ that reached your Lighthouse and succeeded, when your assistant supports questio
 your tool result reaches you unchanged either way. It shares `lh`'s answer for that Lighthouse, so
 answering in either place stops both asking. When your assistant cannot ask, `lh config usage-data on`
 is the way to say yes. Its events carry the source `Mcp`, are sent after the tool's result is returned,
-and `DO_NOT_TRACK` is honoured here too. A shared MCP server (`lighthouse-mcp-http`) asks nothing and
-sends nothing.
+and `DO_NOT_TRACK` is honoured here too.
+
+A shared MCP server (`lighthouse-mcp-http`) asks nobody. It sends only when whoever runs it switched it
+on with `LIGHTHOUSE_USAGE_DATA=on`, deciding for everyone it serves; otherwise it sends nothing. Switched
+on, the whole server process counts as one: it holds one consent, in memory only and never on disk, so a
+restart counts as a new one. Its events carry the source `Mcp`, and `DO_NOT_TRACK` overrides `on`. While
+your administrator has switched usage data off it sends nothing, and it notices within an hour once they
+switch it back on.
+No API key or sign-in ever travels with its usage data, neither the server's own nor a caller's.
 
 ## Something Lighthouse already sends, which this does not cover
 
