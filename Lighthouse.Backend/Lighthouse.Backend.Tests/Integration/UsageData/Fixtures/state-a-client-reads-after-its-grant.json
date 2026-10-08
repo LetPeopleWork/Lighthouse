@@ -1,0 +1,8 @@
+{
+  "sending": true,
+  "decision": "Granted",
+  "mayAsk": false,
+  "reAskAfterDays": 90,
+  "administratorDisabled": false,
+  "acceptedSources": ["Browser", "Cli", "Mcp"]
+}

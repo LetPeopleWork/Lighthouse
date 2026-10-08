@@ -1,0 +1,17 @@
+{
+  "source": "Cli",
+  "events": [
+    {
+      "name": "TeamSizingVoteCast",
+      "sizingMoment": "OnRefinementDay",
+      "offsetMs": 0,
+      "sequence": 0
+    },
+    {
+      "name": "TeamSizingReadinessReached",
+      "sizingMoment": "OnRefinementDay",
+      "offsetMs": 0,
+      "sequence": 1
+    }
+  ]
+}
