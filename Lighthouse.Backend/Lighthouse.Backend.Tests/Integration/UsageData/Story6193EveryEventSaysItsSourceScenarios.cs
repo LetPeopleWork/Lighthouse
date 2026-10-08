@@ -195,7 +195,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // @US-01 @driving_port @real-io @version-skew @contract-shape:pure-function
         // A version fact, the same for every caller, so it tells an anonymous caller nothing about anyone.
         [Test]
-        [Ignore(PendingSlice01)]
         [TestCase(WithNoToken)]
         [TestCase(WithATokenNeverMintedHere)]
         [TestCase(WithAGrantedToken)]
@@ -213,7 +212,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @US-01 @driving_port @real-io @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task The_state_adds_the_labelled_sources_and_nothing_else_to_what_it_already_said()
         {
             var fields = await TheFieldsTheStateCarries(token: null);

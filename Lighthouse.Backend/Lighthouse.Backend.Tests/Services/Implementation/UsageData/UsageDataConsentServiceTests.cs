@@ -83,6 +83,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
         }
 
         [Test]
+        public async Task GetState_AcceptsEverySourceThisVersionKnows()
+        {
+            var state = await CreateService().GetStateAsync(null, TestContext.CurrentContext.CancellationToken);
+
+            Assert.That(state.AcceptedSources, Is.EqualTo(Enum.GetNames<UsageDataSource>()),
+                "a surface added to the enum but missing here would keep its client silent forever, and one "
+                + "listed here but not in the enum would be refused on the very first batch it sends");
+        }
+
+        [Test]
         public async Task GetState_WithNoToken_DoesNotTouchAnything()
         {
             await CreateService().GetStateAsync(null, TestContext.CurrentContext.CancellationToken);

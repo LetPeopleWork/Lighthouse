@@ -33,7 +33,16 @@ namespace Lighthouse.Backend.Models.UsageData
     /// browser holds the half of the cadence the server cannot see: a browser with no consent row
     /// that was shown the dialog and closed it leaves nothing behind on the server, so only the
     /// browser can tell when that was, and only the server knows how long it should count for.
+    ///
+    /// <c>AcceptedSources</c> is the same for every caller too: it names the surfaces this version
+    /// labels its events with. A command line or MCP client reads it before it asks anybody anything,
+    /// and stays silent against an older Lighthouse that would count its events as a browser's.
     /// </remarks>
     public sealed record UsageDataState(
-        bool Sending, string? Decision, bool MayAsk, int ReAskAfterDays, bool AdministratorDisabled);
+        bool Sending,
+        string? Decision,
+        bool MayAsk,
+        int ReAskAfterDays,
+        bool AdministratorDisabled,
+        IReadOnlyList<string> AcceptedSources);
 }

@@ -30,6 +30,10 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         // grants nothing, so guessing one buys an attacker no capability.
         private const int AnalyticsIdByteLength = 16;
 
+        // Read off the enum rather than written out, so a surface added there is advertised here
+        // without anybody having to remember a second list.
+        private static readonly string[] AcceptedSources = Enum.GetNames<UsageDataSource>();
+
         public async Task<UsageDataState> GetStateAsync(string? token, CancellationToken cancellationToken)
         {
             var now = timeProvider.GetUtcNow().UtcDateTime;
@@ -72,7 +76,8 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 Decision: consent?.Decision.ToString(),
                 MayAsk: MayAsk(consent, now, administratorStoppedIt),
                 ReAskAfterDays: configuration.CurrentValue.ReAskAfterDays,
-                AdministratorDisabled: administratorStoppedIt);
+                AdministratorDisabled: administratorStoppedIt,
+                AcceptedSources: AcceptedSources);
         }
 
         public async Task<string> RecordDecisionAsync(UsageDataDecision decision, CancellationToken cancellationToken)
