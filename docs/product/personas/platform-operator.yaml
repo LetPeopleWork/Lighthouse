@@ -63,6 +63,8 @@ primary_jobs:
   - job-operator-bound-a-refresh-that-will-not-end  # story-5877 (2026-09-18, #5877): a run past a sane bound ends itself and says which bound it passed
   # story-6131-chart-postgres-major-upgrade BUNDLED-DATABASE job (self-hoster flavour)
   - job-operator-upgrade-bundled-database-across-major  # story-6131 (2026-10-02, #6131): a chart upgrade that moves the Postgres major keeps the data and a way back
+  # story-6193-usage-data-from-clients SHARED-MCP job (both flavours)
+  - job-operator-decide-usage-data-for-a-shared-mcp-server  # story-6193 (2026-10-08, #6193): one variable decides whether the shared mcp-http sends usage data
 
 goals:
   - Run Lighthouse with more than one replica behind a load balancer without duplicate

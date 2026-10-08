@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-10-06
+updated: 2026-10-08
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -61,6 +61,7 @@ feature_context:
   - epic-5510-5881-refinement
   - epic-5878-baseline
   - story-6218-readable-cli-output
+  - story-6193-usage-data-from-clients
 
 jobs:
   - id: job-rbac-bootstrap
@@ -7997,3 +7998,46 @@ jobs:
         Importance 3 - the web already answers every one of these questions; the terminal is the second
         surface. Satisfaction 1 - only refinement reads well today. Gap 2, desk estimate, until #6193's usage
         data shows how `lh` is used.
+
+  - id: job-operator-decide-usage-data-for-a-shared-mcp-server
+    title: Decide once, in the deployment, whether a shared MCP server sends usage data
+    persona: platform-operator
+    feature_context: story-6193-usage-data-from-clients
+    created: 2026-10-08
+    note: >
+      NEW in DISCUSS of story-6193-usage-data-from-clients (ADO #6193, no parent). The maintainer decided
+      (M8) that the hosted mcp-http server follows its operator's environment variable, off by default, with
+      no per-user prompt - nobody sits at a shared server to be asked, and forty prompts would record forty
+      decisions about one process. Scores are DESK ESTIMATES. The legal basis for an operator deciding for
+      the server's callers is an open question in the feature delta.
+    job_story: >
+      When I run one MCP server that many people's assistants share,
+      I want to decide once, in the deployment, whether it sends usage data,
+      so the server follows my organisation's policy without anyone being prompted.
+    dimensions:
+      functional: >
+        One environment variable, off by default; a start-up line saying which; an unknown value stays off
+        with one warning; the instance administrator's stop still wins; nothing written to disk.
+      emotional: >
+        From wary ("what does this container phone home?") to confident ("it does what the deployment says,
+        and says so when it starts").
+      social: >
+        The operator can answer a security review about the shared server with one line of configuration.
+    forces:
+      push: >
+        A server run for other people cannot ask them, and a vendor default of "on" would put the operator
+        in breach of policy without knowing.
+      pull: >
+        mcp-http is already configured entirely by environment (LIGHTHOUSE_URL, LIGHTHOUSE_OAUTH_*).
+      anxiety: >
+        Does switching it on send anything about the people using the server? Does a typo turn it on?
+      habit: >
+        Operators expect telemetry switches as environment variables and expect them off for self-hosted
+        software.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance 3 - a hosted MCP server is a minority deployment today. Satisfaction 1 - no switch exists.
+        Gap 2, desk estimate.

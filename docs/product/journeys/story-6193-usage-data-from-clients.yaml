@@ -1,0 +1,181 @@
+schema_version: 1
+feature_id: story-6193-usage-data-from-clients
+updated: 2026-10-08
+note: >
+  ADO User Story #6193, no parent. Epic #5733 built usage data for the browser: the browser asks once,
+  detects events, and the Lighthouse backend verifies a live grant on every batch and forwards a closed
+  vocabulary to PostHog. This story lets the clients (lh, the local MCP server, the shared mcp-http
+  server) ask for the same opt-in, report the same events for the same actions, and labels every event -
+  the browser's too - with source Browser | Cli | Mcp. Product answers M1-M11 from the maintainer
+  (2026-10-06, 2026-10-08); every other call is an AFK default listed in
+  docs/feature/story-6193-usage-data-from-clients/feature-delta.md.
+
+journeys:
+
+  - name: decide-once-from-the-terminal-then-forget-about-it
+    goal: >
+      Someone using lh against a Lighthouse is asked once, in plain words, whether lh may tell that
+      Lighthouse which commands they use; their answer holds for that Lighthouse on that machine, for lh
+      and the local MCP server alike, and they can check or change it with one command.
+    persona: "privacy-decider (Lena Fischer); lighthouse-maintainer is the beneficiary"
+    job_id: job-user-decide-once-whether-lighthouse-may-learn-from-me
+
+    emotional_arc:
+      start: Busy and slightly wary - "does this CLI phone home?"
+      middle: Respected - one short question after the answer she asked for, defaulting to No.
+      end: In control - she can see what she said and change it, and is never asked again.
+
+    steps:
+      - id: 1
+        name: Use lh as usual
+        command: lh forecast manual --team-id 3 --remaining 25
+        output: The forecast, exactly as without usage data.
+        emotional_state: {entry: busy, exit: busy}
+        shared_artifacts: ["${lighthouse_url}"]
+        failure_modes:
+          - The command fails - no question is asked after a failed command.
+        gherkin: |
+          Scenario: The first command's answer comes first
+            Given Lena has never answered for https://lighthouse.northwind.io
+            When she runs lh forecast manual --team-id 3 --remaining 25 in a terminal
+            Then the forecast is printed exactly as with usage data off
+      - id: 2
+        name: Asked once
+        command: (same run, below the output)
+        output: |
+          May Lighthouse send usage data?
+          lh tells your Lighthouse which commands you use (never names, ids,
+          URLs or anything you typed), so we can see what helps.
+          Details: ${docs_url}
+          Send usage data from lh? [y/N]
+          (change any time: lh config usage-data on|off)
+        emotional_state: {entry: wary, exit: respected}
+        shared_artifacts: ["${docs_url}", "${may_ask}", "${administrator_disabled}", "${stored_answer}", "${consent_token}"]
+        integration_checkpoint: >
+          Asked only when stdin and stdout are terminals, nothing is stored for this Lighthouse, DO_NOT_TRACK
+          is not set, the Lighthouse labels sources, and its state says MayAsk.
+        failure_modes:
+          - Lighthouse unreachable or MayAsk false - no question; asked on a later run.
+          - Grant request fails after a yes - one line says nothing is sent and how to retry; nothing stored.
+          - Store file unreadable - never written over; no question; nothing sent.
+          - Ctrl-C or end of input - no answer; nothing stored; asked next interactive run.
+        gherkin: |
+          Scenario: Asked once, default No
+            Given the conditions for asking hold
+            When Lena presses Enter at the question
+            Then No is stored for that Lighthouse, nothing is posted, and she is never asked again there
+      - id: 3
+        name: Carry on
+        command: lh team refresh --id 3
+        output: The usual one-line confirmation; with a yes, TeamRefreshTriggered reaches the collector with
+          source Cli.
+        emotional_state: {entry: respected, exit: unbothered}
+        shared_artifacts: ["${consent_token}", "${source}"]
+        failure_modes:
+          - Lighthouse slow or unreachable for usage data - the command waits at most 1 second more and says
+            nothing.
+          - The grant lapsed after a long gap - re-granted silently, not asked again.
+        gherkin: |
+          Scenario: Usage data never changes the command
+            Given Lena said yes
+            When she runs lh team refresh --id 3
+            Then the output and exit code are unchanged
+            And TeamRefreshTriggered is reported with source Cli
+      - id: 4
+        name: Check or change
+        command: lh config usage-data | lh config usage-data off | lh config usage-data on
+        output: |
+          Usage data from lh to ${lighthouse_url}: on
+          This Lighthouse allows usage data.
+        emotional_state: {entry: curious, exit: in control}
+        shared_artifacts: ["${lighthouse_url}", "${stored_answer}", "${administrator_disabled}"]
+        failure_modes:
+          - off while Lighthouse is unreachable - stored off, nothing more sent, says the Lighthouse was not
+            told and the grant lapses by itself.
+          - on under the administrator's stop - nothing recorded; says why.
+        gherkin: |
+          Scenario: Turning it off stops sending
+            Given Lena said yes
+            When she runs lh config usage-data off
+            Then her grant is withdrawn and nothing more is sent
+
+  - name: decide-once-in-the-assistant
+    goal: >
+      Someone using the local Lighthouse MCP server in an assistant is asked once through the assistant,
+      where it can ask; otherwise the answer stored by lh on the same machine decides.
+    persona: "privacy-decider (Priya Raman)"
+    job_id: job-user-decide-once-whether-lighthouse-may-learn-from-me
+    emotional_arc:
+      start: Absorbed in a conversation with the assistant.
+      middle: One question in the assistant's own form; the answer she asked for still arrives.
+      end: Unbothered - the same answer holds for lh on her laptop.
+    steps:
+      - id: 1
+        name: First tool call, asked once
+        command: lighthouse_forecast_manual (via the assistant)
+        output: The elicitation form "May Lighthouse send usage data?", then the forecast as always.
+        shared_artifacts: ["${stored_answer}", "${consent_token}", "${docs_url}"]
+        failure_modes:
+          - The assistant cannot elicit - no question; the stored answer decides, off when none.
+          - The form is closed or times out - no answer; asked next session.
+        gherkin: |
+          Scenario: Asked once in the assistant
+            Given Priya's assistant supports elicitation and nobody on her laptop has answered
+            When the assistant runs lighthouse_forecast_manual
+            Then she is asked once and the forecast reaches the assistant unchanged
+
+  - name: an-operator-decides-for-a-shared-mcp-server
+    goal: >
+      The operator of a shared mcp-http server decides once, in the deployment, whether it sends usage
+      data; nobody using it is prompted.
+    persona: "platform-operator (Tomás Rivera)"
+    job_id: job-operator-decide-usage-data-for-a-shared-mcp-server
+    emotional_arc:
+      start: Wary of anything that phones home from a server he runs for forty people.
+      middle: One variable, one start-up line saying what it does.
+      end: Confident the server follows the policy he set.
+    steps:
+      - id: 1
+        name: Deploy with the policy
+        command: docker run -e LIGHTHOUSE_URL=… -e LIGHTHOUSE_USAGE_DATA=on ghcr.io/letpeoplework/lighthouse-clients/mcp-http
+        output: "Usage data: on (LIGHTHOUSE_USAGE_DATA)" at start-up; events with source Mcp.
+        shared_artifacts: ["${source}"]
+        failure_modes:
+          - Unknown value - off, one warning naming on and off.
+          - Administrator's stop - no grant recorded, nothing forwarded.
+        gherkin: |
+          Scenario: Off unless the operator says on
+            Given mcp-http starts without LIGHTHOUSE_USAGE_DATA
+            Then it logs that usage data is off and sends nothing
+
+shared_artifacts:
+  lighthouse_url:
+    source_of_truth: the connection lh or the MCP server resolved (lh config / LIGHTHOUSE_URL / standalone lock file)
+    consumers: [the question's scope, lh config usage-data output, the store's key]
+    integration_risk: HIGH - two spellings of one Lighthouse must be one answer; reuse the voter-key scope rule
+  docs_url:
+    source_of_truth: "docs/_config.yml url + /settings/usagedata.html = https://docs.lighthouse.letpeople.work/settings/usagedata.html"
+    consumers: [the lh question, the elicitation, lh config usage-data on, the web dialog's link]
+    integration_risk: MEDIUM - a moved page breaks every link; the web already holds the same constant
+  stored_answer:
+    source_of_truth: the per-Lighthouse usage-data store beside voter-keys.json
+    consumers: [lh question gate, lh config usage-data, MCP stdio elicitation gate, both reporters]
+    integration_risk: HIGH - lh and MCP stdio must read the same answer or a person is asked twice
+  consent_token:
+    source_of_truth: POST /usagedata/consent answer, kept in the store (in memory for mcp-http)
+    consumers: [event posts, DELETE /usagedata/consent, GET /usagedata/state]
+    integration_risk: HIGH - a capability; never printed or logged
+  may_ask_and_administrator_disabled:
+    source_of_truth: GET /usagedata/state (UsageDataState)
+    consumers: [whether to ask, lh config usage-data instance line, mcp-http grant]
+    integration_risk: MEDIUM - the client must not re-derive what the server decided
+  source:
+    source_of_truth: the client's declared constant (Cli in lh, Mcp in both MCP servers; absent = Browser)
+    consumers: [the event batch, the forwarded PostHog property]
+    integration_risk: HIGH - an old Lighthouse would drop it and count a client as a browser; clients send
+      only where the state answer says sources are labelled
+
+changelog:
+  - date: 2026-10-08
+    feature: story-6193-usage-data-from-clients
+    change: Created in DISCUSS.
