@@ -9,10 +9,12 @@ nav_order: 8
 
 Lighthouse can tell us **which parts of it get used**, and a little about the instance doing the
 using — its version, how it is deployed, which licence tier it runs on. Nothing is sent unless
-somebody using that instance agrees to it first, and anyone can stop it again with one click.
+somebody using that instance agrees to it first — in the browser, or when the `lh` command line asks
+— and anyone can stop it again: with one click in the browser, with one command in `lh`.
 
 This page is the full account: what is sent, what is never sent, who holds it, how long they hold it,
-and what Lighthouse stores on your own server to remember your answer. The dialog keeps no list of its
+what Lighthouse stores on your own server to remember your answer, and what `lh` keeps on your own
+machine. `lh`'s question links here too. The dialog keeps no list of its
 own, on purpose — a list inside a dialog goes stale quietly while still looking authoritative — so this
 is the only place that list lives, and the build fails if it falls behind what the product can
 actually send.
@@ -30,8 +32,9 @@ ever use the thing we spent a month on" unanswerable.
 ## What is sent
 
 An **event** — a named thing that happened — plus a small, fixed set of facts about the instance. No
-event is sent unless a browser on that instance holds live consent at the moment it happens, and that
-check runs on your own server, against your own database, every single time.
+event is sent unless the browser or the `lh` it came from holds live consent on that instance at the
+moment it happens, and that check runs on your own server, against your own database, every single
+time.
 
 The complete list of events:
 
@@ -43,7 +46,7 @@ The complete list of events:
 | A Team was deleted | Somebody confirmed deleting a Team | Nothing. **Not its name, not its identifier** |
 | A Portfolio was created | Somebody finished creating a Portfolio | Nothing. **Not its name, not its identifier** |
 | A Portfolio was deleted | Somebody confirmed deleting a Portfolio | Nothing. **Not its name, not its identifier** |
-| A forecast was run by hand | Somebody asked for a forecast on a Team page. **Never the forecasts Lighthouse runs on its own** | Nothing. **Not what was asked, not what came back** |
+| A forecast was run by hand | Somebody asked for a forecast on a Team page, or with `lh forecast manual`. **Never the forecasts Lighthouse runs on its own** | Nothing. **Not what was asked, not what came back** |
 | A work tracking system was connected | Somebody finished setting up a connection | Which kind it is — one of `Azure DevOps`, `Jira`, `Linear`, `CSV`, `ServiceNow`. **Never its address, never its name, never anything typed while setting it up** |
 | A Team's data was refreshed by hand | Somebody pressed refresh on a Team rather than waiting for the next automatic one | Nothing |
 | A Portfolio's data was refreshed by hand | Somebody pressed refresh on a Portfolio rather than waiting for the next automatic one | Nothing |
@@ -74,11 +77,11 @@ decides only whether an opening is recorded, not what it carries. The Refinement
 exception: it is counted as soon as the tab shows it, so passing through that tab on a Refinement day
 does count.
 
-Every event carries these, attached by **your** server rather than by your browser:
+Every event carries these, attached by **your** server rather than by your browser or `lh`:
 
 | Field | What it is | Example |
 |---|---|---|
-| Browser identifier | A random value your Lighthouse generates and stores **on your own server**, against the record of this browser's answer, the first time somebody agrees here. Derived from nothing — not your hostname, not your licence key, not your account. Your browser never sees it and never sends it | `a7f2…` |
+| Identifier | A random value your Lighthouse generates and stores **on your own server**, against the record of one answer — a browser's, or `lh`'s on one machine — the first time somebody agrees there. Derived from nothing — not your hostname, not your licence key, not your account. Neither your browser nor `lh` ever sees it or sends it | `a7f2…` |
 | Source | Where the event came from, as one of `Browser`, `Cli` and `Mcp`: the web page, the `lh` command line, or an MCP server. Your server attaches it from what the client declares when it hands the event in. It is declared, not verified: your server has no way to check which client is really talking to it | `Browser`, `Cli`, `Mcp` |
 | Which tab was opened | **Only on the two tab openings above.** One of eleven addresses this product publishes about itself, listed in full below. Your browser never sends an address; it sends a label, and your server looks the published address up. On the other fourteen events this field is not empty — it is not there at all | `/teams/:id/metrics` |
 | Which setting was switched | **Only on a setting being switched.** A fixed word this product publishes for the setting, and there is one: `FeatureOrder`, for *Let Lighthouse own the order of your Features*. **Never the key the setting is stored under, and never its name as you see it on screen.** On the other fifteen events this field is not empty — it is not there at all | `FeatureOrder` |
@@ -89,7 +92,7 @@ Every event carries these, attached by **your** server rather than by your brows
 | Deployment mode | How it is deployed, as one of `Standalone`, `Windows`, `Linux`, `MacOS`, `Docker`, `Kubernetes` | `Kubernetes` |
 | Licence tier | Which tier this instance runs on | `Community`, `Premium` |
 | Authentication | Whether somebody here signs in as themselves. `true` only when authentication is switched on and working — an instance where it is misconfigured, or where it refuses everybody, sends `false`, because nobody is signing in individually there either | `true`, `false` |
-| Timestamp | When it happened. Your browser sends how long ago it was, never a reading of its own clock, so neither its clock nor its time zone travels; your server turns that into a time by its own | `2026-09-12T09:14:07Z` |
+| Timestamp | When it happened. Your browser or `lh` sends how long ago it was, never a reading of its own clock, so neither its clock nor its time zone travels; your server turns that into a time by its own | `2026-09-12T09:14:07Z` |
 
 ### What the page address never contains
 
@@ -128,8 +131,9 @@ Nothing about your work, and nothing about you:
 - No work item titles, identifiers, queries or descriptions
 - No team, portfolio or delivery names, and no identifiers for any of them
 - No user names, email addresses or account identifiers
-- No free text of any kind, and no address your browser was at. What your browser posts to your own
-  server has **no field capable of carrying free text** — only choices from closed lists and bounded
+- No free text of any kind, and no address your browser was at, and nothing you typed on the command
+  line. What your browser or `lh` posts to your own server has **no field capable of carrying free
+  text** — only choices from closed lists and bounded
   numbers — so this is a property of its shape rather than a rule somebody has to remember. The only
   address-shaped thing that travels onward is one of the eleven published above, which Lighthouse wrote
   down about itself
@@ -142,28 +146,30 @@ Nothing about your work, and nothing about you:
 Said plainly, because it is the real cost of counting features rather than installations:
 
 **The times of the events describe when somebody was working.** Events arrive as they happen, so a
-consenting browser leaves a rough trace of the hours it was in use, and therefore of a working day and
+consenting browser or `lh` leaves a rough trace of the hours it was in use, and therefore of a working day and
 an approximate time zone. We cannot remove this from our side — a timestamp is what makes an event an
 event.
 
 **What it still cannot show** is which person, which Team, or what they were looking at. It is the
 shape of activity, not its content.
 
-## Counting browsers, not installations
+## Counting browsers and command lines, not installations
 
 **Lighthouse cannot count how many installations exist, and that is deliberate.**
 
-The identifier above belongs to a browser. Nothing in the message says which instance sent it, so two
-colleagues consenting on the same Lighthouse count as two, exactly as two people at different
-companies would. There is no field that could join them.
+The identifier above belongs to one answer: a browser's, or `lh`'s on one machine. Nothing in the
+message says which instance sent it, so two colleagues consenting on the same Lighthouse count as two,
+exactly as two people at different companies would. There is no field that could join them — not even
+one person who said yes both in their browser and in `lh`, who counts as two as well.
 
 This is a choice, and it costs us the number we would most like to have. An instance identifier
-alongside a browser identifier would link colleagues to one another, which says more about a group of
+alongside this identifier would link colleagues to one another, which says more about a group of
 people than either value does on its own. We would rather be unable to answer "how many installations"
 than hold that.
 
-So every number here counts *browsers*, and a large shared installation weighs more than a small one.
-The `Authentication` field exists only so we can tell whether "one browser is roughly one person" is a
+So every number here counts *browsers and command lines*, and a large shared installation weighs more
+than a small one. The `Source` field says which kind of client an event came from, and the
+`Authentication` field exists only so we can tell whether "one browser is roughly one person" is a
 reasonable reading on that instance at all.
 
 ## Where it goes, and who holds it
@@ -176,8 +182,8 @@ The authority on that is PostHog's own data processing agreement, not our summar
 can drift out of date while still sounding authoritative — and the terms that actually bind them are
 the ones worth reading.
 
-**Your browser never contacts the collector.** It tells your own Lighthouse server that something
-happened; your server decides whether consent allows it, and only your server talks to PostHog. That
+**Neither your browser nor `lh` ever contacts the collector.** Each tells your own Lighthouse server
+that something happened; your server decides whether consent allows it, and only your server talks to PostHog. That
 is also why nothing here is distorted by ad blockers — a blocked request would make the data quietly
 wrong rather than absent, and we would have no way to tell which.
 
@@ -189,19 +195,19 @@ every question we ask of this data, all of which look back days or weeks rather 
 
 A paid plan would raise that floor to **seven years**. That is not a change we could make quietly: a
 longer retention period counts as a material change, so it would mean updating this page, updating the
-dialog, and **asking everyone who already agreed to agree again**. Staying inside the free plan's
+dialog and the question `lh` asks, and **asking everyone who already agreed to agree again**. Staying inside the free plan's
 limits is therefore a commitment about your data, not only about our costs.
 
 ## What Lighthouse stores on your own server
 
-Answering the dialog writes a small amount of data to **your** Lighthouse database. None of it is ever
-sent anywhere — not to the collector, not to us.
+Answering the dialog, or saying yes to `lh`, writes a small amount of data to **your** Lighthouse
+database. None of it is ever sent anywhere — not to the collector, not to us.
 
 | What | Where | Why |
 |---|---|---|
-| One consent row per browser | Your Lighthouse database | So your answer survives a page reload, and so a browser that already answered is not asked again |
-| An opaque token | Your browser's local storage | How this browser proves which consent row is its own |
-| A browser identifier | Your Lighthouse database, on the same consent row | The random value that travels with events. It is **not** stored in your browser, and it is never sent to your browser or accepted from it — your browser presents its token, and the server looks the identifier up. Deliberately kept apart from the token: the token can revoke your consent, so it must never reach anybody else, while this value exists precisely to leave |
+| One consent row per browser, and per `lh` that said yes | Your Lighthouse database | So your answer survives a page reload, and so a browser that already answered is not asked again |
+| An opaque token | Your browser's local storage, or `lh`'s answers file (below) | How this browser, or this `lh`, proves which consent row is its own |
+| An identifier | Your Lighthouse database, on the same consent row | The random value that travels with events. It is **not** stored in your browser or by `lh`, and it is never sent to either or accepted from either — each presents its token, and the server looks the identifier up. Deliberately kept apart from the token: the token can revoke your consent, so it must never reach anybody else, while this value exists precisely to leave |
 
 The consent row holds the **hash** of that token, never the token itself, along with your decision,
 when you made it, and when this browser was last seen. The server therefore cannot reproduce your
@@ -210,9 +216,19 @@ token — it can only recognise one when a browser presents it.
 Two things people are often surprised by, so they are said here:
 
 - **Saying no is also recorded.** Otherwise the instance has no way to know it already asked you, and
-  would keep asking.
+  would keep asking. A no given to `lh` is the exception: `lh` keeps it on your machine instead.
 - **Consent is per browser, not per account.** A different browser, or a cleared browser storage, is a
-  browser that has not answered yet.
+  browser that has not answered yet. The same goes for `lh`: its answer belongs to one machine and one
+  Lighthouse.
+
+### What `lh` keeps on your machine
+
+`lh` keeps its answers in `usage-data.json`, beside `voter-keys.json` in `~/.config/lighthouse-clients`
+(or in the directory of `LIGHTHOUSE_CLI_CONFIG_PATH`, when you set one). The file is readable and
+writable by you only. It holds one answer per Lighthouse: after a yes, the token that proves which
+consent row is `lh`'s; after a no, only the no. **A no is kept on your machine and never sent** — your
+Lighthouse never learns of it. An answers file `lh` cannot read is never written over; until it is
+fixed or removed, `lh` asks nothing and sends nothing.
 
 ## Deciding, and changing your mind
 
@@ -233,6 +249,30 @@ Two honest limits:
   and it will be asked again as though it had never decided. Clearing storage happens entirely on your
   machine and produces no request, so your server cannot learn about it directly; the consent row it
   left behind lingers for about 30 days before ageing out, but it no longer permits anything.
+  Deleting `lh`'s `usage-data.json` works the same way: `lh` stops sending and asks again, and the yes
+  your Lighthouse holds lapses by itself. `lh config usage-data off` is the way that tells your
+  Lighthouse at once.
+
+### In `lh`
+
+`lh` asks **once per Lighthouse**, on stderr, after a command that reached that Lighthouse and
+succeeded, and links to this page. It asks only when stdin, stdout and stderr are all a terminal, so
+never in a script, a pipe or CI. It asks only a Lighthouse whose administrator has not switched usage
+data off, that was not installed only days ago, and that takes usage data from `lh`. Only `y` or
+`yes` is a yes; Enter or anything else is a no, kept on your machine and never sent.
+
+- `lh config usage-data` shows what you answered for the Lighthouse you are connected to, and whether
+  that Lighthouse takes usage data from `lh`. It asks nothing and sends nothing.
+- `lh config usage-data on` records a yes without a question — also in a script or on a build agent,
+  which is the only way usage data is ever sent from there.
+- `lh config usage-data off` withdraws a yes at your Lighthouse and keeps a no, so nothing more is
+  sent.
+
+**`DO_NOT_TRACK` always wins.** Set to anything but `0`, `false` or empty, `lh` neither asks nor sends,
+whatever you answered, and `on` records nothing.
+
+Usage data never changes what `lh` prints or its exit code, and a Lighthouse that is slow to answer
+about usage data delays a command by at most a second.
 
 ## Something Lighthouse already sends, which this does not cover
 

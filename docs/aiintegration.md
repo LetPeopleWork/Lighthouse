@@ -318,6 +318,10 @@ Once connected through CLI or MCP, common workflows look like this:
 
 For a shell-first workflow, the CLI is often enough. For natural-language, tool-driven conversations inside an AI client, prefer MCP.
 
+## Usage Data
+
+The clients ask before they send any usage data to your Lighthouse, and nothing is sent without a yes. Today `lh` asks, once per Lighthouse and only in a terminal; `lh config usage-data` shows your answer, `lh config usage-data on` and `off` change it, and `DO_NOT_TRACK` always wins. Usage data never changes what a client prints or its exit code. What is sent, what is kept on your machine and how to change your mind are on the [Usage Data](./settings/usagedata.html) page.
+
 ## Related Documentation
 
 - [System Settings > API Keys](./settings/apikeys.html)
