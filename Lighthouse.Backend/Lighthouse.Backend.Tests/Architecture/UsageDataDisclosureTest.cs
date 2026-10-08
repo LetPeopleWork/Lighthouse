@@ -1,3 +1,5 @@
+using Lighthouse.Backend.Models.UsageData;
+
 namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
@@ -19,6 +21,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string UsageDataPage = "docs/settings/usagedata.md";
         private const string EventListHeading = "The complete list of events:";
         private const string SendsNothingYet = "Lighthouse sends nothing yet";
+        private const string EveryEventCarriesHeading = "Every event carries these";
+        private const string SourceRowName = "Source";
 
         /// <summary>
         /// The page still tells the reader that this release sends nothing. That sentence is true
@@ -57,6 +61,30 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Assert.That(described, Has.Count.EqualTo(declared.Count),
                     "the page and the code disagree about how many things this product sends. "
                     + $"Declared: {string.Join(", ", declared)}. Described on the page: {described.Count} row(s)");
+            }
+        }
+
+        /// <summary>
+        /// Every event now says which surface it came from, so the page has to name every surface the
+        /// product can label. Reading the members off the enum means a fourth surface cannot ship
+        /// without the page saying so first.
+        /// </summary>
+        [Test]
+        public void EverySourceAnEventCanCarry_IsNamedOnThePage()
+        {
+            var sourceRow = TheRowOfWhatEveryEventCarries(SourceRowName);
+
+            Assert.That(sourceRow, Is.Not.Null,
+                $"'{EveryEventCarriesHeading}' has no '{SourceRowName}' row, so the page does not say that "
+                + "every event names the surface it came from");
+
+            using (Assert.EnterMultipleScope())
+            {
+                foreach (var source in Enum.GetNames<UsageDataSource>())
+                {
+                    Assert.That(sourceRow, Does.Contain($"`{source}`"),
+                        $"the product can label an event '{source}', and the page does not say so");
+                }
             }
         }
 
@@ -99,6 +127,26 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             // The header row and the dashes under it describe the table rather than an event.
             return [.. rows.Skip(2)];
+        }
+
+        /// <summary>
+        /// The row of the page's "every event carries these" table whose first cell is
+        /// <paramref name="rowName"/>, or null when there is none.
+        /// </summary>
+        private static string? TheRowOfWhatEveryEventCarries(string rowName)
+        {
+            var lines = TheUsageDataPage().Split('\n');
+            var heading = Array.FindIndex(lines, line => line.Contains(EveryEventCarriesHeading, StringComparison.Ordinal));
+
+            Assert.That(heading, Is.GreaterThanOrEqualTo(0),
+                $"'{EveryEventCarriesHeading}' is no longer on the page, so there is no table to read.");
+
+            return lines
+                .Skip(heading + 1)
+                .Select(line => line.Trim())
+                .SkipWhile(line => !line.StartsWith('|'))
+                .TakeWhile(line => line.StartsWith('|'))
+                .FirstOrDefault(line => line.Trim('|').Split('|')[0].Trim().Equals(rowName, StringComparison.Ordinal));
         }
 
         private static string TheUsageDataPage()

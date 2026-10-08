@@ -10,8 +10,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     /// </summary>
     public partial class Story6193EveryEventSaysItsSourceTest : UsageDataCollectorObservationTest
     {
-        private const string PendingSlice01 = "pending until DELIVER slice 01 of story 6193";
-
         private const string Browser = "Browser";
         private const string Cli = "Cli";
         private const string Mcp = "Mcp";

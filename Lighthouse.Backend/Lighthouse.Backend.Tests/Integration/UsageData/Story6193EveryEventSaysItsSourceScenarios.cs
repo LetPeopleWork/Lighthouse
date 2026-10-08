@@ -254,7 +254,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // @US-01 @driving_port @contract-shape:pure-function
         // The page the consent links to is the disclosure; it never promises less than the product sends.
         [Test]
-        [Ignore(PendingSlice01)]
         public void The_usage_data_page_lists_the_source_among_what_every_event_carries()
         {
             var row = TheRowOfWhatEveryEventCarriesNamed(SourceRowName);
