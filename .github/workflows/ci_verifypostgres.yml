@@ -116,6 +116,7 @@ jobs:
         working-directory: ./Lighthouse/linux-x64
         env:
           Database__Provider: postgres
+          UsageData__CollectorBaseUrl: http://127.0.0.1:9
           Database__ConnectionString: 'Host=localhost;Port=5432;Database=lighthouse;Username=postgres;Password=postgres'
           Lighthouse__OAuth__UseStubProvider: "true"
           Lighthouse__BaseUrl: "http://localhost:5000"

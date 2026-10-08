@@ -92,6 +92,7 @@ jobs:
           echo "Started Lighthouse with PID $(cat lighthouse.pid)"
         env:
           Database__Provider: sqlite
+          UsageData__CollectorBaseUrl: http://127.0.0.1:9
           Database__ConnectionString: "Data Source=lighthouse.db"
 
       - name: Wait for Lighthouse to start

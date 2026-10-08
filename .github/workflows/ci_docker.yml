@@ -86,6 +86,7 @@ jobs:
           docker run -d --name lighthouse-test \
             -p 443:443 \
             -e Database__Provider=sqlite \
+            -e UsageData__CollectorBaseUrl=http://127.0.0.1:9 \
             -e Database__ConnectionString="Data Source=lighthouse.db" \
             ghcr.io/$REPO_NAME:$VERSION
 

@@ -103,6 +103,7 @@ jobs:
         working-directory: ./Lighthouse/linux-x64
         env:
           Database__Provider: sqlite
+          UsageData__CollectorBaseUrl: http://127.0.0.1:9
           Database__ConnectionString: "Data Source=lighthouse.db"
           Lighthouse__OAuth__UseStubProvider: "true"
           Lighthouse__BaseUrl: "http://localhost:5000"

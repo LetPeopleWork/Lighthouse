@@ -106,6 +106,7 @@ jobs:
         working-directory: ./Lighthouse/linux-x64
         env:
           Database__Provider: sqlite
+          UsageData__CollectorBaseUrl: http://127.0.0.1:9
           Database__ConnectionString: 'Data Source=lighthouse.db'
           Kestrel__Endpoints__Http__Url: "http://localhost:5169"
           # The embed surface ships off (Epic #5674); the @auth suite drives all three hops.
@@ -175,6 +176,7 @@ jobs:
         working-directory: ./Lighthouse/linux-x64
         env:
           Database__Provider: sqlite
+          UsageData__CollectorBaseUrl: http://127.0.0.1:9
           Database__ConnectionString: 'Data Source=lighthouse.db'
           Kestrel__Endpoints__Http__Url: "http://localhost:5169"
           Authentication__Enabled: true
@@ -243,6 +245,7 @@ jobs:
         working-directory: ./Lighthouse/linux-x64
         env:
           Database__Provider: sqlite
+          UsageData__CollectorBaseUrl: http://127.0.0.1:9
           Database__ConnectionString: 'Data Source=lighthouse.db'
           Kestrel__Endpoints__Http__Url: "http://localhost:5169"
           Authentication__Enabled: true
