@@ -1984,3 +1984,18 @@ three high). Resolution:
 | 4 | high | Rollback asset command left `<that-file>` undefined | Fixed: temp dir held in a variable, full path given |
 | 5 | medium | KPI-3 baseline lacked date/query | Date and query reference added |
 | 6 | medium | "D7" not found | D7 is DISCUSS's Locked Decision (aging fallback), in this file; no change |
+
+---
+
+## Wave: DEVOPS / [REF] Maintainer decisions (2026-10-08)
+
+- **MD-1 → (a).** The website's "Agent Skill" card becomes "Agent Skills" with three download links,
+  each with its own Plausible edition (`ai-skill` kept for the general skill so its history continues),
+  and `llms.txt` gains two lines. Sketch approved as shown in the DEVOPS section.
+- **MD-2 → (b).** Each new zip's target: at least half the general zip's downloads over the same 60
+  days, with a floor of 8.
+- **MD-3 → (b)** (recommended default, taken): one release with #6193; weeks 1–2 after release are the
+  baseline for assistant-sourced Refinement events.
+- **MD-4 → (b).** On clients too old for the WIP, SLE Risk and chart reads, the Daily Flow Review skill
+  falls back to `lh --metrics wip` and Work Item age against the 70th percentile, and says so.
+- `zip` must be installed on the maintainer's machine before slice 04's DELIVER (it is missing today).
