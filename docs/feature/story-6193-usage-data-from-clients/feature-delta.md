@@ -2080,3 +2080,138 @@ not exist. The CI-never-emits finding rests on this wave's own reading of `PostH
 `UsageDataInstanceProperties.cs`, `UsageDataConsentService.cs` and the clients' `ci.yml`, and the smoke step's
 `DO_NOT_TRACK= fn` temp-env behaviour was checked by running it in bash. The consolidated review at the end of
 DISTILL is the one to rely on.
+
+---
+
+## Wave: DISTILL / [REF] Maintainer decisions
+
+None taken in this wave. The run was AFK; the copy had been approved before it (DISCUSS, "Proposed copy",
+and M1–M11). The lines the approved set does not cover are listed under "Copy decided in DISTILL".
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation
+
+Read in full before any scenario: this file's DISCUSS (D0–D18, US-01…US-06 and their ACs, M1–M11, the
+approved copy), DESIGN (DSN-1…DSN-25, driving and driven ports, the wire contract, test strategy per slice,
+contract shapes), DEVOPS (DVO-1…DVO-14, the environment matrix, the smoke step, the zero-request and
+env-injection rules); `slices/slice-01…05`; `environments.yaml`; ADR-225…ADR-228;
+`docs/product/kpi-contracts.yaml` (OUT-6193-K1…K3); `docs/architecture/atdd-infrastructure-policy.md`;
+`docs/ci-learnings.md`. Precedent followed: `story-6218-readable-cli-output/distill/` and the existing
+usage data test classes (`UsageDataCollectorObservationTest`, `UsageDataEventPipeTests`). Also read, to
+pin the scenarios to what exists: the clients' `runCli`, `runMcpStdioRuntime`, `runMcpHttpRuntime`,
+`registerMcpTools`, the voter key store and its refusal, and the MCP SDK's `InMemoryTransport` and
+elicitation schema.
+
+## Wave: DISTILL / [REF] Reconciliation
+
+**Reconciliation passed — 0 contradictions.** There are no separate `wave-decisions.md` files; the
+decisions live in this file. Two places where DESIGN refines DISCUSS are refinements, not contradictions,
+and the later decision is pinned:
+
+- D5's "a terminal" is DESIGN's three terminals (stdin, stdout, stderr) with `CI` unset.
+- D9 to DSN-16: the sizing moment comes from the read before the vote. That makes US-04's "a vote whose
+  moment cannot be read" (the read failing after the vote) unreachable as worded; the scenario pins the
+  reachable case instead (see Upstream issues).
+
+No `CLARIFICATION_NEEDED`.
+
+## Wave: DISTILL / [REF] Scenario list
+
+Counts are test cases (each `.each` row counts once). Every clients scenario carries `@US-0n` and a
+`@contract-shape:` tag in its comment; error and edge cases carry `@error`, `@boundary`, `@version-skew`,
+`@infrastructure-failure` or `@security`; KPI scenarios carry `@kpi`.
+
+| Slice | Repository | File | Pending | Active guards |
+|---|---|---|---|---|
+| 01 every event says its source | Lighthouse | `Story6193EveryEventSaysItsSourceScenarios.cs` | 18 | 6 |
+| 02 lh asks once | clients | `usageDataQuestion.test.ts` | 61 | — |
+| 02 | clients | `usageDataConfig.test.ts` | 27 | — |
+| 02–03 | clients | `usageDataGuards.test.ts` | — | 8 |
+| 03 lh reports the rest | clients | `usageDataEvents.test.ts` | 68 | — |
+| 04 the local MCP server asks once | clients | `mcp-stdio/src/usageData.test.ts` | 30 | — |
+| 05 the shared MCP server, operator's call | clients | `mcp-http/src/usageData.e2e.test.ts` | 27 | 1 |
+| **Total** | | | **231** | **15** |
+
+Error/edge share (clients): **53 of 87 test definitions (61 %)**. No walking skeleton, by DISCUSS's
+strategy C: the active guards are the green anchor. Every payload assertion checks closed-enum fields only
+(event name, `source`, `sizing_moment`, and the verdict / moment enums); the fake Lighthouse records whole
+request bodies, so a stray field fails the deep-equality against the expected batch. fast-check is not a
+dependency of the clients repository, so finite domains are parametrised examples (`it.each`).
+
+Per-slice detail: `distill/backend-slice-01.md`, `distill/clients-slice-02.md` … `clients-slice-05.md`.
+RED evidence: `distill/red-classification.md`.
+
+## Wave: DISTILL / [REF] Test placement
+
+- Lighthouse: `Lighthouse.Backend.Tests/Integration/UsageData/`, a partial class split into Scenarios and
+  Specifications, with the two contract fixtures under `Fixtures/`, read from the source tree.
+- lighthouse-clients: colocated `*.test.ts` beside the package each slice changes. Shared: `test-support/`
+  (`fakeLighthouse.ts`, `usageDataContract/`). The `lh` harness is `packages/cli/test-support/lhSession.ts`.
+  Test files are type-checked by `typecheck:tests`.
+
+## Wave: DISTILL / [REF] Driving adapter coverage
+
+| Driving port | How the scenarios enter |
+|---|---|
+| Batch endpoint and state answer (Lighthouse) | HTTP through `WebApplicationFactory`, the collector observed on the way out |
+| `lh` as one process | `runCliSession(args, io, { env, terminal, now })` (scaffold); the guards use today's `runCli` and the built bin |
+| Local MCP server | `createLocalLighthouseMcpServer(env)` (scaffold), SDK `Client` over `InMemoryTransport` |
+| Shared MCP server | `runMcpHttpRuntime` on a real port, SDK clients over HTTP |
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+- The clients' only driven adapter on this path is Lighthouse over HTTP: `aFakeLighthouse` on a real
+  loopback socket, so every request is observed, including those not made through the client object.
+- The answers file `usage-data.json`: real files under a temporary home, with permissions asserted.
+- The terminal: a scripted terminal handed to `runCliSession`; the clock: pinned, or Vitest's fake timers
+  for the 50-second elicitation and the hourly re-read.
+- Lighthouse side: the real queue and drain, the collector recorded by `CapturedOutboundRequests`.
+- Two rows appended to `docs/architecture/atdd-infrastructure-policy.md` (driving, and the fake Lighthouse).
+
+## Wave: DISTILL / [REF] Scaffolds
+
+Two, both `__SCAFFOLD__ = true` and throwing `Not yet implemented -- RED scaffold`:
+`packages/cli/src/cliSession.ts` (`runCliSession`) and `packages/mcp-stdio/src/localServer.ts`
+(`createLocalLighthouseMcpServer`). Nothing on the Lighthouse side needed one. An empty changeset
+accompanies the clients commit.
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- Slice 01 ships before any client sends a source: the clients read `acceptedSources` and send nothing to a
+  Lighthouse that lacks it.
+- `UsageDataEventPipeTests.EverythingTheStateAnswerCarries` pins today's five state fields; it gains
+  `acceptedSources` in slice 01's step.
+- The contract fixtures change in both repositories together, never in one.
+- `usageDataGuards.test.ts` and the mcp-http guard stay active through every slice.
+
+## Wave: DISTILL / [REF] Copy decided in DISTILL
+
+**AFK copy defaults, revisit at the hold:**
+
+1. `lh config usage-data off` when the withdrawal could not reach Lighthouse: the approved off line, then
+   `Could not tell this Lighthouse; the yes it holds lapses by itself within 30 days.`, exit 0.
+2. `lh config usage-data` with an unreadable answers file: `The usage data file <path> cannot be read; fix
+   or remove it.`, exit 1, file untouched (the voter key file's refusal, DSN-22).
+3. `lh config usage-data on` when Lighthouse cannot be asked: the approved `Could not ask this Lighthouse
+   whether it allows usage data.`, nothing recorded, **exit 1** (the wording is approved; the exit code is
+   this wave's call, since nothing the person asked for happened).
+
+## Wave: DISTILL / [REF] Upstream issues
+
+1. US-04 "A vote whose moment cannot be read is not reported": under DSN-16 the moment is read before the
+   vote, so a read failing after the vote cannot happen. Pinned instead: the read before the vote is
+   refused, the vote is refused as today, nothing is reported. DISCUSS's scenario should be reworded.
+2. The 67 absence scenarios in slices 02–04 cannot drive code on their own once the scaffolds are replaced
+   (see `red-classification.md`). Documented, not fixed.
+3. The answers file's owner-only permissions scenario is `it.skip` in the commit; DELIVER makes it
+   `it.skipIf(win32)` when un-skipping.
+
+## Wave: DISTILL / [REF] Self-completeness audit
+
+15-item checklist: C1a happy paths per story ✓ · C1b error paths ✓ (61 %) · C2a answer states (unasked,
+yes, no, withdrawn, lapsed) ✓ · C2b transitions incl. rollback and re-grant ✓ · C3 boundaries (23 h / 25 h /
+31 days, 1 s, 50 s, 1 h, 3 days) ✓ · C4a closed-enum payloads ✓ · C4b output identity ✓ · C5a mode switches
+(terminals, `CI`, `DO_NOT_TRACK`, `LIGHTHOUSE_USAGE_DATA`) ✓ · C5b version skew (predating, Cli-less,
+Mcp-less, rollback) ✓ · C6a refused / failing / silent Lighthouse ✓ · C6b unreadable store ✓ · C6c grant
+failure ✓ · C7a CI / build-agent environment ✓ · C7b two Lighthouses on one machine ✓ · C7c concurrency
+(two terminals, three callers, three assistant calls) ✓. **15/15, COMPLETE**, with the absence-scenario
+gap in Upstream issues 2.
