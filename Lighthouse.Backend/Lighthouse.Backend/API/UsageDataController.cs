@@ -137,7 +137,8 @@ namespace Lighthouse.Backend.API
             [FromHeader(Name = ConsentTokenHeader)] string? token,
             CancellationToken cancellationToken)
         {
-            if (batch?.Events is not { Length: > 0 } reported)
+            if (batch?.Events is not { Length: > 0 } reported
+                || (batch.Source is { } declared && !Enum.IsDefined(declared)))
             {
                 return BadRequest();
             }

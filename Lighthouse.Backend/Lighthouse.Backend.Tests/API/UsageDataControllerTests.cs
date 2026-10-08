@@ -80,6 +80,29 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         /// <summary>
+        /// A source travels as a name, but a bare number binds too, and a number that names none of
+        /// the three would reach the collector as a fourth surface nobody declared.
+        /// </summary>
+        [Test]
+        public async Task ABatchNamingASourceOutsideTheThree_IsRefusedAndNothingWaits()
+        {
+            var queue = new UsageDataEventQueue(Mock.Of<ILogger<UsageDataEventQueue>>());
+            var controller = AController(queue, ABrowserThatAgreed());
+
+            var answer = await controller.HandInEvents(
+                ABatchReporting(0, 0, (UsageDataSource)7), APresentedToken,
+                TestContext.CurrentContext.CancellationToken);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answer, Is.InstanceOf<BadRequestResult>(),
+                    "a source that is none of the three was taken in");
+                Assert.That(queue.TryTakeNext(out _), Is.False,
+                    "the batch was refused and kept anyway");
+            }
+        }
+
+        /// <summary>
         /// A number no browser of ours can produce means the message was not written by our page, and
         /// there is nothing to be gained from guessing what was meant.
         /// </summary>

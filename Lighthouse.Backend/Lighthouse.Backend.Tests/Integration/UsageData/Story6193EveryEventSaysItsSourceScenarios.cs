@@ -122,7 +122,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // @US-01 @driving_port @real-io @error @contract-shape:bounded-change
         // Nothing but our own page and our own clients posts here, so an unknown source is our bug.
         [Test]
-        [Ignore(PendingSlice01)]
         [TestCase("\"Shell\"")]
         [TestCase("7")]
         [TestCase("\"\"")]
@@ -222,7 +221,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // Refinement-day vote that made a Work Item Ready. The clients' own test asserts lh sends exactly
         // this file, so a drift on either side fails in the repository that caused it.
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task The_batch_lh_sends_for_a_vote_is_taken_in_and_forwarded_as_lh_declared_it()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -243,7 +241,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // The other half of the contract: what a client parses after its grant. The clients keep a copy of
         // this file and parse exactly it.
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task The_state_a_client_reads_after_its_grant_is_the_one_the_clients_parse()
         {
             var token = await ABrowserThatAgreedAsync();
