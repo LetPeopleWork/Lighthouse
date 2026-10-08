@@ -1414,11 +1414,11 @@ recommended value and is recorded below; the ones that change what a user sees o
 | DSN-9 | **Eval fixtures**: static route maps, `skills/<name>/evals/fixtures/<fixture>.json` = `{ version, routes: { "GET /api/v1/teams": <body>, … } }`, served by `scripts/eval-fixture.mjs <fixture.json>` (plain Node, like `smoke-fixture.mjs`: prints its URL, answers by method + path ignoring the query, `404` for anything unlisted, and logs every request line to stdout). Static bodies keep ages, risks and dates fixed, so a case never rots with the calendar; `version` drives the older-Lighthouse cases. Fixtures are authored by DISTILL from the Team Gravity / Voyager facts in this file. | ADR-231 |
 | DSN-10 | **Eval run** (A5/Q3): by hand, before the release. Procedure in `skills/README.md`: start the fixture; point MCP stdio (`LIGHTHOUSE_URL`) or `lh connection connect --mode server --url` at it; install only the skill(s) under test plus `lighthouse` for the specific skills; fresh conversation per run; send `prompt` and `followUps`; score from the assistant's tool-call transcript and the fixture's request log (writes appear there as `POST`/`PUT`/`DELETE`); three runs per case. Pass: guardrail cases 3/3, others ≥ 90 % per skill (KPI-2). Results recorded in this workspace as `evals/<yyyy-mm-dd>-<skill>.md` (case id × run → pass/fail + one line). | ADR-231 |
 | DSN-11 | **G1 MCP tool** `lighthouse_team_metrics_wip({ id })`: reads `getTeamWip(id, today)` (today = `getDefaultMetricsDateRange().endDate`, the same day every other metric tool defaults to). Facts = the server's Work Item list unchanged (list answer → second block `summary:` per ADR-224). Summary = `describeAsOfHeading` + `describeInProgressNow` + `describeBlockedNow` (existing, shared with `lh metrics team --metrics wip`) plus three new sentences: no System WIP Limit set; Lighthouse does not say which Work Items are Blocked (older server); no Work Items in progress. Summary reads: Terminology + the Team (name, System WIP Limit). Teams only (A7). No version gate (WIP has always existed; Blocked facts are read tolerantly). Both `blockedCountHistory` descriptions are corrected to name the Team tool (the Portfolio one points to `lh metrics portfolio --metrics wip`). | — |
-| DSN-12 | **G2 client read** `getTeamSleRisk(teamId)` → `GET /v1/teams/{id}/metrics/sleRisk` (no query, as the endpoint takes none) → `readonly SleRiskEntry[]` = `{ referenceId, risk, finishedItemsStillOpenAtThisAge, finishedItemsThatWentOnToMiss: number \| null }`. Gated: `FEATURE_REQUIRES_SERVER_NEWER_THAN.sleRisk = "v26.9.9.9"` (the last release without the route; see Open Questions). | ADR-232 (selection only) |
+| DSN-12 | **G2 client read** `getTeamSleRisk(teamId)` → `GET /v1/teams/{id}/metrics/sleRisk` (no query, as the endpoint takes none) → `readonly SleRiskEntry[]` = `{ referenceId, risk, finishedItemsStillOpenAtThisAge, finishedItemsThatWentOnToMiss: number \| null }`. Gated: `FEATURE_REQUIRES_SERVER_NEWER_THAN.sleRisk = "v26.9.9.9"` (the last release without the route; see Open Questions). No new ADR for where the read lives: every metric read already sits in `client`, so the version gate, Terminology and the shared wording apply in one place (`ARCHITECTURE.md` §8, "adding a capability end to end"). | ADR-232 (selection only) |
 | DSN-13 | **G2 surfaces**: `lh metrics team --metrics sleRisk` (alias `slerisk`) → payload key `sleRisk` = the server's array unchanged (`--json`/`--toon` = facts); `lh metrics portfolio --metrics sleRisk` → the section's unavailable value "SLE Risk is for Teams." MCP `lighthouse_team_metrics_sleRisk({ id })` → list answer + `summary:` block. Pretty view and summary share one `describeSleRisk…` in `client/src/metricsWording.ts`: heading + one sentence (how many of the listed Work Items are at risk against the Team's SLE days and probability) + one line per Work Item, highest risk first, with the evidence ("6 of 11 finished Work Items that reached this age went past 7 days"; "past the SLE" when `finishedItemsThatWentOnToMiss` is null). Summary reads: Terminology, the Team (name, SLE) and today's WIP (name and age per `referenceId`; a failed read leaves only the `referenceId`). Empty list + no SLE on the Team → "no SLE, so no SLE Risk"; empty list + an SLE → no Work Items in progress. | ADR-232 |
 | DSN-14 | **The 70 % line is the web's, restated once**: `SLE_RISK_AT_RISK_FROM = 70` in `client/src/metricsWording.ts`, with a parity test that copies the web's `sleRiskAtRiskSummary` cases (`Lighthouse.Frontend/src/utils/charts/sleRisk.test.ts`: 55 → not at risk, 100 → at risk, 0, the boundary) — the `forecastDisplayRules.parity.test.ts` precedent. The client counts `risk >= 70`; nothing else in the clients decides "at risk". | — |
-| DSN-15 | **G3 client reads** `getTeamProcessBehaviorChart(teamId, range, metricType)` and `getPortfolioProcessBehaviorChart(portfolioId, range, metricType)` over the existing `ProcessBehaviorMetricType` union; route by type: `Throughput`→`throughput/pbc`, `Arrivals`→`arrivals/pbc`, `Wip`→`wipOverTime/pbc`, `WorkItemAge`→`totalWorkItemAge/pbc`, `CycleTime`→`cycleTime/pbc`, `FeatureSize`→`featureSize/pbc` (Portfolio only; a Team asking for it is refused in the client, no request). Type `ProcessBehaviorChart` = `{ status, statusReason, xAxisKind, average, upperNaturalProcessLimit, lowerNaturalProcessLimit, baselineConfigured?, dataPoints: { xValue, yValue, specialCauses, workItemIds, isBlackout? }[] }`. Not gated: the routes predate every supported server; a reader that does not recognise the payload yields no summary (ADR-223). | — |
-| DSN-16 | **G3 surfaces**: MCP `lighthouse_team_metrics_processBehaviorChart({ id, metricType, startDate?, endDate? })` and `lighthouse_portfolio_metrics_processBehaviorChart(…)`; `metricType` **required** (Team enum without `FeatureSize`); dates default as every metric tool (`getDefaultMetricsDateRange`). Object answer → `summary` field beside the facts (ADR-224). CLI `lh metrics team\|portfolio --metrics processBehaviorChart` (aliases `pbc`, `processbehaviorchart`, `processbehaviourchart`) fetches every type of the scope in parallel → payload `processBehaviorChart: { startDate, endDate, charts: { <Type>: <server chart or refusal value> } }`; pretty = one heading + sentence per type. | ADR-232 |
+| DSN-15 | **G3 client reads** `getTeamProcessBehaviorChart(teamId, range, metricType)` and `getPortfolioProcessBehaviorChart(portfolioId, range, metricType)` over the existing `ProcessBehaviorMetricType` union; route by type: `Throughput`→`throughput/pbc`, `Arrivals`→`arrivals/pbc`, `Wip`→`wipOverTime/pbc`, `WorkItemAge`→`totalWorkItemAge/pbc`, `CycleTime`→`cycleTime/pbc`, `FeatureSize`→`featureSize/pbc` (Portfolio only; a Team asking for it is refused in the client, no request). Type `ProcessBehaviorChart` = `{ status, statusReason, xAxisKind, average, upperNaturalProcessLimit, lowerNaturalProcessLimit, baselineConfigured?, dataPoints: { xValue, yValue, specialCauses, workItemIds, isBlackout? }[] }`. Not gated: the routes predate every supported server; a reader that does not recognise the payload yields no summary (ADR-223). Refusals follow the existing MCP convention (`team metrics: invalid id`): a Team asking for `FeatureSize`, or no `metricType`, answers the error text `team metrics: invalid metricType` and sends no request (pinned by DISTILL). Same placement as DSN-12. | — |
+| DSN-16 | **G3 surfaces**: MCP `lighthouse_team_metrics_processBehaviorChart({ id, metricType, startDate?, endDate? })` and `lighthouse_portfolio_metrics_processBehaviorChart(…)`; `metricType` **required** (Team enum without `FeatureSize`) because one chart is one question and each type is its own request — the assistant names the chart it needs instead of fetching five; dates default as every metric tool (`getDefaultMetricsDateRange`). Object answer → `summary` field beside the facts (ADR-224). CLI `lh metrics team\|portfolio --metrics processBehaviorChart` (aliases `pbc`, `processbehaviorchart`, `processbehaviourchart`) fetches every type of the scope in parallel → payload `processBehaviorChart: { startDate, endDate, charts: { <Type>: <server chart or refusal value> } }`; pretty = one heading + sentence per type. | ADR-232 |
 | DSN-17 | **PBC summary rules** (one `describeProcessBehaviorChart…` for both surfaces): status not `Ready` → the status and its reason, no signal named; `baselineConfigured === false` → says no baseline is set and the limits come from the shown range, no signal named; otherwise each signal type (Lighthouse's four names, `None` ignored) with the days it fired, blackout days (`isBlackout`) never named as a signal and listed as blackout days; no signal → "No signals". Facts are never filtered. Whether a run counts as "persisting" (A3) is the skill's call from those days, not the client's. | — |
 | DSN-18 | **Opt-in metric selections**: `sleRisk` and `processBehaviorChart` are fetched **only when named** in `--metrics`; `lh metrics team\|portfolio` without `--metrics` returns and prints exactly what it does today (same requests, same headline). Both appear in the help's `Allowed metrics:` line, after the existing keys. | ADR-232 |
 | DSN-19 | **No usage-data mapping** for the four new tools or two new selections (#6193 M9: only events the web sends; the web sends none for these widgets). `usageDataOccurrencesOf` unchanged. | — |
@@ -1999,3 +1999,345 @@ three high). Resolution:
 - **MD-4 → (b).** On clients too old for the WIP, SLE Risk and chart reads, the Daily Flow Review skill
   falls back to `lh --metrics wip` and Work Item age against the 70th percentile, and says so.
 - `zip` must be installed on the maintainer's machine before slice 04's DELIVER (it is missing today).
+
+---
+
+## Wave: DISTILL / [REF] Maintainer decisions — sketch walk-through (2026-10-08)
+
+Walked through before any scenario was written; all four taken as sketched.
+
+- **SK-1 Daily Flow Review answer → as proposed (Journeys, D9).** "Decide first" + at most 3 decisions +
+  at most 2 discussion prompts + "Everything else is flowing."; a Work Item Age or WIP signal is a
+  discussion prompt; every Work Item carries its link; no people.
+- **SK-2 Refinement PO answer → as proposed (Journeys).** Next Refinement and days to it; ready count by
+  Votes, need range and verdict; how many more to refine; the Work Items worth the session's time with
+  their votes and links; the closing line. No "still waiting for votes" count.
+- **SK-3 `--metrics sleRisk` pretty → as sketched.** Heading (`describeAsOfHeading`), "SLE Risk", one
+  sentence ("2 of 8 Work Items in progress are at risk of missing the SLE (85% within 7 days)."), then
+  every Work Item, highest risk first, with "past the SLE" or the percentage and its evidence.
+- **SK-4 PBC + WIP → as sketched (MQ-1, MQ-2, MQ-3 confirmed).** `processBehaviorChart` with aliases
+  `pbc`, `processbehaviorchart`, `processbehaviourchart`; both new selections opt-in; pretty = range
+  heading + one line per chart type ("No signals" / no baseline / signal and days / not ready and its
+  reason). `--metrics wip` gains the three shared sentences (no System WIP Limit set; Lighthouse does not
+  say which Work Items are Blocked; no Work Items in progress). The chart heading follows the web's own
+  widget title.
+
+---
+
+## Wave: DISTILL / [REF] Prior-Wave Reading and Reconciliation
+
+DISTILL 2026-10-08, maintainer AFK after the sketch walk-through above: engineering options taken at their
+recommended value and listed under "Decisions taken"; nothing below needed the maintainer. Acceptance
+designer: Quinn (`nw-acceptance-designer`). `[lang-mode] typescript` (clients repo, Vitest). `[policy-mode]
+inherit` (two rows appended, see Adapter coverage). `[port-mode]` N/A: the project policy states the
+Python state-delta port does not apply to this TypeScript/.NET project.
+
+| File | Read |
+|---|---|
+| This file: DISCUSS (M1–M8, D0–D13, Gap List, US-01..10, DoD, A1–A7, Q1–Q4), DESIGN (DSN-1..23, Driving Ports, Test Strategy, Contract Shapes, OQ-1..3, MQ-1..3), DEVOPS (pack contract, Changed Assumptions, MD-1..4), sketch decisions SK-1..SK-4 | ✓ |
+| `devops/environments.yaml` (five target environments) | ✓ — every case names one or runs `clean` |
+| ADR-229, ADR-231; `docs/product/architecture/brief.md` (via DESIGN) | ✓ |
+| `docs/architecture/atdd-infrastructure-policy.md` | ✓ — inherit |
+| `discuss/wave-decisions.md`, `design/wave-decisions.md`, `devops/wave-decisions.md` | ⊘ — lean single file: every wave's decisions are in this file |
+| Clients: `skill/SKILL.md` + references, `packages/cli/src/index.ts` (help, `METRIC_KEYS`, aliases), `packages/client/src/{index,metricsWording}.ts`, `packages/mcp-core/src/index.ts` (labels, refusals), `test-support/{fakeLighthouse,lighthouseAnswers,metricsAnswers}.ts`, `packages/cli/test-support/{lhSession,cliHarness}.ts`, `packages/mcp-core/test-support/mcpHarness.ts` | ✓ |
+| Lighthouse `SleRiskDto.cs`, `ProcessBehaviourChart.cs`, `BaseMetricsService.cs` (PBC `xValue` = `yyyy-MM-dd`), web `BaseMetricsView.tsx` (chart titles) | ✓ |
+| `docs/feature/story-6193-usage-data-from-clients/feature-delta.md` "Test placement" | ✓ — precedent followed |
+
+**Reconciliation passed — 0 contradictions that need the maintainer.** Seven places where a later wave
+refined an earlier one; each is engineering, DESIGN's side taken:
+
+| # | Earlier | Later | Taken |
+|---|---|---|---|
+| R1 | DISCUSS Driving Ports: `processBehaviourChart` | DSN-16 / MQ-1 / SK-4: `processBehaviorChart`, British spelling an alias | DESIGN (confirmed in SK-4) |
+| R2 | US-06 pitch summary "8 Work Items in progress · System WIP Limit: 6 · 2 Blocked" | DSN-11: the existing `--metrics wip` lines plus three shared sentences | DESIGN (MQ-2, SK-4) |
+| R3 | D2: `evals/` inside the zipped folder | DSN-2: `evals/` excluded from the zip | DESIGN |
+| R4 | D10: drift covers tools and command groups | DSN-6: also subcommands, `--metrics` keys, frontmatter | DESIGN |
+| R5 | US-07 per-item line "GR-063 · 5 days · 55% — …" | DSN-13: the same line with the Work Item's name | DESIGN |
+| R6 | DSN-1: each skill's cases in `skills/<name>/evals/` | DSN-2 + DEVOPS pack contract: a skill folder without `SKILL.md` fails `verify`; OQ-2: no placeholder skill | Staging, see Decisions D-1 |
+| R7 | DSN-11 does not name the refusal label | Every existing metric tool refuses as `team metrics: <category> (<reason>)` | Existing convention, pinned |
+
+## Wave: DISTILL / [REF] WS Strategy
+
+Inherited **C — no walking skeleton** (brownfield). One `@walking_skeleton` per story where an automated
+end-to-end path exists; none is green at hand-off, because each needs DELIVER's first slice of its story:
+
+| Story | Walking skeleton | State at hand-off |
+|---|---|---|
+| #6245 | `skills/skills.drift.test.ts` "no skill names a tool, an lh command or a metric that does not exist" — `pnpm test` → `listTools()` + `lh` help → every skill's text | **Skipped.** Red today for a real defect: the general skill tells assistants to run `lh feature list` (`skill/SKILL.md:279`), which `lh` never had. Slice 01 removes it and unskips. |
+| #6217 | No automated one: the skill is text. The eval case `the-po-sees-whether-to-refine-more` is the end-to-end check, run by hand. | — |
+| #6246 | `packages/mcp-core/src/currentWip.test.ts` "receives each Work Item with its age, state, whether it is Blocked and since when, and its link" | **Skipped.** The tool does not exist; slice 06 unskips. |
+
+Active at hand-off and green (19): the drift check's own machinery (parsers read real anchors, alias probe,
+four tests proving the check names offenders, frontmatter rule), the eval-case and fixture integrity
+checks (9), and three characterisations of output that must not change (`lh metrics team` and
+`lh metrics portfolio` without `--metrics`, recorded today in `packages/cli/src/__snapshots__/`; and
+`--metrics wip` for a Team with everything to say). These describe what exists, so they are green by
+construction and stay active to catch DELIVER changing them by accident.
+
+## Wave: DISTILL / [REF] Scenario List with Tags
+
+Tags are in a comment above each test (`@walking_skeleton`, `@driving_port`, `@real-io`, `@in-memory`,
+`@error`, `@adapter-integration`, `@contract-shape:<pure-function|bounded-change|unbounded-preservation>`).
+✓ = active and green, ↓ = `it.skip`. 80 tests, 19 active, 61 skipped; 43 of 77 test definitions are
+`@error` (56 %).
+
+**#6245 — drift check and eval integrity** (`skills/`, slice 01)
+
+| Test | Tags | |
+|---|---|---|
+| finds a known tool, group, subcommand and metric in what the clients announce | `@driving_port @real-io` | ✓ |
+| tells a metric alias lh takes from a word it refuses | `@error` | ✓ |
+| names a tool that exists and that the general skill never mentions | `@error` | ✓ |
+| names an lh command and a metric key the general skill never mentions | `@error` | ✓ |
+| names a tool, a command and a metric that do not exist, with the file and line they are on | `@error` | ✓ |
+| accepts a family of tools, an alias, a flag after the group and a name in prose | | ✓ |
+| no skill names a tool, an lh command or a metric that does not exist | `@walking_skeleton @driving_port @real-io` | ↓ |
+| the general skill names every MCP tool, every lh command and every metric key | `@driving_port @real-io` | ↓ |
+| every skill folder has a SKILL.md whose name is the name it ships under | `@driving_port @real-io` | ✓ |
+| finds the cases of all three skills | | ✓ |
+| every case says who it is for, where it runs, against which Lighthouse, and what must happen | `@error` | ✓ |
+| no two cases of one skill share an id | `@error` | ✓ |
+| every skill has positive, neighbouring and negative cases | | ✓ |
+| every case names only tools that exist or that this release adds | `@error` | ✓ |
+| every case names only lh commands that exist | `@error` | ✓ |
+| every tool a case names exists in the clients | | ↓ |
+| names its Lighthouse version and answers routes by method and path | `@error` | ✓ |
+| answers the Terminology and sign-in reads every case makes | `@error` | ✓ |
+| every fixture is used by at least one case | | ✓ |
+| eval fixture server: answers a listed read with the fixture's body, whatever its query | `@real-io @adapter-integration` | ↓ |
+| … reports the fixture's version as its own | `@real-io @adapter-integration` | ↓ |
+| … answers 404 to a route the fixture does not list, and prints that request | `@error @real-io @adapter-integration` | ↓ |
+| … prints every write it receives | `@error @real-io @adapter-integration` | ↓ |
+| … serves the general skill's Northwind fixture to lh, which reads Gravity's Work Items in progress from it | `@real-io @adapter-integration` | ↓ |
+
+**#6246 slice 06 — current WIP over MCP** (`packages/mcp-core/src/currentWip.test.ts`, `packages/cli/src/currentWipView.test.ts`)
+
+| Test | Tags | |
+|---|---|---|
+| receives each Work Item with its age, state, whether it is Blocked and since when, and its link | `@walking_skeleton @driving_port` | ↓ |
+| reads the Team's Work Items in progress as of today | `@driving_port` | ↓ |
+| tells a Team without a System WIP Limit that none is set (MCP) | `@error` | ↓ |
+| does not read a Lighthouse that says nothing about Blocked as nothing Blocked | `@error` | ↓ |
+| says nothing is in progress when nothing is (MCP) | `@error` | ↓ |
+| says it in the instance's own words | `@error` | ↓ |
+| passes a refused read on as the error it is, with no summary | `@error` | ↓ |
+| still returns the Work Items when the Team or the Terminology cannot be read | `@error` | ↓ |
+| names the Team read and, for a Portfolio, the lh command | | ↓ |
+| lh: tells a Team without a System WIP Limit that none is set | `@error @real-io` | ↓ |
+| lh: says Lighthouse does not tell which Work Items are Blocked, rather than showing none Blocked | `@error @real-io` | ↓ |
+| lh: says nothing is in progress when nothing is | `@error @real-io` | ↓ |
+| lh: adds none of them when there is everything to say | `@real-io` | ✓ |
+
+**#6246 slice 07 — SLE Risk** (`packages/cli/src/sleRiskView.test.ts`, `packages/mcp-core/src/sleRisk.test.ts`, `packages/cli/src/metricsSelections.test.ts`)
+
+| Test | Tags | |
+|---|---|---|
+| lh: names how many are at risk, then every Work Item highest risk first | `@driving_port @real-io` | ↓ |
+| lh: shows each Work Item's age and risk with the finished Work Items behind it, or that it is past the SLE | `@driving_port @real-io` | ↓ |
+| lh: hands over Lighthouse's numbers unchanged with --json | `@driving_port @real-io` | ↓ |
+| lh: counts a Work Item at 70% as at risk and one at 69% as not | `@error @real-io` | ↓ |
+| lh: says it in the instance's own words | `@error @real-io` | ↓ |
+| lh: tells a Team without an SLE that it has no SLE Risk | `@error @real-io` | ↓ |
+| lh: says SLE Risk is for Teams when asked for a Portfolio, without asking Lighthouse for it | `@error @real-io` | ↓ |
+| lh: tells Priya to upgrade a Lighthouse that has no SLE Risk yet, and does not ask it | `@error @real-io` | ↓ |
+| lh: keeps every risk when the Work Items' names cannot be read | `@error @real-io` | ↓ |
+| MCP: receives Lighthouse's own risk for each Work Item and the summary lh prints | `@driving_port` | ↓ |
+| MCP: lists every Work Item highest risk first, with the finished Work Items behind each number | `@driving_port` | ↓ |
+| MCP: counts a Work Item at 70% as at risk and one at 69% as not | `@error` | ↓ |
+| MCP: tells a Team without an SLE that it has no SLE Risk | `@error` | ↓ |
+| MCP: says nothing is in progress when a Team with an SLE has nothing in progress | `@error` | ↓ |
+| MCP: passes on an older Lighthouse's refusal as the upgrade it asks for | `@error` | ↓ |
+| MCP: keeps every risk when the Work Items' names cannot be read | `@error` | ↓ |
+| the metrics view without --metrics: makes the same reads for a Team and prints the same view | `@in-memory @contract-shape:unbounded-preservation` | ✓ |
+| … makes the same reads for a Portfolio and prints the same view | `@in-memory @contract-shape:unbounded-preservation` | ✓ |
+| lists them after the existing metrics (help) | `@driving_port` | ↓ |
+| reads SLE Risk, and nothing it was not asked for, for --metrics sleRisk / slerisk (2) | `@driving_port` | ↓ |
+
+**#6246 slice 08 — Process Behaviour Charts** (`packages/cli/src/processBehaviorChartView.test.ts`, `packages/mcp-core/src/processBehaviorChart.test.ts`)
+
+| Test | Tags | |
+|---|---|---|
+| lh: prints one line per chart under the range, each titled as the web titles it | `@driving_port @real-io` | ↓ |
+| lh: reads each of the Team's five charts once | `@driving_port @real-io` | ↓ |
+| lh: hands over every chart unchanged with --json, by chart type | `@driving_port @real-io` | ↓ |
+| lh: reads a Portfolio's six charts, Feature Size among them | `@driving_port @real-io` | ↓ |
+| lh: takes pbc / processbehaviorchart / processbehaviourchart for the charts too (3) | `@real-io` | ↓ |
+| lh: says no baseline is set and names no signal | `@error @real-io` | ↓ |
+| lh: lists a blackout day as one and never as a signal | `@error @real-io` | ↓ |
+| lh: titles the charts in the instance's own words | `@error @real-io` | ↓ |
+| lh: shows the other charts when one cannot be read | `@error @real-io` | ↓ |
+| MCP: names the signal and the days it fired, beside the server's chart unchanged | `@driving_port` | ↓ |
+| MCP: says there are no signals when every day is inside the limits | `@driving_port` | ↓ |
+| MCP: reads the range every metric tool reads when no dates are given | `@driving_port` | ↓ |
+| MCP: reads a Portfolio's Feature Size chart | `@driving_port` | ↓ |
+| MCP: says no baseline is set and the limits come from the range shown, and names no signal | `@error` | ↓ |
+| MCP: passes on why Lighthouse could not compute the chart | `@error` | ↓ |
+| MCP: lists a blackout day as one and never as a signal | `@error` | ↓ |
+| MCP: still names the signals on a chart from a Lighthouse that predates blackout days and baselines | `@error` | ↓ |
+| MCP: names no signal it cannot read, and still hands over the chart | `@error` | ↓ |
+| MCP: refuses a Team's Feature Size chart without asking Lighthouse | `@error` | ↓ |
+| MCP: asks which chart when none is named, without asking Lighthouse | `@error` | ↓ |
+
+## Wave: DISTILL / [REF] Eval Cases — the skills' acceptance specification
+
+One case per AC of US-01..05 and US-09..10 that needs a model to check (DSN-8). Shape as DSN-8, plus one
+optional field, `environment`, naming the `environments.yaml` entry the case runs in (default `clean`).
+53 cases over 16 fixtures; 26 of them negative or neighbour (49 %); 12 guardrails, each with something
+scored from the transcript or the request log, not only a judgement.
+
+| Skill | Cases | Fixtures | Where now | Where it moves, when |
+|---|---|---|---|---|
+| `lighthouse` (#6245) | 20 (12 positive, 5 negative, 3 neighbour; 1 guardrail) | `northwind` (current Lighthouse: Gravity, Voyager, Ocean Explorer), `northwind-v26-6-7-1` (older Lighthouse), `northwind-renamed-terms` (Work Item → Ticket) | `skill/evals/` | moves with the folder in slice 04's `git mv skill skills/lighthouse` |
+| `lighthouse-refinement` (#6217) | 16 (9 / 5 / 2; 7 guardrails) | `gravity-below` (4 ready, need 6–9, GR-051 1 Yes 2 No, GR-057 open question, GR-055 no votes; Voyager without cadence), `gravity-above`, `gravity-refinement-day`, `gravity-ready-by-stage`, `gravity-nothing-waiting` | `test-support/pending-skill-evals/lighthouse-refinement/` | `git mv` to `skills/lighthouse-refinement/evals/` in the commit that adds its `SKILL.md` (slice 04, at the latest the layout-move commit) |
+| `lighthouse-daily-flow-review` (#6246) | 17 (6 / 9 / 2; 4 guardrails) | `gravity-daily` (the Journey: GR-061 Blocked since Mon, GR-058 past the SLE, WIP 8 of 6, GR-063 at 55 %, Total Work Item Age Large Change Wed–Thu), `gravity-calm`, `gravity-older-lighthouse` (v26.9.9.9), `voyager-no-sle`, `gravity-throughput-shift`, `gravity-no-baseline`, `gravity-persisting-signal`, `gravity-blackout-day` | `test-support/pending-skill-evals/lighthouse-daily-flow-review/` | `git mv` to `skills/lighthouse-daily-flow-review/evals/` in the commit that adds its `SKILL.md` (slice 09) |
+
+Fixture bodies were built from `test-support/{lighthouseAnswers,metricsAnswers,dailyFlowAnswers}.ts`
+(DESIGN's reuse decision) and are static JSON. Every fixture answers Terminology and `auth/mode` (OQ-3);
+an unlisted route answers 404 and shows in the request log.
+
+Not expressible as a case, kept as production checks (DSN-9 fixtures answer every listed route with 200):
+a vote refused over the shared MCP server without sign-in (US-05 AC 7) and "Lighthouse cannot tell which
+votes are his" (US-05 AC 2).
+
+## Wave: DISTILL / [REF] Copy Pinned by the Tests
+
+Exact strings the tests hold DELIVER to. Those marked *DISTILL* are not literal in SK-3/SK-4 and were
+chosen here from the stories' own wording; change them in one place in each test file if the maintainer
+prefers other words.
+
+| Where | Pinned | Source |
+|---|---|---|
+| `--metrics sleRisk` pretty + MCP summary | heading `Gravity · as of Thu 8 Oct 2026`; a line `SLE Risk`; `2 of 8 Work Items in progress are at risk of missing the SLE (85% within 7 days).` | SK-3 |
+| same | per Work Item, highest risk first: starts with the reference, holds name, age, `55%` and `6 of 11 finished Work Items that reached this age went past 7 days`; a past-SLE line ends `past the SLE` | SK-3, DSN-13; line separators left free |
+| same | `Voyager has no SLE, so there is no SLE Risk.`; `SLE Risk is for Teams.` | US-07, DSN-13 |
+| same, renamed | `PRM Risk`; `2 of 8 Tickets in progress are at risk of missing the PRM (85% within 7 days).` | DSN-20 |
+| WIP, both surfaces | `No System WIP Limit is set.` · `Lighthouse does not say which Work Items are Blocked.` · `No Work Items are in progress.` | SK-4 wording; exact punctuation *DISTILL* |
+| `--metrics processBehaviorChart` | one line per chart starting with the web's title: `Throughput`, `Arrivals`, `Work In Progress`, `Total Work Item Age`, `Cycle Time`, `Feature Size` + ` Process Behaviour Chart`; `No signals`; signal names and days (`7 Oct`, `8 Oct`); `no baseline` (any case); the server's `statusReason` verbatim; blackout day named as `blackout` | SK-4 |
+| help | `Allowed metrics: …, processBehaviorOverTime, sleRisk, processBehaviorChart` | DSN-18 |
+| MCP | facts labels `team wip: `, `team sleRisk: `, `team processBehaviorChart: `; refusals `team metrics: <category> (<reason>)`; `team metrics: invalid metricType` for a missing metric type or a Team's Feature Size | house convention; `invalid metricType` *DISTILL* |
+
+## Wave: DISTILL / [REF] Adapter Coverage
+
+| Driven adapter | `@real-io` test | Covered by |
+|---|---|---|
+| `LighthouseClient` over HTTP, new routes `teams/{id}/metrics/sleRisk`, `teams|portfolios/{id}/metrics/*/pbc` | YES | `sleRiskView.test.ts`, `processBehaviorChartView.test.ts`: `lh` through `runCliSession` against `aFakeLighthouse` on a real socket, every request observed (routes asked, gate sends nothing) |
+| `LighthouseClient` WIP read (existing route, new MCP consumer) | YES | `currentWipView.test.ts` (`lh`, real socket); the MCP tool over the stub client in `currentWip.test.ts` |
+| Eval fixture server `scripts/eval-fixture.mjs` | YES | `evalFixture.test.ts`, spawned as its own process on a real port, incl. `lh` reading the Northwind fixture |
+| GitHub Releases (`*-skill.zip`) | NO — by design | DEVOPS: `pack-skills.sh` is probed red-first by hand in slices 04 and 09 (no `zip` locally; a Vitest test would red every local run); `verify` runs it on every push |
+| The model | NO — by design | Eval cases run by hand, three runs each (KPI-2) |
+
+Policy: two rows appended to `docs/architecture/atdd-infrastructure-policy.md` — "The skills an assistant
+reads" (Driving) and "The Lighthouse server, as an assistant sees it during an eval run" (fake).
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage
+
+| Driving port (DESIGN) | How the tests enter |
+|---|---|
+| `pnpm test` drift check | `skills/skills.drift.test.ts` itself; reads `createMcpCoreRuntime().listTools()` and `runCliCommand` help |
+| `node scripts/eval-fixture.mjs <fixture>` | `skills/evalFixture.test.ts`, child process |
+| MCP `lighthouse_team_metrics_wip`, `…_sleRisk`, `…_team_metrics_processBehaviorChart`, `…_portfolio_metrics_processBehaviorChart` | `createMcpCoreRuntime(...).callTool` via `mcpHarness` (stub client keyed by read name); MCP transports need no change (DSN), pinned annotations already cover new tools in `runtime.test.ts` |
+| `lh metrics team|portfolio --metrics wip|sleRisk|processBehaviorChart` (+ aliases) | `lhOn(machine)` → `runCliSession`, real config file, real HTTP client, `aFakeLighthouse` |
+| `lh metrics team|portfolio` without `--metrics` | `cliHarness` characterisation (reads + file snapshot) |
+| Assistant + each skill | eval cases (manual, DSN-10) |
+
+## Wave: DISTILL / [REF] Scaffolds
+
+| File | Marker | Why |
+|---|---|---|
+| `scripts/eval-fixture.mjs` | `// SCAFFOLD: true` + `export const __SCAFFOLD__ = true`; throws `Not yet implemented -- RED scaffold` | The eval fixture tests spawn it; slice 01 replaces it with the server |
+
+No other scaffold: the tests import no new production symbol. The MCP tests call the new tools by name
+(an unknown tool answers `Unknown tool: …`), the CLI tests pass the new selections as arguments (today
+`Unknown metric: …`), and the stub client is keyed by read name, so nothing new has to exist to compile.
+Existing modules' exports are untouched.
+
+## Wave: DISTILL / [REF] Test Placement
+
+- lighthouse-clients, per the #6193 precedent: colocated `*.test.ts` beside the package each slice
+  changes (`packages/cli/src/`, `packages/mcp-core/src/`); type-checked by `typecheck:tests`.
+- Skill checks live in `skills/` (DSN-4): `skills.drift.test.ts`, `skills.evals.test.ts`,
+  `evalFixture.test.ts`. Root `vitest.config.ts` `include` gains `skills/**/*.test.ts` and
+  `tsconfig.tests.json` gains `skills/**/*.ts` now rather than in slice 01, because the tests exist now.
+- Shared answers for the daily: `test-support/dailyFlowAnswers.ts` (Gravity before its daily on
+  Thu 8 Oct 2026: WIP, SLE Risk, charts; Voyager without SLE, WIP limit or baseline).
+- Characterisation snapshots: `packages/cli/src/__snapshots__/metricsDefaultView.{team,portfolio}.txt`,
+  recorded from today's `lh`.
+- Eval cases: see the table above.
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- DESIGN driving ports as listed; tool and method names DSN-11..16 (`getTeamSleRisk`,
+  `getTeamProcessBehaviorChart`, `getPortfolioProcessBehaviorChart` are the read names the MCP stub answers).
+- DEVOPS: `zip` installed before slice 04 (pack probe); the five environments of `environments.yaml` for
+  the eval run; OQ-1 (the `sleRisk` gate baseline) settled at slice 07 — the tests use `v26.9.9.9` as the
+  refused version and the fake's default `v26.10.8.1` as a supported one.
+- `pnpm run ci` green at hand-off (2026-10-08): lint, 2 040 passed / 61 skipped, typecheck, build,
+  typecheck:tests.
+
+## Wave: DISTILL / [REF] Red Classification
+
+Every skipped test was run once unskipped against today's code: all fail on an `AssertionError`
+(MISSING_FUNCTIONALITY), none on an import, setup or type error. What each fails on when DELIVER
+unskips it:
+
+| Test (file) | Fails today on |
+|---|---|
+| no skill names a tool, an lh command or a metric that does not exist (drift) | `lh feature list (skill/SKILL.md:279)` is not an `lh` command |
+| the general skill names every MCP tool, every lh command and every metric key (drift) | 42 names missing, e.g. `lighthouse_team_metrics_cumulativeStateTime`, `lh blackout list`, `--metrics blocked` |
+| every tool a case names exists in the clients (evals) | `lighthouse_team_metrics_wip`, `…_sleRisk`, `…_processBehaviorChart` do not exist |
+| eval fixture server, all 5 (evalFixture) | the scaffold exits before printing an address (`expected null not to be null`) |
+| current WIP MCP, all 9 (currentWip) | `Unknown tool: lighthouse_team_metrics_wip` (`isError` true, no facts, no summary); the description test: `blockedCountHistory` description does not name the tool |
+| lh: no System WIP Limit / Blocked not known / nothing in progress (currentWipView, 3) | the pretty view lacks the sentence |
+| lh SLE Risk, all 9 (sleRiskView) | `Unknown metric: "sleRisk"`; the Portfolio one finds no "SLE Risk is for Teams." |
+| MCP SLE Risk, all 7 (sleRisk) | `Unknown tool: lighthouse_team_metrics_sleRisk` |
+| help lists the two selections (metricsSelections) | `Allowed metrics:` line ends at `processBehaviorOverTime` |
+| reads SLE Risk for `sleRisk` / `slerisk` (metricsSelections, 2) | exit code 1, `Unknown metric` |
+| lh charts, all 11 (processBehaviorChartView) | `Unknown metric: "processBehaviorChart"` (no chart route asked, no chart line) |
+| MCP charts, all 11 (processBehaviorChart) | `Unknown tool: lighthouse_team_metrics_processBehaviorChart` / `…_portfolio_…`; the two refusal tests expect `team metrics: invalid metricType` |
+
+## Wave: DISTILL / [REF] Completeness Audit
+
+`nw-at-completeness-check` 15 items: **13/15 — COMPLETE.** Gaps, both `AT_GAP_IN_DELIVERY_SCOPE`
+accepted as production checks: (1) a vote refused over the shared MCP server without sign-in, (2) "cannot
+tell which votes are his" — neither expressible in a static 200-only fixture. No
+`SPECIFICATION_AMBIGUITY`. Not applicable with reason: state-machine PBT (Tier B) — no journey here is a
+state machine the clients own; the skills' conversations are tested by eval cases, not by generated input.
+Mandate-12 domain-types module: N/A by the project policy (TypeScript/.NET; Python pilot artifacts do not
+apply).
+
+## Wave: DISTILL / [REF] Decisions taken (AFK)
+
+| # | Decision | Why |
+|---|---|---|
+| D-1 | Eval cases of a skill whose folder does not exist yet wait in `test-support/pending-skill-evals/<skill>/` and are `git mv`-ed into `skills/<skill>/evals/` with that skill's `SKILL.md` (Refinement: slice 04; Daily Flow Review: slice 09). The general skill's cases go straight into `skill/evals/` and move with the folder. | A `skills/<name>/` folder without `SKILL.md` fails the pack contract in `verify` from slice 04, and OQ-2 rules out a placeholder skill; staging keeps the cases in the clients repo, Biome-formatted and checked on every commit. |
+| D-2 | `skill/evals/` exists from now until slice 04, so a release cut before slice 04 would zip it into `lighthouse-skill.zip` (today's CI zips the whole folder). | Acceptable: DEVOPS holds every release until the checklist is done, and slice 04's packer excludes `evals/`. |
+| D-3 | Optional `environment` field on a case (one of `environments.yaml`). | DEVOPS names five environments and asked DISTILL to write the cases for them (stale general skill, ProKanban skill, older clients, older Lighthouse); DSN-8 had no field for it. |
+| D-4 | Three characterisation tests stay active (both default metrics views, `--metrics wip` with everything to say). | They describe output that exists and must not change; active, they catch an accidental change during DELIVER. |
+| D-5 | The drift test resolves the general skill at `skills/lighthouse/` when it exists, else `skill/`. | Slice 04 then needs no edit to the test; the frontmatter rule expects `name: lighthouse` in either place. |
+| D-6 | The drift test's alias check asks `lh` itself (`--metrics <key>` and whether it answers `Unknown metric`). | DSN-6 lets a known alias pass, and aliases are printed nowhere; asking `lh` keeps the check on public behaviour. |
+| D-7 | Pinned exact copy for the three WIP sentences, the MCP labels and `team metrics: invalid metricType` (marked *DISTILL* above). | SK-4 fixed their content, not their punctuation; the tests need one form. |
+| D-8 | Daily fixtures are set on Thu 8 Oct 2026 (the `lh` harness's day) with the Total Work Item Age signal on Wed 7 and Thu 8 Oct; the Journey said Thu 9 Oct and "since Tue". | One date across automated tests and fixtures; the shape of the answer is unchanged. |
+
+## Wave: DISTILL / [REF] For the maintainer
+
+Nothing blocks DELIVER. Worth a look before slice 01:
+
+- **`lh feature list`** in today's general skill (`skill/SKILL.md:279`) does not exist — the drift
+  test's walking skeleton found it. Slice 01 fixes it.
+- **The *DISTILL* copy** in "Copy Pinned by the Tests": three WIP sentences, `team metrics: invalid
+  metricType`. Change now if you want other words; after DELIVER they are in the view.
+- **D-2**: do not approve a clients release before slice 04 lands, or `lighthouse-skill.zip` carries the
+  general skill's eval cases.
+
+---
+
+## Wave: DISTILL / [REF] Final review gate (2026-10-08)
+
+- DISCUSS (product-owner reviewer): approved, 0 findings. DEVOPS (platform reviewer): approved, 0 findings.
+- DESIGN (solution-architect reviewer): conditionally approved, 0 blockers, 2 high, 1 low — all three
+  closed in DSN-12/15/16 above: no new ADR for where the reads live (existing `client` placement),
+  the FeatureSize/no-type refusal written out as the existing MCP error convention, and why `metricType`
+  is required.
+- DISTILL (acceptance reviewer): approved, 0 findings.
+- Copy alignment: the third WIP sentence is pinned as "No Work Items are in progress." (the approved
+  sketch's wording), not the DISCUSS draft's "No Work Items in progress".
