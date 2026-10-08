@@ -1635,3 +1635,448 @@ chart. Not adopted: a runbook entry for the post-rollback window — its premise
 PostHog by user agent) is false, since no user agent is forwarded, and the residual is already stated in ADR-225.
 Treat the approval as moderately weak: the review cited no code it had read, so the factual claims rest on this
 wave's own reading (Prior-Wave Reading table). The consolidated review at the end of DISTILL is the one to rely on.
+
+---
+
+## Wave: DEVOPS / [REF] Prior-Wave Reading Confirmation
+
+**Agent**: Apex (`nw-platform-architect`) · **Date**: 2026-10-08 · **Mode**: autonomous subagent, maintainer AFK,
+documents only (no code, no `ci.yml` edit, no ADO). **Density**: lean, Tier-1 `[REF]` only, no expansion menu.
+
+**The nine decisions were not asked.** Each follows from the maintainer's answers (M1–M11) and the existing
+pipelines:
+
+| # | Decision | Answer for this story | Source |
+|---|---|---|---|
+| 1 | Deployment target | Lighthouse release (image, binaries, standalone apps) for slice 01; npm packages, Bun binaries, MCPB bundle and the `mcp-http` image for slices 02–05. Users run both on their own infrastructure | DISCUSS Driving Ports |
+| 2 | Container orchestration | None new. The Lighthouse chart runs `mcp-http` unchanged (no value for `LIGHTHOUSE_USAGE_DATA`, A13); the clients' CI starts one Lighthouse container in `smoke-integration` | `chart/templates/mcp.yaml`; clients `ci.yml` |
+| 3 | CI/CD | GitHub Actions in both repositories. **Extend, never add a workflow** | maintainer rule: consolidate CI |
+| 4 | Existing infrastructure | Lighthouse: `ci.yml` → `ci_changes` → `ci_backend` (Sonar), `pages.yml` for docs. Clients: `verify`, `release` (behind `Release` approval), `smoke-platform`, `smoke-integration`, the pre-commit hook | both workflow folders |
+| 5 | Observability | The usage-data pipe itself (PostHog EU) plus the forwarder's existing log lines. **No code**: PostHog saved insights described below | ADR-190 §8; DESIGN Quality Attributes |
+| 6 | Deployment strategy | Lighthouse: calver release behind approval. Clients: changesets, a minor per slice (D17). Rollback = image rollback / patch release; see Deployment Strategy | D17, M11 |
+| 7 | Continuous learning | No (the dataset is the learning; no flags, no experiments) | — |
+| 8 | Branching | Trunk-based on `main`, both repositories | `CLAUDE.md`; memory *trunk-based on main* |
+| 9 | Mutation testing | `per-feature`, ≥ 80 %: Stryker.NET for slice 01, ephemeral StrykerJS for 02–05. Already in `CLAUDE.md`; not edited | `CLAUDE.md` § Mutation Testing Strategy |
+
+| Read | Status |
+|---|---|
+| This file: DISCUSS (S1–S15, D0–D18, M1–M11, KPI-1..7, DoD, A1–A17, maintainer decisions after DISCUSS), DESIGN (DSN-1..25, components, ports, test strategy, enforcement, Earned Trust, contract testing, chart position, changed assumptions) | ✓ (paged) |
+| `slices/slice-01..05` | ✓ (production-data ACs, release gate on 05) |
+| ADR-225 (incl. the 24 h rollback residual), ADR-226 §3–§10, ADR-228 | ✓; ADR-227 via DSN-9..17 |
+| clients `.github/workflows/ci.yml` (all 408 lines), `scripts/smoke-fixture.mjs` (404 on unknown routes), `package.json` (pre-commit = `pnpm run ci` + changeset check), store path (`~/.config/lighthouse-clients/`) | ✓ |
+| Lighthouse `ci_backend.yml` (filter, `UsageDataCanary` exclusion), `ci_changes.yml` (backend trigger = `Lighthouse.Backend` paths only), `pages.yml` (docs deploy on push), `ci_verifysqlite.yml` (E2E app start) | ✓ |
+| `PostHogUsageDataPublisher.cs`, `UsageDataInstanceProperties.cs`, `UsageDataConsentService.cs` | ✓ — the CI-never-emits evidence below rests on these |
+| `docs/settings/usagedata.md`, `docs/ci-learnings.md` (preflight + Stryker traps + pipefail entry), `docs/product/kpi-contracts.yaml` | ✓ |
+| Precedent: `story-6218-readable-cli-output` DEVOPS + `environments.yaml`; `epic-5733-opt-in-usage-data/environments.yaml` | ✓ |
+
+**Contradictions with DESIGN: none.** Two additions, written up under Changed Assumptions.
+
+---
+
+## Wave: DEVOPS / [REF] Can CI emit to production analytics? (finding)
+
+**Yes, today's clients smoke could, if one line were added carelessly. As designed below, it cannot.**
+
+Evidence, from the code:
+
+1. `smoke-integration` starts `ghcr.io/letpeoplework/lighthouse:latest` with only `Database__*` set (clients
+   `ci.yml:290-294`). No `UsageData__*` setting.
+2. That image reports a release-shaped version (`vYY.M.D.N`), so `UsageDataInstanceProperties.Describe()` sets
+   `IsPublishedRelease = true` (the `AShapeOnlyAReleaseHas` regex).
+3. `PostHogUsageDataPublisher.WhereThisOneSends`: no `CollectorBaseUrl` + a published release → the built-in
+   `https://eu.i.posthog.com/i/v0/e/` with the built-in project key (`TheKeyThisProductShipsWith`). That is the one
+   production project (epic-5733: "exactly one PostHog project and it is the live production census").
+4. `UsageDataConsentService.RecordDecisionAsync` does not consult `MayAsk`, so `lh config usage-data on` against a
+   fresh container **does** mint a live grant. Any event-bearing `lh` call after it (`forecast manual`,
+   `team refresh` — both already in the `--pretty` step) would then be forwarded to production with `source: Cli`.
+
+**Why nothing is emitted today**: no client sends anything yet; and once slice 02 ships, GitHub sets `CI=true`
+(DSN-15: never asks), the runner `HOME` is fresh (no stored yes), and the container is minutes old
+(`AskAfterInstallDays` = 3 → `MayAsk` false). Those hold only as long as nobody adds `on` to the smoke.
+
+**Guards this wave requires** (slice 02, in the same commit that adds the smoke step):
+
+| # | Guard | Where | Sufficient alone? |
+|---|---|---|---|
+| G1 | `env: DO_NOT_TRACK: "1"` at **job level** on `smoke-integration` | clients `ci.yml` | Yes for every `lh` call that does not unset it (DSN-20) |
+| G2 | `-e UsageData__CollectorBaseUrl=http://127.0.0.1:9` on the smoke container | clients `ci.yml` `docker run` | Yes: a named address replaces the built-in one; port 9 inside the container refuses, the failure is counted and dropped, nothing is retried |
+| G3 | `CI=true` (GitHub default) | runner | For the question only |
+| G4 | Fresh runner `HOME` | runner | Until a line runs `on` |
+| G5 | No event-bearing command between the step's `on` and `off` | the step | Belt and braces |
+
+G1 and G2 are independent: either one alone keeps the census clean, and a careless future line has to defeat both.
+
+**Elsewhere in CI**: clients `verify` has no real network on usage-data paths (fake `fetch`; `mcp-http` e2e
+against an in-process upstream); its bin-launch smoke exits before reaching any Lighthouse. Lighthouse
+`ci_backend` posts to an in-process collector double and excludes `UsageDataCanary` (the only job meant to reach
+the vendor) by category. Lighthouse E2E never accepts the consent dialog, and slice 01 adds no E2E.
+
+**Side observation, outside this story**: `epic-5733-opt-in-usage-data/environments.yaml` says "Every E2E app-start
+block overrides the collector host to a blackhole". No `UsageData__CollectorBaseUrl` appears anywhere in
+`.github/workflows/` today; the E2E's safety rests on no spec accepting the dialog. Raised for the maintainer below.
+
+---
+
+## Wave: DEVOPS / [REF] Environment Matrix
+
+Machine artifact: `environments.yaml` beside this file (environments with their `never_emits_because`, scenario axes,
+the smoke checks, coexistence, deployment assumptions).
+
+| Environment | Why it exists here |
+|---|---|
+| `backend-unit-and-waf` | Slice 01 ACs, KPI-1, the clients' exact request body posted as a fixture, docs parity |
+| `backend-docs-only-push` | Slices 02/04/05 change only `usagedata.md` in Lighthouse; CI will not re-run the tests that read it |
+| `clients-unit` | Every clients AC, KPI-4/5/7, source-scan rules, characterisation snapshots |
+| `terminal-full` / `terminal-partial-or-ci` | The only place `lh` may ask, and every way it must not (incl. `CI=true`, `docker run -i`) |
+| `do-not-track` | Overrides a stored yes and the operator variable; `on` records nothing |
+| `server-labels-sources` / `server-predates-source` / `server-rolled-back` | Version skew; KPI-4 and ADR-225's residual |
+| `server-vetoed`, `server-slow-or-unreachable` | The veto wins; ≤ 1 s |
+| `store-states` | Absent, yes fresh/stale, no, unreadable, `0600`, two writers, voter keys untouched |
+| `mcp-client-capabilities`, `mcp-http-operator` | Elicitation matrix; the operator's variable |
+| `smoke-latest-container` | The real `:latest` wire, with G1+G2 |
+| `dev-instance-capture` | The production-data ACs, on a source build that can only send to a named capture stub |
+
+**What CI does not cover, accepted**: a real terminal on macOS/Windows (unit-injected `isInteractive`; the Linux
+manual AC); Node 22 (every job runs 24; the new APIs are stable in 22); Bun binaries (never run in CI, existing gap).
+
+---
+
+## Wave: DEVOPS / [REF] CI/CD Pipeline Outline
+
+**No new workflow, job, runner or secret in either repository.** One clients job gains one env line, one container
+flag and one step.
+
+### Lighthouse (slice 01, docs in 02/04/05)
+
+| Stage | Where | What it proves for this story |
+|---|---|---|
+| Local gate | CLAUDE.md quality gates; filtered `dotnet test` | Before every push. Preflight rules S6964 (nullable enum on the DTO), CA1861, NUnit2045, CA1869, S1192 are DESIGN's pre-applied list |
+| Commit stage | `ci.yml` → `ci_changes` → `ci_backend` (unit + WAF + architecture, Sonar) | Absent `source` → `Browser`; `Cli`/`Mcp` carried; `7` and `"Shell"` → `400`, nothing queued; `source` on every published message; `acceptedSources` serialised as names on `state`; `UsageDataDisclosureTest` lists all three members; payload purity unchanged |
+| Program.cs | — | DESIGN needs no `Program.cs` line (the global `JsonStringEnumConverter` exists). **If DELIVER adds one, `ci_backend` force-fulls the live Integration suite**: expect connector flake, not a regression |
+| Docs | `pages.yml` on push to `main` | The page goes live at the push, **before** the release (see Deployment Strategy) |
+| Docs-only pushes (02, 04, 05) | none (backend not triggered) | **Run locally before the push**: `dotnet test --filter "FullyQualifiedName~UsageDataDisclosureTest\|FullyQualifiedName~TeamForecastRealityCheckRunEventTests\|FullyQualifiedName~TeamRefinementUsageEventsTests"` — all three read `usagedata.md` |
+| Release | `ci_release.yml` behind approval | Unchanged |
+
+No E2E is added: the browser's behaviour does not change, and "absent = `Browser`" is a backend fact pinned in WAF
+(maintainer rule: E2E is a thin sanity check).
+
+### lighthouse-clients (slices 02–05)
+
+| Stage | Where | What it proves |
+|---|---|---|
+| Local gate | pre-commit: `pnpm run ci` + `check-changeset.mjs` | Every slice's suite; a `src/` change without a changeset is refused |
+| Commit stage (blocking) | `verify` | All ACs; KPI-4/5/7; output byte-identity with usage data on vs off; source-scan rules (only `client` calls `/usagedata/`; no `console`/`process.std*` in usage-data code; one lock implementation); `mcp-http` e2e (operator variable, no file, no credential header); the bin-launch smoke (unchanged — both bins exit before any Lighthouse call) |
+| Release | `release` (approval) | Unchanged. Approve only a run whose head carries the version-bump commit |
+| Post-release, fake server | `smoke-platform` (3 OS) | Unchanged. The fixture answers `404` on `/usagedata/` and `CI=true`: nothing asked, nothing sent |
+| Post-release, real server | `smoke-integration` | **Extended by slice 02**: G1 (job env), G2 (container flag), one new step "Verify usage-data status (never sends)" |
+
+**Test-environment rule for DISTILL (clients)**: no test reads ambient `process.env.CI`, `DO_NOT_TRACK` or a real
+`HOME`. GitHub sets `CI=true`; a developer may export `DO_NOT_TRACK=1` in their shell. A test that reads the ambient
+value passes on one and fails on the other. Every env-dependent case injects its env, and one guard case runs the
+real `bin` with `CI=true` in a child process to prove the never-ask path end to end.
+
+**Zero-request rule (added here)**: a non-interactive run with no stored yes makes **no** `/usagedata/` request at all,
+asserted on the call log. A script pays nothing, and the `smoke-platform` fixture is never probed.
+
+### The smoke step (slice 02)
+
+Placed after "Connect CLI to Lighthouse", before "Verify --pretty views" (whose scenario-0 reload stays last). Anchors
+are the approved copy (A15), matched with `grep -F` on here-strings (ledger: `printf | grep -q` under `pipefail`
+fails on an early match). DELIVER confirms the exact URL the answer line prints.
+
+```yaml
+  smoke-integration:
+    env:
+      DO_NOT_TRACK: "1"   # G1: every lh call in this job sends nothing unless a line unsets it on purpose
+    steps:
+      # …
+      - name: Start Lighthouse (SQLite mode)
+        run: |
+          docker run -d --name lighthouse-smoke \
+            -p 8443:443 \
+            -e Database__Provider=sqlite \
+            -e "Database__ConnectionString=Data Source=lighthouse.db" \
+            -e UsageData__CollectorBaseUrl=http://127.0.0.1:9 \
+            ghcr.io/letpeoplework/lighthouse:latest
+      # …
+      - name: Verify usage-data status (never sends)
+        shell: bash
+        run: |
+          expect_line() {   # expect_line <fixed text> <lh args…>; prints, checks, keeps the output
+            local expected="$1"; shift
+            out=$(lh "$@" 2>&1); printf '%s\n' "$out"; all+="$out"$'\n'
+            grep -qF -- "$expected" <<<"$out" || { echo "FAIL: '$expected' not in: lh $*"; exit 1; }
+            return 0
+          }
+          all=""
+          dnt="DO_NOT_TRACK is set, so lh sends no usage data whatever is stored."
+          expect_line "$dnt" config usage-data
+          expect_line "$dnt" config usage-data on
+          # From here DO_NOT_TRACK is lifted one call at a time. The container's collector is a dead address
+          # (G2), and no command that reports an event runs before the answer is off again.
+          DO_NOT_TRACK= expect_line "not asked yet (off)" config usage-data
+          DO_NOT_TRACK= expect_line "This Lighthouse allows usage data." config usage-data
+          DO_NOT_TRACK= expect_line ": on." config usage-data on
+          token=$(jq -r '.answers[] | .token // empty' ~/.config/lighthouse-clients/usage-data.json)
+          [ -n "$token" ] || { echo "FAIL: on stored no token"; exit 1; }
+          DO_NOT_TRACK= expect_line "off. Nothing more is sent." config usage-data off
+          DO_NOT_TRACK= expect_line ": off" config usage-data
+          ! grep -qF -- "$token" <<<"$all" || { echo "FAIL: the consent token was printed"; exit 1; }
+          echo "usage-data status: PASS"
+```
+
+`DO_NOT_TRACK=` (empty) counts as unset under DSN-20 ("any non-empty value other than `0`/`false`"); DELIVER may use
+`env -u DO_NOT_TRACK` inside the function instead if the empty-value case is ever narrowed.
+
+What the step proves on the real wire: `acceptedSources` on `:latest` (DESIGN's Earned Trust probe), `POST consent`
+and `DELETE consent` with a client's body, the DSN-21 refusal under `DO_NOT_TRACK`, and that the token never reaches
+output. What it deliberately does not do: run an event-bearing command with a live grant. Seeing `source: Cli` at a
+collector would need a listener reachable from the container; the provider side is pinned by the WAF test with the
+clients' exact body, and AC-02.7 sees it on the dev instance. No `mcp-stdio`/`mcp-http` smoke: the in-process tests
+cover them and `smoke-integration` has no MCP leg today.
+
+Cost: six `lh` calls, under 10 seconds.
+
+---
+
+## Wave: DEVOPS / [REF] Monitoring Contracts (KPI → instrument)
+
+| KPI | Instrument | Where / when read | Gate | As specified? |
+|---|---|---|---|---|
+| **KPI-1** north star: 100 % of events carry `source` | `UsageDataPublishedMessageTests` (every message); in PostHog the "source coverage" insight below | `ci_backend` every push; PostHog on the release day and weekly | Blocking (test); advisory (PostHog) | Yes |
+| **KPI-2** ≥ 3 distinct client pseudonyms per week with `source` ∈ {`Cli`, `Mcp`} within 60 days | PostHog "client pseudonyms per week" insight | Weekly from the clients release carrying slice 02; verdict at day 60 | Advisory | Yes |
+| **KPI-3** client share per event for the 10 `lh` and 6 MCP events | PostHog "share by source per event" insight | After each clients release; monthly | Advisory | Yes |
+| **KPI-4** guardrail: 0 client events as `Browser` | D3 contract tests (`server-predates-source`, `server-rolled-back` with the 24 h boundary) | `verify` | Blocking | Yes; the rollback residual is bounded, not zero (ADR-225) |
+| **KPI-5** guardrail: 0 repeat questions, 0 without a terminal, 0 sends after No/off | Acceptance tests over `terminal-*`, `do-not-track`, `store-states`, `mcp-client-capabilities` | `verify` | Blocking | Yes |
+| **KPI-6** guardrail: budget-exhaustion days unchanged | The forwarder's existing once-a-day budget warning (ADR-190 §8), read per instance | Per instance; see note | Advisory | **Changed**: the dogfood instance named in DISCUSS is offline (platform torn down 2026-09-26). Read on the dev instance during AC-02.7/04.6 and on any customer log shared with the maintainer |
+| **KPI-7** guardrail: ≤ 1 s added | Never-answering fake Lighthouse in `clients-unit` | `verify` | Blocking | Yes |
+
+**`docs/product/kpi-contracts.yaml`**: extended with `OUT-6193-K1`, `OUT-6193-K2`, `OUT-6193-K3`
+(`opt_in_telemetry_required`) — the three outcomes measured in the collector after release. KPI-4/5/7 are test gates
+held by this file and the suites; KPI-6 is the existing per-instance budget line and adds no contract.
+
+### PostHog saved insights (descriptions for the maintainer, no code)
+
+Built once by the maintainer after the Lighthouse release carrying slice 01, in the existing project. All filter
+out the vendor's own instances as the existing insights do.
+
+1. **Usage data by source** — Trends, total count, the 16 existing event names, weekly, **breakdown by event
+   property `source`**. Expected buckets `Browser`, `Cli`, `Mcp`, and `(not set)`. `(not set)` means the event came
+   through a Lighthouse that predates slice 01 (or was rolled back to one): read it as "Browser, or a client inside
+   the 24 h rollback window", never as a fourth surface. Add a PostHog annotation at the Lighthouse release date.
+2. **Source coverage (KPI-1)** — Trends, formula `A / B`, A = all events where `source` is set, B = all events,
+   both filtered to `version` ≥ the first release carrying slice 01. Expected 100 %. Anything lower means a server
+   without the publisher change is reporting a release-shaped version: investigate.
+3. **Client pseudonyms per week (KPI-2)** — Trends, **unique users**, weekly, filter `source` in {`Cli`, `Mcp`};
+   one series unbroken (the KPI) and one broken down by `source`. Caveat on the breakdown: `lh` and the local MCP
+   server share one pseudonym per Lighthouse per machine (A16), so one person using both appears in both
+   bars; the unbroken series counts them once. Each `mcp-http` process start is a new pseudonym.
+4. **Share by source per event (KPI-3)** — Trends, total count, table view, breakdown by event name then
+   `source`, last 30 days, limited to the 10 `lh` events of D8 (the 6 MCP ones are a subset). Events with no client
+   mapping (`TeamTabOpened`, `PortfolioTabOpened`, `WorkTrackingSystemConnected`, `OptionalFeatureToggled`,
+   `TeamForecastRealityCheckRun`, `TeamRefinementConfigured`) must show `Browser` only: a client bar on one of
+   them is a bug.
+
+**No alerting.** The dataset is advisory (ADR-190 §5); nothing pages anybody. The maintainer reads 1–4 at each
+clients release and at day 60.
+
+---
+
+## Wave: DEVOPS / [REF] Usage data
+
+**Which event shows the feature is used: the `source` property itself — no new event name (M9).** The existing
+mirrored events arriving with `source` = `Cli` or `Mcp` are the evidence (KPI-2, KPI-3). Nothing is appended to
+`UsageDataEventName`. `UsageDataSource { Browser = 0, Cli = 1, Mcp = 2 }` is a new closed enum, append-only like the
+event names (ADR-225 §1), and is never free text, an id or a count.
+
+**Docs page updates, per slice** (`docs/settings/usagedata.md`; deployed on push by `pages.yml`):
+
+| Slice | Repo of the code | Page change (same push as the slice) | Other docs |
+|---|---|---|---|
+| 01 | Lighthouse | `Source` row in "Every event carries these" (three values, attached by your server from what the client declares; declared, not verified). Disclosure test lists every member | Lighthouse `ARCHITECTURE.md`: the usage-data concept names three sources |
+| 02 | clients | Every browser-only promise rewritten for "a browser, `lh`, or an MCP server" (S13: "No event is sent unless a browser…", "Browser identifier", "Counting browsers, not installations", "Your browser never contacts the collector"); what `lh` stores (`usage-data.json`, owner-only); `lh config usage-data`; `DO_NOT_TRACK` | `docs/aiintegration.md` paragraph; clients `cli/README.md`, `skill/SKILL.md` (D15), `ARCHITECTURE.md` §5 |
+| 03 | clients | The `lh` column of which events a terminal reports (if the page lists surfaces per event) | — |
+| 04 | clients | One sentence: the local MCP server asks through the assistant once, shares `lh`'s answer; "use `lh config usage-data on`" when the assistant cannot ask | `mcp-stdio/README.md` |
+| 05 | clients | A shared MCP server is one counted unit per process, **decided by whoever runs it for its users** (maintainer decision on open question 1); chart users stay off until a chart value exists | `mcp-http/README.md` (`LIGHTHOUSE_USAGE_DATA` row) |
+
+These page changes are inside each slice's Definition of Done, not deferred to `/release` and not held for the
+"docs wait for confirmation" rule: the page is the disclosure the consent links to (epic-5733's standing
+exception). The Lighthouse docs push for slices 02–05 precedes the approval of the clients release it describes.
+
+---
+
+## Wave: DEVOPS / [REF] Deployment Strategy
+
+### Rollback first
+
+| What | Rollback | Why it is safe |
+|---|---|---|
+| Lighthouse slice 01 (image, binaries, standalone) | Redeploy the previous image / reinstall the previous version | No migration, no stored state: the DTO field and `acceptedSources` vanish. **Residual (ADR-225)**: a client whose `confirmedAt` is under 24 h keeps sending until its next `state` read; the old server ignores `source`, its publisher writes none, so those events land in `(not set)` with the old `version`. Bounded at 24 h per client; the maintainer annotates the window in PostHog if the rollback is his own (customer rollbacks are invisible and equally bounded) |
+| Clients slice 02–05 on npm | `git revert` + **patch** changeset, `pnpm release:version`, push, approve. Users who cannot wait: install the previous version | A downgraded client ignores `usage-data.json` and sends nothing; the server-side grant ages out after 30 unseen days. On re-upgrade the stored answer is honoured (re-grant if pruned, DSN-7). `voter-keys.json` keeps its format, so an older client still reads it |
+| A bad client version | `npm deprecate` with a pointer; never `npm unpublish` | — |
+| `mcp-http` image | Previous version tag | Grant was in memory only; the orphan row ages out |
+| **Kill switches, no release needed** | Per instance: the System Admin's *Never send usage data* (server-side, drops every batch, D7). Per person: `lh config usage-data off` or `DO_NOT_TRACK=1`. Per shared server: unset `LIGHTHOUSE_USAGE_DATA`, restart | All exist or ship with the slice; none depends on the clients behaving |
+
+**Rollback rehearsal (owed once, slice 02)**: on the dev instance with the capture stub, say yes with the new `lh`,
+install the previous `lh` from npm, run `lh forecast manual …` (expect: nothing at the stub), reinstall the new
+version and run it again (expect: one event, `source: Cli`). Record it in slice 02's deliver notes.
+
+### Rollout order
+
+1. **Lighthouse slice 01**, released by the maintainer (calver, approval). Browser events start carrying
+   `source: Browser`.
+2. **Clients slice 02**, its own release, **only after step 1 is on `:latest`**. Not needed for safety — a client
+   checks `acceptedSources` and stays silent against an older server — but `smoke-integration`'s "allows usage
+   data" anchor needs it, so a reversed order shows up as a red smoke (after publish: detects, cannot prevent;
+   the remedy is releasing Lighthouse, not patching the clients).
+3. **Slices 03, 04, 05**, each its own clients release (or batched; the maintainer's call). Slice 05's release
+   gate (the legal basis) is already answered.
+
+Self-hosted instances upgrade at their own pace; a new client against an old instance is silent and
+`lh config usage-data` says why. No canary or progressive exposure: there is no fleet to steer, and nothing is sent
+before a person (or an operator) says yes.
+
+**Two clients rules carried from #6218**: approve a `Release` run only when its head carries the
+`chore(release): version packages` commit; a slice's smoke changes ship in the release that carries its code.
+
+---
+
+## Wave: DEVOPS / [REF] Mutation Testing Strategy
+
+`per-feature`, ≥ 80 % kill rate, on frozen code, last DELIVER step of each slice. `CLAUDE.md` not edited.
+
+- **Slice 01 (Stryker.NET)**: whole-file `mutate` entries for the changed files (`UsageDataController.cs`,
+  `UsageDataConsentService.cs`, `PostHogUsageDataPublisher.cs`, the new `UsageDataSource.cs` has nothing to mutate);
+  line spans are silently ignored, so triage survivors by line from the per-file table. `test-case-filter` scoped to
+  unit namespaces plus the named usage-data test classes, **excluding `API.Integration`** (WAF per test: 80 min vs
+  3). Trust the "will be tested" line, not the pre-filter "created" count. Config kept under `mutation/`
+  (force-added; `stryker-config*.json` is gitignored).
+- **Slices 02–05 (StrykerJS)**: ephemeral install in a scratch directory (no Stryker dependency in the clients
+  repo), version older than the 7-day `minimumReleaseAge`; explicit `"plugins"`, `"related": false`; exclude
+  `*.e2e.test.ts`; run the scratch Vitest config standalone first and read the score line (StrykerJS exits 0 having
+  tested nothing). Pin copy against full literals (blanking mutants). Scope: the new `client/src/usageData*.ts`,
+  `ownerOnlyJsonFile.ts`, `cli/src/usageDataQuestion.ts`, `mcp-core/src/usageDataPort.ts` whole-file; line ranges for
+  the changed handlers in `cli/src/index.ts`, `bin.ts`, `mcp-stdio/src/runtime.ts`, `mcp-http/src/bin.ts`.
+- **Evidence**: `docs/feature/story-6193-usage-data-from-clients/mutation/` per slice, in the #6218 format.
+
+---
+
+## Wave: DEVOPS / [REF] Observability Stack
+
+- **Collector**: PostHog EU, unchanged adapter, one more property. Insights above; no dashboards-as-code.
+- **Lighthouse logs**: unchanged (ADR-190 §8 counters, the budget line, the "named address is not one" and
+  "unpublished build sends nothing" warnings). `source` needs no counter of its own.
+- **Clients**: emit nothing by design (DSN-11). `mcp-http` prints one start-up line (`Usage data: on
+  (LIGHTHOUSE_USAGE_DATA)` / `Usage data: off`) and at most one warning for a mistyped value. `lh config
+  usage-data` is the person's own observability.
+- **Known blind spot, accepted**: a send that silently fails (timeout, refused) is invisible by design; it shows up
+  only as a lower KPI-2. The dev-instance capture is where a broken path is seen before release.
+
+---
+
+## Wave: DEVOPS / [REF] Branching Strategy
+
+Trunk-based on `main` in both repositories, unchanged. Slice 01's code and every docs change are in Lighthouse;
+slices 02–05's code and the `ci.yml` edit are in `lighthouse-clients`. A focused commit per step (refactor commits
+apart, e.g. the `ownerOnlyJsonFile` extraction), push at slice end only when green, never push red, no autonomous
+rebase. The Lighthouse docs commit of a clients slice is pushed before that clients release is approved.
+
+---
+
+## Wave: DEVOPS / [REF] Coexistence Matrix
+
+Full table in `environments.yaml`. The ones at real risk:
+
+| Must not break | Risk | Guard |
+|---|---|---|
+| `voter-keys.json` and voting | Lock/atomic-write code moves (DSN-5) | Refactor commit, voter key tests unedited, format unchanged |
+| Scripts and agents on `lh` | A question or a delay in a pipe | Never asks without a full terminal and no `CI`; zero requests without a stored yes; ≤ 1 s |
+| `mcp-stdio` stdout | A stray log on the protocol stream | Source-scan rule |
+| The #6218 smoke step | Job-level `DO_NOT_TRACK` | D10: usage data never changes output; the new step sits before it |
+| `smoke-platform` | — | 404 + `CI=true`; unchanged |
+| Lighthouse web, every bundle | — | Absent `source` = `Browser`; no frontend change |
+| Chart `mcp.enabled` | No passthrough | Off until a chart value exists (A13 follow-up); no `kubectl set env` |
+
+---
+
+## Wave: DEVOPS / [REF] Pre-requisites
+
+| From DESIGN | Platform answer |
+|---|---|
+| Earned Trust: "`smoke-integration` runs `lh config usage-data` against `lighthouse:latest`" | The step above, with G1 + G2 so it can never emit |
+| Contract without a broker (DSN fixtures) | Backend posts the clients' exact body (slice 01); clients parse the backend's exact `state` (slice 02); smoke checks `acceptedSources` on the real image |
+| DSN-15 `CI` set → never ask | Relied on in CI; tests inject `CI` rather than read it |
+| DSN-20 `DO_NOT_TRACK` | Used as G1 |
+| Chart position (A13) | Follow-up; nothing in this story |
+| D17 versioning | Changeset per clients slice; Lighthouse calver |
+
+---
+
+## Wave: DEVOPS / [REF] Changed Assumptions
+
+| Was | Now | Why |
+|---|---|---|
+| DESIGN Earned Trust: smoke "runs `lh config usage-data`" (read-only implied) | The step also runs `on` and `off` once, under G2, with no event-bearing command between them | Proves `POST`/`DELETE consent` with a client's body on the real image, which no other test does; G2 makes it emission-proof |
+| DESIGN: CI safety implicit | Two explicit guards (G1 job-level `DO_NOT_TRACK`, G2 dead collector address on the smoke container) | `:latest` is a published release with the built-in key; `on` mints a live grant on a fresh container (finding above) |
+| DISCUSS KPI-6: "dogfood instance" | Dev instance during the production-data ACs, plus any shared customer log | The dogfood platform has been offline since 2026-09-26 |
+| (new) | Zero `/usagedata/` requests on a non-interactive run with no stored yes | Scripts pay nothing; the `smoke-platform` fixture is never probed |
+
+No story or AC changes; no `upstream-changes.md` needed.
+
+---
+
+## Wave: DEVOPS / [REF] Open for the maintainer
+
+1. **Stale claim in epic-5733's `environments.yaml`** — "every E2E app-start block overrides the collector host to a
+   blackhole" is not true of today's workflows. E2E stays out of the census only because no spec accepts the dialog.
+   Adding `UsageData__CollectorBaseUrl: http://127.0.0.1:9` to each E2E app start (verify sqlite/postgres/windows/
+   macos/auth) would make it structural. Not done here: outside this story's slices; a candidate ADO Bug if wanted.
+2. **The dogfood instance** for KPI-2/KPI-6 readings is offline; the PostHog insights work without it, but "vendor
+   instance excluded" has nothing to exclude until it returns.
+
+Neither blocks DISTILL.
+
+---
+
+## Wave: DEVOPS / [REF] Wave Decisions Summary
+
+- **DVO-1** Infrastructure: none new in either repository; no workflow, job, runner or secret added.
+- **DVO-2** CI never emits to production: G1 job-level `DO_NOT_TRACK=1` and G2 a dead `UsageData__CollectorBaseUrl`
+  on the smoke container, each sufficient alone; every environment in `environments.yaml` names its reason.
+- **DVO-3** Lighthouse slice 01 CI: existing `ci_backend` (unit + WAF + architecture, Sonar); no E2E added; a
+  `Program.cs` line, if any, means a full live Integration run.
+- **DVO-4** Docs-only Lighthouse pushes run the three page-reading test classes locally (CI does not).
+- **DVO-5** Clients CI: `verify` is the blocking gate; tests inject `CI`/`DO_NOT_TRACK`/`HOME`; one child-process
+  case runs the real `bin` with `CI=true`; zero usage-data requests without a stored yes.
+- **DVO-6** `smoke-integration` gains one step (slice 02): `DO_NOT_TRACK` refusal, status with `acceptedSources`, an
+  `on`/`off` round trip, token never printed. No event-bearing command with a live grant; no MCP smoke.
+- **DVO-7** Rollout: Lighthouse slice 01 released first, then one clients release per slice; safe in either order
+  by `acceptedSources`, observable through the smoke anchor.
+- **DVO-8** Rollback: image rollback with ADR-225's ≤ 24 h per-client `(not set)` residual; clients by patch or
+  pin; kill switches are the admin veto, `lh config usage-data off`, `DO_NOT_TRACK`, unsetting the operator variable.
+- **DVO-9** Observability: four PostHog saved insights (by source, coverage, client pseudonyms, share per event); no
+  alerting; `kpi-contracts.yaml` gains OUT-6193-K1..K3.
+- **DVO-10** Usage data: `source` is the signal; no new event name; `UsageDataSource` append-only.
+- **DVO-11** Docs per slice in the slice's own push, ahead of the release it describes.
+- **DVO-12** Mutation: per-feature, ≥ 80 %, Stryker.NET (01) and ephemeral StrykerJS (02–05), evidence under
+  `mutation/`.
+- **DVO-13** Branching: trunk-based, both repositories.
+- **DVO-14** Chart: no value for `LIGHTHOUSE_USAGE_DATA`; accepted follow-up; no stop-gap.
+- **Handoff** to `nw-acceptance-designer` (DISTILL): `environments.yaml` (environments, `scenario_axes`, smoke
+  checks), the KPI → instrument table, the env-injection and zero-request rules, the smoke step.
+
+---
+
+## Wave: DEVOPS / [REF] Review
+
+`nw-platform-architect-reviewer`, iteration 1 of 2, 2026-10-08: **approved**, 0 critical, 0 high, 0 medium, 0 low.
+External validity (deployment path, observability, rollback, security gates) all PASS. Short-term notes, already in
+this section: the slice 02 rollback rehearsal, and building the PostHog insights only after the Lighthouse release
+with a release-date annotation. Long-term notes match "Open for the maintainer" 1 and 2.
+
+Take the approval as weak. It counted "18 environments, every one with `never_emits_because`" (there are 16, and only
+the four that can touch a network carry that field, by design), and it cited a candidate "Issue #6032" that does
+not exist. The CI-never-emits finding rests on this wave's own reading of `PostHogUsageDataPublisher.cs`,
+`UsageDataInstanceProperties.cs`, `UsageDataConsentService.cs` and the clients' `ci.yml`, and the smoke step's
+`DO_NOT_TRACK= fn` temp-env behaviour was checked by running it in bash. The consolidated review at the end of
+DISTILL is the one to rely on.

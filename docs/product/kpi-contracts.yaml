@@ -1852,3 +1852,56 @@ outcomes:
     measurement_window: "slice 01, then continuous per instance"
     alerting: ["Warning report-creation-slow -> Recent problems"]
     status: designed-not-shipped
+
+  # story-6193-usage-data-from-clients, usage data from lh and the MCP servers (DEVOPS 2026-10-08). No new
+  # event: every existing event gains `source` (Browser | Cli | Mcp), attached by the server from what the
+  # client declares. lh and the local MCP server share one pseudonym per Lighthouse per machine; each
+  # mcp-http process start is a new one. `source` not set = a Lighthouse that predates slice 01, or one
+  # rolled back to it (ADR-225's <= 24 h per-client residual). KPI-4/5/7 are test gates; KPI-6 is the
+  # existing per-instance budget line.
+
+  - id: OUT-6193-K1-every-event-has-a-source
+    feature: story-6193-usage-data-from-clients
+    title: Every forwarded event says which surface it came from (north star)
+    target: "100% of events from versions >= the first release carrying slice 01 have `source` set"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "Property `source` on every message, written by PostHogUsageDataPublisher from the batch's resolved UsageDataSource (absent in the body = Browser)."
+      derivation: "Events with source set / all events, both filtered to version >= the first release with slice 01, weekly."
+      surfacing: ["PostHog insight 'Source coverage'", "PostHog insight 'Usage data by source'", "docs/settings/usagedata.md Source row (slice 01)"]
+    acceptance_scenarios: "UsageDataPublishedMessageTests: source on every message; UsageDataEventPipeTests: absent -> Browser, Cli/Mcp carried, unknown -> 400 and nothing queued"
+    measurement_window: "release day of slice 01, then weekly"
+    alerting: []
+    status: designed-not-shipped
+
+  - id: OUT-6193-K2-client-pseudonyms-weekly
+    feature: story-6193-usage-data-from-clients
+    title: Consenting lh and MCP users show up in usage data at all
+    target: ">= 3 distinct pseudonyms per week with source in {Cli, Mcp} within 60 days of the clients release carrying slice 02 (desk target)"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "The existing mirrored events (D8: 10 from lh, 6 from MCP) with source = Cli or Mcp; distinct_id is the consent row's pseudonym."
+      derivation: "Weekly unique distinct_id where source in {Cli, Mcp}, one unbroken series (a machine using lh and the local MCP server counts once)."
+      surfacing: ["PostHog insight 'Client pseudonyms per week'"]
+    acceptance_scenarios: "covered by the clients' consent and reporter scenarios (slices 02-05)"
+    measurement_window: "60 days from the clients release carrying slice 02"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "Pseudonyms, not people: a lapsed grant re-granted after 30 unseen days is a new pseudonym, and every mcp-http restart is one. Reads high for mcp-http."
+
+  - id: OUT-6193-K3-share-by-source-per-event
+    feature: story-6193-usage-data-from-clients
+    title: The maintainer knows the client share of each mirrored event
+    target: "Share per source readable for all 10 lh and 6 MCP events; the 6 events with no client mapping show Browser only"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "Same events and property as OUT-6193-K2."
+      derivation: "Count per event name x source over the last 30 days; a Cli or Mcp count on TeamTabOpened, PortfolioTabOpened, WorkTrackingSystemConnected, OptionalFeatureToggled, TeamForecastRealityCheckRun or TeamRefinementConfigured is a bug."
+      surfacing: ["PostHog insight 'Share by source per event'"]
+    acceptance_scenarios: "clients slice 03: one case per D8 lh row and every N/A command reporting nothing; slice 04: the 6 MCP tools"
+    measurement_window: "after each clients release, then monthly"
+    alerting: []
+    status: designed-not-shipped

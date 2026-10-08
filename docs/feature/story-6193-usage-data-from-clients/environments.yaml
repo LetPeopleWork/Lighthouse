@@ -1,0 +1,276 @@
+# environments.yaml - consumed by DISTILL for Mandate 4 (Environmental Realism)
+#
+# story-6193-usage-data-from-clients (ADO User Story #6193). Two repositories:
+#   - Lighthouse (slice 01): the batch's `source`, `acceptedSources` on `state`, the publisher property,
+#     docs/settings/usagedata.md. No migration, no Program.cs line expected, no web change.
+#   - lighthouse-clients (slices 02-05): the consent store, the reporter, `lh` (question, config command,
+#     10 events), mcp-stdio (elicitation, 6 events), mcp-http (operator variable).
+# The deliverables are a Lighthouse image/binary release and npm packages that users run against their
+# own Lighthouse. The axes below are the ones along which "is anything asked / recorded / sent" comes out
+# differently: the terminal, the environment variables, the store on disk, the server's answer, the MCP
+# client's capabilities. They are not deployment targets to stand up.
+#
+# The one non-negotiable property of every CI environment here: NOTHING REACHES THE PRODUCTION COLLECTOR.
+# ghcr.io/letpeoplework/lighthouse:latest is a published release (version shape vYY.M.D.N), so with no
+# UsageData:CollectorBaseUrl it forwards to https://eu.i.posthog.com with the key it ships with
+# (PostHogUsageDataPublisher.WhereThisOneSends). The guards are listed per environment.
+#
+# Axes considered and deliberately left OUT:
+#   - Node version: every CI job runs Node 24; engines says >= 22. The new code uses node:readline/promises,
+#     node:fs/promises and AbortSignal.timeout, all stable in 22. Existing gap, not widened.
+#   - A real terminal on macOS / Windows: the question's TTY test is three isTTY reads plus CI; covered by
+#     injected `isInteractive` in unit tests and by the Linux manual production-data AC. smoke-platform
+#     runs with CI=true and never reaches the question.
+#   - Bun-compiled release binaries: built, never run in CI (existing gap). Same code path as npm.
+#   - A capture of a real client event in CI: rejected (needs a listener reachable from the container and
+#     buys nothing the provider-side WebApplicationFactory test with the clients' exact body does not).
+
+schema_version: 1
+feature_id: story-6193-usage-data-from-clients
+updated: 2026-10-08
+wave: DEVOPS
+
+target_environments:
+  - name: backend-unit-and-waf
+    description: >
+      Lighthouse NUnit suite in ci_backend.yml (unit, WebApplicationFactory, architecture). The capture
+      collector double receives forwarded batches; the clients' exact request body is posted as a fixture.
+      Where AC-01.1..01.5, KPI-1 (source on every message) and the docs-parity tests run.
+    repo: Lighthouse
+    slices: ["01"]
+    platform: [linux]
+    preconditions:
+      - "Filter excludes the live-connector categories and UsageDataCanary (CLAUDE.md filter)"
+      - "No Program.cs edit; if DELIVER needs one, ci_backend force-fulls the live Integration suite"
+    never_emits_because: "collector is an in-process double; the canary (live vendor) is excluded by category"
+
+  - name: backend-docs-only-push
+    description: >
+      A Lighthouse push that changes only docs/settings/usagedata.md (slices 02, 04, 05). ci_changes.yml
+      runs ci_backend only for Lighthouse.Backend paths, yet UsageDataDisclosureTest,
+      TeamForecastRealityCheckRunEventTests and TeamRefinementUsageEventsTests read that page. CI will not
+      re-run them, so DELIVER runs them locally before the push.
+    repo: Lighthouse
+    slices: ["02", "04", "05"]
+    platform: [linux]
+    preconditions:
+      - "dotnet test --filter \"FullyQualifiedName~UsageDataDisclosureTest|FullyQualifiedName~TeamForecastRealityCheckRunEventTests|FullyQualifiedName~TeamRefinementUsageEventsTests\""
+
+  - name: clients-unit
+    description: >
+      lighthouse-clients Vitest in `verify` and the pre-commit hook. Fake fetch, temp store directory,
+      injected env (CI, DO_NOT_TRACK, LIGHTHOUSE_USAGE_DATA), injected isInteractive and ask. Every
+      clients AC, KPI-4/5/7, the source-scan enforcement tests and the characterisation snapshots run here.
+    repo: lighthouse-clients
+    slices: ["02", "03", "04", "05"]
+    platform: [linux]
+    preconditions:
+      - "No test reads process.env.CI, DO_NOT_TRACK or a real HOME: GitHub sets CI=true, a developer may export DO_NOT_TRACK=1, and either would flip a test that reads the ambient value"
+      - "Store paths under a per-test temp directory; ~/.config is never touched"
+    never_emits_because: "no real network: fetch is a fake; mcp-http e2e uses an in-process upstream"
+
+  - name: terminal-full
+    description: "stdin, stdout and stderr are TTYs and CI is unset: the only place lh may ask."
+    slices: ["02"]
+    platform: [linux, macos, windows]
+    preconditions: ["isInteractive injected true", "CI absent from injected env", "MayAsk true", "acceptedSources lists Cli"]
+
+  - name: terminal-partial-or-ci
+    description: >
+      Any of stdin/stdout/stderr not a TTY (pipe, redirect, `docker run -i`), or CI set to anything.
+      Never asks. With no stored yes, makes ZERO /usagedata/ requests (a script pays nothing).
+    slices: ["02", "03"]
+    platform: [linux, macos, windows]
+    preconditions: ["each TTY flag false in turn", "CI=true", "CI=1", "call log asserted free of /usagedata/"]
+
+  - name: do-not-track
+    description: >
+      DO_NOT_TRACK set to any non-empty value other than 0/false (any case). No question, no elicitation,
+      no grant, no send; overrides a stored yes and LIGHTHOUSE_USAGE_DATA=on; `lh config usage-data on`
+      records nothing and prints the approved line, exit 0.
+    slices: ["02", "04", "05"]
+    platform: [linux]
+    preconditions: ["DO_NOT_TRACK in {1, true, TRUE, yes}", "control rows DO_NOT_TRACK in {0, false, ''} behave as unset"]
+
+  - name: server-labels-sources
+    description: "Lighthouse with slice 01: state carries acceptedSources [Browser, Cli, Mcp]. The normal case."
+    slices: ["02", "03", "04", "05"]
+    platform: [linux]
+    preconditions: ["state fixture copied from the backend's UsageDataConsentEndpointsTests"]
+
+  - name: server-predates-source
+    description: >
+      Lighthouse released before slice 01 (state without acceptedSources) or with no usage data at all
+      (404), the standalone desktop app on an old version, and the smoke-platform fake server (404 on every
+      unknown route). Never asked, nothing sent, nothing printed; `lh config usage-data` says so.
+    slices: ["02", "04", "05"]
+    platform: [linux]
+    preconditions: ["state without acceptedSources", "state 404", "acceptedSources lacking the caller's source"]
+
+  - name: server-rolled-back
+    description: >
+      An instance that had slice 01 and was rolled back to an image without it. A client whose
+      confirmedAt is under 24 h keeps sending until its next state read (ADR-225 residual); the old
+      publisher writes no `source`, so those events land in PostHog's "not set" bucket. Simulated: a store
+      entry with confirmedAt 23 h old sends without a state read; 25 h old reads state, sees no
+      acceptedSources, sends nothing and changes nothing.
+    slices: ["02"]
+    platform: [linux]
+    preconditions: ["fake clock", "state without acceptedSources after the confirmedAt boundary"]
+
+  - name: server-vetoed
+    description: "AdministratorDisabled true: no question, no elicitation, no mcp-http grant; `on` explains, exit 0."
+    slices: ["02", "04", "05"]
+    platform: [linux]
+    preconditions: ["state with administratorDisabled true", "mcp-http: state re-read at most hourly (fake clock)"]
+
+  - name: server-slow-or-unreachable
+    description: "Accepts the socket and never answers, or refuses it. The command finishes within 1 s of its own output; exit code unchanged."
+    slices: ["02", "03", "04", "05"]
+    platform: [linux]
+    preconditions: ["never-answering fake", "connection refused", "5 s bound only for the interactive grant after a yes"]
+
+  - name: store-states
+    description: >
+      usage-data.json absent, holding yes (fresh / stale), holding no, foreign shape (unreadable, left
+      byte-identical), mode 0600 read back, two processes answering at once (first answer wins), voter-keys.json
+      unchanged by the extraction refactor.
+    slices: ["02", "04"]
+    platform: [linux, macos]
+    preconditions: ["temp directory per test", "two real child processes for the race"]
+
+  - name: mcp-client-capabilities
+    description: "In-process SDK client with and without the elicitation capability; accept, decline, cancel, error, 50 s silence; concurrent tool calls."
+    slices: ["04"]
+    platform: [linux]
+    preconditions: ["fake timers for the 50 s bound", "store shared with an lh harness in the same temp directory"]
+
+  - name: mcp-http-operator
+    description: "LIGHTHOUSE_USAGE_DATA unset / off / on / ON / typo (one warning); DO_NOT_TRACK over it; restart = new in-memory grant; no file under a temp HOME; no caller credential on usage-data calls."
+    slices: ["05"]
+    platform: [linux]
+    preconditions: ["in-process upstream recording every request and its headers"]
+
+  - name: smoke-latest-container
+    description: >
+      Clients `smoke-integration`, after the release is approved and published: the newest released
+      Lighthouse image, SQLite, auth off, unlicensed, fresh. Gains one step (slice 02) reading and toggling
+      the usage-data answer on the real wire. Runs on main only, after `release`; detects, cannot prevent.
+    repo: lighthouse-clients
+    slices: ["02"]
+    platform: [linux]
+    preconditions:
+      - "job-level env DO_NOT_TRACK=1 (only the usage-data lines unset it, one call at a time)"
+      - "container started with -e UsageData__CollectorBaseUrl=http://127.0.0.1:9 (a dead address inside the container)"
+      - "CI=true (GitHub default) and a fresh runner HOME (no stored answer)"
+      - "Lighthouse slice 01 released to :latest before the clients release carrying slice 02"
+    never_emits_because: >
+      Five independent guards: (1) DO_NOT_TRACK=1 on every lh call that is not a usage-data line;
+      (2) the container's collector is a dead address, so even a live grant forwards nowhere;
+      (3) CI=true, so lh never asks; (4) a fresh HOME holds no yes; (5) no event-bearing command runs between
+      the step's `on` and `off`. Any one of (1), (2) alone is sufficient.
+
+  - name: dev-instance-capture
+    description: >
+      The production-data ACs (AC-01.6, 02.7, 04.6, 05.5, 06.4): the dev instance on :5169 (a source build,
+      so its version is `unreleased`) with UsageData__CollectorBaseUrl pointed at a local HTTP listener that
+      answers 200 and prints each body. A source build with no collector named sends nothing at all, so a
+      forgotten capture stub is silent, never production.
+    slices: ["01", "02", "03", "04", "05"]
+    platform: [linux]
+    preconditions:
+      - "Start-DevServer.ps1 with UsageData__CollectorBaseUrl=http://127.0.0.1:<port>"
+      - "a throwaway node:http listener in the scratchpad, not committed"
+      - "lh / MCP pointed at http(s)://localhost:5169 with CI unset and DO_NOT_TRACK unset"
+
+scenario_axes:
+  never_emits_to_production:
+    slices: ["01", "02", "03", "04", "05"]
+    vary_over: [backend-unit-and-waf, clients-unit, smoke-latest-container, dev-instance-capture]
+    rationale: "Every environment names why nothing reaches eu.i.posthog.com. A new CI environment without a never_emits_because entry is a review blocker."
+  consent_gate:
+    slices: ["02", "04", "05"]
+    vary_over: [terminal-full, terminal-partial-or-ci, do-not-track, server-vetoed, store-states]
+    rationale: "KPI-5: at most one question, never without a full terminal, never after a No/off."
+  version_skew:
+    slices: ["02", "04", "05"]
+    vary_over: [server-labels-sources, server-predates-source, server-rolled-back]
+    rationale: "KPI-4: a client event is never counted as Browser, except the bounded 24 h rollback residual."
+  latency:
+    slices: ["02", "03", "04", "05"]
+    vary_over: [server-slow-or-unreachable]
+    rationale: "KPI-7: <= 1 s added; MCP sends detached."
+  output_untouched:
+    slices: ["02", "03", "04"]
+    vary_over: [clients-unit]
+    rationale: "Characterisation snapshots per mapped command, usage data on vs off, --pretty/--json/--toon; MCP results byte-identical."
+  docs_parity:
+    slices: ["01", "02", "04", "05"]
+    vary_over: [backend-unit-and-waf, backend-docs-only-push]
+    rationale: "The page never promises less than the product does; the disclosure test lists every UsageDataSource member."
+
+smoke_integration_usage_data_checks:
+  # One step in lighthouse-clients ci.yml smoke-integration, created by slice 02, after "Connect CLI to
+  # Lighthouse" and before "Verify --pretty views". Anchors are the approved copy (A15), grep -F.
+  - call: "lh config usage-data            (DO_NOT_TRACK=1, job default)"
+    anchor: "DO_NOT_TRACK is set, so lh sends no usage data whatever is stored."
+  - call: "lh config usage-data on         (DO_NOT_TRACK=1)"
+    anchor: "DO_NOT_TRACK is set, so lh sends no usage data whatever is stored."
+    proves: "DSN-21: nothing recorded (the next line still reads not asked yet)"
+  - call: "env -u DO_NOT_TRACK lh config usage-data"
+    anchors: ["not asked yet (off)", "This Lighthouse allows usage data."]
+    proves: "acceptedSources on the real :latest wire; the release order was kept"
+  - call: "env -u DO_NOT_TRACK lh config usage-data on"
+    anchor: "Usage data from lh to https://127.0.0.1:8443: on."
+    proves: "POST consent against the real image; the token is stored and never printed"
+  - call: "env -u DO_NOT_TRACK lh config usage-data off"
+    anchor: "off. Nothing more is sent."
+    proves: "DELETE consent against the real image"
+  - call: "env -u DO_NOT_TRACK lh config usage-data"
+    anchor: "Usage data from lh to https://127.0.0.1:8443: off"
+  - check: "No output line of the step contains the stored token (read from usage-data.json with jq, grep -vF over the step's captured output)"
+
+coexistence_matrix:
+  - tool: "Lighthouse web (every bundle, including tabs open across an upgrade)"
+    must_not_break: true
+    note: "Sends no source; absent = Browser. No frontend change."
+  - tool: "voter-keys.json and lh refinement vote / MCP vote tools"
+    must_not_break: true
+    note: "Lock and atomic-write code extracted to ownerOnlyJsonFile.ts in a refactor commit; voter key tests unedited; file format unchanged, so an older client still reads it."
+  - tool: "Scripts and agents driving lh (no terminal)"
+    must_not_break: true
+    note: "Never asked; output and exit code byte-identical; zero usage-data requests without a stored yes."
+  - tool: "mcp-stdio protocol stream (stdout)"
+    must_not_break: true
+    note: "Source-scan test: no console / process.std* in usage-data code."
+  - tool: "Existing smoke-integration steps (#6218 --pretty step, scenario 0 reload last)"
+    must_not_break: true
+    note: "New step sits before the --pretty step; job-level DO_NOT_TRACK=1 changes none of their outputs (D10)."
+  - tool: "smoke-platform fake server"
+    must_not_break: true
+    note: "Answers 404 on /usagedata/ routes and CI=true; nothing asked or sent; unchanged."
+  - tool: "Lighthouse E2E usage-data dialog specs (usageDataAsk.spec.ts)"
+    must_not_break: true
+    note: "Unchanged; they never accept the dialog. Slice 01 adds no E2E."
+  - tool: "UsageDataCanary (scheduled, live vendor)"
+    must_not_break: true
+    note: "Still excluded from ordinary backend runs by category; the new property is additive."
+  - tool: "Helm chart mcp.enabled deployments"
+    must_not_break: true
+    note: "No value for LIGHTHOUSE_USAGE_DATA (accepted follow-up): chart users stay off. No kubectl set env stop-gap."
+  - tool: "Older mcp-stdio beside a newer lh (and the reverse)"
+    must_not_break: true
+    note: "The older one ignores usage-data.json; the newer one reads it."
+
+platform_coverage:
+  Lighthouse: [ubuntu-latest (ci_backend), .NET 10]
+  lighthouse-clients: [ubuntu-latest Node 24 (verify, smoke-integration), macOS/Windows Node 24 (smoke-platform, fake server, CI=true)]
+  CI: [GitHub Actions - Lighthouse ci.yml/ci_backend.yml/pages.yml; lighthouse-clients ci.yml]
+
+deployment_assumptions:
+  - "Lighthouse slice 01 is expand-only and has no migration: an image rollback is safe; the only residual is ADR-225's <= 24 h per-client mislabel window."
+  - "Release order: Lighthouse slice 01 released (maintainer approval, calver) before the clients release that carries slice 02. Not required for safety (clients check acceptedSources), required for smoke-integration's 'allows usage data' anchor."
+  - "Self-hosted instances upgrade at their own pace; a new client against an old instance is silent and `lh config usage-data` says why. No coordination with customers is needed."
+  - "Clients: one changeset per slice (D17); approve a Release run only when its head carries the version-bump commit (#6218 rule), else smoke-integration runs the previous CLI against the new step."
+  - "docs/settings/usagedata.md deploys on push to main (pages.yml), ahead of either release. Docs lead the behaviour, which is the safe direction; a clients release is never approved before its docs slice is pushed."
+  - "Nothing in CI reaches the production collector; every environment above states why."
