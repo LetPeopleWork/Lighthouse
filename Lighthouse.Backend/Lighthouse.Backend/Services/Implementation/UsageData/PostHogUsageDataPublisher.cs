@@ -208,6 +208,7 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                     facts.DeploymentMode.ToString(),
                     facts.LicenceTier,
                     facts.AuthenticationEnabled,
+                    batch.Source.ToString(),
                     Ip: null,
                     GeoIpDisable: true)))];
         }
@@ -235,7 +236,8 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         /// the browser sent it; the kind of system that was connected; which behaviour setting was
         /// switched and which way it went; when a sizing vote was cast relative to the Team's
         /// Refinement; which verdict a Refinement day showed; the four facts about the instance,
-        /// none of which the browser is ever asked for; and the two instructions that keep the
+        /// none of which the browser is ever asked for; which surface the batch came from, written on
+        /// every message so a count can always be split by it; and the two instructions that keep the
         /// caller's own address out of what the collector stores.
         ///
         /// The address, the kind of system, the setting, its direction, the sizing moment and the
@@ -268,6 +270,7 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             [property: JsonPropertyName("deployment_mode")] string DeploymentMode,
             [property: JsonPropertyName("licence_tier")] string LicenceTier,
             [property: JsonPropertyName("auth_enabled")] bool AuthenticationEnabled,
+            [property: JsonPropertyName("source")] string Source,
             [property: JsonPropertyName("$ip")] string? Ip,
             [property: JsonPropertyName("$geoip_disable")] bool GeoIpDisable);
     }

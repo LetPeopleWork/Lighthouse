@@ -54,6 +54,32 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         /// <summary>
+        /// The web page has never named a source and a tab still holding an old page never will, so a
+        /// batch that names none is a browser's. A client names its own, and that name is what waits.
+        /// </summary>
+        [TestCase(null, UsageDataSource.Browser, TestName = "ABatchNamingNoSource_WaitsAsABrowsers")]
+        [TestCase(UsageDataSource.Browser, UsageDataSource.Browser)]
+        [TestCase(UsageDataSource.Cli, UsageDataSource.Cli)]
+        [TestCase(UsageDataSource.Mcp, UsageDataSource.Mcp)]
+        public async Task ABatch_WaitsUnderTheSourceItCameFrom(UsageDataSource? declared, UsageDataSource expected)
+        {
+            var queue = new UsageDataEventQueue(Mock.Of<ILogger<UsageDataEventQueue>>());
+            var controller = AController(queue, ABrowserThatAgreed());
+
+            var answer = await controller.HandInEvents(
+                ABatchReporting(0, 0, declared), APresentedToken, TestContext.CurrentContext.CancellationToken);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answer, Is.InstanceOf<NoContentResult>());
+                Assert.That(queue.TryTakeNext(out var waiting), Is.True, "the batch was not kept");
+                Assert.That(waiting!.Source, Is.EqualTo(expected),
+                    "the batch waits under a source other than the one it came from, so its events "
+                    + "would be counted under the wrong surface");
+            }
+        }
+
+        /// <summary>
         /// A number no browser of ours can produce means the message was not written by our page, and
         /// there is nothing to be gained from guessing what was meant.
         /// </summary>
@@ -104,7 +130,8 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
-        private static UsageDataEventBatchDto ABatchReporting(int offsetMs, int sequence)
+        private static UsageDataEventBatchDto ABatchReporting(
+            int offsetMs, int sequence, UsageDataSource? source = null)
         {
             return new UsageDataEventBatchDto(
                 [new UsageDataEventDto(
@@ -115,7 +142,8 @@ namespace Lighthouse.Backend.Tests.API
                     Enabled: null,
                     SizingMoment: null,
                     offsetMs,
-                    sequence)]);
+                    sequence)],
+                source);
         }
 
         private static UsageDataEmitPermit ABrowserThatAgreed()

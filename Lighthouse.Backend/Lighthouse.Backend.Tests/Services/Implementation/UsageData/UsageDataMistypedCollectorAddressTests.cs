@@ -141,7 +141,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
                     Enabled: null,
                     SizingMoment: null,
                     OffsetMs: 0,
-                    Sequence: 0)]);
+                    Sequence: 0)],
+                UsageDataSource.Browser);
         }
 
         /// <summary>

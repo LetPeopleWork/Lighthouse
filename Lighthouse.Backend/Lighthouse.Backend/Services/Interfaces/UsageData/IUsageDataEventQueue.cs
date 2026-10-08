@@ -35,7 +35,9 @@ namespace Lighthouse.Backend.Services.Interfaces.UsageData
     /// <summary>
     /// A batch that was taken in, together with the token presented for it. The token travels with
     /// the batch because the answer is asked a second time when it is sent: somebody can withdraw
-    /// while this is still waiting, and only the record can say that they did.
+    /// while this is still waiting, and only the record can say that they did. The source rides on the
+    /// batch rather than on each event because one caller hands in the whole batch.
     /// </summary>
-    public sealed record AcceptedUsageDataBatch(string Token, IReadOnlyList<UsageDataEventReported> Events);
+    public sealed record AcceptedUsageDataBatch(
+        string Token, IReadOnlyList<UsageDataEventReported> Events, UsageDataSource Source);
 }

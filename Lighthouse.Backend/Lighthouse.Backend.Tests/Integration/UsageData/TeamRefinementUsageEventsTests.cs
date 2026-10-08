@@ -33,6 +33,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             "deployment_mode",
             "licence_tier",
             "auth_enabled",
+            "source",
             "$ip",
             "$geoip_disable",
         ];

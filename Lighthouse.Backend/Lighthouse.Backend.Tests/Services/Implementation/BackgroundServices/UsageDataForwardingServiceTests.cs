@@ -227,7 +227,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
                         Enabled: null,
                         SizingMoment: null,
                         OffsetMs: 0,
-                        Sequence: handed)]));
+                        Sequence: handed)],
+                    UsageDataSource.Browser));
             }
         }
 

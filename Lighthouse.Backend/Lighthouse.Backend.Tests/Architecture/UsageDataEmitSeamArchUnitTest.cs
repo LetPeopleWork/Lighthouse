@@ -56,6 +56,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "refinement_verdict",
             "route",
             "sizing_moment",
+            "source",
             "timestamp",
             "version",
             "work_tracking_system",

@@ -3,9 +3,10 @@ using Lighthouse.Backend.Models.UsageData;
 namespace Lighthouse.Backend.API.DTO
 {
     /// <summary>
-    /// What a browser posts.
+    /// What a browser or one of our own clients posts. A batch that names no source is a browser's,
+    /// because the web page has never sent one and a tab still holding an old page never will.
     /// </summary>
-    public sealed record UsageDataEventBatchDto(UsageDataEventDto[]? Events);
+    public sealed record UsageDataEventBatchDto(UsageDataEventDto[]? Events, UsageDataSource? Source = null);
 
     /// <summary>
     /// One thing that happened. Nothing here is text: choices from closed lists, one on-or-off answer

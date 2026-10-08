@@ -127,8 +127,8 @@ namespace Lighthouse.Backend.API
         /// What a browser hands in. The answer is the same whether the batch will be used or thrown
         /// away, so a caller cannot hold up a token and be told whether this instance minted it -
         /// the same reason withdrawal answers the way it does. A body that cannot be read is the one
-        /// exception, and it is not a probe: nothing but our own page posts here, so an unreadable
-        /// message is our bug and saying so costs nobody anything.
+        /// exception, and it is not a probe: nothing but our own page and our own clients posts here,
+        /// so an unreadable message is our bug and saying so costs nobody anything.
         /// </summary>
         [HttpPost("events")]
         [EnableRateLimiting(RateLimitingConfiguration.UsageDataIngestPolicy)]
@@ -162,7 +162,7 @@ namespace Lighthouse.Backend.API
 
             if (permit is not null && token is { } presented)
             {
-                queue.HandIn(new AcceptedUsageDataBatch(presented, takenIn));
+                queue.HandIn(new AcceptedUsageDataBatch(presented, takenIn, batch.Source ?? UsageDataSource.Browser));
             }
 
             return NoContent();

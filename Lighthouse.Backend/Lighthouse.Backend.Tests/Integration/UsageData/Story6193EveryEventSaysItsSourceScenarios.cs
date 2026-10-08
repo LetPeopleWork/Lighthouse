@@ -48,7 +48,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // @US-01 @driving_port @real-io @kpi @contract-shape:bounded-change
         // KPI-1: a Browser count is browsers only, and the web needs no change to stay in it.
         [Test]
-        [Ignore(PendingSlice01)]
         [TestCase(SourceLeftOut)]
         [TestCase(SourceSentAsNull)]
         public async Task A_browser_batch_that_names_no_source_reaches_the_collector_labelled_Browser(string howTheSourceIsMissing)
@@ -67,7 +66,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @US-01 @driving_port @real-io @kpi @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice01)]
         [TestCase(Cli)]
         [TestCase(Mcp)]
         public async Task A_client_batch_reaches_the_collector_labelled_with_the_source_it_declared(string declared)
@@ -87,7 +85,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // @US-01 @driving_port @real-io @boundary @contract-shape:bounded-change
         // Names are read whatever their case, as every other closed choice on this endpoint is.
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task A_source_named_in_lower_case_is_read_as_the_source_it_names()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -105,7 +102,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // @US-01 @driving_port @real-io @kpi @contract-shape:bounded-change
         // KPI-1, north star: one source per batch, written on every message the batch becomes.
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task Every_message_a_batch_becomes_carries_the_source_of_that_batch()
         {
             var token = await ABrowserThatAgreedAsync();

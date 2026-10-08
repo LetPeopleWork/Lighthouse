@@ -81,6 +81,29 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
         }
 
         /// <summary>
+        /// The source is what lets a count be split by surface, so it is written on every message,
+        /// a browser's included - a message without one would be counted under no surface at all.
+        /// </summary>
+        [TestCase(UsageDataSource.Browser)]
+        [TestCase(UsageDataSource.Cli)]
+        [TestCase(UsageDataSource.Mcp)]
+        public async Task EveryMessage_SaysWhichSourceItsBatchCameFrom(UsageDataSource source)
+        {
+            var posted = new WhatWasPosted();
+            var wayOut = AWayOutToldToSendTo(AnAddressAnythingCanPostTo, posted);
+
+            await wayOut.PublishAsync(APermit(), ABatch(source: source), CancellationToken.None);
+
+            var carried = TheOneMessageIn(posted).GetProperty("properties");
+
+            Assert.That(
+                carried.TryGetProperty("source", out var written) ? written.GetString() : null,
+                Is.EqualTo(source.ToString()),
+                "the message left without the source of its batch, so the collector cannot tell "
+                + "which surface the event came from");
+        }
+
+        /// <summary>
         /// Everything the caller does about a batch that did not arrive - putting the day's
         /// allowance back, telling an operator once - hangs on this being noticed. A collector that
         /// answers with a refusal and is treated as having accepted is the worst outcome the whole
@@ -230,7 +253,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
             return new UsageDataEmitPermit("a-pseudonym-this-browser-is-counted-under");
         }
 
-        private static AcceptedUsageDataBatch ABatch(int offsetMs = 0)
+        private static AcceptedUsageDataBatch ABatch(
+            int offsetMs = 0, UsageDataSource source = UsageDataSource.Browser)
         {
             return new AcceptedUsageDataBatch(
                 "a-token-a-browser-presented",
@@ -242,7 +266,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
                     Enabled: null,
                     SizingMoment: null,
                     offsetMs,
-                    Sequence: 0)]);
+                    Sequence: 0)],
+                source);
         }
 
         /// <summary>
