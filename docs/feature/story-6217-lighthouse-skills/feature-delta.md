@@ -1679,3 +1679,308 @@ contract beyond the pack check. AI assistants: covered by the manual evals only.
 | MQ-3 | `sleRisk` and `processBehaviorChart` are not part of `lh metrics team` without `--metrics` | (a) opt-in, default view unchanged; (b) in the default view | **(a)** — the default view stays one screen and makes no extra requests |
 
 All three are also on DISTILL's sketch walk-through with the `--pretty` lines for G1–G3.
+
+---
+
+## Wave: DEVOPS / [REF] Prior-Wave Reading
+
+DEVOPS 2026-10-08, interaction mode **propose**, density `lean` (DEVOPS declares no `ask-intelligent` triggers:
+no expansion menu). Platform architect: Apex (`nw-platform-architect`). Every option was taken at its
+recommended value; the ones that are the maintainer's are listed under "For the maintainer" at the end.
+
+| File / source | Read |
+|---|---|
+| This file: DISCUSS (Outcome KPIs, DoD, checklist rows), DESIGN (DSN-1..23, Earned Trust Probes, OQ-1..3) | ✓ |
+| ADR-229 (packing), ADR-230..232 (titles; nothing platform-relevant beyond 229) | ✓ |
+| clients `.github/workflows/ci.yml` (all), `package.json` scripts + `simple-git-hooks`, `.changeset/config.json` + pending changesets, `scripts/check-changeset.mjs`, `docs/release-model.md`, `docs/deployment.md`, `README.md` §Releases | ✓ |
+| Lighthouse `docs/ci-learnings.md` (preflight rules, shell/pipefail/shellcheck entries), `docs/aiintegration.md`, `docs/settings/usagedata.md` (Source field), `.github/workflows/pages.yml`, `UsageDataEventName.cs` | ✓ |
+| `/storage/repos/website` (`src/pages/Lighthouse.tsx`, `public/llms.txt`, `src/lib/plausible.ts`) — read-only | ✓ (DISCUSS could not read it; it lists the skill, see Website) |
+| GitHub Releases API: `download_count` of `lighthouse-skill.zip` per release | ✓ (baseline below) |
+| `discuss/outcome-kpis.md`, `design/*.md` as separate files | ⊘ — lean single file; KPIs and DESIGN live in this file |
+
+**Contradictions with DESIGN**: none blocking. Three refinements of DSN-3, one revision of KPI-3/KPI-4
+measurement — see DEVOPS Changed Assumptions.
+
+## Wave: DEVOPS / [REF] Environment Matrix
+
+Nothing is deployed to a server. The "environments" are where the deliverables land; full inventory in
+`devops/environments.yaml` (for DISTILL).
+
+| Environment | Platform | Preconditions |
+|---|---|---|
+| CI `verify` | GitHub Actions `ubuntu-latest`, Node 24, pnpm from `packageManager` | `zip`/`unzip` on the runner (present) |
+| CI `release` | same, `Release` environment (maintainer approval) | version bump on `main` for npm/GHCR; none needed for the zips |
+| GitHub Releases | `LetPeopleWork/lighthouse-clients`, `releases/latest/download/<asset>` | the release is the one marked latest |
+| Assistant with skills | Claude Desktop (zip import), Claude Code (`~/.claude/skills/<name>/`), VS Code / Copilot agent skills | MCP stdio/http or `lh` installed and connected |
+| Lighthouse server | any supported version; `sleRisk` gated (`v26.9.9.9`, OQ-1) | older server → D7 fallback |
+| Lighthouse docs site | `pages.yml`, deploys on every `main` push touching `docs/**` | the zips it links are on the latest release |
+| Website | `letpeople.work/lighthouse`, Plausible (cookieless) | as docs |
+| Maintainer machine | CachyOS, Node via fnm | **`zip` is not installed** (`which zip` → not found); needed to run `pack-skills.sh` locally |
+
+## Wave: DEVOPS / [REF] CI/CD Pipeline Outline
+
+One workflow, `Client CI` (`.github/workflows/ci.yml`), extended — no new workflow, no new job (existing
+infrastructure first; DSN-3).
+
+| Job | Trigger | Change | Slice |
+|---|---|---|---|
+| `verify` | `pull_request` (Renovate) and push to `main` (trunk) | **Test** step: unchanged — the drift test rides `pnpm test` (root `vitest.config.ts` include). | 01 |
+| `verify` | same | **NEW step "Pack skills (dry run)"**, right after **Test**: `out="$(mktemp -d)"; bash scripts/pack-skills.sh "$out"; for name in lighthouse lighthouse-refinement; do test -f "$out/$name-skill.zip" \|\| { echo "missing $name-skill.zip"; exit 1; }; done`. Slice 09 adds `lighthouse-daily-flow-review` to that list. | 04, 09 |
+| `release` | push to `main`, `needs: verify`, held at `Release` | "Pack skill folder" **replaced** by `bash scripts/pack-skills.sh release-assets` and **moved** to directly after **Build**, before **Publish npm packages**. | 04 |
+| `release` | same | **Create GitHub release** `files:`: `release-assets/lighthouse-skill.zip` → `release-assets/*-skill.zip`; add `fail_on_unmatched_files: true`. | 04 |
+| `smoke-platform`, `smoke-integration` | after `release` | none for the zips. `smoke-integration`'s `--pretty` grep gains `--metrics sleRisk` and `--metrics processBehaviorChart` (DESIGN contract tests). | 07, 08 |
+
+**`scripts/pack-skills.sh <out-dir>` contract** (DELIVER writes it; the guard lives in the script so the
+release runs the same check as `verify`, not only a listing):
+
+1. `set -euo pipefail`; `mkdir -p` the out-dir and resolve it to an absolute path before any `cd`.
+2. Iterate `skills/*/` (`nullglob`); **zero folders → fail**.
+3. Per folder: `SKILL.md` present, frontmatter `name:` equals the folder name → else fail.
+4. `(cd "$dir" && zip -qr -X "$out/$name-skill.zip" . -x 'evals/*')`.
+5. Post-check per zip: `entries="$(unzip -Z1 "$zip")"`; `grep -qx 'SKILL.md' <<<"$entries"` must succeed
+   (SKILL.md at the root, not nested); `grep -q '^evals/' <<<"$entries"` must **not** succeed → else fail and
+   delete the zip. Print the entries (the human-readable listing ADR-229 names).
+6. Writes nothing but `<out-dir>/*-skill.zip`.
+
+**How a broken pack fails**: a folder without `SKILL.md`, a wrong `name`, a nested root or `evals/` in a zip
+make the script exit non-zero → `verify` red → `release` never starts (`needs: verify`). A skill folder
+renamed or deleted → the expected-name check fails `verify`, because the docs and website link those names.
+If `verify` were ever bypassed, the release job runs the same script **before** `npm publish`, so a packing
+fault aborts before anything irreversible; `fail_on_unmatched_files` catches an empty glob.
+
+**Why the move and the CI edit land in one commit (slice 04)**: today `verify` does not pack. A commit that
+moved `skill/` without changing the release step would pass `verify` and fail in the approved `release` job
+after npm had published. `git mv skill skills/lighthouse`, `pack-skills.sh`, both `ci.yml` edits and the
+drift-test root change go in one commit, so `main` never holds a half-moved layout and one `git revert`
+undoes it.
+
+**actionlint**: run locally on every `ci.yml` edit (`~/go/bin/actionlint .github/workflows/ci.yml`, v1.7.12;
+clean on today's file). Not added to CI: one workflow file, edited a few times a year, and Renovate's action
+bumps are already validated by the run itself. `shellcheck` is not installed locally, so actionlint does not
+lint the `run:` blocks or the script here; check `pack-skills.sh` with the CI-pinned version
+(`docker run --rm -v "$PWD:/mnt" -w /mnt koalaman/shellcheck:v0.9.0 scripts/pack-skills.sh`).
+
+**Local gates**: the `pre-commit` hook (`pnpm run ci` + changeset check) already runs the drift test. The
+pack check is **not** added to the hook: `zip` is absent on the maintainer's machine and the hook would break
+every commit. Local equivalent: `bash scripts/pack-skills.sh "$(mktemp -d)"`, run by DELIVER in slices 04
+and 09 after `zip` is installed. The script gets no Vitest test for the same reason (a `pnpm test` that needs
+`zip` goes red locally); DELIVER probes it red-first by hand — a temp `skills/x/` without `SKILL.md` (exit ≠ 0),
+one whose `name` differs (exit ≠ 0), one with `evals/` (zip has no `evals/`) — and says so in the commit body.
+
+## Wave: DEVOPS / [REF] Release Flow (clients)
+
+| Story | Changesets | Effect on release |
+|---|---|---|
+| #6245 (01–03) | none — `skill/`, `skills/*.test.ts`, `scripts/`, root config (S4; the hook does not fire) | zip content only |
+| #6217 (04–05) | none — `skills/`, `scripts/`, `ci.yml` | a second zip; layout move |
+| #6246 (06–08) | `client` **minor**, `cli` **minor**, `mcp-core` **minor**; `mcp-stdio`/`mcp-http` **patch** via `updateInternalDependencies: patch` | npm, binaries, MCPB, GHCR image |
+| #6246 (09–10) | none — `skills/` | a third zip |
+
+One release carries all three stories, plus the pending #6193 and #6218 changesets and the deferred MCP SDK /
+undici / toon v4 bumps. Every push to `main` queues a `release` run at the `Release` environment; **the
+maintainer approves none of them until the release checklist below is complete** — an approved run with no
+version bump still creates a GitHub Release and would publish half-written skills (ADR-229's accepted
+negative). `concurrency: release` lets a newer push supersede a pending run, so only the release-commit's run
+needs approving.
+
+**Release checklist (maintainer)**:
+
+1. Slices 01–10 pushed; `verify` green on the release commit's parent.
+2. **Eval run** (DSN-10, KPI-2) on the frozen skill text: every case of the three skills, three runs each,
+   recorded as `docs/feature/story-6217-lighthouse-skills/evals/<yyyy-mm-dd>-<skill>.md`. Guardrail cases
+   3/3, others ≥ 90 % per skill. Any skill-text change after the run → re-run that skill's cases.
+3. Liz Rettig's review of the Daily Flow Review skill and her OK on the quotes (Q4).
+4. OQ-1 settled (the `sleRisk` gate baseline) and StrykerJS ≥ 80 % recorded for 06–08.
+5. `pnpm release:version` with `GITHUB_TOKEN_CHANGESET` set; commit and push the bumps and changelogs.
+6. Approve `Release` on that push's run.
+7. Post-release check: `gh release view <tag> --json assets --jq '.assets[].name'` lists the three
+   `*-skill.zip`; each `releases/latest/download/<name>-skill.zip` downloads and `unzip -Z1` shows `SKILL.md`
+   at the root and no `evals/`; `smoke-platform` and `smoke-integration` green.
+8. Only then push the Lighthouse docs commit(s) (`docs/aiintegration.md`, `docs/concepts/concepts.md`) —
+   `pages.yml` deploys on push, so a docs commit pushed before step 6 links zips that 404. DELIVER of 04 and 09
+   writes those commits and holds them unpushed.
+9. Website change (see Website), same day.
+10. Read the KPI-3 and KPI-4 baselines (queries below) and note them in this file.
+
+## Wave: DEVOPS / [REF] Deployment Strategy
+
+**Recreate via GitHub Release assets**, gated by the `Release` environment approval. Canary or staged
+rollout does not apply: an asset is fetched by a human, once, and an installed skill never updates itself.
+The pre-release eval run is therefore the real gate — a wrong skill stays on users' machines until they
+re-download it.
+
+| Slice / fault | Rollback |
+|---|---|
+| 01–03 general skill text, before release | `git revert` the slice commit(s); nothing published |
+| 01–03 after release (wrong guidance in `lighthouse-skill.zip`) | Roll forward: revert/fix text, push, approve a release (no version bump needed); one line in the release notes that the skill should be re-downloaded |
+| 04 layout move + packing + CI | One commit (above) → one `git revert` restores `skill/` and the old release step together |
+| Broken or wrong zip on a published release | Replace the asset on the same release, keep npm/binaries: `dir="$(mktemp -d)"; gh release download <previous-tag> -p '<name>-skill.zip' -D "$dir"; gh release upload <bad-tag> "$dir/<name>-skill.zip" --clobber`. Do **not** mark the previous release as latest — that also rolls back the binaries and MCPB of a release whose npm packages already moved on. Note: a replaced asset's `download_count` restarts at 0 (KPI-3 reads it per asset). Then fix forward in the repo |
+| 05, 09–10 new skill folder | Revert the folder; the next release lacks that zip — so the docs and website links must be removed in the same step, or they 404 |
+| 06–08 client reads (npm, MCP tools, GHCR) | No unpublish. Roll forward with a patch changeset; `npm deprecate @letpeoplework/<pkg>@<bad> "<reason>"` for the bad versions; the mcp-http image republishes under the new version and `latest`. Removing a new MCP tool is a breaking catalogue change for any skill naming it — fix, don't remove |
+
+## Wave: DEVOPS / [REF] Usage-Data Event (project DEVOPS rule)
+
+**N/A for the three skills, confirmed, because** a skill is text an assistant reads: nothing of ours runs
+when it is installed or used, so nothing can emit an event, and the assistant's own telemetry is not ours.
+A marker the skill tells the assistant to send would be an event the web does not send (#6193 M9) and an
+assistant-declared, unverifiable property — rejected.
+
+**N/A for G1–G3 (`lighthouse_team_metrics_wip`, `…_sleRisk`, `…_processBehaviorChart`, the two `--metrics`
+selections), confirmed, because** `UsageDataEventName` (0–15) holds no event for viewing the WIP, SLE Risk
+or PBC widgets on the web, and clients may only mirror events the web sends (DSN-19). Inventing a web event
+for "widget viewed" to make the mirror possible would measure the web, not this feature. Nothing is appended
+to `UsageDataEventName`; `docs/settings/usagedata.md` unchanged.
+
+Use is read from data that already exists — see Monitoring Contracts.
+
+## Wave: DEVOPS / [REF] Monitoring Contracts
+
+| KPI | Instrument | Query / where the maintainer looks | When |
+|---|---|---|---|
+| KPI-1 drift | drift test in `pnpm test` | `verify` → **Test** step; the Vitest diff names each missing/unknown tool or command | every push / PR |
+| KPI-2 evals | eval records in this workspace | `evals/<date>-<skill>.md`: guardrails 3/3, others ≥ 90 % | before every release that changes skill text |
+| KPI-3 installs | GitHub Releases API `download_count` | `gh api repos/LetPeopleWork/lighthouse-clients/releases --paginate --jq '.[] \| select(.published_at >= "<release-day>") \| .assets[] \| select(.name \| endswith("-skill.zip")) \| "\(.name) \(.download_count)"'`, summed per name. Counts live on each release's asset, and `latest/download` follows the newest release, so sum across every release since release day | release day (baseline), day 30, day 60 |
+| KPI-3 (website share) | Plausible goal `Download`, property `edition` | Plausible → Goal "Download" → breakdown by `edition`: `ai-skill` (today) plus the two new editions the website change adds | same |
+| KPI-4 assistant Refinement | PostHog Cloud EU, events `TeamRefinementDayVerdictShown`, `TeamSizingVoteCast` | Trends, weekly, both events, breakdown by `Source` (`Browser`/`Cli`/`Mcp`); read the `Mcp`+`Cli` series and their share of all sources. Consenting users only; cannot tell a skill-driven call from a plain MCP call | weekly for 8 weeks |
+| KPI-5 daily without status round | maintainer's dogfood log | one row per working day in `docs/feature/story-6217-lighthouse-skills/dogfood/daily-log.md`: date, opened from the skill (y/n), round-robin (y/n) | 10 consecutive working days after release |
+| KPI-6 never decided for | guardrail eval cases | KPI-2 record, guardrail rows | as KPI-2 |
+
+**KPI-3 baseline, read 2026-10-08** (the KPI-3 query over every release, asset `lighthouse-skill.zip`, summed): `lighthouse-skill.zip` has **38 downloads in total** across 14 releases since
+2026-05-24 (peak 12 on v2026.06.29.107; 1 on the latest, v2026.09.24.118) — about 8 a month. The DISCUSS
+desk target of **≥ 25 per new zip in 60 days** is roughly twice the general skill's own rate. See "For the
+maintainer" MD-2.
+
+**KPI-4 baseline**: the `Mcp`/`Cli` sources ship with #6193 in the **same** release, so there are no
+assistant-sourced Refinement events before release day and "rise vs the 4 weeks before" has nothing to
+compare with. Revised: the first 2 weeks after release are the baseline; KPI-4 holds when the `Mcp`+`Cli`
+weekly count in weeks 5–8 is above weeks 1–2. See MD-3.
+
+No alerting: nothing runs in production that could page. The guardrail is `verify` going red.
+
+## Wave: DEVOPS / [REF] Observability Stack
+
+| Signal | Tool |
+|---|---|
+| Build/packing health | GitHub Actions (`verify`, `release`, smoke jobs) |
+| Distribution | GitHub Releases API (`download_count`), Plausible (website download clicks, cookieless) |
+| Use | PostHog Cloud EU via the backend-forwarded pipe (existing events, `Source` breakdown) |
+| Answer quality | Manual eval records + dogfood log in this workspace |
+| Logs / traces / metrics of a service | N/A, because no service is added: the new reads run inside existing clients against existing routes |
+
+## Wave: DEVOPS / [REF] Mutation Testing Strategy
+
+**per-feature** (project `CLAUDE.md`, unchanged; nothing written there). StrykerJS on the new
+`client`/`cli`/`mcp-core` code of slices 06–08, ≥ 80 % kill rate, run last on frozen code. Skill text:
+**N/A, because** prose cannot be mutated — KPI-2 is its gate. `pack-skills.sh`: **N/A, because** Stryker does
+not mutate bash — the red-first probes above are its gate.
+
+## Wave: DEVOPS / [REF] Branching Strategy
+
+**Trunk-based on `main`** in both repos (maintainer's standing rule: push directly, no branches). `verify`
+runs on `push: main` and on `pull_request` (Renovate), so the pack check covers both. `release` runs only on
+`main` and waits for approval — the approval is the release gate, not a branch.
+
+## Wave: DEVOPS / [REF] Coexistence Matrix
+
+| Must keep working | How it is protected |
+|---|---|
+| `releases/latest/download/lighthouse-skill.zip` (docs ×3, website card, `llms.txt`) | zip name derived from folder `lighthouse`; `verify` asserts the name exists |
+| `lh metrics team\|portfolio` default output | DSN-18 characterisation test |
+| Other release assets (binaries, MCPB, install scripts) | `files:` list otherwise unchanged; pack step moved but touches only `*-skill.zip` |
+| `pre-commit` hook on a machine without `zip` | pack check deliberately not in the hook |
+| Changeset gate | skills/scripts/CI outside `packages/*/src` → no changeset needed for 01–05, 09–10 |
+| An older general skill installed next to the new specific skills; the ProKanban skill installed alongside | `environments.yaml` `with-stale-general-skill` / `with-prokanban-skill` → DISTILL neighbour cases |
+| New skills against MCP/`lh` older than the #6246 release | `environments.yaml` `with-older-clients` → DISTILL decides the expected answer (open below) |
+
+## Wave: DEVOPS / [REF] Website
+
+`/storage/repos/website` **lists the skill** (DISCUSS could not check): `src/pages/Lighthouse.tsx:1827-1846`,
+an "Agent Skill" card with one link to `lighthouse-skill.zip` and `trackDownload({ edition: "ai-skill",
+format: "zip", source: "ai-integration" })`; `public/llms.txt:62-66` lists "Skill bundle (.zip)".
+`src/components/AIIntegrationSection.tsx` links only the docs page — no change. Excerpt, read 2026-10-08
+at website `e0ae35f`:
+
+```
+Lighthouse.tsx:1831   Agent Skill
+Lighthouse.tsx:1840   href="https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-skill.zip"
+Lighthouse.tsx:1841   onClick={() => trackDownload({ edition: "ai-skill", format: "zip", source: "ai-integration" })}
+Lighthouse.tsx:1845   Download lighthouse-skill.zip
+llms.txt:65           - Skill bundle (.zip): https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-skill.zip
+``` Nothing breaks at release
+(the general zip keeps its name). The change at release (step 9) is MD-1.
+
+## Wave: DEVOPS / [REF] Pre-requisites
+
+- `zip` installed on the maintainer's machine before DELIVER of slice 04 (`pacman -S zip`).
+- `~/go/bin/actionlint` (present) and Docker for `koalaman/shellcheck:v0.9.0`.
+- `GITHUB_TOKEN_CHANGESET` for `pnpm release:version` (unchanged).
+- PostHog and Plausible dashboard access for the maintainer (existing).
+- DISTILL: fixtures cover the routes in OQ-3; `environments.yaml` read for target environments.
+
+## Wave: DEVOPS / [REF] CI-Learnings Pre-Applied
+
+- **`pipefail` + `grep -q`** (2026-10-03): the script captures `unzip -Z1` output and tests it with
+  here-strings; nothing is piped into `grep -q`/`head`.
+- **Never filter a gate's output** (preflight): the verify step reads the script's exit code; the listing is
+  printed after the verdict, never instead of it.
+- **Shell style** (2026-10-03 Sonar shelldre entry): named locals for function arguments, explicit `return`,
+  `*)` in every `case`, literals used three times lifted to `readonly` constants — the clients repo has no
+  Sonar, but the script is written to the house rule anyway.
+- **shellcheck 0.9.0, not `:stable`** (2026-10-03): checked with the CI-pinned image; one `[[ … && … ]]`
+  before any `||` fallback.
+- **`Set up job` failures are infrastructure**: re-run, change nothing.
+- **pnpm from `packageManager`**: no toolchain change; no new dependency.
+- **Comments for a stranger**: no `DSN-`/`US-`/`ADR-` references in the script or workflow comments.
+
+## Wave: DEVOPS / [REF] Changed Assumptions
+
+| Original | New | Why |
+|---|---|---|
+| DSN-3: "`verify` … lists each zip (`unzip -l`) to prove SKILL.md is at the root and `evals/` is absent" | The **script** asserts it (`unzip -Z1` + exact-match checks) and both jobs run the script; `verify` adds an expected-name check | A listing proves nothing unless something reads it; with the check in the script the release can never ship a zip that `verify` would have refused |
+| DSN-3: release "Pack skill folder" step replaced in place | Moved before **Publish npm packages** | A packing fault in the approved release would otherwise fail after npm has published |
+| DSN-3 / ADR-229: one change to `ci.yml` in slice 04 | `git mv`, script, both `ci.yml` edits and the drift-test root in **one** commit | `verify` does not pack today; a split would leave `main` with a layout the release job cannot pack |
+| DISCUSS checklist: website "verify at DELIVER of #6246" | Checked now: it lists the skill; change at release (MD-1) | The website repo is readable in this session |
+| KPI-3: ≥ 25 per new zip in 60 days | Baseline read (38 total, ~8/month for the general zip); target is the maintainer's (MD-2) | The desk target exceeds the existing skill's own rate |
+| KPI-4: rise vs the 4 weeks before release | First 2 weeks after release are the baseline (MD-3) | `Mcp`/`Cli` sources ship in the same release |
+
+No architecture impact: no `devops/upstream-changes.md`.
+
+## Wave: DEVOPS / [REF] For the maintainer
+
+| # | Item | Options | Recommended |
+|---|---|---|---|
+| MD-1 | Website at release (UI — sketch first) | (a) the "Agent Skill" card becomes "Agent Skills" with three download links, each its own Plausible `edition` (`ai-skill` kept for the general one so its series continues; `ai-skill-refinement`, `ai-skill-daily-flow-review`), and `llms.txt` gains two lines; (b) leave the card, add only the `llms.txt` lines and rely on the docs page; (c) three separate cards | **(a)** — reuses the existing card style, and the new editions give a second, non-personal install signal |
+| MD-2 | KPI-3 target | (a) keep ≥ 25 each in 60 days; (b) relative: each new zip ≥ 50 % of `lighthouse-skill.zip`'s downloads over the same 60 days, floor 8; (c) drop the number, report only | **(b)** — anchored on the only baseline there is |
+| MD-3 | KPI-4 baseline | (a) cut a clients release for #6193 (+ #6218) now and ship the skills ≥ 4 weeks later, for a real before/after; (b) one release; weeks 1–2 after release are the baseline | **(b)** — your plan for #6218 was no separate release, and neither option can tell skill use from plain MCP use |
+| MD-4 | New skills against older MCP/`lh` (no `lighthouse_team_metrics_wip`, no `sleRisk`/PBC tools) | (a) the Daily Flow Review skill says it needs clients ≥ the #6246 release and stops; (b) it falls back to `lh metrics team --metrics wip` and D7's age percentiles where it can, saying so | **(b)** — D7 already defines the fallback; DISTILL writes the case |
+
+MD-1 sketch (option a; reuses the existing card markup):
+
+```
+┌ Agent Skills ─────────────────────────────────────────────┐
+│ Pre-built skills that teach your AI agent to use          │
+│ Lighthouse well. Drop them into Claude Code, VS Code, or  │
+│ any skill-compatible agent.                               │
+│                                                           │
+│ Lighthouse — connect, read metrics, forecast              │
+│   Download lighthouse-skill.zip →                         │
+│ Refinement — is the Team ready? prep and vote             │
+│   Download lighthouse-refinement-skill.zip →              │
+│ Daily Flow Review — what to decide and discuss today      │
+│   Download lighthouse-daily-flow-review-skill.zip →       │
+└───────────────────────────────────────────────────────────┘
+```
+
+## Wave: DEVOPS / [REF] Peer Review
+
+Forge (`nw-platform-architect-reviewer`), one cycle. Verdict: **rejected pending revisions** (one blocker,
+three high). Resolution:
+
+| # | Severity | Finding | Resolution |
+|---|---|---|---|
+| 1 | blocker | Website claim unverifiable (reviewer could not open the website repo) | Reviewer's read scope, not the claim: the file was read by shell. Excerpt with line numbers and commit added under Website |
+| 2 | high | Pack step currently after npm publish in `ci.yml` | Agreed — it is the slice-04 change this section specifies; no edit |
+| 3 | high | `pack-skills.sh` does not exist yet | By design — DELIVER slice 04 writes it to the contract above |
+| 4 | high | Rollback asset command left `<that-file>` undefined | Fixed: temp dir held in a variable, full path given |
+| 5 | medium | KPI-3 baseline lacked date/query | Date and query reference added |
+| 6 | medium | "D7" not found | D7 is DISCUSS's Locked Decision (aging fallback), in this file; no change |

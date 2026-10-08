@@ -1,0 +1,57 @@
+# environments.yaml — consumed by DISTILL for Mandate 4 (Environmental Realism)
+# story-6217-lighthouse-skills (#6245, #6217, #6246). Nothing installs into a server: the deliverables are
+# skill zips imported into AI assistants, plus new reads in the existing clients.
+
+target_environments:
+  - name: clean
+    description: "Fresh assistant, only the skill(s) under test installed (plus lighthouse for the specific skills), current clients, current Lighthouse"
+    platform: [claude-desktop, claude-code, vscode-copilot]
+    preconditions:
+      - "MCP stdio/http or lh connected to the eval fixture (scripts/eval-fixture.mjs)"
+  - name: with-stale-general-skill
+    description: "An older lighthouse skill (before #6245, whose description claims daily and refinement questions) installed next to the new specific skills"
+    platform: [claude-desktop, claude-code]
+    preconditions:
+      - "lighthouse-skill.zip from v2026.09.24.118 installed"
+      - "lighthouse-refinement and/or lighthouse-daily-flow-review from this release installed"
+  - name: with-prokanban-skill
+    description: "The ProKanban professional-kanban skill installed alongside (named as companion in D5); prompts may compete"
+    platform: [claude-desktop, claude-code]
+    preconditions:
+      - "professional-kanban skill installed"
+  - name: with-older-clients
+    description: "New skills, MCP server / lh older than the #6246 release: no lighthouse_team_metrics_wip, sleRisk or processBehaviorChart tools"
+    platform: [claude-desktop, claude-code]
+    preconditions:
+      - "lighthouse-mcp-stdio / lh at the release before #6246"
+    open: "Expected answer is MD-4 (recommended: fall back to lh --metrics wip and age percentiles, saying so)"
+  - name: with-older-lighthouse
+    description: "Lighthouse at or below the sleRisk gate baseline (v26.9.9.9): SLE Risk refused by the client"
+    platform: [claude-desktop, claude-code]
+    preconditions:
+      - "fixture version <= v26.9.9.9"
+
+coexistence_matrix:
+  - tool: "releases/latest/download/lighthouse-skill.zip links (docs, website, llms.txt)"
+    must_not_break: true
+  - tool: "lh metrics team|portfolio default output"
+    must_not_break: true
+  - tool: "other release assets (lh binaries, MCPB, install scripts)"
+    must_not_break: true
+  - tool: "simple-git-hooks pre-commit (pnpm run ci + changeset check) on a machine without zip"
+    must_not_break: true
+  - tool: "changeset gate (scripts/check-changeset.mjs)"
+    must_not_break: true
+
+platform_coverage:
+  assistants: [Claude Desktop, Claude Code, VS Code / GitHub Copilot agent skills]
+  clients: [lh linux-x64, lh darwin-x64, lh windows-x64, npm, mcp-stdio, mcp-http]
+  CI: [GitHub Actions ubuntu-latest, Node 24]
+  packing: [ubuntu-latest (zip, unzip), maintainer Linux once zip is installed]
+
+deployment_assumptions:
+  - "Packing is idempotent: the same skills/ tree yields the same zip names and entries"
+  - "Every zip has SKILL.md at its root and no evals/; the pack script refuses otherwise, in verify and in release"
+  - "lighthouse-skill.zip keeps its name; a zip is linked from docs or website only after the release that carries it"
+  - "An installed skill never updates itself; a corrected skill reaches users only when they re-download it"
+  - "No usage-data event is added; use is read from GitHub download counts, Plausible download clicks and existing PostHog events by Source"
