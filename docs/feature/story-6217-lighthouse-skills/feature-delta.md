@@ -1372,3 +1372,310 @@ and the fourth PO check (time in refinement, research §4.2) are dropped for now
 - **A1–A7** kept as proposed (skills/ layout and zip names, specific skills restate only the rules they
   cannot run without, flow-retro suggestion after 3 working days, caps 1 + 3 decisions and 2 prompts,
   manual evals, skill names, WIP read for Teams only).
+
+---
+
+## Wave: DESIGN / [REF] Prior-Wave Reading
+
+DESIGN 2026-10-08, application scope, interaction mode **propose**: every engineering option was taken at its
+recommended value and is recorded below; the ones that change what a user sees or is told are listed under
+"For the maintainer" at the end. Architect: Morgan (`nw-solution-architect`).
+
+| File | Read |
+|---|---|
+| This file (DISCUSS D0–D13, M1–M8, US-01..10, A1–A7, Q1–Q4 answers) | ✓ |
+| `discuss/maintainer-input.md`, `discuss/research.md` | ✓ (via DISCUSS; nothing architecturally new) |
+| `docs/product/architecture/brief.md` (6218 and 6193 sections, house format), ADR-223, ADR-224 | ✓ |
+| clients `ARCHITECTURE.md` (all), `package.json`, `vitest.config.ts`, `tsconfig.tests.json`, `.github/workflows/ci.yml`, `scripts/check-changeset.mjs`, `scripts/smoke-fixture.mjs`, `test-support/fakeLighthouse.ts` (signatures) | ✓ |
+| `client/src/index.ts` (WIP/PBC types, `FEATURE_REQUIRES_SERVER_NEWER_THAN`, `ensureServerSupports`), `client/src/metricsWording.ts` (WIP readers and `describe…`), `client/src/terminology.ts`, `client/src/answerWording.ts` | ✓ |
+| `cli/src/index.ts` (`METRIC_KEYS`, aliases, help texts, `buildMetricsPayload`, `runMetricsGroup` pretty path) | ✓ |
+| `mcp-core/src/index.ts` (tool catalogue, schema fragments, `answerMetric`, `readMetricsWording`, `createMcpCoreRuntime().listTools`) | ✓ |
+| Lighthouse `TeamMetricsController.cs` (`wip`, `sleRisk`, `*/pbc`), `PortfolioMetricsController.cs` (`*/pbc`, `featureSize/pbc`), `SleRiskDto.cs`, `TeamMetricsService.GetSleRiskForTeam`, `ProcessBehaviourChart.cs`, `SpecialCauseType.cs`, `ProcessBehaviorMetricType.cs` | ✓ |
+| Lighthouse frontend `utils/charts/sleRisk.ts` (`AT_RISK_FROM = 70`), `docs/metrics/flow-overview.md` §SLE Risk | ✓ |
+| `docs/feature/epic-4127-sle-risk-corrections/feature-delta.md` (D26 release facts), `docs/ci-learnings.md` | ✓ |
+| `discuss/wave-decisions.md`, `spike/`, journeys YAML | ⊘ — DISCUSS lives in this file (D13); no spike |
+
+**Contradictions with DISCUSS**: none blocking. Seven refinements, listed under DESIGN Changed Assumptions.
+
+---
+
+## Wave: DESIGN / [REF] Design Decisions
+
+| # | Decision | ADR |
+|---|---|---|
+| DSN-1 | **Skills layout** (A1): `skills/lighthouse/` (today's `skill/`, moved with `git mv` in slice 04), `skills/lighthouse-refinement/`, `skills/lighthouse-daily-flow-review/`. Each: `SKILL.md` (frontmatter `name` = folder name), optional `references/*.md`, `evals/` (cases + fixtures). Repo-level files that are not a skill live directly in `skills/` (the drift test, `README.md`); a skill is exactly a sub-folder. | ADR-229 |
+| DSN-2 | **Packing**: one script, `scripts/pack-skills.sh <out-dir>`, zips every `skills/*/` folder's contents (SKILL.md at the zip root, as today) into `<folder>-skill.zip`, **excluding `evals/`**. So `skills/lighthouse` → `lighthouse-skill.zip` (name unchanged; every `releases/latest/download/lighthouse-skill.zip` link keeps working), plus `lighthouse-refinement-skill.zip`, `lighthouse-daily-flow-review-skill.zip`. The script fails (non-zero) when a folder has no `SKILL.md` or the frontmatter `name` differs from the folder. | ADR-229 |
+| DSN-3 | **CI**: the `release` job's "Pack skill folder" step becomes `scripts/pack-skills.sh release-assets`; the release `files:` list replaces `release-assets/lighthouse-skill.zip` with `release-assets/*-skill.zip`. The `verify` job runs the same script into a temp dir and lists each zip (`unzip -l`) to prove SKILL.md is at the root and `evals/` is absent, so a packing fault fails the PR, not the approved release. No other job changes. | ADR-229 |
+| DSN-4 | **Drift check location**: `skills/skills.drift.test.ts`, run by the existing `pnpm test` (root `vitest.config.ts` `include` gains `"skills/**/*.test.ts"`; `tsconfig.tests.json` `include` gains `"skills/**/*.ts"`). Outside `packages/*/src`, so no changeset (S4). Lands in slice 01. | ADR-230 |
+| DSN-5 | **Drift check ground truth, read through public APIs, not source text**: MCP tools = `createMcpCoreRuntime({ createClient: <stub that throws> }).listTools().map(t => t.name)`. CLI = the help the binary prints: `runCliCommand([], stubDeps)` → the "Top-level groups" list; `runCliCommand([group], stubDeps)` per group → every `lh <group> <subcommand>` usage line; the metrics help's `Allowed metrics:` line → the `--metrics` keys. `stubDeps` = no connection, no stored output format, no client (help never needs one). | ADR-230 |
+| DSN-6 | **Drift check rules**: (1) the general skill (`skills/lighthouse/SKILL.md` + its `references/*.md`) names every MCP tool, every `lh <group> <subcommand>` and every `--metrics` key; (2) no skill names a `lighthouse_*` tool, an `lh <group> [<subcommand>]` or a `--metrics` key that does not exist (scanned in backtick spans and fenced code blocks; a canonical name or a known alias passes); (3) every skill folder's `SKILL.md` frontmatter `name` equals its folder name and has a `description`. An exemption list in the test (each entry with its reason in the line) starts with `lh help` only. | ADR-230 |
+| DSN-7 | **Drift check reports** by name: one `it` per rule, each `expect(<sorted list of offenders>).toEqual([])`, so the Vitest diff lists every missing name (rule 1) or every unknown name with `skill-folder/file:line` (rule 2). It also asserts its own parsers are not vacuous: the parsed sets must contain known anchors (`lighthouse_team_list`, group `metrics`, subcommand `refinement vote`, metric `wip`), so a help-format change fails loudly instead of passing on empty sets. | ADR-230 |
+| DSN-8 | **Eval cases**: `skills/<name>/evals/cases.json` (JSON, Biome-formatted; no new dependency). One case = `{ id, story, kind: "positive"\|"neighbour"\|"negative", guardrail: boolean, surface: "mcp"\|"lh", fixture, prompt, followUps?: string[], tools?: { required?: string[], forbidden?: string[], notBefore?: { tool, turn } }, commands?: { required?: string[], forbidden?: string[] }, answer?: { mustContain?: string[], mustNotContain?: string[], checks?: string[] } }`. `mustContain`/`mustNotContain` are literal, case-insensitive; `checks` are plain-language properties the maintainer judges (e.g. "states at least two likelihoods, each with on or before"). The ACs of US-01..05 and US-09..10 are written as cases by DISTILL. | ADR-231 |
+| DSN-9 | **Eval fixtures**: static route maps, `skills/<name>/evals/fixtures/<fixture>.json` = `{ version, routes: { "GET /api/v1/teams": <body>, … } }`, served by `scripts/eval-fixture.mjs <fixture.json>` (plain Node, like `smoke-fixture.mjs`: prints its URL, answers by method + path ignoring the query, `404` for anything unlisted, and logs every request line to stdout). Static bodies keep ages, risks and dates fixed, so a case never rots with the calendar; `version` drives the older-Lighthouse cases. Fixtures are authored by DISTILL from the Team Gravity / Voyager facts in this file. | ADR-231 |
+| DSN-10 | **Eval run** (A5/Q3): by hand, before the release. Procedure in `skills/README.md`: start the fixture; point MCP stdio (`LIGHTHOUSE_URL`) or `lh connection connect --mode server --url` at it; install only the skill(s) under test plus `lighthouse` for the specific skills; fresh conversation per run; send `prompt` and `followUps`; score from the assistant's tool-call transcript and the fixture's request log (writes appear there as `POST`/`PUT`/`DELETE`); three runs per case. Pass: guardrail cases 3/3, others ≥ 90 % per skill (KPI-2). Results recorded in this workspace as `evals/<yyyy-mm-dd>-<skill>.md` (case id × run → pass/fail + one line). | ADR-231 |
+| DSN-11 | **G1 MCP tool** `lighthouse_team_metrics_wip({ id })`: reads `getTeamWip(id, today)` (today = `getDefaultMetricsDateRange().endDate`, the same day every other metric tool defaults to). Facts = the server's Work Item list unchanged (list answer → second block `summary:` per ADR-224). Summary = `describeAsOfHeading` + `describeInProgressNow` + `describeBlockedNow` (existing, shared with `lh metrics team --metrics wip`) plus three new sentences: no System WIP Limit set; Lighthouse does not say which Work Items are Blocked (older server); no Work Items in progress. Summary reads: Terminology + the Team (name, System WIP Limit). Teams only (A7). No version gate (WIP has always existed; Blocked facts are read tolerantly). Both `blockedCountHistory` descriptions are corrected to name the Team tool (the Portfolio one points to `lh metrics portfolio --metrics wip`). | — |
+| DSN-12 | **G2 client read** `getTeamSleRisk(teamId)` → `GET /v1/teams/{id}/metrics/sleRisk` (no query, as the endpoint takes none) → `readonly SleRiskEntry[]` = `{ referenceId, risk, finishedItemsStillOpenAtThisAge, finishedItemsThatWentOnToMiss: number \| null }`. Gated: `FEATURE_REQUIRES_SERVER_NEWER_THAN.sleRisk = "v26.9.9.9"` (the last release without the route; see Open Questions). | ADR-232 (selection only) |
+| DSN-13 | **G2 surfaces**: `lh metrics team --metrics sleRisk` (alias `slerisk`) → payload key `sleRisk` = the server's array unchanged (`--json`/`--toon` = facts); `lh metrics portfolio --metrics sleRisk` → the section's unavailable value "SLE Risk is for Teams." MCP `lighthouse_team_metrics_sleRisk({ id })` → list answer + `summary:` block. Pretty view and summary share one `describeSleRisk…` in `client/src/metricsWording.ts`: heading + one sentence (how many of the listed Work Items are at risk against the Team's SLE days and probability) + one line per Work Item, highest risk first, with the evidence ("6 of 11 finished Work Items that reached this age went past 7 days"; "past the SLE" when `finishedItemsThatWentOnToMiss` is null). Summary reads: Terminology, the Team (name, SLE) and today's WIP (name and age per `referenceId`; a failed read leaves only the `referenceId`). Empty list + no SLE on the Team → "no SLE, so no SLE Risk"; empty list + an SLE → no Work Items in progress. | ADR-232 |
+| DSN-14 | **The 70 % line is the web's, restated once**: `SLE_RISK_AT_RISK_FROM = 70` in `client/src/metricsWording.ts`, with a parity test that copies the web's `sleRiskAtRiskSummary` cases (`Lighthouse.Frontend/src/utils/charts/sleRisk.test.ts`: 55 → not at risk, 100 → at risk, 0, the boundary) — the `forecastDisplayRules.parity.test.ts` precedent. The client counts `risk >= 70`; nothing else in the clients decides "at risk". | — |
+| DSN-15 | **G3 client reads** `getTeamProcessBehaviorChart(teamId, range, metricType)` and `getPortfolioProcessBehaviorChart(portfolioId, range, metricType)` over the existing `ProcessBehaviorMetricType` union; route by type: `Throughput`→`throughput/pbc`, `Arrivals`→`arrivals/pbc`, `Wip`→`wipOverTime/pbc`, `WorkItemAge`→`totalWorkItemAge/pbc`, `CycleTime`→`cycleTime/pbc`, `FeatureSize`→`featureSize/pbc` (Portfolio only; a Team asking for it is refused in the client, no request). Type `ProcessBehaviorChart` = `{ status, statusReason, xAxisKind, average, upperNaturalProcessLimit, lowerNaturalProcessLimit, baselineConfigured?, dataPoints: { xValue, yValue, specialCauses, workItemIds, isBlackout? }[] }`. Not gated: the routes predate every supported server; a reader that does not recognise the payload yields no summary (ADR-223). | — |
+| DSN-16 | **G3 surfaces**: MCP `lighthouse_team_metrics_processBehaviorChart({ id, metricType, startDate?, endDate? })` and `lighthouse_portfolio_metrics_processBehaviorChart(…)`; `metricType` **required** (Team enum without `FeatureSize`); dates default as every metric tool (`getDefaultMetricsDateRange`). Object answer → `summary` field beside the facts (ADR-224). CLI `lh metrics team\|portfolio --metrics processBehaviorChart` (aliases `pbc`, `processbehaviorchart`, `processbehaviourchart`) fetches every type of the scope in parallel → payload `processBehaviorChart: { startDate, endDate, charts: { <Type>: <server chart or refusal value> } }`; pretty = one heading + sentence per type. | ADR-232 |
+| DSN-17 | **PBC summary rules** (one `describeProcessBehaviorChart…` for both surfaces): status not `Ready` → the status and its reason, no signal named; `baselineConfigured === false` → says no baseline is set and the limits come from the shown range, no signal named; otherwise each signal type (Lighthouse's four names, `None` ignored) with the days it fired, blackout days (`isBlackout`) never named as a signal and listed as blackout days; no signal → "No signals". Facts are never filtered. Whether a run counts as "persisting" (A3) is the skill's call from those days, not the client's. | — |
+| DSN-18 | **Opt-in metric selections**: `sleRisk` and `processBehaviorChart` are fetched **only when named** in `--metrics`; `lh metrics team\|portfolio` without `--metrics` returns and prints exactly what it does today (same requests, same headline). Both appear in the help's `Allowed metrics:` line, after the existing keys. | ADR-232 |
+| DSN-19 | **No usage-data mapping** for the four new tools or two new selections (#6193 M9: only events the web sends; the web sends none for these widgets). `usageDataOccurrencesOf` unchanged. | — |
+| DSN-20 | **Terminology**: every new sentence goes through `Terms` (`workItem(s)`, `wip`, `blocked`, `sle`, `team`, …) and the subject's name via `readAnswerWording`; "SLE Risk" is written `${terms.sle} Risk`, as the web's column header does (`sleRiskColumnHeaderName`); the four signal names (Large Change, Moderate Change, Moderate Shift, Small Shift) are product names, not configurable terms, and stay literal. Skill text writes the seeded defaults (Feature, Work Item, Team, Portfolio, Cycle Time, Throughput, WIP, Blocked, SLE) and tells the assistant to use the words of each tool's `summary`. | — |
+| DSN-21 | **Changesets** (unchanged from DISCUSS): #6245 and #6217 none (`skills/`, `scripts/`, root config, CI — S4). #6246: `client` minor, `cli` minor, `mcp-core` minor; `mcp-stdio`/`mcp-http` patch via internal dependency. | — |
+| DSN-22 | **Backend, RBAC, web**: no change. G1–G3 read existing routes under the class-level `[RbacGuard(TeamRead)]` / Portfolio equivalent with the caller's own credential. | — |
+| DSN-23 | **Paradigm**: unchanged — the clients' factory-and-dependencies TypeScript style (pure readers/wording in `client`, orchestration in `cli`/`mcp-core`, effects at `bin.ts`/transports). | — |
+
+---
+
+## Wave: DESIGN / [REF] Component Decomposition
+
+**lighthouse-clients — skills and their tooling (#6245, #6217)**
+
+| Component | Path | Change |
+|---|---|---|
+| General skill | `skill/` → `skills/lighthouse/` | MOVE in slice 04 (`git mv`, history kept); text EXTEND in 01–03 (written at `skill/` until the move) |
+| Refinement skill | `skills/lighthouse-refinement/{SKILL.md,references/,evals/}` | NEW (04, 05) |
+| Daily Flow Review skill | `skills/lighthouse-daily-flow-review/{SKILL.md,references/,evals/}` | NEW (09, 10) |
+| Drift test | `skills/skills.drift.test.ts` | NEW (01); reads `skill/` until slice 04 changes its root to `skills/*/` |
+| Skills README | `skills/README.md` | NEW (04): layout, zip names, drift check, eval procedure (DSN-10) |
+| Eval fixture server | `scripts/eval-fixture.mjs` | NEW (01, first case) |
+| Skill packer | `scripts/pack-skills.sh` | NEW (04) |
+| Root test config | `vitest.config.ts`, `tsconfig.tests.json` | EXTEND `include` (01) |
+| CI | `.github/workflows/ci.yml` | EXTEND `verify` (pack check) and `release` (pack step, `files:` glob) (04) |
+| Architecture doc | `ARCHITECTURE.md` §1, §8, §9, §10, §11 | EXTEND (updated with this DESIGN; describes the target state) |
+
+**lighthouse-clients — reads (#6246)**
+
+| Component | Path | Change |
+|---|---|---|
+| `LighthouseClient` | `packages/client/src/index.ts` | EXTEND: `getTeamSleRisk`, `getTeamProcessBehaviorChart`, `getPortfolioProcessBehaviorChart`, types `SleRiskEntry`, `ProcessBehaviorChart`; gate `sleRisk` |
+| Metric wording | `packages/client/src/metricsWording.ts` | EXTEND: `readSleRisk`, `readProcessBehaviorChart`, `describeSleRisk…`, `describeProcessBehaviorChart…`, three WIP sentences, `SLE_RISK_AT_RISK_FROM` |
+| CLI metrics | `packages/cli/src/index.ts` (`METRIC_KEYS`, aliases, `buildMetricsPayload`, help), `cli/src/metricsOutput.ts` | EXTEND: two opt-in selections + pretty renderers |
+| MCP catalogue | `packages/mcp-core/src/index.ts` | EXTEND: four tools (`…_team_metrics_wip`, `…_team_metrics_sleRisk`, `…_{team,portfolio}_metrics_processBehaviorChart`), schemas, `McpRuntimeClient` pick, `callTool` branches; two description fixes |
+| Transports | `mcp-stdio`, `mcp-http` | none (pick up via `registerMcpTools`) |
+| Docs | `packages/cli/README.md`, MCP READMEs | EXTEND (06–08) |
+
+**Lighthouse repo**: `docs/aiintegration.md`, `docs/concepts/concepts.md:85` (DISCUSS checklist); no code.
+
+---
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Existing component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `skill/` + CI "Pack skill folder" | `skill/`, `ci.yml` | Packaging a skill | EXTEND (move + loop) | Same zip mechanics per folder; the general zip keeps its name |
+| `getTeamWip` + `describeInProgressNow`/`describeBlockedNow` | `client/src/index.ts`, `metricsWording.ts` | G1 facts and wording | EXTEND | The MCP tool is a new entry over the CLI's read; sentences shared |
+| `ProcessBehaviorMetricType` | `client/src/index.ts` | G3 type selector | EXTEND (reuse union) | One family vocabulary for over-time and chart reads |
+| `FEATURE_REQUIRES_SERVER_NEWER_THAN` + `ensureServerSupports` | `client/src/index.ts` | G2 gate | EXTEND | One entry |
+| `answerMetric`, `withSummary`, `readMetricsWording`, `readForSummary` | `mcp-core/src/index.ts`, `toolResult.ts` | Summary beside facts | EXTEND | ADR-224 as is |
+| `buildMetricsPayload` + `METRIC_KEYS` | `cli/src/index.ts` | Selection fan-out | EXTEND | New keys; opt-in rule is a `needs()` change |
+| `readOwner`/`ownerWording.readTeam` (SLE range/probability) | `client/src/ownerWording.ts` | SLE for the G2 sentence | EXTEND (reuse reader) | The Team read the pretty path already makes |
+| `forecastDisplayRules.parity.test.ts` pattern | `client/src/` | Restating a web rule | REUSE pattern | Precedent for the 70 % parity test |
+| `smoke-fixture.mjs` | `scripts/` | A fake Lighthouse on a port | CREATE NEW sibling (`eval-fixture.mjs`) | The smoke fixture hard-codes two routes for CI; the eval server is data-driven per fixture file. Extending it would couple CI smoke to eval fixtures |
+| `test-support/fakeLighthouse.ts` (incl. `gravitysRefinement`) | `test-support/` | Gravity data | REUSE as data source for DISTILL's fixture bodies; NOT as the eval server | It is TypeScript bound to Vitest aliases; a manual run should need only `node` |
+| — (no drift check exists) | — | Skill ↔ tool consistency | CREATE NEW (`skills.drift.test.ts`) | Nothing compares skill text with the catalogue today (S3) |
+| — (no eval format exists) | — | Model-in-the-loop checks | CREATE NEW (case + fixture JSON) | No predecessor in either repo |
+
+---
+
+## Wave: DESIGN / [REF] Driving Ports
+
+| Surface | Change |
+|---|---|
+| Assistant + `lighthouse` / `lighthouse-refinement` / `lighthouse-daily-flow-review` skill | Text (DISCUSS) |
+| GitHub Release assets | `lighthouse-skill.zip` (name unchanged), `lighthouse-refinement-skill.zip`, `lighthouse-daily-flow-review-skill.zip` |
+| `pnpm test` | + drift test |
+| `node scripts/eval-fixture.mjs <fixture>` | NEW, maintainer-only |
+| MCP | + `lighthouse_team_metrics_wip`, `lighthouse_team_metrics_sleRisk`, `lighthouse_team_metrics_processBehaviorChart`, `lighthouse_portfolio_metrics_processBehaviorChart` (all read-only by name suffix) |
+| `lh metrics team\|portfolio --metrics …` | + `sleRisk` (Team), `processBehaviorChart` (both); opt-in |
+
+## Wave: DESIGN / [REF] Driven Ports and Adapters
+
+| Port | Adapter | New routes read |
+|---|---|---|
+| `LighthouseClient` (HTTP) | `createLighthouseClient` → `requestJson` | `GET /api/v1/teams/{id}/metrics/sleRisk`; `GET /api/v1/{teams\|portfolios}/{id}/metrics/{throughput,arrivals,wipOverTime,totalWorkItemAge,cycleTime}/pbc`; `GET /api/v1/portfolios/{id}/metrics/featureSize/pbc` (all existing on the server) |
+| GitHub Releases | `softprops/action-gh-release` (existing) | three zips via glob |
+
+## Wave: DESIGN / [REF] Technology Choices
+
+No new dependency. Vitest (existing) for the drift test; Node's `http` for the eval fixture; `zip`/`unzip` on the
+GitHub runner (already used); JSON for cases and fixtures (Biome-formatted). Rejected: YAML cases (needs a parser
+dependency), a TS fixture server (needs a TS runner outside Vitest), an LLM eval framework (promptfoo et al.: a
+dependency and a model key for a run the maintainer does by hand, A5).
+
+---
+
+## Wave: DESIGN / [REF] C4 — System Context (L1)
+
+```mermaid
+C4Context
+  title System Context — Lighthouse skills and clients (story-6217)
+  Person(coach, "Facilitator / flow coach", "Priya: opens the daily")
+  Person(po, "Product Owner / developer", "Marco, Jonas: prepare Refinement, vote")
+  Person(maint, "Maintainer", "Keeps skills true to the tools; runs evals before release")
+  System_Ext(assistant, "AI assistant", "Claude Desktop / Claude Code with skills installed")
+  System(clients, "lighthouse-clients", "Skills, lh CLI, MCP servers")
+  System_Ext(lh, "Lighthouse server", "REST /api/v1: metrics, refinement, terminology")
+  System_Ext(wts, "Work tracking system", "Jira, ADO, Linear, ServiceNow pages behind Work Item links")
+  System_Ext(gh, "GitHub Releases", "Hosts the skill zips and binaries")
+  Rel(coach, assistant, "Asks what to decide and discuss today")
+  Rel(po, assistant, "Asks whether the Team is ready; confirms votes")
+  Rel(assistant, clients, "Follows the skills and calls tools / lh through")
+  Rel(clients, lh, "Reads metrics and refinement from, writes confirmed votes to")
+  Rel(coach, wts, "Opens Work Items via links in answers to")
+  Rel(maint, gh, "Approves releases that publish skill zips to")
+  Rel(assistant, gh, "Is given skills downloaded from")
+```
+
+## Wave: DESIGN / [REF] C4 — Container (L2)
+
+```mermaid
+C4Container
+  title Container — lighthouse-clients after story-6217
+  System_Ext(assistant, "AI assistant")
+  Person(maint, "Maintainer")
+  System_Boundary(repo, "lighthouse-clients") {
+    Container(skillGen, "lighthouse skill", "Markdown zip", "Connect, every read, coach stance")
+    Container(skillRef, "lighthouse-refinement skill", "Markdown zip", "PO and developer Refinement prep")
+    Container(skillDfr, "lighthouse-daily-flow-review skill", "Markdown zip", "Decide / discuss today")
+    Container(cli, "lh", "Node CLI", "metrics … --metrics wip,sleRisk,processBehaviorChart")
+    Container(mcp, "mcp-stdio / mcp-http", "Node MCP servers", "Transports only")
+    Container(core, "mcp-core", "TS library", "Tool catalogue incl. wip, sleRisk, processBehaviorChart")
+    Container(client, "client", "TS library", "HTTP, version gates, readers and wording")
+    Container(drift, "Drift test", "Vitest", "Skills vs listTools() and lh help")
+    Container(evalfx, "Eval fixture server", "Node http", "Static routes per fixture; request log")
+    Container(ci, "Client CI", "GitHub Actions", "verify packs; release publishes three zips")
+  }
+  System_Ext(lh, "Lighthouse server", "REST /api/v1")
+  System_Ext(gh, "GitHub Releases")
+  Rel(assistant, skillGen, "Loads guidance from")
+  Rel(assistant, skillRef, "Loads guidance from")
+  Rel(assistant, skillDfr, "Loads guidance from")
+  Rel(assistant, mcp, "Calls tools on")
+  Rel(assistant, cli, "Runs commands with --json through")
+  Rel(mcp, core, "Registers tools from")
+  Rel(core, client, "Calls reads through")
+  Rel(cli, client, "Calls reads through")
+  Rel(client, lh, "Sends GET wip, sleRisk, */pbc to")
+  Rel(client, evalfx, "Sends the same GETs to, during an eval run")
+  Rel(drift, core, "Lists tool names from")
+  Rel(drift, cli, "Reads help output of")
+  Rel(drift, skillGen, "Checks names in")
+  Rel(maint, evalfx, "Starts with a fixture")
+  Rel(ci, gh, "Publishes *-skill.zip to")
+```
+
+No Lighthouse container changes; `docs/product/architecture/c4-diagrams.md` unchanged.
+
+---
+
+## Wave: DESIGN / [REF] Quality Attributes
+
+| Attribute | Strategy |
+|---|---|
+| Maintainability (KPI-1) | Drift test in `pnpm test` on every commit hook and CI run; reads the catalogue through public APIs, so a refactor of `mcp-core`/`cli` internals cannot fool it |
+| Correctness of answers | Facts unchanged from the server; summaries built by the same functions as `--pretty`; the at-risk line pinned to the web's by a parity test; skills told to quote `summary` |
+| Compatibility | `lighthouse-skill.zip` name kept; `lh metrics` default output unchanged (opt-in selections); `sleRisk` version-gated; PBC readers tolerant of older payloads (no `isBlackout`/`baselineConfigured`) |
+| Performance | G1: 1 read + ≤ 2 summary reads. G2: 1 read + ≤ 3 summary reads (Terms, Team, WIP). G3 MCP: 1 read + ≤ 2; G3 CLI: 5 (Team) / 6 (Portfolio) chart reads in parallel, only when asked. Each request carries the client's connectivity check (accepted precedent, ADR-224). Summary reads never fail a tool |
+| Security / RBAC | No new route, no write; caller's own credential; read-only tool annotations by name suffix (`isReadOnlyTool`, pinned in `runtime.test.ts`) |
+| Testability | Readers and wording pure in `client`; CLI over stub client; MCP over stub `createClient`; evals over static fixtures |
+| Privacy | No usage-data change; no per-person data read or written by any new read (SLE Risk and WIP are per Work Item) |
+
+## Wave: DESIGN / [REF] Test Strategy per Slice
+
+| Slice | Automated | Manual |
+|---|---|---|
+| 01 | Drift test (both directions, non-vacuity anchors); a red-first run against a deliberately unnamed tool | Eval cases US-01; dogfood AC |
+| 02–03 | Drift test stays green | Eval cases US-02, US-03 |
+| 04 | `pack-skills.sh` in `verify` (zip listing); drift test over `skills/*/` incl. frontmatter rule | Eval cases US-04; first release carries three zip names (two may be placeholders until 09 — see Open Questions) |
+| 05 | — | Eval cases US-05 (guardrails 3/3) |
+| 06 | `client`/`mcp-core` runtime tests (route, facts unchanged, summary block, three new sentences, unknown-Blocked ≠ not-Blocked); `metricSummaries.everyTool.test.ts` gains the tool; CLI `--metrics wip` characterisation | Dogfood AC |
+| 07 | Gate test (old server → `misconfigured`, no request); facts = server; 70 % parity; CLI opt-in characterisation (default `lh metrics team` unchanged, byte for byte) | Dogfood AC |
+| 08 | Route-per-type table test; Team+`FeatureSize` refused without a request; signal/blackout/baseline summary cases; tolerant reader on an older payload | Dogfood AC |
+| 09–10 | Drift test (DFR skill names only real tools) | Eval cases US-09, US-10; Liz Rettig review (Q4) |
+
+StrykerJS on the new `client`/`cli`/`mcp-core` code of 06–08 (≥ 80 %), run last on frozen code.
+
+## Wave: DESIGN / [REF] Architectural Enforcement
+
+- **Drift test** (DSN-6/7) — the rule that skills and tools agree is executable.
+- **Pack check in `verify`** (DSN-3) — the rule "SKILL.md at the zip root, no evals, name = folder" is executable
+  before the release is approved.
+- **Existing**: `McpToolDefinition["name"]` closed union + `toolInputSchemas` `Record` (a tool without a schema does
+  not compile); `runtime.test.ts` pins every tool's annotations; ADR-223's source-scan tests (no layout in `client`
+  wording, seeded words only in `terminology.ts`) cover the new wording.
+- **New**: the 70 % parity test (DSN-14); a characterisation test that `lh metrics team --id n` with no `--metrics`
+  makes the same requests and prints the same text as before (DSN-18).
+
+## Wave: DESIGN / [REF] Earned Trust Probes
+
+| Dependency | What could lie | Probe |
+|---|---|---|
+| The drift test's own parsers | Help format changes → empty sets → vacuous pass | Non-vacuity anchors (DSN-7); the slice-01 red-first run |
+| `zip` packing | Nested folder (SKILL.md not at root), evals shipped, wrong name | `verify` lists every zip (DSN-3) |
+| GitHub release `files:` glob | Glob matches nothing → release without skills | `softprops/action-gh-release` fails on an unmatched pattern only with `fail_on_unmatched_files: true` — set it on that step |
+| Older Lighthouse | `sleRisk` absent; round-1 `sleRisk` that wanted dates | Version gate; DELIVER confirms the baseline with `git tag --contains` (Open Questions) |
+| Older PBC payloads | Missing `isBlackout`/`baselineConfigured` | Tolerant reader test on a payload without them; summary never claims what is absent |
+| Server enums | `specialCauses` as names vs ordinals | Global `JsonStringEnumConverter` sends names; the reader accepts names only and yields no summary otherwise (the enum-strings-out trap) |
+| The model | Nondeterminism | Three runs per case; guardrails 3/3 (KPI-2) |
+
+## Wave: DESIGN / [REF] External Integrations and Contract Testing
+
+Lighthouse REST API (same maintainer, versioned with the gate): contract tests recommended in the existing style,
+not Pact — `client` runtime tests over the exact server JSON for `sleRisk` and one `*/pbc` chart, copied from the
+backend's serialised DTOs, and one `smoke-integration` `--pretty` grep for `--metrics sleRisk` and
+`--metrics processBehaviorChart` against the real demo-seeded image (the #6218 precedent). GitHub Releases: no
+contract beyond the pack check. AI assistants: covered by the manual evals only.
+
+## Wave: DESIGN / [REF] Contract Shapes
+
+| Component | Shape | Universe / assertion |
+|---|---|---|
+| `readSleRisk`, `readProcessBehaviorChart`, `describe…` | pure function | return only; unit tests |
+| `getTeamSleRisk`, `get…ProcessBehaviorChart` | bounded change: one GET each (+ version read, connectivity check) | injected `fetch` records requests; Team+`FeatureSize` and too-old server → zero requests |
+| New MCP tools | read-only; summary reads best-effort | stub client; facts byte/key-identical (ADR-224) |
+| `lh metrics` opt-in | unbounded preservation of the default path | characterisation: same requests, same output |
+| Drift test | pure over parsed sets | — |
+| `pack-skills.sh` | bounded change: writes only `<out-dir>/*-skill.zip` | `verify` runs it into a temp dir |
+| `eval-fixture.mjs` | read-only server; never writes files except its port line on stdout | request log |
+
+## Wave: DESIGN / [REF] CI-Learnings Pre-Applied
+
+- Never pipe a gate's output through `head`/`tail` — the pack check uses `unzip -l` output only after the zip step's
+  own exit code.
+- Comments are for a stranger: the drift test's exemption list states each reason in plain words; no `DSN-`/`US-`
+  references in code comments.
+- New JSON files are Biome-formatted (`pnpm lint` covers the whole tree).
+- `pnpm` toolchain unchanged; no new dependency (no lockfile churn, no min-release-age exposure).
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+| Original (DISCUSS) | New | Why |
+|---|---|---|
+| D2: "each a `SKILL.md` + optional `references/` + `evals/`" (zipped) | `evals/` stays in the folder and is **excluded from the zip** | Users install guidance, not test cases; prompts with expected answers in an installed skill are noise an assistant may read |
+| D10 / US-01: drift check covers "every MCP tool and every `lh` command group" | Also every `lh <group> <subcommand>` and every `--metrics` key; plus frontmatter `name` = folder | New capabilities land as subcommands and metric keys (S1: `blocked`, `cumulativeStateTime` were missing); the name rule protects the zip name |
+| US-08 / Driving Ports: `…_metrics_processBehaviourChart`, `--metrics processBehaviourChart` | `processBehaviorChart` (US spelling), British spelling accepted as a CLI alias | Matches the shipped `processBehaviorOverTime` tools and selection; one spelling per catalogue |
+| US-06 pitch summary "8 Work Items in progress · System WIP Limit: 6 · 2 Blocked" | The existing `--metrics wip` lines (`describeInProgressNow`, `describeBlockedNow`) plus three new sentences, shared with `lh` | One function per answer for both surfaces (ADR-224) |
+| US-07 pitch: per-item "GR-063 · 5 days · 55%" | Kept, by a summary-only WIP read (name, age by `referenceId`); the facts stay the server's array, which carries neither | `SleRiskDto` has `referenceId` and numbers only |
+| US-08: PBC range unspecified | Team last 30 days, Portfolio last 90 (the clients' defaults), overridable | Same as every other metric read |
+| Pre-requisites: "first Lighthouse version with `sleRisk`" | Gate baseline `v26.9.9.9`, to be confirmed at DELIVER | Epic 4127 D26: nothing of the route was released by v26.9.9.9; round 2 (no dates) merged before the next release |
+
+## Wave: DESIGN / [REF] Open Questions (none blocking)
+
+| # | Question | Resolution path |
+|---|---|---|
+| OQ-1 | Was round 2 of the `sleRisk` route (no date parameters, `finishedItemsThatWentOnToMiss`) in the first release that carried the route? | DELIVER slice 07: `git tag --contains <round-2 slice-02 commit>`; if the first release with the route lacks it, raise the baseline to that release |
+| OQ-2 | A release between slice 04 and slice 09 would publish `lighthouse-daily-flow-review-skill.zip` only once the folder exists — no placeholder. `docs/aiintegration.md` links each zip only after the release that carries it (DoD 5) | Order of the Lighthouse docs commits, DELIVER |
+| OQ-3 | Fixture bodies must cover every route a case's surface reads (incl. `/api/v1/version/current`, Terminology, `auth/mode` for votes) | DISTILL authors fixtures; an unlisted route answers `404` and is visible in the request log |
+
+## Wave: DESIGN / [REF] For the maintainer (changes what a user sees or is told)
+
+| # | Item | Options | Taken (recommended) |
+|---|---|---|---|
+| MQ-1 | Spelling of the new CLI selection and MCP tools | (a) `processBehaviorChart`, British spelling accepted as an alias; (b) `processBehaviourChart` as DISCUSS wrote | **(a)** — matches `processBehaviorOverTime` already shipped |
+| MQ-2 | `lh metrics team --metrics wip` gains up to three lines (no System WIP Limit set / Lighthouse does not say which Work Items are Blocked / nothing in progress) because the MCP summary and the CLI share one function | (a) shared — the CLI view changes slightly; (b) MCP-only sentences | **(a)** — one wording, ADR-224 |
+| MQ-3 | `sleRisk` and `processBehaviorChart` are not part of `lh metrics team` without `--metrics` | (a) opt-in, default view unchanged; (b) in the default view | **(a)** — the default view stays one screen and makes no extra requests |
+
+All three are also on DISTILL's sketch walk-through with the `--pretty` lines for G1–G3.

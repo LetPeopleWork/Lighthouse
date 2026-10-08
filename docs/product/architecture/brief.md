@@ -9570,3 +9570,67 @@ maintainer). PostHog: unchanged (ADR-176).
 
 L1, L2 and L3 (the `lighthouse-client` usage-data components) are in the feature delta. No Lighthouse container
 changes, so `c4-diagrams.md` is unchanged.
+
+---
+
+## Application Architecture — story-6217-lighthouse-skills
+
+Feature: story-6217-lighthouse-skills (ADO User Stories #6245, #6217, #6246): the general `lighthouse` agent skill
+catches up with the clients, two new skills (Refinement, Daily Flow Review) ship beside it, and the clients gain
+three reads the daily needs — current WIP over MCP, SLE Risk per Work Item, Process Behaviour Charts with signals.
+Repo: `lighthouse-clients` only (plus Lighthouse docs). DESIGN 2026-10-08, PROPOSE. Full design:
+`docs/feature/story-6217-lighthouse-skills/feature-delta.md` → "Wave: DESIGN / …" (DSN-1…DSN-23).
+
+Pattern unchanged: skills are Markdown release assets; the reads follow the clients' "adding a capability end to
+end" path (client method → `lh` selection → MCP tool, summaries per ADR-223/224). No backend, web, RBAC or
+container change; every new read hits an existing route.
+
+### Key invariants introduced
+
+- **I1 — one skill, one folder, one zip.** `skills/<name>/` → `<name>-skill.zip`, `SKILL.md` at the root, `evals/`
+  never shipped; `lighthouse-skill.zip` keeps its name. Proven in `verify` before the release. (ADR-229)
+- **I2 — skills name exactly what exists.** A Vitest drift test reads `listTools()` and `lh` help; the general
+  skill names every tool, subcommand and metric key; no skill names one that does not exist. (ADR-230)
+- **I3 — evals are data, run by hand.** Case files over static route fixtures; guardrails 3/3 before a release;
+  no model key in CI. (ADR-231)
+- **I4 — `lh metrics` default unchanged.** `sleRisk` and `processBehaviorChart` are named-only selections.
+  (ADR-232)
+- **I5 — "at risk" is the web's line.** `risk >= 70`, restated once in `client` with a parity test against the
+  web's cases.
+
+### Component decomposition (headline)
+
+`skills/{lighthouse,lighthouse-refinement,lighthouse-daily-flow-review}/` (MOVE + NEW), `skills/skills.drift.test.ts`,
+`skills/README.md`, `scripts/pack-skills.sh`, `scripts/eval-fixture.mjs` (NEW); `ci.yml`, `vitest.config.ts`,
+`tsconfig.tests.json` (EXTEND). `client`: EXTEND `index.ts` (`getTeamSleRisk`, `get{Team,Portfolio}ProcessBehaviorChart`,
+gate `sleRisk`), `metricsWording.ts`. `cli`: EXTEND metric keys, payload, renderers. `mcp-core`: four read-only
+tools (`lighthouse_team_metrics_wip`, `lighthouse_team_metrics_sleRisk`,
+`lighthouse_{team,portfolio}_metrics_processBehaviorChart`).
+
+### Architectural Enforcement (this feature)
+
+Drift test (with non-vacuity anchors); pack check in `verify`; `fail_on_unmatched_files` on the release upload;
+70 % parity test; characterisation of the default `lh metrics` path; existing closed tool-name union and
+annotation pins.
+
+### Contract testing
+
+Lighthouse ↔ clients: `client` runtime tests over the backend's exact `SleRiskDto` and `ProcessBehaviourChart`
+JSON; one `smoke-integration` `--pretty` grep per new selection against the demo-seeded image. Pact not adopted
+(same maintainer, version-gated). AI assistants: manual evals only.
+
+### ADR References (this feature)
+
+- [ADR-229](./adr-229-each-skill-is-a-folder-under-skills-zipped-on-its-own-under-its-folder-name.md) — skills
+  layout and packing. **Proposed.**
+- [ADR-230](./adr-230-a-drift-test-in-pnpm-test-holds-the-skills-to-the-tools-and-commands-that-exist.md) — the
+  drift test. **Proposed.**
+- [ADR-231](./adr-231-skill-evaluations-are-case-files-over-static-fixtures-run-by-hand-before-a-release.md) —
+  eval cases, fixtures and the manual run. **Proposed.**
+- [ADR-232](./adr-232-sle-risk-and-process-behaviour-charts-are-named-only-metric-selections.md) — named-only
+  metric selections and the new tool names. **Proposed.**
+- Cross-refs: ADR-223, ADR-224 (wording and summaries), ADR-194 (SLE Risk is a number per Work Item).
+
+### C4
+
+L1 and L2 are in the feature delta. No Lighthouse container changes, so `c4-diagrams.md` is unchanged.
