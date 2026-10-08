@@ -790,9 +790,9 @@ Scenario: A vote reports when it was cast relative to the Team's Refinement
   Then TeamSizingVoteCast and TeamSizingReadinessReached are reported with OnRefinementDay
 
 Scenario: A vote whose moment cannot be read is not reported
-  Given Priya said yes and the read of Gravity's Refinement fails after her vote
-  When her vote on GR-061 succeeds
-  Then her vote is recorded and confirmed as usual
+  Given Priya said yes and the read of Gravity's Refinement that comes before a vote is refused
+  When she votes on GR-061
+  Then her vote is refused exactly as it is today
   And no vote event is reported
 
 Scenario: The Refinement day's verdict is reported when lh shows it
@@ -1302,7 +1302,7 @@ read is replaced by the read the vote already makes).
 |---|---|---|
 | DSN-1 | **`source` wire contract**: closed enum `UsageDataSource { Browser = 0, Cli = 1, Mcp = 2 }`, append-only; optional nullable `Source` on the batch body (no `[JsonRequired]`, S6964); absent or `null` = `Browser`; an undefined number → `400` at the read site, an unknown name → `400` from binding; checked before the gate like the events. | ADR-225 |
 | DSN-2 | **`source` travels on the batch**: `AcceptedUsageDataBatch` gains the resolved source; the publisher writes `source` (the member's name) on every message, never omitted. Not per event, not an instance property. | ADR-225 |
-| DSN-3 | **D3 signal**: `UsageDataState` gains `AcceptedSources` (member names, derived from the enum, same for every caller). A client asks and sends only when the list contains its source; a missing field or a `404` = never ask, never send, nothing printed (the config command says so). | ADR-225 |
+| DSN-3 | **D3 signal**: `UsageDataState` gains `AcceptedSources` (member names, derived from the enum, same for every caller). On the wire: `"acceptedSources": ["Browser", "Cli", "Mcp"]` (camelCase, the API's default naming). A client asks and sends only when the list contains its source; a missing field or a `404` = never ask, never send, nothing printed (the config command says so). | ADR-225 |
 | DSN-4 | **Consent store**: a second owner-only file `usage-data.json` beside `voter-keys.json`, keyed by `getVoterKeyScope`; `{ version: 1, answers: { scope: { answer: "yes", token, confirmedAt } \| { answer: "no", decidedAt } } }`; no entry = not asked; foreign shape = unreadable = never written over, no question, no send. | ADR-226 |
 | DSN-5 | **Locking and atomic write reused by extraction**: the voter key store's lock file, re-read under lock, rename-over write and unreadable-file refusal move to `client/src/ownerOnlyJsonFile.ts` in a behaviour-preserving refactor commit (voter key tests unedited); both stores use it. | ADR-226 |
 | DSN-6 | **First answer wins**: an answer from a question is a compare-and-set under the lock (written only if still undecided); `lh config usage-data on\|off` replaces unconditionally. | ADR-226 |
@@ -1313,7 +1313,7 @@ read is replaced by the read the vote already makes).
 | DSN-11 | **Never prints, never throws**: the reporter returns an outcome value; it has no access to stdout/stderr (a source-scan test forbids `console`/`process.std*` in `usageData*.ts`). This also protects `mcp-stdio`, whose stdout is the protocol stream. | ADR-227 |
 | DSN-12 | **No credential on usage-data calls**: the consent and ingest endpoints are anonymous; the reporter sends no API key or bearer token, so usage data is never bound to an account and `mcp-http` never forwards a caller's credential for it. | ADR-227 |
 | DSN-13 | **Emit only after success, as a plan value**: each CLI group handler attaches `usage: { reached, occurrences }` to `CliCommandResult`; `stdout`/`stderr`/`exitCode` are computed exactly as today; `config`, `connection` and help never set `reached`. MCP tool branches produce occurrences only on `result.ok`. Refused or failed calls report nothing. | ADR-227 |
-| DSN-14 | **`--json`/`--toon` byte-identical by construction**: output is produced before and independently of usage data; `bin.ts` prints, then settles the plan, then returns the command's own exit code. Pinned per mapped command by characterisation tests with usage data on vs off. | ADR-227 |
+| DSN-14 | **`--json`/`--toon` byte-identical by construction**: output is produced before and independently of usage data; `bin.ts` prints, then settles the plan, then returns the command's own exit code. Pinned by characterisation tests with usage data on vs off for every mapped command: `forecast manual`, `team create`, `team delete`, `team refresh`, `portfolio create`, `portfolio delete`, `portfolio refresh`, `refinement vote`, `refinement get` (the D8 mapping table). | ADR-227 |
 | DSN-15 | **Prompt on stderr, full terminal only**: asked only when stdin, stdout **and** stderr are TTYs and `CI` is unset; `readline` on stderr; `y`/`yes` any case = yes, anything else = No; Ctrl-C/EOF caught by the question itself = no answer, exit code unchanged. The pre-question `state` read shares the 1 s budget; the grant after a yes has 5 s and on failure prints the journey's one stderr line. The run that asked reports nothing. | ADR-227 |
 | DSN-16 | **Vote moment from the pre-vote read**: `lh refinement vote` and `lighthouse_team_refinement_vote` already read the Team's Refinement before voting; `sizingMoment` is computed from that answer. No extra read; a failed read already fails the vote. | ADR-227 |
 | DSN-17 | **MCP send is detached**: `registerMcpTools` hands occurrences to an optional usage-data port after the result is computed and returns without awaiting the send (1 s bounded in the background). No port supplied = today's behaviour exactly. | ADR-227 |
@@ -2215,3 +2215,23 @@ Mcp-less, rollback) ✓ · C6a refused / failing / silent Lighthouse ✓ · C6b 
 failure ✓ · C7a CI / build-agent environment ✓ · C7b two Lighthouses on one machine ✓ · C7c concurrency
 (two terminals, three callers, three assistant calls) ✓. **15/15, COMPLETE**, with the absence-scenario
 gap in Upstream issues 2.
+
+## Final Wave Review Gate — outcome (2026-10-08)
+
+- **Eclipse (DISCUSS):** rejected pending one fix — US-04's "a vote whose moment cannot be read"
+  described an unreachable path under DSN-16. Fixed: the scenario now says the read before the vote is
+  refused, the vote is refused as today, nothing is reported (matching what DISTILL pinned). DoR 8/8.
+- **Architect (DESIGN):** approved, 0 critical/high. Applied: DSN-3 names the wire field
+  `acceptedSources` (camelCase); DSN-14 lists the mapped commands. DSN-4 already carried both answer
+  shapes — no change.
+- **Forge (DEVOPS):** rejected because guards G1/G2 were absent from the clients `ci.yml`. The design
+  places them in slice 02's commit, and nothing can send before slice 02 — but they are harmless now,
+  so G1 (`DO_NOT_TRACK: "1"` on `smoke-integration`) and G2 (`UsageData__CollectorBaseUrl` pointing at
+  `http://127.0.0.1:9` on the smoke container) were added to the clients `ci.yml` at this gate. The
+  usage-data smoke step itself stays with slice 02. The Lighthouse E2E app starts carry G2 since
+  074cd640d.
+- **Sentinel (DISTILL):** approved, 0 blockers. The 67 absence-only scenarios stay pending; DELIVER
+  un-skips each one in the same step as the positive scenario in its describe, which the roadmap
+  encodes.
+
+Gate: passed after one revision cycle.
