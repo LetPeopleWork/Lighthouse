@@ -1206,7 +1206,7 @@ describe("useMetricsData", () => {
 			expect(service.getArrivalsPbc).not.toHaveBeenCalled();
 		});
 
-		it("fetches only the chart-only process-behaviour charts for pbcCharts", async () => {
+		it("fetches only the chart-only process-behaviour charts for pbcCharts and throughputPbc", async () => {
 			const entity = createMockEntity();
 			const service = createMockTeamMetricsService();
 
@@ -1216,7 +1216,7 @@ describe("useMetricsData", () => {
 					service,
 					startDate,
 					endDate,
-					activeKeys("pbcCharts"),
+					activeKeys("pbcCharts", "throughputPbc"),
 				),
 			);
 

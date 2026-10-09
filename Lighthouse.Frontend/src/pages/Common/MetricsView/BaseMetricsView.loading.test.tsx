@@ -846,7 +846,7 @@ describe("charts waiting on something this owner never has", () => {
 });
 
 describe("every chart request on the dashboard", () => {
-	it.skip.each(everyOwnerAndCategory)(
+	it.each(everyOwnerAndCategory)(
 		"on a %s's %s is asked for without retrying, and kept for no other window",
 		async (owner, _name, category) => {
 			const withTheAppDefaults = new QueryClient({

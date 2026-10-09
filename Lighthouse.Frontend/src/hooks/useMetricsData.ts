@@ -1,12 +1,5 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import {
-	useCallback,
-	useContext,
-	useEffect,
-	useMemo,
-	useRef,
-	useState,
-} from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { IBlackoutPeriod } from "../models/BlackoutPeriod";
 import type { BlockedCountSnapshot } from "../models/BlockedCountSnapshot";
 import type { IFeature } from "../models/Feature";
@@ -123,7 +116,8 @@ export interface MetricsData<T> {
 	blockedCountHistory: BlockedCountSnapshot[] | null;
 	/** How far each request for the selected window has got, by the fetch key that asks for it. */
 	fetchStates: FetchKeyStates;
-	refetchThroughputPbc: (view?: "raw" | "filtered") => Promise<void>;
+	/** Asks the Throughput process behaviour chart again, for the filtered or the raw view. */
+	setThroughputPbcView: (view: "raw" | "filtered") => void;
 }
 
 function isProjectMetricsService(
@@ -156,16 +150,37 @@ function isTeamOwnedMetricsService(service: object): boolean {
 	return "getFeaturesInProgress" in service;
 }
 
-const everyFetchKeyApplies = Object.fromEntries(
-	getMetricsFetchKeys().map((key) => [key, true]),
-) as Record<MetricsFetchKey, boolean>;
-
 // Whether this owner has the question at all. A key that does not apply is never asked, and is
-// never waited for either.
+// never waited for either. Every key is listed, so a new one does not build until someone says
+// which owners can ask it.
 function applicabilityFor(service: object): Record<MetricsFetchKey, boolean> {
 	const isPortfolioShaped = isProjectMetricsService(service);
 	return {
-		...everyFetchKeyApplies,
+		blackoutPeriods: true,
+		predictability: true,
+		totalWorkItemAge: true,
+		throughput: true,
+		inProgressItems: true,
+		blockedItems: true,
+		wipOverTime: true,
+		cycleTimeData: true,
+		cycleTimePercentiles: true,
+		workItemAgePercentiles: true,
+		ageInStatePercentiles: true,
+		cumulativeStateTime: true,
+		flowEfficiency: true,
+		estimationVsCycleTime: true,
+		arrivals: true,
+		throughputInfo: true,
+		arrivalsInfo: true,
+		wipOverviewInfo: true,
+		totalWorkItemAgeInfo: true,
+		predictabilityScoreInfo: true,
+		cycleTimePercentilesInfo: true,
+		blockedCountHistory: true,
+		pbcCore: true,
+		pbcCharts: true,
+		throughputPbc: true,
 		sleRisk: providesSleRisk(service),
 		featureSizeData: isPortfolioShaped,
 		featureSizePbc: isPortfolioShaped,
@@ -255,74 +270,13 @@ export function useMetricsData<
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 
-	const [sizePercentileValues, setSizePercentileValues] = useState<
-		IPercentileValue[]
-	>([]);
-	const [allFeaturesForSizeChart, setAllFeaturesForSizeChart] = useState<
-		IFeature[]
-	>([]);
-	const [predictabilityData, setPredictabilityData] =
-		useState<IForecastPredictabilityScore | null>(null);
-	const [throughputPbcData, setThroughputPbcData] =
-		useState<ProcessBehaviourChartData | null>(null);
-	const [cycleTimePbcData, setCycleTimePbcData] =
-		useState<ProcessBehaviourChartData | null>(null);
-	const [featureSizePbcData, setFeatureSizePbcData] =
-		useState<ProcessBehaviourChartData | null>(null);
-	const [estimationVsCycleTimeData, setEstimationVsCycleTimeData] =
-		useState<IEstimationVsCycleTimeResponse | null>(null);
-	const [featureSizeEstimationData, setFeatureSizeEstimationData] =
-		useState<IFeatureSizeEstimationResponse | null>(null);
 	const [serviceLevelExpectation, setServiceLevelExpectation] =
 		useState<IPercentileValue | null>(null);
 	const [featureSizeTarget, setFeatureSizeTarget] =
 		useState<IPercentileValue | null>(null);
-	const [arrivalsPbcData, setArrivalsPbcData] =
-		useState<ProcessBehaviourChartData | null>(null);
-	const [throughputInfo, setThroughputInfo] = useState<IThroughputInfo | null>(
-		null,
-	);
-	const [arrivalsInfo, setArrivalsInfo] = useState<IArrivalsInfo | null>(null);
-	const [featureSizePercentilesInfo, setFeatureSizePercentilesInfo] =
-		useState<IFeatureSizePercentilesInfo | null>(null);
-	const [wipOverviewInfo, setWipOverviewInfo] =
-		useState<IWipOverviewInfo | null>(null);
-	const [featuresWorkedOnInfo, setFeaturesWorkedOnInfo] =
-		useState<IFeaturesWorkedOnInfo | null>(null);
-	const [totalWorkItemAgeInfo, setTotalWorkItemAgeInfo] =
-		useState<ITotalWorkItemAgeInfo | null>(null);
-	const [predictabilityScoreInfo, setPredictabilityScoreInfo] =
-		useState<IPredictabilityScoreInfo | null>(null);
-	const [cycleTimePercentilesInfo, setCycleTimePercentilesInfo] =
-		useState<ICycleTimePercentilesInfo | null>(null);
-	// One primitive per fetch key. Primitives are compared by value, so an effect listing its own
-	// flag re-runs only when that flag flips — never because a caller handed us a new Set with the
-	// same contents. Callers grow the key set monotonically within an (entity, window), which makes
-	// false→true happen at most once and therefore fetches at most once, with no refs or cache.
-	const needsPredictability = activeFetchKeys.has("predictability");
-	const needsFeatureSizeData = activeFetchKeys.has("featureSizeData");
-	const needsFeatureSizePbc = activeFetchKeys.has("featureSizePbc");
-	const needsFeatureSizeEstimation = activeFetchKeys.has(
-		"featureSizeEstimation",
-	);
-	const needsFeatureSizePercentilesInfo = activeFetchKeys.has(
-		"featureSizePercentilesInfo",
-	);
-	const needsEstimationVsCycleTime = activeFetchKeys.has(
-		"estimationVsCycleTime",
-	);
-	const needsThroughputInfo = activeFetchKeys.has("throughputInfo");
-	const needsArrivalsInfo = activeFetchKeys.has("arrivalsInfo");
-	const needsWipOverviewInfo = activeFetchKeys.has("wipOverviewInfo");
-	const needsTotalWorkItemAgeInfo = activeFetchKeys.has("totalWorkItemAgeInfo");
-	const needsPredictabilityScoreInfo = activeFetchKeys.has(
-		"predictabilityScoreInfo",
-	);
-	const needsCycleTimePercentilesInfo = activeFetchKeys.has(
-		"cycleTimePercentilesInfo",
-	);
-	const needsFeaturesWorkedOnInfo = activeFetchKeys.has("featuresWorkedOnInfo");
-	const needsPbcCharts = activeFetchKeys.has("pbcCharts");
+	const [throughputPbcView, setThroughputPbcView] = useState<
+		"raw" | "filtered" | undefined
+	>(undefined);
 
 	const applicable = useMemo(
 		() => applicabilityFor(metricsService),
@@ -345,7 +299,16 @@ export function useMetricsData<
 	const blackoutPeriods = useMetricsQuery(
 		"getAllBlackoutPeriods",
 		owner,
-		() => blackoutPeriodService.getAll(),
+		// Without the blackout periods a chart simply marks none, so failing to read them is not a
+		// failed chart.
+		async () => {
+			try {
+				return await blackoutPeriodService.getAll();
+			} catch (error) {
+				console.error("Error fetching blackout periods:", error);
+				return [];
+			}
+		},
 		isAsked("blackoutPeriods"),
 	);
 
@@ -550,101 +513,79 @@ export function useMetricsData<
 		coreProcessBehaviourFailure,
 	);
 
-	const queriesByFetchKey: Partial<
-		Record<MetricsFetchKey, readonly QueryProgress[]>
-	> = {
-		blackoutPeriods: [blackoutPeriods.progress],
-		totalWorkItemAge: [totalWorkItemAge.progress],
-		throughput: [throughput.progress],
-		inProgressItems: [inProgressItems.progress],
-		blockedItems: [blockedItems.progress],
-		wipOverTime: [wipOverTime.progress],
-		cycleTimeData: [cycleTimeData.progress],
-		cycleTimePercentiles: [cycleTimePercentiles.progress],
-		workItemAgePercentiles: [
-			workItemAgePercentiles.progress,
-			previousWorkItemAgePercentiles.progress,
-		],
-		flowEfficiency: [flowEfficiency.progress],
-		ageInStatePercentiles: [ageInStatePercentiles.progress],
-		sleRisk: [sleRisk.progress],
-		cumulativeStateTime: [cumulativeStateTime.progress],
-		arrivals: [arrivals.progress],
-		blockedCountHistory: [blockedCountHistory.progress],
-		pbcCore: [wipPbc.progress, totalWorkItemAgePbc.progress],
-	};
-	const fetchStates: FetchKeyStates = Object.fromEntries(
-		Object.entries(queriesByFetchKey).map(([key, queries]) => [
-			key,
-			fetchKeyStateOf(queries, applicable[key as MetricsFetchKey]),
-		]),
+	const predictability = useMetricsQuery(
+		"getMultiItemForecastPredictabilityScore",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getMultiItemForecastPredictabilityScore(
+				ownerId,
+				dayOf(from),
+				dayOf(to),
+			),
+		isAsked("predictability"),
+		"Error fetching predictability data:",
 	);
 
-	useEffect(() => {
-		if (!needsPredictability) return;
-		metricsService
-			.getMultiItemForecastPredictabilityScore(entity.id, startDate, endDate)
-			.then(setPredictabilityData)
-			.catch((error) =>
-				console.error("Error fetching predictability data:", error),
-			);
-	}, [entity, metricsService, startDate, endDate, needsPredictability]);
+	// Only a portfolio is asked these, which is what `applicable` already says.
+	const portfolioService = metricsService as unknown as IProjectMetricsService;
+	const sizePercentileFailure = "Error fetching Size Percentile Data:";
 
-	useEffect(() => {
-		if (!needsFeatureSizeData) return;
-		if (!isProjectMetricsService(metricsService)) return;
-		const svc = metricsService;
-		const fetch = async () => {
-			const [percentiles, features] = await Promise.all([
-				svc.getSizePercentiles(entity.id, startDate, endDate),
-				svc.getAllFeaturesForSizeChart(entity.id, startDate, endDate),
-			]);
-			setSizePercentileValues(percentiles);
-			setAllFeaturesForSizeChart(features);
-		};
-		fetch().catch((error) =>
-			console.error("Error fetching Size Percentile Data:", error),
-		);
-	}, [metricsService, entity, startDate, endDate, needsFeatureSizeData]);
+	const sizePercentiles = useMetricsQuery(
+		"getSizePercentiles",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			portfolioService.getSizePercentiles(ownerId, dayOf(from), dayOf(to)),
+		isAsked("featureSizeData"),
+		sizePercentileFailure,
+	);
 
-	useEffect(() => {
-		if (!needsFeatureSizePbc) return;
-		if (!isProjectMetricsService(metricsService)) return;
-		metricsService
-			.getFeatureSizePbc(entity.id, startDate, endDate)
-			.then(setFeatureSizePbcData)
-			.catch((error) =>
-				console.error("Error fetching feature size PBC data:", error),
-			);
-	}, [metricsService, entity, startDate, endDate, needsFeatureSizePbc]);
+	const featuresForSizeChart = useMetricsQuery(
+		"getAllFeaturesForSizeChart",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			portfolioService.getAllFeaturesForSizeChart(
+				ownerId,
+				dayOf(from),
+				dayOf(to),
+			),
+		isAsked("featureSizeData"),
+		sizePercentileFailure,
+	);
 
-	useEffect(() => {
-		if (!needsFeatureSizeEstimation) return;
-		if (!isProjectMetricsService(metricsService)) return;
-		metricsService
-			.getFeatureSizeEstimation(entity.id, startDate, endDate)
-			.then(setFeatureSizeEstimationData)
-			.catch((error) =>
-				console.error("Error fetching feature size estimation data:", error),
-			);
-	}, [metricsService, entity, startDate, endDate, needsFeatureSizeEstimation]);
+	const featureSizePbc = useMetricsQuery(
+		"getFeatureSizePbc",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			portfolioService.getFeatureSizePbc(ownerId, dayOf(from), dayOf(to)),
+		isAsked("featureSizePbc"),
+		"Error fetching feature size PBC data:",
+	);
 
-	useEffect(() => {
-		if (!needsFeatureSizePercentilesInfo) return;
-		if (!isProjectMetricsService(metricsService)) return;
-		metricsService
-			.getFeatureSizePercentilesInfo(entity.id, startDate, endDate)
-			.then(setFeatureSizePercentilesInfo)
-			.catch((error) =>
-				console.error("Error fetching feature size percentiles info:", error),
-			);
-	}, [
-		metricsService,
-		entity,
-		startDate,
-		endDate,
-		needsFeatureSizePercentilesInfo,
-	]);
+	const featureSizeEstimation = useMetricsQuery(
+		"getFeatureSizeEstimation",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			portfolioService.getFeatureSizeEstimation(
+				ownerId,
+				dayOf(from),
+				dayOf(to),
+			),
+		isAsked("featureSizeEstimation"),
+		"Error fetching feature size estimation data:",
+	);
+
+	const featureSizePercentilesInfo = useMetricsQuery(
+		"getFeatureSizePercentilesInfo",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			portfolioService.getFeatureSizePercentilesInfo(
+				ownerId,
+				dayOf(from),
+				dayOf(to),
+			),
+		isAsked("featureSizePercentilesInfo"),
+		"Error fetching feature size percentiles info:",
+	);
 
 	useEffect(() => {
 		if (
@@ -671,130 +612,173 @@ export function useMetricsData<
 		}
 	}, [entity]);
 
-	useEffect(() => {
-		if (!needsEstimationVsCycleTime) return;
-		metricsService
-			.getEstimationVsCycleTimeData(entity.id, startDate, endDate)
-			.then(setEstimationVsCycleTimeData)
-			.catch((error) =>
-				console.error("Error fetching estimation vs cycle time data:", error),
-			);
-	}, [entity, metricsService, startDate, endDate, needsEstimationVsCycleTime]);
-
-	useEffect(() => {
-		if (!needsThroughputInfo) return;
-		metricsService
-			.getThroughputInfo(entity.id, startDate, endDate)
-			.then(setThroughputInfo)
-			.catch((error) =>
-				console.error("Error fetching throughput info:", error),
-			);
-	}, [entity, metricsService, startDate, endDate, needsThroughputInfo]);
-
-	useEffect(() => {
-		if (!needsArrivalsInfo) return;
-		metricsService
-			.getArrivalsInfo(entity.id, startDate, endDate)
-			.then(setArrivalsInfo)
-			.catch((error) => console.error("Error fetching arrivals info:", error));
-	}, [entity, metricsService, startDate, endDate, needsArrivalsInfo]);
-
-	useEffect(() => {
-		if (!needsWipOverviewInfo) return;
-		metricsService
-			.getWipOverviewInfo(entity.id, startDate, endDate)
-			.then(setWipOverviewInfo)
-			.catch((error) =>
-				console.error("Error fetching WIP overview info:", error),
-			);
-	}, [entity, metricsService, startDate, endDate, needsWipOverviewInfo]);
-
-	useEffect(() => {
-		if (!needsTotalWorkItemAgeInfo) return;
-		metricsService
-			.getTotalWorkItemAgeInfo(entity.id, startDate, endDate)
-			.then(setTotalWorkItemAgeInfo)
-			.catch((error) =>
-				console.error("Error fetching total work item age info:", error),
-			);
-	}, [entity, metricsService, startDate, endDate, needsTotalWorkItemAgeInfo]);
-
-	useEffect(() => {
-		if (!needsPredictabilityScoreInfo) return;
-		metricsService
-			.getPredictabilityScoreInfo(entity.id, startDate, endDate)
-			.then(setPredictabilityScoreInfo)
-			.catch((error) =>
-				console.error("Error fetching predictability score info:", error),
-			);
-	}, [
-		entity,
-		metricsService,
-		startDate,
-		endDate,
-		needsPredictabilityScoreInfo,
-	]);
-
-	useEffect(() => {
-		if (!needsCycleTimePercentilesInfo) return;
-		metricsService
-			.getCycleTimePercentilesInfo(entity.id, startDate, endDate)
-			.then(setCycleTimePercentilesInfo)
-			.catch((error) =>
-				console.error("Error fetching cycle time percentiles info:", error),
-			);
-	}, [
-		entity,
-		metricsService,
-		startDate,
-		endDate,
-		needsCycleTimePercentilesInfo,
-	]);
-
-	useEffect(() => {
-		if (!needsFeaturesWorkedOnInfo) return;
-		if (!isTeamMetricsService(metricsService)) return;
-		metricsService
-			.getFeaturesWorkedOnInfo(entity.id, startDate, endDate)
-			.then(setFeaturesWorkedOnInfo)
-			.catch((error) =>
-				console.error("Error fetching features worked on info:", error),
-			);
-	}, [entity, metricsService, startDate, endDate, needsFeaturesWorkedOnInfo]);
-
-	useEffect(() => {
-		if (!needsPbcCharts) return;
-		const fetch = async () => {
-			const [throughputPbc, cycleTimePbc, arrivalsPbc] = await Promise.all([
-				metricsService.getThroughputPbc(entity.id, startDate, endDate),
-				metricsService.getCycleTimePbc(entity.id, startDate, endDate),
-				metricsService.getArrivalsPbc(entity.id, startDate, endDate),
-			]);
-			setThroughputPbcData(throughputPbc);
-			setCycleTimePbcData(cycleTimePbc);
-			setArrivalsPbcData(arrivalsPbc);
-		};
-		fetch().catch((error) =>
-			console.error("Error fetching process behaviour chart data:", error),
-		);
-	}, [entity, metricsService, startDate, endDate, needsPbcCharts]);
-
-	const refetchThroughputPbc = useCallback(
-		async (view?: "raw" | "filtered"): Promise<void> => {
-			try {
-				const data = await metricsService.getThroughputPbc(
-					entity.id,
-					startDate,
-					endDate,
-					view,
-				);
-				setThroughputPbcData(data);
-			} catch (error) {
-				console.error("Error refetching throughput PBC data:", error);
-			}
-		},
-		[entity, metricsService, startDate, endDate],
+	const estimationVsCycleTime = useMetricsQuery(
+		"getEstimationVsCycleTimeData",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getEstimationVsCycleTimeData(
+				ownerId,
+				dayOf(from),
+				dayOf(to),
+			),
+		isAsked("estimationVsCycleTime"),
+		"Error fetching estimation vs cycle time data:",
 	);
+
+	const throughputInfo = useMetricsQuery(
+		"getThroughputInfo",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getThroughputInfo(ownerId, dayOf(from), dayOf(to)),
+		isAsked("throughputInfo"),
+		"Error fetching throughput info:",
+	);
+
+	const arrivalsInfo = useMetricsQuery(
+		"getArrivalsInfo",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getArrivalsInfo(ownerId, dayOf(from), dayOf(to)),
+		isAsked("arrivalsInfo"),
+		"Error fetching arrivals info:",
+	);
+
+	const wipOverviewInfo = useMetricsQuery(
+		"getWipOverviewInfo",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getWipOverviewInfo(ownerId, dayOf(from), dayOf(to)),
+		isAsked("wipOverviewInfo"),
+		"Error fetching WIP overview info:",
+	);
+
+	const totalWorkItemAgeInfo = useMetricsQuery(
+		"getTotalWorkItemAgeInfo",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getTotalWorkItemAgeInfo(ownerId, dayOf(from), dayOf(to)),
+		isAsked("totalWorkItemAgeInfo"),
+		"Error fetching total work item age info:",
+	);
+
+	const predictabilityScoreInfo = useMetricsQuery(
+		"getPredictabilityScoreInfo",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getPredictabilityScoreInfo(
+				ownerId,
+				dayOf(from),
+				dayOf(to),
+			),
+		isAsked("predictabilityScoreInfo"),
+		"Error fetching predictability score info:",
+	);
+
+	const cycleTimePercentilesInfo = useMetricsQuery(
+		"getCycleTimePercentilesInfo",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getCycleTimePercentilesInfo(
+				ownerId,
+				dayOf(from),
+				dayOf(to),
+			),
+		isAsked("cycleTimePercentilesInfo"),
+		"Error fetching cycle time percentiles info:",
+	);
+
+	const featuresWorkedOnInfo = useMetricsQuery(
+		"getFeaturesWorkedOnInfo",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			(
+				metricsService as unknown as ITeamMetricsService
+			).getFeaturesWorkedOnInfo(ownerId, dayOf(from), dayOf(to)),
+		isAsked("featuresWorkedOnInfo"),
+		"Error fetching features worked on info:",
+	);
+
+	const processBehaviourFailure =
+		"Error fetching process behaviour chart data:";
+
+	const cycleTimePbc = useMetricsQuery(
+		"getCycleTimePbc",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getCycleTimePbc(ownerId, dayOf(from), dayOf(to)),
+		isAsked("pbcCharts"),
+		processBehaviourFailure,
+	);
+
+	const arrivalsPbc = useMetricsQuery(
+		"getArrivalsPbc",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getArrivalsPbc(ownerId, dayOf(from), dayOf(to)),
+		isAsked("pbcCharts"),
+		processBehaviourFailure,
+	);
+
+	// The filter is part of the request, so flipping it asks again for this chart alone, and an
+	// answer for the view the reader has just left never lands.
+	const throughputPbc = useMetricsQuery(
+		"getThroughputPbc",
+		{ ...selectedWindow, view: throughputPbcView },
+		({ ownerId, from, to, view }) =>
+			view === undefined
+				? metricsService.getThroughputPbc(ownerId, dayOf(from), dayOf(to))
+				: metricsService.getThroughputPbc(
+						ownerId,
+						dayOf(from),
+						dayOf(to),
+						view,
+					),
+		isAsked("throughputPbc"),
+		processBehaviourFailure,
+	);
+	const queriesByFetchKey: Record<MetricsFetchKey, readonly QueryProgress[]> = {
+		blackoutPeriods: [blackoutPeriods.progress],
+		totalWorkItemAge: [totalWorkItemAge.progress],
+		throughput: [throughput.progress],
+		inProgressItems: [inProgressItems.progress],
+		blockedItems: [blockedItems.progress],
+		wipOverTime: [wipOverTime.progress],
+		cycleTimeData: [cycleTimeData.progress],
+		cycleTimePercentiles: [cycleTimePercentiles.progress],
+		workItemAgePercentiles: [
+			workItemAgePercentiles.progress,
+			previousWorkItemAgePercentiles.progress,
+		],
+		flowEfficiency: [flowEfficiency.progress],
+		ageInStatePercentiles: [ageInStatePercentiles.progress],
+		sleRisk: [sleRisk.progress],
+		cumulativeStateTime: [cumulativeStateTime.progress],
+		arrivals: [arrivals.progress],
+		blockedCountHistory: [blockedCountHistory.progress],
+		pbcCore: [wipPbc.progress, totalWorkItemAgePbc.progress],
+		predictability: [predictability.progress],
+		featureSizeData: [sizePercentiles.progress, featuresForSizeChart.progress],
+		featureSizePbc: [featureSizePbc.progress],
+		featureSizeEstimation: [featureSizeEstimation.progress],
+		featureSizePercentilesInfo: [featureSizePercentilesInfo.progress],
+		estimationVsCycleTime: [estimationVsCycleTime.progress],
+		throughputInfo: [throughputInfo.progress],
+		arrivalsInfo: [arrivalsInfo.progress],
+		wipOverviewInfo: [wipOverviewInfo.progress],
+		totalWorkItemAgeInfo: [totalWorkItemAgeInfo.progress],
+		predictabilityScoreInfo: [predictabilityScoreInfo.progress],
+		cycleTimePercentilesInfo: [cycleTimePercentilesInfo.progress],
+		featuresWorkedOnInfo: [featuresWorkedOnInfo.progress],
+		pbcCharts: [cycleTimePbc.progress, arrivalsPbc.progress],
+		throughputPbc: [throughputPbc.progress],
+	};
+	const fetchStates: FetchKeyStates = Object.fromEntries(
+		Object.entries(queriesByFetchKey).map(([key, queries]) => [
+			key,
+			fetchKeyStateOf(queries, applicable[key as MetricsFetchKey]),
+		]),
+	);
+
 	return {
 		blackoutPeriods: blackoutPeriods.answer ?? [],
 		throughputData: throughput.answer,
@@ -809,32 +793,32 @@ export function useMetricsData<
 		perStatePercentileValues: ageInStatePercentiles.answer ?? [],
 		sleRiskValues: sleRisk.answer ?? [],
 		cumulativeStateTime: cumulativeStateTime.answer,
-		sizePercentileValues,
-		allFeaturesForSizeChart,
-		predictabilityData,
-		throughputPbcData,
+		sizePercentileValues: sizePercentiles.answer ?? [],
+		allFeaturesForSizeChart: featuresForSizeChart.answer ?? [],
+		predictabilityData: predictability.answer,
+		throughputPbcData: throughputPbc.answer,
 		wipPbcData: wipPbc.answer,
 		totalWorkItemAgePbcData: totalWorkItemAgePbc.answer,
-		cycleTimePbcData,
-		featureSizePbcData,
-		estimationVsCycleTimeData,
-		featureSizeEstimationData,
+		cycleTimePbcData: cycleTimePbc.answer,
+		featureSizePbcData: featureSizePbc.answer,
+		estimationVsCycleTimeData: estimationVsCycleTime.answer,
+		featureSizeEstimationData: featureSizeEstimation.answer,
 		serviceLevelExpectation,
 		featureSizeTarget,
 		totalWorkItemAge: totalWorkItemAge.answer,
 		arrivalsData: arrivals.answer,
-		arrivalsPbcData,
-		throughputInfo,
-		arrivalsInfo,
-		featureSizePercentilesInfo,
-		wipOverviewInfo,
-		featuresWorkedOnInfo,
-		totalWorkItemAgeInfo,
-		predictabilityScoreInfo,
-		cycleTimePercentilesInfo,
+		arrivalsPbcData: arrivalsPbc.answer,
+		throughputInfo: throughputInfo.answer,
+		arrivalsInfo: arrivalsInfo.answer,
+		featureSizePercentilesInfo: featureSizePercentilesInfo.answer,
+		wipOverviewInfo: wipOverviewInfo.answer,
+		featuresWorkedOnInfo: featuresWorkedOnInfo.answer,
+		totalWorkItemAgeInfo: totalWorkItemAgeInfo.answer,
+		predictabilityScoreInfo: predictabilityScoreInfo.answer,
+		cycleTimePercentilesInfo: cycleTimePercentilesInfo.answer,
 		flowEfficiencyInfo: flowEfficiency.answer,
 		blockedCountHistory: blockedCountHistory.answer,
 		fetchStates,
-		refetchThroughputPbc,
+		setThroughputPbcView,
 	};
 }

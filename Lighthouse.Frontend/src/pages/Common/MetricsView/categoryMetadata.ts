@@ -185,8 +185,9 @@ export function getTrendPolicy(widgetKey: string): TrendPolicy {
 /**
  * One key per gated fetch group in `useMetricsData`. Keys that name a group rather than a single
  * call — `featureSizeData` (size percentiles + all features), `pbcCore` (WIP + total-age PBC),
- * `pbcCharts` (throughput + cycle-time + arrivals PBC) — are the ones whose calls share both a
- * consumer set and a batch, so gating them apart would buy nothing.
+ * `pbcCharts` (cycle-time + arrivals PBC) — are the ones whose calls share both a consumer set and
+ * a window, so gating them apart would buy nothing. The Throughput PBC has a key of its own because
+ * its filter switch asks for it again on its own.
  */
 const metricsFetchKeys = [
 	"blackoutPeriods",
@@ -219,6 +220,7 @@ const metricsFetchKeys = [
 	"featuresWorkedOnInfo",
 	"pbcCore",
 	"pbcCharts",
+	"throughputPbc",
 ] as const;
 
 export type MetricsFetchKey = (typeof metricsFetchKeys)[number];
@@ -312,7 +314,7 @@ const widgetFetchRequirements: Record<string, readonly MetricsFetchKey[]> = {
 	// Both fetch lazily inside themselves and read nothing from useMetricsData.
 	percentilesOverTime: [],
 	pbcOverTime: [],
-	throughputPbc: ["pbcCharts", ...workItemLookupSources],
+	throughputPbc: ["throughputPbc", ...workItemLookupSources],
 	arrivalsPbc: ["pbcCharts", "arrivals", ...workItemLookupSources],
 	cycleTimePbc: ["pbcCharts", ...workItemLookupSources],
 	wipPbc: ["pbcCore", ...workItemLookupSources],

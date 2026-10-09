@@ -341,8 +341,8 @@ describe("categoryMetadata", () => {
 	describe("Bug #5571 — widget fetch requirements", () => {
 		const ownerTypes = ["team", "portfolio"] as const;
 
-		// The only widgets allowed to declare nothing: they own their fetch lifecycle inside
-		// themselves (lazy, on mount, per-selection cache) and read nothing from useMetricsData.
+		// The only widgets allowed to declare nothing: they fetch for themselves, read nothing from
+		// useMetricsData, and report their own loading and failure.
 		const selfFetchingWidgets = ["percentilesOverTime", "pbcOverTime"];
 
 		function everyPlacement(): { widgetKey: string; where: string }[] {
@@ -386,6 +386,7 @@ describe("categoryMetadata", () => {
 			const forbidden: MetricsFetchKey[] = [
 				"pbcCore",
 				"pbcCharts",
+				"throughputPbc",
 				"blackoutPeriods",
 				"wipOverTime",
 				"ageInStatePercentiles",
@@ -488,6 +489,38 @@ describe("categoryMetadata", () => {
 					reachable.has(key),
 					`${key} is declared but no widget in any category requires it`,
 				).toBe(true);
+			}
+		});
+
+		it("asks for the Throughput process behaviour chart on its own key, apart from the Cycle Time and Arrivals ones", () => {
+			expect(getFetchRequirementsForWidget("throughputPbc")).toContain(
+				"throughputPbc",
+			);
+			expect(getFetchRequirementsForWidget("throughputPbc")).not.toContain(
+				"pbcCharts",
+			);
+			for (const widgetKey of ["cycleTimePbc", "arrivalsPbc"]) {
+				expect(getFetchRequirementsForWidget(widgetKey)).toContain("pbcCharts");
+				expect(getFetchRequirementsForWidget(widgetKey)).not.toContain(
+					"throughputPbc",
+				);
+			}
+		});
+
+		it("asks, for each category on its own, for everything any of its widgets requires", () => {
+			for (const cat of getCategories()) {
+				for (const ownerType of ownerTypes) {
+					const asked = getFetchKeysForCategories([cat.key], ownerType);
+					for (const w of getWidgetsForCategory(cat.key, ownerType)) {
+						for (const key of getFetchRequirementsForWidget(w.widgetKey) ??
+							[]) {
+							expect(
+								asked.has(key),
+								`${w.widgetKey} on a ${ownerType}'s ${cat.key} requires ${key}, which is never asked for`,
+							).toBe(true);
+						}
+					}
+				}
 			}
 		});
 

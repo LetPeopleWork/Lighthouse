@@ -1,4 +1,8 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+	notifyManager,
+	QueryClient,
+	QueryClientProvider,
+} from "@tanstack/react-query";
 import {
 	act,
 	fireEvent,
@@ -714,6 +718,10 @@ vi.mock("./WidgetShell", () => ({
 		</div>
 	),
 }));
+
+// The query library tells components about an answer on a later timer tick, which act() does not
+// wait for. Telling them in the same tick lets each answered request show before the next step.
+notifyManager.setScheduler(queueMicrotask);
 
 let queryClient: QueryClient;
 

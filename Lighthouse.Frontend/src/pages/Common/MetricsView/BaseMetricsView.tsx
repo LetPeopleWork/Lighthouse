@@ -846,7 +846,7 @@ type PbcNodesCtx = {
 	isPremium: boolean;
 	hasForecastFilter: boolean;
 	forecastFilterConditions: readonly EvaluatorCondition[];
-	refetchThroughputPbc: (view?: "raw" | "filtered") => Promise<void>;
+	setThroughputPbcView: (view: "raw" | "filtered") => void;
 };
 
 function buildPbcNodes(ctx: PbcNodesCtx): Record<string, ReactNode | null> {
@@ -855,7 +855,7 @@ function buildPbcNodes(ctx: PbcNodesCtx): Record<string, ReactNode | null> {
 			isPremium={ctx.isPremium}
 			hasFilter={ctx.hasForecastFilter}
 			onChange={(filtered) => {
-				void ctx.refetchThroughputPbc(filtered ? "filtered" : "raw");
+				ctx.setThroughputPbcView(filtered ? "filtered" : "raw");
 			}}
 		/>
 	);
@@ -989,7 +989,7 @@ function buildWidgetNodes(ctx: {
 	onCumulativeStateTimeBarClick: (stateName: string) => void;
 	waitStates: string[];
 	stateMappings: IStateMapping[];
-	refetchThroughputPbc: (view?: "raw" | "filtered") => Promise<void>;
+	setThroughputPbcView: (view: "raw" | "filtered") => void;
 	blockedCountHistory: BlockedCountSnapshot[] | null;
 	flowEfficiencyInfo: IFlowEfficiencyInfo | null;
 	sleRiskAtRisk: SleRiskAtRiskSummary | undefined;
@@ -1332,7 +1332,7 @@ export const BaseMetricsView = <
 		cumulativeStateTime,
 		flowEfficiencyInfo,
 		blockedCountHistory,
-		refetchThroughputPbc,
+		setThroughputPbcView,
 	} = useMetricsData(
 		entity,
 		metricsService,
@@ -1766,7 +1766,7 @@ export const BaseMetricsView = <
 		},
 		waitStates,
 		stateMappings,
-		refetchThroughputPbc,
+		setThroughputPbcView,
 		blockedCountHistory,
 		flowEfficiencyInfo,
 		sleRiskAtRisk,
