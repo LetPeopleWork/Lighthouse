@@ -1566,9 +1566,10 @@ describe("useMetricsData while its requests are on their way", () => {
 		"a team's %s reads loading until its answer arrives",
 		(fetchKey) => {
 			const service = holdingEveryRequest(createMockTeamMetricsService());
+			const team = createMockEntity();
 
 			const { result } = renderHook(() =>
-				useMetricsData(createMockEntity(), service, startDate, endDate),
+				useMetricsData(team, service, startDate, endDate),
 			);
 
 			expect(result.current.fetchStates[fetchKey]).toEqual({
@@ -1582,14 +1583,10 @@ describe("useMetricsData while its requests are on their way", () => {
 		"a portfolio's %s reads loading until its answer arrives",
 		(fetchKey) => {
 			const service = holdingEveryRequest(createMockProjectMetricsService());
+			const portfolio = createMockPortfolioEntity();
 
 			const { result } = renderHook(() =>
-				useMetricsData(
-					createMockPortfolioEntity(),
-					service,
-					startDate,
-					endDate,
-				),
+				useMetricsData(portfolio, service, startDate, endDate),
 			);
 
 			expect(result.current.fetchStates[fetchKey]).toEqual({
@@ -1764,14 +1761,13 @@ describe("useMetricsData when a request fails", () => {
 			.mockImplementation(() => {});
 		const failure = new Error("blackout periods failed");
 		mockBlackoutPeriodService.getAll.mockRejectedValue(failure);
+		// Built once, outside the render: a team made per render carries a new lastUpdated each
+		// time, which is a new query key, so every answer would ask again without end.
+		const team = createMockEntity();
+		const service = createMockTeamMetricsService();
 
 		const { result } = renderHook(() =>
-			useMetricsData(
-				createMockEntity(),
-				createMockTeamMetricsService(),
-				startDate,
-				endDate,
-			),
+			useMetricsData(team, service, startDate, endDate),
 		);
 
 		await waitFor(() => {
@@ -1784,6 +1780,7 @@ describe("useMetricsData when a request fails", () => {
 			expect(result.current.fetchStates.blackoutPeriods?.status).toBe("ready");
 		});
 		expect(result.current.blackoutPeriods).toEqual([]);
+		expect(mockBlackoutPeriodService.getAll).toHaveBeenCalledTimes(1);
 		consoleError.mockRestore();
 	});
 });
