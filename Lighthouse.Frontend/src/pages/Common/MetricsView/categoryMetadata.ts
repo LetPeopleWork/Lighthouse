@@ -228,11 +228,11 @@ const metricsFetchKeys = [
 export type MetricsFetchKey = (typeof metricsFetchKeys)[number];
 
 /**
- * Every process-behaviour-chart node is handed `workItemLookup` (BaseMetricsView.tsx:854), which
- * is built from throughput + WIP-over-time + cycle-time + in-progress items (:1545-1553), so a
- * PBC widget cannot name its drill-through points without them. Bug #5571 risk R3 was decided by
- * the maintainer on 2026-07-27 in favour of keeping the names: Predictability therefore saves
- * little, and the whole prize sits on the default Flow Overview view. Do not trim these.
+ * Every process-behaviour-chart node is handed `workItemLookup`, which is built from throughput +
+ * WIP-over-time + cycle-time + in-progress items, so a PBC widget cannot name its drill-through
+ * points without them. Keeping those names was a deliberate choice: opening Predictability saves
+ * few requests because of it, and the saving that matters is on the default Flow Overview view.
+ * Do not trim these.
  *
  * The lookup's fifth source, `featureSizeData`, rides on the portfolio-only `featureSizePbc`
  * entry — a team service never populates `allFeaturesForSizeChart` in the first place.
@@ -248,8 +248,8 @@ const workItemLookupSources: readonly MetricsFetchKey[] = [
  * What a widget needs to render *completely* — body AND RAG footer AND trend AND view-data.
  *
  * The footer/trend/view-data entries are the load-bearing ones: several Flow Overview chips are
- * computed in `BaseMetricsView` from data whose primary consumer sits in another category
- * (Bug #5571 §Q5). Omitting one blanks a chip or empties a drill-in table on the default view,
+ * computed in `BaseMetricsView` from data whose primary consumer sits in another category.
+ * Omitting one blanks a chip or empties a drill-in table on the default view,
  * which is why `categoryMetadata.test.ts` asserts every widget in every category has an entry.
  *
  * An empty entry is legitimate only for a widget that owns its own fetch lifecycle
@@ -258,16 +258,16 @@ const workItemLookupSources: readonly MetricsFetchKey[] = [
 const widgetFetchRequirements: Record<string, readonly MetricsFetchKey[]> = {
 	// --- flow-overview ---------------------------------------------------------------------
 	// The card says how many of these are at risk, and its View Data dialog lists them with the
-	// risk column - BaseMetricsView.tsx
+	// risk column.
 	wipOverview: ["inProgressItems", "wipOverviewInfo", "sleRisk"],
 	sleRisk: ["inProgressItems", "sleRisk"],
-	// trend: computeBlockedTrend(blockedCountHistory) — BaseMetricsView.tsx:1828
+	// trend: computeBlockedTrend(blockedCountHistory)
 	blockedOverview: ["blockedItems", "blockedCountHistory"],
-	// staleItems is derived from inProgressItems — BaseMetricsView.tsx:1581
+	// staleItems is derived from inProgressItems
 	staleOverview: ["inProgressItems"],
 	// body + view-data come from the featuresInProgress prop, not from useMetricsData
 	featuresWorkedOnOverview: ["featuresWorkedOnInfo"],
-	// RAG reads totalWorkItemAge and currentWip — BaseMetricsView.tsx:365-374
+	// RAG reads totalWorkItemAge and currentWip
 	totalWorkItemAge: [
 		"totalWorkItemAge",
 		"inProgressItems",
@@ -275,18 +275,18 @@ const widgetFetchRequirements: Record<string, readonly MetricsFetchKey[]> = {
 	],
 	flowEfficiency: ["flowEfficiency"],
 	predictabilityScore: ["predictability", "predictabilityScoreInfo"],
-	// RAG needs the raw cycle times (ragRules.ts:174); ICycleTimePercentilesInfo carries none
+	// RAG needs the raw cycle times; ICycleTimePercentilesInfo carries none
 	percentiles: [
 		"cycleTimePercentiles",
 		"cycleTimeData",
 		"cycleTimePercentilesInfo",
 	],
-	// RAG reads agingItems, derived from inProgressItems — BaseMetricsView.tsx:1732
+	// RAG reads agingItems, derived from inProgressItems
 	workItemAgePercentiles: ["workItemAgePercentiles", "inProgressItems"],
-	// RAG reads startedTotal/closedTotal — BaseMetricsView.tsx:446, sourced at :1708-1709
+	// RAG reads startedTotal/closedTotal, sourced from throughput and arrivals
 	totalThroughput: ["throughputInfo", "throughput", "arrivals"],
 	totalArrivals: ["arrivalsInfo", "arrivals", "throughput"],
-	// RAG needs sizePercentileValues + active feature sizes (ragRules.ts:619)
+	// RAG needs sizePercentileValues + active feature sizes
 	featureSizePercentiles: ["featureSizePercentilesInfo", "featureSizeData"],
 
 	// --- flow-metrics ----------------------------------------------------------------------
@@ -296,23 +296,23 @@ const widgetFetchRequirements: Record<string, readonly MetricsFetchKey[]> = {
 		"cycleTimePercentiles",
 		"ageInStatePercentiles",
 		"workItemAgePercentiles",
-		// The View Data dialog behind this widget carries the risk column — BaseMetricsView.tsx
+		// The View Data dialog behind this widget carries the risk column
 		"sleRisk",
 	],
 	throughput: ["throughput"],
 	wipOverTime: ["wipOverTime"],
-	// RAG reads the total-age PBC's first and last points — BaseMetricsView.tsx:1746-1750
+	// RAG reads the total-age PBC's first and last points
 	totalWorkItemAgeOverTime: ["wipOverTime", "pbcCore"],
 	arrivals: ["arrivals", "throughput"],
 	stacked: ["throughput", "arrivals", "wipOverTime"],
-	// deriveLoadBalanceMatrixData reads WIP + total age + both core PBCs — :1594-1610
+	// deriveLoadBalanceMatrixData reads WIP + total age + both core PBCs
 	loadBalanceMatrix: ["inProgressItems", "totalWorkItemAge", "pbcCore"],
 	stateTimeCumulative: [
 		"cumulativeStateTime",
 		"cumulativeStateTimeSelection",
 		"cumulativeStateTimeScope",
 	],
-	// footer is the max blocked age, read off the blocked items — BaseMetricsView.tsx:329
+	// footer is the max blocked age, read off the blocked items
 	blockedCountHistory: ["blockedCountHistory", "blockedItems"],
 
 	// --- predictability --------------------------------------------------------------------
@@ -334,7 +334,7 @@ const widgetFetchRequirements: Record<string, readonly MetricsFetchKey[]> = {
 	// --- portfolio -------------------------------------------------------------------------
 	workDistribution: ["cycleTimeData", "inProgressItems"],
 	featureSize: ["featureSizeData", "featureSizeEstimation"],
-	// view-data resolves dataPoints through workItemLookup — BaseMetricsView.tsx:574-579
+	// view-data resolves dataPoints through workItemLookup
 	estimationVsCycleTime: ["estimationVsCycleTime", ...workItemLookupSources],
 };
 
