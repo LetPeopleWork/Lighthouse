@@ -499,3 +499,123 @@ made, or is an engineering choice that doesn't change what a user sees. All are 
   root. Each query overrides the app defaults: no caching across windows, no retries. The hand-rolled fallback
   stays recorded in ADR-233.
 - **O6 → checked in DELIVER** on the dev instance, as written.
+
+---
+
+Lean DEVOPS pass (2026-10-09), Apex, **maintainer AFK**: every decision below is a fixed project fact or the
+recommended option, recorded rather than asked. Frontend only; nothing to install, provision, migrate or configure.
+
+## Wave: DEVOPS / [REF] Decisions
+
+| # | Decision | Answer | Source |
+|---|---|---|---|
+| 1 | Deployment target | **Unchanged.** The standalone release, Docker image and Helm chart ship the built frontend bundle as today. No new environment. | Project fact |
+| 2 | Container orchestration | **Unchanged.** Nothing here touches the container or the chart. | Project fact |
+| 3 | CI/CD platform | **GitHub Actions, existing workflows.** No new workflow, job, runner or secret. | 27 workflows under `.github/workflows/` |
+| 4 | Existing infrastructure | Brownfield; reused as is. | same |
+| 5 | Observability | **None new.** Fetch failures already reach `console.error`; the story turns them into the S3 frame, which is the user-visible signal. No log line, no metric. | Project fact; DDD-1 |
+| 6 | Deployment strategy | **Unchanged.** Rollback = `git revert` of the feature commits, then the ordinary release path. No migration, no setting, no persisted data, no API change, so no mixed-version window: an old bundle and a new bundle call the same endpoints with the same payloads. | ADR-233 (frontend only) |
+| 7 | Continuous learning | **N/A, because** a loading state has nothing to flag, A/B or roll out progressively. Gating it would ship two readings of the same dashboard. | — |
+| 8 | Branching | **Trunk-based on `main`**, slice boundary ritual as usual (push, CI green, then ADO Resolved). | Project rule |
+| 9 | Mutation testing | **`per-feature`, StrykerJS on the changed frontend files, kill rate ≥ 80 %.** | `CLAUDE.md` § Mutation Testing Strategy |
+
+**Contradictions with DESIGN: none.** DESIGN said no backend, API, dependency or RBAC change, and nothing here needs one.
+
+## Wave: DEVOPS / [REF] Usage-data event
+
+**N/A, because** a loading state is not a feature anyone chooses to use. It appears whenever a dashboard fetches,
+for every user, so there is no "use" to count; any count of it is a count of page loads and window changes, which
+`TeamTabOpened`/`PortfolioTabOpened` (with `/teams/:id/metrics` and `/portfolios/:id/metrics`) already approximate. Nothing is appended to
+`UsageDataEventName` (16 events today, last `TeamRefinementDayVerdictShown = 15`; the catalog in
+`docs/settings/usagedata.md` lists what each one says), and nothing changes in `docs/settings/usagedata.md`.
+
+Rejected candidates:
+
+- **"A chart failed to load"** (fired on the S3 error frame). Rejected: it is client-error telemetry, an
+  operational stream the usage-data catalog is not for. Every catalog event records a deliberate user action
+  (opened, created, ran, connected, voted, switched); this one would record the backend or network failing. To be
+  useful it would also need *which* chart, i.e. the widget key as a property. That is ~30 values that grow with
+  every widget, not the small closed enum the rule allows, and the catalog's own pattern (`Which tab was opened` is
+  one of eleven published addresses) shows how much ceremony a single such property costs.
+- **"A window was changed on a metrics dashboard"**. Rejected: it counts #5914's window controls, not this story,
+  and would be read as evidence this feature is used when it says nothing about the loading state.
+
+## Wave: DEVOPS / [REF] Monitoring contracts (Outcome KPIs → instrument)
+
+No KPI needs runtime instrumentation; each is a test, a manual dev-instance check, or a board review.
+
+| KPI | Instrument | Where it is read |
+|---|---|---|
+| `OUT-6249-never-wrong-window` | Vitest + RTL with the hand-settled deferred fake: old window answers last, widget shows the new data and `ready`; reverse order stays `loading` (AC-1.3, AC-1.5, each DDD-2 path). **Plus** a manual check at DELIVER on the dev instance with DevTools network throttling (Slow 3G), stepping the window twice quickly. | CI (`ci_frontend.yml`); DELIVER checklist |
+| `OUT-6249-visible-within-a-frame` | Vitest: `data-widget-status="loading"` asserted in the render that changes the window, no `await` in between (DESIGN Test seams). | CI (`ci_frontend.yml`) |
+| `OUT-6249-no-layout-shift` | Vitest: widget keys of a category identical before and after data (AC-2.2, `estimationVsCycleTime` the named exception). **Plus** the E2E walking skeleton on demo data, waiting through `waitUntilLoaded()`. | CI (`ci_frontend.yml`; E2E in `ci_verifysqlite.yml` and `ci_verifypostgres.yml`) |
+| `OUT-6249-no-repeat-report` | ADO items (Bug or User Story, project `Lighthouse`) and community channels naming charts that show old or stale data, created in the 60 days after the release that carries slice 01. **Target 0; one is a signal.** Checked by whoever runs `/release` for the first release after that window, in the release-notes pass that already reads the board. | The board |
+
+**`docs/product/kpi-contracts.yaml`: no entries added.** Following the #6055 precedent: that file is the contract
+for outcomes with a *data collection* story, and three of these four are CI-asserted, so their `data_collection`
+would read "none"; the fourth is a board query with no data pipeline behind it, exactly like #6055's KPI-4, which
+was also kept here instead. (#6094 did register CI-asserted KPIs there; the #6055 shape is the one asked to be
+mirrored and the more recent small-story precedent.) Recorded here, where a reader of this feature looks.
+
+## Wave: DEVOPS / [REF] CI/CD pipeline outline
+
+No pipeline change. The stages this feature passes through:
+
+| Stage | Workflow | What it does for this feature |
+|---|---|---|
+| Change detection | `ci_changes.yml` | Flags `Lighthouse.Frontend` (and `Lighthouse.EndToEndTests` in slice 02) |
+| Frontend | `ci_frontend.yml` (`build-frontend` action) | `pnpm test` (Vitest) and `pnpm build` (`tsc -b` + Biome via `prebuild`, which runs `--write`) |
+| E2E | `ci_verifysqlite.yml`, `ci_verifypostgres.yml` | The Playwright suite, **twice**, Chromium only. `ci_e2e.yml` only compiles it |
+| Quality gate | `ci_sonar_gates.yml` | SonarQube Cloud, no new issue of any severity |
+
+**Pre-applied CI risks** (from `docs/ci-learnings.md`):
+
+- **Vitest `Test timed out in 5000ms`** on rendering-heavy files: `BaseMetricsView` and `useMetricsData` tests gain
+  a `QueryClientProvider` and deferred promises. A timeout in an untouched rendering file is that entry, not a
+  flake; give it an explicit `{ timeout }`.
+- **Sonar cognitive complexity** on `WidgetShell`: DESIGN already moves the status branches into a sub-component.
+- **POM getters that read "not rendered yet" as a value**: `waitUntilLoaded()` first, then read (DESIGN E2E impact).
+
+## Wave: DEVOPS / [REF] E2E and screenshot implications
+
+- With slice 02, a visible `widget-shell-<key>` no longer means its data has arrived. The `MetricsPage` POM gets
+  `MetricsWidget.waitUntilLoaded()` (waits for `data-widget-status="ready"`, fails fast on `error`) and a
+  category-wide wait; every spec that treats shell visibility as "loaded" goes through it, in the slice-02 commit.
+- **`@screenshot` must never capture a spinner.** `Screenshots.spec` calls the category-wide wait before every
+  capture. The preconditions of a screenshot run are unchanged (premium licence fixture, `rm` the target PNG first,
+  `@auth` excluded); this story should leave every PNG byte-identical in content, so a regenerated image that
+  differs is a finding.
+- E2E runs in CI twice (SQLite and Postgres), so a race in the wait shows up as a flake on either. Run the
+  touched specs locally before committing them.
+- The walking skeleton stays thin (one flow on demo data): open a Team's metrics, wait for loaded, change the
+  preset, see `loading` then `ready`.
+
+## Wave: DEVOPS / [REF] Mutation testing
+
+`per-feature`, StrykerJS, ≥ 80 %, on the changed frontend files: `widgetStatus.ts` (the pure combinator is the
+prime target: a flipped precedence is AC-1.3's failure), `WidgetShell.tsx`, `useMetricsData.ts`,
+`usePbcOverTime.ts`, `usePercentilesOverTime.ts`, `ThroughputRunChartCard.tsx`, and the changed ranges of
+`BaseMetricsView.tsx`. Per-story config `Lighthouse.Frontend/stryker-6249-frontend.json`, results under
+`docs/feature/story-6249-chart-loading-indicators/mutation/`. Two rules from the ledger: prove the harness with a
+standalone `vitest run --config <stryker vitest config>` first (StrykerJS exits 0 having tested nothing), and run
+it last, on frozen code.
+
+## Wave: DEVOPS / [REF] Environments and coexistence
+
+Machine artifact: `docs/feature/story-6249-chart-loading-indicators/environments.yaml`. Axes: theme (light and
+dark, AC-1.7), owner type (Team and Portfolio, AC-1.7), CI's Playwright browser (Chromium). OS, provider and licence
+are deliberately not axes: the behaviour is browser rendering over a payload the tests supply. Must not break:
+the forecast/backtest Run-button spinners and page-level `LoadingAnimation` (out of scope, D4), `TerminologyContext`
+and `LicenseStatusIcon` queries on the shared `QueryClient` (metrics queries override defaults per query, never the
+client's), and the ~10 E2E specs locating `widget-shell-*`.
+
+## Wave: DEVOPS / [REF] Handoff
+
+**To** `nw-acceptance-designer` (DISTILL): `environments.yaml`, the KPI → instrument table above, and the E2E
+implications. Start DISTILL with the UI sketch walk-through the project rule requires; DESIGN's S1-S4 already pin
+most of it. **Per-wave peer review: skipped**: no new deployment target, CI framework, observability or security
+change.
+
+## Wave: DEVOPS / [REF] Changed Assumptions
+
+**None.** DISCUSS leaned "N/A" on usage data and DEVOPS confirms it with the rejected candidates above.

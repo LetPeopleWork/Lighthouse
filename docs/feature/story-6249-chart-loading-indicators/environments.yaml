@@ -1,0 +1,88 @@
+# environments.yaml, consumed by DISTILL for Environmental Realism.
+#
+# story-6249-chart-loading-indicators. Frontend only: nothing is installed, provisioned, migrated or
+# configured. The entries below are not deployment targets; they are the axes the acceptance scenarios
+# vary over, and only where the loading state can look or behave differently.
+#
+# Left OUT on purpose, because varying them multiplies scenarios without varying the behaviour:
+#   - operating system: browser rendering over a payload the test supplies.
+#   - database provider: no backend change. E2E still runs on both in CI (ci_verifysqlite,
+#     ci_verifypostgres), which is a timing exposure for the "loaded" wait, not a behaviour axis.
+#   - premium vs free licence: every dashboard gets the loading state (DISCUSS Cross-cutting: Premium N/A).
+#     The screenshot run's premium fixture is a precondition below, not an axis.
+
+schema_version: 1
+feature_id: story-6249-chart-loading-indicators
+updated: 2026-10-09
+wave: DEVOPS
+
+target_environments:
+  - name: clean
+    description: >
+      Default instance with demo data. Baseline for every component scenario and the E2E walking skeleton.
+    platform: [linux, macos, windows]
+    preconditions: []
+
+  - name: screenshot-capture
+    description: >
+      The @screenshot E2E run. Its own environment because a capture must never contain a spinner, and
+      because getting its preconditions wrong keeps an old image instead of failing.
+    platform: [linux]
+    preconditions:
+      - "Premium licence fixture present (gitignored; absent in a worktree, import it from the main checkout)"
+      - "Target PNG deleted before the run (a diff under the pixel threshold silently keeps the old file)"
+      - "@auth excluded"
+      - "Every capture preceded by the MetricsPage category-wide waitUntilLoaded (data-widget-status=ready)"
+
+browsers:
+  ci: [chromium]          # playwright.config.ts has one project, Desktop Chrome, 1920x1080
+  component_tests: [jsdom]
+
+themes: [light, dark]      # AC-1.7
+owner_types: [team, portfolio]  # AC-1.7
+
+scenario_axes:
+  refetch_loading_and_race:
+    criteria: [AC-1.1, AC-1.2, AC-1.3, AC-1.4, AC-1.5, AC-1.6]
+    vary_over: [clean]
+    owner_types: [team, portfolio]
+    rationale: "Status is derived in render from query keys; the owner id is part of every key."
+  theme:
+    criteria: [AC-1.7]
+    vary_over: [clean]
+    themes: [light, dark]
+    rationale: "40 % dim, spinner and the S3 warning must read in both themes. One render per theme of each WidgetShell status; not multiplied over every AC."
+  first_load_frames:
+    criteria: [AC-2.1, AC-2.2, AC-2.3, AC-2.4]
+    vary_over: [clean]
+    owner_types: [team, portfolio]
+    rationale: "Widget keys per category before and after data; estimationVsCycleTime is the named exception."
+  e2e_walking_skeleton:
+    criteria: [AC-1.1, AC-2.2]
+    vary_over: [clean]
+    browsers: [chromium]
+    rationale: "One thin flow on demo data: open Team metrics, wait loaded, change preset, see loading then ready. Runs twice in CI (SQLite, Postgres)."
+  screenshots:
+    criteria: [DoD-6]
+    vary_over: [screenshot-capture]
+    rationale: "Output must be unchanged and spinner-free."
+
+coexistence_matrix:
+  - tool: "Forecast and backtest Run-button spinners"
+    must_not_break: true
+    note: "Out of scope (D4); untouched."
+  - tool: "Page-level LoadingAnimation (ten callers)"
+    must_not_break: true
+    note: "Not extended (DESIGN Reuse Analysis)."
+  - tool: "TerminologyContext and LicenseStatusIcon queries on the app QueryClient"
+    must_not_break: true
+    note: "Metrics queries override staleTime/gcTime/retry per query, never on the shared client."
+  - tool: "E2E specs locating widget-shell-* (Screenshots, ForecastFilter, TotalThroughputViewData, BlockedItems, ...)"
+    must_not_break: true
+    note: "Re-pointed through MetricsWidget.waitUntilLoaded() in slice 02."
+
+deployment_assumptions:
+  - "No installation step, no migration, no configuration, no secret."
+  - "Ships inside the existing frontend bundle (standalone release, Docker image, Helm chart)."
+  - "No API change, so an old and a new bundle call the same endpoints: no mixed-version window."
+  - "Rollback: git revert of the feature commits, then the ordinary release path."
