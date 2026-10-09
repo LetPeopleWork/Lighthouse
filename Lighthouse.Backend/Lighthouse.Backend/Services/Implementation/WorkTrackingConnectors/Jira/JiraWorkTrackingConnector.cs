@@ -2061,8 +2061,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             /// <summary>
             /// The phrase one end reads as says which way the parent lies; the name says nothing about it,
-            /// and wins when it is also one of the phrases, because Jira's own Causes type is named the
-            /// word its outward end reads. A phrase both ends share points nowhere either.
+            /// and wins when it is also one of the phrases, because a type may be named the word its outward
+            /// end reads, as Jira's stock Blocks type is ('blocks'). A phrase both ends share points nowhere
+            /// either.
             /// </summary>
             public LinkDirection DirectionReadFrom(string reference)
             {

@@ -167,19 +167,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private static string CounterpartKeyOf(JsonElement link, LinkDirection direction)
         {
-            if (direction == LinkDirection.Inward)
-            {
-                return KeyOf(link, IssueLinkInwardIssue);
-            }
-
+            var inwardEnd = KeyOf(link, IssueLinkInwardIssue);
             var outwardEnd = KeyOf(link, IssueLinkOutwardIssue);
 
-            if (direction == LinkDirection.Outward || outwardEnd.Length > 0)
+            return direction switch
             {
-                return outwardEnd;
-            }
-
-            return KeyOf(link, IssueLinkInwardIssue);
+                LinkDirection.Inward => inwardEnd,
+                LinkDirection.Outward => outwardEnd,
+                _ => outwardEnd.Length > 0 ? outwardEnd : inwardEnd,
+            };
         }
 
         private static string LabelOf(JsonElement link, string labelProperty)

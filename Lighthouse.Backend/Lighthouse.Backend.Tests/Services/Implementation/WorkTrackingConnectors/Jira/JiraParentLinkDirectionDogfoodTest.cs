@@ -16,9 +16,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     /// and the links down to its children.
     ///
     /// A real instance is what settles it, because the whole question is which end of each link Jira
-    /// hands to which issue. A payload written here would be written by the very assumption under test,
-    /// and the type's name being the same word as its outward phrase is something only Jira's own stock
-    /// type shows as it really is.
+    /// hands to which issue. A payload written here would be written by the very assumption under test.
     ///
     /// The top of the chain is left out of the query on purpose: the middle issue has to find its
     /// parent on its own links, not on something fetched alongside it.
@@ -47,7 +45,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string AnotherLeaf = "LGHTHSDMO-8433";
 
         private const string TheChainWithItsTopLeftOut =
-            "key in (LGHTHSDMO-8431, LGHTHSDMO-8432, LGHTHSDMO-8433)";
+            $"key in ({TheMiddleOfTheChain}, {ALeaf}, {AnotherLeaf})";
 
         private string? apiToken;
 

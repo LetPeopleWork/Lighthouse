@@ -389,8 +389,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         }
 
         /// <summary>
-        /// Jira's own Causes type is named the same as the phrase its outward end reads. Somebody who typed
-        /// it meant the type, and reading only the outward ends would strip every child of its parent.
+        /// A type may be named the same as the phrase its outward end reads, as Jira's stock Blocks type is.
+        /// Somebody who typed it meant the type, and reading only the outward ends would strip every child of
+        /// its parent.
         /// </summary>
         [Test]
         public async Task A_name_that_is_also_one_of_the_types_phrases_counts_as_the_name()

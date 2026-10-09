@@ -299,7 +299,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
         private const string AnotherChildOfTheMiddleItem = "LEAF-4";
 
-        /// <summary>Shaped like the type Jira ships, whose name is also the phrase its outward end reads.</summary>
+        /// <summary>Named the word its outward end reads, the way Jira's stock Blocks type is.</summary>
         private static readonly JiraLinkType TheLinkTypeEveryLevelIsDrawnWith = new("Causes", "is caused by", "causes");
 
         private static readonly JiraLinkType TheSameLinkTypeUnderANameNeitherEndReads =
@@ -307,8 +307,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
         /// <summary>
         /// The middle item and its two children, with the top of the hierarchy left out of what the Team
-        /// fetches. The instance defines only this type, because the stock types share its phrases and two
-        /// types answering one reference resolve to neither.
+        /// fetches. The instance defines only this type, because the types the other scenarios use share its
+        /// "causes" phrase, and two types answering one reference resolve to neither.
         /// </summary>
         private void TheHierarchyIsDrawnWithOneLinkTypeAtEveryLevel(JiraLinkType linkType)
         {
