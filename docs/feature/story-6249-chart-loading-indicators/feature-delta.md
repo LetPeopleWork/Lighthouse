@@ -227,3 +227,275 @@ Each slice is about a day. The largest unknown is how a widget learns which fetc
   re-pointed in the slice-02 commit.
 
 ---
+
+Lean DESIGN pass (2026-10-09), Morgan, **PROPOSE mode, maintainer AFK**. The DDDs below are *Proposed, for
+maintainer confirmation*, except where the maintainer's sketch decisions (S1-S4, recorded next) settle them; none
+blocks DISTILL. Grounded in a re-read of `useMetricsData.ts` (747 lines), `BaseMetricsView.tsx` (1998 lines),
+`categoryMetadata.ts`, `WidgetShell.tsx`, `useDateRange.ts`, both over-time hooks and widgets,
+`ThroughputRunChartCard.tsx`, `Dashboard.tsx`, `LoadingAnimation.tsx`, `BaseApiService.ts`, `App.tsx`
+(`QueryClient`), `TeamMetricsView.tsx` and the `MetricsPage` POM. Revised once after peer review (see Review).
+ADR: [ADR-233](../../product/architecture/adr-233-a-dashboard-widget-is-loading-until-its-data-answers-the-selected-window.md).
+
+## Wave: DESIGN / [REF] Maintainer decisions (2026-10-09, sketch review, relayed by the coordinator)
+
+| ID | Decision |
+|----|----------|
+| S1 | On a re-fetch the chart content drops to **40 % opacity** with a **24 px centred MUI `CircularProgress`** over it. The header stays at full strength. |
+| S2 | While a widget is loading, the overlay **blocks pointer events on the chart** (no tooltips, no hover) **and View Data is disabled**. The info popover stays usable. Answers DISCUSS open question 4. |
+| S3 | On a fetch failure the old chart is **removed**, never shown undimmed. The frame shows a **warning icon** and the copy **"This chart couldn't be loaded. Change the dates or reload to try again."** **No Retry button.** |
+| S4 | When there is nothing to dim (first load, or an over-time series reload), a **24 px spinner sits centred at the widget's normal height**. The header shows **title + info only**: no RAG chip or trend until data arrives. |
+
+## Wave: DESIGN / [REF] Decisions
+
+| ID | Decision | Options weighed (rejected → why) | Status |
+|----|----------|----------------------------------|--------|
+| DDD-1 | **Every dashboard fetch becomes a TanStack Query whose key *is* the request** (fetch name + Team/Portfolio id + exactly the dates and choices the call sends). The library returns only the current key's data, so "loading" is derived in render from the selected window, never set: a query is `loading` while it has no data for its current key (`isPending`, or showing the previous key's data as `placeholderData: keepPreviousData`), `error` on `isError`, `ready` otherwise. **One query per service call**; a fetch key's state is the most-behind of its queries, so one failing call marks only its own key (the cycle-time batch's five calls become five queries; the previous-period Work Item Age percentiles call belongs to `workItemAgePercentiles`). `useMetricsData` keeps its value-shaped return and adds `fetchStates` per key. Metrics query options: `staleTime: 0`, `gcTime: 0` (no caching across windows, out of scope in DISCUSS), `retry: false` (a failure shows at once, the reason `TerminologyContext` gives for the same setting), `refetchOnWindowFocus: false`. | (a) Hand-rolled per-key request identity recorded by each effect (this design's first draft) → each identity must list exactly what its effect sends, or a widget spins for ever or shows an old window as current; that rule is enforced only by tests. A query key cannot disagree with the call because the call reads its arguments from it. (b) A `pending` flag set when each effect starts → effects run after commit; when the commit comes from the stepper's timer the browser may paint the old chart undimmed first (`useLayoutEffect`/`flushSync` would close that gap but add a state write per key per window to ~30 keys). (c) Clear every value to `null` on a window change → throws away the chart S1 dims. | Proposed |
+| DDD-2 | **Race guard: the query key, everywhere a window or a surviving choice is involved.** A late answer for an old key lands in the old key's cache entry and is never read. Per path: **Throughput run chart filter** → query keyed (filtered view, owner, window), enabled while the filter is on; **Throughput PBC filter** → its own query keyed on the view (DDD-10); **Cumulative State Time Work Item selection** (L1556-1568) → query keyed (item ids, owner, window), enabled when ids are chosen, so the selection survives a window change and is refetched for it; **Cumulative State Time scope** (L1507-1531) → query keyed (definition id, owner, window), enabled when a scope is chosen, the existing reset still clears the choice; **picker candidates** (L1533-1554) → query keyed (owner, window), enabled once the picker has been opened in this window (replaces `candidatesRequestedRef`); **over-time series** → their per-selection caches become queries keyed (selection, owner, window); **named percentiles scope** (L1380-1446) → **unchanged**: its generation counter already discards stale answers and the window change already resets it. | `AbortController` → no service method accepts a signal (0 matches in `services/Api`); ~40 methods and every test double to change, and it buys bandwidth, not correctness. The `cancelled` cleanup flag in every effect (first draft) → correct, but a second hand-written guard beside a library already wired at the app root. | Proposed |
+| DDD-3 | **`WidgetShell` takes one `status` prop: `'loading' \| 'error' \| 'ready'`, default `'ready'`, plus whether there is content to dim.** It is the only place the state is drawn. It exposes `data-widget-status` on the existing `widget-shell-<key>` element and sets `aria-busy` while loading. | Two booleans (`isLoading`, `hasError`, the `LoadingAnimation` shape) → admits "loading and failed" at once. | Proposed |
+| DDD-4 | **Self-fetching widgets report up through the shell.** The shell provides a status reporter in React context; `PbcOverTimeWidget`, `PercentilesOverTimeWidget` and `ThroughputRunChartCard` call one hook with their own (query-derived) status. **This is the one place a status is *set* rather than derived**: the shell cannot read a child's queries during its own render, so the child writes it in a layout effect, which lands before paint. Outside a shell (unit tests) the hook does nothing. | (a) Lift those queries into `BaseMetricsView` → grows a 2000-line component and needs an "enabled" gate per category; (b) each self-fetching widget draws the overlay itself → two places draw the state, and `data-widget-status` would be wrong for exactly those widgets. | Proposed |
+| DDD-5 | **One precedence rule: `loading` > `error` > `ready`.** A widget is as far behind as its furthest-behind input: the page's commit-pending flag, every fetch key it needs (`getFetchRequirementsForWidget`), and anything its child reports. It shows its error only once nothing it waits on is in flight. During the stepper debounce (`isCommitPending`) every widget is `loading`. | `error` > `loading` → "couldn't load" for a window the user has already stepped away from. | Proposed |
+| DDD-6 | **Drawn over the shell's body box only** (`WidgetShell.tsx` L417), per S1/S4: content at 40 % opacity with a 24 px `CircularProgress` centred over it; with nothing to dim, the spinner alone, centred, the frame at its normal height. Per S3, error replaces the body with a warning icon and the fixed copy. | Extend `LoadingAnimation` → its contract is *replace*, not *overlay*, and ten page-level screens use it (out of scope, D4); MUI `Backdrop` → viewport-positioned by default, so it needs the same absolute box anyway. | **Maintainer (S1, S3, S4)**; mechanism Proposed |
+| DDD-7 | **The dimmed chart takes no pointer input while loading, and View Data is disabled; info stays usable** (S2). Recommended means: the `inert` attribute on the body wrapper (native in React 19), which also keeps keyboard focus out of a chart a mouse cannot reach. | Leave it interactive → View Data lists the old window's Work Items, and the Cumulative State Time bar click (L1570-1592) and PBC point drill would query the new window from the old chart. | **Maintainer (S2)**; `inert` Proposed |
+| DDD-8 | **Header chrome by state.** Loading with old content: full header (S1), View Data disabled (S2). Loading with nothing to dim: title + info only (S4). Error: title + info only, so no RAG chip, trend or View Data describes a chart that is no longer there. | Keep RAG and trend on error → a chip about the previous window next to "couldn't be loaded", the stale signal D6 forbids. | S1/S2/S4 maintainer; error case Proposed |
+| DDD-9 | **Slice 02: the frame decides its presence from the widget's placement, not its data.** At the wrap site (L1942-1959) an item is kept when its node exists *or* its status is not `ready`; its children are `null` until every fetch key it needs has had data at least once (so a first load is S4's spinner, not a dimmed `0`). The three overview widgets lose their own `CircularProgress` and get non-null props, built `x ? <Widget/> : null` like every other node. | Per-widget "if null render spinner" in each node → 25 copies of one rule. | Proposed |
+| DDD-10 | **Throughput PBC filter becomes a fetch key of its own** (`throughputPbc`, its query keyed on the raw/filtered view). `refetchThroughputPbc` is replaced by a view setter. | Leave it in the `pbcCharts` group → toggling the filter would dim Cycle Time and Arrivals PBCs too; keep the imperative callback → nothing stops its old-window answer landing after a window change. | Proposed |
+| DDD-11 | **A fetch key the service cannot answer is `ready`, decided by the same predicate that disables its query.** One predicate per key, the ones the effects use today: `providesSleRisk` (`sleRisk`), `isProjectMetricsService` (the four `featureSize*` keys), `isTeamMetricsService` (`featuresWorkedOnInfo`); flow efficiency keeps choosing its Team or Portfolio call by `isTeamOwnedMetricsService`, which never disables it. `blackoutPeriods` failing is `ready` with no periods (optional today). | Leave them `pending` → the Portfolio `wipOverview` (which lists `sleRisk`) spins for ever. | Proposed |
+| DDD-12 | **No client timeout in this story.** A request that never returns leaves the widget loading, which is the truth. | An axios timeout → changes every API call in the app, and the right value differs per endpoint. | Proposed; see O1 |
+
+## Wave: DESIGN / [REF] Component decomposition
+
+All under `Lighthouse.Frontend/src/`. No backend, no new dependency.
+
+| Path | Change | Slice |
+|------|--------|-------|
+| `pages/Common/MetricsView/widgetStatus.ts` | **NEW.** `WidgetStatus` type; the pure precedence combinator (DDD-5); `widgetStatusFor(widgetKey, keyStates, isCommitPending)` and `widgetHasData(widgetKey, keyStates)` over `getFetchRequirementsForWidget`; the query-result → status mapping (DDD-1, DDD-11); the reporter context and `useReportWidgetStatus` hook (DDD-4). A separate module so `WidgetShell.tsx` keeps exporting only a component. | 01 |
+| `pages/Common/MetricsView/WidgetShell.tsx` | EXTEND. `status` prop, reporter provider, S1/S4 overlay or lone spinner, S3 error body, `data-widget-status`, `aria-busy`, `inert`, View Data disabled, header chrome by state (DDD-3, 6, 7, 8). Keep the status branches in a small sub-component so the render body stays under Sonar's cognitive-complexity limit. | 01 |
+| `hooks/useMetricsData.ts` | EXTEND. Each effect becomes a `useQuery` (one per service call, `enabled` = needed and applicable, metrics options of DDD-1, `keepPreviousData`); returns the same values plus `fetchStates` per key; failures surface as `error` instead of only `console.error`; `throughputPbc` query + view setter replace `refetchThroughputPbc` (DDD-10). | 01 |
+| `pages/Common/MetricsView/categoryMetadata.ts` | EXTEND. New fetch key `throughputPbc`; `throughputPbc` widget requires it; `pbcCharts` keeps Cycle Time and Arrivals PBCs. | 01 |
+| `pages/Common/MetricsView/BaseMetricsView.tsx` | EXTEND. Pass `status` at the wrap site; Cumulative State Time scope, Work Item selection and candidates become queries per DDD-2 (L1486-1568); throughput PBC toggle calls the view setter. Slice 02: wrap-site presence and null children (DDD-9); `featureSize` node no longer gated on `length > 0`; overview nodes built `x ? … : null`. | 01, 02 |
+| `pages/Common/MetricsView/usePbcOverTime.ts`, `usePercentilesOverTime.ts` | EXTEND. The hand-kept per-selection cache becomes a query keyed (selection, owner, window); return `status`. | 01 |
+| `pages/Common/MetricsView/PbcOverTimeWidget.tsx`, `PercentilesOverTimeWidget.tsx` | EXTEND. Report `status`. | 01 |
+| `pages/Common/MetricsView/ThroughputRunChartCard.tsx` | EXTEND. Filtered fetch becomes a query keyed (view, owner, window), enabled while filtered; reports its status. Fixes today's bug where the old window's filtered series stays up after a window change. | 01 |
+| `pages/Common/MetricsView/FlowEfficiencyOverviewWidget.tsx`, `PredictabilityScoreOverviewWidget.tsx`, `components/Common/Charts/TotalWorkItemAgeWidget.tsx` | EXTEND. Drop the own spinner; props non-null. | 02 |
+| Tests rendering `useMetricsData`, `BaseMetricsView`, the over-time widgets or `ThroughputRunChartCard` | EXTEND. Wrap in a `QueryClientProvider` with a fresh client per test (`retry: false`). | 01 |
+| `Lighthouse.EndToEndTests/tests/models/metrics/MetricsPage.ts` | EXTEND. `MetricsWidget.waitUntilLoaded()` (shell's `data-widget-status="ready"`), a category-wide wait, specs re-pointed. | 02 |
+
+Slice 01 is large for a day. A seam that keeps every step shippable, for DELIVER's roadmap: (1) `widgetStatus` +
+`WidgetShell` status with the page passing it from `useMetricsData` queries; (2) the self-fetching widgets and the
+throughput PBC key; (3) the Cumulative State Time paths. The slice boundary is unchanged.
+
+## Wave: DESIGN / [REF] Driving ports
+
+Unchanged: the Team and Portfolio metrics dashboards (presets, date picker, stepper, category selector, the
+in-widget filter and scope controls). Internal contracts this story adds, both consumed only inside `MetricsView`:
+`WidgetShell`'s `status` prop and `useReportWidgetStatus(status)`.
+
+## Wave: DESIGN / [REF] Driven ports
+
+`IMetricsService<T>` / `ITeamMetricsService` / `IProjectMetricsService` (`services/Api/MetricsService.ts`):
+**unchanged**, no `AbortSignal`. The backend metrics endpoints: unchanged. No external integration, so no
+contract-test annotation.
+
+## Wave: DESIGN / [REF] Technology choices
+
+No new dependency. **TanStack Query** (`@tanstack/react-query` ^5, MIT) is already installed, its
+`QueryClient` provided at the app root (`App.tsx` L70-77) and used by `TerminologyContext` and
+`LicenseStatusIcon`; the metrics queries override its defaults (5 min stale, 30 min cache, 2 retries) per DDD-1.
+React 19.3 (the repo's real version; `CLAUDE.md` still says 18) supplies the native `inert` attribute. MUI 9
+`CircularProgress` and a warning icon from `@mui/icons-material`. Vitest + RTL; Playwright.
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Existing | Verdict | Contract shape / note |
+|----------|---------|-----------------------|
+| `WidgetShell` | **EXTEND** | The one frame (L1948). Gains `status`; bounded change: body wrapper and header chrome only. |
+| `useMetricsData` | **EXTEND** | Internals move from effects to queries; its value-shaped return stays, plus `fetchStates`, so `BaseMetricsView` keeps reading the same names. |
+| TanStack Query (`App.tsx` `QueryClient`) | **REUSE** | Installed and provided app-wide; its query key is the request identity and its observer returns only the current key's data, which is the whole of DDD-1 and DDD-2. |
+| `getFetchRequirementsForWidget` | **REUSE** as is | Already "what a widget needs to render completely"; exactly the input set for a widget's status. |
+| Generation counter (`BaseMetricsView` L1380-1446) | **REUSE** unchanged | Named percentiles scope only; already correct. |
+| `useDateRange.isCommitPending` | **REUSE** | Feeds DDD-5 for the debounce. |
+| `LoadingAnimation` | **NOT EXTENDED** | Replace-not-overlay contract, ten page-level callers out of scope (D4). Its primitive (`CircularProgress`) is reused. |
+| `FeatureSizeScatterPlotChart` empty state (L414/L805) | **REUSE** | Lets the `featureSize` node drop its `length > 0` gate (slice 02). |
+| `widgetStatus.ts` | **CREATE NEW** | No existing home for a pure status combinator plus a reporter context: `categoryMetadata.ts` is placement data, `WidgetShell.tsx` should export only its component, and `BaseMetricsView` must not grow. Pure functions: return-only. |
+
+## Wave: DESIGN / [REF] C4
+
+```mermaid
+C4Container
+  title Container — story 6249 (unchanged containers; the change is inside the SPA)
+  Person(lead, "Delivery lead / flow coach")
+  Container(spa, "Lighthouse web app", "React 19 + MUI", "Team and Portfolio metrics dashboards")
+  Container(api, "Lighthouse backend", "ASP.NET Core", "Metrics endpoints")
+  Rel(lead, spa, "Changes the window on")
+  Rel(spa, api, "Requests one window's metrics from")
+```
+
+```mermaid
+C4Component
+  title Component — how a widget learns it is behind the window
+  Container_Boundary(mv, "MetricsView") {
+    Component(view, "BaseMetricsView", "React", "Builds widget nodes and wraps each in a shell")
+    Component(range, "useDateRange", "hook", "Committed window + commit-pending flag")
+    Component(data, "useMetricsData", "hook over TanStack Query", "Values + per-key fetch state")
+    Component(status, "widgetStatus", "pure + context", "Combines inputs into one widget status")
+    Component(shell, "WidgetShell", "React", "Draws ready / dimmed + spinner / could-not-load")
+    Component(self, "Over-time widgets, ThroughputRunChartCard", "React + TanStack Query", "Own keyed queries")
+  }
+  Component_Ext(svc, "MetricsService", "axios", "No change")
+  Rel(range, view, "Gives the committed window and pending flag to")
+  Rel(view, data, "Asks for the selected window through")
+  Rel(data, svc, "Fetches each call through")
+  Rel(view, status, "Derives each widget's status with")
+  Rel(view, shell, "Passes the status to")
+  Rel(self, shell, "Reports its own status to")
+  Rel(self, svc, "Fetches its own series through")
+```
+
+## Wave: DESIGN / [REF] Answers to the DISCUSS open questions
+
+1. **How a widget knows it is loading.** One rule for all three sources: *a widget is loading while any input it
+   shows has no data for the request the current window would send* (DDD-1). All three sources are keyed
+   queries; `useMetricsData` exposes them as `fetchStates`, mapped to widgets through
+   `getFetchRequirementsForWidget`; the over-time widgets and `ThroughputRunChartCard` report theirs to the shell
+   (DDD-4). D5's debounce is covered by `isCommitPending`, D6 by `isError` and the precedence rule (DDD-5).
+2. **Race guard.** The query key (DDD-2), decided per path there. The services take no `AbortSignal`.
+3. **Widgets whose presence depends on data** (from `buildWidgetNodes`, `BaseMetricsView.tsx` L998-1232):
+   - `estimationVsCycleTime` L1145-1152 — hidden when the response says `NotConfigured` (and the chart itself
+     returns `null` then, `EstimationVsCycleTimeChart.tsx` L150). **The only real exception.** Slice 02: on first
+     load its frame shows the S4 spinner, then leaves if the answer is `NotConfigured`. On a later window change
+     the previous answer is kept as placeholder, so it does not flicker. Alternative: keep the frame and say
+     "not configured", as Flow Efficiency does (O2).
+   - `featureSize` L1153-1160 — hidden while the Feature list is empty. That gate was only a loading proxy: the
+     chart has its own "No data available" (L414/L805). **Slice 02 drops the gate**, so a Portfolio with no
+     Features in the window shows that empty state instead of nothing (O3).
+   - `featuresWorkedOnOverview` L1019-1025 — gated on the `featuresInProgress` prop, which a Team always passes
+     (`[]` before its own fetch, `TeamMetricsView.tsx` L35/L143), and the widget is Team-only. Not an exception.
+   - Loading-only nulls, which become loading frames in slice 02: `throughput` L1058, `wipOverTime` L1107,
+     `totalWorkItemAgeOverTime` L1116, `stacked` L1123, `arrivals` L1161, `totalThroughput` L1194,
+     `totalArrivals` L1197, `featureSizePercentiles` L1200, `stateTimeCumulative` L1203, and the six PBC nodes
+     via `buildPbcNode` L821.
+4. **Interactivity while loading.** Answered by the maintainer (S2): no pointer input on the chart, View Data
+   disabled, info usable (DDD-7).
+
+## Wave: DESIGN / [REF] Test seams
+
+- **Out-of-order responses, deterministically:** the fake `IMetricsService` returns a promise the test holds
+  and settles by hand, one per call. Render, change the window, settle the *new* window's promise, then the *old*
+  one, and assert the widget shows the new data and `ready`; then the reverse order, asserting it stays
+  `loading` until the new answer. `tsconfig.app.json` targets ES2021 (`Promise.withResolvers` is ES2024), so a
+  five-line deferred helper in the test utilities. Every render under a fresh `QueryClient` (`retry: false`).
+- **Partial failure of a former batch:** reject one of the five cycle-time calls; assert only its key goes
+  `error` and the other four land `ready` (DDD-1, one query per call).
+- **Each click-started path of DDD-2:** change the window while the scope, selection, candidates or filtered
+  fetch is in flight, settle the old answer last, assert it is not shown.
+- `widgetStatus.ts`: table tests of the combinator, `widgetStatusFor` and the inapplicable-key rule (pure; the
+  mutation target).
+- `WidgetShell`: per status and content-to-dim, assert `data-widget-status`, the S1 dim and spinner, the S4 lone
+  spinner and title + info header, `inert` body, disabled View Data, the S3 icon and exact copy; a test child
+  calling `useReportWidgetStatus` for DDD-4/5.
+- `BaseMetricsView`: one test per AC with the deferred fake. KPI `OUT-6249-visible-within-a-frame` is tested as
+  *the status is `loading` in the render that changes the window* (no `await` in between); that no stale frame
+  is painted follows from render-derivation and is argued, not tested.
+
+## Wave: DESIGN / [REF] E2E impact (slice 02)
+
+`widget-shell-<key>` carries `data-widget-status`. `MetricsWidget.waitUntilLoaded()` expects it to be `ready`
+(and fails fast on `error`); a `MetricsPage` helper waits for every widget of the open category.
+`Screenshots.spec` calls it before every capture. The specs that today treat a visible `widget-shell-*` as
+"loaded" go through it (the `ci-learnings` rule on POM getters that read "not rendered yet" as a value applies:
+wait for `ready` first, then read). Status is derived in render, so a fresh shell is never briefly `ready`
+before its fetch starts. The S3 copy is pinned in component tests, not E2E.
+
+## Wave: DESIGN / [REF] Architectural enforcement
+
+- `categoryMetadata.test.ts` gains the invariant that, for each owner type and category, every fetch key any of
+  the category's widgets requires is in `getFetchKeysForCategories([category], ownerType)`; a widget whose key is
+  never enabled would otherwise spin for ever. It keeps pinning that the only widgets with an empty requirements
+  entry are the ones that report their own status.
+- The applicability predicate per fetch key lives in one `Record<MetricsFetchKey, …>` used by both `enabled` and
+  the status mapping (DDD-11), so a new key cannot compile without one and the two cannot disagree.
+- Earned Trust, as it applies to a browser: the backend may answer out of order, fail, fail for one call of
+  several, be asked for a key the service cannot serve, or never answer. The first four are component tests
+  above; the last is O1.
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+- DISCUSS D1: *"The header (info, View Data, trend, RAG chip, title) stays as it is."* → It stays at full
+  strength while old content is dimmed, but **View Data is disabled** (S2). With nothing to dim, and on failure,
+  the header shows **title + info only** (S4, DDD-8).
+- DISCUSS D6: *"The exact copy and the retry affordance (if any) are pinned in the DISTILL sketch walk-through."*
+  → Pinned already by S3: warning icon, "This chart couldn't be loaded. Change the dates or reload to try again.",
+  no Retry.
+- DISCUSS "Code reality": *"`ThroughputRunChartCard` is inside it, though it does its own filtered fetch."* →
+  Also: its filtered series is never refetched on a window change, so with the filter on it shows the old
+  window today. Fixed in slice 01 (DDD-2).
+- DISCUSS "Code reality": *"…and so do two scope fetches inside `BaseMetricsView` (generation counter)."* →
+  True of the two named-percentiles fetches only. The **Cumulative State Time** scope fetch (L1507-1525) has no
+  guard, and its Work Item selection and candidates are never reset on a window change (the reset effect at L1488
+  runs once). Brought under DDD-2 in slice 01; the selection is kept and refetched for the new window.
+- DISCUSS Out of Scope: *"Making fetches faster, batching them, or caching across windows."* → Still honoured:
+  the metrics queries set `gcTime: 0` and `staleTime: 0`, so moving TanStack Query under them changes no fetch
+  timing or caching a user could notice.
+- Project `CLAUDE.md` says React 18; the frontend is on **React 19.3** (which is what makes `inert` free).
+
+## Wave: DESIGN / [REF] Review
+
+Peer review (solution-architect-reviewer, iteration 1): **conditionally approved**, 0 critical, 3 high. All
+three highs addressed: (1) the installed TanStack Query was not weighed → weighed, and adopted (DDD-1/2, ADR-233);
+(2) batched effects had no failure-attribution rule → one query per call, partial-failure test; (3) click-started
+reset paths said "keeps or gains" → decided per path in DDD-2 with a test each. Mediums: fetch-key reachability
+invariant added (enforcement); the reporter named as the one *set* path (DDD-4); slice-01 step seam proposed.
+Lows: one predicate per key (DDD-11); KPI test reworded; the layout-effect pending-flag variant recorded under
+DDD-1. Not re-reviewed (iteration 2 not run).
+
+## Wave: DESIGN / [REF] Open questions for DISTILL / DELIVER
+
+- **O1 (maintainer):** a request that never returns keeps its widget loading indefinitely (DDD-12). Accept, or
+  add a per-request timeout in a follow-up?
+- **O2 (maintainer / DISTILL):** `estimationVsCycleTime` frame that appears then leaves on first load when
+  `NotConfigured`, or a "not configured" frame like Flow Efficiency's?
+- **O3 (maintainer / DISTILL):** `featureSize` empty state now visible on a Portfolio with no Features in the
+  window.
+- **O4 (maintainer):** confirm adopting TanStack Query for the metrics fetches (DDD-1/2). It reverses the first
+  draft after review; the fallback is the hand-rolled per-key identity with a `cancelled` cleanup, recorded in
+  ADR-233's alternatives.
+- **O5 (out of scope, noted):** the named-percentiles scope shows the default percentiles under a named
+  selection while its fetch is in flight, and Features Being Worked On shows `0` until `TeamMetricsView`'s own
+  fetch lands. Neither is a window change; candidates for a follow-up.
+- **O6 (DELIVER):** a Team/Portfolio change that reuses the mounted view now dims the previous owner's charts
+  (the key includes the id). Confirm on the dev instance that routes remount instead.
+
+## Wave: DESIGN / [REF] Wave Decisions Summary
+
+- **Maintainer decisions:** S1 40 % dim + 24 px spinner, header full strength; S2 no pointer input on the chart,
+  View Data disabled, info usable; S3 chart removed, warning icon + fixed copy, no Retry; S4 lone 24 px spinner
+  at normal height, header title + info only.
+- **Key decisions (Proposed):** DDD-1 every dashboard fetch a TanStack Query keyed by its request, one per call,
+  status derived in render; DDD-2 the query key as race guard, decided per path; DDD-3/4 one `status` union on
+  `WidgetShell`, self-fetching widgets report into it; DDD-5 `loading` > `error` > `ready`; DDD-6/7/8 drawing,
+  `inert`, header chrome by state; DDD-9 slice 02 frames by placement; DDD-10 `throughputPbc` fetch key; DDD-11
+  inapplicable keys `ready` by one predicate; DDD-12 no timeout.
+- **One new module** (`widgetStatus.ts`), everything else EXTEND. No backend, API, new dependency or RBAC change.
+- **ADR-233** (Proposed). `brief.md` gains a short section; `ARCHITECTURE.md` unchanged (it does not describe
+  widget loading).
+- **Upstream changes:** D1 and D6 refined (Changed Assumptions); two pre-existing stale-window bugs folded into
+  slice 01.
+
+---
+
+## Wave: DESIGN / [REF] AFK defaults taken on the open questions (2026-10-09)
+
+The maintainer is away (AFK mode). Each default below either follows from a DISCUSS decision the maintainer already
+made, or is an engineering choice that doesn't change what a user sees. All are open to revisit at the hold.
+
+- **O1 → accepted.** No client timeout (DDD-12). A request that never returns keeps its widget loading, which is
+  the truth. A timeout would be a follow-up.
+- **O2 → the frame appears, then leaves when the answer is `NotConfigured`.** This is the exception AC-2.2
+  already carves out. A new "not configured" frame would add a widget that instances don't show today, which is
+  a product change this story didn't ask for.
+- **O3 → accepted.** The `featureSize` empty state shows on a Portfolio with no Features in the window. AC-2.2
+  (no widget removed after its data arrives) implies it.
+- **O4 → TanStack Query adopted** for the metrics fetches (DDD-1/2). It's already installed and wired at the app
+  root. Each query overrides the app defaults: no caching across windows, no retries. The hand-rolled fallback
+  stays recorded in ADR-233.
+- **O6 → checked in DELIVER** on the dev instance, as written.

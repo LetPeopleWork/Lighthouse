@@ -9686,3 +9686,42 @@ JSON; one `smoke-integration` `--pretty` grep per new selection against the demo
 ### C4
 
 L1 and L2 are in the feature delta. No Lighthouse container changes, so `c4-diagrams.md` is unchanged.
+
+---
+
+## Application Architecture — story-6249-chart-loading-indicators
+
+Feature: story-6249-chart-loading-indicators (ADO User Story #6249): every widget on the Team and Portfolio
+metrics dashboards shows plainly when it is not yet showing the selected window (old chart dimmed under a
+spinner, or a spinner in an empty frame on first load), returns only with that window's data, and says so when its
+fetch fails. Frontend only. DESIGN 2026-10-09, PROPOSE (maintainer AFK). Full design:
+`docs/feature/story-6249-chart-loading-indicators/feature-delta.md` → "Wave: DESIGN / …" (DDD-1…DDD-12).
+
+Pattern unchanged: hooks own client state, `WidgetShell` is the one frame, services unchanged (no `AbortSignal`).
+
+### Key invariants introduced
+
+- **I1 — loading is derived, not set.** Every dashboard fetch is a TanStack Query (already installed) keyed by
+  exactly the request it sends, one per service call; a key is `loading` while it has no data for the current
+  request, so the first frame after a window change is already dimmed. Metrics queries neither cache across
+  windows nor retry. (ADR-233)
+- **I2 — a superseded response is never read.** It lands under the old key; click-started choices that survive a
+  window change (filters, Work Item selection) are part of their query's key. (ADR-233)
+- **I3 — one status per widget, one place it is drawn.** `WidgetShell`'s `status` (`loading` > `error` > `ready`)
+  combines the commit-pending flag, the widget's fetch keys and whatever a self-fetching child reports;
+  `data-widget-status` is the E2E "loaded" signal. Visuals per the maintainer's sketch decisions: 40 % dim under
+  a 24 px spinner, no pointer input and View Data disabled while loading, a fixed could-not-load message with no
+  Retry.
+
+### Component decomposition (headline)
+
+NEW `pages/Common/MetricsView/widgetStatus.ts` (pure combinator + reporter context). EXTEND `WidgetShell`,
+`hooks/useMetricsData` (effects → queries, `fetchStates`, new `throughputPbc` key), `categoryMetadata`, `BaseMetricsView`,
+both over-time hooks and widgets, `ThroughputRunChartCard`; slice 02 the three overview widgets and the
+`MetricsPage` POM.
+
+### ADR References (this feature)
+
+- [ADR-233](./adr-233-a-dashboard-widget-is-loading-until-its-data-answers-the-selected-window.md) — loading
+  derived from the request each answer was for. **Proposed.**
+- Cross-refs: ADR-189 (the metrics window hook whose commit-pending flag feeds the status).
