@@ -76,7 +76,7 @@ const everyPlacedWidget = [
 ];
 
 describe("a widget's status, from the things it waits on", () => {
-	it.skip.each<[readonly WidgetStatus[], WidgetStatus]>([
+	it.each<[readonly WidgetStatus[], WidgetStatus]>([
 		[[], "ready"],
 		[["ready", "ready"], "ready"],
 		[["ready", "error"], "error"],
@@ -88,7 +88,7 @@ describe("a widget's status, from the things it waits on", () => {
 		expect(combineWidgetStatuses(statuses)).toBe(expected);
 	});
 
-	it.skip.each<[readonly WidgetStatus[], WidgetStatus]>([
+	it.each<[readonly WidgetStatus[], WidgetStatus]>([
 		[["loading", "error", "ready"], "error"],
 		[["loading", "ready", "ready"], "loading"],
 	])(
@@ -102,7 +102,7 @@ describe("a widget's status, from the things it waits on", () => {
 });
 
 describe("which widgets are behind the selected window", () => {
-	it.skip.each(everyPlacedWidget)(
+	it.each(everyPlacedWidget)(
 		"the chart placed as %s is loading while a stepped window is still waiting to be committed",
 		(widgetKey) => {
 			const everythingAnswered = allAnswered([
@@ -119,7 +119,7 @@ describe("which widgets are behind the selected window", () => {
 		},
 	);
 
-	it.skip("a chart is loading while any one of its inputs has not answered the selected window", () => {
+	it("a chart is loading while any one of its inputs has not answered the selected window", () => {
 		const states: FetchKeyStates = {
 			arrivals: answered,
 			throughput: behindWithOldData,
@@ -128,7 +128,7 @@ describe("which widgets are behind the selected window", () => {
 		expect(widgetStatusFor("arrivals", states, false)).toBe("loading");
 	});
 
-	it.skip("a chart says it could not be loaded as soon as one of its inputs fails, without waiting for the rest", () => {
+	it("a chart says it could not be loaded as soon as one of its inputs fails, without waiting for the rest", () => {
 		const oneFailedOneOnItsWay: FetchKeyStates = {
 			cycleTimePercentiles: failed,
 			cycleTimeData: behindWithOldData,
@@ -140,7 +140,7 @@ describe("which widgets are behind the selected window", () => {
 		);
 	});
 
-	it.skip("a chart whose input failed is loading again while a stepped window waits to be committed", () => {
+	it("a chart whose input failed is loading again while a stepped window waits to be committed", () => {
 		const oneFailed: FetchKeyStates = {
 			cycleTimePercentiles: failed,
 			cycleTimeData: answered,
@@ -150,7 +150,7 @@ describe("which widgets are behind the selected window", () => {
 		expect(widgetStatusFor("cycleScatter", oneFailed, true)).toBe("loading");
 	});
 
-	it.skip("a failure in something a chart does not show leaves that chart ready", () => {
+	it("a failure in something a chart does not show leaves that chart ready", () => {
 		const cycleTimePercentilesFailed: FetchKeyStates = {
 			cycleTimePercentiles: failed,
 			workItemAgePercentiles: answered,
@@ -166,7 +166,7 @@ describe("which widgets are behind the selected window", () => {
 		).toBe("ready");
 	});
 
-	it.skip.each([
+	it.each([
 		["Percentiles Over Time", "percentilesOverTime"],
 		["PBC Over Time", "pbcOverTime"],
 	])(
@@ -194,28 +194,28 @@ describe("Cumulative Time per State narrowed by the reader", () => {
 	const SELECTION = "cumulativeStateTimeSelection";
 	const STRETCH = "cumulativeStateTimeScope";
 
-	it.skip.each<
-		[string, string, WidgetStatus, MetricsFetchKey, () => FetchKeyState]
-	>([
+	it.each<[string, string, WidgetStatus, MetricsFetchKey, () => FetchKeyState]>(
 		[
-			"Work Items",
-			"still being counted",
-			"loading",
-			SELECTION,
-			() => behindWithOldData,
+			[
+				"Work Items",
+				"still being counted",
+				"loading",
+				SELECTION,
+				() => behindWithOldData,
+			],
+			["Work Items", "failed", "error", SELECTION, () => failed],
+			["Work Items", "not made", "ready", SELECTION, notChosen],
+			[
+				"stretch",
+				"still being counted",
+				"loading",
+				STRETCH,
+				() => behindWithOldData,
+			],
+			["stretch", "failed", "error", STRETCH, () => failed],
+			["stretch", "not made", "ready", STRETCH, notChosen],
 		],
-		["Work Items", "failed", "error", SELECTION, () => failed],
-		["Work Items", "not made", "ready", SELECTION, notChosen],
-		[
-			"stretch",
-			"still being counted",
-			"loading",
-			STRETCH,
-			() => behindWithOldData,
-		],
-		["stretch", "failed", "error", STRETCH, () => failed],
-		["stretch", "not made", "ready", STRETCH, notChosen],
-	])(
+	)(
 		"with its totals answered and the %s choice %s, it reads %s",
 		(_narrowing, _state, expected, key, stateOf) => {
 			expect(
@@ -235,7 +235,7 @@ const everyFetchKeyThatCanFail = getMetricsFetchKeys().filter(
 );
 
 describe("every request a chart waits on", () => {
-	it.skip.each(everyFetchKeyThatCanFail)(
+	it.each(everyFetchKeyThatCanFail)(
 		"a failed %s ends every chart that shows it in could-not-load, and nothing else",
 		(failedKey) => {
 			const chartsThatShowIt = everyPlacedWidget.filter((widgetKey) =>
@@ -257,7 +257,7 @@ describe("every request a chart waits on", () => {
 });
 
 describe("whether a chart has an older picture to dim", () => {
-	it.skip("has none on a first visit, before anything it shows has answered", () => {
+	it("has none on a first visit, before anything it shows has answered", () => {
 		expect(
 			widgetHasData("arrivals", {
 				arrivals: neverAnswered,
@@ -266,7 +266,7 @@ describe("whether a chart has an older picture to dim", () => {
 		).toBe(false);
 	});
 
-	it.skip("has one once everything it shows has answered some window, even while it is behind again", () => {
+	it("has one once everything it shows has answered some window, even while it is behind again", () => {
 		expect(
 			widgetHasData("arrivals", {
 				arrivals: behindWithOldData,
@@ -275,7 +275,7 @@ describe("whether a chart has an older picture to dim", () => {
 		).toBe(true);
 	});
 
-	it.skip("has none while any one of its inputs has never answered", () => {
+	it("has none while any one of its inputs has never answered", () => {
 		expect(
 			widgetHasData("arrivals", {
 				arrivals: answered,

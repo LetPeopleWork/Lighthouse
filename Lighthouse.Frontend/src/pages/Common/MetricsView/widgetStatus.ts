@@ -1,4 +1,7 @@
-import type { MetricsFetchKey } from "./categoryMetadata";
+import {
+	getFetchRequirementsForWidget,
+	type MetricsFetchKey,
+} from "./categoryMetadata";
 
 const NOT_YET_IMPLEMENTED = "Not yet implemented -- RED scaffold";
 
@@ -19,28 +22,47 @@ export type QueryProgress = {
 	readonly isPlaceholderData: boolean;
 };
 
+const notAskedFor: FetchKeyState = { status: "ready", hasData: true };
+
 export function combineWidgetStatuses(
-	_statuses: readonly WidgetStatus[],
+	statuses: readonly WidgetStatus[],
 ): WidgetStatus {
-	throw new Error(NOT_YET_IMPLEMENTED);
+	if (statuses.includes("error")) return "error";
+	if (statuses.includes("loading")) return "loading";
+	return "ready";
 }
 
+function inputsOf(widgetKey: string): readonly MetricsFetchKey[] {
+	return getFetchRequirementsForWidget(widgetKey) ?? [];
+}
+
+// A key with no entry was never asked for, so it holds nothing back.
+function stateOf(
+	key: MetricsFetchKey,
+	keyStates: FetchKeyStates,
+): FetchKeyState {
+	return keyStates[key] ?? notAskedFor;
+}
+
+// While a stepped window waits to be committed, everything the page fetched answers a window the
+// reader is leaving, a failure included, so the chart reads as loading whatever its inputs say.
 export function widgetStatusFor(
-	_widgetKey: string,
-	_keyStates: FetchKeyStates,
-	_isCommitPending: boolean,
+	widgetKey: string,
+	keyStates: FetchKeyStates,
+	isCommitPending: boolean,
 ): WidgetStatus {
-	throw new Error(NOT_YET_IMPLEMENTED);
+	if (isCommitPending) return "loading";
+	return combineWidgetStatuses(
+		inputsOf(widgetKey).map((key) => stateOf(key, keyStates).status),
+	);
 }
 
 export function widgetHasData(
-	_widgetKey: string,
-	_keyStates: FetchKeyStates,
+	widgetKey: string,
+	keyStates: FetchKeyStates,
 ): boolean {
-	throw new Error(NOT_YET_IMPLEMENTED);
+	return inputsOf(widgetKey).every((key) => stateOf(key, keyStates).hasData);
 }
-
-const notAskedFor: FetchKeyState = { status: "ready", hasData: true };
 
 function isBehind(query: QueryProgress): boolean {
 	return query.isPending || query.isPlaceholderData;
@@ -50,10 +72,14 @@ function showsAnAnswer(query: QueryProgress): boolean {
 	return !query.isPending && !query.isError;
 }
 
-function statusOf(queries: readonly QueryProgress[]): WidgetStatus {
-	if (queries.some((query) => query.isError)) return "error";
-	if (queries.some(isBehind)) return "loading";
+function statusOfOne(query: QueryProgress): WidgetStatus {
+	if (query.isError) return "error";
+	if (isBehind(query)) return "loading";
 	return "ready";
+}
+
+function statusOf(queries: readonly QueryProgress[]): WidgetStatus {
+	return combineWidgetStatuses(queries.map(statusOfOne));
 }
 
 // A query on placeholder data is still loading: it shows the previous window's answer while the
