@@ -481,7 +481,7 @@ describe.each<[Owner, Theme]>([
 ])(
 	"a %s's charts in the %s theme after the reader picks another window",
 	(owner, theme) => {
-		it.skip("every chart behind the new window dims at once, keeping its older picture until its own data arrives", async () => {
+		it("every chart behind the new window dims at once, keeping its older picture until its own data arrives", async () => {
 			openTheDashboard(owner, "flow-metrics", { theme });
 			await everythingHasLoaded();
 			expectThroughputToRead(30);
@@ -496,7 +496,7 @@ describe.each<[Owner, Theme]>([
 			expectThroughputToRead(30);
 		});
 
-		it.skip("each chart comes back on its own, as soon as its own data for the new window arrives", async () => {
+		it("each chart comes back on its own, as soon as its own data for the new window arrives", async () => {
 			openTheDashboard(owner, "flow-metrics", { theme });
 			await everythingHasLoaded();
 			theReaderPicks("Last 90 days");
@@ -511,7 +511,7 @@ describe.each<[Owner, Theme]>([
 );
 
 describe("a team's charts while the window is changing", () => {
-	it.skip("picking an earlier start date dims the charts until the new window arrives", async () => {
+	it("picking an earlier start date dims the charts until the new window arrives", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 
@@ -524,7 +524,7 @@ describe("a team's charts while the window is changing", () => {
 		expect(statusOf("throughput")).toBe("ready");
 	});
 
-	it.skip("stepping the window back dims the charts at once, before the step is even asked for", async () => {
+	it("stepping the window back dims the charts at once, before the step is even asked for", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 
@@ -555,7 +555,7 @@ describe("a team's charts while the window is changing", () => {
 		expect(statusOf("throughput")).toBe("ready");
 	});
 
-	it.skip("picking the window that is already showing leaves every chart as it is", async () => {
+	it("picking the window that is already showing leaves every chart as it is", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 
@@ -568,7 +568,7 @@ describe("a team's charts while the window is changing", () => {
 		expectThroughputToRead(30);
 	});
 
-	it.skip("a chart behind the window cannot be pointed at or opened for its data", async () => {
+	it("a chart behind the window cannot be pointed at or opened for its data", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 
@@ -584,7 +584,7 @@ describe("a team's charts while the window is changing", () => {
 		).rejects.toThrow(/pointer-events: none/);
 	});
 
-	it.skip("the Throughput filter switch inside a chart behind the window does not respond", async () => {
+	it("the Throughput filter switch inside a chart behind the window does not respond", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 		theReaderPicks("Last 90 days");
@@ -655,7 +655,7 @@ describe("a team's chart when windows are picked in quick succession", () => {
 		answersArrivingInThisOrderSettleOnTheLastWindowPicked,
 	);
 
-	it.skip("stays loading when the first window answers first, until the second window's answer arrives", async () => {
+	it("stays loading when the first window answers first, until the second window's answer arrives", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 		theReaderPicks("Last 90 days");
@@ -669,9 +669,7 @@ describe("a team's chart when windows are picked in quick succession", () => {
 		expectThroughputToRead(7);
 	});
 
-	it.skip.each<
-		[string, string, string, WidgetStatus, WidgetStatus, WidgetStatus]
-	>([
+	it.each<[string, string, string, WidgetStatus, WidgetStatus, WidgetStatus]>([
 		[LAST_90_DAYS, LAST_14_DAYS, LAST_7_DAYS, "loading", "loading", "ready"],
 		[LAST_90_DAYS, LAST_7_DAYS, LAST_14_DAYS, "loading", "ready", "ready"],
 		[LAST_14_DAYS, LAST_90_DAYS, LAST_7_DAYS, "loading", "loading", "ready"],
@@ -709,7 +707,7 @@ describe("a team's chart whose data cannot be loaded", () => {
 		await throughputFailsFor(LAST_90_DAYS);
 	}
 
-	it.skip("stops its spinner, removes the older chart and says it couldn't be loaded", async () => {
+	it("stops its spinner, removes the older chart and says it couldn't be loaded", async () => {
 		await givenThe90DayThroughputFailed();
 
 		expect(statusOf("throughput")).toBe("error");
@@ -724,7 +722,7 @@ describe("a team's chart whose data cannot be loaded", () => {
 		).toBeNull();
 	});
 
-	it.skip("leaves every other chart to come back with its own data", async () => {
+	it("leaves every other chart to come back with its own data", async () => {
 		await givenThe90DayThroughputFailed();
 
 		await everythingAsked({ except: "getThroughput" });
@@ -741,7 +739,7 @@ describe("a team's chart whose data cannot be loaded", () => {
 		expect(statusOf("throughput")).toBe("error");
 	});
 
-	it.skip("comes back once the reader picks a window that loads", async () => {
+	it("comes back once the reader picks a window that loads", async () => {
 		await givenThe90DayThroughputFailed();
 
 		theReaderPicks("Last 7 days");
@@ -755,7 +753,7 @@ describe("a team's chart whose data cannot be loaded", () => {
 		expectThroughputToRead(7);
 	});
 
-	it.skip("stepping the window after a failure shows the chart loading at once, before the step is asked for", async () => {
+	it("stepping the window after a failure shows the chart loading at once, before the step is asked for", async () => {
 		await givenThe90DayThroughputFailed();
 
 		fireEvent.click(screen.getByRole("button", { name: "Previous 7 days" }));
@@ -767,13 +765,7 @@ describe("a team's chart whose data cannot be loaded", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("until a chart can say it could not be loaded, a failed window leaves its older chart in place", async () => {
-		await givenThe90DayThroughputFailed();
-
-		expectThroughputToRead(30);
-	});
-
-	it.skip("does not report a failure for a window the reader has already left", async () => {
+	it("does not report a failure for a window the reader has already left", async () => {
 		await givenTheReaderPicked90DaysAfterEverythingLoaded();
 		theReaderPicks("Last 7 days");
 
@@ -783,7 +775,7 @@ describe("a team's chart whose data cannot be loaded", () => {
 		expect(screen.queryByText(COULD_NOT_LOAD_MESSAGE)).not.toBeInTheDocument();
 	});
 
-	it.skip("says it couldn't be loaded as soon as one of its requests fails, while its others are still on their way", async () => {
+	it("says it couldn't be loaded as soon as one of its requests fails, while its others are still on their way", async () => {
 		await givenTheReaderPicked90DaysAfterEverythingLoaded();
 
 		await act(async () =>
@@ -802,7 +794,7 @@ describe("a team's chart whose data cannot be loaded", () => {
 		).toBeInTheDocument();
 	});
 
-	it.skip("one failed request marks only the charts that show it", async () => {
+	it("one failed request marks only the charts that show it", async () => {
 		openTheDashboard("team", "flow-overview");
 		await act(async () =>
 			held.fail({ method: "getCycleTimePercentiles", window: LAST_30_DAYS }),
@@ -815,7 +807,7 @@ describe("a team's chart whose data cannot be loaded", () => {
 		expect(statusOf("flowEfficiency")).toBe("ready");
 	});
 
-	it.skip("a chart whose answer is simply empty comes back ready, not failed", async () => {
+	it("a chart whose answer is simply empty comes back ready, not failed", async () => {
 		openTheDashboard("team", "flow-overview");
 		await act(async () =>
 			held.answerWithNothing({ method: "getFlowEfficiencyInfoForTeam" }),
@@ -830,14 +822,14 @@ describe("a team's chart whose data cannot be loaded", () => {
 });
 
 describe("charts waiting on something this owner never has", () => {
-	it.skip("a portfolio's Work In Progress comes back without waiting for an at-risk answer only teams have", async () => {
+	it("a portfolio's Work In Progress comes back without waiting for an at-risk answer only teams have", async () => {
 		openTheDashboard("portfolio", "flow-overview");
 		await everythingHasLoaded();
 
 		expect(statusOf("wipOverview")).toBe("ready");
 	});
 
-	it.skip("the cycle time scatterplot comes back even when the blackout periods cannot be read", async () => {
+	it("the cycle time scatterplot comes back even when the blackout periods cannot be read", async () => {
 		openTheDashboard("team", "flow-metrics", { blackoutPeriodsFail: true });
 		await everythingHasLoaded();
 
@@ -962,7 +954,7 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 		expect(candidatesAskedFor(LAST_90_DAYS)).toHaveLength(1);
 	});
 
-	it.skip("is loading while chosen Work Items are counted again for the new window", async () => {
+	it("is loading while chosen Work Items are counted again for the new window", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 		fireEvent.click(
@@ -977,7 +969,7 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 		expect(statusOf("stateTimeCumulative")).toBe("ready");
 	});
 
-	it.skip("says it couldn't be loaded when the chosen stretch's numbers cannot be loaded", async () => {
+	it("says it couldn't be loaded when the chosen stretch's numbers cannot be loaded", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 		fireEvent.click(
@@ -1009,7 +1001,7 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 });
 
 describe("filters inside a chart", () => {
-	it.skip("switching the Throughput process behaviour chart's filter dims only that chart", async () => {
+	it("switching the Throughput process behaviour chart's filter dims only that chart", async () => {
 		openTheDashboard("team", "predictability");
 		await everythingHasLoaded();
 
@@ -1323,7 +1315,7 @@ describe("charts that appear only once their data says to show them", () => {
 		},
 	);
 
-	it.skip.each([
+	it.each([
 		["Estimation vs. Cycle Time", "estimationVsCycleTime"],
 		["Feature Size", "featureSize"],
 	])(

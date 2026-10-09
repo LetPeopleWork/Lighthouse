@@ -146,6 +146,11 @@ import type { ViewDataPayload } from "./WidgetShell";
 import WidgetShell from "./WidgetShell";
 import WipOverviewWidget from "./WipOverviewWidget";
 import { getWidgetInfo } from "./widgetInfoMetadata";
+import {
+	type FetchKeyStates,
+	widgetHasData,
+	widgetStatusFor,
+} from "./widgetStatus";
 import { computeWorkItemAgePercentilesTrend } from "./workItemAgePercentilesTrend";
 
 export interface BaseMetricsViewProps<
@@ -1238,6 +1243,23 @@ function buildWidgetNodes(ctx: {
 	return nodes;
 }
 
+function frameStateOf(
+	widgetKey: string,
+	fetchStates: FetchKeyStates,
+	isCommitPending: boolean,
+) {
+	return {
+		status: widgetStatusFor(widgetKey, fetchStates, isCommitPending),
+		hasContentToDim: widgetHasData(widgetKey, fetchStates),
+	};
+}
+
+// A chart with nothing to draw stays off the dashboard, unless its data failed: then its frame
+// stays to say so, also while the reader steps to a window that may load.
+function couldNotLoad(widgetKey: string, fetchStates: FetchKeyStates): boolean {
+	return widgetStatusFor(widgetKey, fetchStates, false) === "error";
+}
+
 export const BaseMetricsView = <
 	T extends IWorkItem | IFeature,
 	E extends IFeatureOwner,
@@ -1358,6 +1380,7 @@ export const BaseMetricsView = <
 		flowEfficiencyInfo,
 		blockedCountHistory,
 		setThroughputPbcView,
+		fetchStates,
 	} = useMetricsData(
 		entity,
 		metricsService,
@@ -1926,7 +1949,11 @@ export const BaseMetricsView = <
 
 	const activeWidgets = getWidgetsForCategory(selectedCategory, ownerType);
 	const dashboardItems: DashboardItem[] = activeWidgets
-		.filter((w) => widgetNodes[w.widgetKey] != null)
+		.filter(
+			(w) =>
+				widgetNodes[w.widgetKey] != null ||
+				couldNotLoad(w.widgetKey, fetchStates),
+		)
 		.map((w) => ({
 			id: w.widgetKey,
 			size: w.size,
@@ -1938,6 +1965,7 @@ export const BaseMetricsView = <
 					info={getWidgetInfo(w.widgetKey)}
 					viewData={widgetViewData[w.widgetKey]}
 					trend={widgetTrends[w.widgetKey]}
+					{...frameStateOf(w.widgetKey, fetchStates, isCommitPending)}
 				>
 					{widgetNodes[w.widgetKey]}
 				</WidgetShell>

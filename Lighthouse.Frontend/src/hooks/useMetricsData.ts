@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import type { IBlackoutPeriod } from "../models/BlackoutPeriod";
 import type { BlockedCountSnapshot } from "../models/BlockedCountSnapshot";
 import type { IFeature } from "../models/Feature";
@@ -234,13 +234,12 @@ function dayOf(localDay: string): Date {
 
 type MetricsQuery<V> = {
 	readonly progress: QueryProgress;
-	/** The answer for the selected window or, while it has none, the last one for this owner. */
+	/** The answer for the selected window or, while it has none, the previous window's answer. */
 	readonly answer: V | null;
 };
 
 // The key holds everything the request sends, so an answer for a window the reader has already
-// left lands under that window's key and is never read. A window that fails keeps showing the
-// last good answer, but never one that belongs to the owner shown before.
+// left lands under that window's key and is never read.
 function useMetricsQuery<R extends OwnerRequest, V>(
 	fetchName: string,
 	request: R,
@@ -264,20 +263,7 @@ function useMetricsQuery<R extends OwnerRequest, V>(
 		placeholderData: keepPreviousData,
 	});
 
-	const owner = `${request.ownerType}:${request.ownerId}`;
-	const lastGood = useRef<{ owner: string; answer: V | null } | null>(null);
-	if (lastGood.current?.owner !== owner) lastGood.current = null;
-	if (query.data !== undefined && !query.isPlaceholderData) {
-		lastGood.current = { owner, answer: query.data };
-	}
-
-	return {
-		progress: query,
-		answer:
-			query.data === undefined
-				? (lastGood.current?.answer ?? null)
-				: query.data,
-	};
+	return { progress: query, answer: query.data ?? null };
 }
 
 export function useMetricsData<
