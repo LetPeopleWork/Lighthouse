@@ -186,6 +186,29 @@ describe("the Predictability Score details' frame while its filtered score loads
 		expect(frame()).toHaveAttribute("data-widget-status", "ready");
 	});
 
+	it("turning the filter on keeps the unfiltered score on screen, dimmed under a spinner, until the filtered score arrives", async () => {
+		render(detailsFor(LAST_30_DAYS, 0.3));
+
+		await theReaderTurnsTheFilterOn();
+
+		expect(shownScore()).toBeVisible();
+		expect(shownScore()).toHaveTextContent(/^0\.3$/);
+		expect(
+			screen.getByTestId("widget-shell-body-predictabilityScoreDetails"),
+		).toHaveStyle({
+			opacity: "0.4",
+		});
+		expect(screen.getByRole("progressbar")).toBeInTheDocument();
+
+		await theFilteredScoreAnswers(LAST_30_DAYS, 0.31);
+		expect(
+			screen.getByTestId("widget-shell-body-predictabilityScoreDetails"),
+		).not.toHaveStyle({
+			opacity: "0.4",
+		});
+		expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+	});
+
 	it("a filtered score that cannot be loaded ends in the could-not-load message", async () => {
 		render(detailsFor(LAST_30_DAYS, 0.3));
 		await theReaderTurnsTheFilterOn();

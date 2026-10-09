@@ -30,6 +30,7 @@ import type { SleRiskColumnDescriptor } from "../../../utils/charts/sleRisk";
 import type { TrendPayload } from "./trendTypes";
 import type { WidgetStatusGuidance } from "./widgetInfoMetadata";
 import {
+	type ChartReport,
 	combineWidgetStatuses,
 	type WidgetStatus,
 	WidgetStatusReporterContext,
@@ -122,12 +123,13 @@ function frameStatusOf(
 	return combineWidgetStatuses([pageStatus, chartStatus]);
 }
 
-// A chart still waiting for its own series has nothing drawn, whatever the page holds.
+// While a chart waits for its own answer, only the chart knows whether it still shows something.
 function frameHasContentToDim(
 	pageHasContentToDim: boolean,
-	chartStatus: WidgetStatus | undefined,
+	chartReport: ChartReport | undefined,
 ): boolean {
-	return pageHasContentToDim && chartStatus !== "loading";
+	if (chartReport?.status !== "loading") return pageHasContentToDim;
+	return chartReport.hasContentToDim;
 }
 
 type BodyLook = "ready" | "dimmed" | "waiting" | "error";
@@ -341,11 +343,11 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 	children,
 }) => {
 	const theme = useTheme();
-	const [chartStatus, setChartStatus] = useState<WidgetStatus>();
-	const status = frameStatusOf(pageStatus, chartStatus);
+	const [chartReport, setChartReport] = useState<ChartReport>();
+	const status = frameStatusOf(pageStatus, chartReport?.status);
 	const hasContentToDim = frameHasContentToDim(
 		pageHasContentToDim,
-		chartStatus,
+		chartReport,
 	);
 	const [infoOpen, setInfoOpen] = useState(false);
 	const [viewDataOpen, setViewDataOpen] = useState(false);
@@ -526,7 +528,7 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 					status={status}
 					hasContentToDim={hasContentToDim}
 				>
-					<WidgetStatusReporterContext value={setChartStatus}>
+					<WidgetStatusReporterContext value={setChartReport}>
 						{children}
 					</WidgetStatusReporterContext>
 				</WidgetBody>

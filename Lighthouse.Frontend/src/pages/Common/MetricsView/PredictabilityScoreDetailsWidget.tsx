@@ -69,12 +69,16 @@ const PredictabilityScoreDetailsWidget = <T extends IWorkItem>({
 			canRefetch && (filtered || query.state.data !== undefined),
 	});
 
-	// With the filter off the widget shows the page's own score, so a refetch of the filtered answer
-	// it keeps for later holds nothing back.
-	useReportWidgetStatus(fetchKeyStateOf([filteredScore], filtered).status);
-
 	const displayData =
 		filtered && filteredScore.data ? filteredScore.data : predictabilityData;
+
+	// With the filter off the widget shows the page's own score, so a refetch of the filtered answer
+	// it keeps for later holds nothing back. Until the filtered answer lands the widget keeps showing
+	// whichever score it already has, and that is what the frame dims.
+	useReportWidgetStatus(
+		fetchKeyStateOf([filteredScore], filtered).status,
+		!!displayData,
+	);
 
 	return (
 		<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>

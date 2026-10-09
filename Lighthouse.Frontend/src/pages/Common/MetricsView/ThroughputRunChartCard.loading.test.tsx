@@ -188,6 +188,25 @@ describe("the Throughput run chart's frame while its filtered series loads", () 
 		expect(frame()).toHaveAttribute("data-widget-status", "ready");
 	});
 
+	it("turning the filter on keeps the unfiltered series on screen, dimmed under a spinner, until the filtered series arrives", async () => {
+		render(cardFor(LAST_30_DAYS, 30));
+
+		await theReaderTurnsTheFilterOn();
+
+		expect(shownTotal()).toBeVisible();
+		expect(shownTotal()).toHaveTextContent(/^30$/);
+		expect(screen.getByTestId("widget-shell-body-throughput")).toHaveStyle({
+			opacity: "0.4",
+		});
+		expect(screen.getByRole("progressbar")).toBeInTheDocument();
+
+		await theFilteredSeriesAnswers(LAST_30_DAYS, 3);
+		expect(screen.getByTestId("widget-shell-body-throughput")).not.toHaveStyle({
+			opacity: "0.4",
+		});
+		expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+	});
+
 	it("a filtered series that cannot be loaded ends in the could-not-load message", async () => {
 		render(cardFor(LAST_30_DAYS, 30));
 		await theReaderTurnsTheFilterOn();

@@ -298,8 +298,14 @@ describe("a chart's own settings across a reload", () => {
 	);
 });
 
-function SelfFetchingChart({ status }: { readonly status: WidgetStatus }) {
-	useReportWidgetStatus(status);
+function SelfFetchingChart({
+	status,
+	hasContentToDim = false,
+}: {
+	readonly status: WidgetStatus;
+	readonly hasContentToDim?: boolean;
+}) {
+	useReportWidgetStatus(status, hasContentToDim);
 	return <div data-testid="self-fetching-chart">series</div>;
 }
 
@@ -323,6 +329,39 @@ describe("a chart that fetches its own data", () => {
 
 		expect(frame()).toHaveAttribute("data-widget-status", "loading");
 		expect(within(frame()).getByRole("progressbar")).toBeInTheDocument();
+	});
+
+	it("keeps the chart it is still showing on screen, dimmed under a spinner, while its own answer loads", () => {
+		renderFrame(
+			{ status: "ready", hasContentToDim: true },
+			<SelfFetchingChart status="loading" hasContentToDim />,
+		);
+
+		expect(frame()).toHaveAttribute("data-widget-status", "loading");
+		expect(screen.getByTestId("self-fetching-chart")).toBeVisible();
+		expect(body()).toHaveStyle({ opacity: "0.4" });
+		expect(within(frame()).getByRole("progressbar")).toHaveStyle({
+			width: "24px",
+		});
+		expect(screen.getByTestId(`widget-rag-${KEY}`)).toBeInTheDocument();
+	});
+
+	it("with nothing of its own on screen yet, holds a lone spinner under just the title and info", () => {
+		renderFrame(
+			{ status: "ready", hasContentToDim: true },
+			<SelfFetchingChart status="loading" />,
+		);
+
+		expect(frame()).toHaveAttribute("data-widget-status", "loading");
+		expectOutOfSight("self-fetching-chart");
+		expect(body()).not.toHaveStyle({ opacity: "0.4" });
+		expect(within(frame()).getByRole("progressbar")).toHaveStyle({
+			width: "24px",
+		});
+		expect(screen.getByText("Throughput Run Chart")).toBeInTheDocument();
+		expect(screen.getByTestId(`widget-info-${KEY}`)).toBeInTheDocument();
+		expect(screen.queryByTestId(`widget-rag-${KEY}`)).not.toBeInTheDocument();
+		expect(screen.queryByTestId(`widget-trend-${KEY}`)).not.toBeInTheDocument();
 	});
 
 	it.each<[WidgetStatus, WidgetStatus, WidgetStatus]>([

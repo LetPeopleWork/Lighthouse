@@ -64,8 +64,12 @@ const ThroughputRunChartCard = <T extends IWorkItem>({
 	});
 
 	// With the filter off the chart shows the page's own series, so a refetch of the filtered answer
-	// it keeps for later holds nothing back.
-	useReportWidgetStatus(fetchKeyStateOf([filteredSeries], filtered).status);
+	// it keeps for later holds nothing back. Until the filtered answer lands the chart keeps showing
+	// a series, the page's own or the previous window's, so there is always something to dim.
+	useReportWidgetStatus(
+		fetchKeyStateOf([filteredSeries], filtered).status,
+		true,
+	);
 
 	const displayData =
 		filtered && filteredSeries.data ? filteredSeries.data : rawData;
