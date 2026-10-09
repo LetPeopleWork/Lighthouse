@@ -66,6 +66,7 @@ export const metricsQueryOptions = {
 	gcTime: 0,
 	retry: false,
 	refetchOnWindowFocus: false,
+	refetchOnReconnect: false,
 } as const;
 
 export interface MetricsData<T> {

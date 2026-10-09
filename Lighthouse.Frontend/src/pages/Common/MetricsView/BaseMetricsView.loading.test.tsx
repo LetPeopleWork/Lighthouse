@@ -844,7 +844,12 @@ describe("every chart request on the dashboard", () => {
 		async (owner, _name, category) => {
 			const withTheAppDefaults = new QueryClient({
 				defaultOptions: {
-					queries: { staleTime: 300_000, gcTime: 1_800_000, retry: 2 },
+					queries: {
+						staleTime: 300_000,
+						gcTime: 1_800_000,
+						retry: 2,
+						refetchOnReconnect: true,
+					},
 				},
 			});
 			openTheDashboard(owner, category, {
@@ -860,6 +865,7 @@ describe("every chart request on the dashboard", () => {
 				for (const observer of query.observers) {
 					expect(observer.options.staleTime).toBe(0);
 					expect(observer.options.refetchOnWindowFocus).toBe(false);
+					expect(observer.options.refetchOnReconnect).toBe(false);
 				}
 			}
 		},
