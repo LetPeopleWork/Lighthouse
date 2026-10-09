@@ -224,7 +224,7 @@ describe("a chart's frame when its data could not be loaded", () => {
 		expect(COULD_NOT_LOAD_MESSAGE).toBe(COULD_NOT_LOAD);
 	});
 
-	it.skip("removes the chart and says so in plain words, with a warning icon", () => {
+	it("removes the chart and says so in plain words, with a warning icon", () => {
 		renderFrame({ status: "error", hasContentToDim: true });
 
 		expect(frame()).toHaveAttribute("data-widget-status", "error");
@@ -236,7 +236,7 @@ describe("a chart's frame when its data could not be loaded", () => {
 		expect(within(body()).getByTestId("WarningAmberIcon")).toBeInTheDocument();
 	});
 
-	it.skip("shows no rating, trend or data for the chart that is gone, only its title and info", () => {
+	it("shows no rating, trend or data for the chart that is gone, only its title and info", () => {
 		renderFrame({ status: "error", hasContentToDim: true });
 
 		expect(screen.getByText("Throughput Run Chart")).toBeInTheDocument();
@@ -248,7 +248,7 @@ describe("a chart's frame when its data could not be loaded", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it.skip("offers no retry: changing the dates or reloading is the way back", () => {
+	it("offers no retry: changing the dates or reloading is the way back", () => {
 		renderFrame({ status: "error", hasContentToDim: true });
 
 		const buttons = within(frame()).getAllByRole("button");
@@ -262,7 +262,7 @@ function SelfFetchingChart({ status }: { readonly status: WidgetStatus }) {
 }
 
 describe("a chart the page feeds", () => {
-	it.skip.each<WidgetStatus>(["loading", "error", "ready"])(
+	it.each<WidgetStatus>(["loading", "error", "ready"])(
 		"with nothing inside reporting for itself, the frame reads what the page says: %s",
 		(fromPage) => {
 			renderFrame({ status: fromPage, hasContentToDim: true });

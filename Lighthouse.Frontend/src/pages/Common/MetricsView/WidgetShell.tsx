@@ -4,6 +4,7 @@ import NorthEastIcon from "@mui/icons-material/NorthEast";
 import RemoveIcon from "@mui/icons-material/Remove";
 import SouthEastIcon from "@mui/icons-material/SouthEast";
 import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
 	Box,
 	Chip,
@@ -28,7 +29,7 @@ import type { TrendPayload } from "./trendTypes";
 import type { WidgetStatusGuidance } from "./widgetInfoMetadata";
 import type { WidgetStatus } from "./widgetStatus";
 
-/** What a frame says when its chart's data could not be loaded. Not drawn yet. */
+/** What a frame says when its chart's data could not be loaded. */
 export const COULD_NOT_LOAD_MESSAGE =
 	"This chart couldn't be loaded. Change the dates or reload to try again.";
 
@@ -111,13 +112,38 @@ const centredSpinner = (
 // from assistive technology, where aria-busy on the frame already says it is loading.
 const WidgetBody: React.FC<{
 	readonly widgetKey: string;
-	readonly isLoading: boolean;
+	readonly status: WidgetStatus;
 	readonly hasContentToDim: boolean;
 	readonly children: React.ReactNode;
-}> = ({ widgetKey, isLoading, hasContentToDim, children }) => {
+}> = ({ widgetKey, status, hasContentToDim, children }) => {
 	const bodyTestId = `widget-shell-body-${widgetKey}`;
 
-	if (!isLoading) {
+	if (status === "error") {
+		// No retry: changing the dates or reloading the page asks again. A chart that fetches
+		// for itself stays mounted out of sight, so a later answer can still replace this note.
+		return (
+			<Box
+				data-testid={bodyTestId}
+				sx={{
+					flex: 1,
+					minHeight: 0,
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+					gap: 1,
+					p: 2,
+				}}
+			>
+				<Box sx={{ display: "none" }}>{children}</Box>
+				<WarningAmberIcon color="warning" fontSize="small" />
+				<Typography variant="body2" color="text.secondary">
+					{COULD_NOT_LOAD_MESSAGE}
+				</Typography>
+			</Box>
+		);
+	}
+
+	if (status === "ready") {
 		return (
 			<Box data-testid={bodyTestId} sx={{ flex: 1, minHeight: 0 }}>
 				{children}
@@ -317,7 +343,7 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 	const infoAnchorRef = useRef<HTMLButtonElement>(null);
 
 	const isLoading = status === "loading";
-	const hasChartOnScreen = !isLoading || hasContentToDim;
+	const hasChartOnScreen = status === "ready" || (isLoading && hasContentToDim);
 	const shows = headerPartsFor(
 		hasChartOnScreen,
 		!!viewData && viewData.items.length > 0,
@@ -488,7 +514,7 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 
 				<WidgetBody
 					widgetKey={widgetKey}
-					isLoading={isLoading}
+					status={status}
 					hasContentToDim={hasContentToDim}
 				>
 					{children}
