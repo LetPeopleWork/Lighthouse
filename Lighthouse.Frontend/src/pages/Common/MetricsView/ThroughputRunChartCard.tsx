@@ -1,14 +1,12 @@
 import { Box } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import ThroughputChartFilterToggle from "../../../components/Common/Charts/ThroughputChart/ThroughputChartFilterToggle";
-import { metricsQueryOptions } from "../../../hooks/useMetricsData";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
-import { formatLocalDate } from "../../../utils/date/localDate";
-import { fetchKeyStateOf, useReportWidgetStatus } from "./widgetStatus";
+import { useFilteredView } from "./useFilteredView";
+import { useReportWidgetStatus } from "./widgetStatus";
 
 interface ThroughputRunChartCardProps<T extends IWorkItem> {
 	readonly entityId: number;
@@ -33,46 +31,23 @@ const ThroughputRunChartCard = <T extends IWorkItem>({
 }: ThroughputRunChartCardProps<T>) => {
 	const [filtered, setFiltered] = useState(false);
 
-	const filteredSeries = useQuery({
-		...metricsQueryOptions,
-		queryKey: [
-			"metrics",
-			"getThroughput",
-			{
-				view: "filtered",
-				ownerId: entityId,
-				from: formatLocalDate(startDate),
-				to: formatLocalDate(endDate),
-			},
-		] as const,
-		queryFn: async () => {
-			try {
-				return await metricsService.getThroughput(
-					entityId,
-					startDate,
-					endDate,
-					"filtered",
-				);
-			} catch (error) {
-				console.error("Error fetching filtered throughput:", error);
-				throw error;
-			}
-		},
-		// Turning the filter off and on again shows the answer this window already has, rather than
-		// asking again; a window the filter has never been on for is never asked.
-		enabled: (query) => filtered || query.state.data !== undefined,
+	const filteredSeries = useFilteredView({
+		fetchName: "getThroughput",
+		ownerId: entityId,
+		startDate,
+		endDate,
+		filtered,
+		ask: () =>
+			metricsService.getThroughput(entityId, startDate, endDate, "filtered"),
+		failureMessage: "Error fetching filtered throughput:",
 	});
 
-	// With the filter off the chart shows the page's own series, so a refetch of the filtered answer
-	// it keeps for later holds nothing back. Until the filtered answer lands the chart keeps showing
-	// a series, the page's own or the previous window's, so there is always something to dim.
-	useReportWidgetStatus(
-		fetchKeyStateOf([filteredSeries], filtered).status,
-		true,
-	);
+	// Until the filtered answer lands the chart keeps showing a series, the page's own or the
+	// previous window's, so there is always something to dim.
+	useReportWidgetStatus(filteredSeries.status, true);
 
 	const displayData =
-		filtered && filteredSeries.data ? filteredSeries.data : rawData;
+		filtered && filteredSeries.answer ? filteredSeries.answer : rawData;
 
 	return (
 		<Box sx={{ height: "100%", position: "relative" }}>

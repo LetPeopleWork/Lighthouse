@@ -1,14 +1,12 @@
 import { Box, Card, CardContent, Typography } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import PredictabilityScore from "../../../components/Common/Charts/PredictabilityScore";
 import ThroughputChartFilterToggle from "../../../components/Common/Charts/ThroughputChart/ThroughputChartFilterToggle";
-import { metricsQueryOptions } from "../../../hooks/useMetricsData";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
-import { formatLocalDate } from "../../../utils/date/localDate";
-import { fetchKeyStateOf, useReportWidgetStatus } from "./widgetStatus";
+import { useFilteredView } from "./useFilteredView";
+import { useReportWidgetStatus } from "./widgetStatus";
 
 interface PredictabilityScoreDetailsWidgetProps<T extends IWorkItem> {
 	readonly predictabilityData: IForecastPredictabilityScore | null;
@@ -37,48 +35,33 @@ const PredictabilityScoreDetailsWidget = <T extends IWorkItem>({
 		startDate !== undefined &&
 		endDate !== undefined;
 
-	const filteredScore = useQuery({
-		...metricsQueryOptions,
-		queryKey: [
-			"metrics",
-			"getMultiItemForecastPredictabilityScore",
-			{
-				view: "filtered",
-				ownerId: entityId,
-				from: startDate ? formatLocalDate(startDate) : null,
-				to: endDate ? formatLocalDate(endDate) : null,
-			},
-		] as const,
-		queryFn: async () => {
+	const filteredScore = useFilteredView({
+		fetchName: "getMultiItemForecastPredictabilityScore",
+		ownerId: entityId,
+		startDate,
+		endDate,
+		filtered,
+		canAsk: canRefetch,
+		ask: async () => {
 			if (!canRefetch) return null;
-			try {
-				return await metricsService.getMultiItemForecastPredictabilityScore(
-					entityId,
-					startDate,
-					endDate,
-					"filtered",
-				);
-			} catch (error) {
-				console.error("Error fetching filtered predictability score:", error);
-				throw error;
-			}
+			return metricsService.getMultiItemForecastPredictabilityScore(
+				entityId,
+				startDate,
+				endDate,
+				"filtered",
+			);
 		},
-		// Turning the filter off and on again shows the answer this window already has, rather than
-		// asking again; a window the filter has never been on for is never asked.
-		enabled: (query) =>
-			canRefetch && (filtered || query.state.data !== undefined),
+		failureMessage: "Error fetching filtered predictability score:",
 	});
 
 	const displayData =
-		filtered && filteredScore.data ? filteredScore.data : predictabilityData;
+		filtered && filteredScore.answer
+			? filteredScore.answer
+			: predictabilityData;
 
-	// With the filter off the widget shows the page's own score, so a refetch of the filtered answer
-	// it keeps for later holds nothing back. Until the filtered answer lands the widget keeps showing
-	// whichever score it already has, and that is what the frame dims.
-	useReportWidgetStatus(
-		fetchKeyStateOf([filteredScore], filtered).status,
-		!!displayData,
-	);
+	// Until the filtered answer lands the widget keeps showing whichever score it already has, and
+	// that is what the frame dims.
+	useReportWidgetStatus(filteredScore.status, !!displayData);
 
 	return (
 		<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
