@@ -23,8 +23,7 @@ function daysBeforeToday(days: number): Date {
 	return date;
 }
 
-// Pending until the charts report whether they have their data; the frames carry no status yet.
-test.skip("@walking_skeleton a delivery lead picks the last 90 days and watches a chart wait for the new window, then show it", async ({
+test("@walking_skeleton a delivery lead picks the last 90 days and watches a chart wait for the new window, then show it", async ({
 	page,
 	request,
 	overviewPage,

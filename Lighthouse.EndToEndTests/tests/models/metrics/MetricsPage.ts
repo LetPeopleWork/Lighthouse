@@ -20,6 +20,7 @@ export class MetricsWidget {
 	}
 
 	async openDialog(): Promise<WorkItemsDialog> {
+		await this.waitUntilLoaded();
 		await this.ViewDataButton.click();
 		const dialog = new WorkItemsDialog(this.page);
 		await dialog.dialog.waitFor({ state: "visible" });
@@ -51,17 +52,15 @@ export class MetricsWidget {
 	 * nothing about the data; its `data-widget-status` does.
 	 */
 	get Frame(): Locator {
-		return this.page.getByTestId(`widget-shell-${this.widgetId}`);
+		return this.Widget.getByTestId(`widget-shell-${this.widgetId}`);
 	}
 
 	/** Waits until the chart shows the selected window, and fails at once if it could not load. */
 	async waitUntilLoaded(): Promise<void> {
 		const frame = `[data-testid="widget-shell-${this.widgetId}"]`;
-		await this.page
-			.locator(
-				`${frame}[data-widget-status="ready"], ${frame}[data-widget-status="error"]`,
-			)
-			.waitFor({ timeout: 30_000 });
+		await this.Widget.locator(
+			`${frame}[data-widget-status="ready"], ${frame}[data-widget-status="error"]`,
+		).waitFor({ timeout: 30_000 });
 		await expect(
 			this.Frame,
 			`${this.name} could not be loaded`,
@@ -77,14 +76,17 @@ export class MetricsWidget {
 	}
 
 	async toggleForecastFilter(): Promise<void> {
+		await this.waitUntilLoaded();
 		await this.forecastFilterToggle.click();
 	}
 
 	async isForecastFilterEnabled(): Promise<boolean> {
+		await this.waitUntilLoaded();
 		return await this.forecastFilterToggle.isChecked();
 	}
 
 	async snapshotChartContent(): Promise<string> {
+		await this.waitUntilLoaded();
 		return (await this.Widget.innerText()) ?? "";
 	}
 
@@ -93,6 +95,7 @@ export class MetricsWidget {
 	}
 
 	async getStaleOverviewCount(): Promise<number> {
+		await this.waitUntilLoaded();
 		const text = (await this.staleOverviewCount.innerText()) ?? "0";
 		return Number(text.replace(/\D/g, ""));
 	}
@@ -102,6 +105,7 @@ export class MetricsWidget {
 	}
 
 	async getBlockedOverviewCount(): Promise<number> {
+		await this.waitUntilLoaded();
 		const text = (await this.blockedOverviewCount.innerText()) ?? "0";
 		return Number(text.replace(/\D/g, ""));
 	}
@@ -130,6 +134,7 @@ export class MetricsWidget {
 	async getTrendDirection(): Promise<
 		"up" | "down" | "flat" | "none" | "unknown"
 	> {
+		await this.waitUntilLoaded();
 		if ((await this.trendArrow.getAttribute("data-nobaseline")) === "true") {
 			return "none";
 		}
@@ -157,6 +162,7 @@ export class MetricsWidget {
 	}
 
 	async getRagStatus(): Promise<string> {
+		await this.waitUntilLoaded();
 		return (await this.ragStatusIndicator.getAttribute("data-rag")) ?? "";
 	}
 
@@ -165,10 +171,12 @@ export class MetricsWidget {
 	}
 
 	async countStaleAgingBubbles(): Promise<number> {
+		await this.waitUntilLoaded();
 		return this.staleAgingBubbles.count();
 	}
 
 	async openDialogFromStaleBubble(): Promise<WorkItemsDialog> {
+		await this.waitUntilLoaded();
 		await this.staleAgingBubbles.first().click();
 		return new WorkItemsDialog(this.page);
 	}
@@ -191,6 +199,7 @@ export class MetricsWidget {
 	}
 
 	async openDialogFromBubble(): Promise<WorkItemsDialog> {
+		await this.waitUntilLoaded();
 		await this.agingBubbles.first().click();
 		const dialog = new WorkItemsDialog(this.page);
 		await dialog.dialog.waitFor({ state: "visible" });
@@ -205,6 +214,7 @@ export class MetricsWidget {
 	}
 
 	async countBlockedOverTimeBars(): Promise<number> {
+		await this.waitUntilLoaded();
 		return this.blockedOverTimeBars.count();
 	}
 
@@ -222,10 +232,11 @@ export class MetricsWidget {
 
 	/**
 	 * Clicks the latest (rightmost) bar on the Blocked Items Over Time chart,
-	 * which drills into the items blocked at that date (08-04 endpoint) and
-	 * lists them in the shared WorkItemsDialog.
+	 * which drills into the items blocked at that date and lists them in the
+	 * shared WorkItemsDialog.
 	 */
 	async openBlockedOverTimeDialogByLatestBar(): Promise<WorkItemsDialog> {
+		await this.waitUntilLoaded();
 		await this.blockedOverTimeBars.last().click();
 		await this.blockedItemsDialog.waitFor({ state: "visible" });
 		return new WorkItemsDialog(this.page);
@@ -241,12 +252,14 @@ export class MetricsWidget {
  */
 export class CycleTimePercentilesWidget {
 	private readonly widget: Locator;
+	private readonly frame: MetricsWidget;
 
 	constructor(
 		public readonly page: Page,
 		widgetId = "percentiles",
 	) {
-		this.widget = page.locator(`[data-testid="dashboard-item-${widgetId}"]`);
+		this.frame = new MetricsWidget(page, widgetId, widgetId);
+		this.widget = this.frame.Widget;
 	}
 
 	get Widget(): Locator {
@@ -262,10 +275,12 @@ export class CycleTimePercentilesWidget {
 	}
 
 	async getSelectedScope(): Promise<string> {
+		await this.frame.waitUntilLoaded();
 		return (await this.scopeSelector.textContent())?.trim() ?? "";
 	}
 
 	async listScopeOptions(): Promise<string[]> {
+		await this.frame.waitUntilLoaded();
 		await this.scopeSelector.click();
 		const options = this.page.getByRole("option");
 		await options.first().waitFor();
@@ -297,6 +312,7 @@ export class CycleTimePercentilesWidget {
 				)
 			: null;
 
+		await this.frame.waitUntilLoaded();
 		await this.scopeSelector.click();
 		await this.page.getByRole("option", { name, exact: true }).click();
 		await this.page
@@ -305,6 +321,7 @@ export class CycleTimePercentilesWidget {
 			.catch(() => {});
 
 		await responsePromise;
+		await this.frame.waitUntilLoaded();
 	}
 
 	/**
@@ -313,6 +330,7 @@ export class CycleTimePercentilesWidget {
 	 * "No data available".
 	 */
 	async getPercentileValues(): Promise<Record<string, number>> {
+		await this.frame.waitUntilLoaded();
 		const rows = this.widget.locator("tbody tr");
 		const rowCount = await rows.count();
 		const values: Record<string, number> = {};
@@ -331,17 +349,22 @@ export class CycleTimePercentilesWidget {
 	}
 
 	async hasRagChip(): Promise<boolean> {
+		await this.frame.waitUntilLoaded();
 		return (await this.ragChip.count()) > 0;
 	}
 }
 
 export class WorkItemAgePercentilesCard {
 	private readonly card: Locator;
+	private readonly frame: MetricsWidget;
 
 	constructor(public readonly page: Page) {
-		this.card = page.locator(
-			'[data-testid="dashboard-item-workItemAgePercentiles"]',
+		this.frame = new MetricsWidget(
+			page,
+			MetricsWidgetNames.WorkItemAgePercentiles,
+			"workItemAgePercentiles",
 		);
+		this.card = this.frame.Widget;
 	}
 
 	get widget(): Locator {
@@ -357,6 +380,7 @@ export class WorkItemAgePercentilesCard {
 	}
 
 	async countPercentileValues(): Promise<number> {
+		await this.frame.waitUntilLoaded();
 		return this.percentileValues.count();
 	}
 
@@ -376,6 +400,7 @@ export class WorkItemAgePercentilesCard {
 	 * table, so callers can tell "no rows" apart from "rows reading zero".
 	 */
 	async getPercentileValues(): Promise<Record<string, number>> {
+		await this.frame.waitUntilLoaded();
 		const rows = this.card.locator("tbody tr");
 		const rowCount = await rows.count();
 		const values: Record<string, number> = {};
@@ -395,6 +420,21 @@ export class WorkItemAgePercentilesCard {
 }
 
 const METRICS_ROUND_ENDPOINT = "/metrics/workItemAgePercentiles?";
+
+/**
+ * Waits until every chart on the open category shows the selected window. Counting the frames
+ * still loading is not enough on its own: before the first frame renders that count is zero too.
+ */
+async function waitUntilEveryChartOnPageHasLoaded(page: Page): Promise<void> {
+	await page.locator("[data-widget-status]").first().waitFor();
+	await expect(page.locator('[data-widget-status="loading"]')).toHaveCount(0, {
+		timeout: 30_000,
+	});
+	await expect(
+		page.locator('[data-widget-status="error"]'),
+		"a chart on this category could not be loaded",
+	).toHaveCount(0);
+}
 
 /**
  * Drives the dashboard's reporting window. The window lives in the `startDate` /
@@ -458,6 +498,7 @@ export class MetricsDateRange {
 
 		await this.page.goto(url.toString());
 		await requested;
+		await waitUntilEveryChartOnPageHasLoaded(this.page);
 	}
 
 	/** What the header itself says the window is: `dd MMM yyyy → dd MMM yyyy`. */
@@ -511,6 +552,7 @@ export class MetricsDateRange {
 		await this.presetChip(label).click();
 		await requested;
 		await this.close();
+		await waitUntilEveryChartOnPageHasLoaded(this.page);
 	}
 
 	/** Picks a named window without waiting for its answers, so a test can watch the charts wait. */
@@ -523,23 +565,33 @@ export class MetricsDateRange {
 	/**
 	 * Holds back every metrics answer for the window that starts on `start` until the returned
 	 * function is called, so the time a chart spends waiting is long enough to see.
+	 *
+	 * The held requests are let through before the hold is lifted, not after: Playwright sends
+	 * a request on by itself when the handler holding it is removed, so continuing it
+	 * afterwards fails with "Route is already handled".
 	 */
 	async holdAnswersForWindowStarting(
 		start: Date,
 	): Promise<() => Promise<void>> {
 		const startParam = `startDate=${formatLocalDate(start)}`;
 		const heldBack: Route[] = [];
+		let released = false;
 		const isForThatWindow = (url: URL) =>
 			url.pathname.includes("/metrics/") && url.search.includes(startParam);
-		const holdBack = (route: Route) => {
+		const holdBack = async (route: Route) => {
+			if (released) {
+				await route.continue();
+				return;
+			}
 			heldBack.push(route);
 		};
 
 		await this.page.route(isForThatWindow, holdBack);
 
 		return async () => {
-			await this.page.unroute(isForThatWindow, holdBack);
+			released = true;
 			await Promise.all(heldBack.map((route) => route.continue()));
+			await this.page.unroute(isForThatWindow, holdBack);
 		};
 	}
 
@@ -611,12 +663,14 @@ export class MetricsDateRange {
 
 export class WorkItemAgingReferenceLineSelector {
 	private readonly widget: Locator;
+	private readonly frame: MetricsWidget;
 
 	constructor(
 		public readonly page: Page,
 		widgetId: string,
 	) {
-		this.widget = page.locator(`[data-testid="dashboard-item-${widgetId}"]`);
+		this.frame = new MetricsWidget(page, widgetId, widgetId);
+		this.widget = this.frame.Widget;
 	}
 
 	get chart(): Locator {
@@ -646,6 +700,7 @@ export class WorkItemAgingReferenceLineSelector {
 	}
 
 	private async isSelected(toggle: Locator): Promise<boolean> {
+		await this.frame.waitUntilLoaded();
 		return (await toggle.getAttribute("aria-pressed")) === "true";
 	}
 
@@ -658,14 +713,17 @@ export class WorkItemAgingReferenceLineSelector {
 	}
 
 	async selectCycleTime(): Promise<void> {
+		await this.frame.waitUntilLoaded();
 		await this.cycleTimeToggle.click();
 	}
 
 	async selectWorkItemAge(): Promise<void> {
+		await this.frame.waitUntilLoaded();
 		await this.workItemAgeToggle.click();
 	}
 
 	async countReferenceLines(): Promise<number> {
+		await this.frame.waitUntilLoaded();
 		return this.referenceLines.count();
 	}
 }
@@ -947,6 +1005,7 @@ export class MetricsPage {
 		categoryName: MetricsCategories,
 	): Promise<MetricsWidget[]> {
 		await this.page.getByTestId(`category-chip-${categoryName}`).click();
+		await this.waitUntilEveryChartHasLoaded();
 		return this.getAvailableWidgets(categoryName);
 	}
 
@@ -956,19 +1015,8 @@ export class MetricsPage {
 		);
 	}
 
-	/**
-	 * Waits until every chart on the open category shows the selected window. Counting the frames
-	 * still loading is not enough on its own: before the first frame renders that count is zero too.
-	 */
 	async waitUntilEveryChartHasLoaded(): Promise<void> {
-		await this.page.locator("[data-widget-status]").first().waitFor();
-		await expect(
-			this.page.locator('[data-widget-status="loading"]'),
-		).toHaveCount(0, { timeout: 30_000 });
-		await expect(
-			this.page.locator('[data-widget-status="error"]'),
-			"a chart on this category could not be loaded",
-		).toHaveCount(0);
+		await waitUntilEveryChartOnPageHasLoaded(this.page);
 	}
 
 	async getWidgetByName(

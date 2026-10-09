@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { MetricsWidget } from "./MetricsPage";
 
 export type RagStatus = "red" | "amber" | "green";
 
@@ -34,14 +35,18 @@ export function ragLabelFor(status: RagStatus): string {
  * and each widget's POM composes it with its own widget key.
  */
 export class RagChip {
+	private readonly frame: MetricsWidget;
+
 	constructor(
 		private readonly widget: Locator,
 		private readonly widgetKey: string,
-	) {}
+	) {
+		this.frame = new MetricsWidget(widget.page(), widgetKey, widgetKey);
+	}
 
 	static forWidget(page: Page, widgetKey: string): RagChip {
 		return new RagChip(
-			page.locator(`[data-testid="dashboard-item-${widgetKey}"]`),
+			new MetricsWidget(page, widgetKey, widgetKey).Widget,
 			widgetKey,
 		);
 	}
@@ -59,10 +64,12 @@ export class RagChip {
 	}
 
 	async readStatus(): Promise<ObservedRagStatus> {
+		await this.frame.waitUntilLoaded();
 		return toRagStatus(await this.statusValue.getAttribute("data-rag"));
 	}
 
 	async readLabel(): Promise<string> {
+		await this.frame.waitUntilLoaded();
 		return (await this.statusValue.innerText()).trim();
 	}
 
@@ -73,6 +80,7 @@ export class RagChip {
 	 * strict mode intermittently.
 	 */
 	async readTipText(): Promise<string> {
+		await this.frame.waitUntilLoaded();
 		return (await this.chip.getAttribute("aria-label")) ?? "";
 	}
 }

@@ -1,16 +1,19 @@
 import type { Locator, Page } from "@playwright/test";
+import { MetricsWidget } from "./MetricsPage";
 
 export class CycleTimeScatterPlotChart {
 	page: Page;
 	widgetId: string;
+	private readonly frame: MetricsWidget;
 
 	constructor(page: Page, widgetId: string) {
 		this.page = page;
 		this.widgetId = widgetId;
+		this.frame = new MetricsWidget(page, widgetId, widgetId);
 	}
 
 	get Widget(): Locator {
-		return this.page.locator(`[data-testid="dashboard-item-${this.widgetId}"]`);
+		return this.frame.Widget;
 	}
 
 	get cycleTimeSelector(): Locator {
@@ -22,14 +25,17 @@ export class CycleTimeScatterPlotChart {
 	}
 
 	async countDots(): Promise<number> {
+		await this.frame.waitUntilLoaded();
 		return this.dots.count();
 	}
 
 	async getSelectedDefinition(): Promise<string> {
+		await this.frame.waitUntilLoaded();
 		return (await this.cycleTimeSelector.textContent())?.trim() ?? "";
 	}
 
 	async listDefinitionOptions(): Promise<string[]> {
+		await this.frame.waitUntilLoaded();
 		await this.cycleTimeSelector.click();
 		const options = this.page.getByRole("option");
 		await options.first().waitFor();
@@ -39,11 +45,13 @@ export class CycleTimeScatterPlotChart {
 	}
 
 	async selectDefinition(name: string): Promise<void> {
+		await this.frame.waitUntilLoaded();
 		await this.cycleTimeSelector.click();
 		await this.page.getByRole("option", { name, exact: true }).click();
 	}
 
 	async getDotCycleTimes(): Promise<number[]> {
+		await this.frame.waitUntilLoaded();
 		const count = await this.dots.count();
 		const values: number[] = [];
 		for (let index = 0; index < count; index++) {

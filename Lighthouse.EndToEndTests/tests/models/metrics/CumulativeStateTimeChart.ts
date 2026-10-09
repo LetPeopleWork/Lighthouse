@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { MetricsWidget } from "./MetricsPage";
 
 const BAR_ELEMENT_CLASS = "MuiBarChart-element";
 const ONGOING_HATCH_FILL = "url(#cumulative-state-time-ongoing-hatch)";
@@ -9,12 +10,14 @@ const DATA_GRID_ROW_CLASS = "MuiDataGrid-row";
 
 export class CumulativeStateTimeChart {
 	private readonly widget: Locator;
+	private readonly frame: MetricsWidget;
 
 	constructor(
 		public readonly page: Page,
 		widgetId: string,
 	) {
-		this.widget = page.locator(`[data-testid="dashboard-item-${widgetId}"]`);
+		this.frame = new MetricsWidget(page, widgetId, widgetId);
+		this.widget = this.frame.Widget;
 	}
 
 	get chart(): Locator {
@@ -26,6 +29,7 @@ export class CumulativeStateTimeChart {
 	}
 
 	async countCompletedSegments(): Promise<number> {
+		await this.frame.waitUntilLoaded();
 		return this.completedSegments.count();
 	}
 
@@ -36,6 +40,7 @@ export class CumulativeStateTimeChart {
 	}
 
 	async countOngoingSegments(): Promise<number> {
+		await this.frame.waitUntilLoaded();
 		return this.ongoingSegments.count();
 	}
 
@@ -44,6 +49,7 @@ export class CumulativeStateTimeChart {
 	}
 
 	async countStateBars(): Promise<number> {
+		await this.frame.waitUntilLoaded();
 		return this.stateBars.count();
 	}
 
@@ -92,6 +98,7 @@ export class CumulativeStateTimeChart {
 	}
 
 	async clickConstraintBar(): Promise<CumulativeStateTimeDrillDownDialog> {
+		await this.frame.waitUntilLoaded();
 		const bar = await this.tallestBar();
 		await bar.click({ force: true });
 		return new CumulativeStateTimeDrillDownDialog(this.page);
@@ -102,6 +109,7 @@ export class CumulativeStateTimeChart {
 	}
 
 	async scopeToCycleTime(name: string): Promise<void> {
+		await this.frame.waitUntilLoaded();
 		await this.scopeSelector.click();
 		await this.page.getByRole("option", { name, exact: true }).click();
 	}
@@ -113,6 +121,7 @@ export class CumulativeStateTimeChart {
 	}
 
 	async searchPicker(query: string): Promise<void> {
+		await this.frame.waitUntilLoaded();
 		await this.itemPickerCombobox.click();
 		await this.itemPickerCombobox.fill(query);
 	}
@@ -126,6 +135,7 @@ export class CumulativeStateTimeChart {
 	}
 
 	async countSelectedPickerChips(): Promise<number> {
+		await this.frame.waitUntilLoaded();
 		return this.selectedPickerChips.count();
 	}
 }

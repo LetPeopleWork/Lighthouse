@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { MetricsWidget } from "./MetricsPage";
 import {
 	type ObservedRagStatus,
 	RagChip,
@@ -17,13 +18,15 @@ export type { ObservedRagStatus, RagStatus } from "./RagChip";
 
 export class FlowEfficiencyOverviewTile {
 	private readonly widget: Locator;
+	private readonly frame: MetricsWidget;
 	private readonly rag: RagChip;
 
 	constructor(
 		public readonly page: Page,
 		widgetId = "flowEfficiency",
 	) {
-		this.widget = page.locator(`[data-testid="dashboard-item-${widgetId}"]`);
+		this.frame = new MetricsWidget(page, widgetId, widgetId);
+		this.widget = this.frame.Widget;
 		this.rag = new RagChip(this.widget, widgetId);
 	}
 
@@ -36,6 +39,7 @@ export class FlowEfficiencyOverviewTile {
 	}
 
 	async readEfficiencyText(): Promise<string> {
+		await this.frame.waitUntilLoaded();
 		return (await this.efficiencyValue.innerText()) ?? "";
 	}
 
@@ -71,12 +75,14 @@ export class FlowEfficiencyOverviewTile {
 
 export class CumulativeChartFlowEfficiency {
 	private readonly widget: Locator;
+	private readonly frame: MetricsWidget;
 
 	constructor(
 		public readonly page: Page,
 		widgetId: string,
 	) {
-		this.widget = page.locator(`[data-testid="dashboard-item-${widgetId}"]`);
+		this.frame = new MetricsWidget(page, widgetId, widgetId);
+		this.widget = this.frame.Widget;
 	}
 
 	get titleBlock(): Locator {
@@ -88,6 +94,7 @@ export class CumulativeChartFlowEfficiency {
 	}
 
 	async readEfficiencyText(): Promise<string> {
+		await this.frame.waitUntilLoaded();
 		return (await this.efficiencyNumber.innerText()) ?? "";
 	}
 
@@ -100,6 +107,7 @@ export class CumulativeChartFlowEfficiency {
 	}
 
 	async readWaitColourKeySwatchBackground(): Promise<string> {
+		await this.frame.waitUntilLoaded();
 		return this.waitColourKeySwatch.evaluate(
 			(node) => globalThis.getComputedStyle(node).backgroundColor,
 		);
@@ -116,6 +124,7 @@ export class CumulativeChartFlowEfficiency {
 	}
 
 	async hoverFirstBar(): Promise<void> {
+		await this.frame.waitUntilLoaded();
 		const bar = this.widget
 			.locator('rect.MuiBarChart-element:not([fill^="url("])')
 			.first();

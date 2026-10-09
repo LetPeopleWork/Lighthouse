@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { MetricsWidget } from "./MetricsPage";
 
 const BACKGROUND_MODES_TEST_ID = "aging-background-modes";
 const PACE_BAND_TEST_ID = "pace-band";
@@ -8,12 +9,14 @@ const AGE_BAND_COLUMN_HEADER = "Work Item Age Band";
 
 export class WorkItemAgingChart {
 	private readonly widget: Locator;
+	private readonly frame: MetricsWidget;
 
 	constructor(
 		public readonly page: Page,
 		widgetId: string,
 	) {
-		this.widget = page.locator(`[data-testid="dashboard-item-${widgetId}"]`);
+		this.frame = new MetricsWidget(page, widgetId, widgetId);
+		this.widget = this.frame.Widget;
 	}
 
 	get chart(): Locator {
@@ -39,14 +42,17 @@ export class WorkItemAgingChart {
 	}
 
 	async countPaceBands(): Promise<number> {
+		await this.frame.waitUntilLoaded();
 		return this.paceBands.count();
 	}
 
 	async showPacePercentiles(): Promise<void> {
+		await this.frame.waitUntilLoaded();
 		await this.backgroundMode("Pace percentiles").click();
 	}
 
 	async hideBackground(): Promise<void> {
+		await this.frame.waitUntilLoaded();
 		await this.backgroundMode("Off").click();
 	}
 
@@ -69,6 +75,7 @@ export class WorkItemAgingChart {
 	}
 
 	async countCycleTimePercentileChips(): Promise<number> {
+		await this.frame.waitUntilLoaded();
 		return this.cycleTimePercentileChips.count();
 	}
 
