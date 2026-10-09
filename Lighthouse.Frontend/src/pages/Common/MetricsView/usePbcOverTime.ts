@@ -8,7 +8,7 @@ import {
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { formatLocalDate } from "../../../utils/date/localDate";
-import type { WidgetStatus } from "./widgetStatus";
+import { seriesStatusOf, type WidgetStatus } from "./widgetStatus";
 
 /**
  * Keyed by metric family AND date range, not by family alone: the series a request
@@ -30,14 +30,6 @@ export function cacheKey(
 	endDate: Date,
 ): string {
 	return `${metricType}|${formatLocalDate(startDate)}|${formatLocalDate(endDate)}`;
-}
-
-function statusOf(
-	series: readonly unknown[] | null,
-	failed: boolean,
-): WidgetStatus {
-	if (series !== null) return "ready";
-	return failed ? "error" : "loading";
 }
 
 export interface PbcOverTimeState {
@@ -100,6 +92,6 @@ export function usePbcOverTime(
 		metricType,
 		setMetricType,
 		series,
-		status: statusOf(series, failedKey === key),
+		status: seriesStatusOf(series, failedKey === key),
 	};
 }

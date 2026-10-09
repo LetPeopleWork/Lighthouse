@@ -91,6 +91,15 @@ export function fetchKeyStateOf(
 	return { status: statusOf(queries), hasData: queries.every(showsAnAnswer) };
 }
 
+/** A chart that fetches its own series is ready once one has come back, whatever its length. */
+export function seriesStatusOf(
+	series: readonly unknown[] | null,
+	failed: boolean,
+): WidgetStatus {
+	if (series !== null) return "ready";
+	return failed ? "error" : "loading";
+}
+
 /** Where a chart's own request stands, and whether it still shows something the frame can dim. */
 export type ChartReport = {
 	readonly status: WidgetStatus;
