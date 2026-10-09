@@ -29,7 +29,11 @@ import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
 import type { SleRiskColumnDescriptor } from "../../../utils/charts/sleRisk";
 import type { TrendPayload } from "./trendTypes";
 import type { WidgetStatusGuidance } from "./widgetInfoMetadata";
-import type { WidgetStatus } from "./widgetStatus";
+import {
+	combineWidgetStatuses,
+	type WidgetStatus,
+	WidgetStatusReporterContext,
+} from "./widgetStatus";
 
 /** What a frame says when its chart's data could not be loaded. */
 export const COULD_NOT_LOAD_MESSAGE =
@@ -109,6 +113,14 @@ const centredSpinner = (
 		}}
 	/>
 );
+
+function frameStatusOf(
+	pageStatus: WidgetStatus,
+	chartStatus: WidgetStatus | undefined,
+): WidgetStatus {
+	if (!chartStatus) return pageStatus;
+	return combineWidgetStatuses([pageStatus, chartStatus]);
+}
 
 type BodyLook = "ready" | "dimmed" | "waiting" | "error";
 
@@ -316,11 +328,13 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 	info,
 	viewData,
 	trend,
-	status = "ready",
+	status: pageStatus = "ready",
 	hasContentToDim = false,
 	children,
 }) => {
 	const theme = useTheme();
+	const [chartStatus, setChartStatus] = useState<WidgetStatus>();
+	const status = frameStatusOf(pageStatus, chartStatus);
 	const [infoOpen, setInfoOpen] = useState(false);
 	const [viewDataOpen, setViewDataOpen] = useState(false);
 	const infoAnchorRef = useRef<HTMLButtonElement>(null);
@@ -500,7 +514,9 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 					status={status}
 					hasContentToDim={hasContentToDim}
 				>
-					{children}
+					<WidgetStatusReporterContext value={setChartStatus}>
+						{children}
+					</WidgetStatusReporterContext>
 				</WidgetBody>
 			</Box>
 

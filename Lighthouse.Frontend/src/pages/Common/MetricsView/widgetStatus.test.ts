@@ -330,7 +330,7 @@ describe("one request's progress, as a chart sees it", () => {
 });
 
 describe("a chart that fetches for itself", () => {
-	it.skip("reports nothing, and breaks nothing, when it is drawn outside a dashboard frame", () => {
+	it("reports nothing, and breaks nothing, when it is drawn outside a dashboard frame", () => {
 		expect(() =>
 			renderHook(() => useReportWidgetStatus("loading")),
 		).not.toThrow();

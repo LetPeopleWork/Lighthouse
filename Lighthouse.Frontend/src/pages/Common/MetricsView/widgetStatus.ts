@@ -1,9 +1,8 @@
+import { createContext, useContext, useLayoutEffect } from "react";
 import {
 	getFetchRequirementsForWidget,
 	type MetricsFetchKey,
 } from "./categoryMetadata";
-
-const NOT_YET_IMPLEMENTED = "Not yet implemented -- RED scaffold";
 
 export type WidgetStatus = "loading" | "error" | "ready";
 
@@ -92,6 +91,20 @@ export function fetchKeyStateOf(
 	return { status: statusOf(queries), hasData: queries.every(showsAnAnswer) };
 }
 
-export function useReportWidgetStatus(_status: WidgetStatus): void {
-	throw new Error(NOT_YET_IMPLEMENTED);
+/** How a chart that fetches for itself tells its frame where its own request stands. */
+type ReportWidgetStatus = (status: WidgetStatus | undefined) => void;
+
+export const WidgetStatusReporterContext =
+	createContext<ReportWidgetStatus | null>(null);
+
+// A layout effect lands before the browser paints, so a frame is never painted ready for a chart
+// whose request has not started yet. Outside a frame there is nobody to tell.
+export function useReportWidgetStatus(status: WidgetStatus): void {
+	const report = useContext(WidgetStatusReporterContext);
+
+	useLayoutEffect(() => {
+		if (!report) return;
+		report(status);
+		return () => report(undefined);
+	}, [report, status]);
 }

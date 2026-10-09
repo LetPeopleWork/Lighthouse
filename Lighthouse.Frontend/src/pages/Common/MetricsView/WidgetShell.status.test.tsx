@@ -315,7 +315,7 @@ describe("a chart the page feeds", () => {
 });
 
 describe("a chart that fetches its own data", () => {
-	it.skip("puts its own frame into loading while its series is on its way", () => {
+	it("puts its own frame into loading while its series is on its way", () => {
 		renderFrame(
 			{ status: "ready", hasContentToDim: false },
 			<SelfFetchingChart status="loading" />,
@@ -325,7 +325,7 @@ describe("a chart that fetches its own data", () => {
 		expect(within(frame()).getByRole("progressbar")).toBeInTheDocument();
 	});
 
-	it.skip.each<[WidgetStatus, WidgetStatus, WidgetStatus]>([
+	it.each<[WidgetStatus, WidgetStatus, WidgetStatus]>([
 		["ready", "ready", "ready"],
 		["ready", "error", "error"],
 		["error", "ready", "error"],
