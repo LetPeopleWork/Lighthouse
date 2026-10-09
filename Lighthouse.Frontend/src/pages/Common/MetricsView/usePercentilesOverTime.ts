@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { MetricsOwnerKey } from "../../../hooks/useMetricsData";
 import type { IFeature } from "../../../models/Feature";
 import type {
 	PercentilesOverTimeSnapshot,
@@ -48,7 +49,7 @@ export interface PercentilesOverTimeState {
  * request: the endpoint only hands back what was already persisted.
  */
 export function usePercentilesOverTime(
-	ownerId: number,
+	owner: MetricsOwnerKey,
 	metricsService: IMetricsService<IWorkItem | IFeature>,
 	startDate: Date,
 	endDate: Date,
@@ -56,7 +57,8 @@ export function usePercentilesOverTime(
 	const [selection, setSelection] = useState<PercentilesSelection>(30);
 	const [failedKey, setFailedKey] = useState<string | null>(null);
 	const [cache, setCache] = useState<SelectionCache>({});
-	const key = cacheKey(selection, startDate, endDate);
+	// An update recomputes the owner's series, so whose series it is and how recent are part of the key.
+	const key = `${owner.ownerId}|${owner.ownerUpdatedAt}|${cacheKey(selection, startDate, endDate)}`;
 
 	useEffect(() => {
 		// Already fetched for this selection AND range — re-plot from the persisted
@@ -67,7 +69,7 @@ export function usePercentilesOverTime(
 		}
 		let cancelled = false;
 		metricsService
-			.getPercentilesOverTime(ownerId, selection, startDate, endDate)
+			.getPercentilesOverTime(owner.ownerId, selection, startDate, endDate)
 			.then((data) => {
 				if (!cancelled) {
 					setCache((previous) => ({ ...previous, [key]: data }));
@@ -83,7 +85,15 @@ export function usePercentilesOverTime(
 			cancelled = true;
 			setFailedKey(null);
 		};
-	}, [ownerId, metricsService, selection, startDate, endDate, key, cache]);
+	}, [
+		owner.ownerId,
+		metricsService,
+		selection,
+		startDate,
+		endDate,
+		key,
+		cache,
+	]);
 
 	const series = cache[key] ?? null;
 	return {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { MetricsOwnerKey } from "../../../hooks/useMetricsData";
 import type { IFeature } from "../../../models/Feature";
 import {
 	DEFAULT_PROCESS_BEHAVIOR_METRIC_TYPE,
@@ -48,7 +49,7 @@ export interface PbcOverTimeState {
  * back what was already persisted, so there is nothing to gain from asking twice.
  */
 export function usePbcOverTime(
-	ownerId: number,
+	owner: MetricsOwnerKey,
 	metricsService: IMetricsService<IWorkItem | IFeature>,
 	startDate: Date,
 	endDate: Date,
@@ -58,7 +59,8 @@ export function usePbcOverTime(
 	);
 	const [failedKey, setFailedKey] = useState<string | null>(null);
 	const [cache, setCache] = useState<MetricTypeCache>({});
-	const key = cacheKey(metricType, startDate, endDate);
+	// An update recomputes the owner's series, so whose series it is and how recent are part of the key.
+	const key = `${owner.ownerId}|${owner.ownerUpdatedAt}|${cacheKey(metricType, startDate, endDate)}`;
 
 	useEffect(() => {
 		// Already fetched for this family AND range — re-plot from the persisted
@@ -69,7 +71,7 @@ export function usePbcOverTime(
 		}
 		let cancelled = false;
 		metricsService
-			.getProcessBehaviorOverTime(ownerId, metricType, startDate, endDate)
+			.getProcessBehaviorOverTime(owner.ownerId, metricType, startDate, endDate)
 			.then((data) => {
 				if (!cancelled) {
 					setCache((previous) => ({ ...previous, [key]: data }));
@@ -85,7 +87,15 @@ export function usePbcOverTime(
 			cancelled = true;
 			setFailedKey(null);
 		};
-	}, [ownerId, metricsService, metricType, startDate, endDate, key, cache]);
+	}, [
+		owner.ownerId,
+		metricsService,
+		metricType,
+		startDate,
+		endDate,
+		key,
+		cache,
+	]);
 
 	const series = cache[key] ?? null;
 	return {

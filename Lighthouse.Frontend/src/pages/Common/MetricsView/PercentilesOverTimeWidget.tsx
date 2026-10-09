@@ -11,6 +11,7 @@ import {
 import { LineChart } from "@mui/x-charts";
 import type React from "react";
 import { ForecastLevel } from "../../../components/Common/Forecasts/ForecastLevel";
+import type { MetricsOwnerKey } from "../../../hooks/useMetricsData";
 import type { IFeature } from "../../../models/Feature";
 import type {
 	PercentilesOverTimeSnapshot,
@@ -27,7 +28,7 @@ import { usePercentilesOverTime } from "./usePercentilesOverTime";
 import { useReportWidgetStatus } from "./widgetStatus";
 
 interface PercentilesOverTimeWidgetProps {
-	ownerId: number;
+	owner: MetricsOwnerKey;
 	metricsService: IMetricsService<IWorkItem | IFeature>;
 	startDate: Date;
 	endDate: Date;
@@ -89,14 +90,14 @@ function describeSelection(selection: PercentilesSelection): SelectionChip {
  * a backend recompute.
  */
 const PercentilesOverTimeWidget: React.FC<PercentilesOverTimeWidgetProps> = ({
-	ownerId,
+	owner,
 	metricsService,
 	startDate,
 	endDate,
 	title = "Percentiles Over Time",
 }) => {
 	const { selection, setSelection, series, status } = usePercentilesOverTime(
-		ownerId,
+		owner,
 		metricsService,
 		startDate,
 		endDate,

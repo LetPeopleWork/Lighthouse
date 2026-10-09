@@ -130,7 +130,7 @@ function renderWidget(
 	return render(
 		<ThemeProvider theme={theme}>
 			<PbcOverTimeWidget
-				ownerId={OWNER_ID}
+				owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
 				metricsService={createMetricsService(getProcessBehaviorOverTime)}
 				startDate={startDate}
 				endDate={endDate}

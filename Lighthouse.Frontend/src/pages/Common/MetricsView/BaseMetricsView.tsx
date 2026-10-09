@@ -1198,7 +1198,7 @@ function buildWidgetNodes(ctx: {
 		),
 		percentilesOverTime: (
 			<PercentilesOverTimeWidget
-				ownerId={ctx.entity.id}
+				owner={metricsOwnerKeyOf(ctx.entity)}
 				metricsService={ctx.metricsService}
 				startDate={ctx.startDate}
 				endDate={ctx.endDate}
@@ -1206,7 +1206,7 @@ function buildWidgetNodes(ctx: {
 		),
 		pbcOverTime: (
 			<PbcOverTimeWidget
-				ownerId={ctx.entity.id}
+				owner={metricsOwnerKeyOf(ctx.entity)}
 				metricsService={ctx.metricsService}
 				startDate={ctx.startDate}
 				endDate={ctx.endDate}

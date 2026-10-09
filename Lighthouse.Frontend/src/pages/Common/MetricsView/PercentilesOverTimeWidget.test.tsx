@@ -156,7 +156,7 @@ describe("PercentilesOverTimeWidget", () => {
 		const getPercentilesOverTime = vi.fn().mockResolvedValue(DATED_SERIES);
 		render(
 			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
+				owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
 				startDate={RANGE_START}
 				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
@@ -193,7 +193,7 @@ describe("PercentilesOverTimeWidget", () => {
 		const getPercentilesOverTime = vi.fn().mockResolvedValue(DATED_SERIES);
 		render(
 			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
+				owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
 				startDate={RANGE_START}
 				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
@@ -230,7 +230,7 @@ describe("PercentilesOverTimeWidget", () => {
 		const getPercentilesOverTime = vi.fn().mockResolvedValue(DATED_SERIES);
 		render(
 			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
+				owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
 				startDate={RANGE_START}
 				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
@@ -250,7 +250,7 @@ describe("PercentilesOverTimeWidget", () => {
 		const getPercentilesOverTime = vi.fn().mockResolvedValue(DATED_SERIES);
 		render(
 			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
+				owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
 				startDate={RANGE_START}
 				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
@@ -274,7 +274,7 @@ describe("PercentilesOverTimeWidget", () => {
 		const getPercentilesOverTime = vi.fn().mockResolvedValue(DATED_SERIES);
 		render(
 			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
+				owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
 				startDate={RANGE_START}
 				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
@@ -326,7 +326,7 @@ describe("PercentilesOverTimeWidget", () => {
 		const getPercentilesOverTime = vi.fn().mockResolvedValue(DATED_SERIES);
 		render(
 			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
+				owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
 				startDate={RANGE_START}
 				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
@@ -352,7 +352,7 @@ describe("PercentilesOverTimeWidget", () => {
 			.mockReturnValue(new Promise<PercentilesOverTimeSnapshot[]>(() => {}));
 		render(
 			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
+				owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
 				startDate={RANGE_START}
 				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
@@ -383,7 +383,7 @@ describe("PercentilesOverTimeWidget", () => {
 		const getPercentilesOverTime = vi.fn().mockRejectedValue(new Error("boom"));
 		render(
 			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
+				owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
 				startDate={RANGE_START}
 				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
@@ -413,7 +413,7 @@ describe("PercentilesOverTimeWidget", () => {
 			const getPercentilesOverTime = vi.fn().mockResolvedValue([]);
 			render(
 				<PercentilesOverTimeWidget
-					ownerId={OWNER_ID}
+					owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
 					startDate={startDate}
 					endDate={endDate}
 					metricsService={createMetricsService(getPercentilesOverTime)}
@@ -447,7 +447,7 @@ describe("PercentilesOverTimeWidget", () => {
 		const getPercentilesOverTime = vi.fn().mockResolvedValue([]);
 		render(
 			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
+				owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
 				startDate={RANGE_START}
 				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
@@ -480,7 +480,7 @@ describe("PercentilesOverTimeWidget", () => {
 
 		const { rerender } = render(
 			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
+				owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
 				startDate={RANGE_START}
 				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
@@ -498,7 +498,7 @@ describe("PercentilesOverTimeWidget", () => {
 
 		rerender(
 			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
+				owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
 				startDate={PAST_RANGE_START}
 				endDate={PAST_RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
@@ -533,7 +533,7 @@ describe("PercentilesOverTimeWidget", () => {
 			);
 		render(
 			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
+				owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
 				startDate={RANGE_START}
 				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
@@ -576,7 +576,7 @@ describe("PercentilesOverTimeWidget", () => {
 		const getPercentilesOverTime = vi.fn().mockResolvedValue(DATED_SERIES);
 		render(
 			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
+				owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
 				startDate={RANGE_START}
 				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
@@ -618,7 +618,7 @@ describe("PercentilesOverTimeWidget", () => {
 		const getPercentilesOverTime = vi.fn().mockResolvedValue(DATED_SERIES);
 		render(
 			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
+				owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
 				startDate={RANGE_START}
 				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
@@ -648,7 +648,7 @@ describe("PercentilesOverTimeWidget", () => {
 			);
 		render(
 			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
+				owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
 				startDate={RANGE_START}
 				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
@@ -733,7 +733,7 @@ describe("PercentilesOverTimeWidget", () => {
 			);
 		render(
 			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
+				owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
 				startDate={RANGE_START}
 				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
@@ -760,7 +760,7 @@ describe("PercentilesOverTimeWidget", () => {
 			);
 		render(
 			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
+				owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
 				startDate={RANGE_START}
 				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}

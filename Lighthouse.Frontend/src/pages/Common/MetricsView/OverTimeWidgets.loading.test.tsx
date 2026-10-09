@@ -56,7 +56,7 @@ const overTimeCharts: readonly OverTimeChart[] = [
 		method: "getProcessBehaviorOverTime",
 		draw: (service, start, end) => (
 			<PbcOverTimeWidget
-				ownerId={2}
+				owner={{ ownerId: 2, ownerUpdatedAt: 0 }}
 				metricsService={service}
 				startDate={start}
 				endDate={end}
@@ -77,7 +77,7 @@ const overTimeCharts: readonly OverTimeChart[] = [
 		method: "getPercentilesOverTime",
 		draw: (service, start, end) => (
 			<PercentilesOverTimeWidget
-				ownerId={2}
+				owner={{ ownerId: 2, ownerUpdatedAt: 0 }}
 				metricsService={service}
 				startDate={start}
 				endDate={end}

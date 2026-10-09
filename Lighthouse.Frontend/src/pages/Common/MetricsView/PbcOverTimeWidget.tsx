@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { LineChart } from "@mui/x-charts";
 import type React from "react";
+import type { MetricsOwnerKey } from "../../../hooks/useMetricsData";
 import type { IFeature } from "../../../models/Feature";
 import type {
 	ProcessBehaviorMetricType,
@@ -27,7 +28,7 @@ import { usePbcOverTime } from "./usePbcOverTime";
 import { useReportWidgetStatus } from "./widgetStatus";
 
 interface PbcOverTimeWidgetProps {
-	ownerId: number;
+	owner: MetricsOwnerKey;
 	metricsService: IMetricsService<IWorkItem | IFeature>;
 	startDate: Date;
 	endDate: Date;
@@ -133,7 +134,7 @@ function describeMetricType(
  * An empty series gets the shared empty copy, never a fabricated or broken axis.
  */
 const PbcOverTimeWidget: React.FC<PbcOverTimeWidgetProps> = ({
-	ownerId,
+	owner,
 	metricsService,
 	startDate,
 	endDate,
@@ -143,7 +144,7 @@ const PbcOverTimeWidget: React.FC<PbcOverTimeWidgetProps> = ({
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
 	const { metricType, setMetricType, series, status } = usePbcOverTime(
-		ownerId,
+		owner,
 		metricsService,
 		startDate,
 		endDate,

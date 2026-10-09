@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import type { MetricsOwnerKey } from "../../../hooks/useMetricsData";
 import type { IFeature } from "../../../models/Feature";
 import type { ProcessBehaviorSnapshot } from "../../../models/Metrics/ProcessBehaviorSnapshot";
 import type { IWorkItem } from "../../../models/WorkItem";
@@ -15,6 +16,7 @@ import { cacheKey, usePbcOverTime } from "./usePbcOverTime";
 
 const OWNER_ID = 42;
 const OTHER_OWNER_ID = 43;
+const OWNER: MetricsOwnerKey = { ownerId: OWNER_ID, ownerUpdatedAt: 0 };
 const RANGE_START = new Date(2026, 6, 1);
 const RANGE_END = new Date(2026, 6, 26);
 const OTHER_RANGE_START = new Date(2026, 4, 1);
@@ -44,7 +46,7 @@ describe("usePbcOverTime", () => {
 
 		const { result } = renderHook(() =>
 			usePbcOverTime(
-				OWNER_ID,
+				OWNER,
 				createMetricsService(getProcessBehaviorOverTime),
 				RANGE_START,
 				RANGE_END,
@@ -74,7 +76,7 @@ describe("usePbcOverTime", () => {
 		const { result, rerender } = renderHook(
 			({ startDate, endDate }: { startDate: Date; endDate: Date }) =>
 				usePbcOverTime(
-					OWNER_ID,
+					OWNER,
 					createMetricsService(getProcessBehaviorOverTime),
 					startDate,
 					endDate,
@@ -108,7 +110,7 @@ describe("usePbcOverTime", () => {
 		const { result, rerender } = renderHook(
 			({ startDate, endDate }: { startDate: Date; endDate: Date }) =>
 				usePbcOverTime(
-					OWNER_ID,
+					OWNER,
 					createMetricsService(getProcessBehaviorOverTime),
 					startDate,
 					endDate,
@@ -137,7 +139,7 @@ describe("usePbcOverTime", () => {
 
 		const { result } = renderHook(() =>
 			usePbcOverTime(
-				OWNER_ID,
+				OWNER,
 				createMetricsService(getProcessBehaviorOverTime),
 				RANGE_START,
 				RANGE_END,
@@ -176,7 +178,7 @@ describe("usePbcOverTime cache key", () => {
 		const { result, rerender } = renderHook(
 			({ startDate }: { startDate: Date }) =>
 				usePbcOverTime(
-					OWNER_ID,
+					OWNER,
 					createMetricsService(getProcessBehaviorOverTime),
 					startDate,
 					RANGE_END,
@@ -220,7 +222,7 @@ describe("usePbcOverTime when a response outlives the request that asked for it"
 		const { result, rerender } = renderHook(
 			({ ownerId }: { ownerId: number }) =>
 				usePbcOverTime(
-					ownerId,
+					{ ownerId, ownerUpdatedAt: 0 },
 					createMetricsService(getProcessBehaviorOverTime),
 					RANGE_START,
 					RANGE_END,
@@ -249,7 +251,7 @@ describe("usePbcOverTime when a response outlives the request that asked for it"
 
 		const { result } = renderHook(() =>
 			usePbcOverTime(
-				OWNER_ID,
+				OWNER,
 				createMetricsService(getProcessBehaviorOverTime),
 				RANGE_START,
 				RANGE_END,
@@ -263,5 +265,76 @@ describe("usePbcOverTime when a response outlives the request that asked for it"
 		await waitFor(() => expect(result.current.status).toBe("error"));
 
 		consoleError.mockRestore();
+	});
+});
+
+/**
+ * An update recomputes the owner's persisted series, and the dashboard can move to
+ * another owner without remounting, so the owner and the moment it last updated are
+ * part of what a cached series answers for.
+ */
+describe("usePbcOverTime as its owner changes or updates", () => {
+	const ONE_MINUTE_LATER = OWNER.ownerUpdatedAt + 60_000;
+
+	function drawnFor(getProcessBehaviorOverTime: ReturnType<typeof vi.fn>) {
+		return renderHook(
+			({ owner }: { owner: MetricsOwnerKey }) =>
+				usePbcOverTime(
+					owner,
+					createMetricsService(getProcessBehaviorOverTime),
+					RANGE_START,
+					RANGE_END,
+				),
+			{ initialProps: { owner: OWNER } },
+		);
+	}
+
+	it("asks again once the owner has updated, and shows the series it answers", async () => {
+		const getProcessBehaviorOverTime = vi
+			.fn()
+			.mockResolvedValueOnce(FIRST_RANGE_SERIES)
+			.mockResolvedValueOnce(SECOND_RANGE_SERIES);
+		const { result, rerender } = drawnFor(getProcessBehaviorOverTime);
+		await waitFor(() =>
+			expect(result.current.series).toEqual(FIRST_RANGE_SERIES),
+		);
+
+		rerender({ owner: { ...OWNER, ownerUpdatedAt: ONE_MINUTE_LATER } });
+
+		await waitFor(() =>
+			expect(result.current.series).toEqual(SECOND_RANGE_SERIES),
+		);
+		expect(getProcessBehaviorOverTime).toHaveBeenCalledTimes(2);
+	});
+
+	it("does not ask again for the same owner and update moment", async () => {
+		const getProcessBehaviorOverTime = vi
+			.fn()
+			.mockResolvedValue(FIRST_RANGE_SERIES);
+		const { result, rerender } = drawnFor(getProcessBehaviorOverTime);
+		await waitFor(() =>
+			expect(result.current.series).toEqual(FIRST_RANGE_SERIES),
+		);
+
+		rerender({ owner: { ...OWNER } });
+
+		expect(result.current.series).toEqual(FIRST_RANGE_SERIES);
+		expect(getProcessBehaviorOverTime).toHaveBeenCalledTimes(1);
+	});
+
+	it("never shows the previous owner's series while the next owner's is on its way", async () => {
+		const getProcessBehaviorOverTime = vi
+			.fn()
+			.mockResolvedValueOnce(FIRST_RANGE_SERIES)
+			.mockReturnValueOnce(new Promise(() => {}));
+		const { result, rerender } = drawnFor(getProcessBehaviorOverTime);
+		await waitFor(() =>
+			expect(result.current.series).toEqual(FIRST_RANGE_SERIES),
+		);
+
+		rerender({ owner: { ownerId: OTHER_OWNER_ID, ownerUpdatedAt: 0 } });
+
+		expect(result.current.series).toBeNull();
+		expect(result.current.status).toBe("loading");
 	});
 });
