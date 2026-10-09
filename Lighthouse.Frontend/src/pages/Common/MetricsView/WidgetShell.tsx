@@ -122,6 +122,14 @@ function frameStatusOf(
 	return combineWidgetStatuses([pageStatus, chartStatus]);
 }
 
+// A chart still waiting for its own series has nothing drawn, whatever the page holds.
+function frameHasContentToDim(
+	pageHasContentToDim: boolean,
+	chartStatus: WidgetStatus | undefined,
+): boolean {
+	return pageHasContentToDim && chartStatus !== "loading";
+}
+
 type BodyLook = "ready" | "dimmed" | "waiting" | "error";
 
 function bodyLookFor(status: WidgetStatus, hasContentToDim: boolean): BodyLook {
@@ -329,12 +337,16 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 	viewData,
 	trend,
 	status: pageStatus = "ready",
-	hasContentToDim = false,
+	hasContentToDim: pageHasContentToDim = false,
 	children,
 }) => {
 	const theme = useTheme();
 	const [chartStatus, setChartStatus] = useState<WidgetStatus>();
 	const status = frameStatusOf(pageStatus, chartStatus);
+	const hasContentToDim = frameHasContentToDim(
+		pageHasContentToDim,
+		chartStatus,
+	);
 	const [infoOpen, setInfoOpen] = useState(false);
 	const [viewDataOpen, setViewDataOpen] = useState(false);
 	const infoAnchorRef = useRef<HTMLButtonElement>(null);

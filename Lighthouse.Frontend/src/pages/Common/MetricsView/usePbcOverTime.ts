@@ -8,6 +8,7 @@ import {
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { formatLocalDate } from "../../../utils/date/localDate";
+import type { WidgetStatus } from "./widgetStatus";
 
 /**
  * Keyed by metric family AND date range, not by family alone: the series a request
@@ -31,11 +32,20 @@ export function cacheKey(
 	return `${metricType}|${formatLocalDate(startDate)}|${formatLocalDate(endDate)}`;
 }
 
+function statusOf(
+	series: readonly unknown[] | null,
+	failed: boolean,
+): WidgetStatus {
+	if (series !== null) return "ready";
+	return failed ? "error" : "loading";
+}
+
 export interface PbcOverTimeState {
 	metricType: ProcessBehaviorMetricType;
 	setMetricType: (metricType: ProcessBehaviorMetricType) => void;
 	/** null while the selected family is still loading; [] once loaded-but-empty. */
 	series: ProcessBehaviorSnapshot[] | null;
+	status: WidgetStatus;
 }
 
 /**
@@ -54,6 +64,7 @@ export function usePbcOverTime(
 	const [metricType, setMetricType] = useState<ProcessBehaviorMetricType>(
 		DEFAULT_PROCESS_BEHAVIOR_METRIC_TYPE,
 	);
+	const [failedKey, setFailedKey] = useState<string | null>(null);
 	const [cache, setCache] = useState<MetricTypeCache>({});
 	const key = cacheKey(metricType, startDate, endDate);
 
@@ -72,13 +83,23 @@ export function usePbcOverTime(
 					setCache((previous) => ({ ...previous, [key]: data }));
 				}
 			})
-			.catch((error) =>
-				console.error("Error fetching process behavior over time:", error),
-			);
+			.catch((error) => {
+				console.error("Error fetching process behavior over time:", error);
+				if (!cancelled) {
+					setFailedKey(key);
+				}
+			});
 		return () => {
 			cancelled = true;
+			setFailedKey(null);
 		};
 	}, [ownerId, metricsService, metricType, startDate, endDate, key, cache]);
 
-	return { metricType, setMetricType, series: cache[key] ?? null };
+	const series = cache[key] ?? null;
+	return {
+		metricType,
+		setMetricType,
+		series,
+		status: statusOf(series, failedKey === key),
+	};
 }

@@ -56,9 +56,11 @@ describe("usePercentilesOverTime", () => {
 			),
 		);
 
+		expect(result.current.status).toBe("loading");
 		await waitFor(() =>
 			expect(result.current.series).toEqual(FIRST_RANGE_SERIES),
 		);
+		expect(result.current.status).toBe("ready");
 		expect(getPercentilesOverTime).toHaveBeenCalledWith(
 			OWNER_ID,
 			30,
@@ -276,6 +278,7 @@ describe("usePercentilesOverTime when a response outlives the request that asked
 			expect(consoleError).toHaveBeenCalledWith(expect.any(String), failure),
 		);
 		expect(result.current.series).toBeNull();
+		await waitFor(() => expect(result.current.status).toBe("error"));
 
 		consoleError.mockRestore();
 	});

@@ -7,6 +7,7 @@ import type {
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { formatLocalDate } from "../../../utils/date/localDate";
+import type { WidgetStatus } from "./widgetStatus";
 
 /**
  * Keyed by selection AND date range, not by selection alone: the series a request
@@ -30,11 +31,20 @@ export function cacheKey(
 	return `${selection}|${formatLocalDate(startDate)}|${formatLocalDate(endDate)}`;
 }
 
+function statusOf(
+	series: readonly unknown[] | null,
+	failed: boolean,
+): WidgetStatus {
+	if (series !== null) return "ready";
+	return failed ? "error" : "loading";
+}
+
 export interface PercentilesOverTimeState {
 	selection: PercentilesSelection;
 	setSelection: (selection: PercentilesSelection) => void;
 	/** null while the selected tab is still loading; [] once loaded-but-empty. */
 	series: PercentilesOverTimeSnapshot[] | null;
+	status: WidgetStatus;
 }
 
 /**
@@ -52,6 +62,7 @@ export function usePercentilesOverTime(
 	endDate: Date,
 ): PercentilesOverTimeState {
 	const [selection, setSelection] = useState<PercentilesSelection>(30);
+	const [failedKey, setFailedKey] = useState<string | null>(null);
 	const [cache, setCache] = useState<SelectionCache>({});
 	const key = cacheKey(selection, startDate, endDate);
 
@@ -70,13 +81,23 @@ export function usePercentilesOverTime(
 					setCache((previous) => ({ ...previous, [key]: data }));
 				}
 			})
-			.catch((error) =>
-				console.error("Error fetching percentiles over time:", error),
-			);
+			.catch((error) => {
+				console.error("Error fetching percentiles over time:", error);
+				if (!cancelled) {
+					setFailedKey(key);
+				}
+			});
 		return () => {
 			cancelled = true;
+			setFailedKey(null);
 		};
 	}, [ownerId, metricsService, selection, startDate, endDate, key, cache]);
 
-	return { selection, setSelection, series: cache[key] ?? null };
+	const series = cache[key] ?? null;
+	return {
+		selection,
+		setSelection,
+		series,
+		status: statusOf(series, failedKey === key),
+	};
 }

@@ -24,6 +24,7 @@ import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { OVER_TIME_EMPTY_COPY } from "./overTimeEmptyState";
 import { usePbcOverTime } from "./usePbcOverTime";
+import { useReportWidgetStatus } from "./widgetStatus";
 
 interface PbcOverTimeWidgetProps {
 	ownerId: number;
@@ -141,12 +142,13 @@ const PbcOverTimeWidget: React.FC<PbcOverTimeWidgetProps> = ({
 }) => {
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
-	const { metricType, setMetricType, series } = usePbcOverTime(
+	const { metricType, setMetricType, series, status } = usePbcOverTime(
 		ownerId,
 		metricsService,
 		startDate,
 		endDate,
 	);
+	useReportWidgetStatus(status);
 
 	const tabs = processBehaviorMetricTypesFor(ownerType).map((type) =>
 		describeMetricType(type, getTerm),

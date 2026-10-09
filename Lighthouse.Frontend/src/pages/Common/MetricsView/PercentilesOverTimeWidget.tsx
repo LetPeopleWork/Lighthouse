@@ -24,6 +24,7 @@ import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { OVER_TIME_EMPTY_COPY } from "./overTimeEmptyState";
 import { usePercentilesOverTime } from "./usePercentilesOverTime";
+import { useReportWidgetStatus } from "./widgetStatus";
 
 interface PercentilesOverTimeWidgetProps {
 	ownerId: number;
@@ -94,12 +95,13 @@ const PercentilesOverTimeWidget: React.FC<PercentilesOverTimeWidgetProps> = ({
 	endDate,
 	title = "Percentiles Over Time",
 }) => {
-	const { selection, setSelection, series } = usePercentilesOverTime(
+	const { selection, setSelection, series, status } = usePercentilesOverTime(
 		ownerId,
 		metricsService,
 		startDate,
 		endDate,
 	);
+	useReportWidgetStatus(status);
 
 	const chips = PERCENTILES_SELECTIONS.map(describeSelection);
 

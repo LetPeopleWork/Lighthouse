@@ -1046,7 +1046,7 @@ const chartsThatFetchForThemselves = [
 describe.each(chartsThatFetchForThemselves)(
 	"%s on the Predictability dashboard",
 	(_name, widgetKey, method) => {
-		it.skip("shows its spinner in its own frame while its series is on its way", async () => {
+		it("shows its spinner in its own frame while its series is on its way", async () => {
 			openTheDashboard("team", "predictability");
 
 			await everythingAsked({ except: method });
@@ -1058,7 +1058,7 @@ describe.each(chartsThatFetchForThemselves)(
 			).toBeInTheDocument();
 		});
 
-		it.skip("says it couldn't be loaded when its series cannot be loaded", async () => {
+		it("says it couldn't be loaded when its series cannot be loaded", async () => {
 			openTheDashboard("team", "predictability");
 
 			await act(async () => held.fail({ method }));
@@ -1070,7 +1070,7 @@ describe.each(chartsThatFetchForThemselves)(
 			).toBeInTheDocument();
 		});
 
-		it.skip("still says it couldn't be loaded while a stepped window waits to be committed", async () => {
+		it("still says it couldn't be loaded while a stepped window waits to be committed", async () => {
 			openTheDashboard("team", "predictability");
 			await act(async () => held.fail({ method }));
 			await everythingHasLoaded();

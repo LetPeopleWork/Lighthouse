@@ -51,9 +51,11 @@ describe("usePbcOverTime", () => {
 			),
 		);
 
+		expect(result.current.status).toBe("loading");
 		await waitFor(() =>
 			expect(result.current.series).toEqual(FIRST_RANGE_SERIES),
 		);
+		expect(result.current.status).toBe("ready");
 		expect(getProcessBehaviorOverTime).toHaveBeenCalledWith(
 			OWNER_ID,
 			"Throughput",
@@ -144,7 +146,9 @@ describe("usePbcOverTime", () => {
 
 		// The widget's empty-state branch depends on the null/[] distinction.
 		expect(result.current.series).toBeNull();
+		expect(result.current.status).toBe("loading");
 		await waitFor(() => expect(result.current.series).toEqual([]));
+		expect(result.current.status).toBe("ready");
 	});
 });
 
@@ -256,6 +260,7 @@ describe("usePbcOverTime when a response outlives the request that asked for it"
 			expect(consoleError).toHaveBeenCalledWith(expect.any(String), failure),
 		);
 		expect(result.current.series).toBeNull();
+		await waitFor(() => expect(result.current.status).toBe("error"));
 
 		consoleError.mockRestore();
 	});

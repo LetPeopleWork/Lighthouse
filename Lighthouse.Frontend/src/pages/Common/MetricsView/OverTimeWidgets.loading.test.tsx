@@ -133,7 +133,7 @@ describe.each(overTimeCharts)("$name while its series loads", (chart) => {
 		expect(within(frame()).queryByRole("progressbar")).not.toBeInTheDocument();
 	});
 
-	it.skip("shows a spinner in its frame while the series is on its way, never an empty area", () => {
+	it("shows a spinner in its frame while the series is on its way, never an empty area", () => {
 		render(framed(LAST_30_DAYS));
 
 		expect(frame()).toHaveAttribute("data-widget-status", "loading");
@@ -142,7 +142,7 @@ describe.each(overTimeCharts)("$name while its series loads", (chart) => {
 		expect(screen.queryByTestId("over-time-chart")).not.toBeInTheDocument();
 	});
 
-	it.skip("goes back to its spinner when the reader picks another window", async () => {
+	it("goes back to its spinner when the reader picks another window", async () => {
 		const { rerender } = render(framed(LAST_30_DAYS));
 		await answer(LAST_30_DAYS, 3);
 		expect(frame()).toHaveAttribute("data-widget-status", "ready");
@@ -155,7 +155,7 @@ describe.each(overTimeCharts)("$name while its series loads", (chart) => {
 		expectOutOfSight("over-time-chart");
 	});
 
-	it.skip("never shows the series of a window the reader has already left", async () => {
+	it("never shows the series of a window the reader has already left", async () => {
 		const { rerender } = render(framed(LAST_30_DAYS));
 		rerender(framed(LAST_90_DAYS));
 
@@ -166,7 +166,7 @@ describe.each(overTimeCharts)("$name while its series loads", (chart) => {
 		expect(frame()).toHaveAttribute("data-widget-status", "ready");
 	});
 
-	it.skip("ends in the could-not-load message when its series cannot be loaded", async () => {
+	it("ends in the could-not-load message when its series cannot be loaded", async () => {
 		render(framed(LAST_30_DAYS));
 
 		await act(async () => held.fail({ method: chart.method }));
