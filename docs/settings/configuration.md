@@ -139,18 +139,21 @@ The terminology configuration allows you to customize the following terms:
 | **Features** | Features | Plural form of feature | Epics, Initiatives, Themes, Components |
 | **Cycle Time** | Cycle Time | Time from when work starts until completion | Lead Time, Flow Time, Delivery Time |
 | **Throughput** | Throughput | Number of items completed in a given time period | Velocity, Delivery Rate, Completion Rate |
-| **Work in Progress** | Work in Progress | Items currently being worked on | WIP, In Progress, Active Work |
-| **WIP** | WIP | Abbreviated form of Work in Progress | IP, Active, Current |
+| **Work In Progress** | Work In Progress | Items currently being worked on | WIP, In Progress, Active Work |
+| **WIP** | WIP | Abbreviated form of Work In Progress | IP, Active, Current |
 | **Work Item Age** | Work Item Age | How long an item has been in progress | Item Age, Story Age, Task Age |
 | **Tag** | Tag | Labels or categories applied to work items | Label, Category, Type, Keyword |
 | **Work Tracking System** | Work Tracking System | The external system that stores your work items | Issue Tracker, Project Management Tool, ALM Tool |
 | **Work Tracking Systems** | Work Tracking Systems | Plural form of work tracking system | Issue Trackers, Project Management Tools, ALM Tools |
-| **Query** | Query | Search criteria used to find work items | Search, Filter, JQL, WIQL |
 | **Blocked** | Blocked | Items that cannot progress due to impediments | Impediment, Stuck, On Hold, Waiting |
 | **Service Level Expectation** | Service Level Expectation | Expected time for work completion | SLE, Target Time, Goal, Commitment |
 | **SLE** | SLE | Abbreviated form of Service Level Expectation | Target, Goal, Expectation |
 | **Team** | Team | Groups of people working together | Squad, Crew, Group, Department |
 | **Teams** | Teams | Plural form of team | Squads, Crews, Groups, Departments |
+| **Portfolio** | Portfolio | A collection of features that belong together and are managed as a unit | Project, Initiative, Program |
+| **Portfolios** | Portfolios | Plural form of portfolio | Projects, Initiatives, Programs |
+| **Delivery** | Delivery | A point in time by which a defined list of features should be done | Milestone, Checkpoint, Release |
+| **Deliveries** | Deliveries | Plural form of delivery | Milestones, Checkpoints, Releases |
 | **Refinement** | Refinement | The stage where Work Items are clarified and prepared before work on them starts | Grooming, Preparation |
 | **Refinements** | Refinements | Plural form of refinement | Groomings, Preparations |
 

@@ -1,6 +1,6 @@
 # ADR-233: A Dashboard Widget Is Loading Until Its Data Answers the Selected Window
 
-**Status**: Proposed
+**Status**: Accepted (built in story 6249; at delivery the query keys also took the owner's last update, reconnects stopped refetching, and a chart already drawn stays mounted through a narrowing or a failure)
 **Date**: 2026-10-09 (amended the same day after review round 1: error precedence, over-time caching, shared query
 options, placeholders, nullish answers, key format, in-chart controls, reporter default; amended again after review
 round 2: the over-time charts stay off TanStack Query, the whole body is blocked while loading, a child's failure
