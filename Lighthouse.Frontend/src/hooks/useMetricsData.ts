@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { IBlackoutPeriod } from "../models/BlackoutPeriod";
 import type { BlockedCountSnapshot } from "../models/BlockedCountSnapshot";
 import type { IFeature } from "../models/Feature";
@@ -199,6 +199,13 @@ function applicabilityFor(
 	};
 }
 
+// Narrowing Cumulative Time per State counts again a chart its totals have already drawn, so only
+// the totals say whether there is a chart on screen. Its controls then stay put while the narrowed
+// count is on its way.
+const narrowsAChartAlreadyDrawn: ReadonlySet<string> = new Set<MetricsFetchKey>(
+	["cumulativeStateTimeSelection", "cumulativeStateTimeScope"],
+);
+
 /** How the reader narrowed Cumulative Time per State: to some Work Items, or to one stretch. */
 export type CumulativeStateTimeChoices = {
 	readonly itemIds: readonly number[];
@@ -280,7 +287,33 @@ function useMetricsQuery<R extends OwnerRequest, V>(
 		placeholderData: keepPreviousData,
 	});
 
-	return { progress: query, answer: query.data ?? null };
+	// A failure keeps the answer the chart last drew for this owner, so the chart stays mounted out of
+	// sight behind the could-not-load note and comes back with whatever the reader set inside it.
+	const lastDrawn = useRef<LastDrawn<typeof query.data>>(undefined);
+	const owner = ownerOf(request);
+	if (query.isSuccess && !query.isPlaceholderData) {
+		lastDrawn.current = { owner, answer: query.data };
+	}
+	const data =
+		query.isError && lastDrawn.current?.owner === owner
+			? lastDrawn.current.answer
+			: query.data;
+
+	return {
+		progress: {
+			isPending: query.isPending,
+			isError: query.isError,
+			isPlaceholderData: query.isPlaceholderData,
+			data,
+		},
+		answer: data ?? null,
+	};
+}
+
+type LastDrawn<V> = { readonly owner: string; readonly answer: V } | undefined;
+
+function ownerOf(request: OwnerRequest): string {
+	return `${request.ownerType}:${request.ownerId}`;
 }
 
 function listOf<V>(query: MetricsQuery<V[]>): V[] {
@@ -846,10 +879,18 @@ export function useMetricsData<
 		throughputPbc: [throughputPbc.progress],
 	};
 	const fetchStates: FetchKeyStates = Object.fromEntries(
-		Object.entries(queriesByFetchKey).map(([key, queries]) => [
-			key,
-			fetchKeyStateOf(queries, applicable[key as MetricsFetchKey]),
-		]),
+		Object.entries(queriesByFetchKey).map(([key, queries]) => {
+			const state = fetchKeyStateOf(
+				queries,
+				applicable[key as MetricsFetchKey],
+			);
+			return [
+				key,
+				narrowsAChartAlreadyDrawn.has(key)
+					? { ...state, hasData: true }
+					: state,
+			];
+		}),
 	);
 
 	return {

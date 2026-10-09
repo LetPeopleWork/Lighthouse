@@ -708,19 +708,19 @@ describe("a team's chart whose data cannot be loaded", () => {
 		await throughputFailsFor(LAST_90_DAYS);
 	}
 
-	it("stops its spinner, removes the older chart and says it couldn't be loaded", async () => {
+	it("stops its spinner, takes the older chart out of sight and says it couldn't be loaded", async () => {
 		await givenThe90DayThroughputFailed();
 
 		expect(statusOf("throughput")).toBe("error");
 		expect(
 			within(frameOf("throughput")).getByText(COULD_NOT_LOAD_MESSAGE),
-		).toBeInTheDocument();
+		).toBeVisible();
 		expect(
 			within(frameOf("throughput")).queryByRole("progressbar"),
 		).not.toBeInTheDocument();
 		expect(
-			within(frameOf("throughput")).queryByText(/^Work Items Completed: 30$/),
-		).toBeNull();
+			within(frameOf("throughput")).getByText(/^Work Items Completed: 30$/),
+		).not.toBeVisible();
 	});
 
 	it("leaves every other chart to come back with its own data", async () => {
@@ -987,6 +987,28 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 		).toBeInTheDocument();
 	});
 
+	it.each([
+		["Work Items", "Choose Work Items 11 and 12"],
+		["stretch", "Count only the In Review stretch"],
+	])(
+		"the reader's first choice of %s keeps the chart and its controls on screen, dimmed while it is counted",
+		async (_choice, control) => {
+			openTheDashboard("team", "flow-metrics");
+			await everythingHasLoaded();
+			const chart = within(frameOf("stateTimeCumulative")).getByTestId(
+				"time-per-state-chart",
+			);
+			const chosenWith = screen.getByRole("button", { name: control });
+
+			fireEvent.click(chosenWith);
+
+			expect(statusOf("stateTimeCumulative")).toBe("loading");
+			expect(chart).toBeInTheDocument();
+			expect(chosenWith).toBeInTheDocument();
+			expect(bodyOf("stateTimeCumulative")).toHaveStyle({ opacity: "0.4" });
+		},
+	);
+
 	it("keeps showing its numbers when the picker's Work Items cannot be loaded", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
@@ -1036,6 +1058,29 @@ describe("filters inside a chart", () => {
 			),
 			"ready",
 		);
+	});
+
+	it("the Throughput run chart's filter is still on once the chart comes back from a window that could not be loaded", async () => {
+		openTheDashboard("team", "flow-metrics");
+		await everythingHasLoaded();
+		const filterSwitch = within(frameOf("throughput")).getByLabelText(
+			"Use filtered Throughput",
+		);
+		fireEvent.click(filterSwitch);
+		await everythingAsked();
+
+		theReaderPicks("Last 90 days");
+		await throughputFailsFor(LAST_90_DAYS);
+		expect(statusOf("throughput")).toBe("error");
+
+		theReaderPicks("Last 7 days");
+		await everythingHasLoaded();
+
+		expect(statusOf("throughput")).toBe("ready");
+		expect(filterSwitch).toBeInTheDocument();
+		expect(
+			within(frameOf("throughput")).getByLabelText("Use filtered Throughput"),
+		).toBeChecked();
 	});
 });
 

@@ -14,11 +14,15 @@ export type FetchKeyState = {
 
 export type FetchKeyStates = Partial<Record<MetricsFetchKey, FetchKeyState>>;
 
-/** What a widget needs to know about one request: is it still on its way, and did it fail. */
+/**
+ * What a widget needs to know about one request: is it still on its way, did it fail, and which
+ * answer its chart has meanwhile, if any.
+ */
 export type QueryProgress = {
 	readonly isPending: boolean;
 	readonly isError: boolean;
 	readonly isPlaceholderData: boolean;
+	readonly data: unknown;
 };
 
 const notAskedFor: FetchKeyState = { status: "ready", hasData: true };
@@ -67,8 +71,10 @@ function isBehind(query: QueryProgress): boolean {
 	return query.isPending || query.isPlaceholderData;
 }
 
-function showsAnAnswer(query: QueryProgress): boolean {
-	return !query.isPending && !query.isError;
+// A failed request can still hold the answer its chart last drew. Keeping that chart mounted
+// behind the could-not-load note is what lets it come back with the settings the reader made in it.
+function holdsAnAnswer(query: QueryProgress): boolean {
+	return query.data !== undefined;
 }
 
 function statusOfOne(query: QueryProgress): WidgetStatus {
@@ -88,7 +94,7 @@ export function fetchKeyStateOf(
 	applicable: boolean,
 ): FetchKeyState {
 	if (!applicable) return notAskedFor;
-	return { status: statusOf(queries), hasData: queries.every(showsAnAnswer) };
+	return { status: statusOf(queries), hasData: queries.every(holdsAnAnswer) };
 }
 
 /** A chart that fetches its own series is ready once one has come back, whatever its length. */

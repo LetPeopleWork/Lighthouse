@@ -28,21 +28,29 @@ const onItsWay: QueryProgress = {
 	isPending: true,
 	isError: false,
 	isPlaceholderData: false,
+	data: undefined,
 };
 const showingThePreviousWindow: QueryProgress = {
 	isPending: false,
 	isError: false,
 	isPlaceholderData: true,
+	data: "the previous window's answer",
 };
 const failedQuery: QueryProgress = {
 	isPending: false,
 	isError: true,
 	isPlaceholderData: false,
+	data: undefined,
+};
+const failedAfterAnEarlierAnswer: QueryProgress = {
+	...failedQuery,
+	data: "the answer the chart last drew",
 };
 const answeredQuery: QueryProgress = {
 	isPending: false,
 	isError: false,
 	isPlaceholderData: false,
+	data: null,
 };
 
 function allAnswered(keys: readonly MetricsFetchKey[]): FetchKeyStates {
@@ -314,6 +322,20 @@ describe("one request's progress, as a chart sees it", () => {
 
 	it("a request on its way for the first time has nothing to dim", () => {
 		expect(fetchKeyStateOf([onItsWay], true).hasData).toBe(false);
+	});
+
+	it("a request that fails before it ever answered holds nothing", () => {
+		expect(fetchKeyStateOf([failedQuery], true)).toEqual({
+			status: "error",
+			hasData: false,
+		});
+	});
+
+	it("a request that fails after an earlier answer still holds that answer while it reads as failed", () => {
+		expect(fetchKeyStateOf([failedAfterAnEarlierAnswer], true)).toEqual({
+			status: "error",
+			hasData: true,
+		});
 	});
 
 	it.each<[string, QueryProgress]>([
