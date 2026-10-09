@@ -2,7 +2,7 @@ import { Box, Card, CardContent, Typography } from "@mui/material";
 import { useState } from "react";
 import PredictabilityScore from "../../../components/Common/Charts/PredictabilityScore";
 import ThroughputChartFilterToggle from "../../../components/Common/Charts/ThroughputChart/ThroughputChartFilterToggle";
-import type { MetricsOwnerKey } from "../../../hooks/useMetricsData";
+import type { MetricsOwnerRequest } from "../../../hooks/useMetricsData";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
@@ -11,7 +11,7 @@ import { useReportWidgetStatus } from "./widgetStatus";
 
 interface PredictabilityScoreDetailsWidgetProps<T extends IWorkItem> {
 	readonly predictabilityData: IForecastPredictabilityScore | null;
-	readonly owner?: MetricsOwnerKey;
+	readonly owner?: MetricsOwnerRequest;
 	readonly metricsService?: IMetricsService<T>;
 	readonly startDate?: Date;
 	readonly endDate?: Date;

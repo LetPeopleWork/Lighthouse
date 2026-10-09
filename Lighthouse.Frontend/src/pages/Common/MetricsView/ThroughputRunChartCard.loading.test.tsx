@@ -7,6 +7,7 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { addDays } from "date-fns";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { MetricsOwnerRequest } from "../../../hooks/useMetricsData";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
@@ -55,10 +56,17 @@ const seriesTotalling = (total: number) =>
 let held: HeldMetricsService;
 let queryClient: QueryClient;
 
+const theTeam: MetricsOwnerRequest = {
+	ownerType: "team",
+	ownerId: 2,
+	ownerUpdatedAt: 0,
+};
+
 function cardFor(
 	window: string,
 	rawTotal: number,
 	statusFromThePage: WidgetStatus = "ready",
+	owner: MetricsOwnerRequest = theTeam,
 ) {
 	return (
 		<QueryClientProvider client={queryClient}>
@@ -68,7 +76,7 @@ function cardFor(
 				hasContentToDim
 			>
 				<ThroughputRunChartCard
-					owner={{ ownerId: 2, ownerUpdatedAt: 0 }}
+					owner={owner}
 					metricsService={held.service as IMetricsService<IWorkItem>}
 					startDate={windows[window].start}
 					endDate={windows[window].end}
@@ -138,6 +146,42 @@ describe("the Throughput run chart's filtered series follows the selected window
 		).toHaveLength(1);
 		await theFilteredSeriesAnswers(LAST_90_DAYS, 9);
 		expect(shownTotal()).toHaveTextContent(/^9$/);
+	});
+
+	it("with the filter on, the filtered series is asked again once the owner has updated", async () => {
+		const { rerender } = render(cardFor(LAST_30_DAYS, 30));
+		await theReaderTurnsTheFilterOn();
+		await theFilteredSeriesAnswers(LAST_30_DAYS, 3);
+
+		rerender(
+			cardFor(LAST_30_DAYS, 30, "ready", {
+				...theTeam,
+				ownerUpdatedAt: theTeam.ownerUpdatedAt + 60_000,
+			}),
+		);
+
+		expect(
+			held.pending({ method: "getThroughput", filtered: true }),
+		).toHaveLength(1);
+		await theFilteredSeriesAnswers(LAST_30_DAYS, 4);
+		expect(shownTotal()).toHaveTextContent(/^4$/);
+	});
+
+	it("with the filter on, a portfolio sharing the team's id is asked for its own filtered series", async () => {
+		const { rerender } = render(cardFor(LAST_30_DAYS, 30));
+		await theReaderTurnsTheFilterOn();
+		await theFilteredSeriesAnswers(LAST_30_DAYS, 3);
+
+		rerender(
+			cardFor(LAST_30_DAYS, 30, "ready", {
+				...theTeam,
+				ownerType: "portfolio",
+			}),
+		);
+
+		expect(
+			held.pending({ method: "getThroughput", filtered: true }),
+		).toHaveLength(1);
 	});
 
 	it("the filtered series of a window the reader has left never replaces the current one", async () => {

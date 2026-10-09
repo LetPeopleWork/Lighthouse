@@ -32,6 +32,7 @@ import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingC
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import {
+	type MetricsOwnerRequest,
 	metricsOwnerKeyOf,
 	useMetricsData,
 } from "../../../hooks/useMetricsData";
@@ -1028,6 +1029,10 @@ function buildWidgetNodes(ctx: {
 	sleRiskAtRisk: SleRiskAtRiskSummary | undefined;
 	sleRiskValues: ISleRisk[];
 }): Record<string, ReactNode | null> {
+	const filteredViewOwner: MetricsOwnerRequest = {
+		ownerType: ctx.ownerType,
+		...metricsOwnerKeyOf(ctx.entity),
+	};
 	const nodes: Record<string, ReactNode | null> = {
 		wipOverview: (
 			<WipOverviewWidget
@@ -1056,7 +1061,7 @@ function buildWidgetNodes(ctx: {
 		predictabilityScoreDetails: (
 			<PredictabilityScoreDetailsWidget
 				predictabilityData={ctx.predictabilityData}
-				owner={metricsOwnerKeyOf(ctx.entity)}
+				owner={filteredViewOwner}
 				metricsService={ctx.metricsService}
 				startDate={ctx.startDate}
 				endDate={ctx.endDate}
@@ -1079,7 +1084,7 @@ function buildWidgetNodes(ctx: {
 		),
 		throughput: ctx.throughputData ? (
 			<ThroughputRunChartCard
-				owner={metricsOwnerKeyOf(ctx.entity)}
+				owner={filteredViewOwner}
 				metricsService={ctx.metricsService}
 				startDate={ctx.startDate}
 				endDate={ctx.endDate}

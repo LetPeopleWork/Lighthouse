@@ -1066,6 +1066,32 @@ describe("filters inside a chart", () => {
 		);
 	});
 
+	it("the filtered Throughput request is filed under the owner's kind as well as its id and update moment", async () => {
+		const queryClient = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		openTheDashboard("team", "flow-metrics", { queryClient });
+		await everythingHasLoaded();
+
+		fireEvent.click(
+			within(frameOf("throughput")).getByLabelText("Use filtered Throughput"),
+		);
+
+		const filteredRequest = queryClient
+			.getQueryCache()
+			.getAll()
+			.map((query) => query.queryKey[2])
+			.find(
+				(request) =>
+					(request as { view?: string } | undefined)?.view === "filtered",
+			);
+		expect(filteredRequest).toMatchObject({
+			ownerType: "team",
+			ownerId: team.id,
+			ownerUpdatedAt: new Date(team.lastUpdated).getTime(),
+		});
+	});
+
 	it("the Throughput run chart's filter is still on once the chart comes back from a window that could not be loaded", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();

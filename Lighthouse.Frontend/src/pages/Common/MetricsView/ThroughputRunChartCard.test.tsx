@@ -62,7 +62,7 @@ const buildProps = (
 		React.ComponentProps<typeof ThroughputRunChartCard<IWorkItem>>
 	> = {},
 ) => ({
-	owner: { ownerId: 42, ownerUpdatedAt: 0 },
+	owner: { ownerType: "team" as const, ownerId: 42, ownerUpdatedAt: 0 },
 	metricsService: buildMockMetricsService(),
 	startDate: new Date("2026-01-01"),
 	endDate: new Date("2026-01-31"),

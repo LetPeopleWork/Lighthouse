@@ -242,9 +242,12 @@ export function metricsOwnerKeyOf(
 	};
 }
 
-type OwnerRequest = MetricsOwnerKey & { readonly ownerType: OwnerType };
-type AsOfRequest = OwnerRequest & { readonly asOf: string };
-type WindowRequest = OwnerRequest & {
+/** Whose metrics a request asks for, and whether that owner is a team or a portfolio. */
+export type MetricsOwnerRequest = MetricsOwnerKey & {
+	readonly ownerType: OwnerType;
+};
+type AsOfRequest = MetricsOwnerRequest & { readonly asOf: string };
+type WindowRequest = MetricsOwnerRequest & {
 	readonly from: string;
 	readonly to: string;
 };
@@ -265,7 +268,7 @@ type MetricsQuery<V> = {
 
 // The key holds everything the request sends, so an answer for a window the reader has already
 // left lands under that window's key and is never read.
-function useMetricsQuery<R extends OwnerRequest, V>(
+function useMetricsQuery<R extends MetricsOwnerRequest, V>(
 	fetchName: string,
 	request: R,
 	ask: (request: R) => Promise<V | undefined> | V | undefined,
@@ -313,7 +316,7 @@ function useMetricsQuery<R extends OwnerRequest, V>(
 
 type LastDrawn<V> = { readonly owner: string; readonly answer: V } | undefined;
 
-function ownerOf(request: OwnerRequest): string {
+function ownerOf(request: MetricsOwnerRequest): string {
 	return `${request.ownerType}:${request.ownerId}`;
 }
 
@@ -361,7 +364,10 @@ export function useMetricsData<
 	const ownerType: OwnerType = isTeamOwnedMetricsService(metricsService)
 		? "team"
 		: "portfolio";
-	const owner: OwnerRequest = { ownerType, ...metricsOwnerKeyOf(entity) };
+	const owner: MetricsOwnerRequest = {
+		ownerType,
+		...metricsOwnerKeyOf(entity),
+	};
 	const selectedWindow: WindowRequest = {
 		...owner,
 		from: formatLocalDate(startDate),

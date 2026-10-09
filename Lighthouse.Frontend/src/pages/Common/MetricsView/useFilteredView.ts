@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {
-	type MetricsOwnerKey,
+	type MetricsOwnerRequest,
 	metricsQueryOptions,
 } from "../../../hooks/useMetricsData";
 import { formatLocalDate } from "../../../utils/date/localDate";
@@ -8,7 +8,7 @@ import { fetchKeyStateOf, type WidgetStatus } from "./widgetStatus";
 
 type FilteredViewRequest<V> = {
 	readonly fetchName: string;
-	readonly owner: MetricsOwnerKey | undefined;
+	readonly owner: MetricsOwnerRequest | undefined;
 	readonly startDate: Date | undefined;
 	readonly endDate: Date | undefined;
 	/** Whether the reader has the chart's filter switched on. */
