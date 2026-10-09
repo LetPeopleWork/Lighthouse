@@ -107,6 +107,16 @@ Commit whatever Phases 1–2 produced — docs, screenshots, the architecture ov
       `updateInternalDependencies: patch` means dependents (`mcp-http`, `mcp-stdio`) get patch bumps when `client`/`mcp-core` take a minor.
    `release:version` needs the `GITHUB_TOKEN_CHANGESET` credential (the changelog-github plugin); if it's not in the shell, have the user run the bump. Don't block the server release on this — it proceeds in parallel.
 3. **If there are no pending changesets**, say "clients unchanged since last release — nothing to publish" and move on.
+4. **Skills that just shipped.** Once a clients release is out, list its zips:
+   ```bash
+   gh release view --repo LetPeopleWork/lighthouse-clients --json assets -q '.assets[].name' | grep -- '-skill.zip'
+   ```
+   For every skill whose zip is now attached but that the website still shows as "Coming soon"
+   (`released: false` in the `agentSkills` list in `/storage/repos/website/src/pages/Lighthouse.tsx`): set
+   `released: true`, update `src/pages/LighthouseSkills.test.tsx` (it pins which skills have a download link),
+   and in `docs/aiintegration.md` replace its "Coming Soon" mention with the
+   `releases/latest/download/<name>-skill.zip` link and add the zip to the asset list near the top. Never flip
+   one before its zip is on a release — `latest/download` links 404 until then. Commit and push both with Phase 5b.
 
 ## Phase 5 — cut the release (signed standalones + GitHub release)
 
@@ -150,6 +160,26 @@ The `release` job on the Phase-3 green run tags the commit, signs + cosigns the 
      ```
      `detect-publish` skips the whole publish when the chart `version` already appears in `docs/charts/index.yaml` — a run that goes green *without* a `publish` job means you forgot to bump `Chart.yaml:version`.
 
+## Phase 5b — website: Recently shipped and the feature comparison
+
+The Lighthouse page on the website (`/storage/repos/website`, deployed by its `Deploy to GitHub Pages` workflow on
+every push to `main`) shows each card's release date and counts the releases of the last 30 / 90 days, so it goes
+stale unless every release updates it. Needs the real tag and date from Phase 5.
+
+1. In `src/components/LighthouseWhatsNew.tsx`, add the release's publish date (`YYYY-MM-DD`, from
+   `gh release view <tag> --json publishedAt`) to the **top** of `RELEASE_DATES`. Every release, even one
+   without a new card.
+2. Every card with `version: null` ("Next release") whose feature this release carries: set `version` to the real
+   tag and `released` to that date.
+3. For this release's headline features that have no card yet, draft one each (tag, title, two-sentence description
+   in the release notes' customer-pain-then-win tone) and ask the user which to add. Newest cards go first.
+4. If the release ships a new **paid** capability, or moves one between tiers, propose the matching row in the
+   feature comparison table (`Lighthouse.tsx`, "Paid-tier Features" / "Base Functionality"); the licensing docs
+   point readers to that table as the up-to-date list.
+5. Test and build with `SWC_NATIVE_BINDING_CACHE=<a scratch dir> npx vitest run` and
+   `npx vite build --mode production` (the website uses npm; do not run pnpm there, it writes a stray
+   `pnpm-lock.yaml`/`pnpm-workspace.yaml`). Commit, push, and confirm the `Deploy to GitHub Pages` run is green.
+
 ## Phase 6 — announce on Slack
 
 Invoke the **`release-social`** skill (Slack only — LinkedIn was removed). Pass the real tag as its argument so it targets the right block. Walk the user through the draft and, on their explicit pick, post to `#general`.
@@ -162,7 +192,8 @@ Summarize:
 - Architecture overview: unchanged, or which sections moved and which ADRs drove it.
 - Release notes: headline count + contributors (and any first-timers added).
 - Helm chart: new `version` + `appVersion` (must match the app calver), and whether the `Helm Chart` run's `publish` job actually ran and landed the `.tgz` in `docs/charts/`.
-- Clients: published a new version / told user to trigger it / unchanged.
+- Clients: published a new version / told user to trigger it / unchanged; skills flipped from "Coming soon" to a download.
+- Website: release date added, cards dated or added, comparison rows changed, deploy run green.
 - Slack: posted (permalink) / saved draft only.
 - Any follow-ups (e.g. ADO items to close, a clients `Release` approval still pending).
 
