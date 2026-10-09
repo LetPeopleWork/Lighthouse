@@ -7,6 +7,7 @@ import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
 import {
 	Box,
 	Chip,
+	CircularProgress,
 	IconButton,
 	Link,
 	Popover,
@@ -64,12 +65,100 @@ export interface WidgetShellProps {
 	readonly info?: WidgetInfo;
 	readonly viewData?: ViewDataPayload;
 	readonly trend?: TrendPayload;
-	/** Not drawn yet: the frame still always renders as ready. */
 	readonly status?: WidgetStatus;
 	/** Whether an older chart is on screen to dim while the selected window loads. */
 	readonly hasContentToDim?: boolean;
 	readonly children: React.ReactNode;
 }
+
+const LOADING_OPACITY = 0.4;
+const SPINNER_SIZE = 24;
+
+type HeaderParts = {
+	readonly viewData: boolean;
+	readonly trend: boolean;
+	readonly rag: boolean;
+};
+
+// With no chart on screen, a rating, trend or data list would describe something the reader cannot see.
+function headerPartsFor(
+	hasChartOnScreen: boolean,
+	hasViewData: boolean,
+	hasTrend: boolean,
+	hasRag: boolean,
+): HeaderParts {
+	return {
+		viewData: hasChartOnScreen && hasViewData,
+		trend: hasChartOnScreen && hasTrend,
+		rag: hasChartOnScreen && hasRag,
+	};
+}
+
+const centredSpinner = (
+	<CircularProgress
+		size={SPINNER_SIZE}
+		sx={{
+			position: "absolute",
+			top: "50%",
+			left: "50%",
+			marginTop: `${-SPINNER_SIZE / 2}px`,
+			marginLeft: `${-SPINNER_SIZE / 2}px`,
+		}}
+	/>
+);
+
+// The pointer is refused by the body box alone: `inert` would also hide the dimmed chart
+// from assistive technology, where aria-busy on the frame already says it is loading.
+const WidgetBody: React.FC<{
+	readonly widgetKey: string;
+	readonly isLoading: boolean;
+	readonly hasContentToDim: boolean;
+	readonly children: React.ReactNode;
+}> = ({ widgetKey, isLoading, hasContentToDim, children }) => {
+	const bodyTestId = `widget-shell-body-${widgetKey}`;
+
+	if (!isLoading) {
+		return (
+			<Box data-testid={bodyTestId} sx={{ flex: 1, minHeight: 0 }}>
+				{children}
+			</Box>
+		);
+	}
+
+	if (hasContentToDim) {
+		return (
+			<Box sx={{ flex: 1, minHeight: 0, position: "relative" }}>
+				<Box
+					data-testid={bodyTestId}
+					sx={{
+						height: "100%",
+						opacity: LOADING_OPACITY,
+						pointerEvents: "none",
+					}}
+				>
+					{children}
+				</Box>
+				{centredSpinner}
+			</Box>
+		);
+	}
+
+	// A chart that fetches for itself stays mounted out of sight, so its answer still arrives.
+	return (
+		<Box
+			data-testid={bodyTestId}
+			sx={{
+				flex: 1,
+				minHeight: 0,
+				position: "relative",
+				pointerEvents: "none",
+			}}
+		>
+			<Box sx={{ display: "none" }}>{children}</Box>
+			{centredSpinner}
+		</Box>
+	);
+};
 
 const ragColorMap: Record<Exclude<RagStatus, "none">, string> = {
 	red: "#d32f2f",
@@ -218,6 +307,8 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 	info,
 	viewData,
 	trend,
+	status = "ready",
+	hasContentToDim = false,
 	children,
 }) => {
 	const theme = useTheme();
@@ -225,17 +316,25 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 	const [viewDataOpen, setViewDataOpen] = useState(false);
 	const infoAnchorRef = useRef<HTMLButtonElement>(null);
 
-	const hasViewData = !!viewData && viewData.items.length > 0;
-	const hasTrend =
-		!!trend && (trend.direction !== "none" || trend.noBaseline === true);
-	const hasHeader =
-		!!title || (header && showTips) || !!info || hasViewData || hasTrend;
+	const isLoading = status === "loading";
+	const hasChartOnScreen = !isLoading || hasContentToDim;
+	const shows = headerPartsFor(
+		hasChartOnScreen,
+		!!viewData && viewData.items.length > 0,
+		!!trend && (trend.direction !== "none" || trend.noBaseline === true),
+		!!header && showTips,
+	);
+	const hasViewData = shows.viewData;
+	const hasTrend = shows.trend;
+	const hasHeader = !!title || shows.rag || !!info || hasViewData || hasTrend;
 	const showInfoGuidance = showTips && !!info?.statusGuidance;
 
 	return (
 		<>
 			<Box
 				data-testid={`widget-shell-${widgetKey}`}
+				data-widget-status={status}
+				aria-busy={isLoading ? "true" : undefined}
 				sx={{
 					width: "100%",
 					height: "100%",
@@ -336,18 +435,23 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 						)}
 						{hasViewData && (
 							<Tooltip title="View Data" arrow>
-								<IconButton
-									size="small"
-									data-testid={`widget-view-data-${widgetKey}`}
-									onClick={() => setViewDataOpen(true)}
-									sx={{ color: theme.palette.text.secondary }}
-								>
-									<TableChartOutlinedIcon fontSize="small" />
-								</IconButton>
+								<span>
+									<IconButton
+										size="small"
+										data-testid={`widget-view-data-${widgetKey}`}
+										disabled={isLoading}
+										onClick={() => setViewDataOpen(true)}
+										sx={{ color: theme.palette.text.secondary }}
+									>
+										<TableChartOutlinedIcon fontSize="small" />
+									</IconButton>
+								</span>
 							</Tooltip>
 						)}
-						{hasTrend && <TrendChrome widgetKey={widgetKey} trend={trend} />}
-						{header && showTips && header.ragStatus !== "none" && (
+						{hasTrend && trend && (
+							<TrendChrome widgetKey={widgetKey} trend={trend} />
+						)}
+						{shows.rag && header && header.ragStatus !== "none" && (
 							<Tooltip title={header.tipText} arrow>
 								<Chip
 									component="span"
@@ -382,10 +486,16 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 					</Box>
 				)}
 
-				<Box sx={{ flex: 1, minHeight: 0 }}>{children}</Box>
+				<WidgetBody
+					widgetKey={widgetKey}
+					isLoading={isLoading}
+					hasContentToDim={hasContentToDim}
+				>
+					{children}
+				</WidgetBody>
 			</Box>
 
-			{hasViewData && (
+			{hasViewData && viewData && (
 				<WorkItemsDialog
 					title={viewData.title}
 					items={viewData.items}

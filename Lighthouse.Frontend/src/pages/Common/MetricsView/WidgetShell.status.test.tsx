@@ -98,14 +98,14 @@ describe("a chart's frame while its data is current", () => {
 		expect(within(frame()).queryByRole("progressbar")).not.toBeInTheDocument();
 	});
 
-	it.skip("a frame nobody gave a status says it is ready", () => {
+	it("a frame nobody gave a status says it is ready", () => {
 		renderFrame();
 
 		expect(frame()).toHaveAttribute("data-widget-status", "ready");
 		expect(frame()).not.toHaveAttribute("aria-busy", "true");
 	});
 
-	it.skip("a chart that has its data shows at full strength with nothing over it", async () => {
+	it("a chart that has its data shows at full strength with nothing over it", async () => {
 		renderFrame({ status: "ready", hasContentToDim: true });
 
 		expect(frame()).toHaveAttribute("data-widget-status", "ready");
@@ -116,7 +116,7 @@ describe("a chart's frame while its data is current", () => {
 });
 
 describe("a chart's frame while it is behind the selected window", () => {
-	it.skip("keeps the older chart on screen, dimmed, with a spinner over it", () => {
+	it("keeps the older chart on screen, dimmed, with a spinner over it", () => {
 		renderFrame({ status: "loading", hasContentToDim: true });
 
 		expect(frame()).toHaveAttribute("data-widget-status", "loading");
@@ -140,7 +140,7 @@ describe("a chart's frame while it is behind the selected window", () => {
 		}
 	});
 
-	it.skip("lets nobody point at the dimmed chart, nor open its data", async () => {
+	it("lets nobody point at the dimmed chart, nor open its data", async () => {
 		renderFrame({ status: "loading", hasContentToDim: true });
 
 		expect(body()).toHaveStyle({ pointerEvents: "none" });
@@ -150,7 +150,7 @@ describe("a chart's frame while it is behind the selected window", () => {
 		expect(screen.getByTestId(`widget-view-data-${KEY}`)).toBeDisabled();
 	});
 
-	it.skip("a switch inside the chart does not respond while the chart is loading", async () => {
+	it("a switch inside the chart does not respond while the chart is loading", async () => {
 		const onFilterChange = vi.fn();
 		renderFrame(
 			{ status: "loading", hasContentToDim: true },
@@ -180,7 +180,7 @@ describe("a chart's frame while it is behind the selected window", () => {
 		).toBeInTheDocument();
 	});
 
-	it.skip("with no older chart to dim, holds a lone spinner under just the title and info", () => {
+	it("with no older chart to dim, holds a lone spinner under just the title and info", () => {
 		renderFrame({ status: "loading", hasContentToDim: false }, null);
 
 		expect(frame()).toHaveAttribute("data-widget-status", "loading");
@@ -196,7 +196,7 @@ describe("a chart's frame while it is behind the selected window", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it.skip.each(["light", "dark"] as const)(
+	it.each(["light", "dark"] as const)(
 		"is dimmed to 40 percent under a spinner in the %s theme",
 		(mode) => {
 			render(

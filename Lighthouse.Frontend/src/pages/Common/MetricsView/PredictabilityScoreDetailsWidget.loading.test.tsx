@@ -151,7 +151,7 @@ describe("the Predictability Score details' filtered score follows the selected 
 });
 
 describe("the Predictability Score details' frame while its filtered score loads", () => {
-	it.skip("the filter switch does not respond while the dashboard has the score loading", async () => {
+	it("the filter switch does not respond while the dashboard has the score loading", async () => {
 		render(detailsFor(LAST_30_DAYS, 0.3, "loading"));
 
 		expect(

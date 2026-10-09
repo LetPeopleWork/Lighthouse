@@ -153,7 +153,7 @@ describe("the Throughput run chart's filtered series follows the selected window
 });
 
 describe("the Throughput run chart's frame while its filtered series loads", () => {
-	it.skip("the filter switch does not respond while the dashboard has the chart loading", async () => {
+	it("the filter switch does not respond while the dashboard has the chart loading", async () => {
 		render(cardFor(LAST_30_DAYS, 30, "loading"));
 
 		expect(screen.getByTestId("widget-shell-body-throughput")).toHaveStyle({
