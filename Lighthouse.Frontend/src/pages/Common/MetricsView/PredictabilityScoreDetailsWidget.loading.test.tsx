@@ -1,4 +1,8 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+	notifyManager,
+	QueryClient,
+	QueryClientProvider,
+} from "@tanstack/react-query";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { addDays } from "date-fns";
@@ -94,6 +98,10 @@ async function theFilteredScoreAnswers(window: string, score: number) {
 	);
 }
 
+// The query library tells components about an answer on a later timer tick, which act() does not
+// wait for. Telling them in the same tick lets each answered request show before the next step.
+notifyManager.setScheduler(queueMicrotask);
+
 beforeEach(() => {
 	held = createHeldMetricsService("team");
 	queryClient = new QueryClient({
@@ -112,7 +120,7 @@ describe("the Predictability Score details' filtered score follows the selected 
 		expect(held.calls).toHaveLength(0);
 	});
 
-	it.skip("with the filter on, a new window fetches the filtered score for that window", async () => {
+	it("with the filter on, a new window fetches the filtered score for that window", async () => {
 		const { rerender } = render(detailsFor(LAST_30_DAYS, 0.3));
 		await theReaderTurnsTheFilterOn();
 		await theFilteredScoreAnswers(LAST_30_DAYS, 0.31);
@@ -130,7 +138,7 @@ describe("the Predictability Score details' filtered score follows the selected 
 		expect(shownScore()).toHaveTextContent(/^0\.91$/);
 	});
 
-	it.skip("the filtered score of a window the reader has left never replaces the current one", async () => {
+	it("the filtered score of a window the reader has left never replaces the current one", async () => {
 		const { rerender } = render(detailsFor(LAST_30_DAYS, 0.3));
 		await theReaderTurnsTheFilterOn();
 		rerender(detailsFor(LAST_90_DAYS, 0.9));
@@ -195,7 +203,7 @@ describe("the Predictability Score details' frame while its filtered score loads
 });
 
 describe("the Predictability Score details' filtered request", () => {
-	it.skip("is asked for without retrying, and kept for no other window", async () => {
+	it("is asked for without retrying, and kept for no other window", async () => {
 		queryClient = new QueryClient({
 			defaultOptions: {
 				queries: { staleTime: 300_000, gcTime: 1_800_000, retry: 2 },

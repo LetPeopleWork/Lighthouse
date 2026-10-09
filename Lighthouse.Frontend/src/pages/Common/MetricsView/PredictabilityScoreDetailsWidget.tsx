@@ -1,10 +1,13 @@
 import { Box, Card, CardContent, Typography } from "@mui/material";
-import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import PredictabilityScore from "../../../components/Common/Charts/PredictabilityScore";
 import ThroughputChartFilterToggle from "../../../components/Common/Charts/ThroughputChart/ThroughputChartFilterToggle";
+import { metricsQueryOptions } from "../../../hooks/useMetricsData";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
+import { formatLocalDate } from "../../../utils/date/localDate";
 
 interface PredictabilityScoreDetailsWidgetProps<T extends IWorkItem> {
 	readonly predictabilityData: IForecastPredictabilityScore | null;
@@ -26,8 +29,6 @@ const PredictabilityScoreDetailsWidget = <T extends IWorkItem>({
 	hasForecastFilter = false,
 }: PredictabilityScoreDetailsWidgetProps<T>) => {
 	const [filtered, setFiltered] = useState(false);
-	const [filteredData, setFilteredData] =
-		useState<IForecastPredictabilityScore | null>(null);
 
 	const canRefetch =
 		entityId !== undefined &&
@@ -35,29 +36,40 @@ const PredictabilityScoreDetailsWidget = <T extends IWorkItem>({
 		startDate !== undefined &&
 		endDate !== undefined;
 
-	const handleChange = useCallback(
-		async (next: boolean) => {
-			setFiltered(next);
-			if (next && !filteredData && canRefetch) {
-				try {
-					const data =
-						await metricsService.getMultiItemForecastPredictabilityScore(
-							entityId,
-							startDate,
-							endDate,
-							"filtered",
-						);
-					setFilteredData(data);
-				} catch (error) {
-					console.error("Error fetching filtered predictability score:", error);
-				}
+	const filteredScore = useQuery({
+		...metricsQueryOptions,
+		queryKey: [
+			"metrics",
+			"getMultiItemForecastPredictabilityScore",
+			{
+				view: "filtered",
+				ownerId: entityId,
+				from: startDate ? formatLocalDate(startDate) : null,
+				to: endDate ? formatLocalDate(endDate) : null,
+			},
+		] as const,
+		queryFn: async () => {
+			if (!canRefetch) return null;
+			try {
+				return await metricsService.getMultiItemForecastPredictabilityScore(
+					entityId,
+					startDate,
+					endDate,
+					"filtered",
+				);
+			} catch (error) {
+				console.error("Error fetching filtered predictability score:", error);
+				throw error;
 			}
 		},
-		[entityId, metricsService, startDate, endDate, filteredData, canRefetch],
-	);
+		// Turning the filter off and on again shows the answer this window already has, rather than
+		// asking again; a window the filter has never been on for is never asked.
+		enabled: (query) =>
+			canRefetch && (filtered || query.state.data !== undefined),
+	});
 
 	const displayData =
-		filtered && filteredData ? filteredData : predictabilityData;
+		filtered && filteredScore.data ? filteredScore.data : predictabilityData;
 
 	return (
 		<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
@@ -78,7 +90,7 @@ const PredictabilityScoreDetailsWidget = <T extends IWorkItem>({
 						<ThroughputChartFilterToggle
 							isPremium={isPremium}
 							hasFilter={hasForecastFilter}
-							onChange={handleChange}
+							onChange={setFiltered}
 						/>
 					)}
 				</Box>

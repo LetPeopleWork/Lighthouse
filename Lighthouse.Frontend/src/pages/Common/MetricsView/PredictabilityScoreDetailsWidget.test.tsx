@@ -1,4 +1,9 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+	render as renderOnItsOwn,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
@@ -37,6 +42,13 @@ const buildMetricsService = (): IMetricsService<IWorkItem> =>
 			.mockResolvedValue(filteredScore),
 	}) as unknown as IMetricsService<IWorkItem>;
 
+let queryClient: QueryClient;
+
+const render = (ui: React.ReactElement) =>
+	renderOnItsOwn(
+		<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+	);
+
 const buildProps = (
 	overrides: Partial<
 		React.ComponentProps<typeof PredictabilityScoreDetailsWidget<IWorkItem>>
@@ -55,6 +67,9 @@ const buildProps = (
 describe("PredictabilityScoreDetailsWidget", () => {
 	beforeEach(() => {
 		mockCanUsePremiumFeatures.mockReturnValue(true);
+		queryClient = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
 	});
 
 	it("renders the raw predictability score on first render", () => {

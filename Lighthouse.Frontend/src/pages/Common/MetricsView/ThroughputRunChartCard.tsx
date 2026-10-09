@@ -1,10 +1,13 @@
 import { Box } from "@mui/material";
-import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import ThroughputChartFilterToggle from "../../../components/Common/Charts/ThroughputChart/ThroughputChartFilterToggle";
+import { metricsQueryOptions } from "../../../hooks/useMetricsData";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
+import { formatLocalDate } from "../../../utils/date/localDate";
 
 interface ThroughputRunChartCardProps<T extends IWorkItem> {
 	readonly entityId: number;
@@ -28,29 +31,39 @@ const ThroughputRunChartCard = <T extends IWorkItem>({
 	hasForecastFilter,
 }: ThroughputRunChartCardProps<T>) => {
 	const [filtered, setFiltered] = useState(false);
-	const [filteredData, setFilteredData] = useState<RunChartData | null>(null);
 
-	const handleChange = useCallback(
-		async (next: boolean) => {
-			setFiltered(next);
-			if (next && !filteredData) {
-				try {
-					const data = await metricsService.getThroughput(
-						entityId,
-						startDate,
-						endDate,
-						"filtered",
-					);
-					setFilteredData(data);
-				} catch (error) {
-					console.error("Error fetching filtered throughput:", error);
-				}
+	const filteredSeries = useQuery({
+		...metricsQueryOptions,
+		queryKey: [
+			"metrics",
+			"getThroughput",
+			{
+				view: "filtered",
+				ownerId: entityId,
+				from: formatLocalDate(startDate),
+				to: formatLocalDate(endDate),
+			},
+		] as const,
+		queryFn: async () => {
+			try {
+				return await metricsService.getThroughput(
+					entityId,
+					startDate,
+					endDate,
+					"filtered",
+				);
+			} catch (error) {
+				console.error("Error fetching filtered throughput:", error);
+				throw error;
 			}
 		},
-		[entityId, metricsService, startDate, endDate, filteredData],
-	);
+		// Turning the filter off and on again shows the answer this window already has, rather than
+		// asking again; a window the filter has never been on for is never asked.
+		enabled: (query) => filtered || query.state.data !== undefined,
+	});
 
-	const displayData = filtered && filteredData ? filteredData : rawData;
+	const displayData =
+		filtered && filteredSeries.data ? filteredSeries.data : rawData;
 
 	return (
 		<Box sx={{ height: "100%", position: "relative" }}>
@@ -63,7 +76,7 @@ const ThroughputRunChartCard = <T extends IWorkItem>({
 					<ThroughputChartFilterToggle
 						isPremium={isPremium}
 						hasFilter={hasForecastFilter}
-						onChange={handleChange}
+						onChange={setFiltered}
 					/>
 				}
 			/>

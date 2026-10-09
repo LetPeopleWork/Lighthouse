@@ -1,4 +1,9 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+	render as renderOnItsOwn,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
@@ -45,6 +50,13 @@ const buildMockMetricsService = (): IMetricsService<IWorkItem> =>
 		getThroughput: vi.fn().mockResolvedValue(filteredData),
 	}) as unknown as IMetricsService<IWorkItem>;
 
+let queryClient: QueryClient;
+
+const render = (ui: React.ReactElement) =>
+	renderOnItsOwn(
+		<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+	);
+
 const buildProps = (
 	overrides: Partial<
 		React.ComponentProps<typeof ThroughputRunChartCard<IWorkItem>>
@@ -64,6 +76,9 @@ const buildProps = (
 describe("ThroughputRunChartCard", () => {
 	beforeEach(() => {
 		mockCanUsePremiumFeatures.mockReturnValue(true);
+		queryClient = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
 	});
 
 	it("renders BarRunChart with the raw data on first render", () => {
