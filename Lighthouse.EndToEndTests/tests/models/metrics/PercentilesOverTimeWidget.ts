@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { MetricsWidget } from "./MetricsPage";
 
 export type PercentilesHorizon = 30 | 60 | 90;
 
@@ -27,9 +28,15 @@ export const PERCENTILES_OVER_TIME_EMPTY_COPY =
  */
 export class PercentilesOverTimeWidget {
 	private readonly widget: Locator;
+	private readonly frame: MetricsWidget;
 
 	constructor(public readonly page: Page) {
 		this.widget = page.getByTestId("percentiles-over-time-widget");
+		this.frame = new MetricsWidget(
+			page,
+			"Percentiles Over Time",
+			"percentilesOverTime",
+		);
 	}
 
 	get Widget(): Locator {
@@ -56,6 +63,7 @@ export class PercentilesOverTimeWidget {
 	}
 
 	async selectHorizon(horizon: PercentilesHorizon): Promise<void> {
+		await this.frame.waitUntilLoaded();
 		await this.horizonToggle(horizon).click();
 	}
 
@@ -73,6 +81,7 @@ export class PercentilesOverTimeWidget {
 	}
 
 	async selectAge(): Promise<void> {
+		await this.frame.waitUntilLoaded();
 		await this.ageToggle.click();
 	}
 
@@ -81,6 +90,7 @@ export class PercentilesOverTimeWidget {
 	}
 
 	async countLegendEntries(): Promise<number> {
+		await this.frame.waitUntilLoaded();
 		return this.legend.getByTestId(/^percentile-line-/).count();
 	}
 
@@ -90,6 +100,7 @@ export class PercentilesOverTimeWidget {
 	}
 
 	async countChartLines(): Promise<number> {
+		await this.frame.waitUntilLoaded();
 		return this.chartLines.count();
 	}
 
@@ -112,6 +123,7 @@ export class PercentilesOverTimeWidget {
 	 * (MUI-X defaults to a monotone curve, so in practice these are `C`s).
 	 */
 	async countPlottedDays(): Promise<number> {
+		await this.frame.waitUntilLoaded();
 		if ((await this.chartLines.count()) === 0) {
 			return 0;
 		}

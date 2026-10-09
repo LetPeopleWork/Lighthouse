@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { MetricsWidget } from "./MetricsPage";
 
 /**
  * The process-behaviour metric families the recorder persists a dated series
@@ -17,13 +18,13 @@ export const PBC_METRIC_TYPES = [
 
 export type PbcMetricType = (typeof PBC_METRIC_TYPES)[number];
 
-/** The families a portfolio dashboard offers — every one of them (D8). */
+/** The families a portfolio dashboard offers — every one of them. */
 export const PBC_PORTFOLIO_METRIC_TYPES: readonly PbcMetricType[] =
 	PBC_METRIC_TYPES;
 
 /**
  * The families a TEAM dashboard offers: a team has no feature sizes to chart,
- * so Feature Size is withheld there (D8).
+ * so Feature Size is withheld there.
  */
 export const PBC_TEAM_METRIC_TYPES: readonly PbcMetricType[] =
 	PBC_METRIC_TYPES.filter((type) => type !== "FeatureSize");
@@ -62,9 +63,11 @@ export const PBC_OVER_TIME_EMPTY_COPY =
  */
 export class PbcOverTimeWidget {
 	private readonly widget: Locator;
+	private readonly frame: MetricsWidget;
 
 	constructor(public readonly page: Page) {
 		this.widget = page.getByTestId("pbc-over-time-widget");
+		this.frame = new MetricsWidget(page, "PBC Over Time", "pbcOverTime");
 	}
 
 	get Widget(): Locator {
@@ -119,6 +122,7 @@ export class PbcOverTimeWidget {
 	}
 
 	async selectMetric(metricType: PbcMetricType): Promise<void> {
+		await this.frame.waitUntilLoaded();
 		await this.metricToggle(metricType).click();
 	}
 
@@ -127,6 +131,7 @@ export class PbcOverTimeWidget {
 	}
 
 	async countLegendEntries(): Promise<number> {
+		await this.frame.waitUntilLoaded();
 		return this.legend.getByTestId(/^pbc-line-/).count();
 	}
 
@@ -136,6 +141,7 @@ export class PbcOverTimeWidget {
 	}
 
 	async countChartLines(): Promise<number> {
+		await this.frame.waitUntilLoaded();
 		return this.chartLines.count();
 	}
 
@@ -159,6 +165,7 @@ export class PbcOverTimeWidget {
 	 * practice these are `C`s).
 	 */
 	async countPlottedDays(line: PbcLimitLine = "average"): Promise<number> {
+		await this.frame.waitUntilLoaded();
 		if ((await this.limitLinePath(line).count()) === 0) {
 			return 0;
 		}
