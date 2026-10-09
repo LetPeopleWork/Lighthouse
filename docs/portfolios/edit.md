@@ -257,9 +257,13 @@ The selector is offered on every Portfolio whatever its connection, and on Linea
 
 On a Jira connection the **Field Reference** of the Additional Field you pick here may name an issue link type instead of a field. Lighthouse matches the reference against the connection's fields first, and only asks Jira for its link types when no field answers to it.
 
-A link type shows you three phrases — its own name, and the sentence a link reads as from each end — and any of the three works here. Type whichever one you actually see in your Jira; capitalisation is ignored. For a link type whose two ends read `Caused by` and `Results in`, both of those and the type's own name find the same links.
+A link type shows you three phrases — its own name, and the sentence a link reads as from each end. Type one you actually see in your Jira; capitalisation is ignored. Which one you type decides which end of the links is read. For a link type whose two ends read `Caused by` and `Results in`:
 
-You never tell Lighthouse which way the links point. Jira writes a link once and offers it from both ends, so these two set-ups are the same set-up as far as this setting is concerned:
+- **`Caused by`**, the phrase a Feature reads towards its parent, reads only that end. Use it when the same link type also joins each parent to a level above it: a parent then holds the link up to its own parent and the links down to its Features at once, and only the phrase pointing up tells them apart.
+- **`Results in`**, the other end's phrase, reads the opposite way round and would place each parent under its Features.
+- **The type's own name**, or a phrase both ends share (such as *relates to*), reads both ends. That is enough for a single level, and it is what to type when you do not know which end is which.
+
+Jira writes a link once and offers it from both ends, so it does not matter which issue a link was created on. With `Caused by` typed, these two set-ups are the same set-up as far as this setting is concerned:
 
 - **The Feature names its parent.** `LH-42` carries a link reading *Caused by* `LH-7`. `LH-42` is grouped under `LH-7`.
 - **The parent names its Features.** `LH-7` carries links reading *Results in* `LH-42` and *Results in* `LH-43`. Both Features are grouped under `LH-7`, because each of them sees the other end of the very same link.
@@ -268,7 +272,7 @@ You never tell Lighthouse which way the links point. Jira writes a link once and
 A link type holds no value of its own, so once the reference resolves to one, the Additional Field shows the key it found on each Feature instead. That is the quickest way to check the setting is reading what you expected without opening Jira.
 
 {: .important}
-If one Feature's links of that type name two different issues, Lighthouse leaves it where it already was rather than pick one — a parent chosen wrongly moves work under something it does not belong to and looks exactly like correct data afterwards. The refresh writes one warning naming each affected Feature together with every issue its links offered, and **Settings > System Info** counts them in the refresh history. Narrow those links down to one and the next refresh places the Feature.
+If one Feature's links of that type name two different issues, Lighthouse leaves it where it already was rather than pick one — a parent chosen wrongly moves work under something it does not belong to and looks exactly like correct data afterwards. The refresh writes one warning naming each affected Feature together with every issue its links offered, and **Settings > System Info** counts them in the refresh history. Narrow those links down to one and the next refresh places the Feature. When the ones left out are exactly those with children of their own, the type's name is reading the links down to their children as well; type the phrase that points up instead.
 
 If two *different* link types both answer to the phrase you typed, Lighthouse resolves neither, for the same reason. Pick a phrase that belongs to only one of them.
 
