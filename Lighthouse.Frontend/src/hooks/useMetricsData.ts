@@ -266,6 +266,10 @@ function useMetricsQuery<R extends OwnerRequest, V>(
 	return { progress: query, answer: query.data ?? null };
 }
 
+function listOf<V>(query: MetricsQuery<V[]>): V[] {
+	return query.answer ?? [];
+}
+
 export function useMetricsData<
 	T extends IWorkItem | IFeature,
 	E extends IFeatureOwner,
@@ -832,18 +836,19 @@ export function useMetricsData<
 	);
 
 	return {
-		blackoutPeriods: blackoutPeriods.answer ?? [],
+		blackoutPeriods: listOf(blackoutPeriods),
 		throughputData: throughput.answer,
 		wipOverTimeData: wipOverTime.answer,
-		inProgressItems: inProgressItems.answer ?? [],
-		blockedItems: blockedItems.answer ?? [],
-		cycleTimeData: cycleTimeData.answer ?? [],
-		percentileValues: cycleTimePercentiles.answer ?? [],
-		workItemAgePercentilesValues: workItemAgePercentiles.answer ?? [],
-		previousWorkItemAgePercentilesValues:
-			previousWorkItemAgePercentiles.answer ?? [],
-		perStatePercentileValues: ageInStatePercentiles.answer ?? [],
-		sleRiskValues: sleRisk.answer ?? [],
+		inProgressItems: listOf(inProgressItems),
+		blockedItems: listOf(blockedItems),
+		cycleTimeData: listOf(cycleTimeData),
+		percentileValues: listOf(cycleTimePercentiles),
+		workItemAgePercentilesValues: listOf(workItemAgePercentiles),
+		previousWorkItemAgePercentilesValues: listOf(
+			previousWorkItemAgePercentiles,
+		),
+		perStatePercentileValues: listOf(ageInStatePercentiles),
+		sleRiskValues: listOf(sleRisk),
 		cumulativeStateTime: cumulativeStateTime.answer,
 		// A choice the reader has let go of must not keep showing what it last counted.
 		cumulativeStateTimeForSelection: selectionChosen
@@ -852,8 +857,8 @@ export function useMetricsData<
 		cumulativeStateTimeForScope: scopeChosen
 			? cumulativeStateTimeScope.answer
 			: null,
-		sizePercentileValues: sizePercentiles.answer ?? [],
-		allFeaturesForSizeChart: featuresForSizeChart.answer ?? [],
+		sizePercentileValues: listOf(sizePercentiles),
+		allFeaturesForSizeChart: listOf(featuresForSizeChart),
 		predictabilityData: predictability.answer,
 		throughputPbcData: throughputPbc.answer,
 		wipPbcData: wipPbc.answer,
