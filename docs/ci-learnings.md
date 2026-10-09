@@ -414,6 +414,12 @@ get re-applied.
 
 ## Tests
 
+### 2026-10-09 — a hook test that built its team inside the render callback looped forever under `--coverage` and killed the Vitest worker
+- **Symptom**: `Verify Frontend` failed in `pnpm run sonarreport` with `Error: Worker exited unexpectedly with exit code 1 during started state while running test file src/hooks/useMetricsData.test.ts` and no failing test named. `pnpm test` (no coverage) was green, locally and in CI. Running the file with `--pool=forks --coverage` shows the real cause: `JavaScript heap out of memory`.
+- **Root cause**: the new test called `renderHook(() => useMetricsData(createMockEntity(), …))`; `createMockEntity()` stamps `lastUpdated: new Date()` and the hook keys every query on the owner's `lastUpdated`, so each render was a new query key, each answer a re-render, each re-render a new fetch. Without coverage the clock ticks rarely enough that it settles after ~40 fetches; under v8 instrumentation every render lands on a new millisecond, the loop never ends, and the mocked `console.error` spy recorded ~18 000 `act(...)` warnings in 300 ms until the heap died.
+- **Fix**: `Lighthouse.Frontend/src/hooks/useMetricsData.test.ts` builds the team, portfolio and service once, outside the render callback, in the three tests that did it inline; the blackout-failure test now also asserts `getAll` was called exactly once, so a re-introduced loop fails as an assertion instead of an OOM.
+- **Rule going forward**: in a `renderHook` callback never call a factory that builds an owner/entity (anything carrying `new Date()` or another fresh value a query key reads) — build it once above the `renderHook` call; and before pushing new Vitest tests run the touched files with `--coverage` (`CI=true pnpm run sonarreport`, the command CI runs), because a crashed worker only shows up there.
+
 ### 2026-09-21 — `vi.spyOn(Storage.prototype, …)` intercepts nothing here, so every "storage is blocked" test was green against code with the guard deleted
 
 - **Symptom**: three tests in two features — `useAgingBackground.test.ts` (read and write) and `WorkItemsDialog.test.tsx` — each mocked storage to throw and asserted the fallback. All passed. A mutation run then reported the `catch` they name as **never executed**.
