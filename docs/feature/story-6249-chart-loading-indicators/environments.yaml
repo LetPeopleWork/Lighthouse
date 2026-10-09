@@ -15,7 +15,7 @@ schema_version: 1
 feature_id: story-6249-chart-loading-indicators
 updated: 2026-10-09
 wave: DEVOPS
-revised: "review round 1 (2026-10-09): platform Linux only; E2E premise and waits corrected; two first-load exceptions"
+revised: "review round 1 (2026-10-09): platform Linux only; E2E premise and waits corrected; two first-load exceptions. Review round 2: AC-1.7 and AC-1.8 folded into AC-1.1 (E9)"
 
 target_environments:
   - name: clean
@@ -39,17 +39,17 @@ browsers:
   ci: [chromium]          # playwright.config.ts has one project, Desktop Chrome, 1920x1080
   component_tests: [jsdom]
 
-themes: [light, dark]      # AC-1.7
-owner_types: [team, portfolio]  # AC-1.7
+themes: [light, dark]      # AC-1.1 (formerly AC-1.7)
+owner_types: [team, portfolio]  # AC-1.1 (formerly AC-1.7)
 
 scenario_axes:
   refetch_loading_and_race:
     criteria: [AC-1.1, AC-1.2, AC-1.3, AC-1.4, AC-1.5, AC-1.6]
     vary_over: [clean]
     owner_types: [team, portfolio]
-    rationale: "Status is derived in render from query keys; the owner id is part of every key."
+    rationale: "Status is derived in render from query keys (the over-time hooks from their own per-mount cache); the owner id is part of every key."
   theme:
-    criteria: [AC-1.7]
+    criteria: [AC-1.1]   # the theme clause, formerly AC-1.7
     vary_over: [clean]
     themes: [light, dark]
     rationale: "40 % dim, spinner and the S3 warning must read in both themes. One render per theme of each WidgetShell status; not multiplied over every AC."

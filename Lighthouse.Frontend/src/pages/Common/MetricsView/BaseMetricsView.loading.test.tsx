@@ -32,6 +32,7 @@ import { BaseMetricsView } from "./BaseMetricsView";
 import {
 	type CategoryKey,
 	getCategories,
+	getFetchRequirementsForWidget,
 	getWidgetsForCategory,
 } from "./categoryMetadata";
 import type { DateWindowPreset } from "./dateWindow";
@@ -389,6 +390,33 @@ const framedBeforeAnyData = (category: CategoryKey, owner: Owner) =>
 		.map((w) => w.widgetKey)
 		.filter((key) => !placedOnlyOnceTheirDataSaysSo.has(key));
 
+const everyOwnerAndCategory = (["team", "portfolio"] as const).flatMap(
+	(owner) =>
+		getCategories().map(
+			(category) => [owner, category.displayName, category.key] as const,
+		),
+);
+
+const fetchesForItself = new Set(["percentilesOverTime", "pbcOverTime"]);
+
+const chartsThePageFeedsOn = (category: CategoryKey, owner: Owner) =>
+	framedBeforeAnyData(category, owner).filter(
+		(key) => !fetchesForItself.has(key),
+	);
+
+function expectEveryChartToRead(
+	widgetKeys: readonly string[],
+	status: WidgetStatus,
+): void {
+	expect(widgetKeys.length).toBeGreaterThan(0);
+	for (const widgetKey of widgetKeys) {
+		expect(statusOf(widgetKey), widgetKey).toBe(status);
+	}
+}
+
+const bodyOf = (widgetKey: string) =>
+	within(frameOf(widgetKey)).getByTestId(`widget-shell-body-${widgetKey}`);
+
 const withoutThoseThatWaitForTheirData = (
 	keys: readonly (string | undefined)[],
 ) =>
@@ -452,8 +480,11 @@ describe.each<[Owner, Theme]>([
 
 			theReaderPicks("Last 90 days");
 
-			expect(statusOf("throughput")).toBe("loading");
-			expect(statusOf("arrivals")).toBe("loading");
+			expectEveryChartToRead(
+				chartsThePageFeedsOn("flow-metrics", owner),
+				"loading",
+			);
+			expect(bodyOf("throughput")).toHaveStyle({ opacity: "0.4" });
 			expectThroughputToRead(30);
 		});
 
@@ -522,7 +553,10 @@ describe("a team's charts while the window is changing", () => {
 
 		theReaderPicks("Last 30 days");
 
-		expect(statusOf("throughput")).toBe("ready");
+		expectEveryChartToRead(
+			framedBeforeAnyData("flow-metrics", "team"),
+			"ready",
+		);
 		expectThroughputToRead(30);
 	});
 
@@ -542,20 +576,24 @@ describe("a team's charts while the window is changing", () => {
 		).rejects.toThrow(/pointer-events: none/);
 	});
 
-	it("the Throughput filter switch inside a chart behind the window still asks for the filtered series", async () => {
+	it.skip("the Throughput filter switch inside a chart behind the window does not respond", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 		theReaderPicks("Last 90 days");
 
-		await userEvent
-			.setup()
-			.click(
-				within(frameOf("throughput")).getByLabelText("Use filtered Throughput"),
-			);
-
+		expect(bodyOf("throughput")).toHaveStyle({ pointerEvents: "none" });
+		await expect(
+			userEvent
+				.setup()
+				.click(
+					within(frameOf("throughput")).getByLabelText(
+						"Use filtered Throughput",
+					),
+				),
+		).rejects.toThrow(/pointer-events: none/);
 		expect(
 			held.pending({ method: "getThroughput", filtered: true }),
-		).toHaveLength(1);
+		).toHaveLength(0);
 	});
 });
 
@@ -681,11 +719,17 @@ describe("a team's chart whose data cannot be loaded", () => {
 	it.skip("leaves every other chart to come back with its own data", async () => {
 		await givenThe90DayThroughputFailed();
 
-		await act(async () =>
-			held.answer({ window: LAST_90_DAYS, except: "getThroughput" }),
-		);
+		await everythingAsked({ except: "getThroughput" });
+		await everythingAsked({ except: "getThroughput" });
 
-		expect(statusOf("wipOverTime")).toBe("ready");
+		const showsThroughput = (widgetKey: string) =>
+			(getFetchRequirementsForWidget(widgetKey) ?? []).includes("throughput");
+		expectEveryChartToRead(
+			framedBeforeAnyData("flow-metrics", "team").filter(
+				(key) => !showsThroughput(key),
+			),
+			"ready",
+		);
 		expect(statusOf("throughput")).toBe("error");
 	});
 
@@ -713,6 +757,12 @@ describe("a team's chart whose data cannot be loaded", () => {
 		expect(
 			within(frameOf("throughput")).queryByText(COULD_NOT_LOAD_MESSAGE),
 		).not.toBeInTheDocument();
+	});
+
+	it("until a chart can say it could not be loaded, a failed window leaves its older chart in place", async () => {
+		await givenThe90DayThroughputFailed();
+
+		expectThroughputToRead(30);
 	});
 
 	it.skip("does not report a failure for a window the reader has already left", async () => {
@@ -788,28 +838,31 @@ describe("charts waiting on something this owner never has", () => {
 });
 
 describe("every chart request on the dashboard", () => {
-	it.skip("is asked for without retrying, and kept for no other window", async () => {
-		const withTheAppDefaults = new QueryClient({
-			defaultOptions: {
-				queries: { staleTime: 300_000, gcTime: 1_800_000, retry: 2 },
-			},
-		});
-		openTheDashboard("team", "flow-metrics", {
-			queryClient: withTheAppDefaults,
-		});
-		await everythingHasLoaded();
+	it.skip.each(everyOwnerAndCategory)(
+		"on a %s's %s is asked for without retrying, and kept for no other window",
+		async (owner, _name, category) => {
+			const withTheAppDefaults = new QueryClient({
+				defaultOptions: {
+					queries: { staleTime: 300_000, gcTime: 1_800_000, retry: 2 },
+				},
+			});
+			openTheDashboard(owner, category, {
+				queryClient: withTheAppDefaults,
+			});
+			await everythingHasLoaded();
 
-		const queries = withTheAppDefaults.getQueryCache().getAll();
-		expect(queries.length).toBeGreaterThan(0);
-		for (const query of queries) {
-			expect(query.options.retry).toBe(false);
-			expect(query.options.gcTime).toBe(0);
-			for (const observer of query.observers) {
-				expect(observer.options.staleTime).toBe(0);
-				expect(observer.options.refetchOnWindowFocus).toBe(false);
+			const queries = withTheAppDefaults.getQueryCache().getAll();
+			expect(queries.length).toBeGreaterThan(0);
+			for (const query of queries) {
+				expect(query.options.retry).toBe(false);
+				expect(query.options.gcTime).toBe(0);
+				for (const observer of query.observers) {
+					expect(observer.options.staleTime).toBe(0);
+					expect(observer.options.refetchOnWindowFocus).toBe(false);
+				}
 			}
-		}
-	});
+		},
+	);
 });
 
 describe("Cumulative Time per State narrowed by the reader, across a window change", () => {
@@ -828,7 +881,7 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 				call.window === window,
 		);
 
-	it.skip("a stretch chosen for a window the reader has left never shows its numbers", async () => {
+	it.skip("a window change drops the chosen stretch, as it does today, and a late answer for it never shows", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 		fireEvent.click(
@@ -959,8 +1012,12 @@ describe("filters inside a chart", () => {
 		);
 
 		expect(statusOf("throughputPbc")).toBe("loading");
-		expect(statusOf("cycleTimePbc")).toBe("ready");
-		expect(statusOf("arrivalsPbc")).toBe("ready");
+		expectEveryChartToRead(
+			framedBeforeAnyData("predictability", "team").filter(
+				(key) => key !== "throughputPbc",
+			),
+			"ready",
+		);
 	});
 
 	it.skip("switching the Throughput run chart's filter puts only that chart into loading", async () => {
@@ -972,9 +1029,12 @@ describe("filters inside a chart", () => {
 		);
 
 		expect(statusOf("throughput")).toBe("loading");
-		expect(statusOf("arrivals")).toBe("ready");
-		expect(statusOf("wipOverTime")).toBe("ready");
-		expect(statusOf("stacked")).toBe("ready");
+		expectEveryChartToRead(
+			framedBeforeAnyData("flow-metrics", "team").filter(
+				(key) => key !== "throughput",
+			),
+			"ready",
+		);
 	});
 });
 
@@ -1009,14 +1069,18 @@ describe.each(chartsThatFetchForThemselves)(
 				within(frameOf(widgetKey)).getByText(COULD_NOT_LOAD_MESSAGE),
 			).toBeInTheDocument();
 		});
-	},
-);
 
-const everyOwnerAndCategory = (["team", "portfolio"] as const).flatMap(
-	(owner) =>
-		getCategories().map(
-			(category) => [owner, category.displayName, category.key] as const,
-		),
+		it.skip("still says it couldn't be loaded while a stepped window waits to be committed", async () => {
+			openTheDashboard("team", "predictability");
+			await act(async () => held.fail({ method }));
+			await everythingHasLoaded();
+
+			fireEvent.click(screen.getByRole("button", { name: "Previous 7 days" }));
+
+			expect(screen.getByTestId("step-waiting")).toHaveTextContent(/^true$/);
+			expect(statusOf(widgetKey)).toBe("error");
+		});
+	},
 );
 
 describe("a dashboard as it opens", () => {
@@ -1205,6 +1269,51 @@ describe("charts that appear only once their data says to show them", () => {
 
 		expect(isFramed("featureSize")).toBe(false);
 	});
+
+	const theirOwnRequests = [
+		[
+			"Estimation vs. Cycle Time",
+			"estimationVsCycleTime",
+			"getEstimationVsCycleTimeData",
+		],
+		["Feature Size", "featureSize", "getAllFeaturesForSizeChart"],
+	] as const;
+
+	function expectCouldNotLoadWithNoSpinner(widgetKey: string): void {
+		expect(statusOf(widgetKey)).toBe("error");
+		expect(
+			within(frameOf(widgetKey)).getByText(COULD_NOT_LOAD_MESSAGE),
+		).toBeInTheDocument();
+		expect(
+			within(frameOf(widgetKey)).queryByRole("progressbar"),
+		).not.toBeInTheDocument();
+	}
+
+	it.skip.each(theirOwnRequests)(
+		"%s says it couldn't be loaded when its first answer fails, with no spinner",
+		async (_name, widgetKey, method) => {
+			openTheDashboard("portfolio", "portfolio");
+
+			await act(async () => held.fail({ method }));
+			await everythingHasLoaded();
+
+			expectCouldNotLoadWithNoSpinner(widgetKey);
+		},
+	);
+
+	it.skip.each(theirOwnRequests)(
+		"%s, once shown, says it couldn't be loaded when the next window's answer fails",
+		async (_name, widgetKey, method) => {
+			openTheDashboard("portfolio", "portfolio");
+			await everythingHasLoaded();
+			theReaderPicks("Last 90 days");
+
+			await act(async () => held.fail({ method }));
+			await everythingHasLoaded();
+
+			expectCouldNotLoadWithNoSpinner(widgetKey);
+		},
+	);
 
 	it.skip.each([
 		["Estimation vs. Cycle Time", "estimationVsCycleTime"],

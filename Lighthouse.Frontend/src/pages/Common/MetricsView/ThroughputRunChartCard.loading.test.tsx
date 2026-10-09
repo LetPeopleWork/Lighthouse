@@ -145,14 +145,16 @@ describe("the Throughput run chart's filtered series follows the selected window
 });
 
 describe("the Throughput run chart's frame while its filtered series loads", () => {
-	it("the filter switch still works while the dashboard has the chart loading", async () => {
+	it.skip("the filter switch does not respond while the dashboard has the chart loading", async () => {
 		render(cardFor(LAST_30_DAYS, 30, "loading"));
 
-		await theReaderTurnsTheFilterOn();
-
-		expect(
-			held.pending({ method: "getThroughput", filtered: true }),
-		).toHaveLength(1);
+		expect(screen.getByTestId("widget-shell-body-throughput")).toHaveStyle({
+			pointerEvents: "none",
+		});
+		await expect(theReaderTurnsTheFilterOn()).rejects.toThrow(
+			/pointer-events: none/,
+		);
+		expect(held.calls).toHaveLength(0);
 	});
 
 	it.skip("turning the filter on keeps the chart loading until the filtered series arrives", async () => {
@@ -188,5 +190,29 @@ describe("the Throughput run chart's frame while its filtered series loads", () 
 
 		expect(frame()).toHaveAttribute("data-widget-status", "error");
 		expect(screen.getByText(COULD_NOT_LOAD_MESSAGE)).toBeInTheDocument();
+	});
+});
+
+describe("the Throughput run chart's filtered request", () => {
+	it.skip("is asked for without retrying, and kept for no other window", async () => {
+		queryClient = new QueryClient({
+			defaultOptions: {
+				queries: { staleTime: 300_000, gcTime: 1_800_000, retry: 2 },
+			},
+		});
+		render(cardFor(LAST_30_DAYS, 30));
+
+		await theReaderTurnsTheFilterOn();
+
+		const queries = queryClient.getQueryCache().getAll();
+		expect(queries.length).toBeGreaterThan(0);
+		for (const query of queries) {
+			expect(query.options.retry).toBe(false);
+			expect(query.options.gcTime).toBe(0);
+			for (const observer of query.observers) {
+				expect(observer.options.staleTime).toBe(0);
+				expect(observer.options.refetchOnWindowFocus).toBe(false);
+			}
+		}
 	});
 });

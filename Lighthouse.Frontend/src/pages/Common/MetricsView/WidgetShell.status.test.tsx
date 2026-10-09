@@ -143,13 +143,14 @@ describe("a chart's frame while it is behind the selected window", () => {
 	it.skip("lets nobody point at the dimmed chart, nor open its data", async () => {
 		renderFrame({ status: "loading", hasContentToDim: true });
 
+		expect(body()).toHaveStyle({ pointerEvents: "none" });
 		await expect(
 			userEvent.setup().click(screen.getByTestId("the-chart")),
 		).rejects.toThrow(/pointer-events: none/);
 		expect(screen.getByTestId(`widget-view-data-${KEY}`)).toBeDisabled();
 	});
 
-	it("a switch inside the chart still works while the chart is loading", async () => {
+	it.skip("a switch inside the chart does not respond while the chart is loading", async () => {
 		const onFilterChange = vi.fn();
 		renderFrame(
 			{ status: "loading", hasContentToDim: true },
@@ -163,11 +164,10 @@ describe("a chart's frame while it is behind the selected window", () => {
 			</div>,
 		);
 
-		await userEvent
-			.setup()
-			.click(screen.getByLabelText("Use filtered Throughput"));
-
-		expect(onFilterChange).toHaveBeenCalledWith(true);
+		await expect(
+			userEvent.setup().click(screen.getByLabelText("Use filtered Throughput")),
+		).rejects.toThrow(/pointer-events: none/);
+		expect(onFilterChange).not.toHaveBeenCalled();
 	});
 
 	it("still explains the chart when the reader asks", async () => {
@@ -260,6 +260,17 @@ function SelfFetchingChart({ status }: { readonly status: WidgetStatus }) {
 	useReportWidgetStatus(status);
 	return <div data-testid="self-fetching-chart">series</div>;
 }
+
+describe("a chart the page feeds", () => {
+	it.skip.each<WidgetStatus>(["loading", "error", "ready"])(
+		"with nothing inside reporting for itself, the frame reads what the page says: %s",
+		(fromPage) => {
+			renderFrame({ status: fromPage, hasContentToDim: true });
+
+			expect(frame()).toHaveAttribute("data-widget-status", fromPage);
+		},
+	);
+});
 
 describe("a chart that fetches its own data", () => {
 	it.skip("puts its own frame into loading while its series is on its way", () => {

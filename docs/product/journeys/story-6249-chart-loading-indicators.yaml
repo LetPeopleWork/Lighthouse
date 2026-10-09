@@ -1,6 +1,7 @@
 schema_version: 1
 feature_id: story-6249-chart-loading-indicators
 updated: 2026-10-09
+revised: "review round 2 (2026-10-09): M1 body blocked while loading; M2 error header; M3 two hidden-by-rule widgets show could-not-load on failure; M4 copy"
 note: >
   ADO User Story #6249, tagged Release Notes, no parent Epic. DISCOVER and DIVERGE skipped by the
   maintainer. Frontend only. Grounded in a code read: the metrics dashboards have no loading state,
@@ -23,9 +24,9 @@ journeys:
 
     steps:
       - step: Open a Team or Portfolio metrics dashboard
-        sees: every widget of the category in its final place, a spinner in each frame (slice 02); Estimation vs. Cycle Time and Feature Size appear only once their data says to show them, as today
+        sees: every widget of the category in its final place, a spinner in each frame (slice 02); Estimation vs. Cycle Time and Feature Size appear only once their data says to show them, as today, or show the could-not-load frame if their own fetch fails (M3)
       - step: Pick a preset, a date, or step the window
-        sees: every chart not yet showing the selected window dims with a spinner over it; the header stays usable (slice 01b)
+        sees: every chart not yet showing the selected window dims with a spinner over it (slice 01b for the charts the page feeds, 01c for the over-time and filtered views); the chart and the controls inside it take no input until it is back, the info button still works, View Data is disabled (M1)
       - step: Wait
         sees: each chart returns at full strength as its own data for the selected window lands
       - step: Change the window again before the first answers land
@@ -33,10 +34,13 @@ journeys:
 
     error_paths:
       - when: a widget's fetch for the selected window fails
-        sees: the spinner stops and the frame says it could not load; never the previous window's chart at full strength
+        sees: >
+          the spinner stops and the frame says "This chart couldn't be loaded. Change the dates or reload to try
+          again." (M4) under a header of title and info only (M2); never the previous window's chart at full
+          strength. Estimation vs. Cycle Time and Feature Size do the same when their own fetch fails (M3).
 
     shared_artifacts:
       - name: selected window (startDate, endDate)
         source: useDateRange (URL-backed)
       - name: widget loading state
-        source: the dashboard fetch sources (useMetricsData keys, ThroughputRunChartCard, over-time hooks), drawn only by WidgetShell
+        source: the dashboard fetch sources (useMetricsData keys, ThroughputRunChartCard, PredictabilityScoreDetailsWidget, and the over-time hooks, which only expose a status), drawn only by WidgetShell

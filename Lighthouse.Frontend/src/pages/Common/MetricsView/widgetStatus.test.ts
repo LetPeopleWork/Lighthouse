@@ -2,6 +2,8 @@ import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import {
 	type CategoryKey,
+	getFetchRequirementsForWidget,
+	getMetricsFetchKeys,
 	getWidgetsForCategory,
 	type MetricsFetchKey,
 } from "./categoryMetadata";
@@ -172,6 +174,83 @@ describe("which widgets are behind the selected window", () => {
 		(_name, widgetKey) => {
 			expect(widgetStatusFor(widgetKey, {}, false)).toBe("ready");
 			expect(widgetStatusFor(widgetKey, {}, true)).toBe("loading");
+		},
+	);
+});
+
+// The chosen Work Items and the chosen stretch are fetched apart from the totals, so each
+// arrives as an input of its own; the list of inputs gains them with that change.
+const cumulativeTimeWith = (
+	narrowing: string,
+	state: FetchKeyState,
+): FetchKeyStates =>
+	({
+		cumulativeStateTime: answered,
+		[narrowing]: state,
+	}) as FetchKeyStates;
+
+const notChosen = () => fetchKeyStateOf([onItsWay], false);
+
+describe("Cumulative Time per State narrowed by the reader", () => {
+	const SELECTION = "cumulativeStateTimeSelection";
+	const STRETCH = "cumulativeStateTimeScope";
+
+	it.skip.each<[string, string, WidgetStatus, string, () => FetchKeyState]>([
+		[
+			"Work Items",
+			"still being counted",
+			"loading",
+			SELECTION,
+			() => behindWithOldData,
+		],
+		["Work Items", "failed", "error", SELECTION, () => failed],
+		["Work Items", "not made", "ready", SELECTION, notChosen],
+		[
+			"stretch",
+			"still being counted",
+			"loading",
+			STRETCH,
+			() => behindWithOldData,
+		],
+		["stretch", "failed", "error", STRETCH, () => failed],
+		["stretch", "not made", "ready", STRETCH, notChosen],
+	])(
+		"with its totals answered and the %s choice %s, it reads %s",
+		(_narrowing, _state, expected, key, stateOf) => {
+			expect(
+				widgetStatusFor(
+					"stateTimeCumulative",
+					cumulativeTimeWith(key, stateOf()),
+					false,
+				),
+			).toBe(expected);
+		},
+	);
+});
+
+const everyFetchKeyThatCanFail = getMetricsFetchKeys().filter(
+	// Unreadable blackout periods mean no periods to draw, never a failed chart.
+	(key) => key !== "blackoutPeriods",
+);
+
+describe("every request a chart waits on", () => {
+	it.skip.each(everyFetchKeyThatCanFail)(
+		"a failed %s ends every chart that shows it in could-not-load, and nothing else",
+		(failedKey) => {
+			const chartsThatShowIt = everyPlacedWidget.filter((widgetKey) =>
+				(getFetchRequirementsForWidget(widgetKey) ?? []).includes(failedKey),
+			);
+			expect(chartsThatShowIt.length).toBeGreaterThan(0);
+
+			for (const widgetKey of everyPlacedWidget) {
+				const states: FetchKeyStates = {
+					...allAnswered(getFetchRequirementsForWidget(widgetKey) ?? []),
+					[failedKey]: failed,
+				};
+				expect(widgetStatusFor(widgetKey, states, false)).toBe(
+					chartsThatShowIt.includes(widgetKey) ? "error" : "ready",
+				);
+			}
 		},
 	);
 });

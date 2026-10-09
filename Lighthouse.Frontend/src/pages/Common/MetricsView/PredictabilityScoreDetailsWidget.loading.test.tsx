@@ -143,17 +143,16 @@ describe("the Predictability Score details' filtered score follows the selected 
 });
 
 describe("the Predictability Score details' frame while its filtered score loads", () => {
-	it("the filter switch still works while the dashboard has the score loading", async () => {
+	it.skip("the filter switch does not respond while the dashboard has the score loading", async () => {
 		render(detailsFor(LAST_30_DAYS, 0.3, "loading"));
 
-		await theReaderTurnsTheFilterOn();
-
 		expect(
-			held.pending({
-				method: "getMultiItemForecastPredictabilityScore",
-				filtered: true,
-			}),
-		).toHaveLength(1);
+			screen.getByTestId("widget-shell-body-predictabilityScoreDetails"),
+		).toHaveStyle({ pointerEvents: "none" });
+		await expect(theReaderTurnsTheFilterOn()).rejects.toThrow(
+			/pointer-events: none/,
+		);
+		expect(held.calls).toHaveLength(0);
 	});
 
 	it.skip("turning the filter on keeps the score loading until the filtered score arrives", async () => {
@@ -192,5 +191,29 @@ describe("the Predictability Score details' frame while its filtered score loads
 
 		expect(frame()).toHaveAttribute("data-widget-status", "error");
 		expect(screen.getByText(COULD_NOT_LOAD_MESSAGE)).toBeInTheDocument();
+	});
+});
+
+describe("the Predictability Score details' filtered request", () => {
+	it.skip("is asked for without retrying, and kept for no other window", async () => {
+		queryClient = new QueryClient({
+			defaultOptions: {
+				queries: { staleTime: 300_000, gcTime: 1_800_000, retry: 2 },
+			},
+		});
+		render(detailsFor(LAST_30_DAYS, 0.3));
+
+		await theReaderTurnsTheFilterOn();
+
+		const queries = queryClient.getQueryCache().getAll();
+		expect(queries.length).toBeGreaterThan(0);
+		for (const query of queries) {
+			expect(query.options.retry).toBe(false);
+			expect(query.options.gcTime).toBe(0);
+			for (const observer of query.observers) {
+				expect(observer.options.staleTime).toBe(0);
+				expect(observer.options.refetchOnWindowFocus).toBe(false);
+			}
+		}
 	});
 });

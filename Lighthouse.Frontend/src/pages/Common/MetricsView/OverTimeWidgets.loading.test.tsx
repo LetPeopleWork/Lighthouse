@@ -1,4 +1,3 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { addDays } from "date-fns";
@@ -98,30 +97,24 @@ const overTimeCharts: readonly OverTimeChart[] = [
 
 describe.each(overTimeCharts)("$name while its series loads", (chart) => {
 	let held: HeldMetricsService;
-	let queryClient: QueryClient;
 
 	beforeEach(() => {
 		held = createHeldMetricsService("team");
-		queryClient = new QueryClient({
-			defaultOptions: { queries: { retry: false } },
-		});
 	});
 
 	const framed = (window: string) => (
-		<QueryClientProvider client={queryClient}>
-			<WidgetShell
-				widgetKey={chart.widgetKey}
-				title={chart.name}
-				status="ready"
-				hasContentToDim={false}
-			>
-				{chart.draw(
-					held.service as Service,
-					windows[window].start,
-					windows[window].end,
-				)}
-			</WidgetShell>
-		</QueryClientProvider>
+		<WidgetShell
+			widgetKey={chart.widgetKey}
+			title={chart.name}
+			status="ready"
+			hasContentToDim={false}
+		>
+			{chart.draw(
+				held.service as Service,
+				windows[window].start,
+				windows[window].end,
+			)}
+		</WidgetShell>
 	);
 
 	const frame = () => screen.getByTestId(`widget-shell-${chart.widgetKey}`);
@@ -199,33 +192,6 @@ describe.each(overTimeCharts)("$name while its series loads", (chart) => {
 		await user.click(firstSelection);
 
 		expect(held.calls).toHaveLength(requestsSoFar);
-	});
-
-	it.skip("its series is asked for without retrying, and kept while the reader switches selections", async () => {
-		const withTheAppDefaults = new QueryClient({
-			defaultOptions: {
-				queries: { staleTime: 300_000, gcTime: 1_800_000, retry: 2 },
-			},
-		});
-		render(
-			<QueryClientProvider client={withTheAppDefaults}>
-				{chart.draw(
-					held.service as Service,
-					windows[LAST_30_DAYS].start,
-					windows[LAST_30_DAYS].end,
-				)}
-			</QueryClientProvider>,
-		);
-
-		const queries = withTheAppDefaults.getQueryCache().getAll();
-		expect(queries.length).toBeGreaterThan(0);
-		for (const query of queries) {
-			expect(query.options.retry).toBe(false);
-			expect(query.options.gcTime).toBeGreaterThan(0);
-			for (const observer of query.observers) {
-				expect(observer.options.refetchOnWindowFocus).toBe(false);
-			}
-		}
 	});
 });
 
