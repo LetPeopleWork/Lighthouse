@@ -1,4 +1,5 @@
 import { Grid } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import {
 	type ReactNode,
 	useCallback,
@@ -31,7 +32,10 @@ import WorkItemAgePercentiles from "../../../components/Common/Charts/WorkItemAg
 import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingChart";
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
-import { useMetricsData } from "../../../hooks/useMetricsData";
+import {
+	metricsQueryOptions,
+	useMetricsData,
+} from "../../../hooks/useMetricsData";
 import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
 import type { BlockedCountSnapshot } from "../../../models/BlockedCountSnapshot";
 import type { IStateMapping } from "../../../models/Common/StateMapping";
@@ -1496,19 +1500,41 @@ export const BaseMetricsView = <
 	>([]);
 	const [drillDownOpen, setDrillDownOpen] = useState(false);
 
-	const [cumulativeCandidates, setCumulativeCandidates] = useState<
-		ICumulativeStateTimeCandidateRow[]
-	>([]);
-	const [cumulativeCandidatesLoaded, setCumulativeCandidatesLoaded] =
-		useState(false);
-	const candidatesRequestedRef = useRef(false);
-
-	useEffect(() => {
-		candidatesRequestedRef.current = false;
-		setSelectedItemIds([]);
-		setCumulativeCandidates([]);
-		setCumulativeCandidatesLoaded(false);
-	}, []);
+	// The picker's Work Items are asked for only once the reader opens it, and again for each
+	// window it is opened in. A failure leaves the list empty and the chart as it was, because the
+	// chart's numbers do not depend on that list.
+	const [pickerOpenedFor, setPickerOpenedFor] = useState<string | null>(null);
+	const cumulativeCandidatesQuery = useQuery({
+		...metricsQueryOptions,
+		queryKey: [
+			"metrics",
+			"cumulativeStateTimeCandidates",
+			{
+				ownerType,
+				ownerId: entity.id,
+				from: formatLocalDate(startDate),
+				to: formatLocalDate(endDate),
+			},
+		] as const,
+		queryFn: async (): Promise<ICumulativeStateTimeCandidateRow[]> => {
+			const response =
+				ownerType === "team"
+					? await metricsService.getCumulativeStateTimeCandidatesForTeam(
+							entity.id,
+							startDate,
+							endDate,
+						)
+					: await metricsService.getCumulativeStateTimeCandidatesForPortfolio(
+							entity.id,
+							startDate,
+							endDate,
+						);
+			return response.items;
+		},
+		enabled: pickerOpenedFor === selectedQuestion,
+	});
+	const cumulativeCandidates = cumulativeCandidatesQuery.data ?? [];
+	const cumulativeCandidatesLoaded = cumulativeCandidatesQuery.isSuccess;
 
 	const handleCumulativeScopeChange = useCallback(
 		(definitionId: number | null) =>
@@ -1520,28 +1546,10 @@ export const BaseMetricsView = <
 		[selectedQuestion],
 	);
 
-	const handleCumulativeStateTimePickerOpen = useCallback(() => {
-		if (candidatesRequestedRef.current) {
-			return;
-		}
-		candidatesRequestedRef.current = true;
-		const request =
-			ownerType === "team"
-				? metricsService.getCumulativeStateTimeCandidatesForTeam(
-						entity.id,
-						startDate,
-						endDate,
-					)
-				: metricsService.getCumulativeStateTimeCandidatesForPortfolio(
-						entity.id,
-						startDate,
-						endDate,
-					);
-		void request.then((response) => {
-			setCumulativeCandidates(response.items);
-			setCumulativeCandidatesLoaded(true);
-		});
-	}, [ownerType, metricsService, entity.id, startDate, endDate]);
+	const handleCumulativeStateTimePickerOpen = useCallback(
+		() => setPickerOpenedFor(selectedQuestion),
+		[selectedQuestion],
+	);
 
 	const handleCumulativeStateTimeSelectionChange = setSelectedItemIds;
 

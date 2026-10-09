@@ -932,7 +932,7 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 		expectCountsToRead(`Work Items 11+12, ${LAST_90_DAYS}`);
 	});
 
-	it.skip("the picker offers the new window's Work Items once the window changes", async () => {
+	it("the picker offers the new window's Work Items once the window changes", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 		theReaderOpensThePicker();
@@ -948,7 +948,7 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 		);
 	});
 
-	it.skip("the picker asks for no Work Items of the new window until the reader opens it again", async () => {
+	it("the picker asks for no Work Items of the new window until the reader opens it again", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 		theReaderOpensThePicker();
@@ -994,7 +994,7 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 		).toBeInTheDocument();
 	});
 
-	it.skip("keeps showing its numbers when the picker's Work Items cannot be loaded", async () => {
+	it("keeps showing its numbers when the picker's Work Items cannot be loaded", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 		theReaderOpensThePicker();
