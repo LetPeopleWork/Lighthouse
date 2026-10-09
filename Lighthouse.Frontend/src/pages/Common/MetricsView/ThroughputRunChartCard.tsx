@@ -8,6 +8,7 @@ import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { formatLocalDate } from "../../../utils/date/localDate";
+import { fetchKeyStateOf, useReportWidgetStatus } from "./widgetStatus";
 
 interface ThroughputRunChartCardProps<T extends IWorkItem> {
 	readonly entityId: number;
@@ -61,6 +62,10 @@ const ThroughputRunChartCard = <T extends IWorkItem>({
 		// asking again; a window the filter has never been on for is never asked.
 		enabled: (query) => filtered || query.state.data !== undefined,
 	});
+
+	// With the filter off the chart shows the page's own series, so a refetch of the filtered answer
+	// it keeps for later holds nothing back.
+	useReportWidgetStatus(fetchKeyStateOf([filteredSeries], filtered).status);
 
 	const displayData =
 		filtered && filteredSeries.data ? filteredSeries.data : rawData;

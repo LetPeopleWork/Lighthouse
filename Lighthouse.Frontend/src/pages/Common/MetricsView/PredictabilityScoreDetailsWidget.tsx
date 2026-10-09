@@ -8,6 +8,7 @@ import type { IForecastPredictabilityScore } from "../../../models/Forecasts/For
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { formatLocalDate } from "../../../utils/date/localDate";
+import { fetchKeyStateOf, useReportWidgetStatus } from "./widgetStatus";
 
 interface PredictabilityScoreDetailsWidgetProps<T extends IWorkItem> {
 	readonly predictabilityData: IForecastPredictabilityScore | null;
@@ -67,6 +68,10 @@ const PredictabilityScoreDetailsWidget = <T extends IWorkItem>({
 		enabled: (query) =>
 			canRefetch && (filtered || query.state.data !== undefined),
 	});
+
+	// With the filter off the widget shows the page's own score, so a refetch of the filtered answer
+	// it keeps for later holds nothing back.
+	useReportWidgetStatus(fetchKeyStateOf([filteredScore], filtered).status);
 
 	const displayData =
 		filtered && filteredScore.data ? filteredScore.data : predictabilityData;

@@ -163,7 +163,7 @@ describe("the Predictability Score details' frame while its filtered score loads
 		expect(held.calls).toHaveLength(0);
 	});
 
-	it.skip("turning the filter on keeps the score loading until the filtered score arrives", async () => {
+	it("turning the filter on keeps the score loading until the filtered score arrives", async () => {
 		render(detailsFor(LAST_30_DAYS, 0.3));
 
 		await theReaderTurnsTheFilterOn();
@@ -174,7 +174,7 @@ describe("the Predictability Score details' frame while its filtered score loads
 		expect(shownScore()).toHaveTextContent(/^0\.31$/);
 	});
 
-	it.skip("with the filter on, a new window keeps the score loading until that window's filtered score arrives", async () => {
+	it("with the filter on, a new window keeps the score loading until that window's filtered score arrives", async () => {
 		const { rerender } = render(detailsFor(LAST_30_DAYS, 0.3));
 		await theReaderTurnsTheFilterOn();
 		await theFilteredScoreAnswers(LAST_30_DAYS, 0.31);
@@ -186,7 +186,7 @@ describe("the Predictability Score details' frame while its filtered score loads
 		expect(frame()).toHaveAttribute("data-widget-status", "ready");
 	});
 
-	it.skip("a filtered score that cannot be loaded ends in the could-not-load message", async () => {
+	it("a filtered score that cannot be loaded ends in the could-not-load message", async () => {
 		render(detailsFor(LAST_30_DAYS, 0.3));
 		await theReaderTurnsTheFilterOn();
 

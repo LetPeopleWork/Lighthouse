@@ -1020,7 +1020,7 @@ describe("filters inside a chart", () => {
 		);
 	});
 
-	it.skip("switching the Throughput run chart's filter puts only that chart into loading", async () => {
+	it("switching the Throughput run chart's filter puts only that chart into loading", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 

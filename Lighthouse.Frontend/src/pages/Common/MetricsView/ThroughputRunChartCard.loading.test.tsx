@@ -165,7 +165,7 @@ describe("the Throughput run chart's frame while its filtered series loads", () 
 		expect(held.calls).toHaveLength(0);
 	});
 
-	it.skip("turning the filter on keeps the chart loading until the filtered series arrives", async () => {
+	it("turning the filter on keeps the chart loading until the filtered series arrives", async () => {
 		render(cardFor(LAST_30_DAYS, 30));
 
 		await theReaderTurnsTheFilterOn();
@@ -176,7 +176,7 @@ describe("the Throughput run chart's frame while its filtered series loads", () 
 		expect(shownTotal()).toHaveTextContent(/^3$/);
 	});
 
-	it.skip("with the filter on, a new window keeps the chart loading until that window's filtered series arrives", async () => {
+	it("with the filter on, a new window keeps the chart loading until that window's filtered series arrives", async () => {
 		const { rerender } = render(cardFor(LAST_30_DAYS, 30));
 		await theReaderTurnsTheFilterOn();
 		await theFilteredSeriesAnswers(LAST_30_DAYS, 3);
@@ -188,7 +188,7 @@ describe("the Throughput run chart's frame while its filtered series loads", () 
 		expect(frame()).toHaveAttribute("data-widget-status", "ready");
 	});
 
-	it.skip("a filtered series that cannot be loaded ends in the could-not-load message", async () => {
+	it("a filtered series that cannot be loaded ends in the could-not-load message", async () => {
 		render(cardFor(LAST_30_DAYS, 30));
 		await theReaderTurnsTheFilterOn();
 
