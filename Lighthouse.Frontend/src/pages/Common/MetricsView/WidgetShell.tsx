@@ -12,6 +12,8 @@ import {
 	IconButton,
 	Link,
 	Popover,
+	type SxProps,
+	type Theme,
 	Tooltip,
 	Typography,
 	useTheme,
@@ -108,6 +110,33 @@ const centredSpinner = (
 	/>
 );
 
+type BodyLook = "ready" | "dimmed" | "waiting" | "error";
+
+function bodyLookFor(status: WidgetStatus, hasContentToDim: boolean): BodyLook {
+	if (status !== "loading") return status;
+	return hasContentToDim ? "dimmed" : "waiting";
+}
+
+const fullHeight: SxProps<Theme> = { height: "100%" };
+
+const bodySx: Record<BodyLook, SxProps<Theme>> = {
+	ready: fullHeight,
+	dimmed: { height: "100%", opacity: LOADING_OPACITY, pointerEvents: "none" },
+	waiting: { height: "100%", pointerEvents: "none" },
+	error: {
+		height: "100%",
+		boxSizing: "border-box",
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: 1,
+		p: 2,
+	},
+};
+
+// The chart sits at the same place in the tree whatever the status, so React keeps it mounted
+// and a setting the reader made inside it survives a reload. A chart that fetches for itself
+// also keeps fetching while it is out of sight, so a later answer can still replace the note.
 // The pointer is refused by the body box alone: `inert` would also hide the dimmed chart
 // from assistive technology, where aria-busy on the frame already says it is loading.
 const WidgetBody: React.FC<{
@@ -116,72 +145,26 @@ const WidgetBody: React.FC<{
 	readonly hasContentToDim: boolean;
 	readonly children: React.ReactNode;
 }> = ({ widgetKey, status, hasContentToDim, children }) => {
-	const bodyTestId = `widget-shell-body-${widgetKey}`;
+	const look = bodyLookFor(status, hasContentToDim);
+	const chartOutOfSight = look === "waiting" || look === "error";
 
-	if (status === "error") {
-		// No retry: changing the dates or reloading the page asks again. A chart that fetches
-		// for itself stays mounted out of sight, so a later answer can still replace this note.
-		return (
-			<Box
-				data-testid={bodyTestId}
-				sx={{
-					flex: 1,
-					minHeight: 0,
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					gap: 1,
-					p: 2,
-				}}
-			>
-				<Box sx={{ display: "none" }}>{children}</Box>
-				<WarningAmberIcon color="warning" fontSize="small" />
-				<Typography variant="body2" color="text.secondary">
-					{COULD_NOT_LOAD_MESSAGE}
-				</Typography>
-			</Box>
-		);
-	}
-
-	if (status === "ready") {
-		return (
-			<Box data-testid={bodyTestId} sx={{ flex: 1, minHeight: 0 }}>
-				{children}
-			</Box>
-		);
-	}
-
-	if (hasContentToDim) {
-		return (
-			<Box sx={{ flex: 1, minHeight: 0, position: "relative" }}>
-				<Box
-					data-testid={bodyTestId}
-					sx={{
-						height: "100%",
-						opacity: LOADING_OPACITY,
-						pointerEvents: "none",
-					}}
-				>
+	// No retry on error: changing the dates or reloading the page asks again.
+	return (
+		<Box sx={{ flex: 1, minHeight: 0, position: "relative" }}>
+			<Box data-testid={`widget-shell-body-${widgetKey}`} sx={bodySx[look]}>
+				<Box sx={chartOutOfSight ? { display: "none" } : fullHeight}>
 					{children}
 				</Box>
-				{centredSpinner}
+				{look === "error" && (
+					<>
+						<WarningAmberIcon color="warning" fontSize="small" />
+						<Typography variant="body2" color="text.secondary">
+							{COULD_NOT_LOAD_MESSAGE}
+						</Typography>
+					</>
+				)}
 			</Box>
-		);
-	}
-
-	// A chart that fetches for itself stays mounted out of sight, so its answer still arrives.
-	return (
-		<Box
-			data-testid={bodyTestId}
-			sx={{
-				flex: 1,
-				minHeight: 0,
-				position: "relative",
-				pointerEvents: "none",
-			}}
-		>
-			<Box sx={{ display: "none" }}>{children}</Box>
-			{centredSpinner}
+			{status === "loading" && centredSpinner}
 		</Box>
 	);
 };

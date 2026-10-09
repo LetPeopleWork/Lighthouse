@@ -1,7 +1,7 @@
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import ThroughputChartFilterToggle from "../../../components/Common/Charts/ThroughputChart/ThroughputChartFilterToggle";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
@@ -254,6 +254,48 @@ describe("a chart's frame when its data could not be loaded", () => {
 		const buttons = within(frame()).getAllByRole("button");
 		expect(buttons).toEqual([screen.getByTestId(`widget-info-${KEY}`)]);
 	});
+});
+
+function ChartWithASetting() {
+	const [isOn, setIsOn] = useState(false);
+	return (
+		<button type="button" onClick={() => setIsOn((was) => !was)}>
+			{isOn ? "Setting on" : "Setting off"}
+		</button>
+	);
+}
+
+describe("a chart's own settings across a reload", () => {
+	it.each<[string, WidgetStatus, boolean]>([
+		["dims behind the window", "loading", true],
+		["waits with nothing to dim", "loading", false],
+		["could not be loaded", "error", true],
+	])(
+		"a chart keeps what the reader set inside it while it %s and comes back",
+		async (_, inBetween, hasContentToDim) => {
+			const shellAt = (status: WidgetStatus) => (
+				<WidgetShell
+					widgetKey={KEY}
+					{...fullHeader}
+					status={status}
+					hasContentToDim={hasContentToDim}
+				>
+					<ChartWithASetting />
+				</WidgetShell>
+			);
+			const { rerender } = render(shellAt("ready"));
+			await userEvent
+				.setup()
+				.click(screen.getByRole("button", { name: "Setting off" }));
+
+			rerender(shellAt(inBetween));
+			rerender(shellAt("ready"));
+
+			expect(
+				screen.getByRole("button", { name: "Setting on" }),
+			).toBeInTheDocument();
+		},
+	);
 });
 
 function SelfFetchingChart({ status }: { readonly status: WidgetStatus }) {
