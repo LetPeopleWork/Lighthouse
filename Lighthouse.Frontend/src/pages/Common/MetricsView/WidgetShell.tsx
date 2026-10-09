@@ -82,24 +82,37 @@ export interface WidgetShellProps {
 const LOADING_OPACITY = 0.4;
 const SPINNER_SIZE = 24;
 
+/** The parts of the header the frame draws; a part left out is not drawn. */
 type HeaderParts = {
-	readonly viewData: boolean;
-	readonly trend: boolean;
-	readonly rag: boolean;
+	readonly viewData?: ViewDataPayload;
+	readonly trend?: TrendPayload;
+	readonly rag?: WidgetFooter;
 };
+
+function viewDataToList(
+	viewData: ViewDataPayload | undefined,
+): ViewDataPayload | undefined {
+	if (viewData === undefined || viewData.items.length === 0) return undefined;
+	return viewData;
+}
+
+function trendToDraw(
+	trend: TrendPayload | undefined,
+): TrendPayload | undefined {
+	if (trend === undefined) return undefined;
+	if (trend.direction === "none" && trend.noBaseline !== true) return undefined;
+	return trend;
+}
 
 // With no chart on screen, a rating, trend or data list would describe something the reader cannot see.
 function headerPartsFor(
-	hasChartOnScreen: boolean,
-	hasViewData: boolean,
-	hasTrend: boolean,
-	hasRag: boolean,
+	chartOnScreen: boolean,
+	viewData: ViewDataPayload | undefined,
+	trend: TrendPayload | undefined,
+	rag: WidgetFooter | undefined,
 ): HeaderParts {
-	return {
-		viewData: hasChartOnScreen && hasViewData,
-		trend: hasChartOnScreen && hasTrend,
-		rag: hasChartOnScreen && hasRag,
-	};
+	if (!chartOnScreen) return {};
+	return { viewData: viewDataToList(viewData), trend: trendToDraw(trend), rag };
 }
 
 const centredSpinner = (
@@ -139,6 +152,10 @@ function bodyLookFor(status: WidgetStatus, hasContentToDim: boolean): BodyLook {
 	return hasContentToDim ? "dimmed" : "waiting";
 }
 
+function chartIsOnScreen(look: BodyLook): boolean {
+	return look === "ready" || look === "dimmed";
+}
+
 const fullHeight: SxProps<Theme> = { height: "100%" };
 
 const bodySx: Record<BodyLook, SxProps<Theme>> = {
@@ -168,7 +185,7 @@ const WidgetBody: React.FC<{
 	readonly children: React.ReactNode;
 }> = ({ widgetKey, status, hasContentToDim, children }) => {
 	const look = bodyLookFor(status, hasContentToDim);
-	const chartOutOfSight = look === "waiting" || look === "error";
+	const chartOutOfSight = !chartIsOnScreen(look);
 
 	// No retry on error: changing the dates or reloading the page asks again.
 	return (
@@ -330,6 +347,175 @@ const TrendChrome: React.FC<{
 	);
 };
 
+const WidgetInfoButton: React.FC<{
+	readonly widgetKey: string;
+	readonly info: WidgetInfo;
+	readonly showTips: boolean;
+}> = ({ widgetKey, info, showTips }) => {
+	const theme = useTheme();
+	const [infoOpen, setInfoOpen] = useState(false);
+	const infoAnchorRef = useRef<HTMLButtonElement>(null);
+	const showGuidance = showTips && !!info.statusGuidance;
+
+	return (
+		<>
+			<IconButton
+				size="small"
+				data-testid={`widget-info-${widgetKey}`}
+				ref={infoAnchorRef}
+				onClick={() => setInfoOpen((prev) => !prev)}
+				sx={{ color: theme.palette.text.secondary }}
+			>
+				<InfoOutlinedIcon fontSize="small" />
+			</IconButton>
+			<Popover
+				open={infoOpen}
+				anchorEl={infoAnchorRef.current}
+				onClose={() => setInfoOpen(false)}
+				anchorOrigin={{
+					vertical: "bottom",
+					horizontal: "right",
+				}}
+				transformOrigin={{
+					vertical: "top",
+					horizontal: "right",
+				}}
+			>
+				<Box sx={{ p: 2, maxWidth: 300 }}>
+					<Typography variant="body2" sx={{ mb: 1 }}>
+						{info.description}
+					</Typography>
+					{showGuidance && (
+						<Box
+							sx={{
+								display: "flex",
+								flexDirection: "column",
+								gap: 0.75,
+								mb: 1,
+							}}
+						>
+							{infoGuidanceOrder.map(({ guidanceKey, ragStatus }) => (
+								<Box
+									key={guidanceKey}
+									sx={{
+										display: "flex",
+										alignItems: "flex-start",
+										gap: 0.75,
+									}}
+								>
+									<Chip
+										label={ragLabelMap[ragStatus]}
+										size="small"
+										sx={{
+											backgroundColor: ragColorMap[ragStatus],
+											color: "#fff",
+											fontWeight: 600,
+											fontSize: "0.65rem",
+											height: 20,
+											minWidth: 68,
+										}}
+									/>
+									<Typography
+										variant="caption"
+										color="text.secondary"
+										sx={{ lineHeight: 1.45 }}
+									>
+										{info.statusGuidance?.[guidanceKey]}
+									</Typography>
+								</Box>
+							))}
+						</Box>
+					)}
+					<Link
+						href={info.learnMoreUrl}
+						target="_blank"
+						rel="noopener noreferrer"
+						variant="body2"
+					>
+						Learn More
+					</Link>
+				</Box>
+			</Popover>
+		</>
+	);
+};
+
+const WidgetHeader: React.FC<{
+	readonly widgetKey: string;
+	readonly title?: string;
+	readonly info?: WidgetInfo;
+	readonly showTips: boolean;
+	readonly parts: HeaderParts;
+	readonly isLoading: boolean;
+	readonly onViewData: () => void;
+}> = ({ widgetKey, title, info, showTips, parts, isLoading, onViewData }) => {
+	const theme = useTheme();
+
+	return (
+		<Box
+			data-testid={`widget-shell-header-${widgetKey}`}
+			sx={{
+				display: "flex",
+				alignItems: "center",
+				gap: 1,
+				pb: 0.5,
+			}}
+		>
+			{info && (
+				<WidgetInfoButton
+					widgetKey={widgetKey}
+					info={info}
+					showTips={showTips}
+				/>
+			)}
+			{parts.viewData && (
+				<Tooltip title="View Data" arrow>
+					<span>
+						<IconButton
+							size="small"
+							data-testid={`widget-view-data-${widgetKey}`}
+							disabled={isLoading}
+							onClick={onViewData}
+							sx={{ color: theme.palette.text.secondary }}
+						>
+							<TableChartOutlinedIcon fontSize="small" />
+						</IconButton>
+					</span>
+				</Tooltip>
+			)}
+			{parts.trend && <TrendChrome widgetKey={widgetKey} trend={parts.trend} />}
+			{parts.rag && parts.rag.ragStatus !== "none" && (
+				<Tooltip title={parts.rag.tipText} arrow>
+					<Chip
+						component="span"
+						label={
+							<span data-testid="rag-status" data-rag={parts.rag.ragStatus}>
+								{ragLabelMap[parts.rag.ragStatus]}
+							</span>
+						}
+						size="small"
+						data-testid={`widget-rag-${widgetKey}`}
+						sx={{
+							backgroundColor: ragColorMap[parts.rag.ragStatus],
+							color: "#fff",
+							fontWeight: 600,
+							fontSize: "0.65rem",
+							height: 20,
+						}}
+					/>
+				</Tooltip>
+			)}
+
+			{!title && <Box sx={{ flex: 1 }} />}
+			{title && (
+				<Typography variant="subtitle2" color="text.primary" sx={{ flex: 1 }}>
+					{title}
+				</Typography>
+			)}
+		</Box>
+	);
+};
+
 const WidgetShell: React.FC<WidgetShellProps> = ({
 	title,
 	widgetKey,
@@ -342,29 +528,23 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 	hasContentToDim: pageHasContentToDim = false,
 	children,
 }) => {
-	const theme = useTheme();
 	const [chartReport, setChartReport] = useState<ChartReport>();
 	const status = frameStatusOf(pageStatus, chartReport?.status);
 	const hasContentToDim = frameHasContentToDim(
 		pageHasContentToDim,
 		chartReport,
 	);
-	const [infoOpen, setInfoOpen] = useState(false);
 	const [viewDataOpen, setViewDataOpen] = useState(false);
-	const infoAnchorRef = useRef<HTMLButtonElement>(null);
 
 	const isLoading = status === "loading";
-	const hasChartOnScreen = status === "ready" || (isLoading && hasContentToDim);
 	const shows = headerPartsFor(
-		hasChartOnScreen,
-		!!viewData && viewData.items.length > 0,
-		!!trend && (trend.direction !== "none" || trend.noBaseline === true),
-		!!header && showTips,
+		chartIsOnScreen(bodyLookFor(status, hasContentToDim)),
+		viewData,
+		trend,
+		showTips ? header : undefined,
 	);
-	const hasViewData = shows.viewData;
-	const hasTrend = shows.trend;
-	const hasHeader = !!title || shows.rag || !!info || hasViewData || hasTrend;
-	const showInfoGuidance = showTips && !!info?.statusGuidance;
+	const hasHeader =
+		!!title || !!shows.rag || !!info || !!shows.viewData || !!shows.trend;
 
 	return (
 		<>
@@ -380,147 +560,15 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 				}}
 			>
 				{hasHeader && (
-					<Box
-						data-testid={`widget-shell-header-${widgetKey}`}
-						sx={{
-							display: "flex",
-							alignItems: "center",
-							gap: 1,
-							pb: 0.5,
-						}}
-					>
-						{info && (
-							<>
-								<IconButton
-									size="small"
-									data-testid={`widget-info-${widgetKey}`}
-									ref={infoAnchorRef}
-									onClick={() => setInfoOpen((prev) => !prev)}
-									sx={{ color: theme.palette.text.secondary }}
-								>
-									<InfoOutlinedIcon fontSize="small" />
-								</IconButton>
-								<Popover
-									open={infoOpen}
-									anchorEl={infoAnchorRef.current}
-									onClose={() => setInfoOpen(false)}
-									anchorOrigin={{
-										vertical: "bottom",
-										horizontal: "right",
-									}}
-									transformOrigin={{
-										vertical: "top",
-										horizontal: "right",
-									}}
-								>
-									<Box sx={{ p: 2, maxWidth: 300 }}>
-										<Typography variant="body2" sx={{ mb: 1 }}>
-											{info.description}
-										</Typography>
-										{showInfoGuidance && (
-											<Box
-												sx={{
-													display: "flex",
-													flexDirection: "column",
-													gap: 0.75,
-													mb: 1,
-												}}
-											>
-												{infoGuidanceOrder.map(({ guidanceKey, ragStatus }) => (
-													<Box
-														key={guidanceKey}
-														sx={{
-															display: "flex",
-															alignItems: "flex-start",
-															gap: 0.75,
-														}}
-													>
-														<Chip
-															label={ragLabelMap[ragStatus]}
-															size="small"
-															sx={{
-																backgroundColor: ragColorMap[ragStatus],
-																color: "#fff",
-																fontWeight: 600,
-																fontSize: "0.65rem",
-																height: 20,
-																minWidth: 68,
-															}}
-														/>
-														<Typography
-															variant="caption"
-															color="text.secondary"
-															sx={{ lineHeight: 1.45 }}
-														>
-															{info.statusGuidance?.[guidanceKey]}
-														</Typography>
-													</Box>
-												))}
-											</Box>
-										)}
-										<Link
-											href={info.learnMoreUrl}
-											target="_blank"
-											rel="noopener noreferrer"
-											variant="body2"
-										>
-											Learn More
-										</Link>
-									</Box>
-								</Popover>
-							</>
-						)}
-						{hasViewData && (
-							<Tooltip title="View Data" arrow>
-								<span>
-									<IconButton
-										size="small"
-										data-testid={`widget-view-data-${widgetKey}`}
-										disabled={isLoading}
-										onClick={() => setViewDataOpen(true)}
-										sx={{ color: theme.palette.text.secondary }}
-									>
-										<TableChartOutlinedIcon fontSize="small" />
-									</IconButton>
-								</span>
-							</Tooltip>
-						)}
-						{hasTrend && trend && (
-							<TrendChrome widgetKey={widgetKey} trend={trend} />
-						)}
-						{shows.rag && header && header.ragStatus !== "none" && (
-							<Tooltip title={header.tipText} arrow>
-								<Chip
-									component="span"
-									label={
-										<span data-testid="rag-status" data-rag={header.ragStatus}>
-											{ragLabelMap[header.ragStatus]}
-										</span>
-									}
-									size="small"
-									data-testid={`widget-rag-${widgetKey}`}
-									sx={{
-										backgroundColor: ragColorMap[header.ragStatus],
-										color: "#fff",
-										fontWeight: 600,
-										fontSize: "0.65rem",
-										height: 20,
-									}}
-								/>
-							</Tooltip>
-						)}
-
-						{!title && <Box sx={{ flex: 1 }} />}
-						{title && (
-							<Typography
-								variant="subtitle2"
-								color="text.primary"
-								sx={{ flex: 1 }}
-							>
-								{title}
-							</Typography>
-						)}
-					</Box>
+					<WidgetHeader
+						widgetKey={widgetKey}
+						title={title}
+						info={info}
+						showTips={showTips}
+						parts={shows}
+						isLoading={isLoading}
+						onViewData={() => setViewDataOpen(true)}
+					/>
 				)}
 
 				<WidgetBody
@@ -534,17 +582,17 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 				</WidgetBody>
 			</Box>
 
-			{hasViewData && viewData && (
+			{shows.viewData && (
 				<WorkItemsDialog
-					title={viewData.title}
-					items={viewData.items}
+					title={shows.viewData.title}
+					items={shows.viewData.items}
 					open={viewDataOpen}
 					onClose={() => setViewDataOpen(false)}
-					highlightColumn={viewData.highlightColumn}
-					timeInStateColumn={viewData.timeInStateColumn}
-					ageBandColumn={viewData.ageBandColumn}
-					sleRiskColumn={viewData.sleRiskColumn}
-					sle={viewData.sle}
+					highlightColumn={shows.viewData.highlightColumn}
+					timeInStateColumn={shows.viewData.timeInStateColumn}
+					ageBandColumn={shows.viewData.ageBandColumn}
+					sleRiskColumn={shows.viewData.sleRiskColumn}
+					sle={shows.viewData.sle}
 				/>
 			)}
 		</>
