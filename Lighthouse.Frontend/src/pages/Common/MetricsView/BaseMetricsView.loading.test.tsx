@@ -1302,7 +1302,7 @@ describe("charts that appear only once their data says to show them", () => {
 		).not.toBeInTheDocument();
 	}
 
-	it.skip.each(theirOwnRequests)(
+	it.each(theirOwnRequests)(
 		"%s says it couldn't be loaded when its first answer fails, with no spinner",
 		async (_name, widgetKey, method) => {
 			openTheDashboard("portfolio", "portfolio");
@@ -1314,7 +1314,7 @@ describe("charts that appear only once their data says to show them", () => {
 		},
 	);
 
-	it.skip.each(theirOwnRequests)(
+	it.each(theirOwnRequests)(
 		"%s, once shown, says it couldn't be loaded when the next window's answer fails",
 		async (_name, widgetKey, method) => {
 			openTheDashboard("portfolio", "portfolio");
