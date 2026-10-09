@@ -1,6 +1,10 @@
 # ADR-217: A sizing vote is a write gated by Team read, through a named `TeamContribute` requirement that maps to the read predicate
 
-- **Status**: Proposed (DESIGN, 2026-10-02)
+- **Status**: Accepted — **IMPLEMENTED** (Epic #5510, finalized 2026-10-09): `TeamContribute`, its
+  non-disclosing guard and the `RefinementContribution` rate limit (30 entries per minute) shipped with the first
+  vote (slice 11); comments and take-backs joined the same controller (slices 12, 16). Proposed in DESIGN,
+  2026-10-02. **Decision 4 was not needed**: every reader of a Team may vote, so the page shows the vote controls
+  wherever it shows the tab and no `canContributeToTeam` gate exists in `useRbac()`.
 - **Date**: 2026-10-02
 - **Feature**: epic-5510-5881-refinement (ADO Epic #5510 slices 11, 12, 15, 16, 17b)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)

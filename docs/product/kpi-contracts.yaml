@@ -1631,8 +1631,9 @@ outcomes:
 
   # epic-5510-5881-refinement (DEVOPS 2026-10-02). Every KPI here phrased per Team or per instance in
   # DISCUSS is measured per browser: the usage-data pipe carries no Team and no instance identity, by
-  # design (ADR-191). CLI / MCP actions never reach the pipe (no consent row), so vote KPIs count
-  # browser-cast votes only. Event integers are provisional: each slice appends the next free one.
+  # design (ADR-191). Since Story #6193 the CLI and MCP server report the same events with a `source`
+  # (Browser, Cli, Mcp) once their user agrees, so "browser" below reads "consenting client" from the
+  # release carrying #6193; filter on source to keep a browser-only series. Integers are final (12-15).
 
   - id: OUT-5510-K1-refinement-set-up
     feature: epic-5510-5881-refinement
@@ -1676,13 +1677,14 @@ outcomes:
     measurement_scope: opt_in_telemetry_required
     measurement_plan:
       data_collection:
-        - "TeamRefinementDayVerdictShown (provisional 15), slice 05, property refinement_verdict in {Below, In, Above, None}. Sent only when the tab's answer says isRefinementDay = true, at most once per tab mount."
+        - "TeamRefinementDayVerdictShown (15), slice 05, property refinement_verdict in {Below, In, Above, None}. Sent only when the answer says isRefinementDay = true: once per tab opening in the browser, once per `lh refinement get` or `lighthouse_team_refinement_get` run from the clients."
       derivation: "Per (browser, calendar day): last verdict. In / (Below + In + Above); None reported apart. Baseline = first month after the E2 release."
       surfacing: ["docs/settings/usagedata.md (verdict row + refinement_verdict field)", "collector dashboard"]
     acceptance_scenarios: "@kpi-OUT-5510-K3-in-range-on-refinement-day — Vitest: Refinement day reports the verdict exactly; other day reports nothing; not consented reports nothing. Backend: Fits refuses the property on any other event and the event without it"
     measurement_window: "first month after E2 (baseline), then monthly to month 3"
     alerting: []
-    status: designed-not-shipped
+    status: live-on-release
+    ga_baseline: "pending - the first published release carrying E2 and E3 (Epics #5881, #5510; on main 2026-10-09 at 4b49bf9cb, unreleased)"
     caveat: "A browser looking at two Teams on one day mixes them."
 
   - id: OUT-5510-K4-votes-async-off-day
@@ -1692,14 +1694,15 @@ outcomes:
     measurement_scope: opt_in_telemetry_required
     measurement_plan:
       data_collection:
-        - "TeamSizingVoteCast (provisional 13), slice 11, property sizing_moment in {NoCadence (11), OnRefinementDay, OnOtherDay (04), InLiveSession (18)}. Sent after the vote POST returned 2xx, votes only."
+        - "TeamSizingVoteCast (13), slice 11, property sizing_moment in {NoCadence, OnRefinementDay, OnOtherDay} (the last two from slice 04; InLiveSession waits for presenter mode, Epic #6137). Sent after the vote was accepted, votes only."
       derivation: "OnOtherDay / (OnRefinementDay + OnOtherDay + InLiveSession). NoCadence counted apart (all votes before slice 04 lands, and Teams without a cadence)."
       surfacing: ["docs/settings/usagedata.md (vote row + sizing_moment field, widened in 04 and 18)", "collector dashboard"]
     acceptance_scenarios: "@kpi-OUT-5510-K4-votes-async-off-day — Vitest: each moment mapping (LiveSession channel, isRefinementDay true/false, no cadence); comment and take-back report nothing"
     measurement_window: "from the release carrying slice 04, rolling 4 weeks"
     alerting: []
-    status: designed-not-shipped
-    caveat: "CLI / MCP votes are never counted. Re-votes count as votes."
+    status: live-on-release
+    ga_baseline: "pending - the first published release carrying E2 and E3 (Epics #5881, #5510; on main 2026-10-09 at 4b49bf9cb, unreleased)"
+    caveat: "CLI / MCP votes count only from the release carrying Story #6193, and only where their user agreed. Re-votes count as votes."
 
   - id: OUT-5510-K5-ready-before-the-day
     feature: epic-5510-5881-refinement
@@ -1708,14 +1711,15 @@ outcomes:
     measurement_scope: opt_in_telemetry_required
     measurement_plan:
       data_collection:
-        - "TeamSizingReadinessReached (provisional 14), slice 13, property sizing_moment. Sent by the browser whose vote response turned the row Ready by votes where the last read had it not Ready."
+        - "TeamSizingReadinessReached (14), slice 13, property sizing_moment. Sent by the browser or client whose accepted vote made the Work Item Ready by votes (the server says so in madeReady)."
       derivation: "OnOtherDay / (all minus NoCadence)."
       surfacing: ["docs/settings/usagedata.md (readiness row)", "collector dashboard"]
     acceptance_scenarios: "@kpi-OUT-5510-K5-ready-before-the-day — Vitest: tipping vote reports once; a vote on an already-Ready row reports nothing; readiness by stage or rule reports nothing"
     measurement_window: "from the release carrying slice 04"
     alerting: []
-    status: designed-not-shipped
-    caveat: "Readiness tipped by a client vote is not counted."
+    status: live-on-release
+    ga_baseline: "pending - the first published release carrying E2 and E3 (Epics #5881, #5510; on main 2026-10-09 at 4b49bf9cb, unreleased)"
+    caveat: "Readiness tipped by a client vote counts only from the release carrying Story #6193, and only where its user agreed."
 
   - id: OUT-5510-K6-stop-after-above
     feature: epic-5510-5881-refinement
@@ -1729,7 +1733,8 @@ outcomes:
     acceptance_scenarios: "covered by OUT-5510-K3's scenarios"
     measurement_window: "first month after E2 (baseline), then monthly"
     alerting: []
-    status: designed-not-shipped
+    status: live-on-release
+    ga_baseline: "pending - the first published release carrying E2 and E3 (Epics #5881, #5510; on main 2026-10-09 at 4b49bf9cb, unreleased)"
     caveat: "DISCUSS asked per Team; same browser is a directional proxy, noisy for browsers that look at several Teams."
 
   - id: OUT-5510-K7-presenter-gateway
@@ -1761,7 +1766,8 @@ outcomes:
     acceptance_scenarios: "covered by OUT-5510-K3's scenarios"
     measurement_window: "monthly after E2"
     alerting: []
-    status: designed-not-shipped
+    status: live-on-release
+    ga_baseline: "pending - the first published release carrying E2 and E3 (Epics #5881, #5510; on main 2026-10-09 at 4b49bf9cb, unreleased)"
 
   # epic-5878-baseline, Then & Now report (DEVOPS 2026-10-03). Three events by the maintainer's
   # instruction: ReportCreated and ReportOpened (both report_template), ReportDeleted, plus the Reports route

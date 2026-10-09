@@ -1,6 +1,14 @@
 # ADR-216: The sizing log is append-only and keyed by a voter key — an account with authentication on, a client-held random key with it off, and a refusal when a credential belongs to no person
 
-- **Status**: Proposed (DESIGN, 2026-10-02)
+- **Status**: Accepted — **IMPLEMENTED** (Epic #5510, finalized 2026-10-09): the table and its migration
+  (`AddSizingLogEntries`, slice 11), votes and comments (slices 11, 12), votes under an account (slice 15), taking
+  a vote back (slice 16) and client votes with their own voter keys (slices 17a, 17b). Proposed in DESIGN,
+  2026-10-02. **Amended in delivery**: decision 4's channel is stored and reaches usage data but is **not shown**
+  in the log (maintainer, 2026-10-05); `LiveSession` exists in the enum and nothing sends it until presenter
+  mode (Epic #6137). Taking a vote back may name the answer it takes back (`DELETE …/votes/mine?answer=`) and its
+  channel (`?channel=`). A comment or take-back from a credential that belongs to no person is refused like a
+  vote. Signing in with an API key never creates or rewrites its owner's profile. Decision 6's captured
+  yardstick is stored on every vote and read by nothing yet; decision 7's event is still not published.
 - **Date**: 2026-10-02
 - **Feature**: epic-5510-5881-refinement (ADO Epic #5510 slices 11, 12, 15, 16, 17b; Epic #6137 slice 18)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)

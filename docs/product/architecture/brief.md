@@ -9181,8 +9181,9 @@ integration, no push channel; presenter mode needs no SignalR.
   never on "profile is null". (ADR-216)
 - **I6 — the only persisting read-level write is `TeamContribute`**, which is the Team read predicate, non-disclosing,
   rate-limited and allowlisted to `RefinementVotesController`. (ADR-217)
-- **I7 — stage, readiness and the hidden split are one pure resolution**, and the API omits the split for a caller
-  who has not voted; presenter reveal requires `TeamWrite`. (ADR-218)
+- **I7 — stage, readiness and the open question are one pure resolution** (`RefinementResolution`). DESIGN also
+  hid the split from a caller who had not voted; the maintainer dropped that on 2026-10-04 (slice 14 Removed), so
+  every reader sees every split and every comment. (ADR-218, amended)
 
 ### Component decomposition (headline)
 
@@ -9242,13 +9243,15 @@ E9 band parity with the manual forecast; exhaustive frontend enum maps, string-u
 - [ADR-134 addendum](./adr-134-ordering-policy-appsetting-enum-single-selection-point.md) — `RefinementList` may call
   `FeatureComparer.CompareOrderValues` directly: it ranks Work Items, which `IFeatureOrdering` cannot take.
 - [ADR-215](./adr-215-the-need-band-is-the-manual-how-many-for-the-next-refinement-read-at-100-minus-p.md) — need band,
-  verdict, cadence, order, yardstick; derived on read. **Proposed.**
+  verdict, cadence, order, yardstick; derived on read. **Implemented (E2, E3)**; amended twice: the window is one
+  Refinement cycle (#6204), and a Refinement on a blackout day is skipped.
 - [ADR-216](./adr-216-the-sizing-log-is-append-only-and-keyed-by-a-voter-key.md) — append-only log, voter identity
-  across auth on / off / clients, channel, captured yardstick. **Proposed.**
+  across auth on / off / clients, channel, captured yardstick. **Implemented (E3)**; the channel is never shown
+  in the log.
 - [ADR-217](./adr-217-a-sizing-vote-is-a-write-gated-by-team-read-through-a-named-requirement.md) — `TeamContribute`.
-  **Proposed.**
-- [ADR-218](./adr-218-stage-readiness-and-the-hidden-split-are-one-pure-resolution-on-read.md) — DD-5 precedence,
-  readiness, open question, hidden split in the API. **Proposed.**
+  **Implemented (E3)**; no `canContributeToTeam` UI gate was needed.
+- [ADR-218](./adr-218-stage-readiness-and-the-hidden-split-are-one-pure-resolution-on-read.md) — stages from rules,
+  readiness, open question. **Implemented as amended (E2, E3)**; the hidden split was dropped.
 - Cross-refs: ADR-027 (bus, tokens), ADR-056 (state-list placement), ADR-060 (weekly recurrence), ADR-064 (JSON
   settings), ADR-165 (authorship), ADR-190/191 (usage data, per-browser identity), ADR-210 (descending How Many).
 
@@ -9276,14 +9279,63 @@ L1, L2 and L3 (the Refinement module) in `c4-diagrams.md` → "C4 Architecture D
   `DeliveryRuleBuilder` (DESIGN's pick; slice 08's stage rules may still use it); `RefinementView` uses `DataGridBase` with the shared
   name column and parent lookup (`createNameColumn`, `useParentWorkItems`, both widened to Work Items);
   `useRefinementSetUpReporter` is shared by the Team page and the edit-Team page; `RefinementService`.
-- **Not built yet**: everything from slice 03 on — stages, cadence, need band, votes and the sizing log, presenter
-  mode, `RefinementVotesController`, `TeamContribute`, the clients. ADR-215..218 remain *Proposed*.
+- **Built since**: everything from slice 03 on, bar slices 08 (folded into 03) and 14 (Removed) — see below.
+
+### Built — E2 #5881 and E3 #5510 (on `main` 2026-10-09, not yet released)
+
+Evolution records: `docs/evolution/2026-10-09-epic-5881-refinement-need.md` and
+`docs/evolution/2026-10-09-epic-5510-sizing-votes.md`.
+
+- **Settings**: `RefinementSettings` gained `Readiness` (Yes votes and voters needed, two discussion rules
+  `DiscussWhen { No, YesIf }`, either off), `StageRules { Ready, BeingRefined }` (the shared Work Item rule set,
+  healed against the rule schema by `StageRuleHealing`), `Cadence` (weekdays, every N weeks up to 52, starting
+  week stored as its Monday) and `Band` (two likelihoods, 50–95, low below high), all validated in
+  `RefinementSettingsValidator` and judged against the stored values for the fields a save leaves out. The
+  per-state `Stage` stays stored and unread.
+- **Read side**: `RefinementViewQuery` composes `RefinementList`, `StageRuleMatcher`, `RefinementResolution`,
+  `SleYardstickResolver`, `RefinementCalendar` / `RefinementCadenceCalendar` (next Refinement, Refinement day, the
+  cycle; blackout days fetched up to the end of the cycle) and `RefinementNeedCalculator` / `NeedBand`. The
+  answer carries facts only: `yardstick`, `stagesConfigured`, `readyCount` / `readySource`, `readyByVotesCount`,
+  `nextRefinementDate`, `isRefinementDay`, `daysUntilNextRefinement`, `need { low, high, percentiles, verdict or
+  unavailableReason, horizonWorkingDays, cycleStart, cycleEnd }`, and per row `stage`, `signalsDisagree`,
+  `voteCount`, `myVote`, `split`, `readiness`, `missingVotes`, `hasComments`, `hasOpenQuestion`.
+  `GET …/work-items/{workItemId}/log` returns the Work Item's log and the names behind each part of the split.
+- **Write side**: `RefinementVotesController` (`POST …/votes`, `POST …/comments`, `DELETE …/votes/mine`, all
+  `TeamContribute`, rate-limited by `RefinementContribution`, 30 per minute) → `SizingLogCommands` →
+  `ISizingLogRepository.Append`; `VoterIdentityResolver` derives the voter key; `SizingRefusal` names every
+  refusal. Migration `AddSizingLogEntries` on both providers.
+- **Enforcement built**: `RefinementModuleArchUnitTest` grew to cover the static, service-free resolution,
+  calendar and band; the stage matcher reaching the rule engine only through its port; the read never resolving a
+  profile or touching the sizing commands; the log port offering no edit and nothing updating or deleting in the
+  table; every reader-level write living in the votes controller; and the migration's cascade and set-null.
+- **Cross-cutting**: usage data `TeamSizingVoteCast = 13`, `TeamSizingReadinessReached = 14` (both with
+  `sizing_moment`: `NoCadence`, `OnRefinementDay`, `OnOtherDay`) and `TeamRefinementDayVerdictShown = 15`
+  (`refinement_verdict`: `Below`, `In`, `Above`, `None`); since Story #6193 the clients report the same events
+  with their `source`. Demo Team Gravity refines on Thursdays and carries votes and a comment from three demo
+  voters. The weekly recurrence rule was extracted from the blackout code (`WeeklyRecurrence`) and its form fields
+  shared with the cadence settings.
+- **Frontend**: `RefinementView` hands its grid to `RefinementGrid` / `refinementColumns` (#, Stage, the vote
+  column headed by the yardstick question, Votes, Readiness or Votes say, Warnings) and its read to
+  `useRefinement`; `NeedVerdict` (one alert titled by `NextRefinement`), `EnoughForLine` placed by
+  `enoughForPlacement` in the order the grid shows; `VoteControl`, `useVoteCasting`, `VoterNamePrompt`,
+  `ConditionPrompt`, `VotesAndCommentsDialog`, `SizingLogService`, `voterStore` / `useVoterIdentity`. Settings:
+  `ReadinessSettings`, `StageRulesSettings` (reusing `DeliveryRuleBuilder`), `RefinementCadenceSettings`,
+  `RefinementBandSettings` inside `RefinementSettingsSection`. Every sentence is composed in the browser from
+  facts, through Terminology.
+- **Clients** (`lighthouse-clients`, pushed, not yet released): `getTeamRefinement`, `getTerminology`;
+  `lh refinement get | vote | comment | take-back`, `lh config voter set`; MCP
+  `lighthouse_team_refinement_get | vote | comment | voteTakeBack`. The shared HTTP MCP server refuses sizing
+  writes on an instance without sign-in, and with sign-in any write that carries no credential of its own. A Refinement skill for assistants ships as its own zip (Story #6217,
+  ADR-229).
+- **Not built**: presenter mode (slice 18) and the remote-session spike (slice 19), Epic #6137; sizing
+  calibration, Epic #6138, which will read the yardstick captured on each vote; the `SizingEntryRecorded` event.
 
 ### Open for the maintainer
 
-MQ-1 forecast filter in the need number (default: respected, = forecasts) · MQ-2 presenter split reveal (default:
-Team admins when RBAC on) · MQ-3 mcp-http on auth-off refuses votes · ~~MQ-4 no age on To Do rows~~ settled
-2026-10-03: no age column at all.
+~~MQ-1 forecast filter in the need number~~ built as the default: respected, as forecasts do · MQ-2 presenter split
+reveal — moot since every split is visible to everyone; presenter mode is Epic #6137 · ~~MQ-3 mcp-http on auth-off
+refuses votes~~ built that way (slice 17b) · ~~MQ-4 no age on To Do rows~~ settled 2026-10-03: no age column at
+all.
 
 ---
 

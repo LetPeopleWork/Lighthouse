@@ -3382,3 +3382,31 @@ verdict and tooltip copy (`needWording.test.ts`, `RefinementView.need.test.tsx`)
   more."** instead of "…until the {Refinement} after". On that day the alert's title already names the following
   Refinement (the cycle runs from today to it), so "the one after" would point one cycle too far. Every other day keeps
   the approved "until the {Refinement} after". To be confirmed by the maintainer at the hold.
+
+## Wave: DELIVER / [REF] Finalized E2 #5881 and E3 #5510 (2026-10-09)
+
+**Scope**: E2 — Epic #5881, Stories #6141 (with #6146 folded in, Removed), #6142, #6143, #6144, #6145, #6147, #6204;
+E3 — Epic #5510, Stories #6148, #6149, #6151, #6150, #6153, #6154, #6155, #6156, #6217 (#6152 Removed). Every Story
+Closed; both Epics Resolved, to close with the release that carries them. **Delivered** 2026-10-03 … 2026-10-08 in 94
+roadmap steps (E2 44: phases 03, 04, 05, 06, 07, 09, 6204; E3 50: phases 10, 11, 13, 12, 15, 16, 17), every step
+committed, interleaved on `main` in the order of "Delivery order — E2". The `lighthouse-clients` halves of 09 and
+17a/17b, and the skill #6217, live in that repository. User docs `10f98534b`, screenshots `4b49bf9cb` (which also settle
+the screenshots E1 deferred), website commit `117eb96` in the website repository (not pushed).
+
+Evolution records: `docs/evolution/2026-10-09-epic-5881-refinement-need.md` and
+`docs/evolution/2026-10-09-epic-5510-sizing-votes.md`, beside E1's `2026-10-03-epic-6136-refinement-tab.md`.
+
+**Migrated**: nothing to copy. The ADRs were written straight into `docs/product/architecture/`; this workspace has no
+`design/architecture-design.md`, no journey files and no `walking-skeleton.md`. ADR-214 (every setting member), 215,
+216, 217 and 218 are now marked Accepted and implemented, each status line carrying what changed in delivery; ADR-223
+and 224 (Story #6218) and 225 and 226 (Story #6193) likewise, since both Stories are delivered. `brief.md` gains
+"Built — E2 #5881 and E3 #5510"; `ARCHITECTURE.md` module 8 and the ADR table describe what now exists;
+`kpi-contracts.yaml` marks OUT-5510-K3 … K6 and the below-range guardrail live on release, baselines pending (K7 waits
+for E4).
+
+**Confirmed by the maintainer at finalize (2026-10-09)**: the AFK copy calls recorded above as "to be confirmed"
+(the band setting's info icon, the Refinement-day sentence, the equal-ends wordings), and the AFK API calls of
+2026-10-06 (a take-back may name its answer; an API-key call never rewrites its owner's profile). Owed: a Lighthouse release, a clients release
+(`pnpm release:version` first), the website push, Story #6202 (grids cut at 100 rows).
+
+**This workspace stays** for E4 #6137 (live sessions) and E5 #6138 (sizing calibration), both New.

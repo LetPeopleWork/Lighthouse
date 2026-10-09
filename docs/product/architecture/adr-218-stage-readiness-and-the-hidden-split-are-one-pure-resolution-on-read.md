@@ -1,7 +1,11 @@
 # ADR-218: Stage, readiness, the open question and the hidden split are one pure resolution on read, enforced in the API
 
-- **Status**: Proposed (DESIGN, 2026-10-02); **amended by the maintainer 2026-10-04** — see the amendment below,
-  which supersedes decisions 1 and 2 where they differ. The hidden split (slice 14) is dropped.
+- **Status**: Accepted — **IMPLEMENTED as amended** (Epics #5510 and #5881, finalized 2026-10-09): readiness by
+  votes (slice 13), the open question (slice 12) and stages from rules (slice 03) are one static
+  `RefinementResolution`. Proposed in DESIGN, 2026-10-02; **amended by the maintainer 2026-10-04** — see the
+  amendment below, which supersedes decisions 1 and 2 where they differ. The hidden split (slice 14) is dropped,
+  so decision 5 was never built. **Amended in delivery 2026-10-04**: the single veto became two discussion rules,
+  each with its own threshold and either one enough — 1 or more No, or 2 or more "Yes, if…" (both on by default).
 
 > **Amendment (2026-10-04, E2 UI review).** There is no stage per state: stages come only from optional rules
 > ("Ready when", "Being refined when"; unmatched rows are Waiting; when both match, Ready wins). Stage and votes are

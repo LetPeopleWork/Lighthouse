@@ -2,7 +2,9 @@
 
 - **Status**: Accepted — **IMPLEMENTED for the refinement states** (Epic #6136, slice 01, 2026-10-03). Decisions 1
   (with `States` as the only member so far), 2, 3, 4 and 6 are built as written; **decision 5 is amended** — see the
-  status note below. The later members (cadence, band, readiness, stage rules) are still designed, not built.
+  status note below. **IMPLEMENTED for every member (2026-10-09)**: readiness (Epic #5510, slice 13), stage rules
+  (Epic #5881, slice 03), cadence (slice 04) and band (slice 07) joined `States` as members with defaults, saved
+  through the same Team settings write, each left unchanged by a save that does not mention it.
   Proposed in DESIGN, 2026-10-02. **Amended 2026-10-04**: the per-state `Stage` is dropped from the design (stages
   come only from `StageRules`). The already-stored `States[].Stage` (always `Waiting`) stays in the JSON so nothing
   is removed; no code reads it, and a later change may stop writing it.

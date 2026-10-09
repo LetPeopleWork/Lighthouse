@@ -1,6 +1,10 @@
 # ADR-215: The need band is the manual forecast's How Many for the next Refinement date, read at (100 − p), and everything on the Refinement tab is derived on read
 
-- **Status**: Accepted for the need number and its verdict (DELIVER, 2026-10-05); the band setting is still Proposed.
+- **Status**: Accepted — **IMPLEMENTED** (Epics #5881 and #5510, finalized 2026-10-09): the need number and its
+  verdict (slice 05, 2026-10-05), the cadence and next Refinement (slice 04), the backlog order (slice 02), the SLE
+  yardstick (slice 10) and the band setting (slice 07, each end a likelihood from 50% to 95%, low below high).
+  **Amended in delivery 2026-10-04**: decision 3 no longer holds that blackouts never move the date — a cadence day
+  that is blacked out is no Refinement, so the next Refinement is the first cadence day after today that is not one.
   **Amended 2026-10-04**: decision 6 no longer holds for `lineAfterPosition` and `fewerListedThanHigh` — the maintainer
   moved the "enough for" line to the browser, which places it after the high end's count of rows in whatever order it
   shows them, so the response carries neither.
