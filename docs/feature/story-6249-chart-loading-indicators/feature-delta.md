@@ -1131,7 +1131,7 @@ Scored item by item over the 253 cases; an item that does not apply counts as pa
    request has no `catch` today, and the pending spec reds the run on exactly that.
 5. **Error copy hides in-chart controls**: on failure the controls go with the body; changing the dates or reloading
    is the way back (D6, M2).
-6. **The 17 E2E specs that click inside a chart must wait for that chart first (new, M1).** See E2E impact. Not a
+6. **The 5 E2E specs that click inside a chart (of the 17 that read values) must wait for that chart first (new, M1).** See E2E impact. Not a
    contradiction, a consequence the 01b re-pointing must carry.
 7. Not scenario'd, by decision: O1 (a request that never answers stays loading; true by construction, no timeout to
    test), O5 and R3 (named-percentiles scope, out of scope and kept as today), O6 (dev-instance check in DELIVER),

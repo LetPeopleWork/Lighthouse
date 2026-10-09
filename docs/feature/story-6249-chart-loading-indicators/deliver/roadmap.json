@@ -1,0 +1,782 @@
+{
+  "roadmap": {
+    "project_id": "story-6249-chart-loading-indicators",
+    "created_at": "2026-10-09",
+    "total_steps": 19,
+    "total_phases": 4,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "goal": "Story #6249: a metrics chart that is behind the selected window says so, and never settles on the wrong one. Frontend only, four slices, each releasable on its own. Slice 01a: every dashboard fetch becomes a TanStack query keyed by the request it sends, so a slow answer for a window already left can never land; no visual change. Slice 01b: the shared widget frame draws loading (old chart at 40 % under a 24 px spinner, body refusing the pointer, View Data disabled, aria-busy) and could-not-load (warning icon and the agreed copy under a title + info header) for every chart the page feeds, the E2E waits are wired in and the walking skeleton runs. Slice 01c: the over-time charts and the two filtered views report their own status through the frame. Slice 02: a dashboard opens with every chart's frame in place, the three overview widgets lose their own spinners, and Estimation vs. Cycle Time and Feature Size keep their presence rule but show could-not-load on their own failure. Done when zero `it.skip` remain in the six DISTILL files (widgetStatus.test.ts, WidgetShell.status.test.tsx, ThroughputRunChartCard.loading.test.tsx, PredictabilityScoreDetailsWidget.loading.test.tsx, OverTimeWidgets.loading.test.tsx, BaseMetricsView.loading.test.tsx) and the E2E walking skeleton is un-skipped. That is about 236 pending cases: DISTILL counted 233, and the every-fetch-key failure table in widgetStatus.test.ts grows from 29 to 32 rows once slice 01a adds throughputPbc, cumulativeStateTimeSelection and cumulativeStateTimeScope to getMetricsFetchKeys(). The 20 pins stay green, except the one slice 01b deletes. `pnpm test` and `pnpm build` are green with zero warnings, and the E2E specs each slice touches pass locally.",
+    "paradigm_note": "The Hypothesis + state-delta unit mandate from nw-roadmap does not apply, and leaving it out is deliberate. This is TypeScript + Vitest + React Testing Library + Playwright. fast-check is not a devDependency, so DISTILL wrote property-shaped specifications as it.each example tables (recorded in feature-delta.md, DISTILL / Reconciliation). The crafter writes no new specifications: every pending Vitest case and the E2E walking skeleton were written by DISTILL and are skipped. RED means un-skipping them and capturing the failure before the production edit; GREEN is the production code. The crafter edits tests only where DISTILL's disposition lists it (QueryClientProvider wrappers, re-pointed callbacks, deleted spinner tests, the one pin slice 01b deletes) and in the E2E POM and spec re-pointing that slice 01b owns. Code comments follow the project rule: plain-language why only, never a pointer such as DDD-5, R8, E2, M1 or AC-1.3. Steps tagged @sizing-review-needed un-skip eight or more cases; each says why in its implementation_notes."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "reviewed_at": "2026-10-09",
+    "notes": "Conditionally approved on re-review (0 blockers). Condition: each step's file-qualified `unskips` list is the authoritative spec-to-step mapping; scenario_name names the main describe only (02-02 and 02-04 span several describes). Entries marked as pins are passing guards, not un-skips; a suffix such as (it.each, 7 rows) is an annotation, not part of the title. 01-04 lists the two filter-off pins as one string: the real titles end \"own series for it\" (ThroughputRunChartCard) and \"own score for it\" (PredictabilityScoreDetailsWidget)."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-6249-chart-loading-indicators/feature-delta.md",
+    "red_classification": "docs/feature/story-6249-chart-loading-indicators/red-classification.md",
+    "slice_01a": "docs/feature/story-6249-chart-loading-indicators/slices/slice-01a-right-window.md",
+    "slice_01b": "docs/feature/story-6249-chart-loading-indicators/slices/slice-01b-loading-and-error-look.md",
+    "slice_01c": "docs/feature/story-6249-chart-loading-indicators/slices/slice-01c-self-fetching-charts.md",
+    "slice_02": "docs/feature/story-6249-chart-loading-indicators/slices/slice-02-first-load-frames.md",
+    "environments": "docs/feature/story-6249-chart-loading-indicators/environments.yaml",
+    "adr": "docs/product/architecture/adr-233-a-dashboard-widget-is-loading-until-its-data-answers-the-selected-window.md",
+    "ado_story": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6249"
+  },
+  "user_decisions": [
+    "S1: on a re-fetch the chart drops to 40 % opacity under a 24 px centred CircularProgress; the header stays at full strength.",
+    "S2 / M1: while loading, the whole body box widget-shell-body-<key> takes pointer-events none and no child opts back in; View Data is disabled; the info button still works. No `inert`.",
+    "S3 / M4: on failure the chart is removed; WarningAmberIcon and exactly 'This chart couldn't be loaded. Change the dates or reload to try again.'; no Retry.",
+    "S4: with nothing to dim, a lone 24 px spinner at the widget's normal height under a title + info header.",
+    "M2: a could-not-load frame shows title + info only: no rating chip, trend or View Data.",
+    "M3: Estimation vs. Cycle Time and Feature Size keep today's presence rule but show could-not-load, with no spinner, when their own fetch fails, on first load or later.",
+    "O1 accepted: no client timeout; a request that never answers keeps its widget loading.",
+    "O4 accepted: TanStack Query (already installed, MIT) for the useMetricsData fetches and the two filtered views; the over-time hooks are NOT moved (E5)."
+  ],
+  "out_of_scope": [
+    "Forecast and backtest Run-button spinners, the Overview page, Feature and Delivery pages, every page-level LoadingAnimation.",
+    "Moving usePbcOverTime / usePercentilesOverTime to TanStack Query (E5): they keep their cancelled cleanup and per-mount cache and only return a status.",
+    "Any backend, API, RBAC, client or usage-data change (DEVOPS answered usage data N/A).",
+    "A retry button, a client timeout, caching across windows.",
+    "The named-percentiles scope fetch: its generation counter stays, and its failure still reverts to the Default percentiles (R3).",
+    "Mutation testing, refactor passes, review and finalize: the orchestrator runs those after every step below."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 01a: a chart never settles on the wrong window",
+      "description": "Every useMetricsData fetch, the two filtered views and the Cumulative Time per State paths become queries keyed by the request they send. An answer for a window already left lands in its own cache entry and is never read. Nothing looks different yet: a failure still leaves the last good value on screen, as today. Releasable alone: it removes the 'old window lands last and stays' defect and the three stale-window bugs that already existed.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "One request's progress reads as one fetch-key state",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "Implement fetchKeyStateOf in widgetStatus.ts. It maps query progress to a fetch key's status and to whether the key has an older picture to dim. Retire the RED scaffold marker.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetStatus.test.ts",
+          "scenario_name": "one request's progress, as a chart sees it",
+          "unskips": [
+            "widgetStatus.test.ts :: a request %s reads as %s (it.each, 7 rows)",
+            "widgetStatus.test.ts :: a request still showing the previous window has an older picture to dim",
+            "widgetStatus.test.ts :: a request on its way for the first time has nothing to dim",
+            "widgetStatus.test.ts :: something this kind of owner never asks for is ready, even when its request reads %s (it.each, 4 rows)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetStatus.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetStatus.test.ts"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "The 13 cases of 'one request's progress, as a chart sees it' are un-skipped. Their RED (Not yet implemented -- RED scaffold) is captured before the production edit.",
+            "With several queries for one key: any failed query makes the key error. Otherwise any query on its way, or still showing the previous window, makes it loading. Otherwise it is ready. A failure beside a query still on its way reads error.",
+            "hasData is true when the key shows some window's answer, including the previous window's placeholder. It is false for a request on its way for the first time.",
+            "A key the owner never asks for (applicable = false) reads ready, whatever progress its disabled query reports.",
+            "Nothing in the app reads a scaffold marker any more: `grep -rn __SCAFFOLD__ Lighthouse.Frontend/src` returns nothing.",
+            "`pnpm test` green; `pnpm build` green with zero warnings."
+          ],
+          "implementation_notes": "Pure function, return-only contract. Placeholder data counts as loading: keepPreviousData shows the previous key's answer while the current key has none, and that is what the dimmed old chart is made of later. This is the first GREEN that implements widgetStatus.ts, so it removes the `__SCAFFOLD__` export and the comment that calls the file a RED scaffold. The other four exports (combineWidgetStatuses, widgetStatusFor, widgetHasData, useReportWidgetStatus) keep throwing until 02-01 and 03-01 implement them. Nothing in the app calls them before then, so the slice stays releasable. 03-01 deletes the NOT_YET_IMPLEMENTED constant along with the last throwing body. Sizing: 13 cases is over the eight-case guide. They are rows of two it.each tables plus two single cases, all over one small pure function, so splitting the tables would only split one decision. Commit: `feat(metrics): a request's progress reads as one fetch-key state (story 6249)`"
+        },
+        {
+          "id": "01-02",
+          "name": "The Flow Metrics fetches become queries keyed by the request, under one shared options object",
+          "description": "Introduce metricsQueryOptions. Move the useMetricsData fetches the Flow Metrics category needs from effects to TanStack queries: one query per service call, keyed by owner and the formatLocalDate day strings, nullish answers normalised to null, with fetchStates per key and the last-success fallback that keeps 01a invisible.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
+          "scenario_name": "a team's chart when windows are picked in quick succession",
+          "unskips": [
+            "BaseMetricsView.loading.test.tsx :: shows the second window when the first window's answer arrives last",
+            "BaseMetricsView.loading.test.tsx :: answers arriving as %s, then %s, then %s still settle on the last window picked (it.each, 4 rows)",
+            "Pins that must stay green, BaseMetricsView.loading.test.tsx :: answers arriving as %s, then %s, then %s settle on the last window picked, which answered last (2 rows); until a chart can say it could not be loaded, a failed window leaves its older chart in place"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useMetricsData.ts",
+            "Lighthouse.Frontend/src/hooks/useMetricsData.test.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "criteria": [
+            "The five named cases are un-skipped and RED before the production edit ('Work Items Completed: 90' where 7 was expected).",
+            "useMetricsData exports one shared metricsQueryOptions object (staleTime 0, gcTime 0, retry false, refetchOnWindowFocus false). Every query this step creates spreads it, and the app-wide QueryClient defaults are never changed.",
+            "One query per service call: the cycle-time batch becomes five queries, and the previous-period Work Item Age percentiles call belongs to the workItemAgePercentiles key.",
+            "Query keys carry the fetch name, the owner type and id, the dates as formatLocalDate local-day strings, and every choice the call sends. The query function reads its arguments from that key.",
+            "Every query function returns null where the service answered undefined.",
+            "These queries use placeholderData keepPreviousData. The hook keeps its value-shaped return, so BaseMetricsView reads the same names, and it adds fetchStates per fetch key, built with fetchKeyStateOf.",
+            "Applicability per fetch key lives in one Record keyed by MetricsFetchKey. It feeds both the query's enabled flag and fetchKeyStateOf's applicable argument (providesSleRisk, isProjectMetricsService and isTeamMetricsService, as today).",
+            "When a fetch for the selected window fails, the chart keeps showing that metric's last good value, exactly as today. After the owner changes (Team or Portfolio, id or type), a failure never shows the previous owner's value: useMetricsData.test.ts gains that unit test.",
+            "useMetricsData.test.ts and BaseMetricsView.test.tsx render under a QueryClientProvider with a fresh client per test (retry false). The budget-guard call counts are re-checked for one query per call and keep their 'no other category fetched' intent.",
+            "The arrival-order pins and the 'failed window leaves its older chart in place' pin stay green.",
+            "`pnpm test` green; `pnpm build` green with zero warnings."
+          ],
+          "implementation_notes": "Scope of this step: every fetch key that getFetchKeysForCategories(['flow-metrics'], owner) returns, for both owners, with throughput first. The remaining keys move in 01-03 and stay effects until then; both paths coexist safely. The key is the race guard. A late answer for a window already left lands under that window's key and is never read, so no cancelled flag or AbortController is added (no service takes a signal). Dates go into keys as formatLocalDate strings, the way usePbcOverTime's cacheKey already does, so two Date objects for the same day never make two requests. Undefined becomes null because a nullish answer must read as answered-with-nothing, never as still-waiting. The last-success fallback is a per-metric reference reset on owner change. It is temporary: 02-04 retires it once the frame can say a chart could not be loaded. The added unit test is the one DISTILL left for DELIVER (feature-delta.md, Existing-test disposition). The shared options object is created here, but its read-back test, the 8-row it.each 'on a %s's %s is asked for without retrying, and kept for no other window', is un-skipped in 01-03. That test is one table spanning every category, Vitest cannot un-skip some of its rows, and it can only pass once every dashboard fetch is a query. Rendering-heavy test files may hit Vitest's 5000 ms default: give the slow test an explicit timeout instead of treating it as a flake (docs/ci-learnings.md). Commit: `feat(metrics): flow metrics fetches answer the window they were asked for (story 6249)`"
+        },
+        {
+          "id": "01-03",
+          "name": "Every remaining dashboard fetch is a keyed query, and the Throughput PBC filter is its own fetch key",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "Move the rest of the useMetricsData effects to queries on the same pattern. Give the Throughput PBC filter its own throughputPbc fetch key with a view setter, and un-skip the per-category options read-back.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
+          "scenario_name": "every chart request on the dashboard",
+          "unskips": [
+            "BaseMetricsView.loading.test.tsx :: on a %s's %s is asked for without retrying, and kept for no other window (it.each, 8 rows: team and portfolio x the four categories)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useMetricsData.ts",
+            "Lighthouse.Frontend/src/hooks/useMetricsData.test.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "criteria": [
+            "The 8 options rows are un-skipped and RED before the edit: at least the categories whose fetches are still effects fail with 'expected 0 to be greater than 0'.",
+            "Every useMetricsData fetch is now a query that spreads metricsQueryOptions, is keyed on the request, makes one query per service call, normalises undefined to null and uses keepPreviousData. Read back from a QueryClient carrying the app defaults (retry 2, 5 min stale, 30 min cache), every metrics query resolves to retry false, gcTime 0, staleTime 0 and no focus refetch.",
+            "categoryMetadata gains the fetch key throughputPbc, and the throughputPbc widget requires it. pbcCharts keeps only the Cycle Time and Arrivals PBCs.",
+            "Toggling the Throughput PBC filter re-asks only for the Throughput PBC, keyed on the filtered view. refetchThroughputPbc is replaced by a view setter. The BaseMetricsView.test.tsx case 'refetches throughput PBC with view=filtered when the toggle flips to Filtered', and the useMetricsData tests of refetchThroughputPbc, are re-pointed at the setter and keep what they assert.",
+            "categoryMetadata.test.ts gains throughputPbc and the reachability invariant: for each owner type and category, every fetch key that any of the category's widgets requires is in getFetchKeysForCategories([category], ownerType). The only widgets with an empty requirements entry are the ones that report their own status.",
+            "A failure to read the blackout periods still means no periods, never a failed chart.",
+            "`pnpm test` green; `pnpm build` green with zero warnings."
+          ],
+          "implementation_notes": "Same pattern as 01-02, applied to every key 01-02 did not move. The Throughput PBC filter gets a key of its own so that flipping it later dims only that chart, not the Cycle Time and Arrivals PBCs beside it, and so its old-window answer cannot land after a window change. The applicability Record from 01-02 must cover every MetricsFetchKey, so a new key cannot compile until someone decides whether the owner can ask for it. Flow efficiency keeps choosing its Team or Portfolio call by isTeamOwnedMetricsService, which never disables it. Adding throughputPbc to getMetricsFetchKeys() also adds a row to the every-fetch-key failure table in widgetStatus.test.ts, which 02-01 un-skips. Sizing: the 8 cases are the rows of one it.each table checking one rule (every metrics query spreads the shared options), and one test declaration cannot be un-skipped in parts. Commit: `feat(metrics): every dashboard fetch answers the window it was asked for (story 6249)`"
+        },
+        {
+          "id": "01-04",
+          "name": "The Throughput run chart's and Predictability Score details' filtered views follow the window",
+          "description": "Turn the two self-fetching filtered views into queries keyed (filtered view, owner, window), enabled while the filter is on, on the shared options.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/ThroughputRunChartCard.loading.test.tsx",
+          "scenario_name": "the Throughput run chart's filtered series follows the selected window",
+          "unskips": [
+            "ThroughputRunChartCard.loading.test.tsx :: with the filter on, a new window fetches the filtered series for that window",
+            "ThroughputRunChartCard.loading.test.tsx :: the filtered series of a window the reader has left never replaces the current one",
+            "ThroughputRunChartCard.loading.test.tsx :: is asked for without retrying, and kept for no other window",
+            "PredictabilityScoreDetailsWidget.loading.test.tsx :: with the filter on, a new window fetches the filtered score for that window",
+            "PredictabilityScoreDetailsWidget.loading.test.tsx :: the filtered score of a window the reader has left never replaces the current one",
+            "PredictabilityScoreDetailsWidget.loading.test.tsx :: is asked for without retrying, and kept for no other window",
+            "Pins that must stay green, both files :: with the filter off, a new window shows the dashboard's own series / score for it"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/ThroughputRunChartCard.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/ThroughputRunChartCard.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/ThroughputRunChartCard.loading.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PredictabilityScoreDetailsWidget.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PredictabilityScoreDetailsWidget.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PredictabilityScoreDetailsWidget.loading.test.tsx"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "criteria": [
+            "The six named cases are un-skipped and RED first (the old window's '3' and '0.31' are shown; no request for the new window; no query to read options from).",
+            "With the filter on, a window change sends exactly one filtered request for the new window and shows its answer. An answer for a window already left never replaces the current one.",
+            "The filtered request resolves to retry false, gcTime 0, staleTime 0 and no focus refetch.",
+            "With the filter off, nothing extra is requested and the page's own series or score shows (pins).",
+            "ThroughputRunChartCard.test.tsx and PredictabilityScoreDetailsWidget.test.tsx render under a QueryClientProvider with a fresh client per test (retry false).",
+            "`pnpm test` green; `pnpm build` green with zero warnings."
+          ],
+          "implementation_notes": "Today both components cache the filtered answer and never refetch it on a window change, so with the filter on they show the previous window's series or score. That bug already exists, and this slice fixes it. Key on (filtered view, owner, window as formatLocalDate strings), enabled only while the filter is on, and spread metricsQueryOptions. The unfiltered path keeps reading the page's data with no request. Reporting their status to the frame is 03-03, not here. Commit: `fix(metrics): filtered throughput and predictability follow the selected window (story 6249)`"
+        },
+        {
+          "id": "01-05",
+          "name": "Cumulative Time per State selection and scope are keyed queries under their own fetch keys",
+          "description": "Bring the Cumulative Time per State scope fetch and the chosen-Work-Items fetch under the query key, as the fetch keys cumulativeStateTimeSelection and cumulativeStateTimeScope of the stateTimeCumulative widget.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
+          "scenario_name": "Cumulative Time per State narrowed by the reader, across a window change",
+          "unskips": [
+            "BaseMetricsView.loading.test.tsx :: a window change drops the chosen stretch, as it does today, and a late answer for it never shows",
+            "BaseMetricsView.loading.test.tsx :: Work Items chosen in the picker stay chosen and are counted again for the new window",
+            "BaseMetricsView.loading.test.tsx :: a choice of Work Items answered late for the window the reader left never replaces the current one"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "criteria": [
+            "The three named cases are un-skipped and RED first (the old stretch's numbers after moving to 90 days; 'Work Items 11+12, 30 days ending 0 days ago').",
+            "categoryMetadata's metricsFetchKeys gains exactly `cumulativeStateTimeSelection` and `cumulativeStateTimeScope`, and stateTimeCumulative's requirements list both beside cumulativeStateTime. categoryMetadata.test.ts pins them, and the reachability invariant still holds.",
+            "Chosen Work Items survive a window change and are counted again for the new window. An answer for the window the reader left never replaces the current one, and nothing is asked while no Work Items are chosen.",
+            "A window change still drops the chosen stretch, as today, and a late answer for the old stretch never shows. Nothing is asked while no stretch is chosen.",
+            "Each of the two keys reads ready while its choice is not made, through the same applicability predicate that disables its query, and both feed fetchStates.",
+            "`pnpm test` green; `pnpm build` green with zero warnings."
+          ],
+          "implementation_notes": "Today the scope fetch has no guard, and the selection is never refetched on a window change (the reset effect near BaseMetricsView.tsx:1488 runs once). The selection becomes a query keyed (item ids, owner, window). The scope becomes a query keyed (definition id, owner, window). DISTILL named the two fetch keys in categoryMetadata's camelCase noun-phrase style. widgetStatus.test.ts reaches them through a cast until this step; the crafter may drop the cast now that the type lists them (a type-only test edit). Adding them to getMetricsFetchKeys() adds two rows to the every-fetch-key failure table that 02-01 un-skips. Dropping the chosen stretch on a window change is today's behaviour and stays. Keeping chosen Work Items is today's behaviour too, now refetched for the new window. Commit: `fix(metrics): cumulative time per state choices follow the selected window (story 6249)`"
+        },
+        {
+          "id": "01-06",
+          "name": "The picker's candidates reset per window and survive their own failure; slice 01a gates",
+          "description": "Turn the picker candidates into a query keyed (owner, window), enabled once the picker is opened in this window. Add the missing catch, then run the slice gates.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
+          "scenario_name": "Cumulative Time per State narrowed by the reader, across a window change",
+          "unskips": [
+            "BaseMetricsView.loading.test.tsx :: the picker offers the new window's Work Items once the window changes",
+            "BaseMetricsView.loading.test.tsx :: the picker asks for no Work Items of the new window until the reader opens it again",
+            "BaseMetricsView.loading.test.tsx :: keeps showing its numbers when the picker's Work Items cannot be loaded"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx"
+          ],
+          "dependencies": [
+            "01-05"
+          ],
+          "criteria": [
+            "The three named cases are un-skipped in this step and are RED first. Two fail at an assertion ('ITEM-11 (30 days ending 0 days ago)'; no request on reopening). The failure case fails through Vitest's 'Unhandled Rejection: getCumulativeStateTimeCandidatesForTeam failed'.",
+            "The picker offers the selected window's Work Items. The candidates are asked for at most once per window, and only once the picker has been opened in that window. After a window change nothing is requested until the reader opens the picker again.",
+            "When the candidates request fails, the picker's list is empty, the chart's numbers stay in place, and no unhandled rejection is raised. This is a named exception to 'a failure ends in could-not-load', because it fails a list input, not a chart value.",
+            "SLICE GATE: zero `it.skip` remain on the slice-01a cases. The 01a pins are green.",
+            "SLICE GATE: full `pnpm test` in Lighthouse.Frontend is green with no unhandled errors.",
+            "SLICE GATE: `pnpm build` is green with zero errors and zero warnings. Re-check `git diff` afterwards, because the prebuild runs `biome check --write` on ./src.",
+            "SLICE GATE: slice 01a touches no E2E spec and changes nothing a browser sees, so no Playwright run is owed for it."
+          ],
+          "implementation_notes": "Make the candidates a query keyed (owner, window). The 'opened in this window' flag is itself keyed on the window, which replaces the once-per-mount flag (candidatesRequestedRef). The catch ships in the same commit that un-skips its spec, by decision: without it, the un-skipped spec reds the whole Vitest run through the unhandled rejection instead of failing at an assertion. A picker failure keeps today's behaviour on purpose, because the chart's numbers do not depend on the candidate list. Manual dogfood is the maintainer's, at the hold, not this step's: dev instance on :5169 with throttling, Last 90 days then Last 7 days quickly with the Throughput filter on, and every chart should end on the 7-day data. Never aim Playwright at :5169. Commit: `fix(metrics): the work item picker asks per window and survives its own failure (story 6249)`"
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice 01b: a chart the page feeds says when it is behind the window",
+      "description": "The frame draws the three states. The page derives each widget's status from its fetch keys and the stepper's pending flag. The E2E waits go live, and every spec that reads values after a window change goes through them. The self-fetching charts read ready here because nothing reports yet; that is honest about what this slice covers. Releasable alone on top of 01a.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "A widget's status follows one precedence rule",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "Implement combineWidgetStatuses, widgetStatusFor and widgetHasData in widgetStatus.ts.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetStatus.test.ts",
+          "scenario_name": "which widgets are behind the selected window",
+          "unskips": [
+            "widgetStatus.test.ts :: waiting on %j reads as %s (it.each, 7 rows)",
+            "widgetStatus.test.ts :: reads the same whichever order %j are listed in (it.each, 2 rows)",
+            "widgetStatus.test.ts :: the chart placed as %s is loading while a stepped window is still waiting to be committed (it.each, 35 rows)",
+            "widgetStatus.test.ts :: a chart is loading while any one of its inputs has not answered the selected window",
+            "widgetStatus.test.ts :: a chart says it could not be loaded as soon as one of its inputs fails, without waiting for the rest",
+            "widgetStatus.test.ts :: a chart whose input failed is loading again while a stepped window waits to be committed",
+            "widgetStatus.test.ts :: a failure in something a chart does not show leaves that chart ready",
+            "widgetStatus.test.ts :: %s fetches for itself, so the page alone holds it back only while a step is pending (it.each, 2 rows)",
+            "widgetStatus.test.ts :: with its totals answered and the %s choice %s, it reads %s (it.each, 6 rows)",
+            "widgetStatus.test.ts :: a failed %s ends every chart that shows it in could-not-load, and nothing else (it.each over getMetricsFetchKeys() minus blackoutPeriods: 32 rows after slice 01a)",
+            "widgetStatus.test.ts :: has none on a first visit, before anything it shows has answered",
+            "widgetStatus.test.ts :: has one once everything it shows has answered some window, even while it is behind again",
+            "widgetStatus.test.ts :: has none while any one of its inputs has never answered"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetStatus.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetStatus.test.ts"
+          ],
+          "dependencies": [
+            "01-06"
+          ],
+          "criteria": [
+            "Every pending case in the five describes 'a widget's status, from the things it waits on', 'which widgets are behind the selected window', 'Cumulative Time per State narrowed by the reader', 'every request a chart waits on' and 'whether a chart has an older picture to dim' is un-skipped, and is RED (scaffold error) before the edit.",
+            "combineWidgetStatuses: any error gives error; otherwise any loading gives loading; otherwise ready. An empty list is ready, and order never changes the answer.",
+            "widgetStatusFor(widgetKey, keyStates, isCommitPending): its inputs are the fetch keys that getFetchRequirementsForWidget lists. While a step is pending, the page's own keys read loading whatever their state, including a key that failed. A widget with no page keys (Percentiles / PBC Over Time) reads loading while a step is pending and ready otherwise. Once the window is committed, one failed input makes the widget error at once, without waiting for siblings still in flight.",
+            "A missing entry or an inapplicable key never holds a widget back. A failure in a key a widget does not show leaves it ready. Every fetch key that can fail ends exactly the placed widgets that require it in error.",
+            "widgetHasData is true only when every key the widget shows has answered some window.",
+            "After this step, zero `it.skip` remain in widgetStatus.test.ts except 'reports nothing, and breaks nothing, when it is drawn outside a dashboard frame' (03-01).",
+            "`pnpm test` green; `pnpm build` green with zero warnings."
+          ],
+          "implementation_notes": "Pure functions, return-only. This module is the prime mutation target, so keep the precedence in one place. The pending flag rewrites only the page's keys and never a self-fetching child's report. A page key's failure is for a window the reader is leaving, while a child's own failure is real (the child side arrives in 03-01). Sizing: this step un-skips about 91 cases, far above the eight-case guide. Four it.each tables generate most of them: 35 placed widgets, one row per fetch key, 7 precedence rows and 6 Cumulative Time per State rows. The fetch-key table counted 29 rows at DISTILL and grows to 32 because 01a added throughputPbc, cumulativeStateTimeSelection and cumulativeStateTimeScope to getMetricsFetchKeys(). The declared tests number thirteen, over three small pure functions. Splitting them across steps would leave later steps un-skipping cases that are already green, which fakes their RED. Commit: `feat(metrics): one rule decides whether a chart is ready, loading or failed (story 6249)`"
+        },
+        {
+          "id": "02-02",
+          "name": "The frame draws the loading look and refuses the pointer while loading",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "WidgetShell reads its status and hasContentToDim props. It sets data-widget-status and aria-busy on the frame, draws the 40 % dim under a 24 px spinner or the lone spinner under title + info, sets pointer-events none on the body box, and disables View Data.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.status.test.tsx",
+          "scenario_name": "a chart's frame while it is behind the selected window",
+          "unskips": [
+            "WidgetShell.status.test.tsx :: a frame nobody gave a status says it is ready",
+            "WidgetShell.status.test.tsx :: a chart that has its data shows at full strength with nothing over it",
+            "WidgetShell.status.test.tsx :: keeps the older chart on screen, dimmed, with a spinner over it",
+            "WidgetShell.status.test.tsx :: lets nobody point at the dimmed chart, nor open its data",
+            "WidgetShell.status.test.tsx :: a switch inside the chart does not respond while the chart is loading",
+            "WidgetShell.status.test.tsx :: with no older chart to dim, holds a lone spinner under just the title and info",
+            "WidgetShell.status.test.tsx :: is dimmed to 40 percent under a spinner in the %s theme (it.each, light and dark)",
+            "ThroughputRunChartCard.loading.test.tsx :: the filter switch does not respond while the dashboard has the chart loading",
+            "PredictabilityScoreDetailsWidget.loading.test.tsx :: the filter switch does not respond while the dashboard has the score loading",
+            "Pins that must stay green, WidgetShell.status.test.tsx :: a frame left at its defaults shows its chart and header as before; keeps the title, rating and trend at full strength, outside anything that is faded; still explains the chart when the reader asks"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.status.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/ThroughputRunChartCard.loading.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PredictabilityScoreDetailsWidget.loading.test.tsx"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "criteria": [
+            "The ten named cases are un-skipped and RED first (data-widget-status null; widget-shell-body-<key> not found; View Data enabled; a click on the dimmed chart accepted).",
+            "The frame widget-shell-<key> carries data-widget-status, which defaults to ready when no status is given, and aria-busy='true' only while loading.",
+            "Loading with something to dim: the body box widget-shell-body-<key> (the flex body box near WidgetShell.tsx:385, which gains that test id) renders at opacity 0.4, with one 24 px CircularProgress centred over it, in both light and dark themes. The header stays outside anything faded.",
+            "Loading with nothing to dim: a lone 24 px spinner, centred at the widget's normal height, under a header showing title + info only.",
+            "While loading, a click anywhere in the body (the chart, the Throughput filter switch, any in-chart control) is rejected and sends no request. View Data is disabled, and the info button still opens. No `inert` anywhere.",
+            "A frame with no status passed renders exactly as today (pin).",
+            "The 'Not drawn yet' note on the status and hasContentToDim props is removed now that the frame reads them.",
+            "`pnpm test` green; `pnpm build` green with zero warnings."
+          ],
+          "implementation_notes": "The maintainer's decisions, in plain words. The old chart stays visible but faded to 40 %, with a small 24 px spinner over it, and the header stays at full strength. View Data is disabled because it would list the old window's items. The whole body (chart and in-chart controls) ignores the pointer while loading, by pointer-events none on the one body box, and the info button keeps working. Do not use inert: it would also hide the dimmed chart from assistive technology, where aria-busy is the signal. Keep the status branches in a small sub-component so WidgetShell's render body stays under Sonar's cognitive-complexity limit. The self-fetching child must stay mounted under the spinner (out of sight is enough) so that its later report is not lost. Sizing: ten cases, two over the guide. The two card specs observe the same pointer block through the real Throughput run chart and Predictability Score details, and this one change turns them green. Commit: `feat(metrics): a chart behind the window dims under a spinner (story 6249)`"
+        },
+        {
+          "id": "02-03",
+          "name": "The frame draws could-not-load, and otherwise reads what the page says",
+          "description": "WidgetShell's error state: the chart is removed and replaced by WarningAmberIcon and COULD_NOT_LOAD_MESSAGE, under a title + info header, with no retry.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.status.test.tsx",
+          "scenario_name": "a chart's frame when its data could not be loaded",
+          "unskips": [
+            "WidgetShell.status.test.tsx :: removes the chart and says so in plain words, with a warning icon",
+            "WidgetShell.status.test.tsx :: shows no rating, trend or data for the chart that is gone, only its title and info",
+            "WidgetShell.status.test.tsx :: offers no retry: changing the dates or reloading is the way back",
+            "WidgetShell.status.test.tsx :: with nothing inside reporting for itself, the frame reads what the page says: %s (it.each: loading, error, ready)",
+            "Pin that must stay green, WidgetShell.status.test.tsx :: the could-not-load message reads exactly as agreed"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.status.test.tsx"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "criteria": [
+            "The six named cases are un-skipped and RED first.",
+            "Status error: data-widget-status='error', not aria-busy, and no progressbar. The chart is out of sight, and the body shows WarningAmberIcon and exactly 'This chart couldn't be loaded. Change the dates or reload to try again.' (COULD_NOT_LOAD_MESSAGE).",
+            "The error header shows title and info only: no rating chip, no trend and no View Data. The info button is the frame's only button, and there is no Retry.",
+            "With no child reporting, the frame's data-widget-status equals the status the page passed, for each of loading, error and ready.",
+            "The 'Not drawn yet' note on COULD_NOT_LOAD_MESSAGE is removed.",
+            "`pnpm test` green; `pnpm build` green with zero warnings."
+          ],
+          "implementation_notes": "The could-not-load frame never shows the previous window's chart undimmed and never keeps a spinner. Either would present an old or absent number as current, which is the very complaint. Header chrome by state: the full header while loading with something dimmed; title + info only while loading with nothing to dim, and on failure, so no rating or trend describes a chart that is not there. Changing the dates or reloading is the stated recovery, which is why there is no Retry. The self-fetching child stays mounted out of sight under the message too. Commit: `feat(metrics): a chart that cannot load says so (story 6249)`"
+        },
+        {
+          "id": "02-04",
+          "name": "The page derives every widget's status through widgetStatus and passes it to its frame",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "At BaseMetricsView's one wrap site, pass status = widgetStatusFor(widget, fetchStates, isCommitPending) and hasContentToDim = widgetHasData(widget, fetchStates). Retire 01a's last-success fallback and the pin that guarded it.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
+          "scenario_name": "a team's chart whose data cannot be loaded",
+          "unskips": [
+            "BaseMetricsView.loading.test.tsx :: every chart behind the new window dims at once, keeping its older picture until its own data arrives (inside describe.each 'a %s's charts in the %s theme after the reader picks another window', 4 rows)",
+            "BaseMetricsView.loading.test.tsx :: each chart comes back on its own, as soon as its own data for the new window arrives (same describe.each, 4 rows)",
+            "BaseMetricsView.loading.test.tsx :: picking an earlier start date dims the charts until the new window arrives",
+            "BaseMetricsView.loading.test.tsx :: stepping the window back dims the charts at once, before the step is even asked for",
+            "BaseMetricsView.loading.test.tsx :: picking the window that is already showing leaves every chart as it is",
+            "BaseMetricsView.loading.test.tsx :: a chart behind the window cannot be pointed at or opened for its data",
+            "BaseMetricsView.loading.test.tsx :: the Throughput filter switch inside a chart behind the window does not respond",
+            "BaseMetricsView.loading.test.tsx :: stays loading when the first window answers first, until the second window's answer arrives",
+            "BaseMetricsView.loading.test.tsx :: answers arriving as %s, then %s, then %s read %s, then %s, then %s (it.each, 6 rows)",
+            "BaseMetricsView.loading.test.tsx :: stops its spinner, removes the older chart and says it couldn't be loaded",
+            "BaseMetricsView.loading.test.tsx :: leaves every other chart to come back with its own data",
+            "BaseMetricsView.loading.test.tsx :: comes back once the reader picks a window that loads",
+            "BaseMetricsView.loading.test.tsx :: stepping the window after a failure shows the chart loading at once, before the step is asked for",
+            "BaseMetricsView.loading.test.tsx :: does not report a failure for a window the reader has already left",
+            "BaseMetricsView.loading.test.tsx :: says it couldn't be loaded as soon as one of its requests fails, while its others are still on their way",
+            "BaseMetricsView.loading.test.tsx :: one failed request marks only the charts that show it",
+            "BaseMetricsView.loading.test.tsx :: a chart whose answer is simply empty comes back ready, not failed",
+            "BaseMetricsView.loading.test.tsx :: a portfolio's Work In Progress comes back without waiting for an at-risk answer only teams have",
+            "BaseMetricsView.loading.test.tsx :: the cycle time scatterplot comes back even when the blackout periods cannot be read",
+            "BaseMetricsView.loading.test.tsx :: is loading while chosen Work Items are counted again for the new window",
+            "BaseMetricsView.loading.test.tsx :: says it couldn't be loaded when the chosen stretch's numbers cannot be loaded",
+            "BaseMetricsView.loading.test.tsx :: switching the Throughput process behaviour chart's filter dims only that chart",
+            "BaseMetricsView.loading.test.tsx :: %s, once shown, dims like every other chart when the reader picks another window (it.each: Estimation vs. Cycle Time, Feature Size)",
+            "DELETED in this commit (pin), BaseMetricsView.loading.test.tsx :: until a chart can say it could not be loaded, a failed window leaves its older chart in place"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/hooks/useMetricsData.ts",
+            "Lighthouse.Frontend/src/hooks/useMetricsData.test.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx"
+          ],
+          "dependencies": [
+            "02-01",
+            "02-03"
+          ],
+          "criteria": [
+            "The 35 named dashboard cases are un-skipped and RED first (data-widget-status is null at the first chart of each loop).",
+            "In the render that changes the window, every chart the page feeds already reads loading; nothing waits for an effect.",
+            "On Team and Portfolio dashboards, in light and dark themes, every chart the page feeds dims at once on a window change, the body at 40 %, and each one returns on its own as its data lands.",
+            "Out-of-order answers: the status follows the last window picked through every arrival order, and a failure for a window already left is never shown.",
+            "A failed request ends the charts that show it in could-not-load at once, and every other chart comes back. A later window that loads brings the chart back. An empty answer is ready.",
+            "A window whose request failed now shows the could-not-load frame, never the previous window's chart. The pin 'until a chart can say it could not be loaded, a failed window leaves its older chart in place' is deleted in this same commit.",
+            "BaseMetricsView.test.tsx's 'handles API errors gracefully', 'handles predictability data fetch errors gracefully' and 'includes predictability data fetch in error handling test' drop any expectation that the old value stays.",
+            "The useMetricsData unit test from 01-02 ('after switching owner, a failure never shows the previous owner's value') is KEPT, with its setup adjusted if it relied on the fallback.",
+            "Self-fetching widgets (the over-time charts) read ready from the page's keys alone, and loading only while a step is pending; nothing reports yet.",
+            "`pnpm test` green; `pnpm build` green with zero warnings."
+          ],
+          "implementation_notes": "The wrap site in BaseMetricsView.tsx (around L1942-1959) is the only place a page-fed widget's status enters the frame. Derive the status in render from useMetricsData's fetchStates and useDateRange's isCommitPending, via widgetStatusFor, and never set it in an effect. Remove the per-metric last-success reference from useMetricsData: it existed only so 01a changed nothing visible, and now the frame says when a chart could not load. The owner-change unit test is kept because its claim is still true and still worth guarding: once the fallback is gone, the owner is part of every query key, so one owner's numbers can never show under another. Only its setup changes if it reached the fallback. Precedence, in plain words: while the stepper's debounce is pending, every page-fed chart reads loading, because a new window is already on its way. Once the window is committed, any failed input shows could-not-load immediately; otherwise the chart is loading while anything is in flight. A key this owner can never ask for is ready, so the Portfolio Work In Progress widget never waits for a Team-only answer. Sizing: 35 cases, far over the guide, all turned green by this one wrap-site change. They cannot be spread over later steps without un-skipping cases that are already green. The 'older chart stays' pin goes red the moment the status is wired, so its deletion and the failure cases must land in the same commit (DISTILL's disposition says so explicitly). Commit: `feat(metrics): charts the page feeds show when they are behind the window (story 6249)`"
+        },
+        {
+          "id": "02-05",
+          "name": "The E2E page objects wait for a chart's data, and the walking skeleton runs",
+          "description": "Route the MetricsPage, MetricsDateRange and chart page objects through MetricsWidget.waitUntilLoaded() and MetricsPage.waitUntilEveryChartHasLoaded(). Un-skip the walking skeleton and run it locally.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/ChartLoadingIndicators.spec.ts",
+          "scenario_name": "@walking_skeleton a delivery lead picks the last 90 days and watches a chart wait for the new window, then show it",
+          "unskips": [
+            "ChartLoadingIndicators.spec.ts :: @walking_skeleton a delivery lead picks the last 90 days and watches a chart wait for the new window, then show it (test.skip -> test; its 'Pending until…' comment goes with the skip)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/flow/ChartLoadingIndicators.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/MetricsPage.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/CumulativeStateTimeChart.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/CycleTimeScatterPlotChart.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/FlowEfficiencyWidget.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/RagChip.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/WorkItemAgingChart.ts"
+          ],
+          "dependencies": [
+            "02-04"
+          ],
+          "criteria": [
+            "The walking skeleton is un-skipped and run once before the page-object edits, and the result is recorded. Its waits exist since DISTILL and 02-04 delivers the status it reads, so it may already pass; if so, say so rather than faking a RED. After the edits it passes locally against a throw-away backend, never against :5169.",
+            "MetricsPage.switchCategory, MetricsDateRange.apply / applyAndWaitFor / selectPreset, and the chart page objects that build the dashboard-item-<key> locator, wait before any read: for data-widget-status='ready' through waitUntilLoaded (which fails fast on error), or for the whole category through waitUntilEveryChartHasLoaded. Specs keep locating widgets by dashboard-item-<key>, never by widget-shell-*.",
+            "selectPresetWithoutWaiting and holdAnswersForWindowStarting keep their 'do not wait' meaning, which the skeleton relies on.",
+            "In Lighthouse.EndToEndTests, `pnpm build` (Biome --write, then tsc) is clean, and `git diff` shows no rewrite outside the touched files.",
+            "The skeleton passes locally with the exact commands in implementation_notes, and the run output is recorded in the commit body."
+          ],
+          "implementation_notes": "From this slice on, a visible widget no longer means its data for the selected window has arrived. Every getter that reads a value must wait for ready first (the docs/ci-learnings.md rule about POM getters reading 'not rendered yet' as a value). Prefer waiting inside the page objects so that the specs change little. Over-time and other self-fetching charts read ready in this slice, so the category-wide wait does not hang on them before slice 01c. E2E LOCAL RUN, exact commands. Never aim at :5169, the dev instance with real history. Playwright's default LIGHTHOUSEURL is http://localhost:5169/, so always set it. Let E2E_DIR be an absolute scratch directory (the session scratchpad). (1) Build the UI the backend serves: `cd /storage/repos/Lighthouse/Lighthouse.Frontend && pnpm build`. Vite writes ../Lighthouse.Backend/Lighthouse.Backend/wwwroot, and the prebuild runs biome --write, so check `git diff`. (2) Start a throw-away backend in the background (Bash run_in_background): `cd /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend && env ASPNETCORE_ENVIRONMENT=Development Kestrel__Endpoints__Http__Url=http://localhost:5199 Kestrel__Endpoints__Https__Url=https://localhost:7299 Database__Provider=sqlite Database__ConnectionString=\"Data Source=$E2E_DIR/lighthouse.db\" Encryption__KeyStorePath=$E2E_DIR/keys Lighthouse__TimeZone=Europe/Zurich UsageData__CollectorBaseUrl=http://127.0.0.1:9 dotnet run --no-launch-profile`. Set BOTH Kestrel URLs: appsettings.Development.json pins 5169/7246 and silently outranks ASPNETCORE_URLS. Use an absolute DB path, because a relative one opens the dev database. Never point a key store at data-protection-keys. (3) Confirm the port really is 5199: `ss -ltn | grep 5199` and `curl -sf http://localhost:5199/ > /dev/null`. (4) Import the premium licence some specs need: `curl -s -X POST http://localhost:5199/api/latest/license/import -F file=@/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/valid_not_expired_license.json`. The file is gitignored: in a worktree, copy it from the main checkout first. (5) Run: `cd /storage/repos/Lighthouse/Lighthouse.EndToEndTests && env LIGHTHOUSEURL=http://localhost:5199/ TZ=Europe/Zurich pnpm exec playwright test tests/specs/flow/ChartLoadingIndicators.spec.ts --grep-invert \"@screenshot|@auth|@rbac|@proxyauth\"`. The Node TZ, the backend's Lighthouse__TimeZone and the browser's pinned Europe/Zurich must agree, or date-boundary assertions flake. (6) Stop the backend afterwards and delete E2E_DIR. Commit: `test(metrics): e2e page objects wait for a chart's data, walking skeleton runs (story 6249)`"
+        },
+        {
+          "id": "02-06",
+          "name": "Sixteen of the seventeen metrics E2E specs read values only after their charts have loaded",
+          "description": "DISTILL lists 17 E2E specs that read a visible widget as loaded: 16 are re-pointed here, and the 17th, Screenshots.spec, in 02-07. Each goes through the waits, and every click on a control inside a chart is preceded by that chart's waitUntilLoaded(). Run them locally.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/teams/ForecastFilter.spec.ts",
+          "scenario_name": "forecast filter: configure exclude-bugs rule on team settings, see quick-settings indicator, and verify the filter toggle is wired on Throughput Run Chart, Throughput PBC, and Predictability Score Details",
+          "unskips": [
+            "None: these specs already run. This step makes them correct now that a visible chart can still be loading. The 16 spec files: flow/AgingPacePercentiles, flow/BlockedItems, flow/CumulativeStateTime, flow/FlowEfficiency, flow/MetricsTimeHorizon, flow/NamedCycleTimePercentiles, flow/PbcOverTime, flow/PercentilesOverTime, flow/PredictabilityOverTime, flow/SleRiskColumnReachable, flow/TimeInStateAndStaleness, flow/TotalThroughputViewData, flow/WorkItemAgeAsOfRangeEnd, flow/WorkItemAgePercentilesStatus, metrics/MultipleCycleTimes, teams/ForecastFilter (all under Lighthouse.EndToEndTests/tests/specs/)."
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/flow/AgingPacePercentiles.spec.ts",
+            "Lighthouse.EndToEndTests/tests/specs/flow/BlockedItems.spec.ts",
+            "Lighthouse.EndToEndTests/tests/specs/flow/CumulativeStateTime.spec.ts",
+            "Lighthouse.EndToEndTests/tests/specs/flow/FlowEfficiency.spec.ts",
+            "Lighthouse.EndToEndTests/tests/specs/flow/MetricsTimeHorizon.spec.ts",
+            "Lighthouse.EndToEndTests/tests/specs/flow/NamedCycleTimePercentiles.spec.ts",
+            "Lighthouse.EndToEndTests/tests/specs/flow/PbcOverTime.spec.ts",
+            "Lighthouse.EndToEndTests/tests/specs/flow/PercentilesOverTime.spec.ts",
+            "Lighthouse.EndToEndTests/tests/specs/flow/PredictabilityOverTime.spec.ts",
+            "Lighthouse.EndToEndTests/tests/specs/flow/SleRiskColumnReachable.spec.ts",
+            "Lighthouse.EndToEndTests/tests/specs/flow/TimeInStateAndStaleness.spec.ts",
+            "Lighthouse.EndToEndTests/tests/specs/flow/TotalThroughputViewData.spec.ts",
+            "Lighthouse.EndToEndTests/tests/specs/flow/WorkItemAgeAsOfRangeEnd.spec.ts",
+            "Lighthouse.EndToEndTests/tests/specs/flow/WorkItemAgePercentilesStatus.spec.ts",
+            "Lighthouse.EndToEndTests/tests/specs/metrics/MultipleCycleTimes.spec.ts",
+            "Lighthouse.EndToEndTests/tests/specs/teams/ForecastFilter.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/PbcOverTimeWidget.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/PercentilesOverTimeWidget.ts"
+          ],
+          "dependencies": [
+            "02-05"
+          ],
+          "criteria": [
+            "No spec reads a chart value (text, count, rating, tooltip, View Data list) after a window or category change without first passing through waitUntilLoaded() or waitUntilEveryChartHasLoaded(), in either the page object or the spec.",
+            "Every click on a control inside a chart is preceded by that chart's waitUntilLoaded(); otherwise Playwright's actionability check waits on a body that refuses the pointer. The five specs that click inside a chart are: the Throughput filter in teams/ForecastFilter, the over-time toggles in flow/PbcOverTime and flow/PercentilesOverTime, the Cumulative Time per State picker and scope in flow/CumulativeStateTime, and the percentile scope in flow/NamedCycleTimePercentiles.",
+            "No spec locates widget-shell-*. Widgets are still reached through dashboard-item-<key> and the chart page objects.",
+            "Every one of the 16 specs passes locally against the throw-away backend, with the commands in implementation_notes. A spec that needed no edit is still run and listed as passing. Together with Screenshots.spec in 02-07, all 17 specs DISTILL listed are covered.",
+            "In Lighthouse.EndToEndTests, `pnpm build` is clean (Biome and tsc)."
+          ],
+          "implementation_notes": "Edit a spec only where the page-object waits from 02-05 do not already cover it. The files listed are the candidates, not a mandate to touch each one. The two over-time page objects are confirmed as needed: PbcOverTimeWidget.ts (selectMetric, countPlottedDays, countLegendEntries, countChartLines) and PercentilesOverTimeWidget.ts (selectHorizon, selectAge, countPlottedDays, countLegendEntries) both click toggles inside the chart body and read plotted values after a window or selection change. Both must wait for their widget's ready first; that matters most from slice 01c, when these charts start reporting loading. No E2E step may click inside a chart while it loads, because the body ignores the pointer on purpose. E2E runs twice in CI (SQLite and Postgres), so a race in a wait shows up as a flake on either; run the touched specs locally before committing (project rule: never commit an unrun spec or locator). E2E LOCAL RUN: build the UI (`cd /storage/repos/Lighthouse/Lighthouse.Frontend && pnpm build`). Start the throw-away backend on 5199 in the background, exactly as in 02-05: both Kestrel__Endpoints URLs overridden, absolute scratch Database__ConnectionString and Encryption__KeyStorePath, Lighthouse__TimeZone=Europe/Zurich, UsageData__CollectorBaseUrl=http://127.0.0.1:9, and `dotnet run --no-launch-profile` from /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend. Confirm with `ss -ltn | grep 5199`. Import the licence with `curl -s -X POST http://localhost:5199/api/latest/license/import -F file=@/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/valid_not_expired_license.json`; premium-gated flows such as named cycle times need it. Then run `cd /storage/repos/Lighthouse/Lighthouse.EndToEndTests && env LIGHTHOUSEURL=http://localhost:5199/ TZ=Europe/Zurich pnpm exec playwright test tests/specs/flow tests/specs/metrics/MultipleCycleTimes.spec.ts tests/specs/teams/ForecastFilter.spec.ts --grep-invert \"@screenshot|@auth|@rbac|@proxyauth\"`. Never aim at :5169. A failure in flow/ChartLoadingIndicators here means 02-05 regressed. Stop the backend afterwards. Commit: `test(metrics): metrics e2e specs wait for loaded charts (story 6249)`"
+        },
+        {
+          "id": "02-07",
+          "name": "Screenshots wait for every chart before a metrics capture; slice 01b gates",
+          "description": "Screenshots.spec, the 17th of the specs DISTILL listed, calls waitUntilEveryChartHasLoaded() before every metrics capture. A screenshot run proves the PNGs unchanged, then the slice gates run.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/screenshots/Screenshots.spec.ts",
+          "scenario_name": "Take @screenshot of the team metrics dashboard widgets",
+          "unskips": [
+            "None: Screenshots.spec already runs. This step adds the wait so that no capture can hold a spinner. The metrics captures it covers, by test title: Take @screenshot of the metrics date range selection; Take @screenshot of the team metrics dashboard widgets; Take @screenshot of named cycle times on the charts and the config editor; Take @screenshot of the SLE risk widget; Take @screenshot of the blocked items over time chart; Take @screenshot of the blocked over time drill-through dialog; @screenshot a flow coach reads the Work Item Age Percentiles card and switches the aging chart between cycle time and work item age percentiles; @screenshot a flow coach reads the Percentiles Over Time trend for cycle time and work item age, then the dated Throughput process behaviour limits; Take @screenshot of the cycle time work items dialog; Take @screenshot of the named cycle time selection on the Flow Overview percentiles widget; Take @screenshot of the portfolio metrics widgets; Take @screenshot of Work Item Aging chart with pace percentile bands; Take @screenshot of the work item dialog with the SLE risk column; Take @screenshot of Wait States configuration and Flow Efficiency; Take @screenshot of Cumulative Time per State chart scoped to a filtered work item."
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/screenshots/Screenshots.spec.ts"
+          ],
+          "dependencies": [
+            "02-06"
+          ],
+          "criteria": [
+            "Every capture of a metrics dashboard in Screenshots.spec (each switchCategory or goToMetrics followed by a capture, including the dashboard-item-predictabilityScore locator near line 940) is preceded by waitUntilEveryChartHasLoaded().",
+            "A local screenshot run regenerates every metrics PNG with content identical to the committed one. Any PNG that differs is reported as a finding, not committed blindly.",
+            "SLICE GATE: zero `it.skip` remain in widgetStatus.test.ts and WidgetShell.status.test.tsx except the cases 03-01 owns. Zero remain among the slice-01b cases of the card, details and dashboard files. The E2E walking skeleton is un-skipped. The Shell pins are green, and the one deleted pin is gone.",
+            "SLICE GATE: full `pnpm test` in Lighthouse.Frontend is green with no unhandled errors.",
+            "SLICE GATE: `pnpm build` in Lighthouse.Frontend is green with zero errors and zero warnings. Re-check `git diff` after the Biome --write prebuild.",
+            "SLICE GATE: `pnpm build` in Lighthouse.EndToEndTests is clean.",
+            "SLICE GATE: the E2E specs this slice touches all pass in one local run: flow/ChartLoadingIndicators, the 16 specs of 02-06, and screenshots/Screenshots (the @screenshot run)."
+          ],
+          "implementation_notes": "Screenshots must never capture a spinner. A frame now exists before its data, so a wait for the frame alone is no longer a wait for the data. Screenshot run, in this order. (a) Start the throw-away backend on 5199 and import the premium licence exactly as in 02-05; six screenshot tests are premium-gated, and without the licence they fail and leave their PNGs deleted. (b) Delete only the PNGs the metrics captures write; otherwise the 0.5 % pixel guard keeps the OLD image and the run proves nothing. (c) Run `cd /storage/repos/Lighthouse/Lighthouse.EndToEndTests && env LIGHTHOUSEURL=http://localhost:5199/ TZ=Europe/Zurich pnpm exec playwright test tests/specs/screenshots/Screenshots.spec.ts --grep @screenshot --grep-invert @auth`. @auth is excluded because those tests need the Keycloak stack and wipe the database. (d) `git status` the PNGs: unchanged content is the expected outcome. If any test failed, `git restore` its PNG immediately. Then run the full slice E2E set: `env LIGHTHOUSEURL=http://localhost:5199/ TZ=Europe/Zurich pnpm exec playwright test tests/specs/flow tests/specs/metrics/MultipleCycleTimes.spec.ts tests/specs/teams/ForecastFilter.spec.ts --grep-invert \"@screenshot|@auth|@rbac|@proxyauth\"`. Never aim at :5169. For reference, slice 01b un-skips about 142 Vitest cases (DISTILL's 139 plus three more rows in the every-fetch-key table); the gate is phrased as 'zero it.skip remain', so the count need not be re-verified by hand. Commit: `test(metrics): screenshots wait for every chart to load (story 6249)`"
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Slice 01c: charts that fetch for themselves say so too",
+      "description": "Percentiles Over Time, PBC Over Time, the Throughput run chart's filtered view and the Predictability Score details' filtered view report their own status to the frame through one hook. The over-time hooks keep their guard and cache and only expose a status. With 01a and 01b, this closes the complaint.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "A self-fetching chart reports its status to its frame",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "Implement useReportWidgetStatus and its reporter context. WidgetShell provides the context and combines the page's status with the child's report.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.status.test.tsx",
+          "scenario_name": "a chart that fetches its own data",
+          "unskips": [
+            "WidgetShell.status.test.tsx :: puts its own frame into loading while its series is on its way",
+            "WidgetShell.status.test.tsx :: with the page saying %s and the chart reporting %s, the frame reads %s (it.each, 7 rows)",
+            "widgetStatus.test.ts :: reports nothing, and breaks nothing, when it is drawn outside a dashboard frame"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetStatus.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetStatus.test.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.status.test.tsx"
+          ],
+          "dependencies": [
+            "02-07"
+          ],
+          "criteria": [
+            "The nine named cases are un-skipped and RED first (scaffold error; the hook throws outside a frame).",
+            "A child inside a frame that reports loading puts the frame into loading on the child's first paint. The frame's data-widget-status combines the page's status with the child's report: page loading + child error reads error, and every row of the 7-row table holds.",
+            "A frame with no reporting child shows the page's status alone, so 02-03's cases stay green.",
+            "Outside any frame the hook does nothing and throws nothing.",
+            "The child stays mounted under the spinner and under the message, so its report is never lost.",
+            "Zero `it.skip` remain in widgetStatus.test.ts and WidgetShell.status.test.tsx. No export of widgetStatus.ts throws any more: `grep -n NOT_YET_IMPLEMENTED Lighthouse.Frontend/src/pages/Common/MetricsView/widgetStatus.ts` returns nothing.",
+            "`pnpm test` green; `pnpm build` green with zero warnings."
+          ],
+          "implementation_notes": "This is the one place a status is set rather than derived. The frame cannot read a child's queries during its own render, so the child writes its status in a layout effect. That lands before the browser paints, so no fresh frame is ever painted ready before its fetch starts. The pending-step rule never rewrites a child's report: a self-fetching chart's own failure stays visible while the reader steps the window, because the window change does not fix it. Sizing: nine cases, one over the guide. Seven are rows of a single page-by-child truth table. Commit: `feat(metrics): charts that fetch for themselves report through their frame (story 6249)`"
+        },
+        {
+          "id": "03-02",
+          "name": "The over-time hooks expose a status and their widgets report it",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "usePbcOverTime and usePercentilesOverTime return a status without moving to TanStack Query. PbcOverTimeWidget and PercentilesOverTimeWidget report it.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/OverTimeWidgets.loading.test.tsx",
+          "scenario_name": "$name while its series loads",
+          "unskips": [
+            "OverTimeWidgets.loading.test.tsx :: shows a spinner in its frame while the series is on its way, never an empty area (describe.each x PBC Over Time, Percentiles Over Time)",
+            "OverTimeWidgets.loading.test.tsx :: goes back to its spinner when the reader picks another window (x 2)",
+            "OverTimeWidgets.loading.test.tsx :: never shows the series of a window the reader has already left (x 2)",
+            "OverTimeWidgets.loading.test.tsx :: ends in the could-not-load message when its series cannot be loaded (x 2)",
+            "BaseMetricsView.loading.test.tsx :: shows its spinner in its own frame while its series is on its way (describe.each '%s on the Predictability dashboard', x 2)",
+            "BaseMetricsView.loading.test.tsx :: says it couldn't be loaded when its series cannot be loaded (x 2)",
+            "BaseMetricsView.loading.test.tsx :: still says it couldn't be loaded while a stepped window waits to be committed (x 2)",
+            "Pins that must stay green, OverTimeWidgets.loading.test.tsx :: an empty answer reads as nothing recorded yet, never as a spinner (x 2); switching to another selection and back within one window asks for nothing new (x 2)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/usePbcOverTime.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/usePercentilesOverTime.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PbcOverTimeWidget.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PercentilesOverTimeWidget.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/usePbcOverTime.test.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/usePercentilesOverTime.test.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/OverTimeWidgets.loading.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "criteria": [
+            "The fourteen named cases are un-skipped and RED first.",
+            "While an over-time chart's series for the selected window is on its way, its frame shows a lone spinner in an empty frame. The older series is out of sight, never dimmed and never an empty area. A series for a window already left never shows.",
+            "When the series cannot be loaded, the frame shows the could-not-load message, and it keeps showing it while a stepped window waits to be committed.",
+            "An empty answer still reads 'nothing recorded yet', never a spinner (pin).",
+            "Switching to another selection and back within one window asks for nothing new (pin). The existing tests 'replays a range already fetched without a second request' and 're-plots a previously visited family without a second request' stay as they are, and the over-time tests need no QueryClientProvider.",
+            "usePbcOverTime.test.ts and usePercentilesOverTime.test.ts show the returned status: loading while the series is on its way, error after a failed fetch, ready once answered (an empty answer included).",
+            "`pnpm test` green; `pnpm build` green with zero warnings."
+          ],
+          "implementation_notes": "The over-time hooks already discard a stale answer (their cancelled cleanup) and keep a per-mount cache keyed on selection and dates. Moving them to TanStack Query would buy nothing and would put that cache at risk, so they only gain a returned status: loading while the series is null for the current key, error when that fetch failed, ready otherwise. A new window is a new key with a null series, which is exactly the lone-spinner state. While loading, the in-chart toggles sit under the spinner and ignore the pointer anyway. Sizing: fourteen cases, over the guide. Two describe.each tables run the same behaviours over the same two charts, once at the frame and once on the real dashboard, and one production change turns both green. Commit: `feat(metrics): over-time charts show a spinner, never an empty area (story 6249)`"
+        },
+        {
+          "id": "03-03",
+          "name": "The filtered views report their status; slice 01c gates",
+          "description": "ThroughputRunChartCard and PredictabilityScoreDetailsWidget report their filtered query's status through useReportWidgetStatus. Then the slice gates run.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/ThroughputRunChartCard.loading.test.tsx",
+          "scenario_name": "the Throughput run chart's frame while its filtered series loads",
+          "unskips": [
+            "ThroughputRunChartCard.loading.test.tsx :: turning the filter on keeps the chart loading until the filtered series arrives",
+            "ThroughputRunChartCard.loading.test.tsx :: with the filter on, a new window keeps the chart loading until that window's filtered series arrives",
+            "ThroughputRunChartCard.loading.test.tsx :: a filtered series that cannot be loaded ends in the could-not-load message",
+            "PredictabilityScoreDetailsWidget.loading.test.tsx :: turning the filter on keeps the score loading until the filtered score arrives",
+            "PredictabilityScoreDetailsWidget.loading.test.tsx :: with the filter on, a new window keeps the score loading until that window's filtered score arrives",
+            "PredictabilityScoreDetailsWidget.loading.test.tsx :: a filtered score that cannot be loaded ends in the could-not-load message",
+            "BaseMetricsView.loading.test.tsx :: switching the Throughput run chart's filter puts only that chart into loading"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/ThroughputRunChartCard.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/ThroughputRunChartCard.loading.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PredictabilityScoreDetailsWidget.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PredictabilityScoreDetailsWidget.loading.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx"
+          ],
+          "dependencies": [
+            "03-01",
+            "03-02"
+          ],
+          "criteria": [
+            "The seven named cases are un-skipped and RED first.",
+            "Turning the filter on, or a new window with the filter on, keeps the chart's frame loading until that window's filtered answer arrives, then ready, showing the filtered value.",
+            "A failed filtered answer ends the frame in the could-not-load message.",
+            "Flipping the run chart's filter on the dashboard puts only that chart into loading; every other Flow Metrics chart stays ready.",
+            "With the filter off, the frame follows the page's status alone and nothing extra is requested.",
+            "SLICE GATE: zero `it.skip` remain in WidgetShell.status.test.tsx, widgetStatus.test.ts, ThroughputRunChartCard.loading.test.tsx, PredictabilityScoreDetailsWidget.loading.test.tsx and OverTimeWidgets.loading.test.tsx. In BaseMetricsView.loading.test.tsx only the slice-02 cases remain skipped. The Over pins are green.",
+            "SLICE GATE: full `pnpm test` in Lighthouse.Frontend is green with no unhandled errors.",
+            "SLICE GATE: `pnpm build` is green with zero errors and zero warnings. Re-check `git diff` after the Biome --write prebuild.",
+            "SLICE GATE: the E2E specs whose waits now depend on these reporters pass locally: flow/ChartLoadingIndicators, flow/PbcOverTime, flow/PercentilesOverTime, flow/PredictabilityOverTime and teams/ForecastFilter."
+          ],
+          "implementation_notes": "With the filter on, each component reports fetchKeyStateOf over its filtered query; with the filter off it reports ready. From this slice on, the category-wide E2E wait also waits for the over-time charts and the filtered views. A reporter that never leaves loading would hang it, which is why the E2E check belongs to this slice even though no spec file changes. E2E LOCAL RUN: build the UI (`cd /storage/repos/Lighthouse/Lighthouse.Frontend && pnpm build`). Start the throw-away backend on 5199 in the background, exactly as in 02-05: both Kestrel__Endpoints URLs, an absolute scratch DB and key store, Lighthouse__TimeZone=Europe/Zurich, and `dotnet run --no-launch-profile` from /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend. Confirm with `ss -ltn | grep 5199`. Import the licence from /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/valid_not_expired_license.json. Then run `cd /storage/repos/Lighthouse/Lighthouse.EndToEndTests && env LIGHTHOUSEURL=http://localhost:5199/ TZ=Europe/Zurich pnpm exec playwright test tests/specs/flow/ChartLoadingIndicators.spec.ts tests/specs/flow/PbcOverTime.spec.ts tests/specs/flow/PercentilesOverTime.spec.ts tests/specs/flow/PredictabilityOverTime.spec.ts tests/specs/teams/ForecastFilter.spec.ts --grep-invert \"@screenshot|@auth|@rbac|@proxyauth\"`. Never aim at :5169. Commit: `feat(metrics): filtered throughput and predictability show when they are loading (story 6249)`"
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Slice 02: a dashboard opens with every chart's frame in place",
+      "description": "Frames are placed by the category's layout, not by data. Every widget the category shows renders its frame with a centred spinner before any data arrives. The three overview widgets drop their own spinners. Estimation vs. Cycle Time and Feature Size keep today's presence rule but show could-not-load on their own failure. Releasable on top of 01c.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Every placed chart is framed from the first render, and the overview widgets lose their own spinners",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "At the wrap site, keep an item when its node exists or its status is not ready, with children null until it has data. Build the three overview widget nodes like every other node, and drop their own CircularProgress.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
+          "scenario_name": "a dashboard as it opens",
+          "unskips": [
+            "BaseMetricsView.loading.test.tsx :: a %s's %s opens with every chart's frame in its place, each with a spinner, before any data arrives (it.each, 8 rows)",
+            "BaseMetricsView.loading.test.tsx :: a team's Flow Metrics opens with its ten charts framed in their places",
+            "BaseMetricsView.loading.test.tsx :: a portfolio's Portfolio & Features opens with only the Work Item distribution framed",
+            "BaseMetricsView.loading.test.tsx :: a %s's %s adds and removes no chart once its data has arrived (it.each, 6 rows, Portfolio & Features excluded)",
+            "BaseMetricsView.loading.test.tsx :: a frame waiting for its first data shows its info button, with no rating or trend yet",
+            "BaseMetricsView.loading.test.tsx :: %s waits under the same single spinner as every other chart (it.each: Flow Efficiency, Predictability Score, Total Work Item Age)",
+            "BaseMetricsView.loading.test.tsx :: opening a category not visited yet frames all of its charts at once",
+            "BaseMetricsView.loading.test.tsx :: a first visit whose data cannot be loaded says so in the chart's frame",
+            "Pins that must stay green, BaseMetricsView.loading.test.tsx :: a %s's %s adds and removes no chart once its data has arrived (Portfolio & Features, x 2); Estimation vs. Cycle Time is not framed while its first answer is on its way; Estimation vs. Cycle Time stays away once its answer says estimation is not set up; Estimation vs. Cycle Time stays away on a window change once it is known not to be set up; Feature Size is not framed until the window's Features arrive, then takes its place; Feature Size stays away when the window holds no Features"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/FlowEfficiencyOverviewWidget.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/FlowEfficiencyOverviewWidget.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PredictabilityScoreOverviewWidget.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PredictabilityScoreOverviewWidget.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/TotalWorkItemAgeWidget.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/TotalWorkItemAgeWidget.test.tsx"
+          ],
+          "dependencies": [
+            "03-03"
+          ],
+          "criteria": [
+            "The 22 named cases are un-skipped and RED first (widget keys before data differ from the category's placement; widget-shell-totalThroughput is not found on a first visit).",
+            "On first open, and on switching to a category not visited yet, every widget the category places renders its frame at its final position, self-fetching charts included: data-widget-status='loading', aria-busy='true', one centred spinner, under a title + info header with no rating or trend.",
+            "For every owner and category, the set of framed widgets is the same from first render to fully loaded. Estimation vs. Cycle Time and Feature Size are the two named exceptions and keep today's presence rule (pins).",
+            "A first load shows the lone spinner, never a dimmed zero.",
+            "Flow Efficiency, Predictability Score and Total Work Item Age each show exactly one spinner while waiting, the frame's. Their old own-spinner tests ('renders loading state when score is null', 'renders the loading branch while totalAge is null', and the null-info case of FlowEfficiencyOverviewWidget.test.tsx) are deleted.",
+            "BaseMetricsView.test.tsx tests that asserted a widget absent before its data now assert it framed and loading. The featureSize and estimationVsCycleTime absence tests are the exception and stay as they are.",
+            "A first visit whose data cannot be loaded shows could-not-load in the frame.",
+            "`pnpm test` green; `pnpm build` green with zero warnings."
+          ],
+          "implementation_notes": "One presence rule at the one wrap site, instead of a 'render a spinner when null' branch in 25 nodes. An item is kept when its node exists or its status is not ready, and its children stay null until every fetch key it needs has had data at least once. Presence comes from the category's placement, so nothing pops in and the layout never reshuffles. The overview widgets take non-null props, and their nodes are built `x ? <Widget/> : null` like every other node. Their own spinners must go in the same commit as the frames: the first-load table asserts exactly one progressbar per frame, so a frame plus the widget's own spinner fails it, and a widget whose node is null cannot be framed. Estimation vs. Cycle Time stays hidden while estimation is not set up, and Feature Size while the window holds no Features: today's rule, kept by maintainer decision. Their failure case is 04-02. Sizing: 22 cases, well over the guide. Every one turns on the same wrap-site change, and the spinner coupling above keeps them in one commit. Commit: `feat(metrics): a dashboard opens with every chart's frame in place (story 6249)`"
+        },
+        {
+          "id": "04-02",
+          "name": "Estimation vs. Cycle Time and Feature Size show could-not-load on their own failure",
+          "description": "Keep the two presence-gated widgets when their own fetch key is error, on first load or on a re-fetch once shown.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
+          "scenario_name": "charts that appear only once their data says to show them",
+          "unskips": [
+            "BaseMetricsView.loading.test.tsx :: %s says it couldn't be loaded when its first answer fails, with no spinner (it.each: Estimation vs. Cycle Time, Feature Size)",
+            "BaseMetricsView.loading.test.tsx :: %s, once shown, says it couldn't be loaded when the next window's answer fails (it.each: Estimation vs. Cycle Time, Feature Size)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx"
+          ],
+          "dependencies": [
+            "04-01"
+          ],
+          "criteria": [
+            "The four named cases are un-skipped and RED first (not framed after their first answer failed).",
+            "When their own request fails, on first load or on a re-fetch once shown, Estimation vs. Cycle Time and Feature Size appear with the could-not-load message and no spinner.",
+            "Their presence rule otherwise holds: not framed while their first answer is on its way; absent when not set up or when the window holds no Features; absent on a window change once known not to be set up (the pins stay green).",
+            "`pnpm test` green; `pnpm build` green with zero warnings."
+          ],
+          "implementation_notes": "The maintainer's decision, in plain words: these two charts keep today's habit of staying hidden until their data says they apply. But a failure must never look like 'does not apply', so when their own request fails, they appear with the could-not-load message. At the wrap site they are kept when their node exists OR their own fetch key is error. Nothing else changes for them. Commit: `feat(metrics): estimation and feature size say when they cannot load (story 6249)`"
+        },
+        {
+          "id": "04-03",
+          "name": "The E2E waits hold on first load; slice 02 gates",
+          "description": "Re-check the walking skeleton, the page-object waits and the re-pointed specs now that frames exist before their data on first load, then run the slice gates.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/ChartLoadingIndicators.spec.ts",
+          "scenario_name": "@walking_skeleton a delivery lead picks the last 90 days and watches a chart wait for the new window, then show it",
+          "unskips": [
+            "None: the skeleton has run since 02-05. This step re-runs it and every spec that slice 01b re-pointed, because from now on a frame is visible on first load before its data."
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/models/metrics/MetricsPage.ts"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "criteria": [
+            "On a first open and on a first visit to a category, waitUntilEveryChartHasLoaded() and waitUntilLoaded() resolve only once every framed chart reads data-widget-status='ready'. No page-object getter treats a framed-but-loading chart as loaded. MetricsPage.ts is edited only if a first-load gap is found.",
+            "SLICE GATE: zero `it.skip` remain in any of the six DISTILL files (widgetStatus.test.ts, WidgetShell.status.test.tsx, ThroughputRunChartCard.loading.test.tsx, PredictabilityScoreDetailsWidget.loading.test.tsx, OverTimeWidgets.loading.test.tsx, BaseMetricsView.loading.test.tsx): about 236 cases un-skipped, 20 pins, one pin deleted in 02-04. A grep for `it.skip` over those six files returns nothing.",
+            "SLICE GATE: full `pnpm test` in Lighthouse.Frontend is green with no unhandled errors.",
+            "SLICE GATE: `pnpm build` in Lighthouse.Frontend is green with zero errors and zero warnings. Re-check `git diff` after the Biome --write prebuild. `pnpm build` in Lighthouse.EndToEndTests is clean.",
+            "SLICE GATE: one local run passes flow/ChartLoadingIndicators, the 16 specs of 02-06, and the @screenshot run of screenshots/Screenshots, with every metrics PNG content-identical to the committed one."
+          ],
+          "implementation_notes": "Slice 02 makes a frame visible before its data on first load, so any wait that only checked visibility is now wrong on first open as well as after a window change. Run exactly as in 02-07. Build the UI (`cd /storage/repos/Lighthouse/Lighthouse.Frontend && pnpm build`). Start the throw-away backend on 5199 in the background, from /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend, with `env ASPNETCORE_ENVIRONMENT=Development Kestrel__Endpoints__Http__Url=http://localhost:5199 Kestrel__Endpoints__Https__Url=https://localhost:7299 Database__Provider=sqlite Database__ConnectionString=\"Data Source=$E2E_DIR/lighthouse.db\" Encryption__KeyStorePath=$E2E_DIR/keys Lighthouse__TimeZone=Europe/Zurich UsageData__CollectorBaseUrl=http://127.0.0.1:9 dotnet run --no-launch-profile`. Confirm with `ss -ltn | grep 5199`. Import the licence with `curl -s -X POST http://localhost:5199/api/latest/license/import -F file=@/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/valid_not_expired_license.json`. Then, from /storage/repos/Lighthouse/Lighthouse.EndToEndTests, run `env LIGHTHOUSEURL=http://localhost:5199/ TZ=Europe/Zurich pnpm exec playwright test tests/specs/flow tests/specs/metrics/MultipleCycleTimes.spec.ts tests/specs/teams/ForecastFilter.spec.ts --grep-invert \"@screenshot|@auth|@rbac|@proxyauth\"`. For the screenshots, delete only the metrics PNGs first, run `env LIGHTHOUSEURL=http://localhost:5199/ TZ=Europe/Zurich pnpm exec playwright test tests/specs/screenshots/Screenshots.spec.ts --grep @screenshot --grep-invert @auth`, and `git restore` any PNG whose test failed. A regenerated PNG that differs in content is a finding to report. Never aim at :5169. If MetricsPage.ts needed no edit, say so in the commit body. Commit: `test(metrics): e2e waits hold on first load (story 6249)`"
+        }
+      ]
+    }
+  ]
+}
