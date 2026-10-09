@@ -896,6 +896,12 @@ get re-applied.
 - **Fix**: 01a0b9835 (wait for the Features help text; scope rows to the grid with a `position` column), e6692435f (reset the leaked FeatureOrdering switch), 0eff0adb5 (`tests/reporters/FlakySummaryReporter.ts` lists retry-only passes in the job summary).
 - **Rule going forward**: A POM `goTo*` must wait for something only the target view renders, never just the URL or a generic row. Grid locators are scoped to a column only that grid has. A spec that flips an optional feature switches it back in `afterEach`. When a verify job passes, check its job summary for tests that only passed on a retry.
 
+### 2026-10-09 — a keyed metrics query never asked again once the team had updated (story 6249)
+- **Symptom**: verifypostgres red on `FlowEfficiency.spec.ts`, all three attempts: after an admin saved a wait state, the Flow Efficiency tile still read "Not configured" 60 s later. verifysqlite was green on the same commit.
+- **Root cause**: the backend caches metric answers per team and window and clears them only when the team's update runs. The dashboard opened before that update finished and got the cached answer. The old `useMetricsData` effects depended on the entity object, so the refreshed team asked again; the TanStack rewrite keyed queries on `ownerId` alone, so nothing did. SQLite's update simply finished before the dashboard asked, which hid the race.
+- **Fix**: the owner's last-update moment is part of every `["metrics", …]` query key — commit `72e9b1dbc`.
+- **Rule going forward**: when an effect that depended on an entity object becomes a keyed query, the key must carry whatever made that object change (for owners: `lastUpdated`), not just its id — otherwise a server-side refresh never reaches an open view. A spec green on SQLite and red on Postgres is a timing hint, not a flake: look for a race against a background update before re-running.
+
 ## SonarCloud — Frontend (LetPeopleWork_Lighthouse_Frontend)
 
 ### 2026-09-26 — typescript:S4624: a template literal nested inside another fails the gate
@@ -1181,6 +1187,12 @@ get re-applied.
 
 
 ## SonarCloud — Frontend (LetPeopleWork_Lighthouse_Frontend)
+
+### 2026-10-09 — typescript:S1788: a defaulted parameter before a required one
+- **Symptom**: Frontend gate `new_violations = 1`: `typescript:S1788` ("Default parameters should be last") on `src/tests/HeldMetricsService.ts:398`, `answer(filter = {}, value)`.
+- **Root cause**: a test helper gave its first parameter a default while the second had none; neither `tsc` nor Biome objects, and test helpers under `src/` are analysed like production code.
+- **Fix**: `33f1f5ba3`.
+- **Rule going forward**: never give a parameter a default unless every parameter after it is defaulted or optional — mark the trailing one `?` or reorder. Test helpers under `src/` count as new code for the Sonar gate.
 
 ### 2026-05-30 — S6544 vs S3735: SonarCloud bans the `void` operator on new code while requiring promises be handled
 - **Symptom**: a #5100 fix-commit (FE concurrency token chaining) tripped, in sequence across two CI cycles: first `typescript:S6544` ("Promise-returning function provided to variable where a void return was expected") on a `useRef<(p) => void>` assigned a Promise-returning `dispatchSave`; after fixing that with the `void` operator, `typescript:S3735` ("Remove this use of the void operator") ×2 on the `void dispatchSave(...)` call sites. The two rules appear to contradict: S6544 wants floating promises handled, S3735 forbids the canonical `void` handler.
