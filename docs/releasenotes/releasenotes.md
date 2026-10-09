@@ -4,6 +4,45 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse vNext
+
+## Support for Team-Level Refinement
+
+Most Teams refine by habit: an hour every week, whatever is on top of the backlog, until the time runs out. Some weeks that leaves the Team starving for ready work; other weeks it builds a queue of refined Work Items that sit and go stale.
+
+Every Team now has a **Refinement** tab. It lists the Work Items in the Team's refinement states, in backlog order, and answers two questions before the next Refinement.
+
+![Refinement](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/refinement.png)
+
+**How much should we refine?** Give the Team a Refinement cadence, and Lighthouse compares how many Work Items are ready with how many the Team is likely to pull until the Refinement after the next one, using the same How Many forecast as the Forecasts tab. The answer is one of three: refine 2 to 5 more, nothing more is needed, or stop refining. The Work Items needed first are numbered, and a line shows where "enough" ends. Having too much ready is flagged as clearly as having too little.
+
+**Is this Work Item small enough?** Instead of estimating, everybody votes on one question: *is this doable within our SLE?* The answers are **Yes**, **Yes, if…** (with the condition written down) or **No**. Votes can be cast at any time and without a meeting, and enough Yes votes make a Work Item Ready. If your work tracking system already tracks readiness, stage rules let it decide, and the votes sit beside it as a second opinion.
+
+Refinement is part of every Lighthouse installation, community and premium. Full detail: [Refinement](https://docs.lighthouse.letpeople.work/teams/detail.html#refinement) and [Refinement settings](https://docs.lighthouse.letpeople.work/teams/edit.html#refinement).
+
+## Reworked Agent Skills
+
+The Lighthouse skill has been reworked, and two new skills join it, each walking your AI assistant through one recurring Team routine:
+- **Refinement** gets a Team ready for its next Refinement: whether to refine more or stop, and which Work Items are worth the session's time. Try: "Are we ready for Thursday's Refinement?"
+- **Daily Flow Review** opens a Team's daily with what to discuss today: Work Items that are blocked, past the SLE or at risk of missing it, and WIP over its limit. Try: "What should Gravity discuss today?"
+
+Each skill is its own download. Full detail: [AI Integration](https://docs.lighthouse.letpeople.work/aiintegration.html#lighthouse-agent-skill).
+
+## Bugfixes and Improvements
+
+- **Each chart widget now shows a loading indication while its data is refreshed**, and says so when its data cannot be loaded, instead of showing the old answer or an empty chart.
+- **Parents from Jira issue links now work for Work Items that are both a child and a parent.** If you set a one-way phrase like *is caused by*, type the phrase the child uses to point at its parent, or the link type's name. Full detail: [Parent Override Field](https://docs.lighthouse.letpeople.work/teams/edit.html#parent-override-field).
+- **Usage data from the CLI and MCP.** `lh` and the MCP servers now ask for consent to share usage data, just as the browser does, and report the same events once you agree. Each event is labelled with where it came from. Nothing personal is sent. Full detail: [Usage Data](https://docs.lighthouse.letpeople.work/settings/usagedata.html).
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Paul Brown](https://www.linkedin.com/in/paulisthrivving/)
+- [Steve Pereira](https://www.linkedin.com/in/devopsto/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.10.3.6...HEAD)
+
 # Lighthouse v26.10.3.6
 
 ## Forecast Reality Check
