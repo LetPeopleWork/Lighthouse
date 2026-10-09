@@ -26,7 +26,7 @@ export function useCumulativeScopeChoice(selectedQuestion: string): {
 	readonly chooseScope: (definitionId: number | null) => void;
 } {
 	const [scopeChoice, setScopeChoice] = useState<ScopeChoice | null>(null);
-	if (scopeChoice !== null && scopeChoice.question !== selectedQuestion) {
+	if ((scopeChoice?.question ?? selectedQuestion) !== selectedQuestion) {
 		setScopeChoice(null);
 	}
 
