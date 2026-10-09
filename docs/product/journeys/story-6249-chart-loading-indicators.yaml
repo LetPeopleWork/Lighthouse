@@ -1,0 +1,42 @@
+schema_version: 1
+feature_id: story-6249-chart-loading-indicators
+updated: 2026-10-09
+note: >
+  ADO User Story #6249, tagged Release Notes, no parent Epic. DISCOVER and DIVERGE skipped by the
+  maintainer. Frontend only. Grounded in a code read: the metrics dashboards have no loading state,
+  keep the previous window's data on screen until each response lands, let a superseded response
+  overwrite a newer one, and pop widgets in on first load.
+
+journeys:
+
+  - name: change-the-window-and-read-the-right-numbers
+    goal: >
+      A Delivery Lead / RTE (or a Flow Coach at a standup) changes the metrics window and reads each chart
+      out only once it shows that window, without ever reading the previous window's number as the new one.
+    persona: "delivery-lead-rte (secondary: flow-coach; forecasting-prospect watching)"
+    job_id: job-reader-trust-the-chart-shows-the-window-i-picked
+
+    emotional_arc:
+      start: Doubtful - "I clicked 90 days; is that throughput the new number or still the 30-day one?"
+      middle: Patient - "everything dimmed; Throughput is back, Cycle Time is still coming."
+      end: Confident - "every chart is back at full strength, so every number on screen is for 90 days."
+
+    steps:
+      - step: Open a Team or Portfolio metrics dashboard
+        sees: every widget of the category in its final place, a spinner in each frame (slice 02)
+      - step: Pick a preset, a date, or step the window
+        sees: every chart not yet showing the selected window dims with a spinner over it; the header stays usable (slice 01)
+      - step: Wait
+        sees: each chart returns at full strength as its own data for the selected window lands
+      - step: Change the window again before the first answers land
+        sees: charts stay dimmed until the latest window's data lands; the earlier answers are never shown
+
+    error_paths:
+      - when: a widget's fetch for the selected window fails
+        sees: the spinner stops and the frame says it could not load; never the previous window's chart at full strength
+
+    shared_artifacts:
+      - name: selected window (startDate, endDate)
+        source: useDateRange (URL-backed)
+      - name: widget loading state
+        source: the dashboard fetch sources (useMetricsData keys, ThroughputRunChartCard, over-time hooks), drawn only by WidgetShell

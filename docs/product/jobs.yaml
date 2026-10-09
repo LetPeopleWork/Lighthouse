@@ -8075,3 +8075,22 @@ jobs:
       anxiety: A tool that ranks people or tells the Team what to do
       habit: Yesterday / today / impediments
     opportunity_score: {importance: 5, current_satisfaction: 1, gap: 4}
+  - id: job-reader-trust-the-chart-shows-the-window-i-picked
+    title: Trust that the chart shows the window I picked
+    persona: delivery-lead-rte
+    feature_context: story-6249-chart-loading-indicators
+    created: 2026-10-09
+    job_story: >
+      When I change the window on a metrics dashboard,
+      I want every chart to show either the window I picked or plainly that it is still getting there,
+      so I can read the numbers out without wondering whether they are the old ones.
+    dimensions:
+      functional: Each chart is visibly out of date until its data for the selected window arrives, never settles on a superseded window, and opens with its frame in place
+      emotional: From second-guessing every number after a window change to reading it out with confidence
+      social: In a review or in front of a prospect, the tool never looks "unreliable, inaccurate"
+    forces:
+      push: After a window change the old charts stay up looking final; a slow old response can even overwrite the new one; on first open charts pop in one by one
+      pull: The header already greys the window label during a stepper burst; one frame (WidgetShell) wraps every chart
+      anxiety: A dashboard that flickers or turns into a wall of spinners on every click
+      habit: Waiting a moment and hoping the numbers have caught up
+    opportunity_score: {importance: 4, current_satisfaction: 1, gap: 3}
