@@ -203,6 +203,8 @@ const metricsFetchKeys = [
 	"ageInStatePercentiles",
 	"sleRisk",
 	"cumulativeStateTime",
+	"cumulativeStateTimeSelection",
+	"cumulativeStateTimeScope",
 	"flowEfficiency",
 	"featureSizeData",
 	"featureSizePbc",
@@ -305,7 +307,11 @@ const widgetFetchRequirements: Record<string, readonly MetricsFetchKey[]> = {
 	stacked: ["throughput", "arrivals", "wipOverTime"],
 	// deriveLoadBalanceMatrixData reads WIP + total age + both core PBCs — :1594-1610
 	loadBalanceMatrix: ["inProgressItems", "totalWorkItemAge", "pbcCore"],
-	stateTimeCumulative: ["cumulativeStateTime"],
+	stateTimeCumulative: [
+		"cumulativeStateTime",
+		"cumulativeStateTimeSelection",
+		"cumulativeStateTimeScope",
+	],
 	// footer is the max blocked age, read off the blocked items — BaseMetricsView.tsx:329
 	blockedCountHistory: ["blockedCountHistory", "blockedItems"],
 

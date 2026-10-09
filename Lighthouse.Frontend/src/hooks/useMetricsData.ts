@@ -89,6 +89,10 @@ export interface MetricsData<T> {
 	 */
 	sleRiskValues: ISleRisk[];
 	cumulativeStateTime: ICumulativeStateTimeResponse | null;
+	/** Cumulative Time per State counted for the chosen Work Items only; null while none are chosen. */
+	cumulativeStateTimeForSelection: ICumulativeStateTimeResponse | null;
+	/** Cumulative Time per State counted for the chosen stretch only; null while none is chosen. */
+	cumulativeStateTimeForScope: ICumulativeStateTimeResponse | null;
 	sizePercentileValues: IPercentileValue[];
 	allFeaturesForSizeChart: IFeature[];
 	predictabilityData: IForecastPredictabilityScore | null;
@@ -153,7 +157,10 @@ function isTeamOwnedMetricsService(service: object): boolean {
 // Whether this owner has the question at all. A key that does not apply is never asked, and is
 // never waited for either. Every key is listed, so a new one does not build until someone says
 // which owners can ask it.
-function applicabilityFor(service: object): Record<MetricsFetchKey, boolean> {
+function applicabilityFor(
+	service: object,
+	choices: CumulativeStateTimeChoicesMade,
+): Record<MetricsFetchKey, boolean> {
 	const isPortfolioShaped = isProjectMetricsService(service);
 	return {
 		blackoutPeriods: true,
@@ -187,8 +194,26 @@ function applicabilityFor(service: object): Record<MetricsFetchKey, boolean> {
 		featureSizeEstimation: isPortfolioShaped,
 		featureSizePercentilesInfo: isPortfolioShaped,
 		featuresWorkedOnInfo: isTeamMetricsService(service),
+		cumulativeStateTimeSelection: choices.selection,
+		cumulativeStateTimeScope: choices.scope,
 	};
 }
+
+/** How the reader narrowed Cumulative Time per State: to some Work Items, or to one stretch. */
+export type CumulativeStateTimeChoices = {
+	readonly itemIds: readonly number[];
+	readonly scopeDefinitionId: number | null;
+};
+
+type CumulativeStateTimeChoicesMade = {
+	readonly selection: boolean;
+	readonly scope: boolean;
+};
+
+const noCumulativeStateTimeChoices: CumulativeStateTimeChoices = {
+	itemIds: [],
+	scopeDefinitionId: null,
+};
 
 type OwnerType = "team" | "portfolio";
 
@@ -264,6 +289,7 @@ export function useMetricsData<
 	startDate: Date,
 	endDate: Date,
 	activeFetchKeys: ReadonlySet<MetricsFetchKey> = allMetricsFetchKeys,
+	cumulativeStateTimeChoices: CumulativeStateTimeChoices = noCumulativeStateTimeChoices,
 ): MetricsData<T> {
 	const { blackoutPeriodService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
@@ -278,9 +304,15 @@ export function useMetricsData<
 		"raw" | "filtered" | undefined
 	>(undefined);
 
+	const selectionChosen = cumulativeStateTimeChoices.itemIds.length > 0;
+	const scopeChosen = cumulativeStateTimeChoices.scopeDefinitionId !== null;
 	const applicable = useMemo(
-		() => applicabilityFor(metricsService),
-		[metricsService],
+		() =>
+			applicabilityFor(metricsService, {
+				selection: selectionChosen,
+				scope: scopeChosen,
+			}),
+		[metricsService, selectionChosen, scopeChosen],
 	);
 	const isAsked = (key: MetricsFetchKey) =>
 		activeFetchKeys.has(key) && applicable[key];
@@ -462,6 +494,38 @@ export function useMetricsData<
 			),
 		isAsked("cumulativeStateTime"),
 		"Error fetching cumulative state time:",
+	);
+
+	const cumulativeStateTimeSelection = useMetricsQuery(
+		"getCumulativeStateTimeForItems",
+		{ ...selectedWindow, itemIds: cumulativeStateTimeChoices.itemIds },
+		({ ownerId, from, to, itemIds }) =>
+			metricsService.getCumulativeStateTimeForTeam(
+				ownerId,
+				dayOf(from),
+				dayOf(to),
+				[...itemIds],
+			),
+		isAsked("cumulativeStateTimeSelection"),
+		"Error fetching cumulative state time for the chosen work items:",
+	);
+
+	const cumulativeStateTimeScope = useMetricsQuery(
+		"getCumulativeStateTimeForScope",
+		{
+			...selectedWindow,
+			definitionId: cumulativeStateTimeChoices.scopeDefinitionId,
+		},
+		({ ownerId, from, to, definitionId }) =>
+			metricsService.getCumulativeStateTimeForTeam(
+				ownerId,
+				dayOf(from),
+				dayOf(to),
+				undefined,
+				definitionId ?? undefined,
+			),
+		isAsked("cumulativeStateTimeScope"),
+		"Error fetching cumulative state time for the chosen stretch:",
 	);
 
 	const arrivals = useMetricsQuery(
@@ -753,6 +817,8 @@ export function useMetricsData<
 		ageInStatePercentiles: [ageInStatePercentiles.progress],
 		sleRisk: [sleRisk.progress],
 		cumulativeStateTime: [cumulativeStateTime.progress],
+		cumulativeStateTimeSelection: [cumulativeStateTimeSelection.progress],
+		cumulativeStateTimeScope: [cumulativeStateTimeScope.progress],
 		arrivals: [arrivals.progress],
 		blockedCountHistory: [blockedCountHistory.progress],
 		pbcCore: [wipPbc.progress, totalWorkItemAgePbc.progress],
@@ -793,6 +859,13 @@ export function useMetricsData<
 		perStatePercentileValues: ageInStatePercentiles.answer ?? [],
 		sleRiskValues: sleRisk.answer ?? [],
 		cumulativeStateTime: cumulativeStateTime.answer,
+		// A choice the reader has let go of must not keep showing what it last counted.
+		cumulativeStateTimeForSelection: selectionChosen
+			? cumulativeStateTimeSelection.answer
+			: null,
+		cumulativeStateTimeForScope: scopeChosen
+			? cumulativeStateTimeScope.answer
+			: null,
 		sizePercentileValues: sizePercentiles.answer ?? [],
 		allFeaturesForSizeChart: featuresForSizeChart.answer ?? [],
 		predictabilityData: predictability.answer,

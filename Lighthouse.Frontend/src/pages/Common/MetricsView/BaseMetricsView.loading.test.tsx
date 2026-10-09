@@ -889,7 +889,7 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 				call.window === window,
 		);
 
-	it.skip("a window change drops the chosen stretch, as it does today, and a late answer for it never shows", async () => {
+	it("a window change drops the chosen stretch, as it does today, and a late answer for it never shows", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 		fireEvent.click(
@@ -903,7 +903,7 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 		expectCountsToRead(`every Work Item, ${LAST_90_DAYS}`);
 	});
 
-	it.skip("Work Items chosen in the picker stay chosen and are counted again for the new window", async () => {
+	it("Work Items chosen in the picker stay chosen and are counted again for the new window", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 		fireEvent.click(
@@ -918,7 +918,7 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 		expectCountsToRead(`Work Items 11+12, ${LAST_90_DAYS}`);
 	});
 
-	it.skip("a choice of Work Items answered late for the window the reader left never replaces the current one", async () => {
+	it("a choice of Work Items answered late for the window the reader left never replaces the current one", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 		fireEvent.click(

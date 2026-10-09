@@ -1281,19 +1281,38 @@ export const BaseMetricsView = <
 		entity.id,
 	);
 
-	// Only the categories the user has actually opened get their data fetched (Bug #5571).
-	// The set grows as they explore and resets when the question changes — a different entity
-	// or a different date window. The reset token is built from local Y/M/D, never
-	// toISOString: at a negative UTC offset the UTC day flips first, which would reset the set
-	// and refetch everything for no reason — Bug #5566's failure mode, invisible on a UTC runner.
+	// Built from local Y/M/D, never toISOString: at a negative UTC offset the UTC day flips
+	// first, which would read as a new question and refetch everything for no reason.
+	const selectedQuestion = `${entity.id}:${formatLocalDate(startDate)}:${formatLocalDate(endDate)}`;
+
+	// Only the categories the user has actually opened get their data fetched. The set grows as
+	// they explore and resets when the question changes — a different entity or date window.
 	const visitedCategories = useVisitedCategories(
 		selectedCategory,
-		`${entity.id}:${formatLocalDate(startDate)}:${formatLocalDate(endDate)}`,
+		selectedQuestion,
 	);
 	const activeFetchKeys = useMemo(
 		() => getFetchKeysForCategories(visitedCategories, ownerType),
 		[visitedCategories, ownerType],
 	);
+
+	const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
+	// A stretch is chosen for one window only and is dropped once the window changes, so it is
+	// never asked for the next window, and coming back to the old window does not bring it back.
+	const [cumulativeScopeChoice, setCumulativeScopeChoice] = useState<{
+		readonly definitionId: number;
+		readonly question: string;
+	} | null>(null);
+	if (
+		cumulativeScopeChoice !== null &&
+		cumulativeScopeChoice.question !== selectedQuestion
+	) {
+		setCumulativeScopeChoice(null);
+	}
+	const cumulativeScopeDefinitionId =
+		cumulativeScopeChoice?.question === selectedQuestion
+			? cumulativeScopeChoice.definitionId
+			: null;
 
 	const {
 		blackoutPeriods,
@@ -1330,6 +1349,8 @@ export const BaseMetricsView = <
 		predictabilityScoreInfo,
 		cycleTimePercentilesInfo,
 		cumulativeStateTime,
+		cumulativeStateTimeForSelection,
+		cumulativeStateTimeForScope,
 		flowEfficiencyInfo,
 		blockedCountHistory,
 		setThroughputPbcView,
@@ -1339,6 +1360,10 @@ export const BaseMetricsView = <
 		startDate,
 		endDate,
 		activeFetchKeys,
+		{
+			itemIds: selectedItemIds,
+			scopeDefinitionId: cumulativeScopeDefinitionId,
+		},
 	);
 
 	const sleRangeInDays =
@@ -1471,64 +1496,29 @@ export const BaseMetricsView = <
 	>([]);
 	const [drillDownOpen, setDrillDownOpen] = useState(false);
 
-	const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
 	const [cumulativeCandidates, setCumulativeCandidates] = useState<
 		ICumulativeStateTimeCandidateRow[]
 	>([]);
 	const [cumulativeCandidatesLoaded, setCumulativeCandidatesLoaded] =
 		useState(false);
-	const [narrowedCumulativeStateTime, setNarrowedCumulativeStateTime] =
-		useState<ICumulativeStateTimeResponse | null>(null);
-	const [cumulativeScopeDefinitionId, setCumulativeScopeDefinitionId] =
-		useState<number | null>(null);
-	const [scopedCumulativeStateTime, setScopedCumulativeStateTime] =
-		useState<ICumulativeStateTimeResponse | null>(null);
 	const candidatesRequestedRef = useRef(false);
 
 	useEffect(() => {
 		candidatesRequestedRef.current = false;
 		setSelectedItemIds([]);
-		setNarrowedCumulativeStateTime(null);
 		setCumulativeCandidates([]);
 		setCumulativeCandidatesLoaded(false);
 	}, []);
 
-	const fetchCumulativeStateTimeForScope = useCallback(
-		(itemIds?: number[]) =>
-			metricsService.getCumulativeStateTimeForTeam(
-				entity.id,
-				startDate,
-				endDate,
-				itemIds,
-			),
-		[metricsService, entity.id, startDate, endDate],
-	);
-
 	const handleCumulativeScopeChange = useCallback(
-		(definitionId: number | null) => {
-			setCumulativeScopeDefinitionId(definitionId);
-			if (definitionId === null) {
-				setScopedCumulativeStateTime(null);
-				return;
-			}
-			void metricsService
-				.getCumulativeStateTimeForTeam(
-					entity.id,
-					startDate,
-					endDate,
-					undefined,
-					definitionId,
-				)
-				.then(setScopedCumulativeStateTime);
-		},
-		[metricsService, entity.id, startDate, endDate],
+		(definitionId: number | null) =>
+			setCumulativeScopeChoice(
+				definitionId === null
+					? null
+					: { definitionId, question: selectedQuestion },
+			),
+		[selectedQuestion],
 	);
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: entity/window are reset triggers, not values read in the body — a scope chosen for one team/window must not leak into the next.
-	useEffect(() => {
-		setCumulativeScopeDefinitionId(null);
-		setScopedCumulativeStateTime(null);
-	}, [entity.id, startDate, endDate]);
 
 	const handleCumulativeStateTimePickerOpen = useCallback(() => {
 		if (candidatesRequestedRef.current) {
@@ -1553,19 +1543,7 @@ export const BaseMetricsView = <
 		});
 	}, [ownerType, metricsService, entity.id, startDate, endDate]);
 
-	const handleCumulativeStateTimeSelectionChange = useCallback(
-		(itemIds: number[]) => {
-			setSelectedItemIds(itemIds);
-			if (itemIds.length === 0) {
-				setNarrowedCumulativeStateTime(null);
-				return;
-			}
-			void fetchCumulativeStateTimeForScope(itemIds).then(
-				setNarrowedCumulativeStateTime,
-			);
-		},
-		[fetchCumulativeStateTimeForScope],
-	);
+	const handleCumulativeStateTimeSelectionChange = setSelectedItemIds;
 
 	const handleCumulativeStateTimeBarClick = async (stateName: string) => {
 		const activeItemIds =
@@ -1750,8 +1728,8 @@ export const BaseMetricsView = <
 		blockedStalenessThresholdDays,
 		cumulativeStateTime,
 		displayedCumulativeStateTime:
-			scopedCumulativeStateTime ??
-			narrowedCumulativeStateTime ??
+			cumulativeStateTimeForScope ??
+			cumulativeStateTimeForSelection ??
 			cumulativeStateTime,
 		cumulativeScopeDefinitionId,
 		onCumulativeScopeChange: handleCumulativeScopeChange,

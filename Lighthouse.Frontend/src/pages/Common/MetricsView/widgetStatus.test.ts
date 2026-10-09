@@ -179,15 +179,14 @@ describe("which widgets are behind the selected window", () => {
 });
 
 // The chosen Work Items and the chosen stretch are fetched apart from the totals, so each
-// arrives as an input of its own; the list of inputs gains them with that change.
+// arrives as an input of its own.
 const cumulativeTimeWith = (
-	narrowing: string,
+	narrowing: MetricsFetchKey,
 	state: FetchKeyState,
-): FetchKeyStates =>
-	({
-		cumulativeStateTime: answered,
-		[narrowing]: state,
-	}) as FetchKeyStates;
+): FetchKeyStates => ({
+	cumulativeStateTime: answered,
+	[narrowing]: state,
+});
 
 const notChosen = () => fetchKeyStateOf([onItsWay], false);
 
@@ -195,7 +194,9 @@ describe("Cumulative Time per State narrowed by the reader", () => {
 	const SELECTION = "cumulativeStateTimeSelection";
 	const STRETCH = "cumulativeStateTimeScope";
 
-	it.skip.each<[string, string, WidgetStatus, string, () => FetchKeyState]>([
+	it.skip.each<
+		[string, string, WidgetStatus, MetricsFetchKey, () => FetchKeyState]
+	>([
 		[
 			"Work Items",
 			"still being counted",

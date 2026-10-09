@@ -492,6 +492,18 @@ describe("categoryMetadata", () => {
 			}
 		});
 
+		it("asks for Cumulative Time per State narrowed to chosen Work Items or a chosen stretch on keys of their own", () => {
+			const narrowings: MetricsFetchKey[] = [
+				"cumulativeStateTimeSelection",
+				"cumulativeStateTimeScope",
+			];
+			expect(getMetricsFetchKeys()).toEqual(expect.arrayContaining(narrowings));
+			expect(getFetchRequirementsForWidget("stateTimeCumulative")).toEqual([
+				"cumulativeStateTime",
+				...narrowings,
+			]);
+		});
+
 		it("asks for the Throughput process behaviour chart on its own key, apart from the Cycle Time and Arrivals ones", () => {
 			expect(getFetchRequirementsForWidget("throughputPbc")).toContain(
 				"throughputPbc",
