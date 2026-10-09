@@ -1,5 +1,4 @@
 import { Grid } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
 import {
 	type ReactNode,
 	useCallback,
@@ -32,10 +31,7 @@ import WorkItemAgePercentiles from "../../../components/Common/Charts/WorkItemAg
 import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingChart";
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
-import {
-	metricsQueryOptions,
-	useMetricsData,
-} from "../../../hooks/useMetricsData";
+import { useMetricsData } from "../../../hooks/useMetricsData";
 import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
 import type { BlockedCountSnapshot } from "../../../models/BlockedCountSnapshot";
 import type { IStateMapping } from "../../../models/Common/StateMapping";
@@ -140,6 +136,10 @@ import {
 	useCategorySelection,
 	useVisitedCategories,
 } from "./useCategorySelection";
+import {
+	useCumulativeScopeChoice,
+	useCumulativeStateTimeCandidates,
+} from "./useCumulativeStateTimeChoices";
 import { useDateRange } from "./useDateRange";
 import { useShowTips } from "./useShowTips";
 import type { ViewDataPayload } from "./WidgetShell";
@@ -1359,22 +1359,10 @@ export const BaseMetricsView = <
 	);
 
 	const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
-	// A stretch is chosen for one window only and is dropped once the window changes, so it is
-	// never asked for the next window, and coming back to the old window does not bring it back.
-	const [cumulativeScopeChoice, setCumulativeScopeChoice] = useState<{
-		readonly definitionId: number;
-		readonly question: string;
-	} | null>(null);
-	if (
-		cumulativeScopeChoice !== null &&
-		cumulativeScopeChoice.question !== selectedQuestion
-	) {
-		setCumulativeScopeChoice(null);
-	}
-	const cumulativeScopeDefinitionId =
-		cumulativeScopeChoice?.question === selectedQuestion
-			? cumulativeScopeChoice.definitionId
-			: null;
+	const {
+		scopeDefinitionId: cumulativeScopeDefinitionId,
+		chooseScope: handleCumulativeScopeChange,
+	} = useCumulativeScopeChoice(selectedQuestion);
 
 	const {
 		blackoutPeriods,
@@ -1559,56 +1547,18 @@ export const BaseMetricsView = <
 	>([]);
 	const [drillDownOpen, setDrillDownOpen] = useState(false);
 
-	// The picker's Work Items are asked for only once the reader opens it, and again for each
-	// window it is opened in. A failure leaves the list empty and the chart as it was, because the
-	// chart's numbers do not depend on that list.
-	const [pickerOpenedFor, setPickerOpenedFor] = useState<string | null>(null);
-	const cumulativeCandidatesQuery = useQuery({
-		...metricsQueryOptions,
-		queryKey: [
-			"metrics",
-			"cumulativeStateTimeCandidates",
-			{
-				ownerType,
-				ownerId: entity.id,
-				from: formatLocalDate(startDate),
-				to: formatLocalDate(endDate),
-			},
-		] as const,
-		queryFn: async (): Promise<ICumulativeStateTimeCandidateRow[]> => {
-			const response =
-				ownerType === "team"
-					? await metricsService.getCumulativeStateTimeCandidatesForTeam(
-							entity.id,
-							startDate,
-							endDate,
-						)
-					: await metricsService.getCumulativeStateTimeCandidatesForPortfolio(
-							entity.id,
-							startDate,
-							endDate,
-						);
-			return response.items;
-		},
-		enabled: pickerOpenedFor === selectedQuestion,
+	const {
+		candidates: cumulativeCandidates,
+		candidatesLoaded: cumulativeCandidatesLoaded,
+		onPickerOpen: handleCumulativeStateTimePickerOpen,
+	} = useCumulativeStateTimeCandidates({
+		metricsService,
+		ownerType,
+		ownerId: entity.id,
+		startDate,
+		endDate,
+		selectedQuestion,
 	});
-	const cumulativeCandidates = cumulativeCandidatesQuery.data ?? [];
-	const cumulativeCandidatesLoaded = cumulativeCandidatesQuery.isSuccess;
-
-	const handleCumulativeScopeChange = useCallback(
-		(definitionId: number | null) =>
-			setCumulativeScopeChoice(
-				definitionId === null
-					? null
-					: { definitionId, question: selectedQuestion },
-			),
-		[selectedQuestion],
-	);
-
-	const handleCumulativeStateTimePickerOpen = useCallback(
-		() => setPickerOpenedFor(selectedQuestion),
-		[selectedQuestion],
-	);
 
 	const handleCumulativeStateTimeSelectionChange = setSelectedItemIds;
 
