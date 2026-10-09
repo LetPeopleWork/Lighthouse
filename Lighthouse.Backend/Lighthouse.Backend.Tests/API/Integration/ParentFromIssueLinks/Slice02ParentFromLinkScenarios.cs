@@ -12,7 +12,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
     /// The one thing inferred is which end of the link the parent sits on. Jira writes a link once and
     /// serves it from both ends, so the counterpart is the parent whichever end an item holds, and an
     /// instance where a Work Item names its Feature reads the same as one where a Feature names its Work
-    /// Items.
+    /// Items. Only when the phrase typed is the one a single end reads as is the reading narrowed to that
+    /// end, which is what a hierarchy drawn with one link type at every level needs.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
@@ -339,6 +340,72 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                     "A Feature still on the default size is one whose children were not found, and it carries the no-children warning while every forecast drawn from it is a guess at a number nobody measured.");
                 Assert.That(HowManyChildrenEachFeatureEndedUpWith(), Is.EquivalentTo(HowManyItemsLinkToEachFeature()),
                     "Counting the right number of children for the wrong Feature forecasts both of them wrong while looking entirely plausible on the screen.");
+            }
+        }
+
+        /// <summary>
+        /// A hierarchy drawn with one link type at every level: a child reads "is caused by" its parent, and
+        /// that parent reads "causes" each of its children. An item in the middle holds both ends, so only
+        /// the phrase that was typed can say which of its links leads up.
+        /// </summary>
+        [Test]
+        public async Task A_middle_item_holding_both_ends_of_the_link_type_takes_its_parent_from_the_label_that_was_typed()
+        {
+            TheHierarchyIsDrawnWithOneLinkTypeAtEveryLevel(TheLinkTypeEveryLevelIsDrawnWith);
+            TheParentOverrideNames(TheLinkTypeEveryLevelIsDrawnWith.Inward);
+
+            var refreshed = await TheTeamIsRefreshed();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TheParentOf(refreshed, TheMiddleItem), Is.EqualTo(TheTopItem),
+                    "An administrator who typed the phrase a child reads towards its parent said which way is up. Reading the links to its children as well leaves every item in the middle of the hierarchy with no parent at all.");
+                Assert.That(TheParentOf(refreshed, AChildOfTheMiddleItem), Is.EqualTo(TheMiddleItem),
+                    "The leaves were placed before this was fixed, and reading one direction must not cost them their parent.");
+                Assert.That(TheParentOf(refreshed, AnotherChildOfTheMiddleItem), Is.EqualTo(TheMiddleItem),
+                    "Every child of the middle item hangs under it, not only the first one read.");
+            }
+        }
+
+        /// <summary>
+        /// The type's own name points at neither end, so it goes on reading links both ways, exactly as
+        /// before. The middle item then has a parent and children to choose between, and is refused.
+        /// </summary>
+        [Test]
+        public async Task Typing_the_link_types_name_still_reads_its_links_both_ways()
+        {
+            TheHierarchyIsDrawnWithOneLinkTypeAtEveryLevel(TheSameLinkTypeUnderANameNeitherEndReads);
+            TheParentOverrideNames(TheSameLinkTypeUnderANameNeitherEndReads.Name);
+
+            var refreshed = await TheTeamIsRefreshed();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TheParentOf(refreshed, TheMiddleItem), Is.Empty,
+                    "A name says nothing about which end is the parent, and guessing one would quietly turn every hierarchy drawn the other way upside down.");
+                Assert.That(TheParentOf(refreshed, AChildOfTheMiddleItem), Is.EqualTo(TheMiddleItem),
+                    "Everyone who typed a type's name today gets the parents they get today.");
+            }
+        }
+
+        /// <summary>
+        /// Jira's own Causes type is named the same as the phrase its outward end reads. Somebody who typed
+        /// it meant the type, and reading only the outward ends would strip every child of its parent.
+        /// </summary>
+        [Test]
+        public async Task A_name_that_is_also_one_of_the_types_phrases_counts_as_the_name()
+        {
+            TheHierarchyIsDrawnWithOneLinkTypeAtEveryLevel(TheLinkTypeEveryLevelIsDrawnWith);
+            TheParentOverrideNames(TheLinkTypeEveryLevelIsDrawnWith.Name.ToUpperInvariant());
+
+            var refreshed = await TheTeamIsRefreshed();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TheParentOf(refreshed, TheMiddleItem), Is.Empty,
+                    "Read both ways, the middle item has a parent and children to choose between, and choosing would be a guess.");
+                Assert.That(TheParentOf(refreshed, AChildOfTheMiddleItem), Is.EqualTo(TheMiddleItem),
+                    "Reading only the outward ends would leave every leaf, which holds only an inward link, with no parent.");
             }
         }
     }

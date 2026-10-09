@@ -1700,7 +1700,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 : ParentSource.AFieldTheOverrideNames;
 
             var fromTheMatchingLinks = theOverride.NamesALinkType
-                ? issue.Fields.ResolveParentFromLinks(theOverride.LinkTypeName)
+                ? issue.Fields.ResolveParentFromLinks(theOverride.LinkTypeName, theOverride.Direction)
                 : default;
 
             var parentReference = ParentSourceSelector.TheParentOf(workItemQueryOwner, workItem, source, fromTheMatchingLinks);
@@ -1866,7 +1866,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 if (answeringTypes.Count == 1)
                 {
-                    customFieldReferences[reference] = ResolvedReference.ALinkType(answeringTypes[0].Name);
+                    customFieldReferences[reference] = ResolvedReference.ALinkType(
+                        answeringTypes[0].Name, answeringTypes[0].DirectionReadFrom(reference));
                 }
             }
 
@@ -2058,6 +2059,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             public bool AnswersTo(string reference)
                 => Reads(Name, reference) || Reads(Inward, reference) || Reads(Outward, reference);
 
+            /// <summary>
+            /// The phrase one end reads as says which way the parent lies; the name says nothing about it,
+            /// and wins when it is also one of the phrases, because Jira's own Causes type is named the
+            /// word its outward end reads. A phrase both ends share points nowhere either.
+            /// </summary>
+            public LinkDirection DirectionReadFrom(string reference)
+            {
+                var readsInward = Reads(Inward, reference);
+                var readsOutward = Reads(Outward, reference);
+
+                if (Reads(Name, reference) || readsInward == readsOutward)
+                {
+                    return LinkDirection.Both;
+                }
+
+                return readsInward ? LinkDirection.Inward : LinkDirection.Outward;
+            }
+
             private static bool Reads(string label, string reference)
                 => label.Length > 0 && string.Equals(label, reference, StringComparison.OrdinalIgnoreCase);
         }
@@ -2096,15 +2115,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// What one Additional Field reference turned out to name on this instance. The box takes a field
         /// name and an administrator may type a link type into it instead, and the two are read in
         /// entirely different places - so which of them arrived is carried here rather than left to be
-        /// guessed from a bare string that looks the same either way.
+        /// guessed from a bare string that looks the same either way. A link type is carried by its name,
+        /// which loses the phrase that was typed, so which end that phrase pointed at travels beside it.
         /// </summary>
-        private readonly record struct ResolvedReference(string FieldId, string LinkTypeName)
+        private readonly record struct ResolvedReference(string FieldId, string LinkTypeName, LinkDirection Direction)
         {
-            public static ResolvedReference Nothing => new(string.Empty, string.Empty);
+            public static ResolvedReference Nothing => new(string.Empty, string.Empty, LinkDirection.Both);
 
-            public static ResolvedReference AField(string fieldId) => new(fieldId, string.Empty);
+            public static ResolvedReference AField(string fieldId) => new(fieldId, string.Empty, LinkDirection.Both);
 
-            public static ResolvedReference ALinkType(string linkTypeName) => new(string.Empty, linkTypeName);
+            public static ResolvedReference ALinkType(string linkTypeName, LinkDirection direction)
+                => new(string.Empty, linkTypeName, direction);
 
             public bool NamesALinkType => LinkTypeName.Length > 0;
 

@@ -289,6 +289,42 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             }
         }
 
+        // --- One link type drawn at every level of a hierarchy ---
+
+        private const string TheTopItem = "TOP-1";
+
+        private const string TheMiddleItem = "MID-2";
+
+        private const string AChildOfTheMiddleItem = "LEAF-3";
+
+        private const string AnotherChildOfTheMiddleItem = "LEAF-4";
+
+        /// <summary>Shaped like the type Jira ships, whose name is also the phrase its outward end reads.</summary>
+        private static readonly JiraLinkType TheLinkTypeEveryLevelIsDrawnWith = new("Causes", "is caused by", "causes");
+
+        private static readonly JiraLinkType TheSameLinkTypeUnderANameNeitherEndReads =
+            TheLinkTypeEveryLevelIsDrawnWith with { Name = "Cause and effect" };
+
+        /// <summary>
+        /// The middle item and its two children, with the top of the hierarchy left out of what the Team
+        /// fetches. The instance defines only this type, because the stock types share its phrases and two
+        /// types answering one reference resolve to neither.
+        /// </summary>
+        private void TheHierarchyIsDrawnWithOneLinkTypeAtEveryLevel(JiraLinkType linkType)
+        {
+            linkTypesTheInstanceDefines.Clear();
+            linkTypesTheInstanceDefines.Add(linkType);
+
+            issuesTheInstanceServes.Add(AnIssue(
+                TheMiddleItem,
+                string.Empty,
+                linkType.LinkWhoseInwardIssueIs(TheTopItem),
+                linkType.LinkWhoseOutwardIssueIs(AChildOfTheMiddleItem),
+                linkType.LinkWhoseOutwardIssueIs(AnotherChildOfTheMiddleItem)));
+            issuesTheInstanceServes.Add(AnIssue(AChildOfTheMiddleItem, string.Empty, linkType.LinkWhoseInwardIssueIs(TheMiddleItem)));
+            issuesTheInstanceServes.Add(AnIssue(AnotherChildOfTheMiddleItem, string.Empty, linkType.LinkWhoseInwardIssueIs(TheMiddleItem)));
+        }
+
         private Task<RequestTally> WhatOneTeamRefreshAsksForWith(string reference) => WhatOneTeamRefreshCosts(reference);
 
         /// <summary>A refresh of a Team nobody has configured, which is what every Team did before this feature.</summary>

@@ -89,18 +89,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         ///
         /// Jira writes a link once and offers it from both ends, handing each issue a pointer to the
         /// other one - so an entry naming an outwardIssue sits on the issue holding the inward end, and
-        /// the other way round. Whichever end this issue is on, the parent is the one the entry names,
-        /// which is why an instance where a Work Item names its Feature and one where a Feature names its
-        /// Work Items are read the same way, and why nobody is asked to configure a direction.
+        /// the other way round. Read both ways, the parent is whichever issue the entry names, so an
+        /// instance where a Work Item names its Feature and one where a Feature names its Work Items read
+        /// alike without anybody configuring a direction.
+        ///
+        /// One link type drawn at every level breaks that: an item in the middle holds the link up to its
+        /// parent and the links down to its children. Typing the phrase one end reads as narrows the
+        /// reading to the entries handed to that end - Inward keeps those naming an inwardIssue, Outward
+        /// those naming an outwardIssue.
         ///
         /// Two links to the same issue are one parent; two links to different issues are not a parent to
         /// choose between, so both are reported and neither is taken.
         /// </summary>
-        public static ParentResolution ResolveParentFromLinks(this JsonElement fields, string linkTypeReference)
+        public static ParentResolution ResolveParentFromLinks(this JsonElement fields, string linkTypeReference, LinkDirection direction)
         {
             var counterparts = IssueLinksOf(fields)
                 .Where(link => LinkTypeAnswersTo(link, linkTypeReference))
-                .Select(CounterpartKeyOf)
+                .Select(link => CounterpartKeyOf(link, direction))
                 .Where(key => key.Length > 0)
                 .Distinct(StringComparer.Ordinal)
                 .ToList();
@@ -160,11 +165,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private static bool Reads(string label, string reference)
             => label.Length > 0 && label.Equals(reference, StringComparison.OrdinalIgnoreCase);
 
-        private static string CounterpartKeyOf(JsonElement link)
+        private static string CounterpartKeyOf(JsonElement link, LinkDirection direction)
         {
+            if (direction == LinkDirection.Inward)
+            {
+                return KeyOf(link, IssueLinkInwardIssue);
+            }
+
             var outwardEnd = KeyOf(link, IssueLinkOutwardIssue);
 
-            return outwardEnd.Length > 0 ? outwardEnd : KeyOf(link, IssueLinkInwardIssue);
+            if (direction == LinkDirection.Outward || outwardEnd.Length > 0)
+            {
+                return outwardEnd;
+            }
+
+            return KeyOf(link, IssueLinkInwardIssue);
         }
 
         private static string LabelOf(JsonElement link, string labelProperty)
