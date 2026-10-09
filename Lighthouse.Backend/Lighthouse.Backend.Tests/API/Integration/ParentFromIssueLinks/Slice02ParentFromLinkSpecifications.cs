@@ -36,6 +36,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
         private const string TheChildWithNothingMatching = "PROJ-8";
 
+        private const string AnotherChildOfTheParent = "PROJ-9";
+
         private const string TheParent = "EPIC-1";
 
         /// <summary>The issue the Team scenarios call a parent, seen again as the record a Portfolio refreshes.</summary>
@@ -305,24 +307,38 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         private static readonly JiraLinkType TheSameLinkTypeUnderANameNeitherEndReads =
             TheLinkTypeEveryLevelIsDrawnWith with { Name = "Cause and effect" };
 
+        private static readonly JiraLinkType TheLinkTypeDrawnFromChildToParent = new("Hierarchy", "is parent of", "is child of");
+
+        private void TheInstanceDefinesOnly(JiraLinkType linkType)
+        {
+            linkTypesTheInstanceDefines.Clear();
+            linkTypesTheInstanceDefines.Add(linkType);
+        }
+
         /// <summary>
         /// The middle item and its two children, with the top of the hierarchy left out of what the Team
         /// fetches. The instance defines only this type, because the types the other scenarios use share its
         /// "causes" phrase, and two types answering one reference resolve to neither.
         /// </summary>
         private void TheHierarchyIsDrawnWithOneLinkTypeAtEveryLevel(JiraLinkType linkType)
+            => TheHierarchyIsDrawn(linkType, aLinkUpTo: linkType.LinkWhoseInwardIssueIs, aLinkDownTo: linkType.LinkWhoseOutwardIssueIs);
+
+        /// <summary>The same three items, each holding the outward end of the link towards its parent.</summary>
+        private void TheHierarchyIsDrawnTheOtherWayRound(JiraLinkType linkType)
+            => TheHierarchyIsDrawn(linkType, aLinkUpTo: linkType.LinkWhoseOutwardIssueIs, aLinkDownTo: linkType.LinkWhoseInwardIssueIs);
+
+        private void TheHierarchyIsDrawn(JiraLinkType linkType, Func<string, string> aLinkUpTo, Func<string, string> aLinkDownTo)
         {
-            linkTypesTheInstanceDefines.Clear();
-            linkTypesTheInstanceDefines.Add(linkType);
+            TheInstanceDefinesOnly(linkType);
 
             issuesTheInstanceServes.Add(AnIssue(
                 TheMiddleItem,
                 string.Empty,
-                linkType.LinkWhoseInwardIssueIs(TheTopItem),
-                linkType.LinkWhoseOutwardIssueIs(AChildOfTheMiddleItem),
-                linkType.LinkWhoseOutwardIssueIs(AnotherChildOfTheMiddleItem)));
-            issuesTheInstanceServes.Add(AnIssue(AChildOfTheMiddleItem, string.Empty, linkType.LinkWhoseInwardIssueIs(TheMiddleItem)));
-            issuesTheInstanceServes.Add(AnIssue(AnotherChildOfTheMiddleItem, string.Empty, linkType.LinkWhoseInwardIssueIs(TheMiddleItem)));
+                aLinkUpTo(TheTopItem),
+                aLinkDownTo(AChildOfTheMiddleItem),
+                aLinkDownTo(AnotherChildOfTheMiddleItem)));
+            issuesTheInstanceServes.Add(AnIssue(AChildOfTheMiddleItem, string.Empty, aLinkUpTo(TheMiddleItem)));
+            issuesTheInstanceServes.Add(AnIssue(AnotherChildOfTheMiddleItem, string.Empty, aLinkUpTo(TheMiddleItem)));
         }
 
         private Task<RequestTally> WhatOneTeamRefreshAsksForWith(string reference) => WhatOneTeamRefreshCosts(reference);

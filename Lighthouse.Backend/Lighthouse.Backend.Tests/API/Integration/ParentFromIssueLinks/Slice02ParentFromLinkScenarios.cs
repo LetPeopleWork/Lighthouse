@@ -361,9 +361,55 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                 Assert.That(TheParentOf(refreshed, TheMiddleItem), Is.EqualTo(TheTopItem),
                     "An administrator who typed the phrase a child reads towards its parent said which way is up. Reading the links to its children as well leaves every item in the middle of the hierarchy with no parent at all.");
                 Assert.That(TheParentOf(refreshed, AChildOfTheMiddleItem), Is.EqualTo(TheMiddleItem),
-                    "The leaves were placed before this was fixed, and reading one direction must not cost them their parent.");
+                    "A leaf holds only the link up to its parent, and reading one direction must not cost it that parent.");
                 Assert.That(TheParentOf(refreshed, AnotherChildOfTheMiddleItem), Is.EqualTo(TheMiddleItem),
                     "Every child of the middle item hangs under it, not only the first one read.");
+            }
+        }
+
+        /// <summary>
+        /// The same hierarchy drawn the other way round: every item holds the outward end towards its parent,
+        /// reading "is child of" it. Typing that phrase points up through the outward ends instead.
+        /// </summary>
+        [Test]
+        public async Task A_middle_item_takes_its_parent_from_the_outward_label_when_that_is_the_one_typed()
+        {
+            TheHierarchyIsDrawnTheOtherWayRound(TheLinkTypeDrawnFromChildToParent);
+            TheParentOverrideNames(TheLinkTypeDrawnFromChildToParent.Outward);
+
+            var refreshed = await TheTeamIsRefreshed();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TheParentOf(refreshed, TheMiddleItem), Is.EqualTo(TheTopItem),
+                    "The outward phrase says the parent sits on the outward end, and reading the inward ends instead hands the middle item its children to choose between.");
+                Assert.That(TheParentOf(refreshed, AChildOfTheMiddleItem), Is.EqualTo(TheMiddleItem),
+                    "A leaf holds only the outward link up to its parent, so reading the inward ends leaves it with none.");
+                Assert.That(TheParentOf(refreshed, AnotherChildOfTheMiddleItem), Is.EqualTo(TheMiddleItem),
+                    "Every child of the middle item hangs under it, not only the first one read.");
+            }
+        }
+
+        /// <summary>
+        /// A type reading the same phrase in both directions, as Jira's stock Relates type does. Its phrase
+        /// points at neither end, so it reads links both ways, as it always has.
+        /// </summary>
+        [Test]
+        public async Task A_phrase_both_ends_of_the_link_type_share_reads_its_links_both_ways()
+        {
+            TheInstanceDefinesOnly(AnotherLinkTypeTheInstanceDefines);
+            TheParentOverrideNames(AnotherLinkTypeTheInstanceDefines.Inward);
+            TheIssueHasOneLinkWhoseOutwardIssueIs(TheChild, AnotherLinkTypeTheInstanceDefines, TheParent);
+            TheIssueHasOneLinkWhoseInwardIssueIs(AnotherChildOfTheParent, AnotherLinkTypeTheInstanceDefines, TheParent);
+
+            var refreshed = await TheTeamIsRefreshed();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TheParentOf(refreshed, TheChild), Is.EqualTo(TheParent),
+                    "A phrase both ends read says nothing about which way is up, and narrowing it to one end would strip the parent from every item holding the other.");
+                Assert.That(TheParentOf(refreshed, AnotherChildOfTheParent), Is.EqualTo(TheParent),
+                    "Which end of a symmetric link an item holds is not something an administrator chose, so both ends must lead to the parent.");
             }
         }
 
