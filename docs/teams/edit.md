@@ -274,17 +274,73 @@ Wait states are purely a *metrics* concept — they describe how to interpret ti
 Start by marking obvious queues such as *Ready for Review*, *Waiting for Test*, or any column whose name implies a hand-off. A low flow efficiency is not a failure — it is a conversation starter about where work waits.
 
 ## Refinement
-Refinement states tell Lighthouse which of your states hold work your team is still refining: clarifying, slicing or sizing it before anybody starts on it. Lighthouse lists the Work Items in those states on the [Refinement tab](./detail.html#refinement) of the Team.
+The Refinement settings tell Lighthouse which Work Items your Team is still refining, when the Team refines, and when a Work Item counts as ready. Lighthouse uses them on the Team's [Refinement tab](./detail.html#refinement) to say how many Work Items to refine before the next Refinement and to collect sizing votes.
+
+![Refinement Settings](../assets/features/refinement_settings.png)
+
+Everything in this section is part of every Lighthouse installation; none of it needs a license. It is saved with the rest of the Team's settings.
+
+{: .note}
+Refinement settings only decide what the Refinement tab shows. They do not change Cycle Time, Throughput, WIP, forecasts or any other metric.
+
+### Refinement States
+Refinement states tell Lighthouse which of your states hold work your team is still refining: clarifying, slicing or sizing it before anybody starts on it. Lighthouse lists the Work Items in those states on the Refinement tab.
 
 Add a state by typing in the *New Refinement State* field and picking one of the suggestions; each chosen state shows as a chip, and the cross on a chip removes it. The suggestions are your Team's **To Do** and **Doing** states, including the names of your [state mappings](#state-mappings); anything else cannot be added. With no chips left, the Team has no refinement states and its Refinement tab switches off.
 
 If you later take a chosen state out of To Do and Doing (or rename the state mapping it came from), it is removed from the refinement states when you save. Add the new name again if you still want it.
 
-{: .note}
-Refinement states only decide what the Refinement tab lists. They do not change Cycle Time, Throughput, WIP, forecasts or any other metric.
-
 {: .recommendation}
 Pick the states your team refines from — typically the top of the backlog such as *Backlog*, *Next* or *Analysing*.
+
+### Readiness by Votes
+Team members vote on every Work Item in refinement: *Yes*, *Yes, if…* or *No* to "is this doable within our SLE?". These fields decide when the votes make a Work Item **Ready**:
+
+- **Yes votes needed** (default 3): how many Yes votes a Work Item needs. A "Yes, if…" counts as a Yes. At least one is needed ("At least one Yes vote is needed").
+- **Voters needed** (default 3): how many people must have voted at all, whatever they answered. It cannot be lower than the Yes votes needed ("Voters needed cannot be fewer than Yes votes needed").
+
+Under **Send to discussion when**, two rules send a Work Item to discussion instead. Each has its own checkbox and threshold, either one is enough, and both are on by default:
+
+- **1 or more No votes**: a single doubt is worth talking about.
+- **2 or more "Yes, if…" votes**: several conditions usually mean the Work Item is not clear yet.
+
+A Work Item that meets a discussion rule shows *Needs discussion*, however many Yes votes it has. A rule that is on needs a threshold of at least 1 ("A discussion rule needs at least 1 vote"); untick it to switch it off. Ticking it again brings back the threshold it had.
+
+Without [stages](#stages-optional), the Work Items the votes make Ready are the Team's ready count on the Refinement tab.
+
+### Stages (optional)
+If your work tracking system already tells you how far refinement has got (a field, a tag or a state that means *ready*), you can let Lighthouse read the stage from there instead of from the votes. Two optional rules, built with the same rule editor as [Exclude Items for Throughput](#how-the-rule-set-is-defined), decide a Work Item's stage:
+
+- **Ready when** — the Work Items in refinement that are Ready.
+- **Being refined when** — the Work Items in refinement that are being worked on.
+
+Anything neither rule matches is *Waiting*. When both rules match a Work Item, Ready wins. The rules are only offered once the Team has been saved, because the fields they can look at come from the Team's work tracking system connection.
+
+With at least one stage rule:
+
+- The Refinement tab shows a **Stage** column and a breakdown such as "2 Ready · 3 Being refined · 4 Waiting".
+- The ready count is the Work Items whose stage is Ready. Votes are still taken, but they never make a Work Item Ready, and they never hold back one whose stage is Ready.
+- When somebody has voted and the votes disagree with the stage, the row shows a warning, so the Team can see which of the two is out of date.
+
+Remove every condition from both rules to go back to readiness by votes.
+
+### Refinement Cadence
+Set the days the Team refines on, in the same way as a recurring blackout rule: tick the weekdays, and set **Repeat every (weeks)** (1 for every week, up to 52). Above 1, a **Starting week** is needed: pick any day in a week the Team refines in, and the weeks are counted from there.
+
+The Refinement tab then shows when the next Refinement is and how many Work Items to refine before it. A Refinement that falls on a [blackout day](../settings/configuration.html#blackout-periods--recurring-rules) is skipped. With no weekday ticked, the Team has no cadence, and the tab shows "No Refinement cadence" instead of the number.
+
+### Work Items Needed Before the Next Refinement
+The Refinement tab compares the ready Work Items with a range: how many Work Items the Team is likely to pull between the next Refinement and the one after, from a How Many forecast over that cycle with the Team's Throughput. These two fields set where the ends of that range are read:
+
+- **Low end likelihood** (default 50%): the Team pulls at least the low end with (100 − this)% likelihood. At the default, 50%, the low end is the median of the forecast.
+- **High end likelihood** (default 85%): the Team pulls more than the high end with only (100 − this)% likelihood. At the default that is 15%.
+
+Both ends move the same way: the higher the value, the more Work Items that end of the range asks for. The "#" column and the "enough for the next Refinement" line on the tab count up to the high end.
+
+Each likelihood is between 50% and 95% ("Between 50% and 95%."), and the low end must stay below the high end, for example "The low end (90%) must be below the high end (85%)." Nothing is saved while either message shows. The info icon next to the heading explains the range with your current values.
+
+{: .recommendation}
+Keep the defaults until you have a reason to change them. Raise the high end if running out of refined work before a Refinement hurts your Team more than refining a little too much; lower it if refined work tends to go stale while it waits.
 
 ## Cycle Times (Premium)
 Alongside the built-in Cycle Time, you can define **named cycle times** — additional start→end measurements over your workflow. A "Lead Time" from *Backlog* to *Done*, or an "Analysis to Done" from your analysis state onwards, can be tracked side by side.

@@ -82,7 +82,12 @@ Before a team starts on a Work Item, it usually refines it: clarifies what is ne
 
 A Team admin marks those states as the Team's **refinement states**, chosen from its *To Do* and *Doing* states. The Team's **Refinement** tab then lists every Work Item in those states, in backlog order, so the team sees what is waiting to be refined. Refinement states do not change any metric or forecast.
 
-See [Team Settings](../teams/edit.html#refinement) and [Team Details](../teams/detail.html#refinement) for how to set it up and what the tab shows. More support for running refinement is planned.
+Lighthouse then helps with the two questions every refinement raises:
+
+- **How much should we refine?** Refine enough, then stop. Once the Team says when it refines, Lighthouse runs a How Many forecast on the Team's Throughput over one Refinement cycle (the working days between the next Refinement and the one after it) and turns it into a range, for example 5–8 Work Items. Whatever the next Refinement leaves ready has to last that long. The tab compares the Work Items already ready with that range and says whether the Team is **below** it (refine more), **in** it (nothing more is needed) or **above** it (stop refining: refined work that waits goes stale), and it marks which Work Items are needed first.
+- **Is this Work Item small enough?** Every Team member answers one question per Work Item: is it doable within our [SLE](../teams/edit.html#service-level-expectation)? The answer is *Yes*, *Yes, if…* (with the condition) or *No*, and anyone can add a comment or ask a question. Votes are open all the time, so nobody has to wait for a meeting. Enough Yes votes make a Work Item Ready; a No or several conditions send it to discussion instead. A Team whose work tracking system already records when a Work Item is ready can let rules decide that instead, and the votes then serve as a second opinion.
+
+See [Team Settings](../teams/edit.html#refinement) and [Team Details](../teams/detail.html#refinement) for how to set it up and what the tab shows.
 
 # Portfolios
 

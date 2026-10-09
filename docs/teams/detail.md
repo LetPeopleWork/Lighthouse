@@ -167,10 +167,16 @@ Below the summary, a table shows every scenario: rows are sampling windows group
 - When deciding whether to change the sampling window: if yours didn't hold up while others did, it's worth trying one of those.
 - To show someone *why* a forecast deserves trust, instead of asking them to take the Monte Carlo Simulation on faith.
 
-
 # Refinement
 
-The **Refinement** tab, between *Metrics* and *Settings*, lists the Work Items that are currently in the Team's [refinement states](./edit.html#refinement). Everyone who can see the Team can open it; opening it changes nothing.
+The **Refinement** tab, between *Metrics* and *Settings*, lists the Work Items that are currently in the Team's [refinement states](./edit.html#refinement) and helps the Team answer two questions before its next Refinement:
+
+- **How much should we refine?** Enough to last until the Refinement after the next one, and then stop. Lighthouse works that number out from the Team's own Throughput.
+- **Is this Work Item small enough?** Everybody votes on whether a Work Item is doable within the Team's SLE, at any time and without a meeting, and enough Yes votes make it Ready.
+
+Everyone who can see the Team can open the tab, vote and comment. Opening it changes nothing.
+
+![Refinement](../assets/features/refinement.png)
 
 ## When the Tab is Switched Off
 
@@ -181,22 +187,117 @@ Until the Team has at least one refinement state, the tab is shown but switched 
 
 As soon as refinement states are configured and saved, the tab switches on immediately.
 
-## What the Tab Shows
+When nothing is in the refinement states, the tab says "No Work Items in Refinement states right now" instead of showing an empty table.
 
-The tab displays:
+## The Heading
 
-- **A heading** counting the Work Items in refinement, for example "3 Work Items in Refinement".
-- **A table** with search, filter and column controls, and these columns:
-  - **Work Item Name** — the Work Item's ID and name, linking to it in your work tracking system.
-  - **Parent** — the parent Feature or Work Item, if any, or "No Parent". The name links to that parent in your work tracking system.
-  - **State** — the current state of the Work Item.
-- When nothing is in the refinement states, the tab says "No Work Items in Refinement states right now" instead of showing an empty table.
+The heading says how many Work Items are ready. What counts as *ready* depends on whether the Team has [stage rules](./edit.html#stages-optional):
 
-## Sorting and Filtering
+- **Without stage rules**, the votes decide: the heading reads, for example, "9 Work Items in Refinement · 2 ready by votes".
+- **With stage rules**, your work tracking system decides: the heading breaks the Work Items down by stage, for example "2 Ready · 3 Being refined · 4 Waiting". Votes are still taken on every Work Item, but they never make a Work Item Ready, and they never hold back one whose stage is Ready.
 
-The table has the same search, filter and column controls as the other lists in Lighthouse.
+On the right of the heading, a Team without a [Refinement cadence](./edit.html#refinement-cadence) reads **No Refinement cadence**. Its info icon tells you how to get one: if you can change the Team's settings it points you to *Settings*, otherwise it tells you that a Team admin can set one.
+
+## How Many to Refine
+
+Once the Team has a Refinement cadence, a message under the heading says whether the Team has refined enough. Its title names the next Refinement, for example **Next Refinement: Thu 8 Oct · in 4 days** ("tomorrow" when it is one day away). The next Refinement is always after today: on a Refinement day, the message already looks ahead to the following one.
+
+The message compares the number of ready Work Items with a **range**: how many Work Items the Team is likely to pull between the next Refinement and the one after it. Whatever the next Refinement leaves ready has to last that long. There are three outcomes:
+
+- **Below the range** (orange): "3 ready — below the range of 5–8 Work Items Team Gravity is likely to pull until the Refinement after. Refine 2 to 5 more."
+- **In the range** (green): "6 ready — in the range of 5–8. Nothing more needs refining by then."
+- **Above the range** (orange as well): "11 ready — above the range of 5–8. Stop refining: nothing more is needed by then." Having too much ready is as much a reason to act as having too little: refined work that waits goes stale.
+
+When both ends of the range are the same number, the message names that one number instead of a range, for example "Refine 2 more".
+
+The info icon at the end of the message says where the range comes from, for example: "Based on Team Gravity's Throughput: a How Many forecast for the 5 working days between the Refinements on Wed 8 Oct and Wed 15 Oct." It is the same [How Many forecast](#how-many) you get on the Forecasts tab:
+
+- It uses the Team's Throughput: every Work Item the Team finished, not only those that went through refinement, with the same history and [throughput filter](./edit.html#exclude-items-for-throughput-premium) as the Team's other forecasts.
+- It covers **one Refinement cycle**: the working days after the next Refinement, up to and including the one after it. A Team that refines every Wednesday gets Thursday to the following Wednesday, whichever day of the week you look; with weekends set up as blackout days, that is 5 working days. A Team that refines on more than one weekday sees the number follow the gap between its next two Refinements. On a Refinement day itself, the cycle runs from today to the next Refinement, and the message says "…likely to pull until the next Refinement".
+- Days in a [blackout period](../settings/configuration.html#blackout-periods--recurring-rules) are not working days, and a Refinement that falls on a blackout day is skipped: the cycle runs to the next Refinement that actually happens. Weekends only count as non-working days when a blackout rule says so, exactly as in the Team's other forecasts.
+- The low end is the number the Team pulls at least with 50% likelihood, and the Team pulls more than the high end with only 15% likelihood. A Team admin can [change both likelihoods](./edit.html#work-items-needed-before-the-next-refinement).
+
+Work Items the Team pulls before the next Refinement are fine: they leave refinement, the ready count drops, and the number still to refine goes up on its own.
+
+When the Team does not have enough history to forecast yet, the message says so instead ("Not enough data yet — need at least 5 days with completed items to forecast.").
+
+{: .note}
+The range has an upper end on purpose. "Refine 2 to 5 more" is a target to stop at, not permission to build a large ready queue.
+
+## The Work Items Needed First
+
+While the message shows a range, a **#** column in front of the Work Item numbers the rows from 1 up to the high end of the range. A line after the last numbered row reads **"enough for the next Refinement (85%) · not needed before then"**, and the rows below it are shown muted and without a number. The percentage is the high-end likelihood.
+
+The numbering follows the order the rows are **shown in**, not the backlog order: if your backlog order is not the order you want to refine in, sort by another column and the first rows as shown are numbered. When fewer Work Items are in refinement than are needed, the line after the last row reads, for example, "All 6 Work Items in Refinement are needed before the next Refinement."
+
+## The Table
+
+The table has the same search, filter and column controls as the other lists in Lighthouse, and these columns:
+
+- **#** — the rows needed before the next Refinement (see above); only shown while there is a range.
+- **Work Item Name** — the Work Item's ID and name, linking to it in your work tracking system.
+- **Parent** — the parent Feature or Work Item, if any, or "No Parent". The name links to that parent in your work tracking system.
+- **State** — the current state of the Work Item.
+- **Stage** — *Ready*, *Being refined* or *Waiting*; only shown when the Team has stage rules.
+- **Doable within 7 days?** — your own vote (see [Voting](#voting)). The header asks the question every vote answers, and its info icon says where the number comes from.
+- **Votes** — how many people have voted, for example "No votes", "1 vote" or "3 votes", with a speech-bubble icon when somebody wrote something. Click it to open [Votes and comments](#votes-and-comments).
+- **Readiness** (called **Votes say** when the Team has stage rules) — where the votes stand against the Team's [readiness rules](./edit.html#readiness-by-votes):
+  - *Ready* — enough Yes votes from enough voters.
+  - *2 more Yes needed* — not enough Yes votes yet.
+  - *1 more voter needed* — enough Yes votes, but not enough people have voted.
+  - *Needs discussion* — enough No or "Yes, if…" votes that the Team should talk about this Work Item.
+- **Warnings** — a warning icon when the row needs attention, and nothing at all on a row that does not. Hover it to read why:
+  - "Somebody asked a question and has not voted yet."
+  - "The stage says Ready, but the votes don't agree yet." or "The votes say Ready, but the stage is still Waiting." (only with stage rules, and only once somebody has voted: no votes means no opinion, so there is nothing to disagree with).
+
+  Sort by this column to bring every row with a warning together.
 
 **Default sort order**: Work Items are ordered by their backlog rank (the order in your work tracking system). Clicking a column header sorts by that column; clicking again reverses the sort. To return to backlog order, clear the sort.
 
-**Clicking a row**: Rows do not open directly from the Refinement tab — the Work Item name and Parent name are links that open in your work tracking system.
+**Clicking a row**: Rows do not open a detail page. The Work Item name and Parent name are links that open in your work tracking system, the vote buttons cast your vote, and the Votes count opens Votes and comments.
 
+## Voting
+
+Each vote answers one question: **is this Work Item doable within the Team's SLE?** The question heads the vote column with the Team's own number of days:
+
+| The Team has | The header asks | Its info icon says |
+|---|---|---|
+| an [SLE](./edit.html#service-level-expectation) of 75% in 7 days | Doable within 7 days? | SLE 75% of work items in 7 days or less |
+| no SLE | Doable within 12 days? | No SLE set, based off 85% of historical cycle time |
+| no SLE, and nothing finished yet | Doable within our SLE? | No SLE is set and no Work Items have finished yet |
+
+Without an SLE, Lighthouse falls back to the 85th percentile of the Team's Cycle Time over its throughput history window. Setting an SLE gives every voter a number the Team has agreed on.
+
+Every row has three answers:
+
+- **Yes** — doable within the SLE. One click records it.
+- **Yes, if…** — doable, but only if something is true first. Clicking it opens a small *Yes, if…* dialog that asks for the condition ("What has to be true for a Yes?"); *Vote* stays disabled until you write one. A "Yes, if…" counts as a Yes towards Ready, and the condition shows in Votes and comments.
+- **No** — not doable within the SLE as it stands. One click records it.
+
+Voting is open on every Work Item in refinement, all the time; there is no round to start or close. Your answer stays pressed. Click another answer to change your vote, or click your pressed answer again to **take your vote back** (its tooltip reads "Click again to take back your vote"). The count, the split and the readiness update at once.
+
+Every vote is visible to everybody, whether they have voted or not: the table shows only the count, and who voted what is one click away in Votes and comments.
+
+### Who You Vote As
+
+- **With [authentication](../Installation/authentication.html) on**, your vote is cast under your signed-in account. Lighthouse asks for nothing. If your sign-in is not linked to a person in Lighthouse, the vote is refused with "Your sign-in isn't linked to a person in Lighthouse, so it can't vote. Ask an admin to link your account."
+- **Without authentication**, your first vote (or comment) asks **Who is voting?** for your name, which is "Kept in this browser only." Your votes are cast under that name from this browser, and you can change it later in Votes and comments. Names are not checked, so on a shared computer people should vote from their own browser.
+
+{: .note}
+Voting, comments and readiness are available to every Lighthouse installation. Votes under a verified account need authentication, which is a [Premium](../licensing/licensing.html#licensed-features) feature.
+
+## Votes and Comments
+
+Clicking a Work Item's vote count opens **Votes and comments**.
+
+![Votes and comments](../assets/features/refinement_comments.png)
+
+- **The split** at the top, for example "2 Yes · 1 Yes, if… · 0 No". Hover or focus a number to see who is behind it.
+- **What people wrote**, oldest first, each with who wrote it and the day: comments, and the condition of every "Yes, if…" vote (shown as "Ana Lima · Yes, if…"). Votes without words are not listed again; the split already shows them. Until somebody writes something, the list reads "No comments yet."
+- **Add a comment** opens a box to write in; *Send* posts it. Use it to give the reason for your vote, or to ask something. A comment from somebody who has not voted is marked as an **open question**, and the row shows a warning, until that person votes.
+- Without authentication, the footer shows "Voting as Ana Lima" with **Change your name**.
+
+Comments cannot be edited or deleted. A comment is at most 2,000 characters.
+
+{: .note}
+If a Work Item leaves refinement while you have it open, your vote or comment is refused with "This work item is no longer in refinement." If many votes or comments come from one browser in a short time, Lighthouse asks you to try again in a minute.
