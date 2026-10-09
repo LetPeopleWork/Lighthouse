@@ -23,9 +23,9 @@ journeys:
 
     steps:
       - step: Open a Team or Portfolio metrics dashboard
-        sees: every widget of the category in its final place, a spinner in each frame (slice 02)
+        sees: every widget of the category in its final place, a spinner in each frame (slice 02); Estimation vs. Cycle Time and Feature Size appear only once their data says to show them, as today
       - step: Pick a preset, a date, or step the window
-        sees: every chart not yet showing the selected window dims with a spinner over it; the header stays usable (slice 01)
+        sees: every chart not yet showing the selected window dims with a spinner over it; the header stays usable (slice 01b)
       - step: Wait
         sees: each chart returns at full strength as its own data for the selected window lands
       - step: Change the window again before the first answers land

@@ -3,13 +3,23 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
+import ThroughputChartFilterToggle from "../../../components/Common/Charts/ThroughputChart/ThroughputChartFilterToggle";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
-import WidgetShell, { type WidgetShellProps } from "./WidgetShell";
+import WidgetShell, {
+	COULD_NOT_LOAD_MESSAGE,
+	type WidgetShellProps,
+} from "./WidgetShell";
 import { useReportWidgetStatus, type WidgetStatus } from "./widgetStatus";
 
 vi.mock("../../../components/Common/WorkItemsDialog/WorkItemsDialog", () => ({
 	default: ({ open }: { open: boolean }) =>
 		open ? <div data-testid="work-items-dialog" /> : null,
+}));
+
+vi.mock("../../../services/TerminologyContext", () => ({
+	useTerminology: () => ({
+		getTerm: (key: string) => (key === "throughput" ? "Throughput" : key),
+	}),
 }));
 
 const COULD_NOT_LOAD =
@@ -67,6 +77,18 @@ function expectOutOfSight(testId: string) {
 	}
 }
 
+function fadedAncestorOf(element: HTMLElement): HTMLElement | null {
+	for (
+		let node: HTMLElement | null = element;
+		node !== null && node !== document.body;
+		node = node.parentElement
+	) {
+		const opacity = getComputedStyle(node).opacity;
+		if (opacity !== "" && Number(opacity) < 1) return node;
+	}
+	return null;
+}
+
 describe("a chart's frame while its data is current", () => {
 	it("a frame left at its defaults shows its chart and header as before", () => {
 		renderFrame();
@@ -83,13 +105,13 @@ describe("a chart's frame while its data is current", () => {
 		expect(frame()).not.toHaveAttribute("aria-busy", "true");
 	});
 
-	it.skip("a chart that has its data shows at full strength with nothing over it", () => {
+	it.skip("a chart that has its data shows at full strength with nothing over it", async () => {
 		renderFrame({ status: "ready", hasContentToDim: true });
 
 		expect(frame()).toHaveAttribute("data-widget-status", "ready");
-		expect(body()).not.toHaveAttribute("inert");
 		expect(within(frame()).queryByRole("progressbar")).not.toBeInTheDocument();
 		expect(screen.getByTestId(`widget-view-data-${KEY}`)).toBeEnabled();
+		await userEvent.setup().click(screen.getByTestId("the-chart"));
 	});
 });
 
@@ -106,19 +128,46 @@ describe("a chart's frame while it is behind the selected window", () => {
 		});
 	});
 
-	it("keeps the title, rating and trend at full strength", () => {
+	it("keeps the title, rating and trend at full strength, outside anything that is faded", () => {
 		renderFrame({ status: "loading", hasContentToDim: true });
 
-		expect(screen.getByText("Throughput Run Chart")).toBeInTheDocument();
-		expect(screen.getByTestId(`widget-rag-${KEY}`)).toBeInTheDocument();
-		expect(screen.getByTestId(`widget-trend-${KEY}`)).toBeInTheDocument();
+		for (const headerPart of [
+			screen.getByText("Throughput Run Chart"),
+			screen.getByTestId(`widget-rag-${KEY}`),
+			screen.getByTestId(`widget-trend-${KEY}`),
+		]) {
+			expect(fadedAncestorOf(headerPart)).toBeNull();
+		}
 	});
 
-	it.skip("lets nobody hover or click the dimmed chart, nor open its data", () => {
+	it.skip("lets nobody point at the dimmed chart, nor open its data", async () => {
 		renderFrame({ status: "loading", hasContentToDim: true });
 
-		expect(body()).toHaveAttribute("inert");
+		await expect(
+			userEvent.setup().click(screen.getByTestId("the-chart")),
+		).rejects.toThrow(/pointer-events: none/);
 		expect(screen.getByTestId(`widget-view-data-${KEY}`)).toBeDisabled();
+	});
+
+	it("a switch inside the chart still works while the chart is loading", async () => {
+		const onFilterChange = vi.fn();
+		renderFrame(
+			{ status: "loading", hasContentToDim: true },
+			<div>
+				<div data-testid="the-chart">chart</div>
+				<ThroughputChartFilterToggle
+					isPremium
+					hasFilter
+					onChange={onFilterChange}
+				/>
+			</div>,
+		);
+
+		await userEvent
+			.setup()
+			.click(screen.getByLabelText("Use filtered Throughput"));
+
+		expect(onFilterChange).toHaveBeenCalledWith(true);
 	});
 
 	it("still explains the chart when the reader asks", async () => {
@@ -148,7 +197,7 @@ describe("a chart's frame while it is behind the selected window", () => {
 	});
 
 	it.skip.each(["light", "dark"] as const)(
-		"looks the same in the %s theme",
+		"is dimmed to 40 percent under a spinner in the %s theme",
 		(mode) => {
 			render(
 				<ThemeProvider theme={createTheme({ palette: { mode } })}>
@@ -171,6 +220,10 @@ describe("a chart's frame while it is behind the selected window", () => {
 });
 
 describe("a chart's frame when its data could not be loaded", () => {
+	it("the could-not-load message reads exactly as agreed", () => {
+		expect(COULD_NOT_LOAD_MESSAGE).toBe(COULD_NOT_LOAD);
+	});
+
 	it.skip("removes the chart and says so in plain words, with a warning icon", () => {
 		renderFrame({ status: "error", hasContentToDim: true });
 
@@ -180,7 +233,7 @@ describe("a chart's frame when its data could not be loaded", () => {
 		expect(within(frame()).queryByRole("progressbar")).not.toBeInTheDocument();
 		const message = screen.getByText(COULD_NOT_LOAD);
 		expect(message).toBeInTheDocument();
-		expect(within(body()).getByTestId(/^Warning/)).toBeInTheDocument();
+		expect(within(body()).getByTestId("WarningAmberIcon")).toBeInTheDocument();
 	});
 
 	it.skip("shows no rating, trend or data for the chart that is gone, only its title and info", () => {
@@ -223,9 +276,10 @@ describe("a chart that fetches its own data", () => {
 		["ready", "ready", "ready"],
 		["ready", "error", "error"],
 		["error", "ready", "error"],
-		["loading", "error", "loading"],
-		["error", "loading", "loading"],
+		["loading", "error", "error"],
+		["error", "loading", "error"],
 		["loading", "ready", "loading"],
+		["ready", "loading", "loading"],
 	])(
 		"with the page saying %s and the chart reporting %s, the frame reads %s",
 		(fromPage, fromChart, expected) => {

@@ -335,6 +335,8 @@ export type HeldMetricsService = {
 	pending(filter?: CallFilter): HeldCall[];
 	/** Answers every matching call still waiting, with the usual answer unless one is given. */
 	answer(filter?: CallFilter, value?: unknown): void;
+	/** Answers every matching call still waiting with nothing at all, as a service may. */
+	answerWithNothing(filter?: CallFilter): void;
 	/** Fails every matching call still waiting. */
 	fail(filter?: CallFilter): void;
 };
@@ -401,6 +403,12 @@ export function createHeldMetricsService(
 						? usualAnswer(call.method, call.window, call.args)
 						: value,
 				);
+			}
+		},
+		answerWithNothing(filter = {}) {
+			for (const call of pending(filter)) {
+				call.settled = true;
+				call.answer.resolve(undefined);
 			}
 		},
 		fail(filter = {}) {

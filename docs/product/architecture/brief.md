@@ -9703,22 +9703,25 @@ Pattern unchanged: hooks own client state, `WidgetShell` is the one frame, servi
 
 - **I1 — loading is derived, not set.** Every dashboard fetch is a TanStack Query (already installed) keyed by
   exactly the request it sends, one per service call; a key is `loading` while it has no data for the current
-  request, so the first frame after a window change is already dimmed. Metrics queries neither cache across
-  windows nor retry. (ADR-233)
+  request (or shows the previous request's data as a placeholder), so the first frame after a window change is
+  already dimmed. One shared options object: no retry, no cache across windows; the over-time charts keep the
+  per-selection cache they already ship, within a window. (ADR-233)
 - **I2 — a superseded response is never read.** It lands under the old key; click-started choices that survive a
   window change (filters, Work Item selection) are part of their query's key. (ADR-233)
-- **I3 — one status per widget, one place it is drawn.** `WidgetShell`'s `status` (`loading` > `error` > `ready`)
-  combines the commit-pending flag, the widget's fetch keys and whatever a self-fetching child reports;
-  `data-widget-status` is the E2E "loaded" signal. Visuals per the maintainer's sketch decisions: 40 % dim under
-  a 24 px spinner, no pointer input and View Data disabled while loading, a fixed could-not-load message with no
-  Retry.
+- **I3 — one status per widget, one place it is drawn.** `WidgetShell`'s `status` combines the commit-pending flag,
+  the widget's fetch keys and whatever a self-fetching child reports (starting at `loading`): pending window →
+  `loading`; else any input failed for the committed window → `error` at once; else anything in flight → `loading`;
+  else `ready`. `data-widget-status` is the E2E "loaded" signal. Visuals per the maintainer's sketch decisions: 40 %
+  dim under a 24 px spinner, no pointer input on the chart surface and View Data disabled while loading (the
+  controls inside the chart stay usable), a fixed could-not-load message with no Retry.
 
 ### Component decomposition (headline)
 
 NEW `pages/Common/MetricsView/widgetStatus.ts` (pure combinator + reporter context). EXTEND `WidgetShell`,
 `hooks/useMetricsData` (effects → queries, `fetchStates`, new `throughputPbc` key), `categoryMetadata`, `BaseMetricsView`,
-both over-time hooks and widgets, `ThroughputRunChartCard`; slice 02 the three overview widgets and the
-`MetricsPage` POM.
+both over-time hooks and widgets, `ThroughputRunChartCard`, `PredictabilityScoreDetailsWidget`; slice 02 the three
+overview widgets. Slices: 01a right window, 01b loading and error look (with the `MetricsPage` POM waits and the
+re-pointed E2E specs), 01c self-fetching charts, 02 first-load frames.
 
 ### ADR References (this feature)
 

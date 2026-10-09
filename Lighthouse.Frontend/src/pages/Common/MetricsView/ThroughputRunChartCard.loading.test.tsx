@@ -12,7 +12,8 @@ import {
 	windowOf,
 } from "../../../tests/HeldMetricsService";
 import ThroughputRunChartCard from "./ThroughputRunChartCard";
-import WidgetShell from "./WidgetShell";
+import WidgetShell, { COULD_NOT_LOAD_MESSAGE } from "./WidgetShell";
+import type { WidgetStatus } from "./widgetStatus";
 
 vi.mock("../../../components/Common/Charts/BarRunChart", () => ({
 	default: ({
@@ -50,10 +51,18 @@ const seriesTotalling = (total: number) =>
 let held: HeldMetricsService;
 let queryClient: QueryClient;
 
-function cardFor(window: string, rawTotal: number) {
+function cardFor(
+	window: string,
+	rawTotal: number,
+	statusFromThePage: WidgetStatus = "ready",
+) {
 	return (
 		<QueryClientProvider client={queryClient}>
-			<WidgetShell widgetKey="throughput" status="ready" hasContentToDim>
+			<WidgetShell
+				widgetKey="throughput"
+				status={statusFromThePage}
+				hasContentToDim
+			>
 				<ThroughputRunChartCard
 					entityId={2}
 					metricsService={held.service as IMetricsService<IWorkItem>}
@@ -78,21 +87,72 @@ async function theReaderTurnsTheFilterOn() {
 		.click(screen.getByLabelText("Use filtered Throughput"));
 }
 
-describe("the Throughput run chart's filtered series and the selected window", () => {
-	beforeEach(() => {
-		held = createHeldMetricsService("team");
-		queryClient = new QueryClient({
-			defaultOptions: { queries: { retry: false } },
-		});
-	});
+async function theFilteredSeriesAnswers(window: string, total: number) {
+	await act(async () =>
+		held.answer(
+			{ method: "getThroughput", filtered: true, window },
+			seriesTotalling(total),
+		),
+	);
+}
 
+beforeEach(() => {
+	held = createHeldMetricsService("team");
+	queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+});
+
+describe("the Throughput run chart's filtered series follows the selected window", () => {
 	it("with the filter off, a new window shows the dashboard's own series for it", () => {
 		const { rerender } = render(cardFor(LAST_30_DAYS, 30));
 
 		rerender(cardFor(LAST_90_DAYS, 90));
 
-		expect(shownTotal()).toHaveTextContent("90");
+		expect(shownTotal()).toHaveTextContent(/^90$/);
+		// The requests the card sends are all it shows of its own fetching.
 		expect(held.calls).toHaveLength(0);
+	});
+
+	it.skip("with the filter on, a new window fetches the filtered series for that window", async () => {
+		const { rerender } = render(cardFor(LAST_30_DAYS, 30));
+		await theReaderTurnsTheFilterOn();
+		await theFilteredSeriesAnswers(LAST_30_DAYS, 3);
+
+		rerender(cardFor(LAST_90_DAYS, 90));
+
+		expect(
+			held.pending({
+				method: "getThroughput",
+				filtered: true,
+				window: LAST_90_DAYS,
+			}),
+		).toHaveLength(1);
+		await theFilteredSeriesAnswers(LAST_90_DAYS, 9);
+		expect(shownTotal()).toHaveTextContent(/^9$/);
+	});
+
+	it.skip("the filtered series of a window the reader has left never replaces the current one", async () => {
+		const { rerender } = render(cardFor(LAST_30_DAYS, 30));
+		await theReaderTurnsTheFilterOn();
+		rerender(cardFor(LAST_90_DAYS, 90));
+
+		await theFilteredSeriesAnswers(LAST_90_DAYS, 9);
+		await theFilteredSeriesAnswers(LAST_30_DAYS, 3);
+
+		expect(shownTotal()).toHaveTextContent(/^9$/);
+	});
+});
+
+describe("the Throughput run chart's frame while its filtered series loads", () => {
+	it("the filter switch still works while the dashboard has the chart loading", async () => {
+		render(cardFor(LAST_30_DAYS, 30, "loading"));
+
+		await theReaderTurnsTheFilterOn();
+
+		expect(
+			held.pending({ method: "getThroughput", filtered: true }),
+		).toHaveLength(1);
 	});
 
 	it.skip("turning the filter on keeps the chart loading until the filtered series arrives", async () => {
@@ -101,66 +161,20 @@ describe("the Throughput run chart's filtered series and the selected window", (
 		await theReaderTurnsTheFilterOn();
 		expect(frame()).toHaveAttribute("data-widget-status", "loading");
 
-		await act(async () =>
-			held.answer(
-				{ method: "getThroughput", filtered: true },
-				seriesTotalling(3),
-			),
-		);
+		await theFilteredSeriesAnswers(LAST_30_DAYS, 3);
 		expect(frame()).toHaveAttribute("data-widget-status", "ready");
-		expect(shownTotal()).toHaveTextContent("3");
+		expect(shownTotal()).toHaveTextContent(/^3$/);
 	});
 
-	it.skip("with the filter on, a new window fetches the filtered series for that window", async () => {
+	it.skip("with the filter on, a new window keeps the chart loading until that window's filtered series arrives", async () => {
 		const { rerender } = render(cardFor(LAST_30_DAYS, 30));
 		await theReaderTurnsTheFilterOn();
-		await act(async () =>
-			held.answer(
-				{ method: "getThroughput", filtered: true },
-				seriesTotalling(3),
-			),
-		);
+		await theFilteredSeriesAnswers(LAST_30_DAYS, 3);
 
 		rerender(cardFor(LAST_90_DAYS, 90));
-
 		expect(frame()).toHaveAttribute("data-widget-status", "loading");
-		expect(
-			held.pending({
-				method: "getThroughput",
-				filtered: true,
-				window: LAST_90_DAYS,
-			}),
-		).toHaveLength(1);
 
-		await act(async () =>
-			held.answer(
-				{ method: "getThroughput", filtered: true, window: LAST_90_DAYS },
-				seriesTotalling(9),
-			),
-		);
-		expect(frame()).toHaveAttribute("data-widget-status", "ready");
-		expect(shownTotal()).toHaveTextContent("9");
-	});
-
-	it.skip("the filtered series of a window the reader has left never replaces the current one", async () => {
-		const { rerender } = render(cardFor(LAST_30_DAYS, 30));
-		await theReaderTurnsTheFilterOn();
-		rerender(cardFor(LAST_90_DAYS, 90));
-
-		await act(async () =>
-			held.answer(
-				{ method: "getThroughput", filtered: true, window: LAST_90_DAYS },
-				seriesTotalling(9),
-			),
-		);
-		await act(async () =>
-			held.answer(
-				{ method: "getThroughput", filtered: true, window: LAST_30_DAYS },
-				seriesTotalling(3),
-			),
-		);
-
-		expect(shownTotal()).toHaveTextContent("9");
+		await theFilteredSeriesAnswers(LAST_90_DAYS, 9);
 		expect(frame()).toHaveAttribute("data-widget-status", "ready");
 	});
 
@@ -173,10 +187,6 @@ describe("the Throughput run chart's filtered series and the selected window", (
 		);
 
 		expect(frame()).toHaveAttribute("data-widget-status", "error");
-		expect(
-			screen.getByText(
-				"This chart couldn't be loaded. Change the dates or reload to try again.",
-			),
-		).toBeInTheDocument();
+		expect(screen.getByText(COULD_NOT_LOAD_MESSAGE)).toBeInTheDocument();
 	});
 });

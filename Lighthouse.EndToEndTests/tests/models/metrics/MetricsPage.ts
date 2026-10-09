@@ -636,10 +636,10 @@ export class WorkItemAgingReferenceLineSelector {
 	}
 
 	/**
-	 * Both percentile sources label their lines `<n>%` since Story 5508 D9 dropped the term
-	 * prefix — the toggle above the chart already says which population is active, so the DOM
-	 * deliberately no longer distinguishes them by label. Which source is showing is read from
-	 * the toggle, not from the line text; the values themselves are pinned by the unit tests.
+	 * Both percentile sources label their lines plainly `<n>%`, with no term in front: the toggle
+	 * above the chart already says which population is showing, so the lines cannot be told apart
+	 * by their text. Read the source from the toggle; the values themselves are pinned by the
+	 * unit tests.
 	 */
 	get referenceLines(): Locator {
 		return this.widget.locator("text").filter({ hasText: /^\d+%$/ });

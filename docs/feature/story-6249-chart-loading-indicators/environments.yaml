@@ -15,12 +15,13 @@ schema_version: 1
 feature_id: story-6249-chart-loading-indicators
 updated: 2026-10-09
 wave: DEVOPS
+revised: "review round 1 (2026-10-09): platform Linux only; E2E premise and waits corrected; two first-load exceptions"
 
 target_environments:
   - name: clean
     description: >
       Default instance with demo data. Baseline for every component scenario and the E2E walking skeleton.
-    platform: [linux, macos, windows]
+    platform: [linux]       # CI covers Linux only; nothing in this story varies by OS
     preconditions: []
 
   - name: screenshot-capture
@@ -32,7 +33,7 @@ target_environments:
       - "Premium licence fixture present (gitignored; absent in a worktree, import it from the main checkout)"
       - "Target PNG deleted before the run (a diff under the pixel threshold silently keeps the old file)"
       - "@auth excluded"
-      - "Every capture preceded by the MetricsPage category-wide waitUntilLoaded (data-widget-status=ready)"
+      - "Every metrics capture preceded by MetricsPage.waitUntilEveryChartHasLoaded() (every widget data-widget-status=ready); added to Screenshots.spec in slice 01b"
 
 browsers:
   ci: [chromium]          # playwright.config.ts has one project, Desktop Chrome, 1920x1080
@@ -56,7 +57,7 @@ scenario_axes:
     criteria: [AC-2.1, AC-2.2, AC-2.3, AC-2.4]
     vary_over: [clean]
     owner_types: [team, portfolio]
-    rationale: "Widget keys per category before and after data; estimationVsCycleTime is the named exception."
+    rationale: "Widget keys per category before and after data; estimationVsCycleTime and featureSize are the named exceptions (they keep today's presence rule)."
   e2e_walking_skeleton:
     criteria: [AC-1.1, AC-2.2]
     vary_over: [clean]
@@ -77,9 +78,9 @@ coexistence_matrix:
   - tool: "TerminologyContext and LicenseStatusIcon queries on the app QueryClient"
     must_not_break: true
     note: "Metrics queries override staleTime/gcTime/retry per query, never on the shared client."
-  - tool: "E2E specs locating widget-shell-* (Screenshots, ForecastFilter, TotalThroughputViewData, BlockedItems, ...)"
+  - tool: "17 E2E specs locating widgets by dashboard-item-<key> and the chart POMs (Screenshots, ForecastFilter, TotalThroughputViewData, BlockedItems, ...)"
     must_not_break: true
-    note: "Re-pointed through MetricsWidget.waitUntilLoaded() in slice 02."
+    note: "Re-pointed through MetricsWidget.waitUntilLoaded() / MetricsPage.waitUntilEveryChartHasLoaded() (both exist since DISTILL) in slice 01b."
 
 deployment_assumptions:
   - "No installation step, no migration, no configuration, no secret."

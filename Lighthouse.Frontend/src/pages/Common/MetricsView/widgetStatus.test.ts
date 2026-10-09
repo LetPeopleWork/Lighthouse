@@ -80,15 +80,15 @@ describe("a widget's status, from the things it waits on", () => {
 		[["ready", "error"], "error"],
 		[["error", "error"], "error"],
 		[["loading", "ready"], "loading"],
-		[["error", "loading"], "loading"],
-		[["loading", "error", "ready"], "loading"],
+		[["error", "loading"], "error"],
+		[["loading", "error", "ready"], "error"],
 	])("waiting on %j reads as %s", (statuses, expected) => {
 		expect(combineWidgetStatuses(statuses)).toBe(expected);
 	});
 
 	it.skip.each<[readonly WidgetStatus[], WidgetStatus]>([
-		[["loading", "error", "ready"], "loading"],
-		[["error", "ready", "ready"], "error"],
+		[["loading", "error", "ready"], "error"],
+		[["loading", "ready", "ready"], "loading"],
 	])(
 		"reads the same whichever order %j are listed in",
 		(statuses, expected) => {
@@ -101,7 +101,7 @@ describe("a widget's status, from the things it waits on", () => {
 
 describe("which widgets are behind the selected window", () => {
 	it.skip.each(everyPlacedWidget)(
-		"%s is loading while a stepped window is still waiting to be committed",
+		"the chart placed as %s is loading while a stepped window is still waiting to be committed",
 		(widgetKey) => {
 			const everythingAnswered = allAnswered([
 				"throughput",
@@ -126,21 +126,26 @@ describe("which widgets are behind the selected window", () => {
 		expect(widgetStatusFor("arrivals", states, false)).toBe("loading");
 	});
 
-	it.skip("a chart shows it failed only once nothing else it waits on is still on its way", () => {
+	it.skip("a chart says it could not be loaded as soon as one of its inputs fails, without waiting for the rest", () => {
 		const oneFailedOneOnItsWay: FetchKeyStates = {
 			cycleTimePercentiles: failed,
 			cycleTimeData: behindWithOldData,
 			blackoutPeriods: answered,
 		};
-		expect(widgetStatusFor("cycleScatter", oneFailedOneOnItsWay, false)).toBe(
-			"loading",
-		);
 
-		const restAnswered: FetchKeyStates = {
-			...oneFailedOneOnItsWay,
+		expect(widgetStatusFor("cycleScatter", oneFailedOneOnItsWay, false)).toBe(
+			"error",
+		);
+	});
+
+	it.skip("a chart whose input failed is loading again while a stepped window waits to be committed", () => {
+		const oneFailed: FetchKeyStates = {
+			cycleTimePercentiles: failed,
 			cycleTimeData: answered,
+			blackoutPeriods: answered,
 		};
-		expect(widgetStatusFor("cycleScatter", restAnswered, false)).toBe("error");
+
+		expect(widgetStatusFor("cycleScatter", oneFailed, true)).toBe("loading");
 	});
 
 	it.skip("a failure in something a chart does not show leaves that chart ready", () => {
@@ -159,9 +164,12 @@ describe("which widgets are behind the selected window", () => {
 		).toBe("ready");
 	});
 
-	it.skip.each(["percentilesOverTime", "pbcOverTime"])(
+	it.skip.each([
+		["Percentiles Over Time", "percentilesOverTime"],
+		["PBC Over Time", "pbcOverTime"],
+	])(
 		"%s fetches for itself, so the page alone holds it back only while a step is pending",
-		(widgetKey) => {
+		(_name, widgetKey) => {
 			expect(widgetStatusFor(widgetKey, {}, false)).toBe("ready");
 			expect(widgetStatusFor(widgetKey, {}, true)).toBe("loading");
 		},
@@ -213,7 +221,7 @@ describe("one request's progress, as a chart sees it", () => {
 			"loading",
 		],
 		["answered beside one that failed", [answeredQuery, failedQuery], "error"],
-		["failed beside one still on its way", [failedQuery, onItsWay], "loading"],
+		["failed beside one still on its way", [failedQuery, onItsWay], "error"],
 	])("a request %s reads as %s", (_label, queries, expected) => {
 		expect(fetchKeyStateOf(queries, true).status).toBe(expected);
 	});

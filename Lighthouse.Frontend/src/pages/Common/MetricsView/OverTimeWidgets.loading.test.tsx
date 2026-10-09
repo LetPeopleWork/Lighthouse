@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { addDays } from "date-fns";
 import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -14,7 +15,7 @@ import {
 } from "../../../tests/HeldMetricsService";
 import PbcOverTimeWidget from "./PbcOverTimeWidget";
 import PercentilesOverTimeWidget from "./PercentilesOverTimeWidget";
-import WidgetShell from "./WidgetShell";
+import WidgetShell, { COULD_NOT_LOAD_MESSAGE } from "./WidgetShell";
 
 vi.mock("@mui/x-charts", () => ({
 	LineChart: ({ xAxis }: { xAxis?: { data?: string[] }[] }) => (
@@ -158,6 +159,7 @@ describe.each(overTimeCharts)("$name while its series loads", (chart) => {
 		expect(frame()).toHaveAttribute("data-widget-status", "loading");
 		expect(within(frame()).getByRole("progressbar")).toBeInTheDocument();
 		expect(screen.queryByText(EMPTY_COPY)).not.toBeInTheDocument();
+		expectOutOfSight("over-time-chart");
 	});
 
 	it.skip("never shows the series of a window the reader has already left", async () => {
@@ -167,7 +169,7 @@ describe.each(overTimeCharts)("$name while its series loads", (chart) => {
 		await answer(LAST_90_DAYS, 1);
 		await answer(LAST_30_DAYS, 3);
 
-		expect(screen.getByTestId("over-time-chart")).toHaveTextContent("1 days");
+		expect(screen.getByTestId("over-time-chart")).toHaveTextContent(/^1 days$/);
 		expect(frame()).toHaveAttribute("data-widget-status", "ready");
 	});
 
@@ -178,10 +180,60 @@ describe.each(overTimeCharts)("$name while its series loads", (chart) => {
 
 		expect(frame()).toHaveAttribute("data-widget-status", "error");
 		expect(within(frame()).queryByRole("progressbar")).not.toBeInTheDocument();
-		expect(
-			screen.getByText(
-				"This chart couldn't be loaded. Change the dates or reload to try again.",
-			),
-		).toBeInTheDocument();
+		expect(screen.getByText(COULD_NOT_LOAD_MESSAGE)).toBeInTheDocument();
+	});
+
+	it("switching to another selection and back within one window asks for nothing new", async () => {
+		render(framed(LAST_30_DAYS));
+		await answer(LAST_30_DAYS, 3);
+		const user = userEvent.setup();
+		const firstSelection = within(frame()).getByRole("button", {
+			pressed: true,
+		});
+
+		await user.click(
+			within(frame()).getAllByRole("button", { pressed: false })[0],
+		);
+		await answer(LAST_30_DAYS, 2);
+		const requestsSoFar = held.calls.length;
+		await user.click(firstSelection);
+
+		expect(held.calls).toHaveLength(requestsSoFar);
+	});
+
+	it.skip("its series is asked for without retrying, and kept while the reader switches selections", async () => {
+		const withTheAppDefaults = new QueryClient({
+			defaultOptions: {
+				queries: { staleTime: 300_000, gcTime: 1_800_000, retry: 2 },
+			},
+		});
+		render(
+			<QueryClientProvider client={withTheAppDefaults}>
+				{chart.draw(
+					held.service as Service,
+					windows[LAST_30_DAYS].start,
+					windows[LAST_30_DAYS].end,
+				)}
+			</QueryClientProvider>,
+		);
+
+		const queries = withTheAppDefaults.getQueryCache().getAll();
+		expect(queries.length).toBeGreaterThan(0);
+		for (const query of queries) {
+			expect(query.options.retry).toBe(false);
+			expect(query.options.gcTime).toBeGreaterThan(0);
+			for (const observer of query.observers) {
+				expect(observer.options.refetchOnWindowFocus).toBe(false);
+			}
+		}
 	});
 });
+
+// A chart that fetches for itself has to stay mounted to keep fetching, so "gone" may mean
+// hidden rather than removed. Either satisfies the reader, who must not see it.
+function expectOutOfSight(testId: string) {
+	const element = screen.queryByTestId(testId);
+	if (element !== null) {
+		expect(element).not.toBeVisible();
+	}
+}

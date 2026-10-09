@@ -5,31 +5,33 @@ frame at its final position with a spinner, and the charts fill in where they st
 
 ## IN scope
 - Widget nodes no longer render `null` while their data is missing. They render the shell's loading state from
-  slice 01 (D2, AC-2.1, AC-2.2).
+  slice 01b: a centred spinner under a title + info header (D2, S4, AC-2.1, AC-2.2).
+- A first-load failure ends in the S3 message (AC-2.4).
 - `FlowEfficiencyOverviewWidget`, `PredictabilityScoreOverviewWidget` and `TotalWorkItemAgeWidget` drop their
   own `CircularProgress` in favour of the shared state (AC-2.3).
-- E2E: the `MetricsPage` POM gets a "widget loaded" wait (no spinner). Specs that waited on `widget-shell-*`
-  visibility go through it. `@screenshot` output is unchanged.
+- E2E: the walking skeleton (`ChartLoadingIndicators.spec.ts`), the POM waits and the re-pointed specs landed in
+  slice 01b; this slice re-checks that they hold on first load. `@screenshot` output is unchanged.
 
 ## OUT of scope
-- Widgets whose presence depends on their data, if DESIGN finds any (AC-2.2's exception).
+- Estimation vs. Cycle Time and Feature Size keep today's presence rule: no frame and no spinner on first load; they
+  appear when their data says so (R1, AC-2.2's named exceptions).
 - Page-level `LoadingAnimation` on Team and Portfolio detail pages.
 
 ## Learning hypothesis
 - **Disproves** "showing every frame up front feels faster than pop-in" if a category with many widgets reads
   as a wall of spinners on the dev instance. That would argue for a skeleton shape instead of a spinner.
 - **Confirms** it if the dashboard keeps its layout from first paint to fully loaded on demo data and on the
-  dev instance.
+  dev instance (the two named exceptions aside).
 
 ## Acceptance criteria
-AC-2.1 … AC-2.4 in `../feature-delta.md` (US-02).
+AC-2.1 … AC-2.4 in `../feature-delta.md` (US-02), and AC-1.8 for the first-load frames.
 
 ## Dependencies
-Slice 01 (the loading state in `WidgetShell`). It ships on its own after that.
+Slice 01b (the loading state in `WidgetShell`). It ships on its own after that.
 
 ## Effort
-About a day. The production change is small. Most of the time goes into the E2E POM wait and re-pointing
-roughly ten specs, then a screenshot run.
+Under a day. The production change is small; the E2E re-pointing of the 17 specs moved to slice 01b, so what is
+left is a first-load check of the skeleton and the waits, and a screenshot run.
 Reference class: Bug #6112 (E2E lazy-route stale-page race, same "wait for target-only content" fix).
 
 ## Dogfood

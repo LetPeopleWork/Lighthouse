@@ -27,6 +27,10 @@ import type { TrendPayload } from "./trendTypes";
 import type { WidgetStatusGuidance } from "./widgetInfoMetadata";
 import type { WidgetStatus } from "./widgetStatus";
 
+/** What a frame says when its chart's data could not be loaded. Not drawn yet. */
+export const COULD_NOT_LOAD_MESSAGE =
+	"This chart couldn't be loaded. Change the dates or reload to try again.";
+
 type RagStatus = "red" | "amber" | "green" | "none";
 
 type WidgetFooter = {
