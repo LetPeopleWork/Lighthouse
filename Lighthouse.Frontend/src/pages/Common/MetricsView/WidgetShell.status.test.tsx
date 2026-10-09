@@ -1,5 +1,5 @@
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type ReactNode, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -12,8 +12,14 @@ import WidgetShell, {
 import { useReportWidgetStatus, type WidgetStatus } from "./widgetStatus";
 
 vi.mock("../../../components/Common/WorkItemsDialog/WorkItemsDialog", () => ({
-	default: ({ open }: { open: boolean }) =>
-		open ? <div data-testid="work-items-dialog" /> : null,
+	default: ({ open, onClose }: { open: boolean; onClose: () => void }) =>
+		open ? (
+			<div data-testid="work-items-dialog">
+				<button type="button" onClick={onClose}>
+					Close
+				</button>
+			</div>
+		) : null,
 }));
 
 vi.mock("../../../services/TerminologyContext", () => ({
@@ -98,6 +104,35 @@ describe("a chart's frame while its data is current", () => {
 		expect(within(frame()).queryByRole("progressbar")).not.toBeInTheDocument();
 	});
 
+	it("keeps the chart's data list closed until the reader asks for it, and closes it again", async () => {
+		const user = userEvent.setup();
+		renderFrame();
+		expect(screen.queryByTestId("work-items-dialog")).not.toBeInTheDocument();
+
+		await user.click(screen.getByTestId(`widget-view-data-${KEY}`));
+		expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument();
+
+		await user.click(screen.getByRole("button", { name: "Close" }));
+		expect(screen.queryByTestId("work-items-dialog")).not.toBeInTheDocument();
+	});
+
+	it("closes the chart's explanation when the reader presses Escape", async () => {
+		const user = userEvent.setup();
+		renderFrame();
+		await user.click(screen.getByTestId(`widget-info-${KEY}`));
+		expect(
+			screen.getByText("How many Work Items were finished each day"),
+		).toBeVisible();
+
+		await user.keyboard("{Escape}");
+
+		await waitFor(() =>
+			expect(
+				screen.queryByText("How many Work Items were finished each day"),
+			).not.toBeInTheDocument(),
+		);
+	});
+
 	it("a frame nobody gave a status says it is ready", () => {
 		renderFrame();
 
@@ -178,6 +213,14 @@ describe("a chart's frame while it is behind the selected window", () => {
 		expect(
 			await screen.findByText("How many Work Items were finished each day"),
 		).toBeInTheDocument();
+	});
+
+	it("a frame told only that it is loading assumes there is no older chart, and holds a lone spinner", () => {
+		renderFrame({ status: "loading" });
+
+		expectOutOfSight("the-chart");
+		expect(body()).not.toHaveStyle({ opacity: "0.4" });
+		expect(within(frame()).getByRole("progressbar")).toBeInTheDocument();
 	});
 
 	it("with no older chart to dim, holds a lone spinner under just the title and info", () => {
@@ -329,6 +372,22 @@ describe("a chart that fetches its own data", () => {
 
 		expect(frame()).toHaveAttribute("data-widget-status", "loading");
 		expect(within(frame()).getByRole("progressbar")).toBeInTheDocument();
+	});
+
+	it("hands the frame back to the page once the chart that reported for itself is gone", () => {
+		const shellWith = (chart: ReactNode) => (
+			<WidgetShell widgetKey={KEY} {...fullHeader} status="ready">
+				{chart}
+			</WidgetShell>
+		);
+		const { rerender } = render(
+			shellWith(<SelfFetchingChart status="loading" />),
+		);
+		expect(frame()).toHaveAttribute("data-widget-status", "loading");
+
+		rerender(shellWith(<div data-testid="the-chart">chart</div>));
+
+		expect(frame()).toHaveAttribute("data-widget-status", "ready");
 	});
 
 	it("keeps the chart it is still showing on screen, dimmed under a spinner, while its own answer loads", () => {

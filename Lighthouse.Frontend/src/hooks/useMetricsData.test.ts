@@ -1507,3 +1507,283 @@ describe("useMetricsData", () => {
 		});
 	});
 });
+
+describe("useMetricsData while its requests are on their way", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		queryClient = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+	});
+
+	function holdingEveryRequest<S extends object>(service: S): S {
+		for (const method of Object.values(service)) {
+			vi.mocked(method).mockReturnValue(
+				new Promise(() => {
+					// Never settles: every request is still on its way.
+				}),
+			);
+		}
+		mockBlackoutPeriodService.getAll.mockReturnValue(
+			new Promise(() => {
+				// Never settles either.
+			}),
+		);
+		return service;
+	}
+
+	const teamFetchKeys: readonly MetricsFetchKey[] = [
+		"blackoutPeriods",
+		"predictability",
+		"totalWorkItemAge",
+		"throughput",
+		"inProgressItems",
+		"blockedItems",
+		"wipOverTime",
+		"cycleTimeData",
+		"cycleTimePercentiles",
+		"workItemAgePercentiles",
+		"ageInStatePercentiles",
+		"cumulativeStateTime",
+		"flowEfficiency",
+		"estimationVsCycleTime",
+		"arrivals",
+		"throughputInfo",
+		"arrivalsInfo",
+		"wipOverviewInfo",
+		"totalWorkItemAgeInfo",
+		"predictabilityScoreInfo",
+		"cycleTimePercentilesInfo",
+		"blockedCountHistory",
+		"pbcCore",
+		"pbcCharts",
+		"throughputPbc",
+		"sleRisk",
+		"featuresWorkedOnInfo",
+	];
+
+	it.each(teamFetchKeys)(
+		"a team's %s reads loading until its answer arrives",
+		(fetchKey) => {
+			const service = holdingEveryRequest(createMockTeamMetricsService());
+
+			const { result } = renderHook(() =>
+				useMetricsData(createMockEntity(), service, startDate, endDate),
+			);
+
+			expect(result.current.fetchStates[fetchKey]).toEqual({
+				status: "loading",
+				hasData: false,
+			});
+		},
+	);
+
+	it.each([...portfolioOnlyFetchKeys])(
+		"a portfolio's %s reads loading until its answer arrives",
+		(fetchKey) => {
+			const service = holdingEveryRequest(createMockProjectMetricsService());
+
+			const { result } = renderHook(() =>
+				useMetricsData(
+					createMockPortfolioEntity(),
+					service,
+					startDate,
+					endDate,
+				),
+			);
+
+			expect(result.current.fetchStates[fetchKey]).toEqual({
+				status: "loading",
+				hasData: false,
+			});
+		},
+	);
+});
+
+describe("useMetricsData when a request fails", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockBlackoutPeriodService.getAll.mockResolvedValue([]);
+		queryClient = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+	});
+
+	type Failing = {
+		readonly method: string;
+		readonly owner: "team" | "portfolio";
+		readonly choices?: Parameters<typeof useMetricsData>[5];
+	};
+
+	// The terminology mock above answers every term with its own key.
+	it.each<[string, Failing]>([
+		[
+			"Error fetching total work item age:",
+			{ method: "getTotalWorkItemAge", owner: "team" },
+		],
+		["Error getting throughput:", { method: "getThroughput", owner: "team" }],
+		[
+			"Error getting workItems in progress:",
+			{ method: "getInProgressItems", owner: "team" },
+		],
+		[
+			"Error getting blocked workItems:",
+			{ method: "getBlockedItemsAtDate", owner: "team" },
+		],
+		[
+			"Error getting workItems over time:",
+			{ method: "getWorkInProgressOverTime", owner: "team" },
+		],
+		[
+			"Error fetching cycleTime data:",
+			{ method: "getCycleTimeData", owner: "team" },
+		],
+		[
+			"Error fetching per-state percentiles:",
+			{ method: "getAgeInStatePercentiles", owner: "team" },
+		],
+		["Error fetching SLE risk:", { method: "getSleRisk", owner: "team" }],
+		[
+			"Error fetching cumulative state time:",
+			{ method: "getCumulativeStateTimeForTeam", owner: "team" },
+		],
+		[
+			"Error fetching cumulative state time for the chosen work items:",
+			{
+				method: "getCumulativeStateTimeForTeam",
+				owner: "team",
+				choices: { itemIds: [7], scopeDefinitionId: null },
+			},
+		],
+		[
+			"Error fetching cumulative state time for the chosen stretch:",
+			{
+				method: "getCumulativeStateTimeForTeam",
+				owner: "team",
+				choices: { itemIds: [], scopeDefinitionId: 3 },
+			},
+		],
+		["Error fetching arrivals data:", { method: "getArrivals", owner: "team" }],
+		[
+			"Error fetching blocked count history:",
+			{ method: "getBlockedCountHistory", owner: "team" },
+		],
+		[
+			"Error fetching core process behaviour chart data:",
+			{ method: "getWipPbc", owner: "team" },
+		],
+		[
+			"Error fetching predictability data:",
+			{ method: "getMultiItemForecastPredictabilityScore", owner: "team" },
+		],
+		[
+			"Error fetching estimation vs cycle time data:",
+			{ method: "getEstimationVsCycleTimeData", owner: "team" },
+		],
+		[
+			"Error fetching throughput info:",
+			{ method: "getThroughputInfo", owner: "team" },
+		],
+		[
+			"Error fetching arrivals info:",
+			{ method: "getArrivalsInfo", owner: "team" },
+		],
+		[
+			"Error fetching WIP overview info:",
+			{ method: "getWipOverviewInfo", owner: "team" },
+		],
+		[
+			"Error fetching total work item age info:",
+			{ method: "getTotalWorkItemAgeInfo", owner: "team" },
+		],
+		[
+			"Error fetching predictability score info:",
+			{ method: "getPredictabilityScoreInfo", owner: "team" },
+		],
+		[
+			"Error fetching cycle time percentiles info:",
+			{ method: "getCycleTimePercentilesInfo", owner: "team" },
+		],
+		[
+			"Error fetching features worked on info:",
+			{ method: "getFeaturesWorkedOnInfo", owner: "team" },
+		],
+		[
+			"Error fetching process behaviour chart data:",
+			{ method: "getCycleTimePbc", owner: "team" },
+		],
+		[
+			"Error fetching Size Percentile Data:",
+			{ method: "getSizePercentiles", owner: "portfolio" },
+		],
+		[
+			"Error fetching feature size PBC data:",
+			{ method: "getFeatureSizePbc", owner: "portfolio" },
+		],
+		[
+			"Error fetching feature size estimation data:",
+			{ method: "getFeatureSizeEstimation", owner: "portfolio" },
+		],
+		[
+			"Error fetching feature size percentiles info:",
+			{ method: "getFeatureSizePercentilesInfo", owner: "portfolio" },
+		],
+	])(
+		"logs %s when that request fails",
+		async (message, { method, owner, choices }) => {
+			const consoleError = vi
+				.spyOn(console, "error")
+				.mockImplementation(() => {});
+			const failure = new Error(`${method} failed`);
+			const service =
+				owner === "team"
+					? createMockTeamMetricsService()
+					: createMockProjectMetricsService();
+			vi.mocked(
+				(service as unknown as Record<string, ReturnType<typeof vi.fn>>)[
+					method
+				],
+			).mockRejectedValue(failure);
+			const entity =
+				owner === "team" ? createMockEntity() : createMockPortfolioEntity();
+
+			renderHook(() =>
+				useMetricsData(entity, service, startDate, endDate, undefined, choices),
+			);
+
+			await waitFor(() => {
+				expect(consoleError).toHaveBeenCalledWith(message, failure);
+			});
+			consoleError.mockRestore();
+		},
+	);
+
+	it("logs a failure to read the blackout periods, and draws the charts without them", async () => {
+		const consoleError = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
+		const failure = new Error("blackout periods failed");
+		mockBlackoutPeriodService.getAll.mockRejectedValue(failure);
+
+		const { result } = renderHook(() =>
+			useMetricsData(
+				createMockEntity(),
+				createMockTeamMetricsService(),
+				startDate,
+				endDate,
+			),
+		);
+
+		await waitFor(() => {
+			expect(consoleError).toHaveBeenCalledWith(
+				"Error fetching blackout periods:",
+				failure,
+			);
+		});
+		await waitFor(() => {
+			expect(result.current.fetchStates.blackoutPeriods?.status).toBe("ready");
+		});
+		expect(result.current.blackoutPeriods).toEqual([]);
+		consoleError.mockRestore();
+	});
+});

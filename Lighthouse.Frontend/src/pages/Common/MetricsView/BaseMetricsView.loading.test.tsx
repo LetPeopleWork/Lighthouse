@@ -820,6 +820,19 @@ describe("a team's chart whose data cannot be loaded", () => {
 			within(frameOf("flowEfficiency")).queryByText(COULD_NOT_LOAD_MESSAGE),
 		).not.toBeInTheDocument();
 	});
+
+	it("a Total Work Item Age that comes back with nothing draws no total", async () => {
+		openTheDashboard("team", "flow-overview");
+		await act(async () =>
+			held.answerWithNothing({ method: "getTotalWorkItemAge" }),
+		);
+		await everythingHasLoaded();
+
+		expect(statusOf("totalWorkItemAge")).toBe("ready");
+		expect(
+			within(bodyOf("totalWorkItemAge")).queryByText("days"),
+		).not.toBeInTheDocument();
+	});
 });
 
 describe("charts waiting on something this owner never has", () => {

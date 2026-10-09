@@ -136,6 +136,39 @@ describe("which widgets are behind the selected window", () => {
 		expect(widgetStatusFor("arrivals", states, false)).toBe("loading");
 	});
 
+	// Written out rather than read from the requirements table, so a request dropped from a chart's
+	// list shows up here as a chart that stops waiting for it.
+	it.each<[string, MetricsFetchKey]>([
+		["wipOverview", "inProgressItems"],
+		["wipOverview", "sleRisk"],
+		["sleRisk", "inProgressItems"],
+		["sleRisk", "sleRisk"],
+		["totalWorkItemAge", "inProgressItems"],
+		["workItemAgePercentiles", "inProgressItems"],
+		["totalThroughput", "throughput"],
+		["totalThroughput", "arrivals"],
+		["totalArrivals", "arrivals"],
+		["totalArrivals", "throughput"],
+		["aging", "inProgressItems"],
+		["aging", "cycleTimePercentiles"],
+		["aging", "workItemAgePercentiles"],
+		["totalWorkItemAgeOverTime", "wipOverTime"],
+		["totalWorkItemAgeOverTime", "pbcCore"],
+		["stacked", "throughput"],
+		["stacked", "arrivals"],
+		["loadBalanceMatrix", "inProgressItems"],
+		["loadBalanceMatrix", "totalWorkItemAge"],
+		["arrivalsPbc", "arrivals"],
+		["wipPbc", "pbcCore"],
+		["totalWorkItemAgePbc", "pbcCore"],
+		["workDistribution", "cycleTimeData"],
+		["workDistribution", "inProgressItems"],
+	])("%s is loading while its %s has not answered", (widgetKey, fetchKey) => {
+		expect(
+			widgetStatusFor(widgetKey, { [fetchKey]: neverAnswered }, false),
+		).toBe("loading");
+	});
+
 	it("a chart says it could not be loaded as soon as one of its inputs fails, without waiting for the rest", () => {
 		const oneFailedOneOnItsWay: FetchKeyStates = {
 			cycleTimePercentiles: failed,
@@ -322,6 +355,12 @@ describe("one request's progress, as a chart sees it", () => {
 
 	it("a request on its way for the first time has nothing to dim", () => {
 		expect(fetchKeyStateOf([onItsWay], true).hasData).toBe(false);
+	});
+
+	it("a chart fed by two requests has nothing to dim while one of them has never answered", () => {
+		expect(fetchKeyStateOf([answeredQuery, onItsWay], true).hasData).toBe(
+			false,
+		);
 	});
 
 	it("a request that fails before it ever answered holds nothing", () => {

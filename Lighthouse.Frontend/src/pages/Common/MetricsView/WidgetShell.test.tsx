@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
@@ -610,4 +610,52 @@ describe("WidgetShell", () => {
 			).toBeInTheDocument();
 		});
 	});
+});
+
+describe("WidgetShell's rating and trend marks", () => {
+	it.each([
+		["red", "Act", "#d32f2f"],
+		["amber", "Observe", "#ed6c02"],
+		["green", "Sustain", "#2e7d32"],
+	] as const)(
+		"shows a %s rating as %s, in its own colour",
+		(ragStatus, label, colour) => {
+			render(
+				<WidgetShell
+					widgetKey="test-widget"
+					header={{ ragStatus, tipText: "Tip" }}
+				>
+					<div>Content</div>
+				</WidgetShell>,
+			);
+
+			const chip = screen.getByTestId("widget-rag-test-widget");
+			expect(chip).toHaveTextContent(label);
+			expect(chip).toHaveStyle({ backgroundColor: colour });
+		},
+	);
+
+	it.each([
+		["up", "NorthEastIcon"],
+		["down", "SouthEastIcon"],
+		["flat", "EastIcon"],
+	] as const)(
+		"points a trend going %s with its own arrow",
+		(direction, icon) => {
+			render(
+				<WidgetShell
+					widgetKey="test-widget"
+					trend={{ direction, metricLabel: "Total Throughput" }}
+				>
+					<div>Content</div>
+				</WidgetShell>,
+			);
+
+			expect(
+				within(
+					screen.getByTestId("widget-trend-arrow-test-widget"),
+				).getByTestId(icon),
+			).toBeInTheDocument();
+		},
+	);
 });

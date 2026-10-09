@@ -1,3 +1,4 @@
+import { LineChart } from "@mui/x-charts";
 import {
 	fireEvent,
 	render,
@@ -808,5 +809,30 @@ describe("PercentilesOverTimeWidget", () => {
 			),
 		);
 		expect(getPercentilesOverTime).toHaveBeenCalledTimes(4);
+	});
+});
+
+describe("PercentilesOverTimeWidget's date axis", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("lays the recorded days out as evenly spaced points", async () => {
+		render(
+			<PercentilesOverTimeWidget
+				owner={{ ownerId: OWNER_ID, ownerUpdatedAt: 0 }}
+				startDate={RANGE_START}
+				endDate={RANGE_END}
+				metricsService={createMetricsService(
+					vi.fn().mockResolvedValue(DATED_SERIES),
+				)}
+			/>,
+		);
+
+		await screen.findByTestId("mock-line-chart");
+
+		expect(vi.mocked(LineChart).mock.lastCall?.[0].xAxis?.[0]).toMatchObject({
+			scaleType: "point",
+		});
 	});
 });

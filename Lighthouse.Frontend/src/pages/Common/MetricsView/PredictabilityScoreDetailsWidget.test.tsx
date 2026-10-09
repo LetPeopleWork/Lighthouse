@@ -150,3 +150,72 @@ describe("PredictabilityScoreDetailsWidget", () => {
 		).toHaveBeenCalledTimes(1);
 	});
 });
+
+describe("PredictabilityScoreDetailsWidget without everything a filtered score needs", () => {
+	beforeEach(() => {
+		mockCanUsePremiumFeatures.mockReturnValue(true);
+		queryClient = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+	});
+
+	it.each(["owner", "metricsService", "startDate", "endDate"] as const)(
+		"offers no filter when it has no %s to ask with",
+		(missing) => {
+			render(
+				<PredictabilityScoreDetailsWidget
+					{...buildProps({ [missing]: undefined })}
+				/>,
+			);
+
+			expect(
+				screen.queryByLabelText(/use filtered throughput/i),
+			).not.toBeInTheDocument();
+			expect(screen.getByTestId("predictability-score")).toHaveTextContent(
+				"60%",
+			);
+		},
+	);
+
+	it.each(["isPremium", "hasForecastFilter"] as const)(
+		"offers no filter when nobody says %s",
+		(unsaid) => {
+			const props: Partial<ReturnType<typeof buildProps>> = buildProps();
+			delete props[unsaid];
+
+			render(
+				<PredictabilityScoreDetailsWidget
+					{...(props as ReturnType<typeof buildProps>)}
+				/>,
+			);
+
+			expect(
+				screen.queryByLabelText(/use filtered throughput/i),
+			).not.toBeInTheDocument();
+		},
+	);
+
+	it("logs a filtered score that could not be loaded", async () => {
+		const consoleError = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
+		const failure = new Error("filtered score failed");
+		const props = buildProps();
+		vi.mocked(
+			props.metricsService.getMultiItemForecastPredictabilityScore,
+		).mockRejectedValue(failure);
+		render(<PredictabilityScoreDetailsWidget {...props} />);
+
+		await userEvent
+			.setup()
+			.click(screen.getByLabelText(/use filtered throughput/i));
+
+		await waitFor(() => {
+			expect(consoleError).toHaveBeenCalledWith(
+				"Error fetching filtered predictability score:",
+				failure,
+			);
+		});
+		consoleError.mockRestore();
+	});
+});

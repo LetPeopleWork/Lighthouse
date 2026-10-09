@@ -342,3 +342,102 @@ describe("usePbcOverTime as its owner changes or updates", () => {
 		expect(result.current.status).toBe("loading");
 	});
 });
+
+/**
+ * Moving between owners leaves requests behind. What one of them says once the reader has moved on
+ * must not disturb the owner on screen: neither its series, nor its could-not-load note, nor how
+ * many times the chart asks.
+ */
+describe("usePbcOverTime after the reader has moved to another owner", () => {
+	type Request = {
+		readonly answer: (series: ProcessBehaviorSnapshot[]) => void;
+		readonly fail: (error: Error) => void;
+	};
+
+	function heldRequests() {
+		const requests: Request[] = [];
+		const getProcessBehaviorOverTime = vi.fn(
+			() =>
+				new Promise<ProcessBehaviorSnapshot[]>((resolve, reject) => {
+					requests.push({ answer: resolve, fail: reject });
+				}),
+		);
+		return { requests, getProcessBehaviorOverTime };
+	}
+
+	// One service for the whole test: a new one on every render would itself count as a move.
+	function drawnFor(getProcessBehaviorOverTime: ReturnType<typeof vi.fn>) {
+		const metricsService = createMetricsService(getProcessBehaviorOverTime);
+		return renderHook(
+			({ ownerId }: { ownerId: number }) =>
+				usePbcOverTime(
+					{ ownerId, ownerUpdatedAt: 0 },
+					metricsService,
+					RANGE_START,
+					RANGE_END,
+				),
+			{ initialProps: { ownerId: OWNER_ID } },
+		);
+	}
+
+	function quietly() {
+		return vi.spyOn(console, "error").mockImplementation(() => {
+			// The failures below are expected; what the chart shows is what is asserted.
+		});
+	}
+
+	// The chart logs a failure in the same step that takes it in, so the log says it has landed.
+	async function failed(
+		request: Request,
+		consoleError: ReturnType<typeof quietly>,
+		reason: string,
+	) {
+		const error = new Error(reason);
+		request.fail(error);
+		await waitFor(() =>
+			expect(consoleError).toHaveBeenCalledWith(expect.any(String), error),
+		);
+	}
+
+	it("does not ask again for the current owner when the previous owner's series lands late", async () => {
+		const { requests, getProcessBehaviorOverTime } = heldRequests();
+		const { result, rerender } = drawnFor(getProcessBehaviorOverTime);
+		rerender({ ownerId: OTHER_OWNER_ID });
+		expect(getProcessBehaviorOverTime).toHaveBeenCalledTimes(2);
+
+		await act(async () => requests[0].answer(FIRST_RANGE_SERIES));
+
+		expect(getProcessBehaviorOverTime).toHaveBeenCalledTimes(2);
+		expect(result.current.status).toBe("loading");
+	});
+
+	it("keeps the current owner's could-not-load note when the previous owner's request fails later", async () => {
+		const consoleError = quietly();
+		const { requests, getProcessBehaviorOverTime } = heldRequests();
+		const { result, rerender } = drawnFor(getProcessBehaviorOverTime);
+		rerender({ ownerId: OTHER_OWNER_ID });
+
+		await failed(requests[1], consoleError, "current owner");
+		expect(result.current.status).toBe("error");
+
+		await failed(requests[0], consoleError, "previous owner");
+
+		expect(result.current.status).toBe("error");
+		consoleError.mockRestore();
+	});
+
+	it("reads loading, not could-not-load, when the reader comes back to an owner whose request failed", async () => {
+		const consoleError = quietly();
+		const { requests, getProcessBehaviorOverTime } = heldRequests();
+		const { result, rerender } = drawnFor(getProcessBehaviorOverTime);
+		await failed(requests[0], consoleError, "first visit");
+		expect(result.current.status).toBe("error");
+
+		rerender({ ownerId: OTHER_OWNER_ID });
+		rerender({ ownerId: OWNER_ID });
+
+		expect(getProcessBehaviorOverTime).toHaveBeenCalledTimes(3);
+		expect(result.current.status).toBe("loading");
+		consoleError.mockRestore();
+	});
+});

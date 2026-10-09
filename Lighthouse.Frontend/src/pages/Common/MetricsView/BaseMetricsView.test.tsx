@@ -3683,6 +3683,50 @@ describe("BaseMetricsView component", () => {
 				);
 			});
 		});
+
+		it("asks for the raw throughput PBC once the toggle is switched back off", async () => {
+			const user = userEvent.setup();
+			const pbcMetricsService = createMockMetricsService<IWorkItem>();
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockTeam}
+					metricsService={pbcMetricsService}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+					hasForecastFilter={true}
+					forecastFilterConditions={[
+						{
+							fieldKey: "workitem.type" as const,
+							operator: "equals" as const,
+							value: "Bug",
+						},
+					]}
+				/>,
+			);
+			const toggle = await screen.findByLabelText(/use filtered throughput/i);
+			await user.click(toggle);
+			await waitFor(() => {
+				expect(pbcMetricsService.getThroughputPbc).toHaveBeenCalledWith(
+					mockTeam.id,
+					expect.any(Date),
+					expect.any(Date),
+					"filtered",
+				);
+			});
+
+			await user.click(toggle);
+
+			await waitFor(() => {
+				expect(pbcMetricsService.getThroughputPbc).toHaveBeenLastCalledWith(
+					mockTeam.id,
+					expect.any(Date),
+					expect.any(Date),
+					"raw",
+				);
+			});
+		});
 	});
 
 	describe("M4 RAG Footers — Aging and Flow Stability Widgets", () => {

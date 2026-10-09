@@ -1,4 +1,5 @@
 import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { LineChart } from "@mui/x-charts";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeature } from "../../../models/Feature";
@@ -568,5 +569,21 @@ describe("PbcOverTimeWidget", () => {
 		const empty = await screen.findByTestId("pbc-over-time-empty");
 		expect(empty.textContent).toBe(HONEST_EMPTY_COPY);
 		expect(screen.queryByTestId("mock-line-chart")).not.toBeInTheDocument();
+	});
+});
+
+describe("PbcOverTimeWidget's date axis", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("lays the recorded days out as evenly spaced points", async () => {
+		renderWidget(vi.fn().mockResolvedValue(THREE_DAY_SERIES));
+
+		await screen.findByTestId("mock-line-chart");
+
+		expect(vi.mocked(LineChart).mock.lastCall?.[0].xAxis?.[0]).toMatchObject({
+			scaleType: "point",
+		});
 	});
 });

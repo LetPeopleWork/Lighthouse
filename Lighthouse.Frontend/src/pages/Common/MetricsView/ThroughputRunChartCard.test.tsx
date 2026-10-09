@@ -15,15 +15,18 @@ vi.mock("../../../components/Common/Charts/BarRunChart", () => ({
 	default: ({
 		title,
 		chartData,
+		displayTotal,
 		filterToggle,
 	}: {
 		title: string;
 		chartData: RunChartData;
+		displayTotal?: boolean;
 		filterToggle?: React.ReactNode;
 	}) => (
 		<div data-testid={`bar-run-chart-${title}`}>
 			<div data-testid="chart-history">{chartData.history}</div>
 			<div data-testid="chart-total">{chartData.total}</div>
+			<div data-testid="chart-shows-total">{String(displayTotal)}</div>
 			{filterToggle}
 		</div>
 	),
@@ -143,5 +146,51 @@ describe("ThroughputRunChartCard", () => {
 		await user.click(toggle);
 
 		expect(props.metricsService.getThroughput).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe("ThroughputRunChartCard when the filtered series cannot be loaded", () => {
+	beforeEach(() => {
+		mockCanUsePremiumFeatures.mockReturnValue(true);
+		queryClient = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+	});
+
+	it("logs the failure and keeps showing the unfiltered series", async () => {
+		const consoleError = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
+		const failure = new Error("filtered throughput failed");
+		const props = buildProps();
+		vi.mocked(props.metricsService.getThroughput).mockRejectedValue(failure);
+		render(<ThroughputRunChartCard {...props} />);
+
+		await userEvent
+			.setup()
+			.click(screen.getByLabelText(/use filtered throughput/i));
+
+		await waitFor(() => {
+			expect(consoleError).toHaveBeenCalledWith(
+				"Error fetching filtered throughput:",
+				failure,
+			);
+		});
+		expect(screen.getByTestId("chart-total")).toHaveTextContent("5");
+		consoleError.mockRestore();
+	});
+});
+
+describe("ThroughputRunChartCard's total", () => {
+	beforeEach(() => {
+		queryClient = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+	});
+
+	it("asks the run chart to show the total it counts", () => {
+		render(<ThroughputRunChartCard {...buildProps()} />);
+
+		expect(screen.getByTestId("chart-shows-total")).toHaveTextContent("true");
 	});
 });
