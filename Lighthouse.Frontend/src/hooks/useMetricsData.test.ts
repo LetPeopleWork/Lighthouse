@@ -1,4 +1,10 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+	type RenderHookOptions,
+	renderHook as renderHookWithoutQueries,
+	waitFor,
+} from "@testing-library/react";
+import { createElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IBlackoutPeriod } from "../models/BlackoutPeriod";
 import type { IFeatureOwner } from "../models/IFeatureOwner";
@@ -180,8 +186,22 @@ function createMockPortfolioEntity(
 	} as IPortfolio;
 }
 
-const startDate = new Date("2024-01-01");
-const endDate = new Date("2024-06-30");
+// Calendar days at local midnight: the hook asks for days, so a request reads back the same Date.
+const startDate = new Date(2024, 0, 1);
+const endDate = new Date(2024, 5, 30);
+
+let queryClient: QueryClient;
+
+function renderHook<Result, Props>(
+	render: (props: Props) => Result,
+	options?: RenderHookOptions<Props>,
+) {
+	return renderHookWithoutQueries(render, {
+		wrapper: ({ children }: { children: ReactNode }) =>
+			createElement(QueryClientProvider, { client: queryClient }, children),
+		...options,
+	});
+}
 
 /** The five methods the hook probes to decide a service is portfolio-shaped. */
 const portfolioProbeMethods = [
@@ -204,6 +224,9 @@ describe("useMetricsData", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockBlackoutPeriodService.getAll.mockResolvedValue([]);
+		queryClient = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
 	});
 
 	describe("The risk does not follow the date range", () => {
@@ -1279,7 +1302,7 @@ describe("useMetricsData", () => {
 		it("still refetches an active key when the date window moves", async () => {
 			const entity = createMockEntity();
 			const service = createMockTeamMetricsService();
-			const laterEnd = new Date("2024-07-31");
+			const laterEnd = new Date(2024, 6, 31);
 
 			const { rerender } = renderHook(
 				({ end }: { end: Date }) =>
@@ -1383,6 +1406,45 @@ describe("useMetricsData", () => {
 			}
 			expect(mockBlackoutPeriodService.getAll).not.toHaveBeenCalled();
 			expect(countServiceCalls(service)).toBe(0);
+		});
+	});
+	describe("A failed window after the owner changes", () => {
+		it("shows nothing rather than the previous owner's answer", async () => {
+			const firstTeam = createMockEntity({ id: 1 });
+			const secondTeam = createMockEntity({ id: 2 });
+			const service = createMockTeamMetricsService();
+			const firstTeamsThroughput = new RunChartData({}, 30, 11);
+			vi.mocked(service.getThroughput).mockImplementation((ownerId) =>
+				ownerId === firstTeam.id
+					? Promise.resolve(firstTeamsThroughput)
+					: Promise.reject(new Error("throughput failed")),
+			);
+			const consoleSpy = vi
+				.spyOn(console, "error")
+				.mockImplementation(() => {});
+
+			const { result, rerender } = renderHook(
+				({ owner }: { owner: IFeatureOwner }) =>
+					useMetricsData(
+						owner,
+						service,
+						startDate,
+						endDate,
+						new Set<MetricsFetchKey>(["throughput"]),
+					),
+				{ initialProps: { owner: firstTeam } },
+			);
+			await waitFor(() => {
+				expect(result.current.throughputData).toBe(firstTeamsThroughput);
+			});
+
+			rerender({ owner: secondTeam });
+
+			await waitFor(() => {
+				expect(result.current.fetchStates.throughput?.status).toBe("error");
+			});
+			expect(result.current.throughputData).toBeNull();
+			consoleSpy.mockRestore();
 		});
 	});
 });

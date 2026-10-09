@@ -2,7 +2,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	act,
 	fireEvent,
-	render,
+	type RenderOptions,
+	render as renderWithoutQueries,
 	screen,
 	waitFor,
 } from "@testing-library/react";
@@ -714,6 +715,23 @@ vi.mock("./WidgetShell", () => ({
 	),
 }));
 
+let queryClient: QueryClient;
+
+beforeEach(() => {
+	queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+});
+
+function render(ui: ReactNode, options?: RenderOptions) {
+	return renderWithoutQueries(ui, {
+		wrapper: ({ children }: { children: ReactNode }) => (
+			<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+		),
+		...options,
+	});
+}
+
 describe("BaseMetricsView component", () => {
 	// Helper function to render component with router context
 	const renderWithRouter = (component: ReactNode) => {
@@ -1325,6 +1343,13 @@ describe("BaseMetricsView component", () => {
 		const expectedEnd = new Date(previousEnd);
 		expectedEnd.setDate(expectedEnd.getDate() - 30);
 
+		// The service is asked for a calendar day, which it reads back as that day's local midnight.
+		const expectedEndDay = new Date(
+			expectedEnd.getFullYear(),
+			expectedEnd.getMonth(),
+			expectedEnd.getDate(),
+		);
+
 		fireEvent.click(screen.getByTestId("change-end-date"));
 
 		await waitFor(() => {
@@ -1333,11 +1358,11 @@ describe("BaseMetricsView component", () => {
 			);
 			expect(mockMetricsService.getInProgressItems).toHaveBeenCalledWith(
 				mockProject.id,
-				expectedEnd,
+				expectedEndDay,
 			);
 			expect(mockMetricsService.getTotalWorkItemAge).toHaveBeenCalledWith(
 				mockProject.id,
-				expectedEnd,
+				expectedEndDay,
 			);
 		});
 	});

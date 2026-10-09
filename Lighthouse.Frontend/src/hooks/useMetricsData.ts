@@ -1,4 +1,12 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import {
+	useCallback,
+	useContext,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import type { IBlackoutPeriod } from "../models/BlackoutPeriod";
 import type { BlockedCountSnapshot } from "../models/BlockedCountSnapshot";
 import type { IFeature } from "../models/Feature";
@@ -30,6 +38,11 @@ import {
 	getMetricsFetchKeys,
 	type MetricsFetchKey,
 } from "../pages/Common/MetricsView/categoryMetadata";
+import {
+	type FetchKeyStates,
+	fetchKeyStateOf,
+	type QueryProgress,
+} from "../pages/Common/MetricsView/widgetStatus";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 import type {
 	IMetricsService,
@@ -37,6 +50,7 @@ import type {
 	ITeamMetricsService,
 } from "../services/Api/MetricsService";
 import { useTerminology } from "../services/TerminologyContext";
+import { formatLocalDate, parseLocalDate } from "../utils/date/localDate";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -49,6 +63,18 @@ const allMetricsFetchKeys: ReadonlySet<MetricsFetchKey> = new Set(
 	getMetricsFetchKeys(),
 );
 
+/**
+ * Every metrics request is asked fresh for the window on screen and forgotten once nothing shows
+ * it: a dashboard answer is only true for the moment it was asked, so caching it, retrying it or
+ * refetching it behind the reader's back would show numbers the reader did not ask for.
+ */
+export const metricsQueryOptions = {
+	staleTime: 0,
+	gcTime: 0,
+	retry: false,
+	refetchOnWindowFocus: false,
+} as const;
+
 export interface MetricsData<T> {
 	blackoutPeriods: IBlackoutPeriod[];
 	throughputData: RunChartData | null;
@@ -60,7 +86,7 @@ export interface MetricsData<T> {
 	workItemAgePercentilesValues: IPercentileValue[];
 	/**
 	 * The same snapshot read one period earlier (window ends the day before `startDate`), which is
-	 * what the widget's previous-period trend compares against (D5).
+	 * what the widget's previous-period trend compares against.
 	 */
 	previousWorkItemAgePercentilesValues: IPercentileValue[];
 	perStatePercentileValues: IPerStatePercentileValues[];
@@ -95,6 +121,8 @@ export interface MetricsData<T> {
 	cycleTimePercentilesInfo: ICycleTimePercentilesInfo | null;
 	flowEfficiencyInfo: IFlowEfficiencyInfo | null;
 	blockedCountHistory: BlockedCountSnapshot[] | null;
+	/** How far each request for the selected window has got, by the fetch key that asks for it. */
+	fetchStates: FetchKeyStates;
 	refetchThroughputPbc: (view?: "raw" | "filtered") => Promise<void>;
 }
 
@@ -128,6 +156,90 @@ function isTeamOwnedMetricsService(service: object): boolean {
 	return "getFeaturesInProgress" in service;
 }
 
+const everyFetchKeyApplies = Object.fromEntries(
+	getMetricsFetchKeys().map((key) => [key, true]),
+) as Record<MetricsFetchKey, boolean>;
+
+// Whether this owner has the question at all. A key that does not apply is never asked, and is
+// never waited for either.
+function applicabilityFor(service: object): Record<MetricsFetchKey, boolean> {
+	const isPortfolioShaped = isProjectMetricsService(service);
+	return {
+		...everyFetchKeyApplies,
+		sleRisk: providesSleRisk(service),
+		featureSizeData: isPortfolioShaped,
+		featureSizePbc: isPortfolioShaped,
+		featureSizeEstimation: isPortfolioShaped,
+		featureSizePercentilesInfo: isPortfolioShaped,
+		featuresWorkedOnInfo: isTeamMetricsService(service),
+	};
+}
+
+type OwnerType = "team" | "portfolio";
+
+type OwnerRequest = { readonly ownerType: OwnerType; readonly ownerId: number };
+type AsOfRequest = OwnerRequest & { readonly asOf: string };
+type WindowRequest = OwnerRequest & {
+	readonly from: string;
+	readonly to: string;
+};
+
+function dayOf(localDay: string): Date {
+	const day = parseLocalDate(localDay);
+	if (day === null) {
+		throw new TypeError(`${localDay} is not a calendar day.`);
+	}
+	return day;
+}
+
+type MetricsQuery<V> = {
+	readonly progress: QueryProgress;
+	/** The answer for the selected window or, while it has none, the last one for this owner. */
+	readonly answer: V | null;
+};
+
+// The key holds everything the request sends, so an answer for a window the reader has already
+// left lands under that window's key and is never read. A window that fails keeps showing the
+// last good answer, but never one that belongs to the owner shown before.
+function useMetricsQuery<R extends OwnerRequest, V>(
+	fetchName: string,
+	request: R,
+	ask: (request: R) => Promise<V | undefined> | V | undefined,
+	enabled: boolean,
+	failureMessage?: string,
+): MetricsQuery<V> {
+	const query = useQuery({
+		...metricsQueryOptions,
+		queryKey: ["metrics", fetchName, request] as const,
+		queryFn: async ({ queryKey }) => {
+			try {
+				// An empty answer is an answer: undefined would read as still on its way.
+				return (await ask(queryKey[2])) ?? null;
+			} catch (error) {
+				if (failureMessage) console.error(failureMessage, error);
+				throw error;
+			}
+		},
+		enabled,
+		placeholderData: keepPreviousData,
+	});
+
+	const owner = `${request.ownerType}:${request.ownerId}`;
+	const lastGood = useRef<{ owner: string; answer: V | null } | null>(null);
+	if (lastGood.current?.owner !== owner) lastGood.current = null;
+	if (query.data !== undefined && !query.isPlaceholderData) {
+		lastGood.current = { owner, answer: query.data };
+	}
+
+	return {
+		progress: query,
+		answer:
+			query.data === undefined
+				? (lastGood.current?.answer ?? null)
+				: query.data,
+	};
+}
+
 export function useMetricsData<
 	T extends IWorkItem | IFeature,
 	E extends IFeatureOwner,
@@ -143,31 +255,6 @@ export function useMetricsData<
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 
-	const [blackoutPeriods, setBlackoutPeriods] = useState<IBlackoutPeriod[]>([]);
-	const [throughputData, setThroughputData] = useState<RunChartData | null>(
-		null,
-	);
-	const [wipOverTimeData, setWipOverTimeData] = useState<RunChartData | null>(
-		null,
-	);
-	const [inProgressItems, setInProgressItems] = useState<IWorkItem[]>([]);
-	const [blockedItems, setBlockedItems] = useState<IWorkItem[]>([]);
-	const [cycleTimeData, setCycleTimeData] = useState<T[]>([]);
-	const [percentileValues, setPercentileValues] = useState<IPercentileValue[]>(
-		[],
-	);
-	const [workItemAgePercentilesValues, setWorkItemAgePercentilesValues] =
-		useState<IPercentileValue[]>([]);
-	const [
-		previousWorkItemAgePercentilesValues,
-		setPreviousWorkItemAgePercentilesValues,
-	] = useState<IPercentileValue[]>([]);
-	const [perStatePercentileValues, setPerStatePercentileValues] = useState<
-		IPerStatePercentileValues[]
-	>([]);
-	const [sleRiskValues, setSleRiskValues] = useState<ISleRisk[]>([]);
-	const [cumulativeStateTime, setCumulativeStateTime] =
-		useState<ICumulativeStateTimeResponse | null>(null);
 	const [sizePercentileValues, setSizePercentileValues] = useState<
 		IPercentileValue[]
 	>([]);
@@ -177,10 +264,6 @@ export function useMetricsData<
 	const [predictabilityData, setPredictabilityData] =
 		useState<IForecastPredictabilityScore | null>(null);
 	const [throughputPbcData, setThroughputPbcData] =
-		useState<ProcessBehaviourChartData | null>(null);
-	const [wipPbcData, setWipPbcData] =
-		useState<ProcessBehaviourChartData | null>(null);
-	const [totalWorkItemAgePbcData, setTotalWorkItemAgePbcData] =
 		useState<ProcessBehaviourChartData | null>(null);
 	const [cycleTimePbcData, setCycleTimePbcData] =
 		useState<ProcessBehaviourChartData | null>(null);
@@ -194,8 +277,6 @@ export function useMetricsData<
 		useState<IPercentileValue | null>(null);
 	const [featureSizeTarget, setFeatureSizeTarget] =
 		useState<IPercentileValue | null>(null);
-	const [totalWorkItemAge, setTotalWorkItemAge] = useState<number | null>(null);
-	const [arrivalsData, setArrivalsData] = useState<RunChartData | null>(null);
 	const [arrivalsPbcData, setArrivalsPbcData] =
 		useState<ProcessBehaviourChartData | null>(null);
 	const [throughputInfo, setThroughputInfo] = useState<IThroughputInfo | null>(
@@ -214,34 +295,11 @@ export function useMetricsData<
 		useState<IPredictabilityScoreInfo | null>(null);
 	const [cycleTimePercentilesInfo, setCycleTimePercentilesInfo] =
 		useState<ICycleTimePercentilesInfo | null>(null);
-	const [flowEfficiencyInfo, setFlowEfficiencyInfo] =
-		useState<IFlowEfficiencyInfo | null>(null);
-	const [blockedCountHistory, setBlockedCountHistory] = useState<
-		BlockedCountSnapshot[] | null
-	>(null);
 	// One primitive per fetch key. Primitives are compared by value, so an effect listing its own
 	// flag re-runs only when that flag flips — never because a caller handed us a new Set with the
 	// same contents. Callers grow the key set monotonically within an (entity, window), which makes
-	// false→true happen at most once and therefore fetches at most once, with no refs or cache
-	// (Bug #5571).
-	const needsBlackoutPeriods = activeFetchKeys.has("blackoutPeriods");
+	// false→true happen at most once and therefore fetches at most once, with no refs or cache.
 	const needsPredictability = activeFetchKeys.has("predictability");
-	const needsTotalWorkItemAge = activeFetchKeys.has("totalWorkItemAge");
-	const needsThroughput = activeFetchKeys.has("throughput");
-	const needsInProgressItems = activeFetchKeys.has("inProgressItems");
-	const needsBlockedItems = activeFetchKeys.has("blockedItems");
-	const needsWipOverTime = activeFetchKeys.has("wipOverTime");
-	const needsCycleTimeData = activeFetchKeys.has("cycleTimeData");
-	const needsCycleTimePercentiles = activeFetchKeys.has("cycleTimePercentiles");
-	const needsWorkItemAgePercentiles = activeFetchKeys.has(
-		"workItemAgePercentiles",
-	);
-	const needsAgeInStatePercentiles = activeFetchKeys.has(
-		"ageInStatePercentiles",
-	);
-	const needsSleRisk = activeFetchKeys.has("sleRisk");
-	const needsCumulativeStateTime = activeFetchKeys.has("cumulativeStateTime");
-	const needsFlowEfficiency = activeFetchKeys.has("flowEfficiency");
 	const needsFeatureSizeData = activeFetchKeys.has("featureSizeData");
 	const needsFeatureSizePbc = activeFetchKeys.has("featureSizePbc");
 	const needsFeatureSizeEstimation = activeFetchKeys.has(
@@ -253,7 +311,6 @@ export function useMetricsData<
 	const needsEstimationVsCycleTime = activeFetchKeys.has(
 		"estimationVsCycleTime",
 	);
-	const needsArrivals = activeFetchKeys.has("arrivals");
 	const needsThroughputInfo = activeFetchKeys.has("throughputInfo");
 	const needsArrivalsInfo = activeFetchKeys.has("arrivalsInfo");
 	const needsWipOverviewInfo = activeFetchKeys.has("wipOverviewInfo");
@@ -264,28 +321,264 @@ export function useMetricsData<
 	const needsCycleTimePercentilesInfo = activeFetchKeys.has(
 		"cycleTimePercentilesInfo",
 	);
-	const needsBlockedCountHistory = activeFetchKeys.has("blockedCountHistory");
 	const needsFeaturesWorkedOnInfo = activeFetchKeys.has("featuresWorkedOnInfo");
-	const needsPbcCore = activeFetchKeys.has("pbcCore");
 	const needsPbcCharts = activeFetchKeys.has("pbcCharts");
 
-	// The one batch whose members are still fetched together: they share a window derivation and,
-	// on the default Flow Overview, every one of them is required anyway (see the batch below).
-	const needsCycleTimeBatch =
-		needsCycleTimeData ||
-		needsCycleTimePercentiles ||
-		needsWorkItemAgePercentiles ||
-		needsFlowEfficiency;
+	const applicable = useMemo(
+		() => applicabilityFor(metricsService),
+		[metricsService],
+	);
+	const isAsked = (key: MetricsFetchKey) =>
+		activeFetchKeys.has(key) && applicable[key];
 
-	useEffect(() => {
-		if (!needsBlackoutPeriods) return;
-		blackoutPeriodService
-			.getAll()
-			.then(setBlackoutPeriods)
-			.catch(() => {
-				/* optional — fall back to empty */
-			});
-	}, [blackoutPeriodService, needsBlackoutPeriods]);
+	const ownerType: OwnerType = isTeamOwnedMetricsService(metricsService)
+		? "team"
+		: "portfolio";
+	const owner: OwnerRequest = { ownerType, ownerId: entity.id };
+	const selectedWindow: WindowRequest = {
+		...owner,
+		from: formatLocalDate(startDate),
+		to: formatLocalDate(endDate),
+	};
+	const asOfEnd: AsOfRequest = { ...owner, asOf: selectedWindow.to };
+
+	const blackoutPeriods = useMetricsQuery(
+		"getAllBlackoutPeriods",
+		owner,
+		() => blackoutPeriodService.getAll(),
+		isAsked("blackoutPeriods"),
+	);
+
+	const totalWorkItemAge = useMetricsQuery(
+		"getTotalWorkItemAge",
+		asOfEnd,
+		({ ownerId, asOf }) =>
+			metricsService.getTotalWorkItemAge(ownerId, dayOf(asOf)),
+		isAsked("totalWorkItemAge"),
+		"Error fetching total work item age:",
+	);
+
+	const throughput = useMetricsQuery(
+		"getThroughput",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getThroughput(ownerId, dayOf(from), dayOf(to)),
+		isAsked("throughput"),
+		"Error getting throughput:",
+	);
+
+	const inProgressItems = useMetricsQuery(
+		"getInProgressItems",
+		asOfEnd,
+		({ ownerId, asOf }) =>
+			metricsService.getInProgressItems(ownerId, dayOf(asOf)),
+		isAsked("inProgressItems"),
+		`Error getting ${workItemsTerm} in progress:`,
+	);
+
+	// The blocked overview spans BOTH open state categories (To Do + In Progress) — an item can be
+	// stuck in To Do because it is blocked — so it is sourced from the blocked-eligible endpoint,
+	// not filtered out of the WIP (in-progress-only) set.
+	const blockedItems = useMetricsQuery(
+		"getBlockedItemsAtDate",
+		asOfEnd,
+		({ ownerId, asOf }) =>
+			metricsService.getBlockedItemsAtDate(ownerId, dayOf(asOf)),
+		isAsked("blockedItems"),
+		`Error getting blocked ${workItemsTerm}:`,
+	);
+
+	const wipOverTime = useMetricsQuery(
+		"getWorkInProgressOverTime",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getWorkInProgressOverTime(ownerId, dayOf(from), dayOf(to)),
+		isAsked("wipOverTime"),
+		`Error getting ${workItemsTerm} over time:`,
+	);
+
+	const cycleTimeFailure = `Error fetching ${cycleTimeTerm} data:`;
+
+	const cycleTimeData = useMetricsQuery(
+		"getCycleTimeData",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getCycleTimeData(ownerId, dayOf(from), dayOf(to)),
+		isAsked("cycleTimeData"),
+		cycleTimeFailure,
+	);
+
+	const cycleTimePercentiles = useMetricsQuery(
+		"getCycleTimePercentiles",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getCycleTimePercentiles(ownerId, dayOf(from), dayOf(to)),
+		isAsked("cycleTimePercentiles"),
+		cycleTimeFailure,
+	);
+
+	const workItemAgePercentiles = useMetricsQuery(
+		"getWorkItemAgePercentiles",
+		{ ...selectedWindow, period: "selected" },
+		({ ownerId, from, to }) =>
+			metricsService.getWorkItemAgePercentiles(ownerId, dayOf(from), dayOf(to)),
+		isAsked("workItemAgePercentiles"),
+		cycleTimeFailure,
+	);
+
+	// The previous-period trend compares against the same window length, ending the day BEFORE the
+	// selected range starts. The backend snapshots on the window's end date, so that boundary day is
+	// what actually selects the comparison point.
+	const previousWorkItemAgePercentiles = useMetricsQuery(
+		"getWorkItemAgePercentiles",
+		{ ...selectedWindow, period: "previous" },
+		({ ownerId, from, to }) => {
+			const selectedStart = dayOf(from);
+			const previousPeriodEnd = new Date(selectedStart.getTime() - ONE_DAY_MS);
+			const previousPeriodStart = new Date(
+				previousPeriodEnd.getTime() -
+					(dayOf(to).getTime() - selectedStart.getTime()),
+			);
+			return metricsService.getWorkItemAgePercentiles(
+				ownerId,
+				previousPeriodStart,
+				previousPeriodEnd,
+			);
+		},
+		isAsked("workItemAgePercentiles"),
+		cycleTimeFailure,
+	);
+
+	const flowEfficiency = useMetricsQuery(
+		"getFlowEfficiencyInfo",
+		selectedWindow,
+		({ ownerType: askedFor, ownerId, from, to }) =>
+			askedFor === "team"
+				? metricsService.getFlowEfficiencyInfoForTeam(
+						ownerId,
+						dayOf(from),
+						dayOf(to),
+					)
+				: metricsService.getFlowEfficiencyInfoForPortfolio(
+						ownerId,
+						dayOf(from),
+						dayOf(to),
+					),
+		isAsked("flowEfficiency"),
+		cycleTimeFailure,
+	);
+
+	const ageInStatePercentiles = useMetricsQuery(
+		"getAgeInStatePercentiles",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getAgeInStatePercentiles(ownerId, dayOf(from), dayOf(to)),
+		isAsked("ageInStatePercentiles"),
+		"Error fetching per-state percentiles:",
+	);
+
+	// No dates in this request. The risk is a claim about today over the team's own configured
+	// history, so moving the range picker must not ask for it again.
+	const sleRisk = useMetricsQuery(
+		"getSleRisk",
+		owner,
+		({ ownerId }) =>
+			(metricsService as unknown as ITeamMetricsService).getSleRisk(ownerId),
+		isAsked("sleRisk"),
+		"Error fetching SLE risk:",
+	);
+
+	const cumulativeStateTime = useMetricsQuery(
+		"getCumulativeStateTime",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getCumulativeStateTimeForTeam(
+				ownerId,
+				dayOf(from),
+				dayOf(to),
+			),
+		isAsked("cumulativeStateTime"),
+		"Error fetching cumulative state time:",
+	);
+
+	const arrivals = useMetricsQuery(
+		"getArrivals",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getArrivals(ownerId, dayOf(from), dayOf(to)),
+		isAsked("arrivals"),
+		"Error fetching arrivals data:",
+	);
+
+	// The blocked trend looks for its baseline the day before the window starts, while the backend
+	// only returns days on or after the start it is given — so the history is asked from one day
+	// earlier, or the trend never finds its baseline.
+	const blockedCountHistory = useMetricsQuery(
+		"getBlockedCountHistory",
+		selectedWindow,
+		({ ownerId, from, to }) => {
+			const baselineStart = dayOf(from);
+			baselineStart.setDate(baselineStart.getDate() - 1);
+			return metricsService.getBlockedCountHistory(
+				ownerId,
+				baselineStart,
+				dayOf(to),
+			);
+		},
+		isAsked("blockedCountHistory"),
+		"Error fetching blocked count history:",
+	);
+
+	const coreProcessBehaviourFailure =
+		"Error fetching core process behaviour chart data:";
+
+	const wipPbc = useMetricsQuery(
+		"getWipPbc",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getWipPbc(ownerId, dayOf(from), dayOf(to)),
+		isAsked("pbcCore"),
+		coreProcessBehaviourFailure,
+	);
+
+	const totalWorkItemAgePbc = useMetricsQuery(
+		"getTotalWorkItemAgePbc",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getTotalWorkItemAgePbc(ownerId, dayOf(from), dayOf(to)),
+		isAsked("pbcCore"),
+		coreProcessBehaviourFailure,
+	);
+
+	const queriesByFetchKey: Partial<
+		Record<MetricsFetchKey, readonly QueryProgress[]>
+	> = {
+		blackoutPeriods: [blackoutPeriods.progress],
+		totalWorkItemAge: [totalWorkItemAge.progress],
+		throughput: [throughput.progress],
+		inProgressItems: [inProgressItems.progress],
+		blockedItems: [blockedItems.progress],
+		wipOverTime: [wipOverTime.progress],
+		cycleTimeData: [cycleTimeData.progress],
+		cycleTimePercentiles: [cycleTimePercentiles.progress],
+		workItemAgePercentiles: [
+			workItemAgePercentiles.progress,
+			previousWorkItemAgePercentiles.progress,
+		],
+		flowEfficiency: [flowEfficiency.progress],
+		ageInStatePercentiles: [ageInStatePercentiles.progress],
+		sleRisk: [sleRisk.progress],
+		cumulativeStateTime: [cumulativeStateTime.progress],
+		arrivals: [arrivals.progress],
+		blockedCountHistory: [blockedCountHistory.progress],
+		pbcCore: [wipPbc.progress, totalWorkItemAgePbc.progress],
+	};
+	const fetchStates: FetchKeyStates = Object.fromEntries(
+		Object.entries(queriesByFetchKey).map(([key, queries]) => [
+			key,
+			fetchKeyStateOf(queries, applicable[key as MetricsFetchKey]),
+		]),
+	);
 
 	useEffect(() => {
 		if (!needsPredictability) return;
@@ -296,166 +589,6 @@ export function useMetricsData<
 				console.error("Error fetching predictability data:", error),
 			);
 	}, [entity, metricsService, startDate, endDate, needsPredictability]);
-
-	useEffect(() => {
-		if (!needsTotalWorkItemAge) return;
-		metricsService
-			.getTotalWorkItemAge(entity.id, endDate)
-			.then(setTotalWorkItemAge)
-			.catch((error) =>
-				console.error("Error fetching total work item age:", error),
-			);
-	}, [entity, metricsService, endDate, needsTotalWorkItemAge]);
-
-	useEffect(() => {
-		if (!needsThroughput) return;
-		metricsService
-			.getThroughput(entity.id, startDate, endDate)
-			.then(setThroughputData)
-			.catch((error) => console.error("Error getting throughput:", error));
-	}, [entity, metricsService, startDate, endDate, needsThroughput]);
-
-	useEffect(() => {
-		if (!needsInProgressItems) return;
-		metricsService
-			.getInProgressItems(entity.id, endDate)
-			.then(setInProgressItems)
-			.catch((error) =>
-				console.error(`Error getting ${workItemsTerm} in progress:`, error),
-			);
-	}, [entity, metricsService, endDate, workItemsTerm, needsInProgressItems]);
-
-	useEffect(() => {
-		if (!needsBlockedItems) return;
-		// The blocked overview spans BOTH open state categories (To Do + In Progress) — an item
-		// can be stuck in To Do because it is blocked — so it is sourced from the blocked-eligible
-		// endpoint, not filtered out of the WIP (in-progress-only) set.
-		metricsService
-			.getBlockedItemsAtDate(entity.id, endDate)
-			.then(setBlockedItems)
-			.catch((error) =>
-				console.error(`Error getting blocked ${workItemsTerm}:`, error),
-			);
-	}, [entity, metricsService, endDate, workItemsTerm, needsBlockedItems]);
-
-	useEffect(() => {
-		if (!needsWipOverTime) return;
-		metricsService
-			.getWorkInProgressOverTime(entity.id, startDate, endDate)
-			.then(setWipOverTimeData)
-			.catch((error) =>
-				console.error(`Error getting ${workItemsTerm} over time:`, error),
-			);
-	}, [
-		entity,
-		metricsService,
-		startDate,
-		endDate,
-		workItemsTerm,
-		needsWipOverTime,
-	]);
-
-	useEffect(() => {
-		if (!needsCycleTimeBatch) return;
-		// Every call below shares the same dependency signature, so they all belong in one
-		// parallel batch: getCycleTimeData used to be awaited sequentially ahead of the batch,
-		// which needlessly gated the rest of the view — including flow efficiency, which does
-		// not depend on cycle-time data at all (D18). The batch's cross-category members
-		// (per-state percentiles, cumulative state time) have since moved to their own gated
-		// effects; siblings still dispatch in the same commit, so those stay parallel too.
-		const fetchFlowEfficiency = () =>
-			isTeamOwnedMetricsService(metricsService)
-				? metricsService.getFlowEfficiencyInfoForTeam(
-						entity.id,
-						startDate,
-						endDate,
-					)
-				: metricsService.getFlowEfficiencyInfoForPortfolio(
-						entity.id,
-						startDate,
-						endDate,
-					);
-
-		// Previous-period window for the Work Item Age Percentiles trend (D5): the same window
-		// length, ending the day BEFORE the selected range starts. The backend snapshots on the
-		// window's endDate, so that boundary day is what actually selects the comparison point.
-		//
-		// Derived INSIDE the effect on purpose. As a component-scope `new Date(...)` it would be a
-		// fresh identity on every render and, once in this effect's dependency list, an endless
-		// re-render loop (React #185 — see docs/ci-learnings.md, 2026-05-25). Here it depends on
-		// nothing the effect does not already depend on.
-		const previousPeriodEnd = new Date(startDate.getTime() - ONE_DAY_MS);
-		const previousPeriodStart = new Date(
-			previousPeriodEnd.getTime() - (endDate.getTime() - startDate.getTime()),
-		);
-
-		const fetch = async () => {
-			const [
-				data,
-				percentiles,
-				workItemAgePercentiles,
-				previousWorkItemAgePercentiles,
-				flowEfficiency,
-			] = await Promise.all([
-				metricsService.getCycleTimeData(entity.id, startDate, endDate),
-				metricsService.getCycleTimePercentiles(entity.id, startDate, endDate),
-				metricsService.getWorkItemAgePercentiles(entity.id, startDate, endDate),
-				metricsService.getWorkItemAgePercentiles(
-					entity.id,
-					previousPeriodStart,
-					previousPeriodEnd,
-				),
-				fetchFlowEfficiency(),
-			]);
-			setCycleTimeData(data);
-			setPercentileValues(percentiles);
-			setWorkItemAgePercentilesValues(workItemAgePercentiles);
-			setPreviousWorkItemAgePercentilesValues(previousWorkItemAgePercentiles);
-			setFlowEfficiencyInfo(flowEfficiency ?? null);
-		};
-		fetch().catch((error) =>
-			console.error(`Error fetching ${cycleTimeTerm} data:`, error),
-		);
-	}, [
-		entity,
-		metricsService,
-		startDate,
-		endDate,
-		cycleTimeTerm,
-		needsCycleTimeBatch,
-	]);
-
-	useEffect(() => {
-		if (!needsAgeInStatePercentiles) return;
-		metricsService
-			.getAgeInStatePercentiles(entity.id, startDate, endDate)
-			.then(setPerStatePercentileValues)
-			.catch((error) =>
-				console.error("Error fetching per-state percentiles:", error),
-			);
-	}, [entity, metricsService, startDate, endDate, needsAgeInStatePercentiles]);
-
-	// No dates in the dependency list, because none are passed. The risk is a claim about today
-	// over the team's own configured history, so moving the range picker must not refetch it - and
-	// listing the dates here would do exactly that, quietly, on every change.
-	useEffect(() => {
-		if (!needsSleRisk) return;
-		if (!providesSleRisk(metricsService)) return;
-		metricsService
-			.getSleRisk(entity.id)
-			.then(setSleRiskValues)
-			.catch((error) => console.error("Error fetching SLE risk:", error));
-	}, [entity, metricsService, needsSleRisk]);
-
-	useEffect(() => {
-		if (!needsCumulativeStateTime) return;
-		metricsService
-			.getCumulativeStateTimeForTeam(entity.id, startDate, endDate)
-			.then(setCumulativeStateTime)
-			.catch((error) =>
-				console.error("Error fetching cumulative state time:", error),
-			);
-	}, [entity, metricsService, startDate, endDate, needsCumulativeStateTime]);
 
 	useEffect(() => {
 		if (!needsFeatureSizeData) return;
@@ -549,14 +682,6 @@ export function useMetricsData<
 	}, [entity, metricsService, startDate, endDate, needsEstimationVsCycleTime]);
 
 	useEffect(() => {
-		if (!needsArrivals) return;
-		metricsService
-			.getArrivals(entity.id, startDate, endDate)
-			.then(setArrivalsData)
-			.catch((error) => console.error("Error fetching arrivals data:", error));
-	}, [entity, metricsService, startDate, endDate, needsArrivals]);
-
-	useEffect(() => {
 		if (!needsThroughputInfo) return;
 		metricsService
 			.getThroughputInfo(entity.id, startDate, endDate)
@@ -627,24 +752,6 @@ export function useMetricsData<
 	]);
 
 	useEffect(() => {
-		if (!needsBlockedCountHistory) return;
-		// US-03 AC0 / Bug #5521: computeBlockedTrend looks for its baseline at
-		// startDate − 1 day, but the controller filters `RecordedAt >= start`. Fetching
-		// with the dashboard's own startDate therefore put the baseline day exactly one
-		// day outside the returned window, so the trend never found one and rendered the
-		// neutral placeholder on every instance for every range. Fetch one day earlier.
-		const baselineStart = new Date(startDate);
-		baselineStart.setDate(baselineStart.getDate() - 1);
-
-		metricsService
-			.getBlockedCountHistory(entity.id, baselineStart, endDate)
-			.then(setBlockedCountHistory)
-			.catch((error) =>
-				console.error("Error fetching blocked count history:", error),
-			);
-	}, [entity, metricsService, startDate, endDate, needsBlockedCountHistory]);
-
-	useEffect(() => {
 		if (!needsFeaturesWorkedOnInfo) return;
 		if (!isTeamMetricsService(metricsService)) return;
 		metricsService
@@ -654,21 +761,6 @@ export function useMetricsData<
 				console.error("Error fetching features worked on info:", error),
 			);
 	}, [entity, metricsService, startDate, endDate, needsFeaturesWorkedOnInfo]);
-
-	useEffect(() => {
-		if (!needsPbcCore) return;
-		const fetch = async () => {
-			const [wipPbc, totalWorkItemAgePbc] = await Promise.all([
-				metricsService.getWipPbc(entity.id, startDate, endDate),
-				metricsService.getTotalWorkItemAgePbc(entity.id, startDate, endDate),
-			]);
-			setWipPbcData(wipPbc);
-			setTotalWorkItemAgePbcData(totalWorkItemAgePbc);
-		};
-		fetch().catch((error) =>
-			console.error("Error fetching core process behaviour chart data:", error),
-		);
-	}, [entity, metricsService, startDate, endDate, needsPbcCore]);
 
 	useEffect(() => {
 		if (!needsPbcCharts) return;
@@ -703,34 +795,34 @@ export function useMetricsData<
 		},
 		[entity, metricsService, startDate, endDate],
 	);
-
 	return {
-		blackoutPeriods,
-		throughputData,
-		wipOverTimeData,
-		inProgressItems,
-		blockedItems,
-		cycleTimeData,
-		percentileValues,
-		workItemAgePercentilesValues,
-		previousWorkItemAgePercentilesValues,
-		perStatePercentileValues,
-		sleRiskValues,
-		cumulativeStateTime,
+		blackoutPeriods: blackoutPeriods.answer ?? [],
+		throughputData: throughput.answer,
+		wipOverTimeData: wipOverTime.answer,
+		inProgressItems: inProgressItems.answer ?? [],
+		blockedItems: blockedItems.answer ?? [],
+		cycleTimeData: cycleTimeData.answer ?? [],
+		percentileValues: cycleTimePercentiles.answer ?? [],
+		workItemAgePercentilesValues: workItemAgePercentiles.answer ?? [],
+		previousWorkItemAgePercentilesValues:
+			previousWorkItemAgePercentiles.answer ?? [],
+		perStatePercentileValues: ageInStatePercentiles.answer ?? [],
+		sleRiskValues: sleRisk.answer ?? [],
+		cumulativeStateTime: cumulativeStateTime.answer,
 		sizePercentileValues,
 		allFeaturesForSizeChart,
 		predictabilityData,
 		throughputPbcData,
-		wipPbcData,
-		totalWorkItemAgePbcData,
+		wipPbcData: wipPbc.answer,
+		totalWorkItemAgePbcData: totalWorkItemAgePbc.answer,
 		cycleTimePbcData,
 		featureSizePbcData,
 		estimationVsCycleTimeData,
 		featureSizeEstimationData,
 		serviceLevelExpectation,
 		featureSizeTarget,
-		totalWorkItemAge,
-		arrivalsData,
+		totalWorkItemAge: totalWorkItemAge.answer,
+		arrivalsData: arrivals.answer,
 		arrivalsPbcData,
 		throughputInfo,
 		arrivalsInfo,
@@ -740,8 +832,9 @@ export function useMetricsData<
 		totalWorkItemAgeInfo,
 		predictabilityScoreInfo,
 		cycleTimePercentilesInfo,
-		flowEfficiencyInfo,
-		blockedCountHistory,
+		flowEfficiencyInfo: flowEfficiency.answer,
+		blockedCountHistory: blockedCountHistory.answer,
+		fetchStates,
 		refetchThroughputPbc,
 	};
 }

@@ -1,5 +1,9 @@
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+	notifyManager,
+	QueryClient,
+	QueryClientProvider,
+} from "@tanstack/react-query";
 import {
 	act,
 	fireEvent,
@@ -460,6 +464,10 @@ function permutationsOf<T>(items: readonly T[]): T[][] {
 	);
 }
 
+// The query library tells components about an answer on a later timer tick, which act() does not
+// wait for. Telling them in the same tick lets each answered request show before the next step.
+notifyManager.setScheduler(queueMicrotask);
+
 beforeEach(() => {
 	vi.clearAllMocks();
 	localStorage.clear();
@@ -598,7 +606,7 @@ describe("a team's charts while the window is changing", () => {
 });
 
 describe("a team's chart when windows are picked in quick succession", () => {
-	it.skip("shows the second window when the first window's answer arrives last", async () => {
+	it("shows the second window when the first window's answer arrives last", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 		theReaderPicks("Last 90 days");
@@ -637,7 +645,7 @@ describe("a team's chart when windows are picked in quick succession", () => {
 	const lastPickedAnswersLast = (order: readonly string[]) =>
 		order[order.length - 1] === LAST_7_DAYS;
 
-	it.skip.each(everyArrivalOrder.filter((o) => !lastPickedAnswersLast(o)))(
+	it.each(everyArrivalOrder.filter((o) => !lastPickedAnswersLast(o)))(
 		"answers arriving as %s, then %s, then %s still settle on the last window picked",
 		answersArrivingInThisOrderSettleOnTheLastWindowPicked,
 	);
