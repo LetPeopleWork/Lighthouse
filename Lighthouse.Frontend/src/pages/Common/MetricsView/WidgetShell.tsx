@@ -25,6 +25,7 @@ import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
 import type { SleRiskColumnDescriptor } from "../../../utils/charts/sleRisk";
 import type { TrendPayload } from "./trendTypes";
 import type { WidgetStatusGuidance } from "./widgetInfoMetadata";
+import type { WidgetStatus } from "./widgetStatus";
 
 type RagStatus = "red" | "amber" | "green" | "none";
 
@@ -59,6 +60,10 @@ export interface WidgetShellProps {
 	readonly info?: WidgetInfo;
 	readonly viewData?: ViewDataPayload;
 	readonly trend?: TrendPayload;
+	/** Not drawn yet: the frame still always renders as ready. */
+	readonly status?: WidgetStatus;
+	/** Whether an older chart is on screen to dim while the selected window loads. */
+	readonly hasContentToDim?: boolean;
 	readonly children: React.ReactNode;
 }
 

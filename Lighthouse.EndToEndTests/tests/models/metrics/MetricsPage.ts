@@ -4,6 +4,7 @@ import {
 	type Page,
 	type Request,
 	type Response,
+	type Route,
 } from "@playwright/test";
 import { formatLocalDate } from "../../helpers/dates";
 import { WorkItemsDialog } from "./WorkItemsDialog";
@@ -43,6 +44,32 @@ export class MetricsWidget {
 
 	get Widget(): Locator {
 		return this.page.locator(`[data-testid="dashboard-item-${this.widgetId}"]`);
+	}
+
+	/**
+	 * The frame drawn round the chart. It is on screen before the chart's data, so seeing it says
+	 * nothing about the data; its `data-widget-status` does.
+	 */
+	get Frame(): Locator {
+		return this.page.getByTestId(`widget-shell-${this.widgetId}`);
+	}
+
+	/** Waits until the chart shows the selected window, and fails at once if it could not load. */
+	async waitUntilLoaded(): Promise<void> {
+		const frame = `[data-testid="widget-shell-${this.widgetId}"]`;
+		await this.page
+			.locator(
+				`${frame}[data-widget-status="ready"], ${frame}[data-widget-status="error"]`,
+			)
+			.waitFor({ timeout: 30_000 });
+		await expect(
+			this.Frame,
+			`${this.name} could not be loaded`,
+		).toHaveAttribute("data-widget-status", "ready");
+	}
+
+	async waitUntilLoading(): Promise<void> {
+		await expect(this.Frame).toHaveAttribute("data-widget-status", "loading");
 	}
 
 	get forecastFilterToggle(): Locator {
@@ -486,6 +513,36 @@ export class MetricsDateRange {
 		await this.close();
 	}
 
+	/** Picks a named window without waiting for its answers, so a test can watch the charts wait. */
+	async selectPresetWithoutWaiting(label: string): Promise<void> {
+		await this.open();
+		await this.presetChip(label).click();
+		await this.close();
+	}
+
+	/**
+	 * Holds back every metrics answer for the window that starts on `start` until the returned
+	 * function is called, so the time a chart spends waiting is long enough to see.
+	 */
+	async holdAnswersForWindowStarting(
+		start: Date,
+	): Promise<() => Promise<void>> {
+		const startParam = `startDate=${formatLocalDate(start)}`;
+		const heldBack: Route[] = [];
+		const isForThatWindow = (url: URL) =>
+			url.pathname.includes("/metrics/") && url.search.includes(startParam);
+		const holdBack = (route: Route) => {
+			heldBack.push(route);
+		};
+
+		await this.page.route(isForThatWindow, holdBack);
+
+		return async () => {
+			await this.page.unroute(isForThatWindow, holdBack);
+			await Promise.all(heldBack.map((route) => route.continue()));
+		};
+	}
+
 	stepBackwardButton(stepDays: number): Locator {
 		return this.page.getByRole("button", {
 			name: `Previous ${stepDays} days`,
@@ -897,6 +954,21 @@ export class MetricsPage {
 		return this.categoryWidgets[category].map(
 			([name, widgetId]) => new MetricsWidget(this.page, name, widgetId),
 		);
+	}
+
+	/**
+	 * Waits until every chart on the open category shows the selected window. Counting the frames
+	 * still loading is not enough on its own: before the first frame renders that count is zero too.
+	 */
+	async waitUntilEveryChartHasLoaded(): Promise<void> {
+		await this.page.locator("[data-widget-status]").first().waitFor();
+		await expect(
+			this.page.locator('[data-widget-status="loading"]'),
+		).toHaveCount(0, { timeout: 30_000 });
+		await expect(
+			this.page.locator('[data-widget-status="error"]'),
+			"a chart on this category could not be loaded",
+		).toHaveCount(0);
 	}
 
 	async getWidgetByName(

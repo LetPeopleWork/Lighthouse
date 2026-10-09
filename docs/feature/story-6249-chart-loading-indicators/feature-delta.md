@@ -619,3 +619,192 @@ change.
 ## Wave: DEVOPS / [REF] Changed Assumptions
 
 **None.** DISCUSS leaned "N/A" on usage data and DEVOPS confirms it with the rejected candidates above.
+
+---
+
+Lean DISTILL pass (2026-10-09), Quinn, **maintainer AFK**: every engineering choice below took the recommended
+option and is recorded, not asked. The UI sketch walk-through the project rule asks for at the start of DISTILL was
+already held in DESIGN (S1-S4, relayed by the coordinator), so DISTILL pinned those decisions and re-sketched nothing.
+
+## Wave: DISTILL / [REF] Reconciliation
+
+`[lang-mode] typescript` (Vitest + React Testing Library, co-located `*.test.tsx`; Playwright through POMs).
+`[policy-mode] inherit`: the React component and Playwright rows already exist in
+`docs/architecture/atdd-infrastructure-policy.md`; one row appended for the held-answer metrics fake (below).
+`[port-mode]` n/a: the project asserts through its own observables (`data-widget-status`, rendered text), not a
+`state_delta` port. fast-check is **not** a devDependency, so property-shaped specifications are `it.each` example
+tables (every order of three answers, every precedence combination, every placed widget); no dependency added.
+
+Reconciliation passed — 0 contradictions. The three waves live in this file; there are no `wave-decisions.md`.
+DISCUSS D1 ("header stays as it is") and D6 ("copy pinned at DISTILL") were refined by the maintainer's own S2/S3/S4
+and are recorded as DESIGN Changed Assumptions, so they are settled, not contradicted. DEVOPS states no
+contradiction with DESIGN and none was found. DISCUSS's E2E note ("specs locate widgets by `widget-shell-*`") is a
+factual slip, not a decision; see Upstream findings 1.
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+All under `Lighthouse.Frontend/src/pages/Common/MetricsView/` unless stated. Pending = `it.skip` / `it.skip.each`;
+pin = runs green today and must stay green. Counts are test cases (an `each` row is a case).
+
+**Slice 01 — a chart that is behind the window says so (US-01).** 128 cases: 122 pending, 6 pins.
+
+| File · describe | Scenarios | Tags | AC / decision |
+|---|---|---|---|
+| `BaseMetricsView.loading.test.tsx` · a {team, portfolio}'s charts after the reader picks another window | every chart behind the new window dims at once, keeping its older picture until its own data arrives; each chart comes back on its own | `@walking_skeleton @driving_port @kpi @contract-shape:bounded-change` | AC-1.1, AC-1.2, AC-1.7, `OUT-6249-visible-within-a-frame` (no `await` between click and assertion) |
+| same · while the window is changing | picking an earlier start date …; stepping the window back dims the charts at once, before the step is even asked for; a chart behind the window cannot be hovered, clicked or opened for its data | `@driving_port @contract-shape:bounded-change` | AC-1.1 (picker, stepper), D5, S2 |
+| same · when windows are picked in quick succession | shows the second window when the first window's answer arrives last; stays loading when the first answers first; **6-row table**: every arrival order of three answers settles on the last window picked | `@driving_port @property @kpi @error` | AC-1.3, D3, `OUT-6249-never-wrong-window` |
+| same · whose data cannot be loaded | stops its spinner, removes the older chart and says it couldn't be loaded; leaves every other chart to come back; comes back once the reader picks a window that loads; does not report a failure for a window already left; one failed request marks only the charts that show it | `@driving_port @error @contract-shape:bounded-change` | AC-1.6, D6, S3, DDD-1 (one query per call), DDD-5 |
+| same · waiting on something this owner never has | a portfolio's Work In Progress comes back without an at-risk answer; the cycle time scatterplot comes back when blackout periods cannot be read | `@driving_port @error` | DDD-11 |
+| same · Cumulative Time per State narrowed by the reader | a stretch chosen for a window left never shows its numbers; chosen Work Items stay chosen and are counted again; a late answer for the left window never replaces the current one; the picker offers the new window's Work Items | `@driving_port @error` | pre-existing bug folded into slice 01, DDD-2 |
+| same · the Throughput process behaviour chart's filter | switching it dims only that chart | `@driving_port` | DDD-10 |
+| `ThroughputRunChartCard.loading.test.tsx` | with the filter off, a new window shows the page's own series (**pin**); turning the filter on keeps the chart loading; with the filter on, a new window fetches the filtered series for it; a late filtered answer never replaces the current one; a failed filtered series ends in the message | `@driving_port @error` | AC-1.5, pre-existing bug folded into slice 01 |
+| `OverTimeWidgets.loading.test.tsx` (each × PBC Over Time, Percentiles Over Time) | an empty answer reads as nothing recorded yet, never as a spinner (**pin**); a spinner in the frame while the series is on its way, never an empty area; back to its spinner on another window; never shows a left window's series; ends in the message on failure | `@driving_port @error` | AC-1.4, D1, S4 |
+| `WidgetShell.status.test.tsx` | defaults unchanged (**pin**); ready says so; dimmed 40 % with a 24 px spinner; title, rating and trend at full strength (**pin**); `inert` body + View Data disabled; info still opens (**pin**); lone spinner under title + info only; light and dark; failure removes the chart with a warning icon and the exact copy; no rating, trend or View Data on failure; no retry; a self-fetching child reports `loading`; **6-row table** page × child precedence | `@driving_port @error @contract-shape:pure-function` | S1-S4, DDD-3, DDD-4, DDD-6, DDD-7, DDD-8, AC-1.7 |
+| `widgetStatus.test.ts` | precedence table (7) and order-independence (2); every placed widget (35 rows) loading while a step is pending; one input behind ⇒ loading; failure shows only once nothing is in flight; a failure in an input it does not show leaves it ready; self-fetching widgets; has-something-to-dim (3); one request's progress (7-row table + 2); inapplicable ⇒ ready (4-row table); the reporter outside a frame does nothing | `@property @contract-shape:pure-function` | DDD-1, DDD-4, DDD-5, DDD-11 |
+
+**Slice 02 — a dashboard opens with every chart's frame in place (US-02).** 25 cases: 24 pending, 1 pin, all in
+`BaseMetricsView.loading.test.tsx`.
+
+| describe | Scenarios | Tags | AC / decision |
+|---|---|---|---|
+| a dashboard as it opens | **8-row table** (team, portfolio × four categories): every chart's frame in its place, each with a spinner, before any data; **8-row table**: no chart added or removed once the data arrives; a frame waiting for its first data shows title and info only; **3-row table**: Flow Efficiency, Predictability Score, Total Work Item Age wait under the one shared spinner; a category not visited yet frames all its charts at once; a first visit that cannot load says so | `@driving_port @kpi @property @error` | AC-2.1, AC-2.2, AC-2.3, AC-2.4, S4, DDD-9, `OUT-6249-no-layout-shift` |
+| charts whose place depends on what the data says | Estimation vs. Cycle Time framed while it loads, then leaves when not set up; it stays away on a later window change (**pin**); Feature Size stays in place and shows its own empty state when the window holds no Features | `@driving_port @error` | O2, O3, AC-2.2's exception |
+
+**E2E (slice 02):** `Lighthouse.EndToEndTests/tests/specs/flow/ChartLoadingIndicators.spec.ts`, one
+`@walking_skeleton`, `test.skip` until DELIVER: Team Zenith (demo scenario 0), Flow Overview, a non-preset starting
+window, the 90-day answers held back with `page.route`, pick *Last 90 days*, Total Throughput reads `loading`,
+release, it reads `ready`, then every chart on the category is loaded.
+
+Error and edge share: failure 12, race 14, inapplicable / exception / empty 5, i.e. 31 of the 87 cases outside
+`widgetStatus.test.ts` (36 %), plus that file's failure, precedence and inapplicable rows. Chaining: the failure describe builds each scenario on the one
+before (`givenTheReaderPicked90DaysAfterEverythingLoaded` → `givenThe90DayThroughputFailed` → pick another window).
+
+## Wave: DISTILL / [REF] WS strategy
+
+Strategy B (extend existing), as DISCUSS decided. The component skeleton is the first slice-01 scenario (a reader
+picks *Last 90 days*, every chart dims, each returns with its own data), run for a Team and a Portfolio. The thin
+browser skeleton is the E2E above; it is slice 02's, because only with slice 02 does the POM wait on
+`data-widget-status`, and it stays skipped until DELIVER makes the frames report.
+
+## Wave: DISTILL / [REF] Test placement
+
+Co-located beside the components, as every MetricsView test is. New files rather than additions to
+`BaseMetricsView.test.tsx`: that file (6,953 lines) mocks `WidgetShell` and `Dashboard`, so it cannot see the
+frame's status. The new dashboard file renders the **real** `WidgetShell`, `BaseMetricsView`, `useMetricsData`,
+`useDateRange` and `ThroughputRunChartCard`, under a fresh `QueryClient` (`retry: false`) and a real
+`ApiServiceContext`, with charts, the header and the grid replaced by stand-ins that print what they were given.
+The held-answer fake lives in `src/tests/HeldMetricsService.ts` beside the other shared fixtures.
+
+## Wave: DISTILL / [REF] Driving-port coverage
+
+| Driving port | How the specs reach it | Files |
+|---|---|---|
+| Team and Portfolio metrics dashboard (`BaseMetricsView`): presets, date picker, stepper, category selector | header stand-in buttons calling the real `onSelectPreset` / `onStartDateChange` / `onStepWindow` / `onSelectCategory`; the real `useDateRange` debounce runs | `BaseMetricsView.loading` |
+| In-widget controls: Throughput filter (run chart and PBC), Cumulative Time per State stretch, picker open, Work Item choice | the real `ThroughputChartFilterToggle`; stand-in scope control and picker calling the real callbacks | `BaseMetricsView.loading`, `ThroughputRunChartCard.loading` |
+| `WidgetShell` `status` / `hasContentToDim` and `useReportWidgetStatus` (internal contracts DESIGN names) | rendered directly, and through the over-time widgets and the run chart card | `WidgetShell.status`, `OverTimeWidgets.loading`, `ThroughputRunChartCard.loading` |
+| `widgetStatus` pure rules | called directly; the mutation target DEVOPS named | `widgetStatus` |
+| Browser: Team metrics page | Playwright through `MetricsPage` / `MetricsDateRange` POMs | `ChartLoadingIndicators.spec.ts` |
+
+Adapter coverage: no new driven adapter. The metrics services are faked by `createHeldMetricsService` (policy row
+appended); the real HTTP path is exercised by the E2E skeleton on both CI databases.
+
+## Wave: DISTILL / [REF] Scaffolds
+
+| File | What | Marker |
+|---|---|---|
+| `Lighthouse.Frontend/src/pages/Common/MetricsView/widgetStatus.ts` (new) | `WidgetStatus`, `FetchKeyState`, `FetchKeyStates`, `QueryProgress`; `combineWidgetStatuses`, `widgetStatusFor`, `widgetHasData`, `fetchKeyStateOf`, `useReportWidgetStatus`, each throwing `Not yet implemented -- RED scaffold` | `export const __SCAFFOLD__ = true` |
+| `WidgetShell.tsx` (two optional props, type only) | `status?: WidgetStatus`, `hasContentToDim?: boolean`, not read by the component, so behaviour is unchanged; pending tests are type-checked and need the props to compile | — |
+
+Names the specs pin for DELIVER: `data-widget-status` and `aria-busy` on `widget-shell-<key>`, the body hook
+`widget-shell-body-<key>` (carries `inert` and the 40 % opacity), the warning icon found by an MUI icon test id
+starting `Warning`, and the copy *"This chart couldn't be loaded. Change the dates or reload to try again."*
+
+RED classification: `docs/feature/story-6249-chart-loading-indicators/red-classification.md` — 146/146
+`MISSING_FUNCTIONALITY`, 7 pins green.
+
+## Wave: DISTILL / [REF] Existing-test disposition
+
+Untouched in DISTILL; each change lands in the DELIVER commit that changes the behaviour it covers, so no commit is
+red. Paths under `Lighthouse.Frontend/src/`.
+
+| File | What changes | Slice |
+|---|---|---|
+| `hooks/useMetricsData.test.ts`, `pages/Common/MetricsView/BaseMetricsView.test.tsx`, `ThroughputRunChartCard.test.tsx`, `PbcOverTimeWidget.test.tsx`, `PercentilesOverTimeWidget.test.tsx`, `usePbcOverTime.test.ts`, `usePercentilesOverTime.test.ts` | wrap renders in a `QueryClientProvider` with a fresh client per test (`retry: false`), as DESIGN says | 01 |
+| `BaseMetricsView.test.tsx` › `refetches throughput PBC with view=filtered when the toggle flips to Filtered` (and `useMetricsData` tests of `refetchThroughputPbc`) | re-point at the view setter that replaces the callback | 01 |
+| `BaseMetricsView.test.tsx` › `handles API errors gracefully`, `handles predictability data fetch errors gracefully`, `includes predictability data fetch in error handling test` | a failure now ends in the could-not-load frame; keep the "page does not crash" half, drop any expectation that the old value stays | 01 |
+| `BaseMetricsView.test.tsx` budget-guard counts of service calls | the cycle-time batch becomes one query per call; re-check counts, keep the "no other category fetched" intent | 01 |
+| `usePbcOverTime.test.ts` / `usePercentilesOverTime.test.ts` / both over-time widget tests › "replays a range already fetched without a second request", "re-plots a previously visited family without a second request" | **keep as is**; see Upstream findings 3 | 01 |
+| `PredictabilityScoreOverviewWidget.test.tsx` › `renders loading state when score is null`; `components/Common/Charts/TotalWorkItemAgeWidget.test.tsx` › `renders the loading branch while totalAge is null`; the null-info case of `FlowEfficiencyOverviewWidget.test.tsx` | delete with the widgets' own spinners; props become non-null | 02 |
+| `BaseMetricsView.test.tsx` tests asserting a widget is absent before its data, `featureSize` absent on an empty list, or `estimationVsCycleTime` absent | absent → framed and loading (or, for `featureSize`, its empty state) | 02 |
+| `categoryMetadata.test.ts` | gains `throughputPbc` and the reachability invariant (DESIGN enforcement) | 01 |
+| `WidgetShell.test.tsx`, `DashboardHeader*.test.tsx`, `DateWindowStepper.test.tsx`, `useDateRange.test.tsx` | unchanged | — |
+
+## Wave: DISTILL / [REF] E2E impact
+
+POM additions (`Lighthouse.EndToEndTests/tests/models/metrics/MetricsPage.ts`), compiled and Biome-clean today:
+`MetricsWidget.Frame`, `MetricsWidget.waitUntilLoaded()` (`ready`, fails at once on `error`),
+`MetricsWidget.waitUntilLoading()`, `MetricsPage.waitUntilEveryChartHasLoaded()`,
+`MetricsDateRange.selectPresetWithoutWaiting()` and `MetricsDateRange.holdAnswersForWindowStarting()`.
+
+**No spec locates `widget-shell-*` today.** They reach widgets through `dashboard-item-<key>`
+(`MetricsWidget.Widget`) and six chart POMs that build the same locator: `CumulativeStateTimeChart.ts`,
+`CycleTimeScatterPlotChart.ts`, `FlowEfficiencyWidget.ts`, `RagChip.ts`, `WorkItemAgingChart.ts`, and in
+`MetricsPage.ts` `CycleTimePercentilesWidget`, `WorkItemAgePercentilesCard`, `WorkItemAgingReferenceLineSelector`.
+Specs that read a visible widget as "loaded" and need re-pointing in the slice-02 commit:
+`flow/AgingPacePercentiles`, `flow/BlockedItems`, `flow/CumulativeStateTime`, `flow/FlowEfficiency`,
+`flow/MetricsTimeHorizon`, `flow/NamedCycleTimePercentiles`, `flow/PbcOverTime`, `flow/PercentilesOverTime`,
+`flow/PredictabilityOverTime`, `flow/SleRiskColumnReachable`, `flow/TimeInStateAndStaleness`,
+`flow/TotalThroughputViewData`, `flow/WorkItemAgeAsOfRangeEnd`, `flow/WorkItemAgePercentilesStatus`,
+`metrics/MultipleCycleTimes`, `teams/ForecastFilter`, `screenshots/Screenshots` (including its
+`dashboard-item-predictabilityScore` locator at line 940). Recommended: re-point in the POMs, not the specs —
+`MetricsPage.switchCategory`, `MetricsDateRange.apply/applyAndWaitFor/selectPreset` and the chart POMs'
+constructors-or-first-read call `waitUntilEveryChartHasLoaded()` / `waitUntilLoaded()` — so the specs change
+little. `Screenshots.spec` calls `waitUntilEveryChartHasLoaded()` before every capture; regenerated PNGs must be
+identical in content.
+
+## Wave: DISTILL / [REF] Upstream findings
+
+1. **DISCUSS E2E note, factual.** No spec or POM uses `widget-shell-*`; they use `dashboard-item-<key>`. The
+   re-pointing is mostly POM work (list above), and is 17 specs rather than "about ten".
+2. **A self-fetching chart must stay mounted in every state (DESIGN gap, engineering default taken).** DDD-4 has
+   the over-time charts and the run chart card report their status from inside the frame, while S3 removes the
+   chart on failure and S4 shows a lone spinner. If the frame unmounts its child, the child's report disappears,
+   the frame flips back, the child remounts and refetches: a loop, or a chart that never fetches. **Default:** the
+   frame keeps its child mounted and out of sight (hidden under the spinner or the message). The specs assert
+   "out of sight", which removal and hiding both satisfy, so DELIVER keeps the choice.
+3. **`gcTime: 0` would remove shipped behaviour of the over-time charts (DESIGN gap, default taken).** Eight
+   existing tests (two each in `usePbcOverTime`, `usePercentilesOverTime` and both over-time widget files) pin
+   that a revisited family or range re-plots without a second request. DISCUSS ruled out
+   *adding* caching across windows; this caching already ships. **Default:** the over-time queries keep their
+   cached series (no `gcTime: 0` for them); those eight tests stay unchanged. All other metrics queries follow
+   DDD-1 as written.
+4. **Over-time reload, dim or lone spinner.** DDD-1's `keepPreviousData` would keep an older series to dim; S4 says
+   an over-time reload has nothing to dim. The specs follow the maintainer's S4 only as far as "spinner, never an
+   empty area" and do not pin which, so either reading passes.
+5. **Error copy hides in-chart controls.** With the chart out of sight on failure, the Throughput filter switch
+   goes with it; the way back is the dates or a reload, as the copy says. Recorded, not a question.
+6. Not scenario'd, by decision: O1 (a request that never answers stays loading; true by construction and there is
+   no timeout to test), O5 (out of scope), O6 (dev-instance check in DELIVER), AC-1.7's dark theme in a browser
+   (covered at the frame in both themes; screenshots stay light).
+
+Mandate compliance, briefly: specs enter through the dashboard and the frame, never through `useMetricsData`'s
+internals; names are domain language (window, chart, frame, Work Items) with no internal references; the SUT is the
+real component tree with only the backend hop and chart drawing replaced. Layer 1-2 throughout, so the
+property-shaped cases are example tables in place of fast-check. Mandate-12's types module and step-reuse ratio do
+not map onto Vitest; the vocabulary lives in helper verbs (`openTheDashboard`, `theReaderPicks`,
+`throughputAnswersFor`, `everythingHasLoaded`) and the held fake. The 15-item completeness checklist was not scored;
+the open gaps are findings 2-4.
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- DESIGN's TanStack Query adoption (O4) is assumed by the specs only through `QueryClientProvider` in the wrappers;
+  nothing asserts on the library, so the hand-rolled fallback in ADR-233 would satisfy them too.
+- Un-skip slice 01 in DESIGN's seam order: `widgetStatus` + `WidgetShell`, then the dashboard window-change and
+  failure scenarios, then the self-fetching charts and the PBC filter, then Cumulative Time per State.
+- Slice 02 un-skips the "as it opens" and "place depends on the data" scenarios and the E2E skeleton, and
+  re-points the E2E POMs in the same commit.
+- Suite state at hand-off (2026-10-09): `pnpm test` → `Test Files 444 passed | 1 skipped (445)`,
+  `Tests 6562 passed | 146 skipped (6708)`. `pnpm build` → Biome `Checked 973 files … No fixes applied`, `tsc -b`
+  clean, `✓ built in 1.20s`, no warnings; `git diff` shows no rewrite outside this story's files. E2E project:
+  `tsc --noEmit` clean, Biome clean on the two touched files. The E2E skeleton was not run (it is skipped).
+- The Final Wave Review Gate (four reviewers) was not run in this dispatch; it is the coordinator's next step.
