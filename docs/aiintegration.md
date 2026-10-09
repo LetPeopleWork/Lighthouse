@@ -307,6 +307,15 @@ One practical setup is:
 
 This is especially useful if your client supports importing custom skills or prompt bundles and you want the model to begin with Lighthouse-specific guidance instead of a blank prompt.
 
+### Skills for Team Routines (Coming Soon)
+
+Two more skills ship with the next `lighthouse-clients` release. Each one builds on the Lighthouse skill above and walks an assistant through one recurring Team routine:
+
+- **Refinement** gets a Team ready for its next [Refinement](./teams/detail.html#refinement): whether to refine more or stop, and which Work Items are worth the session's time. A developer can ask which Work Items wait for their vote, and vote or comment once they confirm. Try: "Are we ready for Thursday's Refinement?"
+- **Daily Flow Review** opens a Team's daily with what to decide and discuss today: Work Items that are blocked, past the SLE or at risk of missing it, and WIP over its limit, each as a question for the Team, never a task for a person. Try: "What should Gravity discuss today?"
+
+Their downloads will appear here, next to the Lighthouse skill, once that release is out.
+
 ## Example Prompts and Workflows
 
 Once connected through CLI or MCP, common workflows look like this:
