@@ -89,7 +89,7 @@ type HeaderParts = {
 	readonly rag?: WidgetFooter;
 };
 
-function viewDataToList(
+function viewDataWithItems(
 	viewData: ViewDataPayload | undefined,
 ): ViewDataPayload | undefined {
 	if (viewData === undefined || viewData.items.length === 0) return undefined;
@@ -112,7 +112,11 @@ function headerPartsFor(
 	rag: WidgetFooter | undefined,
 ): HeaderParts {
 	if (!chartOnScreen) return {};
-	return { viewData: viewDataToList(viewData), trend: trendToDraw(trend), rag };
+	return {
+		viewData: viewDataWithItems(viewData),
+		trend: trendToDraw(trend),
+		rag,
+	};
 }
 
 const centredSpinner = (
@@ -537,14 +541,18 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 	const [viewDataOpen, setViewDataOpen] = useState(false);
 
 	const isLoading = status === "loading";
-	const shows = headerPartsFor(
+	const headerParts = headerPartsFor(
 		chartIsOnScreen(bodyLookFor(status, hasContentToDim)),
 		viewData,
 		trend,
 		showTips ? header : undefined,
 	);
 	const hasHeader =
-		!!title || !!shows.rag || !!info || !!shows.viewData || !!shows.trend;
+		!!title ||
+		!!headerParts.rag ||
+		!!info ||
+		!!headerParts.viewData ||
+		!!headerParts.trend;
 
 	return (
 		<>
@@ -565,7 +573,7 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 						title={title}
 						info={info}
 						showTips={showTips}
-						parts={shows}
+						parts={headerParts}
 						isLoading={isLoading}
 						onViewData={() => setViewDataOpen(true)}
 					/>
@@ -582,17 +590,17 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 				</WidgetBody>
 			</Box>
 
-			{shows.viewData && (
+			{headerParts.viewData && (
 				<WorkItemsDialog
-					title={shows.viewData.title}
-					items={shows.viewData.items}
+					title={headerParts.viewData.title}
+					items={headerParts.viewData.items}
 					open={viewDataOpen}
 					onClose={() => setViewDataOpen(false)}
-					highlightColumn={shows.viewData.highlightColumn}
-					timeInStateColumn={shows.viewData.timeInStateColumn}
-					ageBandColumn={shows.viewData.ageBandColumn}
-					sleRiskColumn={shows.viewData.sleRiskColumn}
-					sle={shows.viewData.sle}
+					highlightColumn={headerParts.viewData.highlightColumn}
+					timeInStateColumn={headerParts.viewData.timeInStateColumn}
+					ageBandColumn={headerParts.viewData.ageBandColumn}
+					sleRiskColumn={headerParts.viewData.sleRiskColumn}
+					sle={headerParts.viewData.sle}
 				/>
 			)}
 		</>
