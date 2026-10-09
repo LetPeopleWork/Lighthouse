@@ -902,6 +902,23 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 		expectCountsToRead(`every Work Item, ${LAST_90_DAYS}`);
 	});
 
+	it("going back to the window a stretch was chosen in does not bring the stretch back", async () => {
+		openTheDashboard("team", "flow-metrics");
+		await everythingHasLoaded();
+		fireEvent.click(
+			screen.getByRole("button", { name: "Count only the In Review stretch" }),
+		);
+		await everythingAsked();
+		expectCountsToRead(`scope 7, ${LAST_30_DAYS}`);
+
+		theReaderPicks("Last 90 days");
+		await everythingHasLoaded();
+		theReaderPicks("Last 30 days");
+		await everythingHasLoaded();
+
+		expectCountsToRead(`every Work Item, ${LAST_30_DAYS}`);
+	});
+
 	it("Work Items chosen in the picker stay chosen and are counted again for the new window", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
