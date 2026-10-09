@@ -436,6 +436,7 @@ testWithDemo(
 		await overviewPage.lightHousePage.goToOverview();
 		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
 		const metricsPage = await teamDetailPage.goToMetrics();
+		await metricsPage.waitUntilEveryChartHasLoaded();
 
 		// The viewport shot catches all three ways of moving the window at once: the arrows on the
 		// header, the label between them, and the open panel with its named ranges and pickers.
@@ -457,6 +458,7 @@ testWithDemo(
 		await overviewPage.lightHousePage.goToOverview();
 		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
 		const metricsPage = await teamDetailPage.goToMetrics();
+		await metricsPage.waitUntilEveryChartHasLoaded();
 
 		await takePageScreenshot(
 			metricsPage.page,
@@ -940,6 +942,7 @@ testWithDemo(
 				.locator('[data-testid="dashboard-item-predictabilityScore"]')
 				.getByText(/%/),
 		).toBeVisible({ timeout: 90_000 });
+		await portfolioMetricsPage.waitUntilEveryChartHasLoaded();
 
 		await takePageScreenshot(
 			portfolioMetricsPage.page,
