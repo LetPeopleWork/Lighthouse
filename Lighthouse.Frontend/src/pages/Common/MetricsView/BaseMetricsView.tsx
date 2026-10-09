@@ -927,6 +927,27 @@ function buildPbcNodes(ctx: PbcNodesCtx): Record<string, ReactNode | null> {
 	return result;
 }
 
+function buildOverviewScoreNodes(ctx: {
+	flowEfficiencyInfo: IFlowEfficiencyInfo | null;
+	predictabilityData: IForecastPredictabilityScore | null;
+	totalWorkItemAge: number | null;
+}): Record<string, ReactNode | null> {
+	return {
+		flowEfficiency: ctx.flowEfficiencyInfo ? (
+			<FlowEfficiencyOverviewWidget info={ctx.flowEfficiencyInfo} />
+		) : null,
+		predictabilityScore: ctx.predictabilityData ? (
+			<PredictabilityScoreOverviewWidget
+				score={ctx.predictabilityData.predictabilityScore}
+			/>
+		) : null,
+		totalWorkItemAge:
+			ctx.totalWorkItemAge === null ? null : (
+				<TotalWorkItemAgeWidget totalAge={ctx.totalWorkItemAge} />
+			),
+	};
+}
+
 function buildWidgetNodes(ctx: {
 	entity: IFeatureOwner;
 	title: string;
@@ -1022,9 +1043,6 @@ function buildWidgetNodes(ctx: {
 			/>
 		),
 		staleOverview: <StaleOverviewWidget staleCount={ctx.staleItems.length} />,
-		flowEfficiency: (
-			<FlowEfficiencyOverviewWidget info={ctx.flowEfficiencyInfo} />
-		),
 		featuresWorkedOnOverview: ctx.featuresInProgress ? (
 			<FeaturesWorkedOnWidget
 				featureCount={ctx.featuresInProgress.length}
@@ -1032,11 +1050,6 @@ function buildWidgetNodes(ctx: {
 				title={`${ctx.featuresTerm} being Worked On`}
 			/>
 		) : null,
-		predictabilityScore: (
-			<PredictabilityScoreOverviewWidget
-				score={ctx.predictabilityData?.predictabilityScore ?? null}
-			/>
-		),
 		predictabilityScoreDetails: (
 			<PredictabilityScoreDetailsWidget
 				predictabilityData={ctx.predictabilityData}
@@ -1060,9 +1073,6 @@ function buildWidgetNodes(ctx: {
 			<WorkItemAgePercentiles
 				percentileValues={ctx.workItemAgePercentilesValues}
 			/>
-		),
-		totalWorkItemAge: (
-			<TotalWorkItemAgeWidget totalAge={ctx.totalWorkItemAge} />
 		),
 		throughput: ctx.throughputData ? (
 			<ThroughputRunChartCard
@@ -1238,7 +1248,7 @@ function buildWidgetNodes(ctx: {
 		) : null,
 	};
 
-	Object.assign(nodes, buildPbcNodes(ctx));
+	Object.assign(nodes, buildPbcNodes(ctx), buildOverviewScoreNodes(ctx));
 
 	return nodes;
 }
@@ -1254,10 +1264,36 @@ function frameStateOf(
 	};
 }
 
-// A chart with nothing to draw stays off the dashboard, unless its data failed: then its frame
-// stays to say so, also while the reader steps to a window that may load.
-function couldNotLoad(widgetKey: string, fetchStates: FetchKeyStates): boolean {
-	return widgetStatusFor(widgetKey, fetchStates, false) === "error";
+// These appear only once their data says there is something to show: estimation set up, or
+// Features in the window. A frame put up for them early could be taken away again.
+const placedOnlyOnceTheirDataSaysSo = new Set([
+	"estimationVsCycleTime",
+	"featureSize",
+]);
+
+// Every chart the category places takes its frame from the first render, so the layout never
+// reshuffles as the data arrives. The two above keep a frame only once they have something to
+// show, or to say that their data could not be loaded.
+function isPlaced(
+	widgetKey: string,
+	node: ReactNode,
+	fetchStates: FetchKeyStates,
+): boolean {
+	return (
+		node != null ||
+		!placedOnlyOnceTheirDataSaysSo.has(widgetKey) ||
+		widgetStatusFor(widgetKey, fetchStates, false) === "error"
+	);
+}
+
+// Until a chart's data has arrived once, its frame shows the lone spinner rather than a chart
+// drawn from empty defaults.
+function bodyOf(
+	widgetKey: string,
+	node: ReactNode,
+	fetchStates: FetchKeyStates,
+): ReactNode {
+	return widgetHasData(widgetKey, fetchStates) ? node : null;
 }
 
 export const BaseMetricsView = <
@@ -1949,11 +1985,7 @@ export const BaseMetricsView = <
 
 	const activeWidgets = getWidgetsForCategory(selectedCategory, ownerType);
 	const dashboardItems: DashboardItem[] = activeWidgets
-		.filter(
-			(w) =>
-				widgetNodes[w.widgetKey] != null ||
-				couldNotLoad(w.widgetKey, fetchStates),
-		)
+		.filter((w) => isPlaced(w.widgetKey, widgetNodes[w.widgetKey], fetchStates))
 		.map((w) => ({
 			id: w.widgetKey,
 			size: w.size,
@@ -1967,7 +1999,7 @@ export const BaseMetricsView = <
 					trend={widgetTrends[w.widgetKey]}
 					{...frameStateOf(w.widgetKey, fetchStates, isCommitPending)}
 				>
-					{widgetNodes[w.widgetKey]}
+					{bodyOf(w.widgetKey, widgetNodes[w.widgetKey], fetchStates)}
 				</WidgetShell>
 			),
 		}));

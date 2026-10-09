@@ -36,6 +36,7 @@ import { BaseMetricsView } from "./BaseMetricsView";
 import {
 	type CategoryKey,
 	getCategories,
+	getFetchKeysForCategories,
 	getFetchRequirementsForWidget,
 	getWidgetsForCategory,
 } from "./categoryMetadata";
@@ -1084,7 +1085,7 @@ describe.each(chartsThatFetchForThemselves)(
 );
 
 describe("a dashboard as it opens", () => {
-	it.skip.each(everyOwnerAndCategory)(
+	it.each(everyOwnerAndCategory)(
 		"a %s's %s opens with every chart's frame in its place, each with a spinner, before any data arrives",
 		(owner, _name, category) => {
 			openTheDashboard(owner, category);
@@ -1099,7 +1100,7 @@ describe("a dashboard as it opens", () => {
 		},
 	);
 
-	it.skip("a team's Flow Metrics opens with its ten charts framed in their places", () => {
+	it("a team's Flow Metrics opens with its ten charts framed in their places", () => {
 		openTheDashboard("team", "flow-metrics");
 
 		expect(widgetsOnScreen()).toEqual([
@@ -1116,7 +1117,7 @@ describe("a dashboard as it opens", () => {
 		]);
 	});
 
-	it.skip("a portfolio's Portfolio & Features opens with only the Work Item distribution framed", () => {
+	it("a portfolio's Portfolio & Features opens with only the Work Item distribution framed", () => {
 		openTheDashboard("portfolio", "portfolio");
 
 		expect(widgetsOnScreen()).toEqual(["workDistribution"]);
@@ -1138,7 +1139,7 @@ describe("a dashboard as it opens", () => {
 		);
 	}
 
-	it.skip.each(
+	it.each(
 		everyOwnerAndCategory.filter(([, , category]) => category !== "portfolio"),
 	)(
 		"a %s's %s adds and removes no chart once its data has arrived",
@@ -1152,7 +1153,7 @@ describe("a dashboard as it opens", () => {
 		addsAndRemovesNoChartOnceItsDataHasArrived,
 	);
 
-	it.skip("a frame waiting for its first data shows its info button, with no rating or trend yet", () => {
+	it("a frame waiting for its first data shows its info button, with no rating or trend yet", () => {
 		openTheDashboard("team", "flow-overview");
 
 		const frame = frameOf("totalThroughput");
@@ -1167,7 +1168,7 @@ describe("a dashboard as it opens", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it.skip.each([
+	it.each([
 		["Flow Efficiency", "flowEfficiency"],
 		["Predictability Score", "predictabilityScore"],
 		["Total Work Item Age", "totalWorkItemAge"],
@@ -1183,7 +1184,7 @@ describe("a dashboard as it opens", () => {
 		},
 	);
 
-	it.skip("opening a category not visited yet frames all of its charts at once", async () => {
+	it("opening a category not visited yet frames all of its charts at once", async () => {
 		openTheDashboard("team", "flow-overview");
 		await everythingHasLoaded();
 
@@ -1192,10 +1193,22 @@ describe("a dashboard as it opens", () => {
 		expect(widgetsOnScreen()).toEqual(
 			framedBeforeAnyData("flow-metrics", "team"),
 		);
-		expect(statusOf("throughput")).toBe("loading");
+		const answeredOnFlowOverview = getFetchKeysForCategories(
+			["flow-overview"],
+			"team",
+		);
+		const asksForSomethingNew = (widgetKey: string) =>
+			(getFetchRequirementsForWidget(widgetKey) ?? []).some(
+				(fetchKey) => !answeredOnFlowOverview.has(fetchKey),
+			);
+		expectEveryChartToRead(
+			chartsThePageFeedsOn("flow-metrics", "team").filter(asksForSomethingNew),
+			"loading",
+		);
+		expect(statusOf("throughput")).toBe("ready");
 	});
 
-	it.skip("a first visit whose data cannot be loaded says so in the chart's frame", async () => {
+	it("a first visit whose data cannot be loaded says so in the chart's frame", async () => {
 		openTheDashboard("team", "flow-metrics");
 
 		await throughputFailsFor(LAST_30_DAYS);

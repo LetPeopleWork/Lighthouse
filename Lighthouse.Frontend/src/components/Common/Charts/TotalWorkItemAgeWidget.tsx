@@ -1,19 +1,10 @@
-import {
-	Box,
-	Card,
-	CardContent,
-	CircularProgress,
-	Typography,
-	useTheme,
-} from "@mui/material";
+import { Box, Card, CardContent, Typography, useTheme } from "@mui/material";
 import type React from "react";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
 
 interface TotalWorkItemAgeWidgetProps {
-	// Owned by the shared BaseMetricsView data path (useMetricsData); `null` means "not loaded yet"
-	// and renders the loading branch. The widget never fetches this itself (Bug #5571).
-	totalAge: number | null;
+	readonly totalAge: number;
 }
 
 const TotalWorkItemAgeWidget: React.FC<TotalWorkItemAgeWidgetProps> = ({
@@ -52,44 +43,29 @@ const TotalWorkItemAgeWidget: React.FC<TotalWorkItemAgeWidgetProps> = ({
 					Total {workItemAgeTerm}
 				</Typography>
 
-				{totalAge === null && (
+				<Box sx={{ textAlign: "center" }}>
 					<Box
 						sx={{
 							display: "flex",
+							alignItems: "baseline",
 							justifyContent: "center",
-							alignItems: "center",
-							minHeight: 80,
+							gap: 1,
 						}}
 					>
-						<CircularProgress />
-					</Box>
-				)}
-
-				{totalAge !== null && (
-					<Box sx={{ textAlign: "center" }}>
-						<Box
+						<Typography
+							variant="h3"
 							sx={{
-								display: "flex",
-								alignItems: "baseline",
-								justifyContent: "center",
-								gap: 1,
+								color: theme.palette.primary.main,
+								fontWeight: "bold",
 							}}
 						>
-							<Typography
-								variant="h3"
-								sx={{
-									color: theme.palette.primary.main,
-									fontWeight: "bold",
-								}}
-							>
-								{totalAge}
-							</Typography>
-							<Typography variant="h6" color="text.secondary">
-								days
-							</Typography>
-						</Box>
+							{totalAge}
+						</Typography>
+						<Typography variant="h6" color="text.secondary">
+							days
+						</Typography>
 					</Box>
-				)}
+				</Box>
 			</CardContent>
 		</Card>
 	);

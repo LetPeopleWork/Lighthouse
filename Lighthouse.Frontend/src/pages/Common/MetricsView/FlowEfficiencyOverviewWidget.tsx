@@ -1,9 +1,9 @@
-import { Card, CardContent, CircularProgress, Typography } from "@mui/material";
+import { Card, CardContent, Typography } from "@mui/material";
 import type React from "react";
 import type { IFlowEfficiencyInfo } from "../../../models/Metrics/FlowEfficiencyInfo";
 
 interface FlowEfficiencyOverviewWidgetProps {
-	readonly info: IFlowEfficiencyInfo | null;
+	readonly info: IFlowEfficiencyInfo;
 }
 
 const FlowEfficiencyOverviewWidget: React.FC<
@@ -32,12 +32,8 @@ const FlowEfficiencyOverviewWidget: React.FC<
 };
 
 const FlowEfficiencyBody: React.FC<{
-	readonly info: IFlowEfficiencyInfo | null;
+	readonly info: IFlowEfficiencyInfo;
 }> = ({ info }) => {
-	if (info === null) {
-		return <CircularProgress />;
-	}
-
 	if (!info.isConfigured) {
 		return (
 			<Typography

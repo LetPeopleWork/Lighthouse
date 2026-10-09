@@ -25,7 +25,7 @@ function getMockFlowEfficiencyInfo(
 	};
 }
 
-function renderWidget(info: IFlowEfficiencyInfo | null) {
+function renderWidget(info: IFlowEfficiencyInfo) {
 	render(
 		<TestWrapper>
 			<FlowEfficiencyOverviewWidget info={info} />

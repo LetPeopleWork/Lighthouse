@@ -24,14 +24,6 @@ describe("PredictabilityScoreOverviewWidget", () => {
 		);
 	});
 
-	it("renders loading state when score is null", () => {
-		render(<PredictabilityScoreOverviewWidget score={null} />);
-		expect(
-			screen.queryByTestId("predictability-score-value"),
-		).not.toBeInTheDocument();
-		expect(screen.getByRole("progressbar")).toBeInTheDocument();
-	});
-
 	it("rounds fractional percentages", () => {
 		render(<PredictabilityScoreOverviewWidget score={0.456} />);
 		expect(screen.getByTestId("predictability-score-value")).toHaveTextContent(

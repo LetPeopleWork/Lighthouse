@@ -41,17 +41,6 @@ describe("TotalWorkItemAgeWidget", () => {
 		expect(screen.getByText("days")).toBeInTheDocument();
 	});
 
-	it("renders the loading branch while totalAge is null (Bug #5571 AC3)", () => {
-		render(
-			<TestWrapper>
-				<TotalWorkItemAgeWidget totalAge={null} />
-			</TestWrapper>,
-		);
-
-		expect(screen.getByRole("progressbar")).toBeInTheDocument();
-		expect(screen.queryByText("days")).not.toBeInTheDocument();
-	});
-
 	it("makes no metrics-service call of its own (Bug #5571 AC2)", () => {
 		const getTotalWorkItemAge = vi
 			.spyOn(BaseMetricsService.prototype, "getTotalWorkItemAge")

@@ -1,14 +1,8 @@
-import {
-	Card,
-	CardContent,
-	CircularProgress,
-	Typography,
-	useTheme,
-} from "@mui/material";
+import { Card, CardContent, Typography, useTheme } from "@mui/material";
 import type React from "react";
 
 type PredictabilityScoreOverviewWidgetProps = {
-	readonly score: number | null;
+	readonly score: number;
 };
 
 const PredictabilityScoreOverviewWidget: React.FC<
@@ -32,17 +26,13 @@ const PredictabilityScoreOverviewWidget: React.FC<
 					Predictability Score
 				</Typography>
 
-				{score === null ? (
-					<CircularProgress />
-				) : (
-					<Typography
-						variant="h3"
-						data-testid="predictability-score-value"
-						sx={{ color: theme.palette.primary.main, fontWeight: "bold" }}
-					>
-						{Math.round(score * 100)}%
-					</Typography>
-				)}
+				<Typography
+					variant="h3"
+					data-testid="predictability-score-value"
+					sx={{ color: theme.palette.primary.main, fontWeight: "bold" }}
+				>
+					{Math.round(score * 100)}%
+				</Typography>
 			</CardContent>
 		</Card>
 	);
