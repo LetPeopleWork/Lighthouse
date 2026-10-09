@@ -112,6 +112,13 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 		await expect(this.savedIndicator).toBeVisible({ timeout: 15_000 });
 	}
 
+	/** The Refinement section: the states that mean refinement, readiness, stage rules, cadence and band. */
+	get refinementSection(): Locator {
+		return this.page
+			.getByRole("heading", { name: "Refinement", exact: true })
+			.locator('xpath=ancestor::div[contains(@class,"MuiCard-root")][1]');
+	}
+
 	/** Has the Team refine on this weekday every week, in the Refinement section's cadence. */
 	async refineEveryWeekOn(weekday: string): Promise<void> {
 		const day = this.page.getByRole("checkbox", { name: weekday, exact: true });

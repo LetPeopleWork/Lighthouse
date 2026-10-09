@@ -600,6 +600,54 @@ testWithOldItems(
 	},
 );
 
+// Gravity is the one demo Team with refinement states, a Thursday Refinement and votes already cast,
+// and GR-051 is the Work Item somebody wrote a comment on.
+const REFINING_TEAM = "Team Gravity";
+const COMMENTED_WORK_ITEM = "GR-051";
+
+testWithOldItems(
+	"Take @screenshot of the Refinement tab and a Work Item's votes and comments",
+	async ({ testData, overviewPage }) => {
+		expect(testData.teams.map((team) => team.name)).toContain(REFINING_TEAM);
+
+		await overviewPage.lightHousePage.goToOverview();
+		const teamDetail = await overviewPage.goToTeam(REFINING_TEAM);
+		const refinement = await teamDetail.goToRefinement();
+
+		await expect(refinement.verdict).toBeVisible();
+		await expect(refinement.voteColumnHeader).toBeVisible();
+		await expect(refinement.enoughForLine).toBeVisible();
+		await expect(refinement.workItemRow(COMMENTED_WORK_ITEM)).toBeVisible();
+		await takePageScreenshot(teamDetail.page, "features/refinement.png", 3);
+
+		const dialog = await refinement.openVotesAndComments(COMMENTED_WORK_ITEM);
+		await expect(dialog).toContainText("Ana Lima");
+		await takeDialogScreenshot(
+			dialog,
+			"features/refinement_comments.png",
+			0.5,
+			1000,
+		);
+	},
+);
+
+testWithOldItems(
+	"Take @screenshot of the Refinement settings",
+	async ({ testData, overviewPage }) => {
+		expect(testData.teams.map((team) => team.name)).toContain(REFINING_TEAM);
+
+		await overviewPage.lightHousePage.goToOverview();
+		const teamDetail = await overviewPage.goToTeam(REFINING_TEAM);
+		const teamEdit = await teamDetail.editTeam();
+
+		await expect(teamEdit.refinementSection).toContainText("Analysing");
+		await takeElementScreenshot(
+			teamEdit.refinementSection,
+			"features/refinement_settings.png",
+		);
+	},
+);
+
 // Scenario 1 ("Too Much WIP" = Team Voyager) carries several blocked items, so the demo
 // blocked-history backfill produces a Blocked Items Over Time chart with a real trend to
 // screenshot and drill into.

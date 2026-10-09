@@ -73,6 +73,20 @@ export class TeamRefinementPage {
 		});
 	}
 
+	/** The dialog that shows how the votes on one Work Item split and what people wrote about it. */
+	get votesAndCommentsDialog(): Locator {
+		return this.page.getByRole("dialog", { name: /· Votes and comments$/ });
+	}
+
+	/** Opens a Work Item's votes and comments from the count on its row. */
+	async openVotesAndComments(referenceId: string): Promise<Locator> {
+		await this.workItemRow(referenceId)
+			.getByRole("button", { name: /- Votes and comments$/ })
+			.click();
+		await this.votesAndCommentsDialog.waitFor({ state: "visible" });
+		return this.votesAndCommentsDialog;
+	}
+
 	/** Votes on a Work Item, giving the name first when this browser has not voted before. */
 	async vote(referenceId: string, answer: string, name: string): Promise<void> {
 		await this.answerButton(referenceId, answer).click();
