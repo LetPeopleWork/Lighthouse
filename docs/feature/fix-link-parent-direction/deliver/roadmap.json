@@ -1,0 +1,68 @@
+{
+  "roadmap": {
+    "project_id": "fix-link-parent-direction",
+    "created_at": "2026-10-09",
+    "total_steps": 1,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "ADO Bug #6203: with Parent Override Field naming a Jira link type, every item that is both a child and a parent gets no parent. Root cause has two layers. (1) IssueExtensions.ResolveParentFromLinks collects the counterpart of every link of the type in both directions, so a middle item of a multi-level hierarchy has 1 parent + N children = N+1 candidates and ParentSourceSelector refuses it as ambiguous. (2) JiraWorkTrackingConnector resolves the typed reference against the instance's link types and stores ResolvedReference.ALinkType(answeringTypes[0].Name) - the TYPE NAME - so the direction the administrator expressed by typing an inward or outward label is lost before the resolver runs. Fix: the resolved reference carries a direction decided by which part of the link type the typed text matched, and the resolver keeps only links whose matching end that direction names."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator-self-review",
+    "reviewed_at": "2026-10-09",
+    "notes": "Bugfix flow (/nw-bugfix Phase 3) - minimal roadmap, no DISCUSS/DESIGN/DISTILL for this fix. RCA and fix direction approved by the maintainer, including the rule that a type-name match wins over a label match. The maintainer asked for a live Jira integration test; the demo fixture was built by the orchestrator before dispatch. One step because unit, stubbed-connector and live tests all go red on the same defect and green on the same change; splitting would either commit a red test or write already-green tests."
+  },
+  "ssot_inputs": {
+    "ado_work_item": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6203",
+    "live_fixture": "letpeoplework.atlassian.net: link type 'Causes' (id 10007, inward 'is caused by', outward 'causes'); LGHTHSDMO-8430 (top) <- LGHTHSDMO-8431 (middle) <- LGHTHSDMO-8432, LGHTHSDMO-8433 (leaves), label ParentLinkDirection. Verified wire shape: on 8431 the link to 8430 carries inwardIssue=8430, the links to 8432/8433 carry outwardIssue; on 8432 the link carries inwardIssue=8431."
+  },
+  "out_of_scope": [
+    "Any UI or docs change - the configuration Steve already has starts working.",
+    "Steve could not find the child-count chart - handled separately by the orchestrator.",
+    "Changing how ambiguity is refused (ParentSourceSelector) - the refusal is correct once the candidate set is right."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Regression tests and fix for ADO Bug 6203",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "A typed link label sets the direction parents are read from",
+          "description": "TDD execution. Read docs/ci-learnings.md first and pre-apply its rules.\n\n**RED phase** - three test layers, all must fail against unmodified production code for the business reason (middle item gets no parent), not a compile error (introduce the new direction parameter/enum signature first if needed so tests compile, with production behaviour unchanged):\n(a) Unit - extend `IssueExtensionsParentLinkTest.cs`: an issue holding one link with `inwardIssue` = PARENT and two links with `outwardIssue` = CHILD-1/CHILD-2 of the same type resolves to exactly PARENT when the inward direction is asked; the same issue with the outward direction yields the two children (ambiguous); with both directions it stays ambiguous (today's behaviour). Keep existing tests green.\n(b) Stubbed connector acceptance - add a scenario to the ParentFromIssueLinks suite (Slice02ParentFromLinkScenarios/Specifications are the closest home; follow their Scenarios+Specifications split and naming style): an instance whose link type has inward label 'is caused by' and outward 'causes'; Parent Override names 'is caused by'; a middle item carrying one inward link to its parent and outward links to two children resolves to its parent, and each child resolves to the middle item. Add one scenario pinning that typing the TYPE NAME still reads both ways (middle item refused as ambiguous), and that a type whose name equals one of its labels case-insensitively (e.g. name 'Blocks', outward 'blocks') counts as a name match -> both ways.\n(c) Live Jira - new fixture class `JiraParentLinkDirectionDogfoodTest.cs` next to `JiraParentLinkDogfoodTest.cs`, same categories ([Category(\"Integration\")], [Category(\"JiraIntegration\")]), same connection/team construction pattern (token env var JiraLighthouseIntegrationTestToken, Assert.Ignore when unset, all states/types cleared). Query `key in (LGHTHSDMO-8431, LGHTHSDMO-8432, LGHTHSDMO-8433)` (top 8430 deliberately left out). Override 'is caused by' -> 8431 hangs under 8430, 8432 and 8433 under 8431. Override 'Causes' (type name) -> 8431 has no parent. A class summary in the style of the neighbouring dogfood test saying, in plain language, why this needs a real instance (one link type carrying a three-level hierarchy, middle level holding both ends). The live run hits the real demo Jira - run ONLY this class with `--filter FullyQualifiedName~JiraParentLinkDirectionDogfoodTest`, once for RED and once for GREEN.\n\nIf an EXISTING test types a one-directional label and expects the counterpart on the opposite end, STOP and report it to the orchestrator instead of rewriting it.\n\n**GREEN phase** - minimal change:\n- `JiraWorkTrackingConnector.cs`: `ResolvedReference.ALinkType` carries a direction alongside the type name. Where the reference is matched against the listing (around line 1869, `answeringTypes[0]`), decide: name matches -> Both; else inward matches and outward does not -> Inward; outward matches and inward does not -> Outward; both labels match (symmetric) -> Both. Pass the direction into `ResolveParentFromLinks` at the call site (~line 1703). Prefer putting the decision on `JiraIssueLinkType` next to `AnswersTo`.\n- `IssueExtensions.cs`: `ResolveParentFromLinks` takes the direction. Inward keeps links carrying `inwardIssue` (counterpart = inwardIssue key); Outward keeps links carrying `outwardIssue`; Both keeps today's behaviour. A small enum (e.g. `LinkDirection`) in the Jira connector namespace is fine; no new files beyond the enum and the live test class. Per-link label matching in `LinkTypeAnswersTo` stays as is.\n- Comments: rare, plain-language why only, no internal references (see project CLAUDE.md). Update the existing doc comments on these members if they now say something untrue.\n\n**COMMIT phase** - `fix(jira): a typed link label sets which way parents are read` via des-commit with every touched file as owned paths (one --owned-paths flag followed by all paths; repeating the flag keeps only the last). Body: two-layer root cause in plain words, reference Bug #6203, note the live fixture keys.\n\n**Quality gates (mandatory before COMMIT):** from `Lighthouse.Backend/`: `dotnet build` zero warnings; `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"` green (2 Licensing failures in a worktree are environmental - copy valid_not_expired_license.json from /storage/repos/Lighthouse main checkout if needed; 10 ReleaseServiceTest failures under load = re-run that class alone); the ParentFromIssueLinks acceptance tests are tagged Integration? - if so run them explicitly with `--filter FullyQualifiedName~ParentFromIssueLinks`; plus the two Jira dogfood classes (`FullyQualifiedName~JiraParentLink`) green.",
+          "agent": "nw-software-crafter",
+          "criteria": [
+            "With the inward label typed, an item holding both an inward link to its parent and outward links to its children resolves to its parent",
+            "Children in the same chain resolve to the middle item",
+            "Typing the link type's name keeps today's both-ways reading; a type whose name equals one of its labels counts as a name match",
+            "A symmetric label (inward == outward) keeps today's both-ways reading",
+            "Live: against the demo Jira, with 'is caused by' LGHTHSDMO-8431 -> 8430, 8432 -> 8431, 8433 -> 8431; with 'Causes' 8431 has no parent",
+            "Existing parent-from-link tests stay green; dotnet build zero warnings; filtered dotnet test green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice02ParentFromLinkScenarios.cs",
+          "scenario_name": "A middle item holding both ends of the link type takes its parent from the label that was typed",
+          "red_to_green_tests": [
+            "IssueExtensionsParentLinkTest: inward direction picks the parent out of a middle item's links",
+            "ParentFromIssueLinks: a middle item resolves to its parent when the inward label is typed",
+            "JiraParentLinkDirectionDogfoodTest: the demo Jira's three-level Causes chain resolves level by level"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/IssueExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/IssueExtensionsParentLinkTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice02ParentFromLinkScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice02ParentFromLinkSpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraParentLinkDirectionDogfoodTest.cs"
+          ],
+          "dependencies": [],
+          "estimated_hours": 2,
+          "deliverables": [
+            "Direction carried from the typed reference to the resolver",
+            "Unit, stubbed acceptance and live Jira regression tests"
+          ]
+        }
+      ]
+    }
+  ]
+}
