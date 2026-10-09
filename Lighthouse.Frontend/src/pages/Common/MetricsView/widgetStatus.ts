@@ -1,9 +1,5 @@
 import type { MetricsFetchKey } from "./categoryMetadata";
 
-// RED scaffold: the signatures the specifications import, with no behaviour yet. Nothing in the
-// app calls these until the loading state is built, so the dashboard behaves exactly as before.
-export const __SCAFFOLD__ = true;
-
 const NOT_YET_IMPLEMENTED = "Not yet implemented -- RED scaffold";
 
 export type WidgetStatus = "loading" | "error" | "ready";
@@ -44,11 +40,30 @@ export function widgetHasData(
 	throw new Error(NOT_YET_IMPLEMENTED);
 }
 
+const notAskedFor: FetchKeyState = { status: "ready", hasData: true };
+
+function isBehind(query: QueryProgress): boolean {
+	return query.isPending || query.isPlaceholderData;
+}
+
+function showsAnAnswer(query: QueryProgress): boolean {
+	return !query.isPending && !query.isError;
+}
+
+function statusOf(queries: readonly QueryProgress[]): WidgetStatus {
+	if (queries.some((query) => query.isError)) return "error";
+	if (queries.some(isBehind)) return "loading";
+	return "ready";
+}
+
+// A query on placeholder data is still loading: it shows the previous window's answer while the
+// selected window has none yet, and that answer is the older picture a chart dims.
 export function fetchKeyStateOf(
-	_queries: readonly QueryProgress[],
-	_applicable: boolean,
+	queries: readonly QueryProgress[],
+	applicable: boolean,
 ): FetchKeyState {
-	throw new Error(NOT_YET_IMPLEMENTED);
+	if (!applicable) return notAskedFor;
+	return { status: statusOf(queries), hasData: queries.every(showsAnAnswer) };
 }
 
 export function useReportWidgetStatus(_status: WidgetStatus): void {

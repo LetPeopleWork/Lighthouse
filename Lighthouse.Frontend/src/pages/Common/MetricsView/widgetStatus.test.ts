@@ -285,7 +285,7 @@ describe("whether a chart has an older picture to dim", () => {
 });
 
 describe("one request's progress, as a chart sees it", () => {
-	it.skip.each<[string, readonly QueryProgress[], FetchKeyState["status"]]>([
+	it.each<[string, readonly QueryProgress[], FetchKeyState["status"]]>([
 		["on its way", [onItsWay], "loading"],
 		[
 			"still showing the previous window",
@@ -305,17 +305,17 @@ describe("one request's progress, as a chart sees it", () => {
 		expect(fetchKeyStateOf(queries, true).status).toBe(expected);
 	});
 
-	it.skip("a request still showing the previous window has an older picture to dim", () => {
+	it("a request still showing the previous window has an older picture to dim", () => {
 		expect(fetchKeyStateOf([showingThePreviousWindow], true).hasData).toBe(
 			true,
 		);
 	});
 
-	it.skip("a request on its way for the first time has nothing to dim", () => {
+	it("a request on its way for the first time has nothing to dim", () => {
 		expect(fetchKeyStateOf([onItsWay], true).hasData).toBe(false);
 	});
 
-	it.skip.each<[string, QueryProgress]>([
+	it.each<[string, QueryProgress]>([
 		["on its way", onItsWay],
 		["showing the previous window", showingThePreviousWindow],
 		["failed", failedQuery],
