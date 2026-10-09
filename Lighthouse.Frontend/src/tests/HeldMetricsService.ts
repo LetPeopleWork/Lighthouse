@@ -395,7 +395,7 @@ export function createHeldMetricsService(
 		service: service as unknown as ITeamMetricsService | IProjectMetricsService,
 		calls,
 		pending,
-		answer(filter = {}, value) {
+		answer(filter?: CallFilter, value?: unknown) {
 			for (const call of pending(filter)) {
 				call.settled = true;
 				call.answer.resolve(
