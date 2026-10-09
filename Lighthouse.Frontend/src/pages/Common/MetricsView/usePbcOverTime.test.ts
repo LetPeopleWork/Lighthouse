@@ -326,7 +326,11 @@ describe("usePbcOverTime as its owner changes or updates", () => {
 		const getProcessBehaviorOverTime = vi
 			.fn()
 			.mockResolvedValueOnce(FIRST_RANGE_SERIES)
-			.mockReturnValueOnce(new Promise(() => {}));
+			.mockReturnValueOnce(
+				new Promise(() => {
+					// Never settles: the next owner's series is still on its way.
+				}),
+			);
 		const { result, rerender } = drawnFor(getProcessBehaviorOverTime);
 		await waitFor(() =>
 			expect(result.current.series).toEqual(FIRST_RANGE_SERIES),

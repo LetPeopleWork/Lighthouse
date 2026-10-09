@@ -344,7 +344,11 @@ describe("usePercentilesOverTime as its owner changes or updates", () => {
 		const getPercentilesOverTime = vi
 			.fn()
 			.mockResolvedValueOnce(FIRST_RANGE_SERIES)
-			.mockReturnValueOnce(new Promise(() => {}));
+			.mockReturnValueOnce(
+				new Promise(() => {
+					// Never settles: the next owner's series is still on its way.
+				}),
+			);
 		const { result, rerender } = drawnFor(getPercentilesOverTime);
 		await waitFor(() =>
 			expect(result.current.series).toEqual(FIRST_RANGE_SERIES),
