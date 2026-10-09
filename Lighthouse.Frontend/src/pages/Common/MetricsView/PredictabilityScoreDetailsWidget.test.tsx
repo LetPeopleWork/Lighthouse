@@ -55,7 +55,7 @@ const buildProps = (
 	> = {},
 ) => ({
 	predictabilityData: rawScore,
-	entityId: 7,
+	owner: { ownerId: 7, ownerUpdatedAt: 0 },
 	metricsService: buildMetricsService(),
 	startDate: new Date("2026-01-01"),
 	endDate: new Date("2026-01-31"),

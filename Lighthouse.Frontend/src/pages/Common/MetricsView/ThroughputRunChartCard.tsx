@@ -2,6 +2,7 @@ import { Box } from "@mui/material";
 import { useState } from "react";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import ThroughputChartFilterToggle from "../../../components/Common/Charts/ThroughputChart/ThroughputChartFilterToggle";
+import type { MetricsOwnerKey } from "../../../hooks/useMetricsData";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
@@ -9,7 +10,7 @@ import { useFilteredView } from "./useFilteredView";
 import { useReportWidgetStatus } from "./widgetStatus";
 
 interface ThroughputRunChartCardProps<T extends IWorkItem> {
-	readonly entityId: number;
+	readonly owner: MetricsOwnerKey;
 	readonly metricsService: IMetricsService<T>;
 	readonly startDate: Date;
 	readonly endDate: Date;
@@ -20,7 +21,7 @@ interface ThroughputRunChartCardProps<T extends IWorkItem> {
 }
 
 const ThroughputRunChartCard = <T extends IWorkItem>({
-	entityId,
+	owner,
 	metricsService,
 	startDate,
 	endDate,
@@ -33,12 +34,17 @@ const ThroughputRunChartCard = <T extends IWorkItem>({
 
 	const filteredSeries = useFilteredView({
 		fetchName: "getThroughput",
-		ownerId: entityId,
+		owner,
 		startDate,
 		endDate,
 		filtered,
 		ask: () =>
-			metricsService.getThroughput(entityId, startDate, endDate, "filtered"),
+			metricsService.getThroughput(
+				owner.ownerId,
+				startDate,
+				endDate,
+				"filtered",
+			),
 		failureMessage: "Error fetching filtered throughput:",
 	});
 

@@ -1,11 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { metricsQueryOptions } from "../../../hooks/useMetricsData";
+import {
+	type MetricsOwnerKey,
+	metricsQueryOptions,
+} from "../../../hooks/useMetricsData";
 import { formatLocalDate } from "../../../utils/date/localDate";
 import { fetchKeyStateOf, type WidgetStatus } from "./widgetStatus";
 
 type FilteredViewRequest<V> = {
 	readonly fetchName: string;
-	readonly ownerId: number | undefined;
+	readonly owner: MetricsOwnerKey | undefined;
 	readonly startDate: Date | undefined;
 	readonly endDate: Date | undefined;
 	/** Whether the reader has the chart's filter switched on. */
@@ -18,7 +21,7 @@ type FilteredViewRequest<V> = {
 /** The filtered answer behind a chart's filter switch, and where its request stands. */
 export function useFilteredView<V>({
 	fetchName,
-	ownerId,
+	owner,
 	startDate,
 	endDate,
 	filtered,
@@ -36,7 +39,7 @@ export function useFilteredView<V>({
 			fetchName,
 			{
 				view: "filtered",
-				ownerId,
+				...owner,
 				from: startDate ? formatLocalDate(startDate) : null,
 				to: endDate ? formatLocalDate(endDate) : null,
 			},

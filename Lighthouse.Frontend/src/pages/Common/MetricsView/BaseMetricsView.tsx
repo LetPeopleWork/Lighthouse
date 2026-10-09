@@ -31,7 +31,10 @@ import WorkItemAgePercentiles from "../../../components/Common/Charts/WorkItemAg
 import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingChart";
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
-import { useMetricsData } from "../../../hooks/useMetricsData";
+import {
+	metricsOwnerKeyOf,
+	useMetricsData,
+} from "../../../hooks/useMetricsData";
 import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
 import type { BlockedCountSnapshot } from "../../../models/BlockedCountSnapshot";
 import type { IStateMapping } from "../../../models/Common/StateMapping";
@@ -1053,7 +1056,7 @@ function buildWidgetNodes(ctx: {
 		predictabilityScoreDetails: (
 			<PredictabilityScoreDetailsWidget
 				predictabilityData={ctx.predictabilityData}
-				entityId={ctx.entity.id}
+				owner={metricsOwnerKeyOf(ctx.entity)}
 				metricsService={ctx.metricsService}
 				startDate={ctx.startDate}
 				endDate={ctx.endDate}
@@ -1076,7 +1079,7 @@ function buildWidgetNodes(ctx: {
 		),
 		throughput: ctx.throughputData ? (
 			<ThroughputRunChartCard
-				entityId={ctx.entity.id}
+				owner={metricsOwnerKeyOf(ctx.entity)}
 				metricsService={ctx.metricsService}
 				startDate={ctx.startDate}
 				endDate={ctx.endDate}
@@ -1554,7 +1557,7 @@ export const BaseMetricsView = <
 	} = useCumulativeStateTimeCandidates({
 		metricsService,
 		ownerType,
-		ownerId: entity.id,
+		owner: metricsOwnerKeyOf(entity),
 		startDate,
 		endDate,
 		selectedQuestion,

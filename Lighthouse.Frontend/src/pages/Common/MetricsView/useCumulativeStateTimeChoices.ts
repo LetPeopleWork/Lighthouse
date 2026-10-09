@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
-import { metricsQueryOptions } from "../../../hooks/useMetricsData";
+import {
+	type MetricsOwnerKey,
+	metricsQueryOptions,
+} from "../../../hooks/useMetricsData";
 import type { IFeature } from "../../../models/Feature";
 import type { ICumulativeStateTimeCandidateRow } from "../../../models/Metrics/CumulativeStateTimeCandidates";
 import type { IWorkItem } from "../../../models/WorkItem";
@@ -49,7 +52,7 @@ export function useCumulativeScopeChoice(selectedQuestion: string): {
 type CandidatesRequest<T extends IWorkItem | IFeature> = {
 	readonly metricsService: IMetricsService<T>;
 	readonly ownerType: "team" | "portfolio";
-	readonly ownerId: number;
+	readonly owner: MetricsOwnerKey;
 	readonly startDate: Date;
 	readonly endDate: Date;
 	readonly selectedQuestion: string;
@@ -67,7 +70,7 @@ export function useCumulativeStateTimeCandidates<
 >({
 	metricsService,
 	ownerType,
-	ownerId,
+	owner,
 	startDate,
 	endDate,
 	selectedQuestion,
@@ -84,7 +87,7 @@ export function useCumulativeStateTimeCandidates<
 			"cumulativeStateTimeCandidates",
 			{
 				ownerType,
-				ownerId,
+				...owner,
 				from: formatLocalDate(startDate),
 				to: formatLocalDate(endDate),
 			},
@@ -93,12 +96,12 @@ export function useCumulativeStateTimeCandidates<
 			const response =
 				ownerType === "team"
 					? await metricsService.getCumulativeStateTimeCandidatesForTeam(
-							ownerId,
+							owner.ownerId,
 							startDate,
 							endDate,
 						)
 					: await metricsService.getCumulativeStateTimeCandidatesForPortfolio(
-							ownerId,
+							owner.ownerId,
 							startDate,
 							endDate,
 						);

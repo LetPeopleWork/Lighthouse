@@ -5819,7 +5819,7 @@ describe("BaseMetricsView component", () => {
 	 * step 01-05 reduced TotalWorkItemAgeWidget to a plain `totalAge` prop. The remaining widgets
 	 * that still fetch on their own are PredictabilityScoreDetailsWidget and ThroughputRunChartCard
 	 * (BaseMetricsView.tsx, the `predictabilityScoreDetails` and `throughput` entries) — they take
-	 * entityId + metricsService + the date range and issue their own calls.
+	 * owner + metricsService + the date range and issue their own calls.
 	 *
 	 * The last test here is the KPI assertion — "100% of Flow Overview widgets expose a RAG status" —
 	 * expressed as a structural test over getWidgetsForCategory so a future widget cannot silently

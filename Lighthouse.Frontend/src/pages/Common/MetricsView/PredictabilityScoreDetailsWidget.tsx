@@ -2,6 +2,7 @@ import { Box, Card, CardContent, Typography } from "@mui/material";
 import { useState } from "react";
 import PredictabilityScore from "../../../components/Common/Charts/PredictabilityScore";
 import ThroughputChartFilterToggle from "../../../components/Common/Charts/ThroughputChart/ThroughputChartFilterToggle";
+import type { MetricsOwnerKey } from "../../../hooks/useMetricsData";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
@@ -10,7 +11,7 @@ import { useReportWidgetStatus } from "./widgetStatus";
 
 interface PredictabilityScoreDetailsWidgetProps<T extends IWorkItem> {
 	readonly predictabilityData: IForecastPredictabilityScore | null;
-	readonly entityId?: number;
+	readonly owner?: MetricsOwnerKey;
 	readonly metricsService?: IMetricsService<T>;
 	readonly startDate?: Date;
 	readonly endDate?: Date;
@@ -20,7 +21,7 @@ interface PredictabilityScoreDetailsWidgetProps<T extends IWorkItem> {
 
 const PredictabilityScoreDetailsWidget = <T extends IWorkItem>({
 	predictabilityData,
-	entityId,
+	owner,
 	metricsService,
 	startDate,
 	endDate,
@@ -30,14 +31,14 @@ const PredictabilityScoreDetailsWidget = <T extends IWorkItem>({
 	const [filtered, setFiltered] = useState(false);
 
 	const canRefetch =
-		entityId !== undefined &&
+		owner !== undefined &&
 		metricsService !== undefined &&
 		startDate !== undefined &&
 		endDate !== undefined;
 
 	const filteredScore = useFilteredView({
 		fetchName: "getMultiItemForecastPredictabilityScore",
-		ownerId: entityId,
+		owner,
 		startDate,
 		endDate,
 		filtered,
@@ -45,7 +46,7 @@ const PredictabilityScoreDetailsWidget = <T extends IWorkItem>({
 		ask: async () => {
 			if (!canRefetch) return null;
 			return metricsService.getMultiItemForecastPredictabilityScore(
-				entityId,
+				owner.ownerId,
 				startDate,
 				endDate,
 				"filtered",

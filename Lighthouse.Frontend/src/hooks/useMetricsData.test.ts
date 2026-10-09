@@ -269,6 +269,65 @@ describe("useMetricsData", () => {
 		});
 	});
 
+	describe("An owner that has finished an update is asked again", () => {
+		const updatedAt = new Date(2024, 6, 1, 9, 0, 0);
+		const laterUpdate = new Date(2024, 6, 1, 9, 5, 0);
+
+		it("asks every owner-keyed metric again once the owner reports a later update", async () => {
+			const service = createMockTeamMetricsService();
+
+			const { rerender } = renderHook(
+				({ owner }: { owner: IFeatureOwner }) =>
+					useMetricsData(owner, service, startDate, endDate),
+				{
+					initialProps: { owner: createMockEntity({ lastUpdated: updatedAt }) },
+				},
+			);
+
+			await waitFor(() => {
+				expect(service.getThroughput).toHaveBeenCalledTimes(1);
+				expect(service.getTotalWorkItemAge).toHaveBeenCalledTimes(1);
+				expect(service.getSleRisk).toHaveBeenCalledTimes(1);
+			});
+
+			rerender({ owner: createMockEntity({ lastUpdated: laterUpdate }) });
+
+			await waitFor(() => {
+				expect(service.getThroughput).toHaveBeenCalledTimes(2);
+				expect(service.getTotalWorkItemAge).toHaveBeenCalledTimes(2);
+				expect(service.getSleRisk).toHaveBeenCalledTimes(2);
+			});
+			expect(service.getThroughput).toHaveBeenLastCalledWith(
+				1,
+				startDate,
+				endDate,
+			);
+		});
+
+		it("does not ask again for a re-read owner whose last update has not moved", async () => {
+			const service = createMockTeamMetricsService();
+
+			const { rerender } = renderHook(
+				({ owner }: { owner: IFeatureOwner }) =>
+					useMetricsData(owner, service, startDate, endDate),
+				{
+					initialProps: { owner: createMockEntity({ lastUpdated: updatedAt }) },
+				},
+			);
+
+			await waitFor(() => {
+				expect(service.getThroughput).toHaveBeenCalledTimes(1);
+			});
+
+			rerender({
+				owner: createMockEntity({ lastUpdated: new Date(updatedAt) }),
+			});
+
+			await new Promise((resolve) => setTimeout(resolve, 50));
+			expect(service.getThroughput).toHaveBeenCalledTimes(1);
+		});
+	});
+
 	describe("Baseline fetch orchestration", () => {
 		it("should call all core metrics service methods on mount", async () => {
 			const entity = createMockEntity();

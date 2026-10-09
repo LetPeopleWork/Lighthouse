@@ -217,7 +217,24 @@ const noCumulativeStateTimeChoices: CumulativeStateTimeChoices = {
 
 type OwnerType = "team" | "portfolio";
 
-type OwnerRequest = { readonly ownerType: OwnerType; readonly ownerId: number };
+/** Whose metrics a request asks for, as every metrics request key names it. */
+export type MetricsOwnerKey = {
+	readonly ownerId: number;
+	readonly ownerUpdatedAt: number;
+};
+
+// An update recomputes the owner's metrics, so its moment is in the key: an open dashboard asks
+// again once the update is done rather than keeping the answer from before it.
+export function metricsOwnerKeyOf(
+	owner: Pick<IFeatureOwner, "id" | "lastUpdated">,
+): MetricsOwnerKey {
+	return {
+		ownerId: owner.id,
+		ownerUpdatedAt: new Date(owner.lastUpdated).getTime(),
+	};
+}
+
+type OwnerRequest = MetricsOwnerKey & { readonly ownerType: OwnerType };
 type AsOfRequest = OwnerRequest & { readonly asOf: string };
 type WindowRequest = OwnerRequest & {
 	readonly from: string;
@@ -310,7 +327,7 @@ export function useMetricsData<
 	const ownerType: OwnerType = isTeamOwnedMetricsService(metricsService)
 		? "team"
 		: "portfolio";
-	const owner: OwnerRequest = { ownerType, ownerId: entity.id };
+	const owner: OwnerRequest = { ownerType, ...metricsOwnerKeyOf(entity) };
 	const selectedWindow: WindowRequest = {
 		...owner,
 		from: formatLocalDate(startDate),

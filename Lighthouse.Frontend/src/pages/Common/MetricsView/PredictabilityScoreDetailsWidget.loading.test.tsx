@@ -63,7 +63,7 @@ function detailsFor(
 			>
 				<PredictabilityScoreDetailsWidget
 					predictabilityData={scoreOf(pageScore)}
-					entityId={2}
+					owner={{ ownerId: 2, ownerUpdatedAt: 0 }}
 					metricsService={held.service as IMetricsService<IWorkItem>}
 					startDate={windows[window].start}
 					endDate={windows[window].end}
