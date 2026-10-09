@@ -82,6 +82,16 @@ Two standing principles worth keeping visible here because they're easy to skip 
   too, and the review tends to change more than the layout (it has merged and dropped slices). Record the
   outcome in `feature-delta.md` as a maintainer-decision block; DELIVER then only re-sketches what DISTILL
   left open.
+- **Design for a slow connection: every new view has a loading look and a failure look.** At the
+  **DESIGN** wave, any new or changed screen, chart or widget that fetches data answers two questions:
+  what does it show while its data is on its way, and what does it show when the data cannot be loaded?
+  Its sketches cover both states alongside the loaded one. Never show the previous answer as if it were
+  current, an empty area that looks like "no data", or a value the reader cannot tell is stale. Reuse
+  what exists rather than inventing a new look: `WidgetShell`'s `status` (dimmed under a small spinner
+  when there is something to dim, a lone spinner when there is not, and the could-not-load message) for
+  dashboard widgets, and keyed TanStack queries so a late answer for an old request never lands. DISTILL
+  then pins both states, and E2E page objects wait for `data-widget-status="ready"` rather than mere
+  visibility. Check it by hand with the browser throttled to a slow connection.
 - **Each Epic ships on its own.** When DISCUSS splits a feature into several Epics, each one must be
   deliverable and releasable alone: finished, it adds something valuable to at least some users, even if
   no other Epic of the split ever ships. Order the slices Epic by Epic, so one Epic is completed before
