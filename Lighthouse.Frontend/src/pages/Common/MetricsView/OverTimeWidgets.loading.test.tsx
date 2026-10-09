@@ -151,6 +151,9 @@ describe.each(overTimeCharts)("$name while its series loads", (chart) => {
 
 		expect(frame()).toHaveAttribute("data-widget-status", "loading");
 		expect(within(frame()).getByRole("progressbar")).toBeInTheDocument();
+		expect(
+			screen.getByTestId(`widget-shell-body-${chart.widgetKey}`),
+		).not.toHaveStyle({ opacity: "0.4" });
 		expect(screen.queryByText(EMPTY_COPY)).not.toBeInTheDocument();
 		expectOutOfSight("over-time-chart");
 	});
