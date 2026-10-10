@@ -26,7 +26,7 @@ The Lighthouse skill has been reworked, and two new skills join it, each walking
 - **Refinement** gets a Team ready for its next Refinement: whether to refine more or stop, and which Work Items are worth the session's time. Try: "Are we ready for Thursday's Refinement?"
 - **Daily Flow Review** opens a Team's daily with what to discuss today: Work Items that are blocked, past the SLE or at risk of missing it, and WIP over its limit. Try: "What should Gravity discuss today?"
 
-Each skill is its own download. Full detail: [AI Integration](https://docs.lighthouse.letpeople.work/aiintegration.html#lighthouse-agent-skill).
+Both new skills grew out of ideas from Liz Rettig. Each skill is its own download. Full detail: [AI Integration](https://docs.lighthouse.letpeople.work/aiintegration.html#lighthouse-agent-skill).
 
 ## Bugfixes and Improvements
 
@@ -38,6 +38,7 @@ Each skill is its own download. Full detail: [AI Integration](https://docs.light
 ## Contributions ❤️
 
 Special thanks to everyone who contributed feedback for this release:
+- [Liz Rettig](https://www.linkedin.com/in/lizrettig-agilecoach/)
 - [Paul Brown](https://www.linkedin.com/in/paulisthrivving/)
 - [Steve Pereira](https://www.linkedin.com/in/devopsto/)
 
