@@ -1,0 +1,223 @@
+{
+  "roadmap": {
+    "project_id": "bug-6254-deliveries-active-archived",
+    "created_at": "2026-10-10",
+    "total_steps": 5,
+    "total_phases": 2,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "scope": "ADO Bug #6254. All code is in /storage/repos/lighthouse-clients (packages client, cli, mcp-core; test-support; scripts; .github/workflows/ci.yml; docs/release-model.md; .changeset). The DES workspace lives in /storage/repos/Lighthouse/docs/feature/bug-6254-deliveries-active-archived. No server change.",
+    "goal": "Since server v26.8.31.7 (commit 8c0b99756) GET /v1/deliveries/portfolio/{id} answers {active, archived}; the clients still read it as an array, so readable `lh delivery list` falls back to the generic key/value dump and the MCP lighthouse_delivery_list drops its summary. Fix: the client returns {active, archived} (an older server's array becomes {active: array, archived: []}, any other shape is an error); the CLI readable view shows the active Deliveries as today plus an Archived section; the MCP summary counts the active Deliveries; the integration smoke reads .active and also runs BEFORE a release (locally packed packages, against lighthouse:latest and :dev-latest, on every main push and nightly), gating the Release environment. Every step ends with `pnpm run ci` exit 0 in lighthouse-clients.",
+    "paradigm_note": "TypeScript / Vitest in lighthouse-clients; the clients keep their pure-reader / injected-client factory style. No fast-check dependency: finite domains are it.each tables. There is no DISTILL wave for a bugfix: RED is a crafter-authored regression test through the driving port (the client's request path against a fake fetch, `lh` against the fake Lighthouse in test-support, the MCP tool handler), which must fail on today's code for the bug's reason before production code changes."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator (inline, following the bug-6054 and bug-5064 precedent for a surgical bugfix)",
+    "reviewed_at": "2026-10-10",
+    "notes": "No architect dispatch: the Phase-1 RCA (nw-troubleshooter, 2026-10-10) prescribes every fix site. The orchestrator independently verified: readDeliveryList returns null for a non-array (packages/client/src/deliveryWording.ts:83-89); renderedOrGeneric falls back to formatPretty on a null renderer result (packages/cli/src/output.ts:218-227); the smoke's jq `any(.[]; (.features | length) > 0)` (ci.yml:473) cannot match the object; 8c0b99756 is contained in released tags; Lighthouse demo data seeds no archived Delivery (no 'archiv' in DemoDataFactory.cs / DemoDataService.cs), so the archived section is pinned by unit tests, not the smoke. Step order keeps every commit green: 01-01 changes the client type and adds the new-shape fixture beside the old array fixture; 01-02 and 01-03 move their consumers onto the new shape (the RED for each); 01-03 deletes the array fixture once nothing uses it."
+  },
+  "ssot_inputs": {
+    "rca_source": "Inline in /nw-bugfix Phase 1 (nw-troubleshooter, 2026-10-10), verified by orchestrator",
+    "ado_bug": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6254",
+    "server_contract": "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/API/DeliveriesController.cs (GetByPortfolio -> PortfolioDeliveriesDto {Active: DeliveryWithLikelihoodDto[], Archived: ArchivedDeliveryDto[]}); ArchivedDeliveryDto = id, name, date, portfolioId, archivedOn, progress, totalWork, doneWork, remainingWork, likelihoodPercentage?, hasSufficientData, teamsWithoutForecast, selectionMode, concurrencyToken (no features, no completionDates)"
+  },
+  "user_decisions": [
+    "D1 - Approve all: fix client + cli + mcp-core + the smoke jq AND add the pre-release smoke gate, in this one bugfix.",
+    "D2 - Versioning: client MINOR (new exported type, changed listDeliveries signature; changelog words it as a fix); cli PATCH; mcp-core PATCH; mcp-http / mcp-stdio follow via updateInternalDependencies.",
+    "D3 - Normalise in the client: listDeliveries always returns {active, archived}; an older server's array becomes {active: array, archived: []}. Consequence accepted: --json against a pre-v26.8.31.7 server prints the object.",
+    "D4 - Readable layout (sketch approved): the active table exactly as today; below it, only when any exist, a blank line, a heading 'Archived <Deliveries term>' and a table Name / Delivery Date / Archived On / Done / Likelihood. No archived -> section omitted. No active -> the existing 'No Deliveries' line, archived section still shown.",
+    "D5 - latest and dev-latest may differ while server changes are unreleased; that is expected. The latest leg gates the clients release; the dev-latest leg is a visible warning (red in the run), not a blocker.",
+    "D6 - (after seeing 01-02 output) No blank line between the Archived heading and its table, matching the active title which runs straight into its table. The blank line BEFORE the Archived heading stays."
+  ],
+  "out_of_scope": [
+    "A swagger/contract-diff job against dev-latest (RCA prevention P2/P3) - candidate follow-up, not in this bug.",
+    "Any server-side change.",
+    "An MCP summary that also names the archived count (not decided; YAGNI)."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "The clients read Deliveries as {active, archived}",
+      "description": "Client type and reading first, then each consumer moved onto the real server shape, each with a regression test that fails on today's code.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "listDeliveries returns {active, archived}",
+          "description": "The client types and returns the server's {active, archived}; an older server's array is normalised; anything else is an error. Pure readers for the portfolio answer and an archived Delivery row.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/client/src/runtime.test.ts",
+          "scenario_name": "listDeliveries reads the server's {active, archived}, turns an older server's array into {active, archived: []}, and refuses any other shape",
+          "red_to_green_tests": [
+            "packages/client/src/runtime.test.ts :: listDeliveries turns an older server's array into {active: <the array>, archived: []}",
+            "packages/client/src/runtime.test.ts :: listDeliveries refuses an answer that is neither an array nor {active, archived} (it.each: null, a number, {active: 'x'}, {archived: []})",
+            "packages/client/src/runtime.test.ts :: listDeliveries passes {active, archived} through as the server sent it",
+            "packages/client/src/deliveryWording.test.ts :: readPortfolioDeliveries / readArchivedDeliveryItem value-in/value-out cases"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/client/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/deliveryWording.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/runtime.test.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/deliveryWording.test.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/index.ts",
+            "/storage/repos/lighthouse-clients/test-support/lighthouseAnswers.ts",
+            "/storage/repos/lighthouse-clients/.changeset/bug-6254-client-deliveries-active-archived.md"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "A new exported type PortfolioDeliveries = { readonly active: readonly unknown[]; readonly archived: readonly unknown[] }; both listDeliveries signatures (the interface near index.ts:1604 and the implementation near index.ts:3102) return LighthouseApiResult<PortfolioDeliveries>.",
+            "An array answer becomes { active: <that array>, archived: [] }; an object whose active and archived are both arrays passes through unchanged; any other answer is a failed result in the 'unexpected' category, built the same way the client builds its other unexpected-shape failures (see the existing construction near index.ts:3257) - never a throw.",
+            "The legacy-array and bad-shape tests fail on today's code (today the value is passed through untouched) before production code changes; the RED output is captured.",
+            "deliveryWording.ts gains readPortfolioDeliveries(value) -> { active: DeliveryListItem[]; archived: ArchivedDeliveryItem[] } | null (active rows via the existing readDeliveryListItem) and readArchivedDeliveryItem, reading the ArchivedDeliveryDto fields the archived table needs (id, name, date, archivedOn, totalWork, doneWork or remainingWork, likelihoodPercentage optional). Unit cases cover a good answer, an archived row missing a required field, and a non-object.",
+            "mcp-core's McpRuntimeClient.listDeliveries (index.ts near 758) is typed with the client's PortfolioDeliveries (imported, not redeclared) so `pnpm typecheck` stays green; mcp-core behaviour is NOT changed in this step.",
+            "test-support/lighthouseAnswers.ts gains anArchivedDelivery(facts) modelled field for field on ArchivedDeliveryDto, and a new-shape fixture returning { active: <Ocean Explorer's four Deliveries>, archived: [one archived Delivery] }; the existing array fixture oceanExplorersDeliveries stays for now (its consumers move in 01-02 and 01-03).",
+            "Changeset: @letpeoplework client minor, worded as a fix (lh / MCP read the Deliveries list the server has answered since v26.8.31.7; older servers keep working).",
+            "`pnpm run ci` exits 0 in /storage/repos/lighthouse-clients."
+          ],
+          "implementation_notes": "Read the exact package names from packages/*/package.json for the changeset. Follow the file's existing reader style in deliveryWording.ts (null on a shape it cannot read). No comments citing the bug number or internal ids; the commit carries the why. Commit: fix(client): read a Portfolio's Deliveries as {active, archived} (bug 6254)"
+        },
+        {
+          "id": "01-02",
+          "name": "lh delivery list shows the Delivery view again, with an Archived section",
+          "description": "The readable view reads the portfolio answer: the active table as today, then archived Deliveries under their own heading.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/deliveriesView.test.ts",
+          "scenario_name": "Against the server's {active, archived}, readable `lh delivery list` prints the Delivery table (not the generic dump) and the archived Deliveries under 'Archived Deliveries'",
+          "red_to_green_tests": [
+            "packages/cli/src/deliveriesView.test.ts :: the active Deliveries print in the Delivery table when the server answers {active, archived}",
+            "packages/cli/src/deliveriesView.test.ts :: archived Deliveries print under 'Archived Deliveries' with Name / Delivery Date / Archived On / Done / Likelihood",
+            "packages/cli/src/deliveriesView.test.ts :: no archived Deliveries -> no Archived section",
+            "packages/cli/src/deliveriesView.test.ts :: no active Deliveries -> the existing 'No Deliveries' line, archived section still shown"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/cli/src/deliveryOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/deliveryWording.ts",
+            "/storage/repos/lighthouse-clients/packages/client/src/deliveryWording.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/deliveriesView.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/prettyForms.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/readableOutput.edges.test.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/README.md",
+            "/storage/repos/lighthouse-clients/.changeset/bug-6254-cli-deliveries-archived-section.md"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "criteria": [
+            "RED first: the CLI delivery-list tests are moved onto the {active, archived} fixture from 01-01 and fail on today's renderDeliveryList (generic dump, no 'Delivery Date' heading) before deliveryOutput.ts changes; RED output captured.",
+            "renderDeliveryList reads readPortfolioDeliveries; the active table's columns, order and wording are unchanged from today.",
+            "When archived is non-empty: one blank line, a heading 'Archived ' + the configured Deliveries term (from the same Terms the active view uses, so a renamed term renders as the user's word), then a table with columns Name / Delivery Date / Archived On / Done / Likelihood, in the order the server sent (ArchivedOn descending). Done reads as done/total in the same style the active table uses for progress; a missing likelihood renders the way the active table renders a missing likelihood.",
+            "No archived Deliveries -> no heading, no table, no trailing blank line. No active Deliveries -> the existing no-Deliveries line, and the archived section still prints when there are archived ones.",
+            "An answer readPortfolioDeliveries cannot read still falls back to the generic dump (behaviour of renderedOrGeneric unchanged).",
+            "Existing prettyForms / readableOutput.edges delivery cases use the new shape; `--json` output is the client's value unchanged.",
+            "README: if packages/cli/README.md shows or describes `lh delivery list` output, it matches the new view; otherwise leave it untouched and say so in the report.",
+            "Changeset: cli patch.",
+            "`pnpm run ci` exits 0."
+          ],
+          "implementation_notes": "Reuse the CLI's existing table/heading helpers used by renderDeliveryList - no new table style. Any archived-row heading/row wording helpers belong beside describeDeliveryHeadings/describeDeliveryRow in deliveryWording.ts if that is where the active ones live. Commit: fix(cli): lh delivery list shows the Delivery view again, archived ones under their own heading (bug 6254)"
+        },
+        {
+          "id": "01-03",
+          "name": "The MCP delivery list summary counts the active Deliveries",
+          "description": "lighthouse_delivery_list reads the portfolio answer for its summary; the old array fixture is removed.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/mcp-core/src/deliverySummaries.test.ts",
+          "scenario_name": "Against the server's {active, archived}, lighthouse_delivery_list carries a summary counting the active Deliveries",
+          "red_to_green_tests": [
+            "packages/mcp-core/src/deliverySummaries.test.ts :: the delivery list summary counts the active Deliveries when the server answers {active, archived}"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/index.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/deliverySummaries.test.ts",
+            "/storage/repos/lighthouse-clients/packages/mcp-core/src/runtime.test.ts",
+            "/storage/repos/lighthouse-clients/test-support/lighthouseAnswers.ts",
+            "/storage/repos/lighthouse-clients/.changeset/bug-6254-mcp-delivery-summary.md"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "criteria": [
+            "RED first: deliverySummaries.test.ts moves onto the {active, archived} fixture and fails on today's handler because the summary is missing; RED output captured.",
+            "The lighthouse_delivery_list handler (mcp-core index.ts near 3054-3078) counts readPortfolioDeliveries(value)?.active; the facts stay exactly the client's value.",
+            "Where the summary lands follows the existing withSummary convention for object-shaped facts (packages/mcp-core/src/toolResult.ts); the test asserts the place it actually lands, and the report states which it is.",
+            "The array fixture oceanExplorersDeliveries is deleted from test-support once no test uses it (grep the repo); any remaining legacy-array coverage lives only in the client's runtime.test.ts from 01-01.",
+            "Changeset: mcp-core patch.",
+            "`pnpm run ci` exits 0."
+          ],
+          "implementation_notes": "Commit: fix(mcp-core): the delivery list summary counts the active Deliveries again (bug 6254)"
+        },
+        {
+          "id": "01-04",
+          "name": "The Archived heading sits directly on its table, like the active title",
+          "description": "Drop the blank line between the Archived heading and the archived table so both sections are laid out alike.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/packages/cli/src/deliveriesView.test.ts",
+          "scenario_name": "The Archived Deliveries heading is followed directly by its table, as the active title is",
+          "red_to_green_tests": [
+            "packages/cli/src/deliveriesView.test.ts :: the archived-section expectations without the blank line under the heading"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/packages/cli/src/deliveryOutput.ts",
+            "/storage/repos/lighthouse-clients/packages/cli/src/deliveriesView.test.ts"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "criteria": [
+            "RED: the deliveriesView expectations drop the blank line between \"Archived <Deliveries>\" and the table header row and fail on 0cb568d output.",
+            "GREEN: renderDeliveryList prints active table, one blank line, the Archived heading, then the archived table header directly below it.",
+            "No other layout change; the .changeset for the cli from 01-02 still describes it (edit only if it mentions the blank line).",
+            "pnpm run ci exits 0."
+          ],
+          "implementation_notes": "Commit: fix(cli): the Archived heading sits directly on its table, like the active title (bug 6254)"
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "The integration smoke reads .active and runs before a release",
+      "description": "One shared smoke script, run pre-release with locally packed packages against latest and dev-latest, gating the Release environment; the post-publish run stays.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "A pre-release integration smoke gates the clients Release",
+          "description": "Extract the smoke-integration checks into scripts/smoke-integration.sh, fix its delivery jq, and run it before release with packed packages against lighthouse:latest and :dev-latest.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/lighthouse-clients/scripts/smoke-integration.sh",
+          "scenario_name": "The integration smoke run locally with the packages built from HEAD against ghcr.io/letpeoplework/lighthouse:latest passes; the same script with the published cli 1.8.0 fails at the readable delivery-list check",
+          "red_to_green_tests": [
+            "scripts/smoke-integration.sh ghcr.io/letpeoplework/lighthouse:latest with npm-published @letpeoplework cli 1.8.0 on PATH -> exits non-zero at the readable `lh delivery list` check (RED, proves the bug)",
+            "scripts/smoke-integration.sh ghcr.io/letpeoplework/lighthouse:latest with locally packed client+cli from HEAD on PATH -> exits 0 (GREEN)",
+            "scripts/smoke-integration.sh ghcr.io/letpeoplework/lighthouse:dev-latest with locally packed client+cli from HEAD -> exits 0",
+            "actionlint .github/workflows/ci.yml -> clean"
+          ],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/scripts/smoke-integration.sh",
+            "/storage/repos/lighthouse-clients/.github/workflows/ci.yml",
+            "/storage/repos/lighthouse-clients/docs/release-model.md",
+            "/storage/repos/lighthouse-clients/docs/deployment.md"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "criteria": [
+            "scripts/smoke-integration.sh <lighthouse-image> holds the body of today's smoke-integration job (ci.yml ~334-478): it starts the image, seeds the demo scenario, and runs every existing check against whatever `lh` (and MCP binary, if the smoke uses one) is on PATH. Behaviour is the same as today's job apart from the delivery check. It cleans up its container on exit (trap).",
+            "The delivery wait reads `any(.active[]; (.features | length) > 0)`; the readable check `expect_pretty \"Delivery Date\"` stays. No archived-section check in the smoke (the demo data seeds no archived Delivery; unit tests cover it).",
+            "RED/GREEN demonstrated locally with Docker as listed in red_to_green_tests; outputs (tail) captured in the report.",
+            "The post-publish smoke-integration job keeps `needs: release`, installs from npm as today, and runs the shared script against lighthouse:latest.",
+            "A new job runs before the release: pnpm install --frozen-lockfile, pnpm build, pnpm pack of the packages into $RUNNER_TEMP, then installs the client and cli tarballs TOGETHER into one prefix (so the cli's pinned client dependency resolves to the packed client, not npm) and puts that prefix's bin on PATH; it runs the shared script in a matrix over ghcr.io/letpeoplework/lighthouse:latest and :dev-latest.",
+            "Triggers: the workflow gains `schedule` (nightly, a minute that is not :00 or :30) and `workflow_dispatch`; the pre-release job runs on main pushes, the schedule and dispatch.",
+            "The Release-gate job(s) (`unpublished` / `release`) list the pre-release job in `needs:` and only run for `github.event_name == 'push'`, so a nightly or manual run never requests the Release environment.",
+            "actionlint is clean on ci.yml; `pnpm run ci` exits 0.",
+            "docs/release-model.md (and docs/deployment.md if it describes the pipeline) say in plain words that the integration smoke now runs before the Release gate against the released and the next server image, and still runs after publish.",
+            "The two matrix legs can legitimately disagree: dev-latest may carry server changes not released yet. So the matrix sets fail-fast: false and each leg is named by its image; the latest leg gates the Release environment; the dev-latest leg runs and shows red when it fails (job summary / annotation naming the image) but does NOT block the release (e.g. continue-on-error on that leg, or the release needs only the latest leg). The nightly run against dev-latest is the early warning for unreleased server API changes."
+          ],
+          "implementation_notes": "Keep the step names and log lines of the existing job so CI logs stay familiar. Check whether the post-publish job also exercises an MCP binary and keep that working in both runs. Do not push; do not trigger workflows. Commit: ci: run the integration smoke before the Release gate, against latest and dev-latest (bug 6254)"
+        }
+      ]
+    }
+  ]
+}

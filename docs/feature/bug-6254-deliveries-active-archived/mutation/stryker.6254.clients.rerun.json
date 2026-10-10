@@ -1,0 +1,24 @@
+{
+  "testRunner": "command",
+  "commandRunner": {
+    "command": "node_modules/.bin/vitest run --bail=1 --reporter=dot"
+  },
+  "inPlace": false,
+  "tsconfigFile": "no-tsconfig-rewrite.json",
+  "ignorePatterns": ["dist", "agent-output", "docs", "skill", ".changeset"],
+  "disableTypeChecks": false,
+  "coverageAnalysis": "off",
+  "concurrency": 11,
+  "timeoutMS": 30000,
+  "tempDirName": "/tmp/claude-1000/-storage-repos-Lighthouse/bf9fa6f1-aa4b-4da7-9fcb-4b77a16e228f/scratchpad/mut6254/.stryker-tmp-rerun",
+  "cleanTempDir": true,
+  "reporters": ["clear-text", "json", "html", "progress"],
+  "jsonReporter": { "fileName": "/tmp/claude-1000/-storage-repos-Lighthouse/bf9fa6f1-aa4b-4da7-9fcb-4b77a16e228f/scratchpad/mut6254/reports-rerun/mutation-report.json" },
+  "htmlReporter": { "fileName": "/tmp/claude-1000/-storage-repos-Lighthouse/bf9fa6f1-aa4b-4da7-9fcb-4b77a16e228f/scratchpad/mut6254/reports-rerun/mutation-report.html" },
+  "mutate": [
+    "packages/client/src/index.ts:838-855",
+    "packages/client/src/index.ts:3120-3121",
+    "packages/client/src/index.ts:3126-3137"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": null }
+}
