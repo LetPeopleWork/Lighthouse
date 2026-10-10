@@ -4,7 +4,9 @@ updated: 2026-10-10
 note: >
   ADO User Story #6248, tagged Release Notes, no parent Epic. DISCOVER and DIVERGE skipped by the
   maintainer. The Work Items dialog gains a full column catalogue; each opening context picks its default
-  columns from one declared map, and remembers its own layout.
+  columns from one declared map, and remembers its own layout (per row of the defaults table, split by
+  Team and Portfolio, M2). Amended in the end-of-DISTILL review round 1: worked values added, and a second
+  journey for the delivery lead opening a Feature's child items.
 
 journeys:
 
@@ -12,7 +14,7 @@ journeys:
     goal: >
       A Flow Coach clicks a chart point and reads, per item, the value that put it there, then explains or
       questions the point without leaving Lighthouse.
-    persona: "flow-coach (secondary: delivery-lead-rte)"
+    persona: flow-coach
     job_id: job-flow-coach-see-why-each-item-sits-behind-the-point
 
     emotional_arc:
@@ -21,17 +23,72 @@ journeys:
       end: Confident - "these two were 3-pointers that waited on another team; I can say so."
 
     steps:
-      - step: Click a bubble on Estimation vs. Cycle Time (or View Data)
-        sees: the Work Items dialog with ID, Name, Type, State, Estimate, Cycle Time and Closed, sorted by Cycle Time
+      - step: Click a bubble on Estimation vs. Cycle Time (or View Data), e.g. Team Zenith on demo data
+        sees: >
+          the Work Items dialog with ID, Name, Type, State, then Estimate (Story Points), Cycle Time and
+          Closed, sorted by Cycle Time, longest first
+        worked_row:
+          header: "ID | Name | Type | State | Estimate (Story Points) | Cycle Time | Closed"
+          row: "ST-1 | ... | Story | Done | 3 | 20 | 2026-09-20"
+      - step: The same bubble on a Team that estimates in categories (S, M, L) with no unit
+        sees: >
+          a plain "Estimate" header (no unit set) and the category name in the cell, e.g. "M"; sorting
+          by Estimate follows the category order S < M < L, not the alphabet
       - step: Open Manage columns
-        sees: every other column the rows can fill (Started, Age, Parent, Blocked since, Time in State, named cycle times; Size, Owned by, forecast for Features), all off
+        sees: >
+          the shown columns first (Estimate, Cycle Time, Closed, on), then every other column the rows
+          can fill, all off, in the fixed order of R4: Started, Work Item Age, Age / Cycle Time, Parent,
+          Blocked since, Time in State, named cycle times where the chart passes them (Age band, SLE
+          risk and Warnings only where the opening chart supplies them); for Features also Size and
+          Forecasted Completion (Owned by is always shown for Features, not offered)
       - step: Turn on Parent and close the dialog; open it again
-        sees: Parent still shown in this context; the Cycle Time scatter's dialog is unchanged
+        sees: Parent still shown in this context; a dialog of another context (or of a Portfolio) is unchanged
       - step: Click a bar on Blocked over time
         sees: Age and Blocked since per row, sorted by Age
 
     error_paths:
       - when: the Team or Portfolio has no estimation field configured
         sees: no Estimate column in any context, not even under Manage columns
-      - when: an item has no value in the configured estimation field
-        sees: an empty Estimate cell for that row
+      - when: an item has no value in the configured estimation field, or one the chart cannot place
+        sees: an empty Estimate cell for that row (the chart leaves that item out too)
+      - when: the rows with an estimate carry different units
+        sees: a plain "Estimate" header
+
+  - name: open-a-features-child-items-and-explain-its-progress
+    goal: >
+      A delivery lead opens a Feature's child items from a Portfolio's Deliveries and sees, per item,
+      what is finished, what is moving and what is big, without opening the work tracking tool.
+    persona: delivery-lead-rte
+    job_id: job-flow-coach-see-why-each-item-sits-behind-the-point
+
+    emotional_arc:
+      start: Uneasy - "this Feature's progress bar has barely moved; what is left?"
+      middle: Oriented - "two items are done, one large one is still in progress after two weeks."
+      end: Confident - "I raise the 13-pointer now, before the date slips."
+
+    steps:
+      - step: On a Portfolio's Deliveries, click a Feature's progress
+        sees: >
+          the dialog and its title open at once, with the context's headers and the grid's loading
+          overlay while the child items are on their way (never "No items to display")
+      - step: The child items arrive
+        sees: >
+          Started, Closed, Age / Cycle Time and Estimate per child item, oldest first; each item's
+          Estimate comes from its own Team's estimation field
+        worked_row:
+          header: "ID | Name | Type | State | Started | Closed | Age / Cycle Time | Estimate"
+          row: "ST-12 | Address autocomplete | Story | In Progress | ... | (empty) | 14 | 13"
+      - step: Close the dialog and click another Feature's progress
+        sees: that Feature's items only; a late answer for the first Feature never appears in this dialog
+      - step: Open the same Feature from the Team or Portfolio feature list
+        sees: the same columns and defaults; the layout is shared per row and split by Team and Portfolio
+
+    error_paths:
+      - when: the child items cannot be loaded
+        sees: >
+          a warning icon and "These {Work Items} couldn't be loaded. Close and reopen to try again.",
+          in the instance's word for Work Items, and no Retry button; reopening asks again
+      - when: a child item's Team has no estimation field configured
+        sees: no Estimate value from that Team (no column at all if no child item's Team has one)
+      - when: the lead opens the Feature's bar on the Delivery timeline instead
+        sees: Warnings as the only extra column; no Estimate and no Blocked since are offered there

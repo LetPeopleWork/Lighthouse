@@ -1,9 +1,9 @@
 # ADR-234: The Work Items Dialog Takes Its Columns From One Catalogue and Its Defaults From One Map
 
-**Status**: Proposed
+**Status**: Accepted (maintainer, 2026-10-10)
 **Date**: 2026-10-10
 **Feature**: story-6248-work-items-dialog-context-columns (ADO User Story #6248)
-**Decider**: Morgan (Solution Architect), interaction mode = PROPOSE, for maintainer confirmation. The catalogue,
+**Decider**: Morgan (Solution Architect), interaction mode = PROPOSE; confirmed by the maintainer on 2026-10-10. The catalogue,
 per-context layout and the locked defaults table were decided by the maintainer in DISCUSS (2026-10-10).
 
 ---
@@ -14,7 +14,7 @@ The Work Items dialog is opened from 16 places: ten charts, every widget's *View
 drill-down, the Delivery section and timeline, and both feature lists. Each caller adds at most one column of its own
 (`highlightColumn`), which holds Cycle Time, Age, Size or Days Contributed depending on who opened it, and every
 dialog persists its layout under one shared grid key. Hiding a column in one dialog hides it in all of them, and the
-one context column's width carries across its four meanings. Rows already carry dates, ages, parent, blocked-since
+one context column's width carries across its four meanings. Rows from the metrics endpoints already carry dates, ages, parent, blocked-since
 and time in state that the dialog never shows.
 
 DISCUSS locked: a full catalogue where the opening context picks the defaults (the rest reachable through the grid's
@@ -29,8 +29,8 @@ of the judgement cells (SLE colouring, age band, SLE risk, time in state, warnin
 
 1. **One map, one entry per context.** A single frontend module declares, for each context (one row of the locked
    table: closed items, estimation, arrivals, in progress, aging, blocked, stale, work distribution, Feature size, a
-   Feature's child items, Delivery timeline, Cumulative State Time; a thirteenth for the started-and-closed list is
-   proposed), which columns are visible besides ID, Name, Type
+   Feature's child items, Delivery timeline, Cumulative State Time; and a thirteenth for the started-and-closed list,
+   confirmed by the maintainer), which columns are visible besides ID, Name, Type
    and State, which one sorts (descending, carrying today's highlight treatment), and whether the catalogue is offered
    at all. Callers name a context instead of building a column.
 2. **One catalogue.** A second module builds every column the dialog knows. Row-backed columns are offered when the
@@ -41,8 +41,8 @@ of the judgement cells (SLE colouring, age band, SLE risk, time in state, warnin
 3. **Layout per context and owner kind.** The grid's storage key is the context id plus Team or Portfolio, so each
    keeps its own visibility, order and widths, and a Team's dialog never changes a Portfolio's. The dialogs grouped
    under one context (for example the Throughput bar and the Cycle Time scatter, which both list closed items) share
-   one layout, as they share one set of defaults. Whether that grouping is fine enough is for the maintainer to
-   confirm; making it per call site is a key change only.
+   one layout, as they share one set of defaults. The maintainer confirmed both: layout shared per row of the
+   table, and split by Team and Portfolio. Making it per call site would be a key change only.
 4. **Hidden by default, overrides persisted.** The shared grid component accepts a default visibility model. The
    effective model is the defaults overlaid with what the user changed, and only the user's changes are stored.
    *Reset layout* returns to the defaults. A column the user never touched follows the map, including after the map
@@ -68,7 +68,8 @@ of the judgement cells (SLE colouring, age band, SLE risk, time in state, warnin
 ## Consequences
 
 - Positive: changing a context's defaults is one entry, and it reaches every user who did not override that column.
-  No layout leaks between contexts. The dialog's column code moves out of a 563-line component into small builders,
+  No layout leaks between contexts. The dialog's column code moves out of a component of about 560 lines (563 when
+  this was written) into small builders,
   which keeps cognitive complexity in reach.
 - Positive: compile-time enforcement. Contexts are a closed union, the shared run charts take a required context, and
   removing `highlightColumn` from the props at the end of the story makes any missed caller a build error.

@@ -9757,8 +9757,9 @@ component over the shared `DataGridBase`.
   estimation field; both estimation chart builders and the row DTO go through it, so a row's estimate is the value the
   chart plots. (ADR-235)
 - **I2 — estimate only where one owner is known.** `WorkItemDto.Estimate` (init-only, inherited by `FeatureDto` and
-  the run-chart DTOs) is set at the 12 sites with one owner and absent at the 4 multi-Portfolio Feature sites;
-  absent means "not configured", so the column is not offered (the Delivery timeline offers none). (ADR-235)
+  the run-chart DTOs) is set at the 12 sites with one owner and absent at the other 4 (three multi-Portfolio Feature
+  sites, and a Team's Features in progress, whose Team field describes Work Items); absent means "not configured",
+  so the column is not offered (the Delivery timeline offers none). (ADR-235)
 - **I3 — one defaults map.** `WorkItemsDialog/workItemsDialogContexts.ts` holds one entry per context (visible
   columns, sort column, catalogue on/off); callers name a context. (ADR-234)
 - **I4 — layout per context, overrides only.** Storage key `work-items-dialog:<contextId>:<team|portfolio>`; `DataGridBase` takes a
@@ -9770,10 +9771,20 @@ component over the shared `DataGridBase`.
 Backend: EXTEND `EstimateNormalizer`, `BaseMetricsService` (builders read through `EstimateOf`), `WorkItemDto`,
 `TeamMetricsController`, `PortfolioMetricsController`, `FeaturesController.GetFeatureWorkItems`; CREATE
 `WorkItemEstimateDto`. Frontend: CREATE `workItemsDialogContexts.ts` and `workItemColumns.tsx`; EXTEND
-`WorkItemsDialog`, `DataGridBase`, `WorkItem` / `FeatureSchema`, `WidgetShell.ViewDataPayload`,
+`WorkItemsDialog` (new `context` and `ownerKind` props), `DataGridBase`, `WorkItem` (`estimate`), `FeatureSchema`
+(adds `currentStateEnteredAt` only), `WidgetShell.ViewDataPayload`,
 `BaseMetricsView.buildViewData`, the ten charts, the Delivery section and timeline, both feature lists (child items and
 Cumulative State Time items fetched through keyed queries with a loading and failure look). No new dependency, endpoint, migration or RBAC
-change; Lighthouse-Clients unaffected (no strict response schemas).
+change; Lighthouse-Clients unaffected (no strict response schemas). Demo data: Team Zenith gains a Story Points
+estimation field.
+
+### Slices
+
+Four, each releasable alone (slice 01 split in the end-of-DISTILL review): 01a the estimate on the 12 owner-known
+rows plus Team Zenith's demo estimation field; 01b the catalogue, defaults map, `DataGridBase` defaults with
+override-only persistence, per-context layout keys and the Estimation context; 02 every chart and *View Data*
+context, with Cumulative State Time's keyed query and loading / failure look; 03 a Feature's child items (keyed
+query, loading / failure look), the Delivery timeline, and `highlightColumn` removed.
 
 ### Architectural Enforcement (this feature)
 
@@ -9785,7 +9796,7 @@ change; Lighthouse-Clients unaffected (no strict response schemas).
 ### ADR References (this feature)
 
 - [ADR-234](./adr-234-the-work-items-dialog-takes-its-columns-from-one-catalogue-and-its-defaults-from-one-map.md) —
-  catalogue, one defaults map, per-context layout, override-only persistence. **Proposed.**
+  catalogue, one defaults map, per-context layout, override-only persistence. **Accepted.**
 - [ADR-235](./adr-235-a-work-item-carries-its-estimate-normalised-by-the-code-the-estimation-chart-uses.md) — the
-  estimate on the row, one normalisation path, owner per site. **Proposed.**
+  estimate on the row, one normalisation path, owner per site. **Accepted.**
 - Cross-refs: ADR-233 (the `status` vocabulary the dialog reuses).

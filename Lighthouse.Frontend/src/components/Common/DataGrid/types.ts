@@ -74,6 +74,11 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	slots?: MuiDataGridProps<T>["slots"];
 	/** Space to leave above or below a row, which the grid counts when it lays the rows out. */
 	getRowSpacing?: MuiDataGridProps<T>["getRowSpacing"];
+	/**
+	 * Which columns start hidden. Only what the user changes on top of it is remembered, so a later
+	 * change to these defaults still reaches every column the user never touched. Not read yet.
+	 */
+	defaultColumnVisibilityModel?: ColumnVisibilityModel;
 }
 
 /**

@@ -20,4 +20,11 @@ export interface IWorkItem {
 	blockedSince?: string;
 	currentStateEnteredAt?: Date | null;
 	approximate?: boolean;
+	estimate?: IWorkItemEstimate | null;
+}
+
+export interface IWorkItemEstimate {
+	value: number | null;
+	displayValue: string | null;
+	unit: string | null;
 }

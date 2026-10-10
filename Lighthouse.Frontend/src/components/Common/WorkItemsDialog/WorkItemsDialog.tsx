@@ -17,6 +17,7 @@ import type { GridValidRowModel } from "@mui/x-data-grid";
 import { useCallback, useMemo } from "react";
 import { useEnlargedWorkItemsDialog } from "../../../hooks/useEnlargedWorkItemsDialog";
 import type { IFeature } from "../../../models/Feature";
+import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
@@ -42,6 +43,10 @@ import type { DataGridColumn } from "../DataGrid/types";
 import TimeInStateBadge, {
 	daysInState,
 } from "../TimeInStateBadge/TimeInStateBadge";
+import type {
+	WorkItemsDialogContextId,
+	WorkItemsDialogOwnerKind,
+} from "./workItemsDialogContexts";
 
 export interface WorkItemsDialogProps {
 	title: string;
@@ -69,6 +74,22 @@ export interface WorkItemsDialogProps {
 	 * dependency is; without one, nothing about the dialog changes.
 	 */
 	warningsColumn?: WarningsColumnDescriptor;
+	// The props below are declared for the per-context columns and are not read yet.
+	context?: WorkItemsDialogContextId;
+	ownerKind?: WorkItemsDialogOwnerKind;
+	status?: WorkItemsDialogStatus;
+	/** The day Age is measured on, when the rows were picked on a day in the past. */
+	ageOn?: Date;
+	/** The named cycle time the Cycle Time column reads, by definition id. */
+	cycleTimeScope?: number;
+	namedCycleTimeDefinitions?: INamedCycleTimeDefinition[];
+	daysContributedColumn?: DaysContributedColumnDescriptor;
+}
+
+export type WorkItemsDialogStatus = "loading" | "error" | "ready";
+
+export interface DaysContributedColumnDescriptor {
+	daysFor: (workItem: IWorkItem) => number;
 }
 
 export interface WarningsColumnDescriptor {

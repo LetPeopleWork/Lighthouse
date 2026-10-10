@@ -8096,13 +8096,18 @@ jobs:
     opportunity_score: {importance: 4, current_satisfaction: 1, gap: 3}
   - id: job-flow-coach-see-why-each-item-sits-behind-the-point
     title: See why each item sits behind the chart point I clicked
-    persona: flow-coach
+    persona: "flow-coach (secondary: delivery-lead-rte)"
     feature_context: story-6248-work-items-dialog-context-columns
     created: 2026-10-10
+    note: >
+      Also the delivery lead's job (delivery-lead-rte) when opening a Feature's child items from a
+      Portfolio's Deliveries or a feature list: the same list, read to explain a Feature's progress
+      rather than a chart point (US-03). Widened in the story's review round 1 rather than split into a
+      second job.
     job_story: >
-      When I click a point or bar on a chart to see the items behind it,
+      When I click a point or bar on a chart, or open a Feature's child items, to see the items behind it,
       I want the list to show the values that put each item there (its estimate, its dates, its age),
-      so I can explain or question the point without going back to the chart or the work tracking tool.
+      so I can explain or question the point or the progress without going back to the chart or the work tracking tool.
     dimensions:
       functional: The Work Items dialog opens with the columns that explain the context it was opened from, with every other column one click away, and remembers each context's layout separately
       emotional: From "the table says less than the chart did" to a drill-down worth opening

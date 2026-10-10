@@ -1,8 +1,11 @@
 # environments.yaml, consumed by DISTILL for Environmental Realism.
 #
-# story-6248-work-items-dialog-context-columns. One additive backend field plus frontend changes: nothing is
-# installed, provisioned, migrated or configured. The entries below are the axes the acceptance scenarios vary
-# over, and only where the dialog can look or behave differently.
+# story-6248-work-items-dialog-context-columns. One additive backend field, one demo-data change (Team Zenith's
+# estimation field, slice 01a) and frontend changes: nothing is installed, provisioned or migrated. The entries
+# below are the axes the acceptance scenarios vary over, and only where the dialog can look or behave differently.
+#
+# Amended in the end-of-DISTILL review round 1: demo data now carries an estimation field on Team Zenith (S7),
+# slice 01 is split into 01a / 01b (R1), and the two dialogs that fetch on open gain a load axis (S5, S6).
 #
 # Left OUT on purpose:
 #   - operating system: browser rendering over a payload the test supplies.
@@ -17,19 +20,22 @@ wave: DEVOPS
 target_environments:
   - name: clean
     description: >
-      Default instance with demo data. No estimation field is configured on demo data, so this is also the
-      "estimation not configured" environment (D6: no Estimate column anywhere).
+      Default instance with demo data. From slice 01a, Team Zenith has an estimation field (Story Points, S7); every
+      other demo Team and every Portfolio has none, so they are the "estimation not configured" case (D6: no
+      Estimate column there).
     platform: [linux]
     preconditions: []
 
   - name: estimation-configured
     description: >
-      Demo data with an estimation field set on one Team (and, for Portfolio scenarios, one Portfolio) by the test
-      itself. The Estimation chart and the Estimate column appear only here.
+      Team Zenith on demo data, from slice 01a: its CSV carries a Story Points column, registered as an additional
+      field and configured as its estimation field with unit "Story Points" (S7). The Estimation chart and the
+      Estimate column appear here out of the box; the test configures nothing. Portfolio-side and category-estimate
+      cases are covered at component and HTTP level with test-built owners.
     platform: [linux]
     preconditions:
-      - "Estimation field configured through the Team (or Portfolio) settings by the test, never by changing a DemoDataFactory default"
-      - "The chosen Team's work items carry a value in that field"
+      - "Slice 01a's demo-data change has landed (until then the E2E skeleton stays skipped)"
+      - "Team Zenith's work items carry Story Points values"
 
   - name: screenshot-capture
     description: >
@@ -55,21 +61,36 @@ scenario_axes:
   estimate_value:
     criteria: [AC-1.2, AC-1.5]
     vary_over: [clean, estimation-configured]
-    rationale: "Row estimate equals the chart point's value (backend integration test); absent when not configured."
+    slices: [01a, 01b]
+    rationale: "Row estimate equals the chart point's value (backend integration test, 01a); shown per row in the dialog (01b); absent when not configured."
   layout_persistence:
     criteria: [AC-1.3, AC-1.4]
     vary_over: [clean]
     owner_types: [team, portfolio]
+    slices: [01b]
     rationale: "Defaults model, override-only persistence, Reset to defaults, no leak across contexts or owner kinds."
+  child_items_load:
+    criteria: [AC-3.4]
+    states: [loaded, slow, failed]
+    slices: ["03"]
+    mechanism: "Test-held deferred answers in component tests (resolve, hold, reject), not demo-data changes."
+    rationale: "Loading look (S6), could-not-load message (S5), and a previous Feature's late answer never landing (DDD-14)."
+  cumulative_state_time_load:
+    criteria: [AC-2.6]
+    states: [loaded, slow, failed]
+    slices: ["02"]
+    mechanism: "Test-held deferred answers in component tests (resolve, hold, reject), not demo-data changes."
+    rationale: "The bar opens the dialog at once; loading look (S6), could-not-load message (S5), no late answer from an earlier bar (DDD-14)."
   e2e_walking_skeleton:
     criteria: [AC-1.1]
     vary_over: [estimation-configured]
     browsers: [chromium]
-    rationale: "One flow: configure the field, open Estimation vs Cycle Time, click a bubble, read Estimate by header."
+    slices: [01b]
+    rationale: "One flow on Team Zenith's demo data: open Estimation vs Cycle Time, click a bubble, read Estimate by header. Configures nothing (S7)."
   screenshots:
     criteria: [DoD-8]
     vary_over: [screenshot-capture]
-    rationale: "Regenerated at finalize."
+    rationale: "workitemsdialog.png regenerated at finalize (DoD-8 names it)."
 
 coexistence_matrix:
   - tool: "Every other DataGridBase grid (feature lists, Refinement, Delivery grid, settings tables)"
@@ -83,9 +104,13 @@ coexistence_matrix:
     note: "No response schemas; the additive estimate field passes through to MCP agents (M5)."
   - tool: "SleRiskColumnReachable.spec and the WorkItemsDialog POM consumers"
     must_not_break: true
-    note: "POM reads by header; SLE risk declared before Started in the in-progress contexts."
+    note: "POM reads by header; the in-progress contexts keep the defaults table's order and the spec is re-run in slice 02."
+  - tool: "Demo data consumers (E2E specs and screenshots on Team Zenith)"
+    must_not_break: true
+    note: "Team Zenith gains one CSV column and an estimation field (01a); its items, states and dates are unchanged."
 
 deployment_assumptions:
-  - "No installation step, no migration, no configuration, no secret."
+  - "No installation step, no migration, no secret. One demo-data change (Team Zenith's estimation field)."
   - "Additive API field: an old bundle ignores estimate; a new bundle against an old backend reads its absence as 'not configured'."
-  - "Rollback: git revert of the feature commits, then the ordinary release path; leftover localStorage layouts are unread and tiny."
+  - "Fast rollback: redeploy the previous release (image tag, chart version or standalone build); the lasting revert takes the ordinary release path and its approval gate."
+  - "Leftover localStorage layouts after a rollback are unread: at most 26 keys (13 contexts x 2 owner kinds), a few KB at most."

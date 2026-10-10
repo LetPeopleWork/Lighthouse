@@ -1,4 +1,5 @@
 using System.Globalization;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
 
 namespace Lighthouse.Backend.Services.Implementation
@@ -17,6 +18,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
     public static class EstimateNormalizer
     {
+        private const string NotYetImplemented = "Not yet implemented -- RED scaffold written by DISTILL";
+
         private static readonly EstimateNormalizationResult InvalidResult =
             new(EstimateNormalizationStatus.Invalid, 0, string.Empty);
 
@@ -65,6 +68,16 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             return new EstimateNormalizationBatchResult(results, estimates.Count, mapped, unmapped, invalid);
+        }
+
+        public static EstimateNormalizationResult? EstimateOf(WorkTrackingSystemOptionsOwner owner, WorkItemBase item)
+        {
+            throw new InvalidOperationException($"{NotYetImplemented}: the estimate of {item.ReferenceId} for {owner.Name}");
+        }
+
+        public static EstimateNormalizationBatchResult? EstimatesOf(WorkTrackingSystemOptionsOwner owner, IReadOnlyList<WorkItemBase> items)
+        {
+            throw new InvalidOperationException($"{NotYetImplemented}: the estimates of {items.Count} items for {owner.Name}");
         }
 
         private static EstimateNormalizationResult NormalizeNumeric(string estimate)
