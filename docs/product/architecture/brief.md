@@ -9737,3 +9737,55 @@ re-pointed E2E specs), 01c self-fetching charts, 02 first-load frames.
   derived from the request each answer was for; one `status` on `WidgetShell`; the body-level pointer block; the
   over-time hooks expose a status. **Proposed.**
 - Cross-refs: ADR-189 (the metrics window hook whose commit-pending flag feeds the status).
+
+---
+
+## Application Architecture — story-6248-work-items-dialog-context-columns
+
+Feature: story-6248-work-items-dialog-context-columns (ADO User Story #6248): the Work Items dialog offers a full
+column catalogue, each opening context picks its default columns and sort from one declared map, layout persists
+per context, and every work-item and Feature row carries its normalised estimate. DESIGN 2026-10-10, PROPOSE. Full
+design: `docs/feature/story-6248-work-items-dialog-context-columns/feature-delta.md` → "Wave: DESIGN / …"
+(DDD-1…DDD-15).
+
+Pattern unchanged: controllers map entities to DTOs, a pure domain function normalises, the dialog stays one
+component over the shared `DataGridBase`.
+
+### Key invariants introduced
+
+- **I1 — one estimate path.** `EstimateNormalizer.EstimateOf(owner, item)` is the only reader of an owner's
+  estimation field; both estimation chart builders and the row DTO go through it, so a row's estimate is the value the
+  chart plots. (ADR-235)
+- **I2 — estimate only where one owner is known.** `WorkItemDto.Estimate` (init-only, inherited by `FeatureDto` and
+  the run-chart DTOs) is set at the 12 sites with one owner and absent at the 4 multi-Portfolio Feature sites;
+  absent means "not configured", so the column is not offered (the Delivery timeline offers none). (ADR-235)
+- **I3 — one defaults map.** `WorkItemsDialog/workItemsDialogContexts.ts` holds one entry per context (visible
+  columns, sort column, catalogue on/off); callers name a context. (ADR-234)
+- **I4 — layout per context, overrides only.** Storage key `work-items-dialog:<contextId>:<team|portfolio>`; `DataGridBase` takes a
+  default visibility model and persists only the user's deviations, so later map edits reach untouched columns and
+  *Reset layout* returns to the context's defaults. (ADR-234)
+
+### Component decomposition (headline)
+
+Backend: EXTEND `EstimateNormalizer`, `BaseMetricsService` (builders read through `EstimateOf`), `WorkItemDto`,
+`TeamMetricsController`, `PortfolioMetricsController`, `FeaturesController.GetFeatureWorkItems`; CREATE
+`WorkItemEstimateDto`. Frontend: CREATE `workItemsDialogContexts.ts` and `workItemColumns.tsx`; EXTEND
+`WorkItemsDialog`, `DataGridBase`, `WorkItem` / `FeatureSchema`, `WidgetShell.ViewDataPayload`,
+`BaseMetricsView.buildViewData`, the ten charts, the Delivery section and timeline, both feature lists (child items and
+Cumulative State Time items fetched through keyed queries with a loading and failure look). No new dependency, endpoint, migration or RBAC
+change; Lighthouse-Clients unaffected (no strict response schemas).
+
+### Architectural Enforcement (this feature)
+
+- ArchUnitNET: no method outside `EstimateNormalizer` calls `Normalize` / `NormalizeBatch`.
+- Integration test: every item the Estimation chart plots has the same display and numeric value on its
+  `cycleTimeData` row.
+- TypeScript: the context id is a closed union; `highlightColumn` is deleted from the props at the end of the story.
+
+### ADR References (this feature)
+
+- [ADR-234](./adr-234-the-work-items-dialog-takes-its-columns-from-one-catalogue-and-its-defaults-from-one-map.md) —
+  catalogue, one defaults map, per-context layout, override-only persistence. **Proposed.**
+- [ADR-235](./adr-235-a-work-item-carries-its-estimate-normalised-by-the-code-the-estimation-chart-uses.md) — the
+  estimate on the row, one normalisation path, owner per site. **Proposed.**
+- Cross-refs: ADR-233 (the `status` vocabulary the dialog reuses).
