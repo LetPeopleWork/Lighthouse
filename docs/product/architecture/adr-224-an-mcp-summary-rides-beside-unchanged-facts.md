@@ -52,3 +52,11 @@ unless its shape changes.
 - Negative: summaries cost up to two extra reads per tool call (each with the client's connectivity check). On
   `mcp-http` that cost is per request. This was accepted, as for the refinement tool.
 - `lighthouse-mcp-core` takes a minor bump for each slice that converts a tool.
+
+## Amendment — 2026-10-10 (Bug #6254): the Delivery list is an object answer
+
+The Context above lists `delivery_list` among the array answers. That stopped being true when the server began
+answering a Portfolio's Deliveries as `{active, archived}` (first released in v26.8.31.7); the clients now read and
+pass on that object. So `lighthouse_delivery_list` follows rule 1: its `summary` is a field of the answer object and
+counts the running Deliveries under `active`, and its description says so. The decision itself is unchanged; only
+which rule this one tool falls under moved.
