@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-10-08
+updated: 2026-10-10
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -8094,3 +8094,22 @@ jobs:
       anxiety: A dashboard that flickers or turns into a wall of spinners on every click
       habit: Waiting a moment and hoping the numbers have caught up
     opportunity_score: {importance: 4, current_satisfaction: 1, gap: 3}
+  - id: job-flow-coach-see-why-each-item-sits-behind-the-point
+    title: See why each item sits behind the chart point I clicked
+    persona: flow-coach
+    feature_context: story-6248-work-items-dialog-context-columns
+    created: 2026-10-10
+    job_story: >
+      When I click a point or bar on a chart to see the items behind it,
+      I want the list to show the values that put each item there (its estimate, its dates, its age),
+      so I can explain or question the point without going back to the chart or the work tracking tool.
+    dimensions:
+      functional: The Work Items dialog opens with the columns that explain the context it was opened from, with every other column one click away, and remembers each context's layout separately
+      emotional: From "the table says less than the chart did" to a drill-down worth opening
+      social: In a retro, answer "which 3-point items took 20 days?" on the spot
+    forces:
+      push: The dialog shows ID, Name, Type, State and one value; the estimate that defines an Estimation bubble is not in its table (Steve, #6248)
+      pull: Rows already carry dates, ages, parent and blocked-since; the grid already has Manage columns
+      anxiety: A dialog so wide it needs a horizontal scroll in every context
+      habit: Copying IDs into the work tracking tool to look up what the chart already knew
+    opportunity_score: {importance: 4, current_satisfaction: 2, gap: 2}

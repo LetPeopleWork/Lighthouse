@@ -1,0 +1,37 @@
+schema_version: 1
+feature_id: story-6248-work-items-dialog-context-columns
+updated: 2026-10-10
+note: >
+  ADO User Story #6248, tagged Release Notes, no parent Epic. DISCOVER and DIVERGE skipped by the
+  maintainer. The Work Items dialog gains a full column catalogue; each opening context picks its default
+  columns from one declared map, and remembers its own layout.
+
+journeys:
+
+  - name: drill-into-a-chart-point-and-explain-it
+    goal: >
+      A Flow Coach clicks a chart point and reads, per item, the value that put it there, then explains or
+      questions the point without leaving Lighthouse.
+    persona: "flow-coach (secondary: delivery-lead-rte)"
+    job_id: job-flow-coach-see-why-each-item-sits-behind-the-point
+
+    emotional_arc:
+      start: Curious - "that bubble at 3 points and 20 days, which items are those?"
+      middle: Oriented - "the table shows estimate, cycle time and closed date for each one."
+      end: Confident - "these two were 3-pointers that waited on another team; I can say so."
+
+    steps:
+      - step: Click a bubble on Estimation vs. Cycle Time (or View Data)
+        sees: the Work Items dialog with ID, Name, Type, State, Estimate, Cycle Time and Closed, sorted by Cycle Time
+      - step: Open Manage columns
+        sees: every other column the rows can fill (Started, Age, Parent, Blocked since, Time in State, named cycle times; Size, Owned by, forecast for Features), all off
+      - step: Turn on Parent and close the dialog; open it again
+        sees: Parent still shown in this context; the Cycle Time scatter's dialog is unchanged
+      - step: Click a bar on Blocked over time
+        sees: Age and Blocked since per row, sorted by Age
+
+    error_paths:
+      - when: the Team or Portfolio has no estimation field configured
+        sees: no Estimate column in any context, not even under Manage columns
+      - when: an item has no value in the configured estimation field
+        sees: an empty Estimate cell for that row
