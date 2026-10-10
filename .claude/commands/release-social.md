@@ -115,6 +115,7 @@ Hey #general — here's what shipped:
 
 *<Headline 1>*
 <1–2 sentence plain-language summary. End with <https://docs.lighthouse.letpeople.work/...|read more> if a docs link exists.>
+<!-- image: <the headline's screenshot URL from the release block> | <alt text> -->
 
 *<Headline 2>*
 <same shape>
@@ -132,7 +133,7 @@ Rules:
 
 - Max **3** headline sections. Extras fold into the fixes list with bold titles.
 - Max **5** fixes bullets. Beyond that, collapse the tail to one "and a handful of smaller polish fixes" line.
-- **Don't embed bare image URLs.** Slack only auto-unfurls 1–2 URLs per message and tends to pick the docs link (rich preview with title/hero/description) over a bare PNG URL — so the image URL renders as plain-text noise. Instead, rely on the headline's `<https://docs...|Read more>` link to unfurl, since the docs page's hero image is usually the same screenshot you'd have embedded. If you specifically need an inline image rendered (not as an unfurl card), use the Block Kit `image` block via `chat.postMessage`'s `blocks` field — not supported by the current draft format and out of scope unless asked.
+- **Show the headline screenshots, as image markers.** We want images in every release post. Under each headline whose release-notes section carries a screenshot `![...](https://...png)`, put one line `<!-- image: <that URL> | <short alt text> -->`. At post time Step 6b turns each marker into a Block Kit `image` block at that spot, which Slack renders inline at full width. Worked well first time in v26.10.10.1. Never paste a bare PNG URL into the text instead: Slack unfurls only 1–2 links per message, usually picks the docs link, and leaves the PNG URL as plain-text noise. Check each URL returns `200 image/png` (`curl -s -o /dev/null -w '%{http_code} %{content_type}' <url>`) before posting; Slack fetches it itself and rejects the whole message (`invalid_blocks`) if it can't. Use only screenshots that are in the release block. A headline without one simply gets no image. In a pasted (not API-posted) draft the markers are HTML comments, so delete them before pasting.
 - Max ~5 @-mentions. If contributors exceed that, tag the first 5 and append "and others".
 - Emoji budget: max 4 total. Prefer `:rocket:`, `:heart:`, `:bug:`, `:sparkles:`, `:bulb:`, `:warning:`. Skip `:lighthouse:` unless you know the workspace has that custom emoji.
 - Tone: pragmatic, mildly enthusiastic — match the release-notes voice. **Banned words**: "excited", "thrilled", "game-changing", "revolutionary".
@@ -154,7 +155,7 @@ If the user picks `Tweak it`, ask one follow-up free-text question for changes a
 mkdir -p social-posts
 ```
 
-Write `social-posts/<version>-slack.md` — pure Slack mrkdwn body, ready to paste / post. Top of file: `<!-- Paste into #general in the letpeoplework Slack, or post via /release-social. -->`. Nothing else outside the message body.
+Write `social-posts/<version>-slack.md` — pure Slack mrkdwn body, ready to post. Top of file: `<!-- Paste into #general in the letpeoplework Slack, or post via /release-social. -->`. Nothing else outside the message body except the `<!-- image: ... -->` markers from Step 3.
 
 Skip the file if the user said to skip Slack.
 
@@ -168,31 +169,22 @@ Read the saved `social-posts/<version>-slack.md`. If it contains a `<!-- Posted:
 
 ### 6b — build the payload
 
-Strip the leading `<!-- ... -->` header comment(s), substitute channel mentions to API-clickable form, and build a JSON payload with `jq` (don't inline the body in the curl command — quoting hell):
+Build it with the checked-in script `.claude/scripts/slack_release_payload.py`, never by hand or with an inline heredoc (the shell guard blocks those, and quoting the body breaks):
 
 ```bash
-# 1. Strip all leading HTML-comment-only lines (paper-trail may add several).
-sed '/^<!--.*-->$/d' social-posts/<version>-slack.md > /tmp/slack-body.txt
-
-# 2. Substitute every `#general` in the body with the API's <#CHANNELID> form,
-#    so the message renders the channel as a clickable mention. Look up the
-#    general channel ID from the Step 2 cache (separately from $CHANNEL_ID,
-#    which may be #testing or another override).
-#    NOTE: use a comma (or any non-`|`) sed delimiter — `|` clashes with the
-#    alternation inside the regex and breaks with `unknown option to 's'`.
 GENERAL_CH_ID=$(jq -r '.channels[] | select(.name=="general") | .id' social-posts/.slack-cache.json)
-if [ -n "$GENERAL_CH_ID" ] && [ "$GENERAL_CH_ID" != "null" ]; then
-    sed -i -E "s,#general([^A-Za-z0-9_]|$),<#${GENERAL_CH_ID}>\\1,g" /tmp/slack-body.txt
-fi
-
-# 3. Build payload.
 payload=$(mktemp)
-jq -n \
-  --arg ch "$CHANNEL_ID" \
-  --rawfile body /tmp/slack-body.txt \
-  '{channel:$ch, text:$body, unfurl_links:true, unfurl_media:true}' \
-  > "$payload"
+python3 -I .claude/scripts/slack_release_payload.py \
+  social-posts/<version>-slack.md "$CHANNEL_ID" "$GENERAL_CH_ID" > "$payload"
+jq -r '.blocks[] | .type' "$payload"   # sanity check: section / image / section ...
 ```
+
+What the script does:
+- drops the `<!-- ... -->` header and paper-trail lines;
+- turns each `<!-- image: URL | alt -->` marker into a Block Kit `{"type":"image","image_url":…,"alt_text":…}` block at that spot, and the text between markers into `mrkdwn` `section` blocks (it stops if a section goes over Slack's 3000-character limit; shorten that part);
+- swaps `#general` for the clickable `<#CHANNELID>` form;
+- keeps the whole text as the `text` fallback, which notifications and old clients show;
+- sets `unfurl_links`/`unfurl_media` to `false`, because the screenshots are already inline and a link preview would only add a second card below them.
 
 `$CHANNEL_ID` is the resolved channel ID from Step 2d (target of the post — may be `#testing` or another override). `$GENERAL_CH_ID` is always the `#general` channel ID, used only for body-mention substitution; keep them separate so trial posts to `#testing` still render the `#general` reference as a real channel link (clickable, navigates the reader to where the live post will end up).
 
@@ -205,7 +197,7 @@ curl -sS -X POST \
   --data @"$payload" \
   https://slack.com/api/chat.postMessage > /tmp/slack-resp.json
 
-rm -f "$payload" /tmp/slack-body.txt
+rm -f "$payload"
 ```
 
 Check `ok` in `/tmp/slack-resp.json`. On `ok: false`, map the `error` field:
@@ -213,6 +205,7 @@ Check `ok` in `/tmp/slack-resp.json`. On `ok: false`, map the `error` field:
 - `not_in_channel` → tell user to invite the bot to `#general` (or grant `chat:write.public`). Saved draft stays. Stop.
 - `invalid_auth` / `token_revoked` / `account_inactive` → tell user the token is bad. Saved draft stays. Stop.
 - `channel_not_found` → tell user the resolved channel ID doesn't exist; suggest setting `SLACK_CHANNEL_ID` explicitly or refreshing the cache. Saved draft stays. Stop.
+- `invalid_blocks` (often with `downloading image failed`) → an `image_url` is not publicly fetchable as an image. Re-check every marker URL with curl, fix or drop the marker, rebuild the payload. Saved draft stays. Stop.
 - Any other error → echo the `error` verbatim, leave saved draft intact, stop.
 
 On `ok: true`:
