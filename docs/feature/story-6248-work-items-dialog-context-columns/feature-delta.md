@@ -200,7 +200,7 @@ place a `WorkItemDto` is built (a question for DESIGN). No oversized signals.
 |-----|--------|-------------|
 | `OUT-6248-estimate-in-the-drill-down` | 100 % of Estimation vs. Cycle Time dialogs show an Estimate per row when estimation is configured | Component test + E2E walking skeleton on demo data |
 | `OUT-6248-no-layout-leak` | 0 contexts change when another context's layout changes | Component test across two contexts |
-| `OUT-6248-catalogue-used` | Catalogue columns turned on in ≥ 10 % of opted-in instances within 60 days of release | Usage-data event, if DEVOPS adopts one; owner: whoever runs `/release` |
+| ~~`OUT-6248-catalogue-used`~~ | ~~Catalogue columns turned on in ≥ 10 % of opted-in instances within 60 days of release~~ *Retired in DEVOPS: no usage-data event (maintainer, N/A).* | ~~Usage-data event, if DEVOPS adopts one~~ |
 | `OUT-6248-no-repeat-request` | No new "column X missing in the dialog" request in 60 days for a column already in the catalogue | ADO / community channels |
 
 ## Wave: DISCUSS / [REF] Definition of Done
@@ -530,3 +530,111 @@ For DELIVER: WIP over time rows include items closed inside the range, whose Age
 - **Slices unchanged:** 01 backend estimate (all 12 sites) + catalogue + map with `estimation` + grid defaults;
   02 chart and *View Data* contexts; 03 child items, Delivery timeline, `highlightColumn` removed.
 - **No new dependency, no new endpoint, no migration, no RBAC change, clients N/A.**
+
+---
+
+Lean DEVOPS pass (2026-10-10). Decisions 1-9 are the project's standing answers, as in every recent story; the one
+question asked was the usage-data event, which the maintainer answered **N/A**.
+
+## Wave: DEVOPS / [REF] Decisions
+
+| # | Decision | Answer | Source |
+|---|---|---|---|
+| 1 | Deployment target | **Unchanged.** Standalone release, Docker image and Helm chart ship the new backend and bundle as today. | Project fact |
+| 2 | Container orchestration | **Unchanged.** | Project fact |
+| 3 | CI/CD platform | **GitHub Actions, existing workflows.** No new workflow, job, runner or secret. | `.github/workflows/` |
+| 4 | Existing infrastructure | Brownfield; reused as is. | same |
+| 5 | Observability | **None new.** No log line, no metric. A failed child-items or Cumulative State Time load shows its could-not-load look (DDD-14), which is the user-visible signal. | DDD-14 |
+| 6 | Deployment strategy | **Unchanged.** No migration, no setting. The API change is additive (`estimate` on work-item rows), so an old bundle ignores it and a new bundle against an old backend sees `estimate` absent, which reads as "not configured" (D6): no mixed-version breakage. Rollback = `git revert` of the feature commits, then the ordinary release path. Persisted per-context layouts left behind by a rollback are unread keys of under 1 KB (as DDD-10). | ADR-234, ADR-235 |
+| 7 | Continuous learning | **N/A, because** a column catalogue has nothing to flag or roll out progressively; D4's defaults map is the tuning knob. | D4 |
+| 8 | Branching | **Trunk-based on `main`**, slice boundary ritual as usual (push, CI green, then ADO). | Project rule |
+| 9 | Mutation testing | **`per-feature`, both stacks, kill rate ≥ 80 %** (Stryker.NET and StrykerJS). | `CLAUDE.md` § Mutation Testing Strategy |
+
+**Contradictions with DESIGN: none.** No `Program.cs` change (DDD-2), so the full Integration suite is not forced.
+
+## Wave: DEVOPS / [REF] Usage-data event
+
+**N/A**, by the maintainer's choice on 2026-10-10 ("N/A"), over a name-only `WorkItemsDialogColumnShown` (fired when
+a column hidden by default is turned on) and two variants with a closed context or column property. Nothing is
+appended to `UsageDataEventName` (16 events, last `TeamRefinementDayVerdictShown = 15`), and
+`docs/settings/usagedata.md` does not change.
+
+Consequence: `OUT-6248-catalogue-used` had no other instrument, so it is **retired** (see Changed Assumptions). The
+catalogue's use is judged by `OUT-6248-no-repeat-request` and by the maintainer's own review of the defaults (D4).
+
+## Wave: DEVOPS / [REF] Monitoring contracts (Outcome KPIs → instrument)
+
+| KPI | Instrument | Where it is read |
+|---|---|---|
+| `OUT-6248-estimate-in-the-drill-down` | Backend integration test: every plotted item's row `estimate` equals its chart point's value (DESIGN Test seams). Vitest: the `estimation` context shows Estimate per row. E2E walking skeleton: Estimate column present after configuring an estimation field. | CI (`ci_backend.yml`, `ci_frontend.yml`, E2E in `ci_verifysqlite.yml` / `ci_verifypostgres.yml`) |
+| `OUT-6248-no-layout-leak` | Vitest: two contexts (and Team vs Portfolio of one context) side by side; a change in one leaves the other's effective model unchanged. | CI (`ci_frontend.yml`) |
+| `OUT-6248-catalogue-used` | **Retired** (no usage-data event). | n/a |
+| `OUT-6248-no-repeat-request` | ADO items and community channels asking for a dialog column already in the catalogue, in the 60 days after the release carrying slice 03. Target 0. Checked by whoever runs `/release` after that window, in the release-notes pass. | The board |
+
+**`docs/product/kpi-contracts.yaml`: no entries added**, following the #6249 / #6055 precedent: two KPIs are
+CI-asserted and the third is a board query with no data pipeline behind it.
+
+## Wave: DEVOPS / [REF] CI/CD pipeline outline
+
+No pipeline change. Stages this feature passes through:
+
+| Stage | Workflow | What it does for this feature |
+|---|---|---|
+| Change detection | `ci_changes.yml` | Flags `Lighthouse.Backend` (slice 01), `Lighthouse.Frontend` (01-03), `Lighthouse.EndToEndTests` (01, 02) |
+| Backend | `ci_backend.yml` | `dotnet build` (warnings are errors) and the tests, including the new ArchUnit seam test (no caller of `Normalize` / `NormalizeBatch` outside `EstimateNormalizer`) |
+| Frontend | `ci_frontend.yml` | `pnpm run build` (`tsc -b` + Biome `--write` via `prebuild`) and Vitest with coverage |
+| E2E | `ci_verifysqlite.yml`, `ci_verifypostgres.yml` | Playwright, twice, Chromium only |
+| Quality gate | `ci_sonar_gates.yml` | SonarQube Cloud, no new issue of any severity |
+
+**Pre-applied CI risks** (`docs/ci-learnings.md`, already listed in DESIGN "Sonar / ci-learnings risks"): S107
+avoided by the init-only property; S3776 kept down by the catalogue's own file; NUnit2045/2056 and CA1861/CA1859 in
+the new backend tests; zod `.nullable()` and guarded dates in `FeatureSchema` (slice 03); Vitest timeouts in
+rendering-heavy dialog tests get an explicit `{ timeout }` rather than a retry.
+
+## Wave: DEVOPS / [REF] E2E and screenshot implications
+
+- **Walking skeleton (slice 01):** demo data has no estimation field, so the spec configures one through
+  `BaseEditPage.setEstimationField` on a demo Team whose source carries a numeric field, then clicks a bubble and
+  reads the Estimate column by header. It must not change a `DemoDataFactory` default. Kept to one flow.
+- **POM:** `WorkItemsDialog` reads cells by column header (`cellIn`, `columnHeader`, `openManageColumns`), never by
+  position (DESIGN E2E impact).
+- **`SleRiskColumnReachable.spec`** re-run in slice 02 (the in-progress contexts gain Started; SLE risk stays
+  declared before it).
+- **`@screenshot features/metrics/workitemsdialog.png`** changes in slice 02: regenerate at finalize. Preconditions
+  as always: premium licence fixture, `rm` the target PNG first, `@auth` excluded.
+- Persisted layouts live in localStorage, which each Playwright context starts empty, so no spec sees another's
+  layout.
+
+## Wave: DEVOPS / [REF] Mutation testing
+
+`per-feature`, ≥ 80 %, run last on frozen code, results under `docs/feature/story-6248-work-items-dialog-context-columns/mutation/`.
+
+- **Stryker.NET:** `EstimateNormalizer.cs` (new `EstimateOf` / `EstimatesOf`) and `WorkItemEstimateDto.cs`, with the
+  acceptance suite excluded from the test run (it costs 80 minutes instead of 3). .NET ignores line spans, so
+  controller wiring is covered by the controller tests, not mutated.
+- **StrykerJS:** `workItemsDialogContexts.ts`, `workItemColumns.tsx`, the changed `DataGridBase.tsx` persistence
+  (the override diff and Reset to defaults are the prime targets: a flipped merge order is the layout-leak and
+  frozen-defaults failure), and `WorkItemsDialog.tsx`. Prove the harness with a standalone
+  `vitest run --config <stryker vitest config>` first (StrykerJS can exit 0 having tested nothing).
+
+## Wave: DEVOPS / [REF] Environments and coexistence
+
+Machine artifact: `environments.yaml` (this directory). Axes: owner type (Team and Portfolio: different rows,
+different layout keys), estimation configured or not (D6), and the CI browser (Chromium); Linux only. Must not
+break: every other `DataGridBase` grid (they pass no defaults model and keep whole-model persistence as today), the
+feature list grids that share `createParentColumn`, and the Lighthouse-Clients (additive field, M5).
+
+## Wave: DEVOPS / [REF] Handoff
+
+**To** `nw-acceptance-designer` (DISTILL): `environments.yaml`, the KPI → instrument table and the E2E notes.
+DISTILL opens with the UI sketch walk-through: the Estimation dialog, the *Manage columns* list order, the Estimate
+header (with a unit, without, mixed units), date format, the child-items loading and could-not-load copy, and the
+Forecast column label. **Per-wave peer review: skipped**: no new deployment target, CI framework, observability or
+security change.
+
+## Wave: DEVOPS / [REF] Changed Assumptions
+
+- DISCUSS "Outcome KPIs" set `OUT-6248-catalogue-used` ("Catalogue columns turned on in ≥ 10 % of opted-in instances
+  within 60 days of release", measured by "Usage-data event, if DEVOPS adopts one"). DEVOPS adopted none
+  (maintainer, N/A), so the KPI is **retired**, not measured another way: no other source sees a column turned on.
+- DISCUSS "Cross-cutting Impact" named the usage-data candidate; it was put to the maintainer and declined.

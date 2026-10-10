@@ -1,0 +1,91 @@
+# environments.yaml, consumed by DISTILL for Environmental Realism.
+#
+# story-6248-work-items-dialog-context-columns. One additive backend field plus frontend changes: nothing is
+# installed, provisioned, migrated or configured. The entries below are the axes the acceptance scenarios vary
+# over, and only where the dialog can look or behave differently.
+#
+# Left OUT on purpose:
+#   - operating system: browser rendering over a payload the test supplies.
+#   - database provider: no schema change. E2E still runs on both in CI (ci_verifysqlite, ci_verifypostgres).
+#   - premium vs free licence: the dialog is free; CSV export stays premium and is untouched.
+
+schema_version: 1
+feature_id: story-6248-work-items-dialog-context-columns
+updated: 2026-10-10
+wave: DEVOPS
+
+target_environments:
+  - name: clean
+    description: >
+      Default instance with demo data. No estimation field is configured on demo data, so this is also the
+      "estimation not configured" environment (D6: no Estimate column anywhere).
+    platform: [linux]
+    preconditions: []
+
+  - name: estimation-configured
+    description: >
+      Demo data with an estimation field set on one Team (and, for Portfolio scenarios, one Portfolio) by the test
+      itself. The Estimation chart and the Estimate column appear only here.
+    platform: [linux]
+    preconditions:
+      - "Estimation field configured through the Team (or Portfolio) settings by the test, never by changing a DemoDataFactory default"
+      - "The chosen Team's work items carry a value in that field"
+
+  - name: screenshot-capture
+    description: >
+      The @screenshot run; features/metrics/workitemsdialog.png changes in slice 02 and is regenerated at finalize.
+    platform: [linux]
+    preconditions:
+      - "Premium licence fixture present (gitignored; absent in a worktree, import it from the main checkout)"
+      - "Target PNG deleted before the run (a diff under the pixel threshold silently keeps the old file)"
+      - "@auth excluded"
+
+browsers:
+  ci: [chromium]
+  component_tests: [jsdom]
+
+owner_types: [team, portfolio]   # different rows (work items vs Features) and different layout keys (M2)
+
+scenario_axes:
+  context_defaults:
+    criteria: [AC-1.1, AC-2.1, AC-2.2, AC-2.3, AC-2.4, AC-3.1, AC-3.2]
+    vary_over: [clean, estimation-configured]
+    owner_types: [team, portfolio]
+    rationale: "One table test over the defaults map plus one dialog render per context; Estimate only where configured."
+  estimate_value:
+    criteria: [AC-1.2, AC-1.5]
+    vary_over: [clean, estimation-configured]
+    rationale: "Row estimate equals the chart point's value (backend integration test); absent when not configured."
+  layout_persistence:
+    criteria: [AC-1.3, AC-1.4]
+    vary_over: [clean]
+    owner_types: [team, portfolio]
+    rationale: "Defaults model, override-only persistence, Reset to defaults, no leak across contexts or owner kinds."
+  e2e_walking_skeleton:
+    criteria: [AC-1.1]
+    vary_over: [estimation-configured]
+    browsers: [chromium]
+    rationale: "One flow: configure the field, open Estimation vs Cycle Time, click a bubble, read Estimate by header."
+  screenshots:
+    criteria: [DoD-8]
+    vary_over: [screenshot-capture]
+    rationale: "Regenerated at finalize."
+
+coexistence_matrix:
+  - tool: "Every other DataGridBase grid (feature lists, Refinement, Delivery grid, settings tables)"
+    must_not_break: true
+    note: "They pass no defaultColumnVisibilityModel and keep whole-model persistence and Reset as today."
+  - tool: "Feature list grids sharing createParentColumn / ParentWorkItemCell"
+    must_not_break: true
+    note: "The dialog reuses the cell; the lists' own parent lookup is unchanged."
+  - tool: "Lighthouse-Clients (CLI, MCP)"
+    must_not_break: true
+    note: "No response schemas; the additive estimate field passes through to MCP agents (M5)."
+  - tool: "SleRiskColumnReachable.spec and the WorkItemsDialog POM consumers"
+    must_not_break: true
+    note: "POM reads by header; SLE risk declared before Started in the in-progress contexts."
+
+deployment_assumptions:
+  - "No installation step, no migration, no configuration, no secret."
+  - "Additive API field: an old bundle ignores estimate; a new bundle against an old backend reads its absence as 'not configured'."
+  - "Rollback: git revert of the feature commits, then the ordinary release path; leftover localStorage layouts are unread and tiny."
