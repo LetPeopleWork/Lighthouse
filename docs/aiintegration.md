@@ -32,10 +32,11 @@ The current Lighthouse automation packages are published on npm:
 - [@letpeoplework/lighthouse-mcp-stdio](https://www.npmjs.com/package/@letpeoplework/lighthouse-mcp-stdio)
 - [@letpeoplework/lighthouse-mcp-http](https://www.npmjs.com/package/@letpeoplework/lighthouse-mcp-http)
 
-Lighthouse also ships two ready-to-download assets from the latest `lighthouse-clients` release:
+Lighthouse also ships ready-to-download assets from the latest `lighthouse-clients` release:
 
 - [lighthouse-mcp-stdio.mcpb](https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-mcp-stdio.mcpb) for one-click MCP bundle installation in clients that support the [MCPB format](https://github.com/modelcontextprotocol/mcpb)
 - [lighthouse-skill.zip](https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-skill.zip) for installing the Lighthouse agent skill directly as a reusable Lighthouse-specific guidance pack
+- [lighthouse-refinement-skill.zip](https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-refinement-skill.zip) and [lighthouse-daily-flow-review-skill.zip](https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-daily-flow-review-skill.zip), two skills for recurring Team routines, see [Skills for Team Routines](#skills-for-team-routines)
 
 Think of these as two different deliverables:
 
@@ -307,14 +308,17 @@ One practical setup is:
 
 This is especially useful if your client supports importing custom skills or prompt bundles and you want the model to begin with Lighthouse-specific guidance instead of a blank prompt.
 
-### Skills for Team Routines (Coming Soon)
+### Skills for Team Routines
 
-Two more skills ship with the next `lighthouse-clients` release. Each one builds on the Lighthouse skill above and walks an assistant through one recurring Team routine:
+Two more skills build on the Lighthouse skill above, each walking an assistant through one recurring Team routine. Import them the same way as the Lighthouse skill:
 
 - **Refinement** gets a Team ready for its next [Refinement](./teams/detail.html#refinement): whether to refine more or stop, and which Work Items are worth the session's time. A developer can ask which Work Items wait for their vote, and vote or comment once they confirm. Try: "Are we ready for Thursday's Refinement?"
 - **Daily Flow Review** opens a Team's daily with what to decide and discuss today: Work Items that are blocked, past the SLE or at risk of missing it, and WIP over its limit, each as a question for the Team, never a task for a person. Try: "What should Gravity discuss today?"
 
-Their downloads will appear here, next to the Lighthouse skill, once that release is out.
+Downloads:
+
+- [lighthouse-refinement-skill.zip](https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-refinement-skill.zip)
+- [lighthouse-daily-flow-review-skill.zip](https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-daily-flow-review-skill.zip)
 
 ## Example Prompts and Workflows
 
