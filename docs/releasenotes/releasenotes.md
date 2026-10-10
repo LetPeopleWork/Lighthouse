@@ -4,7 +4,7 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse vNext
+# Lighthouse v26.10.10.1
 
 ## Support for Team-Level Refinement
 
@@ -41,7 +41,7 @@ Special thanks to everyone who contributed feedback for this release:
 - [Paul Brown](https://www.linkedin.com/in/paulisthrivving/)
 - [Steve Pereira](https://www.linkedin.com/in/devopsto/)
 
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.10.3.6...HEAD)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.10.3.6...v26.10.10.1)
 
 # Lighthouse v26.10.3.6
 
