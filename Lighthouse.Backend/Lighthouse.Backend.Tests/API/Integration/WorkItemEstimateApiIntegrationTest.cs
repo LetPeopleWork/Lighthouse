@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
     [TestFixture]
     public class WorkItemEstimateApiIntegrationTest
     {
-        private const string Pending = "Not built yet: the estimate on each Work Item row. Unskip one at a time while building it.";
 
         private const string EstimateField = "estimate";
         private const string ValueField = "value";
@@ -110,7 +109,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         // @us-01 @slice-01a @driving_port @real-io @kpi @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task Portfolio_EveryFeatureTheEstimationChartPlots_ListsTheSameEstimateInItsRow()
         {
             await AssertEveryPlottedItemListsItsPointsEstimate($"/api/latest/portfolios/{estimatedPortfolioId}/metrics");
@@ -146,7 +144,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [TestCase(Wip)]
         [TestCase(AllFeaturesForSizeChart)]
         [TestCase(BlockedItemsAtDate)]
-        [Ignore(Pending)]
         public async Task Portfolio_WithAnEstimationField_EveryFeatureCarriesAnEstimate(string endpoint)
         {
             var (rows, body) = await RowsOf($"/api/latest/portfolios/{estimatedPortfolioId}/metrics", endpoint);
@@ -206,7 +203,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         // @us-01 @slice-01a @driving_port @real-io @error @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task Portfolio_FeatureWithACategoryMissingFromTheList_HasAnEstimateWithoutADisplayValue()
         {
             var (rows, body) = await RowsOf($"/api/latest/portfolios/{estimatedPortfolioId}/metrics", CycleTimeData);

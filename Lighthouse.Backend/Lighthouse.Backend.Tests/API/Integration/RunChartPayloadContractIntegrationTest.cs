@@ -36,6 +36,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private const string SizeField = "size";
         private const string OwningTeamField = "owningTeam";
         private const string ParentWorkItemReferenceField = "parentWorkItemReference";
+        private const string EstimateField = "estimate";
 
         private const string ClosedItemReferenceId = "C-1";
         private const string InProgressItemReferenceId = "P-1";
@@ -66,6 +67,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             TagsField,
             AdditionalFieldValuesField,
             ParentWorkItemReferenceField,
+            EstimateField,
         ];
 
         /// <summary>
@@ -83,6 +85,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             SizeField,
             OwningTeamField,
             ParentWorkItemReferenceField,
+            EstimateField,
         ];
 
         private TestWebApplicationFactory<Program> rootFactory = null!;
