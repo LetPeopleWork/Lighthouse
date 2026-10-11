@@ -103,7 +103,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         // @us-01 @slice-01a @driving_port @real-io @kpi @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task Team_EveryItemTheEstimationChartPlots_ListsTheSameEstimateInItsRow()
         {
             await AssertEveryPlottedItemListsItsPointsEstimate($"/api/latest/teams/{estimatedTeamId}/metrics");
@@ -124,7 +123,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [TestCase(CycleTimeData)]
         [TestCase(Wip)]
         [TestCase(BlockedItemsAtDate)]
-        [Ignore(Pending)]
         public async Task Team_WithAnEstimationField_EveryRowCarriesAnEstimateInTheTeamsUnit(string endpoint)
         {
             var (rows, body) = await RowsOf($"/api/latest/teams/{estimatedTeamId}/metrics", endpoint);
@@ -193,7 +191,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         // @us-01 @slice-01a @driving_port @real-io @error @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task Team_ItemWithNothingTheChartCouldPlace_HasAnEstimateWithoutADisplayValue()
         {
             var (rows, body) = await RowsOf($"/api/latest/teams/{estimatedTeamId}/metrics", CycleTimeData);
@@ -220,7 +217,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         // @us-01 @slice-01a @driving_port @real-io @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task FeatureChildItems_EachCarriesTheEstimateOfItsOwnTeam()
         {
             var body = await GetBody($"/api/latest/features/{parentFeatureId}/workitems");

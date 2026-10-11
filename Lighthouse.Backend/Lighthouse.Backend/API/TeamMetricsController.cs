@@ -119,7 +119,7 @@ namespace Lighthouse.Backend.API
             return RunChartDataDto<RunChartWorkItemDto>.From(
                 data,
                 item => item is WorkItem workItem && blockedItemService.IsBlocked(workItem, team),
-                (item, isBlocked) => new RunChartWorkItemDto(item, clock, isBlocked, asOf));
+                (item, isBlocked) => new RunChartWorkItemDto(item, clock, isBlocked, asOf) { Estimate = WorkItemEstimateDto.For(team, item) });
         }
 
         [HttpGet("featuresInProgress")]
@@ -173,9 +173,8 @@ namespace Lighthouse.Backend.API
                     var liveBlockedSince = isBlocked ? w.CurrentStateEnteredAt : null;
                     var blockedSince = answerFromHistory ? blockedSpell?.EnteredAt : liveBlockedSince;
 
-                    // D16: the endpoint already receives asOfDate and used to discard it, leaving the
-                    // aging chart's dot heights today-anchored. Pass it so they honour the range.
-                    return new WorkItemDto(w, clock, isBlocked, [], blockedSince, asOfDate);
+                    // Anchor age on asOfDate, not today, so the aging chart's dot heights match the chosen range.
+                    return new WorkItemDto(w, clock, isBlocked, [], blockedSince, asOfDate) { Estimate = WorkItemEstimateDto.For(team, w) };
                 });
             });
         }
@@ -293,7 +292,7 @@ namespace Lighthouse.Backend.API
             LogDateBoundaries("cycleTimeData", teamId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
                 teamMetricsService.GetCycleTimeDataForTeam(team, startDate, endDate)
-                    .Select(entry => new WorkItemDto(entry.WorkItem, clock, blockedItemService.IsBlocked(entry.WorkItem, team), entry.NamedCycleTimes)));
+                    .Select(entry => new WorkItemDto(entry.WorkItem, clock, blockedItemService.IsBlocked(entry.WorkItem, team), entry.NamedCycleTimes) { Estimate = WorkItemEstimateDto.For(team, entry.WorkItem) }));
         }
 
         private static bool IsNamedRequest(int? definitionId) => definitionId is > 0;
@@ -603,7 +602,7 @@ namespace Lighthouse.Backend.API
                     return teamMetricsService
                         .GetBlockedEligibleItemsForTeam(team)
                         .Where(w => blockedItemService.IsBlocked(w, team))
-                        .Select(w => new WorkItemDto(w, clock, isBlocked: true, [], w.CurrentStateEnteredAt));
+                        .Select(w => new WorkItemDto(w, clock, isBlocked: true, [], w.CurrentStateEnteredAt) { Estimate = WorkItemEstimateDto.For(team, w) });
                 }
 
                 var teamWorkItems = workItemRepository
@@ -613,7 +612,7 @@ namespace Lighthouse.Backend.API
                 var blockedIds = workItemBlockedTransitionRepository.GetBlockedWorkItemIdsAt(targetDate);
                 var reconstructed = teamWorkItems
                     .Where(w => blockedIds.Contains(w.Id))
-                    .Select(w => new WorkItemDto(w, clock, isBlocked: true, [], null))
+                    .Select(w => new WorkItemDto(w, clock, isBlocked: true, [], null) { Estimate = WorkItemEstimateDto.For(team, w) })
                     .ToList();
 
                 ReconcileReconstructedCountWithSnapshot(teamId, OwnerType.Team, targetDate, reconstructed.Count);

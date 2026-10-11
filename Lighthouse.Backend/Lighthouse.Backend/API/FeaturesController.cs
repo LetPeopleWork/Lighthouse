@@ -116,7 +116,7 @@ namespace Lighthouse.Backend.API
 
             var items = workItemRepository.GetAllByPredicate(wi => wi.ParentReferenceId == feature.ReferenceId)
                 .AsEnumerable()
-                .Select(w => new WorkItemDto(w, clock, w.Team != null && blockedItemService.IsBlocked(w, w.Team)))
+                .Select(w => new WorkItemDto(w, clock, w.Team != null && blockedItemService.IsBlocked(w, w.Team)) { Estimate = w.Team != null ? WorkItemEstimateDto.For(w.Team, w) : null })
                 .ToList();
 
             return Ok(items);
