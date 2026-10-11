@@ -173,7 +173,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [TestCase(Throughput)]
         [TestCase(CycleTimeData)]
         [TestCase(Wip)]
-        [Ignore(Pending)]
         public async Task Team_WithoutAnEstimationField_EveryRowSaysSo(string endpoint)
         {
             var (rows, body) = await RowsOf($"/api/latest/teams/{plainTeamId}/metrics", endpoint);
@@ -185,7 +184,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [TestCase(Throughput)]
         [TestCase(CycleTimeData)]
         [TestCase(Wip)]
-        [Ignore(Pending)]
         public async Task Portfolio_WithoutAnEstimationField_EveryFeatureSaysSo(string endpoint)
         {
             var (rows, body) = await RowsOf($"/api/latest/portfolios/{plainPortfolioId}/metrics", endpoint);
@@ -238,7 +236,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         // @us-01 @slice-01a @driving_port @real-io @error @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task TeamFeaturesInProgress_HaveNoSingleOwnerToAsk_SoCarryNoEstimate()
         {
             var (rows, body) = await RowsOf($"/api/latest/teams/{estimatedTeamId}/metrics", FeaturesInProgress);
@@ -248,7 +245,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         // @us-01 @slice-01a @driving_port @real-io @error @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task FeaturesByIds_HaveNoSingleOwnerToAsk_SoCarryNoEstimate()
         {
             var body = await GetBody($"/api/latest/features/ids?featureIds={parentFeatureId}");

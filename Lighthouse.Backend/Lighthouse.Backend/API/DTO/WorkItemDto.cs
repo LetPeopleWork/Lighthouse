@@ -17,14 +17,14 @@ namespace Lighthouse.Backend.API.DTO
         }
 
         /// <param name="asOf">
-        /// D16: when supplied, <see cref="WorkItemAge"/> reports the age the item had on that day
+        /// When supplied, <see cref="WorkItemAge"/> reports the age the item had on that day
         /// instead of today. Only the /wip endpoints pass it — they already receive an asOfDate from
         /// the caller and simply discarded it, which is why the aging chart's dot heights stayed
         /// today-anchored while the percentile card moved. Every other construction site is unchanged
         /// by omission, which bounds the blast radius to that one call path.
         /// </param>
         /// <param name="stateAsOf">
-        /// UPSTREAM-7: the state the item held on <paramref name="asOf"/>, for callers that cannot
+        /// The state the item held on <paramref name="asOf"/>, for callers that cannot
         /// hand over an already-projected entity. Teams project onto a WorkItem copy instead; a
         /// Feature cannot be copied without losing the forecast/work/portfolio data this DTO reads,
         /// and the entity is EF-tracked, so the portfolio path passes the projection in here.
@@ -92,5 +92,10 @@ namespace Lighthouse.Backend.API.DTO
         public DateTime? CurrentStateEnteredAt { get; }
 
         public bool Approximate { get; }
+
+        /// <summary>
+        /// Null when the owner has no estimation field, or the row has no single owner to ask.
+        /// </summary>
+        public WorkItemEstimateDto? Estimate { get; init; }
     }
 }
