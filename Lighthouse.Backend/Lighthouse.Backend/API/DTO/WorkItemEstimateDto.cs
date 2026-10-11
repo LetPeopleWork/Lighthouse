@@ -1,4 +1,6 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation;
 
 namespace Lighthouse.Backend.API.DTO
 {
@@ -6,8 +8,16 @@ namespace Lighthouse.Backend.API.DTO
     {
         public static WorkItemEstimateDto? For(WorkTrackingSystemOptionsOwner owner, WorkItemBase item)
         {
-            throw new InvalidOperationException(
-                $"Not yet implemented -- RED scaffold written by DISTILL: the estimate of {item.ReferenceId} for {owner.Name}");
+            var estimate = EstimateNormalizer.EstimateOf(owner, item);
+            if (estimate is null)
+            {
+                return null;
+            }
+
+            // Only a value the Estimation chart can place is shown, so a row never claims more than the chart does.
+            return estimate.Status == EstimateNormalizationStatus.Mapped
+                ? new WorkItemEstimateDto(estimate.NumericValue, estimate.DisplayValue, owner.EstimationUnit)
+                : new WorkItemEstimateDto(null, null, owner.EstimationUnit);
         }
     }
 }

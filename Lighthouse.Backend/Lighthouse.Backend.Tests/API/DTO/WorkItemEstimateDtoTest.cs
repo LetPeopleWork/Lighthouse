@@ -6,7 +6,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
     [TestFixture]
     public class WorkItemEstimateDtoTest
     {
-        private const string Pending = "Not built yet: the estimate on each Work Item row. Unskip one at a time while building it.";
         private const int EstimationFieldId = 42;
         private const string StoryPoints = "Story Points";
 
@@ -38,7 +37,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
         // @us-01 @slice-01a @error @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public void For_OwnerWithoutAnEstimationField_IsNothing_SoNoEstimateColumnIsOffered()
         {
             var portfolio = new Portfolio { Name = "Orion" };
@@ -50,7 +48,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
         // @us-01 @slice-01a @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public void For_NumericEstimate_CarriesTheNumberItsLabelAndTheOwnersUnit()
         {
             var estimate = WorkItemEstimateDto.For(NumericEstimationPortfolio(), FeatureEstimatedAs("5"));
@@ -60,7 +57,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
         // @us-01 @slice-01a @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public void For_CategoryEstimate_SortsByTheCategorysPlaceAndShowsItsName()
         {
             var estimate = WorkItemEstimateDto.For(TShirtEstimationPortfolio(), FeatureEstimatedAs("l"));
@@ -72,7 +68,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [TestCase("XXL")]
         [TestCase("")]
         [TestCase(null)]
-        [Ignore(Pending)]
         public void For_EstimateTheChartLeavesOut_IsConfiguredButEmpty(string? value)
         {
             var estimate = WorkItemEstimateDto.For(TShirtEstimationPortfolio(), FeatureEstimatedAs(value));
@@ -83,7 +78,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
         // @us-01 @slice-01a @error @contract-shape:pure-function
         [TestCase("big")]
         [TestCase(null)]
-        [Ignore(Pending)]
         public void For_NothingUsableInANumericField_IsConfiguredButEmpty_AndKeepsTheUnit(string? value)
         {
             var estimate = WorkItemEstimateDto.For(NumericEstimationPortfolio(), FeatureEstimatedAs(value));

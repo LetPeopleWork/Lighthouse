@@ -13,8 +13,6 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class EstimateNormalizationSeamArchUnitTest
     {
-        private const string Pending = "Not built yet: the estimate on each Work Item row. Unskip one at a time while building it.";
-
         private static readonly Assembly ProductionAssembly = typeof(EstimateNormalizer).Assembly;
 
         private static readonly BindingFlags AllMemberFlags =
@@ -89,7 +87,6 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         // @us-01 @slice-01a @architecture @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public void TheRowsEstimate_IsReadThroughEstimateOf()
         {
             var estimateOf = typeof(EstimateNormalizer).GetMethod(nameof(EstimateNormalizer.EstimateOf))!;
