@@ -1202,7 +1202,10 @@ namespace Lighthouse.Backend.Services.Implementation
             WorkTrackingSystemOptionsOwner owner,
             IEnumerable<WorkItemBase> closedItems)
         {
-            if (owner.EstimationAdditionalFieldDefinitionId == null)
+            var items = closedItems.ToList();
+            var batchResult = EstimateNormalizer.EstimatesOf(owner, items);
+
+            if (batchResult == null)
             {
                 return new EstimationVsCycleTimeResponse(
                     EstimationVsCycleTimeStatus.NotConfigured,
@@ -1212,9 +1215,6 @@ namespace Lighthouse.Backend.Services.Implementation
                     owner.EstimationCategoryValues,
                     []);
             }
-
-            var fieldId = owner.EstimationAdditionalFieldDefinitionId.Value;
-            var items = closedItems.ToList();
 
             if (items.Count == 0)
             {
@@ -1226,16 +1226,6 @@ namespace Lighthouse.Backend.Services.Implementation
                     owner.EstimationCategoryValues,
                     []);
             }
-
-            var estimates = items.Select(i =>
-            {
-                i.AdditionalFieldValues.TryGetValue(fieldId, out var value);
-                return value;
-            }).ToList();
-            var batchResult = EstimateNormalizer.NormalizeBatch(
-                estimates,
-                owner.UseNonNumericEstimation,
-                owner.EstimationCategoryValues);
 
             var diagnostics = new EstimationVsCycleTimeDiagnostics(
                 batchResult.TotalCount,
@@ -1291,7 +1281,10 @@ namespace Lighthouse.Backend.Services.Implementation
             WorkTrackingSystemOptionsOwner owner,
             IEnumerable<WorkItemBase> allFeatures)
         {
-            if (owner.EstimationAdditionalFieldDefinitionId == null)
+            var items = allFeatures.ToList();
+            var batchResult = EstimateNormalizer.EstimatesOf(owner, items);
+
+            if (batchResult == null)
             {
                 return new FeatureSizeEstimationResponse(
                     EstimationVsCycleTimeStatus.NotConfigured,
@@ -1300,9 +1293,6 @@ namespace Lighthouse.Backend.Services.Implementation
                     owner.EstimationCategoryValues,
                     []);
             }
-
-            var fieldId = owner.EstimationAdditionalFieldDefinitionId.Value;
-            var items = allFeatures.ToList();
 
             if (items.Count == 0)
             {
@@ -1313,17 +1303,6 @@ namespace Lighthouse.Backend.Services.Implementation
                     owner.EstimationCategoryValues,
                     []);
             }
-
-            var estimates = items.Select(i =>
-            {
-                i.AdditionalFieldValues.TryGetValue(fieldId, out var value);
-                return value;
-            }).ToList();
-
-            var batchResult = EstimateNormalizer.NormalizeBatch(
-                estimates,
-                owner.UseNonNumericEstimation,
-                owner.EstimationCategoryValues);
 
             var featureEstimations = new List<FeatureEstimationDataPoint>();
 

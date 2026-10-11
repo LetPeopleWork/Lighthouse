@@ -43,7 +43,6 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         // @us-01 @slice-01a @architecture @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public void NothingOutsideTheNormalizer_NormalizesAnEstimateItself()
         {
             var lowLevel = typeof(EstimateNormalizer)
@@ -68,7 +67,6 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         // @us-01 @slice-01a @architecture @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public void BothEstimationChartBuilders_ReadThroughEstimatesOf()
         {
             var estimatesOf = typeof(EstimateNormalizer).GetMethod(nameof(EstimateNormalizer.EstimatesOf))!;
