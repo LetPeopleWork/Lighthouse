@@ -122,7 +122,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         // @us-01 @slice-01a @error @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public void EstimatesOf_OwnerWithoutAnEstimationField_IsNothing()
         {
             var team = new Team { Name = "Team Pulsar" };
@@ -134,7 +133,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         // @us-01 @slice-01a @example @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public void EstimatesOf_CountsTheItemsTheChartCanPlaceAndThoseItCannot()
         {
             List<WorkItemBase> items =

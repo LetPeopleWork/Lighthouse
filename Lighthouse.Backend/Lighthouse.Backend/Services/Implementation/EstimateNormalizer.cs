@@ -77,7 +77,19 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public static EstimateNormalizationBatchResult? EstimatesOf(WorkTrackingSystemOptionsOwner owner, IReadOnlyList<WorkItemBase> items)
         {
-            throw new InvalidOperationException($"{NotYetImplemented}: the estimates of {items.Count} items for {owner.Name}");
+            if (owner.EstimationAdditionalFieldDefinitionId is not { } fieldId)
+            {
+                return null;
+            }
+
+            var estimates = items.Select(item => RawEstimate(item, fieldId)).ToList();
+            return NormalizeBatch(estimates, owner.UseNonNumericEstimation, owner.EstimationCategoryValues);
+        }
+
+        private static string? RawEstimate(WorkItemBase item, int fieldId)
+        {
+            item.AdditionalFieldValues.TryGetValue(fieldId, out var raw);
+            return raw;
         }
 
         private static EstimateNormalizationResult NormalizeNumeric(string estimate)
