@@ -7,7 +7,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
     [TestFixture]
     public class EstimateNormalizerEstimateOfTest
     {
-        private const string Pending = "Not built yet: one reader for every estimate. Unskip one at a time while building it.";
         private const int EstimationFieldId = 42;
         private const int SomeOtherFieldId = 7;
 
@@ -40,7 +39,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         // @us-01 @slice-01a @error @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public void EstimateOf_OwnerWithoutAnEstimationField_IsNothing()
         {
             var team = new Team { Name = "Team Pulsar" };
@@ -52,7 +50,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         // @us-01 @slice-01a @example @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public void EstimateOf_NumericField_IsTheNumberTheChartPlots()
         {
             var result = EstimateNormalizer.EstimateOf(NumericEstimationTeam(), ItemEstimatedAs("ST-1", "3.5"));
@@ -67,7 +64,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         // @us-01 @slice-01a @example @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public void EstimateOf_CategoryField_IsTheCategorysPlaceInTheOwnersListAndItsName()
         {
             var result = EstimateNormalizer.EstimateOf(TShirtEstimationTeam(), ItemEstimatedAs("ST-1", "m"));
@@ -82,7 +78,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         // @us-01 @slice-01a @error @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public void EstimateOf_CategoryMissingFromTheOwnersList_IsUnmapped()
         {
             var result = EstimateNormalizer.EstimateOf(TShirtEstimationTeam(), ItemEstimatedAs("ST-1", "XXL"));
@@ -93,7 +88,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         // @us-01 @slice-01a @error @contract-shape:pure-function
         [TestCase("")]
         [TestCase("about three")]
-        [Ignore(Pending)]
         public void EstimateOf_NothingUsableInANumericField_IsInvalid(string estimate)
         {
             var result = EstimateNormalizer.EstimateOf(NumericEstimationTeam(), ItemEstimatedAs("ST-1", estimate));
@@ -104,7 +98,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         // @us-01 @slice-01a @error @contract-shape:pure-function
         [TestCase(false)]
         [TestCase(true)]
-        [Ignore(Pending)]
         public void EstimateOf_ItemThatNeverReceivedTheField_IsInvalidWithNothingToShow(bool categories)
         {
             var team = categories ? TShirtEstimationTeam() : NumericEstimationTeam();
@@ -156,7 +149,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         // @us-01 @slice-01a @example @contract-shape:pure-function
         [TestCaseSource(nameof(EstimatesAcrossBothModes))]
-        [Ignore(Pending)]
         public void EstimateOf_AgreesWithTheBatchTheChartReads(bool categories, string? estimate)
         {
             var team = categories ? TShirtEstimationTeam() : NumericEstimationTeam();

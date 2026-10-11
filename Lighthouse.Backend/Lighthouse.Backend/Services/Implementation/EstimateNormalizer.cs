@@ -18,8 +18,6 @@ namespace Lighthouse.Backend.Services.Implementation
 
     public static class EstimateNormalizer
     {
-        private const string NotYetImplemented = "Not yet implemented -- RED scaffold written by DISTILL";
-
         private static readonly EstimateNormalizationResult InvalidResult =
             new(EstimateNormalizationStatus.Invalid, 0, string.Empty);
 
@@ -72,7 +70,12 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public static EstimateNormalizationResult? EstimateOf(WorkTrackingSystemOptionsOwner owner, WorkItemBase item)
         {
-            throw new InvalidOperationException($"{NotYetImplemented}: the estimate of {item.ReferenceId} for {owner.Name}");
+            if (owner.EstimationAdditionalFieldDefinitionId is not { } fieldId)
+            {
+                return null;
+            }
+
+            return Normalize(RawEstimate(item, fieldId), owner.UseNonNumericEstimation, owner.EstimationCategoryValues);
         }
 
         public static EstimateNormalizationBatchResult? EstimatesOf(WorkTrackingSystemOptionsOwner owner, IReadOnlyList<WorkItemBase> items)
