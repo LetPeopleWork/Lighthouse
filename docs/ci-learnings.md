@@ -146,6 +146,7 @@ dotnet-nunit:NUnit4002-default ::: cs ::: Is\.EqualTo\(default\( ::: Use `Is.Def
 dotnet-nunit:NUnit2056 ::: cs ::: Assert\.Multiple\( ::: Use `using (Assert.EnterMultipleScope()) { ... }`, not `Assert.Multiple(() => { ... })` / `Assert.MultipleAsync` (NUnit2056).
 dotnet-nunit:NUnit2010 ::: cs ::: Assert\.That\(.*\.Equals\( ::: Use `Is.Not.EqualTo` constraint, not direct `.Equals()` inside `Assert.That` (NUnit2010).
 csharpsquid:S8733 ::: cs ::: \.AsSplitQuery\( ::: Never call `.AsSplitQuery()` — split-query is configured globally per provider in `DatabaseConfigurator`/`LighthouseAppContextFactory`, and it is relational-only so it breaks the InMemory test fixtures. If S8733 fires, `#pragma warning disable S8733` at the call site. See the 2026-07-30 S8733 entry.
+typescript:S7761 ::: ts,tsx ::: (get|set|has|remove)Attribute\(\s*["'`]data- ::: S7761 — read and write `data-*` attributes through `el.dataset.camelName`, never `getAttribute("data-…")`/`setAttribute`. A CSS selector string such as `[data-field="x"]` is fine. See the 2026-10-11 S7761 entry.
 <!-- LEDGER-CHECKS:END -->
 
 ## Preflight rules — apply by habit before every edit (non-greppable dedup)
@@ -255,6 +256,12 @@ get re-applied.
 - Judge survivors, don't just count them. An **equivalent mutant** has no observable behaviour difference (e.g. dropping a `cancelled` in-flight flag when a late write lands under a cache key nothing reads) — write down *why* it is unkillable rather than inventing a test that asserts an implementation detail.
 
 ## Formatting & linting
+
+### 2026-10-11 — S7761: `getAttribute("data-…")` in a new test helper failed the frontend gate
+- **Symptom**: frontend `sonar-gates` `new_violations = 3` on the Story 6248 DISTILL commit, all `typescript:S7761` "Prefer `.dataset` over `getAttribute(…)`" in `src/tests/WorkItemsDialogTestKit.tsx`. Biome, `tsc` and Vitest were all green.
+- **Root cause**: the rule only reports new lines, and the 27 older `getAttribute("data-…")` calls in the codebase made the form look sanctioned.
+- **Fix**: `header.dataset.field` instead of `header.getAttribute("data-field")`. `dataset` returns `undefined` for a missing attribute where `getAttribute` returns `null`, so `?? ""` / `?? null` fallbacks keep their behaviour.
+- **Rule going forward**: access `data-*` through `dataset` (camelCased key) in every new line, tests included. Now a pre-commit ledger check.
 
 ### 2026-10-03 — Sonar lints chart shell scripts with more shelldre rules than S7688
 - **Symptom**: backend `sonar-gates` `new_violations = 40` after the bundled-Postgres upgrade landed, all on `chart/files/postgres-upgrade/{volume,upgrade}.sh`, `chart/tests/upgrade-path/run.sh` and `chart/scripts/version-guard.sh`: `shelldre:S7679` "Assign this positional parameter to a local variable" (24), `shelldre:S7682` "Add an explicit return statement at the end of the function" (12), `shelldre:S131` "Add a default case (*)" (2), `shelldre:S1192` duplicated literal (2). shellcheck was clean on every one of them.

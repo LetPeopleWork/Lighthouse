@@ -135,7 +135,7 @@ export const theDialog = () => screen.getByRole("dialog");
 export const columnsShown = (): string[] =>
 	within(theDialog())
 		.queryAllByRole("columnheader")
-		.map((header) => header.getAttribute("data-field") ?? "");
+		.map((header) => header.dataset.field ?? "");
 
 /** The columns shown besides the fixed ones, in the order they stand. */
 export const contextColumnsShown = (): string[] =>
@@ -144,7 +144,7 @@ export const contextColumnsShown = (): string[] =>
 export const columnHeader = (field: string): HTMLElement => {
 	const header = within(theDialog())
 		.queryAllByRole("columnheader")
-		.find((candidate) => candidate.getAttribute("data-field") === field);
+		.find((candidate) => candidate.dataset.field === field);
 	if (!header) {
 		assert.fail(`No ${field} column; shown: ${columnsShown().join(", ")}`);
 	}
@@ -160,7 +160,7 @@ export const sortedDescendingBy = (): string | null =>
 	within(theDialog())
 		.queryAllByRole("columnheader")
 		.find((header) => header.getAttribute("aria-sort") === "descending")
-		?.getAttribute("data-field") ?? null;
+		?.dataset.field ?? null;
 
 const rowsShown = (): HTMLElement[] => [
 	...theDialog().querySelectorAll<HTMLElement>(".MuiDataGrid-row"),
