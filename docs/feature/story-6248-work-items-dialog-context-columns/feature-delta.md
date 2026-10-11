@@ -71,7 +71,7 @@ makes what it shows worth reaching.
 | D4 | **The per-context defaults table below is locked**, and it is declared as configuration in one place, so changing a context's defaults is a one-line edit. The maintainer expects their manual review to find rows to adjust. | Maintainer, 2026-10-10: "yes lock … the config should allow to simply adjust this in future" |
 | D5 | **Clients (CLI + MCP): N/A for this story.** The Estimate is an additive field; the CLI ignores it and the MCP tools relay it to agents unchanged (amended in DESIGN, M5). | Maintainer, 2026-10-10 |
 | D6 | **No Estimate column where estimation isn't configured.** It is not offered, not offered-and-empty. A configured estimate that is missing on an item shows an empty cell. | Locked in DISCUSS, from D2 |
-| D7 | **Terminology.** Column headers for configurable terms (Cycle Time, Work Item Age, Blocked, Feature, Team) use the instance's terms, as the dialog's other copy already does. "Estimate" is not a configurable term; the column header carries the estimation unit when one is set (`Estimate (Story Points)`), as the chart's axis does. | Locked |
+| D7 | **Terminology.** Column headers for configurable terms (Cycle Time, Work Item Age, Blocked, Feature, Team) use the instance's terms, as the dialog's other copy already does. "Estimate" is not a configurable term; the column header carries the estimation unit when one is set (`Estimate (Story Points)`), as the chart's axis does. *Superseded in DELIVER (H1): the header is plain `Estimate` in every case.* | Locked |
 
 ### Per-context defaults (D4)
 
@@ -113,7 +113,7 @@ Decision enabled: the coach picks out the 3-point items that took 20 days and as
 
 #### Acceptance Criteria
 - **AC-1.1** From a bubble or *View Data* on Estimation vs. Cycle Time, Team or Portfolio, the dialog shows Estimate, Cycle Time and Closed by default, sorted by Cycle Time descending (D4).
-- **AC-1.2** Each row's Estimate is that item's normalised display value, the same value the chart plots it at (a category estimate shows its category name, e.g. `M`). Only values the chart can place are shown: a category not in the owner's list, an empty value, or a non-numeric value in a numeric field leaves the cell empty (M1). The header reads `Estimate (<unit>)`, e.g. `Estimate (Story Points)`, when every row with an estimate shares one unit, and plain `Estimate` when no unit is set or the units are mixed (D7, S1).
+- **AC-1.2** Each row's Estimate is that item's normalised display value, the same value the chart plots it at (a category estimate shows its category name, e.g. `M`). Only values the chart can place are shown: a category not in the owner's list, an empty value, or a non-numeric value in a numeric field leaves the cell empty (M1). The header reads `Estimate (<unit>)`, e.g. `Estimate (Story Points)`, when every row with an estimate shares one unit, and plain `Estimate` when no unit is set or the units are mixed (D7, S1). *Superseded in DELIVER (H1): the header is plain `Estimate` in every case.*
 - **AC-1.3** *Manage columns* lists every catalogue column the rows can fill (D1, D2). Catalogue columns outside this context's defaults are hidden until turned on; turning one on shows it in its place in the fixed column order (S3, R4).
 - **AC-1.4** A layout change (hide, show, reorder, resize) in this context is remembered for this context on the next open, and no dialog of another context changes (D3). A context is one row of the defaults table, kept apart for Teams and Portfolios (M2), so the dialogs that share a row share its layout. *Reset layout* returns this context to its defaults.
 - **AC-1.5** Where the Team or Portfolio has no estimation field configured, Estimate is not offered in any context (D6).
@@ -866,7 +866,7 @@ cell all three lists open it from.
 The specs read a column by its grid field, which is its `ColumnId`. The Features grid's forecast column is the
 exception: its field is `forecasts`. Header text is pinned only where a decision fixed it:
 
-- S1: Estimate.
+- S1: Estimate (superseded by H1: plain `Estimate`).
 - S4: Forecasted Completion.
 - D7: the Cycle Time term.
 - The named cycle time's name.
@@ -1089,3 +1089,11 @@ left, without starting DELIVER.
   - Filtered `dotnet test`: `Passed: 9423, Skipped: 67, Failed: 0`. Of the skips, 66 are this story's; the 1 extra
     pass is the seam scanner's control.
   - E2E: `tsc --noEmit` clean, Biome clean on both files, and Playwright lists the skeleton as skipped.
+
+---
+
+## Wave: DELIVER / [REF] Maintainer decisions (2026-10-11)
+
+| ID | Decision | Verdict |
+|----|----------|---------|
+| H1 | **Column headers are plain, with no units** (closes DISTILL upstream finding 1). Started, Closed, `{Cycle Time}`, `{Work Item Age}`, `{Work Item Age} / {Cycle Time}`, `{Blocked} since`, Time in State, Size, Days Contributed; `{…}` is the instance's term (D7). Today's highlight suffix " (days)" goes. **The Estimate header is plain `Estimate` in every case, with or without a unit and with mixed units: this supersedes S1 and D7's unit rule**, and the three S1 header cases in `WorkItemsDialog.contexts.test.tsx` change to expect `Estimate`. The backend still carries `unit` on the row (DDD-1), which the MCP tools relay to agents (M5); the dialog does not show it. | "Plain, no units" — "also remove the (Story Points)" |

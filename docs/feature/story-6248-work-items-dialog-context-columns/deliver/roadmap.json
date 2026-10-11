@@ -1,0 +1,1052 @@
+{
+  "roadmap": {
+    "project_id": "story-6248-work-items-dialog-context-columns",
+    "created_at": "2026-10-11",
+    "total_steps": 30,
+    "total_phases": 4,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "goal": "Story #6248: the Work Items dialog brings the columns that explain why each item sits behind the point that was clicked. Four slices, each releasable on its own and delivered in order, never interleaved. Slice 01a (backend): every work-item and Feature row of the Team and Portfolio metrics endpoints, and a Feature's child items, carries its estimate, normalised by the code the Estimation chart uses (EstimateOf / EstimatesOf, WorkItemEstimateDto, set at the 12 owner-known sites), guarded by an ArchUnit seam test; Team Zenith's demo data gains a Story Points estimation field. Slice 01b: the column catalogue, the one declared defaults map, DataGridBase's defaults model with override-only persistence, per-context layout keys, and the estimation context, proven live by the E2E walking skeleton on Team Zenith. Slice 02: every chart and View Data context adopts its defaults, Parent shows names, and the Cumulative Time per State dialog opens at once with a loading and a could-not-load look. Slice 03: a Feature's child items (Delivery section, Team and Portfolio Feature lists) open through a keyed query with both looks, the Delivery timeline gains the catalogue, FeatureSchema gains currentStateEnteredAt, and highlightColumn is deleted. Done when every one of DISTILL's 213 pending cases (212 Vitest / NUnit cases plus the E2E walking skeleton) is un-skipped by exactly one step below and green, the 8 pins stay green except the one slice 03 deletes, and the project gates pass: `pnpm test`, `pnpm build` with zero warnings, `dotnet build` with zero warnings, the filtered `dotnet test`, and the E2E specs each slice touches run locally.",
+    "paradigm_note": "The Hypothesis + state-delta unit mandate from nw-roadmap does not apply, and leaving it out is deliberate. This is C# (NUnit 4, EF InMemory, WebApplicationFactory) plus TypeScript (Vitest, React Testing Library) plus Playwright. fast-check is not a devDependency, so DISTILL wrote property-shaped specifications as it.each / [TestCase] / [TestCaseSource] example tables (feature-delta.md, DISTILL / Reconciliation). The crafter writes no new specifications: every pending case and the E2E walking skeleton were written by DISTILL and are skipped. RED means un-skipping a step's cases and capturing the failure before the production edit; GREEN is the production code. Where a case is already green when un-skipped (an earlier step built what it checks, which this roadmap names where it is expected), the crafter says so in the commit body and does not weaken the case. The crafter edits existing tests only where DISTILL's Existing-test disposition lists it, plus the three Estimate-header cases that maintainer decision H1 changes. Code comments follow the project rule: plain-language why only, never a pointer such as DDD-5, M8, S7, R2, H1, AC-1.3 or ADR-234. Steps tagged @sizing-review-needed un-skip eight or more cases; each says why in its implementation_notes. Mutation testing is not a step: it runs separately, on frozen code, after the last slice."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "reviewed_at": "2026-10-11",
+    "notes": "Conditionally approved, 0 blockers: all 28 NUnit sites (66 rows), 67 Vitest sites (146 rows) and the 1 Playwright skip map to exactly one step. Both highs applied by the orchestrator: 01-07 gains a DemoDataFactoryTest RED for Team Zenith's Story Points estimation field; 04-05 makes the currentStateEnteredAt decode row required. Non-blocking notes applied: 01-01 owns EstimatesOf scaffold removal; 04-06 lists WidgetShell tests and the stale BaseMetricsView comments. Pins listed inside `unskips` (01-01, 02-02, 02-04, 03-06, 04-02) are passing guards, not un-skips. The two '$context' rule templates appear in two tables (everyChartContext ×10 in 03-05, theFeatureListContexts ×2 in 04-01); steps name the table."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-6248-work-items-dialog-context-columns/feature-delta.md",
+    "red_classification": "docs/feature/story-6248-work-items-dialog-context-columns/red-classification.md",
+    "slice_01a": "docs/feature/story-6248-work-items-dialog-context-columns/slices/slice-01a-estimate-on-the-row.md",
+    "slice_01b": "docs/feature/story-6248-work-items-dialog-context-columns/slices/slice-01b-estimation-dialog.md",
+    "slice_02": "docs/feature/story-6248-work-items-dialog-context-columns/slices/slice-02-chart-contexts.md",
+    "slice_03": "docs/feature/story-6248-work-items-dialog-context-columns/slices/slice-03-feature-children.md",
+    "environments": "docs/feature/story-6248-work-items-dialog-context-columns/environments.yaml",
+    "adr_catalogue_and_defaults": "docs/product/architecture/adr-234-the-work-items-dialog-takes-its-columns-from-one-catalogue-and-its-defaults-from-one-map.md",
+    "adr_estimate_on_the_row": "docs/product/architecture/adr-235-a-work-item-carries-its-estimate-normalised-by-the-code-the-estimation-chart-uses.md",
+    "ci_learnings": "docs/ci-learnings.md",
+    "ado_story": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6248"
+  },
+  "user_decisions": [
+    "D1 / D4: a full column catalogue; each context names its visible defaults and its sort in one declared map, so changing a context's defaults is a one-line edit.",
+    "D2 / D6: the catalogue is what rows already carry plus the backend's normalised Estimate; no Estimate column where estimation is not configured; a configured estimate missing on an item is an empty cell.",
+    "D3 / M2: layout persists per context row and per owner kind (team / portfolio); dialogs sharing a row share its layout.",
+    "D5 / M5: no clients change and no clients release; MCP tools relay `estimate` to agents unchanged.",
+    "D7 / H1 (2026-10-11): headers are plain with no units: Started, Closed, {Cycle Time}, {Work Item Age}, {Work Item Age} / {Cycle Time}, {Blocked} since, Time in State, Size, Days Contributed, with {…} the instance's term. Today's highlight suffix ' (days)' goes. The Estimate header is plain `Estimate` in every case, which supersedes S1; the backend keeps `Unit` on WorkItemEstimateDto.",
+    "M1: only estimates the chart can place get a display value; unmapped or invalid values give an empty cell.",
+    "M3 / R2: the Delivery timeline offers neither Estimate nor Blocked since.",
+    "M4: named cycle-time columns only where the caller passes their definitions.",
+    "M6: the old shared `lighthouse:datagrid:work-items-dialog:state` key is left in place and never read.",
+    "M7: Parent shows the parent's name, the reference itself while loading or on failure.",
+    "M8: Aging, Stale and the in-progress View Data sort by Age, not Time in State; no colouring moves.",
+    "M9: a 13th context `startedAndClosed`; Features being Worked On uses `inProgress`.",
+    "M10: Owned by stays a fixed column for Feature rows.",
+    "S2: dates render as the local day YYYY-MM-DD (formatLocalDate); null and the epoch render empty.",
+    "S3 / R4: column order is ID, Name, Type, State, the context's defaults in table order, then Started, Closed, Cycle Time, Work Item Age, Age / Cycle Time, Estimate, Parent, Blocked since, Time in State, Age band, SLE risk, named cycle times, Warnings, Size, Forecasted Completion.",
+    "S4: Feature rows reuse the Features grid's createForecastsColumn whole (header 'Forecasted Completion', field `forecasts`).",
+    "S5 / S6: the child-items and Cumulative Time per State dialogs open at once with the context's headers over the grid's own loading overlay, never 'No items to display'; on failure WarningAmberIcon and 'These {Work Items} couldn't be loaded. Close and reopen to try again.'; no Retry.",
+    "S7: Team Zenith's demo CSV gains a Story Points column registered as an additional field and set as its estimation field with unit 'Story Points'; the E2E skeleton configures nothing.",
+    "R1: slice 01 is split into 01a (backend + demo data) and 01b (dialog machinery).",
+    "R3: a reader who can see a Feature sees its child items' estimates and their Team's unit; accepted.",
+    "DEVOPS: no usage-data event (maintainer N/A); no observability, pipeline or deployment change."
+  ],
+  "out_of_scope": [
+    "Tags, assignee or arbitrary additional fields as columns; a user-configurable column set per instance.",
+    "An estimate on the 4 sites with no single owner (FeaturesController.BuildFeatureDto, DeliveryRulesController.Validate, DeliverySourcesController.FeaturesComingAlong, TeamMetricsController.GetFeaturesInProgress): they leave it null.",
+    "Any change to which items a dialog lists, to the charts themselves, or to other grids (feature lists, Refinement, Delivery grid).",
+    "Migrating or deleting the old shared `work-items-dialog` layout key.",
+    "Lighthouse-Clients changes or release; a usage-data event.",
+    "Regenerating `features/metrics/workitemsdialog.png`, docs (`widgets.md`, `flow-metrics.md`), release notes: finalize, not this roadmap.",
+    "Mutation testing (Stryker.NET and StrykerJS), refactor passes, review and finalize: the orchestrator runs those; mutation runs once after the last slice on frozen code."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 01a: every work-item row carries its estimate",
+      "description": "Backend only, plus demo data. One reader of the owner's estimation field (TryGetValue, so an item that never received the field reads as Invalid), EstimateOf / EstimatesOf over it, both estimation chart builders moved onto EstimatesOf first as a behaviour-preserving refactor, WorkItemEstimateDto.For, an init-only Estimate on WorkItemDto (inherited by FeatureDto and both run-chart DTOs, no constructor change), set at the 12 owner-known sites, the seam held by an ArchUnit test, and Team Zenith's Story Points field. Releasable alone: the API (and MCP agents) see the estimate and the Estimation chart appears on Team Zenith; no dialog change.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Both estimation charts read their estimates through EstimatesOf",
+          "description": "Add the one private reader and EstimatesOf(owner, items) to EstimateNormalizer, and switch BuildEstimationVsCycleTimeResponse and BuildFeatureSizeEstimationResponse onto it. Behaviour-preserving: both charts return exactly what they return today, diagnostics counts included.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/EstimateNormalizerEstimateOfTest.cs",
+          "scenario_name": "EstimatesOf: the batch the charts read",
+          "unskips": [
+            "EstimateNormalizerEstimateOfTest.cs :: EstimatesOf_OwnerWithoutAnEstimationField_IsNothing",
+            "EstimateNormalizerEstimateOfTest.cs :: EstimatesOf_CountsTheItemsTheChartCanPlaceAndThoseItCannot",
+            "EstimateNormalizationSeamArchUnitTest.cs :: BothEstimationChartBuilders_ReadThroughEstimatesOf",
+            "EstimateNormalizationSeamArchUnitTest.cs :: NothingOutsideTheNormalizer_NormalizesAnEstimateItself",
+            "Pin that must stay green, EstimateNormalizationSeamArchUnitTest.cs :: TheScanner_SeesACallThatIsThere"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/EstimateNormalizer.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BaseMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/EstimateNormalizerEstimateOfTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EstimateNormalizationSeamArchUnitTest.cs"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "The four named cases are un-skipped ([Ignore(Pending)] removed) and RED before the production edit: the scaffold's InvalidOperationException for the two EstimatesOf cases, and the seam finding BaseMetricsService calling NormalizeBatch directly for the two seam cases.",
+            "EstimatesOf returns null when owner.EstimationAdditionalFieldDefinitionId has no value; otherwise the existing EstimateNormalizationBatchResult over every item, counts included.",
+            "The reader uses AdditionalFieldValues.TryGetValue: a missing key reads as no value, which normalises to Invalid. No indexer that could throw.",
+            "Both chart builders read through EstimatesOf and take their diagnostics from its counts. TeamMetricsServiceTests and PortfolioMetricsServiceTests (the existing estimation tests) stay green untouched; EstimateNormalizerTest.cs stays untouched.",
+            "No method outside EstimateNormalizer calls Normalize or NormalizeBatch; the scanner's positive control stays green.",
+            "No DI registration and no Program.cs edit (pure static functions).",
+            "`dotnet build` 0 warnings; filtered `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"` green.",
+            "The `EstimatesOf` scaffold is fully removed here: its throw, its 'RED scaffold written by DISTILL' comment, and any reference to the `NotYetImplemented` constant from `EstimatesOf` (the constant itself goes in 01-03 when its last user, `WorkItemEstimateDto.For`, is implemented)."
+          ],
+          "implementation_notes": "Do the builder switch as its own behaviour-preserving commit, so the refactor is reviewable apart from the new function. EstimateOf stays a throwing scaffold until 01-02. Pre-apply docs/ci-learnings.md: CA1859 on any new private helper (type it as the concrete type it holds, not IReadOnlyList), CA1861 (no inline new[] passed to a repeated call), S107 (no signature grows past seven parameters). Sizing: 4 cases. Commit: `refactor(metrics): estimation charts read estimates through EstimatesOf (story 6248)`"
+        },
+        {
+          "id": "01-02",
+          "name": "One item's estimate is EstimateOf, the same answer the batch gives",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "Implement EstimateOf(owner, item) over the same reader and the existing Normalize: null when the owner has no estimation field, otherwise the status-bearing result (Mapped with the chart's label and plotted number, Unmapped, Invalid).",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/EstimateNormalizerEstimateOfTest.cs",
+          "scenario_name": "EstimateOf: one item's estimate, as the chart places it",
+          "unskips": [
+            "EstimateNormalizerEstimateOfTest.cs :: EstimateOf_OwnerWithoutAnEstimationField_IsNothing",
+            "EstimateNormalizerEstimateOfTest.cs :: EstimateOf_NumericField_IsTheNumberTheChartPlots",
+            "EstimateNormalizerEstimateOfTest.cs :: EstimateOf_CategoryField_IsTheCategorysPlaceInTheOwnersListAndItsName",
+            "EstimateNormalizerEstimateOfTest.cs :: EstimateOf_CategoryMissingFromTheOwnersList_IsUnmapped",
+            "EstimateNormalizerEstimateOfTest.cs :: EstimateOf_NothingUsableInANumericField_IsInvalid (TestCase, 2 rows)",
+            "EstimateNormalizerEstimateOfTest.cs :: EstimateOf_ItemThatNeverReceivedTheField_IsInvalidWithNothingToShow (TestCase, 2 rows)",
+            "EstimateNormalizerEstimateOfTest.cs :: EstimateOf_AgreesWithTheBatchTheChartReads (TestCaseSource, 18 rows)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/EstimateNormalizer.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/EstimateNormalizerEstimateOfTest.cs"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "criteria": [
+            "The 26 named cases are un-skipped and RED first (the scaffold's InvalidOperationException).",
+            "Not configured -> null. Numeric -> Mapped with the plotted number; category -> Mapped with the category's place in the owner's list as its value and its name as the label; a category missing from the list -> Unmapped; empty or non-numeric in numeric mode -> Invalid; an item that never received the field -> Invalid, numeric and category.",
+            "For every row of the 18-row table, EstimateOf agrees with what EstimatesOf reports for the same item.",
+            "EstimateOf and EstimatesOf share the one reader; there is no second copy of 'which field, which parse'.",
+            "`dotnet build` 0 warnings; filtered `dotnet test` green."
+          ],
+          "implementation_notes": "Pure, return-only. The scaffold's throwing body in EstimateNormalizer goes; if the NotYetImplemented constant is declared here and WorkItemEstimateDto.For still uses it, it goes in 01-03 with the last throwing body. Sizing: 26 cases, but 18 are rows of one TestCaseSource and the rest are one-line edge cases of the same pure function; splitting them would split one decision. NUnit2045: independent asserts in one test sit in `using (Assert.EnterMultipleScope())`. Commit: `feat(metrics): EstimateOf normalises one item's estimate as the chart does (story 6248)`"
+        },
+        {
+          "id": "01-03",
+          "name": "WorkItemEstimateDto.For maps an item's estimate onto the row's shape",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "Implement WorkItemEstimateDto.For(owner, item) through EstimateOf: null when not configured; Mapped -> Value (the plotted number, used to sort), DisplayValue (the chart's label) and Unit (owner.EstimationUnit); Unmapped / Invalid -> DisplayValue and Value null, Unit kept.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkItemEstimateDtoTest.cs",
+          "scenario_name": "WorkItemEstimateDto.For",
+          "unskips": [
+            "WorkItemEstimateDtoTest.cs :: For_OwnerWithoutAnEstimationField_IsNothing_SoNoEstimateColumnIsOffered",
+            "WorkItemEstimateDtoTest.cs :: For_NumericEstimate_CarriesTheNumberItsLabelAndTheOwnersUnit",
+            "WorkItemEstimateDtoTest.cs :: For_CategoryEstimate_SortsByTheCategorysPlaceAndShowsItsName",
+            "WorkItemEstimateDtoTest.cs :: For_EstimateTheChartLeavesOut_IsConfiguredButEmpty (TestCase, 3 rows)",
+            "WorkItemEstimateDtoTest.cs :: For_NothingUsableInANumericField_IsConfiguredButEmpty_AndKeepsTheUnit (TestCase, 2 rows)",
+            "EstimateNormalizationSeamArchUnitTest.cs :: TheRowsEstimate_IsReadThroughEstimateOf"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkItemEstimateDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/EstimateNormalizer.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkItemEstimateDtoTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EstimateNormalizationSeamArchUnitTest.cs"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "criteria": [
+            "The 9 named cases are un-skipped and RED first (scaffold exception; the seam finding that For does not call EstimateOf).",
+            "For returns null exactly when EstimateOf returns null; a configured owner always yields an object, with DisplayValue and Value null where the chart cannot place the value (XXL, empty, null, non-numeric, never received).",
+            "For calls EstimateOf and nothing else from the normaliser.",
+            "No DISTILL scaffold is left in the backend: a grep for 'RED scaffold written by DISTILL' and for the NotYetImplemented constant over Lighthouse.Backend returns nothing.",
+            "`dotnet build` 0 warnings; filtered `dotnet test` green."
+          ],
+          "implementation_notes": "The record keeps its positional shape (Value, DisplayValue, Unit); S107 does not fire on a positional record's primary constructor (docs/ci-learnings.md). The Unit stays on the DTO even though the dialog will not show it (the maintainer's plain-header decision): MCP agents still read it. Sizing: 9 cases, all over one pure mapping; the seam case is the architectural half of the same function. Commit: `feat(metrics): a row's estimate shape, mapped from EstimateOf (story 6248)`"
+        },
+        {
+          "id": "01-04",
+          "name": "Every work-item row says whether estimation is set up",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "Add `WorkItemEstimateDto? Estimate { get; init; }` to WorkItemDto. FeatureDto, RunChartWorkItemDto and PortfolioRunChartWorkItemDto inherit it; no constructor changes. With no site setting it yet, every row carries \"estimate\": null, which is the right answer for unconfigured owners and for the four sites with no single owner.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WorkItemEstimateApiIntegrationTest.cs",
+          "scenario_name": "not configured, or no single owner: the row says estimate null",
+          "unskips": [
+            "WorkItemEstimateApiIntegrationTest.cs :: Team_WithoutAnEstimationField_EveryRowSaysSo (TestCase, 3 rows: Throughput, CycleTimeData, Wip)",
+            "WorkItemEstimateApiIntegrationTest.cs :: Portfolio_WithoutAnEstimationField_EveryFeatureSaysSo (TestCase, 3 rows: Throughput, CycleTimeData, Wip)",
+            "WorkItemEstimateApiIntegrationTest.cs :: TeamFeaturesInProgress_HaveNoSingleOwnerToAsk_SoCarryNoEstimate",
+            "WorkItemEstimateApiIntegrationTest.cs :: FeaturesByIds_HaveNoSingleOwnerToAsk_SoCarryNoEstimate"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkItemDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WorkItemEstimateApiIntegrationTest.cs"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "criteria": [
+            "The 8 named cases are un-skipped and RED first ('… carries no estimate field' on the real JSON body).",
+            "Every work-item and Feature row of every endpoint carries the key `estimate`, null here. The four no-single-owner sites stay untouched and keep it null.",
+            "No constructor of WorkItemDto, FeatureDto or either run-chart DTO gains a parameter.",
+            "RunChartPayloadContractIntegrationTest, RunChartPayloadContractDtoTest and every other existing backend test stay green; any test that pins the exact set of JSON keys is checked and, if it exists, named in the commit body.",
+            "`dotnet build` 0 warnings; filtered `dotnet test` green."
+          ],
+          "implementation_notes": "Probe the serializer, do not assume it: if the app's JSON options drop null properties (DefaultIgnoreCondition WhenWritingNull or similar), a null Estimate would vanish from the body and the 'says so' cases would read 'no estimate field'. Check the options in use for these controllers and, only if needed, make the property always written. An old frontend ignores the new key; a new frontend against an old backend reads its absence as 'not configured' (DEVOPS decision 6). Sizing: 8 cases, two 3-row TestCase tables plus two singles, all proving one property's default; they cannot pass without the property and pass with it. Commit: `feat(metrics): work-item rows carry an estimate field (story 6248)`"
+        },
+        {
+          "id": "01-05",
+          "name": "Team metrics and a Feature's child items set each row's estimate",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "Set `Estimate = WorkItemEstimateDto.For(team, item)` at the five Team-metrics sites that know the route's Team (the run-chart lambda serving throughput / arrivals / WIP over time, wip, cycleTimeData, blocked-at-date x2), and at FeaturesController.GetFeatureWorkItems with each item's own Team (an item with no Team keeps null, the guard the controller already uses for IsBlocked).",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WorkItemEstimateApiIntegrationTest.cs",
+          "scenario_name": "a Team's rows carry the Team's estimate; a Feature's child items carry their own Team's",
+          "unskips": [
+            "WorkItemEstimateApiIntegrationTest.cs :: Team_EveryItemTheEstimationChartPlots_ListsTheSameEstimateInItsRow",
+            "WorkItemEstimateApiIntegrationTest.cs :: Team_WithAnEstimationField_EveryRowCarriesAnEstimateInTheTeamsUnit (TestCase, 6 rows: Throughput, Arrivals, WipOverTime, CycleTimeData, Wip, BlockedItemsAtDate)",
+            "WorkItemEstimateApiIntegrationTest.cs :: Team_ItemWithNothingTheChartCouldPlace_HasAnEstimateWithoutADisplayValue",
+            "WorkItemEstimateApiIntegrationTest.cs :: FeatureChildItems_EachCarriesTheEstimateOfItsOwnTeam"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/FeaturesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WorkItemEstimateApiIntegrationTest.cs"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "criteria": [
+            "The 9 named cases are un-skipped and RED first (estimate null where an object was expected).",
+            "For every item the Team's Estimation chart plots, the cycleTimeData row's estimate.displayValue equals the point's estimationDisplayValue and estimate.value its estimationNumericValue.",
+            "Every row of the six Team endpoints carries an object in the Team's unit; an item whose value the chart cannot place carries displayValue and value null with the unit kept.",
+            "A Feature's child items each carry their own Team's estimate; an item without a Team carries null.",
+            "TeamMetricsController.GetFeaturesInProgress and FeaturesController.BuildFeatureDto stay untouched (still null): the 01-04 cases stay green.",
+            "Sites are wired with an object initializer only; no constructor gains a parameter and no controller gains a constructor dependency (S107).",
+            "`dotnet build` 0 warnings; filtered `dotnet test` green."
+          ],
+          "implementation_notes": "The blocked-at-date path for a past day is not scenario'd (DISTILL upstream finding 7); wire both branches anyway and keep them symmetrical. No Program.cs change, so the full connector suite is not forced. Sizing: 9 cases, one 6-row endpoint table plus three singles over the same five-line wiring. Commit: `feat(metrics): team rows and a feature's child items carry their estimate (story 6248)`"
+        },
+        {
+          "id": "01-06",
+          "name": "Portfolio metrics set each Feature row's estimate",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "Set `Estimate = WorkItemEstimateDto.For(portfolio, feature)` at the six Portfolio-metrics sites (run charts, in-progress Features, cycleTimeData, the size chart, blocked-at-date x2). With every owner-known site wired, RunChartPayloadContractIntegrationTest adds `estimate` to its required item and Feature fields, as its disposition allows.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WorkItemEstimateApiIntegrationTest.cs",
+          "scenario_name": "a Portfolio's Feature rows carry the Portfolio's estimate",
+          "unskips": [
+            "WorkItemEstimateApiIntegrationTest.cs :: Portfolio_EveryFeatureTheEstimationChartPlots_ListsTheSameEstimateInItsRow",
+            "WorkItemEstimateApiIntegrationTest.cs :: Portfolio_WithAnEstimationField_EveryFeatureCarriesAnEstimate (TestCase, 8 rows: Throughput, Started, Arrivals, WipOverTime, CycleTimeData, Wip, AllFeaturesForSizeChart, BlockedItemsAtDate)",
+            "WorkItemEstimateApiIntegrationTest.cs :: Portfolio_FeatureWithACategoryMissingFromTheList_HasAnEstimateWithoutADisplayValue"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WorkItemEstimateApiIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RunChartPayloadContractIntegrationTest.cs"
+          ],
+          "dependencies": [
+            "01-05"
+          ],
+          "criteria": [
+            "The 10 named cases are un-skipped and RED first.",
+            "For every Feature the Portfolio's Estimation chart plots, the row's estimate equals the point's display and numeric value.",
+            "Every row of the eight Portfolio endpoints carries an object; a Feature with a category missing from the list carries displayValue null.",
+            "RunChartPayloadContractIntegrationTest's RequiredItemFields and RequiredFeatureFields include `estimate`, and the class stays green.",
+            "Zero [Ignore(Pending)] remain in EstimateNormalizerEstimateOfTest.cs, WorkItemEstimateDtoTest.cs, WorkItemEstimateApiIntegrationTest.cs and EstimateNormalizationSeamArchUnitTest.cs (66 cases un-skipped across 01-01..01-06).",
+            "`dotnet build` 0 warnings; filtered `dotnet test` green."
+          ],
+          "implementation_notes": "Size chart and in-progress Features already flow through the same DTO; keep each wiring a one-line initializer. Sizing: 10 cases, one 8-row endpoint table and two singles over one wiring. Commit: `feat(metrics): portfolio rows carry their estimate (story 6248)`"
+        },
+        {
+          "id": "01-07",
+          "name": "Team Zenith ships with a Story Points estimation field; slice 01a gates",
+          "description": "Demo data is production code. Team Zenith's CSV gains a `Story Points` column with Fibonacci values, the demo CSV connection registers it as an additional field, and Team Zenith uses it as its estimation field with unit `Story Points`. Other demo Teams are unchanged. Then run the slice gates and check the API on a throw-away instance.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataFactoryTest.cs",
+          "scenario_name": "Team Zenith's Estimation vs. Cycle Time on demo data",
+          "unskips": [
+            "None. The E2E walking skeleton needs this demo data and slice 01b's Estimate column, so it is un-skipped in 02-07."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Factories/DemoData/Team Zenith.csv",
+            "Lighthouse.Backend/Lighthouse.Backend/Factories/DemoDataFactory.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DemoDataService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataFactoryTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DemoDataServiceTest.cs"
+          ],
+          "dependencies": [
+            "01-06"
+          ],
+          "criteria": [
+            "RED first: a new DemoDataFactoryTest case pins that Team Zenith's demo CSV connection registers a `Story Points` additional field and that Team Zenith is configured with it as its estimation field, unit `Story Points` (numeric mode). It fails before the demo-data edit and passes after. This new case is the only specification the crafter writes in this step (roadmap review, high finding 1).",
+            "Every Team Zenith item that the Estimation chart would plot (closed items) carries a Story Points value; the values are Fibonacci numbers. Items, states and dates of Team Zenith are otherwise unchanged; no other demo Team or Portfolio changes.",
+            "The DemoDataFactory tests and demo CSV fixtures gain Zenith's Story Points column, its field definition and the estimation setting, as DISTILL's disposition lists; every existing demo-data test stays green.",
+            "Live check on a throw-away instance (never :5169): after loading demo scenario 0, Team Zenith's metrics show the Estimation vs. Cycle Time chart, and `/api/latest/teams/{zenithId}/metrics/cycleTimeData` rows carry estimate.displayValue equal to the bubble each item sits in, unit 'Story Points'; a Team without the field returns `\"estimate\": null`.",
+            "SLICE GATE: `dotnet build` 0 warnings; filtered `dotnet test` green with this story's 66 backend cases passing and none skipped.",
+            "SLICE GATE: no frontend file changed in slice 01a."
+          ],
+          "implementation_notes": "Find where the demo CSV connection declares its column mappings and additional fields (DemoDataFactory / DemoDataService) and follow that shape; do not change a DemoDataFactory default for other Teams. The values must be dense enough that every Zenith bubble's rows show an estimate, because the walking skeleton checks every listed row's Estimate cell is non-empty. Live check: build nothing on the frontend; start a throw-away backend on port 5199 from Lighthouse.Backend/Lighthouse.Backend with its own SQLite file and key store in a fresh `mktemp -d` directory (`env ASPNETCORE_ENVIRONMENT=Development Kestrel__Endpoints__Http__Url=http://localhost:5199 Kestrel__Endpoints__Https__Url=https://localhost:7299 Database__Provider=sqlite Database__ConnectionString=\"Data Source=<dir>/lighthouse.db\" Encryption__KeyStorePath=<dir>/keys UsageData__CollectorBaseUrl=http://127.0.0.1:9 dotnet run --no-launch-profile`), load demo scenario 0 through the demo-data API, and read the endpoint. Stop the instance afterwards. Commit: `feat(demo): team zenith estimates in story points (story 6248)` Roadmap review: this step must not ship demo-data changes untested; the DemoDataFactoryTest case above is its RED, the live API check is extra evidence, not the test."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice 01b: the Estimation dialog shows each item's estimate",
+      "description": "The dialog machinery and its first context. The existing judgement builders move into a column catalogue, DataGridBase learns a defaults model with override-only persistence and Reset to defaults, the one defaults map is declared (all 13 entries, as its invariant table requires; only `estimation` gets a caller in this slice), the catalogue builds every row-backed column with plain headers, each context keeps its own layout per owner kind, and the Estimation chart and its View Data open the `estimation` context. Releasable alone: Steve's request answered; every other dialog looks exactly as today because its caller passes no context.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "The existing judgement columns move into the column catalogue file",
+          "description": "Refactor only. Move the Age band, SLE risk and Warnings column builders out of WorkItemsDialog.tsx into workItemColumns.tsx unchanged. The dialog renders exactly as before.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx",
+          "scenario_name": "today's dialog, unchanged",
+          "unskips": [
+            "None: a behaviour-preserving move, guarded by WorkItemsDialog.test.tsx and the two dialog pins in WorkItemsDialog.contexts.test.tsx."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/workItemColumns.tsx"
+          ],
+          "dependencies": [
+            "01-07"
+          ],
+          "criteria": [
+            "The three builders live in workItemColumns.tsx with their behaviour, test ids and copy unchanged; WorkItemsDialog.tsx imports them.",
+            "WorkItemsDialog.test.tsx, WidgetShell tests and the pins 'Feature rows keep Owned by beside the fixed columns' and 'a dialog opened without a context keeps today's columns' stay green.",
+            "The file's scaffold functions (availableColumnIds, buildWorkItemColumn) and its __SCAFFOLD__ marker stay until 02-04 implements them; no production code calls them.",
+            "`pnpm test` green; `pnpm build` green with zero warnings (prebuild runs `biome check --write`: re-check `git diff` afterwards)."
+          ],
+          "implementation_notes": "A refactor commit on its own, first, so later diffs show only new behaviour. Keep each builder small (S3776). Commit: `refactor(work-items-dialog): judgement columns move into the column catalogue (story 6248)`"
+        },
+        {
+          "id": "02-02",
+          "name": "A grid given default visibility persists only what the reader changed",
+          "description": "DataGridBase reads `defaultColumnVisibilityModel`. Effective model = defaults overlaid by the persisted overrides; on change only entries that differ from the defaults are written; Reset layout clears overrides, order and widths and lands on the defaults; the sanitize effect that forces non-hideable columns visible writes through the same override-only diff. A grid given no defaults behaves exactly as today.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.defaults.test.tsx",
+          "scenario_name": "a grid given default visibility",
+          "unskips": [
+            "DataGridBase.defaults.test.tsx :: starts with the columns the defaults hide out of sight",
+            "DataGridBase.defaults.test.tsx :: remembers a column the user turned on across a reopen",
+            "DataGridBase.defaults.test.tsx :: lets a later change to the defaults reach every column the user never touched",
+            "DataGridBase.defaults.test.tsx :: keeps a column the user turned on, even after the defaults start hiding it",
+            "DataGridBase.defaults.test.tsx :: Reset layout lands on the defaults, not on every column shown",
+            "DataGridBase.defaults.test.tsx :: keeps a column that cannot be hidden on screen without freezing the other defaults",
+            "Pins that must stay green, DataGridBase.defaults.test.tsx :: shows every column; remembers a column the user hid across a reopen; Reset layout shows every column again"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx",
+            "Lighthouse.Frontend/src/components/Common/DataGrid/types.ts",
+            "Lighthouse.Frontend/src/components/Common/DataGrid/hooks.ts",
+            "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.defaults.test.tsx"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "criteria": [
+            "The 6 named cases are un-skipped and RED first (the grid ignores the defaults model).",
+            "Defaults hide; a column the reader turned on or off stays as they left it across a remount; a later change to the defaults reaches every untouched column; a column newly absent from the overrides reads as its default, never as MUI's 'absent = visible'.",
+            "Reset layout lands on the defaults, not on `{}`. A non-hideable column stays on screen without freezing the other defaults into the persisted state.",
+            "Without a defaults model: the 3 pins and DataGridBase.test.tsx (including 'should clear persisted state when reset layout is clicked') stay green untouched; every other grid persists the whole model as today.",
+            "The 'Not read yet' doc comment on `defaultColumnVisibilityModel` in types.ts is gone.",
+            "`pnpm test` green; `pnpm build` zero warnings."
+          ],
+          "implementation_notes": "The prime mutation targets later are the merge order and the diff: a flipped merge freezes the reader on today's defaults or leaks layouts. Do not revive useColumnVisibility. Keep the diff and merge in small named helpers to stay under S3776, and avoid negated ternaries (S7735). Sizing: 6 cases. Commit: `feat(data-grid): default column visibility with override-only persistence (story 6248)`"
+        },
+        {
+          "id": "02-03",
+          "name": "One declared map names every context's defaults and sort",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "Replace the throwing Proxy in workItemsDialogContexts.ts with WORK_ITEMS_DIALOG_CONTEXTS: all 13 entries (closedItems, estimation, arrivals, inProgress, aging, blocked, stale, workDistribution, featureSize, featureChildren, deliveryTimeline, cumulativeStateTime, startedAndClosed), each `{ visible, sortBy, catalogue }`, in the defaults table's order.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/workItemsDialogContexts.test.ts",
+          "scenario_name": "the rules every context of the Work Items dialog follows",
+          "unskips": [
+            "workItemsDialogContexts.test.ts :: there is one context per row of the defaults table and no other",
+            "workItemsDialogContexts.test.ts :: %s sorts by one of its own default columns (it.each, 13 rows)",
+            "workItemsDialogContexts.test.ts :: %s names only columns the dialog knows, for its defaults and its sort (it.each, 13 rows)",
+            "workItemsDialogContexts.test.ts :: only Cumulative Time per State offers nothing beyond its defaults, because its rows carry no real dates or ages"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/workItemsDialogContexts.ts",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/workItemsDialogContexts.test.ts"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "criteria": [
+            "The 28 named cases are un-skipped and RED first (`Not yet implemented -- RED scaffold` from the Proxy).",
+            "Exactly 13 entries; every sortBy is one of its own visible columns; every column is a known ColumnId (named cycle times by the `namedCycleTime:<id>` prefix); only cumulativeStateTime has catalogue false.",
+            "Each entry's visible list and sort match the expectations already written in WorkItemsDialog.contexts.test.tsx (the everyChartContext and theFeatureListContexts tables and the layout file); where a reading of the defaults table differs, those tables are the authority. Examples: closedItems [closedDate, cycleTime] by cycleTime; estimation [estimate, cycleTime, closedDate] by cycleTime; inProgress keeps the table order Started, Age, Time in State, SLE risk, sorted by Age; deliveryTimeline [warnings] by warnings; cumulativeStateTime [daysContributed] with no catalogue.",
+            "The file's __SCAFFOLD__ export and the 'RED scaffold' Proxy are gone; ColumnId, WorkItemsDialogContextId, WorkItemsDialogOwnerKind and WorkItemsDialogContextDefaults keep their names.",
+            "`pnpm test` green; `pnpm build` zero warnings."
+          ],
+          "implementation_notes": "DESIGN said slice 01b adds the estimation entry and slices 02 and 03 add the rest, but the invariant table DISTILL pinned in slice 01b requires all 13 entries and the slice 01b layout specs open the closedItems context. Declaring all 13 now is pure data with no caller outside `estimation` until slices 02 and 03, so every other dialog still looks as today and the slice stays releasable. Consequence: some slice 02 and 03 cases that open the dialog directly may already pass when un-skipped; their steps say so. The file is the single edit point for a context's defaults; keep column ids as constants, not repeated literals (S1192). Sizing: 28 cases, but 26 are rows of two it.each tables over the same 13-entry record; there is one decision here. Commit: `feat(work-items-dialog): one declared map of each context's defaults (story 6248)`"
+        },
+        {
+          "id": "02-04",
+          "name": "The Estimation dialog opens with Estimate, Cycle Time and Closed",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "The dialog reads `context` and `ownerKind`: it resolves the context's defaults from the map, builds the available columns through the catalogue (availableColumnIds / buildWorkItemColumn implemented), hands the grid the defaults model, sorts descending by the context's sortBy (the sort column's cell keeps data-testid additionalColumnContent), and builds the Estimate column (display value per row, empty where nothing usable, sorted by the plotted value so categories sort in their configured order, header plain `Estimate`). A dialog without a context still renders exactly as today.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx",
+          "scenario_name": "US-01 — the Estimation dialog shows each item's estimate",
+          "unskips": [
+            "WorkItemsDialog.contexts.test.tsx :: a bubble on a Team's Estimation vs. Cycle Time opens with Estimate, Cycle Time and Closed, longest Cycle Time first",
+            "WorkItemsDialog.contexts.test.tsx :: a bubble on a Portfolio's Estimation vs. Cycle Time opens the same way, with Owned by still beside the Features",
+            "WorkItemsDialog.contexts.test.tsx :: each row shows the estimate the chart plots it at, and an empty cell where there is nothing the chart could place",
+            "WorkItemsDialog.contexts.test.tsx :: a category estimate shows its category name",
+            "WorkItemsDialog.contexts.test.tsx :: the Estimate header %s (it.each, 3 rows; the first row's label changes from 'names the unit when every estimated row shares it' to 'reads plain Estimate even when every estimated row shares a unit', and all three rows expect 'Estimate')",
+            "WorkItemsDialog.contexts.test.tsx :: sorting by Estimate follows the configured category order, not the alphabet",
+            "Pins that must stay green, WorkItemsDialog.contexts.test.tsx :: Feature rows keep Owned by beside the fixed columns; a dialog opened without a context keeps today's columns"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/workItemColumns.tsx",
+            "Lighthouse.Frontend/src/models/WorkItem.ts",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "criteria": [
+            "The 8 named cases are un-skipped and RED first (no context, no Estimate column). The header table is edited before the un-skip so its RED is against the agreed expectation.",
+            "H1: the Estimate header is plain `Estimate` with a unit, without one and with mixed units. The backend's unit is never rendered in the header or the cells. The three header rows expect 'Estimate' and the first row's label no longer claims to name the unit.",
+            "Team bubble: Estimate, Cycle Time, Closed, longest Cycle Time first. Portfolio bubble: the same, with Owned by first among the extra columns for Feature rows.",
+            "Each row shows estimate.displayValue; null or a missing estimate shows an empty cell; sorting by Estimate uses estimate.value, so categories follow the owner's order.",
+            "A dialog without `context` renders exactly as today (both pins green; WorkItemsDialog.test.tsx untouched and green).",
+            "The 'not read yet' notes for `context` and `ownerKind` in WorkItemsDialog.tsx are gone; workItemColumns.tsx's __SCAFFOLD__ export is gone and its two functions no longer throw. The other declared props (status, ageOn, cycleTimeScope, namedCycleTimeDefinitions, daysContributedColumn) keep their note until the step that implements them.",
+            "`pnpm test` green; `pnpm build` zero warnings."
+          ],
+          "implementation_notes": "Rows arrive as raw JSON, so `estimate` may be absent (an older backend), null (not configured) or an object; treat absent and null alike. Availability is by row kind except Estimate, which is offered when any row carries a non-null estimate. Keep the column memo out of the dialog: the catalogue file owns builders and availability in a lookup, so WorkItemsDialog.tsx stays under S3776. S7735: no negated ternaries. Rendering-heavy cases may need an explicit `{ timeout }`, never a retry (docs/ci-learnings.md). This is the component skeleton: the Team bubble case renders the real dialog over the real DataGridBase. Sizing: 8 cases, all one context's Estimate column; the header table is three rows of one decision. Commit: `feat(work-items-dialog): the estimation dialog lists each item's estimate (story 6248)`"
+        },
+        {
+          "id": "02-05",
+          "name": "Manage columns offers the rest of the catalogue, hidden, in one fixed order",
+          "description": "Complete the row-backed catalogue: Started, Closed, Cycle Time, Work Item Age, Age / Cycle Time, Parent (reference for now; names arrive in 03-06), Blocked since, Time in State, with plain headers in the instance's terms and dates as YYYY-MM-DD. Columns outside a context's defaults are offered hidden, after the defaults, in the R4 order; turning one on shows it in its place; Work Item rows never show or offer Owned by.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx",
+          "scenario_name": "US-01 — Manage columns and the row-backed catalogue",
+          "unskips": [
+            "WorkItemsDialog.contexts.test.tsx :: Manage columns offers every other column the rows can fill, all of them off, after the defaults",
+            "WorkItemsDialog.contexts.test.tsx :: a column turned on appears in its place in the fixed order",
+            "WorkItemsDialog.contexts.test.tsx :: rows from a backend that sends no estimate at all read as estimation not set up",
+            "WorkItemsDialog.contexts.test.tsx :: dates show the local day as YYYY-MM-DD, and a date the item does not have stays empty",
+            "WorkItemsDialog.contexts.test.tsx :: the configured word for Cycle Time heads its column",
+            "WorkItemsDialog.contexts.test.tsx :: Work Item rows neither show nor offer Owned by"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/workItemColumns.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx"
+          ],
+          "dependencies": [
+            "02-04"
+          ],
+          "criteria": [
+            "The 6 named cases are un-skipped and RED first (Manage columns does not offer the column).",
+            "Manage columns lists exactly the context's defaults, then every other available column in the fixed order (Started, Closed, Cycle Time, Work Item Age, Age / Cycle Time, Estimate, Parent, Blocked since, Time in State, Age band, SLE risk, named cycle times, Warnings, Size, Forecasted Completion), all off; a column turned on lands in its place in that order.",
+            "Rows without any `estimate` key read as estimation not set up: Estimate is neither shown nor offered.",
+            "Started, Closed and Blocked since render formatLocalDate strings (YYYY-MM-DD), sort as such and export readably; null and the epoch render empty.",
+            "H1 headers: Started, Closed, {Cycle Time}, {Work Item Age}, {Work Item Age} / {Cycle Time}, {Blocked} since, Time in State through getTerm, with no unit suffix; the grid field of each column is its ColumnId.",
+            "The Started and Work Item Age columns are 130px wide or narrower, so a Portfolio in-progress dialog keeps SLE risk on screen at 1920px (checked in 03-09).",
+            "`pnpm test` green; `pnpm build` zero warnings."
+          ],
+          "implementation_notes": "Row-backed columns are offered by row kind, not by whether a row happens to hold a value (DISTILL upstream finding 5): Work Item rows offer Started, Closed, Cycle Time, Work Item Age, Age / Cycle Time, Parent, Blocked since, Time in State; Feature rows the same minus Blocked since, plus Size and Forecasted Completion (03-01). Use utils/date/localDate.ts. Parent here renders the reference through ParentWorkItemCell with no lookup; 03-06 adds the name query. Commit: `feat(work-items-dialog): the catalogue's other columns, hidden by default (story 6248)`"
+        },
+        {
+          "id": "02-06",
+          "name": "Each context remembers its own layout, apart for Teams and Portfolios",
+          "description": "The dialog's storage key becomes `work-items-dialog:<contextId>:<ownerKind>` (persisted under `lighthouse:datagrid:work-items-dialog:<contextId>:<ownerKind>:state`), and DataGridBase is rendered with `key={storageKey}` so a dialog switched to another context while open re-reads that context's layout. The old shared key is never read and never deleted.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.layout.test.tsx",
+          "scenario_name": "each context remembers its own layout",
+          "unskips": [
+            "WorkItemsDialog.layout.test.tsx :: a column hidden in the Estimation dialog is still hidden the next time it opens",
+            "WorkItemsDialog.layout.test.tsx :: hiding Closed in the Estimation dialog leaves the Cycle Time scatter's dialog as it was",
+            "WorkItemsDialog.layout.test.tsx :: hiding Closed in a Team's Estimation dialog leaves every Portfolio's Estimation dialog as it was",
+            "WorkItemsDialog.layout.test.tsx :: a column turned on stays on in its own context only",
+            "WorkItemsDialog.layout.test.tsx :: Reset layout brings the context back to its defaults, not to every column shown",
+            "WorkItemsDialog.layout.test.tsx :: a layout saved before the dialog knew its contexts does not reach any context",
+            "WorkItemsDialog.layout.test.tsx :: the same dialog switched to another context while open shows that context's layout"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.layout.test.tsx"
+          ],
+          "dependencies": [
+            "02-05"
+          ],
+          "criteria": [
+            "The 7 named cases are un-skipped and RED first (today every dialog shares one key).",
+            "A change in one context leaves every other context and the other owner kind unchanged (OUT-6248-no-layout-leak); Reset layout returns only this context to its defaults.",
+            "A layout stored under the old shared key reaches no context, and nothing removes that key.",
+            "A dialog without a context keeps today's key and behaviour (the no-context pin stays green).",
+            "`pnpm test` green; `pnpm build` zero warnings."
+          ],
+          "implementation_notes": "ownerKind defaults are a caller concern: no context-bearing dialog may render without one; if the prop is optional in the type for the legacy path, a context without ownerKind should fall back deterministically and the call sites in 02-07, 03-07 and 04-03..04-05 always pass it. Commit: `feat(work-items-dialog): layout remembered per context and owner kind (story 6248)`"
+        },
+        {
+          "id": "02-07",
+          "name": "The Estimation chart and its View Data open the estimation context; the walking skeleton runs; slice 01b gates",
+          "description": "EstimationVsCycleTimeChart passes `context=\"estimation\"` and `ownerKind` instead of its highlightColumn; BaseMetricsView's buildViewData names the estimation context on the Estimation payload; WidgetShell's ViewDataPayload gains `context`, `ownerKind` and the new caller inputs and forwards them untouched. Un-skip and run the E2E walking skeleton live on demo data.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/WorkItemsDialogContextColumns.spec.ts",
+          "scenario_name": "@walking_skeleton a coach reads each item's estimate on Team Zenith",
+          "unskips": [
+            "WorkItemsDialogContextColumns.spec.ts :: @walking_skeleton @driving_port @US-01 a coach clicks a bubble on Team Zenith's Estimation vs. Cycle Time and reads each item's estimate"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Charts/EstimationVsCycleTimeChart.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+            "Lighthouse.EndToEndTests/tests/specs/flow/WorkItemsDialogContextColumns.spec.ts"
+          ],
+          "dependencies": [
+            "02-06"
+          ],
+          "criteria": [
+            "The skeleton is un-skipped (`testWithDemo.skip` -> `testWithDemo`, the 'Skipped until …' comment removed) and RED first against a build without this step's wiring, then passes live: on demo scenario 0, Team Zenith -> metrics -> Portfolio and Features -> Estimation vs. Cycle Time -> a bubble -> the dialog shows an Estimate column (read by header, `/^Estimate/`) with a non-empty cell on every row; nothing is configured by the spec.",
+            "A bubble and View Data on Estimation vs. Cycle Time open the estimation context for both owner kinds (BaseMetricsView and WidgetShell pass the metrics view's kind).",
+            "BaseMetricsView.test.tsx's 'every payload is classified' check gains, for the Estimation payload, that it names the estimation context (the disposition's slice-01b part; slice 02 extends it to every payload). The stand-in that renders viewData.highlightColumn is re-pointed only as far as this payload needs.",
+            "No other chart or View Data payload changes: every other dialog renders as today.",
+            "SLICE GATE: zero `it.skip` remain in workItemsDialogContexts.test.ts, WorkItemsDialog.layout.test.tsx and DataGridBase.defaults.test.tsx, and the US-01 block of WorkItemsDialog.contexts.test.tsx plus 'Work Item rows neither show nor offer Owned by' are un-skipped: 55 Vitest cases across 02-02..02-06, plus the skeleton here. The 5 slice-01b pins are green.",
+            "SLICE GATE: full `pnpm test` green with no unhandled errors; `pnpm build` in Lighthouse.Frontend zero errors and zero warnings (re-check `git diff` after Biome --write); `pnpm build` (or `tsc --noEmit` + Biome) clean in Lighthouse.EndToEndTests.",
+            "SLICE GATE: one local Playwright run passes flow/WorkItemsDialogContextColumns.spec.ts and the specs that open a Work Items dialog (BlockedItems, SleRiskColumnReachable, and every spec using the WorkItemsDialog page object)."
+          ],
+          "implementation_notes": "Keep WidgetShell a pass-through: the new ViewDataPayload fields are forwarded untouched. The chart gets ownerKind from its parent, never by guessing from the data. Live run, never against :5169: build the UI (`cd /storage/repos/Lighthouse/Lighthouse.Frontend && pnpm build`); start the throw-away backend on 5199 as in 01-07 (fresh `mktemp -d` directory for SQLite and keys, plus `Lighthouse__TimeZone=Europe/Zurich`), confirm with `ss -ltn | grep 5199`; from /storage/repos/Lighthouse/Lighthouse.EndToEndTests run `env LIGHTHOUSEURL=http://localhost:5199/ TZ=Europe/Zurich pnpm exec playwright test tests/specs/flow/WorkItemsDialogContextColumns.spec.ts`, then the dialog-opening specs with `--grep-invert \"@screenshot|@auth|@rbac|@proxyauth\"`. A sorted header's accessible name gains ' Sort'; the page object already allows for it. Commit: `feat(metrics): estimation vs cycle time opens its dialog with each item's estimate (story 6248)`"
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Slice 02: every chart's dialog brings the columns that explain its point",
+      "description": "The dialog learns the Feature columns, keeps every judgement's look under the context's sort, takes the values only a caller knows (Age on a past day, named cycle times, Days Contributed), shows Parent names through a visibility-gated keyed query, and every chart and View Data call site moves from highlightColumn to a context. Cumulative Time per State opens at once and reads its items through a keyed query with the loading and could-not-load looks. Releasable alone; the delivery-side dialogs still look as today.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Feature rows offer Size and Forecasted Completion, and Feature Size sorts by Size",
+          "description": "Add the Feature-only catalogue columns: Size (field `size`) and the Features grid's createForecastsColumn used whole (header 'Forecasted Completion', field `forecasts`), offered only when rows are Features and in that order after everything else.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx",
+          "scenario_name": "US-02 — Feature rows",
+          "unskips": [
+            "WorkItemsDialog.contexts.test.tsx :: a Feature Size dot lists the largest Feature first",
+            "WorkItemsDialog.contexts.test.tsx :: Feature rows add Size and Forecasted Completion, last, to what Manage columns offers",
+            "WorkItemsDialog.contexts.test.tsx :: a Feature's forecast is offered as the Features grid's Forecasted Completion column, right after Size"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/workItemColumns.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx"
+          ],
+          "dependencies": [
+            "02-07"
+          ],
+          "criteria": [
+            "The 3 named cases are un-skipped and RED first.",
+            "featureSize sorts by Size descending; Feature rows offer Size then Forecasted Completion last in Manage columns; Work Item rows never offer either.",
+            "Forecasted Completion is createForecastsColumn itself, used with rows typed as IFeature behind the dialog's existing isFeature guard, never by casting work-item rows.",
+            "`pnpm test` green; `pnpm build` zero warnings."
+          ],
+          "implementation_notes": "Header 'Size' per the plain-header decision. Commit: `feat(work-items-dialog): feature rows offer size and forecasted completion (story 6248)`"
+        },
+        {
+          "id": "03-02",
+          "name": "Judgements keep their look under the context's sort, and the aged lists sort by Age",
+          "description": "The sort column carries today's highlight treatment: SLE colouring and bold on Cycle Time only when the caller passes an SLE, the blocked marker always; Time in State keeps its own badge whichever column sorts; aging, stale and inProgress sort by Age (no switch to Time in State when timeInStateColumn is passed in a context).",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx",
+          "scenario_name": "US-02 — judgements keep their look",
+          "unskips": [
+            "WorkItemsDialog.contexts.test.tsx :: %s lists the oldest item first, not the one longest in its state (it.each, 3 rows: aging, stale, inProgress)",
+            "WorkItemsDialog.contexts.test.tsx :: Cycle Time keeps its SLE colouring and bold where the caller passes the SLE",
+            "WorkItemsDialog.contexts.test.tsx :: a blocked item still carries the blocked marker in the column it is sorted by",
+            "WorkItemsDialog.contexts.test.tsx :: Time in State keeps its own badge when the list is sorted by Age"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/workItemColumns.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "criteria": [
+            "The 6 named cases are un-skipped and RED first; any already green after 02-04 (the Age sort comes from the map) is named in the commit body.",
+            "The sort column's cell keeps data-testid additionalColumnContent; SLE colouring and bold appear only when `sle` is passed; the blocked marker appears on the sort column's cell for a blocked item.",
+            "Time in State keeps its badge colouring when Age sorts; no colouring moves.",
+            "The legacy no-context path is unchanged in this step (WorkItemsDialog.test.tsx green).",
+            "`pnpm test` green; `pnpm build` zero warnings."
+          ],
+          "implementation_notes": "Keep the judgement wiring in the catalogue's builders, not in a growing dialog memo (S3776). Commit: `feat(work-items-dialog): judgements keep their look under each context's sort (story 6248)`"
+        },
+        {
+          "id": "03-03",
+          "name": "Values only the caller knows: Age on a past day, named cycle times, Days Contributed",
+          "description": "Implement the declared inputs: `ageOn` (Age measured on the clicked day, as calculateHistoricalAge does), `cycleTimeScope` with `namedCycleTimeDefinitions` (the Cycle Time column reads that definition's days under its name, and one namedCycleTime:<id> column is offered per definition), and `daysContributedColumn` with the cumulativeStateTime context (Days Contributed only, nothing else offered).",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx",
+          "scenario_name": "US-02 — values only the caller knows",
+          "unskips": [
+            "WorkItemsDialog.contexts.test.tsx :: Age on a past day's point is the age the item had on that day",
+            "WorkItemsDialog.contexts.test.tsx :: a named percentile's dialog reads that named cycle time under its name, and offers each named cycle time",
+            "WorkItemsDialog.contexts.test.tsx :: Cumulative Time per State keeps Days Contributed only and offers nothing else"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/workItemColumns.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx"
+          ],
+          "dependencies": [
+            "03-02"
+          ],
+          "criteria": [
+            "The 3 named cases are un-skipped and RED first.",
+            "With ageOn, Work Item Age reads the age on that day; a named percentile's dialog heads Cycle Time with the definition's name and reads that definition's days (header matched by `/^\\d+d in Review$/`-style anchored regex in the spec); exactly the passed definitions are offered as named cycle-time columns.",
+            "cumulativeStateTime shows Days Contributed (header 'Days Contributed') and offers nothing else; the synthetic epoch dates and zero ages never appear.",
+            "The 'not read yet' notes for ageOn, cycleTimeScope, namedCycleTimeDefinitions and daysContributedColumn are gone.",
+            "`pnpm test` green; `pnpm build` zero warnings."
+          ],
+          "implementation_notes": "Named cycle-time columns are descriptor-backed: offered only where the caller passes the definitions (View Data in BaseMetricsView and the Cycle Time scatter). Commit: `feat(work-items-dialog): caller-supplied age day, named cycle times and days contributed (story 6248)`"
+        },
+        {
+          "id": "03-04",
+          "name": "Every chart context opens with exactly its defaults, in order, and its sort",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "Un-skip the per-context defaults table over the ten chart contexts and close whatever gap it shows in the map or the catalogue.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx",
+          "scenario_name": "US-02 — every chart's dialog brings the columns that explain its point",
+          "unskips": [
+            "WorkItemsDialog.contexts.test.tsx :: $context opens with exactly its default columns, in order, sorted by $sortedBy (it.each, 10 rows: closedItems, estimation, arrivals, inProgress, aging, blocked, stale, workDistribution, featureSize, startedAndClosed)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/workItemsDialogContexts.ts",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/workItemColumns.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx"
+          ],
+          "dependencies": [
+            "03-03"
+          ],
+          "criteria": [
+            "The 10-row table is un-skipped; rows still RED are captured before any fix; rows already green (built by 02-03..03-03) are named in the commit body.",
+            "Each chart context shows exactly its default columns (toEqual, in order) and its first row by its sort.",
+            "inProgress keeps the table order Started, Age, Time in State, SLE risk.",
+            "`pnpm test` green; `pnpm build` zero warnings."
+          ],
+          "implementation_notes": "If a row fails because the map disagrees with the table, fix the map entry, which is the one edit point; never adjust the spec. Sizing: 10 cases, one it.each table that Vitest cannot un-skip in part, over one map. Commit: `feat(work-items-dialog): every chart context opens with its defaults (story 6248)`"
+        },
+        {
+          "id": "03-05",
+          "name": "Every chart context follows the same catalogue rules",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "Un-skip the three rule tables over the ten chart contexts: no Estimate where estimation is not set up (exact lists), Manage columns lists the defaults then the rest in the fixed order, and the reader's own layout comes back on reopen.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx",
+          "scenario_name": "US-02 — every chart context that offers more columns follows the same rules",
+          "unskips": [
+            "WorkItemsDialog.contexts.test.tsx :: $context neither shows nor offers an Estimate where estimation is not set up (it.each, 10 rows)",
+            "WorkItemsDialog.contexts.test.tsx :: $context lists its defaults, then every other column the rows can fill in the one fixed order (it.each, 10 rows)",
+            "WorkItemsDialog.contexts.test.tsx :: $context comes back with the reader's own layout, a default hidden and another column on, the next time it opens (it.each, 10 rows)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/workItemColumns.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx"
+          ],
+          "dependencies": [
+            "03-04"
+          ],
+          "criteria": [
+            "The 30 cases are un-skipped; RED rows are captured before any fix and already-green rows are named in the commit body.",
+            "Without estimation, each context shows and offers exactly its defaults and catalogue minus Estimate; Manage columns follows the defaults-then-fixed-order rule in every context; a hidden default and a turned-on column both come back on reopen in each context.",
+            "`pnpm test` green; `pnpm build` zero warnings; rendering-heavy tables carry an explicit `{ timeout }` if they exceed Vitest's default."
+          ],
+          "implementation_notes": "These are the catalogue's generic rules exercised across contexts; production work is only whatever gap they reveal. Sizing: 30 cases, three it.each tables of 10 over the same generic rules; Vitest cannot un-skip rows in part and splitting by table would only split one decision. Commit: `feat(work-items-dialog): every chart context follows the catalogue rules (story 6248)`"
+        },
+        {
+          "id": "03-06",
+          "name": "Parent shows the parent's name, looked up only while it is shown",
+          "description": "The dialog runs a keyed TanStack query (['work-items-dialog-parents', ...sortedUniqueReferences]) through featureService.getFeaturesByReferences, enabled only while the Parent column is visible, and renders ParentWorkItemCell with the name once known; while loading and on failure the cell shows the reference itself.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.loading.test.tsx",
+          "scenario_name": "Parent shows the parent's name, looked up only while it is shown",
+          "unskips": [
+            "WorkItemsDialog.loading.test.tsx :: shows the parent's name once it is known",
+            "WorkItemsDialog.loading.test.tsx :: shows the parent's reference while its name is on its way",
+            "WorkItemsDialog.loading.test.tsx :: shows the parent's reference when its name cannot be looked up",
+            "WorkItemsDialog.loading.test.tsx :: asks once for the names of the shown rows' parents while Parent is shown, and shows them",
+            "WorkItemsDialog.loading.test.tsx :: a late answer for the previous dialog's parents never names the next dialog's",
+            "Pin that must stay green, WorkItemsDialog.loading.test.tsx :: asks for no parent names while Parent is hidden"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/workItemColumns.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.loading.test.tsx"
+          ],
+          "dependencies": [
+            "03-05"
+          ],
+          "criteria": [
+            "The 5 named cases are un-skipped and RED first ('a lookup of the parents' names').",
+            "One request for exactly the shown rows' unique parent references (any order) while Parent is visible; none while hidden (pin green).",
+            "The name once known; the reference while loading and on failure, never blank and never a previous dialog's name.",
+            "useParentWorkItems and createParentColumn and their callers are unchanged.",
+            "`pnpm test` green; `pnpm build` zero warnings."
+          ],
+          "implementation_notes": "Key on the sorted unique references, not the array identity: the dialog re-sorts on every render. TanStack Query is already at the app root; reuse the project's query options pattern rather than changing app-wide defaults. Commit: `feat(work-items-dialog): parent column shows the parent's name (story 6248)`"
+        },
+        {
+          "id": "03-07",
+          "name": "Every chart and View Data call site opens its context",
+          "description": "Move every chart and View Data caller from highlightColumn to `context` + `ownerKind`: CycleTimeScatterPlotChart, FeatureSizeScatterPlotChart, WorkItemAgingChart, WorkDistributionChart, TotalWorkItemAgeRunChart, BlockedItemsOverTimeChart, ProcessBehaviourChart (getHighlightColumnForType becomes a type-to-context mapping), BarRunChart and LineRunChart (a required `dialogContext` prop from BaseMetricsView, ThroughputRunChartCard and BacktestForecaster's two throughput charts -> closedItems), and every buildViewData payload in BaseMetricsView, forwarded by WidgetShell. Caller-only inputs (sle, ageOn, cycleTimeScope, namedCycleTimeDefinitions, ageBandColumn, sleRiskColumn, timeInStateColumn) are passed where today's highlight carried them.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+          "scenario_name": "every View Data payload names a context",
+          "unskips": [
+            "None: the dialog-level cases are un-skipped in 03-01..03-06. This step moves the call sites and applies the Existing-test disposition."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Charts/BarRunChart.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/LineRunChart.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/BlockedItemsOverTimeChart.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/FeatureSizeScatterPlotChart.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/ProcessBehaviourChart.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/TotalWorkItemAgeRunChart.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/WorkDistributionChart.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/ThroughputRunChartCard.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/BacktestForecaster.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx"
+          ],
+          "dependencies": [
+            "03-06"
+          ],
+          "criteria": [
+            "Every chart click and View Data payload names a context from the map and an ownerKind; no chart or BaseMetricsView payload passes highlightColumn any more (the Cumulative Time per State dialog moves in 03-08; the delivery-side callers in phase 04).",
+            "BarRunChart and LineRunChart take a required dialogContext; a caller that forgets it fails `tsc -b`.",
+            "Feature Size (dot and View Data) sorts by Size; Aging, Stale and the in-progress View Data sort by Age; Features being Worked On uses inProgress; Started and Closed View Data uses startedAndClosed.",
+            "BaseMetricsView.test.tsx: the 'every payload is classified' check gains 'every payload names a context' (disposition, slice 02). Its stand-in dialog is re-pointed from viewData.highlightColumn to the context.",
+            "WorkItemsDialog.test.tsx: the 'Time in State sorts the list' cases follow the Age sort, re-pointed at the aging / stale contexts (disposition, slice 02); every other legacy case stays until 04-06.",
+            "Chart tests that read the dialog's props (if any) are re-pointed from highlightColumn to context in the same commit.",
+            "`pnpm test` green; `pnpm build` zero warnings."
+          ],
+          "implementation_notes": "About 30 call sites, each a small mechanical move; the judgement descriptors keep their names and meaning. Pass ownerKind from the metrics view's kind (BaseMetricsView / WidgetShell forward it to the charts they render); BacktestForecaster is a Team page. If the step runs long, split it at the chart / View Data boundary and commit each half green; do not interleave with phase 04. Commit: `feat(metrics): every chart's dialog opens its context (story 6248)`"
+        },
+        {
+          "id": "03-08",
+          "name": "A Cumulative Time per State bar opens its dialog at once, with a loading and a could-not-load look",
+          "description": "WorkItemsDialog reads `status` ('loading' | 'error' | 'ready', default ready): loading shows the context's headers over the grid's own loading overlay and never 'No items to display'; error shows WarningAmberIcon and 'These {Work Items} couldn't be loaded. Close and reopen to try again.' with no Retry. BaseMetricsView's bar click opens the dialog immediately with context cumulativeStateTime, ownerKind and daysContributedColumn, and reads the items through a TanStack query keyed by (owner, state, window, selected item ids).",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx",
+          "scenario_name": "the items behind a Cumulative Time per State bar",
+          "unskips": [
+            "BaseMetricsView.cumulativeStateTimeDialog.test.tsx :: on a %s's dashboard, the dialog opens at once in its loading look (it.each, 2 rows: team, portfolio)",
+            "BaseMetricsView.cumulativeStateTimeDialog.test.tsx :: on a %s's dashboard, the items arrive with the days each contributed (it.each, 2 rows: team, portfolio)",
+            "BaseMetricsView.cumulativeStateTimeDialog.test.tsx :: says the items couldn't be loaded instead of opening nothing when the request fails",
+            "BaseMetricsView.cumulativeStateTimeDialog.test.tsx :: a late answer for the bar clicked before never lands in the next bar's dialog"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx"
+          ],
+          "dependencies": [
+            "03-07"
+          ],
+          "criteria": [
+            "The 6 named cases are un-skipped and RED first ('the Work Items dialog is open' fails; the loading overlay or Days Contributed is missing).",
+            "A bar click opens the dialog at once: title, the Days Contributed header and the grid's loading overlay (role progressbar). The items then arrive with the days each contributed, most first, for Team and Portfolio.",
+            "A failure shows the could-not-load copy with the instance's word for Work Items and WarningAmberIcon; there is no unhandled rejection left (the one DISTILL counted for this request disappears).",
+            "An answer for an earlier bar never lands in the next bar's dialog.",
+            "BaseMetricsView.test.tsx's Cumulative State Time drill-down cases are re-pointed at the open-at-once flow and the keyed query (disposition, slice 02), wrapped in a QueryClientProvider if they are not already.",
+            "The 'not read yet' note on `status` is gone.",
+            "`pnpm test` green with no unhandled errors; `pnpm build` zero warnings."
+          ],
+          "implementation_notes": "The dialog-level loading block in WorkItemsDialog.loading.test.tsx is tagged slice 03 and is un-skipped in 04-02; building `status` here means those cases may already pass then, which 04-02 records. Reuse WidgetShell's status vocabulary. Commit: `feat(metrics): cumulative time per state opens its items at once, loading or not (story 6248)`"
+        },
+        {
+          "id": "03-09",
+          "name": "Slice 02 gates: the in-progress dialog fits at 1920px, the dialog-opening specs hold",
+          "description": "Check the Portfolio in-progress dialog's width at 1920px (the architect's F10 finding), re-run SleRiskColumnReachable.spec.ts and the dialog-opening E2E specs, and run the slice gates. The Cycle Time percentiles View Data dialog now looks different, so `features/metrics/workitemsdialog.png` is out of date: that is regenerated at finalize, not here.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/SleRiskColumnReachable.spec.ts",
+          "scenario_name": "SLE risk stays reachable",
+          "unskips": [
+            "None: a verification step for slice 02."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/workItemColumns.tsx"
+          ],
+          "dependencies": [
+            "03-08"
+          ],
+          "criteria": [
+            "At a 1920px-wide viewport, a Portfolio's in-progress View Data dialog (Owned by, Started, Age, Time in State, SLE risk) shows the SLE risk column without horizontal scrolling; Started and Work Item Age are 130px or narrower. If it does not fit, narrow those two columns (workItemColumns.tsx) and re-check; report the measured widths in the commit body.",
+            "SleRiskColumnReachable.spec.ts passes locally (both entries), as do WorkItemsDialogContextColumns.spec.ts and every spec using the WorkItemsDialog page object.",
+            "SLICE GATE: zero `it.skip` remain in the US-02 blocks of WorkItemsDialog.contexts.test.tsx, in BaseMetricsView.cumulativeStateTimeDialog.test.tsx and in the Parent block of WorkItemsDialog.loading.test.tsx: 63 cases across 03-01..03-08. The parent-hidden pin is green.",
+            "SLICE GATE: full `pnpm test` green with no unhandled errors; `pnpm build` zero errors and zero warnings (re-check `git diff` after Biome --write).",
+            "SLICE GATE: `workitemsdialog.png` is listed as owed for finalize in the commit body; no PNG is regenerated in this roadmap."
+          ],
+          "implementation_notes": "Run against a throw-away backend on 5199 as in 02-07, never :5169. For the width check, open the Portfolio in-progress dialog in a headed Playwright session or a temporary probe spec at `viewport: { width: 1920, height: 1080 }` and read the SLE risk header's bounding box against the grid's; delete any temporary probe spec afterwards. Command for the specs: from Lighthouse.EndToEndTests, `env LIGHTHOUSEURL=http://localhost:5199/ TZ=Europe/Zurich pnpm exec playwright test tests/specs/flow --grep-invert \"@screenshot|@auth|@rbac|@proxyauth\"`. Commit only if a width changed: `fix(work-items-dialog): in-progress dialog keeps sle risk on screen at 1920px (story 6248)`; otherwise record the check in the next commit body."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Slice 03: a Feature's child items show their progress at a glance",
+      "description": "The featureChildren and deliveryTimeline contexts reach their callers. The child items are fetched through a query keyed by Feature id in DeliverySection, TeamFeatureList and PortfolioFeatureList, with the loading and could-not-load looks; the Delivery timeline offers the catalogue without Estimate or Blocked since; FeatureSchema gains currentStateEnteredAt; highlightColumn is deleted. Releasable alone.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "The child-items and Delivery timeline contexts show their defaults and follow the catalogue rules",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "Dialog-level: featureChildren opens with Started, Closed, Age / Cycle Time and Estimate (each item's own Team's), without Estimate where that Team has none; deliveryTimeline keeps Warnings as its only extra column and never offers Estimate or Blocked since; both follow the three catalogue rules.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx",
+          "scenario_name": "US-03 — a Feature's child items show their progress at a glance",
+          "unskips": [
+            "WorkItemsDialog.contexts.test.tsx :: a Feature's child items open with Started, Closed, Age / Cycle Time and Estimate",
+            "WorkItemsDialog.contexts.test.tsx :: without estimation on the child items' Team, the child items open without an Estimate",
+            "WorkItemsDialog.contexts.test.tsx :: the Delivery timeline keeps Warnings as its only extra column and never offers Estimate or Blocked since",
+            "WorkItemsDialog.contexts.test.tsx :: $context neither shows nor offers an Estimate where estimation is not set up (it.each over theFeatureListContexts, 2 rows: featureChildren, deliveryTimeline)",
+            "WorkItemsDialog.contexts.test.tsx :: $context lists its defaults, then every other column the rows can fill in the one fixed order (it.each over theFeatureListContexts, 2 rows)",
+            "WorkItemsDialog.contexts.test.tsx :: $context comes back with the reader's own layout, a default hidden and another column on, the next time it opens (it.each over theFeatureListContexts, 2 rows)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/workItemColumns.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/workItemsDialogContexts.ts",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx"
+          ],
+          "dependencies": [
+            "03-09"
+          ],
+          "criteria": [
+            "The 9 named cases are un-skipped; RED rows are captured first and rows already green from earlier steps are named in the commit body.",
+            "featureChildren: exactly Started, Closed, Age / Cycle Time, Estimate, sorted by Age / Cycle Time; no Estimate where no row carries one.",
+            "deliveryTimeline: Warnings is the only extra column; Estimate and Blocked since are neither shown nor offered (Feature rows never offer Blocked since).",
+            "Both contexts follow the defaults-then-fixed-order rule and bring back the reader's own layout on reopen.",
+            "`pnpm test` green; `pnpm build` zero warnings."
+          ],
+          "implementation_notes": "Note: the three rule tables over theFeatureListContexts are distinct it.each blocks from the chart-context ones with identical title templates; the file-qualified title plus the table name identifies them. Sizing: 9 cases, three singles and three 2-row tables over two map entries. Commit: `feat(work-items-dialog): child-items and delivery timeline contexts (story 6248)`"
+        },
+        {
+          "id": "04-02",
+          "name": "The dialog's loading and could-not-load look, as a reader of any fetching dialog sees it",
+          "description": "Dialog-level `status` cases tagged slice 03: title and exactly the context's headers over the grid's loading overlay; never 'No items to display' while loading; the could-not-load copy with a warning icon and exactly the Close and Enlarge buttons; the instance's word for Work Items in it. `status` was built in 03-08; close whatever these exact checks still expose.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.loading.test.tsx",
+          "scenario_name": "a dialog whose items are still on their way",
+          "unskips": [
+            "WorkItemsDialog.loading.test.tsx :: opens at once with its title and the context's headers over the grid's loading overlay",
+            "WorkItemsDialog.loading.test.tsx :: never says there are no items while they are still on their way",
+            "WorkItemsDialog.loading.test.tsx :: says the items couldn't be loaded, with a warning and no retry button, when they cannot be loaded",
+            "WorkItemsDialog.loading.test.tsx :: the could-not-load message uses the instance's word for Work Items",
+            "Pin that must stay green, WorkItemsDialog.loading.test.tsx :: a dialog left at its defaults with nothing to list still says so, as today"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.loading.test.tsx"
+          ],
+          "dependencies": [
+            "04-01"
+          ],
+          "criteria": [
+            "The 4 named cases are un-skipped. Cases already green because 03-08 built `status` are named in the commit body; any still RED is captured before the fix.",
+            "Loading: the heading text matches exactly, the headers are exactly the context's defaults, the overlay has role progressbar, and 'No items to display' is absent. Error: WarningAmberIcon, 'These {Work Items} couldn't be loaded. Close and reopen to try again.' with the configured term, and only the Close and Enlarge buttons.",
+            "A ready dialog with no rows still says 'No items to display' (pin green).",
+            "`pnpm test` green; `pnpm build` zero warnings."
+          ],
+          "implementation_notes": "StrykerJS does not mutate JSX text, so the copy is pinned by these behaviour cases, not by the mutation score. Commit: `test(work-items-dialog): the dialog's loading and could-not-load look is pinned (story 6248)` if no production change was needed, otherwise `feat(work-items-dialog): …`."
+        },
+        {
+          "id": "04-03",
+          "name": "The three Feature lists open a Feature's child items through a query keyed by the Feature",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "DeliverySection, TeamFeatureList and PortfolioFeatureList fetch the child items (getFeatureWorkItems) through a TanStack query keyed by Feature id and open the dialog at once with context featureChildren, their ownerKind (team for TeamFeatureList, portfolio for the other two) and status from the query. An answer for a previously clicked Feature never lands in the next one's dialog.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/featureChildItemsDialog.test.tsx",
+          "scenario_name": "a Feature's child items, from every list that opens them",
+          "unskips": [
+            "featureChildItemsDialog.test.tsx :: %s: they open at once in their loading look, never as an empty list (it.each, 3 rows: the Team's Feature list, the Portfolio's Feature list, a Delivery's Features)",
+            "featureChildItemsDialog.test.tsx :: %s: they show Started, Closed, Age / Cycle Time and Estimate once they arrive, oldest first (it.each, 3 rows)",
+            "featureChildItemsDialog.test.tsx :: %s: the previous Feature's items never show when their answer arrives late (it.each, 3 rows)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.test.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/featureChildItemsDialog.test.tsx"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "criteria": [
+            "The 9 named cases are un-skipped and RED first (missing loading look, columns, or a stale Feature's items).",
+            "Each of the three lists opens the dialog at once in its loading look, then shows Started, Closed, Age / Cycle Time and Estimate, oldest first; a late answer for a previous Feature never shows.",
+            "TeamFeatureList.test.tsx, PortfolioFeatureList.test.tsx, DeliverySection.test.tsx and their siblings that stand in for WorkItemsDialog wrap renders in a QueryClientProvider (disposition, slice 03) and stay green.",
+            "`pnpm test` green; `pnpm build` zero warnings."
+          ],
+          "implementation_notes": "Use the same query key shape in all three callers so their behaviour cannot drift; a small shared hook beside FeatureProgressIndicator is fine if it removes repetition of knowledge, not just of code. Sizing: 9 cases, three it.each tables over the same three callers; Vitest cannot un-skip one list's row, and the three callers must move together for any table to pass. Commit: `feat(features): a feature's child items load through a keyed query (story 6248)`"
+        },
+        {
+          "id": "04-04",
+          "name": "Child items that cannot be loaded say so, and are asked for again on reopen",
+          "description": "When the child-items request fails, each list's dialog shows the could-not-load look; closing and reopening asks again.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/featureChildItemsDialog.test.tsx",
+          "scenario_name": "a Feature's child items that cannot be loaded",
+          "unskips": [
+            "featureChildItemsDialog.test.tsx :: %s: they say they couldn't be loaded when the request fails (it.each, 3 rows)",
+            "featureChildItemsDialog.test.tsx :: %s: they are asked for again when the lead closes and reopens after a failure (it.each, 3 rows)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.tsx",
+            "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/featureChildItemsDialog.test.tsx"
+          ],
+          "dependencies": [
+            "04-03"
+          ],
+          "criteria": [
+            "The 6 named cases are un-skipped and RED first.",
+            "A failed request shows 'These Work Items couldn't be loaded. Close and reopen to try again.' (the configured term) in each list's dialog; close and reopen issues a new request.",
+            "No unhandled rejection remains: the 6 child-items rejections DISTILL counted are gone.",
+            "`pnpm test` green with no unhandled errors; `pnpm build` zero warnings."
+          ],
+          "implementation_notes": "Retry off for this query so a failure shows at once; reopen must refetch rather than serve a cached error. Commit: `feat(features): child items that cannot be loaded say so (story 6248)`"
+        },
+        {
+          "id": "04-05",
+          "name": "The Delivery timeline opens its context, and Feature rows carry the time they entered their state",
+          "description": "DeliveryTimelineTab passes context deliveryTimeline, ownerKind portfolio and its warningsColumn. FeatureSchema and fromParsed add `currentStateEnteredAt` (.nullable().optional(), the date guarded so null never becomes 1970), so Time in State fills on the timeline. Not blockedSince, not estimate.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx",
+          "scenario_name": "the Delivery timeline keeps Warnings and gains the catalogue",
+          "unskips": [
+            "None: the timeline's dialog-level cases were un-skipped in 04-01. This step wires the caller and the schema field."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/DeliveryTimelineTab.tsx",
+            "Lighthouse.Frontend/src/models/Feature.ts",
+            "Lighthouse.Frontend/src/models/Feature.decode.test.ts"
+          ],
+          "dependencies": [
+            "04-04"
+          ],
+          "criteria": [
+            "Required (roadmap review, high finding 2): one new decode row in `Lighthouse.Frontend/src/models/Feature.decode.test.ts` (or the existing Feature schema test file, whichever already decodes FeatureSchema) pins `currentStateEnteredAt`: null stays null, an absent field stays null/undefined, an ISO date parses to that date, and it never becomes the 1970 epoch. It is this step's RED.",
+            "The Delivery timeline's dialog opens the deliveryTimeline context with ownerKind portfolio; it fetches nothing and needs no status.",
+            "FeatureSchema parses `currentStateEnteredAt` as nullable: null and absent stay null, a date parses to that date, never the epoch (zod `.nullable()`, never an unguarded `z.coerce.date()`).",
+            "Existing Feature model tests (Feature.test.ts, Feature.decode.test.ts) and DeliveryTimelineTab tests stay green.",
+            "`pnpm test` green; `pnpm build` zero warnings."
+          ],
+          "implementation_notes": "Flagged for the reviewer: DISTILL wrote no case that parses currentStateEnteredAt, so this schema change has no pinned behaviour and StrykerJS would find it unguarded. The crafter writes no new specification by default; if the reviewer or orchestrator agrees, one decode row in Feature.decode.test.ts (null stays null, a date parses) closes the gap. Commit: `feat(delivery): the delivery timeline dialog opens its context (story 6248)`"
+        },
+        {
+          "id": "04-06",
+          "name": "highlightColumn is gone",
+          "description": "Delete highlightColumn, HighlightColumnDefinition and the legacy no-context path from WorkItemsDialog, and highlightColumn from WidgetShell's ViewDataPayload; `context` becomes required, so a forgotten caller fails `tsc -b`. Apply the remaining Existing-test disposition: WorkItemsDialog.test.tsx's highlightColumn cases move to `context` or are deleted, and the pin 'a dialog opened without a context keeps today's columns' is deleted.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx",
+          "scenario_name": "today's dialog, now always opened with a context",
+          "unskips": [
+            "None. Deleted pin: WorkItemsDialog.contexts.test.tsx :: a dialog opened without a context keeps today's columns."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShellTimeInState.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+            "Lighthouse.Frontend/src/tests/WorkItemsDialogTestKit.tsx"
+          ],
+          "dependencies": [
+            "04-05"
+          ],
+          "criteria": [
+            "`grep -rn highlightColumn Lighthouse.Frontend/src` returns nothing; HighlightColumnDefinition and emptyHighlightColumnDefinition are gone.",
+            "`context` is required on WorkItemsDialog; `tsc -b` passes, proving every caller names one.",
+            "WorkItemsDialog.test.tsx's highlightColumn cases are moved to a context or deleted, case by case, and the commit body lists which; the 'Feature rows keep Owned by beside the fixed columns' pin stays green; the no-context pin is deleted.",
+            "WidgetShell.test.tsx, WidgetShellTimeInState.test.tsx and BaseMetricsView.test.tsx no longer build payloads with highlightColumn and stay green.",
+            "No DISTILL scaffold remains: `grep -rn \"__SCAFFOLD__\\|not read yet\\|Not read yet\\|RED scaffold\" Lighthouse.Frontend/src` returns nothing.",
+            "`pnpm test` green; `pnpm build` zero warnings."
+          ],
+          "implementation_notes": "The old shared localStorage key stops being read with the last legacy caller; nothing deletes it. Remove any comment the removal leaves stale; comments state plain why only. Commit: `refactor(work-items-dialog): remove highlightColumn, every dialog opens a context (story 6248)` — refactor because no reader-visible behaviour changes. Also touches WidgetShell.test.tsx, WidgetShellTimeInState.test.tsx and tests/WorkItemsDialogTestKit.tsx (they pass highlightColumn today); when touching BaseMetricsView.test.tsx reword or drop the stale 'describe.skip = RED scaffold; DELIVER enables it' comments."
+        },
+        {
+          "id": "04-07",
+          "name": "Slice 03 gates",
+          "description": "Run the slice and story gates: every pending case un-skipped, pins green, both stacks' builds and suites green, and the E2E specs that open a Work Items dialog pass live.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/WorkItemsDialogContextColumns.spec.ts",
+          "scenario_name": "@walking_skeleton a coach reads each item's estimate on Team Zenith",
+          "unskips": [
+            "None: the skeleton has run since 02-07; this step re-runs it with every other dialog-opening spec."
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/models/metrics/WorkItemsDialog.ts"
+          ],
+          "dependencies": [
+            "04-06"
+          ],
+          "criteria": [
+            "SLICE GATE: zero `it.skip` / `it.skip.each` remain in WorkItemsDialog.contexts.test.tsx, WorkItemsDialog.layout.test.tsx, WorkItemsDialog.loading.test.tsx, workItemsDialogContexts.test.ts, DataGridBase.defaults.test.tsx, BaseMetricsView.cumulativeStateTimeDialog.test.tsx and featureChildItemsDialog.test.tsx; zero [Ignore(Pending)] in the four backend files; zero `test.skip` / `testWithDemo.skip` in WorkItemsDialogContextColumns.spec.ts. Totals: 213 un-skipped (66 backend in phase 01; 55 Vitest + the skeleton in phase 02; 63 in phase 03; 28 in phase 04); 7 pins green, 1 deleted in 04-06.",
+            "SLICE GATE: full `pnpm test` green with no unhandled errors; `pnpm build` zero errors and zero warnings (re-check `git diff` after Biome --write).",
+            "SLICE GATE: `dotnet build` 0 warnings; filtered `dotnet test` green.",
+            "SLICE GATE: one local Playwright run on a throw-away backend (port 5199, never :5169) passes tests/specs/flow (including WorkItemsDialogContextColumns and SleRiskColumnReachable) and the delivery / feature specs that open a Feature's child items, with `--grep-invert \"@screenshot|@auth|@rbac|@proxyauth\"`.",
+            "Owed for finalize, listed in the commit body: regenerate `features/metrics/workitemsdialog.png` (delete it first), docs in widgets.md and flow-metrics.md, the release-notes line crediting Steve; then mutation testing on frozen code."
+          ],
+          "implementation_notes": "Run exactly as in 02-07. If the live run surfaces a page-object gap, fix it in the page object (by header, never by position) and say so. No commit is needed if nothing changed; otherwise `test(e2e): …`."
+        }
+      ]
+    }
+  ]
+}
