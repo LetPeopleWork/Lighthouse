@@ -43,6 +43,7 @@ import { getWorkItemName } from "../../../utils/featureName";
 import { getColorMapForKeys } from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
+import type { WorkItemsDialogOwnerKind } from "../WorkItemsDialog/workItemsDialogContexts";
 import LegendChip from "./LegendChip";
 import PercentileLegend from "./PercentileLegend";
 import TimeBlackoutOverlay from "./TimeBlackoutOverlay";
@@ -143,6 +144,7 @@ interface CycleTimeScatterPlotChartProps {
 	onFetchNamedCycleTimePercentiles?: (
 		definitionId: number,
 	) => Promise<IPercentileValue[]>;
+	ownerKind: WorkItemsDialogOwnerKind;
 }
 
 const DEFAULT_SELECTION = "default";
@@ -154,6 +156,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	blackoutPeriods = [],
 	namedCycleTimeDefinitions = [],
 	onFetchNamedCycleTimePercentiles,
+	ownerKind,
 }) => {
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
@@ -556,11 +559,8 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 				items={selectedItems}
 				open={dialogOpen}
 				onClose={() => setDialogOpen(false)}
-				highlightColumn={{
-					title: cycleTimeTerm,
-					description: "days",
-					valueGetter: (item) => item.cycleTime,
-				}}
+				context="closedItems"
+				ownerKind={ownerKind}
 			/>
 		</>
 	);

@@ -289,7 +289,9 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 	describe("when no data is provided", () => {
 		it("displays a no data message", () => {
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={[]} />);
+			render(
+				<FeatureSizeScatterPlotChart ownerKind="team" sizeDataPoints={[]} />,
+			);
 
 			expect(screen.getByText("No data available")).toBeInTheDocument();
 			expect(screen.queryByTestId("chart-container")).not.toBeInTheDocument();
@@ -298,14 +300,24 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 	describe("when feature data is provided", () => {
 		it("displays the chart with proper title", () => {
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={basicFeatures}
+				/>,
+			);
 
 			expect(screen.getByText("Features Size")).toBeInTheDocument();
 			expect(screen.getByTestId("chart-container")).toBeInTheDocument();
 		});
 
 		it("renders all chart components", () => {
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={basicFeatures}
+				/>,
+			);
 
 			expect(screen.getByTestId("scatter-plot")).toBeInTheDocument();
 			expect(screen.getByTestId("x-axis")).toBeInTheDocument();
@@ -318,7 +330,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 		// the axes are registered under custom ids ("sizeAxis" / "timeAxis").
 		// Mirrors the fix pattern from CycleTimeScatterPlotChart.
 		it("uses explicit axis IDs and x-axis height for stable tick rendering", () => {
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={basicFeatures}
+				/>,
+			);
 
 			const container = screen.getByTestId("chart-container");
 			expect(container.dataset.xAxisId).toBe("sizeAxis");
@@ -345,7 +362,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 		});
 
 		it("renders visible markers as SVG circles", () => {
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={basicFeatures}
+				/>,
+			);
 
 			const scatter = screen.getByTestId("scatter-plot");
 			// Ensure at least one circle element rendered by the marker is present
@@ -354,7 +376,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 		});
 
 		it("calculates appropriate chart dimensions", () => {
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={basicFeatures}
+				/>,
+			);
 
 			const container = screen.getByTestId("chart-container");
 			// Max size is 15, with 10% padding should be 16.5
@@ -375,7 +402,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 				})(),
 			];
 
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={features} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={features}
+				/>,
+			);
 
 			const container = screen.getByTestId("chart-container");
 			const seriesAttr = container.dataset.series;
@@ -406,7 +438,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 				})(),
 			];
 
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={features} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={features}
+				/>,
+			);
 
 			const container = screen.getByTestId("chart-container");
 			const seriesAttr = container.dataset.series;
@@ -433,7 +470,10 @@ describe("FeatureSizeScatterPlotChart", () => {
 			];
 
 			render(
-				<FeatureSizeScatterPlotChart sizeDataPoints={duplicateFeatures} />,
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={duplicateFeatures}
+				/>,
 			);
 
 			const container = screen.getByTestId("chart-container");
@@ -448,7 +488,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 			fDoing.stateCategory = "Doing";
 			fDoing.workItemAge = 5;
 
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={[fDone, fDoing]} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={[fDone, fDoing]}
+				/>,
+			);
 
 			// Enable 'In Progress' (Doing) chip so the Doing series is displayed
 			fireEvent.click(
@@ -467,7 +512,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 			fDoing.stateCategory = "Doing";
 			fDoing.workItemAge = 10; // ensure cycle time on the 'Doing' item used for the chart matches
 
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={[fDone, fDoing]} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={[fDone, fDoing]}
+				/>,
+			);
 
 			// Enable 'In Progress' (Doing) chip so the Doing series is displayed
 			fireEvent.click(
@@ -482,7 +532,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 	describe("when user interacts with data points", () => {
 		it("opens a dialog when clicking a data point", () => {
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={basicFeatures}
+				/>,
+			);
 
 			const markerButtons = screen.getAllByRole("button", {
 				name: /view.*feature.*with size.*child items/i,
@@ -498,7 +553,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 		it("displays feature details in the dialog", () => {
 			const singleFeature = [createFeature(1, "Test Feature", 5, 8)];
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={singleFeature} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={singleFeature}
+				/>,
+			);
 
 			const markerButton = screen.getByRole("button", {
 				name: /view.*feature.*with size.*child items/i,
@@ -514,7 +574,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 		});
 
 		it("closes dialog when close button is clicked", () => {
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={basicFeatures}
+				/>,
+			);
 
 			// Open dialog using the first marker button
 			const markerButtons = screen.getAllByRole("button", {
@@ -537,7 +602,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 				createFeature(2, "Group B", 4, 6),
 			];
 
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={features} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={features}
+				/>,
+			);
 
 			const markerButtons = screen.getAllByRole("button", {
 				name: /view.*feature.*with size.*child items/i,
@@ -561,7 +631,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 			const fDoing = createFeature(2, "Doing Group", 4, 5);
 			fDoing.stateCategory = "Doing";
 
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={[fDone, fDoing]} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={[fDone, fDoing]}
+				/>,
+			);
 
 			// Enable 'In Progress' (Doing) chip so the Doing series is displayed
 			fireEvent.click(
@@ -591,7 +666,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 			fDoing.stateCategory = "Doing";
 			fDoing.workItemAge = 6;
 
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={[fDone, fDoing]} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={[fDone, fDoing]}
+				/>,
+			);
 
 			// Flattened reorder means first marker may be from the Doing series but dataIndex corresponds
 			// to that series; the marker should resolve to the correct group's items via series-local map.
@@ -650,7 +730,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 					createFeature(2, "Group B", 4, 6),
 				];
 
-				render(<FeatureSizeScatterPlotChart sizeDataPoints={features} />);
+				render(
+					<FeatureSizeScatterPlotChart
+						ownerKind="team"
+						sizeDataPoints={features}
+					/>,
+				);
 
 				const markerButtons = screen.getAllByRole("button", {
 					name: /view.*feature.*with size.*child items/i,
@@ -678,7 +763,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 				createFeature(2, "Feature B", 10, 15), // Same dimensions
 			];
 
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={groupedFeatures} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={groupedFeatures}
+				/>,
+			);
 
 			const markerButton = screen.getByRole("button", {
 				name: /view 2 features with size 10 child items/i,
@@ -696,6 +786,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("displays percentile chips", () => {
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={basicFeatures}
 					sizePercentileValues={percentileData}
 				/>,
@@ -714,6 +805,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("displays reference lines for each percentile", () => {
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={basicFeatures}
 					sizePercentileValues={percentileData}
 				/>,
@@ -743,6 +835,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={basicFeatures}
 					sizePercentileValues={highPercentiles}
 				/>,
@@ -756,6 +849,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("allows toggling percentile visibility", () => {
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={basicFeatures}
 					sizePercentileValues={percentileData}
 				/>,
@@ -777,6 +871,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("handles empty percentile arrays gracefully", () => {
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={basicFeatures}
 					sizePercentileValues={[]}
 				/>,
@@ -794,7 +889,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 	describe("accessibility features", () => {
 		it("provides proper aria labels for interactive elements", () => {
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={basicFeatures}
+				/>,
+			);
 
 			// Get only marker buttons, not chip buttons
 			const markerButtons = screen.getAllByRole("button", {
@@ -809,7 +909,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 		});
 
 		it("includes descriptive titles for chart markers", () => {
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={basicFeatures}
+				/>,
+			);
 
 			// The SVG title elements should be present for screen readers
 			// This is tested through the marker rendering behavior
@@ -828,7 +933,10 @@ describe("FeatureSizeScatterPlotChart", () => {
 			];
 
 			render(
-				<FeatureSizeScatterPlotChart sizeDataPoints={featuresWithNulls} />,
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={featuresWithNulls}
+				/>,
 			);
 
 			// Should filter out features with null cycle times and still render
@@ -838,7 +946,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("handles features with zero sizes", () => {
 			const zeroSizeFeature = [createFeature(1, "Zero Size", 0, 5)];
 
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={zeroSizeFeature} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={zeroSizeFeature}
+				/>,
+			);
 
 			expect(screen.getByTestId("chart-container")).toBeInTheDocument();
 		});
@@ -846,7 +959,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("works with single feature", () => {
 			const singleFeature = [createFeature(1, "Only Feature", 5, 8)];
 
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={singleFeature} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={singleFeature}
+				/>,
+			);
 
 			expect(screen.getByTestId("chart-container")).toBeInTheDocument();
 
@@ -882,7 +1000,10 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 		it("displays filter chips for Done, To Do and In Progress", () => {
 			render(
-				<FeatureSizeScatterPlotChart sizeDataPoints={mixedStateFeatures} />,
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={mixedStateFeatures}
+				/>,
 			);
 
 			expect(
@@ -898,7 +1019,10 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 		it("shows only Done features by default (Done chip is active)", () => {
 			render(
-				<FeatureSizeScatterPlotChart sizeDataPoints={mixedStateFeatures} />,
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={mixedStateFeatures}
+				/>,
 			);
 
 			const container = screen.getByTestId("chart-container");
@@ -914,7 +1038,10 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 		it("shows To Do features when To Do chip is clicked", () => {
 			render(
-				<FeatureSizeScatterPlotChart sizeDataPoints={mixedStateFeatures} />,
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={mixedStateFeatures}
+				/>,
 			);
 
 			const todoChip = screen.getByRole("button", {
@@ -929,7 +1056,10 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 		it("shows In Progress features when In Progress chip is clicked", () => {
 			render(
-				<FeatureSizeScatterPlotChart sizeDataPoints={mixedStateFeatures} />,
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={mixedStateFeatures}
+				/>,
 			);
 
 			const doingChip = screen.getByRole("button", {
@@ -944,7 +1074,10 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 		it("shows all features when all chips are enabled", () => {
 			render(
-				<FeatureSizeScatterPlotChart sizeDataPoints={mixedStateFeatures} />,
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={mixedStateFeatures}
+				/>,
 			);
 
 			const todoChip = screen.getByRole("button", {
@@ -964,7 +1097,10 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 		it("can toggle Done features off", () => {
 			render(
-				<FeatureSizeScatterPlotChart sizeDataPoints={mixedStateFeatures} />,
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={mixedStateFeatures}
+				/>,
 			);
 
 			const doneChip = screen.getByRole("button", {
@@ -990,6 +1126,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={mixedStateFeatures}
 					sizePercentileValues={percentiles}
 				/>,
@@ -1018,7 +1155,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 				createFeatureWithState(2, "Done 2", 8, 12, 0, "Done"),
 			];
 
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={onlyDoneFeatures} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={onlyDoneFeatures}
+				/>,
+			);
 
 			expect(
 				screen.queryByRole("button", { name: "ToDo visibility toggle" }),
@@ -1039,7 +1181,10 @@ describe("FeatureSizeScatterPlotChart", () => {
 			];
 
 			render(
-				<FeatureSizeScatterPlotChart sizeDataPoints={doneAndTodoFeatures} />,
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={doneAndTodoFeatures}
+				/>,
 			);
 
 			expect(
@@ -1060,7 +1205,10 @@ describe("FeatureSizeScatterPlotChart", () => {
 			];
 
 			render(
-				<FeatureSizeScatterPlotChart sizeDataPoints={doneAndDoingFeatures} />,
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={doneAndDoingFeatures}
+				/>,
 			);
 
 			expect(
@@ -1083,7 +1231,10 @@ describe("FeatureSizeScatterPlotChart", () => {
 			];
 
 			render(
-				<FeatureSizeScatterPlotChart sizeDataPoints={featuresWithZeroSize} />,
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={featuresWithZeroSize}
+				/>,
 			);
 
 			// Enable all state chips
@@ -1106,7 +1257,10 @@ describe("FeatureSizeScatterPlotChart", () => {
 			];
 
 			render(
-				<FeatureSizeScatterPlotChart sizeDataPoints={inProgressFeature} />,
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={inProgressFeature}
+				/>,
 			);
 
 			// Enable In Progress chip
@@ -1124,7 +1278,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 				createFeatureWithState(1, "To Do Item", 5, null, 0, "ToDo"),
 			];
 
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={todoFeature} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={todoFeature}
+				/>,
+			);
 
 			// Enable To Do chip
 			fireEvent.click(
@@ -1139,6 +1298,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("Cycle Time mode keeps the existing X = Size / Y = Cycle Time layout", () => {
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={basicFeatures}
 					sizePercentileValues={[
 						{ percentile: 50, value: 4 },
@@ -1202,6 +1362,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={basicFeatures}
 					estimationData={tshirtEstimation}
 				/>,
@@ -1247,6 +1408,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={basicFeatures}
 					estimationData={tshirtEstimation}
 				/>,
@@ -1269,7 +1431,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 		});
 
 		it("Toggle renders Cycle Time / Closed Date when estimation unit absent", () => {
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={basicFeatures}
+				/>,
+			);
 
 			const cycleTimeButton = screen.getByRole("button", {
 				name: /cycle time/i,
@@ -1297,6 +1464,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={features}
 					sizePercentileValues={[
 						{ percentile: 50, value: 4 },
@@ -1351,6 +1519,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={[marchFeature, aprilFeature]}
 				/>,
 			);
@@ -1376,6 +1545,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 			const beforeRender = Date.now();
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={[inProgress1, inProgress2]}
 					sizePercentileValues={[]}
 				/>,
@@ -1421,6 +1591,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 			const beforeRender = Date.now();
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={features}
 					sizePercentileValues={[
 						{ percentile: 50, value: 4 },
@@ -1469,7 +1640,9 @@ describe("FeatureSizeScatterPlotChart", () => {
 		});
 
 		it("Empty data set renders no toggle and shows No data available", () => {
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={[]} />);
+			render(
+				<FeatureSizeScatterPlotChart ownerKind="team" sizeDataPoints={[]} />,
+			);
 
 			expect(screen.getByText("No data available")).toBeInTheDocument();
 			expect(
@@ -1494,6 +1667,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 			const beforeRender = Date.now();
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={[pastClosed1, pastClosed2]}
 				/>,
 			);
@@ -1519,7 +1693,10 @@ describe("FeatureSizeScatterPlotChart", () => {
 			inProgress.workItemAge = 3;
 
 			render(
-				<FeatureSizeScatterPlotChart sizeDataPoints={[closed, inProgress]} />,
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={[closed, inProgress]}
+				/>,
 			);
 			fireEvent.click(
 				screen.getByRole("button", { name: "In Progress visibility toggle" }),
@@ -1558,7 +1735,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 		};
 
 		it("should not show estimation-unit toggle button when estimation data is not provided", () => {
-			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="team"
+					sizeDataPoints={basicFeatures}
+				/>,
+			);
 
 			expect(
 				screen.queryByRole("button", { name: /estimation/i }),
@@ -1582,6 +1764,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={basicFeatures}
 					estimationData={notConfigured}
 				/>,
@@ -1609,6 +1792,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={basicFeatures}
 					estimationData={noUnit}
 				/>,
@@ -1622,6 +1806,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("should show toggle and default to estimation when estimation unit is set", () => {
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={basicFeatures}
 					estimationData={estimationData}
 				/>,
@@ -1642,6 +1827,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("should use estimation values in scatter data when estimation mode is active", () => {
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={basicFeatures}
 					estimationData={estimationData}
 				/>,
@@ -1665,6 +1851,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("should switch to cycle time values when cycle time toggle is clicked", () => {
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={basicFeatures}
 					estimationData={estimationData}
 				/>,
@@ -1718,6 +1905,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
+					ownerKind="team"
 					sizeDataPoints={basicFeatures}
 					estimationData={nonNumericEstimation}
 				/>,

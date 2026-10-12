@@ -8,6 +8,7 @@ import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { calculateHistoricalAge } from "../../../utils/date/age";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
+import type { WorkItemsDialogOwnerKind } from "../WorkItemsDialog/workItemsDialogContexts";
 import BaseRunChart from "./BaseRunChart";
 import BlackoutOverlay from "./BlackoutOverlay";
 
@@ -15,12 +16,14 @@ interface TotalWorkItemAgeRunChartProps {
 	wipOverTimeData: RunChartData;
 	startDate: Date;
 	title?: string;
+	ownerKind: WorkItemsDialogOwnerKind;
 }
 
 const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({
 	wipOverTimeData,
 	startDate,
 	title = "Total Work Item Age Over Time",
+	ownerKind,
 }) => {
 	const theme = useTheme();
 	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
@@ -170,14 +173,9 @@ const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({
 				items={selectedItems}
 				open={dialogOpen}
 				onClose={handleCloseDialog}
-				highlightColumn={{
-					title: workItemAgeTerm,
-					description: "days",
-					valueGetter: (item) =>
-						selectedDate
-							? calculateHistoricalAge(item, selectedDate)
-							: calculateHistoricalAge(item, new Date()),
-				}}
+				context="inProgress"
+				ownerKind={ownerKind}
+				ageOn={selectedDate ?? undefined}
 			/>
 		</>
 	);

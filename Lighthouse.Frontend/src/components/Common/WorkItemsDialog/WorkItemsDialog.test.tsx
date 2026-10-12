@@ -849,24 +849,29 @@ describe("WorkItemsDialog Component", () => {
 			expect(screen.queryByText(/d in /)).not.toBeInTheDocument();
 		});
 
-		test("sorts the 'Time in State' column with the longest-running item first", () => {
-			render(
-				<WorkItemsDialog
-					{...defaultProps}
-					items={timeInStateItems}
-					highlightColumn={undefined}
-					timeInStateColumn={{ now }}
-				/>,
-			);
+		test.each(["aging", "stale"] as const)(
+			"the %s list showing Time in State is sorted by Age, oldest first",
+			(context) => {
+				render(
+					<WorkItemsDialog
+						{...defaultProps}
+						items={timeInStateItems}
+						highlightColumn={undefined}
+						context={context}
+						ownerKind="team"
+						timeInStateColumn={{ now }}
+					/>,
+				);
 
-			const badgeCells = screen
-				.getAllByRole("gridcell")
-				.filter((cell) => /d in /.test(cell.textContent ?? ""));
+				const badgeCells = screen
+					.getAllByRole("gridcell")
+					.filter((cell) => /d in /.test(cell.textContent ?? ""));
 
-			expect(badgeCells[0]).toHaveTextContent("16d in Active");
-			expect(badgeCells[1]).toHaveTextContent("8d in Review");
-			expect(badgeCells[2]).toHaveTextContent("3d in In Progress");
-		});
+				expect(badgeCells[0]).toHaveTextContent("16d in Active");
+				expect(badgeCells[1]).toHaveTextContent("3d in In Progress");
+				expect(badgeCells[2]).toHaveTextContent("8d in Review");
+			},
+		);
 
 		test("applies the stale treatment when the threshold reaches the badge", () => {
 			render(

@@ -30,7 +30,10 @@ import WorkDistributionChart from "../../../components/Common/Charts/WorkDistrib
 import WorkItemAgePercentiles from "../../../components/Common/Charts/WorkItemAgePercentiles";
 import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingChart";
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
-import type { WorkItemsDialogOwnerKind } from "../../../components/Common/WorkItemsDialog/workItemsDialogContexts";
+import type {
+	WorkItemsDialogContextId,
+	WorkItemsDialogOwnerKind,
+} from "../../../components/Common/WorkItemsDialog/workItemsDialogContexts";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import {
 	type MetricsOwnerRequest,
@@ -577,16 +580,6 @@ export function buildViewData(
 ): Record<string, ViewDataPayload | undefined> {
 	const { terms } = inputs;
 
-	const cycleTimeHighlight = {
-		title: terms.cycleTime,
-		description: "days",
-		valueGetter: (item: IWorkItem) => item.cycleTime,
-	};
-	const ageHighlight = {
-		title: terms.workItemAge,
-		description: "days",
-		valueGetter: (item: IWorkItem) => item.workItemAge,
-	};
 	const ageBandColumn = buildAgeBandColumnDescriptor({
 		perStatePercentileValues: inputs.perStatePercentileValues,
 		doingStates: inputs.doingStates,
@@ -602,13 +595,6 @@ export function buildViewData(
 		sleTerm: terms.sle,
 		sleRangeInDays: inputs.sleRangeInDays,
 	});
-	const ageCycleHighlight = {
-		title: `${terms.workItemAge}/${terms.cycleTime}`,
-		description: "days",
-		valueGetter: (item: IWorkItem) =>
-			item.cycleTime > 0 ? item.cycleTime : item.workItemAge,
-	};
-
 	const throughputItems = extractWorkItems(
 		inputs.throughputData?.workItemsPerUnitOfTime,
 	);
@@ -660,11 +646,19 @@ export function buildViewData(
 			return null;
 		}
 		return {
-			name: definition.name,
+			id,
 			valueFor: (item: IWorkItem) =>
 				item.namedCycleTimes?.find((value) => value.definitionId === id)?.days,
 		};
 	})();
+
+	const opens = (context: WorkItemsDialogContextId) => ({
+		context,
+		ownerKind: inputs.ownerKind,
+	});
+	const closedItems = opens("closedItems");
+	const inProgress = opens("inProgress");
+	const arrivals = opens("arrivals");
 
 	// Every list of what the team has in flight today, and nothing else, carries the risk column —
 	// the number answers "will this item breach", which only means something for an item still
@@ -673,37 +667,36 @@ export function buildViewData(
 	const inFlight = {
 		title: `${inputs.title} in Progress`,
 		items: inputs.inProgressItems,
-		highlightColumn: ageHighlight,
+		...inProgress,
 		sleRiskColumn,
+	};
+
+	const timeInStateColumn = {
+		stalenessThresholdDays: inputs.stalenessThresholdDays,
+		blockedStalenessThresholdDays: inputs.blockedStalenessThresholdDays,
 	};
 
 	return {
 		wipOverview: {
 			...inFlight,
-			timeInStateColumn: {
-				stalenessThresholdDays: inputs.stalenessThresholdDays,
-				blockedStalenessThresholdDays: inputs.blockedStalenessThresholdDays,
-			},
+			timeInStateColumn,
 		},
 		blockedOverview: {
 			title: `${terms.blocked} ${terms.workItems}`,
 			items: inputs.blockedItems,
-			highlightColumn: ageHighlight,
+			...opens("blocked"),
 		},
 		staleOverview: {
 			title: `Stale ${terms.workItems}`,
 			items: inputs.staleItems,
-			highlightColumn: ageHighlight,
-			timeInStateColumn: {
-				stalenessThresholdDays: inputs.stalenessThresholdDays,
-				blockedStalenessThresholdDays: inputs.blockedStalenessThresholdDays,
-			},
+			...opens("stale"),
+			timeInStateColumn,
 		},
 		featuresWorkedOnOverview: inputs.featuresInProgress
 			? {
 					title: `${terms.features} being Worked On`,
 					items: inputs.featuresInProgress,
-					highlightColumn: ageHighlight,
+					...inProgress,
 				}
 			: undefined,
 		percentiles: namedPercentilesScope
@@ -712,17 +705,14 @@ export function buildViewData(
 					items: inputs.cycleTimeData.filter(
 						(item) => namedPercentilesScope.valueFor(item) !== undefined,
 					),
-					highlightColumn: {
-						title: namedPercentilesScope.name,
-						description: "days",
-						valueGetter: (item: IWorkItem) =>
-							namedPercentilesScope.valueFor(item) ?? 0,
-					},
+					...closedItems,
+					cycleTimeScope: namedPercentilesScope.id,
+					namedCycleTimeDefinitions: inputs.namedCycleTimeDefinitions,
 				}
 			: {
 					title: `Closed ${terms.workItems}`,
 					items: inputs.cycleTimeData,
-					highlightColumn: cycleTimeHighlight,
+					...closedItems,
 					sle: inputs.serviceLevelExpectation?.value,
 				},
 		totalWorkItemAge: inFlight,
@@ -734,95 +724,95 @@ export function buildViewData(
 		throughput: {
 			title: `${inputs.title} Completed`,
 			items: throughputItems,
-			highlightColumn: cycleTimeHighlight,
+			...closedItems,
 		},
 		cycleScatter: {
 			title: `Closed ${terms.workItems}`,
 			items: inputs.cycleTimeData,
-			highlightColumn: cycleTimeHighlight,
+			...closedItems,
 			sle: inputs.serviceLevelExpectation?.value,
 		},
 		workDistribution: {
 			title: `${terms.workItems} Distribution`,
 			items: workDistributionItems,
-			highlightColumn: ageCycleHighlight,
+			...opens("workDistribution"),
 		},
 		aging: {
 			...inFlight,
+			...opens("aging"),
 			title: `${terms.workItems} in Progress`,
 			ageBandColumn,
 		},
 		wipOverTime: {
 			title: `${inputs.title} In Progress`,
 			items: wipOverTimeItems,
-			highlightColumn: ageCycleHighlight,
+			...inProgress,
 		},
 		totalWorkItemAgeOverTime: {
 			title: `${inputs.title} Contributing to Total Age`,
 			items: wipOverTimeItems,
-			highlightColumn: ageHighlight,
+			...inProgress,
 		},
 		stacked: {
 			title: `Started and Closed ${terms.workItems}`,
 			items: startedVsFinishedItems,
-			highlightColumn: ageCycleHighlight,
+			...opens("startedAndClosed"),
 		},
 		estimationVsCycleTime: {
 			title: `${terms.workItems} with Estimates`,
 			items: estimationItems,
-			context: "estimation",
-			ownerKind: inputs.ownerKind,
+			...opens("estimation"),
 		},
 		featureSize: {
 			title: `${terms.features}`,
 			items: inputs.allFeaturesForSizeChart as unknown as IWorkItem[],
-			highlightColumn: ageCycleHighlight,
+			...opens("featureSize"),
 		},
 		throughputPbc: {
 			title: `${inputs.title} Completed`,
 			items: throughputItems,
-			highlightColumn: cycleTimeHighlight,
+			...closedItems,
 		},
 		wipPbc: {
 			title: `${inputs.title} In Progress`,
 			items: wipOverTimeItems,
-			highlightColumn: ageCycleHighlight,
+			...inProgress,
 		},
 		totalWorkItemAgePbc: {
 			title: `${inputs.title} Contributing to Total Age`,
 			items: wipOverTimeItems,
-			highlightColumn: ageHighlight,
+			...inProgress,
 		},
 		cycleTimePbc: {
 			title: `Closed ${terms.workItems}`,
 			items: inputs.cycleTimeData,
-			highlightColumn: cycleTimeHighlight,
+			...closedItems,
 			sle: inputs.serviceLevelExpectation?.value,
 		},
 		featureSizePbc: {
 			title: `${terms.features}`,
 			items: inputs.allFeaturesForSizeChart as unknown as IWorkItem[],
-			highlightColumn: ageCycleHighlight,
+			...opens("featureSize"),
 		},
 		arrivals: {
 			title: `${inputs.title} Started`,
 			items: arrivalsItems,
-			highlightColumn: ageCycleHighlight,
+			...arrivals,
 		},
 		arrivalsPbc: {
 			title: `${inputs.title} Started`,
 			items: arrivalsItems,
-			highlightColumn: ageCycleHighlight,
+			...arrivals,
 		},
 		totalThroughput: {
 			title: `${inputs.title} Completed`,
 			items: throughputItems,
-			highlightColumn: cycleTimeHighlight,
+			...closedItems,
 		},
 		totalArrivals: {
 			title: `${inputs.title} Started`,
 			items: arrivalsItems,
-			highlightColumn: ageCycleHighlight,
+			...arrivals,
 		},
 	};
 }
@@ -832,6 +822,7 @@ function buildPbcNode(
 	titleSuffix: string,
 	type: ProcessBehaviourChartType,
 	workItemLookup: Map<number, IWorkItem>,
+	ownerKind: WorkItemsDialogOwnerKind,
 	filterToggle?: ReactNode,
 ): ReactNode | null {
 	if (!data) return null;
@@ -842,6 +833,7 @@ function buildPbcNode(
 			workItemLookup={workItemLookup}
 			type={type}
 			filterToggle={filterToggle}
+			ownerKind={ownerKind}
 		/>
 	);
 }
@@ -854,6 +846,7 @@ type PbcNodesCtx = {
 	featureSizePbcData: ProcessBehaviourChartData | null;
 	arrivalsPbcData: ProcessBehaviourChartData | null;
 	workItemLookup: Map<number, IWorkItem>;
+	ownerType: WorkItemsDialogOwnerKind;
 	throughputTerm: string;
 	workItemAgeTerm: string;
 	workInProgressTerm: string;
@@ -916,7 +909,7 @@ function buildPbcNodes(ctx: PbcNodesCtx): Record<string, ReactNode | null> {
 			id: "arrivalsPbc",
 			data: ctx.arrivalsPbcData,
 			titleSuffix: "Arrivals",
-			type: ProcessBehaviourChartType.Throughput,
+			type: ProcessBehaviourChartType.Arrivals,
 			filterToggle: undefined,
 		},
 	];
@@ -928,6 +921,7 @@ function buildPbcNodes(ctx: PbcNodesCtx): Record<string, ReactNode | null> {
 			config.titleSuffix,
 			config.type,
 			ctx.workItemLookup,
+			ctx.ownerType,
 			config.filterToggle,
 		);
 	}
@@ -1105,6 +1099,7 @@ function buildWidgetNodes(ctx: {
 				blackoutPeriods={ctx.blackoutPeriods}
 				namedCycleTimeDefinitions={ctx.namedCycleTimeDefinitions}
 				onFetchNamedCycleTimePercentiles={ctx.onFetchNamedCycleTimePercentiles}
+				ownerKind={ctx.ownerType}
 			/>
 		),
 		workDistribution: (
@@ -1113,6 +1108,7 @@ function buildWidgetNodes(ctx: {
 					[...ctx.cycleTimeData, ...ctx.inProgressItems] as IWorkItem[]
 				}
 				title="Work Distribution"
+				ownerKind={ctx.ownerType}
 			/>
 		),
 		aging: (
@@ -1131,6 +1127,7 @@ function buildWidgetNodes(ctx: {
 				perStatePercentileValues={ctx.perStatePercentileValues}
 				workItemAgePercentileValues={ctx.workItemAgePercentilesValues}
 				now={ctx.endDate}
+				ownerKind={ctx.ownerType}
 			/>
 		),
 		loadBalanceMatrix: <LoadBalanceMatrixChart data={ctx.loadBalanceData} />,
@@ -1141,6 +1138,8 @@ function buildWidgetNodes(ctx: {
 				chartData={ctx.wipOverTimeData}
 				displayTotal={false}
 				wipLimit={ctx.entity.systemWIPLimit}
+				dialogContext="inProgress"
+				ownerKind={ctx.ownerType}
 			/>
 		) : null,
 		totalWorkItemAgeOverTime: ctx.wipOverTimeData ? (
@@ -1148,6 +1147,7 @@ function buildWidgetNodes(ctx: {
 				title={`${ctx.title} Total Work Item Age Over Time`}
 				startDate={ctx.startDate}
 				wipOverTimeData={ctx.wipOverTimeData}
+				ownerKind={ctx.ownerType}
 			/>
 		) : null,
 		stacked:
@@ -1187,6 +1187,7 @@ function buildWidgetNodes(ctx: {
 					sizeDataPoints={ctx.allFeaturesForSizeChart}
 					sizePercentileValues={ctx.sizePercentileValues}
 					estimationData={ctx.featureSizeEstimationData ?? undefined}
+					ownerKind={ctx.ownerType}
 				/>
 			) : null,
 		arrivals: ctx.arrivalsData ? (
@@ -1195,6 +1196,8 @@ function buildWidgetNodes(ctx: {
 				startDate={ctx.startDate}
 				chartData={ctx.arrivalsData}
 				displayTotal={true}
+				dialogContext="arrivals"
+				ownerKind={ctx.ownerType}
 			/>
 		) : null,
 		blockedCountHistory: (
@@ -1203,6 +1206,7 @@ function buildWidgetNodes(ctx: {
 				metricsService={ctx.metricsService}
 				ownerId={ctx.entity.id}
 				title={`${ctx.blockedTerm} Over Time`}
+				ownerKind={ctx.ownerType}
 			/>
 		),
 		percentilesOverTime: (

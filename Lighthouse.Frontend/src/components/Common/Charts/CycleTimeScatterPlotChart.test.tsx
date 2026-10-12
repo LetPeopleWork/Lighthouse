@@ -142,6 +142,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 	it("should display 'No data available' when no work items are provided", () => {
 		render(
 			<CycleTimeScatterPlotChart
+				ownerKind="team"
 				percentileValues={mockPercentileValues}
 				cycleTimeDataPoints={[]}
 			/>,
@@ -153,6 +154,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 	it("should render the chart with correct title when data is provided", () => {
 		render(
 			<CycleTimeScatterPlotChart
+				ownerKind="team"
 				percentileValues={mockPercentileValues}
 				cycleTimeDataPoints={mockWorkItems}
 			/>,
@@ -165,6 +167,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 	it("should render percentile chips for each percentile", () => {
 		render(
 			<CycleTimeScatterPlotChart
+				ownerKind="team"
 				percentileValues={mockPercentileValues}
 				cycleTimeDataPoints={mockWorkItems}
 			/>,
@@ -181,6 +184,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 	it("should render SLE reference line when serviceLevelExpectation is provided", () => {
 		render(
 			<CycleTimeScatterPlotChart
+				ownerKind="team"
 				percentileValues={mockPercentileValues}
 				cycleTimeDataPoints={mockWorkItems}
 				serviceLevelExpectation={mockSLE}
@@ -226,6 +230,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 
 		render(
 			<CycleTimeScatterPlotChart
+				ownerKind="team"
 				percentileValues={mockPercentileValues}
 				cycleTimeDataPoints={blockedItems}
 			/>,
@@ -274,6 +279,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 
 		render(
 			<CycleTimeScatterPlotChart
+				ownerKind="team"
 				percentileValues={mockPercentileValues}
 				cycleTimeDataPoints={typeItems}
 			/>,
@@ -298,6 +304,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 	it("uses explicit axis IDs and x-axis height for stable tick rendering", () => {
 		render(
 			<CycleTimeScatterPlotChart
+				ownerKind="team"
 				percentileValues={mockPercentileValues}
 				cycleTimeDataPoints={mockWorkItems}
 			/>,
@@ -367,6 +374,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 		it("does not render the selector when no named definitions are available", () => {
 			render(
 				<CycleTimeScatterPlotChart
+					ownerKind="team"
 					percentileValues={mockPercentileValues}
 					cycleTimeDataPoints={namedItems}
 				/>,
@@ -378,6 +386,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 		it("lists Default plus each named cycle time definition", async () => {
 			render(
 				<CycleTimeScatterPlotChart
+					ownerKind="team"
 					percentileValues={mockPercentileValues}
 					cycleTimeDataPoints={namedItems}
 					namedCycleTimeDefinitions={[conceptToCash]}
@@ -396,6 +405,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 		it("plots the default durations until a named definition is selected", () => {
 			render(
 				<CycleTimeScatterPlotChart
+					ownerKind="team"
 					percentileValues={mockPercentileValues}
 					cycleTimeDataPoints={namedItems}
 					namedCycleTimeDefinitions={[conceptToCash]}
@@ -412,6 +422,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 		it("switches the dots to the named durations client-side and drops items without an entry", async () => {
 			render(
 				<CycleTimeScatterPlotChart
+					ownerKind="team"
 					percentileValues={mockPercentileValues}
 					cycleTimeDataPoints={namedItems}
 					namedCycleTimeDefinitions={[conceptToCash]}
@@ -440,6 +451,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 
 			render(
 				<CycleTimeScatterPlotChart
+					ownerKind="team"
 					percentileValues={mockPercentileValues}
 					cycleTimeDataPoints={namedItems}
 					namedCycleTimeDefinitions={[conceptToCash]}
@@ -462,6 +474,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 		it("disables an invalid named cycle time and keeps it unselectable", async () => {
 			render(
 				<CycleTimeScatterPlotChart
+					ownerKind="team"
 					percentileValues={mockPercentileValues}
 					cycleTimeDataPoints={namedItems}
 					namedCycleTimeDefinitions={[
@@ -487,6 +500,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 		it("falls back to Default when the selected definition becomes invalid", async () => {
 			const { rerender } = render(
 				<CycleTimeScatterPlotChart
+					ownerKind="team"
 					percentileValues={mockPercentileValues}
 					cycleTimeDataPoints={namedItems}
 					namedCycleTimeDefinitions={[{ ...conceptToCash, isValid: true }]}
@@ -505,6 +519,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 
 			rerender(
 				<CycleTimeScatterPlotChart
+					ownerKind="team"
 					percentileValues={mockPercentileValues}
 					cycleTimeDataPoints={namedItems}
 					namedCycleTimeDefinitions={[{ ...conceptToCash, isValid: false }]}

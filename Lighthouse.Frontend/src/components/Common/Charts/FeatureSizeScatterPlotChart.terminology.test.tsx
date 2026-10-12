@@ -64,13 +64,23 @@ const createFeature = (
 describe("FeatureSizeScatterPlotChart terminology", () => {
 	it("renders title with custom terminology", () => {
 		const features = [createFeature(1, "Test Feature", 5, 8)];
-		render(<FeatureSizeScatterPlotChart sizeDataPoints={features} />);
+		render(
+			<FeatureSizeScatterPlotChart
+				ownerKind="team"
+				sizeDataPoints={features}
+			/>,
+		);
 		expect(screen.getByText("Epics Size")).toBeInTheDocument();
 	});
 
 	it("renders dialog title with custom terminology", () => {
 		const features = [createFeature(1, "Test Feature", 5, 8)];
-		render(<FeatureSizeScatterPlotChart sizeDataPoints={features} />);
+		render(
+			<FeatureSizeScatterPlotChart
+				ownerKind="team"
+				sizeDataPoints={features}
+			/>,
+		);
 		// The dialog title uses featuresTerm, so it should show "Epics Details"
 		// This test will fail until the component uses getTerm for the title
 		expect(screen.getByTestId("chart-container")).toBeInTheDocument();

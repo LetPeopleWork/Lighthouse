@@ -155,7 +155,12 @@ describe("LineRunChart component", () => {
 		);
 
 		renderWithTheme(
-			<LineRunChart chartData={mockChartData} startDate={new Date()} />,
+			<LineRunChart
+				dialogContext="inProgress"
+				ownerKind="team"
+				chartData={mockChartData}
+				startDate={new Date()}
+			/>,
 		);
 
 		expect(screen.getByTestId("mock-line-chart")).toBeInTheDocument();
@@ -171,6 +176,8 @@ describe("LineRunChart component", () => {
 
 		renderWithTheme(
 			<LineRunChart
+				dialogContext="inProgress"
+				ownerKind="team"
 				chartData={mockChartData}
 				startDate={new Date()}
 				displayTotal={true}
@@ -185,7 +192,12 @@ describe("LineRunChart component", () => {
 		const mockChartData: RunChartData = new RunChartData([], 0, 0);
 
 		renderWithTheme(
-			<LineRunChart chartData={mockChartData} startDate={new Date()} />,
+			<LineRunChart
+				dialogContext="inProgress"
+				ownerKind="team"
+				chartData={mockChartData}
+				startDate={new Date()}
+			/>,
 		);
 
 		expect(screen.getByText("No data available")).toBeInTheDocument();
@@ -202,6 +214,8 @@ describe("LineRunChart component", () => {
 
 		renderWithTheme(
 			<LineRunChart
+				dialogContext="inProgress"
+				ownerKind="team"
 				chartData={mockChartData}
 				startDate={new Date()}
 				title={customTitle}
@@ -227,7 +241,12 @@ describe("LineRunChart component", () => {
 		const mockChartData = new RunChartData(workItemsMap, rawData.length, 30);
 
 		renderWithTheme(
-			<LineRunChart chartData={mockChartData} startDate={new Date()} />,
+			<LineRunChart
+				dialogContext="inProgress"
+				ownerKind="team"
+				chartData={mockChartData}
+				startDate={new Date()}
+			/>,
 		);
 
 		// Simulate clicking on the second point (index 1)
@@ -257,7 +276,12 @@ describe("LineRunChart component", () => {
 		const mockChartData = new RunChartData(workItemsMap, rawData.length, 30);
 
 		renderWithTheme(
-			<LineRunChart chartData={mockChartData} startDate={new Date()} />,
+			<LineRunChart
+				dialogContext="inProgress"
+				ownerKind="team"
+				chartData={mockChartData}
+				startDate={new Date()}
+			/>,
 		);
 
 		// Simulate clicking on the second point (index 1)
@@ -281,7 +305,12 @@ describe("LineRunChart component", () => {
 		const mockChartData = new RunChartData(workItemsMap, rawData.length, 30);
 
 		renderWithTheme(
-			<LineRunChart chartData={mockChartData} startDate={new Date()} />,
+			<LineRunChart
+				dialogContext="inProgress"
+				ownerKind="team"
+				chartData={mockChartData}
+				startDate={new Date()}
+			/>,
 		);
 
 		// Simulate clicking on the second point (index 1)
@@ -307,7 +336,12 @@ describe("LineRunChart component", () => {
 		);
 
 		renderWithTheme(
-			<LineRunChart chartData={mockChartData} startDate={new Date()} />,
+			<LineRunChart
+				dialogContext="inProgress"
+				ownerKind="team"
+				chartData={mockChartData}
+				startDate={new Date()}
+			/>,
 		);
 
 		// WIP limit chip should not be in the document
@@ -324,6 +358,8 @@ describe("LineRunChart component", () => {
 
 		renderWithTheme(
 			<LineRunChart
+				dialogContext="inProgress"
+				ownerKind="team"
 				chartData={mockChartData}
 				startDate={new Date()}
 				wipLimit={10}
@@ -344,6 +380,8 @@ describe("LineRunChart component", () => {
 
 		renderWithTheme(
 			<LineRunChart
+				dialogContext="inProgress"
+				ownerKind="team"
 				chartData={mockChartData}
 				startDate={new Date()}
 				wipLimit={0}

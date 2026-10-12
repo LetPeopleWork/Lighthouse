@@ -273,6 +273,7 @@ describe("WorkItemAgingChart component", () => {
 	it("renders correctly with in-progress items", () => {
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
@@ -289,6 +290,7 @@ describe("WorkItemAgingChart component", () => {
 	it("displays correct chart title", () => {
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
@@ -303,6 +305,7 @@ describe("WorkItemAgingChart component", () => {
 	it("renders fallback message when there are no items", () => {
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={[]}
 				percentileValues={mockPercentileValues}
@@ -320,6 +323,7 @@ describe("WorkItemAgingChart component", () => {
 	it("renders percentile chips with correct labels", () => {
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
@@ -340,6 +344,7 @@ describe("WorkItemAgingChart component", () => {
 	it("renders service level expectation chip when provided", () => {
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
@@ -354,6 +359,7 @@ describe("WorkItemAgingChart component", () => {
 	it("does not render service level expectation chip when not provided", () => {
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
@@ -370,6 +376,7 @@ describe("WorkItemAgingChart component", () => {
 	it("toggles percentile visibility when chip is clicked", () => {
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
@@ -396,6 +403,7 @@ describe("WorkItemAgingChart component", () => {
 	it("toggles service level expectation visibility when chip is clicked", () => {
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
@@ -412,6 +420,7 @@ describe("WorkItemAgingChart component", () => {
 	it("groups items correctly by state and age", () => {
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
@@ -427,6 +436,7 @@ describe("WorkItemAgingChart component", () => {
 	it("handles empty percentile values array", () => {
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={[]}
@@ -446,6 +456,7 @@ describe("WorkItemAgingChart component", () => {
 	it("renders chart components correctly", () => {
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
@@ -464,6 +475,7 @@ describe("WorkItemAgingChart component", () => {
 	it("renders reference lines for visible percentiles", () => {
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
@@ -487,6 +499,7 @@ describe("WorkItemAgingChart component", () => {
 
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={itemsWithMissingState}
 				percentileValues={mockPercentileValues}
@@ -516,6 +529,7 @@ describe("WorkItemAgingChart component", () => {
 
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={itemsWithNonDoingStates}
 				percentileValues={mockPercentileValues}
@@ -541,6 +555,7 @@ describe("WorkItemAgingChart component", () => {
 
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={itemWithSpecificAge}
 				percentileValues={mockPercentileValues}
@@ -556,6 +571,7 @@ describe("WorkItemAgingChart component", () => {
 		it("renders blocked items with red color", () => {
 			render(
 				<WorkItemAgingChart
+					ownerKind="team"
 					sleRiskValues={[]}
 					inProgressItems={mockBlockedItems}
 					percentileValues={mockPercentileValues}
@@ -604,6 +620,7 @@ describe("WorkItemAgingChart component", () => {
 
 			render(
 				<WorkItemAgingChart
+					ownerKind="team"
 					sleRiskValues={[]}
 					inProgressItems={typeItems}
 					percentileValues={mockPercentileValues}
@@ -627,6 +644,7 @@ describe("WorkItemAgingChart component", () => {
 		it("groups blocked and regular items correctly", () => {
 			render(
 				<WorkItemAgingChart
+					ownerKind="team"
 					sleRiskValues={[]}
 					inProgressItems={mockBlockedItems}
 					percentileValues={mockPercentileValues}
@@ -656,6 +674,7 @@ describe("WorkItemAgingChart component", () => {
 
 			render(
 				<WorkItemAgingChart
+					ownerKind="team"
 					sleRiskValues={[]}
 					inProgressItems={mixedBlockedItems}
 					percentileValues={mockPercentileValues}
@@ -670,6 +689,7 @@ describe("WorkItemAgingChart component", () => {
 		it("renders fallback message when blocked items array is empty", () => {
 			render(
 				<WorkItemAgingChart
+					ownerKind="team"
 					sleRiskValues={[]}
 					inProgressItems={[]}
 					percentileValues={mockPercentileValues}
@@ -707,6 +727,7 @@ describe("WorkItemAgingChart component", () => {
 
 			render(
 				<WorkItemAgingChart
+					ownerKind="team"
 					sleRiskValues={[]}
 					inProgressItems={itemsWithDifferentCasing}
 					percentileValues={mockPercentileValues}
@@ -731,6 +752,7 @@ describe("WorkItemAgingChart component", () => {
 
 			render(
 				<WorkItemAgingChart
+					ownerKind="team"
 					sleRiskValues={[]}
 					inProgressItems={items}
 					percentileValues={mockPercentileValues}
@@ -754,6 +776,7 @@ describe("WorkItemAgingChart component", () => {
 		): string | undefined => {
 			render(
 				<WorkItemAgingChart
+					ownerKind="team"
 					sleRiskValues={[]}
 					inProgressItems={items}
 					percentileValues={mockPercentileValues}
@@ -798,6 +821,7 @@ describe("WorkItemAgingChart component", () => {
 
 			render(
 				<WorkItemAgingChart
+					ownerKind="team"
 					sleRiskValues={[]}
 					inProgressItems={mockInProgressItems}
 					percentileValues={mockPercentileValues}
@@ -827,6 +851,7 @@ describe("WorkItemAgingChart component", () => {
 	it("uses explicit axis IDs and x-axis height for stable tick rendering", () => {
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
@@ -876,6 +901,7 @@ describe("WorkItemAgingChart component", () => {
 		it("renders no pace-band rects by default even when perStatePercentileValues is provided", () => {
 			render(
 				<WorkItemAgingChart
+					ownerKind="team"
 					sleRiskValues={[]}
 					inProgressItems={mockInProgressItems}
 					percentileValues={mockPercentileValues}
@@ -892,6 +918,7 @@ describe("WorkItemAgingChart component", () => {
 		it("shows the pace-bands toggle only when band data is available", () => {
 			const { rerender } = render(
 				<WorkItemAgingChart
+					ownerKind="team"
 					sleRiskValues={[]}
 					inProgressItems={mockInProgressItems}
 					percentileValues={mockPercentileValues}
@@ -906,6 +933,7 @@ describe("WorkItemAgingChart component", () => {
 
 			rerender(
 				<WorkItemAgingChart
+					ownerKind="team"
 					sleRiskValues={[]}
 					inProgressItems={mockInProgressItems}
 					percentileValues={mockPercentileValues}
@@ -924,6 +952,7 @@ describe("WorkItemAgingChart component", () => {
 		it("turns the pace bands on and off through the background control", () => {
 			render(
 				<WorkItemAgingChart
+					ownerKind="team"
 					sleRiskValues={[]}
 					inProgressItems={mockInProgressItems}
 					percentileValues={mockPercentileValues}
@@ -945,6 +974,7 @@ describe("WorkItemAgingChart component", () => {
 		it("keeps the work item type chips and percentile chips untouched by the choice", () => {
 			render(
 				<WorkItemAgingChart
+					ownerKind="team"
 					sleRiskValues={[]}
 					inProgressItems={mockInProgressItems}
 					percentileValues={mockPercentileValues}
@@ -1434,6 +1464,7 @@ describe("WorkItemAgingChart component", () => {
 		) =>
 			render(
 				<WorkItemAgingChart
+					ownerKind="team"
 					sleRiskValues={[]}
 					inProgressItems={overrides?.inProgressItems ?? mockInProgressItems}
 					percentileValues={mockPercentileValues}
@@ -1813,6 +1844,7 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 	it("hands the dialog behind a dot the same band column the list dialog gets", () => {
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={zenithItems}
 				percentileValues={cycleTimePercentiles}
@@ -1827,6 +1859,7 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 	it("reads a dot's items against the state that dot belongs to", () => {
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={zenithItems}
 				percentileValues={cycleTimePercentiles}
@@ -1842,6 +1875,7 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 	it("gives every item behind one dot the same band, because one dot is one state at one age", () => {
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={zenithItems}
 				percentileValues={cycleTimePercentiles}
@@ -1867,6 +1901,7 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={[inAnalysis]}
 				percentileValues={cycleTimePercentiles}
@@ -1883,6 +1918,7 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 	it("offers no band column at all when the team has no finished history", () => {
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={zenithItems}
 				percentileValues={cycleTimePercentiles}
@@ -1897,6 +1933,7 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 	it("re-reads the bands when the team or the date range behind them changes", () => {
 		const { rerender } = render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={zenithItems}
 				percentileValues={cycleTimePercentiles}
@@ -1923,6 +1960,7 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 
 		rerender(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={zenithItems}
 				percentileValues={cycleTimePercentiles}
@@ -1939,6 +1977,7 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 	it("plots exactly the same dots it plotted before the band existed", () => {
 		const { rerender } = render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={zenithItems}
 				percentileValues={cycleTimePercentiles}
@@ -1951,6 +1990,7 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 
 		rerender(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={zenithItems}
 				percentileValues={cycleTimePercentiles}
@@ -2180,6 +2220,7 @@ describe("the risk beside the dot the coach clicked", () => {
 	it("shows the risk on the items behind a bubble", () => {
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[
 					{
 						referenceId: "ZEN-412",
@@ -2213,6 +2254,7 @@ describe("the risk beside the dot the coach clicked", () => {
 	it("shows no risk column for a team that published no target", () => {
 		render(
 			<WorkItemAgingChart
+				ownerKind="team"
 				sleRiskValues={[]}
 				inProgressItems={inFlight}
 				percentileValues={cycleTimePercentiles}

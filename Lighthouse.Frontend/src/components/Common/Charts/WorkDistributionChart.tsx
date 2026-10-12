@@ -19,10 +19,12 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { getColorMapForKeys, hexToRgba } from "../../../utils/theme/colors";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
+import type { WorkItemsDialogOwnerKind } from "../WorkItemsDialog/workItemsDialogContexts";
 
 interface WorkDistributionChartProps {
 	workItems: IWorkItem[];
 	title?: string;
+	ownerKind: WorkItemsDialogOwnerKind;
 }
 
 interface WorkDistributionData {
@@ -35,6 +37,7 @@ interface WorkDistributionData {
 const WorkDistributionChart: React.FC<WorkDistributionChartProps> = ({
 	workItems,
 	title = "Work Distribution by Parent",
+	ownerKind,
 }) => {
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
@@ -44,8 +47,6 @@ const WorkDistributionChart: React.FC<WorkDistributionChartProps> = ({
 			? getTerm(TERMINOLOGY_KEYS.FEATURES)
 			: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 
-	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
-	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
 	const { featureService } = useContext(ApiServiceContext);
 
 	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
@@ -352,12 +353,8 @@ const WorkDistributionChart: React.FC<WorkDistributionChartProps> = ({
 				items={selectedItems}
 				open={dialogOpen}
 				onClose={handleCloseDialog}
-				highlightColumn={{
-					title: `${workItemAgeTerm}/${cycleTimeTerm}`,
-					description: "days",
-					valueGetter: (item) =>
-						item.cycleTime > 0 ? item.cycleTime : item.workItemAge,
-				}}
+				context="workDistribution"
+				ownerKind={ownerKind}
 			/>
 		</>
 	);

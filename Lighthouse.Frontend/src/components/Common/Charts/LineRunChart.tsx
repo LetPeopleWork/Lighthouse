@@ -9,6 +9,10 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
 import { hexToRgba } from "../../../utils/theme/colors";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
+import type {
+	WorkItemsDialogContextId,
+	WorkItemsDialogOwnerKind,
+} from "../WorkItemsDialog/workItemsDialogContexts";
 import BaseRunChart from "./BaseRunChart";
 import BlackoutOverlay from "./BlackoutOverlay";
 
@@ -18,6 +22,9 @@ interface LineRunChartProps {
 	title?: string;
 	displayTotal?: boolean;
 	wipLimit?: number;
+	/** Which list a point opens, decided by what the line counts. */
+	dialogContext: WorkItemsDialogContextId;
+	ownerKind: WorkItemsDialogOwnerKind;
 }
 
 const LineRunChart: React.FC<LineRunChartProps> = ({
@@ -26,6 +33,8 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 	title = "Run Chart",
 	displayTotal = false,
 	wipLimit,
+	dialogContext,
+	ownerKind,
 }) => {
 	const theme = useTheme();
 	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
@@ -38,8 +47,6 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const wipTerm = getTerm(TERMINOLOGY_KEYS.WIP);
-	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
-	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 
 	const handleLineClick = (dataIndex: number) => {
 		const items = chartData.workItemsPerUnitOfTime[dataIndex] || [];
@@ -199,12 +206,8 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 				items={selectedItems}
 				open={dialogOpen}
 				onClose={handleCloseDialog}
-				highlightColumn={{
-					title: `${workItemAgeTerm}/${cycleTimeTerm}`,
-					description: "days",
-					valueGetter: (item) =>
-						item.cycleTime > 0 ? item.cycleTime : item.workItemAge,
-				}}
+				context={dialogContext}
+				ownerKind={ownerKind}
 			/>
 		</>
 	);

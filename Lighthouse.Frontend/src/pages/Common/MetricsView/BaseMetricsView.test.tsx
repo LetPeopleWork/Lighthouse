@@ -28,6 +28,7 @@ vi.mock("../../../hooks/useLicenseRestrictions", () => ({
 	}),
 }));
 
+import type { WorkItemsDialogContextId } from "../../../components/Common/WorkItemsDialog/workItemsDialogContexts";
 import type { IFeature } from "../../../models/Feature";
 import { ForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { IFeatureSizeEstimationResponse } from "../../../models/Metrics/FeatureSizeEstimationData";
@@ -625,11 +626,9 @@ vi.mock("./WidgetShell", () => ({
 		viewData?: {
 			title: string;
 			items: IWorkItem[];
-			highlightColumn?: {
-				title: string;
-				description: string;
-				valueGetter: (item: IWorkItem) => number;
-			};
+			context?: WorkItemsDialogContextId;
+			cycleTimeScope?: number;
+			namedCycleTimeDefinitions?: { id: number; name: string }[];
 			sle?: number;
 			ageBandColumn?: AgeBandColumnDescriptor;
 			sleRiskColumn?: SleRiskColumnDescriptor;
@@ -676,16 +675,13 @@ vi.mock("./WidgetShell", () => ({
 					<span data-testid={`widget-view-data-count-${widgetKey}`}>
 						{viewData.items.length}
 					</span>
-					<span data-testid={`widget-view-data-highlight-title-${widgetKey}`}>
-						{viewData.highlightColumn?.title ?? ""}
+					<span data-testid={`widget-view-data-context-${widgetKey}`}>
+						{viewData.context ?? ""}
 					</span>
-					<span data-testid={`widget-view-data-highlight-values-${widgetKey}`}>
-						{(viewData.highlightColumn
-							? viewData.items.map((item) =>
-									viewData.highlightColumn?.valueGetter(item),
-								)
-							: []
-						).join(",")}
+					<span data-testid={`widget-view-data-cycle-time-scope-${widgetKey}`}>
+						{viewData.namedCycleTimeDefinitions?.find(
+							(definition) => definition.id === viewData.cycleTimeScope,
+						)?.name ?? ""}
 					</span>
 					<span data-testid={`widget-view-data-sle-${widgetKey}`}>
 						{viewData.sle ?? "none"}
@@ -5262,28 +5258,28 @@ describe("BaseMetricsView component", () => {
 			return { service, team };
 		}
 
-		it("View Data Default selection: the highlight column shows the cycle time for all closed items", async () => {
+		it("View Data Default selection: the closed items list reads the default cycle time for all closed items", async () => {
 			renderWithNamedItems();
 
 			await screen.findByTestId("cycle-time-percentiles");
 
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("widget-view-data-highlight-title-percentiles"),
-				).toHaveTextContent("Cycle Time");
+					screen.getByTestId("widget-view-data-context-percentiles"),
+				).toHaveTextContent("closedItems");
 			});
+			expect(
+				screen.getByTestId("widget-view-data-cycle-time-scope-percentiles"),
+			).toBeEmptyDOMElement();
 			expect(
 				screen.getByTestId("widget-view-data-count-percentiles"),
 			).toHaveTextContent("3");
-			expect(
-				screen.getByTestId("widget-view-data-highlight-values-percentiles"),
-			).toHaveTextContent("9,10,11");
 			expect(
 				screen.getByTestId("widget-view-data-sle-percentiles"),
 			).not.toHaveTextContent("none");
 		});
 
-		it("View Data Named selection: highlight column titled with the definition name and valued from namedCycleTimes", async () => {
+		it("View Data Named selection: the Cycle Time column reads the selected named cycle time", async () => {
 			renderWithNamedItems();
 
 			await screen.findByTestId("percentile-select-named");
@@ -5291,12 +5287,12 @@ describe("BaseMetricsView component", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("widget-view-data-highlight-title-percentiles"),
+					screen.getByTestId("widget-view-data-cycle-time-scope-percentiles"),
 				).toHaveTextContent("Concept to Cash");
 			});
 			expect(
-				screen.getByTestId("widget-view-data-highlight-values-percentiles"),
-			).toHaveTextContent("4,7");
+				screen.getByTestId("widget-view-data-context-percentiles"),
+			).toHaveTextContent("closedItems");
 		});
 
 		it("View Data Named selection: rows filtered to the named population equal to the percentile population", async () => {
@@ -5320,7 +5316,7 @@ describe("BaseMetricsView component", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("widget-view-data-highlight-title-percentiles"),
+					screen.getByTestId("widget-view-data-cycle-time-scope-percentiles"),
 				).toHaveTextContent("Concept to Cash");
 			});
 			expect(
@@ -5542,16 +5538,15 @@ describe("BaseMetricsView component", () => {
 				screen.getByTestId("percentile-select-second-named"),
 			);
 
-			// Looking up the definition by anything other than the selected id would
-			// title the column "Concept to Cash" and show that definition's 4 days.
+			// Passing anything other than the selected id would have the column read "Concept to Cash".
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("widget-view-data-highlight-title-percentiles"),
+					screen.getByTestId("widget-view-data-cycle-time-scope-percentiles"),
 				).toHaveTextContent("Commit to Deploy");
 			});
 			expect(
-				screen.getByTestId("widget-view-data-highlight-values-percentiles"),
-			).toHaveTextContent("8");
+				screen.getByTestId("widget-view-data-count-percentiles"),
+			).toHaveTextContent("1");
 		});
 
 		// Adversarial-review regressions: under a named selection the widget must never
@@ -5650,7 +5645,7 @@ describe("BaseMetricsView component", () => {
 				/>,
 			);
 
-		it("exposes the completed items behind Total Throughput, with the cycle time highlight (AC1)", async () => {
+		it("exposes the completed items behind Total Throughput, as closed items (AC1)", async () => {
 			renderOverview();
 
 			await waitFor(() => {
@@ -5669,8 +5664,8 @@ describe("BaseMetricsView component", () => {
 				screen.getByTestId("widget-view-data-count-totalThroughput"),
 			).toHaveTextContent("8");
 			expect(
-				screen.getByTestId("widget-view-data-highlight-title-totalThroughput"),
-			).toHaveTextContent("Cycle Time");
+				screen.getByTestId("widget-view-data-context-totalThroughput"),
+			).toHaveTextContent("closedItems");
 		});
 
 		it("exposes the arrival items behind Total Arrivals (AC2)", async () => {
@@ -6325,7 +6320,7 @@ describe("BaseMetricsView component", () => {
 		const renderedWidgetViewData = () =>
 			testIdSuffixes("widget-view-data-").filter(
 				(suffix) =>
-					!/^(title|count|highlight-title|highlight-values|sle|age-band-header|age-bands)-/.test(
+					!/^(title|count|context|cycle-time-scope|sle|age-band-header|age-bands)-/.test(
 						suffix,
 					),
 			);
@@ -6924,6 +6919,7 @@ describe("which lists carry the risk column", () => {
 			finishedItemsThatWentOnToMiss: number | null;
 		}[],
 		ownerKind: "team" | "portfolio" = "team",
+		overrides: Partial<Parameters<typeof buildViewData>[0]> = {},
 	) =>
 		buildViewData({
 			title: "Work Items",
@@ -6962,6 +6958,7 @@ describe("which lists carry the risk column", () => {
 				blocked: "Blocked",
 				sle: "SLE",
 			},
+			...overrides,
 		});
 
 	const builtWithRisk = () =>
@@ -7014,6 +7011,64 @@ describe("which lists carry the risk column", () => {
 
 			expect(estimation?.context).toBe("estimation");
 			expect(estimation?.ownerKind).toBe(ownerKind);
+		},
+	);
+
+	const CONTEXT_OF_EVERY_LIST: Record<string, WorkItemsDialogContextId> = {
+		wipOverview: "inProgress",
+		blockedOverview: "blocked",
+		staleOverview: "stale",
+		featuresWorkedOnOverview: "inProgress",
+		percentiles: "closedItems",
+		totalWorkItemAge: "inProgress",
+		workItemAgePercentiles: "inProgress",
+		sleRisk: "inProgress",
+		throughput: "closedItems",
+		cycleScatter: "closedItems",
+		workDistribution: "workDistribution",
+		aging: "aging",
+		wipOverTime: "inProgress",
+		totalWorkItemAgeOverTime: "inProgress",
+		stacked: "startedAndClosed",
+		estimationVsCycleTime: "estimation",
+		featureSize: "featureSize",
+		throughputPbc: "closedItems",
+		wipPbc: "inProgress",
+		totalWorkItemAgePbc: "inProgress",
+		cycleTimePbc: "closedItems",
+		featureSizePbc: "featureSize",
+		arrivals: "arrivals",
+		arrivalsPbc: "arrivals",
+		totalThroughput: "closedItems",
+		totalArrivals: "arrivals",
+	};
+
+	it.each(["team", "portfolio"] as const)(
+		"every View Data payload names a context for a %s",
+		(ownerKind) => {
+			const built = viewDataWith([], ownerKind, {
+				featuresInProgress: [inFlightItem(3, "ZEN-3")],
+			});
+
+			const opensWith = Object.fromEntries(
+				Object.entries(built).map(([key, payload]) => [
+					key,
+					{
+						context: payload?.context,
+						ownerKind: payload?.ownerKind,
+						hasHighlightColumn: payload?.highlightColumn !== undefined,
+					},
+				]),
+			);
+
+			expect(opensWith).toEqual(
+				Object.fromEntries(
+					Object.entries(CONTEXT_OF_EVERY_LIST).map(([key, context]) => [
+						key,
+						{ context, ownerKind, hasHighlightColumn: false },
+					]),
+				),
+			);
 		},
 	);
 

@@ -26,17 +26,17 @@ import {
 	useMemo,
 	useState,
 } from "react";
-import type { IFeature } from "../../../models/Feature";
 import type {
 	ProcessBehaviourChartData,
 	ProcessBehaviourChartDataPoint,
 	SpecialCauseType,
 } from "../../../models/Metrics/ProcessBehaviourChartData";
-import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
-import { useTerminology } from "../../../services/TerminologyContext";
-import { calculateHistoricalAge } from "../../../utils/date/age";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
+import type {
+	WorkItemsDialogContextId,
+	WorkItemsDialogOwnerKind,
+} from "../WorkItemsDialog/workItemsDialogContexts";
 import PbcBlackoutOverlay from "./PbcBlackoutOverlay";
 
 const specialCauseColors: Record<SpecialCauseType, string> = {
@@ -139,7 +139,26 @@ export enum ProcessBehaviourChartType {
 	TotalWorkItemAge,
 	WorkInProgress,
 	FeatureSize,
+	Arrivals,
 }
+
+const DIALOG_CONTEXT_OF_TYPE: Record<
+	ProcessBehaviourChartType,
+	WorkItemsDialogContextId
+> = {
+	[ProcessBehaviourChartType.Throughput]: "closedItems",
+	[ProcessBehaviourChartType.CycleTime]: "closedItems",
+	[ProcessBehaviourChartType.TotalWorkItemAge]: "inProgress",
+	[ProcessBehaviourChartType.WorkInProgress]: "inProgress",
+	[ProcessBehaviourChartType.FeatureSize]: "featureSize",
+	[ProcessBehaviourChartType.Arrivals]: "arrivals",
+};
+
+// These two count what was in flight on the clicked day, so their items' ages are read on that day.
+const MEASURES_AGE_ON_THE_CLICKED_DAY = new Set([
+	ProcessBehaviourChartType.TotalWorkItemAge,
+	ProcessBehaviourChartType.WorkInProgress,
+]);
 
 interface ProcessBehaviourChartProps {
 	data: ProcessBehaviourChartData;
@@ -147,6 +166,7 @@ interface ProcessBehaviourChartProps {
 	workItemLookup?: Map<number, IWorkItem>;
 	type: ProcessBehaviourChartType;
 	filterToggle?: React.ReactNode;
+	ownerKind: WorkItemsDialogOwnerKind;
 }
 
 const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
@@ -155,6 +175,7 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 	workItemLookup,
 	type,
 	filterToggle,
+	ownerKind,
 }) => {
 	const theme = useTheme();
 
@@ -167,42 +188,12 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 	const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 	const [dialogTitle, setDialogTitle] = useState("");
 
-	const { getTerm } = useTerminology();
-	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
-	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
-	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
-
 	const useEqualSpacing = useMemo(() => {
 		return (
 			type === ProcessBehaviourChartType.CycleTime ||
 			type === ProcessBehaviourChartType.FeatureSize
 		);
 	}, [type]);
-
-	const getHighlightColumnForType = (type: ProcessBehaviourChartType) => {
-		const highlightColumn = {
-			title: cycleTimeTerm,
-			description: "days",
-			valueGetter: (item: IWorkItem) => item.cycleTime,
-		};
-
-		switch (type) {
-			case ProcessBehaviourChartType.FeatureSize:
-				highlightColumn.title = `Size`;
-				highlightColumn.description = `Child ${workItemsTerm}`;
-				highlightColumn.valueGetter = (item: IWorkItem) =>
-					(item as IFeature).size ?? 0;
-				break;
-			case ProcessBehaviourChartType.TotalWorkItemAge:
-			case ProcessBehaviourChartType.WorkInProgress:
-				highlightColumn.title = workItemAgeTerm;
-				highlightColumn.valueGetter = (item: IWorkItem) =>
-					calculateHistoricalAge(item, selectedDate ?? new Date());
-				break;
-		}
-
-		return highlightColumn;
-	};
 
 	const availableSpecialCauses = useMemo(() => {
 		if (data.status !== "Ready") return new Set<SpecialCauseType>();
@@ -552,7 +543,13 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 				items={dialogItems}
 				open={dialogOpen}
 				onClose={() => setDialogOpen(false)}
-				highlightColumn={getHighlightColumnForType(type)}
+				context={DIALOG_CONTEXT_OF_TYPE[type]}
+				ownerKind={ownerKind}
+				ageOn={
+					MEASURES_AGE_ON_THE_CLICKED_DAY.has(type)
+						? (selectedDate ?? undefined)
+						: undefined
+				}
 			/>
 		</>
 	);

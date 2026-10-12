@@ -8,6 +8,10 @@ import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
+import type {
+	WorkItemsDialogContextId,
+	WorkItemsDialogOwnerKind,
+} from "../WorkItemsDialog/workItemsDialogContexts";
 import BaseRunChart from "./BaseRunChart";
 import BlackoutOverlay from "./BlackoutOverlay";
 
@@ -17,6 +21,9 @@ interface BarRunChartProps {
 	displayTotal?: boolean;
 	title?: string;
 	filterToggle?: ReactNode;
+	/** Which list a bar opens; the same chart shows closed items in one place and started ones in another. */
+	dialogContext: WorkItemsDialogContextId;
+	ownerKind: WorkItemsDialogOwnerKind;
 }
 
 const BarRunChart: React.FC<BarRunChartProps> = ({
@@ -25,6 +32,8 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 	displayTotal = false,
 	title = "Bar Chart",
 	filterToggle,
+	dialogContext,
+	ownerKind,
 }) => {
 	const theme = useTheme();
 	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
@@ -33,7 +42,6 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
-	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 
 	const handleBarClick = (dataIndex: number) => {
 		const items = chartData.workItemsPerUnitOfTime[dataIndex] || [];
@@ -151,11 +159,8 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 				items={selectedItems}
 				open={dialogOpen}
 				onClose={handleCloseDialog}
-				highlightColumn={{
-					title: cycleTimeTerm,
-					description: "days",
-					valueGetter: (item) => item.cycleTime,
-				}}
+				context={dialogContext}
+				ownerKind={ownerKind}
 			/>
 		</>
 	);

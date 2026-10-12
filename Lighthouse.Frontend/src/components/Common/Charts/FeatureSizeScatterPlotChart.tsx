@@ -42,6 +42,7 @@ import { getWorkItemName } from "../../../utils/featureName";
 import { errorColor, getColorMapForKeys } from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
+import type { WorkItemsDialogOwnerKind } from "../WorkItemsDialog/workItemsDialogContexts";
 import LegendChip from "./LegendChip";
 import PercentileLegend from "./PercentileLegend";
 
@@ -217,6 +218,7 @@ interface FeatureSizeScatterPlotChartProps {
 	sizeDataPoints: IFeature[];
 	sizePercentileValues?: IPercentileValue[];
 	estimationData?: IFeatureSizeEstimationResponse;
+	ownerKind: WorkItemsDialogOwnerKind;
 }
 
 type ChartMode = "cycleTime" | "estimation" | "closedDate";
@@ -347,12 +349,16 @@ const getYAxisLabel = ({
 
 const FeatureSizeScatterPlotChart: React.FC<
 	FeatureSizeScatterPlotChartProps
-> = ({ sizeDataPoints, sizePercentileValues = [], estimationData }) => {
+> = ({
+	sizeDataPoints,
+	sizePercentileValues = [],
+	estimationData,
+	ownerKind,
+}) => {
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
-	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const sizeTerm = "Size";
 
 	const showEstimationToggle =
@@ -791,11 +797,8 @@ const FeatureSizeScatterPlotChart: React.FC<
 					title={dialogTitle}
 					items={selectedItems}
 					open={dialogOpen}
-					highlightColumn={{
-						title: sizeTerm,
-						description: `Child ${workItemsTerm}`,
-						valueGetter: (item) => (item as IFeature).size ?? "",
-					}}
+					context="featureSize"
+					ownerKind={ownerKind}
 					onClose={() => setDialogOpen(false)}
 				/>
 			)}

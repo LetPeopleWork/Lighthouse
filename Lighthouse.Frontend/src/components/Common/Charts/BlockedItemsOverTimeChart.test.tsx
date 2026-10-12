@@ -109,6 +109,7 @@ describe("BlockedItemsOverTimeChart", () => {
 
 		render(
 			<BlockedItemsOverTimeChart
+				ownerKind="team"
 				snapshots={snapshots}
 				metricsService={createMockMetricsService()}
 				ownerId={1}
@@ -124,6 +125,7 @@ describe("BlockedItemsOverTimeChart", () => {
 	it(`renders "${EMPTY_MESSAGE}" for an empty array and never a flat zero line`, () => {
 		render(
 			<BlockedItemsOverTimeChart
+				ownerKind="team"
 				snapshots={[]}
 				metricsService={createMockMetricsService()}
 				ownerId={1}
@@ -137,6 +139,7 @@ describe("BlockedItemsOverTimeChart", () => {
 	it(`renders "${EMPTY_MESSAGE}" for null snapshots`, () => {
 		render(
 			<BlockedItemsOverTimeChart
+				ownerKind="team"
 				snapshots={null}
 				metricsService={createMockMetricsService()}
 				ownerId={1}
@@ -183,6 +186,7 @@ describe("BlockedItemsOverTimeChart", () => {
 		// itself just renders the data it receives.
 		const { rerender } = render(
 			<BlockedItemsOverTimeChart
+				ownerKind="team"
 				snapshots={snapshots}
 				metricsService={createMockMetricsService()}
 				ownerId={1}
@@ -199,6 +203,7 @@ describe("BlockedItemsOverTimeChart", () => {
 
 		rerender(
 			<BlockedItemsOverTimeChart
+				ownerKind="team"
 				snapshots={differentSnapshots}
 				metricsService={createMockMetricsService()}
 				ownerId={1}
@@ -215,6 +220,7 @@ describe("BlockedItemsOverTimeChart", () => {
 
 		render(
 			<BlockedItemsOverTimeChart
+				ownerKind="team"
 				snapshots={snapshots}
 				metricsService={createMockMetricsService()}
 				ownerId={1}
@@ -237,6 +243,7 @@ describe("BlockedItemsOverTimeChart", () => {
 
 		render(
 			<BlockedItemsOverTimeChart
+				ownerKind="team"
 				snapshots={snapshots}
 				metricsService={service}
 				ownerId={7}
@@ -269,6 +276,7 @@ describe("BlockedItemsOverTimeChart", () => {
 
 		render(
 			<BlockedItemsOverTimeChart
+				ownerKind="team"
 				snapshots={snapshots}
 				metricsService={service}
 				ownerId={3}
@@ -297,6 +305,7 @@ describe("BlockedItemsOverTimeChart", () => {
 
 		render(
 			<BlockedItemsOverTimeChart
+				ownerKind="team"
 				snapshots={snapshots}
 				metricsService={service}
 				ownerId={42}
@@ -326,6 +335,7 @@ describe("BlockedItemsOverTimeChart", () => {
 
 		render(
 			<BlockedItemsOverTimeChart
+				ownerKind="team"
 				snapshots={snapshots}
 				metricsService={service}
 				ownerId={1}
@@ -354,6 +364,7 @@ describe("BlockedItemsOverTimeChart", () => {
 
 		render(
 			<BlockedItemsOverTimeChart
+				ownerKind="team"
 				snapshots={snapshots}
 				metricsService={service}
 				ownerId={1}
@@ -382,6 +393,7 @@ describe("BlockedItemsOverTimeChart", () => {
 
 		render(
 			<BlockedItemsOverTimeChart
+				ownerKind="team"
 				snapshots={snapshots}
 				metricsService={service}
 				ownerId={1}
@@ -405,6 +417,7 @@ describe("BlockedItemsOverTimeChart", () => {
 		const service = createMockMetricsService([workItem(1, "Blocked Alpha")]);
 		render(
 			<BlockedItemsOverTimeChart
+				ownerKind="team"
 				snapshots={[{ recordedAt: "2026-06-01", blockedCount: 3 }]}
 				metricsService={service}
 				ownerId={1}

@@ -8,12 +8,14 @@ import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { errorColor } from "../../../utils/theme/colors";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
+import type { WorkItemsDialogOwnerKind } from "../WorkItemsDialog/workItemsDialogContexts";
 
 interface BlockedItemsOverTimeChartProps {
 	snapshots: BlockedCountSnapshot[] | null;
 	metricsService: IMetricsService<IWorkItem | IFeature>;
 	ownerId: number;
 	title?: string;
+	ownerKind: WorkItemsDialogOwnerKind;
 }
 
 const EMPTY_MESSAGE =
@@ -32,6 +34,7 @@ const BlockedItemsOverTimeChart: React.FC<BlockedItemsOverTimeChartProps> = ({
 	metricsService,
 	ownerId,
 	title = "Blocked Items Over Time",
+	ownerKind,
 }) => {
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [dialogItems, setDialogItems] = useState<IWorkItem[]>([]);
@@ -133,6 +136,8 @@ const BlockedItemsOverTimeChart: React.FC<BlockedItemsOverTimeChartProps> = ({
 				items={dialogItems}
 				open={dialogOpen}
 				onClose={() => setDialogOpen(false)}
+				context="blocked"
+				ownerKind={ownerKind}
 			/>
 		</Card>
 	);

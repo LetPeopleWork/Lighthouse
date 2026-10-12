@@ -59,6 +59,7 @@ import { deriveStaleness } from "../../../utils/staleness/deriveStaleness";
 import { getColorMapForKeys } from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
+import type { WorkItemsDialogOwnerKind } from "../WorkItemsDialog/workItemsDialogContexts";
 import LegendChip from "./LegendChip";
 import PercentileLegend from "./PercentileLegend";
 
@@ -346,6 +347,7 @@ interface WorkItemAgingChartProps {
 	now?: Date;
 	perStatePercentileValues?: IPerStatePercentileValues[];
 	workItemAgePercentileValues?: IPercentileValue[];
+	ownerKind: WorkItemsDialogOwnerKind;
 }
 
 // One array each, shared by every render that was handed no percentiles. A `[]` written into the
@@ -366,6 +368,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	now: providedNow,
 	perStatePercentileValues = NO_PER_STATE_PERCENTILES,
 	workItemAgePercentileValues = NO_PERCENTILES,
+	ownerKind,
 }) => {
 	const [groupedDataPoints, setGroupedDataPoints] = useState<
 		IGroupedWorkItem[]
@@ -812,11 +815,8 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 				items={selectedItems}
 				open={dialogOpen}
 				onClose={() => setDialogOpen(false)}
-				highlightColumn={{
-					title: workItemAgeTerm,
-					description: "days",
-					valueGetter: (item) => item.workItemAge,
-				}}
+				context="aging"
+				ownerKind={ownerKind}
 				ageBandColumn={ageBandColumn}
 				sleRiskColumn={sleRiskColumn}
 				timeInStateColumn={{

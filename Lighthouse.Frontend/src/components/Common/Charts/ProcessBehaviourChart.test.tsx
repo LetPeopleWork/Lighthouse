@@ -189,6 +189,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -212,6 +213,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -237,6 +239,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -253,6 +256,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput"
 					type={ProcessBehaviourChartType.Throughput}
@@ -269,6 +273,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -292,6 +297,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -308,6 +314,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -323,6 +330,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -338,6 +346,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -352,6 +361,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -370,6 +380,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -403,6 +414,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -432,6 +444,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -456,6 +469,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -484,6 +498,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -518,6 +533,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -551,6 +567,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -582,6 +599,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -611,6 +629,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -638,6 +657,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -658,6 +678,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -688,6 +709,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Cycle Time PBC"
 					type={ProcessBehaviourChartType.CycleTime}
@@ -704,6 +726,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -742,6 +765,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Cycle Time PBC"
 					type={ProcessBehaviourChartType.CycleTime}
@@ -782,6 +806,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -808,6 +833,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Throughput PBC"
 					type={ProcessBehaviourChartType.Throughput}
@@ -839,6 +865,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Cycle Time PBC"
 					type={ProcessBehaviourChartType.CycleTime}
@@ -889,6 +916,7 @@ describe("ProcessBehaviourChart", () => {
 
 			render(
 				<ProcessBehaviourChart
+					ownerKind="team"
 					data={data}
 					title="Cycle Time PBC"
 					type={ProcessBehaviourChartType.CycleTime}

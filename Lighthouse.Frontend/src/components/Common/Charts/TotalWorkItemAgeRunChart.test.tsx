@@ -73,6 +73,7 @@ describe("TotalWorkItemAgeRunChart", () => {
 
 		render(
 			<TotalWorkItemAgeRunChart
+				ownerKind="team"
 				wipOverTimeData={mockData}
 				startDate={startDate}
 			/>,
@@ -89,6 +90,7 @@ describe("TotalWorkItemAgeRunChart", () => {
 
 		render(
 			<TotalWorkItemAgeRunChart
+				ownerKind="team"
 				wipOverTimeData={mockData}
 				startDate={startDate}
 				title="Custom Age Chart"
@@ -112,6 +114,7 @@ describe("TotalWorkItemAgeRunChart", () => {
 
 		render(
 			<TotalWorkItemAgeRunChart
+				ownerKind="team"
 				wipOverTimeData={mockData}
 				startDate={startDate}
 			/>,
@@ -134,6 +137,7 @@ describe("TotalWorkItemAgeRunChart", () => {
 
 		render(
 			<TotalWorkItemAgeRunChart
+				ownerKind="team"
 				wipOverTimeData={mockData}
 				startDate={startDate}
 			/>,
@@ -153,6 +157,7 @@ describe("TotalWorkItemAgeRunChart", () => {
 
 		render(
 			<TotalWorkItemAgeRunChart
+				ownerKind="team"
 				wipOverTimeData={mockData}
 				startDate={startDate}
 			/>,
@@ -192,6 +197,7 @@ describe("TotalWorkItemAgeRunChart", () => {
 
 		render(
 			<TotalWorkItemAgeRunChart
+				ownerKind="team"
 				wipOverTimeData={mockData}
 				startDate={startDate}
 			/>,
@@ -217,6 +223,7 @@ describe("TotalWorkItemAgeRunChart", () => {
 
 		render(
 			<TotalWorkItemAgeRunChart
+				ownerKind="team"
 				wipOverTimeData={mockData}
 				startDate={startDate}
 			/>,
@@ -237,6 +244,7 @@ describe("TotalWorkItemAgeRunChart", () => {
 
 		render(
 			<TotalWorkItemAgeRunChart
+				ownerKind="team"
 				wipOverTimeData={mockData}
 				startDate={startDate}
 			/>,
@@ -262,6 +270,7 @@ describe("TotalWorkItemAgeRunChart", () => {
 
 		render(
 			<TotalWorkItemAgeRunChart
+				ownerKind="team"
 				wipOverTimeData={mockData}
 				startDate={startDate}
 			/>,
@@ -276,6 +285,7 @@ describe("TotalWorkItemAgeRunChart", () => {
 
 		render(
 			<TotalWorkItemAgeRunChart
+				ownerKind="team"
 				wipOverTimeData={mockData}
 				startDate={startDate}
 			/>,
@@ -319,6 +329,7 @@ describe("TotalWorkItemAgeRunChart", () => {
 
 		render(
 			<TotalWorkItemAgeRunChart
+				ownerKind="team"
 				wipOverTimeData={mockData}
 				startDate={startDate}
 			/>,
@@ -361,6 +372,7 @@ describe("TotalWorkItemAgeRunChart", () => {
 
 		render(
 			<TotalWorkItemAgeRunChart
+				ownerKind="team"
 				wipOverTimeData={mockData}
 				startDate={startDate}
 			/>,

@@ -495,6 +495,8 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 												startDate={historicalStartDate}
 												title="Historical Throughput"
 												displayTotal={true}
+												dialogContext="closedItems"
+												ownerKind="team"
 											/>
 										</Box>
 									)}
@@ -525,6 +527,8 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 											startDate={backtestResult.startDate}
 											title="Actual Throughput"
 											displayTotal={true}
+											dialogContext="closedItems"
+											ownerKind="team"
 										/>
 									</Box>
 								)}

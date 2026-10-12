@@ -118,7 +118,12 @@ describe("BarRunChart component", () => {
 		);
 
 		render(
-			<BarRunChart chartData={mockThroughputData} startDate={new Date()} />,
+			<BarRunChart
+				dialogContext="closedItems"
+				ownerKind="team"
+				chartData={mockThroughputData}
+				startDate={new Date()}
+			/>,
 		);
 
 		expect(screen.getByTestId("mock-bar-chart")).toBeInTheDocument();
@@ -134,6 +139,8 @@ describe("BarRunChart component", () => {
 
 		render(
 			<BarRunChart
+				dialogContext="closedItems"
+				ownerKind="team"
 				chartData={mockThroughputData}
 				startDate={new Date()}
 				displayTotal={true}
@@ -148,7 +155,12 @@ describe("BarRunChart component", () => {
 		const mockThroughputData: RunChartData = new RunChartData([], 0, 0);
 
 		render(
-			<BarRunChart chartData={mockThroughputData} startDate={new Date()} />,
+			<BarRunChart
+				dialogContext="closedItems"
+				ownerKind="team"
+				chartData={mockThroughputData}
+				startDate={new Date()}
+			/>,
 		);
 
 		expect(screen.getByText("No data available")).toBeInTheDocument();
@@ -173,7 +185,12 @@ describe("BarRunChart component", () => {
 		);
 
 		render(
-			<BarRunChart chartData={mockThroughputData} startDate={new Date()} />,
+			<BarRunChart
+				dialogContext="closedItems"
+				ownerKind="team"
+				chartData={mockThroughputData}
+				startDate={new Date()}
+			/>,
 		);
 
 		// Simulate clicking on the second bar (index 1)
@@ -207,7 +224,12 @@ describe("BarRunChart component", () => {
 		);
 
 		render(
-			<BarRunChart chartData={mockThroughputData} startDate={new Date()} />,
+			<BarRunChart
+				dialogContext="closedItems"
+				ownerKind="team"
+				chartData={mockThroughputData}
+				startDate={new Date()}
+			/>,
 		);
 
 		// Simulate clicking on the second bar (index 1)
@@ -235,7 +257,12 @@ describe("BarRunChart component", () => {
 		);
 
 		render(
-			<BarRunChart chartData={mockThroughputData} startDate={new Date()} />,
+			<BarRunChart
+				dialogContext="closedItems"
+				ownerKind="team"
+				chartData={mockThroughputData}
+				startDate={new Date()}
+			/>,
 		);
 
 		// Simulate clicking on the second bar (index 1)
@@ -268,7 +295,12 @@ describe("Blackout Day visualization", () => {
 		);
 
 		render(
-			<BarRunChart chartData={mockThroughputData} startDate={new Date()} />,
+			<BarRunChart
+				dialogContext="closedItems"
+				ownerKind="team"
+				chartData={mockThroughputData}
+				startDate={new Date()}
+			/>,
 		);
 
 		const chartProps = screen.getByTestId("chartProps");
@@ -284,7 +316,12 @@ describe("Blackout Day visualization", () => {
 		);
 
 		render(
-			<BarRunChart chartData={mockThroughputData} startDate={new Date()} />,
+			<BarRunChart
+				dialogContext="closedItems"
+				ownerKind="team"
+				chartData={mockThroughputData}
+				startDate={new Date()}
+			/>,
 		);
 
 		const chartProps = screen.getByTestId("chartProps");
@@ -303,7 +340,12 @@ describe("Blackout Day visualization", () => {
 		);
 
 		render(
-			<BarRunChart chartData={mockThroughputData} startDate={new Date()} />,
+			<BarRunChart
+				dialogContext="closedItems"
+				ownerKind="team"
+				chartData={mockThroughputData}
+				startDate={new Date()}
+			/>,
 		);
 
 		const lastCall = BarChart.mock.calls[BarChart.mock.calls.length - 1];

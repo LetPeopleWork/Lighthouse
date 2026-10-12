@@ -122,7 +122,9 @@ describe("WorkDistributionChart component", () => {
 
 	describe("Empty State", () => {
 		it("should display 'No work items to display' when no work items are provided", () => {
-			renderWithContext(<WorkDistributionChart workItems={[]} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={[]} />,
+			);
 
 			expect(
 				screen.getByText("Work Distribution by Parent"),
@@ -140,7 +142,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(3, "PARENT-2"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			expect(
 				screen.getByText("Work Distribution by Parent"),
@@ -153,7 +157,11 @@ describe("WorkDistributionChart component", () => {
 			const customTitle = "Custom Distribution Title";
 
 			renderWithContext(
-				<WorkDistributionChart workItems={workItems} title={customTitle} />,
+				<WorkDistributionChart
+					ownerKind="team"
+					workItems={workItems}
+					title={customTitle}
+				/>,
 			);
 
 			expect(screen.getByText(customTitle)).toBeInTheDocument();
@@ -167,7 +175,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(4, "PARENT-3"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			// Check that all parent references are displayed
 			expect(screen.getByText("PARENT-1: 2")).toBeInTheDocument();
@@ -186,7 +196,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(5, "EPIC-200"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			// Verify grouped counts
 			expect(screen.getByText("EPIC-100: 3")).toBeInTheDocument();
@@ -200,7 +212,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(3, "PARENT-1"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			expect(screen.getByText("No Parent: 2")).toBeInTheDocument();
 			expect(screen.getByText("PARENT-1: 1")).toBeInTheDocument();
@@ -216,7 +230,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(6, "MEDIUM"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			const slices = screen.getAllByRole("button");
 			// First slice should be LARGE (3 items), then MEDIUM (2 items), then SMALL (1 item)
@@ -234,7 +250,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(3, "PARENT-2"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			// Click on the first pie slice (PARENT-1 with 2 items)
 			fireEvent.click(screen.getByTestId("pie-slice-0"));
@@ -253,7 +271,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(3, "EPIC-B"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			// Click on EPIC-A slice (should be first due to sorting by size)
 			fireEvent.click(screen.getByTestId("pie-slice-0"));
@@ -270,7 +290,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(2, "PARENT-1"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			// Open dialog
 			fireEvent.click(screen.getByTestId("pie-slice-0"));
@@ -293,7 +315,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(5, "PARENT-2"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			// Click first slice (PARENT-2 with 3 items, sorted descending)
 			fireEvent.click(screen.getByTestId("pie-slice-0"));
@@ -318,7 +342,9 @@ describe("WorkDistributionChart component", () => {
 		it("should handle single work item", () => {
 			const workItems = [generateMockWorkItem(1, "SINGLE-PARENT")];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			expect(screen.getByText("SINGLE-PARENT: 1")).toBeInTheDocument();
 			expect(screen.getByTestId("mock-pie-chart")).toBeInTheDocument();
@@ -332,7 +358,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(4, "SAME-PARENT"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			expect(screen.getByText("SAME-PARENT: 4")).toBeInTheDocument();
 			expect(screen.getAllByRole("button")).toHaveLength(1); // Only one slice
@@ -347,7 +375,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(5, ""),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			// No Parent should have 3 items (sorted first)
 			expect(screen.getByText("No Parent: 3")).toBeInTheDocument();
@@ -359,7 +389,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(i + 1, `PARENT-${i + 1}`),
 			);
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			// All parents should have 1 item each
 			const slices = screen.getAllByRole("button");
@@ -379,7 +411,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(2, "PARENT-1", 15),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			fireEvent.click(screen.getByTestId("pie-slice-0"));
 
@@ -423,7 +457,10 @@ describe("WorkDistributionChart component", () => {
 			};
 
 			renderWithContext(
-				<WorkDistributionChart workItems={[doneItem, inProgressItem]} />,
+				<WorkDistributionChart
+					ownerKind="team"
+					workItems={[doneItem, inProgressItem]}
+				/>,
 			);
 
 			fireEvent.click(screen.getByTestId("pie-slice-0"));
@@ -441,7 +478,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(3, "FEATURE-XYZ"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			fireEvent.click(screen.getByTestId("pie-slice-0"));
 
@@ -459,7 +498,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(2, "PARENT-1"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			fireEvent.click(screen.getByTestId("pie-slice-0"));
 
@@ -478,7 +519,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(2, "PARENT-2"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			// Check table headers
 			expect(screen.getByText("Name")).toBeInTheDocument();
@@ -496,7 +539,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(6, "EPIC-300"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			// Check parent names in table (should be sorted by count descending)
 			expect(screen.getByText("EPIC-100")).toBeInTheDocument();
@@ -526,7 +571,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(3, "EPIC-100"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			// Check that "No Parent" is displayed in the table
 			expect(screen.getByText("No Parent")).toBeInTheDocument();
@@ -543,7 +590,7 @@ describe("WorkDistributionChart component", () => {
 			];
 
 			const { container } = renderWithContext(
-				<WorkDistributionChart workItems={workItems} />,
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
 			);
 
 			// Look for the parent names in the table which should be next to color indicators
@@ -583,7 +630,7 @@ describe("WorkDistributionChart component", () => {
 			];
 
 			const { container } = renderWithContext(
-				<WorkDistributionChart workItems={workItems} />,
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
 			);
 
 			const colorBox0 = container.querySelector(
@@ -613,7 +660,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(3, "PARENT-2"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			// Find and click on a table row (not header)
 			const tableRows = screen.getAllByRole("row");
@@ -636,7 +685,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(5, "EPIC-B"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			const tableRows = screen.getAllByRole("row");
 
@@ -672,7 +723,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(10, "D"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			// D: 4/10 = 40.0%
 			expect(screen.getByText("40.0%")).toBeInTheDocument();
@@ -691,7 +744,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(3, "ONLY-PARENT"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			expect(screen.getByText("100.0%")).toBeInTheDocument();
 		});
@@ -706,7 +761,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(6, "MEDIUM"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			const tableRows = screen.getAllByRole("row");
 			// Skip header row (index 0)
@@ -742,7 +799,7 @@ describe("WorkDistributionChart component", () => {
 
 			render(
 				<ApiServiceContext.Provider value={mockContext}>
-					<WorkDistributionChart workItems={workItems} />
+					<WorkDistributionChart ownerKind="team" workItems={workItems} />
 				</ApiServiceContext.Provider>,
 			);
 
@@ -773,7 +830,7 @@ describe("WorkDistributionChart component", () => {
 
 			render(
 				<ApiServiceContext.Provider value={mockContext}>
-					<WorkDistributionChart workItems={workItems} />
+					<WorkDistributionChart ownerKind="team" workItems={workItems} />
 				</ApiServiceContext.Provider>,
 			);
 
@@ -804,7 +861,9 @@ describe("WorkDistributionChart component", () => {
 				),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			// Verify the long parent name is displayed in the table
 			expect(
@@ -819,7 +878,9 @@ describe("WorkDistributionChart component", () => {
 		});
 
 		it("should not render table when there are no work items", () => {
-			renderWithContext(<WorkDistributionChart workItems={[]} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={[]} />,
+			);
 
 			// Table headers should not be present
 			expect(screen.queryByText("Name")).not.toBeInTheDocument();
@@ -836,7 +897,9 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(6, "PARENT-C"),
 			];
 
-			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(
+				<WorkDistributionChart ownerKind="team" workItems={workItems} />,
+			);
 
 			// Both pie chart and table should be sorted: C(3), B(2), A(1)
 			const pieSlices = screen.getAllByRole("button");
@@ -871,7 +934,7 @@ describe("WorkDistributionChart component", () => {
 
 			render(
 				<ApiServiceContext.Provider value={mockContext}>
-					<WorkDistributionChart workItems={workItems} />
+					<WorkDistributionChart ownerKind="team" workItems={workItems} />
 				</ApiServiceContext.Provider>,
 			);
 
@@ -902,7 +965,7 @@ describe("WorkDistributionChart component", () => {
 
 			render(
 				<ApiServiceContext.Provider value={mockContext}>
-					<WorkDistributionChart workItems={workItems} />
+					<WorkDistributionChart ownerKind="team" workItems={workItems} />
 				</ApiServiceContext.Provider>,
 			);
 
@@ -932,7 +995,7 @@ describe("WorkDistributionChart component", () => {
 
 			render(
 				<ApiServiceContext.Provider value={mockContext}>
-					<WorkDistributionChart workItems={workItems} />
+					<WorkDistributionChart ownerKind="team" workItems={workItems} />
 				</ApiServiceContext.Provider>,
 			);
 
@@ -963,7 +1026,7 @@ describe("WorkDistributionChart component", () => {
 
 			render(
 				<ApiServiceContext.Provider value={mockContext}>
-					<WorkDistributionChart workItems={workItems} />
+					<WorkDistributionChart ownerKind="team" workItems={workItems} />
 				</ApiServiceContext.Provider>,
 			);
 
@@ -990,7 +1053,7 @@ describe("WorkDistributionChart component", () => {
 
 			render(
 				<ApiServiceContext.Provider value={mockContext}>
-					<WorkDistributionChart workItems={workItems} />
+					<WorkDistributionChart ownerKind="team" workItems={workItems} />
 				</ApiServiceContext.Provider>,
 			);
 
@@ -1022,7 +1085,7 @@ describe("WorkDistributionChart component", () => {
 
 			render(
 				<ApiServiceContext.Provider value={mockContext}>
-					<WorkDistributionChart workItems={workItems} />
+					<WorkDistributionChart ownerKind="team" workItems={workItems} />
 				</ApiServiceContext.Provider>,
 			);
 
@@ -1058,7 +1121,7 @@ describe("WorkDistributionChart component", () => {
 
 			render(
 				<ApiServiceContext.Provider value={mockContext}>
-					<WorkDistributionChart workItems={workItems} />
+					<WorkDistributionChart ownerKind="team" workItems={workItems} />
 				</ApiServiceContext.Provider>,
 			);
 

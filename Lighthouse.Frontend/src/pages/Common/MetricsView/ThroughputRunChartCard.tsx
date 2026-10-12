@@ -62,6 +62,8 @@ const ThroughputRunChartCard = <T extends IWorkItem>({
 				startDate={startDate}
 				chartData={displayData}
 				displayTotal={true}
+				dialogContext="closedItems"
+				ownerKind={owner.ownerType}
 				filterToggle={
 					<ThroughputChartFilterToggle
 						isPremium={isPremium}
