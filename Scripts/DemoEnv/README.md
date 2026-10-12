@@ -8,6 +8,16 @@ demo environment and the screenshot runs have something live to read. They are r
 preconditions the ServiceNow **integration tests** depend on after a Personal Developer Instance has
 been reclaimed. `.github/workflows/provision-servicenow-pdi.yml` runs it on demand.
 
+`BasecampSystemUpdater.py` signs in with OAuth, because Basecamp offers no personal access token on
+its Free plan. It takes the client id and secret of a Launchpad app (registered with the redirect URI
+`http://localhost:8765/callback`) and a refresh token, and trades the refresh token for a fresh access
+token on every run. Launchpad does not rotate refresh tokens, so the three secrets stay valid until
+the app is revoked. To mint a new refresh token, open
+`https://launchpad.37signals.com/authorization/new?type=web_server&client_id=<id>&redirect_uri=http%3A%2F%2Flocalhost%3A8765%2Fcallback`,
+approve, copy `code` from the address bar of the page that fails to load, and POST it to
+`https://launchpad.37signals.com/authorization/token?type=web_server` with the client id, secret,
+redirect URI and code.
+
 ## When the ServiceNow PDI dies
 
 ServiceNow reclaims a PDI after about ten days idle. The signature is a **502 Bad Gateway** served

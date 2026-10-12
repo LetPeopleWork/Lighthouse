@@ -6,6 +6,9 @@ env:
   LinearLighthouseIntegrationTestToken: ${{ secrets.LINEARAPIKEY }}
   ServiceNowLighthouseIntegrationTestToken: ${{ secrets.ServiceNowLighthouseIntegrationTestToken }}
   ServiceNowLighthouseIntegrationTestInstance: ${{ secrets.SERVICENOWLIGHTHOUSEINTEGRATIONTESTINSTANCE }}
+  BasecampClientId: ${{ secrets.BASECAMPCLIENTID }}
+  BasecampClientSecret: ${{ secrets.BASECAMPCLIENTSECRET }}
+  BasecampRefreshToken: ${{ secrets.BASECAMPREFRESHTOKEN }}
 
 # Run at 2 AM CET (which is midnight UTC in winter and 1 AM UTC in summer)
 # Also allow manual triggering via workflow_dispatch
@@ -50,3 +53,7 @@ jobs:
     - name: Update ServiceNow Demo Environment
       run: |
         python ./Scripts/DemoEnv/ServiceNowSystemUpdater.py
+
+    - name: Update Basecamp Demo Environment
+      run: |
+        python ./Scripts/DemoEnv/BasecampSystemUpdater.py "${{ env.BasecampClientId }}" "${{ env.BasecampClientSecret }}" "${{ env.BasecampRefreshToken }}"
