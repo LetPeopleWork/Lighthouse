@@ -565,6 +565,8 @@ describe("Turning a page brings the top of the list into view", () => {
 			expect(await screen.findByText("101–200 of 243")).toBeInTheDocument();
 			await sortByNameDescending(user);
 			expect(screen.getByText("1–100 of 243")).toBeInTheDocument();
+			expect(scrolledInto).toEqual([]);
+
 			await goToNextPage(user, "101–200 of 243");
 			scrolledInto.length = 0;
 			await filterStageBy(user, "Do");
