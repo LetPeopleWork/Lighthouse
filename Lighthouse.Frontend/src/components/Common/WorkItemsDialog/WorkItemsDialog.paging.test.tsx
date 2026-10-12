@@ -49,7 +49,10 @@ describe("A Work Items dialog with more than 100 Work Items", () => {
 		"Priya, on the second page of 243, filters to 64 and sees all of them with no footer",
 		async () => {
 			const user = userEvent.setup();
-			openTheDialog({ items: twoHundredFortyThreeClosed() });
+			openTheDialog({
+				context: "closedItems",
+				items: twoHundredFortyThreeClosed(),
+			});
 			expect(await screen.findByText("1–100 of 243")).toBeInTheDocument();
 
 			await user.click(screen.getByRole("button", { name: "Go to next page" }));
