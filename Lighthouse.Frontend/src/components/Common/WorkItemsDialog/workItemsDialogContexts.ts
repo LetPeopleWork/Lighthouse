@@ -10,7 +10,7 @@ export type ColumnId =
 	| "timeInState"
 	| "estimate"
 	| "size"
-	| "forecast"
+	| "forecasts"
 	| "ageBand"
 	| "sleRisk"
 	| "warnings"

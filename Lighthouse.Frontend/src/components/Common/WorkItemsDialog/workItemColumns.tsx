@@ -4,6 +4,7 @@ import {
 	type GridValidRowModel,
 	gridNumberComparator,
 } from "@mui/x-data-grid";
+import type { IFeature } from "../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import {
@@ -17,6 +18,7 @@ import {
 import { formatLocalDate } from "../../../utils/date/localDate";
 import { hexToRgba } from "../../../utils/theme/colors";
 import type { ColumnVisibilityModel, DataGridColumn } from "../DataGrid/types";
+import { createForecastsColumn } from "../FeatureListDataGrid/columns";
 import ParentWorkItemCell from "../ParentWorkItemCell/ParentWorkItemCell";
 import TimeInStateBadge, {
 	daysInState,
@@ -49,9 +51,13 @@ interface CatalogueEntry {
 
 const always = () => true;
 
+const isFeatureRow = (item: IWorkItem): item is IFeature =>
+	"owningTeam" in item;
+
+const featureRows = (items: readonly IWorkItem[]) => items.some(isFeatureRow);
+
 // Feature rows carry no blocked-since date of their own, so only Work Item rows offer one.
-const workItemRows = (items: readonly IWorkItem[]) =>
-	!items.some((item) => "owningTeam" in item);
+const workItemRows = (items: readonly IWorkItem[]) => !featureRows(items);
 
 const NO_PARENT_NAMES = new Map();
 
@@ -135,6 +141,20 @@ const estimateColumn = (): DataGridColumn<WorkItemRow> => ({
 		),
 });
 
+// The Features grid's own column, so a forecast reads the same in the dialog as in the list it came from.
+const forecastColumn = (): DataGridColumn<WorkItemRow> => {
+	const { field, headerName, width, sortable, renderCell } =
+		createForecastsColumn();
+	return {
+		field,
+		headerName,
+		width,
+		sortable,
+		renderCell: ({ row, value }) =>
+			isFeatureRow(row) ? renderCell?.({ row, value }) : null,
+	};
+};
+
 /** Every catalogue column, in the one order Manage columns lists those a context does not show. */
 const CATALOGUE: readonly CatalogueEntry[] = [
 	{
@@ -206,6 +226,18 @@ const CATALOGUE: readonly CatalogueEntry[] = [
 		offeredFor: always,
 		build: (settings) => timeInStateGridColumn(settings.timeInState),
 	},
+	{
+		id: "size",
+		offeredFor: featureRows,
+		build: (settings) =>
+			numberColumn(
+				"size",
+				"Size",
+				(row) => (isFeatureRow(row) ? row.size : 0),
+				settings,
+			),
+	},
+	{ id: "forecasts", offeredFor: featureRows, build: forecastColumn },
 ];
 
 /** The catalogue columns these rows can fill, in the order Manage columns lists them. */

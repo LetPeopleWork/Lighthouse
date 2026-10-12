@@ -726,7 +726,7 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 	);
 
 	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
-	it.skip(
+	it(
 		"a Feature Size dot lists the largest Feature first",
 		() => {
 			openTheDialog({
@@ -883,7 +883,7 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 	);
 
 	// @us-02 @slice-02 @contract-shape:pure-function
-	it.skip(
+	it(
 		"Feature rows add Size and Forecasted Completion, last, to what Manage columns offers",
 		async () => {
 			const user = userEvent.setup();
@@ -938,7 +938,7 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 	);
 
 	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
-	it.skip(
+	it(
 		"a Feature's forecast is offered as the Features grid's Forecasted Completion column, right after Size",
 		async () => {
 			const user = userEvent.setup();

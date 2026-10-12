@@ -41,7 +41,7 @@ const singleColumnIds = {
 	timeInState: true,
 	estimate: true,
 	size: true,
-	forecast: true,
+	forecasts: true,
 	ageBand: true,
 	sleRisk: true,
 	warnings: true,
