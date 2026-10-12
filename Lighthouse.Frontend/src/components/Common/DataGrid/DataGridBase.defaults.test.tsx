@@ -64,7 +64,7 @@ const onlyEmailHidden: ColumnVisibilityModel = { email: false };
 
 describe("a grid given default visibility", () => {
 	// @us-01 @slice-01b @contract-shape:bounded-change
-	it.skip(
+	it(
 		"starts with the columns the defaults hide out of sight",
 		() => {
 			showTheGrid({ email: false, city: false });
@@ -75,7 +75,7 @@ describe("a grid given default visibility", () => {
 	);
 
 	// @us-01 @slice-01b @contract-shape:bounded-change
-	it.skip(
+	it(
 		"remembers a column the user turned on across a reopen",
 		async () => {
 			const user = userEvent.setup();
@@ -91,7 +91,7 @@ describe("a grid given default visibility", () => {
 	);
 
 	// @us-01 @slice-01b @contract-shape:bounded-change
-	it.skip(
+	it(
 		"lets a later change to the defaults reach every column the user never touched",
 		async () => {
 			const user = userEvent.setup();
@@ -107,7 +107,7 @@ describe("a grid given default visibility", () => {
 	);
 
 	// @us-01 @slice-01b @contract-shape:bounded-change
-	it.skip(
+	it(
 		"keeps a column the user turned on, even after the defaults start hiding it",
 		async () => {
 			const user = userEvent.setup();
@@ -123,7 +123,7 @@ describe("a grid given default visibility", () => {
 	);
 
 	// @us-01 @slice-01b @contract-shape:bounded-change
-	it.skip(
+	it(
 		"Reset layout lands on the defaults, not on every column shown",
 		async () => {
 			const user = userEvent.setup();
@@ -139,7 +139,7 @@ describe("a grid given default visibility", () => {
 	);
 
 	// @us-01 @slice-01b @contract-shape:bounded-change
-	it.skip(
+	it(
 		"keeps a column that cannot be hidden on screen without freezing the other defaults",
 		() => {
 			const first = showTheGrid({ name: false, email: false });

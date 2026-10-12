@@ -17,7 +17,62 @@ import {
 	useColumnWidths,
 	usePersistedGridState,
 } from "./hooks";
-import type { DataGridBaseProps } from "./types";
+import type {
+	ColumnVisibilityModel,
+	DataGridBaseProps,
+	DataGridColumn,
+} from "./types";
+
+/**
+ * The user's overrides are laid over the defaults, so a column they never touched always follows
+ * the current defaults. Without defaults the overrides are the whole model, as before.
+ */
+function withOverrides(
+	defaults: ColumnVisibilityModel | undefined,
+	overrides: ColumnVisibilityModel | undefined,
+): GridColumnVisibilityModel {
+	return { ...defaults, ...overrides };
+}
+
+/**
+ * Only the columns the user set differently from the defaults are remembered; the grid treats a
+ * column missing from either model as shown. Without defaults the whole model is remembered.
+ */
+function overridesOf(
+	model: GridColumnVisibilityModel,
+	defaults: ColumnVisibilityModel | undefined,
+): ColumnVisibilityModel {
+	if (defaults === undefined) return model;
+	const overrides: ColumnVisibilityModel = {};
+	const fields = new Set([...Object.keys(model), ...Object.keys(defaults)]);
+	for (const field of fields) {
+		const shown = model[field] ?? true;
+		if (shown !== (defaults[field] ?? true)) overrides[field] = shown;
+	}
+	return overrides;
+}
+
+function hidesUnhideableColumn<T extends GridValidRowModel>(
+	model: GridColumnVisibilityModel,
+	columns: DataGridColumn<T>[],
+): boolean {
+	return columns.some(
+		(col) => col.hideable === false && model[col.field] === false,
+	);
+}
+
+function withUnhideableColumnsShown<T extends GridValidRowModel>(
+	model: GridColumnVisibilityModel,
+	columns: DataGridColumn<T>[],
+): GridColumnVisibilityModel {
+	const sanitized = { ...model };
+	for (const col of columns) {
+		if (col.hideable === false && sanitized[col.field] === false) {
+			sanitized[col.field] = true;
+		}
+	}
+	return sanitized;
+}
 
 /**
  * A saved column order knows nothing of columns added since it was saved. Each of those goes right
@@ -71,6 +126,7 @@ function DataGridBase<T extends GridValidRowModel>({
 	toolbarActions,
 	slots,
 	getRowSpacing,
+	defaultColumnVisibilityModel,
 }: Readonly<DataGridBaseProps<T>>): React.ReactElement {
 	// Check license status for premium features
 	const { licenseStatus } = useLicenseRestrictions();
@@ -91,28 +147,42 @@ function DataGridBase<T extends GridValidRowModel>({
 	} = usePersistedGridState(storageKeyForState);
 
 	const [columnVisibilityModel, setColumnVisibilityModel] =
-		useState<GridColumnVisibilityModel>(() => {
-			if (persistedState?.columnVisibilityModel)
-				return persistedState.columnVisibilityModel;
-			return {};
-		});
+		useState<GridColumnVisibilityModel>(() =>
+			withOverrides(
+				defaultColumnVisibilityModel,
+				persistedState?.columnVisibilityModel,
+			),
+		);
+
+	const applyVisibility = (model: GridColumnVisibilityModel) => {
+		setColumnVisibilityModel(model);
+		updateState((prev) => ({
+			...prev,
+			columnVisibilityModel: overridesOf(model, defaultColumnVisibilityModel),
+		}));
+	};
 
 	// Sanitize persisted visibility to ensure non-hideable columns are always visible.
 	useEffect(() => {
-		if (!columnVisibilityModel) return;
-		const sanitized = { ...columnVisibilityModel } as GridColumnVisibilityModel;
-		let changed = false;
-		for (const col of columns) {
-			if (col.hideable === false && sanitized[col.field] === false) {
-				sanitized[col.field] = true;
-				changed = true;
-			}
-		}
-		if (changed) {
-			setColumnVisibilityModel(sanitized);
-			updateState((prev) => ({ ...prev, columnVisibilityModel: sanitized }));
-		}
-	}, [columns, columnVisibilityModel, updateState]);
+		if (!hidesUnhideableColumn(columnVisibilityModel, columns)) return;
+		const sanitized = withUnhideableColumnsShown(
+			columnVisibilityModel,
+			columns,
+		);
+		setColumnVisibilityModel(sanitized);
+		updateState((prev) => ({
+			...prev,
+			columnVisibilityModel: overridesOf(
+				sanitized,
+				defaultColumnVisibilityModel,
+			),
+		}));
+	}, [
+		columns,
+		columnVisibilityModel,
+		updateState,
+		defaultColumnVisibilityModel,
+	]);
 
 	// Initialize column order & widths using persisted state or defaults
 	const initialColumnOrder =
@@ -224,7 +294,9 @@ function DataGridBase<T extends GridValidRowModel>({
 						if (setAllWidths) setAllWidths(defaultInitialWidths);
 						resetColumnWidths();
 						resetColumnOrder();
-						setColumnVisibilityModel({});
+						setColumnVisibilityModel(
+							withOverrides(defaultColumnVisibilityModel, undefined),
+						);
 					}}
 					onOpenColumnOrder={() => setIsColumnOrderDialogOpen(true)}
 					allowColumnReorder={allowColumnReorder}
@@ -259,24 +331,9 @@ function DataGridBase<T extends GridValidRowModel>({
 					getRowSpacing={getRowSpacing}
 					disableColumnResize={false}
 					columnVisibilityModel={columnVisibilityModel}
-					onColumnVisibilityModelChange={(newModel) => {
-						// Prevent non-hideable columns from being hidden
-						const sanitizedModel = { ...newModel } as GridColumnVisibilityModel;
-						for (const col of columns) {
-							if (
-								col.hideable === false &&
-								sanitizedModel[col.field] === false
-							) {
-								// Force visible
-								sanitizedModel[col.field] = true;
-							}
-						}
-						setColumnVisibilityModel(sanitizedModel);
-						updateState((prev) => ({
-							...prev,
-							columnVisibilityModel: sanitizedModel,
-						}));
-					}}
+					onColumnVisibilityModelChange={(newModel) =>
+						applyVisibility(withUnhideableColumnsShown(newModel, columns))
+					}
 					onColumnOrderChange={
 						allowColumnReorder
 							? () => {
