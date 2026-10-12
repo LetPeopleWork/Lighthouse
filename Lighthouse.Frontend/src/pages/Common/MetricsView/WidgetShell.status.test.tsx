@@ -57,7 +57,11 @@ const fullHeader: Omit<WidgetShellProps, "children" | "widgetKey"> = {
 	},
 	header: { ragStatus: "green", tipText: "Steady" },
 	trend: { direction: "up", metricLabel: "Throughput" },
-	viewData: { title: "Completed Work Items", items: [oneItem] },
+	viewData: {
+		title: "Completed Work Items",
+		items: [oneItem],
+		context: "closedItems",
+	},
 };
 
 function renderFrame(

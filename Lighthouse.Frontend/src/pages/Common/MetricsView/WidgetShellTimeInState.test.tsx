@@ -31,11 +31,7 @@ describe("WidgetShell WIP-overview view-data wiring", () => {
 				viewData={{
 					title: "Team in Progress",
 					items: [inProgressItem()],
-					highlightColumn: {
-						title: "Work Item Age",
-						description: "days",
-						valueGetter: (item) => item.workItemAge,
-					},
+					context: "inProgress",
 					timeInStateColumn: {},
 				}}
 			>

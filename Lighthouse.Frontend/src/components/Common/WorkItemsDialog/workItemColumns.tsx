@@ -477,11 +477,9 @@ export function buildWorkItemColumn(
 
 export interface ContextGridLayout {
 	columns: DataGridColumn<WorkItemRow>[];
-	visibilityModel?: ColumnVisibilityModel;
-	sortBy?: ColumnId;
+	visibilityModel: ColumnVisibilityModel;
+	sortBy: ColumnId;
 }
-
-const NO_CONTEXT: ContextGridLayout = { columns: [] };
 
 /**
  * The columns a dialog opened from one context adds to the fixed ones: its defaults first, in their
@@ -489,12 +487,10 @@ const NO_CONTEXT: ContextGridLayout = { columns: [] };
  * left out rather than shown empty.
  */
 export function contextGridLayout(
-	context: WorkItemsDialogContextId | undefined,
+	context: WorkItemsDialogContextId,
 	items: readonly IWorkItem[],
 	settings: Omit<CatalogueColumnSettings, "sortBy">,
 ): ContextGridLayout {
-	if (context === undefined) return NO_CONTEXT;
-
 	const { visible, sortBy, catalogue, withheld } =
 		WORK_ITEMS_DIALOG_CONTEXTS[context];
 	const available = availableColumnIds(items, settings).filter(

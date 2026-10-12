@@ -30,15 +30,7 @@ import { getStateColor } from "../../../utils/theme/colors";
 import DataGridBase from "../DataGrid/DataGridBase";
 import type { DataGridColumn } from "../DataGrid/types";
 import { daysInState } from "../TimeInStateBadge/TimeInStateBadge";
-import {
-	ageBandGridColumn,
-	contextGridLayout,
-	isFeatureRow,
-	judgedValueCell,
-	sleRiskGridColumn,
-	timeInStateGridColumn,
-	warningsGridColumn,
-} from "./workItemColumns";
+import { contextGridLayout, isFeatureRow } from "./workItemColumns";
 import type {
 	WorkItemsDialogContextId,
 	WorkItemsDialogOwnerKind,
@@ -49,7 +41,6 @@ export interface WorkItemsDialogProps {
 	items: IWorkItem[];
 	open: boolean;
 	onClose: () => void;
-	highlightColumn?: HighlightColumnDefinition;
 	timeInStateColumn?: TimeInStateColumnDefinition;
 	sle?: number;
 	/**
@@ -71,10 +62,10 @@ export interface WorkItemsDialogProps {
 	 */
 	warningsColumn?: WarningsColumnDescriptor;
 	/**
-	 * What was clicked to open the dialog. Given one, the dialog opens with the columns that explain
-	 * that chart's point and sorts by the one it plots; without one, it shows today's columns.
+	 * What was clicked to open the dialog: it opens with the columns that explain that point and sorts
+	 * by the one it plots.
 	 */
-	context?: WorkItemsDialogContextId;
+	context: WorkItemsDialogContextId;
 	/** Whose items these are; a Team's and a Portfolio's dialog for the same chart open alike. */
 	ownerKind?: WorkItemsDialogOwnerKind;
 	/**
@@ -104,23 +95,11 @@ export interface WarningsColumnDescriptor {
 	warningsFor: (workItem: IWorkItem) => string[];
 }
 
-export interface HighlightColumnDefinition {
-	title: string;
-	description: string;
-	valueGetter: (workItem: IWorkItem) => number;
-}
-
 export interface TimeInStateColumnDefinition {
 	now?: Date;
 	stalenessThresholdDays?: number;
 	blockedStalenessThresholdDays?: number;
 }
-
-const emptyHighlightColumnDefinition: HighlightColumnDefinition = {
-	title: "",
-	description: "",
-	valueGetter: () => 0,
-};
 
 // With no rows yet, the grid's own loading look is a skeleton of blank rows, which reads like a
 // table with nothing in it. A spinner says the items are still on their way.
@@ -134,15 +113,10 @@ const ItemsOnTheirWayOverlay = (props: GridLoadingOverlayProps) => (
 
 const gridSlots = { loadingOverlay: ItemsOnTheirWayOverlay };
 
-// A dialog without a context keeps the key every dialog once shared. A context-bearing dialog gets a
-// key of its own, so the layouts saved under the shared key never leak into any context.
 function layoutStorageKey(
-	context: WorkItemsDialogContextId | undefined,
+	context: WorkItemsDialogContextId,
 	ownerKind: WorkItemsDialogOwnerKind | undefined,
 ): string {
-	if (context === undefined) {
-		return "work-items-dialog";
-	}
 	return ownerKind === undefined
 		? `work-items-dialog:${context}`
 		: `work-items-dialog:${context}:${ownerKind}`;
@@ -153,7 +127,6 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	items,
 	open,
 	onClose,
-	highlightColumn = emptyHighlightColumnDefinition,
 	timeInStateColumn,
 	sle,
 	ageBandColumn,
@@ -174,19 +147,12 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 			isFeatureRow(item) && item.owningTeam && item.owningTeam.trim() !== "",
 	);
 
-	const sortValueOf = (workItem: IWorkItem): number => {
-		if (timeInStateColumn) {
-			return daysInState(
-				workItem.currentStateEnteredAt ?? null,
-				timeInStateColumn.now,
-			);
-		}
-		return highlightColumn.valueGetter(workItem);
-	};
+	const daysInStateOf = (workItem: IWorkItem): number =>
+		daysInState(workItem.currentStateEnteredAt ?? null, timeInStateColumn?.now);
 
-	const sortedItems = [...items].sort((a, b) => {
-		return sortValueOf(b) - sortValueOf(a);
-	});
+	const sortedItems = timeInStateColumn
+		? [...items].sort((a, b) => daysInStateOf(b) - daysInStateOf(a))
+		: items;
 
 	const parentReferences = useMemo(
 		() =>
@@ -300,52 +266,8 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 
 		baseColumns.push(...contextLayout.columns);
 
-		if (highlightColumn.title) {
-			baseColumns.push({
-				field: "additionalColumn",
-				headerName: `${highlightColumn.title} (${highlightColumn.description})`,
-				width: 200,
-				sortable: true,
-				valueGetter: (_, row) => highlightColumn.valueGetter(row),
-				renderCell: ({ row }) =>
-					judgedValueCell(highlightColumn.valueGetter(row), row, {
-						sle,
-						getTerm,
-					}),
-			});
-		}
-
-		// A dialog opened from a context draws these among its catalogue columns, where its defaults place them.
-		if (ageBandColumn && context === undefined) {
-			baseColumns.push(ageBandGridColumn(ageBandColumn));
-		}
-
-		if (sleRiskColumn && context === undefined) {
-			baseColumns.push(sleRiskGridColumn(sleRiskColumn));
-		}
-
-		if (warningsColumn && context === undefined) {
-			baseColumns.push(warningsGridColumn(warningsColumn));
-		}
-
-		// A dialog opened from a context already has Time in State among its catalogue columns.
-		if (timeInStateColumn && context === undefined) {
-			baseColumns.push(timeInStateGridColumn(timeInStateColumn));
-		}
-
 		return baseColumns;
-	}, [
-		hasOwningTeams,
-		context,
-		contextLayout,
-		sle,
-		getTerm,
-		highlightColumn,
-		timeInStateColumn,
-		ageBandColumn,
-		sleRiskColumn,
-		warningsColumn,
-	]);
+	}, [hasOwningTeams, contextLayout]);
 
 	return (
 		<Dialog
@@ -395,12 +317,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 								storageKey={storageKey}
 								defaultColumnVisibilityModel={contextLayout.visibilityModel}
 								initialSortModel={[
-									{
-										field:
-											contextLayout.sortBy ??
-											(timeInStateColumn ? "timeInState" : "additionalColumn"),
-										sort: "desc" as const,
-									},
+									{ field: contextLayout.sortBy, sort: "desc" as const },
 								]}
 								loading={status === "loading"}
 								slots={gridSlots}

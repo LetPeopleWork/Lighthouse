@@ -140,7 +140,7 @@ describe("a dialog whose items are still on their way", () => {
 	it(
 		"a dialog left at its defaults with nothing to list still says so, as today",
 		() => {
-			openTheDialog({ items: [] });
+			openTheDialog({ items: [], context: "closedItems" });
 
 			expect(screen.getByText("No items to display")).toBeInTheDocument();
 		},

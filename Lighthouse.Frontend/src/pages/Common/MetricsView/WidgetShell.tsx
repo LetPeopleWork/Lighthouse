@@ -21,7 +21,6 @@ import {
 import type React from "react";
 import { useRef, useState } from "react";
 import WorkItemsDialog, {
-	type HighlightColumnDefinition,
 	type TimeInStateColumnDefinition,
 	type WorkItemsDialogProps,
 } from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
@@ -57,7 +56,6 @@ type WidgetInfo = {
 export type ViewDataPayload = {
 	readonly title: string;
 	readonly items: IWorkItem[];
-	readonly highlightColumn?: HighlightColumnDefinition;
 	readonly timeInStateColumn?: TimeInStateColumnDefinition;
 	readonly sle?: number;
 	/** Forwarded to the dialog untouched; the shell never looks inside it. */
@@ -65,7 +63,7 @@ export type ViewDataPayload = {
 	/** Forwarded the same way, and absent whenever the owner published no target. */
 	readonly sleRiskColumn?: SleRiskColumnDescriptor;
 	readonly warningsColumn?: WorkItemsDialogProps["warningsColumn"];
-	readonly context?: WorkItemsDialogProps["context"];
+	readonly context: WorkItemsDialogProps["context"];
 	readonly ownerKind?: WorkItemsDialogProps["ownerKind"];
 	readonly status?: WorkItemsDialogProps["status"];
 	readonly ageOn?: WorkItemsDialogProps["ageOn"];
@@ -605,7 +603,6 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 					items={headerParts.viewData.items}
 					open={viewDataOpen}
 					onClose={() => setViewDataOpen(false)}
-					highlightColumn={headerParts.viewData.highlightColumn}
 					timeInStateColumn={headerParts.viewData.timeInStateColumn}
 					ageBandColumn={headerParts.viewData.ageBandColumn}
 					sleRiskColumn={headerParts.viewData.sleRiskColumn}

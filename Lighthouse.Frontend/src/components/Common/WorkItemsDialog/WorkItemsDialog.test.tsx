@@ -251,11 +251,7 @@ describe("WorkItemsDialog Component", () => {
 		title: "Test Dialog",
 		items: mockWorkItems,
 		open: true,
-		highlightColumn: {
-			title: "Work Item Age",
-			description: "days",
-			valueGetter: (item: IWorkItem) => item.workItemAge,
-		},
+		context: "blocked" as const,
 		onClose: vi.fn(),
 	};
 
@@ -287,16 +283,7 @@ describe("WorkItemsDialog Component", () => {
 	});
 
 	test("renders with cycleTime metric", () => {
-		render(
-			<WorkItemsDialog
-				{...defaultProps}
-				highlightColumn={{
-					title: "Cycle Time",
-					description: "days",
-					valueGetter: (item) => item.cycleTime,
-				}}
-			/>,
-		);
+		render(<WorkItemsDialog {...defaultProps} context="closedItems" />);
 
 		// Check if correct column name is displayed
 		expect(screen.getByText(/Cycle Time/)).toBeInTheDocument();
@@ -319,16 +306,7 @@ describe("WorkItemsDialog Component", () => {
 	});
 
 	test("displays items sorted by cycle time in descending order with cycleTime metric", () => {
-		render(
-			<WorkItemsDialog
-				{...defaultProps}
-				highlightColumn={{
-					title: "Cycle Time",
-					description: "days",
-					valueGetter: (item) => item.cycleTime,
-				}}
-			/>,
-		);
+		render(<WorkItemsDialog {...defaultProps} context="closedItems" />);
 
 		// Get all row cells with cycle time information
 		const cells = screen.getAllByTestId("additionalColumnContent");
@@ -389,22 +367,6 @@ describe("WorkItemsDialog Component", () => {
 
 		// Check that the dialog is not in the document
 		expect(screen.queryByText("Test Dialog")).not.toBeInTheDocument();
-	});
-
-	test("renders with ageCycleTime metric column header", () => {
-		render(
-			<WorkItemsDialog
-				{...defaultProps}
-				highlightColumn={{
-					title: "Work Item Age/Cycle Time",
-					description: "days",
-					valueGetter: (item) => item.cycleTime ?? item.workItemAge,
-				}}
-			/>,
-		);
-
-		// Check if column header is displayed correctly
-		expect(screen.getByText(/Work Item Age\/Cycle Time/)).toBeInTheDocument();
 	});
 
 	describe("Service Level Expectation (SLE) functionality", () => {
@@ -473,15 +435,7 @@ describe("WorkItemsDialog Component", () => {
 		test("applies colors correctly with cycleTime metric", () => {
 			// With SLE of 10, items with cycle times of 15, 10, and 5 should have appropriate colors
 			render(
-				<WorkItemsDialog
-					{...defaultProps}
-					highlightColumn={{
-						title: "Cycle Time",
-						description: "days",
-						valueGetter: (item) => item.cycleTime,
-					}}
-					sle={10}
-				/>,
+				<WorkItemsDialog {...defaultProps} context="closedItems" sle={10} />,
 			);
 
 			const cycleTimeCells = screen.getAllByTestId("additionalColumnContent");
@@ -635,11 +589,7 @@ describe("WorkItemsDialog Component", () => {
 				<WorkItemsDialog
 					{...defaultProps}
 					items={mockBlockedWorkItems}
-					highlightColumn={{
-						title: "Cycle Time",
-						description: "days",
-						valueGetter: (item) => item.cycleTime,
-					}}
+					context="closedItems"
 				/>,
 			);
 
@@ -830,7 +780,7 @@ describe("WorkItemsDialog Component", () => {
 				<WorkItemsDialog
 					{...defaultProps}
 					items={timeInStateItems}
-					highlightColumn={undefined}
+					context="stale"
 					timeInStateColumn={{ now }}
 				/>,
 			);
@@ -842,13 +792,6 @@ describe("WorkItemsDialog Component", () => {
 			expect(screen.getByText("8d in Review")).toBeInTheDocument();
 		});
 
-		test("does not render the 'Time in State' column when timeInStateColumn is absent", () => {
-			render(<WorkItemsDialog {...defaultProps} items={timeInStateItems} />);
-
-			expect(screen.queryByText("Time in State")).not.toBeInTheDocument();
-			expect(screen.queryByText(/d in /)).not.toBeInTheDocument();
-		});
-
 		test.each(["aging", "stale"] as const)(
 			"the %s list showing Time in State is sorted by Age, oldest first",
 			(context) => {
@@ -856,7 +799,6 @@ describe("WorkItemsDialog Component", () => {
 					<WorkItemsDialog
 						{...defaultProps}
 						items={timeInStateItems}
-						highlightColumn={undefined}
 						context={context}
 						ownerKind="team"
 						timeInStateColumn={{ now }}
@@ -878,7 +820,7 @@ describe("WorkItemsDialog Component", () => {
 				<WorkItemsDialog
 					{...defaultProps}
 					items={timeInStateItems}
-					highlightColumn={undefined}
+					context="stale"
 					timeInStateColumn={{ now, stalenessThresholdDays: 5 }}
 				/>,
 			);
@@ -894,7 +836,7 @@ describe("WorkItemsDialog Component", () => {
 				<WorkItemsDialog
 					{...defaultProps}
 					items={timeInStateItems}
-					highlightColumn={undefined}
+					context="stale"
 					timeInStateColumn={{ now, stalenessThresholdDays: 0 }}
 				/>,
 			);
@@ -1067,11 +1009,8 @@ const agingDialogProps = {
 	items: zenithInFlightItems,
 	open: true,
 	onClose: vi.fn(),
-	highlightColumn: {
-		title: "Work Item Age",
-		description: "days",
-		valueGetter: (item: IWorkItem) => item.workItemAge,
-	},
+	context: "aging" as const,
+	ownerKind: "team" as const,
 };
 
 const bandCellTexts = () =>
@@ -1163,15 +1102,9 @@ describe("Work Item Age Band column", () => {
 
 		test("stays visible for a coach whose saved column arrangement predates it", () => {
 			localStorage.setItem(
-				"lighthouse:datagrid:work-items-dialog:state",
+				"lighthouse:datagrid:work-items-dialog:aging:team:state",
 				JSON.stringify({
-					columnOrder: [
-						"referenceId",
-						"name",
-						"type",
-						"state",
-						"additionalColumn",
-					],
+					columnOrder: ["referenceId", "name", "type", "state", "workItemAge"],
 				}),
 			);
 
@@ -1190,9 +1123,7 @@ describe("Work Item Age Band column", () => {
 			const headerNames = screen
 				.getAllByRole("columnheader")
 				.map((header) => header.textContent?.trim() ?? "");
-			const ageIndex = headerNames.findIndex((name) =>
-				name.startsWith("Work Item Age ("),
-			);
+			const ageIndex = headerNames.indexOf("Work Item Age");
 			const bandIndex = headerNames.findIndex((name) =>
 				name.startsWith("Work Item Age Band"),
 			);
@@ -1431,7 +1362,9 @@ describe("Work Item Age Band column", () => {
 			// column is the one being sorted by. "none" is the band column staying out of the way.
 			expect(bandColumnHeader()).toHaveAttribute("aria-sort", "none");
 			expect(
-				screen.getByRole("columnheader", { name: /Time in State/ }),
+				screen
+					.getAllByRole("columnheader")
+					.find((header) => header.dataset.field === "workItemAge"),
 			).toHaveAttribute("aria-sort", "descending");
 		});
 	});
@@ -1567,15 +1500,9 @@ describe("SLE Risk column", () => {
 
 		test("stays visible for a coach whose saved column arrangement predates it", () => {
 			localStorage.setItem(
-				"lighthouse:datagrid:work-items-dialog:state",
+				"lighthouse:datagrid:work-items-dialog:aging:team:state",
 				JSON.stringify({
-					columnOrder: [
-						"referenceId",
-						"name",
-						"type",
-						"state",
-						"additionalColumn",
-					],
+					columnOrder: ["referenceId", "name", "type", "state", "workItemAge"],
 				}),
 			);
 
@@ -1597,10 +1524,10 @@ describe("SLE Risk column", () => {
 				"name",
 				"type",
 				"state",
-				"additionalColumn",
+				"workItemAge",
 			];
 			localStorage.setItem(
-				"lighthouse:datagrid:work-items-dialog:state",
+				"lighthouse:datagrid:work-items-dialog:aging:team:state",
 				JSON.stringify({ columnOrder: alreadyNamed }),
 			);
 
@@ -1852,7 +1779,11 @@ describe("Warnings column", () => {
 
 	test("carries whatever the caller found worth warning about", () => {
 		render(
-			<WorkItemsDialog {...agingDialogProps} warningsColumn={warningsColumn} />,
+			<WorkItemsDialog
+				{...agingDialogProps}
+				context="deliveryTimeline"
+				warningsColumn={warningsColumn}
+			/>,
 		);
 
 		expect(

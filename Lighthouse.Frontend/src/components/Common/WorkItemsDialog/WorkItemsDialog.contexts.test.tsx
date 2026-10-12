@@ -1093,29 +1093,10 @@ describe("guards that hold today and must keep holding", () => {
 	it(
 		"Feature rows keep Owned by beside the fixed columns",
 		() => {
-			openTheDialog({ items: portfolioFeatures });
+			openTheDialog({ items: portfolioFeatures, context: "featureSize" });
 
 			expect(columnHeader("owningTeam")).toBeInTheDocument();
 			expect(cellText("owningTeam", "FTR-1")).toBe("Team Voyager");
-		},
-		RENDER_HEAVY,
-	);
-
-	// @us-01 @slice-01b @regression @contract-shape:unbounded-preservation
-	it(
-		"a dialog opened without a context keeps today's columns",
-		() => {
-			openTheDialog({
-				items: finishedStories,
-				highlightColumn: {
-					title: "Cycle Time",
-					description: "days",
-					valueGetter: (item) => item.cycleTime,
-				},
-			});
-
-			expect(contextColumnsShown()).toEqual(["additionalColumn"]);
-			expect(rowOrder()).toEqual(["ST-1", "ST-3", "ST-2"]);
 		},
 		RENDER_HEAVY,
 	);

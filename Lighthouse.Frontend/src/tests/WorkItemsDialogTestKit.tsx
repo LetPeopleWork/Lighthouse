@@ -87,6 +87,7 @@ export function aFeature(
 
 export type DialogOptions = Partial<WorkItemsDialogProps> & {
 	items: IWorkItem[];
+	context: WorkItemsDialogProps["context"];
 	featureService?: IFeatureService;
 };
 

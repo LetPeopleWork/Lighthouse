@@ -5628,8 +5628,6 @@ describe("BaseMetricsView component", () => {
 	 * `throughputItems` and the arrivals extraction the sibling `arrivals` entry already uses — so
 	 * this is registration, not a new query. If it turns out to need a new fetch, slice 01's
 	 * learning hypothesis has fired and slices 03-05 need re-estimating.
-	 *
-	 * describe.skip = RED scaffold; DELIVER enables it (ADR-025).
 	 */
 	describe("View Data on Total Throughput and Total Arrivals (Story 5508 slice 01)", () => {
 		beforeEach(() => {
@@ -5730,8 +5728,6 @@ describe("BaseMetricsView component", () => {
 	 * HARD DEPENDENCY on slice 03 — the previous-period value is the as-of-date computation
 	 * evaluated at `startDate − 1 day`. Before slice 03 lands, both periods age to today and every
 	 * trend reads flat, so enabling this block earlier would pass for the wrong reason.
-	 *
-	 * describe.skip = RED scaffold; DELIVER enables it (ADR-025).
 	 */
 	describe("Work Item Age Percentiles status and trend (Story 5508 slice 04)", () => {
 		beforeEach(() => {
@@ -5868,8 +5864,6 @@ describe("BaseMetricsView component", () => {
 	 * The last test here is the KPI assertion — "100% of Flow Overview widgets expose a RAG status" —
 	 * expressed as a structural test over getWidgetsForCategory so a future widget cannot silently
 	 * ship without a status (AC7).
-	 *
-	 * describe.skip = RED scaffold; DELIVER enables it (ADR-025).
 	 */
 	describe("Flow Efficiency status via the shared data path (Story 5508 slice 05)", () => {
 		beforeEach(() => {
@@ -7061,7 +7055,6 @@ describe("which lists carry the risk column", () => {
 					{
 						context: payload?.context,
 						ownerKind: payload?.ownerKind,
-						hasHighlightColumn: payload?.highlightColumn !== undefined,
 					},
 				]),
 			);
@@ -7070,7 +7063,7 @@ describe("which lists carry the risk column", () => {
 				Object.fromEntries(
 					Object.entries(CONTEXT_OF_EVERY_LIST).map(([key, context]) => [
 						key,
-						{ context, ownerKind, hasHighlightColumn: false },
+						{ context, ownerKind },
 					]),
 				),
 			);

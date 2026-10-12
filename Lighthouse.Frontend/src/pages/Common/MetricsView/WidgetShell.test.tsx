@@ -301,6 +301,7 @@ describe("WidgetShell", () => {
 				viewData={{
 					title: "Closed Items",
 					items: [createWorkItem()],
+					context: "closedItems",
 				}}
 			>
 				<div>Content</div>
@@ -329,6 +330,7 @@ describe("WidgetShell", () => {
 				viewData={{
 					title: "Empty",
 					items: [],
+					context: "closedItems",
 				}}
 			>
 				<div>Content</div>
@@ -364,6 +366,7 @@ describe("WidgetShell", () => {
 					viewData={{
 						title: "Work Items in Progress",
 						items: [createWorkItem()],
+						context: "aging",
 						ageBandColumn,
 					}}
 				>
@@ -389,6 +392,7 @@ describe("WidgetShell", () => {
 					viewData={{
 						title: "Work Items in Progress",
 						items: [createWorkItem()],
+						context: "aging",
 					}}
 				>
 					<div>Content</div>
@@ -413,11 +417,7 @@ describe("WidgetShell", () => {
 				viewData={{
 					title: "All Closed Items",
 					items,
-					highlightColumn: {
-						title: "Cycle Time",
-						description: "days",
-						valueGetter: (item) => item.cycleTime,
-					},
+					context: "closedItems",
 					sle: 14,
 				}}
 			>
