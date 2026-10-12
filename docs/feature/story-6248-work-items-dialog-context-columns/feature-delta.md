@@ -1103,3 +1103,9 @@ left, without starting DELIVER.
 | # | Decision | Why |
 |---|----------|-----|
 | D-01-07 | **Step 01-07 is widened: the CSV connector now reads configured additional-field columns.** For every additional field defined on a CSV connection whose reference is a header in the file, each item carries that cell's value; a missing column or an empty cell gives no value and never fails the import. | DESIGN assumed the demo CSV connection could carry an additional field; it cannot — `CsvWorkTrackingConnector` never fills `AdditionalFieldValues`, so Zenith's Story Points never reached the items (live check: 95 rows, 0 mapped). The connection settings hide the additional-fields editor for CSV, so no customer can define one: only demo data, which sets the field in code, uses it. No customer-visible change; CSV docs unchanged. Revisit if CSV users should get the editor (a separate Story). |
+
+## Wave: DELIVER / [REF] Maintainer decisions (2026-10-12, manual review)
+
+| ID | Decision | Verdict |
+|----|----------|---------|
+| H2 | **The combined `{Work Item Age} / {Cycle Time}` column is removed from the catalogue.** Every context that opened with it (arrivals, workDistribution, featureSize, featureChildren, startedAndClosed) opens with **{Work Item Age} and {Cycle Time} side by side, Age first**, where the combined column stood. A finished item shows an empty Age cell and an unfinished one an empty Cycle Time cell, never a 0 (an age measured on a past day, `ageOn`, still shows for an item finished since). Those contexts **sort by {Work Item Age}**, oldest unfinished first; featureSize keeps sorting by Size. | "Both, Age first" — "sort by Work Item Age" |
