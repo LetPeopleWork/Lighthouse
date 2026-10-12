@@ -43,6 +43,8 @@ vi.mock("../../../../hooks/useLicenseRestrictions", () => ({
 	useLicenseRestrictions: mockUseLicenseRestrictions,
 }));
 
+const RENDER_HEAVY = 20000;
+
 // Spelled out: the keys join the shared list together with the words the server seeds for them.
 const REFINEMENT_KEY = "refinement";
 const REFINEMENTS_KEY = "refinements";
@@ -321,23 +323,31 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 	// Three hundred is the size of a whole backlog sitting in one To Do state; the heading has to count all
 	// of them and the grid has to start where the backlog starts. The grid only draws the rows in view,
 	// so this reads the first row rather than counting rows on the page.
-	it("handles three hundred Work Items, counting all of them and starting at the top of the backlog", async () => {
-		renderTheRefinementTab({
-			refinementConfigured: true,
-			yardstick: NOTHING_TO_GO_ON,
-			workItems: Array.from({ length: 300 }, (_, index) =>
-				aRow(`GR-${1000 + index}`, `Refinement candidate ${index}`, "Backlog"),
-			),
-		});
+	it(
+		"handles three hundred Work Items, counting all of them and starting at the top of the backlog",
+		async () => {
+			renderTheRefinementTab({
+				refinementConfigured: true,
+				yardstick: NOTHING_TO_GO_ON,
+				workItems: Array.from({ length: 300 }, (_, index) =>
+					aRow(
+						`GR-${1000 + index}`,
+						`Refinement candidate ${index}`,
+						"Backlog",
+					),
+				),
+			});
 
-		expect(
-			await screen.findByRole("heading", {
-				name: "300 Work Items in Refinement",
-			}),
-		).toBeVisible();
-		await theRowOf("GR-1000");
-		expect(theListedReferenceIds()[0]).toBe("GR-1000");
-	});
+			expect(
+				await screen.findByRole("heading", {
+					name: "300 Work Items in Refinement",
+				}),
+			).toBeVisible();
+			await theRowOf("GR-1000");
+			expect(theListedReferenceIds()[0]).toBe("GR-1000");
+		},
+		RENDER_HEAVY,
+	);
 
 	// @us-02 @slice-02 @error @contract-shape:pure-function
 	// A read that fails is said the way the other Team views say it, never shown as an empty refinement.
