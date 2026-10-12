@@ -275,3 +275,213 @@ in this pass — left to the dispatching session.
 - **Constraints:** MUI X free tier (100-row page cap); no backend change; short lists must not change.
 - **Waves skipped by the maintainer:** DISCOVER, DIVERGE, DEVOPS (D7). DESIGN, DISTILL follow (DISTILL starts with the maintainer sketch walk-through; the D1/D2 sketch is already approved).
 - **Upstream changes:** none to `jobs.yaml` or personas.
+
+---
+
+## Wave: DESIGN / [REF] Scope, Mode and Density
+
+**Scope:** application / components (`nw-solution-architect`). It is frontend only: no new bounded
+context, no deployment change, no API. **Mode:** propose; the maintainer was AFK, so every choice below
+takes the recommended option. **Density:** `lean`, Tier-1 `[REF]` only. Decision IDs follow the house
+`DDD-n` convention (story-6055, story-6053).
+
+**Prior-wave reading:** the DISCUSS sections above; `slices/slice-01-every-row-reachable.md`;
+`docs/ci-learnings.md` (frontend/Sonar preflight); `brief.md` searched for `DataGrid*`. It has no
+shared frontend-components section, only per-feature sections that mention `DataGridBase` in passing
+(e.g. `brief.md:5005`, `:7492`), so **no `brief.md` entry is needed**. **No ADR:** every decision is
+local to one shared component and reversible in one commit. Nothing changes a boundary, a dependency
+or a technology.
+
+**Evidence base.** Every MUI claim below was read in the installed package source, not recalled. The
+installed version is `@mui/x-data-grid` **9.14.0**, MIT (`Lighthouse.Frontend/package.json:32`
+`^9.14.0`; the main checkout's `node_modules/@mui/x-data-grid/package.json:3`; this worktree has no
+`node_modules`). Paths below are relative to `node_modules/@mui/x-data-grid/` unless they say
+otherwise.
+
+| # | Verified fact | Source |
+|---|---|---|
+| V1 | The MIT grid always paginates: `pagination: true` is a forced prop. | `DataGrid/useDataGridProps.js:17-22` |
+| V2 | Default page size is 100. A larger one throws `pageSize cannot exceed 100 in the MIT version`. | `hooks/features/pagination/gridPaginationUtils.js:10,26,36-38` |
+| V3 | The rows-per-page select **and** its "Rows per page:" label render only when `rowsPerPageOptions.length > 1`. | `@mui/material/TablePagination/TablePagination.js:264,267` |
+| V4 | `GridPagination` passes `pageSizeOptions` to that select only when the current page size is in the list, and warns otherwise. With `[100]` and the default 100 there is no warning and no select. | `components/GridPagination.js` (`isPageSizeIncludedInPageSizeOptions`, `pageSizeOptions`) |
+| V5 | The range label is `${from}–${to} of ${count}` with an en dash, e.g. `1–100 of 243`. | `constants/localeTextConstants.js:174-182` |
+| V6 | A sort change sends the grid back to page 1 (`sortModelChange` → `navigateToStart`). | `hooks/features/pagination/useGridPaginationModel.js:175-189,211` |
+| V7 | A change to the **active** column-filter items or the quick filter sends it back to page 1. Opening the panel or changing an operator with no value does not. | same file `:197-207,212` |
+| V8 | When the row count drops below the open page, the grid moves to the last page that still exists, after one microtask. A rows change that keeps the page valid keeps the page. | same file `:156-170` (`handleRowCountChange`) |
+| V9 | In client mode the pager's row count is the **filtered** top-level row count. | `hooks/features/pagination/useGridRowCount.js:123-140` |
+| V10 | The footer slot renders only when `hideFooter` is false, and whatever the slot returns is the footer. A slot returning `null` leaves no footer container. | `components/base/GridFooterPlaceholder.js:11-17` |
+| V11 | The default footer is `GridFooter` (exported): a selected-row count unless `hideFooterSelectedRowCount`, then the pagination slot. | `components/GridFooter.js:21-38`; `constants/defaultGridSlotsComponents.js:30`; `components/index.js:154` |
+| V12 | `getSortedRowIds()` returns every row id in sort order (`gridSortedRowIdsSelector`). It is not paged and not filtered. | `hooks/features/sorting/useGridSorting.js:140` |
+| V13 | **Row-slot `index` covers the whole list** (page start + position on the page), but `getRowSpacing`'s `indexRelativeToCurrentPage` and both `isLastVisible` flags only cover the **current page**. | row index: `@mui/x-virtualizer` 0.7.2 `features/virtualization/virtualization.js:499,518-530` with `range` = the current page's range (`hooks/core/useGridVirtualizer.js:173`, `hooks/features/pagination/gridPaginationSelector.js:84,144`); spacing: `hooks/core/useGridVirtualizer.js:191-200` + `hooks/features/rows/useGridRows.js:185-190` + `hooks/utils/useGridVisibleRows.js:9-11` |
+
+## Wave: DESIGN / [REF] Design decisions
+
+| ID | Decision | Answers | Status |
+|----|----------|---------|--------|
+| DDD-1 | **One page-size constant, 100, used twice:** as the page size (`pageSizeOptions={[100]}`, page size left at MUI's default 100, V2) and as the footer threshold. It is one piece of knowledge: a page holds 100, and a footer appears once there is more than one page. | D1, D2 | Locked |
+| DDD-2 | **The footer appears iff the grid is not `loading` and its *filtered* row count is above 100**, i.e. it has more than one page. It is read inside the grid from grid state (`gridFilteredTopLevelRowCountSelector` or `gridPageCountSelector`, plus `useGridRootProps().loading`), not from `rows.length`. **Why filtered and not `rows.length`:** AC-1.6 and DISCUSS example 4 have the footer vanish when a *filter* brings a list to 100 rows or fewer. The Work Items dialog has no search box of its own, so that filter is MUI's column filter, which never changes `rows`. With `rows.length`, a column-filtered 243-row list would keep a dead `1–64 of 64 ‹ ›` footer. A consumer-side search (Third-party packages) changes `rows`, so the same rule covers it. The pager counts the same filtered rows (V9), so footer and pager always agree. | Brief: threshold | Locked |
+| DDD-3 | **Mechanism: a conditional footer slot.** `DataGridBase` stops passing `hideFooter` and passes `slots.footer` = a small Lighthouse footer. That footer returns `null` while DDD-2 says no footer (V10), and MUI's own `GridFooter` otherwise. It is merged as `{ ...slots, footer }`, so a consumer's `row` slot (RefinementGrid) survives and the rule holds for every grid (D4). The merged object must be referentially stable across renders: a `useMemo` over `slots` in `DataGridBase`. `hideFooterSelectedRowCount` is set: no grid shows selection in its footer today, and keyboard row selection must not make a "1 row selected" appear beside the range. *Rejected:* `hideFooter={rows.length <= 100}` (one line, but fails AC-1.6 for column filters, see DDD-2); a pagination-slot override (an empty footer bar would still render under short lists, failing AC-1.2); a custom pager (re-implements V5's copy and the arrows' a11y labels for nothing). | Q3, D1, D2 | Locked |
+| DDD-4 | **No rows-per-page picker** comes from `pageSizeOptions={[100]}` alone (V3, V4). The copy is MUI's default `1–100 of 243` (V5). No `localeText` override. | Q3, D2, AC-1.4 | Locked |
+| DDD-5 | **Page policy: MUI's built-in behaviour, no Lighthouse code.** A sort sends the list to page 1 (V6). A change of active column filter or quick filter sends it to page 1 (V7). A rows change (background reload, or a consumer-side search such as Third-party packages) **keeps the page while it still exists** and otherwise moves to the last page that does (V8). Paging is never persisted: `PersistedGridState` (`types.ts:94-101`) has no pagination field and nothing writes one. This matches the DISCUSS lean for the grid's own sort and filters. **The consumer-side search case is not locked:** under MUI's default, a search that leaves more than 100 rows keeps the page. For example, on page 2 of the packages a search matching 150 opens at `101–150 of 150`. A reader cannot tell a search from a filter, so the alternative is to reset to page 1 on a search as well. Recommended: reset, matching the DISCUSS lean. It is done in `ThirdPartyPackagesSection`, the one consumer with a search box, without changing `DataGridBase`. The crafter chooses the mechanism, e.g. remounting the grid keyed on the search text. **Maintainer decides at the DISTILL start** (MD-1). | Q1, AC-1.4, AC-1.7 | Locked for sort/filter/reload; search case → MD-1 |
+| DDD-6 | **AC-1.6 is guaranteed twice.** (a) Once the filtered count is 100 or fewer, DDD-2 removes the footer. (b) One page then holds every row, and MUI clamps the open page to page 1: V7 for column and quick filters, V8 for rows changes. So no state can leave the reader on an empty page with no way back. V8 runs after a microtask, so DISTILL asserts the settled state (`findBy…`). DELIVER checks by hand for a briefly wrong page on a reload that shrinks the list. Before the clamp lands, the page shows a single row, the list's last, for one render; it is never an empty page. The row range clamps its first index to `min(page × 100, count − 1)` (`hooks/features/pagination/gridPaginationSelector.js:73-74`). If one shows, `DataGridBase` controls `paginationModel` and resets it when the count reaches 100 or fewer. That is a fallback, not the plan. | Q1, AC-1.6 | Locked |
+| DDD-7 | **Remove `hidePagination`.** It leaves `types.ts:61-62`, the `DataGridBase` destructure (`:66`) and `ThirdPartyPackagesSection.tsx:147`, its only caller. No test references it, and no `Lighthouse.EndToEndTests` POM locates a pager. A future "never page" grid is speculative (YAGNI), and with one rule for all (D3/D4) a flag would only let a grid hide rows again, which is the defect this story fixes. | Q2, D3, AC-1.5 | Locked |
+| DDD-8 | **Export and Copy are untouched.** `useDataGridExport` reads `apiRef.current.getSortedRowIds()` (`DataGridToolbar.tsx:49`), which is every row in sort order, not paged (V12). Paging adds no filter in front of it, so D6 holds by construction. DISTILL pins it: 243 rows, with page 1 open and again with page 2 open; each export holds all 243 rows in sort order. The toolbar comment there ("the sort and any filter still decide the order") overstates the filter's role. Fix the comment if the line is touched; the behaviour stays out of scope (DISCUSS Q4, a separate item for the maintainer to raise). | Q4, D6, AC-1.8 | Locked |
+| DDD-9 | **Loading and failure: no footer while `loading`, whatever rows are held.** Reason: a footer showing a range from the previous answer under a loading overlay is a stale value the reader cannot recognise as stale. With no rows (first load or after an error) the count is 0, so there is no footer, and MUI's existing loading overlay or `emptyStateMessage` shows as today. Consumers keep owning their failure look (Third-party packages' own spinner and `Alert`, `ThirdPartyPackagesSection.tsx:122-132`). Nothing changes there. See Loading/failure states. | Q5 | Locked |
+| DDD-10 | **RefinementGrid's enough-for line is placed over the whole list, not the page.** The space reserved for the line (`getRowSpacing`) and the line drawn by `EnoughForRow` must agree on **one whole-list row position**. "All N … are needed" may appear only under the **list's** last row, with N counting the whole list. Today they disagree once paging exists (V13). `EnoughForRow` uses the row's whole-list `index` but judges "last" by the page's last row, and `spaceForTheLine` uses the position on the page. Result on 143 rows: page 2 shows a blank 36 px gap where the page-relative position matches, and when 100 rows or more are needed, page 1 says "All 100 Work Items … are needed" while 143 exist. This is not a new product rule: `enoughForPlacement.ts` already says the line "follows the row that makes up the number needed", and that row has one position in the whole list. **Mechanism (crafter's choice), recommended:** `DataGridBase` turned paging on, so it absorbs paging's effect on its own `getRowSpacing` prop. It hands the consumer whole-list facts (whole-list index = page start + position on the page; last = the filtered list's last row) through a Lighthouse-owned parameter shape, structurally the same as `ShownRow { index, isLastShown }` in `enoughForPlacement.ts`. `EnoughForRow` judges `isLastShown` against the filtered row count read from grid state, not `props.isLastVisible`. RefinementGrid is the only `getRowSpacing` caller. *Alternative:* keep the prop as MUI's type and do the whole-list conversion inside the Refinement folder. Allowed if it keeps both halves on one basis. | S5, AC-1.9 | Recommended. Changes what a Team with more than 100 Work Items in refinement sees. **Maintainer confirms placement and wording at the DISTILL start** (MD-2). The mechanism is fixed regardless: spacing and line must share one basis, because a blank gap is a defect under either answer. |
+| DDD-11 | **Merge footprint with #6248 kept small.** The footer and the page-size constant live in a **new file** beside `DataGridBase.tsx`. `DataGridBase.tsx` changes about four lines: drop the `hidePagination` destructure, `pageSizeOptions`, `hideFooter` → `hideFooterSelectedRowCount`, the `slots` merge, and DDD-10's `getRowSpacing` wrap if that route is taken. `types.ts` loses lines 61-62 and, under DDD-10's recommended route, changes line 76's type. That is next to #6248's `defaultColumnVisibilityModel` (`:77-81`), so expect an adjacent-hunk merge there. DELIVER merges with #6248 and never overwrites it (and, per house rules, never rebases on its own initiative). | S6, slice dependency | Locked |
+| DDD-12 | **FeatureGrid's "Select all" keeps selecting every sorted, filtered row, on every page** (`FeatureGrid.tsx:19-58` reads `getSortedRowIds()`). That is today's meaning of "all", and a page boundary is not a reason to change it. No change, recorded so DISTILL does not read it as a paging defect. | AC-1.9 | Locked |
+
+## Wave: DESIGN / [REF] Component decomposition
+
+All paths are under `Lighthouse.Frontend/src/`.
+
+| Path | Change | What |
+|---|---|---|
+| `components/Common/DataGrid/DataGridBase.tsx` | EXTEND (≈4 lines) | `pageSizeOptions={[PAGE_SIZE]}`; drop `hideFooter`/`hidePagination`; `hideFooterSelectedRowCount`; stable `{ ...slots, footer }`; DDD-10 spacing wrap if that route is taken |
+| `components/Common/DataGrid/<RowRangeFooter>.tsx` (name is the crafter's) | CREATE (small) | `PAGE_SIZE = 100`; the footer slot: `null` unless not loading and filtered count > `PAGE_SIZE`, else MUI `GridFooter` |
+| `components/Common/DataGrid/types.ts` | EXTEND | remove `hidePagination` (`:61-62`); DDD-10 may narrow `getRowSpacing`'s parameter type (`:76`) |
+| `pages/Settings/SystemInfo/ThirdPartyPackagesSection.tsx` | EXTEND (−1 line) | drop `hidePagination={false}` (D3) |
+| `pages/Teams/Detail/Refinement/EnoughForLine.tsx` | EXTEND | DDD-10: spacing and row on one whole-list basis; "last shown" means the filtered list's last row |
+| `pages/Teams/Detail/Refinement/EnoughForLine.test.tsx` | EXTEND | follows DDD-10's parameter shape (`:32-33` call `getRowSpacing(theRow(…))`) |
+| The other six consumers | none | they inherit the rule through `DataGridBase` |
+| `components/Common/DataGrid/DataGridToolbar.tsx` | none (comment fix optional) | DDD-8 |
+
+## Wave: DESIGN / [REF] Driving ports
+
+- **`DataGridBaseProps`**, rendered by the eight consumers. The surface shrinks (`hidePagination` goes). `rows`, `loading`, `slots` and `getRowSpacing` keep their roles. `getRowSpacing` may become a Lighthouse-owned whole-list shape (DDD-10).
+- **The reader's gestures inside the grid:** the pager's ‹ / ›, column sort, column filter, quick filter. MUI handles all of them (V6-V8).
+- **Consumer-side search** (Third-party packages), which reaches the grid as a new `rows` array.
+- **Toolbar Export / Copy** (premium): unchanged (DDD-8).
+
+## Wave: DESIGN / [REF] Driven ports and adapters
+
+**N/A, because** the change reads nothing it did not read before. It makes no request, uses no
+storage, and adds no external dependency or new persistence (the grid's localStorage state gains no
+field). Earned Trust: the one external "substrate" is MUI X's pagination behaviour. It is probed by
+V1-V13 above at design time and by DISTILL's component tests, which run the real `DataGrid` (no MUI mock)
+at 100, 101, 143 and 243 rows. Contract tests: N/A, no external integration.
+
+## Wave: DESIGN / [REF] Technology choices
+
+| Choice | Version / licence | Rationale |
+|---|---|---|
+| `@mui/x-data-grid` (Community) built-in pagination, `GridFooter`, grid selectors | **9.14.0** (`^9.14.0`), MIT | Already installed and already paginating (V1). Fixed 100-row pages sit exactly at the MIT cap (V2). No `DataGridPro` (house rule, `brief.md:8623`). |
+| `@mui/material` `TablePagination` (through MUI X's `basePagination`) | `^9.4.0`, MIT | Provides the range label and the arrows with their a11y labels. No new dependency. |
+
+Rejected: virtualised scroll without pages (D4, and it would need `DataGridPro`'s unlimited page size);
+a hand-rolled pager (re-implements V3/V5).
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Existing component | Overlap | Verdict | Contract shape · universe · assertion |
+|---|---|---|---|
+| `DataGridBase` | Owns pagination config and footer for all 8 grids | **EXTEND** | Bounded change: footer visibility and page size. Universe: the 8 consumers. Asserted by Vitest on `DataGridBase` (100 / 101 / 243 rows, column filter → ≤ 100, loading) plus RefinementGrid and Third-party packages spot checks |
+| MUI `GridFooter` / `GridPagination` / `TablePagination` | The whole footer and pager | **REUSE as-is**, wrapped by a footer that is shown or not | Pure rendering. Copy asserted against the literal `1–100 of 143` (ledger rule: pin copy against the literal) |
+| MUI pagination model (reset on sort/filter, clamp on shrink) | The page policy | **REUSE as-is** (DDD-5/6) | No Lighthouse code. Asserted by sort→page 1, filter→page 1, shrink→all rows tests |
+| `useDataGridExport` (`DataGridToolbar.tsx`) | Export/Copy row set | **REUSE unchanged** | Pure read of `getSortedRowIds()`. Asserted closed-world (all 243 rows, in sort order) with page 1 open **and** with page 2 open |
+| `usePersistedGridState` / `PersistedGridState` | Could persist paging | **REUSE unchanged, deliberately not extended** | Unbounded preservation. Asserted closed-world: after paging, the whole persisted object equals its value before paging |
+| `useEnoughForLine` / `EnoughForRow` | Row placement depends on index semantics | **EXTEND** (DDD-10) | Bounded change: line placement only. Universe at 143 rows: `high` = 0, 20, 100, 101, 120, and `high` > filtered count; a column filter that crosses 100; a focused row kept rendered off-page (`isOutOfSight`). Each placement and its sentence are asserted |
+| New footer file | The show/hide rule; no existing alternative (MUI has no "hide footer below N pages" prop; `hideFooter` is static) | **CREATE NEW** (small) | Contract shape: pure function (grid state → footer or nothing), no writes. Asserted by the threshold tests, plus a height check: a grid of 100 rows is the same height before and after the change (AC-1.2), not merely without a footer element |
+
+## Wave: DESIGN / [REF] Loading and failure states
+
+| State | What the grid shows | Footer |
+|---|---|---|
+| First load, no rows yet (`loading` true, `rows` empty), e.g. `PortfolioFeatureList` `loading={features.length === 0}` | MUI loading overlay, as today | **none** |
+| Reload with rows held (`loading` true, rows > 100), e.g. `FeatureListDataGrid` | Rows dimmed under the loading overlay, as today | **none** (DDD-9). Returns when loading ends, on the same page if it still exists (V8) |
+| Loaded, ≤ 100 filtered rows | rows | none (D1) |
+| Loaded, > 100 filtered rows | first 100 rows | `1–100 of N ‹ ›` |
+| Failure | owned by the consumer: Third-party packages keeps its `Alert`; the others pass `[]` and show `emptyStateMessage` as today | none (count 0) |
+
+Only `FeatureListDataGrid` passes `loading` into `DataGridBase` today. Third-party packages shows its own
+spinner before it mounts the grid. Paging changes no consumer's failure look. Some consumers that show
+`emptyStateMessage` after a failed fetch read like "no data", which the house rule forbids. That
+predates this story and is not widened by it. **Decision:** not fixed in this slice, because paging
+changes neither the fetch nor the empty look. DISTILL lists which of the eight consumers do it, as a
+named follow-up for the maintainer to file (no ADO from this wave).
+
+## Wave: DESIGN / [REF] C4
+
+System Context and Container are **unchanged**: still the browser SPA calling the Lighthouse backend,
+with no new container, store or external system. They stay as recorded in `brief.md`, so this story
+adds no copy of them. The component view of the one container that changes:
+
+```mermaid
+flowchart LR
+  subgraph SPA["Lighthouse Frontend (React SPA)"]
+    C["8 consumers<br/>(DataOverviewTable, FeatureGrid, FeatureListDataGrid,<br/>WorkItemsDialog, OverviewDashboard, ArchivedFeatureGrid,<br/>RefinementGrid, ThirdPartyPackagesSection)"]
+    B["DataGridBase<br/>(EXTEND: pageSizeOptions [100], footer slot,<br/>hidePagination removed)"]
+    F["Row-range footer<br/>(CREATE: hidden unless not loading<br/>and filtered rows > 100)"]
+    T["DataGridToolbar / useDataGridExport<br/>(unchanged: getSortedRowIds)"]
+    E["EnoughForLine<br/>(EXTEND: whole-list placement)"]
+    M["MUI X DataGrid 9.14 (MIT)<br/>pagination model, GridFooter, TablePagination"]
+  end
+  C -->|"passes rows, loading, slots to"| B
+  B -->|"renders with page size 100"| M
+  B -->|"registers as footer slot"| F
+  F -->|"reads filtered count and loading from"| M
+  F -->|"delegates range + arrows to"| M
+  T -->|"reads every sorted row id from"| M
+  C -->|"RefinementGrid supplies row slot + spacing from"| E
+  E -->|"places line by whole-list row position via"| M
+```
+
+## Wave: DESIGN / [REF] Architecture enforcement
+
+No new architectural rule, so no new ArchUnit-style check. Two existing guards carry the decisions:
+`tsc -b` fails any leftover `hidePagination` caller once the prop is removed (DDD-7). MUI's runtime
+throws on a page size above 100 (V2), which is checked whenever a component test renders the grid. The
+no-picker and footer rules are pinned behaviourally by DISTILL, not structurally.
+
+**Frontend ledger rules pre-applied** (`docs/ci-learnings.md`):
+- Pin the copy against the literal `1–100 of 143`, with the en dash. A test comparing against
+  `PAGE_SIZE`-derived strings is self-satisfying.
+- No negated ternary on the visibility check (S7735).
+- Keep `DataGridBase`'s render body free of added branching. The decision lives in the footer file
+  (S3776).
+- No prop declared and unused (S6767). `hidePagination` goes with its uses.
+- RTL name matchers are unanchored: match the arrows by MUI's labels `Go to next page` / `Go to
+  previous page` exactly.
+
+## Wave: DESIGN / [REF] Open questions deferred to DISTILL / DELIVER
+
+1. **DISTILL:** pick the footer threshold assertion basis. Recommended: one parametrised test over 100, 101 and 243 rows, plus 243 rows column-filtered to 64.
+2. **DISTILL start, maintainer decisions (walk through before the scenarios are written):**
+   - **MD-1:** a consumer-side search that leaves more than 100 rows. Reset to page 1 (recommended) or keep the page (MUI default)? Sketch both from page 2 of the packages, searching to 150.
+   - **MD-2:** the RefinementGrid enough-for line over pages (DDD-10). Sketch 143 rows, page 1 and page 2, with `high` = 20 and `high` = 120. Show where the line lands and its wording, including that "All N … are needed" only appears under the list's last row.
+
+   Neither blocks DISTILL from starting. Both are resolved as its first step, per the house sketch rule.
+3. **DELIVER:** after ‹ / ›, is the first row of the new page in view? The grid scrolls its own viewport to the page start (`useGridPaginationModel.js:140-147`). Whether the *window* scroll leaves the reader at the bottom of a shorter page is only visible in a browser. Check on the dev instance. If it does, bring the grid's top into view on page change, as a DELIVER polish item.
+4. **DELIVER:** watch for a briefly wrong page on a shrinking reload (DDD-6 fallback).
+6. **DELIVER:** narrow-width check. The range and arrows fit, without overlap, in the Work Items dialog at its smallest size.
+5. **Maintainer, separate item (not created; no ADO from here):** should Export honour an active column filter (DISCUSS Q4, DDD-8)?
+
+## Wave: DESIGN / [REF] Wave decisions summary
+
+- **Key decisions:** DDD-2 footer iff not loading and filtered rows > 100. DDD-3 conditional footer slot over `hideFooter`. DDD-4 `pageSizeOptions [100]` hides the picker. DDD-5 MUI's own page policy. DDD-7 `hidePagination` removed. DDD-8 export untouched. DDD-10 RefinementGrid line on a whole-list basis.
+- **No ADR, no `brief.md` entry, no new dependency, no backend.**
+- **Peer review:** `nw-solution-architect-reviewer`, iteration 1: conditionally approved, 0 critical, 2 high.
+  - Both high issues are resolved by moving the search page policy and the RefinementGrid line placement out of "locked" into maintainer decisions MD-1 and MD-2.
+  - The medium items are folded in: export with page 2 open; closed-world persisted-state check; the EnoughForLine boundary universe; the footer's contract shape and a height check for AC-1.2; an explicit follow-up for the failure looks.
+  - The low items are folded in too: the clamp described as a briefly wrong page; `useMemo` named; a narrow-width check.
+  - The reviewer verified V6-V10 and V13 against the source.
+- **Blocking product questions:** none block DISTILL from starting. Two maintainer decisions are taken at its start: MD-1 (search page policy) and MD-2 (RefinementGrid line placement).
+- **Handoff:** DISTILL (acceptance-designer). DEVOPS skipped (D7); no external integrations, so no contract-test annotation.
+
+## Changed Assumptions
+
+- **S5 / AC-1.9: "whatever paging does must still work with a custom row" was assumed to hold
+  automatically. It does not.** MUI hands the row slot a whole-list index but gives `getRowSpacing` and
+  `isLastVisible` page-relative facts (V13). Above 100 rows, RefinementGrid's enough-for line would
+  leave a blank gap on page 2 and could wrongly say "All 100 … are needed". DDD-10 adds
+  `EnoughForLine.tsx` (and possibly `getRowSpacing`'s type in `types.ts`) to the slice. That is about
+  +0.25 day on the ~1 day estimate.
+- **Open question 1:** the DISCUSS lean ("page 1 on sort/filter, keep the page on reload") holds for
+  the grid's own sort and filters. A **consumer-side search** (Third-party packages) is a rows change
+  to the grid, so MUI keeps the page while it exists and clamps it otherwise. Lighthouse ships well over 100
+  packages, so a broad search can stay above 100. Recommended: reset to page 1, matching the lean.
+  The maintainer decides at the DISTILL start (MD-1).
+- **Open question 5:** DISCUSS considered only "loading with no rows". DESIGN also hides the footer
+  while reloading with rows held (DDD-9).
+- **Open question 3:** confirmed in source, no change. A single page-size option hides both the select
+  and its label (V3).
