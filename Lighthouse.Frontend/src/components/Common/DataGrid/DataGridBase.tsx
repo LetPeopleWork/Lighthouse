@@ -146,21 +146,22 @@ function DataGridBase<T extends GridValidRowModel>({
 		clearState,
 	} = usePersistedGridState(storageKeyForState);
 
-	const [columnVisibilityModel, setColumnVisibilityModel] =
-		useState<GridColumnVisibilityModel>(() =>
-			withOverrides(
-				defaultColumnVisibilityModel,
-				persistedState?.columnVisibilityModel,
-			),
-		);
+	// Only the user's overrides are held, so defaults that change while the grid is shown (a dialog
+	// whose rows arrive after it opened) still reach every column the user never touched.
+	const [visibilityOverrides, setVisibilityOverrides] = useState<
+		ColumnVisibilityModel | undefined
+	>(() => persistedState?.columnVisibilityModel);
+
+	const columnVisibilityModel = useMemo(
+		() => withOverrides(defaultColumnVisibilityModel, visibilityOverrides),
+		[defaultColumnVisibilityModel, visibilityOverrides],
+	);
 
 	const applyVisibility = useCallback(
 		(model: GridColumnVisibilityModel) => {
-			setColumnVisibilityModel(model);
-			updateState((prev) => ({
-				...prev,
-				columnVisibilityModel: overridesOf(model, defaultColumnVisibilityModel),
-			}));
+			const overrides = overridesOf(model, defaultColumnVisibilityModel);
+			setVisibilityOverrides(overrides);
+			updateState((prev) => ({ ...prev, columnVisibilityModel: overrides }));
 		},
 		[updateState, defaultColumnVisibilityModel],
 	);
@@ -281,9 +282,7 @@ function DataGridBase<T extends GridValidRowModel>({
 						if (setAllWidths) setAllWidths(defaultInitialWidths);
 						resetColumnWidths();
 						resetColumnOrder();
-						setColumnVisibilityModel(
-							withOverrides(defaultColumnVisibilityModel, undefined),
-						);
+						setVisibilityOverrides(undefined);
 					}}
 					onOpenColumnOrder={() => setIsColumnOrderDialogOpen(true)}
 					allowColumnReorder={allowColumnReorder}

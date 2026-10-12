@@ -1,7 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { assert, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	openManageColumns,
 	resetTheLayout,
 	turnColumn,
 } from "../../../tests/WorkItemsDialogTestKit";
@@ -42,15 +43,37 @@ const rows: Member[] = [
 
 const STORAGE_KEY = "member-grid";
 
-function showTheGrid(defaults?: ColumnVisibilityModel) {
-	return render(
+function theGrid(defaults?: ColumnVisibilityModel) {
+	return (
 		<DataGridBase
 			rows={rows}
 			columns={columns}
 			storageKey={STORAGE_KEY}
 			defaultColumnVisibilityModel={defaults}
-		/>,
+		/>
 	);
+}
+
+function showTheGrid(defaults?: ColumnVisibilityModel) {
+	const view = render(theGrid(defaults));
+	return {
+		unmount: view.unmount,
+		/** The same grid, still shown, handed other defaults - as a dialog does once its rows arrive. */
+		changeDefaults: (next: ColumnVisibilityModel) =>
+			view.rerender(theGrid(next)),
+	};
+}
+
+async function clickShowHideAll(user: ReturnType<typeof userEvent.setup>) {
+	await openManageColumns(user, thePage);
+	const box = screen
+		.getAllByRole("checkbox")
+		.find((candidate) => candidate.getAttribute("name") === "Show/Hide All");
+	if (!box) {
+		assert.fail("Manage columns offers no Show/Hide All");
+	}
+	await user.click(box);
+	await user.keyboard("{Escape}");
 }
 
 const columnsShown = () =>
@@ -150,6 +173,65 @@ describe("a grid given default visibility", () => {
 			showTheGrid({ email: true, city: false });
 
 			expect(columnsShown()).toEqual(["name", "age", "email"]);
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"lays defaults that change while it is shown under every column the user never touched",
+		() => {
+			const grid = showTheGrid(onlyEmailHidden);
+
+			grid.changeDefaults({ email: false, city: false });
+
+			expect(columnsShown()).toEqual(["name", "age"]);
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"does not take a column the defaults hid for a while as one the user hid",
+		async () => {
+			const user = userEvent.setup();
+			const first = showTheGrid(onlyEmailHidden);
+			first.changeDefaults({ email: false, city: false });
+			await turnColumn(user, "age", false, thePage);
+			first.unmount();
+
+			showTheGrid(onlyEmailHidden);
+
+			expect(columnsShown()).toEqual(["name", "city"]);
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"remembers Show all across a reopen, columns the defaults hide included",
+		async () => {
+			const user = userEvent.setup();
+			const first = showTheGrid({ email: false, city: false });
+			await clickShowHideAll(user);
+			first.unmount();
+
+			showTheGrid({ email: false, city: false });
+
+			expect(columnsShown()).toEqual(["name", "age", "email", "city"]);
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"forgets a column the user turned off and on again, so it follows later defaults",
+		async () => {
+			const user = userEvent.setup();
+			const first = showTheGrid(onlyEmailHidden);
+			await turnColumn(user, "age", false, thePage);
+			await turnColumn(user, "age", true, thePage);
+			first.unmount();
+
+			showTheGrid({ email: false, age: false });
+
+			expect(columnsShown()).toEqual(["name", "city"]);
 		},
 		RENDER_HEAVY,
 	);
