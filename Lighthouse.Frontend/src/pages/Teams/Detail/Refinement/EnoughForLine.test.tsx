@@ -35,7 +35,7 @@ describe("the space the grid keeps for the enough-for line", () => {
 		[20, {}],
 		[131, { bottom: 36 }],
 	])(
-		"a focused row kept rendered off the open page, the 131st of the whole list, with %i needed keeps %o",
+		"the 131st row of the whole list keeps space for the line only when 131 are needed (with %i needed keeps %o)",
 		(high, space) => {
 			const { result } = renderHook(() => useEnoughForLine(needing(high)));
 

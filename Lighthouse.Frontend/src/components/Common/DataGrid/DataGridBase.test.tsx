@@ -395,10 +395,9 @@ describe("DataGridBase", () => {
 		});
 	});
 
-	describe("Virtualization", () => {
-		it("should support virtualization by default for large datasets", () => {
-			// Create a large dataset
-			const largeDataset = Array.from({ length: 200 }, (_, i) => ({
+	describe("A list longer than a page", () => {
+		it("renders one page of 100 rows of a 200-row list, plus the header row", () => {
+			const twoHundredRows = Array.from({ length: 200 }, (_, i) => ({
 				id: i + 1,
 				name: `User ${i + 1}`,
 				age: 20 + (i % 50),
@@ -407,20 +406,13 @@ describe("DataGridBase", () => {
 
 			const { container } = render(
 				<DataGridBase
-					rows={largeDataset}
+					rows={twoHundredRows}
 					columns={mockColumns}
 					storageKey="test-grid"
 				/>,
 			);
 
-			// DataGrid should render successfully
-			const grid = screen.getByRole("grid");
-			expect(grid).toBeInTheDocument();
-
-			// A page holds 100 rows, so not all 200 rows are rendered in the DOM
-			const rows = container.querySelectorAll('[role="row"]');
-			// Should be less than total rows (1 header + one page of rows)
-			expect(rows.length).toBeLessThan(largeDataset.length + 1);
+			expect(container.querySelectorAll('[role="row"]')).toHaveLength(101);
 		});
 	});
 
