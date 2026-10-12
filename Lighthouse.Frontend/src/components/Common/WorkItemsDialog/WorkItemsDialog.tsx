@@ -176,6 +176,8 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 				cycleTimeScope,
 				namedCycleTimeDefinitions,
 				daysContributed: daysContributedColumn,
+				ageBand: ageBandColumn,
+				sleRisk: sleRiskColumn,
 			}),
 		[
 			context,
@@ -187,6 +189,8 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 			cycleTimeScope,
 			namedCycleTimeDefinitions,
 			daysContributedColumn,
+			ageBandColumn,
+			sleRiskColumn,
 		],
 	);
 
@@ -273,11 +277,12 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 			});
 		}
 
-		if (ageBandColumn) {
+		// A dialog opened from a context draws these among its catalogue columns, where its defaults place them.
+		if (ageBandColumn && context === undefined) {
 			baseColumns.push(ageBandGridColumn(ageBandColumn));
 		}
 
-		if (sleRiskColumn) {
+		if (sleRiskColumn && context === undefined) {
 			baseColumns.push(sleRiskGridColumn(sleRiskColumn));
 		}
 

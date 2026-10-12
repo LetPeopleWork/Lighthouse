@@ -713,7 +713,7 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 
 describe("US-02 — every chart's dialog brings the columns that explain its point", () => {
 	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
-	it.skip.each(everyChartContext)(
+	it.each(everyChartContext)(
 		"$context opens with exactly its default columns, in order, sorted by $sortedBy",
 		({ context, items, extra, columns, sortedBy, firstRow }) => {
 			openTheDialog({ context, items, ...extra });

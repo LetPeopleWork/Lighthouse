@@ -61,6 +61,8 @@ export interface CatalogueColumnSettings {
 	/** The named cycle times offered as columns of their own. */
 	namedCycleTimeDefinitions?: INamedCycleTimeDefinition[];
 	daysContributed?: DaysContributedColumnDescriptor;
+	ageBand?: AgeBandColumnDescriptor;
+	sleRisk?: SleRiskColumnDescriptor;
 }
 
 interface CatalogueEntry {
@@ -343,6 +345,18 @@ const CATALOGUE_HEAD: readonly CatalogueEntry[] = [
 		id: "timeInState",
 		offeredFor: always,
 		build: (settings) => timeInStateGridColumn(settings.timeInState),
+	},
+	{
+		id: "ageBand",
+		offeredFor: (_, settings) => settings.ageBand !== undefined,
+		build: (settings) =>
+			ageBandGridColumn(settings.ageBand as AgeBandColumnDescriptor),
+	},
+	{
+		id: "sleRisk",
+		offeredFor: (_, settings) => settings.sleRisk !== undefined,
+		build: (settings) =>
+			sleRiskGridColumn(settings.sleRisk as SleRiskColumnDescriptor),
 	},
 ];
 
