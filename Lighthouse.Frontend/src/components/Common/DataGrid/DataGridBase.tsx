@@ -6,7 +6,13 @@ import type {
 	GridRenderCellParams,
 	GridValidRowModel,
 } from "@mui/x-data-grid";
-import { DataGrid, GridApiContext, useGridApiRef } from "@mui/x-data-grid";
+import {
+	DataGrid,
+	GridApiContext,
+	gridPageCountSelector,
+	gridPageSelector,
+	useGridApiRef,
+} from "@mui/x-data-grid";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
@@ -214,6 +220,18 @@ function DataGridBase<T extends GridValidRowModel>({
 				globalThis.clearTimeout(resizeTimeoutRef.current);
 		};
 	}, []);
+
+	// The grid moves off a page that no longer exists only a tick later, and until then it shows the
+	// list's last row alone under a range that already names the page it is about to show.
+	useEffect(
+		() =>
+			apiRef.current?.subscribeEvent("rowCountChange", () => {
+				const lastPage = Math.max(0, gridPageCountSelector(apiRef) - 1);
+				if (gridPageSelector(apiRef) > lastPage)
+					apiRef.current?.setPage(lastPage);
+			}),
+		[apiRef],
+	);
 
 	// Convert DataGridColumn to GridColDef
 	const gridColumns = useMemo(() => {

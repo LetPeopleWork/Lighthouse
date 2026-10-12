@@ -45,7 +45,7 @@ beforeEach(() => {
 
 describe("A Work Items dialog with more than 100 Work Items", () => {
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
-	it.skip(
+	it(
 		"Priya, on the second page of 243, filters to 64 and sees all of them with no footer",
 		async () => {
 			const user = userEvent.setup();

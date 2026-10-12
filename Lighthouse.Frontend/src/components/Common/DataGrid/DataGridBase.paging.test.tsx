@@ -245,7 +245,7 @@ describe("Sorting and filtering a long list", () => {
 	);
 
 	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
-	it.skip(
+	it(
 		"goes back to the first page when the list is sorted on the second",
 		async () => {
 			const { user } = showTheList(aListOf(243));
@@ -262,7 +262,7 @@ describe("Sorting and filtering a long list", () => {
 	);
 
 	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
-	it.skip(
+	it(
 		"opens the first page of what a column filter on the second page leaves, when that is still more than 100",
 		async () => {
 			const { user } = showTheList(aListOf(243));
@@ -278,7 +278,7 @@ describe("Sorting and filtering a long list", () => {
 
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	// The Work Items dialog has no search of its own, so its column filter is how a list shrinks.
-	it.skip(
+	it(
 		"shows all 64 rows a column filter on the second page leaves, with no footer",
 		async () => {
 			const { user } = showTheList(aListOf(243));
@@ -295,7 +295,7 @@ describe("Sorting and filtering a long list", () => {
 
 describe("A long list whose rows change while a later page is open", () => {
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
-	it.skip(
+	it(
 		"shows all 64 rows and no footer when a reload brings the list down to 64",
 		async () => {
 			const { user, reload } = showTheList(aListOf(243));
@@ -310,7 +310,7 @@ describe("A long list whose rows change while a later page is open", () => {
 	);
 
 	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
-	it.skip(
+	it(
 		"keeps the open page when a reload leaves more than 100 rows and the page still exists",
 		async () => {
 			const { user, reload } = showTheList(aListOf(243));
@@ -325,7 +325,7 @@ describe("A long list whose rows change while a later page is open", () => {
 	);
 
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
-	it.skip(
+	it(
 		"lands on the last page left, never an empty one, when a reload removes the open page",
 		async () => {
 			const { user, reload } = showTheList(aListOf(243));
