@@ -481,7 +481,7 @@ async function theReadersLayoutComesBackOnReopen({
 
 describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 	// @us-01 @slice-01b @driving_port @contract-shape:pure-function
-	it.skip(
+	it(
 		"a bubble on a Team's Estimation vs. Cycle Time opens with Estimate, Cycle Time and Closed, longest Cycle Time first",
 		() => {
 			openTheDialog({
@@ -502,7 +502,7 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 	);
 
 	// @us-01 @slice-01b @driving_port @contract-shape:pure-function
-	it.skip(
+	it(
 		"a bubble on a Portfolio's Estimation vs. Cycle Time opens the same way, with Owned by still beside the Features",
 		() => {
 			const estimatedFeatures = portfolioFeatures.map((feature, index) => ({
@@ -529,7 +529,7 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 	);
 
 	// @us-01 @slice-01b @driving_port @contract-shape:pure-function
-	it.skip(
+	it(
 		"each row shows the estimate the chart plots it at, and an empty cell where there is nothing the chart could place",
 		() => {
 			openTheDialog({ context: "estimation", items: finishedStories });
@@ -542,7 +542,7 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 	);
 
 	// @us-01 @slice-01b @contract-shape:pure-function
-	it.skip(
+	it(
 		"a category estimate shows its category name",
 		() => {
 			const sized = [
@@ -557,11 +557,11 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 	);
 
 	// @us-01 @slice-01b @boundary @contract-shape:pure-function
-	it.skip.each([
+	it.each([
 		[
-			"names the unit when every estimated row shares it",
+			"reads plain Estimate even when every estimated row shares a unit",
 			finishedStories,
-			"Estimate (Story Points)",
+			"Estimate",
 		],
 		[
 			"reads plain Estimate when no unit is set",
@@ -590,7 +590,7 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 	);
 
 	// @us-01 @slice-01b @contract-shape:pure-function
-	it.skip(
+	it(
 		"sorting by Estimate follows the configured category order, not the alphabet",
 		async () => {
 			const user = userEvent.setup();

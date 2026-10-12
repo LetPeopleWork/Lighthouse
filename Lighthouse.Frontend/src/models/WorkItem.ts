@@ -20,6 +20,7 @@ export interface IWorkItem {
 	blockedSince?: string;
 	currentStateEnteredAt?: Date | null;
 	approximate?: boolean;
+	/** Null when the owner has no estimation set up; absent from an older server, which means the same. */
 	estimate?: IWorkItemEstimate | null;
 }
 

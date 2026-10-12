@@ -38,6 +38,7 @@ import TimeInStateBadge, {
 } from "../TimeInStateBadge/TimeInStateBadge";
 import {
 	ageBandGridColumn,
+	contextGridLayout,
 	judgementCell,
 	sleRiskGridColumn,
 	warningsGridColumn,
@@ -73,9 +74,14 @@ export interface WorkItemsDialogProps {
 	 * dependency is; without one, nothing about the dialog changes.
 	 */
 	warningsColumn?: WarningsColumnDescriptor;
-	// The props below are declared for the per-context columns and are not read yet.
+	/**
+	 * What was clicked to open the dialog. Given one, the dialog opens with the columns that explain
+	 * that chart's point and sorts by the one it plots; without one, it shows today's columns.
+	 */
 	context?: WorkItemsDialogContextId;
+	/** Whose items these are; a Team's and a Portfolio's dialog for the same chart open alike. */
 	ownerKind?: WorkItemsDialogOwnerKind;
+	// The props below are declared for the per-context columns and are not read yet.
 	status?: WorkItemsDialogStatus;
 	/** The day Age is measured on, when the rows were picked on a day in the past. */
 	ageOn?: Date;
@@ -126,6 +132,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	ageBandColumn,
 	sleRiskColumn,
 	warningsColumn,
+	context,
 }) => {
 	const { getTerm } = useTerminology();
 	const { enlarged, toggleEnlarged } = useEnlargedWorkItemsDialog();
@@ -174,6 +181,11 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 			return certainColor;
 		},
 		[sle],
+	);
+
+	const contextLayout = useMemo(
+		() => contextGridLayout(context, items, getTerm),
+		[context, items, getTerm],
 	);
 
 	const columns = useMemo(() => {
@@ -239,6 +251,8 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 				},
 			});
 		}
+
+		baseColumns.push(...contextLayout.columns);
 
 		if (highlightColumn.title) {
 			baseColumns.push({
@@ -326,6 +340,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 		return baseColumns;
 	}, [
 		hasOwningTeams,
+		contextLayout,
 		sle,
 		workItemTerm,
 		blockedTerm,
@@ -372,9 +387,12 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 							rows={sortedItems as (IWorkItem & GridValidRowModel)[]}
 							columns={columns}
 							storageKey="work-items-dialog"
+							defaultColumnVisibilityModel={contextLayout.visibilityModel}
 							initialSortModel={[
 								{
-									field: timeInStateColumn ? "timeInState" : "additionalColumn",
+									field:
+										contextLayout.sortBy ??
+										(timeInStateColumn ? "timeInState" : "additionalColumn"),
 									sort: "desc" as const,
 								},
 							]}

@@ -1,5 +1,10 @@
 import { Tooltip, Typography } from "@mui/material";
-import type { GridValidRowModel } from "@mui/x-data-grid";
+import {
+	type GridSortCellParams,
+	type GridValidRowModel,
+	gridNumberComparator,
+} from "@mui/x-data-grid";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import {
 	type AgeBandColumnDescriptor,
@@ -9,27 +14,170 @@ import {
 	type SleRiskColumnDescriptor,
 	sleRiskSortValue,
 } from "../../../utils/charts/sleRisk";
+import { formatLocalDate } from "../../../utils/date/localDate";
 import { hexToRgba } from "../../../utils/theme/colors";
-import type { DataGridColumn } from "../DataGrid/types";
+import type { ColumnVisibilityModel, DataGridColumn } from "../DataGrid/types";
 import type { WarningsColumnDescriptor } from "./WorkItemsDialog";
-import type { ColumnId } from "./workItemsDialogContexts";
+import {
+	type ColumnId,
+	WORK_ITEMS_DIALOG_CONTEXTS,
+	type WorkItemsDialogContextId,
+} from "./workItemsDialogContexts";
 
-// RED scaffold written by DISTILL for the Work Items dialog's column catalogue. DELIVER replaces both
-// functions with the real builders and removes this marker, the constant and this comment.
-export const __SCAFFOLD__ = true;
+type WorkItemRow = IWorkItem & GridValidRowModel;
 
-const NOT_YET_IMPLEMENTED = "Not yet implemented -- RED scaffold";
+export interface CatalogueColumnSettings {
+	getTerm: (key: string) => string;
+	/** The column the rows open sorted by; its cells keep the test id the dialog's sort column has always had. */
+	sortBy?: ColumnId;
+}
+
+interface CatalogueEntry {
+	id: ColumnId;
+	offeredFor: (items: readonly IWorkItem[]) => boolean;
+	build: (settings: CatalogueColumnSettings) => DataGridColumn<WorkItemRow>;
+}
+
+const always = () => true;
+
+// The rows come straight from the server's JSON, so a date may still be a string, and a date the
+// item does not have arrives as null or as the epoch.
+const asLocalDay = (value: Date | string | null | undefined): string => {
+	if (value === null || value === undefined) return "";
+	const date = new Date(value);
+	return date.getTime() > 0 ? formatLocalDate(date) : "";
+};
+
+const numberColumn = (
+	field: ColumnId,
+	headerName: string,
+	numberFor: (row: IWorkItem) => number,
+	{ sortBy }: CatalogueColumnSettings,
+): DataGridColumn<WorkItemRow> => ({
+	field,
+	headerName,
+	width: 140,
+	sortable: true,
+	valueGetter: (_, row) => numberFor(row),
+	renderCell: ({ value }) => (
+		<Typography
+			variant="body2"
+			data-testid={field === sortBy ? "additionalColumnContent" : undefined}
+		>
+			{value as number}
+		</Typography>
+	),
+});
+
+const plottedEstimateOf = (params: unknown): number | null => {
+	const { id, api } = params as GridSortCellParams;
+	return (api.getRow(id) as IWorkItem).estimate?.value ?? null;
+};
+
+// The cell and the export carry what the chart labels the item with; the order follows the value it
+// plots it at, which is how category estimates keep the owner's order rather than the alphabet's.
+const estimateColumn = (): DataGridColumn<WorkItemRow> => ({
+	field: "estimate",
+	headerName: "Estimate",
+	width: 120,
+	sortable: true,
+	valueGetter: (_, row) => row.estimate?.displayValue ?? "",
+	sortComparator: (_first, _second, firstParams, secondParams) =>
+		gridNumberComparator(
+			plottedEstimateOf(firstParams),
+			plottedEstimateOf(secondParams),
+			firstParams as GridSortCellParams,
+			secondParams as GridSortCellParams,
+		),
+});
+
+/** Every catalogue column, in the one order Manage columns lists those a context does not show. */
+const CATALOGUE: readonly CatalogueEntry[] = [
+	{
+		id: "closedDate",
+		offeredFor: always,
+		build: () => ({
+			field: "closedDate",
+			headerName: "Closed",
+			width: 130,
+			sortable: true,
+			valueGetter: (_, row) => asLocalDay(row.closedDate),
+		}),
+	},
+	{
+		id: "cycleTime",
+		offeredFor: always,
+		build: (settings) =>
+			numberColumn(
+				"cycleTime",
+				settings.getTerm(TERMINOLOGY_KEYS.CYCLE_TIME),
+				(row) => row.cycleTime,
+				settings,
+			),
+	},
+	{
+		id: "estimate",
+		// An older server sends no estimate at all, and one whose owner has no estimation set up sends
+		// null; both mean there is nothing for this column to say.
+		offeredFor: (items) =>
+			items.some(
+				(item) => item.estimate !== undefined && item.estimate !== null,
+			),
+		build: estimateColumn,
+	},
+];
 
 /** The catalogue columns these rows can fill, in the order Manage columns lists them. */
 export function availableColumnIds(items: readonly IWorkItem[]): ColumnId[] {
-	throw new Error(`${NOT_YET_IMPLEMENTED} (${items.length} rows)`);
+	return CATALOGUE.filter((entry) => entry.offeredFor(items)).map(
+		(entry) => entry.id,
+	);
 }
 
-/** The grid column for one catalogue entry. */
+/** The grid column for one catalogue entry, or nothing for an id the catalogue does not draw. */
 export function buildWorkItemColumn(
 	columnId: ColumnId,
-): DataGridColumn<IWorkItem & GridValidRowModel> {
-	throw new Error(`${NOT_YET_IMPLEMENTED} (${columnId})`);
+	settings: CatalogueColumnSettings,
+): DataGridColumn<WorkItemRow> | undefined {
+	return CATALOGUE.find((entry) => entry.id === columnId)?.build(settings);
+}
+
+export interface ContextGridLayout {
+	columns: DataGridColumn<WorkItemRow>[];
+	visibilityModel?: ColumnVisibilityModel;
+	sortBy?: ColumnId;
+}
+
+const NO_CONTEXT: ContextGridLayout = { columns: [] };
+
+/**
+ * The columns a dialog opened from one context adds to the fixed ones: its defaults first, in their
+ * order, shown, then whatever else the rows can fill, hidden. A default these rows cannot fill is
+ * left out rather than shown empty.
+ */
+export function contextGridLayout(
+	context: WorkItemsDialogContextId | undefined,
+	items: readonly IWorkItem[],
+	getTerm: (key: string) => string,
+): ContextGridLayout {
+	if (context === undefined) return NO_CONTEXT;
+
+	const { visible, sortBy } = WORK_ITEMS_DIALOG_CONTEXTS[context];
+	const available = availableColumnIds(items);
+	const ordered = [
+		...visible.filter((id) => available.includes(id)),
+		...available.filter((id) => !visible.includes(id)),
+	];
+
+	return {
+		columns: ordered.flatMap(
+			(id) => buildWorkItemColumn(id, { getTerm, sortBy }) ?? [],
+		),
+		visibilityModel: Object.fromEntries(
+			ordered.map((id) => [id, visible.includes(id)]),
+		),
+		sortBy,
+	};
 }
 
 /**
