@@ -1,0 +1,32 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Services/Implementation/EstimateNormalizer.cs",
+      "**/Services/Implementation/BaseMetricsService.cs",
+      "**/API/DTO/WorkItemEstimateDto.cs",
+      "**/API/DTO/WorkItemDto.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs",
+      "**/Factories/DemoDataFactory.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~EstimateNormalizer|FullyQualifiedName~WorkItemEstimateDto|FullyQualifiedName~WorkItemDto|FullyQualifiedName~BaseMetricsService|FullyQualifiedName~TeamMetricsService|FullyQualifiedName~PortfolioMetricsService|FullyQualifiedName~MetricsController|FullyQualifiedName~FeaturesController|FullyQualifiedName~WorkItemAgeAsOfDate|FullyQualifiedName~Csv|FullyQualifiedName~DemoData)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~IntegrationTest",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 6,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
