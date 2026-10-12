@@ -485,3 +485,12 @@ no-picker and footer rules are pinned behaviourally by DISTILL, not structurally
   while reloading with rows held (DDD-9).
 - **Open question 3:** confirmed in source, no change. A single page-size option hides both the select
   and its label (V3).
+
+## Wave: DISTILL / [REF] Maintainer decisions (2026-10-12, sketch walk-through)
+
+| ID | Decision | Verdict |
+|----|----------|---------|
+| MD-1 | **A search in Third-party packages sends the list back to page 1**, even when more than 100 rows remain. A reader cannot tell a search from a column filter, so both behave alike. Done in `ThirdPartyPackagesSection` only; `DataGridBase` keeps MUI's page policy (DDD-5). Rejected: keep the page (MUI default), which opened page 2 of a 150-row search at `101–150 of 150`. | Maintainer, option (a) |
+| MD-2 | **RefinementGrid's enough-for line sits where it falls in the whole list, with nothing added.** With 143 Work Items: needed 20 → under row 20 on page 1, nothing on page 2; needed 120 → no line on page 1 (its rows read "N of 120 needed"), line under row 120 on page 2; needed 150 → under row 143 on page 2, "All 143 Work Items in Refinement are needed before the next Refinement." Rejected: a "continues on page 2" note at the foot of page 1 (new UI, not needed while the row numbers already say it). | Maintainer, option (a) |
+
+DDD-5's search case and DDD-10 are now locked by these decisions.
