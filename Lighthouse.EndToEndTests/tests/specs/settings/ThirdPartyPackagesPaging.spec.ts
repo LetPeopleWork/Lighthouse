@@ -51,4 +51,7 @@ test("A long list shows its range, pages to the rest, and a search opens its fir
 	await systemInfo.searchPackages("e");
 
 	await expect(systemInfo.packagesRowRange).toHaveText(/^1–100 of \d+$/);
+	const found = await systemInfo.packagesRangeTotal();
+	expect(found).toBeGreaterThan(PAGE_SIZE);
+	expect(found).toBeLessThan(served);
 });

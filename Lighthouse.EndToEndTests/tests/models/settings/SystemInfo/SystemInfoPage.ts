@@ -117,6 +117,16 @@ export class SystemInfoPage {
 		return counts.reduce((total, count) => total + count, 0);
 	}
 
+	/** The total the range names, the count left after any search or filter. */
+	async packagesRangeTotal(): Promise<number> {
+		const range = (await this.packagesRowRange.textContent()) ?? "";
+		const total = /^\d+–\d+ of (\d+)$/.exec(range)?.[1];
+		if (total === undefined) {
+			throw new Error(`The range "${range}" names no total.`);
+		}
+		return Number(total);
+	}
+
 	/** Waits for the packages themselves: both bills of materials load after the tab has opened. */
 	async openThirdPartyPackages(): Promise<void> {
 		await this.thirdPartyPackages.scrollIntoViewIfNeeded();
