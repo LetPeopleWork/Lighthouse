@@ -334,7 +334,9 @@ describe("A long list whose rows change while a later page is open", () => {
 
 			reload(aListOf(150));
 
-			expect(await screen.findByText("101–150 of 150")).toBeInTheDocument();
+			// Checked at once, without waiting: the grid on its own moves off the gone page only a
+			// tick later, and until then shows the last row alone.
+			expect(screen.getByText("101–150 of 150")).toBeInTheDocument();
 			expect(namesShown()).toEqual(namesOf(aListOf(150).slice(100)));
 		},
 		RENDER_HEAVY,
