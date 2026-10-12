@@ -187,13 +187,32 @@ const numberColumn = (
 
 const isFinished = (row: IWorkItem): boolean => row.stateCategory === "Done";
 
-// A finished item has no age today, but on a past day it may still have been under way.
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+// Days are counted in UTC, the same way the age itself is, so an item started on the day counts.
+const utcDayOf = (value: Date | string | null | undefined): number | null => {
+	if (value === null || value === undefined) return null;
+	const time = new Date(value).getTime();
+	return time > 0 ? Math.floor(time / MS_PER_DAY) : null;
+};
+
+const startedBy = (row: IWorkItem, day: number): boolean => {
+	const started = utcDayOf(row.startedDate);
+	return started !== null && started <= day;
+};
+
+// Only an item under way has an age: the server reports 0 for one not started yet, which would
+// read as brand new. On a past day an item finished since may still have been under way.
 const ageOf = (
 	row: IWorkItem,
 	{ ageOn }: CatalogueColumnSettings,
 ): number | null => {
-	if (ageOn) return calculateHistoricalAge(row, ageOn);
-	return isFinished(row) ? null : row.workItemAge;
+	if (ageOn === undefined) {
+		return row.stateCategory === "Doing" ? row.workItemAge : null;
+	}
+	return startedBy(row, Math.floor(ageOn.getTime() / MS_PER_DAY))
+		? calculateHistoricalAge(row, ageOn)
+		: null;
 };
 
 const cycleTimeOf = (row: IWorkItem): number | null =>

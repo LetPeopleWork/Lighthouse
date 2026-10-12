@@ -846,6 +846,45 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
+	// @us-02 @slice-02 @boundary @contract-shape:pure-function
+	it(
+		"an item not started yet leaves its Work Item Age empty, never 0, and lists it below the started ones",
+		() => {
+			const notStarted = aWorkItem({
+				referenceId: "TODO-1",
+				state: "New",
+				stateCategory: "ToDo",
+				startedDate: new Date(0),
+				closedDate: new Date(0),
+				cycleTime: 0,
+				workItemAge: 0,
+			});
+			openTheDialog({
+				context: "featureChildren",
+				items: [notStarted, oldestButJustMoved, justStarted],
+			});
+
+			expect(cellText("workItemAge", "TODO-1")).toBe("");
+			expect(rowOrder()).toEqual(["WIP-1", "WIP-3", "TODO-1"]);
+		},
+		RENDER_HEAVY,
+	);
+
+	// @us-02 @slice-02 @boundary @contract-shape:pure-function
+	it(
+		"Age on a past day's point stays empty for an item that had not started by that day",
+		() => {
+			openTheDialog({
+				context: "inProgress",
+				items: [justStarted],
+				ageOn: day("2026-09-20"),
+			});
+
+			expect(cellText("workItemAge", "WIP-3")).toBe("");
+		},
+		RENDER_HEAVY,
+	);
+
 	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
 	it(
 		"a named percentile's dialog reads that named cycle time under its name, and offers each named cycle time",

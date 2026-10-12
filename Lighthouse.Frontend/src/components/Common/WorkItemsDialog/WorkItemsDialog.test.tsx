@@ -64,8 +64,8 @@ const mockWorkItems: IWorkItem[] = [
 	{
 		id: 3,
 		name: "Research Z",
-		state: "New",
-		stateCategory: "ToDo" as StateCategory,
+		state: "Analysis",
+		stateCategory: "Doing" as StateCategory,
 		type: "Task",
 		referenceId: "TASK-789",
 		url: "https://example.com/work-item/3",
