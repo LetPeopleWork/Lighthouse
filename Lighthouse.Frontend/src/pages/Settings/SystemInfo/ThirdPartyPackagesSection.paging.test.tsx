@@ -150,7 +150,7 @@ describe("Third-party packages pages like every other list", () => {
 
 	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
 	// A reader cannot tell a search from a column filter, so a search opens the first page as a filter does.
-	it.skip(
+	it(
 		"opens the first page of what a search from the second page leaves, when that is still more than 100",
 		async () => {
 			const { user } = showThePackages(PACKAGES_243);
@@ -166,7 +166,7 @@ describe("Third-party packages pages like every other list", () => {
 	);
 
 	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
-	it.skip(
+	it(
 		"opens the first page of the whole list when the search is cleared from the second page of its results",
 		async () => {
 			const { user } = showThePackages(PACKAGES_243);
@@ -179,6 +179,32 @@ describe("Third-party packages pages like every other list", () => {
 
 			expect(await screen.findByText("1–100 of 243")).toBeInTheDocument();
 			expect(namesShown()[0]).toBe("lib-001");
+		},
+		RENDER_HEAVY,
+	);
+
+	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
+	it(
+		"keeps the reader's sort and column filter when a search opens the first page",
+		async () => {
+			const { user } = showThePackages(PACKAGES_243);
+			await screen.findByText("1–100 of 243");
+			await user.click(screen.getByRole("columnheader", { name: /^Name/ }));
+			await waitFor(() => expect(namesShown()[0]).toBe("tool-084"));
+			await user.click(screen.getByLabelText("Name column menu"));
+			await user.click(await screen.findByRole("menuitem", { name: "Filter" }));
+			await user.type(
+				await screen.findByRole("textbox", { name: "Value" }),
+				"i",
+			);
+			await screen.findByText("1–100 of 153");
+			await user.keyboard("{Escape}");
+			await goToNextPage(user, "101–153 of 153");
+
+			await user.type(theSearch(), "-");
+
+			expect(await screen.findByText("1–100 of 153")).toBeInTheDocument();
+			expect(namesShown()[0]).toBe("react-window");
 		},
 		RENDER_HEAVY,
 	);

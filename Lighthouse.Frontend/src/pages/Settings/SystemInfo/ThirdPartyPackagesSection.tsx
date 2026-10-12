@@ -3,9 +3,9 @@ import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Link from "@mui/material/Link";
 import TextField from "@mui/material/TextField";
-import type { GridValidRowModel } from "@mui/x-data-grid";
+import { type GridValidRowModel, useGridApiContext } from "@mui/x-data-grid";
 import type React from "react";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import DataGridBase from "../../../components/Common/DataGrid/DataGridBase";
 import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
 import type { ThirdPartyPackage } from "../../../models/SystemInfo/ThirdPartyPackage";
@@ -44,6 +44,24 @@ function parseCdxComponents(doc: CycloneDxDocument): ThirdPartyPackage[] {
 			packageUrl: purlToPackageUrl(comp.purl),
 		}));
 }
+
+/**
+ * The search filters the packages before the grid sees them, so to the grid a search is only new
+ * rows and it would keep the open page. A reader cannot tell a search from a column filter, so a
+ * search opens the first page as a filter does, leaving the sort and any column filter in force.
+ */
+const OpensFirstPageOnSearch: React.FC<Readonly<{ searchText: string }>> = ({
+	searchText,
+}) => {
+	const apiRef = useGridApiContext();
+	const searchedFor = useRef(searchText);
+	useEffect(() => {
+		if (searchedFor.current === searchText) return;
+		searchedFor.current = searchText;
+		apiRef.current?.setPage(0);
+	}, [apiRef, searchText]);
+	return null;
+};
 
 const ThirdPartyPackagesSection: React.FC = () => {
 	const [packages, setPackages] = useState<ThirdPartyPackage[]>([]);
@@ -145,6 +163,7 @@ const ThirdPartyPackagesSection: React.FC = () => {
 				columns={columns}
 				storageKey="third-party-packages-grid"
 				initialSortModel={[{ field: "name", sort: "asc" }]}
+				toolbarActions={<OpensFirstPageOnSearch searchText={searchText} />}
 			/>
 		</Box>
 	);
