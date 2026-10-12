@@ -4,13 +4,16 @@ import type {
 	GridColumnResizeParams,
 	GridColumnVisibilityModel,
 	GridRenderCellParams,
+	GridRowSpacingParams,
 	GridValidRowModel,
 } from "@mui/x-data-grid";
 import {
 	DataGrid,
 	GridApiContext,
+	gridExpandedRowCountSelector,
 	gridPageCountSelector,
 	gridPageSelector,
+	gridPaginationModelSelector,
 	useGridApiRef,
 } from "@mui/x-data-grid";
 import type React from "react";
@@ -105,6 +108,27 @@ function withNewColumnsWhereDeclared(
 }
 
 /**
+ * The grid counts a row's spacing from the top of the open page and calls a row last when it ends
+ * that page. Space kept for something placed in the whole list must follow the row's place there.
+ */
+function useSpacingInWholeList(
+	apiRef: ReturnType<typeof useGridApiRef>,
+	getRowSpacing: DataGridBaseProps<GridValidRowModel>["getRowSpacing"],
+) {
+	return useMemo(() => {
+		if (getRowSpacing === undefined) return undefined;
+		return ({ indexRelativeToCurrentPage }: GridRowSpacingParams) => {
+			const { page, pageSize } = gridPaginationModelSelector(apiRef);
+			const index = page * pageSize + indexRelativeToCurrentPage;
+			return getRowSpacing({
+				index,
+				isLastShown: index === gridExpandedRowCountSelector(apiRef) - 1,
+			});
+		};
+	}, [apiRef, getRowSpacing]);
+}
+
+/**
  * DataGridBase - A reusable data grid component with consistent functionality
  * Built on top of @mui/x-data-grid with additional features:
  * - Sorting on all columns
@@ -140,6 +164,7 @@ function DataGridBase<T extends GridValidRowModel>({
 
 	// Create API ref to access DataGrid API
 	const apiRef = useGridApiRef();
+	const spacingInWholeList = useSpacingInWholeList(apiRef, getRowSpacing);
 
 	// Generate localStorage key for this grid's persisted state (visibility, order, widths, sort)
 	const storageKeyForState = `lighthouse:datagrid:${storageKey}:state`;
@@ -337,7 +362,7 @@ function DataGridBase<T extends GridValidRowModel>({
 					hideFooterSelectedRowCount
 					getRowHeight={() => "auto"}
 					slots={gridSlots}
-					getRowSpacing={getRowSpacing}
+					getRowSpacing={spacingInWholeList}
 					disableColumnResize={false}
 					columnVisibilityModel={columnVisibilityModel}
 					onColumnVisibilityModelChange={(newModel) =>

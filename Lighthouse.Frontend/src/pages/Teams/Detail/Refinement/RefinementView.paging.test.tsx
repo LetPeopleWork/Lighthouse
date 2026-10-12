@@ -180,7 +180,7 @@ describe("Team Gravity's 143 Work Items in refinement can all be reached", () =>
 	});
 
 	// @us-01 @slice-01 @driving_port @kpi-OUT-6202-no-hidden-rows @contract-shape:bounded-change
-	it.skip(
+	it(
 		"Jonas pages to GR-0131, the 131st Work Item in refinement, and votes on it",
 		async () => {
 			const key = aBrowserThatVotedBefore("Jonas");
@@ -218,6 +218,11 @@ describe("Team Gravity's 143 Work Items in refinement can all be reached", () =>
 					key,
 				),
 			);
+			await waitFor(async () =>
+				expect(
+					theButton(await theRowOf(reference(131)), "Yes"),
+				).toHaveAttribute("aria-pressed", "true"),
+			);
 		},
 		RENDER_HEAVY,
 	);
@@ -242,7 +247,7 @@ describe("Team Gravity's 143 Work Items in refinement can all be reached", () =>
 
 	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
 	// Where the line lands on each page for every placement that matters around the page edge.
-	it.skip.each<[number, LineOnThePage | null, LineOnThePage | null]>([
+	it.each<[number, LineOnThePage | null, LineOnThePage | null]>([
 		[0, { side: "above", by: reference(1), says: ENOUGH_FOR }, null],
 		[20, { side: "below", by: reference(20), says: ENOUGH_FOR }, null],
 		[100, { side: "below", by: reference(100), says: ENOUGH_FOR }, null],
@@ -269,7 +274,7 @@ describe("Team Gravity's 143 Work Items in refinement can all be reached", () =>
 
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	// The first page must not call its own 100 rows all needed while 143 are in refinement.
-	it.skip(
+	it(
 		"with 120 needed, numbers the first page 1 to 100 and continues at 101 on the second, up to 120",
 		async () => {
 			const { user } = renderTheRefinementTab(
@@ -298,7 +303,7 @@ describe("Team Gravity's 143 Work Items in refinement can all be reached", () =>
 	);
 
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
-	it.skip(
+	it(
 		"with 120 needed, a State filter on the second page that leaves 64 shows them all, the line under the last",
 		async () => {
 			const { user } = renderTheRefinementTab(
@@ -314,10 +319,12 @@ describe("Team Gravity's 143 Work Items in refinement can all be reached", () =>
 				"Next",
 			);
 
-			await waitFor(() =>
-				expect(theRowsOnThisPage().map((shown) => shown.referenceId)).toEqual(
-					references(1, 64),
-				),
+			await waitFor(
+				() =>
+					expect(theRowsOnThisPage().map((shown) => shown.referenceId)).toEqual(
+						references(1, 64),
+					),
+				{ timeout: 5000 },
 			);
 			expectOnThisPage({
 				side: "below",

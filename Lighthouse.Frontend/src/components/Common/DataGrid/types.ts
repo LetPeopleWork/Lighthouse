@@ -2,11 +2,18 @@ import type {
 	GridColDef,
 	GridFilterModel,
 	GridRowId,
+	GridRowSpacing,
 	GridSortModel,
 	GridValidRowModel,
 	DataGridProps as MuiDataGridProps,
 } from "@mui/x-data-grid";
 import type React from "react";
+
+/** A row's place in the whole list as sorted and filtered, whichever page it is on. */
+export interface RowInWholeList {
+	index: number;
+	isLastShown: boolean;
+}
 
 /**
  * Column definition for DataGrid
@@ -71,7 +78,7 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	/** Replaces parts of the grid, such as how a row renders. */
 	slots?: MuiDataGridProps<T>["slots"];
 	/** Space to leave above or below a row, which the grid counts when it lays the rows out. */
-	getRowSpacing?: MuiDataGridProps<T>["getRowSpacing"];
+	getRowSpacing?: (row: RowInWholeList) => GridRowSpacing;
 	/**
 	 * Which columns start hidden. Only what the user changes on top of it is remembered, so a later
 	 * change to these defaults still reaches every column the user never touched.

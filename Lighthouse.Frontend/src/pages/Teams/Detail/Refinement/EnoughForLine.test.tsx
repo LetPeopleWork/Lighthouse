@@ -1,6 +1,6 @@
-import type { GridRowSpacingParams } from "@mui/x-data-grid";
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import type { RowInWholeList } from "../../../../components/Common/DataGrid/types";
 import { type EnoughForMarking, useEnoughForLine } from "./EnoughForLine";
 
 const needing = (high: number): EnoughForMarking => ({
@@ -13,12 +13,10 @@ const needing = (high: number): EnoughForMarking => ({
 	},
 });
 
-const theRow = (index: number) =>
-	({
-		indexRelativeToCurrentPage: index,
-		isFirstVisible: index === 0,
-		isLastVisible: false,
-	}) as GridRowSpacingParams;
+const theRow = (index: number): RowInWholeList => ({
+	index,
+	isLastShown: false,
+});
 
 describe("the space the grid keeps for the enough-for line", () => {
 	it("moves with the number needed when the Refinement is read again", () => {
@@ -32,4 +30,16 @@ describe("the space the grid keeps for the enough-for line", () => {
 		expect(result.current.getRowSpacing?.(theRow(0))).toEqual({ bottom: 36 });
 		expect(result.current.getRowSpacing?.(theRow(2))).toEqual({});
 	});
+
+	it.each([
+		[20, {}],
+		[131, { bottom: 36 }],
+	])(
+		"a focused row kept rendered off the open page, the 131st of the whole list, with %i needed keeps %o",
+		(high, space) => {
+			const { result } = renderHook(() => useEnoughForLine(needing(high)));
+
+			expect(result.current.getRowSpacing?.(theRow(130))).toEqual(space);
+		},
+	);
 });

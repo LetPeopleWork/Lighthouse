@@ -3,10 +3,13 @@ import {
 	GridRow,
 	type GridRowProps,
 	type GridRowSpacing,
-	type GridRowSpacingParams,
+	gridExpandedRowCountSelector,
+	useGridApiContext,
+	useGridSelector,
 } from "@mui/x-data-grid";
 import type React from "react";
 import { createContext, forwardRef, useContext, useMemo } from "react";
+import type { RowInWholeList } from "../../../../components/Common/DataGrid/types";
 import {
 	describeEnoughFor,
 	describeNeededNumber,
@@ -51,18 +54,13 @@ const SPACE_FOR_THE_LINE: Record<LineSide, GridRowSpacing> = {
 /**
  * The grid lays its rows out from the heights it knows about, so the line lives in space the grid reserves
  * as row spacing; otherwise every row after it would be drawn a line lower than the grid thinks it is.
- * Both the space and the line are placed from the rows as shown, sorted and filtered, so they agree.
+ * Both the space and the line are placed from the row's place in the whole list, sorted and filtered,
+ * so they agree on every page.
  */
 const spaceForTheLine =
 	(high: number) =>
-	({
-		indexRelativeToCurrentPage,
-		isLastVisible,
-	}: GridRowSpacingParams): GridRowSpacing => {
-		const line = lineBeside(high, {
-			index: indexRelativeToCurrentPage,
-			isLastShown: isLastVisible,
-		});
+	(row: RowInWholeList): GridRowSpacing => {
+		const line = lineBeside(high, row);
 		return line === null ? {} : SPACE_FOR_THE_LINE[line.side];
 	};
 
@@ -103,12 +101,16 @@ const EnoughForRow = forwardRef<HTMLDivElement, Readonly<GridRowProps>>(
 	function EnoughForRow(props, ref) {
 		const marking = useContext(EnoughForContext);
 		const theme = useTheme();
+		const shownCount = useGridSelector(
+			useGridApiContext(),
+			gridExpandedRowCountSelector,
+		);
 		if (marking === null) {
 			return <GridRow ref={ref} {...props} />;
 		}
 		const beside = lineBeside(marking.high, {
 			index: props.index,
-			isLastShown: props.isLastVisible,
+			isLastShown: props.index === shownCount - 1,
 			isOutOfSight: props.isNotVisible,
 		});
 		const line =
