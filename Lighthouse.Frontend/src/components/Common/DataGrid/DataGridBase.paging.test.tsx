@@ -110,7 +110,7 @@ const expectNoFooter = () => {
 };
 
 const sortByNameDescending = async (user: UserEvent) => {
-	const header = screen.getByRole("columnheader", { name: /^Name/ });
+	const header = screen.getByRole("columnheader", { name: /^Name$/ });
 	await user.click(header);
 	await user.click(header);
 	await waitFor(() => expect(namesShown()[0]).toBe("Row 243"));
@@ -210,11 +210,11 @@ describe("A list of more than 100 rows says how many it has and pages to the res
 
 	// @us-01 @slice-01 @boundary @contract-shape:unbounded-preservation
 	// Paging is never remembered: the whole saved entry is the same after paging as before it.
-	it.skip(
+	it(
 		"leaves the saved layout of the list exactly as it was after paging",
 		async () => {
 			const { user } = showTheList(aListOf(243));
-			await user.click(screen.getByRole("columnheader", { name: /^Name/ }));
+			await user.click(screen.getByRole("columnheader", { name: /^Name$/ }));
 			const savedBefore = localStorage.getItem(SAVED_LAYOUT_KEY);
 			expect(savedBefore).not.toBeNull();
 
@@ -451,7 +451,7 @@ describe("Export and Copy take the whole list, whichever page is open", () => {
 	);
 
 	// @us-01 @slice-01 @boundary @contract-shape:unbounded-preservation
-	it.skip(
+	it(
 		"exports all 243 rows, in the order shown, from the second page",
 		async () => {
 			const { user } = showTheList(aListOf(243));
@@ -480,7 +480,7 @@ describe("Export and Copy take the whole list, whichever page is open", () => {
 	);
 
 	// @us-01 @slice-01 @boundary @contract-shape:unbounded-preservation
-	it.skip(
+	it(
 		"copies all 243 rows, in the order shown, from the second page",
 		async () => {
 			const { user } = showTheList(aListOf(243));

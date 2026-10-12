@@ -46,12 +46,14 @@ const useDataGridExport = (
 	const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
 
 	const getGridData = useCallback(() => {
-		const visibleRows = apiRef.current.getSortedRowIds();
+		// Every row of the list, in its current sort order: neither the open page nor a column
+		// filter narrows what is exported or copied.
+		const rowIdsInSortOrder = apiRef.current.getSortedRowIds();
 
-		// A grid that builds its own table decides what its file contains; the sort and any filter
-		// still decide the order, because that is the list the reader is looking at.
+		// A grid that builds its own table lays out its file itself, from these same rows in
+		// this same order.
 		if (exportTable) {
-			const { headers, rows } = exportTable(visibleRows);
+			const { headers, rows } = exportTable(rowIdsInSortOrder);
 			return { headers, dataRows: rows };
 		}
 
@@ -59,7 +61,7 @@ const useDataGridExport = (
 
 		const headers = visibleColumns.map((col) => col.headerName || col.field);
 
-		const dataRows = visibleRows.map((rowId) => {
+		const dataRows = rowIdsInSortOrder.map((rowId) => {
 			return visibleColumns.map((col) => {
 				const value = apiRef.current.getCellValue(rowId, col.field);
 				return formatCellValue(value);
