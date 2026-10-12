@@ -417,9 +417,9 @@ describe("DataGridBase", () => {
 			const grid = screen.getByRole("grid");
 			expect(grid).toBeInTheDocument();
 
-			// With virtualization, not all rows are rendered in the DOM
+			// A page holds 100 rows, so not all 200 rows are rendered in the DOM
 			const rows = container.querySelectorAll('[role="row"]');
-			// Should be less than total rows (1 header + virtualized rows)
+			// Should be less than total rows (1 header + one page of rows)
 			expect(rows.length).toBeLessThan(largeDataset.length + 1);
 		});
 	});
