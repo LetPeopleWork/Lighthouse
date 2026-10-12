@@ -5,10 +5,14 @@ import {
 	type GridValidRowModel,
 	gridNumberComparator,
 } from "@mui/x-data-grid";
+import { useQuery } from "@tanstack/react-query";
+import { useContext } from "react";
+import type { ParentWorkItem } from "../../../hooks/useParentWorkItems";
 import type { IFeature } from "../../../models/Feature";
 import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import {
 	type AgeBandColumnDescriptor,
 	paceBandSortRank,
@@ -58,6 +62,8 @@ export interface CatalogueColumnSettings {
 	ageOn?: Date;
 	/** The named cycle time the Cycle Time column reads instead of the item's own, by definition id. */
 	cycleTimeScope?: number;
+	/** Every parent the rows name, sorted and without repeats, so the same rows always ask alike. */
+	parentReferences?: readonly string[];
 	/** The named cycle times offered as columns of their own. */
 	namedCycleTimeDefinitions?: INamedCycleTimeDefinition[];
 	daysContributed?: DaysContributedColumnDescriptor;
@@ -84,7 +90,7 @@ const featureRows = (items: readonly IWorkItem[]) => items.some(isFeatureRow);
 // Feature rows carry no blocked-since date of their own, so only Work Item rows offer one.
 const workItemRows = (items: readonly IWorkItem[]) => !featureRows(items);
 
-const NO_PARENT_NAMES = new Map();
+const NO_PARENT_NAMES = new Map<string, ParentWorkItem>();
 
 // The rows come straight from the server's JSON, so a date may still be a string, and a date the
 // item does not have arrives as null or as the epoch.
@@ -230,16 +236,62 @@ const namedCycleTimeEntries = ({
 		};
 	});
 
-const parentColumn = (): DataGridColumn<WorkItemRow> => ({
+const parentNamesQueryOptions = {
+	staleTime: Number.POSITIVE_INFINITY,
+	retry: false,
+	refetchOnWindowFocus: false,
+	refetchOnReconnect: false,
+} as const;
+
+// The lookup lives in the cell, so it is made only while Parent cells are on screen, and every cell
+// shares one key, so the dialog asks once however many rows it shows. Until the names arrive, or if
+// they never do, the cell shows the reference itself.
+const ParentNameCell: React.FC<{
+	parentReference: string;
+	parentReferences: readonly string[];
+}> = ({ parentReference, parentReferences }) => {
+	const { featureService } = useContext(ApiServiceContext);
+	const { data: parentNames = NO_PARENT_NAMES } = useQuery({
+		...parentNamesQueryOptions,
+		queryKey: ["work-items-dialog-parents", ...parentReferences],
+		queryFn: async () => {
+			const parents = await featureService.getFeaturesByReferences([
+				...parentReferences,
+			]);
+			return new Map<string, ParentWorkItem>(
+				parents.map((parent) => [
+					parent.referenceId,
+					{
+						referenceId: parent.referenceId,
+						name: parent.name,
+						url: parent.url ?? "",
+					},
+				]),
+			);
+		},
+		enabled: parentReferences.length > 0,
+	});
+
+	return (
+		<ParentWorkItemCell
+			parentReference={parentReference}
+			parentMap={parentNames}
+		/>
+	);
+};
+
+const parentColumn = ({
+	parentReferences = [],
+}: CatalogueColumnSettings): DataGridColumn<WorkItemRow> => ({
 	field: "parent",
 	headerName: "Parent",
 	width: 200,
 	sortable: true,
 	valueGetter: (_, row) => row.parentWorkItemReference,
 	renderCell: ({ row }) => (
-		<ParentWorkItemCell
+		<ParentNameCell
 			parentReference={row.parentWorkItemReference}
-			parentMap={NO_PARENT_NAMES}
+			parentReferences={parentReferences}
 		/>
 	),
 });

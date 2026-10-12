@@ -166,10 +166,23 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 		return sortValueOf(b) - sortValueOf(a);
 	});
 
+	const parentReferences = useMemo(
+		() =>
+			[
+				...new Set(
+					items
+						.map((item) => item.parentWorkItemReference)
+						.filter((reference) => reference),
+				),
+			].sort((a, b) => a.localeCompare(b)),
+		[items],
+	);
+
 	const contextLayout = useMemo(
 		() =>
 			contextGridLayout(context, items, {
 				getTerm,
+				parentReferences,
 				timeInState: timeInStateColumn,
 				sle,
 				ageOn,
@@ -183,6 +196,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 			context,
 			items,
 			getTerm,
+			parentReferences,
 			timeInStateColumn,
 			sle,
 			ageOn,

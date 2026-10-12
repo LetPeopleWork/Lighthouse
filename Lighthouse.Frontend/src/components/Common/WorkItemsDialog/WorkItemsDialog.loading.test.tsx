@@ -1,3 +1,4 @@
+import { notifyManager } from "@tanstack/react-query";
 import { act, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeature } from "../../../models/Feature";
@@ -38,6 +39,10 @@ beforeEach(() => {
 	localStorage.clear();
 	for (const key of Object.keys(instanceWords)) delete instanceWords[key];
 });
+
+// The query library tells components about an answer on a later timer tick, which act() does not
+// wait for. Telling them in the same tick lets each answered request show before the next step.
+notifyManager.setScheduler(queueMicrotask);
 
 const RENDER_HEAVY = 20000;
 
@@ -183,7 +188,7 @@ describe("Parent shows the parent's name, looked up only while it is shown", () 
 	}
 
 	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
-	it.skip(
+	it(
 		"shows the parent's name once it is known",
 		async () => {
 			const { featureService, answers } = parentLookups();
@@ -201,7 +206,7 @@ describe("Parent shows the parent's name, looked up only while it is shown", () 
 	);
 
 	// @us-02 @slice-02 @boundary @contract-shape:pure-function
-	it.skip(
+	it(
 		"shows the parent's reference while its name is on its way",
 		() => {
 			const { featureService } = parentLookups();
@@ -217,7 +222,7 @@ describe("Parent shows the parent's name, looked up only while it is shown", () 
 	);
 
 	// @us-02 @slice-02 @error @contract-shape:pure-function
-	it.skip(
+	it(
 		"shows the parent's reference when its name cannot be looked up",
 		async () => {
 			const { featureService, answers } = parentLookups();
@@ -240,7 +245,7 @@ describe("Parent shows the parent's name, looked up only while it is shown", () 
 	// cost being guarded: these two read the request itself, and the cell it fills.
 
 	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
-	it.skip(
+	it(
 		"asks once for the names of the shown rows' parents while Parent is shown, and shows them",
 		async () => {
 			const { featureService, answers } = parentLookups();
@@ -282,7 +287,7 @@ describe("Parent shows the parent's name, looked up only while it is shown", () 
 	);
 
 	// @us-02 @slice-02 @error @contract-shape:pure-function
-	it.skip(
+	it(
 		"a late answer for the previous dialog's parents never names the next dialog's",
 		async () => {
 			const { featureService, answers } = parentLookups();
