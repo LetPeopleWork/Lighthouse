@@ -69,6 +69,7 @@ export interface CatalogueColumnSettings {
 	daysContributed?: DaysContributedColumnDescriptor;
 	ageBand?: AgeBandColumnDescriptor;
 	sleRisk?: SleRiskColumnDescriptor;
+	warnings?: WarningsColumnDescriptor;
 }
 
 interface CatalogueEntry {
@@ -415,6 +416,12 @@ const CATALOGUE_HEAD: readonly CatalogueEntry[] = [
 /** The catalogue columns listed after the named cycle times. */
 const CATALOGUE_TAIL: readonly CatalogueEntry[] = [
 	{
+		id: "warnings",
+		offeredFor: (_, settings) => settings.warnings !== undefined,
+		build: (settings) =>
+			warningsGridColumn(settings.warnings as WarningsColumnDescriptor),
+	},
+	{
 		id: "size",
 		offeredFor: featureRows,
 		build: (settings) =>
@@ -488,8 +495,11 @@ export function contextGridLayout(
 ): ContextGridLayout {
 	if (context === undefined) return NO_CONTEXT;
 
-	const { visible, sortBy, catalogue } = WORK_ITEMS_DIALOG_CONTEXTS[context];
-	const available = availableColumnIds(items, settings);
+	const { visible, sortBy, catalogue, withheld } =
+		WORK_ITEMS_DIALOG_CONTEXTS[context];
+	const available = availableColumnIds(items, settings).filter(
+		(id) => !withheld?.includes(id),
+	);
 	const ordered = [
 		...visible.filter((id) => available.includes(id)),
 		...(catalogue ? available.filter((id) => !visible.includes(id)) : []),

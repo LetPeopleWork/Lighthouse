@@ -1005,7 +1005,7 @@ describe("US-02 — every chart context that offers more columns follows the sam
 
 describe("US-03 — a Feature's child items show their progress at a glance", () => {
 	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
-	it.skip(
+	it(
 		"a Feature's child items open with Started, Closed, Age / Cycle Time and Estimate",
 		() => {
 			openTheDialog({
@@ -1025,7 +1025,7 @@ describe("US-03 — a Feature's child items show their progress at a glance", ()
 	);
 
 	// @us-03 @slice-03 @error @contract-shape:pure-function
-	it.skip(
+	it(
 		"without estimation on the child items' Team, the child items open without an Estimate",
 		() => {
 			openTheDialog({
@@ -1043,7 +1043,7 @@ describe("US-03 — a Feature's child items show their progress at a glance", ()
 	);
 
 	// @us-03 @slice-03 @error @contract-shape:pure-function
-	it.skip(
+	it(
 		"the Delivery timeline keeps Warnings as its only extra column and never offers Estimate or Blocked since",
 		async () => {
 			const user = userEvent.setup();
@@ -1067,21 +1067,21 @@ describe("US-03 — a Feature's child items show their progress at a glance", ()
 	);
 
 	// @us-03 @slice-03 @error @contract-shape:pure-function
-	it.skip.each(theFeatureListContexts)(
+	it.each(theFeatureListContexts)(
 		"$context neither shows nor offers an Estimate where estimation is not set up",
 		estimateIsNeitherShownNorOffered,
 		RENDER_HEAVY,
 	);
 
 	// @us-03 @slice-03 @contract-shape:pure-function
-	it.skip.each(theFeatureListContexts)(
+	it.each(theFeatureListContexts)(
 		"$context lists its defaults, then every other column the rows can fill in the one fixed order",
 		manageColumnsListsTheOneFixedOrder,
 		RENDER_HEAVY,
 	);
 
 	// @us-03 @slice-03 @contract-shape:bounded-change
-	it.skip.each(theFeatureListContexts)(
+	it.each(theFeatureListContexts)(
 		"$context comes back with the reader's own layout, a default hidden and another column on, the next time it opens",
 		theReadersLayoutComesBackOnReopen,
 		RENDER_HEAVY,

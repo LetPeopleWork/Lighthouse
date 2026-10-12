@@ -213,6 +213,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 				daysContributed: daysContributedColumn,
 				ageBand: ageBandColumn,
 				sleRisk: sleRiskColumn,
+				warnings: warningsColumn,
 			}),
 		[
 			context,
@@ -227,6 +228,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 			daysContributedColumn,
 			ageBandColumn,
 			sleRiskColumn,
+			warningsColumn,
 		],
 	);
 
@@ -322,7 +324,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 			baseColumns.push(sleRiskGridColumn(sleRiskColumn));
 		}
 
-		if (warningsColumn) {
+		if (warningsColumn && context === undefined) {
 			baseColumns.push(warningsGridColumn(warningsColumn));
 		}
 

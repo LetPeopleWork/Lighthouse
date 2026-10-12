@@ -43,6 +43,8 @@ export interface WorkItemsDialogContextDefaults {
 	sortBy: ColumnId;
 	/** Whether the rest of the catalogue is offered under Manage columns. */
 	catalogue: boolean;
+	/** Columns never offered here, whatever the rows happen to carry. */
+	withheld?: ColumnId[];
 }
 
 const STARTED: ColumnId = "startedDate";
@@ -80,7 +82,12 @@ export const WORK_ITEMS_DIALOG_CONTEXTS: Record<
 		[STARTED, CLOSED, AGE_OR_CYCLE_TIME, ESTIMATE],
 		AGE_OR_CYCLE_TIME,
 	),
-	deliveryTimeline: withCatalogue(["warnings"], "warnings"),
+	// Its Feature comes from an endpoint that serves every Portfolio alike, so it has no one
+	// estimation to read.
+	deliveryTimeline: {
+		...withCatalogue(["warnings"], "warnings"),
+		withheld: [ESTIMATE],
+	},
 	// Its rows are built for the chart with no real dates or ages, so no other column would say anything.
 	cumulativeStateTime: {
 		visible: ["daysContributed"],
