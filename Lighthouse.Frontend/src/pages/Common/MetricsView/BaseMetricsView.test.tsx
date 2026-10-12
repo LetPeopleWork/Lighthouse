@@ -5621,13 +5621,10 @@ describe("BaseMetricsView component", () => {
 	});
 
 	/**
-	 * DISTILL RED-pending specs — Story 5508 (widget-loose-ends) slice 01, US-01.
-	 *
-	 * D8: Total Throughput and Total Arrivals are the only Flow Overview widgets backed by an item
+	 * Total Throughput and Total Arrivals are the only Flow Overview widgets backed by an item
 	 * set that cannot show it. Both item sources already exist at the buildViewData call site —
 	 * `throughputItems` and the arrivals extraction the sibling `arrivals` entry already uses — so
-	 * this is registration, not a new query. If it turns out to need a new fetch, slice 01's
-	 * learning hypothesis has fired and slices 03-05 need re-estimating.
+	 * this is registration, not a new query.
 	 */
 	describe("View Data on Total Throughput and Total Arrivals (Story 5508 slice 01)", () => {
 		beforeEach(() => {
@@ -5719,15 +5716,9 @@ describe("BaseMetricsView component", () => {
 	});
 
 	/**
-	 * DISTILL RED-pending specs — Story 5508 (widget-loose-ends) slice 04, US-05.
-	 *
-	 * The widget-level half of slice 04: the rule itself is pinned in ragRules.test.ts; here we pin
+	 * The widget-level half: the rule itself is pinned in ragRules.test.ts; here we pin
 	 * that it is REGISTERED, that the trend policy flipped from "none" to "previous-period", and
 	 * that both render through the EXISTING WidgetShell chrome rather than a new component.
-	 *
-	 * HARD DEPENDENCY on slice 03 — the previous-period value is the as-of-date computation
-	 * evaluated at `startDate − 1 day`. Before slice 03 lands, both periods age to today and every
-	 * trend reads flat, so enabling this block earlier would pass for the wrong reason.
 	 */
 	describe("Work Item Age Percentiles status and trend (Story 5508 slice 04)", () => {
 		beforeEach(() => {
@@ -5847,9 +5838,7 @@ describe("BaseMetricsView component", () => {
 	});
 
 	/**
-	 * DISTILL RED-pending specs — Story 5508 (widget-loose-ends) slice 05, US-06.
-	 *
-	 * D7: Flow Efficiency used to sit off the shared data path — it self-fetched in its own effect
+	 * Flow Efficiency used to sit off the shared data path — it self-fetched in its own effect
 	 * and coloured its own number, which is why buildWidgetFooters had no `flowEfficiency` key to
 	 * emit. Moving the fetch into the BaseMetricsView data layer is what earns it the chip; the
 	 * computeFlowEfficiencyRag rule itself is reused verbatim.

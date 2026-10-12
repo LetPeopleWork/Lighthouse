@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { claimPromptSlot, promptSlotHolder } from "./promptSession";
 
-/**
- * Slice 02, AC-05.6. describe.skip = RED scaffold; DELIVER enables it (ADR-025).
- */
-
 describe("promptSession", () => {
 	beforeEach(() => {
 		sessionStorage.clear();

@@ -27,8 +27,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     [Category("slice-02")]
     public class JiraBatchedWriteBackTest
     {
-        private const string RedScaffold = "RED — Epic 5500 slice 02 (batched write-back) not implemented";
-
         private const string AgeField = "customfield_10206";
         private const string DateField = "customfield_10205";
 

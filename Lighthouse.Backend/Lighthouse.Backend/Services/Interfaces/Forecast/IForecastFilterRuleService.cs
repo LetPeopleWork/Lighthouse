@@ -1,4 +1,3 @@
-// SCAFFOLD: true
 using System.Collections.Generic;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;

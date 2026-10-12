@@ -166,8 +166,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         /// completion percentile earlier.
         /// </summary>
         // @regression @us-01 @real-io @contract-shape:unbounded-preservation (AC-1.5, D3)
-        // Passes on unmodified main. It is a regression guard rather than a RED scaffold: it asserts
-        // only against the completion contract, which this slice must leave exactly where it is.
         [Test]
         public async Task Nothing_about_the_completion_forecast_moves()
         {

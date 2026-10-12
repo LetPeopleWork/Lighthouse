@@ -300,7 +300,6 @@ describe("BoardWizard", () => {
 	// "Failed to load boards. Please try again." — the same sentence for a rejected credential, a
 	// table the account may not read and a board nobody shared, and advice that fixes none of them.
 	// The backend already wrote the words that name the table and the role to grant.
-	// DISTILL scaffold for #5610 slice 02 - un-skip in DELIVER (ADR-025).
 	it("shows the reason the board list was refused", async () => {
 		mockGetBoards.mockRejectedValue(new ApiError(403, REFUSAL));
 
@@ -323,7 +322,6 @@ describe("BoardWizard", () => {
 	// ADR-126 decision 3. Boards are shared, not roled, so an empty list has two causes that nothing
 	// on the instance can tell apart — the account is a member of no board, or none of its boards
 	// carries both a table and a filter. The copy names both and asserts neither.
-	// DISTILL scaffold for #5610 slice 02 - un-skip in DELIVER (ADR-025).
 	it("names both reasons a connection may have no board to offer", async () => {
 		mockGetBoards.mockResolvedValue([]);
 
@@ -802,7 +800,6 @@ describe("BoardWizard", () => {
 	// which enabled Confirm. Nothing was overwritten — the settings screen writes each field only
 	// when the incoming value is non-empty — so the dialog reported success and silently did
 	// nothing. A refusal wearing a success costume, for all four connectors.
-	// DISTILL scaffold for #5610 slice 02 - un-skip in DELIVER (ADR-025).
 	it("cannot be confirmed when the board could not be read", async () => {
 		mockGetBoards.mockResolvedValue(mockBoards);
 		mockGetBoardInformation.mockRejectedValue(new ApiError(403, REFUSAL));

@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         /// <summary>
-        /// Not a RED scaffold - a standing guard. ADR-144 makes <c>FlushAsync</c> the collector's only
+        /// <c>FlushAsync</c> is the collector's only
         /// impure member; a second asynchronous member would mean staging had grown a side effect.
         /// </summary>
         [Test]

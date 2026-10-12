@@ -1095,7 +1095,6 @@ describe("GeneralSettingsComponent", () => {
 			).toBeInTheDocument();
 		});
 
-		// DISTILL scaffold for #5610 slice 02 - un-skip in DELIVER (ADR-025).
 		it("does not offer it to someone who cannot open it", () => {
 			rbac.isSystemAdmin = false;
 

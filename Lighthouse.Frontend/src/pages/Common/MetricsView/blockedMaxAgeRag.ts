@@ -21,10 +21,7 @@ export type BlockedRagResult = {
  *   GREEN = nothing is aging,
  *   none  = threshold is 0 (RAG disabled / neutral).
  * Items with no established blockedSince baseline are excluded from the max-age computation by the
- * caller. DELIVER wires this result into the existing computeBlockedOverviewRag call site in
- * BaseMetricsView (re-driving the widget RAG from count to max age).
- *
- * RED scaffold — authored by DISTILL (ADR-025); implemented in DELIVER slice-07.
+ * caller.
  */
 export function computeBlockedMaxAgeRag(
 	maxBlockedAgeDays: number | null,

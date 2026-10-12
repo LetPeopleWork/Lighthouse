@@ -7,8 +7,6 @@ import { createMockApiServiceContext } from "../../tests/MockApiServiceProvider"
 import SurveyNudge from "./SurveyNudge";
 
 /**
- * Slice 02, AC-05.6. describe.skip = RED scaffold; DELIVER enables it (ADR-025).
- *
  * The survey nudge shipped long before there was anything to collide with. Now there are two
  * unsolicited prompts on overlapping clocks, and one of them is a consent request - which may not
  * be put to somebody alongside an unrelated ask. So this component acquires one new obligation:

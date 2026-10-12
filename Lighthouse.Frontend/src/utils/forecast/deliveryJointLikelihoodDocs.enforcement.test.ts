@@ -20,8 +20,7 @@ import { describe, expect, it } from "vitest";
  * may move a keyword, provided the assertion stays falsifiable: a check that passes on an empty
  * section is worse than no check.
  *
- * `describe.skip` = RED scaffold; DELIVER enables it (ADR-025). The second block is NOT skipped — it
- * is the "must not" half, which can fail today and must stay green through the change.
+ * The second block is the "must not" half: it fails if the docs ever make the forbidden claim.
  *
  * Placement: beside formatLikelihood.enforcement.test.ts, which is this repo's only precedent for a
  * readFileSync-plus-regex enforcement test. Not under src/docs — a `src/docs` path in this project has

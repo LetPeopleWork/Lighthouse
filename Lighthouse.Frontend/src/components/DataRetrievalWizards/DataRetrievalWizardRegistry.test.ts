@@ -185,7 +185,6 @@ describe("DataRetrievalWizardRegistry", () => {
 	// already exists as a Visual Task Board, and the picker for it is one row here pointing at the
 	// same dialog Jira, Azure DevOps and Linear already use.
 	describe("picking a ServiceNow board", () => {
-		// DISTILL scaffold for #5610 slice 02 - un-skip in DELIVER (ADR-025).
 		it("is offered to a team", () => {
 			const wizards = getWizardsForSystem("ServiceNow", "team");
 

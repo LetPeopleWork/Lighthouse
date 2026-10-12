@@ -9,8 +9,6 @@ import Footer from "../App/Footer/Footer";
 import { UsageDataAsk } from "./UsageDataAsk";
 
 /**
- * Slice 02, US-05. describe.skip = RED scaffold; DELIVER enables it (ADR-025).
- *
  * Mounted beside the real Footer rather than on its own, because the thing under test is that a
  * person ends up looking at the dialog. A test that asserted openDialog had been called would pass
  * against a provider whose dialog nothing renders, which is the wiring defect this slice is most

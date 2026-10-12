@@ -978,9 +978,7 @@ describe("useMetricsData", () => {
 		});
 
 		/**
-		 * DISTILL RED-pending spec — Story 5508 (widget-loose-ends) slice 02, US-03 AC0.
-		 *
-		 * UPSTREAM-4: this is the seam the defect actually lives at, and the reason a fully green
+		 * This is the seam the defect actually lives at, and the reason a fully green
 		 * `blockedTrend.test.ts` never caught it. The hook fetched the history with the dashboard's own
 		 * [startDate, endDate]; the controller filters `RecordedAt >= startDate`; `computeBlockedTrend`
 		 * then looks for its baseline at `startDate − 1 day` — one day outside the window that was just
@@ -989,8 +987,6 @@ describe("useMetricsData", () => {
 		 *
 		 * The selector tests all build histories that contain a pre-boundary snapshot by hand, so they
 		 * pass over a widget that cannot work. Only an assertion on the requested RANGE catches this.
-		 *
-		 * describe.skip = RED scaffold; DELIVER enables it (ADR-025).
 		 */
 		it("requests blocked-count history from the day BEFORE the range start, so the trend baseline is inside the window (AC0)", async () => {
 			const entity = createMockEntity();

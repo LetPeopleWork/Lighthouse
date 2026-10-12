@@ -13,7 +13,6 @@ using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    // DISTILL scaffold for wait-states-flow-efficiency (Story #5173).
     // Black-box example-based ATs over WebApplicationFactory<Program> — the C#/TS Architecture-of-Reference
     // rows govern (see docs/architecture/atdd-infrastructure-policy.md): no Hypothesis/PBT, no state_delta
     // Universe (Python pilot only). Assertions target the HTTP/JSON contract only.

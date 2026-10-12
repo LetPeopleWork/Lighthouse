@@ -1,8 +1,6 @@
 /**
  * Whether this browser should be shown the usage data dialog without having asked for it.
  *
- * RED scaffold (DISTILL). DELIVER replaces the body.
- *
  * Almost every part of this question is answered on the server, because the facts it rests on -
  * how long this instance has been installed, whether an administrator has switched the asking off,
  * what this browser previously answered and how long ago - are either not the browser's to know or

@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { readAskedMarker, writeAskedMarker } from "./usageDataAskMarker";
 
-/**
- * Slice 02, AC-05.2. describe.skip = RED scaffold; DELIVER enables it (ADR-025).
- */
-
 const ASKED_AT = "2026-09-13T08:30:00.000Z";
 
 describe("usageDataAskMarker", () => {

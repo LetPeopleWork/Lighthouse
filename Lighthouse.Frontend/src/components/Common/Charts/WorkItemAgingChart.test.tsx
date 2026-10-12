@@ -1482,22 +1482,8 @@ describe("WorkItemAgingChart component", () => {
 			fireEvent.click(screen.getByRole("button", { name }));
 
 		/**
-		 * DISTILL RED-pending specs — Story 5508 (widget-loose-ends) slice 01, US-02.
-		 *
-		 * D9: drop the term prefix from the Work Item Age percentile line labels. The Cycle Time /
-		 * Work Item Age toggle directly above the chart already states which population is active,
-		 * so repeating it on all four lines is redundant chrome that makes the two sources read
-		 * differently for no reason.
-		 *
-		 * SUPERSEDES every "reference-line-Work Item Age {p}%" expectation in this describe —
-		 * DELIVER updates them ALL to the unprefixed test-ids when un-skipping this block. There are
-		 * SEVEN such tests, not two: "draws the cycle time reference lines by default...", "swaps to
-		 * work item age lines...", "renders no work item age lines when...", "renders only the highest
-		 * percentile line when...", "keeps the highest percentile per distinct value...", "lets the
-		 * next-highest work item age percentile...", plus the AC1 test below. Updating only some
-		 * leaves the rest asserting a label that no longer renders.
-		 *
-		 * describe.skip = RED scaffold; DELIVER enables it (ADR-025).
+		 * The Cycle Time / Work Item Age toggle directly above the chart already states which population
+		 * is active, so the percentile lines carry the percentage alone.
 		 */
 		describe("percentile line labels drop the term prefix (Story 5508 slice 01)", () => {
 			it("labels work item age reference lines with the percentage alone (AC1)", () => {

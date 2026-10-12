@@ -1,8 +1,6 @@
 /**
  * Where this browser remembers that it has already been shown the usage data dialog unprompted.
  *
- * RED scaffold (DISTILL). DELIVER replaces the bodies.
- *
  * This is the one piece of the cadence the server cannot hold. A browser that closes the dialog
  * without answering has no consent row, so there is nothing on the server to write "we asked this
  * one" against - and asking again on every visit is the nag the whole slice exists to avoid.

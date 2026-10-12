@@ -5,8 +5,6 @@ import {
 } from "./usageDataAskEligibility";
 
 /**
- * Slice 02, US-05. describe.skip = RED scaffold; DELIVER enables it (ADR-025).
- *
  * The division of labour these tests encode: the server answers everything it can see, and this
  * function answers the single thing it cannot - that a browser with no consent row was already
  * shown the dialog once and walked away from it.

@@ -1,8 +1,6 @@
 /**
  * One session, one unsolicited prompt.
  *
- * RED scaffold (DISTILL). DELIVER replaces the bodies.
- *
  * Two prompts now arrive uninvited - the survey nudge and the usage data dialog - and both are
  * relevant to the same people on overlapping clocks, so meeting each other is the normal case
  * rather than an edge one. Showing both at once is not merely untidy: consent asked alongside an

@@ -2,13 +2,6 @@ import { describe, expect, it } from "vitest";
 import { computeBlockedMaxAgeRag } from "./blockedMaxAgeRag";
 import type { RagTerms } from "./ragRules";
 
-/**
- * DISTILL RED-pending specs (Epic 5074, slice-07 / B2). Job:
- * job-flow-coach-read-blocked-health-at-a-glance. describe.skip = RED scaffold enabled in DELIVER one at
- * a time (ADR-025). The result drives the EXISTING Blocked widget RAG chip (rag-status test-id) — DELIVER
- * wires it into the computeBlockedOverviewRag call site and asserts the chip end-to-end in
- * BaseMetricsView.test.tsx.
- */
 const terms: RagTerms = {
 	workItem: "Work Item",
 	workItems: "Work Items",
