@@ -18,10 +18,8 @@ namespace Lighthouse.Backend.API.DTO
 
         /// <param name="asOf">
         /// When supplied, <see cref="WorkItemAge"/> reports the age the item had on that day
-        /// instead of today. Only the /wip endpoints pass it — they already receive an asOfDate from
-        /// the caller and simply discarded it, which is why the aging chart's dot heights stayed
-        /// today-anchored while the percentile card moved. Every other construction site is unchanged
-        /// by omission, which bounds the blast radius to that one call path.
+        /// instead of today. The /wip endpoints pass the day the caller asked about, so the aging
+        /// chart's dot heights move with the chosen range the way its percentile card does.
         /// </param>
         /// <param name="stateAsOf">
         /// The state the item held on <paramref name="asOf"/>, for callers that cannot
