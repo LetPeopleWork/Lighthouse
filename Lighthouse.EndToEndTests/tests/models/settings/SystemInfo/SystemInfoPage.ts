@@ -9,6 +9,11 @@ export type LogLevels =
 	| "Error"
 	| "Fatal";
 
+type BillOfMaterials = {
+	metadata?: { component?: { name?: string } };
+	components?: { name: string; scope?: string }[];
+};
+
 export class SystemInfoPage {
 	page: Page;
 
@@ -64,6 +69,52 @@ export class SystemInfoPage {
 
 	get packagesRowsPerPageChoice(): Locator {
 		return this.thirdPartyPackages.getByText(/^Rows per page/);
+	}
+
+	get nextPackagesPageButton(): Locator {
+		return this.thirdPartyPackages.getByRole("button", {
+			name: "Go to next page",
+			exact: true,
+		});
+	}
+
+	/**
+	 * How many packages the list holds by the grid's own account. The grid counts its header row too,
+	 * and the count covers every page, not just the rows on screen.
+	 */
+	async packagesGridRowCount(): Promise<number> {
+		const rowCount = await this.thirdPartyPackages
+			.getByRole("grid")
+			.getAttribute("aria-rowcount");
+		return Number(rowCount) - 1;
+	}
+
+	/**
+	 * How many packages this build serves, read from its two bills of materials rather than from the
+	 * list, so a list that drops packages cannot vouch for itself. It keeps what the Third Party
+	 * Packages list keeps: every component except the application itself and any marked optional or
+	 * excluded.
+	 */
+	async servedPackageCount(): Promise<number> {
+		const counts = await Promise.all(
+			["/sbom/backend.cdx.json", "/sbom/frontend.cdx.json"].map(
+				async (path) => {
+					const response = await this.page.request.get(
+						new URL(path, this.page.url()).toString(),
+					);
+					expect(response.ok(), `${path} could not be loaded`).toBe(true);
+					const bill = (await response.json()) as BillOfMaterials;
+					const application = bill.metadata?.component?.name;
+					return (bill.components ?? []).filter(
+						(component) =>
+							component.name !== application &&
+							component.scope !== "optional" &&
+							component.scope !== "excluded",
+					).length;
+				},
+			),
+		);
+		return counts.reduce((total, count) => total + count, 0);
 	}
 
 	/** Waits for the packages themselves: both bills of materials load after the tab has opened. */
