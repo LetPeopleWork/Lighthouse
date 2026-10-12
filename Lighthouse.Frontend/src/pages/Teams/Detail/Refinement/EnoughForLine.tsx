@@ -101,10 +101,8 @@ const EnoughForRow = forwardRef<HTMLDivElement, Readonly<GridRowProps>>(
 	function EnoughForRow(props, ref) {
 		const marking = useContext(EnoughForContext);
 		const theme = useTheme();
-		const shownCount = useGridSelector(
-			useGridApiContext(),
-			gridExpandedRowCountSelector,
-		);
+		const apiRef = useGridApiContext();
+		const shownCount = useGridSelector(apiRef, gridExpandedRowCountSelector);
 		if (marking === null) {
 			return <GridRow ref={ref} {...props} />;
 		}
