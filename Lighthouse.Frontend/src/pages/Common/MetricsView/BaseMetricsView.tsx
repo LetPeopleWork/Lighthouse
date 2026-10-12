@@ -1,4 +1,5 @@
 import { Grid } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import {
 	type ReactNode,
 	useCallback,
@@ -29,7 +30,9 @@ import TotalWorkItemAgeWidget from "../../../components/Common/Charts/TotalWorkI
 import WorkDistributionChart from "../../../components/Common/Charts/WorkDistributionChart";
 import WorkItemAgePercentiles from "../../../components/Common/Charts/WorkItemAgePercentiles";
 import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingChart";
-import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
+import WorkItemsDialog, {
+	type WorkItemsDialogStatus,
+} from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import type {
 	WorkItemsDialogContextId,
 	WorkItemsDialogOwnerKind,
@@ -38,6 +41,7 @@ import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import {
 	type MetricsOwnerRequest,
 	metricsOwnerKeyOf,
+	metricsQueryOptions,
 	useMetricsData,
 } from "../../../hooks/useMetricsData";
 import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
@@ -1558,9 +1562,6 @@ export const BaseMetricsView = <
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
 
 	const [drillDownState, setDrillDownState] = useState<string | null>(null);
-	const [drillDownItems, setDrillDownItems] = useState<
-		ICumulativeStateTimeItemRow[]
-	>([]);
 	const [drillDownOpen, setDrillDownOpen] = useState(false);
 
 	const {
@@ -1578,29 +1579,61 @@ export const BaseMetricsView = <
 
 	const handleCumulativeStateTimeSelectionChange = setSelectedItemIds;
 
-	const handleCumulativeStateTimeBarClick = async (stateName: string) => {
-		const activeItemIds =
-			selectedItemIds.length > 0 ? selectedItemIds : undefined;
-		const response =
-			ownerType === "team"
-				? await metricsService.getCumulativeStateTimeItemsForTeam(
-						entity.id,
-						stateName,
-						startDate,
-						endDate,
-						activeItemIds,
-					)
-				: await metricsService.getCumulativeStateTimeItemsForPortfolio(
-						entity.id,
-						stateName,
-						startDate,
-						endDate,
-						activeItemIds,
-					);
+	const handleCumulativeStateTimeBarClick = (stateName: string) => {
 		setDrillDownState(stateName);
-		setDrillDownItems(response.items);
 		setDrillDownOpen(true);
 	};
+
+	const drillDownQuery = useQuery({
+		...metricsQueryOptions,
+		queryKey: [
+			"metrics",
+			"cumulativeStateTimeItems",
+			{
+				ownerType,
+				...metricsOwnerKeyOf(entity),
+				state: drillDownState,
+				from: formatLocalDate(startDate),
+				to: formatLocalDate(endDate),
+				itemIds: selectedItemIds,
+			},
+		] as const,
+		queryFn: async (): Promise<ICumulativeStateTimeItemRow[]> => {
+			const stateName = drillDownState ?? "";
+			const activeItemIds =
+				selectedItemIds.length > 0 ? selectedItemIds : undefined;
+			const response =
+				ownerType === "team"
+					? await metricsService.getCumulativeStateTimeItemsForTeam(
+							entity.id,
+							stateName,
+							startDate,
+							endDate,
+							activeItemIds,
+						)
+					: await metricsService.getCumulativeStateTimeItemsForPortfolio(
+							entity.id,
+							stateName,
+							startDate,
+							endDate,
+							activeItemIds,
+						);
+			return response.items;
+		},
+		enabled: drillDownOpen && drillDownState !== null,
+	});
+
+	let drillDownStatus: WorkItemsDialogStatus = "loading";
+	if (drillDownQuery.isError) {
+		drillDownStatus = "error";
+	} else if (drillDownQuery.isSuccess && !drillDownQuery.isFetching) {
+		drillDownStatus = "ready";
+	}
+
+	const drillDownItems = useMemo(
+		() => (drillDownStatus === "ready" ? (drillDownQuery.data ?? []) : []),
+		[drillDownStatus, drillDownQuery.data],
+	);
 
 	const drillDownWorkItems = useMemo<IWorkItem[]>(
 		() =>
@@ -1622,16 +1655,15 @@ export const BaseMetricsView = <
 		[drillDownItems],
 	);
 
-	const drillDownDaysById = useMemo(
-		() =>
-			new Map(
-				drillDownItems.map((item) => [
-					item.workItemId,
-					Math.round(item.daysContributed * 10) / 10,
-				]),
-			),
-		[drillDownItems],
-	);
+	const drillDownDaysColumn = useMemo(() => {
+		const daysById = new Map(
+			drillDownItems.map((item) => [
+				item.workItemId,
+				Math.round(item.daysContributed * 10) / 10,
+			]),
+		);
+		return { daysFor: (workItem: IWorkItem) => daysById.get(workItem.id) ?? 0 };
+	}, [drillDownItems]);
 
 	const { showTips, toggleShowTips } = useShowTips(ownerType, entity.id);
 
@@ -1773,7 +1805,7 @@ export const BaseMetricsView = <
 			handleCumulativeStateTimeSelectionChange,
 		onCumulativeStateTimePickerOpen: handleCumulativeStateTimePickerOpen,
 		onCumulativeStateTimeBarClick: (stateName) => {
-			void handleCumulativeStateTimeBarClick(stateName);
+			handleCumulativeStateTimeBarClick(stateName);
 		},
 		waitStates,
 		stateMappings,
@@ -1999,11 +2031,10 @@ export const BaseMetricsView = <
 				open={drillDownOpen}
 				title={`${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)} contributing to ${drillDownState ?? ""}`}
 				items={drillDownWorkItems}
-				highlightColumn={{
-					title: "Days Contributed",
-					description: "days",
-					valueGetter: (workItem) => drillDownDaysById.get(workItem.id) ?? 0,
-				}}
+				context="cumulativeStateTime"
+				ownerKind={ownerType}
+				status={drillDownStatus}
+				daysContributedColumn={drillDownDaysColumn}
 				onClose={() => setDrillDownOpen(false)}
 			/>
 		</Grid>

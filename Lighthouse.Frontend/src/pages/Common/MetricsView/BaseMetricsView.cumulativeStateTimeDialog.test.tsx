@@ -1,4 +1,8 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+	notifyManager,
+	QueryClient,
+	QueryClientProvider,
+} from "@tanstack/react-query";
 import {
 	act,
 	fireEvent,
@@ -141,6 +145,10 @@ vi.mock(
 	() => ({ default: () => null }),
 );
 
+// The query library tells components about an answer on a later timer tick, which act() does not
+// wait for. Telling them in the same tick lets each answered request show before the next step.
+notifyManager.setScheduler(queueMicrotask);
+
 const RENDER_HEAVY = 30000;
 
 const team = (() => {
@@ -243,7 +251,7 @@ const COULD_NOT_LOAD =
 
 describe("the items behind a Cumulative Time per State bar", () => {
 	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
-	it.skip.each(["team", "portfolio"] as const)(
+	it.each(["team", "portfolio"] as const)(
 		"on a %s's dashboard, the dialog opens at once in its loading look",
 		async (owner) => {
 			await openTheFlowMetrics(owner);
@@ -268,7 +276,7 @@ describe("the items behind a Cumulative Time per State bar", () => {
 	);
 
 	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
-	it.skip.each(["team", "portfolio"] as const)(
+	it.each(["team", "portfolio"] as const)(
 		"on a %s's dashboard, the items arrive with the days each contributed",
 		async (owner) => {
 			await openTheFlowMetrics(owner);
@@ -290,7 +298,7 @@ describe("the items behind a Cumulative Time per State bar", () => {
 	);
 
 	// @us-02 @slice-02 @error @contract-shape:pure-function
-	it.skip(
+	it(
 		"says the items couldn't be loaded instead of opening nothing when the request fails",
 		async () => {
 			await openTheFlowMetrics("team");
@@ -309,7 +317,7 @@ describe("the items behind a Cumulative Time per State bar", () => {
 	);
 
 	// @us-02 @slice-02 @error @contract-shape:pure-function
-	it.skip(
+	it(
 		"a late answer for the bar clicked before never lands in the next bar's dialog",
 		async () => {
 			await openTheFlowMetrics("team");

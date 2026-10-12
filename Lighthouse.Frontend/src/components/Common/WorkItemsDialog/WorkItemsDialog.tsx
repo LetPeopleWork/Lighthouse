@@ -1,6 +1,7 @@
 import CloseIcon from "@mui/icons-material/Close";
 import CloseFullscreenIcon from "@mui/icons-material/CloseFullscreen";
 import OpenInFullIcon from "@mui/icons-material/OpenInFull";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
 	Box,
 	Chip,
@@ -12,10 +13,15 @@ import {
 	Tooltip,
 	Typography,
 } from "@mui/material";
-import type { GridValidRowModel } from "@mui/x-data-grid";
+import {
+	GridLoadingOverlay,
+	type GridLoadingOverlayProps,
+	type GridValidRowModel,
+} from "@mui/x-data-grid";
 import { useMemo } from "react";
 import { useEnlargedWorkItemsDialog } from "../../../hooks/useEnlargedWorkItemsDialog";
 import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
 import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
@@ -71,7 +77,10 @@ export interface WorkItemsDialogProps {
 	context?: WorkItemsDialogContextId;
 	/** Whose items these are; a Team's and a Portfolio's dialog for the same chart open alike. */
 	ownerKind?: WorkItemsDialogOwnerKind;
-	// Declared for the per-context columns and not read yet.
+	/**
+	 * Whether the items are still on their way or could not be loaded, for a dialog that opens
+	 * before its items arrive. Left out, the items given are the answer.
+	 */
 	status?: WorkItemsDialogStatus;
 	/** The day Age is measured on, when the rows were picked on a day in the past. */
 	ageOn?: Date;
@@ -113,6 +122,18 @@ const emptyHighlightColumnDefinition: HighlightColumnDefinition = {
 	valueGetter: () => 0,
 };
 
+// With no rows yet, the grid's own loading look is a skeleton of blank rows, which reads like a
+// table with nothing in it. A spinner says the items are still on their way.
+const ItemsOnTheirWayOverlay = (props: GridLoadingOverlayProps) => (
+	<GridLoadingOverlay
+		{...props}
+		variant="circular-progress"
+		noRowsVariant="circular-progress"
+	/>
+);
+
+const gridSlots = { loadingOverlay: ItemsOnTheirWayOverlay };
+
 // A dialog without a context keeps the key every dialog once shared. A context-bearing dialog gets a
 // key of its own, so the layouts saved under the shared key never leak into any context.
 function layoutStorageKey(
@@ -140,6 +161,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	warningsColumn,
 	context,
 	ownerKind,
+	status = "ready",
 	ageOn,
 	cycleTimeScope,
 	namedCycleTimeDefinitions,
@@ -351,33 +373,44 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 				</Tooltip>
 			</DialogTitle>
 			<DialogContent sx={{ backgroundColor: "background.paper" }}>
-				{items.length > 0 ? (
-					<Box sx={{ mt: 2 }}>
-						<DataGridBase
-							// The grid reads its saved layout only when it mounts, so a dialog switched to
-							// another context while open needs a fresh grid to pick up that context's layout.
-							key={storageKey}
-							rows={sortedItems as (IWorkItem & GridValidRowModel)[]}
-							columns={columns}
-							storageKey={storageKey}
-							defaultColumnVisibilityModel={contextLayout.visibilityModel}
-							initialSortModel={[
-								{
-									field:
-										contextLayout.sortBy ??
-										(timeInStateColumn ? "timeInState" : "additionalColumn"),
-									sort: "desc" as const,
-								},
-							]}
-							enableExport={true}
-							exportFileName={title.replaceAll(/\s+/g, "_")}
-						/>
+				{status === "error" && (
+					<Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 2 }}>
+						<WarningAmberIcon color="warning" fontSize="small" />
+						<Typography variant="body2" color="text.secondary">
+							{`These ${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)} couldn't be loaded. Close and reopen to try again.`}
+						</Typography>
 					</Box>
-				) : (
-					<Typography variant="body2" color="text.secondary">
-						No items to display
-					</Typography>
 				)}
+				{status !== "error" &&
+					(items.length > 0 || status === "loading" ? (
+						<Box sx={{ mt: 2 }}>
+							<DataGridBase
+								// The grid reads its saved layout only when it mounts, so a dialog switched to
+								// another context while open needs a fresh grid to pick up that context's layout.
+								key={storageKey}
+								rows={sortedItems as (IWorkItem & GridValidRowModel)[]}
+								columns={columns}
+								storageKey={storageKey}
+								defaultColumnVisibilityModel={contextLayout.visibilityModel}
+								initialSortModel={[
+									{
+										field:
+											contextLayout.sortBy ??
+											(timeInStateColumn ? "timeInState" : "additionalColumn"),
+										sort: "desc" as const,
+									},
+								]}
+								loading={status === "loading"}
+								slots={gridSlots}
+								enableExport={true}
+								exportFileName={title.replaceAll(/\s+/g, "_")}
+							/>
+						</Box>
+					) : (
+						<Typography variant="body2" color="text.secondary">
+							No items to display
+						</Typography>
+					))}
 			</DialogContent>
 		</Dialog>
 	);

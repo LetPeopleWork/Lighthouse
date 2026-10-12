@@ -10,6 +10,7 @@ import {
 	render as renderWithoutQueries,
 	screen,
 	waitFor,
+	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
@@ -50,6 +51,7 @@ import {
 	createMockTerminologyService,
 } from "../../../tests/MockApiServiceProvider";
 import { generateWorkItemMapForRunChart } from "../../../tests/TestDataProvider";
+import { cellText } from "../../../tests/WorkItemsDialogTestKit";
 import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
 import type { SleRiskColumnDescriptor } from "../../../utils/charts/sleRisk";
 import {
@@ -4909,6 +4911,11 @@ describe("BaseMetricsView component", () => {
 
 			await user.click(screen.getByTestId("cumulative-bar-click-proxy"));
 
+			expect(
+				within(screen.getByRole("dialog")).getByText(
+					/^Work Items contributing to /,
+				),
+			).toBeInTheDocument();
 			await waitFor(() => {
 				expect(
 					service.getCumulativeStateTimeItemsForPortfolio,
@@ -5035,9 +5042,7 @@ describe("BaseMetricsView component", () => {
 				"https://example.test/items/DRILL-1",
 			);
 			expect(screen.getByText("DRILL-1")).toBeInTheDocument();
-			expect(screen.getByTestId("additionalColumnContent")).toHaveTextContent(
-				"10.2",
-			);
+			expect(cellText("daysContributed", "DRILL-1")).toBe("10.2");
 		});
 	});
 
