@@ -4,6 +4,7 @@ import type { IFeature } from "../../../models/Feature";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { WorkItemsDialogStatus } from "../WorkItemsDialog/WorkItemsDialog";
+import { dialogRowsOf } from "../WorkItemsDialog/workItemsDialogRows";
 
 // Nothing is kept between opens: every open asks again, so a reopen after a failure is a retry.
 const childItemsQueryOptions = {
@@ -13,8 +14,6 @@ const childItemsQueryOptions = {
 	refetchOnWindowFocus: false,
 	refetchOnReconnect: false,
 } as const;
-
-const NO_ITEMS: IWorkItem[] = [];
 
 export interface FeatureChildItems {
 	readonly selectedFeature: IFeature | null;
@@ -36,18 +35,12 @@ export function useFeatureChildItems(): FeatureChildItems {
 		enabled: featureId !== null,
 	});
 
-	let status: WorkItemsDialogStatus = "loading";
-	if (query.isError) {
-		status = "error";
-	} else if (query.isSuccess && !query.isFetching) {
-		status = "ready";
-	}
-
+	const { status, items } = dialogRowsOf(query);
 	const close = useCallback(() => setSelectedFeature(null), []);
 
 	return {
 		selectedFeature,
-		items: status === "ready" ? (query.data ?? NO_ITEMS) : NO_ITEMS,
+		items,
 		status,
 		show: setSelectedFeature,
 		close,

@@ -30,13 +30,12 @@ import TotalWorkItemAgeWidget from "../../../components/Common/Charts/TotalWorkI
 import WorkDistributionChart from "../../../components/Common/Charts/WorkDistributionChart";
 import WorkItemAgePercentiles from "../../../components/Common/Charts/WorkItemAgePercentiles";
 import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingChart";
-import WorkItemsDialog, {
-	type WorkItemsDialogStatus,
-} from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
+import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import type {
 	WorkItemsDialogContextId,
 	WorkItemsDialogOwnerKind,
 } from "../../../components/Common/WorkItemsDialog/workItemsDialogContexts";
+import { dialogRowsOf } from "../../../components/Common/WorkItemsDialog/workItemsDialogRows";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import {
 	type MetricsOwnerRequest,
@@ -1623,17 +1622,8 @@ export const BaseMetricsView = <
 		enabled: drillDownOpen && drillDownState !== null,
 	});
 
-	let drillDownStatus: WorkItemsDialogStatus = "loading";
-	if (drillDownQuery.isError) {
-		drillDownStatus = "error";
-	} else if (drillDownQuery.isSuccess && !drillDownQuery.isFetching) {
-		drillDownStatus = "ready";
-	}
-
-	const drillDownItems = useMemo(
-		() => (drillDownStatus === "ready" ? (drillDownQuery.data ?? []) : []),
-		[drillDownStatus, drillDownQuery.data],
-	);
+	const { status: drillDownStatus, items: drillDownItems } =
+		dialogRowsOf(drillDownQuery);
 
 	const drillDownWorkItems = useMemo<IWorkItem[]>(
 		() =>
