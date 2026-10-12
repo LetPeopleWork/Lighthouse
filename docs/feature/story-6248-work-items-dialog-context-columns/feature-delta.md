@@ -1097,3 +1097,9 @@ left, without starting DELIVER.
 | ID | Decision | Verdict |
 |----|----------|---------|
 | H1 | **Column headers are plain, with no units** (closes DISTILL upstream finding 1). Started, Closed, `{Cycle Time}`, `{Work Item Age}`, `{Work Item Age} / {Cycle Time}`, `{Blocked} since`, Time in State, Size, Days Contributed; `{…}` is the instance's term (D7). Today's highlight suffix " (days)" goes. **The Estimate header is plain `Estimate` in every case, with or without a unit and with mixed units: this supersedes S1 and D7's unit rule**, and the three S1 header cases in `WorkItemsDialog.contexts.test.tsx` change to expect `Estimate`. The backend still carries `unit` on the row (DDD-1), which the MCP tools relay to agents (M5); the dialog does not show it. | "Plain, no units" — "also remove the (Story Points)" |
+
+## Wave: DELIVER / [REF] Autonomous decisions (AFK, 2026-10-12)
+
+| # | Decision | Why |
+|---|----------|-----|
+| D-01-07 | **Step 01-07 is widened: the CSV connector now reads configured additional-field columns.** For every additional field defined on a CSV connection whose reference is a header in the file, each item carries that cell's value; a missing column or an empty cell gives no value and never fails the import. | DESIGN assumed the demo CSV connection could carry an additional field; it cannot — `CsvWorkTrackingConnector` never fills `AdditionalFieldValues`, so Zenith's Story Points never reached the items (live check: 95 rows, 0 mapped). The connection settings hide the additional-fields editor for CSV, so no customer can define one: only demo data, which sets the field in code, uses it. No customer-visible change; CSV docs unchanged. Revisit if CSV users should get the editor (a separate Story). |

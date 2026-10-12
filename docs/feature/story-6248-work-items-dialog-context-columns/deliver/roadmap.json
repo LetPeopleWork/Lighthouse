@@ -288,7 +288,9 @@
             "Lighthouse.Backend/Lighthouse.Backend/Factories/DemoDataFactory.cs",
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DemoDataService.cs",
             "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataFactoryTest.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DemoDataServiceTest.cs"
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DemoDataServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnectorTest.cs"
           ],
           "dependencies": [
             "01-06"
@@ -299,7 +301,8 @@
             "The DemoDataFactory tests and demo CSV fixtures gain Zenith's Story Points column, its field definition and the estimation setting, as DISTILL's disposition lists; every existing demo-data test stays green.",
             "Live check on a throw-away instance (never :5169): after loading demo scenario 0, Team Zenith's metrics show the Estimation vs. Cycle Time chart, and `/api/latest/teams/{zenithId}/metrics/cycleTimeData` rows carry estimate.displayValue equal to the bubble each item sits in, unit 'Story Points'; a Team without the field returns `\"estimate\": null`.",
             "SLICE GATE: `dotnet build` 0 warnings; filtered `dotnet test` green with this story's 66 backend cases passing and none skipped.",
-            "SLICE GATE: no frontend file changed in slice 01a."
+            "SLICE GATE: no frontend file changed in slice 01a.",
+            "AMENDED in DELIVER (D-01-07): the CSV connector fills AdditionalFieldValues for every AdditionalFieldDefinition of the connection whose Reference is a CSV header; a missing column or empty cell yields no value, never a failure. A CsvWorkTrackingConnectorTest case pins this (its own RED). The UI still hides the additional-fields editor for CSV connections, so no customer-visible change."
           ],
           "implementation_notes": "Find where the demo CSV connection declares its column mappings and additional fields (DemoDataFactory / DemoDataService) and follow that shape; do not change a DemoDataFactory default for other Teams. The values must be dense enough that every Zenith bubble's rows show an estimate, because the walking skeleton checks every listed row's Estimate cell is non-empty. Live check: build nothing on the frontend; start a throw-away backend on port 5199 from Lighthouse.Backend/Lighthouse.Backend with its own SQLite file and key store in a fresh `mktemp -d` directory (`env ASPNETCORE_ENVIRONMENT=Development Kestrel__Endpoints__Http__Url=http://localhost:5199 Kestrel__Endpoints__Https__Url=https://localhost:7299 Database__Provider=sqlite Database__ConnectionString=\"Data Source=<dir>/lighthouse.db\" Encryption__KeyStorePath=<dir>/keys UsageData__CollectorBaseUrl=http://127.0.0.1:9 dotnet run --no-launch-profile`), load demo scenario 0 through the demo-data API, and read the endpoint. Stop the instance afterwards. Commit: `feat(demo): team zenith estimates in story points (story 6248)` Roadmap review: this step must not ship demo-data changes untested; the DemoDataFactoryTest case above is its RED, the live API check is extra evidence, not the test."
         }
