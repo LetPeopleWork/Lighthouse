@@ -252,6 +252,7 @@ describe("WorkItemsDialog Component", () => {
 		items: mockWorkItems,
 		open: true,
 		context: "blocked" as const,
+		ownerKind: "team" as const,
 		onClose: vi.fn(),
 	};
 

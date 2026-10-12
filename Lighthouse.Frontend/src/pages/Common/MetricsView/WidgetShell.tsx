@@ -64,7 +64,7 @@ export type ViewDataPayload = {
 	readonly sleRiskColumn?: SleRiskColumnDescriptor;
 	readonly warningsColumn?: WorkItemsDialogProps["warningsColumn"];
 	readonly context: WorkItemsDialogProps["context"];
-	readonly ownerKind?: WorkItemsDialogProps["ownerKind"];
+	readonly ownerKind: WorkItemsDialogProps["ownerKind"];
 	readonly status?: WorkItemsDialogProps["status"];
 	readonly ageOn?: WorkItemsDialogProps["ageOn"];
 	readonly cycleTimeScope?: WorkItemsDialogProps["cycleTimeScope"];

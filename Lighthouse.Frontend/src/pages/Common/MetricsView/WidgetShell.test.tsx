@@ -302,6 +302,7 @@ describe("WidgetShell", () => {
 					title: "Closed Items",
 					items: [createWorkItem()],
 					context: "closedItems",
+					ownerKind: "team",
 				}}
 			>
 				<div>Content</div>
@@ -331,6 +332,7 @@ describe("WidgetShell", () => {
 					title: "Empty",
 					items: [],
 					context: "closedItems",
+					ownerKind: "team",
 				}}
 			>
 				<div>Content</div>
@@ -367,6 +369,7 @@ describe("WidgetShell", () => {
 						title: "Work Items in Progress",
 						items: [createWorkItem()],
 						context: "aging",
+						ownerKind: "team",
 						ageBandColumn,
 					}}
 				>
@@ -393,6 +396,7 @@ describe("WidgetShell", () => {
 						title: "Work Items in Progress",
 						items: [createWorkItem()],
 						context: "aging",
+						ownerKind: "team",
 					}}
 				>
 					<div>Content</div>
@@ -418,6 +422,7 @@ describe("WidgetShell", () => {
 					title: "All Closed Items",
 					items,
 					context: "closedItems",
+					ownerKind: "team",
 					sle: 14,
 				}}
 			>

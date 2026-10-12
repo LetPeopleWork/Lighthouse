@@ -67,7 +67,7 @@ export interface WorkItemsDialogProps {
 	 */
 	context: WorkItemsDialogContextId;
 	/** Whose items these are; a Team's and a Portfolio's dialog for the same chart open alike. */
-	ownerKind?: WorkItemsDialogOwnerKind;
+	ownerKind: WorkItemsDialogOwnerKind;
 	/**
 	 * Whether the items are still on their way or could not be loaded, for a dialog that opens
 	 * before its items arrive. Left out, the items given are the answer.
@@ -113,14 +113,10 @@ const ItemsOnTheirWayOverlay = (props: GridLoadingOverlayProps) => (
 
 const gridSlots = { loadingOverlay: ItemsOnTheirWayOverlay };
 
-function layoutStorageKey(
+const layoutStorageKey = (
 	context: WorkItemsDialogContextId,
-	ownerKind: WorkItemsDialogOwnerKind | undefined,
-): string {
-	return ownerKind === undefined
-		? `work-items-dialog:${context}`
-		: `work-items-dialog:${context}:${ownerKind}`;
-}
+	ownerKind: WorkItemsDialogOwnerKind,
+): string => `work-items-dialog:${context}:${ownerKind}`;
 
 const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	title,

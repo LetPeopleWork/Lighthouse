@@ -95,7 +95,11 @@ function dialogTree(
 	options: DialogOptions,
 	queryClient: QueryClient,
 ): React.ReactElement {
-	const { featureService = createMockFeatureService(), ...props } = options;
+	const {
+		featureService = createMockFeatureService(),
+		ownerKind = "team",
+		...props
+	} = options;
 	return (
 		<QueryClientProvider client={queryClient}>
 			<ApiServiceContext.Provider
@@ -105,6 +109,7 @@ function dialogTree(
 					title="Work Items behind the point"
 					open
 					onClose={() => {}}
+					ownerKind={ownerKind}
 					{...props}
 				/>
 			</ApiServiceContext.Provider>

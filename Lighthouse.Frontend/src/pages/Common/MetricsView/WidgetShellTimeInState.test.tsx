@@ -32,6 +32,7 @@ describe("WidgetShell WIP-overview view-data wiring", () => {
 					title: "Team in Progress",
 					items: [inProgressItem()],
 					context: "inProgress",
+					ownerKind: "team",
 					timeInStateColumn: {},
 				}}
 			>

@@ -147,6 +147,7 @@ describe("EstimationVsCycleTimeChart component", () => {
 	it("should render nothing when status is NotConfigured", () => {
 		const { container } = render(
 			<EstimationVsCycleTimeChart
+				ownerKind="team"
 				data={makeResponse({ status: "NotConfigured", dataPoints: [] })}
 				workItemLookup={mockWorkItemLookup}
 			/>,
@@ -158,6 +159,7 @@ describe("EstimationVsCycleTimeChart component", () => {
 	it("should display 'No data available' when status is NoData", () => {
 		render(
 			<EstimationVsCycleTimeChart
+				ownerKind="team"
 				data={makeResponse({ status: "NoData", dataPoints: [] })}
 				workItemLookup={mockWorkItemLookup}
 			/>,
@@ -169,6 +171,7 @@ describe("EstimationVsCycleTimeChart component", () => {
 	it("should render the chart with title when status is Ready", () => {
 		render(
 			<EstimationVsCycleTimeChart
+				ownerKind="team"
 				data={makeResponse()}
 				workItemLookup={mockWorkItemLookup}
 			/>,
@@ -185,6 +188,7 @@ describe("EstimationVsCycleTimeChart component", () => {
 	it("uses explicit axis IDs and x-axis height for stable tick rendering", () => {
 		render(
 			<EstimationVsCycleTimeChart
+				ownerKind="team"
 				data={makeResponse()}
 				workItemLookup={mockWorkItemLookup}
 			/>,
@@ -229,6 +233,7 @@ describe("EstimationVsCycleTimeChart component", () => {
 	it("should include estimation unit in x-axis label when provided", () => {
 		render(
 			<EstimationVsCycleTimeChart
+				ownerKind="team"
 				data={makeResponse({ estimationUnit: "Points" })}
 				workItemLookup={mockWorkItemLookup}
 			/>,
@@ -244,6 +249,7 @@ describe("EstimationVsCycleTimeChart component", () => {
 	it("should use default x-axis label when no estimation unit", () => {
 		render(
 			<EstimationVsCycleTimeChart
+				ownerKind="team"
 				data={makeResponse({ estimationUnit: null })}
 				workItemLookup={mockWorkItemLookup}
 			/>,
@@ -280,6 +286,7 @@ describe("EstimationVsCycleTimeChart component", () => {
 
 		render(
 			<EstimationVsCycleTimeChart
+				ownerKind="team"
 				data={data}
 				workItemLookup={mockWorkItemLookup}
 			/>,
@@ -311,6 +318,7 @@ describe("EstimationVsCycleTimeChart component", () => {
 
 		render(
 			<EstimationVsCycleTimeChart
+				ownerKind="team"
 				data={data}
 				workItemLookup={mockWorkItemLookup}
 			/>,
@@ -327,6 +335,7 @@ describe("EstimationVsCycleTimeChart component", () => {
 	it("should display diagnostic counts when unmapped or invalid items exist", () => {
 		render(
 			<EstimationVsCycleTimeChart
+				ownerKind="team"
 				data={makeResponse({
 					diagnostics: {
 						totalCount: 10,
@@ -346,6 +355,7 @@ describe("EstimationVsCycleTimeChart component", () => {
 	it("should not display diagnostic counts when all items are mapped", () => {
 		render(
 			<EstimationVsCycleTimeChart
+				ownerKind="team"
 				data={makeResponse({
 					diagnostics: {
 						totalCount: 5,
@@ -365,6 +375,7 @@ describe("EstimationVsCycleTimeChart component", () => {
 	it("should display 'No data available' when status is Ready but dataPoints is empty", () => {
 		render(
 			<EstimationVsCycleTimeChart
+				ownerKind="team"
 				data={makeResponse({ status: "NoData", dataPoints: [] })}
 				workItemLookup={mockWorkItemLookup}
 			/>,

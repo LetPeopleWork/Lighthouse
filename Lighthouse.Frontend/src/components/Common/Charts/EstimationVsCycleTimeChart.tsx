@@ -38,7 +38,7 @@ import type { WorkItemsDialogOwnerKind } from "../WorkItemsDialog/workItemsDialo
 interface EstimationVsCycleTimeChartProps {
 	data: IEstimationVsCycleTimeResponse;
 	workItemLookup: Map<number, IWorkItem>;
-	ownerKind?: WorkItemsDialogOwnerKind;
+	ownerKind: WorkItemsDialogOwnerKind;
 }
 
 const ScatterMarker = (

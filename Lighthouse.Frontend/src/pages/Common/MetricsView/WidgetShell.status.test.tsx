@@ -61,6 +61,7 @@ const fullHeader: Omit<WidgetShellProps, "children" | "widgetKey"> = {
 		title: "Completed Work Items",
 		items: [oneItem],
 		context: "closedItems",
+		ownerKind: "team",
 	},
 };
 
