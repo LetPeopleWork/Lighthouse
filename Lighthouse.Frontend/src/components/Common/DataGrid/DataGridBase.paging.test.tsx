@@ -497,6 +497,7 @@ describe("Export and Copy take the whole list, whichever page is open", () => {
 
 describe("Turning a page brings the top of the list into view", () => {
 	const scrolledInto: { element: Element; options: unknown }[] = [];
+	const scrollIntoViewOfTheTestSetup = Element.prototype.scrollIntoView;
 
 	// The page arrows sit under the last row, so without this the new page opens far above the fold.
 	// jsdom has no layout, so what can be seen is the request to scroll and the element it names.
@@ -508,7 +509,7 @@ describe("Turning a page brings the top of the list into view", () => {
 	});
 
 	afterEach(() => {
-		Reflect.deleteProperty(Element.prototype, "scrollIntoView");
+		Element.prototype.scrollIntoView = scrollIntoViewOfTheTestSetup;
 	});
 
 	const expectTheTopOfTheGridBroughtIntoView = () => {

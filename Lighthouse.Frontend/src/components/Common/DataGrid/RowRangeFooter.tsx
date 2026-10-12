@@ -29,7 +29,7 @@ export const RowRangeFooter: React.FC = () => {
 	const bringTheTopIntoView = (event: React.MouseEvent<HTMLDivElement>) => {
 		if (!(event.target instanceof Element) || !event.target.closest("button"))
 			return;
-		apiRef.current.rootElementRef.current?.scrollIntoView?.({ block: "start" });
+		apiRef.current.rootElementRef.current?.scrollIntoView({ block: "start" });
 	};
 
 	if (loading || rowCount <= PAGE_SIZE) return null;

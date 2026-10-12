@@ -60,6 +60,9 @@ class MockResizeObserver {
 
 global.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
 
+// jsdom does no layout, so it has no scrollIntoView at all; the app calls it when a page is turned.
+Element.prototype.scrollIntoView ??= () => { /* nothing to scroll without a layout */ };
+
 // Mock console methods to reduce stderr noise in tests
 const originalConsoleError = console.error;
 const originalConsoleWarn = console.warn;
