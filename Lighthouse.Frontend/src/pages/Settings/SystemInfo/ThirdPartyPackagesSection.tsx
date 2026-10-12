@@ -163,6 +163,8 @@ const ThirdPartyPackagesSection: React.FC = () => {
 				columns={columns}
 				storageKey="third-party-packages-grid"
 				initialSortModel={[{ field: "name", sort: "asc" }]}
+				// Not a toolbar action, it draws nothing: it sits there only because the toolbar renders
+				// inside the grid's API context, which turning the page needs.
 				toolbarActions={<OpensFirstPageOnSearch searchText={searchText} />}
 			/>
 		</Box>
