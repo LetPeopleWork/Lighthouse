@@ -33,10 +33,12 @@ import {
 	renderMarkerCircle,
 } from "../../../utils/charts/scatterMarkerUtils";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
+import type { WorkItemsDialogOwnerKind } from "../WorkItemsDialog/workItemsDialogContexts";
 
 interface EstimationVsCycleTimeChartProps {
 	data: IEstimationVsCycleTimeResponse;
 	workItemLookup: Map<number, IWorkItem>;
+	ownerKind?: WorkItemsDialogOwnerKind;
 }
 
 const ScatterMarker = (
@@ -92,6 +94,7 @@ const ScatterMarker = (
 const EstimationVsCycleTimeChart: React.FC<EstimationVsCycleTimeChartProps> = ({
 	data,
 	workItemLookup,
+	ownerKind,
 }) => {
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
@@ -288,11 +291,8 @@ const EstimationVsCycleTimeChart: React.FC<EstimationVsCycleTimeChartProps> = ({
 				items={selectedItems}
 				open={dialogOpen}
 				onClose={() => setDialogOpen(false)}
-				highlightColumn={{
-					title: cycleTimeTerm,
-					description: "days",
-					valueGetter: (item) => item.cycleTime,
-				}}
+				context="estimation"
+				ownerKind={ownerKind}
 			/>
 		</>
 	);

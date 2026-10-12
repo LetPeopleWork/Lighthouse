@@ -10,9 +10,7 @@ const TEAM_NAME = "Team Zenith";
 
 const testWithDemo = testWithDemoData(DEMO_SCENARIO_ID);
 
-// Skipped until the demo data gives Team Zenith its Story Points estimation field; until then the
-// Estimation chart is not shown on any demo Team.
-testWithDemo.skip(
+testWithDemo(
 	"@walking_skeleton @driving_port @US-01 a coach clicks a bubble on Team Zenith's Estimation vs. Cycle Time and reads each item's estimate",
 	async ({ testData, overviewPage }) => {
 		expect(testData.teams.map((team) => team.name)).toContain(TEAM_NAME);

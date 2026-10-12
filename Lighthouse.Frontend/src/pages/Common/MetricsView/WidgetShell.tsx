@@ -23,6 +23,7 @@ import { useRef, useState } from "react";
 import WorkItemsDialog, {
 	type HighlightColumnDefinition,
 	type TimeInStateColumnDefinition,
+	type WorkItemsDialogProps,
 } from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
@@ -63,6 +64,14 @@ export type ViewDataPayload = {
 	readonly ageBandColumn?: AgeBandColumnDescriptor;
 	/** Forwarded the same way, and absent whenever the owner published no target. */
 	readonly sleRiskColumn?: SleRiskColumnDescriptor;
+	readonly warningsColumn?: WorkItemsDialogProps["warningsColumn"];
+	readonly context?: WorkItemsDialogProps["context"];
+	readonly ownerKind?: WorkItemsDialogProps["ownerKind"];
+	readonly status?: WorkItemsDialogProps["status"];
+	readonly ageOn?: WorkItemsDialogProps["ageOn"];
+	readonly cycleTimeScope?: WorkItemsDialogProps["cycleTimeScope"];
+	readonly namedCycleTimeDefinitions?: WorkItemsDialogProps["namedCycleTimeDefinitions"];
+	readonly daysContributedColumn?: WorkItemsDialogProps["daysContributedColumn"];
 };
 
 export interface WidgetShellProps {
@@ -601,6 +610,16 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 					ageBandColumn={headerParts.viewData.ageBandColumn}
 					sleRiskColumn={headerParts.viewData.sleRiskColumn}
 					sle={headerParts.viewData.sle}
+					warningsColumn={headerParts.viewData.warningsColumn}
+					context={headerParts.viewData.context}
+					ownerKind={headerParts.viewData.ownerKind}
+					status={headerParts.viewData.status}
+					ageOn={headerParts.viewData.ageOn}
+					cycleTimeScope={headerParts.viewData.cycleTimeScope}
+					namedCycleTimeDefinitions={
+						headerParts.viewData.namedCycleTimeDefinitions
+					}
+					daysContributedColumn={headerParts.viewData.daysContributedColumn}
 				/>
 			)}
 		</>

@@ -6923,9 +6923,11 @@ describe("which lists carry the risk column", () => {
 			finishedItemsStillOpenAtThisAge: number;
 			finishedItemsThatWentOnToMiss: number | null;
 		}[],
+		ownerKind: "team" | "portfolio" = "team",
 	) =>
 		buildViewData({
 			title: "Work Items",
+			ownerKind,
 			inProgressItems: [inFlightItem(1, "ZEN-1"), inFlightItem(2, "ZEN-2")],
 			blockedItems: [],
 			staleItems: [],
@@ -7004,6 +7006,16 @@ describe("which lists carry the risk column", () => {
 			"Put each of these in exactly one of the two lists at the top of this block: the first is for lists of what the team has in flight today, which carry the risk column; the second is for every other list, which deliberately does not. Whichever you choose, write the reason in the call-site table in the feature's DESIGN record.",
 		).toEqual([]);
 	});
+
+	it.each(["team", "portfolio"] as const)(
+		"the Estimation list opens the estimation context for a %s",
+		(ownerKind) => {
+			const estimation = viewDataWith([], ownerKind).estimationVsCycleTime;
+
+			expect(estimation?.context).toBe("estimation");
+			expect(estimation?.ownerKind).toBe(ownerKind);
+		},
+	);
 
 	it("no list is claimed that no longer exists", () => {
 		const built = builtWithRisk();

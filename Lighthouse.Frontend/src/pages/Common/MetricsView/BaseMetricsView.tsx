@@ -30,6 +30,7 @@ import WorkDistributionChart from "../../../components/Common/Charts/WorkDistrib
 import WorkItemAgePercentiles from "../../../components/Common/Charts/WorkItemAgePercentiles";
 import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingChart";
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
+import type { WorkItemsDialogOwnerKind } from "../../../components/Common/WorkItemsDialog/workItemsDialogContexts";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import {
 	type MetricsOwnerRequest,
@@ -531,6 +532,7 @@ function buildWidgetFooters(
 
 type ViewDataInputs = {
 	readonly title: string;
+	readonly ownerKind: WorkItemsDialogOwnerKind;
 	readonly inProgressItems: IWorkItem[];
 	readonly blockedItems: IWorkItem[];
 	readonly staleItems: IWorkItem[];
@@ -768,7 +770,8 @@ export function buildViewData(
 		estimationVsCycleTime: {
 			title: `${terms.workItems} with Estimates`,
 			items: estimationItems,
-			highlightColumn: cycleTimeHighlight,
+			context: "estimation",
+			ownerKind: inputs.ownerKind,
 		},
 		featureSize: {
 			title: `${terms.features}`,
@@ -1175,6 +1178,7 @@ function buildWidgetNodes(ctx: {
 				<EstimationVsCycleTimeChart
 					data={ctx.estimationVsCycleTimeData}
 					workItemLookup={ctx.workItemLookup}
+					ownerKind={ctx.ownerType}
 				/>
 			) : null,
 		featureSize:
@@ -1882,6 +1886,7 @@ export const BaseMetricsView = <
 
 	const widgetViewData = buildViewData({
 		title,
+		ownerKind: ownerType,
 		inProgressItems,
 		blockedItems,
 		staleItems,
