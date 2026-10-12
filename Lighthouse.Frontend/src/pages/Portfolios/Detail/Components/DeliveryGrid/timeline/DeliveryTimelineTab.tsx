@@ -364,6 +364,8 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 				}
 				items={selectedFeature ? [selectedFeature] : []}
 				warningsColumn={warningsColumn}
+				context="deliveryTimeline"
+				ownerKind="portfolio"
 				open={selectedFeature !== undefined}
 				onClose={() => setSelectedFeatureId(null)}
 			/>

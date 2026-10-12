@@ -101,6 +101,7 @@ export const FeatureSchema = z.object({
 	lastUpdated: z.coerce.date(),
 	startedDate: z.coerce.date().nullable(),
 	closedDate: z.coerce.date().nullable(),
+	currentStateEnteredAt: z.coerce.date().nullable().optional(),
 	cycleTime: z.number(),
 	workItemAge: z.number(),
 	size: z.number(),
@@ -168,6 +169,7 @@ export class Feature implements IFeature {
 
 	startedDate: Date = new Date();
 	closedDate: Date = new Date();
+	currentStateEnteredAt: Date | null = null;
 
 	cycleTime!: number;
 	workItemAge!: number;
@@ -240,6 +242,7 @@ export class Feature implements IFeature {
 		// coercing to epoch.
 		feature.startedDate = data.startedDate as Date;
 		feature.closedDate = data.closedDate as Date;
+		feature.currentStateEnteredAt = data.currentStateEnteredAt ?? null;
 		feature.cycleTime = data.cycleTime;
 		feature.workItemAge = data.workItemAge;
 		feature.size = data.size;

@@ -164,3 +164,27 @@ describe("reading a Feature's per-team forecasts off the wire", () => {
 		expect(feature.teamForecasts[0].completionPercentiles).toEqual([]);
 	});
 });
+
+// Time in State reads this field, and treats null as "unknown". A null turned into a Date would be
+// the 1970 epoch, which shows a Feature that has sat in its state for half a century.
+describe("reading when a Feature entered its current state", () => {
+	it.each([
+		{
+			sent: "an ISO date",
+			value: "2026-09-14T00:00:00Z",
+			expected: new Date("2026-09-14T00:00:00Z"),
+		},
+		{ sent: "null", value: null, expected: null },
+	])("reads $sent as $expected", ({ value, expected }) => {
+		const feature = decode(wireFeature({ currentStateEnteredAt: value }));
+
+		expect(feature.currentStateEnteredAt).toEqual(expected);
+		expect(feature.currentStateEnteredAt?.getTime()).not.toBe(0);
+	});
+
+	it("is not a date when the backend leaves the field out", () => {
+		const feature = decode(wireFeature());
+
+		expect(feature.currentStateEnteredAt ?? null).toBeNull();
+	});
+});
