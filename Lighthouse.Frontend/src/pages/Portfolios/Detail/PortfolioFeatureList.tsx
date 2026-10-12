@@ -11,6 +11,7 @@ import {
 } from "../../../components/Common/FeatureListDataGrid/columns";
 import FeatureListDataGrid from "../../../components/Common/FeatureListDataGrid/FeatureListDataGrid";
 import FeatureProgressIndicator from "../../../components/Common/FeatureListDataGrid/FeatureProgressIndicator";
+import { useFeatureChildItems } from "../../../components/Common/FeatureListDataGrid/useFeatureChildItems";
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useParentWorkItems } from "../../../hooks/useParentWorkItems";
 import type { IFeature } from "../../../models/Feature";
@@ -52,9 +53,6 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 		Record<string, string[]>
 	>({});
 	const [features, setFeatures] = useState<IFeature[]>([]);
-	const [selectedFeature, setSelectedFeature] = useState<IFeature | null>(null);
-	const [featureWorkItems, setFeatureWorkItems] = useState<IWorkItem[]>([]);
-	const [isWorkItemsDialogOpen, setIsWorkItemsDialogOpen] = useState(false);
 
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
@@ -62,22 +60,13 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 
 	const parentMap = useParentWorkItems(features);
 
-	const handleShowFeatureDetails = useCallback(
-		async (feature: IFeature) => {
-			setSelectedFeature(feature);
-			setFeatureWorkItems([]);
-			setIsWorkItemsDialogOpen(true);
-
-			const items = await featureService.getFeatureWorkItems(feature.id);
-			setFeatureWorkItems(items);
-		},
-		[featureService],
-	);
-
-	const handleCloseWorkItemsDialog = () => {
-		setIsWorkItemsDialogOpen(false);
-		setSelectedFeature(null);
-	};
+	const {
+		selectedFeature,
+		items: featureWorkItems,
+		status: featureWorkItemsStatus,
+		show: handleShowFeatureDetails,
+		close: handleCloseWorkItemsDialog,
+	} = useFeatureChildItems();
 
 	// Load features
 	const fetchFeatures = useCallback(async () => {
@@ -160,7 +149,10 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 				<WorkItemsDialog
 					title={`${getWorkItemName(selectedFeature.name, selectedFeature.referenceId)} ${workItemsTerm}`}
 					items={featureWorkItems}
-					open={isWorkItemsDialogOpen}
+					open
+					context="featureChildren"
+					ownerKind="portfolio"
+					status={featureWorkItemsStatus}
 					onClose={handleCloseWorkItemsDialog}
 				/>
 			)}

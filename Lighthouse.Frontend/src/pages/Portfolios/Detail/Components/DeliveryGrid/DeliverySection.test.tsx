@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { Delivery } from "../../../../../models/Delivery";
@@ -6,6 +6,7 @@ import type { IEntityReference } from "../../../../../models/EntityReference";
 import { Feature } from "../../../../../models/Feature";
 import { WhenForecast } from "../../../../../models/Forecasts/WhenForecast";
 import type { IWorkItem } from "../../../../../models/WorkItem";
+import { renderWithQueryClient } from "../../../../../tests/renderWithQueryClient";
 import DeliverySection from "./DeliverySection";
 
 const { mockGetFeatureWorkItems } = vi.hoisted(() => ({
@@ -124,7 +125,7 @@ describe("DeliverySection", () => {
 	};
 
 	it("should render delivery section with correct information", () => {
-		render(
+		renderWithQueryClient(
 			<MemoryRouter>
 				<DeliverySection {...mockProps} />
 			</MemoryRouter>,
@@ -145,7 +146,7 @@ describe("DeliverySection", () => {
 			isLoadingFeatures: true,
 		};
 
-		render(
+		renderWithQueryClient(
 			<MemoryRouter>
 				<DeliverySection {...loadingProps} />
 			</MemoryRouter>,
@@ -161,7 +162,7 @@ describe("DeliverySection", () => {
 			isExpanded: true,
 		};
 
-		render(
+		renderWithQueryClient(
 			<MemoryRouter>
 				<DeliverySection {...emptyProps} />
 			</MemoryRouter>,
@@ -173,7 +174,7 @@ describe("DeliverySection", () => {
 	});
 
 	it("should call onEdit when edit button is clicked", () => {
-		render(
+		renderWithQueryClient(
 			<MemoryRouter>
 				<DeliverySection {...mockProps} />
 			</MemoryRouter>,
@@ -187,7 +188,7 @@ describe("DeliverySection", () => {
 	});
 
 	it("should call onDelete when delete button is clicked", () => {
-		render(
+		renderWithQueryClient(
 			<MemoryRouter>
 				<DeliverySection {...mockProps} />
 			</MemoryRouter>,
@@ -201,7 +202,7 @@ describe("DeliverySection", () => {
 	});
 
 	it("should have both edit and delete buttons", () => {
-		render(
+		renderWithQueryClient(
 			<MemoryRouter>
 				<DeliverySection {...mockProps} />
 			</MemoryRouter>,
@@ -212,7 +213,7 @@ describe("DeliverySection", () => {
 	});
 
 	it("should not call onToggleExpanded when edit button is clicked", () => {
-		render(
+		renderWithQueryClient(
 			<MemoryRouter>
 				<DeliverySection {...mockProps} />
 			</MemoryRouter>,
@@ -239,7 +240,7 @@ describe("DeliverySection", () => {
 			delivery.featureLikelihoods = [];
 			delivery.completionDates = [];
 
-			render(
+			renderWithQueryClient(
 				<MemoryRouter>
 					<DeliverySection {...mockProps} delivery={delivery} />
 				</MemoryRouter>,
@@ -275,7 +276,7 @@ describe("DeliverySection", () => {
 			feature.totalWork = { "1": 10 };
 			feature.forecasts = [];
 
-			render(
+			renderWithQueryClient(
 				<MemoryRouter>
 					<DeliverySection
 						{...mockProps}
@@ -311,7 +312,7 @@ describe("DeliverySection", () => {
 			feature.totalWork = { "1": 10 };
 			feature.forecasts = [];
 
-			render(
+			renderWithQueryClient(
 				<MemoryRouter>
 					<DeliverySection
 						{...mockProps}
@@ -347,7 +348,7 @@ describe("DeliverySection", () => {
 			feature.totalWork = { "1": 10 };
 			feature.forecasts = [];
 
-			render(
+			renderWithQueryClient(
 				<MemoryRouter>
 					<DeliverySection
 						{...mockProps}
@@ -377,7 +378,7 @@ describe("DeliverySection", () => {
 			delivery.completionDates = [];
 			delivery.hasSufficientData = false;
 
-			render(
+			renderWithQueryClient(
 				<MemoryRouter>
 					<DeliverySection {...mockProps} delivery={delivery} />
 				</MemoryRouter>,
@@ -414,7 +415,7 @@ describe("DeliverySection", () => {
 			feature.totalWork = { "1": 10 };
 			feature.forecasts = [];
 
-			render(
+			renderWithQueryClient(
 				<MemoryRouter>
 					<DeliverySection
 						{...mockProps}
@@ -450,7 +451,7 @@ describe("DeliverySection", () => {
 			feature.totalWork = { "1": 10 };
 			feature.forecasts = [];
 
-			render(
+			renderWithQueryClient(
 				<MemoryRouter>
 					<DeliverySection
 						{...mockProps}
@@ -467,7 +468,7 @@ describe("DeliverySection", () => {
 
 	describe("WorkItemsDialog", () => {
 		it("should not show WorkItemsDialog by default", () => {
-			render(
+			renderWithQueryClient(
 				<MemoryRouter>
 					<DeliverySection {...mockProps} />
 				</MemoryRouter>,
@@ -479,7 +480,7 @@ describe("DeliverySection", () => {
 		it("should open WorkItemsDialog when feature details are requested", async () => {
 			mockGetFeatureWorkItems.mockResolvedValue([]);
 
-			render(
+			renderWithQueryClient(
 				<MemoryRouter>
 					<DeliverySection {...mockProps} />
 				</MemoryRouter>,
@@ -495,7 +496,7 @@ describe("DeliverySection", () => {
 		it("should call getFeatureWorkItems with the correct feature id", async () => {
 			mockGetFeatureWorkItems.mockResolvedValue([]);
 
-			render(
+			renderWithQueryClient(
 				<MemoryRouter>
 					<DeliverySection {...mockProps} />
 				</MemoryRouter>,
@@ -511,7 +512,7 @@ describe("DeliverySection", () => {
 		it("should display the correct feature name in the dialog title", async () => {
 			mockGetFeatureWorkItems.mockResolvedValue([]);
 
-			render(
+			renderWithQueryClient(
 				<MemoryRouter>
 					<DeliverySection {...mockProps} />
 				</MemoryRouter>,
@@ -533,7 +534,7 @@ describe("DeliverySection", () => {
 			];
 			mockGetFeatureWorkItems.mockResolvedValue(mockWorkItems);
 
-			render(
+			renderWithQueryClient(
 				<MemoryRouter>
 					<DeliverySection {...mockProps} />
 				</MemoryRouter>,
@@ -559,7 +560,7 @@ describe("DeliverySection", () => {
 		it("should close the dialog when onClose is triggered", async () => {
 			mockGetFeatureWorkItems.mockResolvedValue([]);
 
-			render(
+			renderWithQueryClient(
 				<MemoryRouter>
 					<DeliverySection {...mockProps} />
 				</MemoryRouter>,
@@ -601,7 +602,7 @@ describe("DeliverySection", () => {
 				features: [mockFeature, secondFeature],
 			};
 
-			render(
+			renderWithQueryClient(
 				<MemoryRouter>
 					<DeliverySection {...propsWithTwoFeatures} />
 				</MemoryRouter>,
@@ -655,7 +656,7 @@ describe("DeliverySection", () => {
 				delivery: deliveryWithForecasts,
 			};
 
-			render(
+			renderWithQueryClient(
 				<MemoryRouter>
 					<DeliverySection {...propsWithForecasts} />
 				</MemoryRouter>,
@@ -685,7 +686,7 @@ describe("DeliverySection", () => {
 				delivery: deliveryWithForecasts,
 			};
 
-			render(
+			renderWithQueryClient(
 				<MemoryRouter>
 					<DeliverySection {...propsWithForecasts} />
 				</MemoryRouter>,
@@ -696,7 +697,7 @@ describe("DeliverySection", () => {
 		});
 
 		it("should not display 85% chip when forecast does not exist", () => {
-			render(
+			renderWithQueryClient(
 				<MemoryRouter>
 					<DeliverySection {...mockProps} />
 				</MemoryRouter>,
@@ -726,7 +727,7 @@ describe("DeliverySection", () => {
 				delivery: deliveryWithPartialForecasts,
 			};
 
-			render(
+			renderWithQueryClient(
 				<MemoryRouter>
 					<DeliverySection {...propsWithPartialForecasts} />
 				</MemoryRouter>,
@@ -757,7 +758,7 @@ describe("DeliverySection", () => {
 				delivery: deliveryWithAllForecasts,
 			};
 
-			render(
+			renderWithQueryClient(
 				<MemoryRouter>
 					<DeliverySection {...propsWithAllForecasts} />
 				</MemoryRouter>,

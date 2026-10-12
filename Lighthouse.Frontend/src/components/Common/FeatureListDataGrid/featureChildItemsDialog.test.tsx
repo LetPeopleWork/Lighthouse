@@ -1,4 +1,8 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+	notifyManager,
+	QueryClient,
+	QueryClientProvider,
+} from "@tanstack/react-query";
 import { act, render, screen, within } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import type { ReactElement } from "react";
@@ -33,6 +37,10 @@ vi.mock("../../../hooks/useLicenseRestrictions", () => ({
 		isLoading: false,
 	}),
 }));
+
+// The query library tells components about an answer on a later timer tick, which act() does not
+// wait for. Telling them in the same tick lets each answered request show before the next step.
+notifyManager.setScheduler(queueMicrotask);
 
 const RENDER_HEAVY = 20000;
 
@@ -215,7 +223,7 @@ async function theLeadClosesTheDialog(user: UserEvent): Promise<void> {
 
 describe("a Feature's child items, from every list that opens them", () => {
 	// @us-03 @slice-03 @driving_port @error @contract-shape:pure-function
-	it.skip.each(everyFeatureList)(
+	it.each(everyFeatureList)(
 		"%s: they open at once in their loading look, never as an empty list",
 		async (_, showTheList) => {
 			const user = userEvent.setup();
@@ -231,7 +239,7 @@ describe("a Feature's child items, from every list that opens them", () => {
 	);
 
 	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
-	it.skip.each(everyFeatureList)(
+	it.each(everyFeatureList)(
 		"%s: they show Started, Closed, Age / Cycle Time and Estimate once they arrive, oldest first",
 		async (_, showTheList) => {
 			const user = userEvent.setup();
@@ -293,7 +301,7 @@ describe("a Feature's child items, from every list that opens them", () => {
 	);
 
 	// @us-03 @slice-03 @error @contract-shape:pure-function
-	it.skip.each(everyFeatureList)(
+	it.each(everyFeatureList)(
 		"%s: the previous Feature's items never show when their answer arrives late",
 		async (_, showTheList) => {
 			const user = userEvent.setup();

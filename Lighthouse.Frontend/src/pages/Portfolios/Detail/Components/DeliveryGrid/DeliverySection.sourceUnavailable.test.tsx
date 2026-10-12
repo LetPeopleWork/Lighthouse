@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
@@ -8,6 +8,7 @@ import type { IEntityReference } from "../../../../../models/EntityReference";
 import { Feature } from "../../../../../models/Feature";
 import type { IWorkItem } from "../../../../../models/WorkItem";
 import { DeliverySelectionMode } from "../../../../../models/WorkItemRules";
+import { renderWithQueryClient } from "../../../../../tests/renderWithQueryClient";
 import DeliverySection from "./DeliverySection";
 
 /**
@@ -85,7 +86,7 @@ function featureNamed(id: number, name: string): Feature {
 }
 
 function renderSection(delivery: Delivery, onUnbind?: () => void) {
-	return render(
+	return renderWithQueryClient(
 		<MemoryRouter>
 			<DeliverySection
 				delivery={delivery}
@@ -163,7 +164,7 @@ describe("DeliverySection broken-source notice (US-04)", () => {
 	});
 
 	it("still says what is wrong to a reader who may not edit, and offers them nothing to press", () => {
-		render(
+		renderWithQueryClient(
 			<MemoryRouter>
 				<DeliverySection
 					delivery={deliveryWith(

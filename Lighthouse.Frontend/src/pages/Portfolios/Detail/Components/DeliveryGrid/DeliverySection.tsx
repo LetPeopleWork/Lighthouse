@@ -27,14 +27,7 @@ import {
 } from "@mui/material";
 import type { GridRowId, GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
-import {
-	useCallback,
-	useContext,
-	useEffect,
-	useId,
-	useMemo,
-	useState,
-} from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import type {
 	DataGridColumn,
 	DataGridExportTable,
@@ -46,6 +39,7 @@ import {
 } from "../../../../../components/Common/FeatureListDataGrid/columns";
 import FeatureListDataGrid from "../../../../../components/Common/FeatureListDataGrid/FeatureListDataGrid";
 import FeatureProgressIndicator from "../../../../../components/Common/FeatureListDataGrid/FeatureProgressIndicator";
+import { useFeatureChildItems } from "../../../../../components/Common/FeatureListDataGrid/useFeatureChildItems";
 import FeatureName from "../../../../../components/Common/FeatureName/FeatureName";
 import { FeatureLikelihoodChip } from "../../../../../components/Common/Forecasts/FeatureLikelihoodChip";
 import { ForecastLevel } from "../../../../../components/Common/Forecasts/ForecastLevel";
@@ -57,9 +51,7 @@ import type { IDeliverySource } from "../../../../../models/Delivery/DeliverySou
 import type { IEntityReference } from "../../../../../models/EntityReference";
 import type { IFeature } from "../../../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
-import type { IWorkItem } from "../../../../../models/WorkItem";
 import { DeliverySelectionMode } from "../../../../../models/WorkItemRules";
-import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../../../utils/featureName";
 import {
@@ -334,7 +326,7 @@ function featureColumns({
 	featureTerm: string;
 	delivery: Delivery;
 	teams: IEntityReference[];
-	onShowDetails: (feature: IFeature) => Promise<void>;
+	onShowDetails: (feature: IFeature) => void;
 }): DataGridColumn<IFeature & GridValidRowModel>[] {
 	return [
 		{
@@ -367,7 +359,7 @@ function featureColumns({
 				<FeatureProgressIndicator
 					feature={row}
 					teams={teams}
-					onShowDetails={() => onShowDetails(row)}
+					onShowDetails={async () => onShowDetails(row)}
 				/>
 			),
 		},
@@ -469,11 +461,6 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	deliverySources = [],
 	onUnbind,
 }) => {
-	const { featureService } = useContext(ApiServiceContext);
-
-	const [selectedFeature, setSelectedFeature] = useState<IFeature | null>(null);
-	const [featureWorkItems, setFeatureWorkItems] = useState<IWorkItem[]>([]);
-	const [isWorkItemsDialogOpen, setIsWorkItemsDialogOpen] = useState(false);
 	const [isUnbindDialogOpen, setIsUnbindDialogOpen] = useState(false);
 
 	const [activeTab, setActiveTab] = useState<DeliveryDetailTab>("workItems");
@@ -507,22 +494,13 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 		[isMetricsTabDisabled, loadMetricsHistory],
 	);
 
-	const handleShowFeatureDetails = useCallback(
-		async (feature: IFeature) => {
-			setSelectedFeature(feature);
-			setFeatureWorkItems([]);
-			setIsWorkItemsDialogOpen(true);
-
-			const items = await featureService.getFeatureWorkItems(feature.id);
-			setFeatureWorkItems(items);
-		},
-		[featureService],
-	);
-
-	const handleCloseWorkItemsDialog = () => {
-		setIsWorkItemsDialogOpen(false);
-		setSelectedFeature(null);
-	};
+	const {
+		selectedFeature,
+		items: featureWorkItems,
+		status: featureWorkItemsStatus,
+		show: handleShowFeatureDetails,
+		close: handleCloseWorkItemsDialog,
+	} = useFeatureChildItems();
 
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
@@ -877,7 +855,10 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 				<WorkItemsDialog
 					title={`${getWorkItemName(selectedFeature.name, selectedFeature.referenceId)} ${workItemsTerm}`}
 					items={featureWorkItems}
-					open={isWorkItemsDialogOpen}
+					open
+					context="featureChildren"
+					ownerKind="portfolio"
+					status={featureWorkItemsStatus}
 					onClose={handleCloseWorkItemsDialog}
 				/>
 			)}

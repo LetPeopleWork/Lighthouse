@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Feature } from "../../../models/Feature";
@@ -14,6 +14,7 @@ import {
 	createMockApiServiceContext,
 	createMockTeamMetricsService,
 } from "../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../tests/renderWithQueryClient";
 import PortfolioFeatureList from "./PortfolioFeatureList";
 
 vi.mock("../../../components/Common/Forecasts/ForecastInfoList", () => ({
@@ -287,7 +288,7 @@ describe("PortfolioFeatureList component", () => {
 		const { default: userEvent } = await import("@testing-library/user-event");
 		const user = userEvent.setup();
 
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<MemoryRouter>
 					<PortfolioFeatureList portfolio={portfolio} />
@@ -325,7 +326,7 @@ describe("PortfolioFeatureList component", () => {
 		const { default: userEvent } = await import("@testing-library/user-event");
 		const user = userEvent.setup();
 
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<MemoryRouter>
 					<PortfolioFeatureList portfolio={portfolio} />
@@ -352,7 +353,7 @@ describe("PortfolioFeatureList component", () => {
 	});
 
 	it("should display the warning icon for features using the default feature size", async () => {
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<MemoryRouter>
 					<PortfolioFeatureList portfolio={portfolio} />
@@ -370,7 +371,7 @@ describe("PortfolioFeatureList component", () => {
 	});
 
 	it("should render toggle for hide completed features", async () => {
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<MemoryRouter>
 					<PortfolioFeatureList portfolio={portfolio} />
@@ -390,7 +391,7 @@ describe("PortfolioFeatureList component", () => {
 		const { default: userEvent } = await import("@testing-library/user-event");
 		const user = userEvent.setup();
 
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<MemoryRouter>
 					<PortfolioFeatureList portfolio={portfolio} />

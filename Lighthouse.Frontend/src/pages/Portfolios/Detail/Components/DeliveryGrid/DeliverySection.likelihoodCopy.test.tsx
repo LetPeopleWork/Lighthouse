@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ForecastLevel } from "../../../../../components/Common/Forecasts/ForecastLevel";
@@ -7,6 +7,7 @@ import type { IEntityReference } from "../../../../../models/EntityReference";
 import { Feature } from "../../../../../models/Feature";
 import type { IWorkItem } from "../../../../../models/WorkItem";
 import { DeliverySelectionMode } from "../../../../../models/WorkItemRules";
+import { renderWithQueryClient } from "../../../../../tests/renderWithQueryClient";
 import DeliverySection from "./DeliverySection";
 
 /**
@@ -110,7 +111,7 @@ function featureNamed(id: number, name: string): Feature {
 }
 
 function renderSection(delivery: Delivery) {
-	return render(
+	return renderWithQueryClient(
 		<MemoryRouter>
 			<DeliverySection
 				delivery={delivery}

@@ -1,10 +1,4 @@
-import {
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-	within,
-} from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -13,6 +7,7 @@ import type { IDeliverySource } from "../../../../../models/Delivery/DeliverySou
 import { DeliverySelectionMode } from "../../../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import { createMockApiServiceContext } from "../../../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../../../tests/renderWithQueryClient";
 import DeliverySection from "./DeliverySection";
 
 const { terminology } = vi.hoisted(() => ({
@@ -87,7 +82,7 @@ const renderSection = (props: {
 	canEdit?: boolean;
 	sourceKey?: string | null;
 }) =>
-	render(
+	renderWithQueryClient(
 		<MemoryRouter>
 			<ApiServiceContext.Provider value={createMockApiServiceContext({})}>
 				<DeliverySection

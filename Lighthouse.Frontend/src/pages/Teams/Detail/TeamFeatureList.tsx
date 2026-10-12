@@ -12,13 +12,13 @@ import {
 } from "../../../components/Common/FeatureListDataGrid/columns";
 import FeatureListDataGrid from "../../../components/Common/FeatureListDataGrid/FeatureListDataGrid";
 import FeatureProgressIndicator from "../../../components/Common/FeatureListDataGrid/FeatureProgressIndicator";
+import { useFeatureChildItems } from "../../../components/Common/FeatureListDataGrid/useFeatureChildItems";
 import StyledLink from "../../../components/Common/StyledLink/StyledLink";
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useParentWorkItems } from "../../../hooks/useParentWorkItems";
 import type { IFeature } from "../../../models/Feature";
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
-import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
@@ -32,9 +32,6 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 
 	const [featuresInProgress, setFeaturesInProgress] = useState<string[]>([]);
 	const [features, setFeatures] = useState<IFeature[]>([]);
-	const [selectedFeature, setSelectedFeature] = useState<IFeature | null>(null);
-	const [featureWorkItems, setFeatureWorkItems] = useState<IWorkItem[]>([]);
-	const [isWorkItemsDialogOpen, setIsWorkItemsDialogOpen] = useState(false);
 
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
@@ -46,22 +43,13 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 	// Stable single-element array so useMemo deps don't change on every render
 	const teams = useMemo(() => [team], [team]);
 
-	const handleShowFeatureDetails = useCallback(
-		async (feature: IFeature) => {
-			setSelectedFeature(feature);
-			setFeatureWorkItems([]);
-			setIsWorkItemsDialogOpen(true);
-
-			const items = await featureService.getFeatureWorkItems(feature.id);
-			setFeatureWorkItems(items);
-		},
-		[featureService],
-	);
-
-	const handleCloseWorkItemsDialog = () => {
-		setIsWorkItemsDialogOpen(false);
-		setSelectedFeature(null);
-	};
+	const {
+		selectedFeature,
+		items: featureWorkItems,
+		status: featureWorkItemsStatus,
+		show: handleShowFeatureDetails,
+		close: handleCloseWorkItemsDialog,
+	} = useFeatureChildItems();
 
 	// Load features
 	useEffect(() => {
@@ -155,7 +143,10 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 				<WorkItemsDialog
 					title={`${getWorkItemName(selectedFeature.name, selectedFeature.referenceId)} ${workItemsTerm}`}
 					items={featureWorkItems}
-					open={isWorkItemsDialogOpen}
+					open
+					context="featureChildren"
+					ownerKind="team"
+					status={featureWorkItemsStatus}
 					onClose={handleCloseWorkItemsDialog}
 				/>
 			)}

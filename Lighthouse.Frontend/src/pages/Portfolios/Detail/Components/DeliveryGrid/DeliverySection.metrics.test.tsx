@@ -1,10 +1,11 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Delivery } from "../../../../../models/Delivery";
 import type { DeliveryMetricsHistory } from "../../../../../models/Delivery/DeliveryMetricsHistory";
 import type { IEntityReference } from "../../../../../models/EntityReference";
 import { Feature } from "../../../../../models/Feature";
+import { renderWithQueryClient } from "../../../../../tests/renderWithQueryClient";
 import { METRICS_GRID_COLUMNS } from "./DeliveryMetricsTab";
 import DeliverySection from "./DeliverySection";
 
@@ -134,7 +135,7 @@ const getMockFeature = (): Feature => {
 const mockTeams: IEntityReference[] = [{ id: 1, name: "Team Alpha" }];
 
 const renderSection = (deliveryOverrides: Partial<Delivery> = {}) =>
-	render(
+	renderWithQueryClient(
 		<MemoryRouter>
 			<DeliverySection
 				delivery={getMockDelivery(deliveryOverrides)}

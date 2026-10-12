@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -17,6 +17,7 @@ import {
 	createMockPortfolioService,
 	createMockTeamService,
 } from "../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../tests/renderWithQueryClient";
 import { PREMIUM_UPGRADE_TOOLTIP } from "../../../utils/premiumUpgradeTooltip";
 import PortfolioDeliveryView from "./PortfolioDeliveryView";
 
@@ -103,7 +104,7 @@ const renderView = (options?: {
 		portfolioService,
 	});
 
-	render(
+	renderWithQueryClient(
 		<ApiServiceContext.Provider value={context}>
 			<MemoryRouter>
 				<SnackbarErrorHandler>

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
@@ -10,6 +10,7 @@ import {
 	createMockDeliveryService,
 	createMockFeatureService,
 } from "../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../tests/renderWithQueryClient";
 import PortfolioDeliveryView from "./PortfolioDeliveryView";
 
 vi.mock("../../../services/TerminologyContext", () => ({
@@ -66,7 +67,7 @@ const renderView = (canEdit: boolean | undefined, deliveries: Delivery[]) => {
 
 	const props = canEdit === undefined ? { portfolio } : { portfolio, canEdit };
 
-	return render(
+	return renderWithQueryClient(
 		<ApiServiceContext.Provider value={context}>
 			<MemoryRouter>
 				<SnackbarErrorHandler>

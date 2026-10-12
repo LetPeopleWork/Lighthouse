@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
@@ -6,6 +6,7 @@ import { Delivery, type IDelivery } from "../../../../../models/Delivery";
 import { DeliverySelectionMode } from "../../../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import { createMockApiServiceContext } from "../../../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../../../tests/renderWithQueryClient";
 import { PREMIUM_UPGRADE_TOOLTIP } from "../../../../../utils/premiumUpgradeTooltip";
 import DeliverySection from "./DeliverySection";
 
@@ -31,7 +32,7 @@ const renderSection = (props: {
 	canArchive?: boolean;
 	onArchive?: (delivery: Delivery) => void;
 }) =>
-	render(
+	renderWithQueryClient(
 		<MemoryRouter>
 			<ApiServiceContext.Provider value={createMockApiServiceContext({})}>
 				<DeliverySection

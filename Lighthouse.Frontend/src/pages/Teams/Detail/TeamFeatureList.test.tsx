@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { Feature } from "../../../models/Feature";
@@ -13,6 +13,7 @@ import {
 	createMockFeatureService,
 	createMockTeamMetricsService,
 } from "../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../tests/renderWithQueryClient";
 import TeamFeatureList from "./TeamFeatureList";
 
 vi.mock("../../../services/TerminologyContext", () => ({
@@ -204,7 +205,7 @@ describe("TeamFeatureList component", () => {
 		const { default: userEvent } = await import("@testing-library/user-event");
 		const user = userEvent.setup();
 
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<MemoryRouter>
 					<TeamFeatureList team={team} />
@@ -233,7 +234,7 @@ describe("TeamFeatureList component", () => {
 		const { default: userEvent } = await import("@testing-library/user-event");
 		const user = userEvent.setup();
 
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<MemoryRouter>
 					<TeamFeatureList team={team} />
@@ -256,7 +257,7 @@ describe("TeamFeatureList component", () => {
 	});
 
 	it("should render appropriate table headers", async () => {
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<MemoryRouter>
 					<TeamFeatureList team={team} />
@@ -276,7 +277,7 @@ describe("TeamFeatureList component", () => {
 	});
 
 	it("should render toggle for hide completed features", async () => {
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<MemoryRouter>
 					<TeamFeatureList team={team} />
@@ -293,7 +294,7 @@ describe("TeamFeatureList component", () => {
 	});
 
 	it("should not render show details action", async () => {
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<MemoryRouter>
 					<TeamFeatureList team={team} />
@@ -312,7 +313,7 @@ describe("TeamFeatureList component", () => {
 		const { default: userEvent } = await import("@testing-library/user-event");
 		const user = userEvent.setup();
 
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<MemoryRouter>
 					<TeamFeatureList team={team} />
