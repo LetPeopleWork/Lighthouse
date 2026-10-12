@@ -51,6 +51,9 @@ const PACKAGES_243 = [
 	...numbered("tool", 84),
 ];
 
+/** The 243 above and then 80 "util-…", so a third page opens at tool-042. */
+const PACKAGES_323 = [...PACKAGES_243, ...numbered("util", 80)];
+
 let systemInfoService: ISystemInfoService;
 
 const showThePackages = (names: string[]) => {
@@ -156,6 +159,23 @@ describe("Third-party packages pages like every other list", () => {
 			const { user } = showThePackages(PACKAGES_243);
 			await screen.findByText("1–100 of 243");
 			await goToNextPage(user, "101–200 of 243");
+
+			await user.type(theSearch(), "lib");
+
+			expect(await screen.findByText("1–100 of 150")).toBeInTheDocument();
+			expect(namesShown()).toEqual(numbered("lib", 100));
+		},
+		RENDER_HEAVY,
+	);
+
+	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
+	it(
+		"opens the first page of what a search from the third page leaves, when that is two pages and the third is gone",
+		async () => {
+			const { user } = showThePackages(PACKAGES_323);
+			await screen.findByText("1–100 of 323");
+			await goToNextPage(user, "101–200 of 323");
+			await goToNextPage(user, "201–300 of 323");
 
 			await user.type(theSearch(), "lib");
 
