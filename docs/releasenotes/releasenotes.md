@@ -9,6 +9,7 @@ nav_order: 95
 ## Bugfixes and Improvements
 
 - **Clicking a chart now lists the Work Items with the columns that explain why they are there.** The Estimation vs. Cycle Time dialog shows each Work Item's Estimate next to its Cycle Time, the Blocked list shows since when each Work Item is Blocked, a Feature's child items show when each started and closed, and **Manage columns** offers the rest; the layout you choose is remembered for each chart. Full detail: [Viewing the Data Behind a Widget](https://docs.lighthouse.letpeople.work/metrics/widgets.html#columns-in-the-work-items-dialog).
+- **Every row of a long list can now be reached.** A list used to stop at its first 100 rows without saying there were more, so a Team with 143 Work Items in refinement could not vote on the last 43. A list of more than 100 rows now says how many it holds, for example `1–100 of 143`, and its arrows page to the rest. Sorting, filtering, the search in Third-party packages, and Export and Copy all cover the whole list. Lists of 100 rows or fewer look as before.
 
 ## Contributions ❤️
 
