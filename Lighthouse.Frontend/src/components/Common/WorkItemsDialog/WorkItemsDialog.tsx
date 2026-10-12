@@ -120,6 +120,20 @@ const emptyHighlightColumnDefinition: HighlightColumnDefinition = {
 	valueGetter: () => 0,
 };
 
+// A dialog without a context keeps the key every dialog once shared. A context-bearing dialog gets a
+// key of its own, so the layouts saved under the shared key never leak into any context.
+function layoutStorageKey(
+	context: WorkItemsDialogContextId | undefined,
+	ownerKind: WorkItemsDialogOwnerKind | undefined,
+): string {
+	if (context === undefined) {
+		return "work-items-dialog";
+	}
+	return ownerKind === undefined
+		? `work-items-dialog:${context}`
+		: `work-items-dialog:${context}:${ownerKind}`;
+}
+
 const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	title,
 	items,
@@ -132,6 +146,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	sleRiskColumn,
 	warningsColumn,
 	context,
+	ownerKind,
 }) => {
 	const { getTerm } = useTerminology();
 	const { enlarged, toggleEnlarged } = useEnlargedWorkItemsDialog();
@@ -186,6 +201,8 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 		() => contextGridLayout(context, items, getTerm, timeInStateColumn),
 		[context, items, getTerm, timeInStateColumn],
 	);
+
+	const storageKey = layoutStorageKey(context, ownerKind);
 
 	const columns = useMemo(() => {
 		const baseColumns: DataGridColumn<IWorkItem & GridValidRowModel>[] = [
@@ -365,9 +382,12 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 				{items.length > 0 ? (
 					<Box sx={{ mt: 2 }}>
 						<DataGridBase
+							// The grid reads its saved layout only when it mounts, so a dialog switched to
+							// another context while open needs a fresh grid to pick up that context's layout.
+							key={storageKey}
 							rows={sortedItems as (IWorkItem & GridValidRowModel)[]}
 							columns={columns}
-							storageKey="work-items-dialog"
+							storageKey={storageKey}
 							defaultColumnVisibilityModel={contextLayout.visibilityModel}
 							initialSortModel={[
 								{
