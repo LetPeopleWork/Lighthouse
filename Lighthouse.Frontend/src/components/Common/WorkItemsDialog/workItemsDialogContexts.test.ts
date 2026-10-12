@@ -53,14 +53,14 @@ const isKnownColumn = (column: string): boolean =>
 
 describe("the rules every context of the Work Items dialog follows", () => {
 	// @us-02 @slice-01b @example @contract-shape:pure-function
-	it.skip("there is one context per row of the defaults table and no other", () => {
+	it("there is one context per row of the defaults table and no other", () => {
 		expect(Object.keys(WORK_ITEMS_DIALOG_CONTEXTS).sort()).toEqual(
 			[...everyContext].sort(),
 		);
 	});
 
 	// @us-02 @slice-01b @example @contract-shape:pure-function
-	it.skip.each(everyContext)(
+	it.each(everyContext)(
 		"%s sorts by one of its own default columns",
 		(context) => {
 			const defaults = WORK_ITEMS_DIALOG_CONTEXTS[context];
@@ -70,7 +70,7 @@ describe("the rules every context of the Work Items dialog follows", () => {
 	);
 
 	// @us-02 @slice-01b @example @contract-shape:pure-function
-	it.skip.each(everyContext)(
+	it.each(everyContext)(
 		"%s names only columns the dialog knows, for its defaults and its sort",
 		(context) => {
 			const defaults = WORK_ITEMS_DIALOG_CONTEXTS[context];
@@ -84,7 +84,7 @@ describe("the rules every context of the Work Items dialog follows", () => {
 	);
 
 	// @us-02 @slice-01b @example @contract-shape:pure-function
-	it.skip("only Cumulative Time per State offers nothing beyond its defaults, because its rows carry no real dates or ages", () => {
+	it("only Cumulative Time per State offers nothing beyond its defaults, because its rows carry no real dates or ages", () => {
 		const withoutCatalogue = everyContext.filter(
 			(context) => !WORK_ITEMS_DIALOG_CONTEXTS[context].catalogue,
 		);

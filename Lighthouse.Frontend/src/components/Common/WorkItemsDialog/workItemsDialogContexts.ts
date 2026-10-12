@@ -1,9 +1,3 @@
-// RED scaffold written by DISTILL for the Work Items dialog's per-context columns. DELIVER replaces the
-// map below with the real entries and removes this marker, the constant and this comment.
-export const __SCAFFOLD__ = true;
-
-const NOT_YET_IMPLEMENTED = "Not yet implemented -- RED scaffold";
-
 /** Every column the dialog can offer besides ID, Name, Type and State. */
 export type ColumnId =
 	| "startedDate"
@@ -51,17 +45,50 @@ export interface WorkItemsDialogContextDefaults {
 	catalogue: boolean;
 }
 
-const notYetDeclared = (): never => {
-	throw new Error(NOT_YET_IMPLEMENTED);
-};
+const STARTED: ColumnId = "startedDate";
+const CLOSED: ColumnId = "closedDate";
+const CYCLE_TIME: ColumnId = "cycleTime";
+const AGE: ColumnId = "workItemAge";
+const AGE_OR_CYCLE_TIME: ColumnId = "ageOrCycleTime";
+const TIME_IN_STATE: ColumnId = "timeInState";
+const ESTIMATE: ColumnId = "estimate";
+const SLE_RISK: ColumnId = "sleRisk";
 
+const withCatalogue = (
+	visible: ColumnId[],
+	sortBy: ColumnId,
+): WorkItemsDialogContextDefaults => ({ visible, sortBy, catalogue: true });
+
+/** The columns each context opens with and the one it sorts by; change a context's defaults here. */
 export const WORK_ITEMS_DIALOG_CONTEXTS: Record<
 	WorkItemsDialogContextId,
 	WorkItemsDialogContextDefaults
-> = new Proxy(
-	{} as Record<WorkItemsDialogContextId, WorkItemsDialogContextDefaults>,
-	{
-		get: notYetDeclared,
-		ownKeys: notYetDeclared,
+> = {
+	closedItems: withCatalogue([CLOSED, CYCLE_TIME], CYCLE_TIME),
+	estimation: withCatalogue([ESTIMATE, CYCLE_TIME, CLOSED], CYCLE_TIME),
+	arrivals: withCatalogue([STARTED, AGE_OR_CYCLE_TIME], AGE_OR_CYCLE_TIME),
+	inProgress: withCatalogue([STARTED, AGE, TIME_IN_STATE, SLE_RISK], AGE),
+	aging: withCatalogue([AGE, "ageBand", SLE_RISK, TIME_IN_STATE], AGE),
+	blocked: withCatalogue([AGE, "blockedSince"], AGE),
+	stale: withCatalogue([AGE, TIME_IN_STATE], AGE),
+	workDistribution: withCatalogue(
+		["parent", AGE_OR_CYCLE_TIME],
+		AGE_OR_CYCLE_TIME,
+	),
+	featureSize: withCatalogue(["size", AGE_OR_CYCLE_TIME, CLOSED], "size"),
+	featureChildren: withCatalogue(
+		[STARTED, CLOSED, AGE_OR_CYCLE_TIME, ESTIMATE],
+		AGE_OR_CYCLE_TIME,
+	),
+	deliveryTimeline: withCatalogue(["warnings"], "warnings"),
+	// Its rows are built for the chart with no real dates or ages, so no other column would say anything.
+	cumulativeStateTime: {
+		visible: ["daysContributed"],
+		sortBy: "daysContributed",
+		catalogue: false,
 	},
-);
+	startedAndClosed: withCatalogue(
+		[STARTED, CLOSED, AGE_OR_CYCLE_TIME],
+		AGE_OR_CYCLE_TIME,
+	),
+};
