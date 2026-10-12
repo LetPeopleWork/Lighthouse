@@ -581,3 +581,65 @@ describe("Turning a page brings the top of the list into view", () => {
 		RENDER_HEAVY,
 	);
 });
+
+describe("A list follows what its page hands it on every render", () => {
+	const firstRowOnShow = () =>
+		screen
+			.getAllByRole("row")
+			.find(
+				(row) =>
+					row.querySelector('[role="gridcell"][data-field="name"]')
+						?.textContent === "Row 001",
+			) as HTMLElement;
+
+	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
+	it(
+		"keeps the space its page asks for now, not the space it asked for first",
+		async () => {
+			const listWithSpacing = (
+				getRowSpacing: (row: { index: number }) => { top?: number },
+			) => (
+				<DataGridBase
+					rows={aListOf(3)}
+					columns={columns}
+					storageKey={STORAGE_KEY}
+					getRowSpacing={getRowSpacing}
+				/>
+			);
+			const { rerender } = render(listWithSpacing(() => ({})));
+			await screen.findByText("Row 001");
+
+			rerender(
+				listWithSpacing(({ index }) => (index === 0 ? { top: 36 } : {})),
+			);
+
+			await waitFor(() =>
+				expect(firstRowOnShow().style.marginTop).toBe("36px"),
+			);
+		},
+		RENDER_HEAVY,
+	);
+
+	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
+	it(
+		"shows the loading look its page hands it now, not the one it handed it first",
+		async () => {
+			const listLoadingWith = (says: string) => (
+				<DataGridBase
+					rows={[]}
+					columns={columns}
+					storageKey={STORAGE_KEY}
+					loading
+					slots={{ loadingOverlay: () => <div>{says}</div> }}
+				/>
+			);
+			const { rerender } = render(listLoadingWith("First look"));
+			await screen.findByText("First look");
+
+			rerender(listLoadingWith("Second look"));
+
+			expect(await screen.findByText("Second look")).toBeInTheDocument();
+		},
+		RENDER_HEAVY,
+	);
+});
