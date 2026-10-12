@@ -2,7 +2,7 @@
   "roadmap": {
     "project_id": "story-6202-lists-beyond-100-rows",
     "created_at": "2026-10-12",
-    "total_steps": 6,
+    "total_steps": 7,
     "total_phases": 1,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
@@ -278,6 +278,36 @@
             "SLICE GATE: one local run of tests/specs/settings passes (excluding @screenshot, @auth, @rbac, @proxyauth), so no other settings spec lost a locator."
           ],
           "implementation_notes": "Why two branches: Lighthouse.Frontend/public/sbom/backend.cdx.json and frontend.cdx.json are committed placeholders holding one component each. CI copies the real SBOM artifact over them only when sbom-version is set, which ci.yml does on refs/heads/main only. So PR builds, Renovate PRs included, run ci_verifysqlite / ci_verifypostgres with 2 packages, and a long-only spec would fail there. Count source: the branch must not be chosen by the footer it is testing, or a broken footer would send the spec into the short branch and pass. Read the grid's own row count (for example its `aria-rowcount`, after proving on the live run that it counts every row rather than the page), or the two SBOM endpoints counted with the same filter ThirdPartyPackagesSection applies to components. Whichever you choose, check it against the range total on the real-SBOM run. Never commit a spec or POM member that has not run against a live Lighthouse: DISTILL only type-checked this one. Build and serve from THIS worktree with absolute paths; relative paths in subagents resolve to the main checkout. Run `pnpm install` in /storage/repos/Lighthouse/.claude/worktrees/shimmering-brewing-flute/Lighthouse.Frontend and in .../Lighthouse.EndToEndTests if node_modules is missing. Real SBOMs for the long branch: `gh run list --workflow ci.yml --branch main --status success --limit 1 --json databaseId` gives the run id; the version is not in that listing, so read the artifact name from `gh api repos/{owner}/{repo}/actions/runs/<id>/artifacts --jq '.artifacts[].name'` (it is Lighthouse-SBOM-<version>), then `gh run download <id> --name Lighthouse-SBOM-<version>` downloads into a fresh directory under the session scratchpad. Copy the two .cdx.json files over Lighthouse.Frontend/public/sbom, then run `pnpm build`. `pnpm build` writes into the backend's web root (vite.config.ts `outDir: '../Lighthouse.Backend/Lighthouse.Backend/wwwroot'`), so check that Lighthouse.Backend/Lighthouse.Backend/wwwroot/index.html exists afterwards and that `/sbom/frontend.cdx.json` on the instance serves the real file. Afterwards run `git checkout -- Lighthouse.Frontend/public/sbom` and never commit the real SBOMs. Then rebuild on the placeholders and run the spec once more for the short branch. Start a throw-away backend on 5199 in the background, from /storage/repos/Lighthouse/.claude/worktrees/shimmering-brewing-flute/Lighthouse.Backend/Lighthouse.Backend: `env ASPNETCORE_ENVIRONMENT=Development Kestrel__Endpoints__Http__Url=http://localhost:5199 Kestrel__Endpoints__Https__Url=https://localhost:7299 Database__Provider=sqlite Database__ConnectionString=\"Data Source=$E2E_DIR/lighthouse.db\" Encryption__KeyStorePath=$E2E_DIR/keys UsageData__CollectorBaseUrl=http://127.0.0.1:9 dotnet run --no-launch-profile`, with E2E_DIR a fresh directory under the session scratchpad. Verify each config key against Lighthouse.Backend before using it. The instance time zone is not needed for this page, so leave it out. If you keep it, the key LighthouseClock.cs names in its error message is `Lighthouse:TimeZone` (env `Lighthouse__TimeZone`); confirm where Program.cs reads it first. ASPNETCORE_URLS is ignored here; override the Kestrel keys. Never aim at :5169 (the dev instance). Never point a key store at `data-protection-keys`. Confirm with `ss -ltn | grep 5199`. No premium licence is needed for this page. Then, from the worktree's Lighthouse.EndToEndTests, run `env LIGHTHOUSEURL=http://localhost:5199/ TZ=Europe/Zurich pnpm exec playwright test tests/specs/settings/ThirdPartyPackagesPaging.spec.ts`, then the settings folder with `--grep-invert \"@screenshot|@auth|@rbac|@proxyauth\"`. Restart the backend after each rebuild so it serves the new web root. Do not regenerate settings/systeminfo.png here: it changes because the picker goes, and finalize deletes and regenerates it. Report, without blocking, the browser checks DESIGN left open: after › is the new page's first row in view; does a shrinking reload show a briefly wrong page; do the range and arrows fit in the Work Items dialog at its smallest width. A defect there becomes a polish step the orchestrator adds. If a briefly wrong page shows, 01-02's controlled-page fallback applies. Stop the backend afterwards. PROJECT RULES: read docs/ci-learnings.md first and pre-apply its Playwright rules: drive the page only through the page object, never an inline page.locator() in the spec; scope locators to the Third Party Packages card so another list's pager never matches; getByRole/getByText names are case-insensitive substrings unless exact, so anchor the range regex; a POM getter that reads 0 or '' while not yet rendered makes a one-sided assertion vacuous, so wait for the first package row before counting. Un-skip with `test.skip` → `test`; never add describe.skip. Comments are rare, plain-language why only, and never cite internal ids such as L-5, MD-1 or AC-1.5. Biome-clean, `pnpm build` zero warnings; its prebuild runs `biome check --write`, so re-read `git diff` afterwards. Never pipe a gate's output through tail or head. Commit: `test(settings): walking skeleton pages Third Party Packages when the build serves enough packages (story 6202)`"
+        },
+        {
+          "id": "01-07",
+          "name": "Turning a page brings the top of the list into view",
+          "tags": [
+            "@polish"
+          ],
+          "description": "The live run of 01-06 showed that after pressing the next-page arrow the window stays scrolled to the bottom, where the arrows are, so the new page's first row is far above the fold (its top was at y = -3089 on Third Party Packages). DESIGN named this as a DELIVER polish item if the browser showed it. When the reader turns a page, bring the top of the grid into view.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.paging.test.tsx",
+          "scenario_name": "A list of more than 100 rows says how many it has and pages to the rest",
+          "unskips": [],
+          "pins": [],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx",
+            "Lighthouse.Frontend/src/components/Common/DataGrid/RowRangeFooter.tsx",
+            "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.paging.test.tsx"
+          ],
+          "dependencies": [
+            "01-06"
+          ],
+          "criteria": [
+            "A new component case in DataGridBase.paging.test.tsx: on a 243-row list, pressing 'Go to next page' brings the top of the grid into view (jsdom has no layout, so observe the scroll request on the grid's root element, e.g. a scrollIntoView spy, with block 'start' or 'nearest'). It is RED before the production edit.",
+            "Pressing 'Go to previous page' does the same. A page change the reader did not ask for (a sort, a column filter, a reload clamping the page, a search in Third-party packages) does not scroll the window.",
+            "Lists of 100 rows or fewer never scroll (no pager).",
+            "All earlier paging cases in the five paging test files stay green.",
+            "On the :5199 instance (still running, real SBOMs), pressing the arrow on Third Party Packages leaves the new page's first row in view; record how it was checked in the commit body.",
+            "`pnpm test` green; `pnpm build` green with zero errors and zero warnings."
+          ],
+          "implementation_notes": "Keep it small and inside the paging code: the change belongs with the footer the reader presses, not in every consumer. Only an arrow press scrolls, so a sort, filter, reload clamp or search must not move the window. Do not persist anything. Respect prefers-reduced-motion if smooth scrolling is used (or just use an instant scroll). Unpushed story #6248 also edits DataGridBase.tsx, so prefer putting the behaviour in RowRangeFooter.tsx. PROJECT RULES: docs/ci-learnings.md frontend rules (S7735, S3776, S6767, S7764 globalThis, S7770, S7761, S1192, S8786); exact strings for the arrow labels; comments rare, plain-language why, never internal ids. `pnpm build` prebuild runs `biome check --write`: re-read `git diff`. Commit: `fix(datagrid): turning a page brings the top of the list into view (story 6202)`"
         }
       ]
     }
