@@ -86,6 +86,9 @@
 	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\team-valid-state-since.csv">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
+	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\team-valid-additional-fields.csv">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\team-valid-demo-journey-synthesis.csv">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>

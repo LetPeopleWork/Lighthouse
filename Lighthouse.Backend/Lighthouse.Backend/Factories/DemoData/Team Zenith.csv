@@ -1,373 +1,373 @@
-ID,Name,State,Type,Parent,StartedDate,ClosedDate,Tags,StateEnteredDate
-TZ-001,User authentication system,Done,User Story,AP-001,{w-145},{w-132},,
-TZ-002,Fix login timeout issue,Done,Bug,AP-001,{w-134},{w-132},,
-TZ-003,Dashboard performance optimization,Done,User Story,AP-001,{w-136},{w-132},,
-TZ-004,Payment gateway integration,Done,User Story,AP-001,{w-138},{w-131},,
-TZ-005,Error handling for API failures,Done,Bug,AP-001,{w-132},{w-130},,
-TZ-006,User profile management,Done,User Story,AP-001,{w-136},{w-129},,
-TZ-007,Email notification system,Done,User Story,AP-001,{w-131},{w-129},,
-TZ-008,Fix memory leak in background process,Done,Bug,AP-002,{w-142},{w-129},,
-TZ-009,Search functionality enhancement,Done,User Story,AP-002,{w-139},{w-129},,
-TZ-010,Mobile responsive design updates,Done,User Story,AP-002,{w-141},{w-128},,
-TZ-011,Database query optimization,Done,Bug,AP-002,{w-141},{w-128},,
-TZ-012,Two-factor authentication,Done,User Story,AP-002,{w-128},{w-127},,
-TZ-013,File upload validation,Done,User Story,AP-002,{w-134},{w-127},,
-TZ-014,Fix session management bug,Done,Bug,AP-002,{w-128},{w-126},,
-TZ-015,Report generation feature,Done,User Story,AP-002,{w-130},{w-126},,
-TZ-016,User settings customization,Done,User Story,AP-002,{w-130},{w-125},,
-TZ-017,API rate limiting implementation,Done,Bug,AP-002,{w-127},{w-124},,
-TZ-018,Social media integration,Done,User Story,AP-002,{w-124},{w-123},,
-TZ-019,Data export functionality,Done,User Story,AP-002,{w-132},{w-122},,
-TZ-020,Fix timezone display issue,Done,Bug,AP-002,{w-125},{w-121},,
-TZ-021,Advanced filtering options,Done,User Story,AP-002,{w-123},{w-120},,
-TZ-022,Notification preferences,Done,User Story,AP-002,{w-122},{w-120},,
-TZ-023,Performance monitoring setup,Done,Bug,AP-002,{w-133},{w-120},,
-TZ-024,User onboarding flow,Done,User Story,AP-002,{w-123},{w-120},,
-TZ-025,Fix drag and drop functionality,Done,Bug,AP-002,{w-121},{w-119},,
-TZ-026,Data visualization components,Done,User Story,AP-002,{w-120},{w-119},,
-TZ-027,Automated backup system,Done,User Story,AP-002,{w-120},{w-118},,
-TZ-028,Security audit fixes,Done,Bug,AP-003,{w-125},{w-117},,
-TZ-029,Real-time collaboration features,Done,User Story,AP-003,{w-125},{w-117},,
-TZ-030,Fix chart rendering issue,Done,Bug,AP-003,{w-117},{w-115},,
-TZ-031,Advanced user permissions,Done,User Story,AP-003,{w-119},{w-114},,
-TZ-032,Mobile app push notifications,Done,User Story,AP-003,{w-118},{w-113},,
-TZ-033,Fix data synchronization bug,Done,Bug,AP-003,{w-119},{w-113},,
-TZ-034,Admin dashboard enhancements,Done,User Story,AP-003,{w-114},{w-112},,
-TZ-035,Bulk operations interface,Done,User Story,AP-003,{w-118},{w-111},,
-TZ-036,Fix email template rendering,Done,Bug,AP-003,{w-116},{w-111},,
-TZ-037,Third-party API integration,Done,User Story,AP-003,{w-121},{w-111},,
-TZ-038,Performance testing suite,Done,User Story,,{w-123},{w-110},,
-TZ-039,Accessibility improvements,Waiting for Verification,User Story,,{-5},,,{-6}
-TZ-040,Database migration tools,Implementation,User Story,,{-3},,Blocked,{-12}
-TZ-300,Hotfix triage for login regression,Analysing,User Story,AP-001,{-0},,,{-0}
-TZ-041,Telemetry data ingestion pipeline,Done,User Story,ALT-91,{w-114},{w-110},,
-TZ-042,Real-time sensor monitoring UI,Done,User Story,ALT-91,{w-111},{w-110},,
-TZ-043,Spacecraft health metrics dashboard,Done,User Story,ALT-91,{w-114},{w-109},,
-TZ-044,Telemetry data validation layer,Done,User Story,ALT-91,{w-111},{w-109},,
-TZ-045,Historical telemetry archive system,Done,User Story,ALT-91,{w-110},{w-107},,
-TZ-046,Anomaly detection alerting,Done,User Story,ALT-91,{w-112},{w-105},,
-TZ-047,Telemetry API endpoints,Done,User Story,ALT-91,{w-106},{w-104},,
-TZ-048,Data visualization components,Done,User Story,ALT-91,{w-106},{w-104},,
-TZ-049,Performance optimization for charts,Done,User Story,ALT-91,{w-105},{w-104},,
-TZ-050,Telemetry export functionality,Done,User Story,ALT-91,{w-104},{w-101},,
-TZ-051,Multi-spacecraft support,Done,User Story,ALT-91,{w-102},{w-101},,
-TZ-052,Custom dashboard layouts,Done,User Story,ALT-91,{w-104},{w-101},,
-TZ-053,Telemetry data compression,Done,User Story,ALT-91,{w-105},{w-97},,
-TZ-054,Real-time alert notifications,Done,User Story,ALT-91,{w-97},{w-96},,
-TZ-055,Dashboard mobile responsiveness,Done,User Story,ALT-91,{w-97},{w-96},,
-TZ-056,Telemetry data retention policies,Done,User Story,ALT-91,{w-98},{w-95},,
-TZ-057,Final dashboard integration testing,Done,User Story,ALT-91,{w-99},{w-95},,
-TZ-058,Escape pod structural design review,Done,User Story,ALT-92,{w-97},{w-95},,
-TZ-059,Emergency ejection mechanism testing,Done,User Story,ALT-92,{w-104},{w-94},,
-TZ-060,Life support integration validation,Done,User Story,ALT-92,{w-97},{w-94},,
-TZ-061,Certification documentation finalization,Done,User Story,ALT-92,{w-97},{w-94},,
-TZ-062,Network topology design,Done,User Story,ALT-93,{w-100},{w-94},,
-TZ-063,Primary communication link setup,Done,User Story,ALT-93,{w-94},{w-93},,
-TZ-064,Secondary backup channel config,Done,User Story,ALT-93,{w-102},{w-92},,
-TZ-065,Automatic failover mechanism,Done,User Story,ALT-93,{w-92},{w-91},,
-TZ-066,Network health monitoring dashboard,Done,User Story,ALT-93,{w-91},{w-90},,
-TZ-067,Signal strength optimization,Done,User Story,ALT-93,{w-94},{w-90},,
-TZ-068,Redundancy testing suite,Done,User Story,ALT-93,{w-96},{w-89},,
-TZ-069,Load balancing implementation,Done,User Story,ALT-93,{w-90},{w-89},,
-TZ-070,Network latency reduction,Done,User Story,ALT-93,{w-90},{w-89},,
-TZ-071,Emergency communication protocol,Done,User Story,ALT-93,{w-95},{w-89},,
-TZ-072,Satellite handoff automation,Done,User Story,ALT-93,{w-91},{w-88},,
-TZ-073,Connection retry logic,Done,User Story,ALT-93,{w-91},{w-88},,
-TZ-074,Network security hardening,Done,User Story,ALT-93,{w-88},{w-87},,
-TZ-075,Bandwidth optimization,Done,User Story,ALT-93,{w-89},{w-87},,
-TZ-076,Multi-path routing implementation,Done,User Story,ALT-93,{w-91},{w-86},,
-TZ-077,Network diagnostics tools,Done,User Story,ALT-93,{w-87},{w-85},,
-TZ-078,Redundancy protocol documentation,Done,User Story,ALT-93,{w-86},{w-84},,
-TZ-079,Final network stress testing,Done,User Story,ALT-93,{w-87},{w-84},,
-TZ-080,Redundancy certification approval,Done,User Story,ALT-93,{w-87},{w-84},,
-TZ-081,Physics engine foundation,Done,User Story,ALT-94,{w-93},{w-83},,
-TZ-082,Gravitational force calculations,Done,User Story,ALT-94,{w-89},{w-83},,
-TZ-083,Orbital trajectory modeling,Done,User Story,ALT-94,{w-83},{w-82},,
-TZ-084,3D visualization rendering,Done,User Story,ALT-94,{w-90},{w-82},,
-TZ-085,Time acceleration controls,Done,User Story,ALT-94,{w-88},{w-82},,
-TZ-086,Multi-body problem solver,Done,User Story,ALT-94,{w-86},{w-81},,
-TZ-087,Spacecraft dynamics integration,Done,User Story,ALT-94,{w-82},{w-80},,
-TZ-088,Collision detection system,Done,User Story,ALT-94,{w-81},{w-79},,
-TZ-089,Maneuver planning interface,Done,User Story,ALT-94,{w-79},{w-78},,
-TZ-090,Delta-V calculator,Done,User Story,ALT-94,{w-80},{w-78},,
-TZ-091,Simulation save/load functionality,Done,User Story,ALT-94,{w-82},{w-78},,
-TZ-092,Performance optimization,Done,User Story,ALT-94,{w-79},{w-78},,
-TZ-093,User tutorial system,Done,User Story,ALT-94,{w-80},{w-77},,
-TZ-094,Scenario template library,Done,User Story,ALT-94,{w-79},{w-77},,
-TZ-095,Export simulation data,Done,User Story,ALT-94,{w-77},{w-74},,
-TZ-096,Final acceptance testing,Done,User Story,ALT-94,{w-80},{w-74},,
-TZ-097,Biometric sensor integration,Done,User Story,ALT-95,{w-74},{w-73},,
-TZ-098,Heart rate monitoring module,Done,User Story,ALT-95,{w-82},{w-72},,
-TZ-099,Blood pressure tracking,Done,User Story,ALT-95,{w-76},{w-71},,
-TZ-100,Oxygen saturation sensors,Done,User Story,ALT-95,{w-74},{w-70},,
-TZ-101,Temperature monitoring system,Done,User Story,ALT-95,{w-79},{w-69},,
-TZ-102,Sleep pattern analysis,Done,User Story,ALT-95,{w-71},{w-69},,
-TZ-103,Exercise activity tracking,Done,User Story,ALT-95,{w-73},{w-69},,
-TZ-104,Nutrition intake logging,Done,User Story,ALT-95,{w-70},{w-69},,
-TZ-105,Hydration level monitoring,Done,User Story,ALT-95,{w-78},{w-68},,
-TZ-106,Stress level indicators,Done,User Story,ALT-95,{w-81},{w-68},,
-TZ-107,Medical alert system,Done,User Story,ALT-95,{w-72},{w-66},,
-TZ-108,Health dashboard UI,Done,User Story,ALT-95,{w-67},{w-65},,
-TZ-109,Historical health data archive,Done,User Story,ALT-95,{w-69},{w-64},,
-TZ-110,Crew health reports generation,Done,User Story,ALT-95,{w-69},{w-64},,
-TZ-111,Anomaly detection algorithms,Done,User Story,ALT-95,{w-68},{w-63},,
-TZ-112,Medical officer notification system,Done,User Story,ALT-95,{w-65},{w-62},,
-TZ-113,Telemedicine integration,Done,User Story,ALT-95,{w-65},{w-62},,
-TZ-114,Predictive health analytics,Done,User Story,ALT-95,{w-67},{w-61},,
-TZ-115,Crew quarantine protocols,Done,User Story,ALT-95,{w-63},{w-60},,
-TZ-116,Mental health tracking,Done,User Story,ALT-95,{w-65},{w-59},,
-TZ-117,Medication reminder system,Done,User Story,ALT-95,{w-64},{w-59},,
-TZ-118,Emergency medical response triggers,Done,User Story,ALT-95,{w-60},{w-58},,
-TZ-119,Health data privacy controls,Done,User Story,ALT-95,{w-59},{w-57},,
-TZ-120,Wearable device synchronization,Done,User Story,ALT-95,{w-69},{w-56},,
-TZ-121,Mobile health app interface,Done,User Story,ALT-95,{w-56},{w-55},,
-TZ-122,Voice-activated health queries,Done,User Story,ALT-95,{w-59},{w-55},,
-TZ-123,Health trend visualization,Done,User Story,ALT-95,{w-65},{w-55},,
-TZ-124,Crew comparison analytics,Done,User Story,ALT-95,{w-56},{w-54},,
-TZ-125,Medical equipment integration,Done,User Story,ALT-95,{w-59},{w-54},,
-TZ-126,System performance testing,Done,User Story,ALT-95,{w-58},{w-53},,
-TZ-127,Final medical certification,Done,User Story,ALT-95,{w-60},{w-52},,
-TZ-128,Safety protocol documentation,Done,User Story,ALT-96,{w-54},{w-52},,
-TZ-129,Automated pre-launch checklist,Done,User Story,ALT-96,{w-53},{w-52},,
-TZ-130,Hazard detection sensors,Done,User Story,ALT-96,{w-55},{w-51},,
-TZ-131,Emergency shutdown systems,Done,User Story,ALT-96,{w-52},{w-51},,
-TZ-132,Fire suppression automation,Done,User Story,ALT-96,{w-52},{w-51},,
-TZ-133,Fuel leak detection,Done,User Story,ALT-96,{w-52},{w-51},,
-TZ-134,Pressure monitoring system,Done,User Story,ALT-96,{w-57},{w-50},,
-TZ-135,Weather condition integration,Done,User Story,ALT-96,{w-51},{w-49},,
-TZ-136,Lightning protection automation,Done,User Story,ALT-96,{w-49},{w-48},,
-TZ-137,Personnel tracking system,Done,User Story,ALT-96,{w-51},{w-48},,
-TZ-138,Access control automation,Done,User Story,ALT-96,{w-50},{w-46},,
-TZ-139,Communication system integration,Done,User Story,ALT-96,{w-51},{w-45},,
-TZ-140,Launch abort sequence automation,Done,User Story,ALT-96,{w-44},{w-43},,
-TZ-141,System redundancy verification,Done,User Story,ALT-96,{w-47},{w-42},,
-TZ-142,Real-time alert dashboard,Done,User Story,ALT-96,{w-45},{w-41},,
-TZ-143,Safety drill simulation mode,Done,User Story,ALT-96,{w-47},{w-40},,
-TZ-144,Compliance reporting system,Done,User Story,ALT-96,{w-48},{w-40},,
-TZ-145,Final safety certification,Done,User Story,ALT-96,{w-44},{w-39},,
-TZ-146,Heat shield material analysis,Done,User Story,ALT-97,{w-40},{w-39},,
-TZ-147,Thermal sensor array setup,Done,User Story,ALT-97,{w-41},{w-39},,
-TZ-148,Entry trajectory modeling,Done,User Story,ALT-97,{w-44},{w-38},,
-TZ-149,Ablation rate calculations,Done,User Story,ALT-97,{w-48},{w-38},,
-TZ-150,Heat distribution simulation,Done,User Story,ALT-97,{w-44},{w-36},,
-TZ-151,Structural integrity testing,Done,User Story,ALT-97,{w-37},{w-36},,
-TZ-152,Atmospheric density modeling,Done,User Story,ALT-97,{w-41},{w-36},,
-TZ-153,Temperature gradient analysis,Done,User Story,ALT-97,{w-39},{w-35},,
-TZ-154,Plasma flow visualization,Done,User Story,ALT-97,{w-42},{w-35},,
-TZ-155,Material stress testing,Done,User Story,ALT-97,{w-37},{w-35},,
-TZ-156,Entry angle optimization,Done,User Story,ALT-97,{w-38},{w-34},,
-TZ-157,Heat shield design iterations,Done,User Story,ALT-97,{w-37},{w-33},,
-TZ-158,Cooling system integration,Done,User Story,ALT-97,{w-34},{w-33},,
-TZ-159,Real-time telemetry monitoring,Done,User Story,ALT-97,{w-36},{w-31},,
-TZ-160,Safety margin calculations,Done,User Story,ALT-97,{w-34},{w-30},,
-TZ-161,Entry profile database,Done,User Story,ALT-97,{w-33},{w-29},,
-TZ-162,Predictive failure analysis,Done,User Story,ALT-97,{w-28},{w-27},,
-TZ-163,Heat analysis report generation,Done,User Story,ALT-97,{w-33},{w-27},,
-TZ-164,Wind tunnel validation,Done,User Story,ALT-97,{w-29},{w-26},,
-TZ-165,Final analysis documentation,Done,User Story,ALT-97,{w-31},{w-25},,
-TZ-166,Communication protocol design,Done,User Story,ALT-98,{w-29},{w-25},,
-TZ-167,Voice communication channels,Done,User Story,ALT-98,{w-28},{w-24},,
-TZ-168,Video conferencing system,Done,User Story,ALT-98,{w-34},{w-24},,
-TZ-169,Data transmission optimization,Done,User Story,ALT-98,{w-27},{w-24},,
-TZ-170,Encryption implementation,Done,User Story,ALT-98,{w-28},{w-24},,
-TZ-171,Multi-station coordination,Done,User Story,ALT-98,{w-24},{w-23},,
-TZ-172,Priority messaging system,Done,User Story,ALT-98,{w-27},{w-23},,
-TZ-173,Communication logging,Done,User Story,ALT-98,{w-24},{w-22},,
-TZ-174,Alert broadcast system,Done,User Story,ALT-98,{w-26},{w-21},,
-TZ-175,Screen sharing functionality,Done,User Story,ALT-98,{w-23},{w-21},,
-TZ-176,Contact directory integration,Done,User Story,ALT-98,{w-23},{w-18},,
-TZ-177,Communication analytics dashboard,Done,User Story,ALT-98,{w-20},{w-17},,
-TZ-178,Mobile communication app,Done,User Story,ALT-98,{w-21},{w-17},,
-TZ-179,Offline message queuing,Done,User Story,ALT-98,{w-20},{w-16},,
-TZ-180,Final hub integration testing,Done,User Story,ALT-98,{w-21},{w-15},,
-TZ-181,Stage separation mechanism design,Done,User Story,ALT-99,{w-17},{w-15},,
-TZ-182,Explosive bolt testing,Done,User Story,ALT-99,{w-17},{w-15},,
-TZ-183,Separation sensor validation,Done,User Story,ALT-99,{w-19},{w-14},,
-TZ-184,Thrust vectoring verification,Done,User Story,ALT-99,{w-16},{w-14},,
-TZ-185,Full separation test execution,Done,User Story,ALT-99,{w-26},{w-13},,
-TZ-186,Power distribution architecture,Done,User Story,ALT-100,{w-19},{w-12},,
-TZ-187,Solar panel integration,Done,User Story,ALT-100,{w-13},{w-10},,
-TZ-188,Battery management system,Done,User Story,ALT-100,{w-19},{w-9},,
-TZ-189,Power consumption monitoring,Done,User Story,ALT-100,{w-10},{w-8},,
-TZ-190,Load balancing controller,Done,User Story,ALT-100,{w-10},{w-7},,
-TZ-191,Emergency power protocols,Done,User Story,ALT-100,{w-8},{w-7},,
-TZ-192,Redundant power pathways,Done,User Story,ALT-100,{w-11},{w-7},,
-TZ-193,Power efficiency optimization,Done,User Story,ALT-100,{w-10},{w-7},,
-TZ-194,Voltage regulation system,Done,User Story,ALT-100,{w-13},{w-6},,
-TZ-195,Circuit protection automation,Done,User Story,ALT-100,{w-16},{w-6},,
-TZ-196,Power grid monitoring dashboard,Done,User Story,ALT-100,{w-10},{w-6},,
-TZ-197,Energy storage optimization,Done,Bug,ALT-100,{w-6},{w-3},,
-TZ-198,Power distribution testing,Done,User Story,ALT-100,{w-8},{w-3},,
-TZ-199,System integration validation,Done,User Story,ALT-100,{w-7},{w-2},,
-TZ-200,Grid performance analytics,Done,User Story,ALT-100,{w-5},{w-2},,
-TZ-201,Final power grid certification,Done,Bug,ALT-100,{w-4},{w-2},,
-TZ-202,Comprehensive system testing,Done,User Story,ALT-100,{w-8},{w-1},,
-TZ-203,Documentation finalization,Done,Bug,ALT-100,{w-3},{w-1},,
-TZ-204,Performance testing suite,Next,User Story,,{-2},,,{-1}
-TZ-205,Accessibility improvements,Backlog,User Story,,,,,
-TZ-206,Database migration tools,Backlog,Bug,,,,,
-TV-055,Mission control dashboard foundation,Backlog,User Story,AP-004,,,,
-TV-056,Spacecraft telemetry data collection,Backlog,User Story,AP-004,,,,
-TV-057,Flight path calculation engine,Backlog,User Story,AP-004,,,,
-TV-058,Solar system mapping interface,Backlog,User Story,AP-004,,,,
-TV-059,Asteroid field detection system,Backlog,User Story,AP-004,,,,
-TV-060,Warp drive diagnostics panel,Backlog,User Story,AP-004,,,,
-TV-061,Communication array configuration,Backlog,User Story,AP-004,,,,
-TV-062,Planetary atmosphere analysis,Backlog,User Story,AP-004,,,,
-TV-063,Star chart visualization engine,Backlog,User Story,AP-004,,,,
-TV-064,Navigation computer calibration,Backlog,User Story,AP-004,,,,
-TV-065,Interstellar communication protocols,Backlog,User Story,AP-004,,,,
-TV-066,Quantum sensor data processing,Backlog,User Story,AP-004,,,,
-TV-067,Deep space scanning algorithms,Backlog,User Story,AP-004,,,,
-TV-068,Gravitational field mapping,Backlog,User Story,AP-004,,,,
-TV-069,Emergency navigation backup systems,Backlog,User Story,AP-004,,,,
-TV-070,Cosmic radiation shielding controls,Backlog,User Story,AP-004,,,,
-TV-071,Hyperdrive jump calculations,Backlog,User Story,AP-004,,,,
-TV-072,Space-time distortion detection,Backlog,User Story,AP-004,,,,
-TV-073,Orbital mechanics simulation,Backlog,User Story,AP-004,,,,
-TV-074,Solar wind analysis dashboard,Backlog,User Story,AP-004,,,,
-TV-075,Nebula navigation protocols,Backlog,User Story,AP-004,,,,
-TV-076,Alien signal decryption module,Backlog,User Story,AP-004,,,,
-TV-077,Black hole proximity warnings,Backlog,User Story,AP-004,,,,
-TV-078,Galaxy map integration layer,Backlog,User Story,AP-004,,,,
-TV-079,Ion storm tracking system,Backlog,User Story,AP-004,,,,
-TV-080,Plasma field navigation tools,Backlog,User Story,AP-004,,,,
-TV-081,Comet trajectory prediction,Backlog,User Story,AP-004,,,,
-TV-082,Stellar cartography database,Backlog,User Story,AP-005,,,,
-TV-083,Pulsar beacon synchronization,Backlog,User Story,AP-005,,,,
-TV-084,Void space anomaly detection,Backlog,User Story,AP-005,,,,
-TV-085,Galactic coordinate conversion,Backlog,User Story,AP-005,,,,
-TV-086,Wormhole stability analysis,Backlog,User Story,AP-005,,,,
-TV-087,Dark matter density mapping,Backlog,User Story,AP-005,,,,
-TV-088,Exoplanet habitability scanner,Backlog,User Story,AP-005,,,,
-TV-089,Antimatter containment monitoring,Backlog,User Story,AP-005,,,,
-TV-090,Temporal anomaly detection grid,Backlog,User Story,AP-005,,,,
-TV-091,Supernova blast zone calculator,Backlog,User Story,AP-005,,,,
-TV-092,Quantum entanglement communication,Backlog,User Story,AP-005,,,,
-TV-093,Multidimensional space mapping,Backlog,User Story,AP-005,,,,
-TV-094,Stellar navigation system integration,Backlog,User Story,AP-005,,,,
-ORI-501,Design AI decision tree framework,Backlog,User Story,ORI-107,,,,
-ORI-502,Prototype voice command interface,Backlog,User Story,ORI-107,,,,
-ORI-503,Develop anomaly detection algorithms,Backlog,User Story,ORI-107,,,,
-ORI-504,Create mission timeline optimization,Backlog,User Story,ORI-107,,,,
-ORI-505,Build crew health monitoring integration,Backlog,User Story,ORI-107,,,,
-ORI-506,Test emergency response automation,Backlog,User Story,ORI-107,,,,
-ORI-507,Design predictive maintenance alerts,Backlog,User Story,ORI-107,,,,
-ORI-601,Map asteroid belt navigation routes,Backlog,User Story,ORI-104,,,,
-ORI-602,Prototype gravitational slingshot calculator,Backlog,User Story,ORI-104,,,,
-ORI-603,Design neutron star proximity warnings,Backlog,User Story,ORI-104,,,,
-ORI-604,Build interstellar dust density mapper,Backlog,User Story,ORI-104,,,,
-ORI-605,Create dark matter detection grid,Backlog,User Story,ORI-104,,,,
-ORI-701,Research cosmic ray absorption materials,Backlog,User Story,ORI-105,,,,
-ORI-702,Test electromagnetic field generators,Backlog,User Story,ORI-105,,,,
-ORI-703,Design modular shield configurations,Backlog,User Story,ORI-105,,,,
-ORI-704,Prototype crew quarters protection,Backlog,User Story,ORI-105,,,,
-ORI-705,Build radiation exposure monitoring,Backlog,User Story,ORI-105,,,,
-ORI-706,Test shielding effectiveness metrics,Backlog,User Story,ORI-105,,,,
-ORI-801,Design quantum entanglement transmitter,Backlog,User Story,ORI-106,,,,
-ORI-802,Build quantum state stabilization,Backlog,User Story,ORI-106,,,,
-ORI-803,Test long-distance quantum links,Backlog,User Story,ORI-106,,,,
-ORI-804,Prototype encryption key distribution,Backlog,User Story,ORI-106,,,,
-ORI-805,Create quantum error correction,Backlog,User Story,ORI-106,,,,
-ORI-806,Design quantum repeater network,Backlog,User Story,ORI-106,,,,
-ORI-807,Build quantum channel authentication,Backlog,User Story,ORI-106,,,,
-ORI-808,Test quantum decoherence mitigation,Backlog,User Story,ORI-106,,,,
-ORI-901,Design solar plasma detection array,Backlog,User Story,ORI-108,,,,
-ORI-902,Build coronal mass ejection predictor,Backlog,User Story,ORI-108,,,,
-ORI-903,Create magnetic field monitoring,Backlog,User Story,ORI-108,,,,
-ORI-904,Prototype spacecraft alert system,Backlog,User Story,ORI-108,,,,
-ORI-1001,Design cryogenic tank insulation,Backlog,User Story,ORI-109,,,,
-ORI-1002,Test liquid hydrogen containment,Backlog,User Story,ORI-109,,,,
-ORI-1003,Build automated refueling system,Backlog,User Story,ORI-109,,,,
-ORI-1004,Prototype fuel transfer mechanisms,Backlog,User Story,ORI-109,,,,
-ORI-1005,Create temperature monitoring network,Backlog,User Story,ORI-109,,,,
-ORI-1006,Design emergency venting protocols,Backlog,User Story,ORI-109,,,,
-ORI-1101,Design zero-g assembly protocols,Backlog,User Story,ORI-110,,,,
-ORI-1102,Build microgravity material handling,Backlog,User Story,ORI-110,,,,
-ORI-1103,Test precision manufacturing tools,Backlog,User Story,ORI-110,,,,
-ORI-1104,Create quality control systems,Backlog,User Story,ORI-110,,,,
-ORI-1105,Prototype automated fabrication,Backlog,User Story,ORI-110,,,,
-ORI-1106,Design contamination prevention,Backlog,User Story,ORI-110,,,,
-ORI-1107,Build orbital platform stabilization,Backlog,User Story,ORI-110,,,,
-OE-001-005,Establish seafloor reference points,Backlog,User Story,OE-001,,,,
-OE-001-006,Process 3D terrain data,Backlog,User Story,OE-001,,,,
-OE-001-007,Create interactive depth maps,Backlog,User Story,OE-001,,,,
-OE-001-008,Validate mapping accuracy,Backlog,User Story,OE-001,,,,
-OE-001-009,Publish geological findings,Backlog,User Story,OE-001,,,,
-OE-002-005,Install coral nursery structures,Backlog,User Story,OE-002,,,,
-OE-002-006,Monitor water quality parameters,Backlog,User Story,OE-002,,,,
-OE-002-007,Train local dive volunteers,Backlog,User Story,OE-002,,,,
-OE-004-001,Site selection and environmental impact study,Backlog,User Story,OE-004,,,,
-OE-004-002,Design modular station architecture,Backlog,User Story,OE-004,,,,
-OE-004-003,Engineer pressure-resistant hull,Backlog,User Story,OE-004,,,,
-OE-004-004,Install life support systems,Backlog,User Story,OE-004,,,,
-OE-004-005,Set up power generation units,Backlog,User Story,OE-004,,,,
-OE-004-006,Build laboratory facilities,Backlog,User Story,OE-004,,,,
-OE-004-007,Create emergency evacuation systems,Backlog,User Story,OE-004,,,,
-OE-004-008,Establish surface communication link,Backlog,User Story,OE-004,,,,
-OE-006-001,Design autonomous navigation system,Backlog,User Story,OE-006,,,,
-OE-006-002,Build submarine hull prototypes,Backlog,User Story,OE-006,,,,
-OE-006-003,Install sensor packages,Backlog,User Story,OE-006,,,,
-OE-006-004,Develop AI piloting software,Backlog,User Story,OE-006,,,,
-OE-006-005,Create fleet command center,Backlog,User Story,OE-006,,,,
-OE-006-006,Test submarine endurance,Backlog,User Story,OE-006,,,,
-OE-006-007,Program mission coordination protocols,Backlog,User Story,OE-006,,,,
-OE-006-008,Deploy first submarine units,Backlog,User Story,OE-006,,,,
-OE-006-009,Monitor fleet performance,Backlog,User Story,OE-006,,,,
-OE-006-010,Scale manufacturing operations,Backlog,User Story,OE-006,,,,
-OE-006-011,Establish maintenance protocols,Backlog,User Story,OE-006,,,,
-OE-007-009,Restore damaged forest areas,Backlog,User Story,OE-007,,,,
-OE-007-010,Document biodiversity improvements,Backlog,User Story,OE-007,,,,
-OE-008-001,Conduct geological surveys,Backlog,User Story,OE-008,,,,
-OE-008-002,Map mineral deposit locations,Backlog,User Story,OE-008,,,,
-OE-008-003,Analyze sediment core samples,Backlog,User Story,OE-008,,,,
-OE-008-004,Assess extraction feasibility,Backlog,User Story,OE-008,,,,
-OE-008-005,Evaluate environmental impact,Backlog,User Story,OE-008,,,,
-OE-008-006,Design sustainable extraction methods,Backlog,User Story,OE-008,,,,
-OE-010-001,Install satellite tracking equipment on whales,Backlog,User Story,OE-010,,,,
-OE-010-002,Set up hydrophone listening stations,Backlog,User Story,OE-010,,,,
-OE-010-003,Create whale song recognition software,Backlog,User Story,OE-010,,,,
-OE-010-004,Map historical migration routes,Backlog,User Story,OE-010,,,,
-OE-010-005,Monitor feeding ground usage,Backlog,User Story,OE-010,,,,
-OE-010-006,Track breeding area patterns,Backlog,User Story,OE-010,,,,
-OE-010-007,Analyze climate impact on migration,Backlog,User Story,OE-010,,,,
-NL-001-001,Install traffic cameras at key intersections,Backlog,User Story,NL-001,,,,
-NL-001-002,Deploy vehicle detection sensors,Backlog,User Story,NL-001,,,,
-NL-001-003,Build real-time traffic data pipeline,Backlog,User Story,NL-001,,,,
-NL-001-004,Develop traffic flow prediction algorithms,Backlog,User Story,NL-001,,,,
-NL-001-005,Create dynamic signal timing system,Backlog,User Story,NL-001,,,,
-NL-001-006,Integrate with emergency vehicle priority,Backlog,User Story,NL-001,,,,
-NL-001-007,Build traffic monitoring dashboard,Backlog,User Story,NL-001,,,,
-NL-001-008,Test AI optimization performance,Backlog,User Story,NL-001,,,,
-NL-001-009,Deploy citywide traffic management,Backlog,User Story,NL-001,,,,
-NL-001-010,Monitor congestion reduction metrics,Backlog,User Story,NL-001,,,,
-NL-002-001,Install IoT sensors in municipal buildings,Backlog,User Story,NL-002,,,,
-NL-002-002,Deploy smart HVAC control systems,Backlog,User Story,NL-002,,,,
-NL-002-003,Implement automated lighting management,Backlog,User Story,NL-002,,,,
-NL-002-004,Create energy consumption analytics,Backlog,User Story,NL-002,,,,
-NL-002-005,Build occupancy detection system,Backlog,User Story,NL-002,,,,
-NL-002-006,Develop predictive maintenance alerts,Backlog,User Story,NL-002,,,,
-NL-002-007,Integrate security system automation,Backlog,User Story,NL-002,,,,
-NL-002-008,Create facility manager dashboard,Backlog,User Story,NL-002,,,,
-NL-003-001,Install citywide surveillance camera network,Backlog,User Story,NL-003,,,,
-NL-003-002,Deploy audio gunshot detection sensors,Backlog,User Story,NL-003,,,,
-NL-003-003,Build crime pattern recognition AI,Backlog,User Story,NL-003,,,,
-NL-003-004,Create predictive policing algorithms,Backlog,User Story,NL-003,,,,
-NL-003-005,Develop emergency alert automation,Backlog,User Story,NL-003,,,,
-NL-003-006,Integrate with 911 dispatch system,Backlog,User Story,NL-003,,,,
-NL-003-007,Build real-time incident mapping,Backlog,User Story,NL-003,,,,
-NL-003-008,Create officer mobile response app,Backlog,User Story,NL-003,,,,
-NL-003-009,Implement crowd monitoring system,Backlog,User Story,NL-003,,,,
-NL-004-001,Install smart sensors in waste bins,Backlog,User Story,NL-004,,,,
-NL-004-002,Deploy GPS tracking on collection trucks,Backlog,User Story,NL-004,,,,
-NL-004-003,Build waste level monitoring system,Backlog,User Story,NL-004,,,,
-NL-004-004,Create dynamic collection route optimization,Backlog,User Story,NL-004,,,,
-NL-004-005,Develop predictive bin fill algorithms,Backlog,User Story,NL-004,,,,
-NL-004-006,Build driver mobile navigation app,Backlog,User Story,NL-004,,,,
-NL-004-007,Create citizen reporting interface,Backlog,User Story,NL-004,,,,
-NL-004-008,Implement automated dispatch system,Backlog,User Story,NL-004,,,,
-NL-004-009,Monitor collection efficiency metrics,Backlog,User Story,NL-004,,,,
-NL-004-010,Integrate recycling classification AI,Backlog,User Story,NL-004,,,,
-NL-004-011,Create waste management dashboard,Backlog,User Story,NL-004,,,,
-NL-004-014,Generate sustainability reports,Backlog,User Story,NL-004,,,,
-NL-004-015,Partner with waste reduction programs,Backlog,User Story,NL-004,,,,
+ID,Name,State,Type,Parent,StartedDate,ClosedDate,Tags,StateEnteredDate,Story Points
+TZ-001,User authentication system,Done,User Story,AP-001,{w-145},{w-132},,,13
+TZ-002,Fix login timeout issue,Done,Bug,AP-001,{w-134},{w-132},,,3
+TZ-003,Dashboard performance optimization,Done,User Story,AP-001,{w-136},{w-132},,,3
+TZ-004,Payment gateway integration,Done,User Story,AP-001,{w-138},{w-131},,,8
+TZ-005,Error handling for API failures,Done,Bug,AP-001,{w-132},{w-130},,,2
+TZ-006,User profile management,Done,User Story,AP-001,{w-136},{w-129},,,5
+TZ-007,Email notification system,Done,User Story,AP-001,{w-131},{w-129},,,3
+TZ-008,Fix memory leak in background process,Done,Bug,AP-002,{w-142},{w-129},,,13
+TZ-009,Search functionality enhancement,Done,User Story,AP-002,{w-139},{w-129},,,13
+TZ-010,Mobile responsive design updates,Done,User Story,AP-002,{w-141},{w-128},,,8
+TZ-011,Database query optimization,Done,Bug,AP-002,{w-141},{w-128},,,13
+TZ-012,Two-factor authentication,Done,User Story,AP-002,{w-128},{w-127},,,2
+TZ-013,File upload validation,Done,User Story,AP-002,{w-134},{w-127},,,8
+TZ-014,Fix session management bug,Done,Bug,AP-002,{w-128},{w-126},,,3
+TZ-015,Report generation feature,Done,User Story,AP-002,{w-130},{w-126},,,3
+TZ-016,User settings customization,Done,User Story,AP-002,{w-130},{w-125},,,5
+TZ-017,API rate limiting implementation,Done,Bug,AP-002,{w-127},{w-124},,,3
+TZ-018,Social media integration,Done,User Story,AP-002,{w-124},{w-123},,,1
+TZ-019,Data export functionality,Done,User Story,AP-002,{w-132},{w-122},,,13
+TZ-020,Fix timezone display issue,Done,Bug,AP-002,{w-125},{w-121},,,5
+TZ-021,Advanced filtering options,Done,User Story,AP-002,{w-123},{w-120},,,8
+TZ-022,Notification preferences,Done,User Story,AP-002,{w-122},{w-120},,,1
+TZ-023,Performance monitoring setup,Done,Bug,AP-002,{w-133},{w-120},,,13
+TZ-024,User onboarding flow,Done,User Story,AP-002,{w-123},{w-120},,,5
+TZ-025,Fix drag and drop functionality,Done,Bug,AP-002,{w-121},{w-119},,,2
+TZ-026,Data visualization components,Done,User Story,AP-002,{w-120},{w-119},,,2
+TZ-027,Automated backup system,Done,User Story,AP-002,{w-120},{w-118},,,1
+TZ-028,Security audit fixes,Done,Bug,AP-003,{w-125},{w-117},,,8
+TZ-029,Real-time collaboration features,Done,User Story,AP-003,{w-125},{w-117},,,8
+TZ-030,Fix chart rendering issue,Done,Bug,AP-003,{w-117},{w-115},,,1
+TZ-031,Advanced user permissions,Done,User Story,AP-003,{w-119},{w-114},,,8
+TZ-032,Mobile app push notifications,Done,User Story,AP-003,{w-118},{w-113},,,5
+TZ-033,Fix data synchronization bug,Done,Bug,AP-003,{w-119},{w-113},,,13
+TZ-034,Admin dashboard enhancements,Done,User Story,AP-003,{w-114},{w-112},,,1
+TZ-035,Bulk operations interface,Done,User Story,AP-003,{w-118},{w-111},,,8
+TZ-036,Fix email template rendering,Done,Bug,AP-003,{w-116},{w-111},,,8
+TZ-037,Third-party API integration,Done,User Story,AP-003,{w-121},{w-111},,,13
+TZ-038,Performance testing suite,Done,User Story,,{w-123},{w-110},,,13
+TZ-039,Accessibility improvements,Waiting for Verification,User Story,,{-5},,,{-6},2
+TZ-040,Database migration tools,Implementation,User Story,,{-3},,Blocked,{-12},5
+TZ-300,Hotfix triage for login regression,Analysing,User Story,AP-001,{-0},,,{-0},1
+TZ-041,Telemetry data ingestion pipeline,Done,User Story,ALT-91,{w-114},{w-110},,,3
+TZ-042,Real-time sensor monitoring UI,Done,User Story,ALT-91,{w-111},{w-110},,,2
+TZ-043,Spacecraft health metrics dashboard,Done,User Story,ALT-91,{w-114},{w-109},,,5
+TZ-044,Telemetry data validation layer,Done,User Story,ALT-91,{w-111},{w-109},,,5
+TZ-045,Historical telemetry archive system,Done,User Story,ALT-91,{w-110},{w-107},,,2
+TZ-046,Anomaly detection alerting,Done,User Story,ALT-91,{w-112},{w-105},,,8
+TZ-047,Telemetry API endpoints,Done,User Story,ALT-91,{w-106},{w-104},,,3
+TZ-048,Data visualization components,Done,User Story,ALT-91,{w-106},{w-104},,,2
+TZ-049,Performance optimization for charts,Done,User Story,ALT-91,{w-105},{w-104},,,2
+TZ-050,Telemetry export functionality,Done,User Story,ALT-91,{w-104},{w-101},,,2
+TZ-051,Multi-spacecraft support,Done,User Story,ALT-91,{w-102},{w-101},,,1
+TZ-052,Custom dashboard layouts,Done,User Story,ALT-91,{w-104},{w-101},,,3
+TZ-053,Telemetry data compression,Done,User Story,ALT-91,{w-105},{w-97},,,5
+TZ-054,Real-time alert notifications,Done,User Story,ALT-91,{w-97},{w-96},,,2
+TZ-055,Dashboard mobile responsiveness,Done,User Story,ALT-91,{w-97},{w-96},,,1
+TZ-056,Telemetry data retention policies,Done,User Story,ALT-91,{w-98},{w-95},,,8
+TZ-057,Final dashboard integration testing,Done,User Story,ALT-91,{w-99},{w-95},,,3
+TZ-058,Escape pod structural design review,Done,User Story,ALT-92,{w-97},{w-95},,,2
+TZ-059,Emergency ejection mechanism testing,Done,User Story,ALT-92,{w-104},{w-94},,,13
+TZ-060,Life support integration validation,Done,User Story,ALT-92,{w-97},{w-94},,,3
+TZ-061,Certification documentation finalization,Done,User Story,ALT-92,{w-97},{w-94},,,5
+TZ-062,Network topology design,Done,User Story,ALT-93,{w-100},{w-94},,,5
+TZ-063,Primary communication link setup,Done,User Story,ALT-93,{w-94},{w-93},,,1
+TZ-064,Secondary backup channel config,Done,User Story,ALT-93,{w-102},{w-92},,,13
+TZ-065,Automatic failover mechanism,Done,User Story,ALT-93,{w-92},{w-91},,,1
+TZ-066,Network health monitoring dashboard,Done,User Story,ALT-93,{w-91},{w-90},,,2
+TZ-067,Signal strength optimization,Done,User Story,ALT-93,{w-94},{w-90},,,5
+TZ-068,Redundancy testing suite,Done,User Story,ALT-93,{w-96},{w-89},,,13
+TZ-069,Load balancing implementation,Done,User Story,ALT-93,{w-90},{w-89},,,1
+TZ-070,Network latency reduction,Done,User Story,ALT-93,{w-90},{w-89},,,1
+TZ-071,Emergency communication protocol,Done,User Story,ALT-93,{w-95},{w-89},,,13
+TZ-072,Satellite handoff automation,Done,User Story,ALT-93,{w-91},{w-88},,,3
+TZ-073,Connection retry logic,Done,User Story,ALT-93,{w-91},{w-88},,,5
+TZ-074,Network security hardening,Done,User Story,ALT-93,{w-88},{w-87},,,1
+TZ-075,Bandwidth optimization,Done,User Story,ALT-93,{w-89},{w-87},,,2
+TZ-076,Multi-path routing implementation,Done,User Story,ALT-93,{w-91},{w-86},,,5
+TZ-077,Network diagnostics tools,Done,User Story,ALT-93,{w-87},{w-85},,,1
+TZ-078,Redundancy protocol documentation,Done,User Story,ALT-93,{w-86},{w-84},,,3
+TZ-079,Final network stress testing,Done,User Story,ALT-93,{w-87},{w-84},,,3
+TZ-080,Redundancy certification approval,Done,User Story,ALT-93,{w-87},{w-84},,,8
+TZ-081,Physics engine foundation,Done,User Story,ALT-94,{w-93},{w-83},,,8
+TZ-082,Gravitational force calculations,Done,User Story,ALT-94,{w-89},{w-83},,,8
+TZ-083,Orbital trajectory modeling,Done,User Story,ALT-94,{w-83},{w-82},,,2
+TZ-084,3D visualization rendering,Done,User Story,ALT-94,{w-90},{w-82},,,8
+TZ-085,Time acceleration controls,Done,User Story,ALT-94,{w-88},{w-82},,,13
+TZ-086,Multi-body problem solver,Done,User Story,ALT-94,{w-86},{w-81},,,3
+TZ-087,Spacecraft dynamics integration,Done,User Story,ALT-94,{w-82},{w-80},,,2
+TZ-088,Collision detection system,Done,User Story,ALT-94,{w-81},{w-79},,,2
+TZ-089,Maneuver planning interface,Done,User Story,ALT-94,{w-79},{w-78},,,1
+TZ-090,Delta-V calculator,Done,User Story,ALT-94,{w-80},{w-78},,,3
+TZ-091,Simulation save/load functionality,Done,User Story,ALT-94,{w-82},{w-78},,,5
+TZ-092,Performance optimization,Done,User Story,ALT-94,{w-79},{w-78},,,3
+TZ-093,User tutorial system,Done,User Story,ALT-94,{w-80},{w-77},,,2
+TZ-094,Scenario template library,Done,User Story,ALT-94,{w-79},{w-77},,,2
+TZ-095,Export simulation data,Done,User Story,ALT-94,{w-77},{w-74},,,5
+TZ-096,Final acceptance testing,Done,User Story,ALT-94,{w-80},{w-74},,,8
+TZ-097,Biometric sensor integration,Done,User Story,ALT-95,{w-74},{w-73},,,2
+TZ-098,Heart rate monitoring module,Done,User Story,ALT-95,{w-82},{w-72},,,8
+TZ-099,Blood pressure tracking,Done,User Story,ALT-95,{w-76},{w-71},,,5
+TZ-100,Oxygen saturation sensors,Done,User Story,ALT-95,{w-74},{w-70},,,5
+TZ-101,Temperature monitoring system,Done,User Story,ALT-95,{w-79},{w-69},,,8
+TZ-102,Sleep pattern analysis,Done,User Story,ALT-95,{w-71},{w-69},,,3
+TZ-103,Exercise activity tracking,Done,User Story,ALT-95,{w-73},{w-69},,,5
+TZ-104,Nutrition intake logging,Done,User Story,ALT-95,{w-70},{w-69},,,3
+TZ-105,Hydration level monitoring,Done,User Story,ALT-95,{w-78},{w-68},,,8
+TZ-106,Stress level indicators,Done,User Story,ALT-95,{w-81},{w-68},,,13
+TZ-107,Medical alert system,Done,User Story,ALT-95,{w-72},{w-66},,,13
+TZ-108,Health dashboard UI,Done,User Story,ALT-95,{w-67},{w-65},,,2
+TZ-109,Historical health data archive,Done,User Story,ALT-95,{w-69},{w-64},,,8
+TZ-110,Crew health reports generation,Done,User Story,ALT-95,{w-69},{w-64},,,3
+TZ-111,Anomaly detection algorithms,Done,User Story,ALT-95,{w-68},{w-63},,,5
+TZ-112,Medical officer notification system,Done,User Story,ALT-95,{w-65},{w-62},,,3
+TZ-113,Telemedicine integration,Done,User Story,ALT-95,{w-65},{w-62},,,2
+TZ-114,Predictive health analytics,Done,User Story,ALT-95,{w-67},{w-61},,,13
+TZ-115,Crew quarantine protocols,Done,User Story,ALT-95,{w-63},{w-60},,,3
+TZ-116,Mental health tracking,Done,User Story,ALT-95,{w-65},{w-59},,,13
+TZ-117,Medication reminder system,Done,User Story,ALT-95,{w-64},{w-59},,,3
+TZ-118,Emergency medical response triggers,Done,User Story,ALT-95,{w-60},{w-58},,,2
+TZ-119,Health data privacy controls,Done,User Story,ALT-95,{w-59},{w-57},,,3
+TZ-120,Wearable device synchronization,Done,User Story,ALT-95,{w-69},{w-56},,,13
+TZ-121,Mobile health app interface,Done,User Story,ALT-95,{w-56},{w-55},,,2
+TZ-122,Voice-activated health queries,Done,User Story,ALT-95,{w-59},{w-55},,,3
+TZ-123,Health trend visualization,Done,User Story,ALT-95,{w-65},{w-55},,,13
+TZ-124,Crew comparison analytics,Done,User Story,ALT-95,{w-56},{w-54},,,2
+TZ-125,Medical equipment integration,Done,User Story,ALT-95,{w-59},{w-54},,,3
+TZ-126,System performance testing,Done,User Story,ALT-95,{w-58},{w-53},,,8
+TZ-127,Final medical certification,Done,User Story,ALT-95,{w-60},{w-52},,,8
+TZ-128,Safety protocol documentation,Done,User Story,ALT-96,{w-54},{w-52},,,5
+TZ-129,Automated pre-launch checklist,Done,User Story,ALT-96,{w-53},{w-52},,,1
+TZ-130,Hazard detection sensors,Done,User Story,ALT-96,{w-55},{w-51},,,5
+TZ-131,Emergency shutdown systems,Done,User Story,ALT-96,{w-52},{w-51},,,2
+TZ-132,Fire suppression automation,Done,User Story,ALT-96,{w-52},{w-51},,,1
+TZ-133,Fuel leak detection,Done,User Story,ALT-96,{w-52},{w-51},,,2
+TZ-134,Pressure monitoring system,Done,User Story,ALT-96,{w-57},{w-50},,,5
+TZ-135,Weather condition integration,Done,User Story,ALT-96,{w-51},{w-49},,,2
+TZ-136,Lightning protection automation,Done,User Story,ALT-96,{w-49},{w-48},,,1
+TZ-137,Personnel tracking system,Done,User Story,ALT-96,{w-51},{w-48},,,2
+TZ-138,Access control automation,Done,User Story,ALT-96,{w-50},{w-46},,,8
+TZ-139,Communication system integration,Done,User Story,ALT-96,{w-51},{w-45},,,8
+TZ-140,Launch abort sequence automation,Done,User Story,ALT-96,{w-44},{w-43},,,3
+TZ-141,System redundancy verification,Done,User Story,ALT-96,{w-47},{w-42},,,3
+TZ-142,Real-time alert dashboard,Done,User Story,ALT-96,{w-45},{w-41},,,5
+TZ-143,Safety drill simulation mode,Done,User Story,ALT-96,{w-47},{w-40},,,13
+TZ-144,Compliance reporting system,Done,User Story,ALT-96,{w-48},{w-40},,,8
+TZ-145,Final safety certification,Done,User Story,ALT-96,{w-44},{w-39},,,8
+TZ-146,Heat shield material analysis,Done,User Story,ALT-97,{w-40},{w-39},,,1
+TZ-147,Thermal sensor array setup,Done,User Story,ALT-97,{w-41},{w-39},,,2
+TZ-148,Entry trajectory modeling,Done,User Story,ALT-97,{w-44},{w-38},,,8
+TZ-149,Ablation rate calculations,Done,User Story,ALT-97,{w-48},{w-38},,,8
+TZ-150,Heat distribution simulation,Done,User Story,ALT-97,{w-44},{w-36},,,13
+TZ-151,Structural integrity testing,Done,User Story,ALT-97,{w-37},{w-36},,,1
+TZ-152,Atmospheric density modeling,Done,User Story,ALT-97,{w-41},{w-36},,,13
+TZ-153,Temperature gradient analysis,Done,User Story,ALT-97,{w-39},{w-35},,,3
+TZ-154,Plasma flow visualization,Done,User Story,ALT-97,{w-42},{w-35},,,8
+TZ-155,Material stress testing,Done,User Story,ALT-97,{w-37},{w-35},,,3
+TZ-156,Entry angle optimization,Done,User Story,ALT-97,{w-38},{w-34},,,5
+TZ-157,Heat shield design iterations,Done,User Story,ALT-97,{w-37},{w-33},,,8
+TZ-158,Cooling system integration,Done,User Story,ALT-97,{w-34},{w-33},,,1
+TZ-159,Real-time telemetry monitoring,Done,User Story,ALT-97,{w-36},{w-31},,,5
+TZ-160,Safety margin calculations,Done,User Story,ALT-97,{w-34},{w-30},,,5
+TZ-161,Entry profile database,Done,User Story,ALT-97,{w-33},{w-29},,,3
+TZ-162,Predictive failure analysis,Done,User Story,ALT-97,{w-28},{w-27},,,2
+TZ-163,Heat analysis report generation,Done,User Story,ALT-97,{w-33},{w-27},,,8
+TZ-164,Wind tunnel validation,Done,User Story,ALT-97,{w-29},{w-26},,,8
+TZ-165,Final analysis documentation,Done,User Story,ALT-97,{w-31},{w-25},,,5
+TZ-166,Communication protocol design,Done,User Story,ALT-98,{w-29},{w-25},,,5
+TZ-167,Voice communication channels,Done,User Story,ALT-98,{w-28},{w-24},,,8
+TZ-168,Video conferencing system,Done,User Story,ALT-98,{w-34},{w-24},,,13
+TZ-169,Data transmission optimization,Done,User Story,ALT-98,{w-27},{w-24},,,5
+TZ-170,Encryption implementation,Done,User Story,ALT-98,{w-28},{w-24},,,3
+TZ-171,Multi-station coordination,Done,User Story,ALT-98,{w-24},{w-23},,,1
+TZ-172,Priority messaging system,Done,User Story,ALT-98,{w-27},{w-23},,,5
+TZ-173,Communication logging,Done,User Story,ALT-98,{w-24},{w-22},,,1
+TZ-174,Alert broadcast system,Done,User Story,ALT-98,{w-26},{w-21},,,8
+TZ-175,Screen sharing functionality,Done,User Story,ALT-98,{w-23},{w-21},,,2
+TZ-176,Contact directory integration,Done,User Story,ALT-98,{w-23},{w-18},,,13
+TZ-177,Communication analytics dashboard,Done,User Story,ALT-98,{w-20},{w-17},,,2
+TZ-178,Mobile communication app,Done,User Story,ALT-98,{w-21},{w-17},,,5
+TZ-179,Offline message queuing,Done,User Story,ALT-98,{w-20},{w-16},,,8
+TZ-180,Final hub integration testing,Done,User Story,ALT-98,{w-21},{w-15},,,8
+TZ-181,Stage separation mechanism design,Done,User Story,ALT-99,{w-17},{w-15},,,3
+TZ-182,Explosive bolt testing,Done,User Story,ALT-99,{w-17},{w-15},,,1
+TZ-183,Separation sensor validation,Done,User Story,ALT-99,{w-19},{w-14},,,5
+TZ-184,Thrust vectoring verification,Done,User Story,ALT-99,{w-16},{w-14},,,2
+TZ-185,Full separation test execution,Done,User Story,ALT-99,{w-26},{w-13},,,8
+TZ-186,Power distribution architecture,Done,User Story,ALT-100,{w-19},{w-12},,,13
+TZ-187,Solar panel integration,Done,User Story,ALT-100,{w-13},{w-10},,,3
+TZ-188,Battery management system,Done,User Story,ALT-100,{w-19},{w-9},,,13
+TZ-189,Power consumption monitoring,Done,User Story,ALT-100,{w-10},{w-8},,,1
+TZ-190,Load balancing controller,Done,User Story,ALT-100,{w-10},{w-7},,,3
+TZ-191,Emergency power protocols,Done,User Story,ALT-100,{w-8},{w-7},,,2
+TZ-192,Redundant power pathways,Done,User Story,ALT-100,{w-11},{w-7},,,5
+TZ-193,Power efficiency optimization,Done,User Story,ALT-100,{w-10},{w-7},,,5
+TZ-194,Voltage regulation system,Done,User Story,ALT-100,{w-13},{w-6},,,5
+TZ-195,Circuit protection automation,Done,User Story,ALT-100,{w-16},{w-6},,,13
+TZ-196,Power grid monitoring dashboard,Done,User Story,ALT-100,{w-10},{w-6},,,5
+TZ-197,Energy storage optimization,Done,Bug,ALT-100,{w-6},{w-3},,,2
+TZ-198,Power distribution testing,Done,User Story,ALT-100,{w-8},{w-3},,,8
+TZ-199,System integration validation,Done,User Story,ALT-100,{w-7},{w-2},,,5
+TZ-200,Grid performance analytics,Done,User Story,ALT-100,{w-5},{w-2},,,8
+TZ-201,Final power grid certification,Done,Bug,ALT-100,{w-4},{w-2},,,1
+TZ-202,Comprehensive system testing,Done,User Story,ALT-100,{w-8},{w-1},,,8
+TZ-203,Documentation finalization,Done,Bug,ALT-100,{w-3},{w-1},,,3
+TZ-204,Performance testing suite,Next,User Story,,{-2},,,{-1},1
+TZ-205,Accessibility improvements,Backlog,User Story,,,,,,3
+TZ-206,Database migration tools,Backlog,Bug,,,,,,2
+TV-055,Mission control dashboard foundation,Backlog,User Story,AP-004,,,,,5
+TV-056,Spacecraft telemetry data collection,Backlog,User Story,AP-004,,,,,1
+TV-057,Flight path calculation engine,Backlog,User Story,AP-004,,,,,1
+TV-058,Solar system mapping interface,Backlog,User Story,AP-004,,,,,5
+TV-059,Asteroid field detection system,Backlog,User Story,AP-004,,,,,5
+TV-060,Warp drive diagnostics panel,Backlog,User Story,AP-004,,,,,3
+TV-061,Communication array configuration,Backlog,User Story,AP-004,,,,,1
+TV-062,Planetary atmosphere analysis,Backlog,User Story,AP-004,,,,,3
+TV-063,Star chart visualization engine,Backlog,User Story,AP-004,,,,,8
+TV-064,Navigation computer calibration,Backlog,User Story,AP-004,,,,,1
+TV-065,Interstellar communication protocols,Backlog,User Story,AP-004,,,,,3
+TV-066,Quantum sensor data processing,Backlog,User Story,AP-004,,,,,2
+TV-067,Deep space scanning algorithms,Backlog,User Story,AP-004,,,,,5
+TV-068,Gravitational field mapping,Backlog,User Story,AP-004,,,,,1
+TV-069,Emergency navigation backup systems,Backlog,User Story,AP-004,,,,,1
+TV-070,Cosmic radiation shielding controls,Backlog,User Story,AP-004,,,,,5
+TV-071,Hyperdrive jump calculations,Backlog,User Story,AP-004,,,,,5
+TV-072,Space-time distortion detection,Backlog,User Story,AP-004,,,,,3
+TV-073,Orbital mechanics simulation,Backlog,User Story,AP-004,,,,,1
+TV-074,Solar wind analysis dashboard,Backlog,User Story,AP-004,,,,,3
+TV-075,Nebula navigation protocols,Backlog,User Story,AP-004,,,,,8
+TV-076,Alien signal decryption module,Backlog,User Story,AP-004,,,,,1
+TV-077,Black hole proximity warnings,Backlog,User Story,AP-004,,,,,3
+TV-078,Galaxy map integration layer,Backlog,User Story,AP-004,,,,,2
+TV-079,Ion storm tracking system,Backlog,User Story,AP-004,,,,,5
+TV-080,Plasma field navigation tools,Backlog,User Story,AP-004,,,,,1
+TV-081,Comet trajectory prediction,Backlog,User Story,AP-004,,,,,1
+TV-082,Stellar cartography database,Backlog,User Story,AP-005,,,,,5
+TV-083,Pulsar beacon synchronization,Backlog,User Story,AP-005,,,,,5
+TV-084,Void space anomaly detection,Backlog,User Story,AP-005,,,,,3
+TV-085,Galactic coordinate conversion,Backlog,User Story,AP-005,,,,,1
+TV-086,Wormhole stability analysis,Backlog,User Story,AP-005,,,,,3
+TV-087,Dark matter density mapping,Backlog,User Story,AP-005,,,,,8
+TV-088,Exoplanet habitability scanner,Backlog,User Story,AP-005,,,,,1
+TV-089,Antimatter containment monitoring,Backlog,User Story,AP-005,,,,,3
+TV-090,Temporal anomaly detection grid,Backlog,User Story,AP-005,,,,,2
+TV-091,Supernova blast zone calculator,Backlog,User Story,AP-005,,,,,5
+TV-092,Quantum entanglement communication,Backlog,User Story,AP-005,,,,,1
+TV-093,Multidimensional space mapping,Backlog,User Story,AP-005,,,,,1
+TV-094,Stellar navigation system integration,Backlog,User Story,AP-005,,,,,5
+ORI-501,Design AI decision tree framework,Backlog,User Story,ORI-107,,,,,5
+ORI-502,Prototype voice command interface,Backlog,User Story,ORI-107,,,,,3
+ORI-503,Develop anomaly detection algorithms,Backlog,User Story,ORI-107,,,,,1
+ORI-504,Create mission timeline optimization,Backlog,User Story,ORI-107,,,,,3
+ORI-505,Build crew health monitoring integration,Backlog,User Story,ORI-107,,,,,8
+ORI-506,Test emergency response automation,Backlog,User Story,ORI-107,,,,,1
+ORI-507,Design predictive maintenance alerts,Backlog,User Story,ORI-107,,,,,3
+ORI-601,Map asteroid belt navigation routes,Backlog,User Story,ORI-104,,,,,2
+ORI-602,Prototype gravitational slingshot calculator,Backlog,User Story,ORI-104,,,,,5
+ORI-603,Design neutron star proximity warnings,Backlog,User Story,ORI-104,,,,,1
+ORI-604,Build interstellar dust density mapper,Backlog,User Story,ORI-104,,,,,1
+ORI-605,Create dark matter detection grid,Backlog,User Story,ORI-104,,,,,5
+ORI-701,Research cosmic ray absorption materials,Backlog,User Story,ORI-105,,,,,5
+ORI-702,Test electromagnetic field generators,Backlog,User Story,ORI-105,,,,,3
+ORI-703,Design modular shield configurations,Backlog,User Story,ORI-105,,,,,1
+ORI-704,Prototype crew quarters protection,Backlog,User Story,ORI-105,,,,,3
+ORI-705,Build radiation exposure monitoring,Backlog,User Story,ORI-105,,,,,8
+ORI-706,Test shielding effectiveness metrics,Backlog,User Story,ORI-105,,,,,1
+ORI-801,Design quantum entanglement transmitter,Backlog,User Story,ORI-106,,,,,3
+ORI-802,Build quantum state stabilization,Backlog,User Story,ORI-106,,,,,2
+ORI-803,Test long-distance quantum links,Backlog,User Story,ORI-106,,,,,5
+ORI-804,Prototype encryption key distribution,Backlog,User Story,ORI-106,,,,,1
+ORI-805,Create quantum error correction,Backlog,User Story,ORI-106,,,,,1
+ORI-806,Design quantum repeater network,Backlog,User Story,ORI-106,,,,,5
+ORI-807,Build quantum channel authentication,Backlog,User Story,ORI-106,,,,,5
+ORI-808,Test quantum decoherence mitigation,Backlog,User Story,ORI-106,,,,,3
+ORI-901,Design solar plasma detection array,Backlog,User Story,ORI-108,,,,,1
+ORI-902,Build coronal mass ejection predictor,Backlog,User Story,ORI-108,,,,,3
+ORI-903,Create magnetic field monitoring,Backlog,User Story,ORI-108,,,,,8
+ORI-904,Prototype spacecraft alert system,Backlog,User Story,ORI-108,,,,,1
+ORI-1001,Design cryogenic tank insulation,Backlog,User Story,ORI-109,,,,,3
+ORI-1002,Test liquid hydrogen containment,Backlog,User Story,ORI-109,,,,,2
+ORI-1003,Build automated refueling system,Backlog,User Story,ORI-109,,,,,5
+ORI-1004,Prototype fuel transfer mechanisms,Backlog,User Story,ORI-109,,,,,1
+ORI-1005,Create temperature monitoring network,Backlog,User Story,ORI-109,,,,,1
+ORI-1006,Design emergency venting protocols,Backlog,User Story,ORI-109,,,,,5
+ORI-1101,Design zero-g assembly protocols,Backlog,User Story,ORI-110,,,,,5
+ORI-1102,Build microgravity material handling,Backlog,User Story,ORI-110,,,,,3
+ORI-1103,Test precision manufacturing tools,Backlog,User Story,ORI-110,,,,,1
+ORI-1104,Create quality control systems,Backlog,User Story,ORI-110,,,,,3
+ORI-1105,Prototype automated fabrication,Backlog,User Story,ORI-110,,,,,8
+ORI-1106,Design contamination prevention,Backlog,User Story,ORI-110,,,,,1
+ORI-1107,Build orbital platform stabilization,Backlog,User Story,ORI-110,,,,,3
+OE-001-005,Establish seafloor reference points,Backlog,User Story,OE-001,,,,,2
+OE-001-006,Process 3D terrain data,Backlog,User Story,OE-001,,,,,5
+OE-001-007,Create interactive depth maps,Backlog,User Story,OE-001,,,,,1
+OE-001-008,Validate mapping accuracy,Backlog,User Story,OE-001,,,,,1
+OE-001-009,Publish geological findings,Backlog,User Story,OE-001,,,,,5
+OE-002-005,Install coral nursery structures,Backlog,User Story,OE-002,,,,,5
+OE-002-006,Monitor water quality parameters,Backlog,User Story,OE-002,,,,,3
+OE-002-007,Train local dive volunteers,Backlog,User Story,OE-002,,,,,1
+OE-004-001,Site selection and environmental impact study,Backlog,User Story,OE-004,,,,,3
+OE-004-002,Design modular station architecture,Backlog,User Story,OE-004,,,,,8
+OE-004-003,Engineer pressure-resistant hull,Backlog,User Story,OE-004,,,,,1
+OE-004-004,Install life support systems,Backlog,User Story,OE-004,,,,,3
+OE-004-005,Set up power generation units,Backlog,User Story,OE-004,,,,,2
+OE-004-006,Build laboratory facilities,Backlog,User Story,OE-004,,,,,5
+OE-004-007,Create emergency evacuation systems,Backlog,User Story,OE-004,,,,,1
+OE-004-008,Establish surface communication link,Backlog,User Story,OE-004,,,,,1
+OE-006-001,Design autonomous navigation system,Backlog,User Story,OE-006,,,,,5
+OE-006-002,Build submarine hull prototypes,Backlog,User Story,OE-006,,,,,5
+OE-006-003,Install sensor packages,Backlog,User Story,OE-006,,,,,3
+OE-006-004,Develop AI piloting software,Backlog,User Story,OE-006,,,,,1
+OE-006-005,Create fleet command center,Backlog,User Story,OE-006,,,,,3
+OE-006-006,Test submarine endurance,Backlog,User Story,OE-006,,,,,8
+OE-006-007,Program mission coordination protocols,Backlog,User Story,OE-006,,,,,1
+OE-006-008,Deploy first submarine units,Backlog,User Story,OE-006,,,,,3
+OE-006-009,Monitor fleet performance,Backlog,User Story,OE-006,,,,,2
+OE-006-010,Scale manufacturing operations,Backlog,User Story,OE-006,,,,,5
+OE-006-011,Establish maintenance protocols,Backlog,User Story,OE-006,,,,,1
+OE-007-009,Restore damaged forest areas,Backlog,User Story,OE-007,,,,,1
+OE-007-010,Document biodiversity improvements,Backlog,User Story,OE-007,,,,,5
+OE-008-001,Conduct geological surveys,Backlog,User Story,OE-008,,,,,5
+OE-008-002,Map mineral deposit locations,Backlog,User Story,OE-008,,,,,3
+OE-008-003,Analyze sediment core samples,Backlog,User Story,OE-008,,,,,1
+OE-008-004,Assess extraction feasibility,Backlog,User Story,OE-008,,,,,3
+OE-008-005,Evaluate environmental impact,Backlog,User Story,OE-008,,,,,8
+OE-008-006,Design sustainable extraction methods,Backlog,User Story,OE-008,,,,,1
+OE-010-001,Install satellite tracking equipment on whales,Backlog,User Story,OE-010,,,,,3
+OE-010-002,Set up hydrophone listening stations,Backlog,User Story,OE-010,,,,,2
+OE-010-003,Create whale song recognition software,Backlog,User Story,OE-010,,,,,5
+OE-010-004,Map historical migration routes,Backlog,User Story,OE-010,,,,,1
+OE-010-005,Monitor feeding ground usage,Backlog,User Story,OE-010,,,,,1
+OE-010-006,Track breeding area patterns,Backlog,User Story,OE-010,,,,,5
+OE-010-007,Analyze climate impact on migration,Backlog,User Story,OE-010,,,,,5
+NL-001-001,Install traffic cameras at key intersections,Backlog,User Story,NL-001,,,,,3
+NL-001-002,Deploy vehicle detection sensors,Backlog,User Story,NL-001,,,,,1
+NL-001-003,Build real-time traffic data pipeline,Backlog,User Story,NL-001,,,,,3
+NL-001-004,Develop traffic flow prediction algorithms,Backlog,User Story,NL-001,,,,,8
+NL-001-005,Create dynamic signal timing system,Backlog,User Story,NL-001,,,,,1
+NL-001-006,Integrate with emergency vehicle priority,Backlog,User Story,NL-001,,,,,3
+NL-001-007,Build traffic monitoring dashboard,Backlog,User Story,NL-001,,,,,2
+NL-001-008,Test AI optimization performance,Backlog,User Story,NL-001,,,,,5
+NL-001-009,Deploy citywide traffic management,Backlog,User Story,NL-001,,,,,1
+NL-001-010,Monitor congestion reduction metrics,Backlog,User Story,NL-001,,,,,1
+NL-002-001,Install IoT sensors in municipal buildings,Backlog,User Story,NL-002,,,,,5
+NL-002-002,Deploy smart HVAC control systems,Backlog,User Story,NL-002,,,,,5
+NL-002-003,Implement automated lighting management,Backlog,User Story,NL-002,,,,,3
+NL-002-004,Create energy consumption analytics,Backlog,User Story,NL-002,,,,,1
+NL-002-005,Build occupancy detection system,Backlog,User Story,NL-002,,,,,3
+NL-002-006,Develop predictive maintenance alerts,Backlog,User Story,NL-002,,,,,8
+NL-002-007,Integrate security system automation,Backlog,User Story,NL-002,,,,,1
+NL-002-008,Create facility manager dashboard,Backlog,User Story,NL-002,,,,,3
+NL-003-001,Install citywide surveillance camera network,Backlog,User Story,NL-003,,,,,2
+NL-003-002,Deploy audio gunshot detection sensors,Backlog,User Story,NL-003,,,,,5
+NL-003-003,Build crime pattern recognition AI,Backlog,User Story,NL-003,,,,,1
+NL-003-004,Create predictive policing algorithms,Backlog,User Story,NL-003,,,,,1
+NL-003-005,Develop emergency alert automation,Backlog,User Story,NL-003,,,,,5
+NL-003-006,Integrate with 911 dispatch system,Backlog,User Story,NL-003,,,,,5
+NL-003-007,Build real-time incident mapping,Backlog,User Story,NL-003,,,,,3
+NL-003-008,Create officer mobile response app,Backlog,User Story,NL-003,,,,,1
+NL-003-009,Implement crowd monitoring system,Backlog,User Story,NL-003,,,,,3
+NL-004-001,Install smart sensors in waste bins,Backlog,User Story,NL-004,,,,,8
+NL-004-002,Deploy GPS tracking on collection trucks,Backlog,User Story,NL-004,,,,,1
+NL-004-003,Build waste level monitoring system,Backlog,User Story,NL-004,,,,,3
+NL-004-004,Create dynamic collection route optimization,Backlog,User Story,NL-004,,,,,2
+NL-004-005,Develop predictive bin fill algorithms,Backlog,User Story,NL-004,,,,,5
+NL-004-006,Build driver mobile navigation app,Backlog,User Story,NL-004,,,,,1
+NL-004-007,Create citizen reporting interface,Backlog,User Story,NL-004,,,,,1
+NL-004-008,Implement automated dispatch system,Backlog,User Story,NL-004,,,,,5
+NL-004-009,Monitor collection efficiency metrics,Backlog,User Story,NL-004,,,,,5
+NL-004-010,Integrate recycling classification AI,Backlog,User Story,NL-004,,,,,3
+NL-004-011,Create waste management dashboard,Backlog,User Story,NL-004,,,,,1
+NL-004-014,Generate sustainability reports,Backlog,User Story,NL-004,,,,,3
+NL-004-015,Partner with waste reduction programs,Backlog,User Story,NL-004,,,,,8

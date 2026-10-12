@@ -218,6 +218,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task GetWorkItemsForTeam_AdditionalFieldColumns_ReadsEachDefinedFieldAndSkipsEmptyCellsAndMissingColumns()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam("team-valid-additional-fields.csv");
+            team.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 7, DisplayName = "Story Points", Reference = "Story Points" });
+            team.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 8, DisplayName = "Risk", Reference = "Risk" });
+
+            var workItems = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItems, Has.Count.EqualTo(2));
+                Assert.That(workItems[0].AdditionalFieldValues, Is.EquivalentTo(new Dictionary<int, string?> { [7] = "5" }));
+                Assert.That(workItems[1].AdditionalFieldValues, Is.Empty);
+            }
+        }
+
+        [Test]
         public async Task GetWorkItemsForTeam_SomeOptionalRows_LoadsCorrect()
         {
             var subject = CreateSubject();

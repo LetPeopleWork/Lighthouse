@@ -30,6 +30,8 @@ namespace Lighthouse.Backend.Tests.Factories
 
         private static readonly DayOfWeek[] OnlyThursday = [DayOfWeek.Thursday];
 
+        private static readonly object[] FibonacciPoints = ["1", "2", "3", "5", "8", "13"];
+
         [Test]
         public void CreateDemoWorkTrackingSystemConnection_CreatesWorkTrackingSystemConnectionWithCorrectDetails()
         {
@@ -108,6 +110,50 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(demoTeam.DataRetrievalValue, Does.Not.Contain("{"));
                 Assert.That(demoTeam.DataRetrievalValue, Does.Not.Contain("}"));
             }
+        }
+
+        [Test]
+        public void CreateDemoTeam_GoodThroughputTeam_EstimatesInStoryPointsFromTheDemoConnection()
+        {
+            var subject = CreateSubject();
+
+            var connection = subject.CreateDemoWorkTrackingSystemConnection();
+            var zenith = subject.CreateDemoTeam(DemoTeamNames.GoodThroughput);
+
+            var storyPoints = connection.AdditionalFieldDefinitions.SingleOrDefault(field => field.Reference == "Story Points");
+            Assert.That(storyPoints, Is.Not.Null);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(storyPoints!.DisplayName, Is.EqualTo("Story Points"));
+                Assert.That(zenith.EstimationAdditionalFieldDefinitionId, Is.EqualTo(storyPoints.Id));
+                Assert.That(zenith.EstimationUnit, Is.EqualTo("Story Points"));
+                Assert.That(zenith.UseNonNumericEstimation, Is.False);
+                Assert.That(StoryPointsOf(zenith.DataRetrievalValue), Has.All.AnyOf(FibonacciPoints));
+            }
+        }
+
+        [Test]
+        [TestCase("Team Equinox")]
+        [TestCase("Team Gravity")]
+        [TestCase("Team Lightspeed")]
+        [TestCase("Team Meridian")]
+        [TestCase("Team Pulsar")]
+        [TestCase("Team Voyager")]
+        public void CreateDemoTeam_EveryTeamButZenith_HasNoEstimationField(string teamName)
+        {
+            var demoTeam = CreateSubject().CreateDemoTeam(teamName);
+
+            Assert.That(demoTeam.EstimationAdditionalFieldDefinitionId, Is.Null);
+        }
+
+        private static List<string> StoryPointsOf(string csvContent)
+        {
+            var lines = csvContent.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var column = Array.IndexOf(lines[0].Split(','), "Story Points");
+            Assert.That(column, Is.Not.Negative, "the CSV has no Story Points column");
+
+            return [.. lines.Skip(1).Select(line => line.Split(',')[column])];
         }
 
         [Test]

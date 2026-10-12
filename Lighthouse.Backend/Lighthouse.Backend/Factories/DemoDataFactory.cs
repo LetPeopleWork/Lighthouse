@@ -13,6 +13,10 @@ namespace Lighthouse.Backend.Factories
         private const string Backlog = "Backlog";
         private const string Next = "Next";
         private const string Analysing = "Analysing";
+        private const string StoryPoints = "Story Points";
+
+        // Pinned like the connection's own id, so a Team can name its estimation field before anything is saved.
+        private const int StoryPointsFieldId = 1886;
 
         private readonly IWorkTrackingSystemFactory workTrackingSystemFactory;
         private readonly ILighthouseClock clock;
@@ -63,6 +67,12 @@ namespace Lighthouse.Backend.Factories
                 RefinementSettings = CreateDemoRefinementSettings(name),
             };
 
+            if (name == DemoTeamNames.GoodThroughput)
+            {
+                demoTeam.EstimationAdditionalFieldDefinitionId = StoryPointsFieldId;
+                demoTeam.EstimationUnit = StoryPoints;
+            }
+
             return demoTeam;
         }
 
@@ -102,6 +112,13 @@ namespace Lighthouse.Backend.Factories
             workTrackingSystemConnection.Options.Single(x => x.Key == CsvWorkTrackingOptionNames.StateEnteredDateHeader).Value = "StateEnteredDate";
             workTrackingSystemConnection.Options.Single(x => x.Key == CsvWorkTrackingOptionNames.DependsOnHeader).Value = "DependsOn";
             workTrackingSystemConnection.Options.Single(x => x.Key == CsvWorkTrackingOptionNames.SynthesizeStateJourneyForDemo).Value = bool.TrueString;
+
+            workTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                Id = StoryPointsFieldId,
+                DisplayName = StoryPoints,
+                Reference = StoryPoints,
+            });
 
             return workTrackingSystemConnection;
         }

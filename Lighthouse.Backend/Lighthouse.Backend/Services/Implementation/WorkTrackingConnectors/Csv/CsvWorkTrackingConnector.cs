@@ -241,9 +241,27 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
                 Url = url,
                 Order = order,
                 SyncedTransitions = BuildStateEnteredTransitions(csv, owner, mappedState, stateCategory, startedDate, closedDate),
+                AdditionalFieldValues = AdditionalFieldValuesOf(csv, owner.WorkTrackingSystemConnection),
             };
 
             return workItemBase;
+        }
+
+        private static Dictionary<int, string?> AdditionalFieldValuesOf(CsvReader csv, WorkTrackingSystemConnection connection)
+        {
+            var values = new Dictionary<int, string?>();
+
+            foreach (var field in connection.AdditionalFieldDefinitions)
+            {
+                var value = csv.GetField(field.Reference)?.Trim();
+
+                if (!string.IsNullOrEmpty(value))
+                {
+                    values[field.Id] = value;
+                }
+            }
+
+            return values;
         }
 
         private static IReadOnlyList<WorkItemStateTransition> BuildStateEnteredTransitions(
