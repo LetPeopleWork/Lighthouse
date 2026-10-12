@@ -8,7 +8,7 @@ import type {
 } from "@mui/x-data-grid";
 import { DataGrid, GridApiContext, useGridApiRef } from "@mui/x-data-grid";
 import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import ColumnOrderDialog from "./ColumnOrderDialog";
 import DataGridToolbar from "./DataGridToolbar";
@@ -154,35 +154,22 @@ function DataGridBase<T extends GridValidRowModel>({
 			),
 		);
 
-	const applyVisibility = (model: GridColumnVisibilityModel) => {
-		setColumnVisibilityModel(model);
-		updateState((prev) => ({
-			...prev,
-			columnVisibilityModel: overridesOf(model, defaultColumnVisibilityModel),
-		}));
-	};
+	const applyVisibility = useCallback(
+		(model: GridColumnVisibilityModel) => {
+			setColumnVisibilityModel(model);
+			updateState((prev) => ({
+				...prev,
+				columnVisibilityModel: overridesOf(model, defaultColumnVisibilityModel),
+			}));
+		},
+		[updateState, defaultColumnVisibilityModel],
+	);
 
 	// Sanitize persisted visibility to ensure non-hideable columns are always visible.
 	useEffect(() => {
 		if (!hidesUnhideableColumn(columnVisibilityModel, columns)) return;
-		const sanitized = withUnhideableColumnsShown(
-			columnVisibilityModel,
-			columns,
-		);
-		setColumnVisibilityModel(sanitized);
-		updateState((prev) => ({
-			...prev,
-			columnVisibilityModel: overridesOf(
-				sanitized,
-				defaultColumnVisibilityModel,
-			),
-		}));
-	}, [
-		columns,
-		columnVisibilityModel,
-		updateState,
-		defaultColumnVisibilityModel,
-	]);
+		applyVisibility(withUnhideableColumnsShown(columnVisibilityModel, columns));
+	}, [columns, columnVisibilityModel, applyVisibility]);
 
 	// Initialize column order & widths using persisted state or defaults
 	const initialColumnOrder =
