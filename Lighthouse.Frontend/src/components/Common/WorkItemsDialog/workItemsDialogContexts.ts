@@ -4,7 +4,6 @@ export type ColumnId =
 	| "closedDate"
 	| "cycleTime"
 	| "workItemAge"
-	| "ageOrCycleTime"
 	| "parent"
 	| "blockedSince"
 	| "timeInState"
@@ -51,7 +50,6 @@ const STARTED: ColumnId = "startedDate";
 const CLOSED: ColumnId = "closedDate";
 const CYCLE_TIME: ColumnId = "cycleTime";
 const AGE: ColumnId = "workItemAge";
-const AGE_OR_CYCLE_TIME: ColumnId = "ageOrCycleTime";
 const TIME_IN_STATE: ColumnId = "timeInState";
 const ESTIMATE: ColumnId = "estimate";
 const SLE_RISK: ColumnId = "sleRisk";
@@ -68,19 +66,16 @@ export const WORK_ITEMS_DIALOG_CONTEXTS: Record<
 > = {
 	closedItems: withCatalogue([CLOSED, CYCLE_TIME], CYCLE_TIME),
 	estimation: withCatalogue([ESTIMATE, CYCLE_TIME, CLOSED], CYCLE_TIME),
-	arrivals: withCatalogue([STARTED, AGE_OR_CYCLE_TIME], AGE_OR_CYCLE_TIME),
+	arrivals: withCatalogue([STARTED, AGE, CYCLE_TIME], AGE),
 	inProgress: withCatalogue([STARTED, AGE, TIME_IN_STATE, SLE_RISK], AGE),
 	aging: withCatalogue([AGE, "ageBand", SLE_RISK, TIME_IN_STATE], AGE),
 	blocked: withCatalogue([AGE, "blockedSince"], AGE),
 	stale: withCatalogue([AGE, TIME_IN_STATE], AGE),
-	workDistribution: withCatalogue(
-		["parent", AGE_OR_CYCLE_TIME],
-		AGE_OR_CYCLE_TIME,
-	),
-	featureSize: withCatalogue(["size", AGE_OR_CYCLE_TIME, CLOSED], "size"),
+	workDistribution: withCatalogue(["parent", AGE, CYCLE_TIME], AGE),
+	featureSize: withCatalogue(["size", AGE, CYCLE_TIME, CLOSED], "size"),
 	featureChildren: withCatalogue(
-		[STARTED, CLOSED, AGE_OR_CYCLE_TIME, ESTIMATE],
-		AGE_OR_CYCLE_TIME,
+		[STARTED, CLOSED, AGE, CYCLE_TIME, ESTIMATE],
+		AGE,
 	),
 	// Its Feature comes from an endpoint that serves every Portfolio alike, so it has no one
 	// estimation to read.
@@ -94,8 +89,5 @@ export const WORK_ITEMS_DIALOG_CONTEXTS: Record<
 		sortBy: "daysContributed",
 		catalogue: false,
 	},
-	startedAndClosed: withCatalogue(
-		[STARTED, CLOSED, AGE_OR_CYCLE_TIME],
-		AGE_OR_CYCLE_TIME,
-	),
+	startedAndClosed: withCatalogue([STARTED, CLOSED, AGE, CYCLE_TIME], AGE),
 };

@@ -203,7 +203,6 @@ const everyChartContext: ContextCase[] = [
 			"cycleTime",
 			"startedDate",
 			"workItemAge",
-			"ageOrCycleTime",
 			"estimate",
 			"parent",
 			"blockedSince",
@@ -222,7 +221,6 @@ const everyChartContext: ContextCase[] = [
 			"closedDate",
 			"startedDate",
 			"workItemAge",
-			"ageOrCycleTime",
 			"parent",
 			"blockedSince",
 			"timeInState",
@@ -231,15 +229,14 @@ const everyChartContext: ContextCase[] = [
 	{
 		context: "arrivals",
 		items: [threePointerThatTookLong, oldestButJustMoved, justStarted],
-		columns: ["startedDate", "ageOrCycleTime"],
-		sortedBy: "ageOrCycleTime",
+		columns: ["startedDate", "workItemAge", "cycleTime"],
+		sortedBy: "workItemAge",
 		firstRow: "WIP-1",
 		offered: [
 			"startedDate",
-			"ageOrCycleTime",
-			"closedDate",
-			"cycleTime",
 			"workItemAge",
+			"cycleTime",
+			"closedDate",
 			"estimate",
 			"parent",
 			"blockedSince",
@@ -260,7 +257,6 @@ const everyChartContext: ContextCase[] = [
 			"sleRisk",
 			"closedDate",
 			"cycleTime",
-			"ageOrCycleTime",
 			"parent",
 			"blockedSince",
 		],
@@ -280,7 +276,6 @@ const everyChartContext: ContextCase[] = [
 			"startedDate",
 			"closedDate",
 			"cycleTime",
-			"ageOrCycleTime",
 			"parent",
 			"blockedSince",
 		],
@@ -297,7 +292,6 @@ const everyChartContext: ContextCase[] = [
 			"startedDate",
 			"closedDate",
 			"cycleTime",
-			"ageOrCycleTime",
 			"parent",
 			"timeInState",
 		],
@@ -315,7 +309,6 @@ const everyChartContext: ContextCase[] = [
 			"startedDate",
 			"closedDate",
 			"cycleTime",
-			"ageOrCycleTime",
 			"parent",
 			"blockedSince",
 		],
@@ -323,16 +316,15 @@ const everyChartContext: ContextCase[] = [
 	{
 		context: "workDistribution",
 		items: [threePointerThatTookLong, oldestButJustMoved, justStarted],
-		columns: ["parent", "ageOrCycleTime"],
-		sortedBy: "ageOrCycleTime",
+		columns: ["parent", "workItemAge", "cycleTime"],
+		sortedBy: "workItemAge",
 		firstRow: "WIP-1",
 		offered: [
 			"parent",
-			"ageOrCycleTime",
+			"workItemAge",
+			"cycleTime",
 			"startedDate",
 			"closedDate",
-			"cycleTime",
-			"workItemAge",
 			"estimate",
 			"blockedSince",
 			"timeInState",
@@ -341,7 +333,7 @@ const everyChartContext: ContextCase[] = [
 	{
 		context: "featureSize",
 		items: portfolioFeatures,
-		columns: ["owningTeam", "size", "ageOrCycleTime", "closedDate"],
+		columns: ["owningTeam", "size", "workItemAge", "cycleTime", "closedDate"],
 		sortedBy: "size",
 		firstRow: "FTR-2",
 		// Feature rows keep Owned by beside the fixed columns, never carry a blocked-since date, and
@@ -349,11 +341,10 @@ const everyChartContext: ContextCase[] = [
 		offered: [
 			"owningTeam",
 			"size",
-			"ageOrCycleTime",
+			"workItemAge",
+			"cycleTime",
 			"closedDate",
 			"startedDate",
-			"cycleTime",
-			"workItemAge",
 			"parent",
 			"timeInState",
 			"forecasts",
@@ -362,15 +353,14 @@ const everyChartContext: ContextCase[] = [
 	{
 		context: "startedAndClosed",
 		items: [threePointerThatTookLong, oldestButJustMoved, justStarted],
-		columns: ["startedDate", "closedDate", "ageOrCycleTime"],
-		sortedBy: "ageOrCycleTime",
+		columns: ["startedDate", "closedDate", "workItemAge", "cycleTime"],
+		sortedBy: "workItemAge",
 		firstRow: "WIP-1",
 		offered: [
 			"startedDate",
 			"closedDate",
-			"ageOrCycleTime",
-			"cycleTime",
 			"workItemAge",
+			"cycleTime",
 			"estimate",
 			"parent",
 			"blockedSince",
@@ -383,16 +373,21 @@ const theFeatureListContexts: ContextCase[] = [
 	{
 		context: "featureChildren",
 		items: [threePointerThatTookLong, oldestButJustMoved, justStarted],
-		columns: ["startedDate", "closedDate", "ageOrCycleTime", "estimate"],
-		sortedBy: "ageOrCycleTime",
+		columns: [
+			"startedDate",
+			"closedDate",
+			"workItemAge",
+			"cycleTime",
+			"estimate",
+		],
+		sortedBy: "workItemAge",
 		firstRow: "WIP-1",
 		offered: [
 			"startedDate",
 			"closedDate",
-			"ageOrCycleTime",
-			"estimate",
-			"cycleTime",
 			"workItemAge",
+			"cycleTime",
+			"estimate",
 			"parent",
 			"blockedSince",
 			"timeInState",
@@ -412,7 +407,6 @@ const theFeatureListContexts: ContextCase[] = [
 			"closedDate",
 			"cycleTime",
 			"workItemAge",
-			"ageOrCycleTime",
 			"parent",
 			"timeInState",
 			"size",
@@ -623,7 +617,6 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 				{ field: "closedDate", shown: true },
 				{ field: "startedDate", shown: false },
 				{ field: "workItemAge", shown: false },
-				{ field: "ageOrCycleTime", shown: false },
 				{ field: "parent", shown: false },
 				{ field: "blockedSince", shown: false },
 				{ field: "timeInState", shown: false },
@@ -672,7 +665,6 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 				"closedDate",
 				"startedDate",
 				"workItemAge",
-				"ageOrCycleTime",
 				"parent",
 				"blockedSince",
 				"timeInState",
@@ -816,6 +808,44 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
+	// @us-02 @slice-02 @boundary @contract-shape:pure-function
+	it.each([
+		"arrivals",
+		"workDistribution",
+		"startedAndClosed",
+		"featureChildren",
+	] as const)(
+		"%s leaves a finished item's Work Item Age and an unfinished item's Cycle Time empty, never 0, and lists the empty ages last",
+		(context) => {
+			openTheDialog({
+				context,
+				items: [threePointerThatTookLong, oldestButJustMoved, justStarted],
+			});
+
+			expect(cellText("workItemAge", "ST-1")).toBe("");
+			expect(cellText("cycleTime", "ST-1")).toBe("20");
+			expect(cellText("workItemAge", "WIP-1")).toBe("30");
+			expect(cellText("cycleTime", "WIP-1")).toBe("");
+			expect(rowOrder()).toEqual(["WIP-1", "WIP-3", "ST-1"]);
+		},
+		RENDER_HEAVY,
+	);
+
+	// @us-02 @slice-02 @boundary @contract-shape:pure-function
+	it(
+		"Age on a past day's point still shows for an item finished since, because it was unfinished on that day",
+		() => {
+			openTheDialog({
+				context: "startedAndClosed",
+				items: [threePointerThatTookLong],
+				ageOn: day("2026-09-10"),
+			});
+
+			expect(cellText("workItemAge", "ST-1")).toBe("10");
+		},
+		RENDER_HEAVY,
+	);
+
 	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
 	it(
 		"a named percentile's dialog reads that named cycle time under its name, and offers each named cycle time",
@@ -927,7 +957,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 				"cycleTime",
 				"startedDate",
 				"workItemAge",
-				"ageOrCycleTime",
 				"estimate",
 				"parent",
 				"blockedSince",
@@ -1006,7 +1035,7 @@ describe("US-02 — every chart context that offers more columns follows the sam
 describe("US-03 — a Feature's child items show their progress at a glance", () => {
 	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
 	it(
-		"a Feature's child items open with Started, Closed, Age / Cycle Time and Estimate",
+		"a Feature's child items open with Started, Closed, Work Item Age, Cycle Time and Estimate, oldest first",
 		() => {
 			openTheDialog({
 				context: "featureChildren",
@@ -1016,10 +1045,11 @@ describe("US-03 — a Feature's child items show their progress at a glance", ()
 			expect(contextColumnsShown()).toEqual([
 				"startedDate",
 				"closedDate",
-				"ageOrCycleTime",
+				"workItemAge",
+				"cycleTime",
 				"estimate",
 			]);
-			expect(sortedDescendingBy()).toBe("ageOrCycleTime");
+			expect(sortedDescendingBy()).toBe("workItemAge");
 		},
 		RENDER_HEAVY,
 	);
@@ -1036,7 +1066,8 @@ describe("US-03 — a Feature's child items show their progress at a glance", ()
 			expect(contextColumnsShown()).toEqual([
 				"startedDate",
 				"closedDate",
-				"ageOrCycleTime",
+				"workItemAge",
+				"cycleTime",
 			]);
 		},
 		RENDER_HEAVY,

@@ -35,7 +35,6 @@ const singleColumnIds = {
 	closedDate: true,
 	cycleTime: true,
 	workItemAge: true,
-	ageOrCycleTime: true,
 	parent: true,
 	blockedSince: true,
 	timeInState: true,

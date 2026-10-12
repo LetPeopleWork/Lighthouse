@@ -185,8 +185,19 @@ const numberColumn = (
 	},
 });
 
-const ageOf = (row: IWorkItem, { ageOn }: CatalogueColumnSettings): number =>
-	ageOn ? calculateHistoricalAge(row, ageOn) : row.workItemAge;
+const isFinished = (row: IWorkItem): boolean => row.stateCategory === "Done";
+
+// A finished item has no age today, but on a past day it may still have been under way.
+const ageOf = (
+	row: IWorkItem,
+	{ ageOn }: CatalogueColumnSettings,
+): number | null => {
+	if (ageOn) return calculateHistoricalAge(row, ageOn);
+	return isFinished(row) ? null : row.workItemAge;
+};
+
+const cycleTimeOf = (row: IWorkItem): number | null =>
+	isFinished(row) ? row.cycleTime : null;
 
 // An item the named cycle time has no value for has not passed through both of its states.
 const namedCycleTimeOf = (
@@ -207,7 +218,7 @@ const cycleTimeColumn = (
 		return numberColumn(
 			"cycleTime",
 			settings.getTerm(TERMINOLOGY_KEYS.CYCLE_TIME),
-			(row) => row.cycleTime,
+			cycleTimeOf,
 			settings,
 		);
 	}
@@ -358,18 +369,6 @@ const CATALOGUE_HEAD: readonly CatalogueEntry[] = [
 				"workItemAge",
 				settings.getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE),
 				(row) => ageOf(row, settings),
-				settings,
-			),
-	},
-	{
-		id: "ageOrCycleTime",
-		offeredFor: always,
-		build: (settings) =>
-			numberColumn(
-				"ageOrCycleTime",
-				`${settings.getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE)} / ${settings.getTerm(TERMINOLOGY_KEYS.CYCLE_TIME)}`,
-				(row) =>
-					row.stateCategory === "Done" ? row.cycleTime : ageOf(row, settings),
 				settings,
 			),
 	},

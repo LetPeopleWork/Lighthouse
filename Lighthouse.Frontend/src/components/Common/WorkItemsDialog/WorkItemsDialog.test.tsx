@@ -109,6 +109,14 @@ const mockWorkItems: IWorkItem[] = [
 ];
 
 // Mock data with blocked items for testing
+// The closed-items list only ever lists finished items, and only a finished item has a Cycle Time.
+const asFinished = (items: IWorkItem[]): IWorkItem[] =>
+	items.map((item) => ({
+		...item,
+		state: "Done",
+		stateCategory: "Done" as StateCategory,
+	}));
+
 const mockBlockedWorkItems: IWorkItem[] = [
 	{
 		id: 6,
@@ -307,7 +315,13 @@ describe("WorkItemsDialog Component", () => {
 	});
 
 	test("displays items sorted by cycle time in descending order with cycleTime metric", () => {
-		render(<WorkItemsDialog {...defaultProps} context="closedItems" />);
+		render(
+			<WorkItemsDialog
+				{...defaultProps}
+				items={asFinished(mockWorkItems)}
+				context="closedItems"
+			/>,
+		);
 
 		// Get all row cells with cycle time information
 		const cells = screen.getAllByTestId("additionalColumnContent");
@@ -436,7 +450,12 @@ describe("WorkItemsDialog Component", () => {
 		test("applies colors correctly with cycleTime metric", () => {
 			// With SLE of 10, items with cycle times of 15, 10, and 5 should have appropriate colors
 			render(
-				<WorkItemsDialog {...defaultProps} context="closedItems" sle={10} />,
+				<WorkItemsDialog
+					{...defaultProps}
+					items={asFinished(mockWorkItems)}
+					context="closedItems"
+					sle={10}
+				/>,
 			);
 
 			const cycleTimeCells = screen.getAllByTestId("additionalColumnContent");
@@ -589,7 +608,7 @@ describe("WorkItemsDialog Component", () => {
 			render(
 				<WorkItemsDialog
 					{...defaultProps}
-					items={mockBlockedWorkItems}
+					items={asFinished(mockBlockedWorkItems)}
 					context="closedItems"
 				/>,
 			);

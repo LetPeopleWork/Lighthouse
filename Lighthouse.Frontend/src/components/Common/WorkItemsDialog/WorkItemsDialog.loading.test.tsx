@@ -68,7 +68,8 @@ describe("a dialog whose items are still on their way", () => {
 				"state",
 				"startedDate",
 				"closedDate",
-				"ageOrCycleTime",
+				"workItemAge",
+				"cycleTime",
 			]);
 			expect(within(theDialog()).getByRole("progressbar")).toBeInTheDocument();
 		},

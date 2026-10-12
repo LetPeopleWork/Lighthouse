@@ -240,7 +240,7 @@ describe("a Feature's child items, from every list that opens them", () => {
 
 	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
 	it.each(everyFeatureList)(
-		"%s: they show Started, Closed, Age / Cycle Time and Estimate once they arrive, oldest first",
+		"%s: they show Started, Closed, Work Item Age, Cycle Time and Estimate once they arrive, oldest first",
 		async (_, showTheList) => {
 			const user = userEvent.setup();
 			showTheList();
@@ -251,7 +251,8 @@ describe("a Feature's child items, from every list that opens them", () => {
 			expect(contextColumnsShown()).toEqual([
 				"startedDate",
 				"closedDate",
-				"ageOrCycleTime",
+				"workItemAge",
+				"cycleTime",
 				"estimate",
 			]);
 			expect(rowOrder()).toEqual(["ST-12", "ST-11"]);
