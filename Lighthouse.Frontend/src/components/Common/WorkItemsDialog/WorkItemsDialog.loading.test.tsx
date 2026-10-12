@@ -48,7 +48,7 @@ const RENDER_HEAVY = 20000;
 
 describe("a dialog whose items are still on their way", () => {
 	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
-	it.skip(
+	it(
 		"opens at once with its title and the context's headers over the grid's loading overlay",
 		() => {
 			openTheDialog({
@@ -76,7 +76,7 @@ describe("a dialog whose items are still on their way", () => {
 	);
 
 	// @us-03 @slice-03 @error @contract-shape:pure-function
-	it.skip(
+	it(
 		"never says there are no items while they are still on their way",
 		() => {
 			openTheDialog({
@@ -92,7 +92,7 @@ describe("a dialog whose items are still on their way", () => {
 	);
 
 	// @us-03 @slice-03 @error @contract-shape:pure-function
-	it.skip(
+	it(
 		"says the items couldn't be loaded, with a warning and no retry button, when they cannot be loaded",
 		() => {
 			openTheDialog({ context: "featureChildren", items: [], status: "error" });
@@ -116,7 +116,7 @@ describe("a dialog whose items are still on their way", () => {
 	);
 
 	// @us-03 @slice-03 @error @contract-shape:pure-function
-	it.skip(
+	it(
 		"the could-not-load message uses the instance's word for Work Items",
 		() => {
 			instanceWords.workItems = "Tickets";
