@@ -103,13 +103,14 @@ if "kanban_board" in dock:
     work_columns = [c for c in columns if c["type"] == "Kanban::Column"]
     flow = [triage] + work_columns + [done]
 
+    # Read the whole board before changing anything, so each card makes at most one step per run.
+    cards_by_column = [(idx, column, get_all(column["cards_url"])) for idx, column in enumerate(flow[:-1])]
+    held_by_column = [(c, get_all(c["on_hold"]["cards_url"])) for c in work_columns if c.get("on_hold")]
+
     for _ in range(max(0, TRIAGE_TARGET - triage["cards_count"])):
         title = random_title("Card")
         if post(f"{bucket_url}/card_tables/lists/{triage['id']}/cards.json", {"title": title}).ok:
             print(f"🆕 Created card '{title}' in {triage['title']}")
-
-    # Read every column before moving anything, so a card moves at most one column per run.
-    cards_by_column = [(idx, column, get_all(column["cards_url"])) for idx, column in enumerate(flow[:-1])]
 
     moved = 0
     for idx, column, cards in cards_by_column:
@@ -128,11 +129,8 @@ if "kanban_board" in dock:
                     print(f"  ✅ '{card['title']}' {column['title']} → {target['title']}")
                     moved += 1
 
-    for column in work_columns:
-        on_hold = column.get("on_hold")
-        if not on_hold:
-            continue
-        for card in get_all(on_hold["cards_url"]):
+    for column, held_cards in held_by_column:
+        for card in held_cards:
             if random.random() < MOVE_CHANCE:
                 if post(f"{bucket_url}/card_tables/cards/{card['id']}/moves.json", {"column_id": column["id"]}).ok:
                     print(f"  ▶️  '{card['title']}' released from hold in {column['title']}")
@@ -147,6 +145,7 @@ if "todoset" in dock:
 
     for todolist in todolists:
         open_todos = get_all(todolist["todos_url"])
+        completed_todos = get_all(f"{todolist['todos_url']}?completed=true")
         replenish = 0 if todolist is todoset else max(0, TODO_TARGET - len(open_todos))
         for _ in range(replenish):
             content = random_title("To-do")
@@ -158,7 +157,7 @@ if "todoset" in dock:
                 if post(f"{bucket_url}/todos/{todo['id']}/completion.json").ok:
                     print(f"  ☑️  Completed '{todo['content']}'")
 
-        for todo in get_all(f"{todolist['todos_url']}?completed=true"):
+        for todo in completed_todos:
             if random.random() < TODO_REOPEN_CHANCE:
                 if delete(f"{bucket_url}/todos/{todo['id']}/completion.json").ok:
                     print(f"  ↩️  Reopened '{todo['content']}'")
