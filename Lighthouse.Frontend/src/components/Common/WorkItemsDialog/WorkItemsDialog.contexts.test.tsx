@@ -741,7 +741,7 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 	);
 
 	// @us-02 @slice-02 @contract-shape:pure-function
-	it.skip.each(["aging", "stale", "inProgress"] as const)(
+	it.each(["aging", "stale", "inProgress"] as const)(
 		"%s lists the oldest item first, not the one longest in its state",
 		(context) => {
 			openTheDialog({
@@ -758,7 +758,7 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 	);
 
 	// @us-02 @slice-02 @regression @contract-shape:pure-function
-	it.skip(
+	it(
 		"Cycle Time keeps its SLE colouring and bold where the caller passes the SLE",
 		() => {
 			openTheDialog({
@@ -777,7 +777,7 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 	);
 
 	// @us-02 @slice-02 @regression @contract-shape:pure-function
-	it.skip(
+	it(
 		"a blocked item still carries the blocked marker in the column it is sorted by",
 		() => {
 			openTheDialog({ context: "blocked", items: inFlight });
@@ -790,7 +790,7 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 	);
 
 	// @us-02 @slice-02 @regression @contract-shape:pure-function
-	it.skip(
+	it(
 		"Time in State keeps its own badge when the list is sorted by Age",
 		() => {
 			openTheDialog({ context: "stale", items: inFlight, timeInStateColumn });

@@ -1,3 +1,4 @@
+import BlockIcon from "@mui/icons-material/Block";
 import { Tooltip, Typography } from "@mui/material";
 import {
 	type GridSortCellParams,
@@ -15,8 +16,15 @@ import {
 	type SleRiskColumnDescriptor,
 	sleRiskSortValue,
 } from "../../../utils/charts/sleRisk";
+import { formatBlockedSince } from "../../../utils/date/blockedDuration";
 import { formatLocalDate } from "../../../utils/date/localDate";
-import { hexToRgba } from "../../../utils/theme/colors";
+import {
+	certainColor,
+	confidentColor,
+	hexToRgba,
+	realisticColor,
+	riskyColor,
+} from "../../../utils/theme/colors";
 import type { ColumnVisibilityModel, DataGridColumn } from "../DataGrid/types";
 import { createForecastsColumn } from "../FeatureListDataGrid/columns";
 import ParentWorkItemCell from "../ParentWorkItemCell/ParentWorkItemCell";
@@ -41,6 +49,8 @@ export interface CatalogueColumnSettings {
 	sortBy?: ColumnId;
 	/** When a row's time in its state is measured to, and when that time counts as stale. */
 	timeInState?: TimeInStateColumnDefinition;
+	/** The target the sort column's values are judged against; without one they are shown plain. */
+	sle?: number;
 }
 
 interface CatalogueEntry {
@@ -51,7 +61,7 @@ interface CatalogueEntry {
 
 const always = () => true;
 
-const isFeatureRow = (item: IWorkItem): item is IFeature =>
+export const isFeatureRow = (item: IWorkItem): item is IFeature =>
 	"owningTeam" in item;
 
 const featureRows = (items: readonly IWorkItem[]) => items.some(isFeatureRow);
@@ -81,25 +91,74 @@ const dayColumn = (
 	valueGetter: (_, row) => asLocalDay(dayOf(row)),
 });
 
+/** How a value compares with the target: past it, past seven tenths of it, past half of it, or well inside. */
+export const sleColor = (
+	value: number,
+	sle: number | undefined,
+): string | undefined => {
+	if (!sle) return undefined;
+	if (value > sle) return riskyColor;
+	if (value >= sle * 0.7) return realisticColor;
+	if (value >= sle * 0.5) return confidentColor;
+	return certainColor;
+};
+
+const blockedTooltip = (
+	row: IWorkItem,
+	getTerm: (key: string) => string,
+): string => {
+	const duration = row.blockedSince
+		? formatBlockedSince(row.blockedSince)
+		: null;
+	return duration
+		? `Blocked for ${duration}`
+		: `This ${getTerm(TERMINOLOGY_KEYS.WORK_ITEM)} is ${getTerm(TERMINOLOGY_KEYS.BLOCKED)}`;
+};
+
+/**
+ * The cell of the column a list is sorted by: judged against the target when there is one, and
+ * marked when the item is blocked, so the reader sees both without scanning to another column.
+ */
+export const judgedValueCell = (
+	value: number,
+	row: IWorkItem,
+	{ sle, getTerm }: Pick<CatalogueColumnSettings, "sle" | "getTerm">,
+) => {
+	const treatment = judgementCell(sleColor(value, sle));
+	return (
+		<Typography
+			variant="body2"
+			data-testid="additionalColumnContent"
+			style={treatment.style}
+			sx={{ ...treatment.sx, fontWeight: sle ? "bold" : "normal" }}
+		>
+			{value}
+			{row.isBlocked && (
+				<Tooltip title={blockedTooltip(row, getTerm)}>
+					<BlockIcon sx={{ color: "error.main", fontSize: "1rem", ml: 1 }} />
+				</Tooltip>
+			)}
+		</Typography>
+	);
+};
+
 const numberColumn = (
 	field: ColumnId,
 	headerName: string,
 	numberFor: (row: IWorkItem) => number,
-	{ sortBy }: CatalogueColumnSettings,
+	settings: CatalogueColumnSettings,
 ): DataGridColumn<WorkItemRow> => ({
 	field,
 	headerName,
 	width: 130,
 	sortable: true,
 	valueGetter: (_, row) => numberFor(row),
-	renderCell: ({ value }) => (
-		<Typography
-			variant="body2"
-			data-testid={field === sortBy ? "additionalColumnContent" : undefined}
-		>
-			{value as number}
-		</Typography>
-	),
+	renderCell: ({ value, row }) =>
+		field === settings.sortBy ? (
+			judgedValueCell(value as number, row, settings)
+		) : (
+			<Typography variant="body2">{value as number}</Typography>
+		),
 });
 
 const ageOrCycleTimeOf = (row: IWorkItem): number =>
@@ -271,8 +330,7 @@ const NO_CONTEXT: ContextGridLayout = { columns: [] };
 export function contextGridLayout(
 	context: WorkItemsDialogContextId | undefined,
 	items: readonly IWorkItem[],
-	getTerm: (key: string) => string,
-	timeInState?: TimeInStateColumnDefinition,
+	settings: Omit<CatalogueColumnSettings, "sortBy">,
 ): ContextGridLayout {
 	if (context === undefined) return NO_CONTEXT;
 
@@ -285,7 +343,7 @@ export function contextGridLayout(
 
 	return {
 		columns: ordered.flatMap(
-			(id) => buildWorkItemColumn(id, { getTerm, sortBy, timeInState }) ?? [],
+			(id) => buildWorkItemColumn(id, { ...settings, sortBy }) ?? [],
 		),
 		visibilityModel: Object.fromEntries(
 			ordered.map((id) => [id, visible.includes(id)]),

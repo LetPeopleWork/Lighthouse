@@ -1,4 +1,3 @@
-import BlockIcon from "@mui/icons-material/Block";
 import CloseIcon from "@mui/icons-material/Close";
 import CloseFullscreenIcon from "@mui/icons-material/CloseFullscreen";
 import OpenInFullIcon from "@mui/icons-material/OpenInFull";
@@ -14,30 +13,22 @@ import {
 	Typography,
 } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { useEnlargedWorkItemsDialog } from "../../../hooks/useEnlargedWorkItemsDialog";
-import type { IFeature } from "../../../models/Feature";
 import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
-import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
 import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
 import type { SleRiskColumnDescriptor } from "../../../utils/charts/sleRisk";
-import { formatBlockedSince } from "../../../utils/date/blockedDuration";
-import {
-	certainColor,
-	confidentColor,
-	getStateColor,
-	realisticColor,
-	riskyColor,
-} from "../../../utils/theme/colors";
+import { getStateColor } from "../../../utils/theme/colors";
 import DataGridBase from "../DataGrid/DataGridBase";
 import type { DataGridColumn } from "../DataGrid/types";
 import { daysInState } from "../TimeInStateBadge/TimeInStateBadge";
 import {
 	ageBandGridColumn,
 	contextGridLayout,
-	judgementCell,
+	isFeatureRow,
+	judgedValueCell,
 	sleRiskGridColumn,
 	timeInStateGridColumn,
 	warningsGridColumn,
@@ -150,16 +141,9 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 }) => {
 	const { getTerm } = useTerminology();
 	const { enlarged, toggleEnlarged } = useEnlargedWorkItemsDialog();
-	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
-	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
-
-	const isFeature = useCallback((item: IWorkItem): item is IFeature => {
-		return "owningTeam" in item;
-	}, []);
-
 	const hasOwningTeams = items.some(
 		(item) =>
-			isFeature(item) && item.owningTeam && item.owningTeam.trim() !== "",
+			isFeatureRow(item) && item.owningTeam && item.owningTeam.trim() !== "",
 	);
 
 	const sortValueOf = (workItem: IWorkItem): number => {
@@ -176,30 +160,14 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 		return sortValueOf(b) - sortValueOf(a);
 	});
 
-	const getColumnColor = useCallback(
-		(value: number) => {
-			if (!sle) return undefined;
-
-			const seventyPercentSLE = sle * 0.7;
-			const fiftyPercentSLE = sle * 0.5;
-
-			if (value > sle) {
-				return riskyColor;
-			}
-			if (value >= seventyPercentSLE) {
-				return realisticColor;
-			}
-			if (value >= fiftyPercentSLE) {
-				return confidentColor;
-			}
-			return certainColor;
-		},
-		[sle],
-	);
-
 	const contextLayout = useMemo(
-		() => contextGridLayout(context, items, getTerm, timeInStateColumn),
-		[context, items, getTerm, timeInStateColumn],
+		() =>
+			contextGridLayout(context, items, {
+				getTerm,
+				timeInState: timeInStateColumn,
+				sle,
+			}),
+		[context, items, getTerm, timeInStateColumn, sle],
 	);
 
 	const storageKey = layoutStorageKey(context, ownerKind);
@@ -263,7 +231,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 				headerName: "Owned by",
 				width: 150,
 				renderCell: ({ row }) => {
-					return isFeature(row) ? row.owningTeam : "";
+					return isFeatureRow(row) ? row.owningTeam : "";
 				},
 			});
 		}
@@ -277,43 +245,11 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 				width: 200,
 				sortable: true,
 				valueGetter: (_, row) => highlightColumn.valueGetter(row),
-				renderCell: ({ row }) => {
-					const value = highlightColumn.valueGetter(row);
-					const treatment = judgementCell(getColumnColor(value));
-					return (
-						<Typography
-							variant="body2"
-							data-testid="additionalColumnContent"
-							style={treatment.style}
-							sx={{
-								...treatment.sx,
-								fontWeight: sle ? "bold" : "normal",
-							}}
-						>
-							{value}
-							{row.isBlocked && (
-								<Tooltip
-									title={(() => {
-										const duration = row.blockedSince
-											? formatBlockedSince(row.blockedSince)
-											: null;
-										return duration
-											? `Blocked for ${duration}`
-											: `This ${workItemTerm} is ${blockedTerm}`;
-									})()}
-								>
-									<BlockIcon
-										sx={{
-											color: "error.main",
-											fontSize: "1rem",
-											ml: 1,
-										}}
-									/>
-								</Tooltip>
-							)}
-						</Typography>
-					);
-				},
+				renderCell: ({ row }) =>
+					judgedValueCell(highlightColumn.valueGetter(row), row, {
+						sle,
+						getTerm,
+					}),
 			});
 		}
 
@@ -340,10 +276,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 		context,
 		contextLayout,
 		sle,
-		workItemTerm,
-		blockedTerm,
-		isFeature,
-		getColumnColor,
+		getTerm,
 		highlightColumn,
 		timeInStateColumn,
 		ageBandColumn,
