@@ -1,5 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
 import { assert } from "vitest";
 import WorkItemsDialog, {
@@ -13,6 +12,7 @@ import {
 	createMockApiServiceContext,
 	createMockFeatureService,
 } from "./MockApiServiceProvider";
+import { renderWithQueryClient } from "./renderWithQueryClient";
 
 /**
  * The columns every dialog shows whatever opened it. Owned by is not among them: it shows for
@@ -91,29 +91,24 @@ export type DialogOptions = Partial<WorkItemsDialogProps> & {
 	featureService?: IFeatureService;
 };
 
-function dialogTree(
-	options: DialogOptions,
-	queryClient: QueryClient,
-): React.ReactElement {
+function dialogTree(options: DialogOptions): React.ReactElement {
 	const {
 		featureService = createMockFeatureService(),
 		ownerKind = "team",
 		...props
 	} = options;
 	return (
-		<QueryClientProvider client={queryClient}>
-			<ApiServiceContext.Provider
-				value={createMockApiServiceContext({ featureService })}
-			>
-				<WorkItemsDialog
-					title="Work Items behind the point"
-					open
-					onClose={() => {}}
-					ownerKind={ownerKind}
-					{...props}
-				/>
-			</ApiServiceContext.Provider>
-		</QueryClientProvider>
+		<ApiServiceContext.Provider
+			value={createMockApiServiceContext({ featureService })}
+		>
+			<WorkItemsDialog
+				title="Work Items behind the point"
+				open
+				onClose={() => {}}
+				ownerKind={ownerKind}
+				{...props}
+			/>
+		</ApiServiceContext.Provider>
 	);
 }
 
@@ -125,14 +120,10 @@ export interface OpenedDialog {
 
 /** Opens the dialog the way a chart, a widget or a Feature list does, with a fresh query cache. */
 export function openTheDialog(options: DialogOptions): OpenedDialog {
-	const queryClient = new QueryClient({
-		defaultOptions: { queries: { retry: false } },
-	});
-	const view = render(dialogTree(options, queryClient));
+	const view = renderWithQueryClient(dialogTree(options));
 	return {
 		unmount: view.unmount,
-		showInstead: (next: DialogOptions) =>
-			view.rerender(dialogTree(next, queryClient)),
+		showInstead: (next: DialogOptions) => view.rerender(dialogTree(next)),
 	};
 }
 
