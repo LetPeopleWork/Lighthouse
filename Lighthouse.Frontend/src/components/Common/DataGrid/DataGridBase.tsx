@@ -17,6 +17,7 @@ import {
 	useColumnWidths,
 	usePersistedGridState,
 } from "./hooks";
+import { PAGE_SIZE, RowRangeFooter } from "./RowRangeFooter";
 import type {
 	ColumnVisibilityModel,
 	DataGridBaseProps,
@@ -118,7 +119,6 @@ function DataGridBase<T extends GridValidRowModel>({
 	initialSortModel = [],
 	onSortModelChange,
 	emptyStateMessage = "No rows to display",
-	hidePagination = true,
 	enableExport = false,
 	exportFileName,
 	exportTable,
@@ -262,6 +262,11 @@ function DataGridBase<T extends GridValidRowModel>({
 		[orderedColumns],
 	);
 
+	const gridSlots = useMemo(
+		() => ({ ...slots, footer: RowRangeFooter }),
+		[slots],
+	);
+
 	return (
 		<Box
 			sx={{
@@ -309,11 +314,11 @@ function DataGridBase<T extends GridValidRowModel>({
 							sortModel: initialSortModel,
 						},
 					}}
-					pageSizeOptions={[10, 25, 50, 100]}
+					pageSizeOptions={[PAGE_SIZE]}
 					disableRowSelectionOnClick
-					hideFooter={hidePagination}
+					hideFooterSelectedRowCount
 					getRowHeight={() => "auto"}
-					slots={slots}
+					slots={gridSlots}
 					getRowSpacing={getRowSpacing}
 					disableColumnResize={false}
 					columnVisibilityModel={columnVisibilityModel}

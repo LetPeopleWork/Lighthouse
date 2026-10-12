@@ -106,7 +106,7 @@ beforeEach(() => {
 
 describe("Third-party packages pages like every other list", () => {
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(
+	it(
 		"shows the range and total of 243 packages with page arrows and no rows-per-page choice",
 		async () => {
 			showThePackages(PACKAGES_243);
@@ -120,7 +120,7 @@ describe("Third-party packages pages like every other list", () => {
 	);
 
 	// @us-01 @slice-01 @error @boundary @contract-shape:bounded-change
-	it.skip(
+	it(
 		"shows all of 38 packages with no footer",
 		async () => {
 			showThePackages(numbered("tool", 38));
@@ -133,7 +133,7 @@ describe("Third-party packages pages like every other list", () => {
 	);
 
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
-	it.skip(
+	it(
 		"shows all 9 packages a search from the second page leaves, with no footer",
 		async () => {
 			const { user } = showThePackages(PACKAGES_243);

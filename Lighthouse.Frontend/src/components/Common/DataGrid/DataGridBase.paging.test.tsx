@@ -144,7 +144,7 @@ describe("A list of 100 rows or fewer looks unchanged", () => {
 
 describe("A list of more than 100 rows says how many it has and pages to the rest", () => {
 	// @us-01 @slice-01 @driving_port @boundary @contract-shape:bounded-change
-	it.skip.each([
+	it.each([
 		[101, "1–100 of 101"],
 		[143, "1–100 of 143"],
 		[243, "1–100 of 243"],
@@ -162,7 +162,7 @@ describe("A list of more than 100 rows says how many it has and pages to the res
 	);
 
 	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
-	it.skip(
+	it(
 		"puts the 101st row alone on the second page of a 101-row list",
 		async () => {
 			const { user } = showTheList(aListOf(101));
@@ -177,7 +177,7 @@ describe("A list of more than 100 rows says how many it has and pages to the res
 	);
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(
+	it(
 		"reaches every row of a 243-row list, and the arrows lead back",
 		async () => {
 			const { user } = showTheList(aListOf(243));
@@ -196,7 +196,7 @@ describe("A list of more than 100 rows says how many it has and pages to the res
 	);
 
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
-	it.skip(
+	it(
 		"offers the previous and next page only, with no rows-per-page choice",
 		() => {
 			showTheList(aListOf(243));
@@ -359,7 +359,7 @@ describe("While a list is loading", () => {
 
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	// A range left over from the previous answer under a loading overlay would be a stale count.
-	it.skip(
+	it(
 		"shows no footer while a 243-row list reloads, and the range again once it has",
 		async () => {
 			const { reload } = showTheList(aListOf(243), true);

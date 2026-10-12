@@ -58,8 +58,6 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	onSortModelChange?: (sortModel: GridSortModel) => void;
 	/** Custom empty state message */
 	emptyStateMessage?: string;
-	/** Hide pagination (default: true) */
-	hidePagination?: boolean;
 	/** Enable CSV export functionality (default: false) - Premium Feature */
 	enableExport?: boolean;
 	/** Custom filename for CSV export (without extension) */

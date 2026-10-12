@@ -144,7 +144,6 @@ const ThirdPartyPackagesSection: React.FC = () => {
 				rows={filteredPackages}
 				columns={columns}
 				storageKey="third-party-packages-grid"
-				hidePagination={false}
 				initialSortModel={[{ field: "name", sort: "asc" }]}
 			/>
 		</Box>
