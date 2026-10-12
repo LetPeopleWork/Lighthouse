@@ -71,13 +71,15 @@ export interface WorkItemsDialogProps {
 	context?: WorkItemsDialogContextId;
 	/** Whose items these are; a Team's and a Portfolio's dialog for the same chart open alike. */
 	ownerKind?: WorkItemsDialogOwnerKind;
-	// The props below are declared for the per-context columns and are not read yet.
+	// Declared for the per-context columns and not read yet.
 	status?: WorkItemsDialogStatus;
 	/** The day Age is measured on, when the rows were picked on a day in the past. */
 	ageOn?: Date;
 	/** The named cycle time the Cycle Time column reads, by definition id. */
 	cycleTimeScope?: number;
+	/** The named cycle times offered as columns of their own; without them none is offered. */
 	namedCycleTimeDefinitions?: INamedCycleTimeDefinition[];
+	/** How many days each row added to the state that was clicked. */
 	daysContributedColumn?: DaysContributedColumnDescriptor;
 }
 
@@ -138,6 +140,10 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	warningsColumn,
 	context,
 	ownerKind,
+	ageOn,
+	cycleTimeScope,
+	namedCycleTimeDefinitions,
+	daysContributedColumn,
 }) => {
 	const { getTerm } = useTerminology();
 	const { enlarged, toggleEnlarged } = useEnlargedWorkItemsDialog();
@@ -166,8 +172,22 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 				getTerm,
 				timeInState: timeInStateColumn,
 				sle,
+				ageOn,
+				cycleTimeScope,
+				namedCycleTimeDefinitions,
+				daysContributed: daysContributedColumn,
 			}),
-		[context, items, getTerm, timeInStateColumn, sle],
+		[
+			context,
+			items,
+			getTerm,
+			timeInStateColumn,
+			sle,
+			ageOn,
+			cycleTimeScope,
+			namedCycleTimeDefinitions,
+			daysContributedColumn,
+		],
 	);
 
 	const storageKey = layoutStorageKey(context, ownerKind);

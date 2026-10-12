@@ -802,7 +802,7 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 	);
 
 	// @us-02 @slice-02 @boundary @contract-shape:pure-function
-	it.skip(
+	it(
 		"Age on a past day's point is the age the item had on that day",
 		() => {
 			openTheDialog({
@@ -817,7 +817,7 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 	);
 
 	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
-	it.skip(
+	it(
 		"a named percentile's dialog reads that named cycle time under its name, and offers each named cycle time",
 		async () => {
 			const user = userEvent.setup();
@@ -854,7 +854,7 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 	);
 
 	// @us-02 @slice-02 @boundary @contract-shape:pure-function
-	it.skip(
+	it(
 		"Cumulative Time per State keeps Days Contributed only and offers nothing else",
 		async () => {
 			const user = userEvent.setup();

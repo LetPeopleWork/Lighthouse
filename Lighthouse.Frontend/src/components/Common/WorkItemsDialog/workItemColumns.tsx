@@ -6,6 +6,7 @@ import {
 	gridNumberComparator,
 } from "@mui/x-data-grid";
 import type { IFeature } from "../../../models/Feature";
+import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import {
@@ -16,6 +17,7 @@ import {
 	type SleRiskColumnDescriptor,
 	sleRiskSortValue,
 } from "../../../utils/charts/sleRisk";
+import { calculateHistoricalAge } from "../../../utils/date/age";
 import { formatBlockedSince } from "../../../utils/date/blockedDuration";
 import { formatLocalDate } from "../../../utils/date/localDate";
 import {
@@ -32,6 +34,7 @@ import TimeInStateBadge, {
 	daysInState,
 } from "../TimeInStateBadge/TimeInStateBadge";
 import type {
+	DaysContributedColumnDescriptor,
 	TimeInStateColumnDefinition,
 	WarningsColumnDescriptor,
 } from "./WorkItemsDialog";
@@ -51,11 +54,21 @@ export interface CatalogueColumnSettings {
 	timeInState?: TimeInStateColumnDefinition;
 	/** The target the sort column's values are judged against; without one they are shown plain. */
 	sle?: number;
+	/** The day Age is measured on, when the rows were picked on a day in the past. */
+	ageOn?: Date;
+	/** The named cycle time the Cycle Time column reads instead of the item's own, by definition id. */
+	cycleTimeScope?: number;
+	/** The named cycle times offered as columns of their own. */
+	namedCycleTimeDefinitions?: INamedCycleTimeDefinition[];
+	daysContributed?: DaysContributedColumnDescriptor;
 }
 
 interface CatalogueEntry {
 	id: ColumnId;
-	offeredFor: (items: readonly IWorkItem[]) => boolean;
+	offeredFor: (
+		items: readonly IWorkItem[],
+		settings: CatalogueColumnSettings,
+	) => boolean;
 	build: (settings: CatalogueColumnSettings) => DataGridColumn<WorkItemRow>;
 }
 
@@ -145,7 +158,7 @@ export const judgedValueCell = (
 const numberColumn = (
 	field: ColumnId,
 	headerName: string,
-	numberFor: (row: IWorkItem) => number,
+	numberFor: (row: IWorkItem) => number | null,
 	settings: CatalogueColumnSettings,
 ): DataGridColumn<WorkItemRow> => ({
 	field,
@@ -153,16 +166,67 @@ const numberColumn = (
 	width: 130,
 	sortable: true,
 	valueGetter: (_, row) => numberFor(row),
-	renderCell: ({ value, row }) =>
-		field === settings.sortBy ? (
+	renderCell: ({ value, row }) => {
+		if (value === null) return null;
+		return field === settings.sortBy ? (
 			judgedValueCell(value as number, row, settings)
 		) : (
 			<Typography variant="body2">{value as number}</Typography>
-		),
+		);
+	},
 });
 
-const ageOrCycleTimeOf = (row: IWorkItem): number =>
-	row.stateCategory === "Done" ? row.cycleTime : row.workItemAge;
+const ageOf = (row: IWorkItem, { ageOn }: CatalogueColumnSettings): number =>
+	ageOn ? calculateHistoricalAge(row, ageOn) : row.workItemAge;
+
+// An item the named cycle time has no value for has not passed through both of its states.
+const namedCycleTimeOf = (
+	row: IWorkItem,
+	definitionId: number,
+): number | null =>
+	row.namedCycleTimes?.find((value) => value.definitionId === definitionId)
+		?.days ?? null;
+
+const cycleTimeColumn = (
+	settings: CatalogueColumnSettings,
+): DataGridColumn<WorkItemRow> => {
+	const { cycleTimeScope, namedCycleTimeDefinitions = [] } = settings;
+	const scope = namedCycleTimeDefinitions.find(
+		(definition) => definition.id === cycleTimeScope,
+	);
+	if (scope === undefined) {
+		return numberColumn(
+			"cycleTime",
+			settings.getTerm(TERMINOLOGY_KEYS.CYCLE_TIME),
+			(row) => row.cycleTime,
+			settings,
+		);
+	}
+	return numberColumn(
+		"cycleTime",
+		scope.name,
+		(row) => namedCycleTimeOf(row, scope.id),
+		settings,
+	);
+};
+
+const namedCycleTimeEntries = ({
+	namedCycleTimeDefinitions = [],
+}: CatalogueColumnSettings): CatalogueEntry[] =>
+	namedCycleTimeDefinitions.map(({ id, name }) => {
+		const columnId: ColumnId = `namedCycleTime:${id}`;
+		return {
+			id: columnId,
+			offeredFor: always,
+			build: (settings) =>
+				numberColumn(
+					columnId,
+					name,
+					(row) => namedCycleTimeOf(row, id),
+					settings,
+				),
+		};
+	});
 
 const parentColumn = (): DataGridColumn<WorkItemRow> => ({
 	field: "parent",
@@ -214,8 +278,8 @@ const forecastColumn = (): DataGridColumn<WorkItemRow> => {
 	};
 };
 
-/** Every catalogue column, in the one order Manage columns lists those a context does not show. */
-const CATALOGUE: readonly CatalogueEntry[] = [
+/** The catalogue columns listed ahead of the named cycle times. */
+const CATALOGUE_HEAD: readonly CatalogueEntry[] = [
 	{
 		id: "startedDate",
 		offeredFor: always,
@@ -229,13 +293,7 @@ const CATALOGUE: readonly CatalogueEntry[] = [
 	{
 		id: "cycleTime",
 		offeredFor: always,
-		build: (settings) =>
-			numberColumn(
-				"cycleTime",
-				settings.getTerm(TERMINOLOGY_KEYS.CYCLE_TIME),
-				(row) => row.cycleTime,
-				settings,
-			),
+		build: cycleTimeColumn,
 	},
 	{
 		id: "workItemAge",
@@ -244,7 +302,7 @@ const CATALOGUE: readonly CatalogueEntry[] = [
 			numberColumn(
 				"workItemAge",
 				settings.getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE),
-				(row) => row.workItemAge,
+				(row) => ageOf(row, settings),
 				settings,
 			),
 	},
@@ -255,7 +313,8 @@ const CATALOGUE: readonly CatalogueEntry[] = [
 			numberColumn(
 				"ageOrCycleTime",
 				`${settings.getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE)} / ${settings.getTerm(TERMINOLOGY_KEYS.CYCLE_TIME)}`,
-				ageOrCycleTimeOf,
+				(row) =>
+					row.stateCategory === "Done" ? row.cycleTime : ageOf(row, settings),
 				settings,
 			),
 	},
@@ -285,6 +344,10 @@ const CATALOGUE: readonly CatalogueEntry[] = [
 		offeredFor: always,
 		build: (settings) => timeInStateGridColumn(settings.timeInState),
 	},
+];
+
+/** The catalogue columns listed after the named cycle times. */
+const CATALOGUE_TAIL: readonly CatalogueEntry[] = [
 	{
 		id: "size",
 		offeredFor: featureRows,
@@ -297,13 +360,36 @@ const CATALOGUE: readonly CatalogueEntry[] = [
 			),
 	},
 	{ id: "forecasts", offeredFor: featureRows, build: forecastColumn },
+	{
+		id: "daysContributed",
+		offeredFor: (_, settings) => settings.daysContributed !== undefined,
+		build: (settings) =>
+			numberColumn(
+				"daysContributed",
+				"Days Contributed",
+				(row) => settings.daysContributed?.daysFor(row) ?? null,
+				settings,
+			),
+	},
+];
+
+/** Every catalogue column, in the one order Manage columns lists those a context does not show. */
+const catalogueEntries = (
+	settings: CatalogueColumnSettings,
+): CatalogueEntry[] => [
+	...CATALOGUE_HEAD,
+	...namedCycleTimeEntries(settings),
+	...CATALOGUE_TAIL,
 ];
 
 /** The catalogue columns these rows can fill, in the order Manage columns lists them. */
-export function availableColumnIds(items: readonly IWorkItem[]): ColumnId[] {
-	return CATALOGUE.filter((entry) => entry.offeredFor(items)).map(
-		(entry) => entry.id,
-	);
+export function availableColumnIds(
+	items: readonly IWorkItem[],
+	settings: CatalogueColumnSettings,
+): ColumnId[] {
+	return catalogueEntries(settings)
+		.filter((entry) => entry.offeredFor(items, settings))
+		.map((entry) => entry.id);
 }
 
 /** The grid column for one catalogue entry, or nothing for an id the catalogue does not draw. */
@@ -311,7 +397,9 @@ export function buildWorkItemColumn(
 	columnId: ColumnId,
 	settings: CatalogueColumnSettings,
 ): DataGridColumn<WorkItemRow> | undefined {
-	return CATALOGUE.find((entry) => entry.id === columnId)?.build(settings);
+	return catalogueEntries(settings)
+		.find((entry) => entry.id === columnId)
+		?.build(settings);
 }
 
 export interface ContextGridLayout {
@@ -334,11 +422,11 @@ export function contextGridLayout(
 ): ContextGridLayout {
 	if (context === undefined) return NO_CONTEXT;
 
-	const { visible, sortBy } = WORK_ITEMS_DIALOG_CONTEXTS[context];
-	const available = availableColumnIds(items);
+	const { visible, sortBy, catalogue } = WORK_ITEMS_DIALOG_CONTEXTS[context];
+	const available = availableColumnIds(items, settings);
 	const ordered = [
 		...visible.filter((id) => available.includes(id)),
-		...available.filter((id) => !visible.includes(id)),
+		...(catalogue ? available.filter((id) => !visible.includes(id)) : []),
 	];
 
 	return {
