@@ -206,7 +206,6 @@ const everyChartContext: ContextCase[] = [
 			"estimate",
 			"parent",
 			"blockedSince",
-			"timeInState",
 		],
 	},
 	{
@@ -223,7 +222,6 @@ const everyChartContext: ContextCase[] = [
 			"workItemAge",
 			"parent",
 			"blockedSince",
-			"timeInState",
 		],
 	},
 	{
@@ -240,7 +238,6 @@ const everyChartContext: ContextCase[] = [
 			"estimate",
 			"parent",
 			"blockedSince",
-			"timeInState",
 		],
 	},
 	{
@@ -293,7 +290,6 @@ const everyChartContext: ContextCase[] = [
 			"closedDate",
 			"cycleTime",
 			"parent",
-			"timeInState",
 		],
 	},
 	{
@@ -327,7 +323,6 @@ const everyChartContext: ContextCase[] = [
 			"closedDate",
 			"estimate",
 			"blockedSince",
-			"timeInState",
 		],
 	},
 	{
@@ -346,7 +341,6 @@ const everyChartContext: ContextCase[] = [
 			"closedDate",
 			"startedDate",
 			"parent",
-			"timeInState",
 			"forecasts",
 		],
 	},
@@ -364,7 +358,6 @@ const everyChartContext: ContextCase[] = [
 			"estimate",
 			"parent",
 			"blockedSince",
-			"timeInState",
 		],
 	},
 ];
@@ -390,7 +383,6 @@ const theFeatureListContexts: ContextCase[] = [
 			"estimate",
 			"parent",
 			"blockedSince",
-			"timeInState",
 		],
 	},
 	{
@@ -408,7 +400,6 @@ const theFeatureListContexts: ContextCase[] = [
 			"cycleTime",
 			"workItemAge",
 			"parent",
-			"timeInState",
 			"size",
 			"forecasts",
 		],
@@ -619,7 +610,6 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 				{ field: "workItemAge", shown: false },
 				{ field: "parent", shown: false },
 				{ field: "blockedSince", shown: false },
-				{ field: "timeInState", shown: false },
 			]);
 		},
 		RENDER_HEAVY,
@@ -667,7 +657,6 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 				"workItemAge",
 				"parent",
 				"blockedSince",
-				"timeInState",
 			]);
 		},
 		RENDER_HEAVY,
@@ -789,6 +778,24 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 
 			expect(sortedDescendingBy()).toBe("workItemAge");
 			expect(cellText("timeInState", "WIP-2")).toMatch(/^\d+d in Review$/);
+		},
+		RENDER_HEAVY,
+	);
+
+	// @us-02 @slice-02 @boundary @contract-shape:pure-function
+	it.each(["aging", "inProgress"] as const)(
+		"%s neither shows nor offers Time in State when the caller says nothing about how to measure it",
+		async (context) => {
+			const user = userEvent.setup();
+			openTheDialog({ context, items: inFlight, ageBandColumn, sleRiskColumn });
+
+			expect(columnsShown()).not.toContain("timeInState");
+
+			await openManageColumns(user);
+
+			expect(catalogueOffered().map(({ field }) => field)).not.toContain(
+				"timeInState",
+			);
 		},
 		RENDER_HEAVY,
 	);
@@ -999,7 +1006,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 				"estimate",
 				"parent",
 				"blockedSince",
-				"timeInState",
 			]);
 		},
 		RENDER_HEAVY,

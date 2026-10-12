@@ -414,7 +414,7 @@ const CATALOGUE_HEAD: readonly CatalogueEntry[] = [
 	},
 	{
 		id: "timeInState",
-		offeredFor: always,
+		offeredFor: (_, settings) => settings.timeInState !== undefined,
 		build: (settings) => timeInStateGridColumn(settings.timeInState),
 	},
 	{
