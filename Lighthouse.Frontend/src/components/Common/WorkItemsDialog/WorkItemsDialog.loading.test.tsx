@@ -7,8 +7,10 @@ import { createMockFeatureService } from "../../../tests/MockApiServiceProvider"
 import {
 	aFeature,
 	aWorkItem,
+	cellIn,
 	cellText,
 	columnsShown,
+	contextColumnsShown,
 	openTheDialog,
 	theDialog,
 } from "../../../tests/WorkItemsDialogTestKit";
@@ -144,6 +146,52 @@ describe("a dialog whose items are still on their way", () => {
 			openTheDialog({ items: [], context: "closedItems" });
 
 			expect(screen.getByText("No items to display")).toBeInTheDocument();
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"says nothing about failing to load once the items are in",
+		() => {
+			openTheDialog({
+				context: "featureChildren",
+				items: [aWorkItem({ referenceId: "ST-1" })],
+				status: "ready",
+			});
+
+			expect(within(theDialog()).queryByText(/couldn't be loaded/)).toBeNull();
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"lays the context's defaults over rows that arrive after it opened",
+		() => {
+			const dialog = openTheDialog({
+				context: "inProgress",
+				ownerKind: "portfolio",
+				items: [],
+				status: "loading",
+			});
+
+			dialog.showInstead({
+				context: "inProgress",
+				ownerKind: "portfolio",
+				items: [
+					aFeature({
+						referenceId: "FTR-1",
+						state: "In Progress",
+						stateCategory: "Doing",
+					}),
+				],
+				status: "ready",
+			});
+
+			expect(contextColumnsShown()).toEqual([
+				"owningTeam",
+				"startedDate",
+				"workItemAge",
+			]);
 		},
 		RENDER_HEAVY,
 	);
@@ -308,6 +356,71 @@ describe("Parent shows the parent's name, looked up only while it is shown", () 
 			);
 
 			expect(cellText("parent", "ST-2")).toBe("FTR-2");
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"asks for no names when none of the shown rows has a parent",
+		() => {
+			const { featureService } = parentLookups();
+			openTheDialog({
+				context: "workDistribution",
+				items: [
+					aWorkItem({ referenceId: "ST-9", parentWorkItemReference: "" }),
+				],
+				featureService,
+			});
+
+			expect(featureService.getFeaturesByReferences).not.toHaveBeenCalled();
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"asks once for the same rows' parents, whatever order the rows come in",
+		() => {
+			const { featureService } = parentLookups();
+			const dialog = openTheDialog({
+				context: "workDistribution",
+				items: [childOfSearch, childOfCheckout],
+				featureService,
+			});
+
+			dialog.showInstead({
+				context: "workDistribution",
+				items: [childOfCheckout, childOfSearch],
+				featureService,
+			});
+
+			expect(featureService.getFeaturesByReferences).toHaveBeenCalledTimes(1);
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"links a parent's name to the parent, and one without an address to nowhere",
+		async () => {
+			const { featureService, answers } = parentLookups();
+			openTheDialog({
+				context: "workDistribution",
+				items: [childOfCheckout, childOfSearch],
+				featureService,
+			});
+
+			await act(async () =>
+				theLookup(answers, 0).resolve([
+					{ ...checkoutRevamp, url: "https://example.com/FTR-1" },
+					searchRebuild,
+				]),
+			);
+
+			expect(
+				within(cellIn("parent", "ST-1")).getByRole("link"),
+			).toHaveAttribute("href", "https://example.com/FTR-1");
+			expect(
+				within(cellIn("parent", "ST-2")).getByText("FTR-2: Search rebuild"),
+			).toHaveAttribute("href", "");
 		},
 		RENDER_HEAVY,
 	);

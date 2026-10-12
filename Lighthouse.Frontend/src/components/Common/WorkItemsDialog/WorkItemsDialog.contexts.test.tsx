@@ -15,6 +15,7 @@ import {
 	contextColumnsShown,
 	day,
 	estimateOf,
+	FIXED_COLUMNS,
 	headerText,
 	noUsableEstimate,
 	openManageColumns,
@@ -25,7 +26,7 @@ import {
 } from "../../../tests/WorkItemsDialogTestKit";
 import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
 import type { SleRiskColumnDescriptor } from "../../../utils/charts/sleRisk";
-import { riskyColor } from "../../../utils/theme/colors";
+import { hexToRgba, riskyColor } from "../../../utils/theme/colors";
 import type { WorkItemsDialogContextId } from "./workItemsDialogContexts";
 
 vi.mock("../../../hooks/useLicenseRestrictions", () => ({
@@ -1204,6 +1205,494 @@ describe("guards that hold today and must keep holding", () => {
 
 			expect(columnHeader("owningTeam")).toBeInTheDocument();
 			expect(cellText("owningTeam", "FTR-1")).toBe("Team Voyager");
+		},
+		RENDER_HEAVY,
+	);
+});
+
+const headingsOffered = (): string[] =>
+	screen
+		.getAllByRole("checkbox")
+		.filter((box) => {
+			const field = box.getAttribute("name") ?? "";
+			return (
+				field !== "" &&
+				field !== "Show/Hide All" &&
+				!FIXED_COLUMNS.includes(field)
+			);
+		})
+		.map((box) => box.closest("label")?.textContent?.trim() ?? "");
+
+const inFlightSince = (
+	referenceId: string,
+	currentStateEnteredAt: Date,
+): IWorkItem =>
+	aWorkItem({
+		referenceId,
+		state: "In Progress",
+		stateCategory: "Doing",
+		startedDate: day("2026-10-01"),
+		closedDate: new Date(0),
+		cycleTime: 0,
+		workItemAge: 10,
+		currentStateEnteredAt,
+	});
+
+describe("what each catalogue column says, and how it sorts", () => {
+	it(
+		"heads every column the catalogue offers with its name",
+		async () => {
+			const user = userEvent.setup();
+			const storyList = openTheDialog({
+				context: "closedItems",
+				items: finishedStories,
+			});
+			await openManageColumns(user);
+
+			expect(headingsOffered()).toEqual([
+				"Closed",
+				"Cycle Time",
+				"Started",
+				"Work Item Age",
+				"Estimate",
+				"Parent",
+				"Blocked since",
+			]);
+			storyList.unmount();
+
+			const featureList = openTheDialog({
+				context: "featureSize",
+				ownerKind: "portfolio",
+				items: portfolioFeatures,
+			});
+
+			expect(headerText("size")).toBe("Size");
+			featureList.unmount();
+
+			openTheDialog({
+				context: "cumulativeStateTime",
+				items: [threePointerThatTookLong],
+				daysContributedColumn: { daysFor: () => 2 },
+			});
+
+			expect(headerText("daysContributed")).toBe("Days Contributed");
+		},
+		RENDER_HEAVY,
+	);
+
+	it.each([
+		{
+			context: "inProgress" as const,
+			items: inFlight,
+			extra: { sleRiskColumn, timeInStateColumn },
+			turnOn: ["cycleTime"],
+			fields: ["startedDate", "timeInState", "sleRisk", "cycleTime"],
+		},
+		{
+			context: "workDistribution" as const,
+			items: [threePointerThatTookLong, eightPointerThatFlew],
+			extra: {},
+			turnOn: [],
+			fields: ["parent"],
+		},
+		{
+			context: "deliveryTimeline" as const,
+			items: [mediumFeature],
+			extra: { warningsColumn },
+			turnOn: [],
+			fields: ["warnings"],
+		},
+	])(
+		"$context: every column named here sorts on a header click",
+		async ({ context, items, extra, turnOn, fields }) => {
+			const user = userEvent.setup();
+			openTheDialog({ context, items, ...extra });
+			for (const field of turnOn) {
+				await turnColumn(user, field, true);
+			}
+
+			for (const field of fields) {
+				const before = columnHeader(field).getAttribute("aria-sort");
+				await user.click(columnHeader(field));
+
+				expect(columnHeader(field).getAttribute("aria-sort")).not.toBe(before);
+			}
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"orders by parent on a Parent header click",
+		async () => {
+			const user = userEvent.setup();
+			const underTheSecondFeature = aWorkItem({
+				referenceId: "ST-A",
+				state: "In Progress",
+				stateCategory: "Doing",
+				closedDate: new Date(0),
+				workItemAge: 30,
+				parentWorkItemReference: "FTR-2",
+			});
+			const underTheFirstFeature = aWorkItem({
+				referenceId: "ST-B",
+				state: "In Progress",
+				stateCategory: "Doing",
+				closedDate: new Date(0),
+				workItemAge: 3,
+				parentWorkItemReference: "FTR-1",
+			});
+			openTheDialog({
+				context: "workDistribution",
+				items: [underTheSecondFeature, underTheFirstFeature],
+			});
+
+			await user.click(columnHeader("parent"));
+
+			expect(rowOrder()).toEqual(["ST-B", "ST-A"]);
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"orders by time in state on a Time in State header click",
+		async () => {
+			const user = userEvent.setup();
+			openTheDialog({ context: "aging", items: inFlight, timeInStateColumn });
+
+			await user.click(columnHeader("timeInState"));
+
+			expect(rowOrder()).toEqual(["WIP-1", "WIP-3", "WIP-2"]);
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"of two items equally old, lists the one longer in its state first",
+		() => {
+			const movedRecently = inFlightSince("WIP-A", day("2026-10-08"));
+			const stuck = inFlightSince("WIP-B", day("2026-10-02"));
+			openTheDialog({
+				context: "aging",
+				items: [movedRecently, stuck],
+				timeInStateColumn,
+			});
+
+			expect(rowOrder()).toEqual(["WIP-B", "WIP-A"]);
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"orders by estimate on an Estimate header click, a row an older server sent none for included",
+		async () => {
+			const user = userEvent.setup();
+			const sentNoEstimate = aWorkItem({ referenceId: "ST-4", cycleTime: 7 });
+			openTheDialog({
+				context: "estimation",
+				items: [eightPointerThatFlew, sentNoEstimate, threePointerThatTookLong],
+			});
+
+			await user.click(columnHeader("estimate"));
+
+			expect(rowOrder()).toEqual(["ST-4", "ST-1", "ST-2"]);
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"Blocked since shows the day an item was blocked, and nothing for one that is not",
+		() => {
+			openTheDialog({ context: "blocked", items: inFlight });
+
+			expect(cellText("blockedSince", "WIP-1")).toBe("2026-10-01");
+			expect(cellText("blockedSince", "WIP-2")).toBe("");
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"judges only the column the rows are sorted by",
+		() => {
+			const blockedFeature = aFeature({
+				referenceId: "FTR-9",
+				state: "In Progress",
+				stateCategory: "Doing",
+				closedDate: new Date(0),
+				workItemAge: 12,
+				isBlocked: true,
+				size: 20,
+			});
+			openTheDialog({
+				context: "featureSize",
+				ownerKind: "portfolio",
+				items: [blockedFeature],
+				sle: 10,
+			});
+
+			expect(
+				within(cellIn("size", "FTR-9")).getByTestId("additionalColumnContent"),
+			).toBeInTheDocument();
+			expect(
+				within(cellIn("workItemAge", "FTR-9")).queryByTestId(
+					"additionalColumnContent",
+				),
+			).toBeNull();
+			expect(
+				within(cellIn("workItemAge", "FTR-9")).queryByTestId("BlockIcon"),
+			).toBeNull();
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"leaves an empty cell of the sort column unjudged",
+		() => {
+			openTheDialog({
+				context: "inProgress",
+				items: [threePointerThatTookLong],
+				ageOn: day("2026-09-25"),
+				sle: 10,
+			});
+
+			expect(
+				within(cellIn("workItemAge", "ST-1")).queryByTestId(
+					"additionalColumnContent",
+				),
+			).toBeNull();
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"Age on a day counts an item started later that day, and not one finished that day or never started",
+		() => {
+			const startedThatAfternoon = aWorkItem({
+				referenceId: "WIP-S",
+				state: "In Progress",
+				stateCategory: "Doing",
+				startedDate: new Date("2026-10-08T15:00:00Z"),
+				closedDate: new Date(0),
+				workItemAge: 3,
+			});
+			const finishedThatAfternoon = aWorkItem({
+				referenceId: "ST-F",
+				startedDate: day("2026-10-01"),
+				closedDate: new Date("2026-10-08T15:00:00Z"),
+			});
+			const neverStarted = aWorkItem({
+				referenceId: "ST-N",
+				state: "New",
+				stateCategory: "ToDo",
+				startedDate: new Date(0),
+				closedDate: new Date(0),
+			});
+			openTheDialog({
+				context: "inProgress",
+				items: [startedThatAfternoon, finishedThatAfternoon, neverStarted],
+				ageOn: day("2026-10-08"),
+			});
+
+			expect(cellText("workItemAge", "WIP-S")).toBe("1");
+			expect(cellText("workItemAge", "ST-F")).toBe("");
+			expect(cellText("workItemAge", "ST-N")).toBe("");
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"Cycle Time reads the named cycle time it is scoped to, and each named column reads its own",
+		async () => {
+			const user = userEvent.setup();
+			const namedCycleTimeDefinitions = [
+				{ id: 7, name: "Dev Cycle" },
+				{ id: 9, name: "Review Cycle" },
+			];
+			const throughBoth = aWorkItem({
+				referenceId: "ST-A",
+				namedCycleTimes: [
+					{ definitionId: 7, days: 2 },
+					{ definitionId: 9, days: 5 },
+				],
+			});
+			const throughDevOnly = aWorkItem({
+				referenceId: "ST-B",
+				namedCycleTimes: [{ definitionId: 7, days: 4 }],
+			});
+			const throughNeither = aWorkItem({ referenceId: "ST-C" });
+			const references = ["ST-A", "ST-B", "ST-C"];
+			openTheDialog({
+				context: "closedItems",
+				items: [throughBoth, throughDevOnly, throughNeither],
+				namedCycleTimeDefinitions,
+				cycleTimeScope: 9,
+			});
+
+			expect(headerText("cycleTime")).toBe("Review Cycle");
+			expect(references.map((ref) => cellText("cycleTime", ref))).toEqual([
+				"5",
+				"",
+				"",
+			]);
+
+			await turnColumn(user, "namedCycleTime:7", true);
+
+			expect(
+				references.map((ref) => cellText("namedCycleTime:7", ref)),
+			).toEqual(["2", "4", ""]);
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"washes a judged cell in a tenth of its judgement's colour",
+		() => {
+			openTheDialog({
+				context: "inProgress",
+				items: inFlight,
+				sleRiskColumn: { ...sleRiskColumn, colorForRisk: () => riskyColor },
+			});
+
+			expect(
+				within(cellIn("sleRisk", "WIP-1")).getByTestId("sleRiskColumnContent"),
+			).toHaveStyle({ backgroundColor: hexToRgba(riskyColor, 0.1) });
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"orders SLE Risk lowest first, then highest first, with a row it cannot place last both ways",
+		async () => {
+			const user = userEvent.setup();
+			openTheDialog({
+				context: "inProgress",
+				items: [longestInItsState, oldestButJustMoved, justStarted],
+				sleRiskColumn: {
+					...sleRiskColumn,
+					labelFor: (item) =>
+						item.referenceId === "WIP-2"
+							? "No history"
+							: `${item.workItemAge * 2}%`,
+				},
+			});
+
+			await user.click(columnHeader("sleRisk"));
+
+			expect(rowOrder()).toEqual(["WIP-3", "WIP-1", "WIP-2"]);
+
+			await user.click(columnHeader("sleRisk"));
+
+			expect(rowOrder()).toEqual(["WIP-1", "WIP-3", "WIP-2"]);
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"keeps rows SLE Risk cannot place in the order they came, below the rest",
+		async () => {
+			const user = userEvent.setup();
+			openTheDialog({
+				context: "inProgress",
+				items: [longestInItsState, justStarted, oldestButJustMoved],
+				sleRiskColumn: {
+					...sleRiskColumn,
+					labelFor: (item) =>
+						item.referenceId === "WIP-1"
+							? `${item.workItemAge * 2}%`
+							: "No history",
+				},
+			});
+
+			await user.click(columnHeader("sleRisk"));
+
+			expect(rowOrder()).toEqual(["WIP-1", "WIP-2", "WIP-3"]);
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"shows a row's SLE Risk disclosure when the reader hovers over it",
+		async () => {
+			const user = userEvent.setup();
+			openTheDialog({
+				context: "inProgress",
+				items: inFlight,
+				sleRiskColumn: {
+					...sleRiskColumn,
+					disclosureFor: (item) =>
+						item.referenceId === "WIP-1"
+							? "Judged on 3 finished items."
+							: undefined,
+				},
+			});
+
+			await user.hover(
+				within(cellIn("sleRisk", "WIP-1")).getByTestId("sleRiskColumnContent"),
+			);
+
+			expect(await screen.findByRole("tooltip")).toHaveTextContent(
+				"Judged on 3 finished items.",
+			);
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"lists every warning a row has, one sentence after another",
+		() => {
+			openTheDialog({
+				context: "deliveryTimeline",
+				items: [mediumFeature],
+				warningsColumn: {
+					...warningsColumn,
+					warningsFor: () => [
+						"Starts after its Delivery date.",
+						"Has no forecast.",
+					],
+				},
+			});
+
+			expect(cellText("warnings", "FTR-1")).toBe(
+				"Starts after its Delivery date. Has no forecast.",
+			);
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"Time in State counts a blocked item as stale from the day it was blocked",
+		() => {
+			openTheDialog({
+				context: "aging",
+				items: inFlight,
+				timeInStateColumn: {
+					now: NOW,
+					stalenessThresholdDays: 100,
+					blockedStalenessThresholdDays: 5,
+				},
+			});
+
+			expect(
+				within(cellIn("timeInState", "WIP-1")).getByTestId(
+					"time-in-state-stale",
+				),
+			).toHaveAttribute("aria-label", expect.stringContaining("Blocked 10d"));
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		"Feature rows that name no owning team leave Owned by out",
+		() => {
+			openTheDialog({
+				context: "featureSize",
+				ownerKind: "portfolio",
+				items: portfolioFeatures.map((feature) => ({
+					...feature,
+					owningTeam: "  ",
+				})),
+			});
+
+			expect(columnsShown()).not.toContain("owningTeam");
 		},
 		RENDER_HEAVY,
 	);

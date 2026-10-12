@@ -1829,3 +1829,37 @@ describe("Warnings column", () => {
 		expect(screen.queryAllByTestId("warningsColumnContent")).toHaveLength(0);
 	});
 });
+
+describe("the exported file", () => {
+	beforeEach(() => {
+		localStorage.clear();
+	});
+
+	test("is named after the dialog's title, each run of spaces one underscore", async () => {
+		(useLicenseRestrictions as unknown as Mock).mockReturnValue({
+			licenseStatus: { canUsePremiumFeatures: true },
+			isLoading: false,
+		});
+		vi.spyOn(URL, "createObjectURL").mockImplementation(() => "blob:zenith");
+		vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+		const appended = vi.spyOn(document.body, "appendChild");
+
+		const user = userEvent.setup();
+		render(
+			<WorkItemsDialog
+				{...agingDialogProps}
+				title="FTR-1:  Checkout   revamp"
+			/>,
+		);
+		await user.click(screen.getByTestId("export-button"));
+
+		const download = appended.mock.calls
+			.map(([node]) => node)
+			.find(
+				(node): node is HTMLAnchorElement => node instanceof HTMLAnchorElement,
+			);
+		expect(download?.download).toMatch(
+			/^FTR-1:_Checkout_revamp_\d{4}-\d{2}-\d{2}\.csv$/,
+		);
+	});
+});
