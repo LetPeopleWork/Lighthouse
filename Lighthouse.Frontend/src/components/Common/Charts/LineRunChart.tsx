@@ -40,6 +40,7 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [dialogTitle, setDialogTitle] = useState<string>("");
+	const [clickedDay, setClickedDay] = useState<Date | undefined>(undefined);
 	const [wipLimitVisible, setWipLimitVisible] = useState<boolean>(
 		!!wipLimit && wipLimit >= 1,
 	);
@@ -56,6 +57,7 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 			day.setUTCDate(day.getUTCDate() + dataIndex);
 			const formattedDate = day.toLocaleDateString();
 			setDialogTitle(`${workItemsTerm} in Progress on ${formattedDate}`);
+			setClickedDay(day);
 			setSelectedItems(items);
 			setDialogOpen(true);
 		}
@@ -208,6 +210,7 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 				onClose={handleCloseDialog}
 				context={dialogContext}
 				ownerKind={ownerKind}
+				ageOn={clickedDay}
 			/>
 		</>
 	);

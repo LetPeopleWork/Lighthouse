@@ -6922,6 +6922,7 @@ describe("which lists carry the risk column", () => {
 	) =>
 		buildViewData({
 			title: "Work Items",
+			endDate: new Date("2026-10-01T12:00:00"),
 			ownerKind,
 			inProgressItems: [inFlightItem(1, "ZEN-1"), inFlightItem(2, "ZEN-2")],
 			blockedItems: [],
@@ -7069,6 +7070,31 @@ describe("which lists carry the risk column", () => {
 			);
 		},
 	);
+
+	const LISTS_IN_PROGRESS_OVER_THE_RANGE = [
+		"wipOverTime",
+		"totalWorkItemAgeOverTime",
+		"wipPbc",
+		"totalWorkItemAgePbc",
+	];
+
+	it("the lists of what was in progress over the range measure age on the range's last day, and no other list does", () => {
+		const lastDay = new Date("2026-09-30T12:00:00");
+		const built = viewDataWith([], "team", { endDate: lastDay });
+
+		const ageOnOfEvery = Object.fromEntries(
+			Object.entries(built).map(([key, payload]) => [key, payload?.ageOn]),
+		);
+
+		expect(ageOnOfEvery).toEqual(
+			Object.fromEntries(
+				Object.keys(built).map((key) => [
+					key,
+					LISTS_IN_PROGRESS_OVER_THE_RANGE.includes(key) ? lastDay : undefined,
+				]),
+			),
+		);
+	});
 
 	it("no list is claimed that no longer exists", () => {
 		const built = builtWithRisk();

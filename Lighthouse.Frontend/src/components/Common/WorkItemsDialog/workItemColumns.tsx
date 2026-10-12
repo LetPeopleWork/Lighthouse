@@ -196,9 +196,14 @@ const utcDayOf = (value: Date | string | null | undefined): number | null => {
 	return time > 0 ? Math.floor(time / MS_PER_DAY) : null;
 };
 
-const startedBy = (row: IWorkItem, day: number): boolean => {
+// Matches how the server counts work in progress: started on or before the day, and not closed
+// on or before it.
+const underWayOn = (row: IWorkItem, day: number): boolean => {
 	const started = utcDayOf(row.startedDate);
-	return started !== null && started <= day;
+	const closed = utcDayOf(row.closedDate);
+	return (
+		started !== null && started <= day && (closed === null || closed > day)
+	);
 };
 
 // Only an item under way has an age: the server reports 0 for one not started yet, which would
@@ -210,8 +215,13 @@ const ageOf = (
 	if (ageOn === undefined) {
 		return row.stateCategory === "Doing" ? row.workItemAge : null;
 	}
-	return startedBy(row, Math.floor(ageOn.getTime() / MS_PER_DAY))
-		? calculateHistoricalAge(row, ageOn)
+	// The day is the reader's calendar day: a range end arrives as its local midnight, which east
+	// of Greenwich is still the day before in UTC.
+	const onDay = new Date(
+		Date.UTC(ageOn.getFullYear(), ageOn.getMonth(), ageOn.getDate(), 12),
+	);
+	return underWayOn(row, Math.floor(onDay.getTime() / MS_PER_DAY))
+		? calculateHistoricalAge(row, onDay)
 		: null;
 };
 

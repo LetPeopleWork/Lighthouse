@@ -538,6 +538,8 @@ function buildWidgetFooters(
 
 type ViewDataInputs = {
 	readonly title: string;
+	/** The last day of the range, the day the lists of what was in progress over it measure age on. */
+	readonly endDate: Date;
 	readonly ownerKind: WorkItemsDialogOwnerKind;
 	readonly inProgressItems: IWorkItem[];
 	readonly blockedItems: IWorkItem[];
@@ -662,6 +664,9 @@ export function buildViewData(
 	const closedItems = opens("closedItems");
 	const inProgress = opens("inProgress");
 	const arrivals = opens("arrivals");
+	// These lists hold everything in progress on any day of the range, so their ages are read on its
+	// last day, the same day the rest of the view describes; an item finished by then shows none.
+	const inProgressOverTheRange = { ...inProgress, ageOn: inputs.endDate };
 
 	// Every list of what the team has in flight today, and nothing else, carries the risk column —
 	// the number answers "will this item breach", which only means something for an item still
@@ -749,12 +754,12 @@ export function buildViewData(
 		wipOverTime: {
 			title: `${inputs.title} In Progress`,
 			items: wipOverTimeItems,
-			...inProgress,
+			...inProgressOverTheRange,
 		},
 		totalWorkItemAgeOverTime: {
 			title: `${inputs.title} Contributing to Total Age`,
 			items: wipOverTimeItems,
-			...inProgress,
+			...inProgressOverTheRange,
 		},
 		stacked: {
 			title: `Started and Closed ${terms.workItems}`,
@@ -779,12 +784,12 @@ export function buildViewData(
 		wipPbc: {
 			title: `${inputs.title} In Progress`,
 			items: wipOverTimeItems,
-			...inProgress,
+			...inProgressOverTheRange,
 		},
 		totalWorkItemAgePbc: {
 			title: `${inputs.title} Contributing to Total Age`,
 			items: wipOverTimeItems,
-			...inProgress,
+			...inProgressOverTheRange,
 		},
 		cycleTimePbc: {
 			title: `Closed ${terms.workItems}`,
@@ -1912,6 +1917,7 @@ export const BaseMetricsView = <
 
 	const widgetViewData = buildViewData({
 		title,
+		endDate,
 		ownerKind: ownerType,
 		inProgressItems,
 		blockedItems,

@@ -879,6 +879,37 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 
 	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	it(
+		"Age on a day given as its first moment, as a chosen range end is, is the age on that calendar day",
+		() => {
+			openTheDialog({
+				context: "inProgress",
+				items: [oldestButJustMoved, threePointerThatTookLong],
+				ageOn: new Date(2026, 8, 20),
+			});
+
+			expect(cellText("workItemAge", "WIP-1")).toBe("10");
+			expect(cellText("workItemAge", "ST-1")).toBe("");
+		},
+		RENDER_HEAVY,
+	);
+
+	// @us-02 @slice-02 @boundary @contract-shape:pure-function
+	it(
+		"Age on a past day stays empty for an item that had finished by that day",
+		() => {
+			openTheDialog({
+				context: "inProgress",
+				items: [threePointerThatTookLong],
+				ageOn: day("2026-09-25"),
+			});
+
+			expect(cellText("workItemAge", "ST-1")).toBe("");
+		},
+		RENDER_HEAVY,
+	);
+
+	// @us-02 @slice-02 @boundary @contract-shape:pure-function
+	it(
 		"Age on a past day's point stays empty for an item that had not started by that day",
 		() => {
 			openTheDialog({
