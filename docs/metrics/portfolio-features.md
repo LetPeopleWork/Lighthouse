@@ -36,9 +36,9 @@ Additionally, the widget includes a table that presents the same data in tabular
 ## Viewing Details
 
 Click on any segment of the pie chart to open a detailed dialog showing:
-- The parent work item reference
+- The parent work item, by name, linked to it in your work tracking system
 - List of all child work items in that group
-- Each work item's cycle time (for completed items) or work item age (for items in progress)
+- Each work item's Work Item Age (for items in progress) and Cycle Time (for completed items), side by side, with the oldest unfinished item first
 - Additional work item details (title, ID, state)
 
 This visualization helps you:
@@ -158,7 +158,7 @@ The scatter plot displays:
 - Each dot or bubble represents one or more completed work items from the selected time range
 - Larger bubbles indicate multiple items with the same estimation and cycle time
 
-Similar to the [Cycle Time Scatterplot](flow-metrics.html#cycle-time-scatterplot), you can click on any data point to drill into the underlying work items and see their details.
+Similar to the [Cycle Time Scatterplot](flow-metrics.html#cycle-time-scatterplot), you can click on any data point to drill into the underlying work items and see their details. The list shows each item's Estimate next to its Cycle Time and the day it closed, sorted by Cycle Time, so the items that took far longer than their Estimate suggested stand out at the top. **View Data** in the widget header lists every plotted item the same way.
 
 {: .note}
 This chart only appears after you've configured an estimation field. If no estimation field is configured, the chart will not be visible.

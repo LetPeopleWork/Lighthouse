@@ -217,7 +217,7 @@ In this widget you can see the different percentiles of your Cycle Time. It's to
 
 In case you have defined a [Service Level Expectation](../teams/edit.html#service-level-expectation), you will see the SLE on the top right.
 
-Use the **View Data** button in the widget header to see all items that were closed in the respective date range. If you have defined an SLE, the Cycle Time coloring is based on how close (or above) the item got to the SLE.
+Use the **View Data** button in the widget header to see all items that were closed in the respective date range, with the day each closed and its Cycle Time, longest first. If you have defined an SLE, the Cycle Time coloring is based on how close (or above) the item got to the SLE.
 
 ![Closed Items Dialog](../assets/features/metrics/workitemsdialog.png)
 

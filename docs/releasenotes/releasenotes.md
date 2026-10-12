@@ -4,6 +4,17 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse vNext
+
+## Bugfixes and Improvements
+
+- **Clicking a chart now lists the Work Items with the columns that explain why they are there.** The Estimation vs. Cycle Time dialog shows each Work Item's Estimate next to its Cycle Time, the Blocked list shows since when each Work Item is Blocked, a Feature's child items show when each started and closed, and **Manage columns** offers the rest; the layout you choose is remembered for each chart. Full detail: [Viewing the Data Behind a Widget](https://docs.lighthouse.letpeople.work/metrics/widgets.html#columns-in-the-work-items-dialog).
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Steve Pereira](https://www.linkedin.com/in/devopsto/)
+
 # Lighthouse v26.10.10.1
 
 ## Support for Team-Level Refinement

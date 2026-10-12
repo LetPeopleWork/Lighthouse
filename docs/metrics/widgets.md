@@ -58,6 +58,12 @@ Widgets that are backed by a concrete set of work items include a **View Data** 
 
 Some charts also support **chart-specific drill-ins**: clicking a bar, bubble, data point, or pie segment opens a dialog scoped to that particular subset (e.g. items for a single day or a specific parent feature).
 
+### Columns in the Work Items Dialog
+
+Every dialog shows the ID, Name, Type and State of each item, and then opens with the columns that explain why the items are there. The list behind a Cycle Time chart shows when each item closed and its Cycle Time, the list behind Estimation vs. Cycle Time adds each item's Estimate, the list of Blocked Work Items shows how old each item is and since when it has been Blocked, and a Feature's child items show when each started and closed, its Work Item Age or, once finished, its Cycle Time, and its Estimate. Each list is sorted by the column that matters most for it, usually Cycle Time or Work Item Age.
+
+The rest of what Lighthouse knows about the items is one click away: **Manage columns**, in the menu of any column header, lists every other column the dialog can show, such as Started, Closed, Parent, Blocked since or the Estimate, and turning one on adds it to the table. The Estimate is offered only where an estimation field is configured for the Team or Portfolio. Columns you hide, show, move or resize are remembered for that kind of list (the dialogs of a chart and of its **View Data** button share one layout), separately for Teams and for Portfolios, so changing the Blocked list leaves the Cycle Time list as it was. **Reset layout to defaults**, the grid icon above the table, returns the dialog you are in to its default columns.
+
 # Status Indicators
 
 Most widgets display a status indicator in one of three states. The labels used in the UI are:
