@@ -33,14 +33,13 @@ import {
 } from "../../../utils/theme/colors";
 import DataGridBase from "../DataGrid/DataGridBase";
 import type { DataGridColumn } from "../DataGrid/types";
-import TimeInStateBadge, {
-	daysInState,
-} from "../TimeInStateBadge/TimeInStateBadge";
+import { daysInState } from "../TimeInStateBadge/TimeInStateBadge";
 import {
 	ageBandGridColumn,
 	contextGridLayout,
 	judgementCell,
 	sleRiskGridColumn,
+	timeInStateGridColumn,
 	warningsGridColumn,
 } from "./workItemColumns";
 import type {
@@ -184,8 +183,8 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	);
 
 	const contextLayout = useMemo(
-		() => contextGridLayout(context, items, getTerm),
-		[context, items, getTerm],
+		() => contextGridLayout(context, items, getTerm, timeInStateColumn),
+		[context, items, getTerm, timeInStateColumn],
 	);
 
 	const columns = useMemo(() => {
@@ -313,33 +312,15 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 			baseColumns.push(warningsGridColumn(warningsColumn));
 		}
 
-		if (timeInStateColumn) {
-			baseColumns.push({
-				field: "timeInState",
-				headerName: "Time in State",
-				width: 200,
-				sortable: true,
-				valueGetter: (_, row) =>
-					daysInState(row.currentStateEnteredAt ?? null, timeInStateColumn.now),
-				renderCell: ({ row }) => (
-					<TimeInStateBadge
-						currentStateEnteredAt={row.currentStateEnteredAt ?? null}
-						currentStateName={row.state}
-						stalenessThresholdDays={timeInStateColumn.stalenessThresholdDays}
-						blockedStalenessThresholdDays={
-							timeInStateColumn.blockedStalenessThresholdDays
-						}
-						isBlocked={row.isBlocked}
-						blockedSince={row.blockedSince ?? null}
-						now={timeInStateColumn.now}
-					/>
-				),
-			});
+		// A dialog opened from a context already has Time in State among its catalogue columns.
+		if (timeInStateColumn && context === undefined) {
+			baseColumns.push(timeInStateGridColumn(timeInStateColumn));
 		}
 
 		return baseColumns;
 	}, [
 		hasOwningTeams,
+		context,
 		contextLayout,
 		sle,
 		workItemTerm,

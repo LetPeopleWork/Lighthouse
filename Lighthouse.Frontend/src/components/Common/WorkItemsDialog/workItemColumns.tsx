@@ -17,7 +17,14 @@ import {
 import { formatLocalDate } from "../../../utils/date/localDate";
 import { hexToRgba } from "../../../utils/theme/colors";
 import type { ColumnVisibilityModel, DataGridColumn } from "../DataGrid/types";
-import type { WarningsColumnDescriptor } from "./WorkItemsDialog";
+import ParentWorkItemCell from "../ParentWorkItemCell/ParentWorkItemCell";
+import TimeInStateBadge, {
+	daysInState,
+} from "../TimeInStateBadge/TimeInStateBadge";
+import type {
+	TimeInStateColumnDefinition,
+	WarningsColumnDescriptor,
+} from "./WorkItemsDialog";
 import {
 	type ColumnId,
 	WORK_ITEMS_DIALOG_CONTEXTS,
@@ -30,6 +37,8 @@ export interface CatalogueColumnSettings {
 	getTerm: (key: string) => string;
 	/** The column the rows open sorted by; its cells keep the test id the dialog's sort column has always had. */
 	sortBy?: ColumnId;
+	/** When a row's time in its state is measured to, and when that time counts as stale. */
+	timeInState?: TimeInStateColumnDefinition;
 }
 
 interface CatalogueEntry {
@@ -40,6 +49,12 @@ interface CatalogueEntry {
 
 const always = () => true;
 
+// Feature rows carry no blocked-since date of their own, so only Work Item rows offer one.
+const workItemRows = (items: readonly IWorkItem[]) =>
+	!items.some((item) => "owningTeam" in item);
+
+const NO_PARENT_NAMES = new Map();
+
 // The rows come straight from the server's JSON, so a date may still be a string, and a date the
 // item does not have arrives as null or as the epoch.
 const asLocalDay = (value: Date | string | null | undefined): string => {
@@ -47,6 +62,18 @@ const asLocalDay = (value: Date | string | null | undefined): string => {
 	const date = new Date(value);
 	return date.getTime() > 0 ? formatLocalDate(date) : "";
 };
+
+const dayColumn = (
+	field: ColumnId,
+	headerName: string,
+	dayOf: (row: IWorkItem) => Date | string | null | undefined,
+): DataGridColumn<WorkItemRow> => ({
+	field,
+	headerName,
+	width: 130,
+	sortable: true,
+	valueGetter: (_, row) => asLocalDay(dayOf(row)),
+});
 
 const numberColumn = (
 	field: ColumnId,
@@ -56,7 +83,7 @@ const numberColumn = (
 ): DataGridColumn<WorkItemRow> => ({
 	field,
 	headerName,
-	width: 140,
+	width: 130,
 	sortable: true,
 	valueGetter: (_, row) => numberFor(row),
 	renderCell: ({ value }) => (
@@ -66,6 +93,23 @@ const numberColumn = (
 		>
 			{value as number}
 		</Typography>
+	),
+});
+
+const ageOrCycleTimeOf = (row: IWorkItem): number =>
+	row.stateCategory === "Done" ? row.cycleTime : row.workItemAge;
+
+const parentColumn = (): DataGridColumn<WorkItemRow> => ({
+	field: "parent",
+	headerName: "Parent",
+	width: 200,
+	sortable: true,
+	valueGetter: (_, row) => row.parentWorkItemReference,
+	renderCell: ({ row }) => (
+		<ParentWorkItemCell
+			parentReference={row.parentWorkItemReference}
+			parentMap={NO_PARENT_NAMES}
+		/>
 	),
 });
 
@@ -94,15 +138,14 @@ const estimateColumn = (): DataGridColumn<WorkItemRow> => ({
 /** Every catalogue column, in the one order Manage columns lists those a context does not show. */
 const CATALOGUE: readonly CatalogueEntry[] = [
 	{
+		id: "startedDate",
+		offeredFor: always,
+		build: () => dayColumn("startedDate", "Started", (row) => row.startedDate),
+	},
+	{
 		id: "closedDate",
 		offeredFor: always,
-		build: () => ({
-			field: "closedDate",
-			headerName: "Closed",
-			width: 130,
-			sortable: true,
-			valueGetter: (_, row) => asLocalDay(row.closedDate),
-		}),
+		build: () => dayColumn("closedDate", "Closed", (row) => row.closedDate),
 	},
 	{
 		id: "cycleTime",
@@ -116,6 +159,28 @@ const CATALOGUE: readonly CatalogueEntry[] = [
 			),
 	},
 	{
+		id: "workItemAge",
+		offeredFor: always,
+		build: (settings) =>
+			numberColumn(
+				"workItemAge",
+				settings.getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE),
+				(row) => row.workItemAge,
+				settings,
+			),
+	},
+	{
+		id: "ageOrCycleTime",
+		offeredFor: always,
+		build: (settings) =>
+			numberColumn(
+				"ageOrCycleTime",
+				`${settings.getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE)} / ${settings.getTerm(TERMINOLOGY_KEYS.CYCLE_TIME)}`,
+				ageOrCycleTimeOf,
+				settings,
+			),
+	},
+	{
 		id: "estimate",
 		// An older server sends no estimate at all, and one whose owner has no estimation set up sends
 		// null; both mean there is nothing for this column to say.
@@ -124,6 +189,22 @@ const CATALOGUE: readonly CatalogueEntry[] = [
 				(item) => item.estimate !== undefined && item.estimate !== null,
 			),
 		build: estimateColumn,
+	},
+	{ id: "parent", offeredFor: always, build: parentColumn },
+	{
+		id: "blockedSince",
+		offeredFor: workItemRows,
+		build: (settings) =>
+			dayColumn(
+				"blockedSince",
+				`${settings.getTerm(TERMINOLOGY_KEYS.BLOCKED)} since`,
+				(row) => row.blockedSince,
+			),
+	},
+	{
+		id: "timeInState",
+		offeredFor: always,
+		build: (settings) => timeInStateGridColumn(settings.timeInState),
 	},
 ];
 
@@ -159,6 +240,7 @@ export function contextGridLayout(
 	context: WorkItemsDialogContextId | undefined,
 	items: readonly IWorkItem[],
 	getTerm: (key: string) => string,
+	timeInState?: TimeInStateColumnDefinition,
 ): ContextGridLayout {
 	if (context === undefined) return NO_CONTEXT;
 
@@ -171,12 +253,37 @@ export function contextGridLayout(
 
 	return {
 		columns: ordered.flatMap(
-			(id) => buildWorkItemColumn(id, { getTerm, sortBy }) ?? [],
+			(id) => buildWorkItemColumn(id, { getTerm, sortBy, timeInState }) ?? [],
 		),
 		visibilityModel: Object.fromEntries(
 			ordered.map((id) => [id, visible.includes(id)]),
 		),
 		sortBy,
+	};
+}
+
+/** How long each row has sat in its current state, flagged once that counts as stale. */
+export function timeInStateGridColumn(
+	definition: TimeInStateColumnDefinition = {},
+): DataGridColumn<WorkItemRow> {
+	return {
+		field: "timeInState",
+		headerName: "Time in State",
+		width: 200,
+		sortable: true,
+		valueGetter: (_, row) =>
+			daysInState(row.currentStateEnteredAt ?? null, definition.now),
+		renderCell: ({ row }) => (
+			<TimeInStateBadge
+				currentStateEnteredAt={row.currentStateEnteredAt ?? null}
+				currentStateName={row.state}
+				stalenessThresholdDays={definition.stalenessThresholdDays}
+				blockedStalenessThresholdDays={definition.blockedStalenessThresholdDays}
+				isBlocked={row.isBlocked}
+				blockedSince={row.blockedSince ?? null}
+				now={definition.now}
+			/>
+		),
 	};
 }
 

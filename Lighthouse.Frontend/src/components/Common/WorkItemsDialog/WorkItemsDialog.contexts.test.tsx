@@ -609,7 +609,7 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 	);
 
 	// @us-01 @slice-01b @driving_port @contract-shape:pure-function
-	it.skip(
+	it(
 		"Manage columns offers every other column the rows can fill, all of them off, after the defaults",
 		async () => {
 			const user = userEvent.setup();
@@ -633,7 +633,7 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 	);
 
 	// @us-01 @slice-01b @contract-shape:bounded-change
-	it.skip(
+	it(
 		"a column turned on appears in its place in the fixed order",
 		async () => {
 			const user = userEvent.setup();
@@ -654,7 +654,7 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 	);
 
 	// @us-01 @slice-01b @error @contract-shape:pure-function
-	it.skip(
+	it(
 		"rows from a backend that sends no estimate at all read as estimation not set up",
 		async () => {
 			const user = userEvent.setup();
@@ -682,7 +682,7 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 	);
 
 	// @us-01 @slice-01b @boundary @contract-shape:pure-function
-	it.skip(
+	it(
 		"dates show the local day as YYYY-MM-DD, and a date the item does not have stays empty",
 		() => {
 			openTheDialog({
@@ -698,7 +698,7 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 	);
 
 	// @us-01 @slice-01b @contract-shape:pure-function
-	it.skip(
+	it(
 		"the configured word for Cycle Time heads its column",
 		() => {
 			instanceWords.cycleTime = "Lead Time";
@@ -905,7 +905,7 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 	);
 
 	// @us-01 @slice-01b @error @contract-shape:pure-function
-	it.skip(
+	it(
 		"Work Item rows neither show nor offer Owned by",
 		async () => {
 			const user = userEvent.setup();
