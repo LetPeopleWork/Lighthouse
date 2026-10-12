@@ -354,11 +354,13 @@ All paths are under `Lighthouse.Frontend/src/`.
 | `components/Common/DataGrid/DataGridBase.tsx` | EXTEND (≈4 lines) | `pageSizeOptions={[PAGE_SIZE]}`; drop `hideFooter`/`hidePagination`; `hideFooterSelectedRowCount`; stable `{ ...slots, footer }`; DDD-10 spacing wrap if that route is taken |
 | `components/Common/DataGrid/<RowRangeFooter>.tsx` (name is the crafter's) | CREATE (small) | `PAGE_SIZE = 100`; the footer slot: `null` unless not loading and filtered count > `PAGE_SIZE`, else MUI `GridFooter` |
 | `components/Common/DataGrid/types.ts` | EXTEND | remove `hidePagination` (`:61-62`); DDD-10 may narrow `getRowSpacing`'s parameter type (`:76`) |
-| `pages/Settings/SystemInfo/ThirdPartyPackagesSection.tsx` | EXTEND (−1 line) | drop `hidePagination={false}` (D3) |
+| `pages/Settings/SystemInfo/ThirdPartyPackagesSection.tsx` | EXTEND | drop `hidePagination={false}` (D3); a change of search text sends the grid to page 1 while keeping the reader's sort and column filter (MD-1; mechanism is the crafter's) |
 | `pages/Teams/Detail/Refinement/EnoughForLine.tsx` | EXTEND | DDD-10: spacing and row on one whole-list basis; "last shown" means the filtered list's last row |
 | `pages/Teams/Detail/Refinement/EnoughForLine.test.tsx` | EXTEND | follows DDD-10's parameter shape (`:32-33` call `getRowSpacing(theRow(…))`) |
-| The other six consumers | none | they inherit the rule through `DataGridBase` |
-| `components/Common/DataGrid/DataGridToolbar.tsx` | none (comment fix optional) | DDD-8 |
+| `pages/Teams/Detail/Refinement/RefinementGrid.tsx` | EXTEND | DDD-10: the only `getRowSpacing` caller; it hands the row slot and the spacing callback to `DataGridBase`, so the callback follows the new parameter shape (added by the roadmap review, M-2) |
+| `pages/Teams/Detail/Refinement/enoughForPlacement.ts` | EXTEND (conditional) | only if DDD-10 reuses or adjusts its `ShownRow { index, isLastShown }` shape |
+| The other five consumers | none | they inherit the rule through `DataGridBase` |
+| `components/Common/DataGrid/DataGridToolbar.tsx` | EXTEND (comment only) | DDD-8: the comment saying a filter decides what is exported is wrong and is corrected; export behaviour unchanged (made mandatory by the roadmap review, L-6) |
 
 ## Wave: DESIGN / [REF] Driving ports
 
@@ -827,3 +829,41 @@ Acceptance designer, iteration 2: needs revision (1 blocker, 0 high, 2 medium, 7
 - **DELIVER action items (accepted conditions):** **M-1** when un-skipping the GR-0131 vote case, add a Then through the rendered row that shows Jonas's Yes, beside the `castVote` boundary check. **L-5** confirm on the first live run that the "e" search leaves more than 100 packages, or pick a term that does, and record the count in the comment. **L-1** tighten `/^Name/` to an exact header name if the header's accessible name allows it. **L-3** optional: assert the gap without the literal `36px` if a named constant exists.
 
 No blocker remains. DELIVER can start; the DISCUSS amendments are wording and do not change what the tests pin.
+
+## Wave: DELIVER / [REF] Changed Assumptions
+
+- **The walking skeleton assumed every real build serves well over 100 packages. Only main builds do.**
+  `Lighthouse.Frontend/public/sbom/backend.cdx.json` and `frontend.cdx.json` are committed placeholders
+  holding one component each. CI copies the real SBOM artifact over them only when `sbom-version` is set,
+  which `ci.yml` does on `refs/heads/main` only. So on PR builds (Renovate PRs run `ci_verifysqlite` /
+  `ci_verifypostgres` too) Third Party Packages lists 2 packages, and the spec as DISTILL wrote it would fail.
+  **Decision (engineering, coordinator):** the spec reads how many packages the build serves, from a source
+  other than the footer it tests. At 100 or fewer it asserts the short-list look (no range, no arrows) and
+  stops with a Playwright annotation saying why. Above 100 it runs the full paging and search flow. Roadmap
+  step 01-06 proves the long branch locally on main's downloaded SBOM artifact (never committed) and the
+  short branch on the placeholders. It picks the search term from the real data. The spec header's "well
+  over 100 packages in any real build" is corrected. Upstream finding 2 above (both SBOMs served) is
+  subsumed by this.
+
+## Wave: DELIVER / [REF] Roadmap review
+
+`deliver/roadmap.json`, iteration 1: needs revision (0 blockers, 2 high, 3 medium, 10 low). Revised
+2026-10-12 per the coordinator's decisions. It awaits re-review (`validation.status: pending_review`).
+
+| Finding | Disposition |
+|---|---|
+| H-1 placeholder SBOMs on non-main builds | Accepted, widened: two-branch skeleton (see Changed Assumptions); 01-06 criteria, notes and `SystemInfoPage.ts` count member updated |
+| H-2 where `pnpm build` writes | Rejected as a defect: `vite.config.ts` `outDir` is the backend's `wwwroot`. 01-06 now states it and checks `wwwroot/index.html` exists after the build |
+| M-1 fallback file missing from 01-02 | `DataGridBase.tsx` added to 01-02, marked fallback-only |
+| M-2 `RefinementGrid.tsx` undeclared in DESIGN | Added as EXTEND above (plus `enoughForPlacement.ts`, conditional); 01-05 says why it is in the step |
+| M-3 MD-1 missing from DESIGN row | `ThirdPartyPackagesSection.tsx` row now covers the search → page 1 rule |
+| L-1 pins mixed into `unskips` | Each step has a separate `pins` array |
+| L-2 the 36px gap | Dropped: `LINE_HEIGHT_PX` is module-private in `EnoughForLine.tsx`, and a literal in one test is clearer than a constant exported only for a test |
+| L-3 01-05 sizing reason | Restated as one shared spacing rule |
+| L-4 vote case | 01-05 names the rendered row as the behaviour and `castVote` as the port contract |
+| L-5 structural greps in step criteria | Scaffold, `hidePagination` and `PersistedGridState` checks moved to 01-06's slice gate |
+| L-6 toolbar comment optional in DESIGN | Made mandatory in the DESIGN row, matching 01-03 |
+| L-7 shared test kit | 01-02 notes that `WorkItemsDialogTestKit.tsx` is shared with unpushed Story #6248: merge, never overwrite |
+| L-8 time-zone key | 01-06 drops it (this page does not need it). If kept: `Lighthouse:TimeZone` / `Lighthouse__TimeZone`, as `LighthouseClock.cs` names it, confirmed in `Program.cs` first |
+| L-9 remount guidance | Replaced with a criterion: page 1 after a search, with the reader's sort and column filter kept; checked live in 01-06 |
+| L-10 live check earlier than 01-06 | Declined: the live long-list check needs the downloaded SBOM artifact; component tests cover 01-01 to 01-05, and 01-06 is the browser proof |

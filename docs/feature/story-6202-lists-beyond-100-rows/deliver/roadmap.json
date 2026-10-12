@@ -1,0 +1,285 @@
+{
+  "roadmap": {
+    "project_id": "story-6202-lists-beyond-100-rows",
+    "created_at": "2026-10-12",
+    "total_steps": 6,
+    "total_phases": 1,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "goal": "Story #6202: every row of a list longer than 100 rows can be reached, and a short list stays exactly as it is. Frontend only, one slice. Every DataGridBase grid shows MUI's own footer (range and total, e.g. `1–100 of 143`, with previous/next arrows and no rows-per-page choice) only while it is not loading and holds more than 100 rows the reader can see after filters; pages are fixed at 100 and never remembered. The hidePagination prop goes, so Third-party packages follows the same rule, and its search sends the list back to page 1. Export and Copy keep taking every row in sort order. RefinementGrid's enough-for line is placed by the row's position in the whole list, not on the page. Done when zero `it.skip` / `test.skip` remain in the five DISTILL files (DataGridBase.paging.test.tsx, ThirdPartyPackagesSection.paging.test.tsx, RefinementView.paging.test.tsx, WorkItemsDialog.paging.test.tsx, ThirdPartyPackagesPaging.spec.ts): 33 pending cases (32 Vitest, 1 Playwright). The 9 pins stay green, the RowRangeFooter scaffold marker is gone, `pnpm test` and `pnpm build` are green with zero warnings, and the walking skeleton passes locally on both of its branches: a build serving the real SBOMs (more than 100 packages) and one serving the committed placeholders (2 packages).",
+    "paradigm_note": "The Hypothesis + state-delta unit mandate from nw-roadmap does not apply, and leaving it out is deliberate (EXEMPT FROM PARADIGM: TypeScript + Vitest + React Testing Library + Playwright; fast-check is not a devDependency). DISTILL wrote the boundary universe as it.each tables (0 / 1 / 100 / 101 / 143 / 243 rows, the 64-row filter, the seven line placements), recorded in feature-delta.md, DISTILL / Reconciliation. The crafter writes no new Vitest specifications. Every pending case was written by DISTILL and is skipped. RED means un-skipping it and capturing the failure before the production edit. GREEN is the production code. Three steps (01-02, 01-03 and part of 01-05) un-skip cases that MUI's own behaviour, or an earlier step, already satisfies. Those steps say so, and each such case is shown to be falsifiable once by a temporary sabotage that is reverted, never committed. The crafter edits tests only where DISTILL's disposition, the DISTILL review gate's DELIVER action items, or the roadmap review list it: EnoughForLine.test.tsx follows the chosen parameter shape and gains the off-page focused-row case; the Jonas vote case gains an observable Then; the `/^Name/` header match may be tightened; the E2E spec gains its short-list branch and records the live package count. Steps tagged @sizing-review-needed un-skip eight or more cases, and each says why in its implementation_notes. In every step, `unskips` lists only skipped cases; passing guards are in `pins`."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": null,
+    "reviewed_at": null,
+    "notes": "Iteration 1 review: needs_revision (0 blockers, 2 high, 3 medium, 10 low). Revised per the coordinator's decisions, recorded in feature-delta.md, DELIVER / Roadmap review. Each step's file-qualified `unskips` list is the authoritative spec-to-step mapping; `pins` lists passing guards that must stay green and are not counted. scenario_name names the main describe only. A suffix such as (it.each, 3 rows) is an annotation, not part of the title. Totals: 01-01 = 10, 01-02 = 7, 01-03 = 3, 01-04 = 2, 01-05 = 10, 01-06 = 1, so 33 pending cases, each in exactly one step. Two deliberate deviations from DISTILL's enabling order: (1) Third-party packages' three D3 cases move into 01-01, because removing hidePagination there is forced by tsc in the same step and flips their behaviour; un-skipping them later would start from a fake RED. (2) The Work Items dialog's filter case is batched into 01-02 with the other filter-and-reload cases. It needs no code of its own, and a separate step would be a third step with the same green-on-un-skip shape.",
+    "approved_by": "maintainer (2026-10-12), after review iteration 2 findings were applied",
+    "accepted_risk": "PR CI builds serve placeholder SBOMs, so the walking skeleton proves only the short-list look there; long-list paging is proven by component tests, the local real-SBOM run and CI on main."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-6202-lists-beyond-100-rows/feature-delta.md",
+    "red_classification": "docs/feature/story-6202-lists-beyond-100-rows/distill/red-classification.md",
+    "slice_01": "docs/feature/story-6202-lists-beyond-100-rows/slices/slice-01-every-row-reachable.md",
+    "ci_learnings": "docs/ci-learnings.md",
+    "ado_story": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6202"
+  },
+  "user_decisions": [
+    "D1: the footer appears only when a grid has more than 100 rows the reader can see (after filters). With 100 or fewer the grid looks exactly as today, with no footer bar at all.",
+    "D2: fixed pages of 100. The footer is MUI's range and total plus previous/next arrows (`1–100 of 243  ‹ ›`). No rows-per-page picker, nothing persisted.",
+    "D3: Settings → Third-party packages follows the same rule. Its always-on footer and its picker go.",
+    "D4: every DataGridBase consumer in one slice. Conditional footer chosen over virtualised scrolling.",
+    "D6: CSV export and Copy keep exporting every row in the current sort order, whichever page is open.",
+    "D7 / D8: no DEVOPS wave, no usage-data event.",
+    "MD-1 (maintainer, option a): a search in Third-party packages sends the list back to page 1 even when more than 100 rows remain. It is done in ThirdPartyPackagesSection only, and DataGridBase keeps MUI's page policy.",
+    "MD-2 (maintainer, option a): RefinementGrid's enough-for line sits where it falls in the whole list, with nothing added. With 143 Work Items: 20 needed → under row 20 on page 1, nothing on page 2. 120 needed → no line on page 1, line under row 120 on page 2. 150 needed → under row 143 with 'All 143 Work Items in Refinement are needed before the next Refinement.'",
+    "Engineering (roadmap review H-1, coordinator): the committed SBOM placeholders hold one component each and CI copies the real SBOMs in on main builds only, so the walking skeleton reads how many packages the build serves. At 100 or fewer it asserts the short-list look (no range, no arrows) and stops with an annotation saying why. Above 100 it runs the full paging and search flow."
+  ],
+  "out_of_scope": [
+    "Virtualised scrolling without pages, a rows-per-page picker, remembering the page across visits, server-side paging.",
+    "Whether Export should honour an active column filter (a separate item for the maintainer). Export behaviour is not changed.",
+    "The failure looks of consumers that show their empty message after a failed load (a follow-up the maintainer files; paging does not widen it).",
+    "FeatureGrid's 'Select all' keeps selecting every sorted, filtered row on every page.",
+    "Regenerating settings/systeminfo.png (it changes: the picker goes), docs, website grep and release-notes line: finalize owns them.",
+    "Committing real SBOMs into Lighthouse.Frontend/public/sbom, or changing how CI provides them on PR builds.",
+    "Mutation testing (Stryker, with the three new Vitest files in the runner's include: list), refactor passes, review and finalize: the orchestrator runs those after the steps below.",
+    "Any backend, API, RBAC, client or usage-data change."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 01: every row of a long list is reachable",
+      "description": "Every DataGridBase grid shows its range and arrows once it holds more than 100 rows the reader can see and is not loading. Short lists stay as they are. Third-party packages follows the rule and its search opens page 1. Export, Copy and the saved layout ignore the open page. RefinementGrid's enough-for line is placed by whole-list position. Releasable after the last step: the whole slice is one story.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "A list longer than 100 rows shows its range and page arrows; a short or loading list shows no footer",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "Build the conditional footer in the RowRangeFooter scaffold and wire it as DataGridBase's footer slot, with fixed pages of 100 and no picker. While the grid is loading there is no footer. Remove the hidePagination prop and its one caller in Third-party packages. Retire the scaffold marker.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.paging.test.tsx",
+          "scenario_name": "A list of more than 100 rows says how many it has and pages to the rest",
+          "unskips": [
+            "DataGridBase.paging.test.tsx :: with %i rows shows the first 100 above %s, with page arrows (it.each, 3 rows: 101, 143, 243)",
+            "DataGridBase.paging.test.tsx :: puts the 101st row alone on the second page of a 101-row list",
+            "DataGridBase.paging.test.tsx :: reaches every row of a 243-row list, and the arrows lead back",
+            "DataGridBase.paging.test.tsx :: offers the previous and next page only, with no rows-per-page choice",
+            "DataGridBase.paging.test.tsx :: shows no footer while a 243-row list reloads, and the range again once it has",
+            "ThirdPartyPackagesSection.paging.test.tsx :: shows the range and total of 243 packages with page arrows and no rows-per-page choice",
+            "ThirdPartyPackagesSection.paging.test.tsx :: shows all of 38 packages with no footer",
+            "ThirdPartyPackagesSection.paging.test.tsx :: shows all 9 packages a search from the second page leaves, with no footer"
+          ],
+          "pins": [
+            "DataGridBase.paging.test.tsx :: shows all of its %i rows and no footer (it.each, 3 rows: 0, 1, 100)",
+            "DataGridBase.paging.test.tsx :: sorts the whole list, so its overall first row opens the first page",
+            "DataGridBase.paging.test.tsx :: shows the loading look and no footer on a first load with no rows yet",
+            "DataGridBase.paging.test.tsx :: exports all 243 rows, in the order shown, from the first page",
+            "DataGridBase.paging.test.tsx :: copies all 243 rows, in the order shown, from the first page",
+            "ThirdPartyPackagesSection.paging.test.tsx :: says why the packages could not be loaded, with no list and no footer"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/DataGrid/RowRangeFooter.tsx",
+            "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx",
+            "Lighthouse.Frontend/src/components/Common/DataGrid/types.ts",
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.tsx",
+            "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.paging.test.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.paging.test.tsx"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "The 10 named cases are un-skipped and their RED is captured before the production edit: `Unable to find an element with the text: 1–100 of N`, plus 'Rows per page' and the footer bar present under 38 packages and under a 9-package search.",
+            "A grid that is not loading and holds more than 100 rows after filters shows its first 100 rows above MUI's range label, pinned as literals with the en dash (`1–100 of 101`, `1–100 of 143`, `1–100 of 243`). 'Go to previous page' is disabled on page 1 and 'Go to next page' is disabled on the last page.",
+            "Page 2 of a 101-row list holds Row 101 alone (`101–101 of 101`). Every row of 243 is reachable (`101–200 of 243`, `201–243 of 243`), and the previous arrow leads back.",
+            "There is no rows-per-page choice: no text starting 'Rows per page' and no combobox in the footer.",
+            "While the grid is loading there is no footer, even with 243 rows held. The range returns once loading ends.",
+            "Lists of 0, 1 and 100 rows render no `.MuiDataGrid-footerContainer` at all, not an empty one (the pins stay green).",
+            "Third-party packages shows the same footer as every other list. 243 packages show the range and arrows with no picker. 38 packages show no footer. A search from page 2 that leaves 9 shows all 9 with no footer. Its failure pin keeps the Alert, with no list and no footer.",
+            "The existing suites stay green unchanged: DataGridBase.test.tsx (its 200-row 'fewer rendered than 200' case holds because a page holds 100), DataGridToolbar.test.tsx, ThirdPartyPackagesSection.test.tsx, and every consumer's own tests. DataGridBase.defaults.test.tsx (story #6248) is untouched.",
+            "`pnpm test` green; `pnpm build` green with zero errors and zero warnings.",
+            "The removal is proven in this commit: `pnpm exec tsc -b` is clean with no `hidePagination` left in Lighthouse.Frontend/src, and RowRangeFooter.tsx exports no `__SCAFFOLD__`."
+          ],
+          "implementation_notes": "Mechanism, as DESIGN chose it: DataGridBase stops passing hideFooter and passes a footer slot. The slot renders nothing unless the grid is not loading and its filtered top-level row count is above the page size, and otherwise renders MUI's own GridFooter. Read the count from grid state (the filtered row count or the page count selector, plus the root props' loading), never from rows.length. A column filter does not change rows, so rows.length would leave a dead footer under a filtered list (01-02 pins that). Merge the slot as `{ ...slots, footer }` and keep the merged object referentially stable (useMemo over slots), so RefinementGrid's own row slot survives. Set `pageSizeOptions={[PAGE_SIZE]}` and leave the page size at MUI's default of 100: one option hides both the select and its label. Set hideFooterSelectedRowCount, so keyboard selection never puts '1 row selected' beside the range. No localeText override: the range copy is MUI's. The decision lives in the footer file, and DataGridBase's render body gains no branching (about four changed lines). That keeps the merge with story #6248, which also edits DataGridBase.tsx and types.ts next to `defaultColumnVisibilityModel`, to adjacent hunks. Merge, never overwrite, and never rebase on your own initiative. The crafter may rename RowRangeFooter; PAGE_SIZE is one piece of knowledge used twice, as the page size and as the threshold. This step removes the `__SCAFFOLD__` export and the throwing body, and removes hidePagination from types.ts and DataGridBase (01-06's slice gate greps for both). Removing the prop forces removing `hidePagination={false}` from ThirdPartyPackagesSection.tsx in the same commit (tsc), and that flips the three Third-party packages D3 cases, so they are un-skipped here rather than later. If the line in DataGridBase.test.tsx that credits virtualisation for the 200-row case is touched, reword it to say a page holds 100. Sizing: 10 cases is over the eight-case guide. All ten turn on one predicate (not loading and more than one page) and on the one prop removal that tsc forces into the same commit. Splitting would mean keeping an unused prop for a step, which Biome and Sonar (S6767) reject. PROJECT RULES: read docs/ci-learnings.md first and pre-apply its frontend rules: no negated condition in a ternary (S7735), so write the visibility check positively; cognitive complexity under 15 (S3776); no declared-but-unused prop (S6767); globalThis over window (S7764); pass a single-argument function straight to .map (S7770); `dataset` over getAttribute('data-…') (S7761); a literal used three or more times in one file becomes a constant (S1192); a presence regex starts with ^ or a literal word (S8786). Pin user-visible copy against the literal with the en dash, never a string built from PAGE_SIZE (self-satisfying). RTL regex name matchers are unanchored substring matches: use the exact strings 'Go to next page' / 'Go to previous page' and anchor every regex. Un-skip by `it.skip` → `it` and `it.skip.each` → `it.each`; never add describe.skip (Vitest still evaluates its body). Comments are rare, say the why in plain language, and never cite internal ids such as DDD-3, MD-1, AC-1.6, V13 or D3. Gates: in this worktree run `pnpm install` in Lighthouse.Frontend first and check `pnpm biome --version` against package.json (a stale node_modules runs an old Biome). `pnpm build`'s prebuild runs `biome check --write`, so re-read `git diff` after the build and commit what it rewrote. Never pipe a gate's output through tail or head. Commit: `feat(datagrid): a list longer than 100 rows shows its range and pages (story 6202)`"
+        },
+        {
+          "id": "01-02",
+          "name": "A long list opens on the right page after a sort, a column filter or a reload",
+          "description": "Un-skip the page-policy cases on DataGridBase and the Work Items dialog's own column filter case. MUI's built-in policy and 01-01's filtered-count rule are expected to satisfy them, with no Lighthouse page code. Add the controlled-page fallback only if a briefly wrong page shows.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.paging.test.tsx",
+          "scenario_name": "Sorting and filtering a long list; A long list whose rows change while a later page is open",
+          "unskips": [
+            "DataGridBase.paging.test.tsx :: goes back to the first page when the list is sorted on the second",
+            "DataGridBase.paging.test.tsx :: opens the first page of what a column filter on the second page leaves, when that is still more than 100",
+            "DataGridBase.paging.test.tsx :: shows all 64 rows a column filter on the second page leaves, with no footer",
+            "DataGridBase.paging.test.tsx :: shows all 64 rows and no footer when a reload brings the list down to 64",
+            "DataGridBase.paging.test.tsx :: keeps the open page when a reload leaves more than 100 rows and the page still exists",
+            "DataGridBase.paging.test.tsx :: lands on the last page left, never an empty one, when a reload removes the open page",
+            "WorkItemsDialog.paging.test.tsx :: Priya, on the second page of 243, filters to 64 and sees all of them with no footer"
+          ],
+          "pins": [],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.paging.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.paging.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "criteria": [
+            "The 7 named cases are un-skipped. They are expected to pass at once. The commit body records that, and each case was shown to fail once under a temporary sabotage that was then reverted (for example, holding the grid on page 2 whatever happens, or counting rows.length instead of the filtered rows).",
+            "A sort on page 2 opens `1–100 of 243` with the list's overall first 100 rows in the new order.",
+            "A column filter on page 2 that leaves 179 rows opens `1–100 of 179`, with Row 065 first.",
+            "A column filter on page 2 that leaves 64 rows shows all 64 with no footer bar.",
+            "A reload to 64 rows on page 2 shows all 64 with no footer. A reload to 250 rows keeps page 2 (`101–200 of 250`, Row 101 first). A reload to 150 rows while page 3 is open lands on `101–150 of 150`, never on an empty page.",
+            "In the Work Items dialog, Priya on page 2 of 243 filters State to 'Resolved' and sees all 64 Work Items, with no range text and no 'Go to next page' button.",
+            "`pnpm test` green; `pnpm build` green with zero errors and zero warnings."
+          ],
+          "implementation_notes": "DataGridBase.tsx is listed for the fallback only. It stays unchanged unless the fallback below is needed, and the commit body says which. DESIGN chose MUI's own page policy and no Lighthouse code: a sort or a change of active column filter sends the grid to page 1, and a rows change keeps the page while it exists and otherwise clamps to the last page that does. The settled states are asserted with findBy/waitFor because the clamp lands after a microtask. Before it lands, the page shows a single row, the list's last, for one render; it is never empty. Only if a case is flaky for that reason, or a briefly wrong page shows on a shrinking reload in the 01-06 live run, add the fallback: DataGridBase controls paginationModel and resets it to page 1 once the filtered count reaches 100 or fewer. The Work Items dialog has no search box, so its column filter is the only way it narrows. That is why the footer rule reads the filtered count. The case reuses src/tests/WorkItemsDialogTestKit.tsx, which is shared with the unpushed Story #6248: if this step needs to touch the kit, merge with #6248's version and never overwrite it. PROJECT RULES: read docs/ci-learnings.md first and pre-apply its frontend rules (S7735 no negated ternary, S3776 complexity, S6767 unused props, S7764 globalThis, S7770 direct .map, S7761 dataset, S1192 repeated literals, S8786 anchored presence regex). Copy is pinned against literals with the en dash. RTL regex matchers are unanchored, so use exact strings for the arrow labels and anchor every regex. Un-skip with `it.skip` → `it`; never add describe.skip. Comments are rare, plain-language why only, and never cite internal ids such as DDD-5 or V8. `pnpm build` zero warnings; its prebuild runs `biome check --write`, so re-read `git diff` afterwards. Commit: `test(datagrid): pin the page a long list opens on after sort, filter and reload (story 6202)`"
+        },
+        {
+          "id": "01-03",
+          "name": "Paging leaves Export, Copy and the saved layout exactly as they were",
+          "description": "Un-skip the closed-world checks that the open page changes nothing outside the visible rows. Export and Copy from page 2 hold all 243 rows in sort order, and the saved layout entry is byte-identical after paging. Correct the toolbar comment that wrongly says a filter decides what is exported.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.paging.test.tsx",
+          "scenario_name": "Export and Copy take the whole list, whichever page is open",
+          "unskips": [
+            "DataGridBase.paging.test.tsx :: exports all 243 rows, in the order shown, from the second page",
+            "DataGridBase.paging.test.tsx :: copies all 243 rows, in the order shown, from the second page",
+            "DataGridBase.paging.test.tsx :: leaves the saved layout of the list exactly as it was after paging"
+          ],
+          "pins": [],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.paging.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridToolbar.tsx"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "criteria": [
+            "The 3 named cases are un-skipped. They are expected to pass at once, because export and copy already read every sorted row id and nothing writes the page. Each was shown to fail once under a temporary, reverted sabotage (for example, exporting only the visible page's rows, or writing the page into the saved state).",
+            "With the list sorted by Name descending and page 2 open, the exported CSV and the copied plain text each hold all 243 names, in that order, with the header row first.",
+            "After sorting, paging forward twice and back once, the saved layout entry `lighthouse:datagrid:<storageKey>:state` is byte-identical to its value before paging, and it existed before the comparison.",
+            "If the column header's accessible name allows it, the `/^Name/` header match in this file is tightened to the exact header name.",
+            "The comment in DataGridToolbar.tsx that says a filter decides what is exported is corrected to what is true: every row, in the current sort order. It is plain language with no internal ids. Export behaviour is unchanged.",
+            "`pnpm test` green; `pnpm build` green with zero errors and zero warnings."
+          ],
+          "implementation_notes": "No production behaviour changes in this step. DESIGN recorded that export reads every row id in sort order, unpaged and unfiltered, so whole-list export holds by construction, and paging is never persisted. These cases make that a pinned guarantee. The toolbar comment fix is mandatory: the comment is wrong, and the house rule says to fix a wrong comment in a file you touch. Whether export should honour an active column filter is out of scope and stays a question for the maintainer: do not change it. The Export/Copy cases restore URL, ClipboardItem and navigator.clipboard after each case; keep that intact. PROJECT RULES: read docs/ci-learnings.md first and pre-apply its frontend rules (S7735, S3776, S6767, S7764, S7770, S7761, S1192, S8786). Pin against literals. RTL regex matchers are unanchored, so anchor every regex, including any tightened header match. Un-skip with `it.skip` → `it`; never add describe.skip. Comments are rare, plain-language why only, and never cite internal ids such as DDD-8 or D6. `pnpm build` zero warnings; its prebuild runs `biome check --write`, so re-read `git diff` afterwards. Commit: `test(datagrid): export, copy and the saved layout ignore the open page (story 6202)`"
+        },
+        {
+          "id": "01-04",
+          "name": "A search in Third-party packages opens the first page of its results",
+          "description": "Make a change of search text in ThirdPartyPackagesSection send its grid back to page 1, even when more than 100 packages remain, without losing the reader's sort or column filter. DataGridBase keeps MUI's page policy for every other rows change.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.paging.test.tsx",
+          "scenario_name": "Third-party packages pages like every other list",
+          "unskips": [
+            "ThirdPartyPackagesSection.paging.test.tsx :: opens the first page of what a search from the second page leaves, when that is still more than 100",
+            "ThirdPartyPackagesSection.paging.test.tsx :: opens the first page of the whole list when the search is cleared from the second page of its results"
+          ],
+          "pins": [
+            "ThirdPartyPackagesSection.paging.test.tsx :: says why the packages could not be loaded, with no list and no footer"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.paging.test.tsx"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "criteria": [
+            "The 2 named cases are un-skipped and RED before the production edit: the open page is kept, so the list shows `101–150 of 150` and `101–200 of 243`.",
+            "From page 2 of 243 packages, typing 'lib' (150 matches) opens `1–100 of 150` with lib-001 first.",
+            "From page 2 of the 150 'lib' results, clearing the search opens `1–100 of 243` with lib-001 first.",
+            "After a search the list opens on page 1, and a sort and an active column filter the reader set before the search are still in force afterwards. A mechanism that drops either (for example, a remount that loses the column filter) fails this criterion. It is checked in the browser during 01-06's live run, and in a component check if the chosen mechanism makes one cheap. The commit body says how it was checked.",
+            "DataGridBase's own policy is unchanged: 01-02's 'keeps the open page when a reload leaves more than 100 rows' case stays green.",
+            "The three Third-party packages cases from 01-01 and ThirdPartyPackagesSection.test.tsx stay green.",
+            "`pnpm test` green; `pnpm build` green with zero errors and zero warnings."
+          ],
+          "implementation_notes": "The maintainer's decision, in plain words: a reader cannot tell a search from a column filter, so a search behaves like one and opens page 1. It is done in ThirdPartyPackagesSection only; DataGridBase is not touched. The mechanism is the crafter's choice, as long as it meets the criterion above: page 1 after a search, with sort and column filter kept. A remount keyed on the search text resets the grid's whole in-memory state, so check what it keeps before choosing it. If a comment is needed, write the why from the first sentence of this note, never a decision id. PROJECT RULES: read docs/ci-learnings.md first and pre-apply its frontend rules (S7735 no negated ternary, S3776, S6767, S7764, S7770, S7761, S1192, S8786, S6754 a useState pair is [thing, setThing]). Pin against literals with the en dash. RTL regex matchers are unanchored, so anchor every regex. Un-skip with `it.skip` → `it`; never add describe.skip. Comments are rare, plain-language why only, and never cite internal ids such as MD-1 or DDD-5. `pnpm build` zero warnings; its prebuild runs `biome check --write`, so re-read `git diff` afterwards. Commit: `feat(settings): a package search opens the first page of its results (story 6202)`"
+        },
+        {
+          "id": "01-05",
+          "name": "On a Refinement tab past 100 Work Items, every row is reachable and the enough-for line sits where it falls in the whole list",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "description": "Put the space kept for the enough-for line and the line itself on one whole-list basis: the row's position in the whole list, and 'last' meaning the filtered list's last row. Un-skip Jonas's vote past row 100 (with an observable Then added), the seven placements, the 120-needed numbering and the State-filter case.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx",
+          "scenario_name": "Team Gravity's 143 Work Items in refinement can all be reached",
+          "unskips": [
+            "RefinementView.paging.test.tsx :: Jonas pages to GR-0131, the 131st Work Item in refinement, and votes on it",
+            "RefinementView.paging.test.tsx :: with %i needed, the line sits where it falls in the whole list (page 1: %o, page 2: %o) (it.each, 7 rows: 0, 20, 100, 101, 120, 143, 150)",
+            "RefinementView.paging.test.tsx :: with 120 needed, numbers the first page 1 to 100 and continues at 101 on the second, up to 120",
+            "RefinementView.paging.test.tsx :: with 120 needed, a State filter on the second page that leaves 64 shows them all, the line under the last"
+          ],
+          "pins": [
+            "RefinementView.paging.test.tsx :: a Team with 38 Work Items in refinement sees all of them, with no footer"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/EnoughForLine.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/EnoughForLine.test.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementGrid.tsx",
+            "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx",
+            "Lighthouse.Frontend/src/components/Common/DataGrid/types.ts",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/enoughForPlacement.ts"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "criteria": [
+            "The 10 named cases are un-skipped before the production edit. The cases that fail record their RED: space kept under GR-0100 on page 1 for 101 / 120 / 143 / 150 needed, and 'All 100 Work Items in Refinement are needed before the next Refinement.' on page 1 with 120 needed. 01-01 already shipped the pager, so the Jonas case and the page-1 placements may pass at once. The commit body lists which cases were green before the line change.",
+            "Jonas sees `1–100 of 143` above GR-0001 to GR-0100, pages to `101–143 of 143` (GR-0101 to GR-0143), and votes Yes on GR-0131. A new Then checks, through the rendered GR-0131 row, that the row shows Jonas's Yes as his vote. The existing check that the vote reaches the sizing log for GR-0131 (answer Yes, channel Web, voter Jonas) stays beside it.",
+            "On 143 Work Items, for 0, 20, 100, 101, 120, 143 and 150 needed, each page shows exactly the expected line or none, with its exact words, beside the right row. Space for the line is kept there and nowhere else on that page, so page 2 never shows a blank gap. 'All 143 Work Items in Refinement are needed before the next Refinement.' appears only under GR-0143, and only when more are needed than the list holds.",
+            "With 120 needed, page 1 is numbered 1 to 100, shows the '100 of 120 needed before the next Refinement' label and no line. Page 2 numbers 101 to 120 and leaves 121 to 143 unnumbered.",
+            "With 120 needed, a State filter on page 2 that leaves 64 shows all 64 with no range. The line under GR-0064 says 'All 64 Work Items in Refinement are needed before the next Refinement.'",
+            "EnoughForLine.test.tsx follows the parameter shape chosen here and gains a case for a focused row kept rendered off the open page. That row neither draws the line nor keeps space for it unless it is the whole-list row where the needed count is reached.",
+            "RefinementView.enoughFor.test.tsx, every other RefinementView.*.test.tsx, enoughForPlacement.test.ts and the 38-row pin stay green. So do all of 01-01 to 01-04's cases.",
+            "`pnpm test` green; `pnpm build` green with zero errors and zero warnings."
+          ],
+          "implementation_notes": "Why this is needed: MUI hands the row slot the row's whole-list index, but the spacing callback's index and both 'last visible' flags only cover the current page. So the space for the line and the line drawn by the row disagree once a list pages: there is a blank gap on page 2, and page 1 says all 100 are needed while 143 exist. This is not a new product rule. The line already follows 'the row that makes up the number needed', and that row has one position in the whole list. Recommended mechanism (crafter's choice): DataGridBase turned paging on, so it absorbs paging's effect on its own getRowSpacing prop. It hands the consumer whole-list facts (index = page start + position on the page; last = the filtered list's last row) through a Lighthouse-owned parameter shape, structurally like ShownRow { index, isLastShown } in enoughForPlacement.ts. That narrows getRowSpacing's type in types.ts, next to story #6248's hunk, so merge carefully. The row judges 'last shown' against the filtered row count from grid state, not MUI's page-relative flag. Why RefinementGrid.tsx is in this step: it is the only getRowSpacing caller, and it hands both the row slot and the spacing callback to DataGridBase, so the callback it passes changes when the parameter shape changes. If enoughForPlacement.ts's ShownRow shape is reused or adjusted, it joins this step too (DESIGN lists it as a conditional EXTEND). Allowed alternative: keep MUI's type and convert to whole-list facts inside the Refinement folder, as long as spacing and line share one basis; then DataGridBase.tsx and types.ts drop out of this step. On the Jonas case: the rendered row showing his Yes is the behaviour the reader sees. The castVote check is the contract at the port where the vote leaves the tab. Keep both. The 36px gap stays a literal in the tests: EnoughForLine.tsx's LINE_HEIGHT_PX is module-private, and a literal in one test is clearer than a constant exported only for a test. Sizing: 10 cases is over the eight-case guide. All ten are governed by one shared spacing rule: the space kept for the line and the line itself come from one whole-list row position. The seven placements, the numbering, the filter and the vote each read that rule from a different side, and splitting them would leave a step whose cases all pass on un-skip. PROJECT RULES: read docs/ci-learnings.md first and pre-apply its frontend rules: S7735 no negated ternary; S3776 complexity under 15 (keep the spacing conversion out of DataGridBase's render branching); S6767 no unused props (MUI's flag must not linger in the new shape unread); S7764; S7770; S7761 dataset over getAttribute('data-…'); S1192; S8786. Pin the line's words against literals. RTL regex matchers are unanchored, so anchor every regex. Un-skip with `it.skip` → `it` and `it.skip.each` → `it.each`; never add describe.skip. Comments are rare, plain-language why only, and never cite internal ids such as DDD-10, MD-2, V13 or AC-1.10. `pnpm build` zero warnings; its prebuild runs `biome check --write`, so re-read `git diff` afterwards. Commit: `feat(refinement): the enough-for line sits where it falls in the whole list (story 6202)` enoughForPlacement.ts is listed as conditional: touch it only if its ShownRow shape is reused or adjusted, and say in the commit body whether it was touched."
+        },
+        {
+          "id": "01-06",
+          "name": "Walking skeleton: Third Party Packages pages on a build with more than 100 packages, and stays a short list on one with fewer; slice gates",
+          "description": "Give the walking skeleton two branches, chosen by how many packages the build serves. Prove the long branch locally on a build carrying main's real SBOMs and the short branch on the committed placeholders, then un-skip it and run the slice gates.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/settings/ThirdPartyPackagesPaging.spec.ts",
+          "scenario_name": "A long list shows its range, pages to the rest, and a search opens its first page @walking_skeleton @driving_port @us-01 @kpi-OUT-6202-no-hidden-rows @contract-shape:bounded-change",
+          "unskips": [
+            "ThirdPartyPackagesPaging.spec.ts :: A long list shows its range, pages to the rest, and a search opens its first page @walking_skeleton @driving_port @us-01 @kpi-OUT-6202-no-hidden-rows @contract-shape:bounded-change"
+          ],
+          "pins": [],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/settings/ThirdPartyPackagesPaging.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/settings/SystemInfo/SystemInfoPage.ts"
+          ],
+          "dependencies": [
+            "01-05"
+          ],
+          "criteria": [
+            "The spec first counts the packages the build serves from the SBOMs themselves, never from the grid under test: it fetches /sbom/backend.cdx.json and /sbom/frontend.cdx.json and counts their components with the same filter ThirdPartyPackagesSection applies (name the filter in a comment). The grid's aria-rowcount may be used only as a cross-check that must agree with that count. At 100 or fewer (short branch) the spec asserts that the rows shown equal the SBOM count and that there is no range text and no 'Go to next page' button, so a dropped-row fault fails; it adds a Playwright annotation saying the build serves too few packages to page (the committed placeholder SBOMs) and stops. Above 100 (long branch) it asserts the range total equals the SBOM count and runs the full flow.",
+            "Residual risk, stated in the spec header and the commit body: PR CI builds serve the placeholder SBOMs, so in PR CI the walking skeleton proves only the short-list look; the long-list paging is proven in CI by the component tests and in a browser by this step's local real-SBOM run and by CI on main, which builds with the real SBOMs.",
+            "Long branch, on a local build carrying main's real SBOMs: the package count is confirmed above 100 before any paging step. Page 1 reads `1–100 of N` with no rows-per-page choice. Page 2 reads `101–…` and its first package differs from page 1's. A search chosen from the real data that leaves more than 100 packages opens `1–100 of …`. The spec comment names the term and the count it left on that run, in plain words.",
+            "Short branch, on a local build of the committed placeholders: the spec passes through the short-list assertions and records its annotation.",
+            "The spec header no longer claims every real build has well over 100 packages; it says main builds carry the real SBOMs and other builds carry placeholders. The 'Skipped until the paging footer is built' line is gone.",
+            "SystemInfoPage.ts gains the package-count member the branch needs. Its existing members are untouched, so the System Info screenshot test still compiles.",
+            "While 01-06 runs on the real-SBOM build, a search with a sort and a column filter active is checked by hand: the list opens on page 1, and the sort and filter are kept (01-04's criterion). The result is recorded in the commit body.",
+            "SLICE GATE: zero `it.skip` / `test.skip` in the five DISTILL files (DataGridBase.paging.test.tsx, ThirdPartyPackagesSection.paging.test.tsx, RefinementView.paging.test.tsx, WorkItemsDialog.paging.test.tsx, ThirdPartyPackagesPaging.spec.ts): all 33 pending cases un-skipped, all 9 pins green. A grep for `\\.skip` over those five files returns nothing.",
+            "SLICE GATE (structural): `grep -rn __SCAFFOLD__ Lighthouse.Frontend/src` and `grep -rn hidePagination Lighthouse.Frontend/src` both return nothing. `git diff main -- Lighthouse.Frontend/src/components/Common/DataGrid/types.ts` shows no new field on PersistedGridState. `git status Lighthouse.Frontend/public/sbom` is clean.",
+            "SLICE GATE: full `pnpm test` in Lighthouse.Frontend is green with no unhandled errors. `pnpm build` in Lighthouse.Frontend has zero errors and zero warnings; re-check `git diff` after its Biome --write prebuild. Lighthouse.EndToEndTests type-checks (`pnpm tsc --noEmit`) and is Biome-clean.",
+            "SLICE GATE: one local run of tests/specs/settings passes (excluding @screenshot, @auth, @rbac, @proxyauth), so no other settings spec lost a locator."
+          ],
+          "implementation_notes": "Why two branches: Lighthouse.Frontend/public/sbom/backend.cdx.json and frontend.cdx.json are committed placeholders holding one component each. CI copies the real SBOM artifact over them only when sbom-version is set, which ci.yml does on refs/heads/main only. So PR builds, Renovate PRs included, run ci_verifysqlite / ci_verifypostgres with 2 packages, and a long-only spec would fail there. Count source: the branch must not be chosen by the footer it is testing, or a broken footer would send the spec into the short branch and pass. Read the grid's own row count (for example its `aria-rowcount`, after proving on the live run that it counts every row rather than the page), or the two SBOM endpoints counted with the same filter ThirdPartyPackagesSection applies to components. Whichever you choose, check it against the range total on the real-SBOM run. Never commit a spec or POM member that has not run against a live Lighthouse: DISTILL only type-checked this one. Build and serve from THIS worktree with absolute paths; relative paths in subagents resolve to the main checkout. Run `pnpm install` in /storage/repos/Lighthouse/.claude/worktrees/shimmering-brewing-flute/Lighthouse.Frontend and in .../Lighthouse.EndToEndTests if node_modules is missing. Real SBOMs for the long branch: `gh run list --workflow ci.yml --branch main --status success --limit 1 --json databaseId` gives the run id; the version is not in that listing, so read the artifact name from `gh api repos/{owner}/{repo}/actions/runs/<id>/artifacts --jq '.artifacts[].name'` (it is Lighthouse-SBOM-<version>), then `gh run download <id> --name Lighthouse-SBOM-<version>` downloads into a fresh directory under the session scratchpad. Copy the two .cdx.json files over Lighthouse.Frontend/public/sbom, then run `pnpm build`. `pnpm build` writes into the backend's web root (vite.config.ts `outDir: '../Lighthouse.Backend/Lighthouse.Backend/wwwroot'`), so check that Lighthouse.Backend/Lighthouse.Backend/wwwroot/index.html exists afterwards and that `/sbom/frontend.cdx.json` on the instance serves the real file. Afterwards run `git checkout -- Lighthouse.Frontend/public/sbom` and never commit the real SBOMs. Then rebuild on the placeholders and run the spec once more for the short branch. Start a throw-away backend on 5199 in the background, from /storage/repos/Lighthouse/.claude/worktrees/shimmering-brewing-flute/Lighthouse.Backend/Lighthouse.Backend: `env ASPNETCORE_ENVIRONMENT=Development Kestrel__Endpoints__Http__Url=http://localhost:5199 Kestrel__Endpoints__Https__Url=https://localhost:7299 Database__Provider=sqlite Database__ConnectionString=\"Data Source=$E2E_DIR/lighthouse.db\" Encryption__KeyStorePath=$E2E_DIR/keys UsageData__CollectorBaseUrl=http://127.0.0.1:9 dotnet run --no-launch-profile`, with E2E_DIR a fresh directory under the session scratchpad. Verify each config key against Lighthouse.Backend before using it. The instance time zone is not needed for this page, so leave it out. If you keep it, the key LighthouseClock.cs names in its error message is `Lighthouse:TimeZone` (env `Lighthouse__TimeZone`); confirm where Program.cs reads it first. ASPNETCORE_URLS is ignored here; override the Kestrel keys. Never aim at :5169 (the dev instance). Never point a key store at `data-protection-keys`. Confirm with `ss -ltn | grep 5199`. No premium licence is needed for this page. Then, from the worktree's Lighthouse.EndToEndTests, run `env LIGHTHOUSEURL=http://localhost:5199/ TZ=Europe/Zurich pnpm exec playwright test tests/specs/settings/ThirdPartyPackagesPaging.spec.ts`, then the settings folder with `--grep-invert \"@screenshot|@auth|@rbac|@proxyauth\"`. Restart the backend after each rebuild so it serves the new web root. Do not regenerate settings/systeminfo.png here: it changes because the picker goes, and finalize deletes and regenerates it. Report, without blocking, the browser checks DESIGN left open: after › is the new page's first row in view; does a shrinking reload show a briefly wrong page; do the range and arrows fit in the Work Items dialog at its smallest width. A defect there becomes a polish step the orchestrator adds. If a briefly wrong page shows, 01-02's controlled-page fallback applies. Stop the backend afterwards. PROJECT RULES: read docs/ci-learnings.md first and pre-apply its Playwright rules: drive the page only through the page object, never an inline page.locator() in the spec; scope locators to the Third Party Packages card so another list's pager never matches; getByRole/getByText names are case-insensitive substrings unless exact, so anchor the range regex; a POM getter that reads 0 or '' while not yet rendered makes a one-sided assertion vacuous, so wait for the first package row before counting. Un-skip with `test.skip` → `test`; never add describe.skip. Comments are rare, plain-language why only, and never cite internal ids such as L-5, MD-1 or AC-1.5. Biome-clean, `pnpm build` zero warnings; its prebuild runs `biome check --write`, so re-read `git diff` afterwards. Never pipe a gate's output through tail or head. Commit: `test(settings): walking skeleton pages Third Party Packages when the build serves enough packages (story 6202)`"
+        }
+      ]
+    }
+  ]
+}
