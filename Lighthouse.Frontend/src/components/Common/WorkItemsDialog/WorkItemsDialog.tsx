@@ -154,9 +154,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 		() =>
 			[
 				...new Set(
-					items
-						.map((item) => item.parentWorkItemReference)
-						.filter((reference) => reference),
+					items.map((item) => item.parentWorkItemReference).filter(Boolean),
 				),
 			].sort((a, b) => a.localeCompare(b)),
 		[items],

@@ -112,7 +112,7 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 						feature={row}
 						teams={portfolio.involvedTeams}
 						isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
-						onShowDetails={async () => handleShowFeatureDetails(row)}
+						onShowDetails={() => Promise.resolve(handleShowFeatureDetails(row))}
 					/>
 				),
 			},

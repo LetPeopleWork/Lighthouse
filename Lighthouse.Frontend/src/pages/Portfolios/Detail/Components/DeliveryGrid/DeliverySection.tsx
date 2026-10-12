@@ -359,7 +359,7 @@ function featureColumns({
 				<FeatureProgressIndicator
 					feature={row}
 					teams={teams}
-					onShowDetails={async () => onShowDetails(row)}
+					onShowDetails={() => Promise.resolve(onShowDetails(row))}
 				/>
 			),
 		},

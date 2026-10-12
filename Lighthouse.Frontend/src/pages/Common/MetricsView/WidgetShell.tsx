@@ -62,14 +62,18 @@ export type ViewDataPayload = {
 	readonly ageBandColumn?: AgeBandColumnDescriptor;
 	/** Forwarded the same way, and absent whenever the owner published no target. */
 	readonly sleRiskColumn?: SleRiskColumnDescriptor;
-	readonly warningsColumn?: WorkItemsDialogProps["warningsColumn"];
+	readonly warningsColumn?: NonNullable<WorkItemsDialogProps["warningsColumn"]>;
 	readonly context: WorkItemsDialogProps["context"];
 	readonly ownerKind: WorkItemsDialogProps["ownerKind"];
-	readonly status?: WorkItemsDialogProps["status"];
-	readonly ageOn?: WorkItemsDialogProps["ageOn"];
-	readonly cycleTimeScope?: WorkItemsDialogProps["cycleTimeScope"];
-	readonly namedCycleTimeDefinitions?: WorkItemsDialogProps["namedCycleTimeDefinitions"];
-	readonly daysContributedColumn?: WorkItemsDialogProps["daysContributedColumn"];
+	readonly status?: NonNullable<WorkItemsDialogProps["status"]>;
+	readonly ageOn?: NonNullable<WorkItemsDialogProps["ageOn"]>;
+	readonly cycleTimeScope?: NonNullable<WorkItemsDialogProps["cycleTimeScope"]>;
+	readonly namedCycleTimeDefinitions?: NonNullable<
+		WorkItemsDialogProps["namedCycleTimeDefinitions"]
+	>;
+	readonly daysContributedColumn?: NonNullable<
+		WorkItemsDialogProps["daysContributedColumn"]
+	>;
 };
 
 export interface WidgetShellProps {

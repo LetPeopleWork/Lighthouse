@@ -93,9 +93,11 @@ const workItemRows = (items: readonly IWorkItem[]) => !featureRows(items);
 
 const NO_PARENT_NAMES = new Map<string, ParentWorkItem>();
 
+type ServerDate = Date | string | null | undefined;
+
 // The rows come straight from the server's JSON, so a date may still be a string, and a date the
 // item does not have arrives as null or as the epoch.
-const asLocalDay = (value: Date | string | null | undefined): string => {
+const asLocalDay = (value: ServerDate): string => {
 	if (value === null || value === undefined) return "";
 	const date = new Date(value);
 	return date.getTime() > 0 ? formatLocalDate(date) : "";
@@ -104,7 +106,7 @@ const asLocalDay = (value: Date | string | null | undefined): string => {
 const dayColumn = (
 	field: ColumnId,
 	headerName: string,
-	dayOf: (row: IWorkItem) => Date | string | null | undefined,
+	dayOf: (row: IWorkItem) => ServerDate,
 ): DataGridColumn<WorkItemRow> => ({
 	field,
 	headerName,
@@ -190,7 +192,7 @@ const isFinished = (row: IWorkItem): boolean => row.stateCategory === "Done";
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 // Days are counted in UTC, the same way the age itself is, so an item started on the day counts.
-const utcDayOf = (value: Date | string | null | undefined): number | null => {
+const utcDayOf = (value: ServerDate): number | null => {
 	if (value === null || value === undefined) return null;
 	const time = new Date(value).getTime();
 	return time > 0 ? Math.floor(time / MS_PER_DAY) : null;

@@ -94,7 +94,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 						teams={teams}
 						overallTitle="Total"
 						isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
-						onShowDetails={async () => handleShowFeatureDetails(row)}
+						onShowDetails={() => Promise.resolve(handleShowFeatureDetails(row))}
 					/>
 				),
 			},
