@@ -97,7 +97,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static EstimateNormalizationResult NormalizeNumeric(string estimate)
         {
-            if (double.TryParse(estimate, CultureInfo.InvariantCulture, out var value))
+            if (double.TryParse(estimate, CultureInfo.InvariantCulture, out var value) && double.IsFinite(value))
             {
                 return new EstimateNormalizationResult(
                     EstimateNormalizationStatus.Mapped,

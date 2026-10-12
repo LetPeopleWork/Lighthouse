@@ -89,6 +89,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(result.Status, Is.EqualTo(EstimateNormalizationStatus.Invalid));
         }
 
+        [TestCase("NaN")]
+        [TestCase("Infinity")]
+        [TestCase("-Infinity")]
+        [TestCase("1e999")]
+        public void Normalize_NumericMode_NonFiniteNumber_ReturnsInvalid(string estimate)
+        {
+            var result = EstimateNormalizer.Normalize(estimate, useNonNumeric: false, []);
+
+            Assert.That(result.Status, Is.EqualTo(EstimateNormalizationStatus.Invalid));
+        }
+
         [Test]
         public void Normalize_NumericMode_NegativeNumber_Parses()
         {
