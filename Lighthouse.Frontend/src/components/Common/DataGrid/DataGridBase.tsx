@@ -107,12 +107,31 @@ function withNewColumnsWhereDeclared(
 	return merged;
 }
 
+type GridApiRef = ReturnType<typeof useGridApiRef>;
+
+/**
+ * When the rows shrink under an open page that no longer exists, the grid moves off it only a tick
+ * later, and until then it shows the list's last row alone under a range that already names the page
+ * it is about to show. Moving at once, as the row count changes, never lets that frame be drawn.
+ */
+function useMovingOffAPageThatIsGone(apiRef: GridApiRef) {
+	useEffect(
+		() =>
+			apiRef.current?.subscribeEvent("rowCountChange", () => {
+				const lastPage = Math.max(0, gridPageCountSelector(apiRef) - 1);
+				if (gridPageSelector(apiRef) > lastPage)
+					apiRef.current?.setPage(lastPage);
+			}),
+		[apiRef],
+	);
+}
+
 /**
  * The grid counts a row's spacing from the top of the open page and calls a row last when it ends
  * that page. Space kept for something placed in the whole list must follow the row's place there.
  */
 function useSpacingInWholeList(
-	apiRef: ReturnType<typeof useGridApiRef>,
+	apiRef: GridApiRef,
 	getRowSpacing: DataGridBaseProps<GridValidRowModel>["getRowSpacing"],
 ) {
 	return useMemo(() => {
@@ -246,17 +265,7 @@ function DataGridBase<T extends GridValidRowModel>({
 		};
 	}, []);
 
-	// The grid moves off a page that no longer exists only a tick later, and until then it shows the
-	// list's last row alone under a range that already names the page it is about to show.
-	useEffect(
-		() =>
-			apiRef.current?.subscribeEvent("rowCountChange", () => {
-				const lastPage = Math.max(0, gridPageCountSelector(apiRef) - 1);
-				if (gridPageSelector(apiRef) > lastPage)
-					apiRef.current?.setPage(lastPage);
-			}),
-		[apiRef],
-	);
+	useMovingOffAPageThatIsGone(apiRef);
 
 	// Convert DataGridColumn to GridColDef
 	const gridColumns = useMemo(() => {
