@@ -494,3 +494,85 @@ describe("Export and Copy take the whole list, whichever page is open", () => {
 		RENDER_HEAVY,
 	);
 });
+
+describe("Turning a page brings the top of the list into view", () => {
+	const scrolledInto: { element: Element; options: unknown }[] = [];
+
+	// The page arrows sit under the last row, so without this the new page opens far above the fold.
+	// jsdom has no layout, so what can be seen is the request to scroll and the element it names.
+	beforeEach(() => {
+		scrolledInto.length = 0;
+		Element.prototype.scrollIntoView = function (this: Element, options) {
+			scrolledInto.push({ element: this, options });
+		};
+	});
+
+	afterEach(() => {
+		Reflect.deleteProperty(Element.prototype, "scrollIntoView");
+	});
+
+	const expectTheTopOfTheGridBroughtIntoView = () => {
+		expect(scrolledInto).toEqual([
+			{
+				element: document.querySelector(".MuiDataGrid-root"),
+				options: { block: "start" },
+			},
+		]);
+	};
+
+	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
+	it(
+		"scrolls the top of the grid into view when the reader goes to the next page",
+		async () => {
+			const { user } = showTheList(aListOf(243));
+
+			await goToNextPage(user, "101–200 of 243");
+
+			expectTheTopOfTheGridBroughtIntoView();
+		},
+		RENDER_HEAVY,
+	);
+
+	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
+	it(
+		"scrolls the top of the grid into view when the reader goes to the previous page",
+		async () => {
+			const { user } = showTheList(aListOf(243));
+			await goToNextPage(user, "101–200 of 243");
+			scrolledInto.length = 0;
+
+			await goToPreviousPage(user, "1–100 of 243");
+
+			expectTheTopOfTheGridBroughtIntoView();
+		},
+		RENDER_HEAVY,
+	);
+
+	// @us-01 @slice-01 @boundary @contract-shape:unbounded-preservation
+	it(
+		"never scrolls for a page change the reader did not ask for with an arrow",
+		async () => {
+			const { user, reload } = showTheList(aListOf(243));
+			await goToNextPage(user, "101–200 of 243");
+			await goToNextPage(user, "201–243 of 243");
+			scrolledInto.length = 0;
+
+			await user.click(screen.getByText("201–243 of 243"));
+			reload(aListOf(150));
+			expect(await screen.findByText("101–150 of 150")).toBeInTheDocument();
+			reload(aListOf(243));
+			expect(await screen.findByText("101–200 of 243")).toBeInTheDocument();
+			await sortByNameDescending(user);
+			expect(screen.getByText("1–100 of 243")).toBeInTheDocument();
+			await goToNextPage(user, "101–200 of 243");
+			scrolledInto.length = 0;
+			await filterStageBy(user, "Do");
+			expect(await screen.findByText("1–100 of 179")).toBeInTheDocument();
+			reload(aListOf(100));
+			await waitFor(() => expectNoFooter());
+
+			expect(scrolledInto).toEqual([]);
+		},
+		RENDER_HEAVY,
+	);
+});

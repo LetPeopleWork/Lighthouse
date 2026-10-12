@@ -23,6 +23,15 @@ export const RowRangeFooter: React.FC = () => {
 		gridFilteredTopLevelRowCountSelector,
 	);
 
+	// The arrows sit under the last row, so the page they open would start far above the fold.
+	// Only a press on an arrow scrolls; a sort, filter or reload that changes the page leaves the
+	// window where the reader put it.
+	const bringTheTopIntoView = (event: React.MouseEvent<HTMLDivElement>) => {
+		if (!(event.target instanceof Element) || !event.target.closest("button"))
+			return;
+		apiRef.current.rootElementRef.current?.scrollIntoView?.({ block: "start" });
+	};
+
 	if (loading || rowCount <= PAGE_SIZE) return null;
-	return <GridFooter />;
+	return <GridFooter onClick={bringTheTopIntoView} />;
 };
