@@ -982,21 +982,21 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 
 describe("US-02 — every chart context that offers more columns follows the same rules", () => {
 	// @us-02 @slice-02 @error @contract-shape:pure-function
-	it.skip.each(everyChartContext)(
+	it.each(everyChartContext)(
 		"$context neither shows nor offers an Estimate where estimation is not set up",
 		estimateIsNeitherShownNorOffered,
 		RENDER_HEAVY,
 	);
 
 	// @us-02 @slice-02 @contract-shape:pure-function
-	it.skip.each(everyChartContext)(
+	it.each(everyChartContext)(
 		"$context lists its defaults, then every other column the rows can fill in the one fixed order",
 		manageColumnsListsTheOneFixedOrder,
 		RENDER_HEAVY,
 	);
 
 	// @us-02 @slice-02 @contract-shape:bounded-change
-	it.skip.each(everyChartContext)(
+	it.each(everyChartContext)(
 		"$context comes back with the reader's own layout, a default hidden and another column on, the next time it opens",
 		theReadersLayoutComesBackOnReopen,
 		RENDER_HEAVY,
