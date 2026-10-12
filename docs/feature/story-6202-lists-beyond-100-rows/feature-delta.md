@@ -31,10 +31,14 @@ Read from the code on 2026-10-12.
 | Persona | Role here |
 |---|---|
 | `team-member-voter` | **Jonas Weber**, developer in Team Gravity. Gravity has **143** Work Items in refinement; he wants to vote on `GR-0131`, which sorts to row 131 and today is unreachable. Primary. |
-| `flow-coach` | **Priya Raman**, coach of Team Gravity. Opens the Refinement tab and the Work Items dialog behind a chart (e.g. 260 closed Work Items over the last 180 days) and needs to trust that the list is whole. |
+| `flow-coach` | **Priya Nair**, coach of Team Gravity. Opens the Refinement tab and the Work Items dialog behind a chart (e.g. 260 closed Work Items over the last 180 days) and needs to trust that the list is whole. |
 | `product-owner` | **Marco Bianchi**, PO of Team Gravity; walks the refinement list before Wednesday's Refinement. |
 | `delivery-forecaster` | **Lena Fischer**, delivery lead for the Ocean Explorer Portfolio; reads the Portfolio's Feature list and archived Features. Secondary. |
 | `config-admin` | Reads Settings → System → Third-party packages (well over 100 packages). Secondary. |
+
+The row counts in this document (Gravity 143, Kestrel 38, a 243-row Feature list or Work Items dialog,
+260 closed Work Items) are **illustrative**, chosen to sit either side of the 100-row boundary. Nobody
+counted demo data or the dev instance for them; the tests build their own lists of these sizes.
 
 ## Wave: DISCUSS / [REF] JTBD One-Liner
 
@@ -45,7 +49,8 @@ reached at all, so the job fails outright for it.
 Also served: `job-flow-coach-refine-just-enough` (the coach's count and triage are only honest when every
 Work Item in refinement is on the list). The same defect cuts every other list-backed job short (Feature
 lists, Work Items dialogs, archived Features); the fix restores reach for all of them and changes none,
-so **`jobs.yaml` is not edited**.
+so **`jobs.yaml` is not edited**. Both ids exist there: `job-flow-coach-refine-just-enough` at
+`docs/product/jobs.yaml:7756` and `job-team-member-give-sizing-view` at `:7818` (read 2026-10-12).
 
 Forces — *push*: rows past 100 vanish with no hint, so a reader concludes "that's all". *Pull*: the grid
 already holds every row; only the way to reach them is missing. *Anxiety*: lists that are short today
@@ -55,7 +60,7 @@ must not grow a footer or change. *Habit*: scrolling a list to its end and trust
 
 | ID | Decision | Verdict |
 |----|----------|---------|
-| D1 | **The footer appears only when a grid has more than 100 rows.** A grid with 100 rows or fewer looks exactly as it does today, with no footer. | Maintainer, approved sketch 2026-10-08 |
+| D1 | **The footer appears only when a grid has more than 100 rows the reader can see (after filters).** A grid with 100 such rows or fewer looks exactly as it does today, with no footer. | Maintainer, approved sketch 2026-10-08 |
 | D2 | **Fixed pages of 100.** The footer shows the row range and total plus previous/next arrows, e.g. `1–100 of 243  ‹ ›`. There is **no rows-per-page picker**, so nothing is persisted. | Maintainer, 2026-10-08 |
 | D3 | **Settings → Third-party packages follows the same rule.** Its always-on footer override goes; it shows a footer only above 100 rows, and loses its rows-per-page picker. | Maintainer |
 | D4 | **Every `DataGridBase` consumer in one slice**, not page by page. Virtualised scrolling without pages (the alternative in the ADO item) was rejected in favour of the conditional footer. | Maintainer |
@@ -92,6 +97,10 @@ refining from a list she knows is complete.
 4. **List shrinks** — Priya, on page 2 of a 243-row Work Items dialog, filters to 64 rows: the footer
    disappears and all 64 rows show — never an empty page with no way back.
 5. **Export** — Lena (premium) exports the 243-row Feature list while on page 1: the CSV has 243 rows.
+6. **Refinement line past row 100** — Gravity needs 120 Work Items before the next Refinement: page 1
+   shows no line and its rows read "N of 120 needed"; the line sits under row 120 on page 2. Needing 150
+   puts it under row 143 with "All 143 Work Items in Refinement are needed before the next Refinement."
+   (MD-2)
 
 #### UAT Scenarios (BDD)
 
@@ -162,15 +171,16 @@ Then the file holds all 243 Features in name order
 
 #### Acceptance Criteria
 
-- [ ] **AC-1.1** Every `DataGridBase` grid with more than 100 rows shows a footer with the range and total (`1–100 of 143`) and previous/next arrows; every row is reachable through them.
-- [ ] **AC-1.2** A grid with 100 rows or fewer renders no footer and is visually unchanged (existing @screenshot images of short lists do not change).
-- [ ] **AC-1.3** The rule switches at the boundary: 100 rows → no footer, 101 rows → footer with a second page holding one row.
-- [ ] **AC-1.4** Pages are fixed at 100 rows; no rows-per-page control is shown and nothing about paging is persisted to the grid's saved state.
+- [ ] **AC-1.1** Every `DataGridBase` grid with more than 100 rows the reader can see (after filters) shows a footer with the range and total (`1–100 of 143`) and previous/next arrows; every row is reachable through them.
+- [ ] **AC-1.2** A grid with 100 visible rows or fewer (after filters) renders no footer and is visually unchanged (existing @screenshot images of short lists do not change).
+- [ ] **AC-1.3** The rule switches at the boundary of rows the reader can see (after filters): 100 rows → no footer, 101 rows → footer with a second page holding one row.
+- [ ] **AC-1.4** The reader sees every page hold 100 rows (the last page holds the rest), and the footer offers no rows-per-page choice. When the reader leaves the list and comes back, it opens on page 1 with pages of 100, and the columns, sort and widths they had saved are as before.
 - [ ] **AC-1.5** Settings → Third-party packages has no override left and follows AC-1.1 to AC-1.4, including when its search narrows the list.
 - [ ] **AC-1.6** When a grid's rows drop to 100 or fewer while a later page is open (filter, search, data reload), all remaining rows show and the footer disappears; no state leaves the reader on an empty or unreachable page.
 - [ ] **AC-1.7** Sorting orders the whole list, not only the visible page (sorting by a column puts the overall first row on page 1).
-- [ ] **AC-1.8** CSV export and Copy (premium) contain every row in the current sort order, whichever page is open (D6).
-- [ ] **AC-1.9** It holds for all eight consumers (S3), including `RefinementGrid` with its custom row rendering.
+- [ ] **AC-1.8** CSV export and Copy (premium) contain every row in the current sort order, whichever page is open (D6), including rows an active column filter hides from view (today's behaviour, S4; whether that should change is out of scope).
+- [ ] **AC-1.9** It holds for all eight consumers (S3), because every one of them renders through `DataGridBase`: the `DataGridBase` tests check the paging behaviour once for all eight. Five consumers set nothing that paging touches (no `slots`, `getRowSpacing` or `hidePagination`; they pass rows, columns and storage, export or sort props): `DataOverviewTable`, `FeatureGrid`, `FeatureListDataGrid`, `OverviewDashboard`, `ArchivedFeatureGrid`. Three of these narrow their rows with a filter of their own before handing them over, which to the grid is a rows change, covered by the `DataGridBase` cases for rows changing on a later page (AC-1.6). They need no test of their own. The other three customise something paging touches and are checked through their own components: `RefinementGrid` (custom rows and row spacing, S5, AC-1.10), `ThirdPartyPackagesSection` (its footer override goes, and its own search sends the list to page 1, D3, MD-1) and `WorkItemsDialog` (it sorts its own rows, and a column filter is the only way to narrow it, AC-1.6).
+- [ ] **AC-1.10** On a Refinement tab with more than 100 Work Items, the enough-for line sits under the row where the needed count is reached in the whole list, on whichever page that row falls, and nowhere else; no line shows on page 1 when that row is past 100. When more are needed than the list holds, the line sits under the last Work Item and says all of them are needed (MD-2, domain example 6).
 
 #### Outcome KPIs
 
@@ -181,14 +191,16 @@ See [REF] Outcome KPIs.
 - Frontend only; no API, DTO or schema change.
 - MUI X free tier caps a page at 100 (S1) — D2 sits at that cap.
 - `DataGridBase.tsx` is also being changed by Story #6248 (S6): expect a merge, not a conflict of intent.
+- RefinementGrid's enough-for line has to be placed over the whole list, not the page (DESIGN DDD-10, MD-2): `EnoughForLine.tsx` is in the slice.
 
 ## Wave: DISCUSS / [REF] Definition of Done
 
-1. AC-1.1 … AC-1.9 pass in Vitest + React Testing Library against `DataGridBase` and at least `RefinementGrid` and `ThirdPartyPackagesSection`.
+1. AC-1.1 … AC-1.10 pass in Vitest + React Testing Library: against `DataGridBase` for the paging behaviour all eight consumers inherit, and against `RefinementGrid` (through the Refinement tab), `ThirdPartyPackagesSection` and `WorkItemsDialog`, the three consumers that customise something paging touches (AC-1.9).
 2. Checked by hand on the dev instance (`:5169`) on a list above 100 rows and one below (see slice dogfood).
 3. Existing E2E and @screenshot runs are green with no regenerated images for lists of 100 rows or fewer.
 4. Docs: grep `docs/` for wording that says a list shows "all" rows or mentions page controls; amend only if found. A release-notes line is drafted on #6202 (`Release Notes` tag) in Team/Work Item/Feature terms.
 5. `pnpm test` and `pnpm build` (Biome included) clean; no new SonarCloud issues; Stryker ≥ 80 % on changed lines.
+6. Website: grep `/storage/repos/website` for a screenshot or copy showing Third-party packages with its old rows-per-page picker, or a list said to show "all" rows; amend or record "none found" (Checklist item 3).
 
 ## Wave: DISCUSS / [REF] Out of Scope
 
@@ -215,21 +227,23 @@ end; the slice changes when the footer shows and what it holds, in one shared co
 
 ## Wave: DISCUSS / [REF] Scope Assessment: PASS
 
-1 story, 1 slice, 1 bounded context (shared frontend grid) touched through 1 component plus 1 consumer
-override removed. About 1 day. No oversized signal.
+1 story, 1 slice, 1 bounded context (shared frontend grid) touched through 1 component, 1 consumer
+override removed, and RefinementGrid's enough-for line placed over the whole list rather than the page
+(`EnoughForLine.tsx`, possibly `getRowSpacing`'s type; DESIGN DDD-10, MD-2, about +0.25 day). About 1.25
+days. No oversized signal.
 
 ## Wave: DISCUSS / [REF] Story Map and Prioritisation
 
 Backbone: *open a list* → *see how much there is* → *reach any row* → *act on it / export it*.
 Single release, single slice (`slice-01-every-row-reachable`). Priority rationale: it is a correctness
 defect that silently blocks voting and sizing on large Teams (#5510, #5881 shipped with it as a known
-limit), costs about a day, and has no dependency.
+limit), costs about a day and a quarter, and has no dependency.
 
 ## Wave: DISCUSS / [REF] Outcome KPIs
 
 | KPI | Target | Measurement |
 |-----|--------|-------------|
-| `OUT-6202-no-hidden-rows` | 0 of the 8 `DataGridBase` consumers leave a row unreachable (was 8 of 8 above 100 rows) | Component tests with 243 rows on `DataGridBase` + consumer spot checks (AC-1.9); dev-instance check of Third-party packages and a Work Items dialog over 100 rows |
+| `OUT-6202-no-hidden-rows` (verification KPI: confirms the fix at release, not a change in behaviour) | 0 of the 8 `DataGridBase` consumers leave a row unreachable (was 8 of 8 above 100 rows); after release, no report of a row missing from a long list reaches the maintainer (GitHub issue or the community Slack) | Component tests with 243 rows on `DataGridBase`, which all eight consumers inherit, plus consumer cases for `RefinementGrid`, Third-party packages and the Work Items dialog, the three that customise what paging touches (AC-1.9, AC-1.10); dev-instance check of Third-party packages and a Work Items dialog over 100 rows |
 | `OUT-6202-short-lists-untouched` | 100 % of grids with ≤ 100 rows render no footer; 0 @screenshot images of short lists change | Vitest boundary test (AC-1.3); @screenshot run without regenerated images |
 
 A behavioural KPI (votes on Work Items past row 100) was drafted and dropped: it needs a usage-data event, and the maintainer decided there is none for this story (D8).
@@ -246,7 +260,7 @@ A behavioural KPI (votes on Work Items past row 100) was drafted and dropped: it
 
 1. **RBAC impact — N/A, because** paging changes how rows already delivered to the browser are shown, not which rows are delivered or who may act on them; no new `useRbac()` gate and no read of `/authorization/my-summary`.
 2. **Lighthouse-Clients CLI/MCP versioning — N/A, because** the change is frontend-only: no API endpoint, DTO or payload changes, and `lh` / MCP never render `DataGridBase`. No clients release.
-3. **Website marketing surface — N/A, because** this fixes a defect in existing lists; there is nothing new to market. DELIVER greps `/storage/repos/website` for any screenshot of a Third-party packages list with its old rows-per-page picker (outside this session's readable roots).
+3. **Website marketing surface — N/A, because** this fixes a defect in existing lists; there is nothing new to market. The website grep is a named DELIVER step: Definition of Done item 6.
 4. **Configurable terminology — applied.** The footer copy uses no configurable term (range and total only). This document, the release note and any docs use the seeded defaults *Team*, *Portfolio*, *Feature*, *Work Item*; never Epic/Story/Initiative for user concepts.
 5. **Each Epic ships on its own — N/A, because** this is a single User Story with no parent Epic and one slice.
 6. **Usage-data event — N/A** (maintainer, D8), because a paging footer makes existing rows reachable rather than adding a feature anyone chooses to use. DEVOPS, where this is normally asked, is skipped (D7).
@@ -257,10 +271,10 @@ A behavioural KPI (votes on Work Items past row 100) was drafted and dropped: it
 |---|----------|--------|----------|
 | 1 | Problem statement clear, domain language | PASS | Elevator Pitch Before: 143 Work Items, 100 shown, nothing says so |
 | 2 | Persona with specific characteristics | PASS | Jonas Weber (`team-member-voter`), Team Gravity, 143 Work Items in refinement; Priya, Marco, Lena, config-admin |
-| 3 | 3+ domain examples with real data | PASS | 5 examples: Gravity 143, Kestrel 38 / Ocean Explorer 12, 100 vs 101, 243 → 64 filter, 243-row export |
+| 3 | 3+ domain examples with real data | PASS | 6 examples: Gravity 143, Kestrel 38 / Ocean Explorer 12, 100 vs 101, 243 → 64 filter, 243-row export, Refinement line at 120 / 150 needed (counts illustrative, see Persona IDs) |
 | 4 | UAT in Given/When/Then, 3-7 | PASS | 7 scenarios |
-| 5 | AC derived from UAT | PASS | AC-1.1…1.9 map to the scenarios plus S3/S5 coverage |
-| 6 | Right-sized | PASS | ~1 day, 7 scenarios, one demo session |
+| 5 | AC derived from UAT | PASS | Long list pages → AC-1.1; 100 or fewer as today → AC-1.2; footer at the 101st row → AC-1.3; fixed pages → AC-1.4; Third-party packages → AC-1.5; list shrinks → AC-1.6; export → AC-1.8. AC-1.7 (sort orders the whole list) comes from example 1 and S4; AC-1.9 from S3/S5; AC-1.10 from example 6 and MD-2 |
+| 6 | Right-sized | PASS | ~1.25 days (incl. the Refinement line, DDD-10), 7 scenarios, one demo session |
 | 7 | Technical notes | PASS | Frontend-only; MUI 100-row cap; #6248 overlap |
 | 8 | Dependencies resolved or tracked | PASS | None blocking; #6248 tracked in Pre-requisites |
 | 9 | Outcome KPIs with measurable targets | PASS | 2 KPIs with numeric targets, both measurable without usage data (D8) |
@@ -494,3 +508,322 @@ no-picker and footer rules are pinned behaviourally by DISTILL, not structurally
 | MD-2 | **RefinementGrid's enough-for line sits where it falls in the whole list, with nothing added.** With 143 Work Items: needed 20 → under row 20 on page 1, nothing on page 2; needed 120 → no line on page 1 (its rows read "N of 120 needed"), line under row 120 on page 2; needed 150 → under row 143 on page 2, "All 143 Work Items in Refinement are needed before the next Refinement." Rejected: a "continues on page 2" note at the foot of page 1 (new UI, not needed while the row numbers already say it). | Maintainer, option (a) |
 
 DDD-5's search case and DDD-10 are now locked by these decisions.
+
+## Wave: DISTILL / [REF] Reconciliation
+
+`[lang-mode] typescript`. Frontend acceptance tests are Vitest and React Testing Library in co-located
+`*.test.tsx` files; E2E is Playwright through page objects. No backend code is touched.
+
+`[policy-mode] inherit`: `docs/architecture/atdd-infrastructure-policy.md` already records both mechanisms used
+here (the React component tree through the real component, and Playwright through POMs). The one driven
+boundary stood in for, the system-info service's SBOM reads, uses `createMockSystemInfoService()` as the existing
+Third-party packages tests do. No row was added.
+
+`[port-mode]` is n/a: the project asserts through what the reader sees (rows, the range label, the arrows, the
+exported file), not through a `state_delta` port. fast-check is not a devDependency, so the boundary universe is
+written as `it.each` tables (0, 1, 100 / 101, 143, 243 rows; the 64-row filter; the seven line placements).
+
+**DEVOPS artifacts missing — using project defaults.** DEVOPS was skipped by the maintainer (D7): the change is
+frontend-only, so the environment matrix is the one every frontend test already runs in (jsdom, `Europe/Zurich`).
+No usage-data event (D8). Traceability check A: US-01 is covered by all 42 cases. Check B: N/A, because D7 removes
+DEVOPS and the change runs in one environment; the default installer environments do not apply to a list.
+
+**Reconciliation passed — 0 contradictions.** DISCUSS, DESIGN and the DISTILL maintainer decisions all live in
+this file; there are no `wave-decisions.md`. Where a later wave moved an earlier one, it refined it:
+
+- DISCUSS S5 ("paging must still work with a custom row") → DESIGN Changed Assumptions / DDD-10: it does not
+  hold by itself; the line moves to a whole-list basis. Already reconciled in DESIGN.
+- DISCUSS Q1 lean (page 1 on sort/filter, keep on reload) → DDD-5 (MUI's policy) → MD-1: a consumer-side search
+  also opens page 1. Consistent with the lean.
+- DISCUSS Q5 (no footer while loading with no rows) → DDD-9: also none while reloading with rows held. A
+  widening, not a reversal.
+- DDD-10 (line placed over the whole list, wording to confirm) → MD-2: option (a), nothing added. MD-2's worked
+  examples (20 / 120 / 150 needed on 143 rows) match DDD-10's rule exactly.
+- DISCUSS D5 and its WS Strategy say "no walking skeleton". DISTILL adds one thin browser flow, tagged
+  `@walking_skeleton` because the house rule is one E2E walking skeleton per flow. D5 was about not building a
+  skeleton slice ahead of the real one, which still holds: there is one slice and nothing comes before it.
+  Recorded as a refinement, not a reversal.
+- AC-1.6 "no footer once the rows drop to 100 or fewer" and DDD-2's *filtered* count agree: a column filter
+  never changes `rows`, so only the filtered count satisfies AC-1.6 for the Work Items dialog.
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+"Pending" means `it.skip` / `it.skip.each` / `test.skip`. A "pin" runs green today and must stay green. Counts are
+test cases; each `each` row counts as one. Every test carries a tag comment
+`// @us-01 @slice-01 … @contract-shape:…`; the E2E skeleton carries its tags in its title.
+
+**Totals: 42 cases — 33 pending and 9 pins.** Frontend 41 (32 pending, 9 pins); E2E 1 pending.
+`@sizing-review-needed`: 42 cases for one slice is above the 8-case sizing signal. Kept as one slice because most
+cases are boundary rows of the same footer rule (D4: every consumer in one slice).
+**Error / edge / boundary share: 32 of 42 (76 %)**; the 10 happy-path cases are the three range checks, reaching
+every row, the whole-list sort, export and copy from page 1, the 243 packages, Jonas's vote and the E2E
+skeleton.
+
+| File · scenarios | Cases | Tags | AC / decision |
+|---|---|---|---|
+| `DataGridBase.paging.test.tsx` · **pins**: 0, 1 and 100 rows show in full with no footer (no range, no arrows, no "Rows per page", no footer bar) | 3 pins | `@regression @boundary @kpi-OUT-6202-short-lists-untouched @contract-shape:unbounded-preservation` | AC-1.2, AC-1.3, D1 |
+| `DataGridBase.paging` · 101 / 143 / 243 rows: the first 100 above the literal `1–100 of 101` / `1–100 of 143` / `1–100 of 243`, next enabled, previous disabled | 3 | `@driving_port @boundary @contract-shape:bounded-change` | AC-1.1, AC-1.3, D2, DDD-1 |
+| `DataGridBase.paging` · the 101st row alone on page 2 (`101–101 of 101`) · every row of 243 reachable, arrows lead back · previous and next only, no rows-per-page choice · the saved layout entry byte-identical after paging | 4 | `@driving_port` / `@boundary` / `@error`; the last `@contract-shape:unbounded-preservation` | AC-1.1, AC-1.3, AC-1.4, DDD-4, DDD-5 |
+| `DataGridBase.paging` · **pin**: a sort orders the whole list (Row 243 first) | 1 pin | `@regression @contract-shape:bounded-change` | AC-1.7 |
+| `DataGridBase.paging` · a sort on page 2 goes back to page 1 · a column filter on page 2 leaving 179 opens `1–100 of 179` · a column filter on page 2 leaving 64 shows all 64, no footer | 3 | `@boundary` / `@error` | AC-1.6, AC-1.7, DDD-2, DDD-5 (V6, V7) |
+| `DataGridBase.paging` · a reload to 64 on page 2 shows all, no footer · a reload to 250 keeps page 2 (`101–200 of 250`) · a reload to 150 on page 3 lands on `101–150 of 150`, never an empty page | 3 | `@error` / `@boundary` | AC-1.6, DDD-5, DDD-6 (V8) |
+| `DataGridBase.paging` · **pin**: a first load with no rows shows the skeleton overlay and no footer · no footer while a 243-row list reloads, the range again once loaded | 1 pin + 1 | `@regression` / `@error` | DDD-9 |
+| `DataGridBase.paging` · **pins**: export and copy from page 1 hold all 243 rows in sort order · export and copy from page 2 hold all 243 rows in sort order | 2 pins + 2 | `@regression` / `@boundary` `@contract-shape:unbounded-preservation` | AC-1.8, D6, DDD-8 |
+| `ThirdPartyPackagesSection.paging.test.tsx` · 243 packages: `1–100 of 243`, arrows, no picker · 38 packages: no footer · a search from page 2 leaving 9: all show, no footer · a search from page 2 leaving 150 opens `1–100 of 150` · clearing the search from page 2 of its results opens `1–100 of 243` | 5 | `@driving_port` / `@error` / `@boundary` | AC-1.5, AC-1.6, D3, DDD-7, **MD-1** |
+| `ThirdPartyPackagesSection.paging` · **pin**: a failed load shows the `Alert` with the reason, no grid, no footer | 1 pin | `@regression @error @contract-shape:unbounded-preservation` | DDD-9 |
+| `RefinementView.paging.test.tsx` · Jonas sees `1–100 of 143`, pages to `101–143 of 143` and votes Yes on GR-0131 (the vote reaches the sizing log for GR-0131) | 1 | `@driving_port @kpi-OUT-6202-no-hidden-rows` | AC-1.1, AC-1.9, US-01 scenario 1 |
+| `RefinementView.paging` · **pin**: a Team with 38 Work Items in refinement (Kestrel's size) sees them all, no footer | 1 pin | `@regression` | AC-1.2 |
+| `RefinementView.paging` · where the enough-for line sits on each page of 143, for **0, 20, 100, 101, 120, 143 and 150** needed: exactly one line (or none), its exact words, beside the right row, and space kept there and **nowhere else** on the page | 7 | `@boundary @contract-shape:bounded-change` | AC-1.9, DDD-10, **MD-2** |
+| `RefinementView.paging` · 120 needed: page 1 numbered 1–100 with `100 of 120 needed before the next Refinement` and no line; page 2 continues 101–120 · a State filter on page 2 leaving 64: all show, "All 64 … are needed" under GR-0064, no footer | 2 | `@error` | AC-1.6, AC-1.9, DDD-10, MD-2 |
+| `WorkItemsDialog.paging.test.tsx` · Priya, on page 2 of a 243-item dialog, filters State to 64 and sees all of them, with no footer (DISCUSS example 4; added after review so a third consumer is checked through its own component) | 1 | `@error @contract-shape:bounded-change` | AC-1.6, AC-1.9, DDD-2 |
+| `Lighthouse.EndToEndTests/tests/specs/settings/ThirdPartyPackagesPaging.spec.ts` · on a real build, Third Party Packages shows `1–100 of N`, no picker, page 2 starts at `101–` with a different first package, and a search leaving more than a page opens `1–100 of …` | 1 | `@walking_skeleton @driving_port @us-01 @kpi-OUT-6202-no-hidden-rows @contract-shape:bounded-change` | AC-1.1, AC-1.4, AC-1.5, MD-1, `OUT-6202-no-hidden-rows` |
+
+AC-1.2's "visually unchanged": the component pins assert that no footer bar exists at all under a short list (the
+footer slot returns nothing, so no container is rendered), which is what keeps a short list's height. jsdom has no
+layout, so the height itself is held by the existing @screenshot images of short lists, which DoD 3 says must not
+be regenerated.
+
+## Wave: DISTILL / [REF] WS strategy
+
+Strategy B (extend existing), as DISCUSS decided.
+
+- **Browser skeleton:** `ThirdPartyPackagesPaging.spec.ts`, one flow through `SystemInfoPage` only. Third Party
+  Packages is the one list every build has above 100 rows (both SBOMs), so it needs no demo data and configures
+  nothing. Skipped until DELIVER builds the footer.
+- **Component skeleton:** Jonas's vote on GR-0131, through the real Refinement tab, the real `DataGridBase` and the
+  real MUI grid, with only the refinement read and the sizing log write stood in for.
+
+## Wave: DISTILL / [REF] Test placement
+
+New files beside the code they cover, so the existing suites that pin today's behaviour stay untouched:
+
+- `Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.paging.test.tsx`, beside `DataGridBase.test.tsx`
+  and `DataGridBase.defaults.test.tsx` (story #6248's precedent for a behaviour-specific file).
+- `Lighthouse.Frontend/src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.paging.test.tsx`.
+- `Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.paging.test.tsx`, reusing
+  `src/tests/WorkItemsDialogTestKit.tsx` (story #6248).
+- `Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx`, reusing
+  `src/tests/RefinementTabTestKit.tsx` as the other `RefinementView.*.test.tsx` files do.
+- `Lighthouse.EndToEndTests/tests/specs/settings/ThirdPartyPackagesPaging.spec.ts`, with the members it needs on the
+  existing `tests/models/settings/SystemInfo/SystemInfoPage.ts`.
+
+Copy is pinned against literals with the en dash (`1–100 of 243`), never a string built from the page size. Pager
+buttons are matched by MUI's exact labels as strings (`"Go to next page"`, `"Go to previous page"`), which RTL
+matches whole; every regex is anchored (`/^\d+–\d+ of \d+$/`, `/^Rows per page/`).
+
+## Wave: DISTILL / [REF] Driving-port coverage
+
+| Driving port / reader action | How the specs reach it | Files |
+|---|---|---|
+| `DataGridBaseProps` (`rows`, `loading`, `storageKey`, `enableExport`) | Rendered directly on the real grid; `rows` and `loading` changed by re-rendering (a reload) | DataGridBase.paging |
+| Pager arrows ‹ / › | Clicked by their exact labels; each step waits for the new range | all three, E2E |
+| Column sort | Header clicked twice (descending) on page 1 and on page 2 | DataGridBase.paging |
+| Column filter | Column menu → Filter → Value, the way a reader filters (Stage in DataGridBase, State on the Refinement tab) | DataGridBase.paging, RefinementView.paging |
+| Consumer-side search | Typed into and cleared from "Search packages..." | ThirdPartyPackagesSection.paging, E2E |
+| Toolbar Export / Copy (premium) | `export-button` / `copy-button`, reading the Blob handed to `createObjectURL` and the `text/plain` clipboard item | DataGridBase.paging |
+| `RefinementGrid` (custom row slot and row spacing) | The real Refinement tab, rows read through the "#" cell, the line's text and each row's kept space | RefinementView.paging |
+| Vote on a Work Item past row 100 | `Yes` on GR-0131 on page 2, the sizing log call checked | RefinementView.paging |
+
+`WorkItemsDialog` is checked through its own component too (the 64-row filter from page 2). The other five
+consumers (`DataOverviewTable`, `FeatureGrid`, `FeatureListDataGrid`, `OverviewDashboard`, `ArchivedFeatureGrid`)
+pass no paging props and inherit the rule through `DataGridBase` (AC-1.9). AC-1.9's wording claims all eight;
+see the review gate below for the DISCUSS amendment that would match it to this coverage.
+`FeatureGrid`'s "Select all" keeps selecting every sorted, filtered row (DDD-12) and is not re-tested here.
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+**N/A — no driven adapter.** The change reads nothing new, writes nothing new and adds no persistence (the grid's
+saved layout gains no field, which the byte-identical layout case pins). The one external substrate, MUI X 9.14's
+pagination, is exercised for real in every case: no MUI component is mocked. The SBOM reads in the Third-party
+packages cases are stood in for by the existing `createMockSystemInfoService()`.
+
+## Wave: DISTILL / [REF] Loading and failure states pinned
+
+| State (DESIGN table) | Pinned by |
+|---|---|
+| First load, no rows yet | Pin: skeleton overlay, no footer (DataGridBase.paging) |
+| Reload with 243 rows held | Pending: no footer while loading; `1–100 of 243` once loaded (DataGridBase.paging) |
+| Loaded, ≤ 100 rows | Pins: 0 / 1 / 100 rows, the Refinement tab's 38; pending: Third-party packages' 38 |
+| Loaded, > 100 rows | Pending: the range cases |
+| Failure | Pin: Third-party packages keeps its `Alert`, no grid, no footer. The other consumers' failure looks are unchanged by this story; see the next section. |
+
+## Wave: DISTILL / [REF] Lists that read as "no data" after a failed load (follow-up candidate, not in scope)
+
+DESIGN asked DISTILL to name which of the eight consumers show their empty message after a failed fetch. Read from
+the code on 2026-10-12; paging changes none of it. For the maintainer to file (no ADO from this wave):
+
+| Consumer · where its rows come from | After a failed load |
+|---|---|
+| `FeatureListDataGrid` on the **Team's** Feature list (`TeamFeatureList.tsx:66-77`) | The failure is only logged; `features` stays `[]`, so the list shows its empty message, which reads as "no Features". |
+| `FeatureGrid` / `FeatureSelector` in the **create-Delivery dialog** (`DeliveryCreateModal.tsx:550-552`) | Only logged; the Feature picker shows an empty list. |
+| `FeatureListDataGrid` on the **Portfolio's** Feature list (`PortfolioFeatureList.tsx:84-93`) | Only logged; `loading={features.length === 0}` keeps the loading overlay up for good. Not "no data", but it never says the load failed. |
+| `RefinementGrid` (`useRefinement.ts:110-113`) | A snackbar names the error; the tab keeps its loading look while `refinement` is null. Not "no data". |
+| `DataOverviewTable` on the Overview (`OverviewDashboard.tsx:131-133`) | `hasError` shows the error look. Fine. |
+| `ThirdPartyPackagesSection` | Its own `Alert`. Fine (pinned above). |
+| `FeatureGrid` in the Delivery source tab (`DeliverySourceTab.tsx:348-360`) | An error `Alert`. Fine. |
+| `WorkItemsDialog` | Rows are handed in by the chart; story #6248 adds the dialog's own could-not-load look for the dialogs that fetch. |
+| `ArchivedFeatureGrid` | Rows are handed in from the archived Delivery record; no fetch of its own. |
+
+## Wave: DISTILL / [REF] Scaffolds
+
+| File | What | Marker |
+|---|---|---|
+| `Lighthouse.Frontend/src/components/Common/DataGrid/RowRangeFooter.tsx` (new) | `PAGE_SIZE = 100` and `RowRangeFooter: React.FC`, which throws `Not yet implemented -- RED scaffold`. Not imported by any test or production file yet: the specs go through `DataGridBase`, so DELIVER wires it as the footer slot (DDD-3) and may rename it (DESIGN left the name to the crafter). | `export const __SCAFFOLD__ = true` |
+
+No other scaffold is needed. DDD-10's whole-list spacing is reached through the Refinement tab, so no test imports
+a new helper and the mechanism stays the crafter's choice. `hidePagination` is **not** removed in DISTILL:
+removing it is the behaviour change DELIVER makes (DDD-7), and `tsc -b` then fails any leftover caller.
+
+**For DELIVER.** The GREEN step that wires the footer removes the scaffold marker and the throwing body. The
+specs pin:
+
+- The range is MUI's default label, `1–100 of 243`, with an en dash; no `localeText` override.
+- The arrows are MUI's buttons named `Go to next page` / `Go to previous page`.
+- Under 101 rows there is **no** `.MuiDataGrid-footerContainer` at all, not an empty one.
+- The saved layout key `lighthouse:datagrid:<storageKey>:state` is byte-identical before and after paging.
+- The enough-for line's kept space shows as the row's `margin-top` / `margin-bottom` of `36px`, as the existing
+  `RefinementView.enoughFor` cases already read it.
+
+## Wave: DISTILL / [REF] Existing-test disposition
+
+Nothing changes in DISTILL. Each change lands in the DELIVER commit that changes the behaviour it covers.
+
+| File | What changes | When |
+|---|---|---|
+| `DataGridBase.test.tsx` › "Virtualization … large datasets" (200 rows, fewer rendered than 200) | Stays green: a page holds 100. Its comment credits virtualisation for what paging does; reword it if the line is touched. | DDD-1 step |
+| `ThirdPartyPackagesSection.test.tsx` | Unchanged; none of its cases reads the footer. | — |
+| `EnoughForLine.test.tsx` (`getRowSpacing(theRow(…))` with MUI's page-relative shape) | Follows whatever parameter shape DDD-10's mechanism picks; DESIGN lists it as EXTEND. | DDD-10 step |
+| `RefinementView.enoughFor.test.tsx` | Unchanged; six rows never page. | — |
+| `DataGridBase.defaults.test.tsx` (story #6248, pending) | Untouched; merge, never overwrite. | — |
+
+## Wave: DISTILL / [REF] E2E impact
+
+`SystemInfoPage` gains `thirdPartyPackages` (the card found by its "Third Party Packages" heading, so its pager is
+never confused with another list's), `packageRows`, `firstPackageName`, `packagesRowRange`,
+`packagesRowsPerPageChoice`, `openThirdPartyPackages()` (waits for the first package row, since both SBOMs load
+after the tab opens), `goToNextPackagesPage()` (returns once the range has changed) and `searchPackages(text)`
+(returns once the range or the first package has changed, so it times out if a search changes nothing). Existing members are untouched, so
+`Screenshots.spec.ts`'s System Info shot keeps working.
+
+The spec type-checks (`pnpm tsc --noEmit`), is Biome-clean and is listed by `playwright test --list` as one test.
+**It was not run against a live instance in DISTILL** (instructed); DELIVER runs it live before un-skipping, as the
+ledger requires of every POM member.
+
+`@screenshot settings/systeminfo.png` is a full-page shot that includes the packages list. Its footer loses "Rows per
+page" and the picker, so that image **changes** at finalize (a long list, so AC-1.2 does not cover it): delete the
+PNG first, then regenerate. Every @screenshot of a list with 100 rows or fewer must come out unchanged.
+
+## Wave: DISTILL / [REF] Completeness checklist (15 items)
+
+| Item | Verdict |
+|---|---|
+| C1a empty / zero input | pass: 0 rows; a first load with no rows; a failed SBOM load |
+| C1b partition boundaries | pass: 100 / 101 rows; the 101st row alone; needed 100 / 101 around the page edge |
+| C2a state machine documented | pass: the page model (page 1 → page n; reset on sort, filter, search; clamp on shrink) and `loading → loaded` |
+| C2b illegal event per state | pass: a reload removing the open page; a filter or reload taking the list under 101 while on page 2 |
+| C3 0 / 1 / many | pass: 0, 1, 100, 101, 143, 243 rows; 9, 38, 150, 243 packages |
+| C4a apply twice | pass: next twice then previous; sort clicked twice; search typed then cleared |
+| C4b inverse without prerequisite | pass: previous disabled on page 1, next disabled on the last page |
+| C5a every mode combination | pass: export and copy × page 1 and page 2; the seven line placements × both pages |
+| C5b flag orthogonality | pass: paging leaves the saved layout byte-identical; export ignores the open page |
+| C6a malformed input | N/A, because the grid takes rows the app already holds; nothing is parsed |
+| C6b each declared error | pass: the SBOM failure keeps its `Alert` with no footer |
+| C6c closed error set | pass: every failure look is the consumer's own (listed above); paging adds none |
+| C7a degraded resource | pass: no footer while a reload is on its way (DDD-9) |
+| C7b interruption mid-operation | pass: a reload arriving while page 2 or 3 is open |
+| C7c concurrent actors | N/A, because a list's page is per browser tab and is never saved |
+
+**13 / 13 applicable pass, 2 N/A with reasons → COMPLETE.** Audit log entry: (story-6202, C1–C7, 0 open findings,
+none).
+
+Step-reuse ratio (Mandate-12 criterion 4): N/A as written, because this project writes no Gherkin. The shared
+vocabulary lives in each file's helpers (`showTheList`, `namesShown`, `goToNextPage`, `expectNoFooter`,
+`expectOnThisPage`), reused by every case in its file.
+
+## Wave: DISTILL / [REF] Upstream findings
+
+None blocks DELIVER.
+
+1. **A row kept rendered off-page because it holds the focus (`isOutOfSight`)** is in DESIGN's DDD-10 universe but
+   is not reached by a tab-level test: jsdom cannot scroll a focused row away. Cover it in `EnoughForLine.test.tsx`
+   when DDD-10 picks its parameter shape.
+2. **The E2E skeleton assumes the instance serves both SBOMs** (`/sbom/frontend.cdx.json` and the backend's). In a
+   build that lacks one, Third Party Packages shows an `Alert`, `openThirdPartyPackages()` times out and the spec
+   fails loudly rather than passing. DELIVER confirms on the CI verify builds.
+3. **DESIGN open question 3** (is the new page's first row in view after ‹ / ›?) and **4** (a briefly wrong page on
+   a shrinking reload) are browser checks; DISTILL pins only the settled state (`findBy…`).
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- **DESIGN driving ports:** `DataGridBaseProps` with `hidePagination` removed (DDD-7); the conditional footer slot
+  (DDD-3); MUI's page policy (DDD-5); the whole-list line (DDD-10).
+- **DEVOPS environments:** none (D7). Frontend tests run in jsdom pinned to `Europe/Zurich`.
+- **Merge:** story #6248 edits `DataGridBase.tsx` and `types.ts` too (DDD-11). Merge with it, never overwrite it,
+  and never rebase on your own initiative.
+
+## Wave: DISTILL / [REF] DELIVER hand-off
+
+Un-skip one case at a time, in this order. Each step keeps every pin green.
+
+1. `DataGridBase.paging` › 101 / 143 / 243 rows show the first 100 above the range (DDD-1, DDD-3: footer slot,
+   `pageSizeOptions={[100]}`). The 0 / 1 / 100 pins must stay green through this step.
+2. › previous and next only, no rows-per-page choice (DDD-4).
+3. › the 101st row alone on page 2 → › every row of 243 reachable.
+4. › the saved layout byte-identical after paging.
+5. › no footer while a 243-row list reloads (DDD-9).
+6. › a sort on page 2 goes back to page 1 → › a column filter leaving 179 → › a column filter leaving 64 (DDD-2:
+   the *filtered* count).
+7. › a reload to 64 → › a reload to 250 keeps the page → › a reload to 150 lands on the last page (DDD-6; add the
+   controlled `paginationModel` fallback only if a briefly wrong page shows).
+8. › export from page 2 → › copy from page 2 (DDD-8; no code change expected).
+9. `ThirdPartyPackagesSection.paging` › 243 packages, no picker (DDD-7: remove `hidePagination` everywhere) →
+   › 38 packages, no footer → › a search leaving 9.
+10. › a search leaving 150 opens page 1 → › clearing the search opens page 1 (MD-1, in `ThirdPartyPackagesSection`
+    only).
+11. `WorkItemsDialog.paging` › Priya filters page 2 of 243 down to 64.
+12. `RefinementView.paging` › Jonas pages to GR-0131 and votes.
+13. › the seven line placements → › 120 needed: numbering → › a State filter leaving 64 (DDD-10, MD-2; update
+    `EnoughForLine.test.tsx` to the chosen parameter shape and add the `isOutOfSight` case there).
+14. `ThirdPartyPackagesPaging.spec.ts` last: run it live against a local instance, then un-skip.
+
+Then: regenerate `settings/systeminfo.png` at finalize (delete it first); confirm no short-list @screenshot changes;
+remove the `RowRangeFooter` scaffold marker; Stryker on the changed lines with the three new test files in the
+runner's `include:` list.
+
+RED classification: `docs/feature/story-6202-lists-beyond-100-rows/distill/red-classification.md`. All 32 pending
+frontend cases are `MISSING_FUNCTIONALITY`; all 9 pins are green; the E2E skeleton is blocked until DELIVER.
+
+## Wave: DISTILL / [REF] Final Wave Review Gate (2026-10-12)
+
+DEVOPS was skipped (D7), so the platform reviewer does not apply. DESIGN had its own architect review in its wave
+(conditionally approved, its highs folded into MD-1 and MD-2) and was not re-run.
+
+| Reviewer | Verdict | What was done |
+|---|---|---|
+| Acceptance designer (DISTILL) | needs revision: 0 blockers, 1 high, 2 medium, 7 low | **High fixed:** the POM's `goToNextPackagesPage()` and `searchPackages()` now return only once the list has changed. **Mediums fixed:** the walking-skeleton refinement of D5 is recorded in Reconciliation; a `WorkItemsDialog` case adds a third consumer checked through its own component. **Lows fixed:** plain-language E2E header; the first package asserted non-empty before the not-equal check; a comment that narrated the defect reworded; the 38-row pin renamed to match its fixture; the saved-layout case sorts first and asserts the entry exists before comparing; the failure copy matched with an anchored regex; the time-bound describe title and a misleading constant renamed; comments say why the footer-bar class and the row margin are the observable signals. Not re-run after the fixes. |
+| Product owner (DISCUSS) | conditionally approved: 0 blockers, 2 high, 5 medium, 4 low | All 11 findings fixed in the DISCUSS sections and the slice brief by the product owner (2026-10-12, maintainer AFK, recommended fix taken each time); see the list below. None changes a test. |
+
+Product owner findings, resolved:
+
+- **H-1** fixed: AC-1.9, the KPI measurement and DoD 1 now say all eight inherit through `DataGridBase`; five set nothing paging touches (checked in code), three have their own cases.
+- **H-2** fixed: Scope Assessment, story map, DoR 6 and slice Effort say about 1.25 days; slice IN and Technical Notes list the Refinement line; new AC-1.10 and domain example 6.
+- **M-1** fixed: D1 and AC-1.1–1.3 say "rows the reader can see (after filters)".
+- **M-2** fixed: AC-1.8 says export also holds rows a column filter hides.
+- **M-3** fixed: the KPI is labelled a verification KPI; a missing-row report would reach the maintainer by GitHub issue or the community Slack.
+- **M-4** fixed: AC-1.4 rewritten as what the reader sees, including coming back to the list.
+- **M-5** fixed: a note under Persona IDs (and the slice's demo-data line) marks the row counts as illustrative.
+- **L-1** fixed: DoR row 5 maps each scenario to its AC.
+- **L-2** fixed: both job ids found at `jobs.yaml:7756` and `:7818`, cited in the JTBD section.
+- **L-3** fixed: flow-coach renamed Priya Nair.
+- **L-4** fixed: website grep is DoD item 6; Checklist item 3 points to it.
+
+Acceptance designer, iteration 2: needs revision (1 blocker, 0 high, 2 medium, 7 low); every iteration-1 fix verified.
+
+- **B-1 / L-6** fixed: the E2E title carries `@us-01 @kpi-OUT-6202-no-hidden-rows @contract-shape:bounded-change`, matching the scenario table.
+- **M-2** fixed: traceability checks A and B recorded under the DEVOPS note.
+- **L-2** fixed: the Export/Copy cases restore `URL`, `ClipboardItem` and `navigator.clipboard` after each case.
+- **L-4** fixed: the E2E throws if page 1's first package has no name, so the page-2 comparison cannot go vacuous.
+- **L-7** fixed: `@sizing-review-needed` noted under the totals.
+- **DELIVER action items (accepted conditions):** **M-1** when un-skipping the GR-0131 vote case, add a Then through the rendered row that shows Jonas's Yes, beside the `castVote` boundary check. **L-5** confirm on the first live run that the "e" search leaves more than 100 packages, or pick a term that does, and record the count in the comment. **L-1** tighten `/^Name/` to an exact header name if the header's accessible name allows it. **L-3** optional: assert the gap without the literal `36px` if a named constant exists.
+
+No blocker remains. DELIVER can start; the DISCUSS amendments are wording and do not change what the tests pin.

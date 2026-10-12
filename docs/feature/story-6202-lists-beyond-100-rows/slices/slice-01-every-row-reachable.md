@@ -20,10 +20,14 @@ Same list with 38 rows: no footer line at all, as today.
 
 - `DataGridBase`: footer shown only above 100 rows (D1), fixed 100-row pages, range + arrows, no
   rows-per-page picker, nothing persisted (D2).
-- All eight consumers covered by the one change (D4): `DataOverviewTable`, `FeatureGrid`,
-  `FeatureListDataGrid`, `WorkItemsDialog`, `OverviewDashboard`, `ArchivedFeatureGrid`, `RefinementGrid`,
-  `ThirdPartyPackagesSection`.
+- All eight consumers covered by the one change (D4), because each renders through `DataGridBase`:
+  `DataOverviewTable`, `FeatureGrid`, `FeatureListDataGrid`, `WorkItemsDialog`, `OverviewDashboard`,
+  `ArchivedFeatureGrid`, `RefinementGrid`, `ThirdPartyPackagesSection`. The `DataGridBase` tests stand for
+  the five that set nothing paging touches; `RefinementGrid`, `ThirdPartyPackagesSection` and
+  `WorkItemsDialog` are also checked through their own components (AC-1.9).
 - `ThirdPartyPackagesSection` drops `hidePagination={false}` (D3).
+- RefinementGrid's enough-for line is placed over the whole list, not the page (DDD-10, MD-2;
+  `EnoughForLine.tsx`), AC-1.10.
 - A list that shrinks to 100 rows or fewer shows all its rows, with no footer (AC-1.6).
 - Export/Copy stay whole-list (D6) — pinned by a test.
 - Release-notes line on #6202.
@@ -43,7 +47,7 @@ Same list with 38 rows: no footer line at all, as today.
 
 ## Acceptance criteria
 
-AC-1.1 … AC-1.9 in `../feature-delta.md` (US-01).
+AC-1.1 … AC-1.10 in `../feature-delta.md` (US-01).
 
 ## Dependencies
 
@@ -52,7 +56,8 @@ do not overwrite it. DESIGN answers the open questions first (page on sort/filte
 
 ## Effort
 
-About 1 day including tests. Reference class: Story #6248 slice 01a (a `DataGridBase`-wide change with
+About 1.25 days including tests: about a day for the footer, plus about 0.25 day for the Refinement
+line over the whole list (DDD-10). Reference class: Story #6248 slice 01a (a `DataGridBase`-wide change with
 consumer spot checks).
 
 ## Production-data check
@@ -60,7 +65,8 @@ consumer spot checks).
 - **Dev instance (`:5169`, real history):** Settings → System → Third-party packages (well over 100
   packages from both SBOMs) and a Work Items dialog behind a Throughput chart over a long date range
   (more than 100 closed Work Items) — both must show the footer and reach the last row.
-- **Demo data:** demo Teams and Portfolios sit under 100 rows per list (to be confirmed in DISTILL), so
+- **Demo data:** demo Teams and Portfolios are expected to sit under 100 rows per list (not counted; the
+  row counts in this brief and the feature delta are illustrative), so
   they prove the "unchanged" side: Ocean Explorer's Feature list shows no footer.
 - No demo Team has more than 100 Work Items in refinement; the Refinement case is covered by component
   tests with 143 rows, not by E2E (E2E stays a thin sanity check).
