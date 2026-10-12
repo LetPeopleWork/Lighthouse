@@ -1,0 +1,30 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": { "configFile": "vitest.stryker.6202.ts" },
+  "reporters": ["clear-text", "progress", "json"],
+  "coverageAnalysis": "perTest",
+  "concurrency": 4,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": ["dist", "coverage", "playwright-report", "reports"],
+  "mutate": [
+    "src/components/Common/DataGrid/RowRangeFooter.tsx",
+    "src/components/Common/DataGrid/DataGridBase.tsx:110-148",
+    "src/components/Common/DataGrid/DataGridBase.tsx:186-186",
+    "src/components/Common/DataGrid/DataGridBase.tsx:268-268",
+    "src/components/Common/DataGrid/DataGridBase.tsx:317-320",
+    "src/components/Common/DataGrid/DataGridBase.tsx:369-371",
+    "src/components/Common/DataGrid/DataGridBase.tsx:373-374",
+    "src/components/Common/DataGrid/DataGridToolbar.tsx:49-64",
+    "src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.tsx:48-65",
+    "src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.tsx:166-168",
+    "src/pages/Teams/Detail/Refinement/EnoughForLine.tsx:57-66",
+    "src/pages/Teams/Detail/Refinement/EnoughForLine.tsx:104-111"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": 0 },
+  "jsonReporter": { "fileName": "stryker-6202-frontend.json" },
+  "tempDirName": ".stryker-tmp-6202"
+}
