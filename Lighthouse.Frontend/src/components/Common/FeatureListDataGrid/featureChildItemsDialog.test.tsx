@@ -260,7 +260,7 @@ describe("a Feature's child items, from every list that opens them", () => {
 	);
 
 	// @us-03 @slice-03 @error @contract-shape:pure-function
-	it.skip.each(everyFeatureList)(
+	it.each(everyFeatureList)(
 		"%s: they say they couldn't be loaded when the request fails",
 		async (_, showTheList) => {
 			const user = userEvent.setup();
@@ -281,7 +281,7 @@ describe("a Feature's child items, from every list that opens them", () => {
 	);
 
 	// @us-03 @slice-03 @error @contract-shape:bounded-change
-	it.skip.each(everyFeatureList)(
+	it.each(everyFeatureList)(
 		"%s: they are asked for again when the lead closes and reopens after a failure",
 		async (_, showTheList) => {
 			const user = userEvent.setup();
