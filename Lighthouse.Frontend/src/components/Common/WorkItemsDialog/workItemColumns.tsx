@@ -114,7 +114,7 @@ const dayColumn = (
 });
 
 /** How a value compares with the target: past it, past seven tenths of it, past half of it, or well inside. */
-export const sleColor = (
+const sleColor = (
 	value: number,
 	sle: number | undefined,
 ): string | undefined => {
@@ -141,7 +141,7 @@ const blockedTooltip = (
  * The cell of the column a list is sorted by: judged against the target when there is one, and
  * marked when the item is blocked, so the reader sees both without scanning to another column.
  */
-export const judgedValueCell = (
+const judgedValueCell = (
 	value: number,
 	row: IWorkItem,
 	{ sle, getTerm }: Pick<CatalogueColumnSettings, "sle" | "getTerm">,
@@ -455,26 +455,6 @@ const catalogueEntries = (
 	...CATALOGUE_TAIL,
 ];
 
-/** The catalogue columns these rows can fill, in the order Manage columns lists them. */
-export function availableColumnIds(
-	items: readonly IWorkItem[],
-	settings: CatalogueColumnSettings,
-): ColumnId[] {
-	return catalogueEntries(settings)
-		.filter((entry) => entry.offeredFor(items, settings))
-		.map((entry) => entry.id);
-}
-
-/** The grid column for one catalogue entry, or nothing for an id the catalogue does not draw. */
-export function buildWorkItemColumn(
-	columnId: ColumnId,
-	settings: CatalogueColumnSettings,
-): DataGridColumn<WorkItemRow> | undefined {
-	return catalogueEntries(settings)
-		.find((entry) => entry.id === columnId)
-		?.build(settings);
-}
-
 export interface ContextGridLayout {
 	columns: DataGridColumn<WorkItemRow>[];
 	visibilityModel: ColumnVisibilityModel;
@@ -493,27 +473,33 @@ export function contextGridLayout(
 ): ContextGridLayout {
 	const { visible, sortBy, catalogue, withheld } =
 		WORK_ITEMS_DIALOG_CONTEXTS[context];
-	const available = availableColumnIds(items, settings).filter(
-		(id) => !withheld?.includes(id),
+	const offered = new Map<ColumnId, CatalogueEntry>(
+		catalogueEntries(settings)
+			.filter(
+				(entry) =>
+					entry.offeredFor(items, settings) && !withheld?.includes(entry.id),
+			)
+			.map((entry) => [entry.id, entry]),
 	);
 	const ordered = [
-		...visible.filter((id) => available.includes(id)),
-		...(catalogue ? available.filter((id) => !visible.includes(id)) : []),
+		...visible.flatMap((id) => offered.get(id) ?? []),
+		...(catalogue
+			? [...offered.values()].filter((entry) => !visible.includes(entry.id))
+			: []),
 	];
+	const columnSettings = { ...settings, sortBy };
 
 	return {
-		columns: ordered.flatMap(
-			(id) => buildWorkItemColumn(id, { ...settings, sortBy }) ?? [],
-		),
+		columns: ordered.map((entry) => entry.build(columnSettings)),
 		visibilityModel: Object.fromEntries(
-			ordered.map((id) => [id, visible.includes(id)]),
+			ordered.map(({ id }) => [id, visible.includes(id)]),
 		),
 		sortBy,
 	};
 }
 
 /** How long each row has sat in its current state, flagged once that counts as stale. */
-export function timeInStateGridColumn(
+function timeInStateGridColumn(
 	definition: TimeInStateColumnDefinition = {},
 ): DataGridColumn<WorkItemRow> {
 	return {
@@ -543,10 +529,7 @@ export function timeInStateGridColumn(
  * rather than reading. `plainColor` is what the text falls back to when there is no judgement to
  * show — leave it out to inherit the surrounding text colour.
  */
-export const judgementCell = (
-	color: string | undefined,
-	plainColor?: string,
-) => ({
+const judgementCell = (color: string | undefined, plainColor?: string) => ({
 	sx: {
 		color: color ?? plainColor,
 		padding: "4px 8px",
@@ -561,14 +544,10 @@ export const judgementCell = (
 	},
 });
 
-/**
- * The band column. It lives outside the dialog because it needs nothing from it beyond the
- * descriptor, and because the tie between the sort and the option list below is easier to see when
- * the two sit next to each other rather than buried in a list of six other columns.
- */
-export const ageBandGridColumn = (
+/** Which pace band each row's age falls into. */
+const ageBandGridColumn = (
 	descriptor: AgeBandColumnDescriptor,
-): DataGridColumn<IWorkItem & GridValidRowModel> => ({
+): DataGridColumn<WorkItemRow> => ({
 	field: "ageBand",
 	headerName: descriptor.headerName,
 	description: descriptor.description,
@@ -619,14 +598,10 @@ export const ageBandGridColumn = (
 	},
 });
 
-/**
- * The risk column. It sits beside the band column above for the same reason that one sits outside
- * the dialog: neither needs anything from it but its descriptor, and a reader who meets both in the
- * grid is better served by their definitions being neighbours here too.
- */
-export const sleRiskGridColumn = (
+/** Each row's chance of missing the target. */
+const sleRiskGridColumn = (
 	descriptor: SleRiskColumnDescriptor,
-): DataGridColumn<IWorkItem & GridValidRowModel> => ({
+): DataGridColumn<WorkItemRow> => ({
 	field: "sleRisk",
 	headerName: descriptor.headerName,
 	description: descriptor.description,
@@ -693,13 +668,10 @@ export const sleRiskGridColumn = (
 	},
 });
 
-/**
- * The warnings column. Outside the dialog for the same reason the two above it are: it needs
- * nothing from the dialog but its descriptor, which arrives carrying the sentences themselves.
- */
-export const warningsGridColumn = (
+/** What is worth checking about each row, as sentences the descriptor has already written. */
+const warningsGridColumn = (
 	descriptor: WarningsColumnDescriptor,
-): DataGridColumn<IWorkItem & GridValidRowModel> => ({
+): DataGridColumn<WorkItemRow> => ({
 	field: "warnings",
 	headerName: descriptor.headerName,
 	description: descriptor.description,
