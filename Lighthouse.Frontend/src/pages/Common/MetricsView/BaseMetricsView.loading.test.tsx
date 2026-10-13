@@ -1522,7 +1522,7 @@ describe("Feature Size on a Team's and a Portfolio's dashboard", () => {
 	});
 
 	// @us-01 @contract-shape:bounded-change
-	it.skip("a Team's Feature Size plots the Features the Team itself answers with, and asks for its size percentiles", async () => {
+	it("a Team's Feature Size plots the Features the Team itself answers with, and asks for its size percentiles", async () => {
 		openTheDashboard("team", "portfolio");
 		const anyOwnersFeatures = usualAnswer(
 			"getAllFeaturesForSizeChart",
@@ -1562,7 +1562,7 @@ describe("Feature Size on a Team's and a Portfolio's dashboard", () => {
 	});
 
 	// @us-06 @contract-shape:bounded-change
-	it.skip("a Team's Feature Size is handed no estimate, so it offers no Estimation mode, and no estimate is ever asked of the Team", async () => {
+	it("a Team's Feature Size is handed no estimate, so it offers no Estimation mode, and no estimate is ever asked of the Team", async () => {
 		openTheDashboard("team", "portfolio");
 
 		await everythingHasLoaded();

@@ -2,8 +2,6 @@ import type { IFeature } from "../../models/Feature";
 import type { IFeatureSizeEstimationResponse } from "../../models/Metrics/FeatureSizeEstimationData";
 import type { IFeatureSizePercentilesInfo } from "../../models/Metrics/InfoWidgetData";
 import type { ProcessBehaviourChartData } from "../../models/Metrics/ProcessBehaviourChartData";
-import type { IPercentileValue } from "../../models/PercentileValue";
-import { BaseApiService } from "./BaseApiService";
 import {
 	BaseMetricsService,
 	type IProjectMetricsService,
@@ -15,43 +13,6 @@ export class ProjectMetricsService
 {
 	constructor() {
 		super("portfolios");
-	}
-
-	async getSizePercentiles(
-		projectId: number,
-		startDate: Date,
-		endDate: Date,
-	): Promise<IPercentileValue[]> {
-		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<IPercentileValue[]>(
-				`/portfolios/${projectId}/metrics/sizePercentiles?${this.getDateFormatString(startDate, endDate)}`,
-			);
-
-			return response.data;
-		});
-	}
-
-	async getAllFeaturesForSizeChart(
-		projectId: number,
-		startDate: Date,
-		endDate: Date,
-	): Promise<IFeature[]> {
-		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<IFeature[]>(
-				`/portfolios/${projectId}/metrics/allFeaturesForSizeChart?${this.getDateFormatString(startDate, endDate)}`,
-			);
-
-			const features = BaseApiService.asArray(
-				response.data,
-				`/portfolios/${projectId}/metrics/allFeaturesForSizeChart`,
-			).map((feature) => {
-				feature.startedDate = new Date(feature.startedDate);
-				feature.closedDate = new Date(feature.closedDate);
-				return feature;
-			});
-
-			return features;
-		});
 	}
 
 	async getFeatureSizePbc(

@@ -78,6 +78,8 @@ function createMockTeamMetricsService(): ITeamMetricsService {
 		getArrivals: vi.fn().mockResolvedValue(new RunChartData({}, 30, 0)),
 		getArrivalsPbc: vi.fn().mockResolvedValue(null),
 		getFeaturesInProgress: vi.fn().mockResolvedValue([]),
+		getSizePercentiles: vi.fn().mockResolvedValue([]),
+		getAllFeaturesForSizeChart: vi.fn().mockResolvedValue([]),
 		getForecastInputCandidates: vi.fn().mockResolvedValue({
 			remainingItems: 0,
 			wipItems: 0,

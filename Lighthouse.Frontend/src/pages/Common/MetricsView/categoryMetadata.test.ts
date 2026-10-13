@@ -518,7 +518,7 @@ describe("Feature Size on a Team", () => {
 		getWidgetsForCategory(category, owner).map((w) => w.widgetKey);
 
 	// @us-01 @contract-shape:bounded-change
-	it.skip("a Team's Portfolio & Features category offers Feature Size between the Work Item distribution and Estimation vs. Cycle Time", () => {
+	it("a Team's Portfolio & Features category offers Feature Size between the Work Item distribution and Estimation vs. Cycle Time", () => {
 		expect(widgetKeysOf("portfolio", "team")).toEqual([
 			"workDistribution",
 			"featureSize",

@@ -105,7 +105,7 @@ const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 	],
 	portfolio: [
 		{ widgetKey: "workDistribution", size: "large" },
-		{ widgetKey: "featureSize", size: "large", ownerFilter: "portfolio-only" },
+		{ widgetKey: "featureSize", size: "large" },
 		{ widgetKey: "estimationVsCycleTime", size: "large" },
 	],
 };
@@ -235,7 +235,7 @@ export type MetricsFetchKey = (typeof metricsFetchKeys)[number];
  * Do not trim these.
  *
  * The lookup's fifth source, `featureSizeData`, rides on the portfolio-only `featureSizePbc`
- * entry — a team service never populates `allFeaturesForSizeChart` in the first place.
+ * entry rather than on this list, so no process behaviour chart on a Team asks for Feature sizes.
  */
 const workItemLookupSources: readonly MetricsFetchKey[] = [
 	"throughput",
@@ -348,6 +348,13 @@ export function getFetchRequirementsForWidget(
 	return widgetFetchRequirements[widgetKey];
 }
 
+// A Feature's size process behaviour chart and its size estimate are configured on a Portfolio,
+// so a Team never has them to give, even where a widget it shares with a Portfolio would use them.
+const portfolioOnlyFetchKeys: ReadonlySet<MetricsFetchKey> = new Set([
+	"featureSizePbc",
+	"featureSizeEstimation",
+]);
+
 export function getFetchKeysForCategories(
 	categoryKeys: readonly CategoryKey[],
 	ownerType: "team" | "portfolio",
@@ -356,6 +363,9 @@ export function getFetchKeysForCategories(
 	for (const categoryKey of categoryKeys) {
 		for (const widget of getWidgetsForCategory(categoryKey, ownerType)) {
 			for (const fetchKey of widgetFetchRequirements[widget.widgetKey] ?? []) {
+				if (ownerType === "team" && portfolioOnlyFetchKeys.has(fetchKey)) {
+					continue;
+				}
 				fetchKeys.add(fetchKey);
 			}
 		}

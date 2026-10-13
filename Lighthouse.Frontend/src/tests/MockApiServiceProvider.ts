@@ -260,6 +260,8 @@ export const createMockTeamMetricsService = (): ITeamMetricsService => {
 		getThroughputInfo: vi.fn(),
 		getArrivalsInfo: vi.fn(),
 		getFeaturesWorkedOnInfo: vi.fn(),
+		getSizePercentiles: vi.fn().mockResolvedValue([]),
+		getAllFeaturesForSizeChart: vi.fn().mockResolvedValue([]),
 		getWipOverviewInfo: vi.fn(),
 		getTotalWorkItemAgeInfo: vi.fn(),
 		getPredictabilityScoreInfo: vi.fn(),

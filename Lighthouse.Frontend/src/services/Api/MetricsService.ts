@@ -259,7 +259,27 @@ function buildPercentilesOverTimeQuery(
 	return `horizon=${selection}`;
 }
 
-export interface ITeamMetricsService extends IMetricsService<IWorkItem> {
+/**
+ * Feature sizes, for any owner that has them. A Team counts only its own Work Items in each
+ * Feature, so it answers with the same shapes as a Portfolio but different sizes.
+ */
+export interface IFeatureSizeMetricsService {
+	getSizePercentiles(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IPercentileValue[]>;
+
+	getAllFeaturesForSizeChart(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IFeature[]>;
+}
+
+export interface ITeamMetricsService
+	extends IMetricsService<IWorkItem>,
+		IFeatureSizeMetricsService {
 	getFeaturesInProgress(teamId: number, asOfDate: Date): Promise<IWorkItem[]>;
 	/**
 	 * Teams only. A feature can sit in several portfolios, each with its own target and its own
@@ -278,19 +298,9 @@ export interface ITeamMetricsService extends IMetricsService<IWorkItem> {
 	): Promise<IFeaturesWorkedOnInfo>;
 }
 
-export interface IProjectMetricsService extends IMetricsService<IFeature> {
-	getSizePercentiles(
-		projectId: number,
-		startDate: Date,
-		endDate: Date,
-	): Promise<IPercentileValue[]>;
-
-	getAllFeaturesForSizeChart(
-		projectId: number,
-		startDate: Date,
-		endDate: Date,
-	): Promise<IFeature[]>;
-
+export interface IProjectMetricsService
+	extends IMetricsService<IFeature>,
+		IFeatureSizeMetricsService {
 	getFeatureSizePbc(
 		projectId: number,
 		startDate: Date,
@@ -312,7 +322,7 @@ export interface IProjectMetricsService extends IMetricsService<IFeature> {
 
 export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 	extends BaseApiService
-	implements IMetricsService<T>
+	implements IMetricsService<T>, IFeatureSizeMetricsService
 {
 	private readonly api: string;
 
@@ -875,6 +885,41 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 				`/${this.api}/${id}/metrics/flowEfficiencyInfo?${this.getDateFormatString(startDate, endDate)}`,
 			);
 			return response.data;
+		});
+	}
+
+	async getSizePercentiles(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IPercentileValue[]> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<IPercentileValue[]>(
+				`/${this.api}/${id}/metrics/sizePercentiles?${this.getDateFormatString(startDate, endDate)}`,
+			);
+
+			return response.data;
+		});
+	}
+
+	async getAllFeaturesForSizeChart(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IFeature[]> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<IFeature[]>(
+				`/${this.api}/${id}/metrics/allFeaturesForSizeChart?${this.getDateFormatString(startDate, endDate)}`,
+			);
+
+			return BaseApiService.asArray(
+				response.data,
+				`/${this.api}/${id}/metrics/allFeaturesForSizeChart`,
+			).map((feature) => {
+				feature.startedDate = new Date(feature.startedDate);
+				feature.closedDate = new Date(feature.closedDate);
+				return feature;
+			});
 		});
 	}
 

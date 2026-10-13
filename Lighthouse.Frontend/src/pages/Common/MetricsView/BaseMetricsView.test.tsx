@@ -6607,8 +6607,8 @@ describe("BaseMetricsView component", () => {
 				],
 			},
 			"team/portfolio": {
-				headers: ["workDistribution"],
-				viewData: ["workDistribution"],
+				headers: ["featureSize", "workDistribution"],
+				viewData: ["featureSize", "workDistribution"],
 			},
 			"portfolio/flow-overview": {
 				headers: [

@@ -38,6 +38,7 @@ import {
 } from "../pages/Common/MetricsView/widgetStatus";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 import type {
+	IFeatureSizeMetricsService,
 	IMetricsService,
 	IProjectMetricsService,
 	ITeamMetricsService,
@@ -125,15 +126,25 @@ export interface MetricsData<T> {
 	setThroughputPbcView: (view: "raw" | "filtered") => void;
 }
 
+// Feature sizes alone do not make a Portfolio: a Team has them too. The Feature Size process
+// behaviour chart and the size estimate are configured on a Portfolio only.
 function isProjectMetricsService(
 	service: object,
 ): service is IProjectMetricsService {
 	return (
-		"getAllFeaturesForSizeChart" in service &&
-		"getSizePercentiles" in service &&
+		providesFeatureSize(service) &&
 		"getFeatureSizePbc" in service &&
 		"getFeatureSizeEstimation" in service &&
 		"getFeatureSizePercentilesInfo" in service
+	);
+}
+
+// Teams and Portfolios both have Feature sizes; a Team counts only its own Work Items in each.
+function providesFeatureSize(
+	service: object,
+): service is IFeatureSizeMetricsService {
+	return (
+		"getAllFeaturesForSizeChart" in service && "getSizePercentiles" in service
 	);
 }
 
@@ -190,7 +201,7 @@ function applicabilityFor(
 		pbcCharts: true,
 		throughputPbc: true,
 		sleRisk: providesSleRisk(service),
-		featureSizeData: isPortfolioShaped,
+		featureSizeData: providesFeatureSize(service),
 		featureSizePbc: isPortfolioShaped,
 		featureSizeEstimation: isPortfolioShaped,
 		featureSizePercentilesInfo: isPortfolioShaped,
@@ -637,7 +648,9 @@ export function useMetricsData<
 		"Error fetching predictability data:",
 	);
 
-	// Only a portfolio is asked these, which is what `applicable` already says.
+	// Each is asked only of a service that has it, which is what `applicable` already says.
+	const featureSizeService =
+		metricsService as unknown as IFeatureSizeMetricsService;
 	const portfolioService = metricsService as unknown as IProjectMetricsService;
 	const sizePercentileFailure = "Error fetching Size Percentile Data:";
 
@@ -645,7 +658,7 @@ export function useMetricsData<
 		"getSizePercentiles",
 		selectedWindow,
 		({ ownerId, from, to }) =>
-			portfolioService.getSizePercentiles(ownerId, dayOf(from), dayOf(to)),
+			featureSizeService.getSizePercentiles(ownerId, dayOf(from), dayOf(to)),
 		isAsked("featureSizeData"),
 		sizePercentileFailure,
 	);
@@ -654,7 +667,7 @@ export function useMetricsData<
 		"getAllFeaturesForSizeChart",
 		selectedWindow,
 		({ ownerId, from, to }) =>
-			portfolioService.getAllFeaturesForSizeChart(
+			featureSizeService.getAllFeaturesForSizeChart(
 				ownerId,
 				dayOf(from),
 				dayOf(to),
