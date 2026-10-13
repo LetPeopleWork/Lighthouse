@@ -9800,3 +9800,56 @@ query, loading / failure look), the Delivery timeline, and `highlightColumn` rem
 - [ADR-235](./adr-235-a-work-item-carries-its-estimate-normalised-by-the-code-the-estimation-chart-uses.md) — the
   estimate on the row, one normalisation path, owner per site. **Accepted.**
 - Cross-refs: ADR-233 (the `status` vocabulary the dialog reuses).
+
+---
+
+## Application Architecture — story-6251-team-feature-size
+
+Feature: story-6251-team-feature-size (ADO User Story #6251). The Feature Size scatter and the Feature Size
+Percentiles widget come to the Team, counting the Team's own share of each Feature. The metrics cache stops letting a
+Team and a Portfolio with the same id serve each other's numbers. DESIGN 2026-10-13, PROPOSE. Full design:
+`docs/feature/story-6251-team-feature-size/feature-delta.md` → "Wave: DESIGN / …" (DDD-1…DDD-14).
+
+The pattern is unchanged: controllers map entities to DTOs, metrics services read through the repositories, and a
+pure domain method holds the rule.
+
+### Key invariants introduced
+
+- **I1: a Team's share has one definition.** `Feature.SizeFor(teamId)` returns this Team's `FeatureWork` total, or 0
+  for a default-sized Feature. The Team's scatter values and percentiles both use it. (ADR-236)
+- **I2: `FeatureDto.Size` is owner-scoped by route.** On `teams/{id}/metrics/allFeaturesForSizeChart` it is the Team's
+  share. Everywhere else it is the whole Feature's size. (ADR-236)
+- **I3: metric cache entries are owner-scoped.** A key names the owner kind as well as its id, and invalidation
+  removes by that same scoped prefix, so a Team and a Portfolio with the same id never share an entry.
+- **I4: default-sized Features never count on a Team.** Their per-Team rows are made up by extrapolation, so the
+  Team's query excludes them explicitly.
+- **I5: the Feature Size scatter frame is always placed** on both owners: a spinner while loading, a could-not-load
+  note on failure, and an owner-specific empty state when there are no Features (ADR-233 looks).
+
+### Component decomposition (headline)
+
+- **Backend:**
+  - EXTEND `BaseMetricsService` (owner-scoped cache key; `WasClosedBetween` and the size-chart window rule lifted from the Portfolio service in a separate refactor), `Feature` (`SizeFor`), `FeatureDto` (`Size` init-only), `ITeamMetricsService` / `TeamMetricsService` and `TeamMetricsController`.
+  - Three routes, `GET teams/{teamId}/metrics/{allFeaturesForSizeChart, sizePercentiles, featureSizePercentilesInfo}`, under the existing `TeamRead` guard and not cached.
+- **Frontend:**
+  - CREATE `IFeatureSizeMetricsService`, implemented once in the shared `BaseMetricsService<T>`.
+  - EXTEND `useMetricsData` (a `providesFeatureSize` predicate), `categoryMetadata` (gate lifts), `BaseMetricsView` (always-placed scatter frame), and the scatter and percentiles widget (owner copy).
+- No migration, dependency, RBAC change, licence gate or Lighthouse-Clients change.
+
+### Slices
+
+- 00: owner-scoped metrics cache.
+- 01: refactor commit, `SizeFor`, the scatter and size-percentile routes, the scatter on the Team, and the always-placed frame on both owners.
+- 02: the percentiles-info route and the widget on the Team.
+
+### Architectural Enforcement (this feature)
+
+- Unit test: a Team and a Portfolio with the same id, asking for the same metric and window, each get their own value.
+- Unit test: invalidating one owner leaves the other owner's entries in place.
+- Endpoint test on demo data: the Team shares of a multi-team Feature add up to its Portfolio size.
+
+### ADR References (this feature)
+
+- [ADR-236](./adr-236-on-a-teams-metrics-routes-a-features-size-is-that-teams-share.md): on a Team's metrics routes,
+  a Feature's size is that Team's share, defined once by `Feature.SizeFor`. **Accepted.**
+- Cross-refs: ADR-233 (widget loading and could-not-load looks), ADR-235 (init-only property on the same DTO).

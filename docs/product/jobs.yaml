@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-10-10
+updated: 2026-10-13
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -62,6 +62,7 @@ feature_context:
   - epic-5878-baseline
   - story-6218-readable-cli-output
   - story-6193-usage-data-from-clients
+  - story-6251-team-feature-size
 
 jobs:
   - id: job-rbac-bootstrap
@@ -8118,3 +8119,29 @@ jobs:
       anxiety: A dialog so wide it needs a horizontal scroll in every context
       habit: Copying IDs into the work tracking tool to look up what the chart already knew
     opportunity_score: {importance: 4, current_satisfaction: 2, gap: 2}
+  - id: job-flow-coach-know-how-much-of-a-feature-we-take-on
+    title: Know how much of a Feature my team usually takes on
+    persona: flow-coach
+    feature_context: story-6251-team-feature-size
+    ado: Story #6251 (reporter Steve Pereira)
+    created: 2026-10-13
+    note: >
+      Feature Size and Feature Size Percentiles exist only on a Portfolio, where a Feature's size is all of
+      its child Work Items across every Team. A Team's share of each Feature is already stored per Team
+      (FeatureWork.TotalWorkItems), so this job is served from data Lighthouse already keeps. Only Features
+      some Portfolio loads are known to Lighthouse at all.
+    job_story: >
+      When my team reviews its flow or splits the next Feature,
+      I want to see how many Work Items our part of each Feature usually comes to, and which open Features
+      are already bigger than usual,
+      so I can tell when our share of a Feature is growing past what we normally finish and raise it before it drags.
+    dimensions:
+      functional: The Feature Size scatter and the Feature Size Percentiles widget on the Team, counting only this Team's Work Items under each Feature
+      emotional: From "I'd have to open the Portfolio and subtract the other teams" to a number that is plainly ours
+      social: Raise "this one is twice our usual size" in refinement with data instead of a hunch
+    forces:
+      push: The charts are only on the Portfolio, where a Feature's size mixes in every other Team's Work Items (Steve, #6251)
+      pull: The Team already has Cycle Time and Work Item Age percentiles; Feature size beside them closes the set
+      anxiety: The same Feature shows a different size on the Team than on the Portfolio and reads as a bug
+      habit: Judging a Feature's size by eye on the board, or not at all
+    opportunity_score: {importance: 3, current_satisfaction: 1, gap: 2}
