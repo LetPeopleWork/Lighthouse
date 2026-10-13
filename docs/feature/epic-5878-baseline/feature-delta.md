@@ -1559,7 +1559,7 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
   here." and Back to Reports (*copy to confirm at DELIVER's sketch*). A metric key in a read that the frontend has no
   panel for renders a neutral frame "This metric can't be shown in this version of Lighthouse." in its place; the
   wizard does not offer a key it has no panel for. Neither ever crashes the view.
-- **DD33** *(2026-10-13, M9)* **Then freezes the 85th percentile only** (D26 as DESIGN shaped it): the {Cycle Time}
+- **DD33** *(2026-10-13, M9)* **Then freezes the 85th percentile only** *(superseded 2026-10-13 by DT9: Then freezes the 85th, 70th and 50th)* (D26 as DESIGN shaped it): the {Cycle Time}
   panel's Then column shows the 85th alone, as in the approved mockup; Now shows 85th / 70th / 50th. Then's missing
   70th and 50th are not "absent" values — they were never Then's — so no "Not captured" sentence appears for them.
   "Not captured for this report" stays reserved for a metric or value the report predates (D27): one the catalog
@@ -1640,7 +1640,7 @@ twin the metrics controllers carry). Days are `yyyy-MM-dd`.
     metrics: { [metricKey]: { atThen: Side, atNow: Side, beyondThenLimits: { above, below } | null } }
   } }
 Side per metric (each member a value = { value: number | null, sampleSize: int | null, absentReason: code | null }):
-  cycle-time      atThen { p85 }              atNow { p85, p70, p50 }          -- DD33
+  cycle-time      atThen { p85, p70, p50 }    atNow { p85, p70, p50 }          -- DT9
   throughput      { total, perDay }
   wip             { average, min, max }
   work-item-age   { totalWindowAverage, totalLastDay, averageWindowAverage, averageLastDay }
@@ -2513,6 +2513,32 @@ DELIVER re-sketches only what is listed as open below.
 
 Open for DELIVER: none of the layout; only exact spacing and the wizard's step labels if `CreateWizardShell` imposes a
 form.
+
+**Maintainer decisions after the slice-01 live check (2026-10-13)** — these supersede the matching parts of DT3, DT5
+and DD33; slice 01 is reworked to them before slice 02 starts, and every later panel copies the same shape:
+
+- **[DT9] Then freezes the 85th, 70th and 50th**, mirroring Now row by row (supersedes DD33's "85th only"). `atThen` for
+  `cycle-time` becomes `{ p85, p70, p50 }`; each value keeps its sample size and absent reason.
+- **[DT10] A metric panel is three segments, `| Then | Now | Change |`**, titled by the metric word alone
+  ("{Cycle Time}", not "{Cycle Time}: Then & Now"). Each side's heading carries the sample size —
+  "THEN · 181 {Work Items}", "NOW · 203 {Work Items}" — and the value lines carry none. Each percentile line carries the
+  certainty icon and colour of `ForecastLevel`, exactly as the Metrics tab's {Cycle Time} percentiles do, on both sides.
+- **[DT11] The Change segment** has its own heading "CHANGE" and one line per percentile: sign and arrow plus days and
+  per cent, e.g. "▼ 3 days (−20 %)"; a zero reads "No change". Better or worse is carried by the arrow and sign, never by
+  colour alone.
+  ```
+  Reports / Baseline Q3
+  ┌ Cycle Time ──────────────────────────────────────────────────────────────┐
+  │ THEN · 181 Work Items   │ NOW · 203 Work Items   │ CHANGE                  │
+  │ 🟢 85th  15 days        │ 🟢 85th  12 days       │ ▼ 3 days (−20 %)        │
+  │ 🟠 70th   9 days        │ 🟠 70th   9 days       │ No change               │
+  │ 🔴 50th   5 days        │ 🔴 50th   6 days       │ ▲ 1 day (+20 %)         │
+  └──────────────────────────────────────────────────────────────────────────┘
+  ```
+- **[DT12] The report page's top is one line, "Reports / Baseline Q3"**, both parts the same size (no large heading).
+- **[DT13] The wizard's Then step drops "· frozen when you create it"**; it shows the resolved days only.
+- The report name in the list uses the theme's link colour (it rendered in the browser's visited purple, unreadable in
+  dark mode).
 
 ### [REF] Reconciliation
 
