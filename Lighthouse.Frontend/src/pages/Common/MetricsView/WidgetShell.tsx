@@ -7,6 +7,7 @@ import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
 	Box,
+	Button,
 	Chip,
 	CircularProgress,
 	IconButton,
@@ -193,16 +194,28 @@ const bodySx: Record<BodyLook, SxProps<Theme>> = {
 // also keeps fetching while it is out of sight, so a later answer can still replace the note.
 // The pointer is refused by the body box alone: `inert` would also hide the dimmed chart
 // from assistive technology, where aria-busy on the frame already says it is loading.
-const WidgetBody: React.FC<{
+export interface WidgetBodyProps {
 	readonly widgetKey: string;
 	readonly status: WidgetStatus;
 	readonly hasContentToDim: boolean;
+	/** What the could-not-load look says instead of the chart's own sentence. */
+	readonly failureMessage?: string;
+	/** Offers Retry on the could-not-load look; without it, reloading is the only way to ask again. */
+	readonly onRetry?: () => void;
 	readonly children: React.ReactNode;
-}> = ({ widgetKey, status, hasContentToDim, children }) => {
+}
+
+export const WidgetBody: React.FC<WidgetBodyProps> = ({
+	widgetKey,
+	status,
+	hasContentToDim,
+	failureMessage = COULD_NOT_LOAD_MESSAGE,
+	onRetry,
+	children,
+}) => {
 	const look = bodyLookFor(status, hasContentToDim);
 	const chartOutOfSight = !chartIsOnScreen(look);
 
-	// No retry on error: changing the dates or reloading the page asks again.
 	return (
 		<Box sx={{ flex: 1, minHeight: 0, position: "relative" }}>
 			<Box data-testid={`widget-shell-body-${widgetKey}`} sx={bodySx[look]}>
@@ -213,8 +226,13 @@ const WidgetBody: React.FC<{
 					<>
 						<WarningAmberIcon color="warning" fontSize="small" />
 						<Typography variant="body2" color="text.secondary">
-							{COULD_NOT_LOAD_MESSAGE}
+							{failureMessage}
 						</Typography>
+						{onRetry && (
+							<Button size="small" onClick={onRetry}>
+								Retry
+							</Button>
+						)}
 					</>
 				)}
 			</Box>

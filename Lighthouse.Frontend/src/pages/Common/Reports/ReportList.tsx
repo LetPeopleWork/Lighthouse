@@ -12,7 +12,6 @@ import { parseLocalDate } from "../../../utils/date/localDate";
 interface ReportListProps {
 	owner: IReportOwner;
 	reports: IReportListItem[];
-	loading: boolean;
 }
 
 const TYPE_NAMES: Record<string, string> = { "then-and-now": "Then & Now" };
@@ -20,7 +19,6 @@ const TYPE_NAMES: Record<string, string> = { "then-and-now": "Then & Now" };
 const ReportList: React.FC<Readonly<ReportListProps>> = ({
 	owner,
 	reports,
-	loading,
 }) => {
 	const columns: DataGridColumn<IReportListItem>[] = useMemo(
 		() => [
@@ -58,7 +56,6 @@ const ReportList: React.FC<Readonly<ReportListProps>> = ({
 			rows={reports}
 			columns={columns}
 			storageKey={`reports-${owner.kind}`}
-			loading={loading}
 		/>
 	);
 };

@@ -135,7 +135,7 @@ describe("The Reports tab lists a Team's reports", () => {
 	});
 
 	// @us-01 @slice-01 @boundary @contract-shape:pure-function
-	it.skip("shows an admin of a Team without reports an empty list and Create Report", async () => {
+	it("shows an admin of a Team without reports an empty list and Create Report", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService({
 				getReports: vi.fn().mockResolvedValue(aReportList([])),
@@ -147,7 +147,7 @@ describe("The Reports tab lists a Team's reports", () => {
 	});
 
 	// @us-01 @slice-01 @boundary @contract-shape:pure-function
-	it.skip("tells a reader of a Team without reports that a Team Admin can create one", async () => {
+	it("tells a reader of a Team without reports that a Team Admin can create one", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService({
 				getReports: vi.fn().mockResolvedValue(aReportList([])),
@@ -411,7 +411,7 @@ describe("The Reports list on a slow or failing connection", () => {
 
 	// @us-01 @slice-01 @boundary @contract-shape:pure-function
 	// An empty area while the list is on its way would read as "no reports".
-	it.skip("shows a spinner, never the empty list, while the list is on its way", async () => {
+	it("shows a spinner, never the empty list, while the list is on its way", async () => {
 		const held = deferred<ReturnType<typeof aReportList>>();
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService({
@@ -425,7 +425,7 @@ describe("The Reports list on a slow or failing connection", () => {
 
 	// @us-01 @us-08 @slice-01 @boundary @contract-shape:pure-function
 	// Until the list arrives nobody knows whether the Community cap is reached.
-	it.skip("holds Create Report until the list says whether another report may be created", async () => {
+	it("holds Create Report until the list says whether another report may be created", async () => {
 		const held = deferred<ReturnType<typeof aReportList>>();
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService({
@@ -441,7 +441,7 @@ describe("The Reports list on a slow or failing connection", () => {
 	});
 
 	// @us-01 @slice-01 @error @ac-1.8 @contract-shape:pure-function
-	it.skip("says the list could not be loaded and offers Retry, never the empty list", async () => {
+	it("says the list could not be loaded and offers Retry, never the empty list", async () => {
 		const getReports = vi
 			.fn()
 			.mockRejectedValueOnce(new Error("the network dropped"))
