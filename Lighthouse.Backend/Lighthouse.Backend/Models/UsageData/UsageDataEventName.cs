@@ -40,5 +40,9 @@ namespace Lighthouse.Backend.Models.UsageData
         TeamSizingReadinessReached = 14,
 
         TeamRefinementDayVerdictShown = 15,
+
+        ReportCreated = 16,
+
+        ReportOpened = 17,
     }
 }

@@ -179,15 +179,14 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// order the names were appended in rather than their numbers.
         /// </summary>
         // @us-01 @us-08 @slice-01 @slice-08 @contract-shape:bounded-change
-        [TestCase(ReportCreated, TheLastEventNamedBeforeReports, Ignore = PendingSlice01)]
-        [TestCase(ReportOpened, ReportCreated, Ignore = PendingSlice01)]
+        [TestCase(ReportCreated, TheLastEventNamedBeforeReports)]
+        [TestCase(ReportOpened, ReportCreated)]
         [TestCase(ReportDeleted, ReportOpened, Ignore = PendingSlice08)]
         public void The_report_events_are_appended_to_the_list_of_names_never_inserted(string name, string namedBefore)
             => ThenIsAppendedAfter("UsageDataEventName", name, namedBefore);
 
         // @us-01 @slice-01 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice01)]
         public void Then_and_Now_is_the_first_report_type_on_its_own_list()
         {
             var vocabulary = typeof(Backend.Program).Assembly.GetTypes()
@@ -201,9 +200,9 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // @us-01 @us-06 @us-08 @slice-01 @slice-06 @slice-08 @contract-shape:bounded-change
         // Data leaving that the page does not describe is data nobody was told about. Each row is found by what
         // its first column says, and must name what travels with it.
-        [TestCase("A report was created", "`ThenAndNow`", Ignore = PendingSlice01)]
-        [TestCase("A report was opened", "`ThenAndNow`", Ignore = PendingSlice01)]
-        [TestCase("Which type of report", "`ThenAndNow`", Ignore = PendingSlice01)]
+        [TestCase("A report was created", "`ThenAndNow`")]
+        [TestCase("A report was opened", "`ThenAndNow`")]
+        [TestCase("Which type of report", "`ThenAndNow`")]
         [TestCase("A Team tab was opened", "seven Team tabs", Ignore = PendingSlice01)]
         [TestCase("A Portfolio tab was opened", "six Portfolio tabs", Ignore = PendingSlice06)]
         [TestCase("A report was deleted", "| Nothing", Ignore = PendingSlice08)]
