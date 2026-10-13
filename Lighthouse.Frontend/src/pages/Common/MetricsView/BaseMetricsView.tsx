@@ -1978,6 +1978,7 @@ export const BaseMetricsView = <
 		kind: ownerType,
 		terms: {
 			feature: getTerm(TERMINOLOGY_KEYS.FEATURE),
+			features: getTerm(TERMINOLOGY_KEYS.FEATURES),
 			team: getTerm(TERMINOLOGY_KEYS.TEAM),
 			workItems: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
 		},

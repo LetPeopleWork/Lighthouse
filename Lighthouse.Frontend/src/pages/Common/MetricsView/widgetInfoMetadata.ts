@@ -400,6 +400,7 @@ export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
 
 export interface WidgetInfoTerms {
 	readonly feature: string;
+	readonly features: string;
 	readonly team: string;
 	readonly workItems: string;
 }
@@ -413,6 +414,8 @@ export interface WidgetInfoOwner {
 const teamDescriptions: Record<string, (terms: WidgetInfoTerms) => string> = {
 	featureSize: ({ feature, team, workItems }) =>
 		`${feature} sizes, counting only this ${team}'s ${workItems}, on a scatter plot filterable by state, to spot size/cycle-time correlations.`,
+	featureSizePercentiles: ({ features, team, workItems }) =>
+		`Size distribution percentiles of this ${team}'s ${workItems} in completed ${features}, with trend comparison to the previous period.`,
 };
 
 export function getWidgetInfo(

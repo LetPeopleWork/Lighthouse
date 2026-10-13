@@ -1696,7 +1696,7 @@ describe("Feature Size Percentiles on a Team's Flow Overview", () => {
 	});
 
 	// @us-07 @contract-shape:pure-function
-	it.skip.each([
+	it.each([
 		["Act", 9],
 		["Observe", 8],
 		["Observe", 6],
@@ -1724,7 +1724,7 @@ describe("Feature Size Percentiles on a Team's Flow Overview", () => {
 	// A finished Feature bigger than the 85th is history, not a risk: only open Features move
 	// the status.
 	// @us-07 @error @contract-shape:pure-function
-	it.skip.each([
+	it.each([
 		[
 			"only a finished Feature bigger than the 85th",
 			[
@@ -1751,7 +1751,7 @@ describe("Feature Size Percentiles on a Team's Flow Overview", () => {
 	});
 
 	// @us-02 @contract-shape:bounded-change
-	it.skip("explains that it counts this Team's Work Items in completed Features", () => {
+	it("explains that it counts this Team's Work Items in completed Features", () => {
 		openTheDashboard("team", "flow-overview");
 
 		fireEvent.click(
