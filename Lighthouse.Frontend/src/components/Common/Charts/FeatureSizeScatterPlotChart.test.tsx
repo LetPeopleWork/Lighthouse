@@ -1917,4 +1917,71 @@ describe("FeatureSizeScatterPlotChart", () => {
 			expect(yValues).toContain(4);
 		});
 	});
+
+	describe("a Portfolio bubble's title", () => {
+		it("says item for one Feature and items for two", () => {
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="portfolio"
+					sizeDataPoints={[
+						createFeature(1, "Alone", 4, 5),
+						createFeature(2, "Twin A", 6, 9),
+						createFeature(3, "Twin B", 6, 9),
+					]}
+				/>,
+			);
+
+			// The mocked chart draws markers outside an <svg>, where React moves
+			// every <title> into the document head, so they are read from there.
+			const titles = Array.from(
+				document.querySelectorAll("title"),
+				(title) => title.textContent,
+			).sort((a, b) => (a ?? "").localeCompare(b ?? ""));
+			expect(titles).toEqual([
+				"1 item with size 4 child items",
+				"2 items with size 6 child items",
+			]);
+		});
+	});
+
+	describe("y-axis label outside closed-date mode", () => {
+		it("names the cycle time in days when there is no estimation", () => {
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="portfolio"
+					sizeDataPoints={basicFeatures}
+				/>,
+			);
+
+			expect(screen.getByTestId("chart-container").dataset.yAxisLabel).toBe(
+				"Cycle Time (days)",
+			);
+		});
+
+		it("names the estimation unit when estimation is ready", () => {
+			render(
+				<FeatureSizeScatterPlotChart
+					ownerKind="portfolio"
+					sizeDataPoints={basicFeatures}
+					estimationData={{
+						status: "Ready",
+						estimationUnit: "Story Points",
+						useNonNumericEstimation: false,
+						categoryValues: [],
+						featureEstimations: [
+							{
+								featureId: 1,
+								estimationNumericValue: 3,
+								estimationDisplayValue: "3",
+							},
+						],
+					}}
+				/>,
+			);
+
+			expect(screen.getByTestId("chart-container").dataset.yAxisLabel).toBe(
+				"Story Points",
+			);
+		});
+	});
 });

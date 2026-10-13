@@ -704,3 +704,64 @@ describe("MetricsService getProcessBehaviorOverTime", () => {
 		).rejects.toThrow("Network Error");
 	});
 });
+
+describe("MetricsService getAllFeaturesForSizeChart", () => {
+	afterEach(() => {
+		vi.resetAllMocks();
+	});
+
+	const rawFeature = (id: number) => ({
+		id,
+		name: `Feature ${id}`,
+		referenceId: `F-${id}`,
+		state: "Done",
+		stateCategory: "Done",
+		type: "Feature",
+		startedDate: "2023-01-03T00:00:00Z",
+		closedDate: "2023-01-20T00:00:00Z",
+	});
+
+	it.each([
+		{ owner: "Team", create: () => new TeamMetricsService(), api: "teams" },
+		{
+			owner: "Portfolio",
+			create: () => new ProjectMetricsService(),
+			api: "portfolios",
+		},
+	])(
+		"asks the $owner's own size-chart endpoint for the window",
+		async ({ create, api }) => {
+			mockedAxios.create.mockReturnThis();
+			mockedAxios.get.mockResolvedValueOnce({ data: [rawFeature(1)] });
+
+			await create().getAllFeaturesForSizeChart(
+				7,
+				new Date("2023-01-01"),
+				new Date("2023-01-31"),
+			);
+
+			expect(mockedAxios.get).toHaveBeenCalledWith(
+				`/${api}/7/metrics/allFeaturesForSizeChart?startDate=2023-01-01&endDate=2023-01-31`,
+			);
+		},
+	);
+
+	it("turns each Feature's started and closed dates into real dates", async () => {
+		mockedAxios.create.mockReturnThis();
+		mockedAxios.get.mockResolvedValueOnce({
+			data: [rawFeature(1), rawFeature(2)],
+		});
+
+		const result = await new TeamMetricsService().getAllFeaturesForSizeChart(
+			7,
+			new Date("2023-01-01"),
+			new Date("2023-01-31"),
+		);
+
+		expect(result.map((feature) => feature.id)).toEqual([1, 2]);
+		for (const feature of result) {
+			expect(feature.startedDate).toEqual(new Date("2023-01-03T00:00:00Z"));
+			expect(feature.closedDate).toEqual(new Date("2023-01-20T00:00:00Z"));
+		}
+	});
+});
