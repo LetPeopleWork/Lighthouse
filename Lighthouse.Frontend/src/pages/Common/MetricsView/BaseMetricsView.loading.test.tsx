@@ -22,6 +22,7 @@ import { Team } from "../../../models/Team/Team";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
+import { TerminologyProvider } from "../../../services/TerminologyContext";
 import {
 	createHeldMetricsService,
 	type HeldMetricsService,
@@ -31,6 +32,7 @@ import {
 import {
 	createMockApiServiceContext,
 	createMockBlackoutPeriodService,
+	createMockTerminologyService,
 } from "../../../tests/MockApiServiceProvider";
 import { BaseMetricsView } from "./BaseMetricsView";
 import {
@@ -139,8 +141,27 @@ vi.mock("./Dashboard", () => ({
 	),
 }));
 
+// The View Data table, once opened, says what it was handed: its title and, for each row, the
+// Feature or Work Item and the size it shows.
 vi.mock("../../../components/Common/WorkItemsDialog/WorkItemsDialog", () => ({
-	default: () => null,
+	default: ({
+		open,
+		title,
+		items,
+	}: {
+		open: boolean;
+		title: string;
+		items: { referenceId: string; size?: number }[];
+	}) =>
+		open ? (
+			<div data-testid="view-data-table" data-title={title}>
+				{items.map((item) => (
+					<span key={item.referenceId} data-testid="view-data-row">
+						{`${item.referenceId} ${item.size ?? ""}`}
+					</span>
+				))}
+			</div>
+		) : null,
 }));
 
 vi.mock("@mui/x-charts", async (importOriginal) => ({
@@ -333,6 +354,8 @@ function openTheDashboard(
 		blackoutPeriodsFail?: boolean;
 		theme?: Theme;
 		queryClient?: QueryClient;
+		/** The instance's own words, by terminology key; the seeded words when absent. */
+		terms?: Record<string, string>;
 	} = {},
 ): void {
 	held = createHeldMetricsService(owner);
@@ -348,7 +371,30 @@ function openTheDashboard(
 	const queryClient =
 		options.queryClient ??
 		new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const terminologyService = createMockTerminologyService();
+	terminologyService.getAllTerminology = vi.fn().mockResolvedValue(
+		Object.entries(options.terms ?? {}).map(([key, value], index) => ({
+			id: index + 1,
+			key,
+			defaultValue: key,
+			description: "",
+			value,
+		})),
+	);
+	const dashboard = (
+		<BaseMetricsView
+			entity={entity}
+			metricsService={held.service as IMetricsService<IWorkItem>}
+			title="Work Items"
+			defaultDateRange={30}
+			doingStates={["In Progress"]}
+			hasForecastFilter
+			featuresInProgress={[]}
+		/>
+	);
 
+	// The instance's words are looked up only when a scenario names some: the lookup is a query of
+	// its own, and the scenarios that count the dashboard's queries would count it too.
 	render(
 		<ThemeProvider
 			theme={createTheme({ palette: { mode: options.theme ?? "light" } })}
@@ -356,17 +402,16 @@ function openTheDashboard(
 			<MemoryRouter>
 				<QueryClientProvider client={queryClient}>
 					<ApiServiceContext.Provider
-						value={createMockApiServiceContext({ blackoutPeriodService })}
+						value={createMockApiServiceContext({
+							blackoutPeriodService,
+							terminologyService,
+						})}
 					>
-						<BaseMetricsView
-							entity={entity}
-							metricsService={held.service as IMetricsService<IWorkItem>}
-							title="Work Items"
-							defaultDateRange={30}
-							doingStates={["In Progress"]}
-							hasForecastFilter
-							featuresInProgress={[]}
-						/>
+						{options.terms ? (
+							<TerminologyProvider>{dashboard}</TerminologyProvider>
+						) : (
+							dashboard
+						)}
 					</ApiServiceContext.Provider>
 				</QueryClientProvider>
 			</MemoryRouter>
@@ -1782,5 +1827,126 @@ describe("Feature Size Percentiles on a Team's Flow Overview", () => {
 				/^Size distribution percentiles for completed features with trend comparison to the previous period\.$/,
 			),
 		).toBeInTheDocument();
+	});
+});
+
+// Story #6251: Feature Size Percentiles offers its data as a table on both owners, the same Features
+// table the Feature Size scatter opens. It lists exactly the Features the percentiles count: the ones
+// finished in the window, with a size to count. A Portfolio's Feature sizes also carry the finished
+// Features its default Feature Size sizes, at 0, which its percentiles leave out, so the table leaves
+// them out too. On a Team every size is the Team's own part of the Feature, as the Team's answer
+// carries it.
+describe("Feature Size Percentiles' data, on a Team's and a Portfolio's Flow Overview", () => {
+	const owners = ["team", "portfolio"] as const;
+
+	const aFeature = (
+		referenceId: string,
+		stateCategory: "ToDo" | "Doing" | "Done",
+		size: number,
+		isUsingDefaultFeatureSize = false,
+	) => ({
+		id: Number(referenceId.replace(/\D/g, "")),
+		name: `Feature ${referenceId}`,
+		referenceId,
+		url: `https://example.com/work/${referenceId}`,
+		type: "Epic",
+		state: { ToDo: "To Do", Doing: "In Progress", Done: "Done" }[stateCategory],
+		stateCategory,
+		startedDate: new Date("2026-08-20"),
+		closedDate: new Date("2026-09-10"),
+		cycleTime: stateCategory === "Done" ? 22 : 0,
+		workItemAge: stateCategory === "Done" ? 0 : 27,
+		parentWorkItemReference: "",
+		isBlocked: false,
+		size,
+		isUsingDefaultFeatureSize,
+	});
+
+	// Finished in the window: OE-011 and OE-001. Still open: OE-002 and OE-007.
+	const finishedAndOpenFeatures = [
+		aFeature("OE-011", "Done", 4),
+		aFeature("OE-001", "Done", 17),
+		aFeature("OE-002", "ToDo", 19),
+		aFeature("OE-007", "Doing", 10),
+	];
+
+	async function openTheFlowOverviewAnsweredWith(
+		owner: (typeof owners)[number],
+		features: unknown[],
+		terms?: Record<string, string>,
+	): Promise<void> {
+		openTheDashboard(owner, "flow-overview", { terms });
+		await act(async () =>
+			held.answer({ method: "getAllFeaturesForSizeChart" }, features),
+		);
+		await everythingHasLoaded();
+	}
+
+	const theTableIcon = () =>
+		within(frameOf("featureSizePercentiles")).getByTestId(
+			"widget-view-data-featureSizePercentiles",
+		);
+
+	function openTheTable(): HTMLElement {
+		fireEvent.click(theTableIcon());
+		return screen.getByTestId("view-data-table");
+	}
+
+	const rowsOf = (table: HTMLElement) =>
+		within(table)
+			.queryAllByTestId("view-data-row")
+			.map((row) => row.textContent);
+
+	// @us-02 @contract-shape:bounded-change
+	it.skip.each(owners)(
+		"a %s's Feature Size Percentiles offers its data as a table",
+		async (owner) => {
+			await openTheFlowOverviewAnsweredWith(owner, finishedAndOpenFeatures);
+
+			expect(theTableIcon()).toBeEnabled();
+		},
+	);
+
+	// @us-02 @contract-shape:bounded-change
+	it.skip.each(owners)(
+		"a %s's Feature Size Percentiles table is titled Closed Features, in the instance's words",
+		async (owner) => {
+			await openTheFlowOverviewAnsweredWith(owner, finishedAndOpenFeatures, {
+				features: "Epics",
+			});
+
+			expect(openTheTable()).toHaveAttribute("data-title", "Closed Epics");
+		},
+	);
+
+	// @us-02 @contract-shape:pure-function
+	it.skip.each(owners)(
+		"a %s's Feature Size Percentiles table lists only the Features finished in the window, none still open",
+		async (owner) => {
+			await openTheFlowOverviewAnsweredWith(owner, finishedAndOpenFeatures);
+
+			expect(rowsOf(openTheTable()).sort()).toEqual(["OE-001 17", "OE-011 4"]);
+		},
+	);
+
+	// @us-02 @error @contract-shape:pure-function
+	it.skip("a Portfolio's Feature Size Percentiles table leaves out a finished Feature sized by the Portfolio's default, as its percentiles do", async () => {
+		await openTheFlowOverviewAnsweredWith("portfolio", [
+			aFeature("OE-011", "Done", 4),
+			aFeature("OE-013", "Done", 0, true),
+		]);
+
+		expect(rowsOf(openTheTable())).toEqual(["OE-011 4"]);
+	});
+
+	// OE-001 holds 17 Work Items on the Portfolio; this Team's answer carries its part, 4.
+	// @us-02 @contract-shape:bounded-change
+	it.skip("a Team's Feature Size Percentiles table shows each Feature at the Team's own part of it", async () => {
+		await openTheFlowOverviewAnsweredWith("team", [
+			aFeature("OE-001", "Done", 4),
+			aFeature("OE-011", "Done", 4),
+		]);
+
+		expect(rowsOf(openTheTable()).sort()).toEqual(["OE-001 4", "OE-011 4"]);
 	});
 });
