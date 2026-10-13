@@ -18,6 +18,17 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
         public static bool ThenRebuildable(DateOnly thenStart, DateOnly today, int doneItemsCutoffDays)
             => EarliestStart(today, doneItemsCutoffDays) is not DateOnly earliest || thenStart >= earliest;
 
+        /// <summary>Why Then, as entered, cannot be frozen; null when its length and end are acceptable.</summary>
+        public static string? ThenRefusal(DateOnly thenEnd, int lengthDays, DateOnly today)
+        {
+            if (lengthDays < MinimumLengthDays)
+            {
+                return ReportRefusalCodes.ThenTooShort;
+            }
+
+            return thenEnd > today ? ReportRefusalCodes.ThenEndsInTheFuture : null;
+        }
+
         public static ReportWindow? NowWindow(DateOnly today, int lengthDays) => ReportWindow.EndingOn(today, lengthDays);
     }
 }

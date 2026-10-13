@@ -76,7 +76,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:bounded-change
         // Counting both ends, 1 to 14 Sep is 14 days; a rule that subtracted the dates would call it 13.
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task A_Then_of_exactly_fourteen_days_is_accepted()
         {
             var gravity = ATeam("Team Gravity");
@@ -91,7 +90,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         [TestCase(10)]
         [TestCase(0)]
         [TestCase(-30)]
-        [Ignore(PendingSlice02)]
         public async Task A_Then_shorter_than_fourteen_days_is_refused_and_nothing_is_created(int lengthDays)
         {
             var gravity = ATeam("Team Gravity");
@@ -105,7 +103,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-02 @slice-02 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task A_Then_ending_after_today_is_refused()
         {
             var lightspeed = ATeam(Lightspeed);

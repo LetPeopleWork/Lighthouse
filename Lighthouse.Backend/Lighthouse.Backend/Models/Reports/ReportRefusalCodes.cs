@@ -11,6 +11,8 @@ namespace Lighthouse.Backend.Models.Reports
 
         public const string ThenTooShort = "then-too-short";
 
+        public const string ThenEndsInTheFuture = "then-ends-in-the-future";
+
         public const string ThenBeforeCutoff = "then-before-cutoff";
 
         public const string NowTooShort = "now-too-short";

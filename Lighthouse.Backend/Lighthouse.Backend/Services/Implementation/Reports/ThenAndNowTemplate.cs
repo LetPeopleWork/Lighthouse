@@ -21,9 +21,14 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
 
         public ReportOutcome<string> Freeze(ReportOwner owner, NewReport request, ReportCalendar calendar)
         {
-            if (request.ThenAndNow is not NewThenAndNow settings || settings.ThenLengthDays < 1)
+            if (request.ThenAndNow is not NewThenAndNow settings)
             {
                 return ReportOutcome<string>.Refused(ReportRefusalCodes.ThenTooShort);
+            }
+
+            if (ReportWindowPolicy.ThenRefusal(settings.ThenEndDate, settings.ThenLengthDays, calendar.Today) is string thenRefusal)
+            {
+                return ReportOutcome<string>.Refused(thenRefusal);
             }
 
             if (settings.NowLengthDays < 1)
