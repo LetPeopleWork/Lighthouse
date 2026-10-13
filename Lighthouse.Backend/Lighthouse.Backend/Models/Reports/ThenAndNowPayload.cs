@@ -25,7 +25,14 @@ namespace Lighthouse.Backend.Models.Reports
     /// <summary>Inclusive calendar days in the instance's zone: both ends count.</summary>
     public sealed record ReportWindow(DateOnly Start, DateOnly End, int LengthDays)
     {
-        public static ReportWindow EndingOn(DateOnly end, int lengthDays) => new(end.AddDays(-(lengthDays - 1)), end, lengthDays);
+        /// <summary>The window of <paramref name="lengthDays"/> days ending on <paramref name="end"/>, or null when it would start before the first day the calendar can name.</summary>
+        public static ReportWindow? EndingOn(DateOnly end, int lengthDays)
+        {
+            var startDayNumber = (long)end.DayNumber - lengthDays + 1;
+            return startDayNumber >= DateOnly.MinValue.DayNumber && startDayNumber <= end.DayNumber
+                ? new(DateOnly.FromDayNumber((int)startDayNumber), end, lengthDays)
+                : null;
+        }
     }
 
     /// <summary>A value with what it rests on, or no value and the reason there is none - never a 0 standing in for nothing.</summary>

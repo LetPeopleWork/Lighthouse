@@ -11,6 +11,11 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
     {
         public CycleTimePercentiles CycleTimePercentiles(ReportOwner owner, ReportWindow window)
         {
+            if (owner.Kind != ReportOwnerKind.Team)
+            {
+                throw new ArgumentException($"Only a Team's series can be read here, not a {owner.Kind}'s", nameof(owner));
+            }
+
             var team = teams.GetById(owner.Id) ?? throw new InvalidOperationException($"Team {owner.Id} does not exist");
             var start = window.Start.ToDateTime(TimeOnly.MinValue);
             var end = window.End.ToDateTime(TimeOnly.MinValue);

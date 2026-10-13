@@ -18,6 +18,6 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
         public static bool ThenRebuildable(DateOnly thenStart, DateOnly today, int doneItemsCutoffDays)
             => EarliestStart(today, doneItemsCutoffDays) is not DateOnly earliest || thenStart >= earliest;
 
-        public static ReportWindow NowWindow(DateOnly today, int lengthDays) => ReportWindow.EndingOn(today, lengthDays);
+        public static ReportWindow? NowWindow(DateOnly today, int lengthDays) => ReportWindow.EndingOn(today, lengthDays);
     }
 }

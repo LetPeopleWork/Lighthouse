@@ -5,10 +5,16 @@ namespace Lighthouse.Backend.Models.Reports
     {
         public const string NameMissing = "name-missing";
 
+        public const string NameTooLong = "name-too-long";
+
         public const string TemplateNotSupported = "template-not-supported";
 
         public const string ThenTooShort = "then-too-short";
 
+        public const string ThenBeforeCutoff = "then-before-cutoff";
+
         public const string NowTooShort = "now-too-short";
+
+        public const string NowBeforeCutoff = "now-before-cutoff";
     }
 }

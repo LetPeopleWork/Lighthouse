@@ -376,7 +376,112 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
+        // Crafter-written: a window reaching back past the first day the calendar can name is refused before
+        // anything is stored, never saved and then crashed on.
+        [TestCase(800_000, 90, Reason.ThenBeforeCutoff)]
+        [TestCase(90, 800_000, Reason.NowBeforeCutoff)]
+        public async Task A_window_longer_than_the_calendar_reaches_is_refused_and_stores_nothing(int thenLengthDays, int nowLengthDays, string reason)
+        {
+            var lightspeed = ATeam(Lightspeed);
+
+            TheCallerAdministers(lightspeed);
+            using var refused = await CreateAReport(lightspeed, new NewReport { ThenLengthDays = thenLengthDays, NowLengthDays = nowLengthDays });
+            var answer = await refused.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), answer);
+                Assert.That(CodeIn(answer), Is.EqualTo(reason));
+                Assert.That(StoredReports(), Is.Zero);
+            }
+        }
+
+        // Crafter-written: a stored Now length no window can hold is a report this version cannot read.
+        [Test]
+        public async Task A_stored_report_whose_Now_the_calendar_cannot_reach_is_refused_with_a_warning_not_a_crash()
+        {
+            var lightspeed = GivenLightspeedFinishedTwentyWorkItemsSinceEarlyJuly();
+            var reportId = await GivenTheAdminCreated(lightspeed, new NewReport());
+            TheStoredPayloadIsReshaped(reportId, payload => payload["nowLengthDays"] = 800_000);
+
+            using var opened = await AskForTheReport(lightspeed, reportId);
+            var answer = await opened.Content.ReadAsStringAsync();
+            TheCallerAdministersTheInstance();
+            var warnings = (await ThePlaceOperatorsReadAboutProblems()).EnumerateArray()
+                .Where(problem => TextOf(problem, "level") == "Warning" && (TextOf(problem, "message") ?? string.Empty).Contains($"Stored report {reportId} "))
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(opened.StatusCode, Is.EqualTo(HttpStatusCode.UnprocessableEntity), answer);
+                Assert.That(CodeIn(answer), Is.EqualTo(Reason.TemplateNotSupported));
+                Assert.That(warnings, Is.Not.Empty, "nothing tells the operator why the report will not open");
+            }
+        }
+
+        // Crafter-written: the store holds names of up to 200 characters; a longer one is refused, not crashed on.
+        [Test]
+        public async Task A_name_longer_than_the_store_holds_is_refused_and_stores_nothing()
+        {
+            var lightspeed = ATeam(Lightspeed);
+
+            TheCallerAdministers(lightspeed);
+            using var refused = await CreateAReport(lightspeed, new NewReport { Name = new string('n', 201) });
+            var answer = await refused.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), answer);
+                Assert.That(CodeIn(answer), Is.EqualTo(NameTooLong));
+                Assert.That(StoredReports(), Is.Zero);
+            }
+        }
+
+        // Crafter-written
+        [Test]
+        public async Task A_name_as_long_as_the_store_holds_is_created()
+        {
+            var lightspeed = ATeam(Lightspeed);
+
+            TheCallerAdministers(lightspeed);
+            using var created = await CreateAReport(lightspeed, new NewReport { Name = new string('n', 200) });
+
+            await ThenItWasCreated(created);
+        }
+
+        // Crafter-written: a type this version does not offer is refused as such, whatever else the request lacks.
+        [Test]
+        public async Task A_type_this_version_does_not_offer_is_refused_as_such_even_without_a_Then_window()
+        {
+            var lightspeed = ATeam(Lightspeed);
+            var request = new JsonObject
+            {
+                ["templateKey"] = LaterTemplate,
+                ["name"] = "x",
+                ["shownMetricKeys"] = new JsonArray(CycleTime),
+            };
+
+            TheCallerAdministers(lightspeed);
+            using var refused = await CreateAReportFromRawRequest(lightspeed, request);
+            var answer = await refused.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), answer);
+                Assert.That(CodeIn(answer), Is.EqualTo(Reason.TemplateNotSupported));
+                Assert.That(StoredReports(), Is.Zero);
+            }
+        }
+
         // --- Steps ---
+
+        private const string NameTooLong = "name-too-long";
+
+        private static string? CodeIn(string answer)
+        {
+            using var document = JsonDocument.Parse(answer);
+            return TextOf(document.RootElement, "code");
+        }
 
         private static readonly string?[] TheEngagementStartAlone = [EngagementStart];
 

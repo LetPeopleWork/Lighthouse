@@ -31,13 +31,23 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return ReportOutcome<string>.Refused(ReportRefusalCodes.NowTooShort);
             }
 
-            var thenWindow = ReportWindow.EndingOn(settings.ThenEndDate, settings.ThenLengthDays);
+            if (ReportWindow.EndingOn(settings.ThenEndDate, settings.ThenLengthDays) is not ReportWindow thenWindow)
+            {
+                return ReportOutcome<string>.Refused(ReportRefusalCodes.ThenBeforeCutoff);
+            }
+
+            var nowLengthDays = settings.NowLengthDays ?? settings.ThenLengthDays;
+            if (ReportWindowPolicy.NowWindow(calendar.Today, nowLengthDays) is null)
+            {
+                return ReportOutcome<string>.Refused(ReportRefusalCodes.NowBeforeCutoff);
+            }
+
             var captures = catalog.For(owner.Kind).ToDictionary(metric => metric.Key, metric => metric.CaptureThen(owner, thenWindow));
 
             var payload = new ThenAndNowPayload
             {
                 ThenWindow = thenWindow,
-                NowLengthDays = settings.NowLengthDays ?? settings.ThenLengthDays,
+                NowLengthDays = nowLengthDays,
                 Captures = captures,
             };
 
@@ -49,7 +59,9 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             var payload = PayloadOf(report);
             var owner = report.OwnedBy();
             var thenWindow = payload.ThenWindow ?? throw new JsonException($"Report {report.Id} holds no Then window");
-            var nowWindow = ReportWindowPolicy.NowWindow(calendar.Today, payload.NowLengthDays ?? thenWindow.LengthDays);
+            var nowLengthDays = payload.NowLengthDays ?? thenWindow.LengthDays;
+            var nowWindow = ReportWindowPolicy.NowWindow(calendar.Today, nowLengthDays)
+                ?? throw new JsonException($"Report {report.Id} holds a Now of {nowLengthDays} days, longer than the calendar reaches");
 
             var metrics = new Dictionary<string, MetricRead>();
             foreach (var metric in catalog.For(owner.Kind))

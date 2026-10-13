@@ -92,6 +92,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         }
 
         [Test]
+        public async Task A_name_too_long_is_refused_with_its_reason_and_the_name_is_never_logged()
+        {
+            var tooLong = SecretName + new string('x', Report.LongestName);
+
+            var outcome = await Subject(seconds: 0).Create(Lightspeed, new NewReport(
+                ThenAndNowTemplate.TemplateKey, tooLong, ["cycle-time"], new NewThenAndNow(new DateOnly(2026, 10, 2), 90, 30)));
+
+            var line = logger.Lines.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Status, Is.EqualTo(ReportOutcomeStatus.Refused));
+                Assert.That(stored, Is.Null);
+                Assert.That(line.Level, Is.EqualTo(LogLevel.Information));
+                Assert.That(line.Fields["Reason"], Is.EqualTo("name-too-long"));
+                Assert.That(line.Message, Does.Not.Contain(SecretName));
+            }
+        }
+
+        [Test]
         public async Task A_read_above_two_seconds_is_a_report_read_slow_warning()
         {
             await ReadTakingMilliseconds(2_001);

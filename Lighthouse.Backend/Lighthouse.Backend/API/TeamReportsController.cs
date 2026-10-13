@@ -2,6 +2,7 @@ using Lighthouse.Backend.API.DTO.Reports;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Services.Implementation.Authorization;
+using Lighthouse.Backend.Services.Implementation.Reports;
 using Lighthouse.Backend.Services.Interfaces.Reports;
 using Microsoft.AspNetCore.Mvc;
 
@@ -26,16 +27,16 @@ namespace Lighthouse.Backend.API
         [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
         public async Task<ActionResult<ReportRead>> CreateReport(int teamId, [FromBody] NewReportRequest request)
         {
-            if (request.ThenAndNow is not { ThenEndDate: DateOnly thenEndDate, ThenLengthDays: int thenLengthDays })
+            var thenAndNow = request.ThenAndNow is { ThenEndDate: DateOnly thenEndDate, ThenLengthDays: int thenLengthDays }
+                ? new NewThenAndNow(thenEndDate, thenLengthDays, request.ThenAndNow.NowLengthDays)
+                : null;
+
+            if (thenAndNow is null && request.TemplateKey == ThenAndNowTemplate.TemplateKey)
             {
                 return ValidationProblem("A report needs the day Then ends and how many days it spans.");
             }
 
-            var newReport = new NewReport(
-                request.TemplateKey ?? string.Empty,
-                request.Name ?? string.Empty,
-                request.ShownMetricKeys ?? [],
-                new NewThenAndNow(thenEndDate, thenLengthDays, request.ThenAndNow.NowLengthDays));
+            var newReport = new NewReport(request.TemplateKey ?? string.Empty, request.Name ?? string.Empty, request.ShownMetricKeys ?? [], thenAndNow);
 
             var created = await commands.Create(ReportOwner.Team(teamId), newReport);
             if (created is { Status: ReportOutcomeStatus.Done, Value: ReportRead read })

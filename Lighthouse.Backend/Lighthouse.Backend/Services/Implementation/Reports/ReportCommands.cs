@@ -25,6 +25,11 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return Refuse(owner, TemplateFor(request)?.Key, ReportRefusalCodes.NameMissing);
             }
 
+            if (request.Name.Trim().Length > Report.LongestName)
+            {
+                return Refuse(owner, TemplateFor(request)?.Key, ReportRefusalCodes.NameTooLong);
+            }
+
             if (TemplateFor(request) is not IReportTemplate template)
             {
                 return Refuse(owner, null, ReportRefusalCodes.TemplateNotSupported);

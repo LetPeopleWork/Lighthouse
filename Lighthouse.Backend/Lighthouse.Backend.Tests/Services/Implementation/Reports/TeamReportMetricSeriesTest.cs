@@ -1,0 +1,56 @@
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Models.Reports;
+using Lighthouse.Backend.Services.Implementation.Reports;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Reports;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestDoubles;
+using Moq;
+
+namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
+{
+    public class TeamReportMetricSeriesTest
+    {
+        private const int SharedId = 7;
+
+        private static readonly ReportWindow Window = new(new DateOnly(2026, 7, 5), new DateOnly(2026, 10, 2), 90);
+
+        private static readonly PercentileValue[] Percentiles = [new(50, 6), new(70, 11), new(85, 21)];
+
+        private Mock<IRepository<Team>> teams = null!;
+        private TeamReportMetricSeries subject = null!;
+
+        [SetUp]
+        public void SetUp()
+        {
+            var team = new Team { Name = "Team Lightspeed", Id = SharedId };
+            teams = new Mock<IRepository<Team>>();
+            teams.Setup(repository => repository.GetById(SharedId)).Returns(team);
+
+            var metrics = new Mock<ITeamMetricsService>();
+            metrics.Setup(service => service.GetCycleTimePercentilesForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(Percentiles);
+            metrics.Setup(service => service.GetClosedItemsForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([]);
+
+            subject = new TeamReportMetricSeries(teams.Object, metrics.Object, new FakeLighthouseClock(DateTimeOffset.UtcNow));
+        }
+
+        [Test]
+        public void A_Team_reads_its_own_series()
+        {
+            var percentiles = subject.CycleTimePercentiles(ReportOwner.Team(SharedId), Window);
+
+            Assert.That(percentiles, Is.EqualTo(new CycleTimePercentiles(6, 11, 21, 0)));
+        }
+
+        [Test]
+        public void A_Portfolio_never_reads_the_series_of_the_Team_sharing_its_id()
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(() => subject.CycleTimePercentiles(ReportOwner.Portfolio(SharedId), Window), Throws.ArgumentException);
+                teams.Verify(repository => repository.GetById(It.IsAny<int>()), Times.Never);
+            }
+        }
+    }
+}
