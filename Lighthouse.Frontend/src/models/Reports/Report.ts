@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /** Whose report it is. A report belongs to exactly one Team or one Portfolio and is deleted with it. */
 export interface IReportOwner {
 	readonly kind: "team" | "portfolio";
@@ -64,7 +66,7 @@ export interface IReportValue {
 	absentReason: ReportAbsentReason | null;
 }
 
-/** One side of a metric: only the members that metric has are present. */
+/** One side of a metric: only the members that metric has are present, and one never captured is missing or null. */
 export type ReportMetricSide = Partial<
 	Record<
 		| "p85"
@@ -79,7 +81,7 @@ export type ReportMetricSide = Partial<
 		| "totalLastDay"
 		| "averageWindowAverage"
 		| "averageLastDay",
-		IReportValue
+		IReportValue | null
 	>
 >;
 
@@ -138,3 +140,92 @@ export interface IReportEdit {
 	concurrencyToken: string;
 	thenAndNow: { nowLengthDays: number };
 }
+
+const day = z.string();
+const ownerKind = z.enum(["team", "portfolio"]);
+
+/** A later version may show a metric this one has no name for; it is passed on so the view can say it cannot show it. */
+const metricKey = z.custom<ReportMetricKey>((key) => typeof key === "string");
+
+export const ReportTemplatesSchema: z.ZodType<IReportTemplates> = z.object({
+	today: day,
+	earliestStart: day.nullable(),
+	minimumLengthDays: z.number(),
+	templates: z.array(
+		z.object({
+			templateKey: z.literal("then-and-now"),
+			metrics: z.array(z.object({ key: metricKey })),
+		}),
+	),
+});
+
+export const ReportListSchema: z.ZodType<IReportList> = z.object({
+	reports: z.array(
+		z.object({
+			id: z.number(),
+			name: z.string(),
+			templateKey: z.string(),
+			ownerKind,
+			ownerId: z.number(),
+			createdOn: day,
+			thenAndNow: z.object({ thenRebuildable: z.boolean() }).optional(),
+		}),
+	),
+	creationBlockedByCap: z.boolean(),
+	communityCap: z.number(),
+});
+
+const ReportValueSchema: z.ZodType<IReportValue> = z.object({
+	value: z.number().nullable(),
+	sampleSize: z.number().nullable(),
+	absentReason: z
+		.enum([
+			"no-finished-items",
+			"too-few-points",
+			"no-process",
+			"no-wip",
+			"lower-limit-zero",
+		])
+		.nullable(),
+});
+
+const ReportMetricSideSchema = z.record(
+	z.string(),
+	ReportValueSchema.nullable(),
+);
+
+const ReportWindowSchema: z.ZodType<IReportWindow> = z.object({
+	start: day,
+	end: day,
+	lengthDays: z.number(),
+});
+
+export const ReportSchema: z.ZodType<IReport> = z.object({
+	id: z.number(),
+	name: z.string(),
+	templateKey: z.string(),
+	ownerKind,
+	ownerId: z.number(),
+	createdOn: day,
+	concurrencyToken: z.string(),
+	shownMetricKeys: z.array(metricKey),
+	thenAndNow: z.object({
+		thenWindow: ReportWindowSchema,
+		nowWindow: ReportWindowSchema,
+		daysSinceThenEnded: z.number(),
+		thenRebuildable: z.boolean(),
+		metrics: z.record(
+			z.string(),
+			z
+				.object({
+					atThen: ReportMetricSideSchema,
+					atNow: ReportMetricSideSchema,
+					beyondThenLimits: z
+						.object({ above: ReportValueSchema, below: ReportValueSchema })
+						.nullable()
+						.optional(),
+				})
+				.nullable(),
+		),
+	}),
+});

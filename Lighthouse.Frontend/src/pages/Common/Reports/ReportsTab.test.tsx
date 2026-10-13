@@ -71,7 +71,7 @@ describe("The Reports tab lists a Team's reports", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:pure-function
-	it.skip("lists each report by name, linking to it, with its Type and when it was created", async () => {
+	it("lists each report by name, linking to it, with its Type and when it was created", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService(),
 		});
@@ -90,7 +90,7 @@ describe("The Reports tab lists a Team's reports", () => {
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// The code calls it a template; nobody using Lighthouse ever reads that word.
-	it.skip("never says Template", async () => {
+	it("never says Template", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService(),
 		});
@@ -101,7 +101,7 @@ describe("The Reports tab lists a Team's reports", () => {
 	});
 
 	// @us-01 @slice-01 @contract-shape:pure-function
-	it.skip("offers an admin Create Report", async () => {
+	it("offers an admin Create Report", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService(),
 		});
@@ -110,7 +110,7 @@ describe("The Reports tab lists a Team's reports", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it.skip("shows a reader the reports but nothing to create or delete them with", async () => {
+	it("shows a reader the reports but nothing to create or delete them with", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService(),
 			viewer: "reader",

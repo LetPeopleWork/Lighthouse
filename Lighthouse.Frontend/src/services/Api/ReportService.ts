@@ -1,15 +1,15 @@
-import type {
-	INewReport,
-	IReport,
-	IReportEdit,
-	IReportList,
-	IReportOwner,
-	IReportTemplates,
+import {
+	type INewReport,
+	type IReport,
+	type IReportEdit,
+	type IReportList,
+	type IReportOwner,
+	type IReportTemplates,
+	ReportListSchema,
+	ReportSchema,
+	ReportTemplatesSchema,
 } from "../../models/Reports/Report";
 import { BaseApiService } from "./BaseApiService";
-
-// Placeholder until the Reports endpoints are wired; every method is replaced with the real call.
-export const __SCAFFOLD__ = true;
 
 /** The reports of one Team or one Portfolio. Refusals arrive as an ApiError carrying the reason's code. */
 export interface IReportService {
@@ -26,27 +26,46 @@ export interface IReportService {
 	deleteReport(owner: IReportOwner, reportId: number): Promise<void>;
 }
 
-const notYet = (what: string): Promise<never> =>
-	Promise.reject(new Error(`Not yet implemented -- RED scaffold: ${what}`));
+const reportsOf = (owner: IReportOwner): string =>
+	`/${owner.kind === "team" ? "teams" : "portfolios"}/${owner.id}/reports`;
 
 export class ReportService extends BaseApiService implements IReportService {
 	public getTemplates(owner: IReportOwner): Promise<IReportTemplates> {
-		return notYet(`the report types of ${owner.kind} ${owner.id}`);
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<unknown>(
+				`${reportsOf(owner)}/templates`,
+			);
+			return BaseApiService.parse(ReportTemplatesSchema, response.data);
+		});
 	}
 
 	public getReports(owner: IReportOwner): Promise<IReportList> {
-		return notYet(`the reports of ${owner.kind} ${owner.id}`);
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<unknown>(reportsOf(owner));
+			return BaseApiService.parse(ReportListSchema, response.data);
+		});
 	}
 
 	public getReport(owner: IReportOwner, reportId: number): Promise<IReport> {
-		return notYet(`report ${reportId} of ${owner.kind} ${owner.id}`);
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<unknown>(
+				`${reportsOf(owner)}/${reportId}`,
+			);
+			return BaseApiService.parse(ReportSchema, response.data);
+		});
 	}
 
 	public createReport(
 		owner: IReportOwner,
 		report: INewReport,
 	): Promise<number> {
-		return notYet(`creating "${report.name}" on ${owner.kind} ${owner.id}`);
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.post<unknown>(
+				reportsOf(owner),
+				report,
+			);
+			return BaseApiService.parse(ReportSchema, response.data).id;
+		});
 	}
 
 	public editReport(
@@ -54,12 +73,18 @@ export class ReportService extends BaseApiService implements IReportService {
 		reportId: number,
 		edit: IReportEdit,
 	): Promise<IReport> {
-		return notYet(
-			`saving "${edit.name}" over report ${reportId} of ${owner.kind} ${owner.id}`,
-		);
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.put<unknown>(
+				`${reportsOf(owner)}/${reportId}`,
+				edit,
+			);
+			return BaseApiService.parse(ReportSchema, response.data);
+		});
 	}
 
 	public deleteReport(owner: IReportOwner, reportId: number): Promise<void> {
-		return notYet(`deleting report ${reportId} of ${owner.kind} ${owner.id}`);
+		return this.withErrorHandling(async () => {
+			await this.apiService.delete(`${reportsOf(owner)}/${reportId}`);
+		});
 	}
 }
