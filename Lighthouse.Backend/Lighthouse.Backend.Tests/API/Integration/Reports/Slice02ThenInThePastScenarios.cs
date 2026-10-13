@@ -32,7 +32,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-02 @slice-02 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task A_coach_freezes_a_Then_that_ended_the_day_before_the_engagement_began()
         {
             var lightspeed = GivenLightspeedFinishedWorkItemsAroundTheEngagementStart();
@@ -50,7 +49,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-02 @slice-02 @kpi-OUT-5878-G3 @contract-shape:pure-function
         // The rebuilt Then and the Metrics tab are read for the same inclusive days and must agree.
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task The_rebuilt_Then_matches_the_Metrics_tab_for_the_same_days()
         {
             var lightspeed = GivenLightspeedFinishedWorkItemsAroundTheEngagementStart();
@@ -66,7 +64,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-02 @slice-02 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task A_coach_freezes_a_Then_of_a_custom_length()
         {
             var gravity = ATeam("Team Gravity");
@@ -183,7 +180,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:unbounded-preservation
         // History that fills in later - a sync that brings an older finished Work Item - is not rebuilt into Then.
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task Later_views_read_the_frozen_Then_not_a_rebuild()
         {
             var lightspeed = GivenLightspeedFinishedWorkItemsAroundTheEngagementStart();
