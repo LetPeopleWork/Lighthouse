@@ -120,3 +120,52 @@ The quietest run (load ~11) is the lowest the shared machine reached during the 
 
 **Run it again:** `dotnet test --filter "FullyQualifiedName~ReportCreationTimingProbe" --logger "console;verbosity=detailed"`
 — the readings are printed as `[create timing]` lines.
+
+## Step 01-21: rollback rehearsal on both providers
+
+**Verdict: PASS on SQLite and on PostgreSQL.** The previous published release started healthy over a database that
+slice 01 had migrated and filled with reports; opening a Team worked; deleting that Team removed its reports at the
+database, with no error in the previous release's log. This is the record the `/release` gate for the first calver
+containing slice 01 looks for.
+
+| | |
+|---|---|
+| Date | 2026-10-13 (13:26–13:35 UTC) |
+| Slice-01 build | `26e430ad0` (`git archive` of HEAD into a scratch folder, Release build; the working tree was not used) |
+| Previous release | `v26.10.10.1`, image `ghcr.io/letpeoplework/lighthouse:26.10.10.1` (digest `sha256:02904c7477b850c25a34d9d62c8c7c53c04e90f0f6a19969d48e42afd8f96e4d`); `GET /api/latest/version/current` answered `v26.10.10.1` |
+| Providers | SQLite (scratch file mounted into the container) and PostgreSQL 18 (`postgres:18-alpine`, throwaway container) |
+
+**What ran, per provider.**
+
+1. Slice-01 build on a spare port, scratch key ring, production environment:
+   `ASPNETCORE_ENVIRONMENT=Production Kestrel__Endpoints__Http__Url=http://127.0.0.1:45180 Database__Provider=<sqlite|postgres> Database__ConnectionString=<scratch db> Encryption__KeyStorePath=<scratch>/keys dotnet bin/Release/net10.0/linux-x64/Lighthouse.dll`.
+   Waited for `/health/ready` → 200. `__EFMigrationsHistory` then ended at `20261013082234_AddReports` (SQLite) and
+   `20261013082248_AddReports` (PostgreSQL).
+2. `POST /api/latest/demo/scenarios/0/load` → 200 (one Team, "Team Zenith", id 1).
+3. Two reports through the real endpoint: `POST /api/latest/teams/1/reports` with
+   `{"templateKey":"then-and-now","name":"Rollback rehearsal A|B","shownMetricKeys":[],"thenAndNow":{"thenEndDate":"2026-10-13","thenLengthDays":30,"nowLengthDays":30}}`
+   → 201 twice; `SELECT COUNT(*) FROM "Reports" WHERE "TeamId"=1` → 2. Slice-01 process stopped.
+4. Previous release over the same database:
+   - SQLite: `docker run -d -p 127.0.0.1:45190:80 -v <scratch>/data:/data -v <scratch>/keys:/keys -e Database__Provider=sqlite -e "Database__ConnectionString=Data Source=/data/rb.db" -e Encryption__KeyStorePath=/keys ghcr.io/letpeoplework/lighthouse:26.10.10.1`
+   - PostgreSQL: the same, on a private Docker network with the Postgres container, `-e Database__Provider=postgres -e "Database__ConnectionString=Host=<pg container>;Port=5432;Database=lighthouse;Username=postgres;Password=postgres"`
+5. Against the previous release: `/health/ready` → 200, `/health/startup` → 200; `GET /api/latest/teams/1` → 200;
+   `DELETE /api/latest/teams/1` → 204; `GET /api/latest/teams/1` → 404; `Reports` rows for Team 1 → 0, all rows → 0
+   (queried with `sqlite3` / `psql` directly).
+
+**Outcomes.**
+
+| Provider | Starts healthy | Open Team | Delete Team | Its reports | Errors in previous-release log | Migration history after |
+|---|---|---|---|---|---|---|
+| SQLite | yes (ready + startup 200) | 200 | 204 | 2 → 0 | 0 | unchanged, still ends at `AddReports` |
+| PostgreSQL | yes (ready + startup 200) | 200 | 204 | 2 → 0 | 0 | unchanged, still ends at `AddReports` |
+
+The previous release has no pending migrations against the slice-01 schema, so it starts without touching `Reports`;
+the cascade is the database's, which is why a binary that does not know the table still removes the rows.
+
+**Noise, not a finding.** The slice-01 log on PostgreSQL holds two `ERROR - Command: Failed executing DbCommand`
+lines for `SELECT ... FROM "__EFMigrationsHistory"`: EF probing the history table on a brand-new empty database before
+it creates it. The SQLite run has none, and the previous release's logs have no error, fatal or exception line on
+either provider.
+
+**Clean-up.** Every container (`rb5878-old-sqlite`, `rb5878-old-postgres`, `rb5878-pg`) and the `rb5878-net` network
+were removed, both slice-01 processes were stopped, and the scratch build, databases and key ring were deleted.
