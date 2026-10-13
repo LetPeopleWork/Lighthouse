@@ -525,7 +525,7 @@
             "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.tsx",
             "Lighthouse.Frontend/src/pages/Common/Reports/wizard/ReportWizard.tsx",
             "Lighthouse.Frontend/src/pages/Common/Reports/wizard/TypeStep.tsx",
-            "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportTypeSteps.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportTypes.ts",
             "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/ThenStep.tsx",
             "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/NowStep.tsx",
             "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/MetricsAndNameStep.tsx",
