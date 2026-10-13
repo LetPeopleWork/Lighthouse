@@ -478,6 +478,7 @@ testWithDemo(
 			for (const metricWidget of metrics) {
 				const coveredElsewhere =
 					metricWidget.name === MetricsWidgetNames.EstimationVsCycleTime ||
+					metricWidget.name === MetricsWidgetNames.FeatureSize ||
 					metricWidget.name === MetricsWidgetNames.FeatureSizePercentiles ||
 					metricWidget.name === MetricsWidgetNames.PercentilesOverTime ||
 					metricWidget.name === MetricsWidgetNames.PbcOverTime;

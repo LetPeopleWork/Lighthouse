@@ -987,16 +987,12 @@ export class MetricsPage {
 				);
 		}
 
-		// Remove Feature Size and Feature Size Process Behaviour Chart from team level as they don't make sense without the context of a portfolio
+		// A Team has no Feature Size Process Behaviour Chart: that chart tracks whole Features, which only a Portfolio owns
 		if (mode === "team") {
 			this.categoryWidgets[MetricsCategories.Predictability] =
 				this.categoryWidgets[MetricsCategories.Predictability].filter(
 					([name]) =>
 						name !== MetricsWidgetNames.FeatureSizeProcessBehaviourChart,
-				);
-			this.categoryWidgets[MetricsCategories.PortfolioAndFeatures] =
-				this.categoryWidgets[MetricsCategories.PortfolioAndFeatures].filter(
-					([name]) => name !== MetricsWidgetNames.FeatureSize,
 				);
 		}
 	}
