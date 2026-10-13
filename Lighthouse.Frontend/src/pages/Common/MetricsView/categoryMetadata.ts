@@ -230,8 +230,9 @@ export type MetricsFetchKey = (typeof metricsFetchKeys)[number];
  * few requests because of it, and the saving that matters is on the default Flow Overview view.
  * Do not trim these.
  *
- * The lookup's fifth source, `featureSizeData`, rides on the portfolio-only `featureSizePbc`
- * entry rather than on this list, so no process behaviour chart on a Team asks for Feature sizes.
+ * Feature sizes are not on this list. A Portfolio's lookup also takes its Features, and gets
+ * them through `featureSizePbc`'s own `featureSizeData` entry. A Team's lookup never takes
+ * Features, because its Work Items and Features are numbered separately and would collide on id.
  */
 const workItemLookupSources: readonly MetricsFetchKey[] = [
 	"throughput",

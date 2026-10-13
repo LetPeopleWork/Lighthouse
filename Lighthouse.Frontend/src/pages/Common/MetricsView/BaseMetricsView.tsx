@@ -209,6 +209,7 @@ export function buildWorkItemLookup(
 	cycleTimeData: IWorkItem[],
 	inProgressItems: IWorkItem[],
 	allFeaturesForSizeChart: IFeature[],
+	ownerKind: WorkItemsDialogOwnerKind,
 ): Map<number, IWorkItem> {
 	const lookup = new Map<number, IWorkItem>();
 
@@ -224,6 +225,13 @@ export function buildWorkItemLookup(
 
 	for (const source of sourcesRichestFirst) {
 		addItemsWithoutDuplicates(lookup, source);
+	}
+
+	// A Team's Work Items and its Features are numbered in separate tables, so on a Team a Feature
+	// would overwrite the Work Item that happens to share its id. Only a Portfolio, whose every
+	// source is a Feature, lets its Features in.
+	if (ownerKind === "team") {
+		return lookup;
 	}
 
 	for (const item of allFeaturesForSizeChart) {
@@ -1674,6 +1682,7 @@ export const BaseMetricsView = <
 				cycleTimeData as unknown as IWorkItem[],
 				inProgressItems,
 				allFeaturesForSizeChart,
+				ownerType,
 			),
 		[
 			throughputData,
@@ -1681,6 +1690,7 @@ export const BaseMetricsView = <
 			cycleTimeData,
 			inProgressItems,
 			allFeaturesForSizeChart,
+			ownerType,
 		],
 	);
 

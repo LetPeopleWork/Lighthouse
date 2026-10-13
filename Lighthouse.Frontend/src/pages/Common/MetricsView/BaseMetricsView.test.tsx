@@ -677,6 +677,9 @@ vi.mock("./WidgetShell", () => ({
 					<span data-testid={`widget-view-data-count-${widgetKey}`}>
 						{viewData.items.length}
 					</span>
+					<span data-testid={`widget-view-data-names-${widgetKey}`}>
+						{viewData.items.map((item) => item.name).join(",")}
+					</span>
 					<span data-testid={`widget-view-data-context-${widgetKey}`}>
 						{viewData.context ?? ""}
 					</span>
@@ -6308,7 +6311,7 @@ describe("BaseMetricsView component", () => {
 		const renderedWidgetViewData = () =>
 			testIdSuffixes("widget-view-data-").filter(
 				(suffix) =>
-					!/^(title|count|context|cycle-time-scope|sle|age-band-header|age-bands)-/.test(
+					!/^(title|count|names|context|cycle-time-scope|sle|age-band-header|age-bands)-/.test(
 						suffix,
 					),
 			);
@@ -6712,10 +6715,8 @@ describe("BaseMetricsView component", () => {
 		// R2 in its nastiest shape: this drill-in table is populated by resolving each data point's
 		// workItemIds through the shared work-item lookup, which is fed by throughput, WIP over
 		// time, cycle-time data and in-progress items — none of them owned by this category.
-		it("resolves estimation drill-in rows through the shared work-item lookup", async () => {
-			presetCategory("portfolio", mockProject.id, "portfolio");
-			const svc = createPortfolioService();
-			svc.getEstimationVsCycleTimeData = vi.fn().mockResolvedValue({
+		const estimationOfTheInProgressItems = () =>
+			vi.fn().mockResolvedValue({
 				status: "Ready",
 				diagnostics: {
 					totalCount: 2,
@@ -6736,12 +6737,43 @@ describe("BaseMetricsView component", () => {
 				],
 			});
 
+		it("resolves estimation drill-in rows through the shared work-item lookup", async () => {
+			presetCategory("portfolio", mockProject.id, "portfolio");
+			const svc = createPortfolioService();
+			svc.getEstimationVsCycleTimeData = estimationOfTheInProgressItems();
+
 			renderView("portfolio", svc, createBlackoutService());
 			await settle();
 
 			expect(
 				screen.getByTestId("widget-view-data-count-estimationVsCycleTime"),
 			).toHaveTextContent(String(mockInProgressItems.length));
+		});
+
+		// A Team's Work Items and its Features are numbered in separate tables, so the same id can
+		// name one of each. The Team's own drill-through must open the Work Item.
+		it("resolves a Team's estimation drill-in rows to its Work Items, not to Features with the same ids", async () => {
+			presetCategory("team", mockTeam.id, "portfolio");
+			const svc = createTeamService();
+			svc.getAllFeaturesForSizeChart = vi.fn().mockResolvedValue(
+				mockInProgressItems.map((item) => ({
+					...item,
+					name: `Feature sharing id ${item.id}`,
+					size: 5,
+					stateCategory: "Done",
+				})),
+			);
+			svc.getEstimationVsCycleTimeData = estimationOfTheInProgressItems();
+
+			renderView("team", svc, createBlackoutService());
+			await settle();
+
+			expect(svc.getAllFeaturesForSizeChart).toHaveBeenCalled();
+			expect(
+				screen.getByTestId("widget-view-data-names-estimationVsCycleTime"),
+			).toHaveTextContent(
+				mockInProgressItems.map((item) => item.name).join(","),
+			);
 		});
 
 		// R5: the gate keys off visited categories, but a new date window is a new question —
@@ -6791,6 +6823,7 @@ describe("buildWorkItemLookup", () => {
 			[cycleTimeRecord],
 			[],
 			[],
+			"team",
 		);
 
 		expect(lookup.get(id)?.cycleTime).toBe(12);
@@ -6807,6 +6840,7 @@ describe("buildWorkItemLookup", () => {
 			[],
 			[inProgressRecord],
 			[],
+			"team",
 		);
 
 		expect(lookup.get(id)?.workItemAge).toBe(7);
@@ -6827,9 +6861,30 @@ describe("buildWorkItemLookup", () => {
 			[cycleTimeRecord],
 			[],
 			[sizeChartFeature],
+			"portfolio",
 		);
 
 		expect(lookup.get(id)?.cycleTime).toBe(99);
+	});
+
+	it("keeps a Team's own Work Item when one of its Features shares the id", () => {
+		const id = 47;
+		const teamWorkItem = aWorkItem({ id, name: "The Team's Work Item" });
+		const featureWithTheSameId = aWorkItem({
+			id,
+			name: "A Feature",
+		}) as unknown as IFeature;
+
+		const lookup = buildWorkItemLookup(
+			null,
+			null,
+			[teamWorkItem],
+			[],
+			[featureWithTheSameId],
+			"team",
+		);
+
+		expect(lookup.get(id)?.name).toBe("The Team's Work Item");
 	});
 
 	it("still includes items that only the run charts know about", () => {
@@ -6842,6 +6897,7 @@ describe("buildWorkItemLookup", () => {
 			[],
 			[],
 			[],
+			"team",
 		);
 
 		expect(lookup.get(44)).toBe(throughputOnly);
