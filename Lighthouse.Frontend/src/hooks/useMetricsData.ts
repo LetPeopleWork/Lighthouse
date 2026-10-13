@@ -127,7 +127,8 @@ export interface MetricsData<T> {
 }
 
 // Feature sizes alone do not make a Portfolio: a Team has them too. The Feature Size process
-// behaviour chart and the size estimate are configured on a Portfolio only.
+// behaviour chart and the size estimate are configured on a Portfolio only, so a Team is never
+// treated as one, even when its service happens to carry those methods.
 function isProjectMetricsService(
 	service: object,
 ): service is IProjectMetricsService {
@@ -135,7 +136,7 @@ function isProjectMetricsService(
 		providesFeatureSize(service) &&
 		"getFeatureSizePbc" in service &&
 		"getFeatureSizeEstimation" in service &&
-		"getFeatureSizePercentilesInfo" in service
+		!isTeamOwnedMetricsService(service)
 	);
 }
 
@@ -144,7 +145,9 @@ function providesFeatureSize(
 	service: object,
 ): service is IFeatureSizeMetricsService {
 	return (
-		"getAllFeaturesForSizeChart" in service && "getSizePercentiles" in service
+		"getAllFeaturesForSizeChart" in service &&
+		"getSizePercentiles" in service &&
+		"getFeatureSizePercentilesInfo" in service
 	);
 }
 
@@ -204,7 +207,7 @@ function applicabilityFor(
 		featureSizeData: providesFeatureSize(service),
 		featureSizePbc: isPortfolioShaped,
 		featureSizeEstimation: isPortfolioShaped,
-		featureSizePercentilesInfo: isPortfolioShaped,
+		featureSizePercentilesInfo: providesFeatureSize(service),
 		featuresWorkedOnInfo: isTeamMetricsService(service),
 		cumulativeStateTimeSelection: choices.selection,
 		cumulativeStateTimeScope: choices.scope,
@@ -702,7 +705,7 @@ export function useMetricsData<
 		"getFeatureSizePercentilesInfo",
 		selectedWindow,
 		({ ownerId, from, to }) =>
-			portfolioService.getFeatureSizePercentilesInfo(
+			featureSizeService.getFeatureSizePercentilesInfo(
 				ownerId,
 				dayOf(from),
 				dayOf(to),

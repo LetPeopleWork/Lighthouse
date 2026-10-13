@@ -6544,6 +6544,7 @@ describe("BaseMetricsView component", () => {
 			"team/flow-overview": {
 				headers: [
 					"blockedOverview",
+					"featureSizePercentiles",
 					"percentiles",
 					"predictabilityScore",
 					"sleRisk",

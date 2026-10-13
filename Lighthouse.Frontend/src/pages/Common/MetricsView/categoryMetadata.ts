@@ -70,11 +70,7 @@ const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 		{ widgetKey: "workItemAgePercentiles", size: "small" },
 		{ widgetKey: "totalThroughput", size: "small" },
 		{ widgetKey: "totalArrivals", size: "small" },
-		{
-			widgetKey: "featureSizePercentiles",
-			size: "small",
-			ownerFilter: "portfolio-only",
-		},
+		{ widgetKey: "featureSizePercentiles", size: "small" },
 	],
 	"flow-metrics": [
 		{ widgetKey: "cycleScatter", size: "large" },

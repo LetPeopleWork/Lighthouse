@@ -275,6 +275,12 @@ export interface IFeatureSizeMetricsService {
 		startDate: Date,
 		endDate: Date,
 	): Promise<IFeature[]>;
+
+	getFeatureSizePercentilesInfo(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IFeatureSizePercentilesInfo>;
 }
 
 export interface ITeamMetricsService
@@ -312,12 +318,6 @@ export interface IProjectMetricsService
 		startDate: Date,
 		endDate: Date,
 	): Promise<IFeatureSizeEstimationResponse>;
-
-	getFeatureSizePercentilesInfo(
-		portfolioId: number,
-		startDate: Date,
-		endDate: Date,
-	): Promise<IFeatureSizePercentilesInfo>;
 }
 
 export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
@@ -920,6 +920,20 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 				feature.closedDate = new Date(feature.closedDate);
 				return feature;
 			});
+		});
+	}
+
+	async getFeatureSizePercentilesInfo(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IFeatureSizePercentilesInfo> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<IFeatureSizePercentilesInfo>(
+				`/${this.api}/${id}/metrics/featureSizePercentilesInfo?${this.getDateFormatString(startDate, endDate)}`,
+			);
+
+			return response.data;
 		});
 	}
 

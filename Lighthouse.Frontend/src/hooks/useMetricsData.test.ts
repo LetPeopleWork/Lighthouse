@@ -80,6 +80,7 @@ function createMockTeamMetricsService(): ITeamMetricsService {
 		getFeaturesInProgress: vi.fn().mockResolvedValue([]),
 		getSizePercentiles: vi.fn().mockResolvedValue([]),
 		getAllFeaturesForSizeChart: vi.fn().mockResolvedValue([]),
+		getFeatureSizePercentilesInfo: vi.fn().mockResolvedValue(null),
 		getForecastInputCandidates: vi.fn().mockResolvedValue({
 			remainingItems: 0,
 			wipItems: 0,
@@ -658,7 +659,7 @@ describe("useMetricsData", () => {
 		// service here carries both of those methods as traps: having them must not make a Team's
 		// service count as a Portfolio's, so neither is ever asked.
 		// @us-01 @contract-shape:bounded-change
-		it.skip("asks a team metrics service for its Feature sizes, and never for a Feature Size process behaviour chart or estimate", async () => {
+		it("asks a team metrics service for its Feature sizes, and never for a Feature Size process behaviour chart or estimate", async () => {
 			const entity = createMockEntity();
 			const service = {
 				...createMockTeamMetricsService(),
@@ -778,7 +779,7 @@ describe("useMetricsData", () => {
 		// service missing only the Feature Size Percentiles is still asked for its sizes. This row
 		// holds again once the percentiles are asked of a Team as well, and stays pending until then.
 		// @us-02 @contract-shape:bounded-change
-		it.skip.each(["getFeatureSizePercentilesInfo"] as const)(
+		it.each(["getFeatureSizePercentilesInfo"] as const)(
 			"does not treat a service missing %s as a portfolio service",
 			doesNotTreatItAsAPortfolioService,
 		);
@@ -786,7 +787,7 @@ describe("useMetricsData", () => {
 		// Story #6251: a service without the Feature Size process behaviour chart or the estimate
 		// is not a Portfolio, but it may still be a Team with Feature sizes of its own.
 		// @us-01 @contract-shape:bounded-change
-		it.skip.each(["getFeatureSizePbc", "getFeatureSizeEstimation"] as const)(
+		it.each(["getFeatureSizePbc", "getFeatureSizeEstimation"] as const)(
 			"a service missing %s is not treated as a portfolio service, but is still asked for its Feature sizes",
 			async (missingMethod) => {
 				const entity = createMockPortfolioEntity();
@@ -1502,10 +1503,10 @@ describe("useMetricsData", () => {
 			const total =
 				countServiceCalls(service) +
 				countServiceCalls(mockBlackoutPeriodService);
-			// 20 since Epic #4127 slice 02: the WIP card says how many of its items are at risk,
-			// so the default view now asks for that too. The number went up for a declared reason,
-			// which is the only way it is allowed to move.
-			expect(total).toBe(20);
+			// The WIP card says how many of its items are at risk, and a Team's Flow Overview shows
+			// Feature Size Percentiles, which asks for the Team's Feature sizes, its size percentiles
+			// and its percentiles info. The number only moves for a reason stated here.
+			expect(total).toBe(23);
 		});
 
 		/**

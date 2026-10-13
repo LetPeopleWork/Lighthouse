@@ -527,7 +527,7 @@ describe("Feature Size on a Team", () => {
 	});
 
 	// @us-02 @contract-shape:bounded-change
-	it.skip("a Team's Flow Overview offers Feature Size Percentiles last, as a Portfolio's does", () => {
+	it("a Team's Flow Overview offers Feature Size Percentiles last, as a Portfolio's does", () => {
 		expect(widgetKeysOf("flow-overview", "team")).toEqual([
 			"wipOverview",
 			"sleRisk",
@@ -546,7 +546,7 @@ describe("Feature Size on a Team", () => {
 	});
 
 	// @us-01 @contract-shape:bounded-change
-	it.skip("a Team asks for the Feature sizes whenever either widget is shown", () => {
+	it("a Team asks for the Feature sizes whenever either widget is shown", () => {
 		expect([...getFetchKeysForCategories(["portfolio"], "team")]).toContain(
 			"featureSizeData",
 		);

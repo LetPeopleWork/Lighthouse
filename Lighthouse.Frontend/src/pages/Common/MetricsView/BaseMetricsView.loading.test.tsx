@@ -1638,7 +1638,7 @@ describe("Feature Size Percentiles on a Team's Flow Overview", () => {
 		within(frameOf("featureSizePercentiles")).getByTestId("rag-status");
 
 	// @us-02 @contract-shape:bounded-change
-	it.skip("is offered on a Team and asked of the Team itself", async () => {
+	it("is offered on a Team and asked of the Team itself", async () => {
 		openTheDashboard("team", "flow-overview");
 
 		expect(isFramed("featureSizePercentiles")).toBe(true);
@@ -1650,7 +1650,7 @@ describe("Feature Size Percentiles on a Team's Flow Overview", () => {
 	});
 
 	// @us-07 @error @contract-shape:bounded-change
-	it.skip("says there is no data, not zeros, when the Team finished no Feature in the window", async () => {
+	it("says there is no data, not zeros, when the Team finished no Feature in the window", async () => {
 		openTheDashboard("team", "flow-overview");
 
 		await act(async () => {
@@ -1676,7 +1676,7 @@ describe("Feature Size Percentiles on a Team's Flow Overview", () => {
 	});
 
 	// @us-02 @error @contract-shape:bounded-change
-	it.skip("says it couldn't be loaded when the Team's Feature Size Percentiles cannot be loaded", async () => {
+	it("says it couldn't be loaded when the Team's Feature Size Percentiles cannot be loaded", async () => {
 		openTheDashboard("team", "flow-overview");
 
 		await act(async () =>
