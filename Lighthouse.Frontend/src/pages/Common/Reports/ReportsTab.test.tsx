@@ -491,16 +491,14 @@ describe("The columns of the Reports list", () => {
 	it("names each report's Type and the day it was created", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService({
-				getReports: vi
-					.fn()
-					.mockResolvedValue(
-						aReportList([
-							aListedReport({
-								name: "Engagement start",
-								createdOn: "2026-08-01",
-							}),
-						]),
-					),
+				getReports: vi.fn().mockResolvedValue(
+					aReportList([
+						aListedReport({
+							name: "Engagement start",
+							createdOn: "2026-08-01",
+						}),
+					]),
+				),
 			}),
 		});
 
