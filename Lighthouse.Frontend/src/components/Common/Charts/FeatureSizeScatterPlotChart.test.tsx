@@ -287,22 +287,11 @@ describe("FeatureSizeScatterPlotChart", () => {
 		vi.clearAllMocks();
 	});
 
-	describe("when no data is provided", () => {
-		it("displays a no data message", () => {
-			render(
-				<FeatureSizeScatterPlotChart ownerKind="team" sizeDataPoints={[]} />,
-			);
-
-			expect(screen.getByText("No data available")).toBeInTheDocument();
-			expect(screen.queryByTestId("chart-container")).not.toBeInTheDocument();
-		});
-	});
-
 	describe("when feature data is provided", () => {
 		it("displays the chart with proper title", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 				/>,
 			);
@@ -314,7 +303,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("renders all chart components", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 				/>,
 			);
@@ -332,7 +321,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("uses explicit axis IDs and x-axis height for stable tick rendering", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 				/>,
 			);
@@ -364,7 +353,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("renders visible markers as SVG circles", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 				/>,
 			);
@@ -378,7 +367,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("calculates appropriate chart dimensions", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 				/>,
 			);
@@ -404,7 +393,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={features}
 				/>,
 			);
@@ -440,7 +429,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={features}
 				/>,
 			);
@@ -471,7 +460,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={duplicateFeatures}
 				/>,
 			);
@@ -490,7 +479,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={[fDone, fDoing]}
 				/>,
 			);
@@ -514,7 +503,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={[fDone, fDoing]}
 				/>,
 			);
@@ -534,7 +523,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("opens a dialog when clicking a data point", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 				/>,
 			);
@@ -555,7 +544,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 			const singleFeature = [createFeature(1, "Test Feature", 5, 8)];
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={singleFeature}
 				/>,
 			);
@@ -576,7 +565,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("closes dialog when close button is clicked", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 				/>,
 			);
@@ -604,7 +593,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={features}
 				/>,
 			);
@@ -633,7 +622,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={[fDone, fDoing]}
 				/>,
 			);
@@ -668,7 +657,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={[fDone, fDoing]}
 				/>,
 			);
@@ -732,7 +721,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 				render(
 					<FeatureSizeScatterPlotChart
-						ownerKind="team"
+						ownerKind="portfolio"
 						sizeDataPoints={features}
 					/>,
 				);
@@ -765,7 +754,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={groupedFeatures}
 				/>,
 			);
@@ -786,7 +775,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("displays percentile chips", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 					sizePercentileValues={percentileData}
 				/>,
@@ -805,7 +794,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("displays reference lines for each percentile", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 					sizePercentileValues={percentileData}
 				/>,
@@ -835,7 +824,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 					sizePercentileValues={highPercentiles}
 				/>,
@@ -849,7 +838,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("allows toggling percentile visibility", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 					sizePercentileValues={percentileData}
 				/>,
@@ -871,7 +860,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("handles empty percentile arrays gracefully", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 					sizePercentileValues={[]}
 				/>,
@@ -891,7 +880,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("provides proper aria labels for interactive elements", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 				/>,
 			);
@@ -911,7 +900,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("includes descriptive titles for chart markers", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 				/>,
 			);
@@ -934,7 +923,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={featuresWithNulls}
 				/>,
 			);
@@ -948,7 +937,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={zeroSizeFeature}
 				/>,
 			);
@@ -961,7 +950,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={singleFeature}
 				/>,
 			);
@@ -1001,7 +990,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("displays filter chips for Done, To Do and In Progress", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={mixedStateFeatures}
 				/>,
 			);
@@ -1020,7 +1009,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("shows only Done features by default (Done chip is active)", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={mixedStateFeatures}
 				/>,
 			);
@@ -1039,7 +1028,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("shows To Do features when To Do chip is clicked", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={mixedStateFeatures}
 				/>,
 			);
@@ -1057,7 +1046,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("shows In Progress features when In Progress chip is clicked", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={mixedStateFeatures}
 				/>,
 			);
@@ -1075,7 +1064,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("shows all features when all chips are enabled", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={mixedStateFeatures}
 				/>,
 			);
@@ -1098,7 +1087,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("can toggle Done features off", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={mixedStateFeatures}
 				/>,
 			);
@@ -1126,7 +1115,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={mixedStateFeatures}
 					sizePercentileValues={percentiles}
 				/>,
@@ -1157,7 +1146,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={onlyDoneFeatures}
 				/>,
 			);
@@ -1182,7 +1171,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={doneAndTodoFeatures}
 				/>,
 			);
@@ -1206,7 +1195,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={doneAndDoingFeatures}
 				/>,
 			);
@@ -1232,7 +1221,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={featuresWithZeroSize}
 				/>,
 			);
@@ -1258,7 +1247,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={inProgressFeature}
 				/>,
 			);
@@ -1280,7 +1269,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={todoFeature}
 				/>,
 			);
@@ -1298,7 +1287,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("Cycle Time mode keeps the existing X = Size / Y = Cycle Time layout", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 					sizePercentileValues={[
 						{ percentile: 50, value: 4 },
@@ -1362,7 +1351,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 					estimationData={tshirtEstimation}
 				/>,
@@ -1408,7 +1397,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 					estimationData={tshirtEstimation}
 				/>,
@@ -1433,7 +1422,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("Toggle renders Cycle Time / Closed Date when estimation unit absent", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 				/>,
 			);
@@ -1464,7 +1453,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={features}
 					sizePercentileValues={[
 						{ percentile: 50, value: 4 },
@@ -1519,7 +1508,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={[marchFeature, aprilFeature]}
 				/>,
 			);
@@ -1545,7 +1534,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 			const beforeRender = Date.now();
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={[inProgress1, inProgress2]}
 					sizePercentileValues={[]}
 				/>,
@@ -1591,7 +1580,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 			const beforeRender = Date.now();
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={features}
 					sizePercentileValues={[
 						{ percentile: 50, value: 4 },
@@ -1639,12 +1628,14 @@ describe("FeatureSizeScatterPlotChart", () => {
 			expect(p85).toHaveAttribute("data-value", "7");
 		});
 
-		it("Empty data set renders no toggle and shows No data available", () => {
+		it("Empty data set renders no axis mode toggle", () => {
 			render(
-				<FeatureSizeScatterPlotChart ownerKind="team" sizeDataPoints={[]} />,
+				<FeatureSizeScatterPlotChart
+					ownerKind="portfolio"
+					sizeDataPoints={[]}
+				/>,
 			);
 
-			expect(screen.getByText("No data available")).toBeInTheDocument();
 			expect(
 				screen.queryByRole("group", { name: /axis mode/i }),
 			).not.toBeInTheDocument();
@@ -1667,7 +1658,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 			const beforeRender = Date.now();
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={[pastClosed1, pastClosed2]}
 				/>,
 			);
@@ -1694,7 +1685,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={[closed, inProgress]}
 				/>,
 			);
@@ -1737,7 +1728,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("should not show estimation-unit toggle button when estimation data is not provided", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 				/>,
 			);
@@ -1764,7 +1755,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 					estimationData={notConfigured}
 				/>,
@@ -1792,7 +1783,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 					estimationData={noUnit}
 				/>,
@@ -1806,7 +1797,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("should show toggle and default to estimation when estimation unit is set", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 					estimationData={estimationData}
 				/>,
@@ -1827,7 +1818,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("should use estimation values in scatter data when estimation mode is active", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 					estimationData={estimationData}
 				/>,
@@ -1851,7 +1842,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("should switch to cycle time values when cycle time toggle is clicked", () => {
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 					estimationData={estimationData}
 				/>,
@@ -1905,7 +1896,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			render(
 				<FeatureSizeScatterPlotChart
-					ownerKind="team"
+					ownerKind="portfolio"
 					sizeDataPoints={basicFeatures}
 					estimationData={nonNumericEstimation}
 				/>,

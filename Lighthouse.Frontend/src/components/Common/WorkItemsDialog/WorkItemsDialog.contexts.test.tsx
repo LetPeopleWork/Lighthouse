@@ -1697,3 +1697,25 @@ describe("what each catalogue column says, and how it sorts", () => {
 		RENDER_HEAVY,
 	);
 });
+
+// Story #6251: on a Team, every size is the Team's own part of the Feature. That number comes from
+// the Team's answer, so the dialog only has to show the size it is handed, unchanged.
+describe("a Team's Features worked on", () => {
+	// @story-6251 @us-01 @contract-shape:unbounded-preservation
+	it(
+		"show in the Size column the size the Team's answer carries",
+		async () => {
+			const user = userEvent.setup();
+			openTheDialog({
+				context: "inProgress",
+				ownerKind: "team",
+				items: [aFeature({ referenceId: "OE-002", size: 4 })],
+			});
+
+			await turnColumn(user, "size", true);
+
+			expect(cellText("size", "OE-002")).toBe("4");
+		},
+		RENDER_HEAVY,
+	);
+});

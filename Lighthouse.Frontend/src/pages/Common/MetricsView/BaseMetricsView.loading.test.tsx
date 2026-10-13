@@ -183,10 +183,18 @@ vi.mock("../../../components/Common/Charts/EstimationVsCycleTimeChart", () => ({
 vi.mock(
 	"../../../components/Common/Charts/FeatureSizeScatterPlotChart",
 	() => ({
-		default: ({ sizeDataPoints }: { sizeDataPoints: unknown[] }) => (
-			<div data-testid="feature-size-chart">
-				{`${sizeDataPoints.length} Features`}
-			</div>
+		default: ({
+			sizeDataPoints,
+			estimationData,
+		}: {
+			sizeDataPoints: unknown[];
+			estimationData?: unknown;
+		}) => (
+			<div
+				data-testid="feature-size-chart"
+				data-features-handed={sizeDataPoints.length}
+				data-estimate-handed={String(estimationData !== undefined)}
+			/>
 		),
 	}),
 );
@@ -384,11 +392,17 @@ const widgetsOnScreen = () =>
 			item.getAttribute("data-testid")?.replace("dashboard-item-", ""),
 		);
 
-// These two keep today's rule: they appear only once their data says to show them.
-const placedOnlyOnceTheirDataSaysSo = new Set([
-	"estimationVsCycleTime",
-	"featureSize",
-]);
+// Estimation vs. Cycle Time appears only once its data says to show it. Every other chart, Feature
+// Size included, is framed from the first render.
+const placedOnlyOnceTheirDataSaysSo = new Set(["estimationVsCycleTime"]);
+
+// A Portfolio's Portfolio & Features is the one page whose opening look this story changes, because
+// Feature Size is framed there from the first render; its rows are pending with the story's others.
+const isAPortfoliosPortfolioAndFeatures = ([owner, , category]: readonly [
+	Owner,
+	string,
+	CategoryKey,
+]) => owner === "portfolio" && category === "portfolio";
 
 const framedBeforeAnyData = (category: CategoryKey, owner: Owner) =>
 	getWidgetsForCategory(category, owner)
@@ -1192,19 +1206,35 @@ describe.each(chartsThatFetchForThemselves)(
 );
 
 describe("a dashboard as it opens", () => {
-	it.each(everyOwnerAndCategory)(
-		"a %s's %s opens with every chart's frame in its place, each with a spinner, before any data arrives",
-		(owner, _name, category) => {
-			openTheDashboard(owner, category);
+	function opensWithEveryFrameInPlace(
+		owner: Owner,
+		_name: string,
+		category: CategoryKey,
+	) {
+		openTheDashboard(owner, category);
 
-			expect(widgetsOnScreen()).toEqual(framedBeforeAnyData(category, owner));
-			for (const widgetKey of framedBeforeAnyData(category, owner)) {
-				expect(statusOf(widgetKey)).toBe("loading");
-				expect(
-					within(frameOf(widgetKey)).getByRole("progressbar"),
-				).toBeInTheDocument();
-			}
-		},
+		expect(widgetsOnScreen()).toEqual(framedBeforeAnyData(category, owner));
+		for (const widgetKey of framedBeforeAnyData(category, owner)) {
+			expect(statusOf(widgetKey)).toBe("loading");
+			expect(
+				within(frameOf(widgetKey)).getByRole("progressbar"),
+			).toBeInTheDocument();
+		}
+	}
+
+	it.each(
+		everyOwnerAndCategory.filter(
+			(row) => !isAPortfoliosPortfolioAndFeatures(row),
+		),
+	)(
+		"a %s's %s opens with every chart's frame in its place, each with a spinner, before any data arrives",
+		opensWithEveryFrameInPlace,
+	);
+
+	// @us-03 @contract-shape:bounded-change
+	it.skip.each(everyOwnerAndCategory.filter(isAPortfoliosPortfolioAndFeatures))(
+		"a %s's %s opens with every chart's frame in its place, each with a spinner, before any data arrives",
+		opensWithEveryFrameInPlace,
 	);
 
 	it("a team's Flow Metrics opens with its ten charts framed in their places", () => {
@@ -1224,11 +1254,13 @@ describe("a dashboard as it opens", () => {
 		]);
 	});
 
-	it("a portfolio's Portfolio & Features opens with only the Work Item distribution framed", () => {
+	// @us-03 @contract-shape:bounded-change
+	it.skip("a portfolio's Portfolio & Features opens with the Work Item distribution and Feature Size framed", () => {
 		openTheDashboard("portfolio", "portfolio");
 
-		expect(widgetsOnScreen()).toEqual(["workDistribution"]);
+		expect(widgetsOnScreen()).toEqual(["workDistribution", "featureSize"]);
 		expect(statusOf("workDistribution")).toBe("loading");
+		expect(statusOf("featureSize")).toBe("loading");
 	});
 
 	async function addsAndRemovesNoChartOnceItsDataHasArrived(
@@ -1254,8 +1286,17 @@ describe("a dashboard as it opens", () => {
 	);
 
 	it.each(
-		everyOwnerAndCategory.filter(([, , category]) => category === "portfolio"),
+		everyOwnerAndCategory.filter(
+			(row) =>
+				row[2] === "portfolio" && !isAPortfoliosPortfolioAndFeatures(row),
+		),
 	)(
+		"a %s's %s adds and removes no chart once its data has arrived",
+		addsAndRemovesNoChartOnceItsDataHasArrived,
+	);
+
+	// @us-03 @contract-shape:bounded-change
+	it.skip.each(everyOwnerAndCategory.filter(isAPortfoliosPortfolioAndFeatures))(
 		"a %s's %s adds and removes no chart once its data has arrived",
 		addsAndRemovesNoChartOnceItsDataHasArrived,
 	);
@@ -1370,26 +1411,6 @@ describe("charts that appear only once their data says to show them", () => {
 		expect(isFramed("estimationVsCycleTime")).toBe(false);
 	});
 
-	it("Feature Size is not framed until the window's Features arrive, then takes its place", async () => {
-		openTheDashboard("portfolio", "portfolio");
-		expect(isFramed("featureSize")).toBe(false);
-
-		await everythingHasLoaded();
-
-		expect(isFramed("featureSize")).toBe(true);
-	});
-
-	it("Feature Size stays away when the window holds no Features", async () => {
-		openTheDashboard("portfolio", "portfolio");
-
-		await act(async () =>
-			held.answer({ method: "getAllFeaturesForSizeChart" }, []),
-		);
-		await everythingHasLoaded();
-
-		expect(isFramed("featureSize")).toBe(false);
-	});
-
 	const theirOwnRequests = [
 		[
 			"Estimation vs. Cycle Time",
@@ -1449,4 +1470,329 @@ describe("charts that appear only once their data says to show them", () => {
 			expect(statusOf(widgetKey)).toBe("loading");
 		},
 	);
+});
+
+// Story #6251. A Team's metrics page gets the Feature Size scatter and the Feature Size
+// Percentiles widget, both counting that Team's part of each Feature. The scatter's frame
+// takes its place from the first render on both owners, so it shows a spinner while it loads,
+// the could-not-load note when it fails, and the chart's own empty look when there is nothing to
+// plot. What the chart is handed is read off the stand-in's attributes; its copy is held by the
+// chart's own tests.
+describe("Feature Size on a Team's and a Portfolio's dashboard", () => {
+	const owners = ["team", "portfolio"] as const;
+	const isFramed = (widgetKey: string) =>
+		screen.queryByTestId(`widget-shell-${widgetKey}`) !== null;
+	const methodsAsked = () => held.calls.map((call) => call.method);
+	const theChartIsHanded = () =>
+		within(frameOf("featureSize")).getByTestId("feature-size-chart");
+
+	// @us-03 @contract-shape:bounded-change
+	it.skip.each(owners)(
+		"a %s's Feature Size is framed from the first render, under a lone spinner",
+		(owner) => {
+			openTheDashboard(owner, "portfolio");
+
+			expect(isFramed("featureSize")).toBe(true);
+			expect(statusOf("featureSize")).toBe("loading");
+			expect(
+				within(frameOf("featureSize")).getAllByRole("progressbar"),
+			).toHaveLength(1);
+		},
+	);
+
+	// @us-03 @error @contract-shape:bounded-change
+	it.skip.each(owners)(
+		"a %s's Feature Size keeps its place, ready, and hands the chart an empty list when the window holds no Features",
+		async (owner) => {
+			openTheDashboard(owner, "portfolio");
+
+			await act(async () =>
+				held.answer({ method: "getAllFeaturesForSizeChart" }, []),
+			);
+			await everythingHasLoaded();
+
+			expect(isFramed("featureSize")).toBe(true);
+			expect(statusOf("featureSize")).toBe("ready");
+			expect(theChartIsHanded()).toHaveAttribute("data-features-handed", "0");
+		},
+	);
+
+	// @us-03 @error @contract-shape:bounded-change
+	it.skip("a Team's Feature Size says it couldn't be loaded when its Features cannot be loaded", async () => {
+		openTheDashboard("team", "portfolio");
+
+		await act(async () => held.fail({ method: "getAllFeaturesForSizeChart" }));
+		await everythingHasLoaded();
+
+		expect(statusOf("featureSize")).toBe("error");
+		expect(
+			within(frameOf("featureSize")).getByText(COULD_NOT_LOAD_MESSAGE),
+		).toBeInTheDocument();
+		expect(
+			within(frameOf("featureSize")).queryByRole("progressbar"),
+		).not.toBeInTheDocument();
+	});
+
+	// @us-01 @contract-shape:bounded-change
+	it.skip("a Team's Feature Size plots the Features the Team itself answers with, and asks for its size percentiles", async () => {
+		openTheDashboard("team", "portfolio");
+		const anyOwnersFeatures = usualAnswer(
+			"getAllFeaturesForSizeChart",
+			LAST_30_DAYS,
+			[],
+		) as { id: number; size: number }[];
+		const theTeamsOwnFeatures = [
+			...anyOwnersFeatures,
+			{ ...anyOwnersFeatures[0], id: 99, size: 2 },
+		];
+
+		await act(async () =>
+			held.answer(
+				{ method: "getAllFeaturesForSizeChart" },
+				theTeamsOwnFeatures,
+			),
+		);
+		await everythingHasLoaded();
+
+		expect(theChartIsHanded()).toHaveAttribute(
+			"data-features-handed",
+			String(theTeamsOwnFeatures.length),
+		);
+		const askedForFeatures = held.calls.filter(
+			(call) => call.method === "getAllFeaturesForSizeChart",
+		);
+		expect(askedForFeatures.length).toBeGreaterThan(0);
+		expect(askedForFeatures.map((call) => call.args[0])).toEqual(
+			askedForFeatures.map(() => team.id),
+		);
+		expect(methodsAsked()).toEqual(
+			expect.arrayContaining([
+				"getAllFeaturesForSizeChart",
+				"getSizePercentiles",
+			]),
+		);
+	});
+
+	// @us-06 @contract-shape:bounded-change
+	it.skip("a Team's Feature Size is handed no estimate, so it offers no Estimation mode, and no estimate is ever asked of the Team", async () => {
+		openTheDashboard("team", "portfolio");
+
+		await everythingHasLoaded();
+
+		expect(theChartIsHanded()).toHaveAttribute("data-estimate-handed", "false");
+		expect(methodsAsked()).not.toContain("getFeatureSizeEstimation");
+	});
+
+	// @us-06 @contract-shape:bounded-change
+	it.skip("a Team's Feature Size explains that it counts only this Team's Work Items", () => {
+		openTheDashboard("team", "portfolio");
+
+		fireEvent.click(
+			within(frameOf("featureSize")).getByTestId("widget-info-featureSize"),
+		);
+
+		expect(
+			screen.getByText(
+				/^Feature sizes, counting only this Team's Work Items, on a scatter plot filterable by state, to spot size\/cycle-time correlations\.$/,
+			),
+		).toBeInTheDocument();
+	});
+
+	// @us-06 @contract-shape:unbounded-preservation
+	it("a Portfolio's Feature Size explains itself as before", async () => {
+		openTheDashboard("portfolio", "portfolio");
+		await everythingHasLoaded();
+
+		fireEvent.click(
+			within(frameOf("featureSize")).getByTestId("widget-info-featureSize"),
+		);
+
+		expect(
+			screen.getByText(
+				/^Feature sizes on a scatter plot, filterable by state, to spot size\/cycle-time correlations\.$/,
+			),
+		).toBeInTheDocument();
+	});
+});
+
+describe("Feature Size Percentiles on a Team's Flow Overview", () => {
+	const isFramed = (widgetKey: string) =>
+		screen.queryByTestId(`widget-shell-${widgetKey}`) !== null;
+	const methodsAsked = () => held.calls.map((call) => call.method);
+
+	// Act above the 85th (8), Observe above the 70th (5), Sustain otherwise. A part equal to a
+	// percentile is not above it.
+	const teamPercentiles = [
+		{ percentile: 50, value: 3 },
+		{ percentile: 70, value: 5 },
+		{ percentile: 85, value: 8 },
+		{ percentile: 95, value: 12 },
+	];
+
+	const anOpenFeatureOfWhichTheTeamHas = (workItems: number) => ({
+		id: 90,
+		name: "Coral Reef Restoration Program",
+		referenceId: "OE-002",
+		url: "https://example.com/work/90",
+		type: "Epic",
+		state: "In Progress",
+		stateCategory: "Doing",
+		startedDate: new Date("2026-01-01"),
+		closedDate: new Date("2026-01-10"),
+		cycleTime: 0,
+		workItemAge: 9,
+		parentWorkItemReference: "",
+		isBlocked: false,
+		size: workItems,
+	});
+
+	const statusOfThePercentiles = () =>
+		within(frameOf("featureSizePercentiles")).getByTestId("rag-status");
+
+	// @us-02 @contract-shape:bounded-change
+	it.skip("is offered on a Team and asked of the Team itself", async () => {
+		openTheDashboard("team", "flow-overview");
+
+		expect(isFramed("featureSizePercentiles")).toBe(true);
+
+		await everythingHasLoaded();
+
+		expect(methodsAsked()).toContain("getFeatureSizePercentilesInfo");
+		expect(statusOf("featureSizePercentiles")).toBe("ready");
+	});
+
+	// @us-07 @error @contract-shape:bounded-change
+	it.skip("says there is no data, not zeros, when the Team finished no Feature in the window", async () => {
+		openTheDashboard("team", "flow-overview");
+
+		await act(async () => {
+			held.answer({ method: "getSizePercentiles" }, []);
+			held.answer(
+				{ method: "getFeatureSizePercentilesInfo" },
+				{
+					percentiles: [],
+					comparison: {
+						direction: "none",
+						metricLabel: "Feature Size Percentiles",
+					},
+				},
+			);
+		});
+		await everythingHasLoaded();
+
+		expect(
+			within(frameOf("featureSizePercentiles")).getByText(
+				/^No data available$/,
+			),
+		).toBeInTheDocument();
+	});
+
+	// @us-02 @error @contract-shape:bounded-change
+	it.skip("says it couldn't be loaded when the Team's Feature Size Percentiles cannot be loaded", async () => {
+		openTheDashboard("team", "flow-overview");
+
+		await act(async () =>
+			held.fail({ method: "getFeatureSizePercentilesInfo" }),
+		);
+		await everythingHasLoaded();
+
+		expect(statusOf("featureSizePercentiles")).toBe("error");
+		expect(
+			within(frameOf("featureSizePercentiles")).getByText(
+				COULD_NOT_LOAD_MESSAGE,
+			),
+		).toBeInTheDocument();
+		expect(
+			within(frameOf("featureSizePercentiles")).queryByRole("progressbar"),
+		).not.toBeInTheDocument();
+	});
+
+	// @us-07 @contract-shape:pure-function
+	it.skip.each([
+		["Act", 9],
+		["Observe", 8],
+		["Observe", 6],
+		["Sustain", 5],
+		["Sustain", 4],
+	] as const)(
+		"reads %s when the Team's part of an open Feature is %i Work Items",
+		async (status, workItems) => {
+			openTheDashboard("team", "flow-overview");
+
+			await act(async () => {
+				held.answer({ method: "getSizePercentiles" }, teamPercentiles);
+				held.answer({ method: "getAllFeaturesForSizeChart" }, [
+					anOpenFeatureOfWhichTheTeamHas(workItems),
+				]);
+			});
+			await everythingHasLoaded();
+
+			expect(statusOfThePercentiles()).toHaveTextContent(
+				new RegExp(`^${status}$`),
+			);
+		},
+	);
+
+	// A finished Feature bigger than the 85th is history, not a risk: only open Features move
+	// the status.
+	// @us-07 @error @contract-shape:pure-function
+	it.skip.each([
+		[
+			"only a finished Feature bigger than the 85th",
+			[
+				{
+					...anOpenFeatureOfWhichTheTeamHas(9),
+					id: 91,
+					referenceId: "OE-011",
+					state: "Done",
+					stateCategory: "Done",
+				},
+			],
+		],
+		["no Feature at all", []],
+	])("reads Sustain when the Team has %s", async (_situation, features) => {
+		openTheDashboard("team", "flow-overview");
+
+		await act(async () => {
+			held.answer({ method: "getSizePercentiles" }, teamPercentiles);
+			held.answer({ method: "getAllFeaturesForSizeChart" }, features);
+		});
+		await everythingHasLoaded();
+
+		expect(statusOfThePercentiles()).toHaveTextContent(/^Sustain$/);
+	});
+
+	// @us-02 @contract-shape:bounded-change
+	it.skip("explains that it counts this Team's Work Items in completed Features", () => {
+		openTheDashboard("team", "flow-overview");
+
+		fireEvent.click(
+			within(frameOf("featureSizePercentiles")).getByTestId(
+				"widget-info-featureSizePercentiles",
+			),
+		);
+
+		expect(
+			screen.getByText(
+				/^Size distribution percentiles of this Team's Work Items in completed Features, with trend comparison to the previous period\.$/,
+			),
+		).toBeInTheDocument();
+	});
+
+	// @us-02 @contract-shape:unbounded-preservation
+	it("on a Portfolio explains itself as before", () => {
+		openTheDashboard("portfolio", "flow-overview");
+
+		fireEvent.click(
+			within(frameOf("featureSizePercentiles")).getByTestId(
+				"widget-info-featureSizePercentiles",
+			),
+		);
+
+		expect(
+			screen.getByText(
+				/^Size distribution percentiles for completed features with trend comparison to the previous period\.$/,
+			),
+		).toBeInTheDocument();
+	});
 });

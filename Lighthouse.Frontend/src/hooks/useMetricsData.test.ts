@@ -203,6 +203,15 @@ function renderHook<Result, Props>(
 	});
 }
 
+/**
+ * Story #6251: the two Feature Size methods only a Portfolio has. A Team has Feature sizes of its
+ * own, so a service lacking one of these is no Portfolio, but may still be a Team.
+ */
+const portfolioOnlyFeatureSizeMethods: ReadonlySet<string> = new Set([
+	"getFeatureSizePbc",
+	"getFeatureSizeEstimation",
+]);
+
 /** The five methods the hook probes to decide a service is portfolio-shaped. */
 const portfolioProbeMethods = [
 	"getAllFeaturesForSizeChart",
@@ -212,8 +221,8 @@ const portfolioProbeMethods = [
 	"getFeatureSizePercentilesInfo",
 ] as const;
 
-/** Every key whose effect is reachable only through the portfolio discriminator. */
-const portfolioOnlyFetchKeys: ReadonlySet<MetricsFetchKey> = new Set([
+/** Every Feature Size key; a Portfolio is asked for all four. */
+const everyFeatureSizeFetchKey: ReadonlySet<MetricsFetchKey> = new Set([
 	"featureSizeData",
 	"featureSizePbc",
 	"featureSizeEstimation",
@@ -500,10 +509,10 @@ describe("useMetricsData", () => {
 		/**
 		 * The trend's whole credibility rests on the SECOND window, and a wrong window is invisible
 		 * from the widget: it still renders an arrow, just a meaningless one. This is exactly how the
-		 * blocked-trend fetch-window defect (US-03 AC0) escaped every rendering test and was caught
+		 * blocked-trend fetch-window defect escaped every rendering test and was caught
 		 * only at this seam, so the window is pinned here rather than at the view.
 		 *
-		 * D5: the comparison window ends the day BEFORE the selected range starts, and spans the same
+		 * The comparison window ends the day BEFORE the selected range starts, and spans the same
 		 * length. The backend snapshots on the window's endDate, so that boundary day is the part
 		 * that actually selects the comparison point.
 		 */
@@ -638,18 +647,38 @@ describe("useMetricsData", () => {
 			);
 		});
 
-		it("should NOT call project-specific methods for team metrics service", async () => {
+		// Story #6251: a Team has Feature sizes of its own, but no Feature Size process behaviour
+		// chart and no estimate of a Feature's size, which are configured on a Portfolio. The Team's
+		// service here carries both of those methods as traps: having them must not make a Team's
+		// service count as a Portfolio's, so neither is ever asked.
+		// @us-01 @contract-shape:bounded-change
+		it.skip("asks a team metrics service for its Feature sizes, and never for a Feature Size process behaviour chart or estimate", async () => {
 			const entity = createMockEntity();
-			const service = createMockTeamMetricsService();
+			const service = {
+				...createMockTeamMetricsService(),
+				getFeatureSizePbc: vi.fn(),
+				getFeatureSizeEstimation: vi.fn(),
+			};
+			const asked = service as unknown as Record<string, unknown>;
+
+			expect(Object.keys(asked)).toEqual(
+				expect.arrayContaining([
+					"getAllFeaturesForSizeChart",
+					"getSizePercentiles",
+					"getFeatureSizePercentilesInfo",
+				]),
+			);
 
 			renderHook(() => useMetricsData(entity, service, startDate, endDate));
 
 			await waitFor(() => {
-				expect(service.getThroughput).toHaveBeenCalled();
+				expect(asked.getAllFeaturesForSizeChart).toHaveBeenCalled();
 			});
 
-			expect(service).not.toHaveProperty("getSizePercentiles");
-			expect(service).not.toHaveProperty("getAllFeaturesForSizeChart");
+			expect(asked.getSizePercentiles).toHaveBeenCalled();
+			expect(asked.getFeatureSizePercentilesInfo).toHaveBeenCalled();
+			expect(service.getFeatureSizePbc).not.toHaveBeenCalled();
+			expect(service.getFeatureSizeEstimation).not.toHaveBeenCalled();
 		});
 
 		it("should populate size percentiles for project service", async () => {
@@ -680,7 +709,11 @@ describe("useMetricsData", () => {
 		 * control render (all five present) asserts the fetches DO fire, so the case cannot be
 		 * satisfied by a discriminator that simply never returns true.
 		 */
-		it.each(portfolioProbeMethods)(
+		it.each(
+			portfolioProbeMethods.filter(
+				(method) => !portfolioOnlyFeatureSizeMethods.has(method),
+			),
+		)(
 			"does not treat a service missing %s as a portfolio service",
 			async (missingMethod) => {
 				const entity = createMockPortfolioEntity();
@@ -697,7 +730,7 @@ describe("useMetricsData", () => {
 						incompleteService as unknown as IProjectMetricsService,
 						startDate,
 						endDate,
-						portfolioOnlyFetchKeys,
+						everyFeatureSizeFetchKey,
 					),
 				);
 				renderHook(() =>
@@ -706,7 +739,7 @@ describe("useMetricsData", () => {
 						completeService,
 						startDate,
 						endDate,
-						portfolioOnlyFetchKeys,
+						everyFeatureSizeFetchKey,
 					),
 				);
 
@@ -730,6 +763,48 @@ describe("useMetricsData", () => {
 						incompleteService[probe],
 						`${probe} must not be fetched while ${missingMethod} is absent`,
 					).not.toHaveBeenCalled();
+				}
+			},
+		);
+
+		// Story #6251: a service without the Feature Size process behaviour chart or the estimate
+		// is not a Portfolio, but it may still be a Team with Feature sizes of its own.
+		// @us-01 @contract-shape:bounded-change
+		it.skip.each(["getFeatureSizePbc", "getFeatureSizeEstimation"] as const)(
+			"a service missing %s is not treated as a portfolio service, but is still asked for its Feature sizes",
+			async (missingMethod) => {
+				const entity = createMockPortfolioEntity();
+				const { [missingMethod]: _dropped, ...incompleteService } =
+					createMockProjectMetricsService() as unknown as Record<
+						string,
+						unknown
+					>;
+
+				renderHook(() =>
+					useMetricsData(
+						entity,
+						incompleteService as unknown as IProjectMetricsService,
+						startDate,
+						endDate,
+						everyFeatureSizeFetchKey,
+					),
+				);
+
+				await waitFor(() => {
+					expect(
+						incompleteService.getFeatureSizePercentilesInfo,
+					).toHaveBeenCalledTimes(1);
+				});
+				expect(incompleteService.getSizePercentiles).toHaveBeenCalledTimes(1);
+				expect(
+					incompleteService.getAllFeaturesForSizeChart,
+				).toHaveBeenCalledTimes(1);
+				for (const portfolioOnly of [
+					"getFeatureSizePbc",
+					"getFeatureSizeEstimation",
+				]) {
+					if (portfolioOnly === missingMethod) continue;
+					expect(incompleteService[portfolioOnly]).not.toHaveBeenCalled();
 				}
 			},
 		);
@@ -1230,7 +1305,7 @@ describe("useMetricsData", () => {
 			});
 
 			expect(service.getCycleTimePercentiles).toHaveBeenCalledTimes(1);
-			// current period + previous period (D5)
+			// the selected range and the same-length period before it
 			expect(service.getWorkItemAgePercentiles).toHaveBeenCalledTimes(2);
 			expect(service.getFlowEfficiencyInfoForTeam).toHaveBeenCalledTimes(1);
 			expect(service.getAgeInStatePercentiles).not.toHaveBeenCalled();
@@ -1575,7 +1650,7 @@ describe("useMetricsData while its requests are on their way", () => {
 		},
 	);
 
-	it.each([...portfolioOnlyFetchKeys])(
+	it.each([...everyFeatureSizeFetchKey])(
 		"a portfolio's %s reads loading until its answer arrives",
 		(fetchKey) => {
 			const service = holdingEveryRequest(createMockProjectMetricsService());

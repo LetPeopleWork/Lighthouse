@@ -158,34 +158,9 @@ describe("categoryMetadata", () => {
 				"featureSizePercentiles",
 			);
 		});
-
-		it("feature size percentiles info widget is portfolio-only", () => {
-			const widgets = getWidgetsForCategory("flow-overview", "team");
-			expect(widgets.map((w) => w.widgetKey)).not.toContain(
-				"featureSizePercentiles",
-			);
-		});
 	});
 
 	describe("Story 4804 — per-category widget composition", () => {
-		it("flow-overview contains expected info widgets in order for team", () => {
-			const widgets = getWidgetsForCategory("flow-overview", "team");
-			expect(widgets.map((w) => w.widgetKey)).toEqual([
-				"wipOverview",
-				"sleRisk",
-				"blockedOverview",
-				"staleOverview",
-				"featuresWorkedOnOverview",
-				"totalWorkItemAge",
-				"flowEfficiency",
-				"predictabilityScore",
-				"percentiles",
-				"workItemAgePercentiles",
-				"totalThroughput",
-				"totalArrivals",
-			]);
-		});
-
 		it("flow-overview contains expected info widgets for portfolio", () => {
 			const widgets = getWidgetsForCategory("flow-overview", "portfolio");
 			expect(widgets.map((w) => w.widgetKey)).toEqual([
@@ -255,14 +230,6 @@ describe("categoryMetadata", () => {
 		it("predictability includes featureSizePbc for portfolio", () => {
 			const widgets = getWidgetsForCategory("predictability", "portfolio");
 			expect(widgets.map((w) => w.widgetKey)).toContain("featureSizePbc");
-		});
-
-		it("portfolio contains expected widgets in order for team", () => {
-			const widgets = getWidgetsForCategory("portfolio", "team");
-			expect(widgets.map((w) => w.widgetKey)).toEqual([
-				"workDistribution",
-				"estimationVsCycleTime",
-			]);
 		});
 
 		it("portfolio includes feature size for portfolio owner", () => {
@@ -392,10 +359,8 @@ describe("categoryMetadata", () => {
 				"ageInStatePercentiles",
 				"cumulativeStateTime",
 				"estimationVsCycleTime",
-				"featureSizeData",
 				"featureSizePbc",
 				"featureSizeEstimation",
-				"featureSizePercentilesInfo",
 			];
 			for (const key of forbidden) {
 				expect(
@@ -430,19 +395,6 @@ describe("categoryMetadata", () => {
 			for (const key of required) {
 				expect(keys.has(key), `flow-overview needs ${key}`).toBe(true);
 			}
-		});
-
-		it("flow-overview pulls feature sizes only for a portfolio owner", () => {
-			expect(
-				getFetchKeysForCategories(["flow-overview"], "portfolio").has(
-					"featureSizeData",
-				),
-			).toBe(true);
-			expect(
-				getFetchKeysForCategories(["flow-overview"], "team").has(
-					"featureSizeData",
-				),
-			).toBe(false);
 		});
 
 		it("unions the requirements of every category it is given", () => {
@@ -546,5 +498,69 @@ describe("categoryMetadata", () => {
 			const keys = getFetchKeysForCategories([] as CategoryKey[], "team");
 			expect(keys.size).toBe(0);
 		});
+	});
+});
+
+// Story #6251: a Team gets the Feature Size scatter and the Feature Size Percentiles widget, in
+// the same places as on a Portfolio. The Feature Size process behaviour chart stays Portfolio-only.
+describe("Feature Size on a Team", () => {
+	const widgetKeysOf = (category: CategoryKey, owner: "team" | "portfolio") =>
+		getWidgetsForCategory(category, owner).map((w) => w.widgetKey);
+
+	// @us-01 @contract-shape:bounded-change
+	it.skip("a Team's Portfolio & Features category offers Feature Size between the Work Item distribution and Estimation vs. Cycle Time", () => {
+		expect(widgetKeysOf("portfolio", "team")).toEqual([
+			"workDistribution",
+			"featureSize",
+			"estimationVsCycleTime",
+		]);
+	});
+
+	// @us-02 @contract-shape:bounded-change
+	it.skip("a Team's Flow Overview offers Feature Size Percentiles last, as a Portfolio's does", () => {
+		expect(widgetKeysOf("flow-overview", "team")).toEqual([
+			"wipOverview",
+			"sleRisk",
+			"blockedOverview",
+			"staleOverview",
+			"featuresWorkedOnOverview",
+			"totalWorkItemAge",
+			"flowEfficiency",
+			"predictabilityScore",
+			"percentiles",
+			"workItemAgePercentiles",
+			"totalThroughput",
+			"totalArrivals",
+			"featureSizePercentiles",
+		]);
+	});
+
+	// @us-01 @contract-shape:bounded-change
+	it.skip("a Team asks for the Feature sizes whenever either widget is shown", () => {
+		expect([...getFetchKeysForCategories(["portfolio"], "team")]).toContain(
+			"featureSizeData",
+		);
+		expect([...getFetchKeysForCategories(["flow-overview"], "team")]).toEqual(
+			expect.arrayContaining(["featureSizeData", "featureSizePercentilesInfo"]),
+		);
+	});
+
+	// @us-01 @contract-shape:unbounded-preservation
+	it("a Team is never asked for an estimate of a Feature's size", () => {
+		const everyCategory = getCategories().map((category) => category.key);
+
+		expect([...getFetchKeysForCategories(everyCategory, "team")]).not.toContain(
+			"featureSizeEstimation",
+		);
+	});
+
+	// @us-01 @contract-shape:unbounded-preservation
+	it("the Feature Size process behaviour chart stays on a Portfolio only", () => {
+		expect(widgetKeysOf("predictability", "team")).not.toContain(
+			"featureSizePbc",
+		);
+		expect(widgetKeysOf("predictability", "portfolio")).toContain(
+			"featureSizePbc",
+		);
 	});
 });

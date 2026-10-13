@@ -120,12 +120,16 @@ const teamOnlyMethods = [
 	"getFeaturesWorkedOnInfo",
 ] as const satisfies readonly MetricsMethod[];
 
-const portfolioOnlyMethods = [
+// Both owners answer these: on a Team, a Feature's size is that Team's part of it.
+const featureSizeMethods = [
 	"getSizePercentiles",
 	"getAllFeaturesForSizeChart",
+	"getFeatureSizePercentilesInfo",
+] as const satisfies readonly MetricsMethod[];
+
+const portfolioOnlyMethods = [
 	"getFeatureSizePbc",
 	"getFeatureSizeEstimation",
-	"getFeatureSizePercentilesInfo",
 ] as const satisfies readonly MetricsMethod[];
 
 const workItem = (id: number, state: string, category: string): IWorkItem => ({
@@ -370,6 +374,7 @@ export function createHeldMetricsService(
 	const calls: HeldCall[] = [];
 	const methods: readonly MetricsMethod[] = [
 		...sharedMethods,
+		...featureSizeMethods,
 		...(ownerType === "team" ? teamOnlyMethods : portfolioOnlyMethods),
 	];
 
