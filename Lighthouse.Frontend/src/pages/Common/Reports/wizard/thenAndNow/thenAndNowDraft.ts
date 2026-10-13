@@ -1,4 +1,4 @@
-import { format, subDays } from "date-fns";
+import { format, isValid, subDays } from "date-fns";
 import type {
 	INewReport,
 	IReportTemplates,
@@ -34,17 +34,22 @@ export const thenEndOf = (
 	templates: IReportTemplates,
 ): string => draft.thenEnd ?? templates.today;
 
-export const lengthOf = (text: string): number | null => {
+const wholeDaysOf = (text: string): number | null => {
 	const days = Number(text);
-	return text.trim() !== "" && Number.isInteger(days) && days > 0 ? days : null;
+	return text.trim() !== "" && Number.isInteger(days) ? days : null;
 };
 
-/** Why the server would refuse the Then entered, or null while it has no length yet or would be accepted. */
+export const lengthOf = (text: string): number | null => {
+	const days = wholeDaysOf(text);
+	return days !== null && days > 0 ? days : null;
+};
+
+/** Why the server would refuse the Then entered, or null while it has no whole number of days yet or would be accepted. */
 export const thenRefusalOf = (
 	draft: ThenAndNowDraft,
 	templates: IReportTemplates,
 ): ReportWindowRefusal | null => {
-	const lengthDays = lengthOf(draft.thenLength);
+	const lengthDays = wholeDaysOf(draft.thenLength);
 	return lengthDays === null
 		? null
 		: reportWindowCheck(
@@ -59,7 +64,7 @@ export const nowLengthOf = (draft: ThenAndNowDraft): string =>
 
 const LONG_DAY = "d MMM yyyy";
 
-/** "5 Jul – 2 Oct 2026", or with both years when the days fall in different years. */
+/** "5 Jul – 2 Oct 2026", or with both years when the days fall in different years; null when no date can name the first day. */
 export const resolvedThenDays = (
 	end: string,
 	lengthDays: number | null,
@@ -68,6 +73,8 @@ export const resolvedThenDays = (
 	if (endDay === null || lengthDays === null) return null;
 
 	const startDay = subDays(endDay, lengthDays - 1);
+	if (!isValid(startDay)) return null;
+
 	const startFormat =
 		startDay.getFullYear() === endDay.getFullYear() ? "d MMM" : LONG_DAY;
 	return `${format(startDay, startFormat)} – ${format(endDay, LONG_DAY)}`;

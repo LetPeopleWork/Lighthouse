@@ -56,6 +56,7 @@ const REFUSAL_COPY: Record<ReportRefusalCode, (words: RefusalWords) => string> =
 	{
 		"then-too-short": (words) =>
 			`Then needs at least ${words.minimumLengthDays} days.`,
+		"then-too-long": () => "Then can't reach back that far.",
 		"then-ends-in-the-future": () => "Then cannot end after today.",
 		"then-before-cutoff": (words) => cutoffRefusal("Then", words),
 		"now-too-short": (words) =>
@@ -83,10 +84,21 @@ export const windowRefusalCopyFor = (
 const isRefusalCode = (code: string): code is ReportRefusalCode =>
 	Object.keys(REFUSAL_COPY).includes(code);
 
-/** The sentence for a failed create or save: the refusal's own copy, or a plain retry for anything else. */
+/**
+ * The sentence for a failed create or save: the refusal's own copy, or a plain retry for anything else. A day
+ * the refusal names itself wins over the one the wizard was opened with, which may be a day old by now.
+ */
 export const refusalCopyFor = (error: unknown, words: RefusalWords): string => {
-	const code = error instanceof ApiError ? error.problemCode : undefined;
-	return code !== undefined && isRefusalCode(code)
-		? REFUSAL_COPY[code](words)
-		: COULD_NOT_CREATE;
+	if (!(error instanceof ApiError)) return COULD_NOT_CREATE;
+
+	const code = error.problemCode;
+	if (code === undefined || !isRefusalCode(code)) return COULD_NOT_CREATE;
+
+	return REFUSAL_COPY[code]({
+		...words,
+		earliestStart:
+			error.earliestStart === undefined
+				? words.earliestStart
+				: error.earliestStart,
+	});
 };

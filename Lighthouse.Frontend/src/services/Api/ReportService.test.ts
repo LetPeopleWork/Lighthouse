@@ -264,4 +264,33 @@ describe("ReportService", () => {
 			subject.createReport(LIGHTSPEED, aNewReport("One too many")),
 		).rejects.toMatchObject({ code: 403, problemCode: "report-cap-reached" });
 	});
+
+	it.each([
+		[
+			"names the oldest kept day",
+			{ earliestStart: "2025-10-03" },
+			"2025-10-03",
+		],
+		["says there is no oldest kept day", { earliestStart: null }, null],
+		["says nothing of an oldest kept day", {}, undefined],
+	])(
+		"hands on the oldest kept day a refusal %s exactly as it was given",
+		async (_, body, earliestStart) => {
+			mockedAxios.isAxiosError.mockReturnValue(true);
+			mockedAxios.post.mockRejectedValueOnce({
+				message: "Bad Request",
+				response: {
+					status: 400,
+					data: { code: "then-before-cutoff", ...body },
+				},
+			});
+
+			const refusal = await subject
+				.createReport(LIGHTSPEED, aNewReport("Too far back"))
+				.catch((error: unknown) => error);
+
+			expect(refusal).toBeInstanceOf(ApiError);
+			expect((refusal as ApiError).earliestStart).toBe(earliestStart);
+		},
+	);
 });

@@ -60,6 +60,7 @@ export class BaseApiService {
 			parsed.technicalDetails,
 			parsed.fieldName,
 			parsed.problemCode,
+			parsed.earliestStart,
 		);
 	}
 
@@ -72,6 +73,7 @@ export class BaseApiService {
 		technicalDetails?: string;
 		fieldName?: string;
 		problemCode?: string;
+		earliestStart?: string | null;
 	} {
 		const fallbackMessage = axiosMessage ?? String(status);
 
@@ -90,6 +92,7 @@ export class BaseApiService {
 				FieldName?: unknown;
 				code?: unknown;
 				Code?: unknown;
+				earliestStart?: unknown;
 			};
 
 			return {
@@ -103,6 +106,7 @@ export class BaseApiService {
 					payload.FieldName,
 				),
 				problemCode: BaseApiService.extractString(payload.code, payload.Code),
+				earliestStart: BaseApiService.extractDayOrNull(payload.earliestStart),
 			};
 		}
 
@@ -145,6 +149,11 @@ export class BaseApiService {
 		}
 
 		return undefined;
+	}
+
+	// A null is an answer in its own right (nothing is cut off), so it is kept apart from a member that is missing.
+	private static extractDayOrNull(value: unknown): string | null | undefined {
+		return typeof value === "string" || value === null ? value : undefined;
 	}
 
 	protected static parse<TSchema extends z.ZodType>(

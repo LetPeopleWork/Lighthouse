@@ -9,6 +9,11 @@ export class ApiError extends Error {
 	 * message to tell them apart breaks the moment that prose is reworded.
 	 */
 	public readonly problemCode?: string;
+	/**
+	 * The oldest day the server still keeps finished items for, when a refusal names one: a day, null when
+	 * every finished item is kept, or undefined when the refusal says nothing about it.
+	 */
+	public readonly earliestStart?: string | null;
 
 	constructor(
 		code: string | number,
@@ -16,12 +21,14 @@ export class ApiError extends Error {
 		technicalDetails?: string,
 		fieldName?: string,
 		problemCode?: string,
+		earliestStart?: string | null,
 	) {
 		super(message);
 		this.code = code;
 		this.technicalDetails = technicalDetails;
 		this.fieldName = fieldName;
 		this.problemCode = problemCode;
+		this.earliestStart = earliestStart;
 		this.name = "ApiError";
 		// Set the prototype explicitly for older TS targets
 		Object.setPrototypeOf(this, ApiError.prototype);

@@ -21,6 +21,7 @@ import {
 	NO_METRIC,
 	next,
 	renderWithReports,
+	THEN_TOO_LONG,
 	THEN_TOO_SHORT,
 	TODAY_ON_THE_INSTANCE,
 	TYPES_COULD_NOT_LOAD,
@@ -237,6 +238,36 @@ describe("Step two: Then", () => {
 		await enterNumber(await theThenLengthField(), 10);
 
 		expect(await theWizard()).toHaveTextContent(THEN_TOO_SHORT);
+		expect(
+			within(await theWizard()).getByRole("button", { name: "Next" }),
+		).toBeDisabled();
+	});
+
+	// @us-02 @slice-02 @error @contract-shape:pure-function
+	it.each([0, -30])(
+		"refuses a Then of %i days as too short and goes no further",
+		async (days) => {
+			await openTheWizard();
+			await next();
+
+			await enterNumber(await theThenLengthField(), days);
+
+			expect(await theWizard()).toHaveTextContent(THEN_TOO_SHORT);
+			expect(
+				within(await theWizard()).getByRole("button", { name: "Next" }),
+			).toBeDisabled();
+		},
+	);
+
+	// @us-02 @slice-02 @error @contract-shape:pure-function
+	it("refuses a Then reaching back further than the calendar goes, without naming its days", async () => {
+		await openTheWizard();
+		await next();
+
+		await enterNumber(await theThenLengthField(), 1_000_000_000);
+
+		expect(await theWizard()).toHaveTextContent(THEN_TOO_LONG);
+		expect(within(await theWizard()).queryByText(/^= /)).toBeNull();
 		expect(
 			within(await theWizard()).getByRole("button", { name: "Next" }),
 		).toBeDisabled();
@@ -616,22 +647,31 @@ describe("Creating the report", () => {
 
 	// @us-02 @slice-02 @error @contract-shape:unbounded-preservation
 	// The oldest kept day moves on at midnight; a wizard left open overnight can still be refused.
-	it("names the oldest kept day when the server refuses Then for starting before it", async () => {
-		await openTheWizard(
+	it("names the oldest kept day the server refuses Then with, not the one the wizard was opened with", async () => {
+		const reportService = await openTheWizard(
 			aReportService({
 				getReports: vi.fn().mockResolvedValue(aReportList([])),
 				createReport: vi
 					.fn()
-					.mockRejectedValue(aRefusal(400, "then-before-cutoff")),
+					.mockRejectedValue(aRefusal(400, "then-before-cutoff", "2025-10-03")),
 			}),
 		);
 		await onToTheLastStep();
+		const templatesAskedFor = vi.mocked(reportService.getTemplates).mock.calls
+			.length;
 
 		await userEvent.click(await theCreateButton());
 
 		expect(
 			await within(await theWizard()).findByRole("alert"),
-		).toHaveTextContent(CUTOFF_REFUSAL);
+		).toHaveTextContent(
+			"The Then window must start on or after 3 Oct 2025 — older finished Work Items are no longer kept.",
+		);
+		await waitFor(() =>
+			expect(reportService.getTemplates).toHaveBeenCalledTimes(
+				templatesAskedFor + 1,
+			),
+		);
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation

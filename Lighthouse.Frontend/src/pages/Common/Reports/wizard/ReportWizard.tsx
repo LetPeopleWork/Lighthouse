@@ -9,6 +9,7 @@ import type {
 	IReportTemplates,
 	ReportTemplateKey,
 } from "../../../../models/Reports/Report";
+import { ApiError } from "../../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import {
 	usageDataReportTemplateFor,
@@ -76,6 +77,13 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 		} catch (error) {
 			setRefusal(refusalCopyFor(error, refusalWordsFor(bounds)));
 			setIsCreating(false);
+			// The oldest kept day has moved on since the wizard opened; ask again so Then's own check agrees.
+			if (
+				error instanceof ApiError &&
+				error.problemCode === "then-before-cutoff"
+			) {
+				refetch().catch(() => undefined);
+			}
 			return;
 		}
 

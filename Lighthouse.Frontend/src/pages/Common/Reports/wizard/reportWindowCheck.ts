@@ -3,6 +3,7 @@ import type { IReportTemplates } from "../../../../models/Reports/Report";
 /** Why a window entered in the wizard would be refused, by the same codes the server refuses it with. */
 export type ReportWindowRefusal =
 	| "then-too-short"
+	| "then-too-long"
 	| "then-ends-in-the-future"
 	| "then-before-cutoff"
 	| "now-too-short"
@@ -28,13 +29,19 @@ const dayNumber = (day: string): number => {
 	return Date.UTC(year, month - 1, date) / millisecondsPerDay;
 };
 
+// 1 Jan of the year 1, the first day the server's calendar can name, counted the same way.
+const FIRST_CALENDAR_DAY = -719_162;
+
+const startDayNumber = (end: string, lengthDays: number): number =>
+	dayNumber(end) - (lengthDays - 1);
+
 const startsBefore = (
 	earliestStart: string | null,
 	end: string,
 	lengthDays: number,
 ): boolean =>
 	earliestStart !== null &&
-	dayNumber(end) - (lengthDays - 1) < dayNumber(earliestStart);
+	startDayNumber(end, lengthDays) < dayNumber(earliestStart);
 
 const thenRefusal = (
 	end: string,
@@ -43,6 +50,10 @@ const thenRefusal = (
 ): ReportWindowRefusal | null => {
 	if (lengthDays < bounds.minimumLengthDays) {
 		return "then-too-short";
+	}
+
+	if (startDayNumber(end, lengthDays) < FIRST_CALENDAR_DAY) {
+		return "then-too-long";
 	}
 
 	if (dayNumber(end) > dayNumber(bounds.today)) {

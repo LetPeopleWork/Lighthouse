@@ -72,6 +72,7 @@ export const CUTOFF_REFUSAL =
 export const thenNeedsAtLeast = (days: number) =>
 	`Then needs at least ${days} days.`;
 export const THEN_TOO_SHORT = thenNeedsAtLeast(14);
+export const THEN_TOO_LONG = "Then can't reach back that far.";
 export const NO_METRIC = "Choose at least one metric";
 export const NOT_CAPTURED = "Not captured for this report";
 export const FROZEN = "frozen, can't be changed";
@@ -227,9 +228,20 @@ export const aReportService = (
 	...overrides,
 });
 
-/** A refusal the way the API service hands it on: the status and the reason's code. */
-export const aRefusal = (status: number, reason: string): ApiError =>
-	new ApiError(status, `refused: ${reason}`, undefined, undefined, reason);
+/** A refusal the way the API service hands it on: the status, the reason's code, and the oldest kept day when the server names one. */
+export const aRefusal = (
+	status: number,
+	reason: string,
+	earliestStart?: string | null,
+): ApiError =>
+	new ApiError(
+		status,
+		`refused: ${reason}`,
+		undefined,
+		undefined,
+		reason,
+		earliestStart,
+	);
 
 export type Viewer = "admin" | "reader" | "rbacOff";
 

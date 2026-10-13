@@ -13,6 +13,13 @@
 			"refusal": "then-too-short"
 		},
 		{
+			"case": "a Then of 13 days ending tomorrow",
+			"side": "then",
+			"end": "2026-10-03",
+			"lengthDays": 13,
+			"refusal": "then-too-short"
+		},
+		{
 			"case": "a Then of 14 days",
 			"side": "then",
 			"end": "2026-10-02",
@@ -54,6 +61,14 @@
 			"lengthDays": 90,
 			"keepsEveryFinishedItem": true,
 			"refusal": null
+		},
+		{
+			"case": "a Then starting before the first day the calendar can name, when every finished item is kept",
+			"side": "then",
+			"end": "2026-10-02",
+			"lengthDays": 1000000,
+			"keepsEveryFinishedItem": true,
+			"refusal": "then-too-long"
 		},
 		{
 			"case": "a Now of 13 days",
