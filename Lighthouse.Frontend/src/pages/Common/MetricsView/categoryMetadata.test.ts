@@ -471,13 +471,23 @@ describe("categoryMetadata", () => {
 			}
 		});
 
+		// A Feature's size process behaviour chart and its size estimate are configured on a
+		// Portfolio only, so a Team is never asked for them, even by a widget it shares.
+		const onlyAPortfolioHas: ReadonlySet<string> = new Set([
+			"featureSizePbc",
+			"featureSizeEstimation",
+		]);
+		const requiredOf = (widgetKey: string, ownerType: "team" | "portfolio") =>
+			(getFetchRequirementsForWidget(widgetKey) ?? []).filter(
+				(key) => ownerType === "portfolio" || !onlyAPortfolioHas.has(key),
+			);
+
 		it("asks, for each category on its own, for everything any of its widgets requires", () => {
 			for (const cat of getCategories()) {
 				for (const ownerType of ownerTypes) {
 					const asked = getFetchKeysForCategories([cat.key], ownerType);
 					for (const w of getWidgetsForCategory(cat.key, ownerType)) {
-						for (const key of getFetchRequirementsForWidget(w.widgetKey) ??
-							[]) {
+						for (const key of requiredOf(w.widgetKey, ownerType)) {
 							expect(
 								asked.has(key),
 								`${w.widgetKey} on a ${ownerType}'s ${cat.key} requires ${key}, which is never asked for`,

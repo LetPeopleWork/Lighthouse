@@ -396,13 +396,15 @@ const widgetsOnScreen = () =>
 // Size included, is framed from the first render.
 const placedOnlyOnceTheirDataSaysSo = new Set(["estimationVsCycleTime"]);
 
-// A Portfolio's Portfolio & Features is the one page whose opening look this story changes, because
-// Feature Size is framed there from the first render; its rows are pending with the story's others.
-const isAPortfoliosPortfolioAndFeatures = ([owner, , category]: readonly [
+// Portfolio & Features is the one page whose opening look this story changes, on both owners,
+// because Feature Size is framed there from the first render; its rows are pending with the
+// story's others. On a Team the page gains Feature Size, and its frame is placed before its data
+// only once the Feature Size frame is always placed.
+const isPortfolioAndFeatures = ([, , category]: readonly [
 	Owner,
 	string,
 	CategoryKey,
-]) => owner === "portfolio" && category === "portfolio";
+]) => category === "portfolio";
 
 const framedBeforeAnyData = (category: CategoryKey, owner: Owner) =>
 	getWidgetsForCategory(category, owner)
@@ -1222,17 +1224,13 @@ describe("a dashboard as it opens", () => {
 		}
 	}
 
-	it.each(
-		everyOwnerAndCategory.filter(
-			(row) => !isAPortfoliosPortfolioAndFeatures(row),
-		),
-	)(
+	it.each(everyOwnerAndCategory.filter((row) => !isPortfolioAndFeatures(row)))(
 		"a %s's %s opens with every chart's frame in its place, each with a spinner, before any data arrives",
 		opensWithEveryFrameInPlace,
 	);
 
 	// @us-03 @contract-shape:bounded-change
-	it.skip.each(everyOwnerAndCategory.filter(isAPortfoliosPortfolioAndFeatures))(
+	it.skip.each(everyOwnerAndCategory.filter(isPortfolioAndFeatures))(
 		"a %s's %s opens with every chart's frame in its place, each with a spinner, before any data arrives",
 		opensWithEveryFrameInPlace,
 	);
@@ -1285,18 +1283,8 @@ describe("a dashboard as it opens", () => {
 		addsAndRemovesNoChartOnceItsDataHasArrived,
 	);
 
-	it.each(
-		everyOwnerAndCategory.filter(
-			(row) =>
-				row[2] === "portfolio" && !isAPortfoliosPortfolioAndFeatures(row),
-		),
-	)(
-		"a %s's %s adds and removes no chart once its data has arrived",
-		addsAndRemovesNoChartOnceItsDataHasArrived,
-	);
-
 	// @us-03 @contract-shape:bounded-change
-	it.skip.each(everyOwnerAndCategory.filter(isAPortfoliosPortfolioAndFeatures))(
+	it.skip.each(everyOwnerAndCategory.filter(isPortfolioAndFeatures))(
 		"a %s's %s adds and removes no chart once its data has arrived",
 		addsAndRemovesNoChartOnceItsDataHasArrived,
 	);

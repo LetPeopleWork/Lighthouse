@@ -140,9 +140,13 @@ function createMockTeamMetricsService(): ITeamMetricsService {
 	};
 }
 
+// A Portfolio's service shares most of its questions with a Team's, but never asks which Features
+// a Team is working on: that question is how the hook tells the two owners apart.
 function createMockProjectMetricsService(): IProjectMetricsService {
+	const { getFeaturesInProgress: _teamOnly, ...sharedWithATeam } =
+		createMockTeamMetricsService();
 	return {
-		...createMockTeamMetricsService(),
+		...sharedWithATeam,
 		getAllFeaturesForSizeChart: vi.fn().mockResolvedValue([]),
 		getSizePercentiles: vi.fn().mockResolvedValue([]),
 		getFeatureSizePbc: vi.fn().mockResolvedValue(null),
@@ -709,62 +713,72 @@ describe("useMetricsData", () => {
 		 * control render (all five present) asserts the fetches DO fire, so the case cannot be
 		 * satisfied by a discriminator that simply never returns true.
 		 */
+		const doesNotTreatItAsAPortfolioService = async (
+			missingMethod: (typeof portfolioProbeMethods)[number],
+		) => {
+			const entity = createMockPortfolioEntity();
+			const { [missingMethod]: _dropped, ...incompleteService } =
+				createMockProjectMetricsService() as unknown as Record<string, unknown>;
+			const completeService = createMockProjectMetricsService();
+
+			renderHook(() =>
+				useMetricsData(
+					entity,
+					incompleteService as unknown as IProjectMetricsService,
+					startDate,
+					endDate,
+					everyFeatureSizeFetchKey,
+				),
+			);
+			renderHook(() =>
+				useMetricsData(
+					entity,
+					completeService,
+					startDate,
+					endDate,
+					everyFeatureSizeFetchKey,
+				),
+			);
+
+			await waitFor(() => {
+				expect(
+					completeService.getFeatureSizePercentilesInfo,
+				).toHaveBeenCalledTimes(1);
+			});
+			expect(completeService.getSizePercentiles).toHaveBeenCalledTimes(1);
+			expect(completeService.getAllFeaturesForSizeChart).toHaveBeenCalledTimes(
+				1,
+			);
+			expect(completeService.getFeatureSizePbc).toHaveBeenCalledTimes(1);
+			expect(completeService.getFeatureSizeEstimation).toHaveBeenCalledTimes(1);
+
+			for (const probe of portfolioProbeMethods) {
+				if (probe === missingMethod) continue;
+				expect(
+					incompleteService[probe],
+					`${probe} must not be fetched while ${missingMethod} is absent`,
+				).not.toHaveBeenCalled();
+			}
+		};
+
 		it.each(
 			portfolioProbeMethods.filter(
-				(method) => !portfolioOnlyFeatureSizeMethods.has(method),
+				(method) =>
+					!portfolioOnlyFeatureSizeMethods.has(method) &&
+					method !== "getFeatureSizePercentilesInfo",
 			),
 		)(
 			"does not treat a service missing %s as a portfolio service",
-			async (missingMethod) => {
-				const entity = createMockPortfolioEntity();
-				const { [missingMethod]: _dropped, ...incompleteService } =
-					createMockProjectMetricsService() as unknown as Record<
-						string,
-						unknown
-					>;
-				const completeService = createMockProjectMetricsService();
+			doesNotTreatItAsAPortfolioService,
+		);
 
-				renderHook(() =>
-					useMetricsData(
-						entity,
-						incompleteService as unknown as IProjectMetricsService,
-						startDate,
-						endDate,
-						everyFeatureSizeFetchKey,
-					),
-				);
-				renderHook(() =>
-					useMetricsData(
-						entity,
-						completeService,
-						startDate,
-						endDate,
-						everyFeatureSizeFetchKey,
-					),
-				);
-
-				await waitFor(() => {
-					expect(
-						completeService.getFeatureSizePercentilesInfo,
-					).toHaveBeenCalledTimes(1);
-				});
-				expect(completeService.getSizePercentiles).toHaveBeenCalledTimes(1);
-				expect(
-					completeService.getAllFeaturesForSizeChart,
-				).toHaveBeenCalledTimes(1);
-				expect(completeService.getFeatureSizePbc).toHaveBeenCalledTimes(1);
-				expect(completeService.getFeatureSizeEstimation).toHaveBeenCalledTimes(
-					1,
-				);
-
-				for (const probe of portfolioProbeMethods) {
-					if (probe === missingMethod) continue;
-					expect(
-						incompleteService[probe],
-						`${probe} must not be fetched while ${missingMethod} is absent`,
-					).not.toHaveBeenCalled();
-				}
-			},
+		// Story #6251: Feature sizes are asked of any owner that has the two size methods, so a
+		// service missing only the Feature Size Percentiles is still asked for its sizes. This row
+		// holds again once the percentiles are asked of a Team as well, and stays pending until then.
+		// @us-02 @contract-shape:bounded-change
+		it.skip.each(["getFeatureSizePercentilesInfo"] as const)(
+			"does not treat a service missing %s as a portfolio service",
+			doesNotTreatItAsAPortfolioService,
 		);
 
 		// Story #6251: a service without the Feature Size process behaviour chart or the estimate
