@@ -1,0 +1,656 @@
+{
+  "roadmap": {
+    "project_id": "story-6251-team-feature-size",
+    "created_at": "2026-10-13",
+    "total_steps": 15,
+    "total_phases": 3,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "goal": "Story #6251: bring the Feature Size scatter and the Feature Size Percentiles widget to a Team, each Feature sized by this Team's share (its own child Work Items under the Feature, Feature.SizeFor), and stop a Team and a Portfolio with the same id from serving each other's cached metrics. Slice 00 scopes the metrics cache by owner kind; slice 01 lifts one closed-in-range rule, adds the Team allFeaturesForSizeChart and sizePercentiles routes in a new controller, carries the share on featuresInProgress, and places the scatter frame on both owners with the Team's copy; slice 02 adds the Team featureSizePercentilesInfo route and the widget on the Team's Flow Overview. Done when every DISTILL ledger row (0.1-0.7, 1.1-1.38, 2.1-2.16) is un-ignored or un-skipped and green; `grep -rn \"SCAFFOLD:\" Lighthouse.Backend/Lighthouse.Backend` is empty; `dotnet build` has zero warnings; the backend suite is green with `--filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"`; `pnpm test` and `pnpm build` are green with zero warnings. Docs (portfolio-features.md, flow-overview.md), the release-notes line, screenshots, the evolution record and Stryker belong to finalize after the maintainer's hold and are NOT steps here.",
+    "paradigm_note": "The Hypothesis + state-delta unit mandate from nw-roadmap does not apply, deliberately. The backend is C# + NUnit 4.6 + Moq, the frontend TypeScript + Vitest + RTL; the project references no property-testing library. DISTILL authored every test, example-based, with the finite axes as [TestCase]/TestCaseSource/it.each (feature-delta.md, DISTILL 'Mandate compliance'). The crafter authors no new acceptance tests: RED is removing [Ignore(Pending)] / it.skip and watching the test fail as red-classification.md records; GREEN is production code. Existing tests are edited only where DISTILL's Existing-test disposition says so, in the same commit as the change that makes them wrong.",
+    "exit_gates": [
+      "End of phase 00 and of phase 01: `grep -rn \"SCAFFOLD:\" Lighthouse.Backend/Lighthouse.Backend` is empty (00 removes the MetricsCacheKey scaffold, 01-02 the Feature.SizeFor scaffold).",
+      "End of phase 01 (AFK-3): start the backend once on the Postgres provider with demo data, call allFeaturesForSizeChart and sizePercentiles for Team Gravity (featureSizePercentilesInfo as well after phase 02), record status code and body of each in the evolution record.",
+      "End of phases 01 and 02: by-hand check with the browser throttled to a slow connection: the scatter's and the percentiles widget's loading and could-not-load looks, on a Team and on a Portfolio.",
+      "Ratification at the hold before any push: AFK-1, AFK-2, AFK-5, AFK-6, AFK-8, AFK-9, the Blocked flag from an unreadable Portfolio, and the Size column header copy question."
+    ]
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "date": "2026-10-13",
+    "notes": "Review 1 rejected: 1.34 second half missing; slice-02 assertions un-skipped in 01-06; phase-00 dependency wording; controller name. Retry rejected: two more slice-02 assertions left in 01-06 (categoryMetadata 'Flow Overview offers Feature Size Percentiles last', useMetricsData 'a service missing %s'). Both findings applied; orchestrator verified by reading every test body un-skipped in 01-06 that none asks for featureSizePercentilesInfo or the featureSizePercentiles widget. Ledger placement complete and single; no sizing flags."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-6251-team-feature-size/feature-delta.md",
+    "red_classification": "docs/feature/story-6251-team-feature-size/red-classification.md",
+    "slices": "docs/feature/story-6251-team-feature-size/slices/slice-00-owner-scoped-metrics-cache.md, slice-01-team-feature-size-scatter.md, slice-02-team-feature-size-percentiles.md",
+    "environments": "docs/feature/story-6251-team-feature-size/environments.yaml",
+    "adr": "docs/product/architecture/adr-236-on-a-teams-metrics-routes-a-features-size-is-that-teams-share.md",
+    "harness": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/TeamFeatureSizeAcceptanceTest.cs",
+    "ado_story": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6251"
+  },
+  "user_decisions": [
+    "D1 - size on the Team is this Team's share (FeatureWork.TotalWorkItems for the Team), not the whole Feature's Size.",
+    "D2 - every tracked Feature with a Team share above zero counts, whichever Portfolio loads it.",
+    "D4 / AFK-1 / AFK-6 - TeamRead suffices to see the Feature; a reader without it gets 404; the new routes name only readable Portfolios.",
+    "D7 - default-sized Features are excluded explicitly.",
+    "DDD-1 / AFK-5 - FeatureDto.Size carries the share on every Team metrics route that returns a Feature, featuresInProgress included.",
+    "DDD-5 - the three Team routes are not cached.",
+    "DDD-6 - MetricsCacheKey.For<TEntity>(TEntity owner, string metricIdentifier) / PrefixFor<TEntity>(TEntity owner), owner kind from typeof(TEntity).Name.",
+    "DDD-7 - new controller with [RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = \"teamId\")], filling FeatureDto as featuresInProgress does (AFK-9).",
+    "DDD-10 / UI-2 - the scatter frame is always placed on both owners, empty copy `No {Features} to show.`.",
+    "UI-1 / AFK-2 / UI-3 - Team axis, tooltip, screen-reader label and info descriptions as locked at DISTILL.",
+    "AFK-4 - no E2E spec; MetricsPage Team Feature Size exclusion removed and Feature Size added to coveredElsewhere in slice 01."
+  ],
+  "out_of_scope": [
+    "Feature Size PBC, PBC Over Time and Percentiles Over Time on the Team (D3).",
+    "An Estimation mode, size target or Default Feature Size on the Team (D8).",
+    "Naming only readable Portfolios on featuresInProgress (FU-1) and the dimmed previous-Team look (FU-2).",
+    "Finalize items: docs/metrics/portfolio-features.md and flow-overview.md, the release-notes line on #6251, the @screenshot run, the evolution record, Stryker on frozen code, ADO state transitions."
+  ],
+  "phases": [
+    {
+      "id": "00",
+      "name": "A Team's numbers are always the Team's own",
+      "description": "Scope every metrics cache key and invalidation prefix by owner kind as well as id, built in one place, so Team N and Portfolio N never share an entry. Backend only, releasable alone, ordered first; phase 01 depends on it only for ordering (both edit BaseMetricsService), not for behaviour.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "00-01",
+          "name": "Cache keys and invalidation prefixes name the owner's kind",
+          "description": "Replace the MetricsCacheKey scaffold with the real builder: For<TEntity>(TEntity owner, string metricIdentifier) and PrefixFor<TEntity>(TEntity owner), where TEntity : class, IEntity, the kind taken from typeof(TEntity).Name. Route every key built in GetFromCacheIfExists and every prefix in InvalidateMetrics (BaseMetricsService) through it, so all 20 colliding families are fixed at the builder, not per call site. Un-ignore slice 00.",
+          "agent": "nw-software-crafter",
+          "commit_type": "fix",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/Slice00OwnerScopedMetricsScenarios.cs",
+          "scenario_name": "A_Team_and_a_Portfolio_with_the_same_number_each_see_their_own_numbers_whichever_is_asked_first",
+          "ledger_rows": [
+            "0.1",
+            "0.2",
+            "0.3",
+            "0.4",
+            "0.5",
+            "0.6",
+            "0.7"
+          ],
+          "unskips": [
+            "0.1 @walking_skeleton :: Slice00OwnerScopedMetricsScenarios.cs :: A_Team_and_a_Portfolio_with_the_same_number_each_see_their_own_numbers_whichever_is_asked_first",
+            "0.2 :: Slice00OwnerScopedMetricsScenarios.cs :: Refreshing_one_owner_leaves_the_numbers_remembered_for_the_other_alone",
+            "0.3 :: MetricsCacheKeyTest.cs :: A_Team_and_a_Portfolio_with_the_same_id_never_share_a_remembered_metric",
+            "0.4 :: MetricsCacheKeyTest.cs :: Clearing_one_owner_reaches_none_of_the_other_owner_s_metrics"
+          ],
+          "guards_kept_green": [
+            "0.5 :: MetricsCacheKeyTest.cs :: Clearing_an_owner_reaches_every_one_of_its_own_metrics",
+            "0.6 :: MetricsCacheKeyTest.cs :: Clearing_one_owner_reaches_no_other_owner_of_the_same_kind",
+            "0.7 :: Slice00OwnerScopedMetricsScenarios.cs :: A_Team_whose_number_no_Portfolio_shares_reads_its_own_numbers"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/MetricsCacheKey.cs (edit - real For<TEntity>/PrefixFor<TEntity>, SCAFFOLD comments removed)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BaseMetricsService.cs (edit - GetFromCacheIfExists and InvalidateMetrics build through MetricsCacheKey)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/Slice00OwnerScopedMetricsScenarios.cs (edit - remove [Ignore(Pending)])",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/MetricsCacheKeyTest.cs (edit - remove [Ignore(Pending)])"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "With a Team and a Portfolio that share an id, each owner's Total Throughput and Cycle Time Percentiles answer that owner's own value, whichever was asked first (AC-0.1).",
+            "Refreshing a Team clears its own remembered metrics and none of the Portfolio's, and the reverse (AC-0.2).",
+            "For all 21 colliding identifiers, a Team and a Portfolio with the same id never get the same key, and neither owner's prefix reaches the other's keys (AC-0.3).",
+            "A Team whose id no Portfolio shares reads exactly the figures it read before (AC-0.4, guard 0.7), and the single-owner suites listed under DISTILL AC-0.4 stay green unchanged.",
+            "No SCAFFOLD: marker remains in MetricsCacheKey.cs."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: C#/NUnit example tests authored by DISTILL; see paradigm_note. Guards 0.5 and 0.6 pass on the scaffold already and must keep passing once the kind is in the name. Every current caller passes Team or Portfolio as TEntity (TeamMetricsService.cs:35 names it explicitly), so no call site changes signature. The cache is in memory only: nothing to migrate. Rows: 7 (4 pending, 3 guards)."
+        }
+      ]
+    },
+    {
+      "id": "01",
+      "name": "The Feature Size scatter on the Team",
+      "description": "Refactor first (one closed-in-range rule), then the share, the two Team routes in a new controller, the share on featuresInProgress, the frontend service and gate, the always-placed frame on both owners, the Team copy, and the AFK-4 E2E follow-ups. The walking skeleton 1.1 opens 01-02, the first behaviour step, because DESIGN requires the refactor commit to come first and on its own.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "One closed-in-range rule for Team Work Items and Portfolio Features",
+          "description": "Separate refactor commit (DDD-3 step 2). Lift ONE protected closed-in-range helper over WorkItemBase into BaseMetricsService, and the size-chart window rule (Done and closed in the range, or To Do, or Doing). Delete the Portfolio's and the Team's own copies in favour of it. No behaviour change: the characterisation set is the guard.",
+          "agent": "nw-software-crafter",
+          "commit_type": "refactor",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/ClosedInRangeCharacterisationTest.cs",
+          "scenario_name": "ClosedInRangeCharacterisationTest (8 cases: Portfolio Cycle Time data, size chart, size percentiles, Team closed Work Items x UTC, Pacific/Auckland)",
+          "ledger_rows": [
+            "1.15",
+            "1.17"
+          ],
+          "unskips": [],
+          "guards_kept_green": [
+            "1.17 :: ClosedInRangeCharacterisationTest.cs :: all 8 cases",
+            "1.15 :: Slice01TeamFeatureSizeScenarios.cs :: The_Portfolio_still_sizes_a_Feature_by_every_Team_s_Work_Items",
+            "PortfolioMetricsServiceTests and TeamMetricsServiceTests, unchanged"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BaseMetricsService.cs (edit - one protected closed-in-range helper and the size-chart window rule)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PortfolioMetricsService.cs (edit - use the lifted helpers; its own copy deleted)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs (edit - use the lifted helper; its own copy deleted)"
+          ],
+          "dependencies": [
+            "00-01"
+          ],
+          "criteria": [
+            "Every ClosedInRangeCharacterisationTest case is green before and after, unchanged, in both zones.",
+            "The Portfolio's size chart, size percentiles and Cycle Time data answer exactly as before (1.15, PortfolioMetricsServiceTests).",
+            "The codebase holds a single definition of 'closed between these instance days'.",
+            "The commit is a refactor commit with no test edited."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: pure refactor held by DISTILL's characterisation guards; see paradigm_note. Run the filter `FullyQualifiedName~ClosedInRangeCharacterisationTest|FullyQualifiedName~PortfolioMetricsServiceTests|FullyQualifiedName~TeamMetricsServiceTests` green before and after. Commit as `refactor(metrics): …`, separate from the feature commits."
+        },
+        {
+          "id": "01-02",
+          "name": "A Team sees each Feature it works on at its own share",
+          "description": "Feature.SizeFor(teamId) for real (0 when default-sized, else the sum of this Team's FeatureWork TotalWorkItems), FeatureDto.Size init-only, TeamMetricsService/ITeamMetricsService gain the Features for the size chart (predicate per DDD-4 with == disjunctions on StateCategory, closed-date window through the lifted helper), and a new controller with [RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = \"teamId\")] serving allFeaturesForSizeChart. The controller builds FeatureDto as featuresInProgress does (same forecast window via FeatureForecastWindow.EndFor and blackout days, same Blocked rule, other Teams' fields per AFK-9), with readablePortfolioIds from IRbacAdministrationService.GetReadablePortfolioIdsAsync (AFK-6) and Size = SizeFor in the initializer.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/Slice01TeamFeatureSizeScenarios.cs",
+          "scenario_name": "A_Team_sees_a_Feature_four_Teams_work_on_as_big_as_its_own_part_of_it",
+          "ledger_rows": [
+            "1.1",
+            "1.2",
+            "1.3",
+            "1.4",
+            "1.5",
+            "1.16"
+          ],
+          "unskips": [
+            "1.1 @walking_skeleton :: Slice01TeamFeatureSizeScenarios.cs :: A_Team_sees_a_Feature_four_Teams_work_on_as_big_as_its_own_part_of_it",
+            "1.2 :: Slice01TeamFeatureSizeScenarios.cs :: The_parts_each_Team_sees_add_up_to_the_Feature_s_size_on_its_Portfolio",
+            "1.3 :: Slice01TeamFeatureSizeScenarios.cs :: A_Team_sees_the_Features_closed_in_the_window_and_every_open_one",
+            "1.4 :: Slice01TeamFeatureSizeScenarios.cs :: A_Feature_the_Team_has_no_Work_Item_in_is_not_shown_even_from_the_Portfolio_it_works_in",
+            "1.5 :: Slice01TeamFeatureSizeScenarios.cs :: A_Feature_sized_by_its_Portfolio_s_default_is_not_shown_even_with_work_made_up_for_the_Team",
+            "1.16 :: FeatureSizeForTeamTest.cs :: all five methods"
+          ],
+          "guards_kept_green": [
+            "1.15",
+            "1.17"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs (edit - SizeFor real, SCAFFOLD comment removed)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/FeatureDto.cs (edit - Size { get; init; })",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ITeamMetricsService.cs (edit - Features for the size chart)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs (edit - Features for the size chart via featureRepository.GetAllByPredicate)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamFeatureSizeMetricsController.cs (new - the Team Feature Size routes)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/Slice01TeamFeatureSizeScenarios.cs (edit - remove [Ignore(Pending)] on the rows above)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/FeatureSizeForTeamTest.cs (edit - remove [Ignore(Pending)])"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "criteria": [
+            "On Gravity, OE-002 is answered at 4, not 19 (AC-1.1, AC-1.2).",
+            "OE-002's parts on Equinox, Gravity, Lightspeed and Zenith add up to its 19 on Ocean Explorer; likewise OE-001 17, OE-007 10, OE-008 10, OE-011 4 (OUT-6251-share-adds-up).",
+            "The answer holds Done Features closed in the window, both days included, plus every To Do and In Progress Feature with a share above zero (AC-1.4, D6).",
+            "A Feature with no Work Item of the Team, or a zero row, is absent; a default-sized Feature is absent even with made-up work for the Team (AC-1.3, D7).",
+            "No SCAFFOLD: marker remains in Feature.cs."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: DISTILL's example tests; see paradigm_note. The routes RED as 404 until the controller exists. Do not copy TeamMetricsService's GetAll().Where(...), which loads every Feature. Only allFeaturesForSizeChart returns Features, so AFK-6 is wired here even though its scenarios (1.6, 1.7) are un-ignored in 01-04. TeamMetricsController is past S107; do not widen it. Rows: 6."
+        },
+        {
+          "id": "01-03",
+          "name": "A Team's size percentiles, and what the two routes refuse and cost",
+          "description": "TeamMetricsService/ITeamMetricsService gain size percentiles over the share of Features closed in the window (BuildPercentiles), served as sizePercentiles on the new controller. Un-ignore the refusal, unknown-Team and query-budget rows that ask both routes.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/Slice01TeamFeatureSizeScenarios.cs",
+          "scenario_name": "A_Team_s_size_percentiles_come_from_its_parts_of_the_Features_closed_in_the_window",
+          "ledger_rows": [
+            "1.9",
+            "1.11",
+            "1.12",
+            "1.14",
+            "1.37"
+          ],
+          "unskips": [
+            "1.9 :: Slice01TeamFeatureSizeScenarios.cs :: A_window_that_ends_before_it_starts_is_refused",
+            "1.11 :: Slice01TeamFeatureSizeScenarios.cs :: A_Team_s_size_percentiles_come_from_its_parts_of_the_Features_closed_in_the_window",
+            "1.12 :: Slice01TeamFeatureSizeScenarios.cs :: A_Team_with_no_Feature_closed_in_the_window_has_no_size_percentiles",
+            "1.14 :: Slice01TeamFeatureSizeScenarios.cs :: Asking_a_Team_for_its_Feature_sizes_costs_as_much_of_the_database_for_twenty_Features_as_for_two",
+            "1.37 :: Slice01TeamFeatureSizeScenarios.cs :: A_Team_that_does_not_exist_has_no_Feature_sizes"
+          ],
+          "guards_kept_green": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ITeamMetricsService.cs (edit - size percentiles)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs (edit - size percentiles from SizeFor)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamFeatureSizeMetricsController.cs (edit - sizePercentiles)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/Slice01TeamFeatureSizeScenarios.cs (edit - remove [Ignore(Pending)])"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "criteria": [
+            "Parts 1…10 closed in the window give 5/7/8/9 at the 50th/70th/85th/95th; none closed gives no percentiles (D6).",
+            "Both routes answer 400 for a window that ends before it starts, and 404 for a Team that does not exist while Gravity is answered.",
+            "Both routes spend the same database commands for twenty Features as for two (DDD-5)."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. The budget is relative, not a number (DISTILL finding 10). The routes are not cached (DDD-5). Rows: 5."
+        },
+        {
+          "id": "01-04",
+          "name": "A Team's reader sees the Team's Features, and no more",
+          "description": "Un-ignore the reader rows. Production: only what the rows show is missing from 01-02/01-03 (readable-Portfolio narrowing, the guard's 404, the empty answer for a Team with no tracked Feature).",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/Slice01TeamFeatureSizeScenarios.cs",
+          "scenario_name": "A_reader_of_the_Team_sees_its_part_of_a_Feature_from_a_Portfolio_they_cannot_read_without_learning_its_name",
+          "ledger_rows": [
+            "1.6",
+            "1.7",
+            "1.8",
+            "1.10"
+          ],
+          "unskips": [
+            "1.6 :: Slice01TeamFeatureSizeScenarios.cs :: A_reader_of_the_Team_sees_its_part_of_a_Feature_from_a_Portfolio_they_cannot_read_without_learning_its_name",
+            "1.7 :: Slice01TeamFeatureSizeScenarios.cs :: Someone_who_may_read_every_Portfolio_sees_each_Feature_name_the_Portfolio_it_comes_from",
+            "1.8 :: Slice01TeamFeatureSizeScenarios.cs :: Someone_who_cannot_read_the_Team_is_told_there_is_no_such_Team_while_its_reader_is_answered",
+            "1.10 :: Slice01TeamFeatureSizeScenarios.cs :: A_Team_none_of_whose_Work_Items_belong_to_a_tracked_Feature_has_no_Features_to_show"
+          ],
+          "guards_kept_green": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamFeatureSizeMetricsController.cs (edit - if the rows show a gap)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/Slice01TeamFeatureSizeScenarios.cs (edit - remove [Ignore(Pending)])"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "criteria": [
+            "A reader of Gravity and Ocean Explorer but not Orion sees OR-001 at 2 naming no Portfolio, and OE-002 naming Ocean Explorer (AC-1.7, AFK-6).",
+            "A reader of every Portfolio sees each Feature name its Portfolio.",
+            "A reader of Zenith asking for Gravity gets 404 on both routes while a reader of Gravity is answered (AC-1.7, AFK-1).",
+            "Team Polaris (no Work Item; or work only under a parent no Portfolio loads) gets an empty answer (AC-1.6 backend half, D2)."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. These rows may already pass after 01-03; un-ignore, confirm, and record if any went green without a RED (expected: AFK-6 wired in 01-02). If so, the commit is test-only plus any gap fixed. Rows: 4."
+        },
+        {
+          "id": "01-05",
+          "name": "Every Size on the Team's page is the Team's share",
+          "description": "TeamMetricsController.featuresInProgress sets Size = f.SizeFor(team.Id) in the FeatureDto initializer (AFK-5). The dialog reads size as before.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/Slice01TeamFeatureSizeScenarios.cs",
+          "scenario_name": "The_Features_a_Team_is_working_on_are_as_big_as_its_own_part_of_them",
+          "ledger_rows": [
+            "1.13",
+            "1.35",
+            "1.36"
+          ],
+          "unskips": [
+            "1.13 :: Slice01TeamFeatureSizeScenarios.cs :: The_Features_a_Team_is_working_on_are_as_big_as_its_own_part_of_them"
+          ],
+          "guards_kept_green": [
+            "1.35 :: Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx :: a Team's Features worked on show in Size the size the Team's answer carries",
+            "1.36 :: Slice01TeamFeatureSizeScenarios.cs :: A_reader_who_cannot_read_the_Team_gets_no_Feature_sizes_from_the_Features_it_is_working_on_either"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs (edit - featuresInProgress Size = share; no new constructor parameter)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/Slice01TeamFeatureSizeScenarios.cs (edit - remove [Ignore(Pending)] on 1.13)"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "criteria": [
+            "Gravity's featuresInProgress answers OE-002 and OE-007 at 4; Zenith's answers OE-002 at 3 (AC-1.9).",
+            "A reader who cannot read the Team still gets 404 from featuresInProgress (guard 1.36)."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. featuresInProgress keeps naming every Portfolio (FU-1, out of scope). Rows: 3 (1 pending, 2 guards)."
+        },
+        {
+          "id": "01-06",
+          "name": "The dashboard asks a Team for its Feature sizes, and never takes a Team for a Portfolio",
+          "description": "Frontend: standalone IFeatureSizeMetricsService (getAllFeaturesForSizeChart, getSizePercentiles; getFeatureSizePercentilesInfo is NOT added here: its Team route arrives in slice 02, and slice 01 must ship alone without asking a route that does not exist yet) extended by ITeamMetricsService and IProjectMetricsService; implementations move from ProjectMetricsService into the shared BaseMetricsService<T>; providesFeatureSize(service) drives featureSizeData; isProjectMetricsService also rules out a Team's service (DISTILL finding 13); the portfolioService cast and its comment are replaced; remove ownerFilter portfolio-only from featureSize and correct the categoryMetadata comment; the Team mock gains the methods.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts",
+          "scenario_name": "a Team's Portfolio & Features category offers Feature Size between the Work Item distribution and Estimation vs. Cycle Time",
+          "ledger_rows": [
+            "1.29",
+            "1.30",
+            "1.33",
+            "1.34"
+          ],
+          "unskips": [
+            "1.29 :: Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx :: Team plots its own answer and asks for its size percentiles",
+            "1.30 :: Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx :: Team chart handed no estimate; no estimate ever asked of the Team",
+            "1.33 :: Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts :: a Team's Portfolio & Features category offers Feature Size between the Work Item distribution and Estimation vs. Cycle Time"
+          ],
+          "guards_kept_green": [
+            "1.33 guard :: Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts :: a Team is never asked for an estimate of a Feature's size",
+            "1.33 guard :: Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts :: the Feature Size process behaviour chart stays on a Portfolio only"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/services/Api/MetricsService.ts (edit - IFeatureSizeMetricsService; BaseMetricsService<T> implementations)",
+            "Lighthouse.Frontend/src/services/Api/ProjectMetricsService.ts (edit - size methods move to the base)",
+            "Lighthouse.Frontend/src/services/Api/TeamMetricsService.ts (edit - Team service exposes the interface)",
+            "Lighthouse.Frontend/src/hooks/useMetricsData.ts (edit - providesFeatureSize, isProjectMetricsService excludes a Team service, cast replaced)",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts (edit - featureSize gate lift, comment corrected)",
+            "Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts (edit - Team mock gains the methods)",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx (edit - only where it lists a Team's widgets, per DISTILL disposition)",
+            "the four test files above (edit - remove it.skip on the listed rows)"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "criteria": [
+            "On a Team, Portfolio & Features offers Feature Size, and the dashboard asks the Team (not a Portfolio) for its Features and size percentiles, plotting the Team's own answer.",
+            "A Team's service is never asked for the Feature Size PBC or the estimate, even when it carries those methods.",
+            "A service lacking only the PBC or the estimate is not treated as a Portfolio but is still asked for sizes.",
+            "The Feature Size PBC stays Portfolio-only; the Portfolio's requests are unchanged."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: Vitest example tests by DISTILL; see paradigm_note. providesFeatureSize checks the two slice-01 methods (getAllFeaturesForSizeChart, getSizePercentiles); 02-03 widens it to getFeatureSizePercentilesInfo. Four skipped tests of rows 1.33/1.34 assert slice-02 behaviour (featureSizePercentilesInfo or the featureSizePercentiles widget) and must STAY SKIPPED here; 02-03 un-skips them: 'a Team's Flow Overview offers Feature Size Percentiles last, as a Portfolio's does', 'a Team asks for the Feature sizes whenever either widget is shown' (Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts); 'asks a team metrics service for its Feature sizes, and never for a Feature Size process behaviour chart or estimate', 'a service missing %s is not treated as a portfolio service, but is still asked for its Feature sizes' (Lighthouse.Frontend/src/hooks/useMetricsData.test.ts). Rows: 4 (1.33 and 1.34 completed by 02-03)."
+        },
+        {
+          "id": "01-07",
+          "name": "The Feature Size frame says what is happening, on a Team and on a Portfolio",
+          "description": "featureSize leaves placedOnlyOnceTheirDataSaysSo (estimationVsCycleTime stays); the node is never null and hands the chart its list, empty or not; the chart renders `No {Features} to show.` itself on both owners (UI-2), so the frame shows the lone spinner while loading and the could-not-load note on failure.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
+          "scenario_name": "Feature Size framed from the first render under a lone spinner (Team, Portfolio)",
+          "ledger_rows": [
+            "1.24",
+            "1.25",
+            "1.26",
+            "1.27",
+            "1.28",
+            "1.32"
+          ],
+          "unskips": [
+            "1.24 :: Lighthouse.Frontend/src/components/Common/Charts/FeatureSizeScatterPlotChart.teamShare.test.tsx :: no Features: title + No Features to show., and in the instance's words (Team, Portfolio)",
+            "1.25 :: BaseMetricsView.loading.test.tsx :: Feature Size framed from the first render under a lone spinner (Team, Portfolio)",
+            "1.26 :: BaseMetricsView.loading.test.tsx :: keeps its place, ready, and hands the chart an empty list (Team, Portfolio)",
+            "1.27 :: BaseMetricsView.loading.test.tsx :: Team Feature Size could not be loaded",
+            "1.32 :: BaseMetricsView.loading.test.tsx :: a Portfolio's Portfolio & Features opens with every frame (incl. Feature Size) … / opens with Work Item distribution and Feature Size framed"
+          ],
+          "guards_kept_green": [
+            "1.28 :: BaseMetricsView.loading.test.tsx :: Portfolio Feature Size could not be loaded, first answer and next window"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx (edit - featureSize always placed, empty list handed)",
+            "Lighthouse.Frontend/src/components/Common/Charts/FeatureSizeScatterPlotChart.tsx (edit - `No {Features} to show.` on both owners)",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx and FeatureSizeScatterPlotChart.teamShare.test.tsx (edit - remove it.skip on the listed rows)"
+          ],
+          "dependencies": [
+            "01-06"
+          ],
+          "criteria": [
+            "On a Team and on a Portfolio, the Feature Size frame is there from the first render with a lone spinner (AC-1.8, AC-1.10).",
+            "With no Features, the card shows its title and `No Features to show.` in the instance's words, on both owners (AC-1.6, AC-1.10, UI-2).",
+            "When the Team's Feature sizes cannot be loaded, the frame shows the could-not-load note; the Portfolio's failure look is unchanged.",
+            "A Portfolio's Portfolio & Features opens with every frame, Feature Size included, and adds or removes none once loaded."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. Do not invent copy beyond UI-2. Rows: 6 (5 pending, 1 guard)."
+        },
+        {
+          "id": "01-08",
+          "name": "The Team's scatter says its sizes are this Team's Work Items",
+          "description": "FeatureSizeScatterPlotChart on ownerKind team: axis `Size (this {Team}'s {Work Items})`, tooltip `{n} {Features} with {size} of this {Team}'s {Work Items}` (`1 {Feature}` for one), screen-reader label `View {n} {Features} with {size} of this {Team}'s {Work Items}` (UI-1, AFK-2), all through the terminology hooks. The Portfolio's strings are byte-identical; the title stays `{Features} Size` with no subtitle.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/FeatureSizeScatterPlotChart.teamShare.test.tsx",
+          "scenario_name": "Team size axis, Cycle Time and Closed Date modes",
+          "ledger_rows": [
+            "1.18",
+            "1.19",
+            "1.20",
+            "1.21",
+            "1.22",
+            "1.23",
+            "1.38"
+          ],
+          "unskips": [
+            "1.18 :: FeatureSizeScatterPlotChart.teamShare.test.tsx :: Team size axis, Cycle Time and Closed Date modes",
+            "1.19 :: FeatureSizeScatterPlotChart.teamShare.test.tsx :: bubble of two / of one Feature, and its accessible name",
+            "1.20 :: FeatureSizeScatterPlotChart.teamShare.test.tsx :: copy in the instance's own words"
+          ],
+          "guards_kept_green": [
+            "1.21 :: FeatureSizeScatterPlotChart.teamShare.test.tsx :: on a Team, keeps the title Features Size with no line of text added",
+            "1.22 :: FeatureSizeScatterPlotChart.teamShare.test.tsx :: offers only Cycle Time and Closed Date when handed no estimate",
+            "1.23 :: FeatureSizeScatterPlotChart.teamShare.test.tsx :: Portfolio axis and bubble unchanged (2)",
+            "1.38 :: FeatureSizeScatterPlotChart.teamShare.test.tsx :: on a Team, only finished Features are plotted at first, and turning on To Do and In Progress adds the open ones (2)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Charts/FeatureSizeScatterPlotChart.tsx (edit - Team axis, tooltip, screen-reader label)",
+            "Lighthouse.Frontend/src/components/Common/Charts/FeatureSizeScatterPlotChart.teamShare.test.tsx (edit - remove it.skip on 1.18-1.20)"
+          ],
+          "dependencies": [
+            "01-07"
+          ],
+          "criteria": [
+            "On a Team the size axis reads `Size (this Team's Work Items)` and the modes are Cycle Time and Closed Date only (AC-1.4, AC-1.5).",
+            "A bubble's tooltip reads `2 Features with 4 of this Team's Work Items` / `1 Feature with 4 of this Team's Work Items`, and its accessible name is the tooltip prefixed with `View` (AFK-2).",
+            "With Team, Feature and Work Item renamed (Squad, Epic, Ticket), every Team string uses the instance's words (D9).",
+            "The Portfolio's axis, tooltip and accessible name are unchanged; the title is unchanged on both owners."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. 7 rows but only 3 pending; the 4 guard rows (6 cases) only have to stay green, so no sizing split. ownerKind is already a prop."
+        },
+        {
+          "id": "01-09",
+          "name": "The Team's Feature Size info text counts this Team's Work Items",
+          "description": "widgetInfoMetadata: owner- and term-aware info description for featureSize on a Team: `{Feature} sizes, counting only this {Team}'s {Work Items}, on a scatter plot filterable by state, to spot size/cycle-time correlations.` The Portfolio text stays byte-identical.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
+          "scenario_name": "Team info text; Portfolio info text unchanged",
+          "ledger_rows": [
+            "1.31"
+          ],
+          "unskips": [
+            "1.31 :: BaseMetricsView.loading.test.tsx :: Team info text (Portfolio half is a guard)"
+          ],
+          "guards_kept_green": [],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts (edit - Team featureSize description through the terminology hooks)",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx (edit - remove it.skip on 1.31)"
+          ],
+          "dependencies": [
+            "01-08"
+          ],
+          "criteria": [
+            "On a Team, the Feature Size info (i) description says it counts only this Team's Work Items, in the instance's words (UI-1 note).",
+            "On a Portfolio, the description is unchanged."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. Shape the info lookup so slice 02's percentiles description is one more entry of the same kind. Rows: 1."
+        },
+        {
+          "id": "01-10",
+          "name": "The E2E page objects reach a Team's Feature Size",
+          "description": "AFK-4: delete the Team Feature Size filter in the MetricsPage page object (keep the PBC one) and add Feature Size to coveredElsewhere in the Screenshots.spec.ts team dashboard loop, so no Team featureSize.png lands beside the Portfolio's featuresize.png (they collide on a case-insensitive checkout).",
+          "agent": "nw-software-crafter",
+          "commit_type": "test",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/screenshots/Screenshots.spec.ts",
+          "scenario_name": "team dashboard loop (coveredElsewhere includes Feature Size)",
+          "ledger_rows": [],
+          "unskips": [],
+          "guards_kept_green": [
+            "Lighthouse.EndToEndTests WorkItemsDialogContextColumns.spec.ts (switches a Team to Portfolio & Features on demo data)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/models/metrics/MetricsPage.ts (edit - Team Feature Size exclusion removed)",
+            "Lighthouse.EndToEndTests/tests/specs/screenshots/Screenshots.spec.ts (edit - Feature Size in coveredElsewhere for the Team loop)"
+          ],
+          "dependencies": [
+            "01-09"
+          ],
+          "criteria": [
+            "The MetricsPage page object lists Feature Size among a Team's Portfolio & Features widgets, and still excludes the Feature Size PBC.",
+            "The screenshot loop captures no Team featureSize.png.",
+            "The Playwright specs that open a Team's Portfolio & Features (WorkItemsDialogContextColumns.spec.ts) run green locally on demo data."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: E2E wiring, single-example by nature. Run Playwright locally before committing (project rule: never commit an unrun spec/POM locator). Page objects wait for data-widget-status=\"ready\". The @screenshot run itself is finalize's, with the premium licence fixture. No DISTILL ledger row maps here; this is a disposition item."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Feature Size Percentiles on the Team",
+      "description": "The Team featureSizePercentilesInfo route over the share, then the widget on the Team's Flow Overview with its status and info text.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "A Team sees the percentiles of its part of the Features it finished, against the period before",
+          "description": "TeamMetricsService/ITeamMetricsService gain the percentiles info over the share of Features closed in the window and in the previous period of the same length, reusing BuildPercentiles and BuildFeatureSizePercentilesInfoDto (no owner argument); served as featureSizePercentilesInfo on the Team Feature Size controller, not cached.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/Slice02TeamFeatureSizePercentilesScenarios.cs",
+          "scenario_name": "A_Team_sees_the_percentiles_of_its_parts_of_the_Features_it_finished_against_the_period_before",
+          "ledger_rows": [
+            "2.1",
+            "2.2",
+            "2.3",
+            "2.4",
+            "2.7"
+          ],
+          "unskips": [
+            "2.1 @walking_skeleton :: Slice02TeamFeatureSizePercentilesScenarios.cs :: A_Team_sees_the_percentiles_of_its_parts_of_the_Features_it_finished_against_the_period_before",
+            "2.2 :: Slice02TeamFeatureSizePercentilesScenarios.cs :: The_trend_follows_the_Team_s_median_part",
+            "2.3 :: Slice02TeamFeatureSizePercentilesScenarios.cs :: Features_the_Team_has_no_real_part_of_are_left_out_of_its_percentiles",
+            "2.4 :: Slice02TeamFeatureSizePercentilesScenarios.cs :: A_Team_that_finished_no_Feature_in_the_window_has_no_percentiles_rather_than_zeros"
+          ],
+          "guards_kept_green": [
+            "2.7 :: Slice02TeamFeatureSizePercentilesScenarios.cs :: The_Portfolio_s_percentiles_still_count_every_Team_s_Work_Items"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ITeamMetricsService.cs (edit - percentiles info)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs (edit - percentiles info from SizeFor)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamFeatureSizeMetricsController.cs (edit - featureSizePercentilesInfo)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/Slice02TeamFeatureSizePercentilesScenarios.cs (edit - remove [Ignore(Pending)])"
+          ],
+          "dependencies": [
+            "01-10"
+          ],
+          "criteria": [
+            "A Team's percentiles are 5/7/8/9 from its parts of the Features closed in the window, with the trend up from 2 (AC-2.1, AC-2.2).",
+            "The trend follows the Team's 50th: down and flat as the period before varies (AC-2.2).",
+            "Shares of zero and default-sized Features are left out (AC-2.1, D7).",
+            "A Team that finished no Feature in the window gets no percentiles, not zeros (AC-2.5).",
+            "The Portfolio's percentiles still count every Team's Work Items (25/27/28/29)."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. Rows: 5 (4 pending, 1 guard)."
+        },
+        {
+          "id": "02-02",
+          "name": "What the percentiles route refuses and what it costs",
+          "description": "Un-ignore the refusal, unknown-Team, bad-window and query-budget rows for featureSizePercentilesInfo; production only where they show a gap.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/Slice02TeamFeatureSizePercentilesScenarios.cs",
+          "scenario_name": "Someone_who_cannot_read_the_Team_is_told_there_is_no_such_Team_while_its_reader_is_answered",
+          "ledger_rows": [
+            "2.5",
+            "2.6",
+            "2.14",
+            "2.16"
+          ],
+          "unskips": [
+            "2.5 :: Slice02TeamFeatureSizePercentilesScenarios.cs :: Someone_who_cannot_read_the_Team_is_told_there_is_no_such_Team_while_its_reader_is_answered",
+            "2.6 :: Slice02TeamFeatureSizePercentilesScenarios.cs :: Asking_a_Team_for_its_Feature_Size_Percentiles_costs_as_much_of_the_database_for_twenty_Features_as_for_two",
+            "2.14 :: Slice02TeamFeatureSizePercentilesScenarios.cs :: A_window_that_ends_before_it_starts_is_refused",
+            "2.16 :: Slice02TeamFeatureSizePercentilesScenarios.cs :: A_Team_that_does_not_exist_has_no_Feature_Size_Percentiles"
+          ],
+          "guards_kept_green": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamFeatureSizeMetricsController.cs (edit - if the rows show a gap)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/Slice02TeamFeatureSizePercentilesScenarios.cs (edit - remove [Ignore(Pending)])"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "criteria": [
+            "A reader who cannot read Gravity gets 404 while Gravity's reader is answered (AC-2.6, AFK-1).",
+            "A window that ends before it starts gets 400; a Team that does not exist gets 404 while Gravity is answered.",
+            "The route spends the same database commands for twenty Features as for two."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. Same pattern as 01-03/01-04; these may go green with 02-01's route - un-ignore, confirm, record any that had no RED. Rows: 4."
+        },
+        {
+          "id": "02-03",
+          "name": "The Team's Flow Overview offers Feature Size Percentiles",
+          "description": "getFeatureSizePercentilesInfo joins IFeatureSizeMetricsService and the shared base; providesFeatureSize drives featureSizePercentilesInfo; remove ownerFilter portfolio-only from featureSizePercentiles; the card's looks come from WidgetShell.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
+          "scenario_name": "offered on a Team and asked of the Team",
+          "ledger_rows": [
+            "2.8",
+            "2.9",
+            "2.13",
+            "2.15"
+          ],
+          "unskips": [
+            "2.8 :: BaseMetricsView.loading.test.tsx :: offered on a Team and asked of the Team",
+            "2.9 :: BaseMetricsView.loading.test.tsx :: no data, not zeros",
+            "2.15 :: BaseMetricsView.loading.test.tsx :: Team Feature Size Percentiles could not be loaded: the could-not-load note, no spinner",
+            "2.13 :: Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts :: a Team's Flow Overview offers Feature Size Percentiles last, as a Portfolio's does",
+            "1.33 (remainder) :: Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts :: a Team asks for the Feature sizes whenever either widget is shown",
+            "1.34 :: Lighthouse.Frontend/src/hooks/useMetricsData.test.ts :: asks a team metrics service for its Feature sizes, and never for a Feature Size process behaviour chart or estimate",
+            "1.34 :: Lighthouse.Frontend/src/hooks/useMetricsData.test.ts :: a service missing %s is not treated as a portfolio service, but is still asked for its Feature sizes"
+          ],
+          "guards_kept_green": [],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/services/Api/MetricsService.ts (edit - getFeatureSizePercentilesInfo on the interface and base)",
+            "Lighthouse.Frontend/src/services/Api/ProjectMetricsService.ts (edit - method moves to the base)",
+            "Lighthouse.Frontend/src/hooks/useMetricsData.ts (edit - featureSizePercentilesInfo applicability via providesFeatureSize)",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts (edit - featureSizePercentiles gate lift)",
+            "BaseMetricsView.loading.test.tsx and categoryMetadata.test.ts (edit - remove it.skip on the listed rows)",
+            "Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts (edit - Team mock gains getFeatureSizePercentilesInfo)",
+            "Lighthouse.Frontend/src/hooks/useMetricsData.test.ts (edit - remove it.skip on the two 1.34 tests)"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "criteria": [
+            "On a Team, Flow Overview ends with Feature Size Percentiles and asks the Team for featureSizeData and featureSizePercentilesInfo (AC-2.1).",
+            "With no Feature closed in the range the widget shows its no-data look, never zeros (AC-2.5).",
+            "When the Team's percentiles cannot be loaded, the widget shows the could-not-load note and no spinner.",
+            "The Portfolio's Flow Overview is unchanged."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. Also completes rows 1.33 and 1.34 begun in 01-06 (the two tests that assert the Team is asked for featureSizePercentilesInfo). Rows: 4 (+2 completions)."
+        },
+        {
+          "id": "02-04",
+          "name": "The widget's status calls out an open Feature bigger than the Team's usual, and its info text says whose Work Items",
+          "description": "The status rule (computeFeatureSizeRag) reads the Team's open Features' shares from slice 01's data against the Team's percentiles; the Team's percentiles info description: `Size distribution percentiles of this {Team}'s {Work Items} in completed {Features}, with trend comparison to the previous period.` (UI-3). The card is unchanged.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
+          "scenario_name": "status Act (9 > 85th 8), Observe at the 85th (8), Observe (6), Sustain at the 70th (5), Sustain (4)",
+          "ledger_rows": [
+            "2.10",
+            "2.11",
+            "2.12"
+          ],
+          "unskips": [
+            "2.10 :: BaseMetricsView.loading.test.tsx :: status Act / Observe at the 85th / Observe / Sustain at the 70th / Sustain",
+            "2.11 :: BaseMetricsView.loading.test.tsx :: Sustain with no open Feature",
+            "2.12 :: BaseMetricsView.loading.test.tsx :: Team info text (Portfolio half is a guard)"
+          ],
+          "guards_kept_green": [],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx (edit - status input from the Team's shares, if the rows show a gap)",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts (edit - Team featureSizePercentiles description)",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx (edit - remove it.skip on the listed rows)"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "criteria": [
+            "Status reads Act when an open Feature's share is above the 85th, Observe at exactly the 85th or above the 70th, and Sustain at or below the 70th (AC-2.3).",
+            "With no open Feature, status reads Sustain (AC-2.3).",
+            "On a Team the info (i) description says it counts this Team's Work Items, in the instance's words; on a Portfolio it is unchanged (AC-2.4, UI-3)."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. The scatter's own status footer reads the same data, so 2.10 holds for it too (DISTILL finding 8). Rows: 3."
+        }
+      ]
+    }
+  ]
+}
