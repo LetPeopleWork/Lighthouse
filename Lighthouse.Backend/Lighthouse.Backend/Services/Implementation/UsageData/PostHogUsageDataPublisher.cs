@@ -204,6 +204,7 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                     reported.Enabled,
                     reported.SizingMoment?.ToString(),
                     reported.RefinementVerdict?.ToString(),
+                    reported.ReportTemplate?.ToString(),
                     facts.Version,
                     facts.DeploymentMode.ToString(),
                     facts.LicenceTier,
@@ -235,13 +236,14 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         /// The address of the page that was opened, as this application publishes it rather than as
         /// the browser sent it; the kind of system that was connected; which behaviour setting was
         /// switched and which way it went; when a sizing vote was cast relative to the Team's
-        /// Refinement; which verdict a Refinement day showed; the four facts about the instance,
+        /// Refinement; which verdict a Refinement day showed; which type of report was created or
+        /// opened; the four facts about the instance,
         /// none of which the browser is ever asked for; which surface the batch came from, written on
         /// every message so a count can always be split by it; and the two instructions that keep the
         /// caller's own address out of what the collector stores.
         ///
-        /// The address, the kind of system, the setting, its direction, the sizing moment and the
-        /// verdict are each left out entirely on an event they do not belong to, rather than written
+        /// The address, the kind of system, the setting, its direction, the sizing moment, the
+        /// verdict and the report type are each left out entirely on an event they do not belong to, rather than written
         /// as an empty value or as off - an "enabled: false" on an event that switched nothing would
         /// read as a switch nobody made. The two instructions below are also empty-looking and are written
         /// anyway, on purpose: an absent instruction is one the collector does not follow, and what
@@ -266,6 +268,9 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             [property: JsonPropertyName("refinement_verdict")]
             [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
             string? RefinementVerdict,
+            [property: JsonPropertyName("report_template")]
+            [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+            string? ReportTemplate,
             [property: JsonPropertyName("version")] string Version,
             [property: JsonPropertyName("deployment_mode")] string DeploymentMode,
             [property: JsonPropertyName("licence_tier")] string LicenceTier,

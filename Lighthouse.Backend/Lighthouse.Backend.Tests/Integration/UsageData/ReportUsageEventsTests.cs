@@ -61,7 +61,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // @driving_port @real-io @us-01 @slice-01 @kpi-OUT-5878-K1-report-created @kpi-OUT-5878-K2-reports-reopened @contract-shape:bounded-change
         [TestCase(ReportCreated)]
         [TestCase(ReportOpened)]
-        [Ignore(PendingSlice01)]
         public async Task A_report_created_or_opened_travels_with_its_type_and_nothing_else(string name)
         {
             var token = await ABrowserThatAgreedAsync();
@@ -94,7 +93,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [TestCase(ReportCreated, ",\"reportTemplate\":\"ThenAndNow\",\"route\":\"" + TeamReportsTab + "\"")]
         [TestCase(ReportOpened, "")]
         [TestCase(ReportOpened, ",\"reportTemplate\":\"ThenAndNow\",\"refinementVerdict\":\"In\"")]
-        [Ignore(PendingSlice01)]
         public async Task A_report_event_without_a_type_from_the_list_or_carrying_anything_more_is_refused(string name, string parts)
         {
             var token = await ABrowserThatAgreedAsync();

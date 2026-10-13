@@ -54,6 +54,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "optional_feature",
             "properties",
             "refinement_verdict",
+            "report_template",
             "route",
             "sizing_moment",
             "source",

@@ -9,8 +9,8 @@ namespace Lighthouse.Backend.Models.UsageData
     /// say which page somebody opened, one says which kind of work tracking system was connected,
     /// one says which setting was switched and whether it is now on or off, and a sizing vote says
     /// when it was cast relative to the Team's Refinement, and a Refinement day says which verdict
-    /// its tab showed; the rest say only that somebody did
-    /// something. Which event may carry which part is declared in
+    /// its tab showed, and a report being created or opened says which type of report it was; the
+    /// rest say only that somebody did something. Which event may carry which part is declared in
     /// <see cref="UsageDataEventShapes"/>.
     ///
     /// Choices from closed lists and bounded numbers, and nothing else - there is no field here in
@@ -26,5 +26,6 @@ namespace Lighthouse.Backend.Models.UsageData
         UsageDataSizingMoment? SizingMoment,
         int OffsetMs,
         int Sequence,
-        UsageDataRefinementVerdict? RefinementVerdict = null);
+        UsageDataRefinementVerdict? RefinementVerdict = null,
+        UsageDataReportTemplate? ReportTemplate = null);
 }

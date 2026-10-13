@@ -30,5 +30,6 @@ namespace Lighthouse.Backend.API.DTO
         UsageDataSizingMoment? SizingMoment,
         int? OffsetMs,
         int? Sequence,
-        UsageDataRefinementVerdict? RefinementVerdict = null);
+        UsageDataRefinementVerdict? RefinementVerdict = null,
+        UsageDataReportTemplate? ReportTemplate = null);
 }
