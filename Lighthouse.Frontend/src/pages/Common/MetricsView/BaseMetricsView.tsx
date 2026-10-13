@@ -1985,8 +1985,8 @@ export const BaseMetricsView = <
 	const infoOwner: WidgetInfoOwner = {
 		kind: ownerType,
 		terms: {
-			feature: getTerm(TERMINOLOGY_KEYS.FEATURE),
-			features: getTerm(TERMINOLOGY_KEYS.FEATURES),
+			feature: featureTerm,
+			features: featuresTerm,
 			team: getTerm(TERMINOLOGY_KEYS.TEAM),
 			workItems: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
 		},

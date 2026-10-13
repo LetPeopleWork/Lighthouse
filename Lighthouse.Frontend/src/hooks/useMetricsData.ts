@@ -177,6 +177,7 @@ function applicabilityFor(
 	choices: CumulativeStateTimeChoicesMade,
 ): Record<MetricsFetchKey, boolean> {
 	const isPortfolioShaped = isProjectMetricsService(service);
+	const hasFeatureSizes = providesFeatureSize(service);
 	return {
 		blackoutPeriods: true,
 		predictability: true,
@@ -204,10 +205,10 @@ function applicabilityFor(
 		pbcCharts: true,
 		throughputPbc: true,
 		sleRisk: providesSleRisk(service),
-		featureSizeData: providesFeatureSize(service),
+		featureSizeData: hasFeatureSizes,
 		featureSizePbc: isPortfolioShaped,
 		featureSizeEstimation: isPortfolioShaped,
-		featureSizePercentilesInfo: providesFeatureSize(service),
+		featureSizePercentilesInfo: hasFeatureSizes,
 		featuresWorkedOnInfo: isTeamMetricsService(service),
 		cumulativeStateTimeSelection: choices.selection,
 		cumulativeStateTimeScope: choices.scope,
