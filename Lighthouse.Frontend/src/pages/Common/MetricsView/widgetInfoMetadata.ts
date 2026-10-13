@@ -410,12 +410,29 @@ export interface WidgetInfoOwner {
 	readonly terms: WidgetInfoTerms;
 }
 
+type TeamWording = Pick<WidgetInfoEntry, "description" | "statusGuidance">;
+
+const featureSizeGuidanceForTeam = ({
+	feature,
+	features,
+	team,
+	workItems,
+}: WidgetInfoTerms): WidgetStatusGuidance => ({
+	sustain: `All active ${features} are within the expected size range, counting only this ${team}'s ${workItems}. No action needed.`,
+	observe: `One or more active ${features} exceed the 70th percentile size, counting only this ${team}'s ${workItems}. Consider splitting to deliver in smaller slices.`,
+	act: `At least one active ${feature} exceeds the 85th percentile size, counting only this ${team}'s ${workItems}. Look to split or close it as soon as possible.`,
+});
+
 // A Team sees each Feature only through its own Work Items, so these widgets say so on a Team.
-const teamDescriptions: Record<string, (terms: WidgetInfoTerms) => string> = {
-	featureSize: ({ feature, team, workItems }) =>
-		`${feature} sizes, counting only this ${team}'s ${workItems}, on a scatter plot filterable by state, to spot size/cycle-time correlations.`,
-	featureSizePercentiles: ({ features, team, workItems }) =>
-		`Size distribution percentiles of this ${team}'s ${workItems} in completed ${features}, with trend comparison to the previous period.`,
+const teamWordings: Record<string, (terms: WidgetInfoTerms) => TeamWording> = {
+	featureSize: (terms) => ({
+		description: `${terms.feature} sizes, counting only this ${terms.team}'s ${terms.workItems}, on a scatter plot filterable by state, to spot size/cycle-time correlations.`,
+		statusGuidance: featureSizeGuidanceForTeam(terms),
+	}),
+	featureSizePercentiles: (terms) => ({
+		description: `Size distribution percentiles of this ${terms.team}'s ${terms.workItems} in completed ${terms.features}, with trend comparison to the previous period.`,
+		statusGuidance: featureSizeGuidanceForTeam(terms),
+	}),
 };
 
 export function getWidgetInfo(
@@ -426,9 +443,9 @@ export function getWidgetInfo(
 	if (owner?.kind !== "team") {
 		return entry;
 	}
-	const describeForTeam = teamDescriptions[widgetKey];
-	if (!entry || !describeForTeam) {
+	const wordForTeam = teamWordings[widgetKey];
+	if (!entry || !wordForTeam) {
 		return entry;
 	}
-	return { ...entry, description: describeForTeam(owner.terms) };
+	return { ...entry, ...wordForTeam(owner.terms) };
 }

@@ -93,6 +93,49 @@ describe("widgetInfoMetadata", () => {
 		);
 	});
 
+	describe.each(["featureSize", "featureSizePercentiles"])(
+		"%s status guidance",
+		(widgetKey) => {
+			// Renamed terms, so a sentence that still hard-codes the default word cannot pass.
+			const renamedTerms = {
+				feature: "Bet",
+				features: "Bets",
+				team: "Squad",
+				workItems: "Tasks",
+			};
+
+			it("on a Team speaks of this Team's share in the Team's own words", () => {
+				const info = getWidgetInfo(widgetKey, {
+					kind: "team",
+					terms: renamedTerms,
+				});
+
+				expect(info?.statusGuidance).toEqual({
+					sustain:
+						"All active Bets are within the expected size range, counting only this Squad's Tasks. No action needed.",
+					observe:
+						"One or more active Bets exceed the 70th percentile size, counting only this Squad's Tasks. Consider splitting to deliver in smaller slices.",
+					act: "At least one active Bet exceeds the 85th percentile size, counting only this Squad's Tasks. Look to split or close it as soon as possible.",
+				});
+			});
+
+			it("on a Portfolio reads as before", () => {
+				const info = getWidgetInfo(widgetKey, {
+					kind: "portfolio",
+					terms: renamedTerms,
+				});
+
+				expect(info?.statusGuidance).toEqual({
+					sustain:
+						"All active features are within the expected size range. No action needed.",
+					observe:
+						"One or more active features exceed the 70th percentile size. Consider splitting to deliver in smaller slices.",
+					act: "At least one active feature exceeds the 85th percentile size. Look to split or close it as soon as possible.",
+				});
+			});
+		},
+	);
+
 	it("no two widgets share the same description", () => {
 		const descriptions = Object.values(widgetInfoMetadata).map(
 			(e: WidgetInfoEntry) => e.description,
