@@ -240,7 +240,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task A_type_of_report_this_version_does_not_offer_is_refused()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -273,7 +272,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-08 @slice-01 @contract-shape:bounded-change
         // The reports go at the database, so an older version deleting the Team takes them along as well.
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task Deleting_a_Team_deletes_its_reports()
         {
             var lightspeed = GivenLightspeedFinishedTwentyWorkItemsSinceEarlyJuly();
@@ -295,7 +293,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         // An instance rolled back from a later version still holds that version's reports.
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task A_report_of_a_type_this_version_does_not_know_is_listed_but_opening_it_is_refused_never_a_crash()
         {
             var lightspeed = GivenLightspeedFinishedTwentyWorkItemsSinceEarlyJuly();
@@ -317,7 +314,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task A_report_carrying_values_this_version_does_not_know_still_opens()
         {
             var lightspeed = GivenLightspeedFinishedTwentyWorkItemsSinceEarlyJuly();
@@ -332,7 +328,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:bounded-change
         // The operator learns why a report will not open; the name a coach gave it never reaches the log.
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task The_operator_is_warned_when_a_stored_report_cannot_be_read_and_the_warning_does_not_name_it()
         {
             var lightspeed = GivenLightspeedFinishedTwentyWorkItemsSinceEarlyJuly();

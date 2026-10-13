@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Services.Interfaces.Reports;
+using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.Models.Reports
 {
@@ -36,6 +37,7 @@ namespace Lighthouse.Backend.Models.Reports
 
     public sealed record ReportSummary(int Id, string Name, string TemplateKey, ReportOwnerKind OwnerKind, int OwnerId, DateOnly CreatedOn)
     {
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public ThenAndNowSummary? ThenAndNow { get; init; }
     }
 

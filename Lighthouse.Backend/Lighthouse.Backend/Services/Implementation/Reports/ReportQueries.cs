@@ -5,9 +5,11 @@ using Lighthouse.Backend.Services.Interfaces.Reports;
 
 namespace Lighthouse.Backend.Services.Implementation.Reports
 {
-    public class ReportQueries(IReportReader reader, IReportOwnerLookup owners, IEnumerable<IReportTemplate> templates, ILighthouseClock clock, ILogger<ReportQueries> logger) : IReportQueries
+    public class ReportQueries(IReportReader reader, IReportOwnerLookup owners, IEnumerable<IReportTemplate> templates, ILighthouseClock clock, TimeProvider timeProvider, ILogger<ReportQueries> logger) : IReportQueries
     {
         public const int CommunityCap = 2;
+
+        public const double SlowReadMilliseconds = 2_000;
 
         private const string TemplateNotSupported = "template-not-supported";
 
@@ -44,11 +46,19 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
 
         public ReportOutcome<ReportRead> Get(ReportOwner owner, int reportId)
         {
+            var started = timeProvider.GetTimestamp();
             if (CalendarOf(owner) is not ReportCalendar calendar || reader.GetForOwner(owner, reportId) is not Report report)
             {
                 return ReportOutcome<ReportRead>.NotFound();
             }
 
+            var outcome = Read(report, calendar);
+            LogIfSlow(report, owner, timeProvider.GetElapsedTime(started).TotalMilliseconds);
+            return outcome;
+        }
+
+        private ReportOutcome<ReportRead> Read(Report report, ReportCalendar calendar)
+        {
             if (TemplateOf(report) is not IReportTemplate template)
             {
                 LogUnreadable(report, null);
@@ -87,6 +97,15 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             => owners.Find(owner) is ReportOwnerFacts facts ? new ReportCalendar(clock.Today, facts.DoneItemsCutoffDays) : null;
 
         private IReportTemplate? TemplateOf(Report report) => templates.Find(template => template.Key == report.TemplateKey);
+
+        private void LogIfSlow(Report report, ReportOwner owner, double elapsedMs)
+        {
+            if (elapsedMs > SlowReadMilliseconds)
+            {
+                logger.LogWarning("report-read-slow: report {ReportId} of {OwnerKind} {OwnerId} with template {TemplateKey} took {ElapsedMs} ms to read",
+                    report.Id, owner.Kind, owner.Id, report.TemplateKey, elapsedMs);
+            }
+        }
 
         private void LogUnreadable(Report report, JsonException? exception)
         {

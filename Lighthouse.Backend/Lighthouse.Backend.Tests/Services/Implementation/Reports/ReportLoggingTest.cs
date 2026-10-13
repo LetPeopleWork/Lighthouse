@@ -21,12 +21,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
         private FakeTimeProvider timeProvider = null!;
         private RecordingLogger logger = null!;
+        private Report? stored;
 
         [SetUp]
         public void SetUp()
         {
             timeProvider = new FakeTimeProvider(new DateTimeOffset(2026, 10, 2, 7, 0, 0, TimeSpan.Zero));
             logger = new RecordingLogger();
+            stored = null;
         }
 
         [Test]
@@ -89,6 +91,48 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             }
         }
 
+        [Test]
+        public async Task A_read_above_two_seconds_is_a_report_read_slow_warning()
+        {
+            await ReadTakingMilliseconds(2_001);
+
+            var line = logger.Lines.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(line.Level, Is.EqualTo(LogLevel.Warning));
+                Assert.That(line.Message, Does.StartWith("report-read-slow"));
+                Assert.That(line.Fields["ReportId"], Is.EqualTo(17));
+                Assert.That(line.Fields["OwnerKind"], Is.EqualTo(ReportOwnerKind.Team));
+                Assert.That(line.Fields["OwnerId"], Is.EqualTo(42));
+                Assert.That(line.Fields["TemplateKey"], Is.EqualTo(ThenAndNowTemplate.TemplateKey));
+                Assert.That(line.Fields["ElapsedMs"], Is.EqualTo(2001d));
+                Assert.That(line.Message, Does.Not.Contain(SecretName));
+            }
+        }
+
+        [Test]
+        public async Task A_read_below_two_seconds_logs_nothing()
+        {
+            await ReadTakingMilliseconds(2_000);
+
+            Assert.That(logger.Lines, Is.Empty);
+        }
+
+        private async Task ReadTakingMilliseconds(int milliseconds)
+        {
+            await CreateTakingSeconds(0);
+            logger.Lines.Clear();
+
+            var reader = new Mock<IReportReader>();
+            reader.Setup(r => r.GetForOwner(Lightspeed, 17))
+                .Callback(() => timeProvider.Advance(TimeSpan.FromMilliseconds(milliseconds)))
+                .Returns(stored);
+
+            var outcome = Queries(reader.Object).Get(Lightspeed, 17);
+
+            Assert.That(outcome.Status, Is.EqualTo(ReportOutcomeStatus.Done));
+        }
+
         private async Task<ReportRead> CreateTakingSeconds(int seconds)
         {
             var outcome = await Subject(seconds).Create(Lightspeed, new NewReport(
@@ -102,23 +146,40 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         {
             var clock = new FakeLighthouseClock(timeProvider.GetUtcNow(), InstanceZone);
 
-            var series = new Mock<IReportMetricSeries>();
-            series.Setup(s => s.CycleTimePercentiles(Lightspeed, It.IsAny<ReportWindow>())).Returns(new CycleTimePercentiles(6, 11, 21, 20));
-
-            var owners = new Mock<IReportOwnerLookup>();
-            owners.Setup(o => o.Find(Lightspeed)).Returns(new ReportOwnerFacts(365));
-
             var writer = new Mock<IReportWriter>();
-            writer.Setup(w => w.Add(It.IsAny<Report>())).Callback<Report>(report => report.Id = 17);
+            writer.Setup(w => w.Add(It.IsAny<Report>())).Callback<Report>(report =>
+            {
+                report.Id = 17;
+                stored = report;
+            });
             writer.Setup(w => w.Save()).Callback(() => timeProvider.Advance(TimeSpan.FromSeconds(seconds))).Returns(Task.CompletedTask);
 
-            var template = new ThenAndNowTemplate(new ReportMetricCatalog([new CycleTimeReportMetric(series.Object)]), clock);
-            return new ReportCommands(writer.Object, owners.Object, [template], clock, timeProvider, logger);
+            return new ReportCommands(writer.Object, Owners(), [Template(clock)], clock, timeProvider, logger);
+        }
+
+        private ReportQueries Queries(IReportReader reader)
+        {
+            var clock = new FakeLighthouseClock(timeProvider.GetUtcNow(), InstanceZone);
+            return new ReportQueries(reader, Owners(), [Template(clock)], clock, timeProvider, logger);
+        }
+
+        private static IReportOwnerLookup Owners()
+        {
+            var owners = new Mock<IReportOwnerLookup>();
+            owners.Setup(o => o.Find(Lightspeed)).Returns(new ReportOwnerFacts(365));
+            return owners.Object;
+        }
+
+        private static ThenAndNowTemplate Template(FakeLighthouseClock clock)
+        {
+            var series = new Mock<IReportMetricSeries>();
+            series.Setup(s => s.CycleTimePercentiles(Lightspeed, It.IsAny<ReportWindow>())).Returns(new CycleTimePercentiles(6, 11, 21, 20));
+            return new ThenAndNowTemplate(new ReportMetricCatalog([new CycleTimeReportMetric(series.Object)]), clock);
         }
 
         private sealed record LogLine(LogLevel Level, string Message, Dictionary<string, object?> Fields);
 
-        private sealed class RecordingLogger : ILogger<ReportCommands>
+        private sealed class RecordingLogger : ILogger<ReportCommands>, ILogger<ReportQueries>
         {
             public List<LogLine> Lines { get; } = [];
 
