@@ -1,5 +1,5 @@
 import { Box, Button, Stack } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useContext } from "react";
 import { Link as RouterLink } from "react-router";
@@ -31,6 +31,19 @@ const isMadeByANewerVersion = (error: Error | null): boolean =>
 	error.code === 422 &&
 	error.problemCode === "template-not-supported";
 
+const ANSWERS_THAT_DO_NOT_CHANGE = new Set<string | number>([404, 422]);
+
+// A report that is gone, or made by a newer version, stays that way; asking again only delays saying so.
+const retriesUnlessFinal =
+	(usualRetry: unknown) =>
+	(failureCount: number, error: Error): boolean => {
+		if (error instanceof ApiError && ANSWERS_THAT_DO_NOT_CHANGE.has(error.code))
+			return false;
+		return typeof usualRetry === "number"
+			? failureCount < usualRetry
+			: usualRetry === true;
+	};
+
 const ReportPanels: React.FC<{ readonly report: IReport }> = ({ report }) => {
 	const { getTerm } = useTerminology();
 	const workItems = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
@@ -57,6 +70,7 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 	reportId,
 }) => {
 	const { reportService } = useContext(ApiServiceContext);
+	const usualRetry = useQueryClient().getDefaultOptions().queries?.retry;
 	const {
 		data: report,
 		isFetching,
@@ -66,6 +80,7 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 	} = useQuery({
 		queryKey: ["report", owner.kind, owner.id, reportId],
 		queryFn: () => reportService.getReport(owner, reportId),
+		retry: retriesUnlessFinal(usualRetry),
 	});
 
 	useReportOpenedReporter(isError ? undefined : report);

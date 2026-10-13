@@ -26,6 +26,8 @@ export interface WizardStepperFrameProps {
 	steps: readonly string[];
 	activeStep: number;
 	busy: boolean;
+	/** Keeps the inputs on screen but stops the user leaving or stepping back, e.g. while a save is in flight. */
+	navigationDisabled?: boolean;
 	onCancel: () => void;
 	onBack?: () => void;
 	next?: WizardFrameAction;
@@ -49,6 +51,7 @@ const WizardStepperFrame: React.FC<WizardStepperFrameProps> = ({
 	steps,
 	activeStep,
 	busy,
+	navigationDisabled = false,
 	onCancel,
 	onBack,
 	next,
@@ -80,11 +83,19 @@ const WizardStepperFrame: React.FC<WizardStepperFrameProps> = ({
 			)}
 
 			<Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 3 }}>
-				<Button onClick={onCancel} variant="outlined">
+				<Button
+					onClick={onCancel}
+					variant="outlined"
+					disabled={navigationDisabled}
+				>
 					Cancel
 				</Button>
 				{onBack && (
-					<Button onClick={onBack} variant="outlined">
+					<Button
+						onClick={onBack}
+						variant="outlined"
+						disabled={navigationDisabled}
+					>
 						Back
 					</Button>
 				)}

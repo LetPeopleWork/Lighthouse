@@ -653,4 +653,48 @@ describe("Creating the report", () => {
 		expect(reportService.createReport).not.toHaveBeenCalled();
 		expect(reportUsage).not.toHaveBeenCalled();
 	});
+
+	it("holds the wizard open, with Cancel and Back disabled, while the report is being created", async () => {
+		const held = deferred<number>();
+		await openTheWizard(
+			aReportService({
+				getReports: vi.fn().mockResolvedValue(aReportList([])),
+				createReport: vi.fn().mockReturnValue(held.promise),
+			}),
+		);
+		await onToTheLastStep();
+
+		await userEvent.click(await theCreateButton());
+		const wizard = await theWizard();
+		await userEvent.keyboard("{Escape}");
+
+		expect(
+			within(wizard).getByRole("button", { name: "Cancel" }),
+		).toBeDisabled();
+		expect(within(wizard).getByRole("button", { name: "Back" })).toBeDisabled();
+		expect(screen.getByRole("dialog")).toBeVisible();
+	});
+
+	it("says a name can be at most 200 characters when the server refuses it for its length", async () => {
+		await openTheWizard(
+			aReportService({
+				getReports: vi.fn().mockResolvedValue(aReportList([])),
+				createReport: vi.fn().mockRejectedValue(aRefusal(400, "name-too-long")),
+			}),
+		);
+		await onToTheLastStep();
+
+		await userEvent.click(await theCreateButton());
+
+		expect(
+			await within(await theWizard()).findByRole("alert"),
+		).toHaveTextContent("A report name can be at most 200 characters.");
+	});
+
+	it("takes no more than 200 characters for the name", async () => {
+		await openTheWizard();
+		await onToTheLastStep();
+
+		expect(await theNameField()).toHaveAttribute("maxlength", "200");
+	});
 });

@@ -249,10 +249,12 @@ export const renderWithReports = (
 		reportService,
 		viewer = "admin",
 		owner = LIGHTSPEED,
+		retry = false,
 	}: {
 		reportService: IReportService;
 		viewer?: Viewer;
 		owner?: IReportOwner;
+		retry?: number | false;
 	},
 ): RenderResult & { rerenderWith: (element: React.ReactElement) => void } => {
 	const rbacService = createMockRbacService();
@@ -261,7 +263,7 @@ export const renderWithReports = (
 		.mockResolvedValue(summaryFor(viewer, owner));
 
 	const queryClient = new QueryClient({
-		defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+		defaultOptions: { queries: { retry }, mutations: { retry: false } },
 	});
 
 	const wrap = (element: React.ReactElement) => (

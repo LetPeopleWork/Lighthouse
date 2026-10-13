@@ -502,6 +502,46 @@ describe("A report on a slow or failing connection", () => {
 		expect(screen.getByText("Since August")).toBeVisible();
 		expect(screen.queryByText(ENGAGEMENT_START)).toBeNull();
 	});
+
+	it("answers a report made by a newer version at once, asking only once", async () => {
+		const getReport = vi
+			.fn()
+			.mockRejectedValue(aRefusal(422, "template-not-supported"));
+		renderWithReports(
+			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
+			{ reportService: aReportService({ getReport }), retry: 2 },
+		);
+
+		expect(await screen.findByText(MADE_BY_A_NEWER_VERSION)).toBeVisible();
+		expect(getReport).toHaveBeenCalledTimes(1);
+	});
+
+	it("answers a report that is gone at once, asking only once", async () => {
+		const getReport = vi.fn().mockRejectedValue(aRefusal(404, "not-found"));
+		renderWithReports(
+			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
+			{ reportService: aReportService({ getReport }), retry: 2 },
+		);
+
+		expect(await screen.findByText(COULD_NOT_LOAD)).toBeVisible();
+		expect(getReport).toHaveBeenCalledTimes(1);
+	});
+
+	it("asks again when a read fails for any other reason", async () => {
+		const getReport = vi
+			.fn()
+			.mockRejectedValueOnce(new Error("the network dropped"))
+			.mockResolvedValue(theEngagementStartReport());
+		renderWithReports(
+			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
+			{ reportService: aReportService({ getReport }), retry: 2 },
+		);
+
+		expect(
+			await screen.findByText(ENGAGEMENT_START, undefined, { timeout: 3000 }),
+		).toBeVisible();
+		expect(getReport).toHaveBeenCalledTimes(2);
+	});
 });
 
 describe("Who may change a report from its page", () => {

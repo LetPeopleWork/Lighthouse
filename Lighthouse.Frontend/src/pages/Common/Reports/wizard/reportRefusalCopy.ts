@@ -7,6 +7,7 @@ import type { ReportWindowRefusal } from "./reportWindowCheck";
 export type ReportRefusalCode =
 	| ReportWindowRefusal
 	| "name-missing"
+	| "name-too-long"
 	| "no-metric-shown"
 	| "unknown-metric"
 	| "metric-not-captured"
@@ -41,6 +42,7 @@ const REFUSAL_COPY: Record<ReportRefusalCode, (words: RefusalWords) => string> =
 			`Now needs at least ${words.minimumLengthDays} days.`,
 		"now-before-cutoff": (words) => cutoffRefusal("Now", words),
 		"name-missing": () => "Give the report a name.",
+		"name-too-long": () => "A report name can be at most 200 characters.",
 		"no-metric-shown": () => "Choose at least one metric",
 		"unknown-metric": () =>
 			"One of the chosen metrics isn't known to this version of Lighthouse.",

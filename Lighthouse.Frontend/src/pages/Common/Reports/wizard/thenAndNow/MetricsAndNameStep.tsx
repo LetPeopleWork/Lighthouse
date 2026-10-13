@@ -19,6 +19,7 @@ import {
 } from "./thenAndNowDraft";
 
 const NO_METRIC = "Choose at least one metric";
+const NAME_MAX_LENGTH = 200;
 
 const MetricsAndNameStep: React.FC<
 	Readonly<ReportTypeStepProps<ThenAndNowDraft>>
@@ -58,6 +59,7 @@ const MetricsAndNameStep: React.FC<
 				label="Name"
 				value={nameOf(draft, templates)}
 				disabled={disabled}
+				slotProps={{ htmlInput: { maxLength: NAME_MAX_LENGTH } }}
 				onChange={(event) => onChange({ ...draft, name: event.target.value })}
 			/>
 		</Stack>

@@ -103,7 +103,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 	return (
 		<Dialog
 			open
-			onClose={onClose}
+			onClose={isCreating ? undefined : onClose}
 			aria-labelledby={TITLE_ID}
 			maxWidth="md"
 			fullWidth
@@ -113,6 +113,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 				steps={["Type", ...type.steps.map((step) => step.label)]}
 				activeStep={activeStep}
 				busy={false}
+				navigationDisabled={isCreating}
 				onCancel={onClose}
 				onBack={
 					activeStep > TYPE_STEP
