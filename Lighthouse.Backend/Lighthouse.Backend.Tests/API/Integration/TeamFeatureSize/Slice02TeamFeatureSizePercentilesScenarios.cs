@@ -22,7 +22,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("us-02")]
         [Category("walking_skeleton")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task A_Team_sees_the_percentiles_of_its_parts_of_the_Features_it_finished_against_the_period_before()
         {
             GivenGravityClosedTenFeaturesInTheWindowWithPartsOneToTen();
@@ -39,7 +38,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [TestCase("flat", 5, 5, 5, 5, 5)]
         [Category("us-02")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task The_trend_follows_the_Team_s_median_part(string direction, int previousMedian, params int[] partsInThePeriodBefore)
         {
             GivenGravityClosedTenFeaturesInTheWindowWithPartsOneToTen();
@@ -57,7 +55,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("us-02")]
         [Category("error")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task Features_the_Team_has_no_real_part_of_are_left_out_of_its_percentiles()
         {
             GivenGravityClosedTenFeaturesInTheWindowWithPartsOneToTen();
@@ -74,7 +71,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("us-07")]
         [Category("error")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task A_Team_that_finished_no_Feature_in_the_window_has_no_percentiles_rather_than_zeros()
         {
             GivenGravityHasOnlyOpenFeatures();

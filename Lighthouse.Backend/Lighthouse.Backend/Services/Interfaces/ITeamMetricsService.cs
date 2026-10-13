@@ -52,6 +52,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         IEnumerable<PercentileValue> GetSizePercentilesForTeam(Team team, DateTime startDate, DateTime endDate);
 
+        FeatureSizePercentilesInfoDto GetFeatureSizePercentilesInfoForTeam(Team team, DateTime startDate, DateTime endDate);
+
         IEnumerable<WorkItem> GetWipSnapshotForTeam(Team team, DateTime endDate);
 
         IEnumerable<WorkItem> GetBlockedEligibleItemsForTeam(Team team);

@@ -666,16 +666,34 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Size Percentiles for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
-            var closedFeaturesOfTeam = featureRepository.GetAllByPredicate(f =>
+            var sizes = ClosedInDateRange(GetDoneFeaturesTheTeamHasARealShareOf(team), startDate, endDate)
+                .Select(f => f.SizeFor(team.Id))
+                .ToList();
+
+            return sizes.Count == 0 ? [] : BuildPercentiles(sizes);
+        }
+
+        public FeatureSizePercentilesInfoDto GetFeatureSizePercentilesInfoForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Feature Size Percentiles Info for Team {TeamName} from {StartDate} to {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            var currentPercentiles = GetSizePercentilesForTeam(team, startDate, endDate).ToList();
+            var periodDays = (endDate.Date - startDate.Date).Days + 1;
+            var previousEnd = startDate.AddDays(-1);
+            var previousStart = startDate.AddDays(-periodDays);
+            var previousPercentiles = GetSizePercentilesForTeam(team, previousStart, previousEnd).ToList();
+
+            return BuildFeatureSizePercentilesInfoDto(currentPercentiles, previousPercentiles, currentStart: startDate, currentEnd: endDate, previousStart: previousStart, previousEnd: previousEnd);
+        }
+
+        // A Feature sized by its Portfolio's default carries made-up work for Teams that never had
+        // any, so it does not count as finished work of this Team.
+        private List<Feature> GetDoneFeaturesTheTeamHasARealShareOf(Team team) =>
+            featureRepository.GetAllByPredicate(f =>
                     !f.IsUsingDefaultFeatureSize &&
                     f.StateCategory == StateCategories.Done &&
                     f.FeatureWork.Any(fw => fw.TeamId == team.Id && fw.TotalWorkItems > 0))
                 .ToList();
-
-            var sizes = ClosedInDateRange(closedFeaturesOfTeam, startDate, endDate).Select(f => f.SizeFor(team.Id)).ToList();
-
-            return sizes.Count == 0 ? [] : BuildPercentiles(sizes);
-        }
 
         public IEnumerable<WorkItem> GetWipSnapshotForTeam(Team team, DateTime endDate)
         {

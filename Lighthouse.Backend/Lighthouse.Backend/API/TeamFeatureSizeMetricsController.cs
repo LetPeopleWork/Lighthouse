@@ -65,6 +65,18 @@ namespace Lighthouse.Backend.API
                 teamMetricsService.GetSizePercentilesForTeam(team, startDate, endDate));
         }
 
+        [HttpGet("featureSizePercentilesInfo")]
+        public ActionResult<FeatureSizePercentilesInfoDto> GetFeatureSizePercentilesInfo(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
+                teamMetricsService.GetFeatureSizePercentilesInfoForTeam(team, startDate, endDate));
+        }
+
         // A reader of the Team may see a Feature from a Portfolio they cannot open; the Feature still
         // counts, but that Portfolio's name is withheld from them.
         private async Task<HashSet<int>> GetReadablePortfolioIds(List<Feature> features)
