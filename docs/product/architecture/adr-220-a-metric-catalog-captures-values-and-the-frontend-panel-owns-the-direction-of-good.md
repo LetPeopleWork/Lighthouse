@@ -1,6 +1,6 @@
 # ADR-220: A metric catalog captures values on the server; one frontend panel per metric owns its direction of good
 
-- **Status**: Proposed (DESIGN, 2026-10-03)
+- **Status**: Accepted (2026-10-13, after the Final Wave Review; proposed in DESIGN 2026-10-03)
 - **Date**: 2026-10-03
 - **Feature**: epic-5878-baseline (slices 01, 03, 04, 05, 06)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)
@@ -39,6 +39,15 @@ info widgets compute a previous-period comparison in the backend with neutral ar
    needs, and it costs nothing now.
 6. **Metric keys are strings on the wire**, not enum ordinals (enums serialise as strings out and integers in on this
    API, which has bitten numeric TypeScript mirrors before).
+7. **What a version that does not know a key shows** (2026-10-13). Neither case ever crashes a view, and both are
+   logged as a Warning on the server when the server is the one that does not know the key:
+   - **A metric key with no panel** (a newer server behind a cached older SPA): a neutral frame in the panel's place,
+     "This metric can't be shown in this version of Lighthouse."; the wizard does not offer a key it has no panel for.
+     A stored key the *server's* catalog does not know is skipped on read.
+   - **A report type this version cannot read** (a report written by a newer version, then rolled back): listed, with
+     "Not supported in this version" in the Type column and deletable; opening it answers 422 with
+     `template-not-supported`, and the view shows the not-found family of looks with "This report was made by a newer
+     version of Lighthouse and can't be shown here." and Back to Reports. The copy is confirmed in DELIVER's sketch.
 
 ## Alternatives considered
 
@@ -62,8 +71,10 @@ info widgets compute a previous-period comparison in the backend with neutral ar
 - **Negative**: a non-frontend consumer (a future CLI) cannot colour a change without re-declaring direction; that
   is the maintainer's chosen trade, recorded here.
 - **Negative**: two catalogs to keep in step (backend keys, frontend registry). A key the frontend does not know
-  renders a neutral "not supported in this version" panel rather than crashing; an E2E-free unit test pins that the
-  frontend key union equals the backend catalog's keys through the templates endpoint fixture.
+  renders the neutral frame of decision 7 rather than crashing; an E2E-free unit test pins that the frontend key union
+  equals the backend catalog's keys through the templates endpoint fixture.
+- **Note**: a capture is read-only I/O (it reads through the series port and writes nothing), not a pure function;
+  its arithmetic over a series is pure and tested with a faked port.
 
 ## Enforcement
 

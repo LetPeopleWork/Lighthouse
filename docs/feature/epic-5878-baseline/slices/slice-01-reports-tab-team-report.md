@@ -1,6 +1,6 @@
 # Slice 01 — Reports tab: freeze a Then & Now report for a Team
 
-**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-01 (ADO #6159) · **Estimate**: ~1d (includes the migration) ·
+**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-01 (ADO #6159) · **Estimate**: ~1½d (includes the migration; re-estimated 2026-10-13 from ~1d — the 4+-components taste test is a borderline fail) ·
 **Tier**: Community · **Walking skeleton**: yes · `job_id: job-flow-coach-show-whether-flow-changed`
 
 ## Goal
@@ -16,7 +16,7 @@ create.
 ## IN
 
 - **Reports** tab on Team detail after Metrics (D18), readable with Team read; role-specific empty state.
-- **Create Report** (Team Write only, server-guarded; UI via `useRbac().isTeamAdmin`) → template card "Then & Now" →
+- **Create Report** (Team Write only, server-guarded; UI via `useRbac().isTeamAdmin`) → the Create wizard (DT3): ① Type card "Then & Now" (users read "Type", never "Template", DT2) →
   Then length 30 / 90 days ending today → defaulted name (D19) → Create → the report opens.
 - Storage for reports: owner, template key, name, Then window, Now length (= Then length for now, D43), created
   date, selection, frozen per-metric values with their sample sizes (D26, D45); nothing about settings (D46). One expand-only migration via
@@ -53,7 +53,8 @@ the metrics frozen.
 
 ## Acceptance criteria
 
-AC-1.1 … AC-1.7 in `feature-delta.md` (US-01).
+AC-1.1 … AC-1.8 in `feature-delta.md` (US-01); AC-1.8 (loading, could-not-load with Retry, no longer exists — DT6)
+added 2026-10-13.
 
 ## Dependencies
 

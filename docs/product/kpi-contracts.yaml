@@ -1783,7 +1783,7 @@ outcomes:
     measurement_scope: opt_in_telemetry_required
     measurement_plan:
       data_collection:
-        - "ReportCreated (provisional 12), slice 01, property report_template in {ThenAndNow}: sent after POST .../reports returned 201."
+        - "ReportCreated (provisional 16), slice 01, property report_template in {ThenAndNow}: sent after POST .../reports returned 201."
         - "Denominator: TeamTabOpened / PortfolioTabOpened, any route (existing). Funnel middle step: route TeamDetail_Reports (slice 01) / PortfolioDetail_Reports (slice 06)."
       derivation: "Distinct browsers reporting ReportCreated / distinct browsers reporting any Team or Portfolio tab opening, 90 days from the release that carries slice 10."
       surfacing: ["docs/settings/usagedata.md rows (slice 01)", "collector dashboard"]
@@ -1800,7 +1800,7 @@ outcomes:
     measurement_scope: opt_in_telemetry_required
     measurement_plan:
       data_collection:
-        - "ReportOpened (provisional 13), property report_template in {ThenAndNow}, slice 01: the report view's read returned 2xx and the view stayed mounted 5 s; once per mount. Portfolio reports from slice 06 through the shared view."
+        - "ReportOpened (provisional 17), property report_template in {ThenAndNow}, slice 01: the report view's read returned 2xx and the view stayed mounted 5 s; once per mount. Portfolio reports from slice 06 through the shared view."
         - "ReportCreated (OUT-5878-K1) for the cohort start."
       derivation: "Per browser: d0 = day of first ReportCreated; success when ReportOpened falls on >= 2 distinct calendar days >= d0 + 7."
       surfacing: ["docs/settings/usagedata.md row (slice 01)", "collector dashboard"]
@@ -1824,7 +1824,7 @@ outcomes:
     measurement_window: "90 days from the release carrying slice 10"
     alerting: []
     status: designed-not-shipped
-    caveat: "Upper bound: the cap is per owner and deletes free a slot, so two creations may be two Teams that never met the cap."
+    caveat: "Per-browser proxy, and an upper bound: browsers, not instances or owners; the cap is per owner and deletes free a slot, so two creations may be two Teams that never met the cap."
 
   - id: OUT-5878-guardrail-quick-deletes
     feature: epic-5878-baseline
@@ -1833,7 +1833,7 @@ outcomes:
     measurement_scope: opt_in_telemetry_required
     measurement_plan:
       data_collection:
-        - "ReportDeleted (provisional 14), name only, slice 08: DELETE .../reports/{id} returned 204. Never sent when reports go with their Team or Portfolio."
+        - "ReportDeleted (provisional 18), name only, slice 08: DELETE .../reports/{id} returned 204. Never sent when reports go with their Team or Portfolio."
         - "ReportCreated (OUT-5878-K1)."
       derivation: "Per browser: deletes within 24 h after a create / creates, monthly."
       surfacing: ["docs/settings/usagedata.md row (slice 08)", "collector dashboard"]

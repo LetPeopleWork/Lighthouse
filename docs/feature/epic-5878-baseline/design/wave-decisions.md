@@ -9,6 +9,10 @@ Upstream Changes). **Successor**: DEVOPS (`nw-platform-architect`), then DISTILL
 **Revision 2026-10-03.** The maintainer answered the eight decisions to confirm: four accepted, four changed as
 D45–D48 (recorded in DISCUSS and applied here, in the ADRs and in the SSOT).
 
+**Revision 2026-10-13 (Final Wave Review: needs_revision).** Addressed B1–B3, H1–H6, M1–M9, L1–L2 against DISTILL's
+final UI decisions DT1–DT7 and `distill/upstream-issues.md`. DD19, DD24, DD25 revised; DD26–DD34 added; a
+"Loading and failure looks" section and an Observability quality attribute added; ADR-219..222 **Accepted**.
+
 Full text of everything below: `../feature-delta.md` → "Wave: DESIGN / …" sections. ADRs: ADR-219..ADR-222.
 
 ## Config
@@ -48,13 +52,30 @@ technology · no external integration (contract testing N/A).
 - **DD16** *Withdrawn by D46* — no settings record, no notice.
 - **DD17** Cap policy in the create command; list envelope says `creationBlockedByCap`; race accepted.
 - **DD18** Two controllers (Team / Portfolio); Read on class, Write on actions; cross-owner 404; `useRbac` gating.
-- **DD19** `IReportQueries` (write-free) vs `IReportCommands`.
+- **DD19** `IReportQueries` (write-free) vs `IReportCommands`; persistence split into `IReportReader` /
+  `IReportWriter`, both on `ReportRepository`; queries reach the reader only (rev. 2026-10-13).
 - **DD20** In-request, all-or-nothing creation; never the update queue.
 - **DD21** Concurrency token on `Report`; 409 on stale edit.
-- **DD22** Shared tab; linkable report route; no client-side window maths.
+- **DD22** Shared tab; linkable report route; never the viewer's clock — client day arithmetic only on server days
+  (rev. 2026-10-13, DD26).
 - **DD23** No domain event / queue / SignalR; owner-delete count from the list endpoint.
-- **DD24** `thenRebuildable` on the read drives the delete warning.
-- **DD25** Edit request carries no Then field; uncaptured keys refused.
+- **DD24** `thenRebuildable` on the read **and every list row**, at `thenAndNow.thenRebuildable` in both; drives the
+  delete warning (rev. 2026-10-13).
+- **DD25** Edit request carries no Then field; uncaptured keys refused. Universe declared: only name, shown keys, Now
+  length and token change; owner, type, created, schema version, Then window, captures and unknown payload members
+  stay byte-identical; no other table. Then members in a body are ignored (200) (rev. 2026-10-13).
+- **DD26** Wizard pre-check from server bounds (`today`, `earliestStart`, `minimumLengthDays` on the templates
+  read); the server re-validates and stays the authority; one boundary table on both stacks.
+- **DD27** Wire names `atThen` / `atNow`.
+- **DD28** Closed refusal codes (DISTILL's eleven) in ProblemDetails; 400 validation, 403 cap, 404, 409, 422 for a
+  stored report of an unknown type.
+- **DD29** Ports take a `ReportOwner`, never a user; controllers authorise. 5882's sender is the first user-less caller.
+- **DD30** One `ReportWizard` (create | edit) on a `WizardStepperFrame` extracted from `CreateWizardShell`;
+  `DataGridBase` list; `DeleteConfirmationDialog` + optional warning.
+- **DD31** Loading / re-read / failure / not-found looks on `WidgetShell`'s body look and keyed queries.
+- **DD32** Unknown type: listed, opens to a not-found-family look; unknown metric: neutral frame.
+- **DD33** Then freezes the 85th only; no "Not captured" for Then's 70th / 50th.
+- **DD34** Create ≤ 10 s is a hypothesis; slice 01 measures; fallback cheaper captures; reopen DESIGN if it misses.
 
 ## Storage
 
@@ -68,7 +89,9 @@ One expand-only migration in slice 01 (`CreateMigration`, SQLite + PostgreSQL): 
 23 overlaps examined: 12 reused (as code or pattern), 5 extended (`XmRCalculator`, the cycle-time selection in
 `BaseMetricsService`, the two metrics interfaces' WIA series, owner tabs and delete dialogs, usage-data enums), 6
 rejected with evidence (PBC builders, `BaselineValidationService`, the day-keyed PBC/percentile tables, info-widget
-comparison, `CycleTimePercentiles` widget, `TeamDeleted` cleanup). CREATE NEW: the report entity / table / repository,
+comparison, `CycleTimePercentiles` widget, `TeamDeleted` cleanup). Added 2026-10-13: `CreateWizardShell` (extend by
+extracting its stepper frame), `DataGridBase` (reuse), `DeleteConfirmationDialog` (extend: optional warning),
+`WidgetShell` body look (extend: export), keyed TanStack queries (reuse), `LoadingAnimation` (rejected for the view). CREATE NEW: the report entity / table / repository,
 templates, catalog, window policy, beyond-limits policy, panels and tab. (`FetchFingerprint` was an extension only for
 the settings notice and left the list with D46.)
 

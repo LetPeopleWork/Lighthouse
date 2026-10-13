@@ -10,7 +10,8 @@
 
 ## Goal
 
-An editor changes a report's name, its Now length and which metrics it shows, in one "Edit report" dialog. Every
+An editor changes a report's name, its Now length and which metrics it shows, in one "Edit report" dialog *(— superseded by DT4 (2026-10-13): the Create wizard in edit mode, Type and Then
+locked, Now and Metrics & name editable)*. Every
 reader sees the change. Then — its window and its frozen data — never changes.
 
 ## IN
@@ -37,7 +38,8 @@ release. Freezing everything stays (it is cheap and already built), but later te
 
 ## Acceptance criteria
 
-AC-10.1 … AC-10.5 in `feature-delta.md` (US-10).
+AC-10.1 … AC-10.6 in `feature-delta.md` (US-10); AC-10.6 (a stale save is refused with "This report was changed by
+someone else. Reload to see their changes.", DT4) added 2026-10-13.
 
 ## Dependencies
 

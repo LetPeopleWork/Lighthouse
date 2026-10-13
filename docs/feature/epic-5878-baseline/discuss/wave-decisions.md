@@ -21,9 +21,9 @@ Full text of everything below: `../feature-delta.md` → "Wave: DISCUSS" section
 feature_type user-facing (full stack) · walking skeleton brownfield · research depth comprehensive, reusing DIVERGE ·
 JTBD light (job reused, not re-derived) · density lean.
 
-## Scope Assessment: PASS — 9 stories, 1 new module (reports + metric catalog with panels) on 3 existing ones (metrics, licence, RBAC), estimated ~8½ days
+## Scope Assessment: PASS — 9 stories, 1 new module (reports + metric catalog with panels) on 3 existing ones (metrics, licence, RBAC), estimated ~9 days (slice 01 re-estimated 1 → 1½ days on 2026-10-13; was ~8½)
 
-Slice 11 dropped on 2026-10-03 and slice 09 after DESIGN (D46), so the story count is 9; effort under 2 weeks; one user outcome,
+Slice 11 dropped on 2026-10-03 and slice 09 after DESIGN (D46), so the story count is 9; effort ~9 days, under 2 weeks; one user outcome,
 nothing ships without the Reports tab. No Epic split. The release is cut after slice 10 (Edit report is part of v1
 since D43/D44); no slice is cancellable any more.
 
@@ -33,7 +33,8 @@ since D43/D44); no slice is cancellable any more.
 - **D17** Every story carries `job_id: job-flow-coach-show-whether-flow-changed`; no new job or persona.
 - **D18** Reports tab after Metrics on Team (after Refinement once epic-5510 lands) and Portfolio; always enabled;
   role-specific empty state.
-- **D19** Create flow: template card → Then end date and length → Now length → metrics (all four ticked) → defaulted
+- **D19** Create flow: template card *(— superseded by DT2 (2026-10-13): users read "Type"; ① Type of the shared
+  wizard, DT3)* → Then end date and length → Now length → metrics (all four ticked) → defaulted
   name. *Rename part superseded by D44.*
 - **D20** *Superseded by D37* (was: Then presets only, Team 14/30/90, Portfolio 30/90/180).
 - **D21** Then validation: end ≤ today, ≥ 14 days, whole window inside `DoneItemsCutoffDays`; refusal names the
@@ -87,7 +88,8 @@ since D43/D44); no slice is cancellable any more.
 - **D42** (Q5) Reports are deleted with their Team/Portfolio; its delete confirmation names "and its N reports".
 - **D43** (Q6) Now length set at creation (default = Then length; same presets + custom), saved on the report, not
   in the address; viewers cannot change it; editors can, stored for everyone. Scheduled sending (5882) needs it.
-- **D44** (Q7) "Edit report" dialog for editors: name, Now length, shown metrics. Then is never editable.
+- **D44** (Q7) "Edit report" dialog *(— superseded by DT4 (2026-10-13): the Create wizard in edit mode, Type and
+  Then locked)* for editors: name, Now length, shown metrics. Then is never editable.
 
 ## Requirements Summary
 
@@ -115,7 +117,13 @@ since D43/D44); no slice is cancellable any more.
 - No synthesised values; every value shows its sample size; "—" with a reason only when truly empty (D45).
 - One expand-only migration in slice 01 via `CreateMigration`, all providers; cascade with the owner.
 - Terminology tokens for every metric word; no "Baseline", "Epic", "Story", "Initiative"; no verdict words.
-- NFR: create ≤ 10 s on 365 days of history; open ≤ 2 s; Metrics tab unchanged.
+- NFR: create ≤ 10 s on 365 days of history; open ≤ 2 s; Metrics tab unchanged. Added 2026-10-13: meaning never by
+  colour alone (sign and number always carry it) and a keyboard-operable wizard; a stale edit is refused and the user
+  told to reload (DT4); report volume per owner — Community 2, Premium unlimited, so the list handles many rows.
+- Earliest allowed Then start = today − `DoneItemsCutoffDays` (2 Oct 2026, 365 → 2 Oct 2025), a bound on the start
+  date independent of the inclusive window-length count (D21).
+- Maintainer-accepted risks: DISCOVER G1–G3 failed (D2) — problems are clear but not validated, the spreadsheet
+  workaround is assumed; no settings-changed notice (D46) against O5, guardrail G4.
 - Out of scope: CLI/MCP, export, Delivery level, cross-owner reports, verdicts, rules/thresholds, narrative, charts,
   author note (later), viewer-changeable Now, editing Then, nice-to-have metrics, a settings-changed notice (D46), a
   {Throughput} weekly median (D47).

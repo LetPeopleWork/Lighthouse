@@ -1,6 +1,6 @@
 # ADR-219: A Report is an owner-scoped record with a template-specific payload; delivery and schedule live outside it
 
-- **Status**: Proposed (DESIGN, 2026-10-03)
+- **Status**: Accepted (2026-10-13, after the Final Wave Review; proposed in DESIGN 2026-10-03)
 - **Date**: 2026-10-03
 - **Feature**: epic-5878-baseline (ADO Epic #5878 "Then & Now"; slices 01–10, Stories #6159–#6168)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)
@@ -56,7 +56,17 @@ through a converter; `DeliveryNote` and `Delivery` are owner-scoped rows with a 
    built now.
 5. **Payload evolution is additive.** Members are only added, as nullable; an absent member means "not captured"
    (D27). Renaming or removing a member needs its own ADR. `PayloadSchemaVersion` exists for the day a reshape is
-   unavoidable; v1 writes `1`.
+   unavoidable; v1 writes `1`. An edit keeps every payload member it does not change, including members a later
+   version wrote that this version does not know.
+6. **Read and write are separate at the persistence port too.** `IReportReader` (get, list, count for an owner)
+   and `IReportWriter` (add, update, remove, save), both implemented by one `ReportRepository`. The query side
+   depends on the reader only, so "reading a report writes nothing" holds by type, not by review.
+7. **Owner scoping lives in the application ports; authorisation in the driving adapters.** Every query and command
+   takes the owner (kind + id) and touches only that owner's reports; none takes a user. The Team and Portfolio
+   controllers apply the owner's Read / Write guards and translate the route into the owner. A caller without a
+   user — the first will be 5882's scheduled sender — decides its own authorisation before calling the query port.
+8. **The Community cap refuses with 403** and the code `report-cap-reached`, as every premium refusal in the API
+   does; the client tells it from an RBAC 403 by the code.
 
 ## Alternatives considered
 
@@ -85,10 +95,23 @@ through a converter; `DeliveryNote` and `Delivery` are owner-scoped rows with a 
   payload deserialises into the current type with later members null).
 - **Risk named**: two concurrent creations can both pass the Community count and leave three reports. Accepted: the
   lapse rule (D29) already tolerates more than two, and creation stays blocked until the count drops.
+- **Negative**: two persistence interfaces over one class instead of one repository interface; the price of making
+  the read path's write-freedom a compile-time fact.
+
+### Alternatives for the persistence port
+
+- **One `IReportRepository` with read and write members**, and an ArchUnit rule that the query side calls no write
+  member. The rule would have to list method names and breaks silently when one is added. **Rejected.**
+- **Queries read `LighthouseAppContext` directly.** No port to fake in unit tests, and every write is in reach.
+  **Rejected.**
 
 ## Enforcement
 
 - ArchUnitNET: nothing outside `API` and the composition root depends on the Reports module.
+- ArchUnitNET: the query implementation depends on `IReportReader` and on none of `IReportWriter`, `IRepository<>`,
+  `LighthouseAppContext`; a reflection test asserts `IReportReader` declares no add / update / remove / save member.
+- NUnit: an edit leaves every column but name, shown keys, Now length and token — and every payload member but the
+  Now length, including one this version does not know — unchanged, and touches no other table.
 - NUnit (both providers): deleting a Team or Portfolio removes its reports; a report row with both or neither owner
   cannot be saved.
 - NUnit: payload round-trip from a slice-01-shaped document; `JsonSerializerOptions` is one cached instance (CA1869).

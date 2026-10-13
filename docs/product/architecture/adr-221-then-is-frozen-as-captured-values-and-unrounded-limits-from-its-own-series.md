@@ -1,6 +1,6 @@
 # ADR-221: Then is frozen as captured values and unrounded XmR limits computed from its own series
 
-- **Status**: Proposed (DESIGN, 2026-10-03)
+- **Status**: Accepted (2026-10-13, after the Final Wave Review; proposed in DESIGN 2026-10-03)
 - **Date**: 2026-10-03
 - **Feature**: epic-5878-baseline (slices 01, 02, 03, 04, 05)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)
@@ -66,6 +66,14 @@ average (D47); average {Work Item Age} as window average and last day (D48).
      `W[end]` {Work Items}). Limits and count over `T[d]`.
 8. **Nothing about the owner's settings is stored** (D46). Now uses today's settings; Then stays as frozen; the
    report does not compare them.
+9. **Then freezes the {Cycle Time} 85th percentile only** (2026-10-13). The panel's Then column shows the 85th alone,
+   as in the approved mockup; Now shows the 85th, 70th and 50th. Then's 70th and 50th were never Then's, so no "Not
+   captured" sentence appears for them; that sentence stays for a metric or value the report predates (D27).
+10. **On the wire the two sides of a metric are `atThen` and `atNow`** (2026-10-13), in the read and in the browser
+   alike. A member named `then` is a Biome error (`noThenProperty`) and turns the object into a thenable for anything
+   that awaits it. Member names inside a side: `p85`, `p70`, `p50`; `total`, `perDay`; `average`, `min`, `max`;
+   `totalWindowAverage`, `totalLastDay`, `averageWindowAverage`, `averageLastDay`; each `{ value, sampleSize,
+   absentReason }`. `beyondThenLimits` is `{ above, below }` of the same shape, the count in `value`.
 
 ## Alternatives considered
 
@@ -98,6 +106,15 @@ average (D47); average {Work Item Age} as window average and last day (D48).
   rule's classification on the same data.
 - NUnit (AC-2.3): Then captured for a window equals the Metrics endpoints' values for the same window and settings.
 - NUnit: changing the owner's PBC Baseline after creation changes no frozen value and no count (AC-3.2).
+- NUnit: the read DTO has no member named `then` or `now`; Biome's `noThenProperty` holds the frontend.
+
+## Alternatives considered for the wire names (2026-10-13)
+
+- **`then` / `now` on the wire, renamed to `atThen` / `atNow` in the client** (what DISTILL first pinned). Works,
+  but keeps two names for one thing and a mapping step every consumer (5882's renderer, a later CLI) must repeat.
+  **Rejected.**
+- **`thenValues` / `nowValues`.** Equally safe; `atThen` / `atNow` was preferred because the frontend model and its
+  tests already use it. **Rejected.**
 
 Cross-refs: [ADR-208](./adr-208-a-past-day-is-computed-by-the-recorders-own-code.md) (one computation, two callers), ADR-219,
 ADR-220.

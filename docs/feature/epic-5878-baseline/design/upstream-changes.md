@@ -61,3 +61,23 @@ day's {WIP}). Applied to US-05 (pitch, example 5, scenario, AC-5.2) and slice 05
 
 ADR-209 deferred any Report abstraction to the second Report kind; this Epic is it. ADR-219 answers ADR-209's six
 questions and supersedes the deferral; ADR-209 carries a status note. The Forecast Reality Check is unchanged.
+
+## 7. DISTILL's UI decisions and upstream issues absorbed (2026-10-13)
+
+DT1–DT7 (maintainer, 2026-10-13) are final and replaced DESIGN's frontend shape: `CreateReportDialog`,
+`EditReportDialog` and `DeleteReportDialog` are gone; Create and Edit are one wizard on a stepper frame extracted
+from `CreateWizardShell` (DD30); the list is `DataGridBase`; delete is `DeleteConfirmationDialog` with an optional
+warning line. DESIGN now answers each item of `distill/upstream-issues.md` (marked there):
+
+| DISTILL item | DESIGN answer | Changes a test? |
+|---|---|---|
+| 1 list carries `thenRebuildable` | adopted, at `thenAndNow.thenRebuildable` on the row, the same path as the read (DD24) | yes — the row path |
+| 2 `then` / `now` on the wire | renamed on the wire to `atThen` / `atNow` (DD27) | yes — backend helper, frontend mapping removed |
+| 3 member names inside a side | adopted unchanged (Driving ports → Read contract) | no |
+| 4 refusal codes; open statuses | adopted unchanged; cap 403, unknown stored type 422, edit with Then members 200 (DD25, DD28) | no (statuses were left open) |
+| 5 `CreateWizardShell` cannot host the steps | extract `WizardStepperFrame` (DD30) | no (tests drive the dialog) |
+| 6 owner-delete count source | confirmed: the owner's list endpoint (DD23) | no |
+| 7 report address and where it renders | confirmed as pinned (DD22) | no |
+| 8 unknown type has no look | designed (DD32), copy to confirm | adds a frontend case |
+| Copy: list failure | a sentence added beside Retry ("Loading and failure looks"), copy to confirm | yes, if confirmed |
+| Wizard bounds | `minimumLengthDays` added to the templates read; `earliestStart` nullable for cutoff 0 (DD26) | yes — test kit fixture and model |

@@ -336,7 +336,7 @@ D37–D44 are the maintainer's answers to Q1–Q7 (2026-10-03). Superseded decis
   epic-5510, when it lands, sits between Metrics and Reports). Portfolio: {Features} · {Deliveries} · Metrics ·
   **Reports** · Settings · Access. The tab is always enabled for anyone with read. Empty state: editors see
   "Create Report"; readers see "No reports yet. A {Team} Admin can create one." (Portfolio: "{Portfolio} Admin").
-- [D19] **Create flow** (reshaped by D37, D43, D44): Create Report → choose a Template (one card in v1: "Then & Now —
+- [D19] **Create flow** (reshaped by D37, D43, D44): Create Report → choose a Template *(— superseded by DT2 (2026-10-13): users read "Type", never "Template"; the step is ① Type of the shared wizard, DT3)* (one card in v1: "Then & Now —
   set today's flow against a window that stays as it was") → Then: end date and length (D37) → Now length (D43,
   default = Then length) → metrics (all four v1 metrics ticked) → name, defaulted to "Then & Now — 90 days to 31 Jul
   2026" → Create. The new report opens. *Was*: claims C1–C4 preselected; renaming later out of v1 — that part is
@@ -345,7 +345,9 @@ D37–D44 are the maintainer's answers to Q1–Q7 (2026-10-03). Superseded decis
   Portfolio 30 / 90 / 180, no custom length (provisional, Q1). The calendar-day rule moves into D37 unchanged.
 - [D21] **Then validation** at creation: end date not after today; at least 14 days (D37); whole window inside
   `DoneItemsCutoffDays` (default 365). Refusal names the earliest allowed start: "The Then window must start on or
-  after 2 Oct 2025 — older finished {Work Items} are no longer kept." Never silently partial (DISCOVER journey
+  after 2 Oct 2025 — older finished {Work Items} are no longer kept." The earliest allowed Then start = today − `DoneItemsCutoffDays`
+  days (today 2 Oct 2026, 365 → 2 Oct 2025); it bounds the start date and is independent of the inclusive counting
+  of the window's length (D37). Never silently partial (DISCOVER journey
   failure mode).
 - [D22] **Superseded by D43.** *Was*: Now preset chosen by anyone viewing, kept in the page address, not saved
   (provisional, Q6).
@@ -378,7 +380,7 @@ D37–D44 are the maintainer's answers to Q1–Q7 (2026-10-03). Superseded decis
   Do / Doing / Done state mapping, the query, blackout days. When today's differ: "Settings changed since this report
   was created (state mapping). Then stays as frozen on 2 Oct 2026; Now uses today's settings." Shown once in the
   header, not per panel.
-- [D32] **Words**: template "Then & Now"; tab "Reports"; windows "Then" / "Now"; panel titles "{Cycle Time}: Then &
+- [D32] **Words**: template "Then & Now" *(— superseded by DT2 (2026-10-13): the user-facing word is **Type** — "Then & Now" is a report Type; "template" stays the code's word only)*; tab "Reports"; windows "Then" / "Now"; panel titles "{Cycle Time}: Then &
   Now". No user-facing "Baseline" (C3). "Report", "Then", "Now" are not Terminology keys; every metric word is a
   Terminology token. Copy never says Epic, Story or Initiative. No verdict words (Holds, trending, stable,
   predictable) anywhere (D39).
@@ -457,7 +459,7 @@ D37–D44 are the maintainer's answers to Q1–Q7 (2026-10-03). Superseded decis
   (Epic 5882) needs a defined window, and it is not in the page address. Viewers cannot change it, not even for one
   view. Editors change it through Edit report (D44), and the change is stored for everyone. Anyone who wants a
   different window side by side creates another report.
-- [D44] **Edit report** (Q7; supersedes D19's rename part). Editors (Write) get an "Edit report" dialog: name, Now
+- [D44] **Edit report** (Q7; supersedes D19's rename part). Editors (Write) get an "Edit report" dialog *(— superseded by DT4 (2026-10-13): Edit report reopens the Create wizard in edit mode, Type and Then shown locked, Now and Metrics & name editable)*: name, Now
   length, and which metrics are shown (slice 10's "change shown claims" folded in). Then — its window and its frozen
   data — is never editable. Viewers see no Edit report.
 - [D45] **Thin data shows the value and its sample size** (maintainer 2026-10-03, after DESIGN; supersedes D41's
@@ -470,8 +472,11 @@ D37–D44 are the maintainer's answers to Q1–Q7 (2026-10-03). Superseded decis
   compared. Slice 09 is dropped (ADO Story #6167, the maintainer's call); US-09 is dropped.
 - [D47] **{Throughput} over the whole window** (maintainer 2026-10-03, after DESIGN; reshapes D39's M2). The panel
   shows the total {Work Items} finished in the window and the average per day, Then and Now. Change and % change are
-  on the per-day average — identical to the total's change when both windows have the same length, and still right
-  when the Now length differs from Then. No weekly median, no week count. The beyond-limits count is unchanged: Now's
+  on the per-day average. *(Corrected 2026-10-13; was: "identical to the total's change when both windows have the
+  same length".)* With equal lengths only the **% change** matches the total's; the absolute change is per day, not a
+  count of {Work Items}. Both stay right when the Now length differs from Then. Per DESIGN DD6 (maintainer-accepted),
+  change and % change are computed in the panel from the values **as displayed** (rounded): 0.58 → 0.72 per day shows
+  +0.14 and +24%, although the unrounded totals 52 → 65 would give +25%. Every figure in this document is as displayed. No weekly median, no week count. The beyond-limits count is unchanged: Now's
   daily values against Then's frozen limits.
 - [D48] **Average {Work Item Age} has two values per side, like the total** (maintainer 2026-10-03, after DESIGN; Q10
   extended). The window average — the mean, over the window's days, of that day's average age (that day's total age ÷
@@ -483,9 +488,10 @@ D37–D44 are the maintainer's answers to Q1–Q7 (2026-10-03). Superseded decis
 
 ## Wave: DISCUSS / [REF] Scope Assessment
 
-**PASS.** 9 stories (slice 11 dropped on 2026-10-03, slice 09 dropped after DESIGN by D46), ~8½ days, one new module (reports and the metric catalog with
+**PASS.** 9 stories (slice 11 dropped on 2026-10-03, slice 09 dropped after DESIGN by D46), ~9 days (slice 01
+re-estimated 1 → 1½ days on 2026-10-13; was ~8½), one new module (reports and the metric catalog with
 its panels) standing on existing metrics, licence and RBAC; one user outcome; nothing ships independently of the
-Reports tab. No oversize signal fires (10 stories is not more than 10; effort just under 2 weeks). No Epic split. The
+Reports tab. No oversize signal fires (9 stories, not more than 10; ~9 days of effort, under 2 weeks). No Epic split. The
 release is cut after slice 10 (D34): with D43 and D44 the edit dialog is part of v1, so no slice is cancellable any
 more.
 
@@ -508,7 +514,7 @@ proves the freeze-and-store shape that every later slice extends.
 
 | # | Slice | Est. | ADO | Learning hypothesis — disproves … if it fails |
 |---|---|---|---|---|
-| 01 | Reports tab; create a Then & Now report for a Team; Then ends today (30 / 90 days); {Cycle Time} panel: Then 85th, Now 85th / 70th / 50th, change, % change, coloured | 1d | #6159 | "Freezing at creation is fast and simple enough" — if creating a 90-day report on the dev instance's busiest Team takes > 10 s, freezing must move off the request |
+| 01 | Reports tab; create a Then & Now report for a Team; Then ends today (30 / 90 days); {Cycle Time} panel: Then 85th, Now 85th / 70th / 50th, change, % change, coloured | 1½d (was 1d; re-estimated 2026-10-13, see taste tests) | #6159 | "Freezing at creation is fast and simple enough" — if creating a 90-day report on the dev instance's busiest Team takes > 10 s, freezing must move off the request |
 | 02 | A Then that ended on a picked date; a custom length of 14 days or more | 1d | #6160 | "History rebuilds a past Then credibly" — if a Then ending 31 Jul rebuilt today differs from the Metrics tab for the same dates, the rebuild is wrong |
 | 03 | The {Cycle Time} panel counts Now's {Work Items} beyond Then's frozen limits, above and below | 1d | #6161 | "A count against frozen limits says something on real Teams" — if on the dev instance every Team reads 0 above and "—" below over the 63 days since 31 Jul, the count is mute for per-item data and must change before three more panels copy it |
 | 04 | Choose the metrics a report shows; {Throughput} panel (total and per-day average over the whole window, change and % change on the per-day average, days beyond Then's limits) (D47) | 1d | #6162 | "A per-day average reads sensibly beside a count of days beyond" — if dogfood readers misread the per-day average or ask what "days beyond" means, the {Throughput} panel needs different wording |
@@ -521,7 +527,9 @@ proves the freeze-and-store shape that every later slice extends.
 | 11 | **Dropped 2026-10-03** — per-claim charts are out (D39) | — | #6169 (close) | — |
 
 Briefs: `slices/slice-NN-*.md` (the briefs of slices 09 and 11 are kept, marked dropped, so the ADO links still
-resolve).
+resolve). The brief **file names are historical** — some still carry the old verdict and claim words (e.g.
+`slice-03-cycle-time-trending-down-verdict.md`); they are kept unchanged because the ADO Stories link to them. The
+content of each brief is current.
 
 ### Prioritisation rationale
 
@@ -541,7 +549,7 @@ Order 01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 10 (09 dropped, D4
 
 | Test | Verdict |
 |---|---|
-| 4+ new components in one slice? | Pass — the largest (01) adds a tab, a create dialog, a report view and one panel. |
+| 4+ new components in one slice? | **Borderline fail** (re-checked 2026-10-13). 01 adds the Reports tab, the Reports list (DT1), the Create wizard (DT3, on the existing `CreateWizardShell`), the report view with its loading and failure looks (DT6) and the first panel, plus the usage events. Kept as one slice: it is the walking skeleton and each piece is in its thinnest form; the usage events stay in 01 because DEVOPS placed them there. Re-estimated 1d → 1½d. *Was*: "Pass — the largest (01) adds a tab, a create dialog, a report view and one panel." |
 | Every slice depends on a new abstraction? | Pass — the panel registry is born in 01 with one panel, its first consumer. |
 | Disproves a pre-commitment? | Pass — 02 tests D12, 03 D40, 07 D14, 08 DV-7. |
 | Synthetic-data-only slices? | Pass — each is dogfooded on the dev instance (`:5169`, real history); demo data covers E2E and screenshots only. |
@@ -588,6 +596,7 @@ Team Lightspeed › Reports › Then & Now — engagement start                 
 │ Average, 31 Jul    64 days    ┃ Average, 2 Oct     91 days      +27 days   +42% ▲ (red)        │
 │   · 10 Work Items             ┃   · 10 Work Items                                              │
 │                               ┃ Days beyond Then's limits: 6 above (red) · — below             │
+│                               ┃   (Then's lower limit is 0)                                    │
 └───────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -634,7 +643,9 @@ time zone, windows inclusive at both ends · no CLI/MCP, no export.
 `job_id: job-flow-coach-show-whether-flow-changed` · persona `flow-coach` (Elena Kovacs, Team Admin, Team Lightspeed)
 
 **Problem**: Elena starts an engagement with Team Lightspeed today. To show later whether flow changed she exports
-{Cycle Time} percentiles into a spreadsheet; nothing in Lighthouse keeps today's numbers from moving.
+{Cycle Time} percentiles into a spreadsheet; nothing in Lighthouse keeps today's numbers from moving. *(The
+spreadsheet workaround is an **assumption** from desk research, not observed: DISCOVER G1 failed, maintainer-accepted
+risk D2.)*
 
 #### Elevator Pitch
 
@@ -685,16 +696,26 @@ Scenario: A reader sees reports but cannot create one
   Given Martin is a Viewer on Team Lightspeed
   When Martin opens the Reports tab
   Then he sees "Then & Now — 90 days to 2 Oct 2026" and no Create Report button
+
+Scenario: A report that cannot be loaded says so and shows no old numbers
+  Given Elena created "Then & Now — 90 days to 2 Oct 2026" on Team Lightspeed
+  And on 30 Oct 2026 the report cannot be loaded
+  When Martin opens it
+  Then he sees "This report couldn't be loaded. Reload to try again." with Retry
+  And no Then or Now values are shown
 ```
 
 **AC**: AC-1.1 Reports tab on every Team after Metrics (D18), readable with Team read. AC-1.2 Create Report (Write
-only, server-guarded) offers the one template "Then & Now"; Then 30 or 90 days ending today (D37's Team presets; end
+only, server-guarded) offers the one Type "Then & Now" (DT2; *was* "the one template"); Then 30 or 90 days ending today (D37's Team presets; end
 date and custom length come in slice 02). AC-1.3 The report stores the frozen Then {Cycle Time} 85th percentile, the
 Now length (= Then length, D43) and the sample size; nothing about settings (D46); Then never recomputes (D26). AC-1.4 Now = the saved length
 ending today, computed on view, may overlap Then (D38). AC-1.5 The panel follows D39: title, Then left, accent bar,
 Now right with change and % change on the 85th; lower = improvement (green), higher = worse (red), equal = neutral;
 the sign is always shown. AC-1.6 Every percentile shows its sample size ("· 3 Work Items"); "—" plus reason only when no
-{Work Item} finished in the window; change and % show "—" then (D45, superseding D41's wording). AC-1.7 Role-specific empty state (D18); default name per D19.
+{Work Item} finished in the window; change and % show "—" then (D45, superseding D41's wording). AC-1.7 Role-specific empty state (D18); default name per D19. AC-1.8 While a report
+loads, a spinner and nothing that could pass for "no data"; when it cannot be loaded, "This report couldn't be
+loaded. Reload to try again." with Retry and no stale numbers; a report that no longer exists reads "This report no
+longer exists." (DT6).
 **KPI**: K1. **Tech**: first migration (report storage, expand-only); the panel registry is born with one panel; the
 direction of good lives in the frontend panel only; tab-open route key `TeamDetail_Reports`.
 
@@ -765,7 +786,8 @@ Decision enabled: whether to ask about the unusually slow {Work Items} before sh
 **Examples**: (1) Team Gravity: Then's upper limit is 34 days; two Now Work Items took 41 and 38 days → "2 above" in
 red. (2) Team Lightspeed: Then's lower limit is 2.4 days (frozen unrounded); three Now Work Items finished in under
 2 days → "3 below" in green. (3) Team Orion: Then's lower limit is at 0 → below shows "—" with "Then's lower limit is
-0" (Q8, confirmed 2026-10-03). (4) Team Pulsar: only 1 finished Work Item in Then, so no limits can be computed (fewer than 2
+0" (Q8, confirmed 2026-10-03). (4) Team Pulsar, on a 30-day Then ending 2 Oct 2026 (3 Sep – 2 Oct): only 1 finished Work Item
+in that Then (its 90-day Then in US-01 holds 3), so no limits can be computed (fewer than 2
 points, D45) → "—" with the reason. (5) A Team Admin changes the Team's PBC Baseline setting → the counts do not change.
 
 ```gherkin
@@ -787,7 +809,8 @@ Scenario: A lower limit at zero is not shown as zero
   Then the below count shows "—" with "Then's lower limit is 0"
 
 Scenario: Fewer than two Then points show a dash and the reason
-  Given Team Pulsar finished only 1 Work Item in Then
+  Given Team Pulsar's report has a Then of 30 days ending 2 Oct 2026 (3 Sep – 2 Oct)
+  And Team Pulsar finished only 1 Work Item in that Then
   When Priya opens the report
   Then the beyond-limits count shows "—" with the reason that Then has too few points for limits
 
@@ -808,7 +831,8 @@ takes the limits directly (DESIGN). Demo data: check one demo Team gives a non-z
 
 ### US-04 — Choose the metrics a report shows; see {Throughput} Then & Now (slice 04)
 
-`job_id: job-flow-coach-show-whether-flow-changed` · persona `flow-coach` (Priya Raman, Team Gravity)
+`job_id: job-flow-coach-show-whether-flow-changed` · persona `flow-coach` (Priya Raman, Team Gravity; Elena, Team
+Lightspeed)
 
 **Problem**: Priya's Team adopted a WIP limit on 14 Sep 2026. The sponsor cares about {Throughput} as well as {Cycle
 Time}, and Priya wants the metrics fixed before she sees the numbers.
@@ -833,10 +857,10 @@ Scenario: The available metrics are ticked by default
   Then Cycle Time and Throughput are ticked
 
 Scenario: Higher Throughput shows as a change for the better
-  Given Team Gravity's Then finished 52 Work Items in 90 days, 0.58 per day
-  And its Now finished 65 Work Items in 90 days, 0.72 per day
+  Given Team Lightspeed's Then of 90 days to 31 Jul 2026 (3 May – 31 Jul) finished 52 Work Items, 0.58 per day
+  And its Now, the last 90 days (5 Jul – 2 Oct 2026), finished 65 Work Items, 0.72 per day
   And 2 days of Now finished more Work Items than Then's upper limit
-  When Priya opens the report
+  When Elena opens the report
   Then the Throughput panel shows "+0.14 per day" and "+24%" and 2 days above Then's limits, all marked as an improvement
 
 Scenario: A Now of a different length compares per day
@@ -1022,7 +1046,8 @@ is never clipped (D38). AC-7.4 The header shows both windows and days since Then
 #### Elevator Pitch
 
 Before: reports can only be added.
-After: Reports → report menu → **Delete** → confirms "Delete 'Then & Now — engagement start'?" → the list shows one
+After: Reports → the delete icon on the report's row in the list (DT1), or **Delete** in the report's header (DT5) →
+confirms "Delete 'Then & Now — engagement start'?" → the list shows one
 report; at two reports Create Report reads "Community includes 2 reports per Team. Delete one, or use Premium for
 unlimited reports."
 Decision enabled: which reports to keep, and whether more than two justify Premium.
@@ -1061,6 +1086,8 @@ deletes its reports; its confirmation adds "and its N reports" when N ≥ 1 (D42
 **KPI**: K4. **Tech**: copies `AdditionalFieldsHelper` (S8); the owner delete dialogs exist and gain the count.
 
 ### US-09 — Dropped 2026-10-03 (was: see when Now runs under different settings than Then)
+
+`job_id: n/a — dropped`
 
 Dropped by D46: the maintainer does not want a settings-changed notice ("it will inevitably change; just accept it").
 Nothing about the owner's settings is stored on a report. ADO Story #6167 is the maintainer's to retitle or close. The
@@ -1113,15 +1140,25 @@ Scenario: Then cannot be edited
 Scenario: Readers cannot edit a report
   When Martin views the report
   Then there is no Edit report action
+
+Scenario: A save over someone else's change is refused
+  Given Elena opened Edit report on "Then & Now — 90 days to 31 Jul 2026"
+  And meanwhile Aiko Tanaka, also a Team Admin on Team Lightspeed, renamed the report
+  When Elena saves her Now length of 30 days
+  Then her change is refused and Aiko's name stays
+  And Elena reads "This report was changed by someone else. Reload to see their changes."
 ```
 
 **AC**: AC-10.1 Edit report for Write only, server-guarded. AC-10.2 Editable: name (not empty), Now length (D43
 rules), shown metrics (at least one) (D44). AC-10.3 Then's window and frozen data are never editable; nothing is
 recomputed. AC-10.4 Metrics not captured cannot be ticked (D27). AC-10.5 The change is stored and seen by every
-reader.
+reader. AC-10.6 A save over a change someone else saved after the wizard was opened is refused, nothing is
+overwritten, and the editor reads "This report was changed by someone else. Reload to see their changes." (DT4).
 **KPI**: K2 (~~K3~~ dropped, maintainer 2026-10-03).
 
 ### US-11 — Dropped 2026-10-03 (was: open the chart behind a verdict)
+
+`job_id: n/a — dropped`
 
 Per-claim charts are out of v1 (D39): there are no verdicts to explain, and the panels carry the numbers. ADO Story
 #6169 is to be closed or removed by the maintainer. The slice brief is kept, marked dropped.
@@ -1174,8 +1211,18 @@ background job is implied; creation completes or fails whole (D26).
 the existing minimum-data guards. In a worktree, the premium licence fixture is copied from the main checkout before
 cap tests (slice 08). None block slice 01.
 
-**NFRs**: creating a 90-day report on a Team with 365 days of history ≤ 10 s; opening a report ≤ 2 s; the Metrics
-tab and its PBCs unchanged (no shared setting altered).
+**NFRs** (widened 2026-10-13; was performance only):
+
+- **Performance**: creating a 90-day report on a Team with 365 days of history ≤ 10 s; opening a report ≤ 2 s; the
+  Metrics tab and its PBCs unchanged (no shared setting altered).
+- **Accessibility**: meaning is never carried by colour alone — every change shows its sign and number, every
+  beyond-limits count its number, whatever the colour (D39, AC-1.5, AC-3.3). The Create / Edit wizard (DT3, DT4) is
+  operable by keyboard alone, and so are the report's actions (Edit report, Delete, Retry).
+- **Concurrency**: a save over a report someone else changed after it was opened is refused, nothing is overwritten,
+  and the user is told "This report was changed by someone else. Reload to see their changes." (DT4, AC-10.6).
+- **Report volume per owner**: Community holds at most 2 reports per {Team} / {Portfolio} (D29); Premium is
+  unlimited, so the Reports list (a `DataGridBase` table, DT1) must stay usable with many rows — tens of reports on
+  one owner.
 
 ---
 
@@ -1201,6 +1248,10 @@ Guardrails: G1 reports deleted within 1 day of creation ≤ 20% of created (re-r
 name-only "report deleted"); G2 open ≤ 2 s, create ≤ 10 s; G3 no report shows 0 where data is absent; Metrics tab
 PBCs unchanged.
 
+| Guardrail | Risk | Status | How it would be noticed |
+|---|---|---|---|
+| G4 No settings-changed notice (D46) | Against O5 (presenting noise as improvement): when the owner's {Work Item} types, state mapping, query or blackout days change after creation, Now is computed under today's settings while Then stays frozen, so a panel can show a change the Team's work did not cause. | **Maintainer-accepted risk** (D46, 2026-10-03): "settings will inevitably change; just accept it". Mitigated only by the docs saying Now uses today's settings while Then stays frozen. | Not measurable through usage data (nothing about settings is stored). Noticed when a coach or reader asks why a value moved that the Team's work does not explain — in the K5 interview log, support questions or GitHub issues. Repeated reports reopen D46. |
+
 Hypothesis: we believe a frozen Then shown beside today's metrics, with the change coloured, will make coaches return
 to Lighthouse to show change. We will know when ≥ 40% of report-creating instances open Reports again a week or more
 later (K2).
@@ -1216,7 +1267,7 @@ No silent N/A — every item answered.
 | **RBAC impact** | **New guards, no new requirement.** Create, edit (Edit report) and delete = `TeamWrite` / `PortfolioWrite` (Team/Portfolio Admin, System Admin); list and view = `TeamRead` / `PortfolioRead`. UI: `rbac.isTeamAdmin(id)` / `rbac.isPortfolioAdmin(id)` from `useRbac()`; nothing fetches `/api/latest/authorization/my-summary`. Auth off or RBAC off: everyone may create and edit (permissive). Docs: `docs/settings/rbac.md` gains the Reports row at finalize. |
 | **Lighthouse-Clients CLI/MCP** | **N/A, because the maintainer excluded CLI/MCP on 2026-10-02 (D15).** All new endpoints are additive; no existing response shape changes, so no client release is forced. |
 | **Website / marketing surface** | **Owed at finalize (after slice 10, D34)**: features list entry (Community; Premium = unlimited reports), and a ValueFlow-style "show what changed since the engagement started" line for the consulting audience. Website is a separate repo that hot-links `docs/assets` from `@main`, so new screenshots go live there on push. Confirm copy with the maintainer before editing. |
-| **Docs + screenshots** | **Owed at finalize, not batched**: new page for Reports and the Then & Now template (the four panels, what change, % change and "beyond Then's limits" mean, why the colours, why every value shows its
+| **Docs + screenshots** | **Owed at finalize, not batched**: new page for Reports and the Then & Now Type (DT2; *was* "template") (the four panels, what change, % change and "beyond Then's limits" mean, why the colours, why every value shows its
 sample size, the "—" cases, that Now uses today's settings while Then stays as frozen, the cap, Edit report); `docs/teams/detail.md` and `docs/portfolios/detail.md` (new tab); `docs/licensing/licensing.md` (2 reports Community); `docs/settings/rbac.md`; the Team/Portfolio delete wording (D42). `@screenshot` one per theme: a Team report with green, red and "—" values, and the create dialog. Docs wait for the maintainer's confirmation. |
 | **Demo data** | **Checked in slice 03 and again at finalize; no CSV change planned.** Demo history is relative to load day and short (S11). Team Lightspeed (≈100 days) must give a 30-day Then and a Now with at least one visible change and a non-zero beyond-limits count for the screenshot; adjust its CSV only if it does not. The Portfolios stay thin on purpose, showing "—". No pre-seeded report — the E2E creates one, and a seeded report would freeze on load day. |
 | **Terminology** | **No new key.** "Report", "Then", "Now", "Then & Now" are product words, not a tracker's noun (D32); a key can be added later, additively. Every panel title and label uses {Cycle Time}, {Throughput}, {WIP}, {Work Item Age}, {Work Item(s)}, {Feature(s)}, {Team}, {Portfolio}. |
@@ -1230,18 +1281,18 @@ sample size, the "—" cases, that Now uses today's settings while Then stays as
 
 ## Wave: DISCUSS / [REF] DoR Validation
 
-Re-run 2026-10-03 after the revision.
+Re-run 2026-10-03 after the revision; re-run 2026-10-13 after the Final Wave Review Gate (items 1, 4, 6, 7, 8).
 
 | # | DoR item | Status | Evidence |
 |---|---|---|---|
-| 1 | Problem clear, domain language | PASS | Every story opens with Elena, Priya, Dev or Martin's situation; no "implement X" titles; no verdict language left in problems. |
+| 1 | Problem clear, domain language | PASS (clear; not validated) | **Clear. Not validated**: DISCOVER G1 FAIL (0 interviews), proceeding is a maintainer-accepted risk (D2, 2026-10-02). US-01's spreadsheet workaround is an **assumption** from desk research, not observed. Every story opens with Elena, Priya, Dev or Martin's situation; no "implement X" titles; no verdict language left in problems. |
 | 2 | Persona specific | PASS | `flow-coach` consulting (Elena, Team Admin, Lightspeed, engagement from 1 Aug 2026), short assessment (Dev, Gravity, ends 2 Oct 2026) and internal (Priya, Gravity, WIP limit from 14 Sep); reader `delivery-lead-rte` (Martin, Viewer). |
 | 3 | 3+ domain examples, real data | PASS | Each story lists ≥ 3 examples with Team names, dates (2 Oct 2026, 31 Jul 2026, 2 Oct 2025 cutoff) and values (21 → 12 days, −43%; 610 → 880 days, +44%). |
-| 4 | UAT G/W/T, 3–7 | PASS | US-01: 5, US-02: 5, US-03: 5, US-04: 4, US-05: 4, US-06: 3, US-07: 4, US-08: 4, US-09: dropped (D46), US-10: 6 (after DESIGN: US-01: 6, US-04: 5, US-05: 5, US-06: 4). Each includes an error or boundary path. |
+| 4 | UAT G/W/T, 3–7 | PASS | US-01: 5, US-02: 5, US-03: 5, US-04: 4, US-05: 4, US-06: 3, US-07: 4, US-08: 4, US-09: dropped (D46), US-10: 6 (after DESIGN: US-01: 6, US-04: 5, US-05: 5, US-06: 4; 2026-10-13: US-01: 7 with the cannot-be-loaded scenario, US-10: 7 with the stale-save scenario). Each includes an error or boundary path. |
 | 5 | AC from UAT | PASS | AC-n.m per story trace to its scenarios and to D-decisions. |
-| 6 | Right-sized | PASS, one at the edge | Every slice ≤ 1 day (07: ½ day). US-10 carries 6 scenarios in 1 day; it stays one slice because all three fields share one dialog and one guard. |
-| 7 | Technical notes | PASS | Inventory S1–S11; unrounded limits (S3, D40); PBC Baseline independence (S4); counting against frozen limits needs a limits-in path (US-03); NFRs. |
-| 8 | Dependencies tracked | PASS | 02–10 depend on 01; 03 on 02 (dogfood against a past Then); 04 on 03 (the count); 05 on 04 (picker); 06 on 05 (catalog complete); 07 on 01; 08 on 06; ~~09 on 01's snapshot~~ (09 dropped, D46); 10 on 05 and 07; release after 10 (D34). Three new provisional answers (Q8–Q10) are tracked below. |
+| 6 | Right-sized | PASS, two at the edge | Every slice ≤ 1 day (07: ½ day) except 01, re-estimated to 1½ days on 2026-10-13 (walking skeleton; the 4+-components taste test is a borderline fail). US-10 carries 7 scenarios in 1 day (6 before 2026-10-13); it stays one slice because all three fields share one wizard step set (DT4) and one guard. |
+| 7 | Technical notes | PASS | Inventory S1–S11; unrounded limits (S3, D40); PBC Baseline independence (S4); counting against frozen limits needs a limits-in path (US-03); NFRs for performance, accessibility, concurrency and report volume. |
+| 8 | Dependencies tracked | PASS | 02–10 depend on 01; 03 on 02 (dogfood against a past Then); 04 on 03 (the count); 05 on 04 (picker); 06 on 05 (catalog complete); 07 on 01; 08 on 06; ~~09 on 01's snapshot~~ (09 dropped, D46); 10 on 05 and 07; release after 10 (D34). Three new provisional answers (Q8–Q10) are tracked below. The Team tab order depends on Epic 5510 (Refinement sits between Metrics and Reports when it lands, D18) — tracked, not blocking. |
 | 9 | Outcome KPIs | PASS | K1–K5 with targets, baselines, measurement, re-checked against D39; guardrails G1–G3. |
 
 **DoR status: PASSED.** Q8–Q10 were confirmed by the maintainer on 2026-10-03; no provisional answer remains.
@@ -1302,6 +1353,19 @@ maintainer was not available mid-run, so genuine choices carry a recommendation,
 **Revision 2026-10-03.** The maintainer answered the eight decisions: #1, #2, #3, #8 accepted; thin data, the settings
 notice, {Throughput} and average {Work Item Age} changed as D45–D48 (recorded in DISCUSS). This section is updated in
 place: DD12 and DD15 rewritten, DD16 withdrawn, the settings snapshot and the weekly-median policy removed.
+
+**Revision 2026-10-13 (Final Wave Review, needs_revision).** Updated in place after DISTILL's UI walkthrough
+(DT1–DT7, final) and `distill/upstream-issues.md`: persistence split into a read and a write port (DD19); the edit's
+bounded-change universe declared (DD25); the wizard's window refusal before Create (DD26); wire names `atThen` /
+`atNow` (DD27); the closed refusal set and its statuses (DD28); owner identity in the application ports (DD29); the
+Create/Edit wizard on an extracted stepper frame, the list on `DataGridBase`, delete on `DeleteConfirmationDialog`
+(DD30); loading / failure / not-found looks (new section); unknown type and metric looks (DD32); Then freezes the
+85th only (DD33); the create budget as a hypothesis with a gate (DD34); Observability added to Quality attributes.
+ADR-219..222 corrected and **Accepted**. Additional reads this round: DISTILL sections and upstream issues,
+`ReportsAcceptanceTest.cs` (reason codes, helpers), `Slice01/08/10` scenarios, `models/Reports/Report.ts`,
+`ReportsTestKit.tsx`, `ReportsTab.createWizard.test.tsx`, `CreateWizardShell.tsx`, `DeleteConfirmationDialog.tsx`,
+`WidgetShell.tsx` / `widgetStatus.ts`, and the premium refusals in `TeamsController`, `DeliveriesController`,
+`OptionalFeaturesController`.
 
 | Read | Status |
 |---|---|
@@ -1395,12 +1459,17 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
   settings category and a header notice.)
 - **DD17** Cap: `ReportCapPolicy` = `CanUsePremiumFeatures() || countForOwner < 2`, checked inside the create command;
   the list envelope returns `creationBlockedByCap` so the UI does not restate the rule. The concurrent-create race is
-  accepted (ADR-219).
+  accepted (ADR-219). The refusal is **403** with code `report-cap-reached`, matching every premium refusal the API
+  already gives (`TeamsController` CSV cap, `DeliveriesController` archive, `OptionalFeaturesController`); the
+  frontend tells it from an RBAC 403 by the code alone.
 - **DD18** RBAC: one controller per owner kind, class-level `TeamRead` / `PortfolioRead`, action-level `TeamWrite` /
   `PortfolioWrite` on create / edit / delete; a report reached through another owner's route is a 404. Frontend gates
   on `useRbac().isTeamAdmin(id)` / `isPortfolioAdmin(id)` only. No new `RbacGuardRequirement`.
-- **DD19** Read and write are separate driving ports: `IReportQueries` (list, get — write-free) and `IReportCommands`
-  (create, edit, delete).
+- **DD19** Read and write are separate driving ports: `IReportQueries` (templates, list, get — write-free) and
+  `IReportCommands` (create, edit, delete). *Revised 2026-10-13 (B1)*: persistence is split the same way, so the
+  read path cannot even name a write. Driven `IReportReader` (get-for-owner, list-for-owner, count-for-owner) and
+  `IReportWriter` (add, update, remove, save) — both implemented by the one `ReportRepository`. `ReportQueries`
+  depends on `IReportReader` only; `ReportCommands` on both. There is no `IReportRepository`.
 - **DD20** Creation is in-request and all-or-nothing: every capture is computed in memory, then one `SaveChanges`.
   If slice 01's 10 s hypothesis fails, the first remedy is cheaper captures (one item load per owner per request),
   not the update queue (ADR-209 §3).
@@ -1408,13 +1477,81 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
   filter.
 - **DD22** Frontend: one shared Reports tab for both owner kinds; report view on its own route
   (`/teams/:id/reports/:reportId`, `/portfolios/:id/reports/:reportId`) so a report is linkable (5882 will link to
-  it). The frontend never derives a report window from the viewer's clock.
+  it). The frontend never reads the viewer's clock for a report: it does day arithmetic only on days the server sent
+  (DD26).
 - **DD23** No domain event, queue work or SignalR: nothing subscribes. The owner delete dialog reads the count from
   the list endpoint (D42); cascade is the FK.
-- **DD24** The read returns `thenRebuildable` (Then's start ≥ today − cutoff), which the delete dialog uses for
-  "This Then window can no longer be rebuilt" (D30).
-- **DD25** The edit request has no Then fields at all — name, shown metric keys, Now length only. A shown key without a
-  capture is refused (D27, AC-10.4).
+- **DD24** `thenRebuildable` (Then's start ≥ today − cutoff, computed by one function) is returned on the read **and
+  on every list row** (*revised 2026-10-13, H3*: DT1 puts a delete icon on each row and DT7's warning must show from
+  there without opening the report). It sits at the same path in both, `thenAndNow.thenRebuildable` — the list row
+  gains a `thenAndNow` object holding only that member, by the rule that template-specific members live in the
+  template's own object. `DeleteConfirmationDialog` shows "This Then window can no longer be rebuilt." when it is
+  false (D30, DT7).
+- **DD25** The edit request has no Then fields at all — name, shown metric keys, Now length, concurrency token. A
+  shown key without a capture is refused (D27, AC-10.4). *Revised 2026-10-13 (B2), the bounded-change universe*:
+  - **may change**: `Name`, `ShownMetricKeysJson`, the payload's `nowLengthDays`, `ConcurrencyToken` (a new token) —
+    of the one addressed row;
+  - **byte-identical after Edit**: `TeamId` / `PortfolioId`, `TemplateKey`, `CreatedAt`, `PayloadSchemaVersion`, and
+    every other payload member — `thenWindow`, every capture, and members a later version wrote that this version
+    does not know (an edit must not strip them);
+  - **no other row and no other table** is written.
+  An edit body carrying Then members (`thenEndDate`, `thenLengthDays`, …) is answered as if they were absent: the
+  request DTO has no such members and System.Text.Json ignores unknown members (no `UnmappedMemberHandling` is set in
+  the backend), so the edit succeeds (200) and Then stays as frozen. DISTILL's `Then_cannot_be_edited` pins exactly
+  that Then is unchanged and leaves the status open — consistent; no test changes.
+- **DD26** *(2026-10-13, B3)* **The wizard shows a window refusal before Create from bounds the server sends; the
+  server stays the rule's only authority.** `GET …/reports/templates` returns `today`, `earliestStart` and
+  `minimumLengthDays` (14), all produced by `ReportWindowPolicy`. The wizard's Then and Now steps compare the entered
+  window against those three values — end ≤ `today`, start ≥ `earliestStart`, length ≥ `minimumLengthDays` — and
+  compute the shown start as end − (L − 1) on the server's day strings (plain calendar days, never a `Date` in the
+  viewer's zone). Create and Save re-validate on the server; a server refusal maps to the same copy by its code, so a
+  frontend slip can delay a refusal, never store a bad window. No number or cutoff lives in the frontend. Rejected: a
+  window-check endpoint (one source of the comparisons too, but a round-trip on every keystroke, Next waiting on the
+  network, and a third loading/failure look inside a wizard step); copying 14 and the cutoff into the frontend (two
+  sources of the rule's values). Enforced by one boundary table run on both stacks (E12).
+- **DD27** *(2026-10-13, H4)* **The two sides of a metric are `atThen` and `atNow` on the wire**, as in the browser.
+  A member named `then` is a Biome error (`noThenProperty`) and makes the object a thenable to anything that awaits
+  it; one name on both sides removes the mapping DISTILL put in `ReportService`. Changes: the backend read DTO and
+  `ReportsAcceptanceTest.ThenValueIn` / `NowValueIn` (`"then"` → `"atThen"`, `"now"` → `"atNow"`); the frontend
+  `ReportService` mapping is dropped (the model already says `atThen` / `atNow`). `thenWindow`, `nowWindow`,
+  `thenRebuildable`, `daysSinceThenEnded` keep their names (not a bare `then`).
+- **DD28** *(2026-10-13, M1, M2)* **Refusals are a closed set of codes**, in a ProblemDetails body with an extension
+  `code` (and `earliestStart` for the two cutoff codes). Statuses: validation 400; cap 403 (DD17); RBAC 403 (no
+  code); another owner's or a missing report 404; stale token 409; a stored report of a type this version cannot read
+  **422** with `template-not-supported`. The set is DISTILL's eleven, adopted unchanged — see "Driving ports". It is
+  separate from DD12's absence codes, which are not refusals but values.
+- **DD29** *(2026-10-13, M7)* **Owner scoping lives in the application ports, authorisation in the driving
+  adapters.** Every `IReportQueries` / `IReportCommands` operation takes a `ReportOwner` (kind + id) and returns only
+  that owner's reports; none takes a user or a principal. The two controllers apply `RbacGuard` (Read / Write) and
+  translate the route into a `ReportOwner`. So a caller without a user can read a report: in v1 none exists; the
+  first will be 5882's scheduled sender, which decides its own authorisation (whose rights a send runs under) before
+  calling `IReportQueries.Get`.
+- **DD30** *(2026-10-13, H1, DT3/DT4/DT7)* **Create and Edit are one `ReportWizard` (mode create | edit)**, built on a
+  stepper frame **extracted** from `CreateWizardShell` (step labels, active step, Cancel / Back / Next / primary
+  action, busy state, error-alert slot). `CreateWizardShell` keeps its props and behaviour and renders inside the
+  frame (a refactor commit; its own tests stay green). Extract, not extend: its props are the Create {Team} /
+  {Portfolio} flow's (connections, states, wizards), and adding report steps to it would make every caller carry
+  both. Steps: ① Type is the wizard's own; each type contributes the steps after it through an exhaustive
+  `reportTypeSteps satisfies Record<ReportTemplateKey, …>` (Then & Now: ② Then, ③ Now, ④ Metrics & name). Edit mode
+  shows ① and ② read-only and starts at ③. Delete is `DeleteConfirmationDialog` with one new optional `warning` prop;
+  there is no `DeleteReportDialog`. The list is `DataGridBase`.
+- **DD31** *(2026-10-13, H5)* Loading, re-read, failure and not-found looks: see the section of that name.
+- **DD32** *(2026-10-13, M6)* **Unknown type, unknown metric.** A report whose type this version cannot read is still
+  listed (Type column: "Not supported in this version", no delete restriction) and opening it shows the not-found
+  family of looks with its own sentence, "This report was made by a newer version of Lighthouse and can't be shown
+  here." and Back to Reports (*copy to confirm at DELIVER's sketch*). A metric key in a read that the frontend has no
+  panel for renders a neutral frame "This metric can't be shown in this version of Lighthouse." in its place; the
+  wizard does not offer a key it has no panel for. Neither ever crashes the view.
+- **DD33** *(2026-10-13, M9)* **Then freezes the 85th percentile only** (D26 as DESIGN shaped it): the {Cycle Time}
+  panel's Then column shows the 85th alone, as in the approved mockup; Now shows 85th / 70th / 50th. Then's missing
+  70th and 50th are not "absent" values — they were never Then's — so no "Not captured" sentence appears for them.
+  "Not captured for this report" stays reserved for a metric or value the report predates (D27): one the catalog
+  captures for reports created later.
+- **DD34** *(2026-10-13, M8)* **Create ≤ 10 s is an unverified hypothesis.** Gate: slice 01 logs the elapsed time of
+  every create (Observability) and measures on the dev instance's busiest Team with a 365-day Then before slice 02
+  starts; the result is recorded in the slice's evolution notes. If it misses, the fallback (DD20) is cheaper
+  captures — one item load per owner per request, shared by the four metrics — never the update queue; if that still
+  misses, DESIGN is reopened before slice 04 adds the second metric.
 
 ---
 
@@ -1428,13 +1565,13 @@ Backend (`Lighthouse.Backend/Lighthouse.Backend/…`):
 | `Models/Reports/ThenAndNowPayload.cs` (+ `ReportWindow`, `MetricCapture` records per metric, `CapturedValue`, `FrozenLimits`) | NEW | Typed payload; additive members only |
 | `Models/Reports/ReportReadModels.cs` | NEW | Read DTOs the services return (summary, report, Then & Now read) |
 | `Services/Interfaces/Reports/IReportQueries.cs`, `IReportCommands.cs` | NEW | Driving application ports (DD19) |
-| `Services/Interfaces/Reports/IReportTemplate.cs`, `IReportMetric.cs`, `IReportMetricSeries.cs`, `IReportRepository.cs` | NEW | Template strategy, catalog entry, driven series port, persistence port |
+| `Services/Interfaces/Reports/IReportTemplate.cs`, `IReportMetric.cs`, `IReportMetricSeries.cs`, `IReportReader.cs`, `IReportWriter.cs`, `ReportOwner.cs` | NEW | Template strategy, catalog entry, driven series port, read and write persistence ports (DD19), owner identity (DD29) |
 | `Services/Implementation/Reports/ReportQueries.cs`, `ReportCommands.cs` | NEW | Compose templates, catalog, policies, repository |
 | `Services/Implementation/Reports/ThenAndNowTemplate.cs` | NEW | Create (freeze Then), edit (Now length), read (capture Now, count) |
 | `Services/Implementation/Reports/Metrics/{CycleTime,Throughput,Wip,WorkItemAge}ReportMetric.cs`, `ReportMetricCatalog.cs` | NEW | DD5, DD15 |
 | `Services/Implementation/Reports/TeamReportMetricSeries.cs`, `PortfolioReportMetricSeries.cs` | NEW | Adapters over the metrics services |
 | `Services/Implementation/Reports/ReportWindowPolicy.cs`, `BeyondLimits.cs`, `ReportCapPolicy.cs` | NEW | Pure policies (DD10, DD13, DD17) |
-| `Services/Implementation/Repositories/ReportRepository.cs` | NEW | `RepositoryBase<Report>` + count for owner |
+| `Services/Implementation/Repositories/ReportRepository.cs` | NEW | Implements `IReportReader` and `IReportWriter` (may derive from `RepositoryBase<Report>`; nothing outside the composition root sees it as `IRepository<Report>`) |
 | `API/TeamReportsController.cs`, `API/PortfolioReportsController.cs` (+ request DTOs in `API/DTO/Reports`) | NEW | Driving adapters (DD18) |
 | `Services/Implementation/XmRCalculator.cs` | EXTEND | Extract `Limits` (DD9) |
 | `Services/Implementation/BaseMetricsService.cs` | EXTEND | Extract the cycle-time series selection shared by the PBC builder and the new read |
@@ -1447,13 +1584,17 @@ Frontend (`Lighthouse.Frontend/src/…`):
 
 | Path | Change | Responsibility |
 |---|---|---|
-| `pages/Common/Reports/ReportsTab.tsx`, `ReportList.tsx` | NEW | Tab for either owner kind; empty states (D18); Create enablement from the envelope |
-| `pages/Common/Reports/CreateReportDialog.tsx`, `EditReportDialog.tsx`, `DeleteReportDialog.tsx` | NEW | D19, D44, D30 |
+| `pages/Common/Reports/ReportsTab.tsx`, `ReportList.tsx` | NEW | Tab for either owner kind; list on `DataGridBase` (Name link, Type, Created, delete icon for editors — DT1); empty states (D18); Create enablement from the envelope |
+| `pages/Common/Reports/wizard/ReportWizard.tsx` (mode create \| edit), `TypeStep.tsx`, `reportTypeSteps.ts`, `thenAndNow/{ThenStep,NowStep,MetricsAndNameStep}.tsx`, `reportWindowCheck.ts` | NEW | DT3/DT4, DD30; type-contributed steps; the pure window pre-check over server bounds (DD26) |
+| `components/Common/CreateWizards/WizardStepperFrame.tsx` | NEW (extracted) | Stepper chrome shared by `CreateWizardShell` and `ReportWizard` (DD30) |
+| `components/Common/CreateWizards/CreateWizardShell.tsx` | EXTEND (refactor) | Renders inside the extracted frame; props and behaviour unchanged |
+| `components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog.tsx` | EXTEND | One optional `warning` line (DT7); existing callers unchanged |
+| `pages/Common/MetricsView/WidgetShell.tsx` | EXTEND (export) | Export the body look (lone spinner / dimmed under a small spinner / could-not-load) for the list and the report view |
 | `pages/Common/Reports/ReportView.tsx`, `ThenAndNowHeader.tsx` | NEW | Fetch once; header (D35: both windows, days since Then ended); render shown panels |
-| `pages/Common/Reports/panels/ThenNowPanelFrame.tsx`, `{CycleTime,Throughput,Wip,WorkItemAge}Panel.tsx`, `reportPanelRegistry.ts`, `thenNowComparison.ts`, `reportWindowPresets.ts` | NEW | DD6, DD7; presets Team 30/90, Portfolio 90/180 |
-| `services/Api/ReportService.ts`, `models/Reports/*.ts` | NEW | API client and models (Zod `.nullable()` for every nullable) |
+| `pages/Common/Reports/panels/ThenNowPanelFrame.tsx`, `{CycleTime,Throughput,Wip,WorkItemAge}Panel.tsx`, `UnsupportedMetricPanel.tsx`, `reportPanelRegistry.ts`, `thenNowComparison.ts`, `reportWindowPresets.ts` | NEW | DD6, DD7, DD32; presets Team 30/90, Portfolio 90/180 (one-click buttons beside the custom length, as approved in the wizard sketch) |
+| `services/Api/ReportService.ts`, `models/Reports/*.ts` | NEW | API client and models (Zod `.nullable()` for every nullable); wire names used as they are, no renaming (DD27) |
 | `pages/Teams/Detail/TeamDetail.tsx`, `pages/Portfolios/Detail/PortfolioDetail.tsx`, router | EXTEND | Reports tab after Metrics; nested report route |
-| Team / Portfolio delete dialogs | EXTEND | "and its N reports" (D42) |
+| Team / Portfolio delete dialogs (Overview) | EXTEND | "and its N reports" when N ≥ 1, N from the owner's list endpoint (D42, DD23) |
 
 ---
 
@@ -1464,12 +1605,39 @@ twin the metrics controllers carry). Days are `yyyy-MM-dd`.
 
 | Operation | Method / path | Guard | Returns |
 |---|---|---|---|
-| List templates and applicable metrics | `GET …/reports/templates` | Read | `{ today, earliestStart, templates: [{ templateKey, metrics: [{ key }] }] }` — the instance's day and the cutoff bound the create dialog's date picker and default name; metrics that apply to this owner kind |
-| List the owner's reports | `GET …/reports` | Read | `{ reports: [{ id, name, templateKey, ownerKind, ownerId, createdOn }], creationBlockedByCap, communityCap: 2 }` |
-| Create | `POST …/reports` `{ templateKey, name, shownMetricKeys, thenAndNow: { thenEndDate, thenLengthDays, nowLengthDays } }` | Write | 201 + the report read; 400 with reason code + earliest start; refusal at cap with code `report-cap-reached` |
-| Read (Now computed) | `GET …/reports/{reportId}` | Read | `{ id, name, templateKey, ownerKind, ownerId, createdOn, concurrencyToken, shownMetricKeys, thenAndNow: { thenWindow, nowWindow, daysSinceThenEnded, thenRebuildable, metrics: { [key]: { then, now, beyondThenLimits } \| absent } } }` |
-| Edit | `PUT …/reports/{reportId}` `{ name, shownMetricKeys, concurrencyToken, thenAndNow: { nowLengthDays } }` | Write | 200 + read; 409 stale token; 400 uncaptured key / bad length |
-| Delete | `DELETE …/reports/{reportId}` | Write | 204 |
+| List templates and applicable metrics | `GET …/reports/templates` | Read | `{ today, earliestStart, minimumLengthDays, templates: [{ templateKey, metrics: [{ key }] }] }` — the instance's day, the cutoff and the minimum length (14) bound the wizard's Then and Now steps and its default name (DD26); `earliestStart` is `null` when the owner keeps every finished item (cutoff 0, ADR-222); metrics that apply to this owner kind. Pure read |
+| List the owner's reports | `GET …/reports` | Read | `{ reports: [{ id, name, templateKey, ownerKind, ownerId, createdOn, thenAndNow: { thenRebuildable } }], creationBlockedByCap, communityCap: 2 }` (DD24; a row of a type this version cannot read is listed with no `thenAndNow`). Pure read; the source of the owner-delete count too (DD23) |
+| Create | `POST …/reports` `{ templateKey, name, shownMetricKeys, thenAndNow: { thenEndDate, thenLengthDays, nowLengthDays } }` | Write | 201 + the report read; 400 + code (+ `earliestStart`); 403 `report-cap-reached` |
+| Read (Now computed) | `GET …/reports/{reportId}` | Read | see "Read contract" below; 404 missing or another owner's; 422 `template-not-supported` |
+| Edit | `PUT …/reports/{reportId}` `{ name, shownMetricKeys, concurrencyToken, thenAndNow: { nowLengthDays } }` | Write | 200 + read; 409 stale token; 400 + code. Then members in the body are ignored (DD25) |
+| Delete | `DELETE …/reports/{reportId}` | Write | 204; 404 |
+
+**Read contract** (*2026-10-13, H4/M3*; member names as DISTILL pinned them, adopted):
+
+```
+{ id, name, templateKey, ownerKind, ownerId, createdOn, concurrencyToken, shownMetricKeys,
+  thenAndNow: {
+    thenWindow { start, end, lengthDays }, nowWindow { start, end, lengthDays },   -- yyyy-MM-dd, inclusive
+    daysSinceThenEnded, thenRebuildable,
+    metrics: { [metricKey]: { atThen: Side, atNow: Side, beyondThenLimits: { above, below } | null } }
+  } }
+Side per metric (each member a value = { value: number | null, sampleSize: int | null, absentReason: code | null }):
+  cycle-time      atThen { p85 }              atNow { p85, p70, p50 }          -- DD33
+  throughput      { total, perDay }
+  wip             { average, min, max }
+  work-item-age   { totalWindowAverage, totalLastDay, averageWindowAverage, averageLastDay }
+beyondThenLimits.above / .below: a value whose `value` is the count (no sample size), or an absent reason
+```
+
+A metric the report never captured is missing from `metrics`; a member it never captured is missing or null — both
+read "Not captured for this report" (D27), except Then's 70th and 50th, which Then never holds (DD33).
+
+**Refusal codes** (closed; DISTILL's set, adopted — DD28). Window: `then-too-short`, `then-ends-in-the-future`,
+`then-before-cutoff` (+ `earliestStart`), `now-too-short`, `now-before-cutoff` (+ `earliestStart`). Request:
+`name-missing`, `no-metric-shown`, `unknown-metric`, `metric-not-captured` (edit only). Type:
+`template-not-supported` (400 on create; 422 when opening a stored report). Licence: `report-cap-reached` (403).
+**Absence codes** (DD12; values, not refusals): `no-finished-items`, `too-few-points`, `no-process`, `no-wip`,
+`lower-limit-zero` on the wire; `then-was-zero` is the panel's own and never travels.
 
 Template-specific members sit in one object named after the template (`thenAndNow`), in requests and in the read
 alike, and are validated by the template named in `templateKey`; a second template adds its own sibling object, so
@@ -1482,7 +1650,8 @@ nullable (S6964); no `[JsonRequired]` on anything a stored client might omit.
 
 | Port | Adapter | Notes |
 |---|---|---|
-| `IReportRepository` (NEW) | `ReportRepository` (EF, `RepositoryBase<Report>`) | Add, get-for-owner, list-for-owner, count-for-owner, update, remove |
+| `IReportReader` (NEW) | `ReportRepository` (EF) | Get-for-owner, list-for-owner, count-for-owner. No write member; the only persistence port `ReportQueries` may reach (DD19, E4) |
+| `IReportWriter` (NEW) | `ReportRepository` (EF, the same class) | Add, update, remove, save. Used by `ReportCommands` only |
 | `IReportMetricSeries` (NEW) | `TeamReportMetricSeries`, `PortfolioReportMetricSeries` | Delegate to `ITeamMetricsService` / `IPortfolioMetricsService`: cycle-time percentiles, finished cycle-time series, daily {Throughput}, daily {WIP}, daily total {Work Item Age} |
 | `ILighthouseClock` (reused) | existing | `Today`, `Zone` |
 | `ILicenseService` (reused) | existing | `CanUsePremiumFeatures()` |
@@ -1530,12 +1699,22 @@ No licensing change. Contract testing (Pact): **N/A**, no external integration.
 | Team / Portfolio detail tabs; delete dialogs | `TeamDetail.tsx:486-516`, `PortfolioDetail.tsx` | Tab, confirmation | **EXTEND** | One tab; "and its N reports" |
 | `RepositoryBase<T>`, ProblemDetails + `ConcurrencyConflictExceptionFilter` | repositories, filters | Persistence, 409 | **REUSE** | — |
 | Usage data route keys / event enum | `Models/UsageData/*` | Tab opens, events | **EXTEND (DEVOPS)** | Append only |
+| `CreateWizardShell` (*2026-10-13, H2*) | `components/Common/CreateWizards/CreateWizardShell.tsx` | Stepper wizard look (DT3: "on `CreateWizardShell`") | **EXTEND by extraction** | Its props are the Create {Team} / {Portfolio} flow's (connections, data-retrieval wizards, states) and its steps are hard-wired to `STEPS`; it cannot host report steps as is. Extract the chrome into `WizardStepperFrame`; the shell renders inside it unchanged; `ReportWizard` composes the same frame (DD30) |
+| `DataGridBase` (*H2*) | `components/Common/DataGrid/DataGridBase.tsx` | Reports list table | **REUSE** | The feature-list table style DT1 names; no change |
+| `DeleteConfirmationDialog` (*H2*) | `components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog.tsx` | Delete a report | **EXTEND** | One optional `warning` prop rendered as a warning line (DT7); every current caller passes none and is unchanged. Replaces DESIGN's former `DeleteReportDialog` |
+| `WidgetShell` body look + `WidgetStatus` (*H5*) | `pages/Common/MetricsView/WidgetShell.tsx`, `widgetStatus.ts` | Loading / re-read / failure looks | **EXTEND (export)** | Export the body look so the list and report view reuse it rather than invent one; `WidgetStatus` reused as is. The widget header (info, RAG) is not used |
+| TanStack Query keyed queries (*H5*) | existing app-wide | Late answers never land | **REUSE** | Keys per owner and report (see "Loading and failure looks") |
+| `LoadingAnimation` | `components/Common/LoadingAnimation` | Spinner | **REJECT for the report view** | No dimmed-under-spinner state and no could-not-load copy; `WidgetShell`'s body look has both |
 
 **CREATE NEW, with evidence**: `Report` entity/table/repository (nothing persists an owner-scoped, user-named,
 editable frozen comparison; ADR-209 confirmed no Report concept exists); the template strategy and metric catalog
 (no catalog of comparable metrics exists — the Metrics page wires widgets one by one); `ReportWindowPolicy` (the
 existing validator is off by one under D37's counting); `BeyondLimits` (no limits-in counting exists — `XmRCalculator` classifies against limits it computes itself); the frontend panels and
-tab (no Then/Now layout exists).
+tab (no Then/Now layout exists); `ReportWizard` and its type-contributed steps (no wizard composes steps per type;
+the stepper chrome itself is reused by extraction, not rebuilt).
+
+Contract shape per overlapping component (Mandate 12): see "Contract shapes" — every REUSE / EXTEND row that is on a
+report path appears there with its shape, universe and assertion.
 
 ---
 
@@ -1563,7 +1742,7 @@ C4Container
   title Container — Reports (Then & Now)
   Person(coach, "Flow coach")
   Person(reader, "Reader")
-  Container(spa, "Lighthouse SPA", "React 18 + TypeScript", "Reports tab, create / edit / delete dialogs, report view with one registered panel per metric")
+  Container(spa, "Lighthouse SPA", "React 18 + TypeScript", "Reports tab (DataGridBase list), Create / Edit report wizard on the extracted stepper frame, DeleteConfirmationDialog with a warning line, report view with one registered panel per metric")
   Container(api, "Lighthouse backend", "ASP.NET Core .NET 10", "Team/PortfolioReportsController, Reports module, existing metrics services")
   ContainerDb(db, "Relational store", "SQLite or PostgreSQL", "Reports table (payload JSON, FK cascade to Teams / Portfolios); Work Items")
   System_Ext(wts, "Work tracking system")
@@ -1573,6 +1752,11 @@ C4Container
   Rel(api, db, "Stores frozen reports in and reads Work Items from", "EF Core")
   Rel(api, wts, "Syncs Work Items from (unchanged)")
 ```
+
+**L3 delta (2026-10-13, B1).** In the L3 diagram the single `IReportRepository` node becomes two: `IReportReader`
+(reached by `IReportQueries` and, for the cap count, by `IReportCommands`) and `IReportWriter` (reached by
+`IReportCommands` only), both implemented by `ReportRepository`. The SPA subgraph gains `ReportWizard` →
+`WizardStepperFrame`. "Only `C` writes" now holds by type: `Q` has no arrow to a port with a write member.
 
 ---
 
@@ -1628,11 +1812,41 @@ the new table.
 
 | Component | Shape | Universe / assertion |
 |---|---|---|
-| `IReportMetric` capture, `ReportWindowPolicy`, `BeyondLimits`, `XmRCalculator.Limits`, `ReportCapPolicy` | pure function (return only) | table/property tests; no repository in their dependency graph (ArchUnit) |
-| `IReportQueries` (list, get) | pure read | depends on no write member of `IReportRepository` and on no `SaveChanges` (ArchUnit) |
-| `IReportCommands.Create` | bounded change | one `Reports` row added, nothing else; asserted by row counts of every other table before/after in an integration test |
-| `IReportCommands.Edit` / `Delete` | bounded change | name / shown keys / Now length of one row; one row removed |
-| Templates' create | returns a payload value; persistence only in the command | — |
+| `ReportWindowPolicy`, `BeyondLimits`, `XmRCalculator.Limits`, `ReportCapPolicy`, `thenRebuildable` | pure function (return only) | table/property tests; no repository or series port in their dependency graph (ArchUnit) |
+| `IReportMetric` capture (*reclassified 2026-10-13, M4*) | **read-only I/O**: reads through `IReportMetricSeries`, returns a capture value, writes nothing | depends on `IReportMetricSeries` only (E3); that port has no write member. Its arithmetic over a series is pure and unit-tested with a faked series port |
+| `TeamReportMetricSeries`, `PortfolioReportMetricSeries` (*M5*) | read-only I/O (driven adapters) | delegate to the metrics services' read methods only; parity tests against the Metrics endpoints (E6) are their probe — a series that differs from the Metrics tab fails there, not in a report |
+| `IReportQueries` templates / list / get | pure read (with read-only I/O) | `ReportQueries` depends on `IReportReader`, never `IReportWriter`, `IRepository<>`, `LighthouseAppContext` or `SaveChanges` (ArchUnit E4); integration test: row counts and the `Reports` row's columns unchanged across a get |
+| Owner-delete count (*M5, DD23*) | pure read | it **is** `IReportQueries` list (the length of `reports`); no new member, no count endpoint |
+| `IReportTemplate` read (Then & Now: capture Now, count beyond limits) | read-only I/O, returns a read value | reached only from `ReportQueries`; same assertion as the row above |
+| `IReportTemplate` create (freeze Then) | returns a payload value; persistence only in the command | no `IReportWriter` in its graph (ArchUnit) |
+| `IReportTemplate` edit (*M5*) | pure function: (stored payload, edit request, window bounds) → payload or refusal | returns the stored payload with `nowLengthDays` replaced and every other member — including members this version does not know — kept; unit test with an unknown member present |
+| `IReportCommands.Create` | bounded change | one `Reports` row added, nothing else; row counts of every other table before/after in an integration test |
+| `IReportCommands.Edit` (*B2*) | bounded change | mutation set = `Name`, `ShownMetricKeysJson`, payload `nowLengthDays`, `ConcurrencyToken` of the addressed row; universe = every other column of that row, every other payload member (compared as JSON trees with `nowLengthDays` removed), every other row and table — asserted unchanged in one integration test (DD25) |
+| `IReportCommands.Delete` | bounded change | the addressed row removed; every other row and table unchanged |
+| Frontend `reportWindowCheck` (*B3*) | pure function: (entered window, server bounds) → refusal code or none | boundary table shared with the backend's `ReportWindowPolicy` test (E12) |
+| Frontend panels, `ThenNowPanelFrame`, `UnsupportedMetricPanel` | pure function of props | identical props → identical output, no network (E9) |
+
+---
+
+## Wave: DESIGN / [REF] Loading and failure looks
+
+*Added 2026-10-13 (H5); consistent with DT6, which is final.* Every look reuses `WidgetShell`'s body look (exported,
+see Reuse Analysis) and `WidgetStatus` (`loading` / `error` / `ready`). Never: the previous answer shown as current,
+an empty area that could pass for "no data", or a value the reader cannot tell is stale. Check by hand with the
+browser throttled to a slow connection.
+
+| Surface | Query key | First load | Re-read | Failure | Not found / unsupported |
+|---|---|---|---|---|---|
+| Reports list (tab) | `['reports', ownerKind, ownerId]` | lone spinner where the table goes; `+ Create Report` disabled until the envelope arrives (the cap state is unknown) | after create / edit / delete (invalidated): current table dimmed under a small spinner | "Reports couldn't be loaded. Reload to try again." with Retry; no table, no empty state (*copy to confirm; DISTILL proposed Retry alone*) | — |
+| Report view | `['report', ownerKind, ownerId, reportId]` | breadcrumb + lone spinner "Loading report…" (DT6) | after Edit (invalidated): current report dimmed under a small spinner, never shown as fresh (DT6) | "This report couldn't be loaded. Reload to try again." + Retry, no stale numbers (DT6) | 404: "This report no longer exists." + Back to Reports (DT6); 422 `template-not-supported`: DD32's sentence + Back to Reports |
+| Wizard (create and edit) | `['reportTemplates', ownerKind, ownerId]` | step ① shows a lone spinner; Next disabled — no default dates are drawn from the viewer's clock while the server's `today` is on its way | — | error alert in the wizard "Report types couldn't be loaded." + Retry; Next disabled | — |
+| Wizard submit | mutation | — | Create / Save shows a spinner; inputs disabled (DT3) | error alert in the wizard naming the refusal by its code's copy, every input kept (DT3); 409 on Save: DT4's sentence | — |
+| Owner delete dialog (Overview) | the owner's list key | the clause shows a small spinner; Delete disabled until the count arrives | — | the clause reads "and any reports it has"; Delete enabled (*copy to confirm*) | — |
+
+A late answer for an older report, owner or window never lands: every query is keyed as above and the view renders
+only the answer for its current key. The report view sets `data-report-status` (`loading` / `error` / `ready`) and
+the list `data-widget-status`; E2E page objects wait for `ready`, not for visibility. Edit opens from the report
+already in hand (the wizard needs the templates query only for its bounds).
 
 ---
 
@@ -1641,7 +1855,9 @@ the new table.
 - **5882 Email Reports**: a later `ReportDelivery` (schedule, channel) table references `Reports.Id` with cascade —
   outside the template and outside the row. It renders the **same read** the SPA uses, through the **same pure
   panels** (no fetching, no effect-derived state — Spike 6052's SSR constraint), and links to the report's own route.
-  The saved Now length gives every send a defined window.
+  The saved Now length gives every send a defined window. It calls `IReportQueries.Get(owner, reportId)` with no
+  user: owner scoping is in the port, authorisation in whoever calls it (DD29), so the sender decides whose rights a
+  send runs under.
 - **5935 Signals**: a second `IReportTemplate` whose payload holds a definition (rules) rather than captures; it calls
   the same `IReportMetric` captures live and adds a rule engine on top. Same table, same tab, same cap (D29).
 - **Cross-owner listing**: every summary carries `ownerKind` + `ownerId`; a later listing is a new query over
@@ -1659,7 +1875,9 @@ ArchUnitNET + NUnit + TypeScript:
   `ProcessBehaviourChartBaseline*` (S4) or `BaselineValidationService` (the PBC Baseline's rule stays its own; the two
   validators answer different questions and are deliberately not shared — DRY is about knowledge, ADR-222).
 - **E3** metrics depend on `IReportMetricSeries`, never on the metrics services directly.
-- **E4** `IReportQueries`' implementation reaches no write member (read path write-free).
+- **E4** `ReportQueries` (and the template read it calls) depends on `IReportReader` and on none of `IReportWriter`,
+  `IRepository<>`, `LighthouseAppContext`; `IReportReader` declares no member that adds, updates, removes or saves
+  (a reflection test over the interface, so a write added to the read port fails the build, not a review).
 - **E5** `XmRCalculator.Calculate` = `Limits` rounded (property test); existing `XmRCalculatorTest` untouched.
 - **E6** parity: Then captured for a window equals the Metrics endpoints for that window (AC-2.3).
 - **E7** payload round-trip: a slice-01-shaped document reads into the current type, later members null.
@@ -1667,13 +1885,35 @@ ArchUnitNET + NUnit + TypeScript:
 - **E9** frontend registry exhaustive (`satisfies Record<…>`), exhaustive maps for reason codes with no `default:`;
   panels pure (identical props → identical output, no network).
 - **E10** no user-facing "Baseline"; every metric word via Terminology tokens.
+- **E11** *(2026-10-13)* read DTO shape test: no member named `then` or `now` anywhere in the read (DD27); the frontend
+  side is held by Biome's `noThenProperty`.
+- **E12** *(2026-10-13)* one window boundary table — 13 / 14 days, end = today / today + 1, start = earliest /
+  earliest − 1, for Then and for Now — run against `ReportWindowPolicy` (NUnit) and `reportWindowCheck` (Vitest) with
+  the same rows and the same expected codes (DD26), so the frontend pre-check cannot drift from the rule unnoticed.
+- **E13** *(2026-10-13)* edit universe (DD25): one integration test stores a payload carrying a member this version
+  does not know, edits name, keys and Now length, and asserts every other column and payload member unchanged and no
+  other table touched.
 
 ---
 
 ## Wave: DESIGN / [REF] Quality attributes
 
-- **Performance**: create ≤ 10 s (four captures over ≤ 365 days, in memory, one save; slice 01 measures on the dev
-  instance's busiest Team); open ≤ 2 s (four Now captures, metrics cache keyed by dates). Metrics tab unchanged.
+- **Performance**: create ≤ 10 s and open ≤ 2 s are **unverified hypotheses** (DD34): four captures over ≤ 365 days,
+  in memory, one save; four Now captures on open, metrics cache keyed by dates. Slice 01 measures create on the dev
+  instance's busiest Team before slice 02 starts; fallback = one item load per owner per request; reopen DESIGN if
+  that misses. Metrics tab unchanged.
+- **Observability** (*added 2026-10-13, H6*), through the existing `ILogger` pipeline and the operator's problems log
+  (`/api/latest/logs/problems`), never naming a report, its owner's name or any Work Item:
+  - **Warning** when a stored report cannot be read: unknown template key, unreadable payload, or a payload schema
+    version this version does not know — with report id, owner kind + id and the key / version (DISTILL pins that the
+    warning names the key and never the report's name);
+  - **Warning** when a stored shown-metric key or capture key is not in this version's catalog (it is skipped on read,
+    DD32);
+  - **Error** for an unexpected failure during create or edit (the exception, report id where one exists, owner kind +
+    id, template key); nothing is half-stored (DD20);
+  - **Information** for every create with its elapsed milliseconds and window lengths — the instrument for DD34;
+  - refusals (400 / 403 / 409) are expected answers and are **not** logged above Debug.
+  Usage events are DEVOPS's (see the DEVOPS sections), not part of this list.
 - **Reliability / integrity**: all-or-nothing creation; frozen Then independent of PBC settings; cascade enforced by
   the database; additive payload.
 - **Security**: owner Read/Write guards; non-disclosing 404 across owners; payload holds aggregate numbers only — no
@@ -1718,7 +1958,11 @@ No open decision remains for the maintainer from DESIGN.
 
 - DELIVER: confirm `GetCycleTimeDataForPortfolio` and the Portfolio PBC's `GetFeaturesClosedInDateRange` select the
   same Features; if not, the new series read uses the PBC's.
-- DELIVER: the exact HTTP status for `report-cap-reached` follows the existing premium refusals (check before choosing).
+- ~~DELIVER: the exact HTTP status for `report-cap-reached`~~ — decided 2026-10-13: 403, as every premium refusal (DD17,
+  DD28).
+- DELIVER: the copy marked *to confirm* in DD32 and "Loading and failure looks" goes into DELIVER's sketch with the
+  maintainer before the slice that first shows it (slice 01 for the list failure and the unsupported type; slice 08
+  for the owner delete dialog's loading and failure clause).
 - DELIVER: SQLite check constraint support through `CreateMigration` — if awkward, the factory alone enforces "exactly
   one owner" and a test pins it.
 - DISTILL: sample size visible on every value (D45) and the five "—" cases as boundary scenarios — no finished items,
@@ -1736,13 +1980,16 @@ No open decision remains for the maintainer from DESIGN.
 ## Wave: DESIGN / [REF] ADRs
 
 - [ADR-219](../../product/architecture/adr-219-a-report-is-an-owner-scoped-record-with-a-template-payload.md) — Report
-  model; supersedes ADR-209's deferral. **Proposed.**
+  model; supersedes ADR-209's deferral; read / write persistence ports, owner scoping in the ports, cap status.
+  **Accepted** (2026-10-13).
 - [ADR-220](../../product/architecture/adr-220-a-metric-catalog-captures-values-and-the-frontend-panel-owns-the-direction-of-good.md)
-  — metric catalog + panel registry; direction of good frontend-only. **Proposed.**
+  — metric catalog + panel registry; direction of good frontend-only; unknown type and metric looks. **Accepted**
+  (2026-10-13).
 - [ADR-221](../../product/architecture/adr-221-then-is-frozen-as-captured-values-and-unrounded-limits-from-its-own-series.md)
-  — what Then freezes; unrounded limits; sufficiency codes. **Proposed.**
+  — what Then freezes (85th only for {Cycle Time}); unrounded limits; sufficiency codes; wire names `atThen` /
+  `atNow`. **Accepted** (2026-10-13).
 - [ADR-222](../../product/architecture/adr-222-report-windows-are-inclusive-instance-days-and-now-length-is-stored-on-the-report.md)
-  — windows and the stored Now length. **Proposed.**
+  — windows, the stored Now length, the wizard's pre-check from server bounds. **Accepted** (2026-10-13).
 
 ---
 
@@ -1792,7 +2039,7 @@ the Refinement precedent (`epic-5510-5881-refinement`), re-read for this feature
 | This file: every `## Wave: DESIGN / …` section (DD1–DD25, components, driving/driven ports, storage + migration plan, contract shapes, seams for 5882/5935, enforcement E1–E10, quality attributes, open questions, Handoff to DEVOPS) | ✓ |
 | `design/wave-decisions.md`, `design/upstream-changes.md`, `discuss/wave-decisions.md` | ✓ |
 | Precedent: `epic-5510-5881-refinement/devops/wave-decisions.md`, its `environments.yaml`, its `## Wave: DEVOPS / …` sections | ✓ |
-| `Models/UsageData/UsageDataEventName.cs` (last `TeamForecastRealityCheckRun = 11`, same on this checkout's `main` at `289afca46`), `UsageDataRouteKey.cs` (last `PortfolioDetail_Access = 9`), `UsageDataRoutePatterns.cs`, `UsageDataEventShapes.cs` (`IsCarriedExactlyWhenDeclared`), `UsageDataEventReported.cs`, `UsageDataOptionalFeature.cs` (usage data's own list, not the product's keys) | ✓ |
+| `Models/UsageData/UsageDataEventName.cs` (2026-10-03: last `TeamForecastRealityCheckRun = 11`; **re-read 2026-10-13 on `main`: last `TeamRefinementDayVerdictShown = 15`**), `UsageDataRouteKey.cs` (2026-10-03: last `PortfolioDetail_Access = 9`; **re-read 2026-10-13: last `TeamDetail_Refinement = 10`**), `UsageDataRoutePatterns.cs`, `UsageDataEventShapes.cs` (`IsCarriedExactlyWhenDeclared`), `UsageDataEventReported.cs`, `UsageDataOptionalFeature.cs` (usage data's own list, not the product's keys) | ✓ |
 | `PostHogUsageDataPublisher.cs` (wire properties `work_tracking_system`, `optional_feature`, `licence_tier`) | ✓ |
 | Frontend `services/UsageData/usageDataRouteKeys.ts` (`/teams/:id/:tab?` matcher), `usageDataEvents.ts` (5-second dwell), `usageDataReporter.ts` (exhaustive `Record` mapping), `ForecastRealityCheck.tsx` (emission after a 2xx) | ✓ |
 | `docs/settings/usagedata.md` (event table, field table, "ten addresses", per-instance facts incl. licence tier) | ✓ |
@@ -1838,7 +2085,7 @@ never a connector); hosted tenant (platform torn down; Postgres covers the provi
 
 | Stage | Workflow | What it does for this feature |
 |---|---|---|
-| Change detection | `ci_changes.yml` (`path-classifier.sh`) | Flags backend and frontend. **Slice 01 registers the Reports module in `Program.cs`** → `connector_shared=true` → the full live-connector `Integration` category runs (shared Linear key, unauthenticated GitHub pair can rate-limit). Expect it; do not debug it as a regression. A red backend skips `sonar-gates` |
+| Change detection | `ci_changes.yml` (`path-classifier.sh`) | Flags backend and frontend. **Slice 01 registers the Reports module in `Program.cs`** → `connector_shared=true` → the full live-connector `Integration` category runs (shared Linear key, unauthenticated GitHub pair can rate-limit). Expect it; the acceptance rule below says what may be re-run and what blocks |
 | Backend | `ci_backend.yml` | `dotnet build` zero warnings; NUnit unit + WebApplicationFactory acceptance tests (RBAC on every write, cross-owner 404, cap, window policy, parity E6, payload round-trip E7, cascade E8, bounded-change row counts); ArchUnitNET E1–E5; `ExpandOnlyMigrationGuard` over the one migration |
 | Frontend | `ci_frontend.yml` | Vitest (panels pure, registry exhaustive, reason-code maps, dialogs, usage-data emission per event, route keys); `pnpm build` (`tsc -b`, Biome `--write` in prebuild) |
 | E2E (compile) | `ci_e2e.yml` | Compiles the suite only |
@@ -1847,6 +2094,29 @@ never a connector); hosted tenant (platform torn down; Postgres covers the provi
 | Quality gate | `ci_sonar_gates.yml` | No new issue of any severity. Pre-apply (`docs/ci-learnings.md`): S6964 nullable value types on request DTOs, no `[JsonRequired]` on anything a stored client may omit, CA1869 cached `JsonSerializerOptions` for the payload converter, CA1859, S107 (two controllers, DD18), S3776, CA1861/NUnit2045 in new tests, Zod `.nullable()` |
 | Package / Docker / Chart | existing jobs | Unchanged. No chart value added |
 | Release | `ci_release.yml` via `/release` | Calver; cut after slice 10 (D34); `waiting` on main = deploy approval |
+
+**Acceptance rule for the slice-01 backend run (full live-connector suite, forced by `Program.cs`).** The filter on
+that run is `Category!=Integration | (Category=Integration & Category!=UsageDataCanary)`, so every connector category
+runs against real Jira, Linear, Azure DevOps and ServiceNow. A red backend is judged by its failure signature:
+
+| Signature (from `CLAUDE.md` § Quality Gates) | Verdict |
+|---|---|
+| A live-connector test throwing `NotSupportedException` for a missing credential | Environmental |
+| Linear failures where one names a 429 (shared key with local runs) | Environmental |
+| `GetAllReleases_*` / `GetLatestVersion_*` with `Octokit.RateLimitExceededException` | Environmental |
+| The 8 `LighthouseReleaseServiceIntegrationTest.InstallUpdate_SupportedPlatform_*` ("never reached exit within 10 s") | Known on unmodified `main`, not caused by this slice; not "confirmed" by a rerun |
+| Exactly 10 failures in `ReleaseServiceTest` (the unit class) | Contention |
+
+Only a run whose **every** failure matches a row above may be re-run, and **at most once**. The rerun must be green
+(or fail only on the `InstallUpdate` row, which then needs the maintainer's explicit go). **Any other failure — any
+Reports, metrics, migration, RBAC or ArchUnit test, or a connector failure that does not match a signature — blocks
+the slice** and is debugged as a regression. What a red backend does downstream (read from `ci.yml` /
+`ci_backend.yml`, 2026-10-13): the failed `dotnet test` step skips `End SonarCloud analysis`, so no backend Sonar
+report exists for that push; `sonar-gates` (`needs: [frontend, backend]`, `if: … !contains(needs.*.result,
+'failure')`) is then **skipped, not failed** — so **Sonar does not judge that push at all**. Worse, the packaging and
+`release` jobs treat a skipped `sonar-gates` as passable and do **not** need `backend`, so a red backend does not stop
+the pipeline reaching the release gate. Hence: never approve a `waiting` release run, and never close the slice's ADO
+item, on a run whose backend is red; the Sonar verdict for slice 01 is the one from the green (re)run.
 
 **Local gates** (CI parity, `CLAUDE.md` § Quality Gates): `pnpm test`, `pnpm build`, backend build + filtered
 `dotnet test` (connector categories excluded). In a worktree, copy the premium licence fixture first (2 Licensing
@@ -1872,18 +2142,21 @@ can pair them only as "same browser, close in time".
 
 ### New vocabulary (appended, never renumbered)
 
-**The name is the contract; the integer is whatever is next on `main` when the slice lands.** Today the next free
-event integer is 12 and the next free route key is 10. The Refinement epic has named its own events (provisionally
-12–16) and `TeamDetail_Refinement` (provisionally 10) the same way; neither feature reserves numbers — whichever slice
-lands first takes the next one. The integers below assume Reports lands first.
+**The name is the contract; the integer is whatever is next on `main` when the slice lands.** Re-read on `main`
+2026-10-13: `UsageDataEventName` ends at `TeamRefinementDayVerdictShown = 15` and `UsageDataRouteKey` at
+`TeamDetail_Refinement = 10` — the Refinement epic landed first and took 12–15 and key 10. So the next free event
+integer is **16** and the next free route key **11**; the integers below are re-based on that and are still
+provisional. Nothing reserves numbers: **DELIVER step (first step of slice 01, again of slice 06 and slice 08)** —
+re-read both enum files on `main` immediately before appending and take the next integer then, never the one written
+here. The DISTILL tests pin **names only, not integers**, so a shift costs no test change.
 
 | Event (`UsageDataEventName`) | Int (provisional) | Carries | Emitting slice (DELIVER step) | Fires (browser, after the server accepted) | KPI served |
 |---|---|---|---|---|---|
-| `TeamTabOpened` + route key **`TeamDetail_Reports`** (`/teams/:id/reports`) | 0 (existing) / key 10 | route (existing) | **01** | Existing 5-second dwell rule; `usageDataRouteKeys.ts` gains `["reports", …]`, `UsageDataRoutePatterns` gains the address | K1 funnel step (saw the tab → created); Team vs Portfolio split |
-| `PortfolioTabOpened` + route key **`PortfolioDetail_Reports`** (`/portfolios/:id/reports`) | 1 (existing) / key 11 | route (existing) | **06** | Same | Same, for Portfolios |
-| **`ReportCreated`** | **12** | `report_template` | **01** | `POST …/reports` returned 201, from the create dialog. Never on a refused create (window, cap) | K1, K2 (cohort start), G1 (denominator) |
-| **`ReportOpened`** | **13** | `report_template` | **01** (Team), Portfolio from **06** with no extra step — the view is shared | The report view's `GET …/reports/{id}` returned 2xx **and the view stayed mounted 5 s** (same constant as tab openings); at most once per mount — a refetch after an edit does not fire again | K2 (north star) |
-| **`ReportDeleted`** | **14** | nothing | **08** | `DELETE …/reports/{id}` returned 204, from the report's delete dialog. **Not** when reports go with their Team or Portfolio (that is `TeamDeleted` / `PortfolioDeleted`, D42) | G1 |
+| `TeamTabOpened` + route key **`TeamDetail_Reports`** (`/teams/:id/reports`) | 0 (existing) / key 11 | route (existing) | **01** | Existing 5-second dwell rule; `usageDataRouteKeys.ts` gains `["reports", …]`, `UsageDataRoutePatterns` gains the address | K1 funnel step (saw the tab → created); Team vs Portfolio split |
+| `PortfolioTabOpened` + route key **`PortfolioDetail_Reports`** (`/portfolios/:id/reports`) | 1 (existing) / key 12 | route (existing) | **06** | Same | Same, for Portfolios |
+| **`ReportCreated`** | **16** | `report_template` | **01** | `POST …/reports` returned 201, from the create dialog. Never on a refused create (window, cap) | K1, K2 (cohort start), G1 (denominator) |
+| **`ReportOpened`** | **17** | `report_template` | **01** (Team), Portfolio from **06** with no extra step — the view is shared | The report view's `GET …/reports/{id}` returned 2xx **and the view stayed mounted 5 s** (same constant as tab openings); at most once per mount — a refetch after an edit does not fire again | K2 (north star) |
+| **`ReportDeleted`** | **18** | nothing | **08** | `DELETE …/reports/{id}` returned 204, from the report's delete dialog. **Not** when reports go with their Team or Portfolio (that is `TeamDeleted` / `PortfolioDeleted`, D42) | G1 |
 
 **The report view's own route maps to no route key.** The existing matcher is `/teams/:id/:tab?`, which does not match
 `/teams/7/reports/42`, so opening a report reports no tab opening — `ReportOpened` says it. Pinned by a Vitest case
@@ -1914,6 +2187,16 @@ reading run over one unbroken series. The value comes from the read's `templateK
 This is a deliberate exception to "name-only first", decided by the maintainer; in v1 the value is always
 `ThenAndNow`.
 
+**The exception, stated once.** `CLAUDE.md` says a property is added only when an outcome KPI cannot be counted
+without it. No v1 KPI needs `report_template` — with one template, every report is *Then & Now*. It is carried anyway,
+on both `ReportCreated` and `ReportOpened`, **by the maintainer's explicit decision of 2026-10-03**, for two reasons:
+symmetry (the events' shape never changes, so K1/K2 and any per-template reading run over one unbroken series), and
+5935 Signals will append values, at which point the split *is* KPI-relevant. It stays within the rule's hard limits: a
+**closed enum**, mapped exhaustively in the browser, never free text, ids or counts. `CLAUDE.md` is not edited. **Owed
+in DELIVER (slice 01)**: `docs/settings/usagedata.md` names the property *and why it exists in v1* (one template today,
+more to come; it says which kind of report, never which report). **The maintainer may revisit** this — surfaced in the
+AFK hold summary; dropping it before slice 01 lands costs one enum and two Vitest assertions.
+
 **No owner-kind property, and no Team-/Portfolio- prefixed names.** No KPI splits by owner kind. The split, where
 anyone wants it, is readable from the two route keys. Three owner-agnostic names follow from DESIGN's single module and
 shared tab.
@@ -1927,7 +2210,7 @@ shared tab.
 | **K4** land-and-expand (≥ 15% of Community creators hit the 2-report cap within 90 days) | none exact; proxy from `ReportCreated` + `licence_tier` | proxy: Community browsers with ≥ 2 `ReportCreated` within 90 days ÷ Community browsers with ≥ 1 | **An upper bound, not a count.** The cap is per owner; the pipe has no owner, and deletes free a slot, so two creations may be two Teams that never met the cap. No fourth event (maintainer 2026-10-03): read the proxy only as "at most this many" |
 | **K5** consultants show a report to client management (≥ 2 in 90 days) | maintainer conversation log (DISCOVER R1, R2) | — | Qualitative, unchanged; no telemetry |
 | **G1** reports deleted within 1 day of creation ≤ 20% of created | `ReportDeleted` + `ReportCreated` | per browser: `ReportDeleted` within 24 h after a `ReportCreated` from the same browser ÷ `ReportCreated` | **Proxy — accepted by the maintainer 2026-10-03.** Without a report id, a delete cannot be paired with *its* create; a same-day delete of an older report counts too, so the proxy reads high — safe for a ceiling guardrail. Readable from slice 08 |
-| **G2** open ≤ 2 s, create ≤ 10 s | slice 01 timing on the dev instance's busiest Team (manual, DELIVER); DISTILL timing check; the `ElapsedMs` field of the *report created* log line, Warning above 10 s (Observability) | per instance, in the log and *Recent problems* | Not telemetry. In the field it is the operator's signal, not ours |
+| **G2** open ≤ 2 s, create ≤ 10 s | slice 01 timing on the dev instance's busiest Team (manual, DELIVER); DISTILL timing check; the `ElapsedMs` field of the *report created* log line, Warning above 10 s; **a Warning `report-read-slow` when a single report read exceeds 2 s** — logged only when exceeded (Observability) | per instance, in the log and *Recent problems* | Not telemetry. In the field it is the operator's signal, not ours |
 | **G3** no report shows 0 where data is absent; Metrics tab PBCs unchanged | DISTILL boundary scenarios (the five "—" codes, DD12) + E5 byte-identical `Calculate` + E6 parity | CI | Not telemetry |
 
 **Smuggling refused, explicitly**: no report name, report id, owner id, metric value, window length, shown-metric
@@ -1938,7 +2221,8 @@ fails the build if a row is missing):
 
 - **01**: rows *A report was created* (with "which template — only *Then & Now*; never its name, never which Team or
   Portfolio, never its dates or numbers") and *A report was opened* (five-second rule; which template, as for creation); field row
-  *Which report template* (only on a report being created or opened; value `ThenAndNow`); the Team tab count and the address
+  *Which report template* (only on a report being created or opened; value `ThenAndNow`; **and why it is sent while
+  there is only one template** — further templates are planned, and it names the kind of report, never the report); the Team tab count and the address
   list gain *Reports*; the "only on …" sentences of the existing field rows get their event counts updated.
 - **06**: the Portfolio tab count and the address list gain *Reports*.
 - **08**: row *A report was deleted* ("only when somebody deletes a report itself — reports that go with their Team or
@@ -1974,13 +2258,19 @@ DISTILL: one acceptance scenario each — a seeded row with an unknown template 
 **Rollback rehearsal (owed, DELIVER 01)**: start the previous published release's Docker image against a database
 migrated by slice 01 (SQLite file + Postgres) that holds reports; open a Team, delete a Team that has reports.
 Expected: starts, healthy (`MigrationsAppliedHealthCheck` checks *pending*; the older binary has none), the reports go
-with the Team, no error. One manual check, recorded in the slice's deliver notes.
+with the Team, no error. One manual check, recorded in the slice's deliver notes. **Release gate item**: the `/release`
+run that cuts the calver containing slice 01 must find this rehearsal recorded (date, previous version used, both
+providers, outcome) in slice 01's deliver notes before the release is approved; if it is missing, the release waits
+for it.
 
-**Migration generation (DELIVER 01)**: `Lighthouse.Backend/Create-Migration.ps1 -MigrationName AddReports` (SQLite +
-Postgres; the script needs a full solution build first), then the ordered `--no-incremental` rebuild (migration DLLs
-are HintPath refs). **The CHECK constraint is not a problem on SQLite here**: SQLite cannot add a constraint to an
-existing table, but this is a new table, so EF writes the CHECK inline in `CREATE TABLE`. DESIGN's fallback (factory
-plus a test) is only needed if `Create-Migration.ps1` output proves otherwise.
+**Migration generation — the first DELIVER step of slice 01, a generation check before any feature code depends on
+it**: `Lighthouse.Backend/Create-Migration.ps1 -MigrationName AddReports` (SQLite + Postgres; the script needs a full
+solution build first), then the ordered `--no-incremental` rebuild (migration DLLs are HintPath refs), then confirm
+the exactly-one-owner CHECK **in the emitted SQL of both providers** (the generated migration's `CreateTable` /
+a `dotnet ef migrations script` for each), and both `ON DELETE CASCADE` FKs. Expectation, **unverified until that
+step runs**: SQLite cannot add a constraint to an existing table, but this is a new table, so EF should write the
+CHECK inline in `CREATE TABLE`. If either provider's SQL lacks it, take DESIGN's fallback (the factory enforces
+exactly one owner, plus a test) and record which provider needed it.
 
 **`HistoricalSchemaPatch`: no entry.** It patches *columns* that a later migration adds to tables the migration
 fixtures seed (Teams, Portfolios, Deliveries). Slice 01 adds a *table* that no fixture seeds and no column to Teams or
@@ -2005,11 +2295,15 @@ Accepted residual: a create costs up to the 10 s budget of CPU (four captures ov
 Premium instance looping creates can load the instance, exactly as looping manual forecasts can today. If that ever
 matters, the remedy is project-wide (a policy for expensive authenticated operations), not a Reports-only one.
 
+**Revisit trigger**: `report-creation-slow` Warnings observed in *Recent problems* on any instance (a support case,
+the maintainer's own instance, a demo) — repeated ones within a short span, or one alongside a user report of a slow
+instance — reopen this decision: first DD20's cheaper captures, then the project-wide policy.
+
 ---
 
 ## Wave: DEVOPS / [REF] Observability Stack
 
-**Unchanged stack; five log lines, no metric, no dashboard.** Message templates with named placeholders, no
+**Unchanged stack; six log lines, no metric, no dashboard.** Message templates with named placeholders, no
 interpolation; a catch that logs passes the exception first (S6667).
 
 | Event | Level | Structured fields | Never logged |
@@ -2018,18 +2312,23 @@ interpolation; a catch that logs passes the exception first (S6667).
 | Create refused (window policy codes; `report-cap-reached`) | Information — a user error or a stale UI (the UI disables Create at the cap), not operator-actionable | `Reason`, `OwnerKind`, `OwnerId`, `TemplateKey` | name, requested dates |
 | Report deleted (its own delete; not the owner cascade) | Information — irreversible, and the one thing an operator may be asked about later | `ReportId`, `OwnerKind`, `OwnerId`, `TemplateKey` | name |
 | Report edited | Debug | `ReportId`, `OwnerKind`, `OwnerId` | name (old or new), shown keys |
+| Report read slow — `GET …/reports/{id}` above 2 000 ms server-side | **Warning** (`report-read-slow`, surfaces in *Recent problems*) — G2's open-time field signal, symmetric with `report-creation-slow`. Logged **only** when the threshold is exceeded; a read under it logs nothing | `ReportId`, `OwnerKind`, `OwnerId`, `TemplateKey`, `ElapsedMs` | name, any value |
 | A stored report cannot be read (unknown template key, payload that fails to deserialize) | **Warning** — operator-actionable (a rollback across a template, or a corrupt row); at most once per read of that report | `ReportId`, `TemplateKey`, `PayloadSchemaVersion` | payload content |
 
 **Never in any log line**: the report name, metric values, limits, sample sizes, the window dates the user typed. The
-read path logs nothing on success (it runs on every view). A stale edit's 409 is logged by the existing
+read path logs nothing on success (it runs on every view) — only the `report-read-slow` Warning, and only above 2 s. A stale edit's 409 is logged by the existing
 concurrency filter, as for every other entity.
 
 ---
 
 ## Wave: DEVOPS / [REF] Mutation Testing Strategy
 
-**`per-feature`, ≥ 80%** — the project setting, not re-decided, `CLAUDE.md` not edited. Run **once per Epic at
-finalize (after slice 10), last, on frozen code**, recorded under `docs/feature/epic-5878-baseline/mutation/`.
+**`per-feature`, ≥ 80%** — the project setting, not re-decided, `CLAUDE.md` not edited. **Deliberate reading:
+"per-feature" means per Epic here — run once at the end, after slice 10, on frozen code**, not per slice. Any edit
+after a run shifts the mutated line ranges and invalidates the result (project memory: mutation runs last on frozen
+code), so a per-slice run would be redone anyway. Recorded under `docs/feature/epic-5878-baseline/mutation/`;
+**`results.md` lists, next to each kill rate, the files excluded (and why) and the JSX-text gap** (StrykerJS does not
+mutate JSX text, so copy is pinned by literal assertions, not counted in the score) — the number never stands alone.
 
 - **Backend (Stryker.NET)**, whole files only (.NET Stryker ignores line spans): `Models/Reports/*`,
   `Services/Implementation/Reports/**` (templates, the four `*ReportMetric`, `ReportMetricCatalog`,
@@ -2097,10 +2396,14 @@ report again), the route-key cases (`/teams/7/reports` → key; `/teams/7/report
 key, extra payload member); the log assertions (levels above; no name in the rendered message); the DB-level cascade
 assertion on both providers. Tags: `@kpi-OUT-5878-*` per `kpi-contracts.yaml`.
 
-**Per-wave peer review: not run** (documents-only subagent; the coordinator's call). No novel deployment target, no
-new CI framework, no observability rewrite.
+**Peer review of record: the Final Wave Review Gate** (four reviewers) — no separate per-wave
+`nw-platform-architect-reviewer` pass was run; its first verdict (2026-10-13: needs_revision, 0 blockers, 4 high) was
+addressed in this section's revision of 2026-10-13. No novel deployment target, no new CI framework, no observability
+rewrite.
 
-**Outcome collision check** (`nwave-ai outcomes check-delta`): not run here; still owed by the coordinator.
+**Outcome collision check** (`nwave-ai outcomes check-delta`, run by the coordinator 2026-10-13): **6 outcomes
+checked, 0 collisions found.** Warnings only: the `OUT-5878-*` ids are referenced but not in the outcomes registry —
+expected, they live in `kpi-contracts.yaml`; no action.
 
 ---
 
@@ -2114,6 +2417,8 @@ new CI framework, no observability rewrite.
 | Checklist: "K3 may justify one closed-enum property on 'report created' … DEVOPS decides or drops K3" | No property; **K3 dropped** (maintainer 2026-10-03) | A property at creation would miss every Now length changed through Edit report, which has no event (D33) |
 | DESIGN: "the report view's nested route should map to the same key or its own — DEVOPS decides" | Neither; it maps to no key | `ReportOpened` is the report's event; the key stays the list's; no double count |
 | K1, K2, K4, G1 phrased per instance or per report | Per browser (proxies above) | The pipe has no instance, owner or report identity, by design |
+| DEVOPS 2026-10-03: events 12/13/14, route keys 10/11 ("if Reports lands first") | Events **16/17/18**, route keys **11/12** — still provisional; DELIVER re-reads both enums on `main` at landing | Refinement landed first: `main` ends at `TeamRefinementDayVerdictShown = 15` and `TeamDetail_Refinement = 10` (re-read 2026-10-13). The names are the contract; DISTILL pins names only |
+| G2 open ≤ 2 s verified only by DELIVER's manual timing | Plus a `report-read-slow` Warning above 2 s, logged only when exceeded | Gives the open budget the same field signal the create budget has |
 
 ---
 
