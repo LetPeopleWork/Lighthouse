@@ -710,7 +710,8 @@ describe("useMetricsData", () => {
 		 * The owner-type discriminator is a five-way conjunction, and a conjunction is exactly the
 		 * shape that degrades silently: loosen any one `&&` into `||` and a TEAM service that
 		 * happens to expose a single portfolio-shaped method is promoted to a portfolio, firing
-		 * four portfolio-only fetches against an endpoint set it does not have.
+		 * the two portfolio-only fetches (the Feature Size process behaviour chart and the
+		 * estimate) against an endpoint set it does not have.
 		 *
 		 * Each case drops exactly one probe method and asserts the promotion does not happen; the
 		 * control render (all five present) asserts the fetches DO fire, so the case cannot be
@@ -775,9 +776,8 @@ describe("useMetricsData", () => {
 			doesNotTreatItAsAPortfolioService,
 		);
 
-		// Story #6251: Feature sizes are asked of any owner that has the two size methods, so a
-		// service missing only the Feature Size Percentiles is still asked for its sizes. This row
-		// holds again once the percentiles are asked of a Team as well, and stays pending until then.
+		// A service missing any one of the three Feature-size methods (the sizes, their percentiles,
+		// or the percentiles' info) is asked for no Feature sizes at all.
 		// @us-02 @contract-shape:bounded-change
 		it.each(["getFeatureSizePercentilesInfo"] as const)(
 			"does not treat a service missing %s as a portfolio service",
