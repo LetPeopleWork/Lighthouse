@@ -20,6 +20,7 @@ namespace Lighthouse.Backend.Models.UsageData
             [UsageDataRouteKey.PortfolioDetail_Settings] = "/portfolios/:id/settings",
             [UsageDataRouteKey.PortfolioDetail_Access] = "/portfolios/:id/access",
             [UsageDataRouteKey.TeamDetail_Refinement] = "/teams/:id/refinement",
+            [UsageDataRouteKey.TeamDetail_Reports] = "/teams/:id/reports",
         };
 
         public static IReadOnlyDictionary<UsageDataRouteKey, string> All => Addresses;

@@ -32,5 +32,7 @@ namespace Lighthouse.Backend.Models.UsageData
         PortfolioDetail_Access = 9,
 
         TeamDetail_Refinement = 10,
+
+        TeamDetail_Reports = 11,
     }
 }
