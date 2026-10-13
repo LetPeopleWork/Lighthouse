@@ -160,7 +160,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task A_reader_cannot_create_a_report()
         {
             var lightspeed = GivenLightspeedFinishedTwentyWorkItemsSinceEarlyJuly();
@@ -181,7 +180,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         // Without a role on the Team, its reports are not there at all, the way the Team itself is not.
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task Somebody_with_no_role_on_the_Team_cannot_see_that_it_has_reports()
         {
             var lightspeed = GivenLightspeedFinishedTwentyWorkItemsSinceEarlyJuly();
@@ -197,7 +195,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task A_report_reached_through_another_Teams_address_is_not_found()
         {
             var lightspeed = GivenLightspeedFinishedTwentyWorkItemsSinceEarlyJuly();
@@ -215,7 +212,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task A_report_that_does_not_exist_is_not_found()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -231,7 +227,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         [TestCase("")]
         [TestCase("   ")]
-        [Ignore(PendingSlice01)]
         public async Task A_report_without_a_name_is_refused_and_nothing_is_created(string name)
         {
             var lightspeed = ATeam(Lightspeed);

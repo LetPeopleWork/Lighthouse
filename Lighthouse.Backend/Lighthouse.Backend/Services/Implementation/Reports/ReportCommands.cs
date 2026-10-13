@@ -26,19 +26,19 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
 
             if (string.IsNullOrWhiteSpace(request.Name))
             {
-                return ReportOutcome<ReportRead>.Refused(NameMissing);
+                return Refuse(owner, TemplateFor(request)?.Key, NameMissing);
             }
 
-            if (templates.Find(candidate => candidate.Key == request.TemplateKey) is not IReportTemplate template)
+            if (TemplateFor(request) is not IReportTemplate template)
             {
-                return ReportOutcome<ReportRead>.Refused(TemplateNotSupported);
+                return Refuse(owner, null, TemplateNotSupported);
             }
 
             var calendar = new ReportCalendar(clock.Today, facts.DoneItemsCutoffDays);
             var frozen = template.Freeze(owner, request, calendar);
             if (frozen.Status != ReportOutcomeStatus.Done || frozen.Value is null)
             {
-                return ReportOutcome<ReportRead>.Refused(frozen.Code ?? TemplateNotSupported);
+                return Refuse(owner, template.Key, frozen.Code ?? TemplateNotSupported);
             }
 
             var report = Report.For(owner, template.Key, request.Name.Trim(), clock.Now.UtcDateTime);
@@ -50,6 +50,16 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
 
             LogCreated(report, request, timeProvider.GetElapsedTime(started).TotalMilliseconds);
             return ReportOutcome<ReportRead>.Done(template.Read(report, calendar));
+        }
+
+        private IReportTemplate? TemplateFor(NewReport request) => templates.Find(candidate => candidate.Key == request.TemplateKey);
+
+        // An unknown template key is what the caller typed, so only a key this version offers is ever logged.
+        private ReportOutcome<ReportRead> Refuse(ReportOwner owner, string? templateKey, string reason)
+        {
+            logger.LogInformation("Report creation refused with {Reason} for {OwnerKind} {OwnerId} with template {TemplateKey}",
+                reason, owner.Kind, owner.Id, templateKey);
+            return ReportOutcome<ReportRead>.Refused(reason);
         }
 
         private void LogCreated(Report report, NewReport request, double elapsedMs)

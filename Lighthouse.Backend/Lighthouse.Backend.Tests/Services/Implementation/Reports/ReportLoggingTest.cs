@@ -15,6 +15,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
         private static readonly ReportOwner Lightspeed = ReportOwner.Team(42);
 
+        private static readonly string[] LoggedRefusalFields = ["Reason", "OwnerKind", "OwnerId", "TemplateKey"];
+
         private static readonly TimeZoneInfo InstanceZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Zurich");
 
         private FakeTimeProvider timeProvider = null!;
@@ -63,7 +65,40 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             }
         }
 
+        [Test]
+        public async Task A_refused_create_logs_its_reason_and_never_the_name_or_dates()
+        {
+            var thenEnd = new DateOnly(2026, 9, 17);
+
+            var outcome = await Subject(seconds: 0).Create(Lightspeed, new NewReport(
+                ThenAndNowTemplate.TemplateKey, SecretName, ["cycle-time"], new NewThenAndNow(thenEnd, 0, 30)));
+
+            var line = logger.Lines.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Status, Is.EqualTo(ReportOutcomeStatus.Refused));
+                Assert.That(line.Level, Is.EqualTo(LogLevel.Information));
+                Assert.That(line.Fields.Keys.Where(key => key != "{OriginalFormat}"), Is.EquivalentTo(LoggedRefusalFields));
+                Assert.That(line.Fields["Reason"], Is.EqualTo("then-too-short"));
+                Assert.That(line.Fields["OwnerKind"], Is.EqualTo(ReportOwnerKind.Team));
+                Assert.That(line.Fields["OwnerId"], Is.EqualTo(42));
+                Assert.That(line.Fields["TemplateKey"], Is.EqualTo(ThenAndNowTemplate.TemplateKey));
+                Assert.That(line.Message, Does.Not.Contain(SecretName));
+                Assert.That(line.Message, Does.Not.Contain(thenEnd.ToString()));
+                Assert.That(line.Message, Does.Not.Contain("2026"));
+            }
+        }
+
         private async Task<ReportRead> CreateTakingSeconds(int seconds)
+        {
+            var outcome = await Subject(seconds).Create(Lightspeed, new NewReport(
+                ThenAndNowTemplate.TemplateKey, SecretName, ["cycle-time"], new NewThenAndNow(new DateOnly(2026, 10, 2), 90, 30)));
+
+            Assert.That(outcome.Status, Is.EqualTo(ReportOutcomeStatus.Done));
+            return outcome.Value!;
+        }
+
+        private ReportCommands Subject(int seconds)
         {
             var clock = new FakeLighthouseClock(timeProvider.GetUtcNow(), InstanceZone);
 
@@ -78,13 +113,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             writer.Setup(w => w.Save()).Callback(() => timeProvider.Advance(TimeSpan.FromSeconds(seconds))).Returns(Task.CompletedTask);
 
             var template = new ThenAndNowTemplate(new ReportMetricCatalog([new CycleTimeReportMetric(series.Object)]), clock);
-            var subject = new ReportCommands(writer.Object, owners.Object, [template], clock, timeProvider, logger);
-
-            var outcome = await subject.Create(Lightspeed, new NewReport(
-                ThenAndNowTemplate.TemplateKey, SecretName, ["cycle-time"], new NewThenAndNow(new DateOnly(2026, 10, 2), 90, 30)));
-
-            Assert.That(outcome.Status, Is.EqualTo(ReportOutcomeStatus.Done));
-            return outcome.Value!;
+            return new ReportCommands(writer.Object, owners.Object, [template], clock, timeProvider, logger);
         }
 
         private sealed record LogLine(LogLevel Level, string Message, Dictionary<string, object?> Fields);
