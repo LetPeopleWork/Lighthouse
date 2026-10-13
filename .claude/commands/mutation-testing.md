@@ -113,7 +113,7 @@ pnpm exec stryker run docs/feature/<feature>/mutation/stryker.<id>.frontend.json
   "timeoutMS": 120000,
   "inPlace": true,
   "disableTypeChecks": false,
-  "ignorePatterns": ["dist", "coverage", "playwright-report", "reports"],
+  "ignorePatterns": ["/dist", "/coverage", "/playwright-report", "/reports"],
   "mutate": ["src/models/Common/DataRetrievalSchemaDefaults.ts:56-66"],
   "thresholds": { "high": 90, "low": 80, "break": 0 },
   "jsonReporter": { "fileName": "stryker-<id>-frontend.json" },
@@ -121,11 +121,14 @@ pnpm exec stryker run docs/feature/<feature>/mutation/stryker.<id>.frontend.json
 }
 ```
 
-Three frontend-specific traps:
+Four frontend-specific traps:
 
 - **`inPlace: true` mutates your working tree.** StrykerJS restores on a clean exit; a crash or a
   Ctrl-C can leave mutants in `src/`. **Always `git status` after a frontend run** and revert anything
   unexpected before committing.
+- **Anchor `ignorePatterns` to the root (`/reports`, not `reports`).** An unanchored pattern matches
+  case-insensitively at any depth: `reports` silently dropped every `src/**/Reports/` source directory
+  ("did not result in any files") in Epic 5878's first run.
 - **`disableTypeChecks` must stay `false`.** Left on, Stryker writes `// @ts-nocheck` into every file
   it touches — a previous run put it into 661 files.
 - **Vitest needs its own narrowed config.** Stryker reruns the suite per mutant, and sweeping all
