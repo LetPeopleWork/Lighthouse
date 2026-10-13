@@ -1,6 +1,7 @@
 import type {
 	UsageDataOptionalFeature,
 	UsageDataRefinementVerdict,
+	UsageDataReportTemplate,
 	UsageDataRouteKey,
 	UsageDataSizingMoment,
 	UsageDataWorkTrackingSystem,
@@ -23,6 +24,7 @@ export interface NoticedEvent {
 	enabled?: boolean;
 	sizingMoment?: UsageDataSizingMoment;
 	refinementVerdict?: UsageDataRefinementVerdict;
+	reportTemplate?: UsageDataReportTemplate;
 	noticedAt: number;
 }
 

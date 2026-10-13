@@ -1,11 +1,11 @@
 import { format, subDays } from "date-fns";
 import type {
+	INewReport,
 	IReportOwner,
 	IReportTemplates,
 	ReportMetricKey,
 } from "../../../../../models/Reports/Report";
 import { parseLocalDate } from "../../../../../utils/date/localDate";
-import { panelFor } from "../../panels/reportPanelRegistry";
 
 const DEFAULT_LENGTH_DAYS = 90;
 
@@ -13,6 +13,7 @@ const DEFAULT_LENGTH_DAYS = 90;
 export interface ThenAndNowDraft {
 	thenEnd: string | null;
 	thenLength: string;
+	nowLength: string | null;
 	name: string | null;
 	shownMetricKeys: ReportMetricKey[] | null;
 }
@@ -20,6 +21,7 @@ export interface ThenAndNowDraft {
 export const newThenAndNowDraft = (): ThenAndNowDraft => ({
 	thenEnd: null,
 	thenLength: String(DEFAULT_LENGTH_DAYS),
+	nowLength: null,
 	name: null,
 	shownMetricKeys: null,
 });
@@ -36,6 +38,10 @@ export const lengthOf = (text: string): number | null => {
 	const days = Number(text);
 	return text.trim() !== "" && Number.isInteger(days) && days > 0 ? days : null;
 };
+
+/** Now is as long as Then until somebody changes it. */
+export const nowLengthOf = (draft: ThenAndNowDraft): string =>
+	draft.nowLength ?? draft.thenLength;
 
 const LONG_DAY = "d MMM yyyy";
 
@@ -68,7 +74,7 @@ export const nameOf = (
 	templates: IReportTemplates,
 ): string => draft.name ?? defaultNameOf(draft, templates);
 
-/** The metrics the server offers that this version has a panel for. */
+/** The metrics the server offers for Then & Now. */
 export const offeredMetricsOf = (
 	templates: IReportTemplates,
 ): ReportMetricKey[] =>
@@ -76,11 +82,24 @@ export const offeredMetricsOf = (
 		templates.templates.find(
 			(template) => template.templateKey === "then-and-now",
 		)?.metrics ?? []
-	)
-		.map((metric) => metric.key)
-		.filter((key) => panelFor(key) !== undefined);
+	).map((metric) => metric.key);
 
 export const shownMetricsOf = (
 	draft: ThenAndNowDraft,
 	templates: IReportTemplates,
 ): ReportMetricKey[] => draft.shownMetricKeys ?? offeredMetricsOf(templates);
+
+/** The report as the server is asked to create it; only called once every step is complete. */
+export const newReportOf = (
+	draft: ThenAndNowDraft,
+	templates: IReportTemplates,
+): INewReport => ({
+	templateKey: "then-and-now",
+	name: nameOf(draft, templates),
+	shownMetricKeys: shownMetricsOf(draft, templates),
+	thenAndNow: {
+		thenEndDate: thenEndOf(draft, templates),
+		thenLengthDays: lengthOf(draft.thenLength) ?? 0,
+		nowLengthDays: lengthOf(nowLengthOf(draft)),
+	},
+});

@@ -1,5 +1,6 @@
 import type React from "react";
 import type {
+	INewReport,
 	IReportOwner,
 	IReportTemplates,
 	ReportTemplateKey,
@@ -11,7 +12,9 @@ import ThenStep from "./thenAndNow/ThenStep";
 import {
 	lengthOf,
 	nameOf,
+	newReportOf,
 	newThenAndNowDraft,
+	nowLengthOf,
 	shownMetricsOf,
 	type ThenAndNowDraft,
 	thenEndOf,
@@ -37,6 +40,7 @@ export interface ReportTypeDefinition<TDraft> {
 	purpose: string;
 	newDraft: () => TDraft;
 	steps: readonly ReportTypeStep<TDraft>[];
+	toNewReport: (draft: TDraft, templates: IReportTemplates) => INewReport;
 }
 
 interface DraftByType {
@@ -58,7 +62,11 @@ export const reportTypeSteps: {
 					parseLocalDate(thenEndOf(draft, templates)) !== null &&
 					lengthOf(draft.thenLength) !== null,
 			},
-			{ label: "Now", component: NowStep, isComplete: () => true },
+			{
+				label: "Now",
+				component: NowStep,
+				isComplete: (draft) => lengthOf(nowLengthOf(draft)) !== null,
+			},
 			{
 				label: "Metrics & name",
 				component: MetricsAndNameStep,
@@ -67,5 +75,6 @@ export const reportTypeSteps: {
 					shownMetricsOf(draft, templates).length > 0,
 			},
 		],
+		toNewReport: newReportOf,
 	},
 };

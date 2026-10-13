@@ -1,0 +1,64 @@
+import { format } from "date-fns";
+import { ApiError } from "../../../../services/Api/ApiError";
+import { parseLocalDate } from "../../../../utils/date/localDate";
+import type { ReportWindowRefusal } from "./reportWindowCheck";
+
+/** Every reason the server gives for refusing a report it was asked to create or change. */
+export type ReportRefusalCode =
+	| ReportWindowRefusal
+	| "name-missing"
+	| "no-metric-shown"
+	| "unknown-metric"
+	| "metric-not-captured"
+	| "template-not-supported"
+	| "report-cap-reached";
+
+/** What a refusal's sentence may name: the server's bounds and the instance's own words. */
+export interface RefusalWords {
+	minimumLengthDays: number;
+	earliestStart: string | null;
+	ownerTerm: string;
+	workItemsTerm: string;
+}
+
+const COULD_NOT_CREATE = "The report couldn't be created. Try again.";
+
+const oldestKeptDay = (earliestStart: string | null): string => {
+	const day = earliestStart === null ? null : parseLocalDate(earliestStart);
+	return day === null ? "the oldest kept day" : format(day, "d MMM yyyy");
+};
+
+const cutoffRefusal = (side: "Then" | "Now", words: RefusalWords): string =>
+	`The ${side} window must start on or after ${oldestKeptDay(words.earliestStart)} — older finished ${words.workItemsTerm} are no longer kept.`;
+
+const REFUSAL_COPY: Record<ReportRefusalCode, (words: RefusalWords) => string> =
+	{
+		"then-too-short": (words) =>
+			`Then needs at least ${words.minimumLengthDays} days.`,
+		"then-ends-in-the-future": () => "Then cannot end after today.",
+		"then-before-cutoff": (words) => cutoffRefusal("Then", words),
+		"now-too-short": (words) =>
+			`Now needs at least ${words.minimumLengthDays} days.`,
+		"now-before-cutoff": (words) => cutoffRefusal("Now", words),
+		"name-missing": () => "Give the report a name.",
+		"no-metric-shown": () => "Choose at least one metric",
+		"unknown-metric": () =>
+			"One of the chosen metrics isn't known to this version of Lighthouse.",
+		"metric-not-captured": () =>
+			"One of the chosen metrics was not captured for this report.",
+		"template-not-supported": () =>
+			"This Type of report can't be created by this version of Lighthouse.",
+		"report-cap-reached": (words) =>
+			`Community includes 2 reports per ${words.ownerTerm}. Delete one, or use Premium for unlimited reports.`,
+	};
+
+const isRefusalCode = (code: string): code is ReportRefusalCode =>
+	Object.keys(REFUSAL_COPY).includes(code);
+
+/** The sentence for a failed create or save: the refusal's own copy, or a plain retry for anything else. */
+export const refusalCopyFor = (error: unknown, words: RefusalWords): string => {
+	const code = error instanceof ApiError ? error.problemCode : undefined;
+	return code !== undefined && isRefusalCode(code)
+		? REFUSAL_COPY[code](words)
+		: COULD_NOT_CREATE;
+};

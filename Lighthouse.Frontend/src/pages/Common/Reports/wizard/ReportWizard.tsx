@@ -1,13 +1,22 @@
 import { Dialog, DialogTitle } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useContext, useState } from "react";
+import { useNavigate } from "react-router";
 import WizardStepperFrame from "../../../../components/Common/CreateWizards/WizardStepperFrame";
 import type {
 	IReportOwner,
+	IReportTemplates,
 	ReportTemplateKey,
 } from "../../../../models/Reports/Report";
+import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../../services/TerminologyContext";
+import {
+	usageDataReportTemplateFor,
+	useUsageDataReporter,
+} from "../../../../services/UsageData/usageDataReporter";
+import { refusalCopyFor } from "./reportRefusalCopy";
 import { reportTypeSteps } from "./reportTypeSteps";
 import TypeStep, { type ReportTypesStatus } from "./TypeStep";
 
@@ -30,10 +39,16 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 	onClose,
 }) => {
 	const { reportService } = useContext(ApiServiceContext);
+	const queryClient = useQueryClient();
+	const navigate = useNavigate();
+	const reportUsage = useUsageDataReporter();
+	const { getTerm } = useTerminology();
 	const [activeStep, setActiveStep] = useState(TYPE_STEP);
 	const chosen: ReportTemplateKey = "then-and-now";
 	const type = reportTypeSteps[chosen];
 	const [draft, setDraft] = useState(type.newDraft);
+	const [isCreating, setIsCreating] = useState(false);
+	const [refusal, setRefusal] = useState<string | null>(null);
 
 	// Today and the bounds are the server's; an answer kept from an earlier opening may name yesterday.
 	const { data, isFetching, isError, refetch } = useQuery({
@@ -52,6 +67,43 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 	const isComplete =
 		templates !== undefined &&
 		(current === undefined || current.isComplete(draft, templates));
+
+	const create = async (bounds: IReportTemplates) => {
+		setIsCreating(true);
+		setRefusal(null);
+		let reportId: number;
+		try {
+			reportId = await reportService.createReport(
+				owner,
+				type.toNewReport(draft, bounds),
+			);
+		} catch (error) {
+			setRefusal(
+				refusalCopyFor(error, {
+					minimumLengthDays: bounds.minimumLengthDays,
+					earliestStart: bounds.earliestStart,
+					ownerTerm: getTerm(
+						owner.kind === "team"
+							? TERMINOLOGY_KEYS.TEAM
+							: TERMINOLOGY_KEYS.PORTFOLIO,
+					),
+					workItemsTerm: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
+				}),
+			);
+			setIsCreating(false);
+			return;
+		}
+
+		reportUsage({
+			name: "ReportCreated",
+			reportTemplate: usageDataReportTemplateFor(chosen),
+		});
+		await queryClient.invalidateQueries({
+			queryKey: ["reports", owner.kind, owner.id],
+		});
+		onClose();
+		navigate(`/${owner.kind}s/${owner.id}/reports/${reportId}`);
+	};
 
 	const StepContent = current?.component;
 
@@ -86,10 +138,15 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 							}
 				}
 				primaryAction={
-					isLastStep
-						? { label: "Create", onClick: () => {}, disabled: !isComplete }
+					isLastStep && templates !== undefined
+						? {
+								label: "Create",
+								onClick: () => create(templates),
+								disabled: !isComplete || isCreating,
+							}
 						: undefined
 				}
+				error={refusal === null ? null : { message: refusal }}
 			>
 				{StepContent === undefined || templates === undefined ? (
 					<TypeStep status={status} chosen={chosen} onRetry={() => refetch()} />
@@ -99,7 +156,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 						templates={templates}
 						draft={draft}
 						onChange={setDraft}
-						disabled={false}
+						disabled={isCreating}
 					/>
 				)}
 			</WizardStepperFrame>

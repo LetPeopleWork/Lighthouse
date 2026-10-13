@@ -3,6 +3,7 @@ import type {
 	UsageDataDecisionValue,
 	UsageDataOptionalFeature,
 	UsageDataRefinementVerdict,
+	UsageDataReportTemplate,
 	UsageDataRouteKey,
 	UsageDataSizingMoment,
 	UsageDataWorkTrackingSystem,
@@ -35,6 +36,7 @@ export const UsageDataEventName = {
 	TeamSizingVoteCast: "TeamSizingVoteCast",
 	TeamSizingReadinessReached: "TeamSizingReadinessReached",
 	TeamRefinementDayVerdictShown: "TeamRefinementDayVerdictShown",
+	ReportCreated: "ReportCreated",
 } as const;
 
 export type UsageDataEventName =
@@ -61,6 +63,8 @@ export interface IUsageDataEvent {
 	sizingMoment?: UsageDataSizingMoment;
 	/** Only on a Refinement day's verdict being shown: which verdict the Refinement tab showed. */
 	refinementVerdict?: UsageDataRefinementVerdict;
+	/** Only on a report being created: its Type, from usage data's own list. */
+	reportTemplate?: UsageDataReportTemplate;
 	/** How long before this batch was handed in the thing happened, so a reader can order them. */
 	offsetMs: number;
 	sequence: number;

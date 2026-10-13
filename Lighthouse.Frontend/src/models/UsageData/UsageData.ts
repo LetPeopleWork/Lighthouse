@@ -140,6 +140,20 @@ export const UsageDataRefinementVerdict = {
 export type UsageDataRefinementVerdict =
 	(typeof UsageDataRefinementVerdict)[keyof typeof UsageDataRefinementVerdict];
 
+/**
+ * Which Type of report was created, said as a choice from this list.
+ *
+ * Usage data's own list, not the keys reports are stored under, so a Type added to the product does
+ * not start leaving this instance under its storage name before somebody decides it may. Only the
+ * Type travels: never the report's name, its days or its numbers.
+ */
+export const UsageDataReportTemplate = {
+	ThenAndNow: "ThenAndNow",
+} as const;
+
+export type UsageDataReportTemplate =
+	(typeof UsageDataReportTemplate)[keyof typeof UsageDataReportTemplate];
+
 export const USAGE_DATA_DOCS_URL =
 	"https://docs.lighthouse.letpeople.work/settings/usagedata.html";
 

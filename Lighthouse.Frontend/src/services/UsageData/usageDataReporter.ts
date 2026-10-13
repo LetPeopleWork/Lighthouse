@@ -1,8 +1,10 @@
 import { useCallback } from "react";
 import { useUsageDataConsentIfKnown } from "../../hooks/useUsageDataConsent";
+import type { ReportTemplateKey } from "../../models/Reports/Report";
 import type {
 	UsageDataOptionalFeature,
 	UsageDataRefinementVerdict,
+	UsageDataReportTemplate,
 	UsageDataSizingMoment,
 	UsageDataWorkTrackingSystem,
 } from "../../models/UsageData/UsageData";
@@ -24,6 +26,7 @@ export interface UsageDataCapabilityUse {
 	enabled?: boolean;
 	sizingMoment?: UsageDataSizingMoment;
 	refinementVerdict?: UsageDataRefinementVerdict;
+	reportTemplate?: UsageDataReportTemplate;
 }
 
 /**
@@ -49,6 +52,21 @@ const asSomethingWeDisclose: Record<
 export const usageDataWorkTrackingSystemFor = (
 	system: WorkTrackingSystemType,
 ): UsageDataWorkTrackingSystem => asSomethingWeDisclose[system];
+
+/**
+ * Which Type a report is, said in the words usage data publishes. Written out so that a new Type fails
+ * to compile here until somebody decides what it discloses, rather than travelling unannounced.
+ */
+const reportTemplateWeDisclose: Record<
+	ReportTemplateKey,
+	UsageDataReportTemplate
+> = {
+	"then-and-now": "ThenAndNow",
+};
+
+export const usageDataReportTemplateFor = (
+	template: ReportTemplateKey,
+): UsageDataReportTemplate => reportTemplateWeDisclose[template];
 
 /**
  * How a screen says that somebody used something, rather than that somebody looked at something.

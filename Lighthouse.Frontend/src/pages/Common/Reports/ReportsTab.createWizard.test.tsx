@@ -527,7 +527,7 @@ describe("Creating the report", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @kpi-OUT-5878-K1-report-created @contract-shape:bounded-change
-	it.skip("creates the report as chosen, opens it, and reports one report created with its Type", async () => {
+	it("creates the report as chosen, opens it, and reports one report created with its Type", async () => {
 		const reportService = await openTheWizard();
 		await next();
 		await chooseThenEnd("2026-07-31");
@@ -559,7 +559,7 @@ describe("Creating the report", () => {
 	});
 
 	// @us-01 @slice-01 @boundary @contract-shape:pure-function
-	it.skip("shows that the report is being created and holds every input still meanwhile", async () => {
+	it("shows that the report is being created and holds every input still meanwhile", async () => {
 		const held = deferred<number>();
 		await openTheWizard(
 			aReportService({
@@ -577,7 +577,7 @@ describe("Creating the report", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it.skip("keeps every input and reports nothing when creating fails", async () => {
+	it("keeps every input and reports nothing when creating fails", async () => {
 		await openTheWizard(
 			aReportService({
 				getReports: vi.fn().mockResolvedValue(aReportList([])),
@@ -641,7 +641,7 @@ describe("Creating the report", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it.skip("creates nothing and reports nothing when the wizard is closed", async () => {
+	it("creates nothing and reports nothing when the wizard is closed", async () => {
 		const reportService = await openTheWizard();
 		await onToTheLastStep();
 
