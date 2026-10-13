@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Reports;
 
 namespace Lighthouse.Backend.Models.Reports
 {
@@ -7,6 +8,8 @@ namespace Lighthouse.Backend.Models.Reports
         public const int LongestTemplateKey = 64;
 
         public const int LongestName = 200;
+
+        public const int CurrentPayloadSchemaVersion = 1;
 
         public int Id { get; set; }
 
@@ -27,5 +30,22 @@ namespace Lighthouse.Backend.Models.Reports
         public int PayloadSchemaVersion { get; set; }
 
         public Guid ConcurrencyToken { get; set; }
+
+        /// <summary>A new report of exactly one owner: the owner's kind decides which of the two owner columns is set.</summary>
+        public static Report For(ReportOwner owner, string templateKey, string name, DateTime createdAt)
+        {
+            return new Report
+            {
+                TeamId = owner.Kind == ReportOwnerKind.Team ? owner.Id : null,
+                PortfolioId = owner.Kind == ReportOwnerKind.Portfolio ? owner.Id : null,
+                TemplateKey = templateKey,
+                Name = name,
+                CreatedAt = createdAt,
+                PayloadSchemaVersion = CurrentPayloadSchemaVersion,
+                ConcurrencyToken = Guid.NewGuid(),
+            };
+        }
+
+        public ReportOwner OwnedBy() => TeamId is int teamId ? ReportOwner.Team(teamId) : ReportOwner.Portfolio(PortfolioId ?? 0);
     }
 }

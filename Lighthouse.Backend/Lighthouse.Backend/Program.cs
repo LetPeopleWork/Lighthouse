@@ -22,6 +22,9 @@ using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Implementation.Repositories;
+using Lighthouse.Backend.Services.Implementation.Reports;
+using Lighthouse.Backend.Services.Implementation.Reports.Metrics;
+using Lighthouse.Backend.Services.Interfaces.Reports;
 using Lighthouse.Backend.Services.Implementation.UsageData;
 using Lighthouse.Backend.Services.Interfaces.UsageData;
 using Lighthouse.Backend.Services.Implementation.TeamData;
@@ -109,6 +112,7 @@ namespace Lighthouse.Backend
                 Log.Information("Mode: {Mode}", isStandalone ? "Standalone (Tauri)" : "Server (ASP.NET Core)");
 
                 RegisterServices(builder);
+                RegisterReports(builder.Services);
 
                 if (!isStandalone)
                 {
@@ -1327,6 +1331,20 @@ namespace Lighthouse.Backend
             }
 
             return 60;
+        }
+
+        private static void RegisterReports(IServiceCollection services)
+        {
+            services.AddScoped<ReportRepository>();
+            services.AddScoped<IReportReader>(provider => provider.GetRequiredService<ReportRepository>());
+            services.AddScoped<IReportWriter>(provider => provider.GetRequiredService<ReportRepository>());
+            services.AddScoped<IReportOwnerLookup, ReportOwnerLookup>();
+            services.AddScoped<IReportMetricSeries, TeamReportMetricSeries>();
+            services.AddScoped<IReportMetric, CycleTimeReportMetric>();
+            services.AddScoped<ReportMetricCatalog>();
+            services.AddScoped<IReportTemplate, ThenAndNowTemplate>();
+            services.AddScoped<IReportQueries, ReportQueries>();
+            services.AddScoped<IReportCommands, ReportCommands>();
         }
 
         private static void RegisterServices(WebApplicationBuilder builder)

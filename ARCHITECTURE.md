@@ -70,9 +70,9 @@ graph LR
 
 ---
 
-## 4. The eight modules
+## 4. The nine modules
 
-The codebase is one assembly organised into **eight logical modules** (namespace folders), with boundaries **enforced at test time** by `TngTech.ArchUnitNET` (ADO #5101). No physical assembly split — that would complicate the single-binary publish for enforcement the test rules already give (ADR-027 D5).
+The codebase is one assembly organised into **nine logical modules** (namespace folders), with boundaries **enforced at test time** by `TngTech.ArchUnitNET` (ADO #5101). No physical assembly split — that would complicate the single-binary publish for enforcement the test rules already give (ADR-027 D5).
 
 | # | Module | Responsibility | Anchor namespaces |
 |---|---|---|---|
@@ -84,6 +84,7 @@ The codebase is one assembly organised into **eight logical modules** (namespace
 | 6 | **RBAC / Identity** | Authorization, RBAC administration, licensing/premium gate | `Services.*.Auth`, `.Authorization`, `.Licensing` |
 | 7 | **Platform / Persistence** | `LighthouseAppContext`, repositories, DB management, **domain-event dispatcher**, seeding, OAuth token store | `Data`, `Services.*.Repositories`, `.DatabaseManagement`, `.DomainEvents`, `.Seeding`, `.OAuth` |
 | 8 | **Refinement** | The Team's Refinement tab: which Work Items are in refinement, how many more the Team needs to last one Refinement cycle, and the sizing votes cast on them. Its settings are one JSON value on the Team, saved through the Team settings write. It depends **down only** — on WorkItems, Forecasting, Metrics and the kernel, never on WorkTracking-Integration or Portfolio/Delivery — and **nothing but `API` depends on it**, so it can be removed without touching any other module. Built so far: the settings, the list of Work Items in refinement (`RefinementList`, read-only), the SLE yardstick, and casting a sizing vote, which appends to the sizing log (`SizingLogCommands`, the module's only write), and stages. Stages come only from two optional rules a Team may set, Ready and Being refined, matched by the shared Work Item rule engine (`StageRuleMatcher`) over the Work Items already in refinement and never beyond them; whatever neither matches is Waiting, Ready wins when both match, and a Team with no rule has no stages. The stage and the votes are two independent signals shown side by side: the ready count follows the votes for a Team without stage rules and the stage for a Team with them. The need number is derived on read, never stored: the Team's own manual How Many forecast over one Refinement cycle — the working days after the next Refinement (today, on a Refinement day) up to and including the Refinement after it, so whichever day of the week it is the number stays the same — read at (100 − p) for the band's two likelihoods (50% and 85% by default), and the ready count is judged Below, In (both ends included) or Above that range (`RefinementNeedCalculator`, `NeedBand`). The cycle is a calendar fact (`RefinementCadenceCalendar.CycleFrom`): a Refinement on a blackout day does not happen, so either end skips to the next one that does, and blackout days inside the cycle are not working days. The answer carries facts only, the cycle's first and last day among them; where no number can be given it says why (no cadence, too little Throughput history, no refinement states), and the browser places the "enough for" line. Votes make a Work Item Ready when enough Yes votes come from enough voters, unless one of two discussion rules sends it to discussion (by default 1 No, or 2 "Yes, if…"); a comment from somebody without a current vote is an open question until they vote; every reader sees every split and every comment. A reader votes, comments and takes a vote back under an account when sign-in is on, or under a random key their browser or client keeps and a name they give when it is off. The CLI and the MCP server read the same answer and cast the same votes through the same endpoints. Presenter mode (Epic #6137) and sizing calibration (Epic #6138) are not built | `Services.*.Refinement`, `API/Refinement*Controller` |
+| 9 | **Reports** | Saved, owner-scoped reports on a Team's or a Portfolio's Reports tab. A report belongs to exactly one owner and goes when it goes (cascading foreign keys). The first type, Then & Now, freezes a window of the owner's metrics (Then) the moment it is created and compares it with the same metrics over a window ending today (Now), computed afresh on every read; windows are inclusive calendar days in the instance's zone, taken from `ILighthouseClock`. Each type is a strategy (`IReportTemplate`) and each metric a catalog entry (`IReportMetric`) that reads through `IReportMetricSeries`, whose Team adapter goes through the same metrics service the Metrics tab uses, so a report and the tab never disagree. Reads and writes are separate ports: `IReportQueries` reaches persistence only through `IReportReader`; `IReportCommands` also uses `IReportWriter`; one `ReportRepository` implements both and only the composition root names it. Every port operation takes a `ReportOwner`, never a user; the controllers apply the existing Team Read/Write guards. It depends **down only** — on Metrics, RBAC/licence and Platform — and nothing but `API` and the composition root depend on it. Built so far: a Team's Then & Now reports with Cycle Time | `Models.Reports`, `Services.*.Reports`, `API/TeamReportsController` |
 
 Plus three non-module bands:
 - **`Models` — the shared kernel** at the bottom. Entities, value objects, **and the DTOs that services return** (relocated out of `API.DTO` so the core never depends on the API layer — ADO #5101). Everything may depend downward on `Models`.
@@ -93,7 +94,7 @@ Plus three non-module bands:
 ```mermaid
 graph TD
   API["API — driving adapter"]
-  subgraph CORE["Application core — the 8 modules"]
+  subgraph CORE["Application core — the 9 modules"]
     WT["WorkTracking-Integration"]
     SYNC["WorkItems / Sync"]
     FC["Forecasting"]
@@ -102,6 +103,7 @@ graph TD
     RBAC["RBAC / Identity"]
     PLAT["Platform / Persistence<br/>(repos · DbContext · dispatcher)"]
     REF["Refinement"]
+    REP["Reports"]
   end
   KERNEL["Models — shared kernel + domain events"]
   API --> CORE
@@ -113,6 +115,8 @@ graph TD
   REF --> SYNC
   REF --> FC
   REF --> MET
+  REP --> MET
+  REP --> RBAC
 ```
 
 > Dependencies point **downward** (API → core → Models); the sideways arrows are the legal cross-module edges. The enforced hexagonal seam is that **no core module points back up to `API`**.
@@ -236,6 +240,7 @@ sequenceDiagram
 - **EF Core**, provider-switched in `DatabaseConfigurator`: `UseSqlite` (default; WAL mode) or `UseNpgsql` (server), chosen from the `Database:Provider` config string.
 - **Two migration assemblies** — `Lighthouse.Migrations.Sqlite` and `Lighthouse.Migrations.Postgres`. Generate migrations only via the **`Create-Migration.ps1`** script (spins up an ephemeral Docker Postgres for the Postgres half) — never `dotnet ef migrations add` directly.
 - `LighthouseAppContext` overrides `SaveChangesAsync` to `PreprocessDataBeforeSave` (encrypt secrets, stamp initial concurrency tokens on `Added`) then `SaveWithRetry` (§7). Which values are encrypted, under which key, and who owns that key is §9.
+- **Stored reports** live in one `Reports` table for every report type: the common columns (exactly one of `TeamId` / `PortfolioId`, held by a check constraint and two cascading foreign keys; template key; name; created instant; shown metric keys; concurrency token) plus the type's own data as JSON text in `TemplatePayloadJson`, with a `PayloadSchemaVersion`. Payload members are only ever added and are all optional, so a member a report predates reads as not captured and members a later version wrote survive a read by an older one; nothing is converted by EF, so the text is kept as written. A new report type adds no column and no table.
 
 ---
 

@@ -30,7 +30,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-01 @slice-01 @kpi-OUT-5878-K1-report-created @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task A_coach_freezes_the_Cycle_Time_of_the_last_ninety_days_for_a_Team()
         {
             var lightspeed = GivenLightspeedFinishedTwentyWorkItemsSinceEarlyJuly();
@@ -54,7 +53,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-01 @slice-01 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task Every_reader_of_the_Team_finds_the_report_in_its_list()
         {
             var lightspeed = GivenLightspeedFinishedTwentyWorkItemsSinceEarlyJuly();
@@ -75,7 +73,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-01 @us-02 @slice-01 @contract-shape:pure-function
         // The wizard's date picker and default name are bounded by the instance's day, never the viewer's clock.
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task The_types_of_report_offered_name_today_and_the_earliest_day_Then_may_start()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -94,7 +91,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-01 @slice-01 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task Now_moves_with_the_calendar_while_Then_stays_as_it_was_frozen()
         {
             var lightspeed = GivenLightspeedFinishedTwentyWorkItemsSinceEarlyJuly();
@@ -363,6 +359,34 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
                 Assert.That(opened.StatusCode, Is.EqualTo(HttpStatusCode.UnprocessableEntity), "the report this version cannot read is refused, not crashed on");
                 Assert.That(problems, Is.Not.Empty, "nothing tells the operator why the report will not open");
                 Assert.That(problems.Select(problem => TextOf(problem, "message")), Has.None.Contains(EngagementStart));
+            }
+        }
+
+        // Crafter-written: until the window refusals arrive, a create that cannot even name its Then window is
+        // still a 400 that stores nothing, never a 500.
+        [TestCase("thenEndDate", null)]
+        [TestCase("thenEndDate", "2 Oct 2026")]
+        [TestCase("thenLengthDays", null)]
+        [TestCase("thenLengthDays", "ninety")]
+        public async Task A_create_without_a_readable_Then_window_is_refused_and_stores_nothing(string member, string? sent)
+        {
+            var lightspeed = ATeam(Lightspeed);
+            var request = new NewReport().ToJson();
+            var thenAndNow = request["thenAndNow"]!.AsObject();
+            thenAndNow.Remove(member);
+            if (sent is not null)
+            {
+                thenAndNow[member] = sent;
+            }
+
+            TheCallerAdministers(lightspeed);
+            using var refused = await CreateAReportFromRawRequest(lightspeed, request);
+            var answer = await refused.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), answer);
+                Assert.That(StoredReports(), Is.Zero);
             }
         }
 
