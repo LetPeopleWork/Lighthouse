@@ -574,7 +574,7 @@ describe("What opening a report reports", () => {
 		reportUsage.mock.calls.filter(([use]) => use.name === "ReportOpened");
 
 	// @us-01 @slice-01 @kpi-OUT-5878-K2-reports-reopened @contract-shape:bounded-change
-	it.skip("reports one report opened, with its Type, once it has been open for five seconds", async () => {
+	it("reports one report opened, with its Type, once it has been open for five seconds", async () => {
 		openTheReport();
 		await theReportIsReady();
 
@@ -589,7 +589,7 @@ describe("What opening a report reports", () => {
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// A glance that leaves at once is not somebody reading the report.
-	it.skip("reports nothing for a report left within five seconds", async () => {
+	it("reports nothing for a report left within five seconds", async () => {
 		const { unmount } = renderWithReports(
 			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
 			{ reportService: aReportService() },
@@ -604,7 +604,7 @@ describe("What opening a report reports", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it.skip("reports nothing for a report that could not be loaded", async () => {
+	it("reports nothing for a report that could not be loaded", async () => {
 		renderWithReports(
 			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
 			{

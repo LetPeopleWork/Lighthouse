@@ -68,6 +68,14 @@ export const usageDataReportTemplateFor = (
 	template: ReportTemplateKey,
 ): UsageDataReportTemplate => reportTemplateWeDisclose[template];
 
+/** The same, for a Type as the server sends it: one this version does not know discloses nothing. */
+export const usageDataReportTemplateOf = (
+	templateKey: string,
+): UsageDataReportTemplate | undefined =>
+	Object.entries(reportTemplateWeDisclose).find(
+		([key]) => key === templateKey,
+	)?.[1];
+
 /**
  * How a screen says that somebody used something, rather than that somebody looked at something.
  *

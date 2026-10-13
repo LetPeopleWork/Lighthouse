@@ -9,7 +9,7 @@ import { usageDataPageOpeningFor } from "./usageDataRouteKeys";
  */
 describe("the Reports tab is a tab like the others", () => {
 	// @us-01 @slice-01 @kpi-OUT-5878-K1-report-created @contract-shape:pure-function
-	it.skip("answers a Team's Reports tab as a Team tab opening naming that tab", () => {
+	it("answers a Team's Reports tab as a Team tab opening naming that tab", () => {
 		expect(usageDataPageOpeningFor("/teams/7/reports")).toEqual({
 			name: UsageDataEventName.TeamTabOpened,
 			route: "TeamDetail_Reports",
@@ -25,14 +25,14 @@ describe("the Reports tab is a tab like the others", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:pure-function
-	it.skip("names no tab for the address of one report", () => {
+	it("names no tab for the address of one report", () => {
 		expect(usageDataPageOpeningFor("/teams/7/reports")).toBeDefined();
 		expect(usageDataPageOpeningFor("/teams/7/reports/42")).toBeUndefined();
 		expect(usageDataPageOpeningFor("/portfolios/7/reports/42")).toBeUndefined();
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:pure-function
-	it.skip("names the same tab whichever Team it belongs to, so nothing in it can tell Teams apart", () => {
+	it("names the same tab whichever Team it belongs to, so nothing in it can tell Teams apart", () => {
 		expect(usageDataPageOpeningFor("/teams/7/reports")).toBeDefined();
 		expect(usageDataPageOpeningFor("/teams/7/reports")).toEqual(
 			usageDataPageOpeningFor("/teams/1234/reports"),

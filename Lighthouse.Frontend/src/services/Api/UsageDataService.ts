@@ -37,6 +37,7 @@ export const UsageDataEventName = {
 	TeamSizingReadinessReached: "TeamSizingReadinessReached",
 	TeamRefinementDayVerdictShown: "TeamRefinementDayVerdictShown",
 	ReportCreated: "ReportCreated",
+	ReportOpened: "ReportOpened",
 } as const;
 
 export type UsageDataEventName =

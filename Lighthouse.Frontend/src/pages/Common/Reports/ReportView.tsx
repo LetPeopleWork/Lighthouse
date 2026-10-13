@@ -12,6 +12,7 @@ import { WidgetBody } from "../MetricsView/WidgetShell";
 import type { WidgetStatus } from "../MetricsView/widgetStatus";
 import { panelFor } from "./panels/reportPanelRegistry";
 import ThenAndNowHeader from "./ThenAndNowHeader";
+import { useReportOpenedReporter } from "./useReportOpenedReporter";
 
 const LOADING = "Loading report…";
 const COULD_NOT_LOAD = "This report couldn't be loaded. Reload to try again.";
@@ -70,6 +71,8 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 		queryKey: ["report", owner.kind, owner.id, reportId],
 		queryFn: () => reportService.getReport(owner, reportId),
 	});
+
+	useReportOpenedReporter(isError ? undefined : report);
 
 	const reportsPath = `/${owner.kind}s/${owner.id}/reports`;
 	const status = statusOf(isFetching, isError);
