@@ -9377,7 +9377,7 @@ external integration or technology. **This is the first stored Report**: ADR-209
   about the owner's settings is stored or compared (D45, D46; ADR-221).
 - **I10 — the read path cannot name a write.** Persistence is two driven ports, `IReportReader` (get, list, count for
   an owner; no write member) and `IReportWriter` (add, update, remove, save), both implemented by the one
-  `ReportRepository`. `ReportQueries` depends on the reader only; `ReportCommands` on both. There is no
+  `ReportRepository`. `ReportQueries` depends on the reader only among the persistence ports; `ReportCommands` on both. There is no
   `IReportRepository`. (ADR-219)
 - **I11 — owner scoping in the application ports, authorisation in the driving adapters.** Every `IReportQueries` /
   `IReportCommands` operation takes a `ReportOwner` (kind + id) and returns only that owner's reports; none takes a
@@ -9429,7 +9429,7 @@ edit / delete; no new requirement):
 
 Template-specific members sit in one object named after the template (`thenAndNow`) in requests and reads alike. The
 read carries per metric `atThen`, `atNow` and `beyondThenLimits`; every value is `{ value, sampleSize, absentReason }`.
-Refusals are a closed set of codes in a ProblemDetails `code` extension: validation 400 (window codes add
+Refusals are a closed set of codes in a ProblemDetails `code` extension: validation 400 (the two cutoff codes add
 `earliestStart`); cap 403 `report-cap-reached`, like every premium refusal; RBAC 403 with no code; a missing or
 another owner's report 404; a stored report of a type this version cannot read 422 `template-not-supported`.
 

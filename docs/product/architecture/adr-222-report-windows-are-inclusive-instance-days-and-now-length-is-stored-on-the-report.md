@@ -30,7 +30,7 @@ What exists:
    `today − DoneItemsCutoffDays` (a cutoff of 0 means no limit). A refusal is a closed reason code with the earliest
    allowed start, and the frontend writes the copy (no "Baseline"). It is checked for Then at creation, and for Now at
    creation and on edit. The policy reads nothing: `today` and the cutoff days are arguments, read by the query or
-   command that calls it (from `ILighthouseClock` and the owner) — so its tests need no fakes.
+   command that calls it (from `ILighthouseClock` and the read-only `IReportOwnerLookup` port) — so its tests need no fakes.
 3. **The Now length is a template-specific member of the Then & Now payload**, written at creation (default = Then
    length) and changed only through the edit endpoint under Write. No query parameter on the read can change it.
 4. **Day arithmetic happens once.** Day counts shown in the header ("63 days since Then ended") are computed on the
@@ -89,6 +89,6 @@ What exists:
   start, no refusal).
 - Vitest: with bounds whose `minimumLengthDays` and `earliestStart` differ from the shared table's, the refusal copy
   names those values — a literal 14 or a fixed date in the copy fails.
-- ArchUnitNET: `ReportWindowPolicy` depends on neither `ILighthouseClock` nor any repository or port.
+- ArchUnitNET: `ReportWindowPolicy` depends on neither `ILighthouseClock` nor any repository or port (part of E15, which holds the cap policy and the beyond-limits rule to the same).
 
 Cross-refs: ADR-219, ADR-221; Bug #5567 conventions in the brief's `fix-backend-utc-today-anchor` section.

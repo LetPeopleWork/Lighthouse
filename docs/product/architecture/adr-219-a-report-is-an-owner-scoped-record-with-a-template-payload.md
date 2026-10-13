@@ -59,7 +59,7 @@ through a converter; `DeliveryNote` and `Delivery` are owner-scoped rows with a 
    unavoidable; v1 writes `1`. An edit keeps every payload member it does not change, including members a later
    version wrote that this version does not know.
 6. **Read and write are separate at the persistence port too.** `IReportReader` (get, list, count for an owner)
-   and `IReportWriter` (add, update, remove, save), both implemented by one `ReportRepository`. The query side
+   and `IReportWriter` (add, update, remove, save), both implemented by one `ReportRepository`; the owner (does it exist, its cutoff days) is read through a third read-only port, `IReportOwnerLookup`. The query side
    depends on the reader only, so "reading a report writes nothing" holds by type, not by review.
 7. **Owner scoping lives in the application ports; authorisation in the driving adapters.** Every query and command
    takes the owner (kind + id) and touches only that owner's reports; none takes a user. The Team and Portfolio

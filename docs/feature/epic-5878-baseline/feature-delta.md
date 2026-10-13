@@ -473,7 +473,7 @@ D37–D44 are the maintainer's answers to Q1–Q7 (2026-10-03). Superseded decis
 - [D47] **{Throughput} over the whole window** (maintainer 2026-10-03, after DESIGN; reshapes D39's M2). The panel
   shows the total {Work Items} finished in the window and the average per day, Then and Now. Change and % change are
   on the per-day average. *(Corrected 2026-10-13; was: "identical to the total's change when both windows have the
-  same length".)* With equal lengths only the **% change** matches the total's; the absolute change is per day, not a
+  same length".)* With equal lengths only the **unrounded % change** matches the total's (the panel shows the % of the displayed, rounded values, DD6); the absolute change is per day, not a
   count of {Work Items}. Both stay right when the Now length differs from Then. Per DESIGN DD6 (maintainer-accepted),
   change and % change are computed in the panel from the values **as displayed** (rounded): 0.58 → 0.72 per day shows
   +0.14 and +24%, although the unrounded totals 52 → 65 would give +25%. Every figure in this document is as displayed. No weekly median, no week count. The beyond-limits count is unchanged: Now's
@@ -884,7 +884,7 @@ Scenario: An older report did not capture Throughput
 change on the per-day average; good = up. AC-4.3 Days
 beyond Then's frozen limits, by side (D40); above green, below red. AC-4.4 Every applicable metric frozen whatever is
 ticked (D26). AC-4.5 Reports created before this slice: "Not captured for this report" (D27). AC-4.6 A Then of 0 shows
-no % change (Q9, confirmed 2026-10-03).
+the absolute change and "—" for the % with "Then was 0" (Q9, confirmed 2026-10-03).
 **KPI**: K2. **Tech**: one panel registration per metric; total and per-day average from the daily series (D47).
 
 ### US-05 — See {WIP} and {Work Item Age} Then & Now (slice 05)
@@ -1253,8 +1253,8 @@ PBCs unchanged.
 | G4 No settings-changed notice (D46) | Against O5 (presenting noise as improvement): when the owner's {Work Item} types, state mapping, query or blackout days change after creation, Now is computed under today's settings while Then stays frozen, so a panel can show a change the Team's work did not cause. | **Maintainer-accepted risk** (D46, 2026-10-03): "settings will inevitably change; just accept it". Mitigated only by the docs saying Now uses today's settings while Then stays frozen. | Not measurable through usage data (nothing about settings is stored). Noticed when a coach or reader asks why a value moved that the Team's work does not explain — in the K5 interview log, support questions or GitHub issues. Repeated reports reopen D46. |
 
 Hypothesis: we believe a frozen Then shown beside today's metrics, with the change coloured, will make coaches return
-to Lighthouse to show change. We will know when ≥ 40% of report-creating instances open Reports again a week or more
-later (K2).
+to Lighthouse to show change. We will know when ≥ 40% of report-creating instances open Reports again on two or more
+later days, a week or more after their first report (K2).
 
 ---
 
@@ -1285,7 +1285,7 @@ Re-run 2026-10-03 after the revision; re-run 2026-10-13 after the Final Wave Rev
 
 | # | DoR item | Status | Evidence |
 |---|---|---|---|
-| 1 | Problem clear, domain language | PASS (clear; not validated) | **Clear. Not validated**: DISCOVER G1 FAIL (0 interviews), proceeding is a maintainer-accepted risk (D2, 2026-10-02). US-01's spreadsheet workaround is an **assumption** from desk research, not observed. Every story opens with Elena, Priya, Dev or Martin's situation; no "implement X" titles; no verdict language left in problems. |
+| 1 | Problem clear, domain language | WAIVED — clear, not validated (maintainer-accepted risk D2) | **Clear. Not validated**: DISCOVER G1 FAIL (0 interviews), proceeding is a maintainer-accepted risk (D2, 2026-10-02). US-01's spreadsheet workaround is an **assumption** from desk research, not observed. Every story opens with Elena, Priya, Dev or Martin's situation; no "implement X" titles; no verdict language left in problems. |
 | 2 | Persona specific | PASS | `flow-coach` consulting (Elena, Team Admin, Lightspeed, engagement from 1 Aug 2026), short assessment (Dev, Gravity, ends 2 Oct 2026) and internal (Priya, Gravity, WIP limit from 14 Sep); reader `delivery-lead-rte` (Martin, Viewer). |
 | 3 | 3+ domain examples, real data | PASS | Each story lists ≥ 3 examples with Team names, dates (2 Oct 2026, 31 Jul 2026, 2 Oct 2025 cutoff) and values (21 → 12 days, −43%; 610 → 880 days, +44%). |
 | 4 | UAT G/W/T, 3–7 | PASS | US-01: 5, US-02: 5, US-03: 5, US-04: 4, US-05: 4, US-06: 3, US-07: 4, US-08: 4, US-09: dropped (D46), US-10: 6 (after DESIGN: US-01: 6, US-04: 5, US-05: 5, US-06: 4; 2026-10-13: US-01: 7 with the cannot-be-loaded scenario, US-10: 7 with the stale-save scenario). Each includes an error or boundary path. |
@@ -1295,7 +1295,7 @@ Re-run 2026-10-03 after the revision; re-run 2026-10-13 after the Final Wave Rev
 | 8 | Dependencies tracked | PASS | 02–10 depend on 01; 03 on 02 (dogfood against a past Then); 04 on 03 (the count); 05 on 04 (picker); 06 on 05 (catalog complete); 07 on 01; 08 on 06; ~~09 on 01's snapshot~~ (09 dropped, D46); 10 on 05 and 07; release after 10 (D34). Three new provisional answers (Q8–Q10) are tracked below. The Team tab order depends on Epic 5510 (Refinement sits between Metrics and Reports when it lands, D18) — tracked, not blocking. |
 | 9 | Outcome KPIs | PASS | K1–K5 with targets, baselines, measurement, re-checked against D39; guardrails G1–G3. |
 
-**DoR status: PASSED.** Q8–Q10 were confirmed by the maintainer on 2026-10-03; no provisional answer remains.
+**DoR status: PASSED, with item 1 waived** (clear but not validated; the maintainer accepted the risk in D2, 2026-10-02). Q8–Q10 were confirmed by the maintainer on 2026-10-03; no provisional answer remains.
 
 ---
 
@@ -1731,8 +1731,10 @@ existing validator is off by one under D37's counting); `BeyondLimits` (no limit
 tab (no Then/Now layout exists); `ReportWizard` and its type-contributed steps (no wizard composes steps per type;
 the stepper chrome itself is reused by extraction, not rebuilt).
 
-Contract shape per overlapping component (Mandate 12): see "Contract shapes" — every REUSE / EXTEND row that is on a
-report path appears there with its shape, universe and assertion.
+Contract shape per overlapping component (Mandate 12): see "Contract shapes" — every component this feature **changes or adds** on a
+report path appears there with its shape, universe and assertion. Components reused unchanged (`ILighthouseClock`,
+`ILicenseService`, the RBAC guards, the existing metrics reads, TanStack queries, ProblemDetails and the concurrency
+filter) keep the contracts their own tests already pin; their effects reach the policies only as arguments (E15).
 
 ---
 
@@ -1907,10 +1909,12 @@ ArchUnitNET + NUnit + TypeScript:
 - **E2** the Reports module does not depend on `ProcessBehaviourChart`, `XmRResult`, the owner's
   `ProcessBehaviourChartBaseline*` (S4) or `BaselineValidationService` (the PBC Baseline's rule stays its own; the two
   validators answer different questions and are deliberately not shared — DRY is about knowledge, ADR-222).
-- **E3** metrics depend on `IReportMetricSeries`, never on the metrics services directly.
+- **E3** the Reports metric captures (`IReportMetric`) depend on `IReportMetricSeries`, never on the metrics services
+  directly; only the two series adapters reach those.
 - **E4** `ReportQueries` (and the template read it calls) depends on `IReportReader` and on none of `IReportWriter`,
   `IRepository<>`, `LighthouseAppContext`; `IReportReader` declares no member that adds, updates, removes or saves
-  (a reflection test over the interface, so a write added to the read port fails the build, not a review).
+  (a reflection test over the interface, so a write added to the read port fails the build, not a review). The same
+  reflection test covers `IReportOwnerLookup`, the other read-only port the query side reaches.
 - **E5** `XmRCalculator.Calculate` = `Limits` rounded (property test); existing `XmRCalculatorTest` untouched.
 - **E6** parity: Then captured for a window equals the Metrics endpoints for that window (AC-2.3).
 - **E7** payload round-trip: a slice-01-shaped document reads into the current type, later members null.
@@ -2145,7 +2149,7 @@ runs against real Jira, Linear, Azure DevOps and ServiceNow. A red backend is ju
 
 | Signature (from `CLAUDE.md` § Quality Gates) | Verdict |
 |---|---|
-| A live-connector test throwing `NotSupportedException` for a missing credential | Environmental |
+| A live-connector test throwing `NotSupportedException` for a missing credential | **Blocking in CI** — the credentials come from the repository secrets `ci_backend.yml` already injects, so a missing one is a misnamed or absent secret and a rerun cannot fix it; check the secret. Environmental only on a developer machine |
 | Linear failures where one names a 429 (shared key with local runs) | Environmental |
 | `GetAllReleases_*` / `GetLatestVersion_*` with `Octokit.RateLimitExceededException` | Environmental |
 | The 8 `LighthouseReleaseServiceIntegrationTest.InstallUpdate_SupportedPlatform_*` ("never reached exit within 10 s") | Known on unmodified `main`, not caused by this slice; not "confirmed" by a rerun |
@@ -2305,7 +2309,7 @@ Expected: starts, healthy (`MigrationsAppliedHealthCheck` checks *pending*; the 
 with the Team, no error. One manual check, recorded in the slice's deliver notes. **Release gate item**: the `/release`
 run that cuts the calver containing slice 01 must find this rehearsal recorded (date, previous version used, both
 providers, outcome) in slice 01's deliver notes before the release is approved; if it is missing, the release waits
-for it.
+for it. The maintainer checks it while approving the `/release` gate.
 
 **Migration generation — the first DELIVER step of slice 01, a generation check before any feature code depends on
 it**: `Lighthouse.Backend/Create-Migration.ps1 -MigrationName AddReports` (SQLite + Postgres; the script needs a full
