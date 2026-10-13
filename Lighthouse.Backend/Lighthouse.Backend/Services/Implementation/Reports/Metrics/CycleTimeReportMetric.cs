@@ -6,8 +6,9 @@ using Lighthouse.Backend.Services.Interfaces.Reports;
 namespace Lighthouse.Backend.Services.Implementation.Reports.Metrics
 {
     /// <summary>
-    /// The Metrics tab's cycle-time percentiles over a window. Then keeps the 85th alone; Now shows the 85th,
-    /// 70th and 50th. Each rests on the finished items with a cycle time in its window.
+    /// The Metrics tab's cycle-time percentiles over a window: the 85th, 70th and 50th, frozen for Then and computed
+    /// for Now. Each rests on the finished items with a cycle time in its window. A report frozen before Then kept all
+    /// three simply has no Then value for the ones it lacks.
     /// </summary>
     public class CycleTimeReportMetric(IReportMetricSeries series) : IReportMetric
     {
@@ -19,41 +20,34 @@ namespace Lighthouse.Backend.Services.Implementation.Reports.Metrics
         private const string P70 = "p70";
         private const string P50 = "p50";
 
+        private static readonly string[] Percentiles = [P85, P70, P50];
+
         public string Key => MetricKey;
 
         public bool AppliesTo(ReportOwnerKind ownerKind) => true;
 
         public JsonObject CaptureThen(ReportOwner owner, ReportWindow thenWindow)
-        {
-            var percentiles = series.CycleTimePercentiles(owner, thenWindow);
-            return new JsonObject
-            {
-                [P85] = JsonValueOf(ValueOf(percentiles.P85, percentiles.FinishedItems)),
-            };
-        }
+            => new(ValuesOf(series.CycleTimePercentiles(owner, thenWindow))
+                .Select(value => KeyValuePair.Create(value.Key, JsonSerializer.SerializeToNode(value.Value, ThenAndNowPayload.JsonOptions))));
 
         public MetricRead Read(JsonObject? capturedThen, ReportOwner owner, ReportWindow nowWindow)
         {
-            var atThen = new Dictionary<string, CapturedValue>();
-            if (capturedThen?[P85] is JsonNode frozen && frozen.Deserialize<CapturedValue>(ThenAndNowPayload.JsonOptions) is CapturedValue thenP85)
-            {
-                atThen[P85] = thenP85;
-            }
+            var atThen = Percentiles
+                .Select(member => (Member: member, Frozen: capturedThen?[member]?.Deserialize<CapturedValue>(ThenAndNowPayload.JsonOptions)))
+                .Where(captured => captured.Frozen is not null)
+                .ToDictionary(captured => captured.Member, captured => captured.Frozen!);
 
-            var now = series.CycleTimePercentiles(owner, nowWindow);
-            var atNow = new Dictionary<string, CapturedValue>
-            {
-                [P85] = ValueOf(now.P85, now.FinishedItems),
-                [P70] = ValueOf(now.P70, now.FinishedItems),
-                [P50] = ValueOf(now.P50, now.FinishedItems),
-            };
-
-            return new MetricRead(atThen, atNow);
+            return new MetricRead(atThen, ValuesOf(series.CycleTimePercentiles(owner, nowWindow)));
         }
+
+        private static Dictionary<string, CapturedValue> ValuesOf(CycleTimePercentiles percentiles) => new()
+        {
+            [P85] = ValueOf(percentiles.P85, percentiles.FinishedItems),
+            [P70] = ValueOf(percentiles.P70, percentiles.FinishedItems),
+            [P50] = ValueOf(percentiles.P50, percentiles.FinishedItems),
+        };
 
         private static CapturedValue ValueOf(int percentile, int finishedItems)
             => finishedItems > 0 ? CapturedValue.Shown(percentile, finishedItems) : CapturedValue.Absent(NoFinishedItems);
-
-        private static JsonNode? JsonValueOf(CapturedValue value) => JsonSerializer.SerializeToNode(value, ThenAndNowPayload.JsonOptions);
     }
 }

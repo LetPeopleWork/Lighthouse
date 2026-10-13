@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     /// <summary>
     /// A Team admin creates a Then &amp; Now report: Then is the last 90 days ending today, frozen the moment the
     /// report is created, and Now is the same length ending on whatever day the report is read. The first panel
-    /// is {Cycle Time}: Then's 85th percentile, Now's 85th, 70th and 50th, each with how many finished Work
+    /// is {Cycle Time}: the 85th, 70th and 50th percentiles on both sides, each with how many finished Work
     /// Items it rests on. A value with nothing to rest on is "—" with a reason, never 0.
     ///
     /// Every reader of the Team sees the report; only its admin creates one; nobody reaches a report through
@@ -45,6 +45,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
                 Assert.That(TextOf(report, "templateKey"), Is.EqualTo(ThenAndNow));
                 Assert.That(ThenWindowIn(report), Is.EqualTo(NinetyDaysToToday));
                 Assert.That(ThenValueIn(report, CycleTime, P85), Is.EqualTo(Shown(21, 20)));
+                Assert.That(ThenValueIn(report, CycleTime, P70), Is.EqualTo(Shown(11, 20)));
+                Assert.That(ThenValueIn(report, CycleTime, P50), Is.EqualTo(Shown(6, 20)));
                 Assert.That(NowValueIn(report, CycleTime, P85), Is.EqualTo(Shown(21, 20)));
                 Assert.That(NowValueIn(report, CycleTime, P70), Is.EqualTo(Shown(11, 20)));
                 Assert.That(NowValueIn(report, CycleTime, P50), Is.EqualTo(Shown(6, 20)));
@@ -106,6 +108,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
                 Assert.That(ThenWindowIn(report), Is.EqualTo(NinetyDaysToToday));
                 Assert.That(NowWindowIn(report), Is.EqualTo(new ReportWindow("2026-08-02", "2026-10-30", 90)));
                 Assert.That(ThenValueIn(report, CycleTime, P85), Is.EqualTo(Shown(21, 20)));
+                Assert.That(ThenValueIn(report, CycleTime, P70), Is.EqualTo(Shown(11, 20)));
+                Assert.That(ThenValueIn(report, CycleTime, P50), Is.EqualTo(Shown(6, 20)));
                 Assert.That(NowValueIn(report, CycleTime, P85), Is.EqualTo(Shown(12, 10)));
                 Assert.That(NowValueIn(report, CycleTime, P70), Is.EqualTo(Shown(9, 10)));
                 Assert.That(NowValueIn(report, CycleTime, P50), Is.EqualTo(Shown(6, 10)));
@@ -113,7 +117,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:unbounded-preservation
-        // Rebuilding Then without LS-17 would give an 85th percentile of 17 days, so 21 can only be the frozen value.
+        // Rebuilding Then without LS-17 would give an 85th percentile of 17 days and a 70th of 9, on 19 Work Items,
+        // so 21 and 11 on 20 can only be the frozen values.
         [Test]
         public async Task The_frozen_Then_does_not_move_when_the_tracker_later_drops_a_Work_Item()
         {
@@ -123,7 +128,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             TheTrackerNoLongerHolds(DroppedLater);
 
             var report = await TheReport(lightspeed, reportId);
-            Assert.That(ThenValueIn(report, CycleTime, P85), Is.EqualTo(Shown(21, 20)));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ThenValueIn(report, CycleTime, P85), Is.EqualTo(Shown(21, 20)));
+                Assert.That(ThenValueIn(report, CycleTime, P70), Is.EqualTo(Shown(11, 20)));
+                Assert.That(ThenValueIn(report, CycleTime, P50), Is.EqualTo(Shown(6, 20)));
+            }
         }
 
         // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:pure-function
@@ -139,7 +149,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             var reportId = await GivenTheAdminCreated(pulsar, new NewReport());
 
             var report = await TheReport(pulsar, reportId);
-            Assert.That(ThenValueIn(report, CycleTime, P85), Is.EqualTo(Shown(18, 3)));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ThenValueIn(report, CycleTime, P85), Is.EqualTo(Shown(18, 3)));
+                Assert.That(ThenValueIn(report, CycleTime, P70), Is.EqualTo(Shown(18, 3)));
+                Assert.That(ThenValueIn(report, CycleTime, P50), Is.EqualTo(Shown(9, 3)));
+            }
         }
 
         // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:pure-function
@@ -154,6 +169,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             using (Assert.EnterMultipleScope())
             {
                 ThenItIsADashFor(ThenValueIn(report, CycleTime, P85), Reason.NoFinishedItems);
+                ThenItIsADashFor(ThenValueIn(report, CycleTime, P70), Reason.NoFinishedItems);
+                ThenItIsADashFor(ThenValueIn(report, CycleTime, P50), Reason.NoFinishedItems);
                 ThenItIsADashFor(NowValueIn(report, CycleTime, P85), Reason.NoFinishedItems);
             }
         }
