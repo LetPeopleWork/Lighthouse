@@ -30,9 +30,11 @@ import {
 import ReportView from "./ReportView";
 
 /**
- * One report as a reader opens it: the header naming both windows, one panel per shown metric in the
- * catalog's order, every value with the number of Work Items or days behind it, and a dash with its reason
- * wherever a value cannot be shown. A change is told by its sign and arrow as well as its colour.
+ * One report as a reader opens it: one line "Reports / <name>", the header naming both windows, and one
+ * panel per shown metric in the catalog's order. A panel is three segments, Then | Now | Change; each side's
+ * heading says how many Work Items or days it rests on, every percentile carries the certainty icon the
+ * Metrics tab shows for it, and a value that cannot be shown is a dash with its reason. A change is told by
+ * its sign and arrow as well as its colour.
  *
  * The report waits for its read before drawing anything that could pass for numbers, says so when the read
  * fails or the report is gone, and never lets a late answer for another report land.
@@ -68,11 +70,18 @@ vi.mock("react-router", async () => ({
 	useNavigate: () => mockNavigate,
 }));
 
-const CYCLE_TIME_PANEL = "Cycle Time: Then & Now";
-const THROUGHPUT_PANEL = "Throughput: Then & Now";
-const WIP_PANEL = "WIP: Then & Now";
-const AGE_PANEL = "Work Item Age: Then & Now";
+const CYCLE_TIME_PANEL = "Cycle Time";
+const THROUGHPUT_PANEL = "Throughput";
+const WIP_PANEL = "WIP";
+const AGE_PANEL = "Work Item Age";
 const READY = "ready";
+
+/** The icons the Metrics tab's Cycle Time percentiles carry for the 85th, 70th and 50th. */
+const CERTAINTY_OF_85TH_70TH_50TH = [
+	"CheckCircleOutlineOutlinedIcon",
+	"QueryBuilderIcon",
+	"ErrorOutlineOutlinedIcon",
+];
 
 const openTheReport = (
 	report: IReport = theEngagementStartReport(),
@@ -97,6 +106,22 @@ const theReportIsReady = async () =>
 
 const changesIn = (panel: HTMLElement) =>
 	Array.from(panel.querySelectorAll<HTMLElement>("[data-change]"));
+
+type Segment = "then" | "now" | "change";
+
+const theSegment = (panel: HTMLElement, segment: Segment): HTMLElement => {
+	const found = panel.querySelector<HTMLElement>(`[data-segment="${segment}"]`);
+	expect(found, `the panel has no ${segment} segment`).not.toBeNull();
+	return found as HTMLElement;
+};
+
+const readingOfSegment = (panel: HTMLElement, segment: Segment) =>
+	readingOf(theSegment(panel, segment));
+
+const certaintyIconsIn = (segment: HTMLElement) =>
+	Array.from(segment.querySelectorAll<SVGElement>("svg[data-testid]")).map(
+		(icon) => icon.dataset.testid,
+	);
 
 const withCycleTime = (
 	metric: NonNullable<IReport["thenAndNow"]["metrics"]["cycle-time"]>,
@@ -129,16 +154,19 @@ describe("The report header", () => {
 	});
 
 	// @us-01 @slice-01 @contract-shape:pure-function
-	it("names the report and leads back to the Reports list", async () => {
+	it("names the report on one line after Reports, which leads back to the list, with no large heading", async () => {
 		openTheReport();
 
 		await theReportIsReady();
 
-		expect(screen.getByText(ENGAGEMENT_START)).toBeVisible();
+		expect(
+			readingOf(screen.getByRole("navigation", { name: "breadcrumb" })),
+		).toMatch(new RegExp(`^Reports ?/ ?${ENGAGEMENT_START}$`));
 		expect(screen.getByRole("link", { name: "Reports" })).toHaveAttribute(
 			"href",
 			`/teams/${LIGHTSPEED.id}/reports`,
 		);
+		expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
 	});
 });
 
@@ -146,28 +174,76 @@ describe("The panels of a report", () => {
 	beforeEach(beforeEachReportTest);
 
 	// @us-01 @slice-01 @driving_port @contract-shape:pure-function
-	it("shows the Cycle Time panel with Then's and Now's 85th percentile and the Work Items behind them", async () => {
+	it("shows the Cycle Time panel as Then, Now and Change, each side's Work Items named once in its heading", async () => {
 		openTheReport();
 
-		const panel = readingOf(await thePanel(CYCLE_TIME_PANEL));
+		const panel = await thePanel(CYCLE_TIME_PANEL);
+		const then = readingOfSegment(panel, "then");
+		const now = readingOfSegment(panel, "now");
 
-		expect(panel).toContain("85th 21 days · 38 Work Items");
-		expect(panel).toContain("85th 12 days · 41 Work Items");
-		expect(panel).toContain("70th 7 days");
-		expect(panel).toContain("50th 4 days");
+		expect(then).toMatch(/^THEN · 38 Work Items /i);
+		expect(then).toMatch(/85th 21 days.*70th 10 days.*50th 5 days$/);
+		expect(now).toMatch(/^NOW · 41 Work Items /i);
+		expect(now).toMatch(/85th 12 days.*70th 7 days.*50th 4 days$/);
+		expect(then.match(/Work Items/g)).toHaveLength(1);
+		expect(now.match(/Work Items/g)).toHaveLength(1);
+		expect(readingOfSegment(panel, "change")).toMatch(/^CHANGE /i);
+	});
+
+	// @us-01 @slice-01 @contract-shape:pure-function
+	// The same icons as the Metrics tab's Cycle Time percentiles, so a reader knows the 50th is a coin toss.
+	it("marks every percentile on both sides with the certainty icon the Metrics tab shows for it", async () => {
+		openTheReport();
+
+		const panel = await thePanel(CYCLE_TIME_PANEL);
+
+		expect(certaintyIconsIn(theSegment(panel, "then"))).toEqual(
+			CERTAINTY_OF_85TH_70TH_50TH,
+		);
+		expect(certaintyIconsIn(theSegment(panel, "now"))).toEqual(
+			CERTAINTY_OF_85TH_70TH_50TH,
+		);
 	});
 
 	// @us-01 @slice-01 @contract-shape:pure-function
 	// Colour alone tells nobody who cannot see it; the sign and the arrow say the same.
-	it("tells a shorter Cycle Time as better by sign and arrow as well as colour", async () => {
+	it("tells a shorter Cycle Time as better on every percentile by arrow and sign as well as colour", async () => {
 		openTheReport();
 
 		const panel = await thePanel(CYCLE_TIME_PANEL);
-		const [change] = changesIn(panel);
+		const changes = changesIn(theSegment(panel, "change"));
 
-		expect(readingOf(panel)).toContain("−9 days");
-		expect(readingOf(change)).toMatch(/−43%.*▼/);
-		expect(change.dataset.change).toBe("better");
+		expect(changes.map(readingOf)).toEqual([
+			"▼ 9 days (−43 %)",
+			"▼ 3 days (−30 %)",
+			"▼ 1 day (−20 %)",
+		]);
+		expect(changes.map((change) => change.dataset.change)).toEqual([
+			"better",
+			"better",
+			"better",
+		]);
+	});
+
+	// @us-01 @slice-01 @boundary @contract-shape:pure-function
+	it("reads a percentile that did not move as No change, and a longer one as worse", async () => {
+		openTheReport(
+			withCycleTime({
+				atThen: { p85: shown(15, 181), p70: shown(9, 181), p50: shown(5, 181) },
+				atNow: { p85: shown(12, 203), p70: shown(9, 203), p50: shown(6, 203) },
+				beyondThenLimits: null,
+			}),
+		);
+
+		const panel = await thePanel(CYCLE_TIME_PANEL);
+		const worse = changesIn(theSegment(panel, "change")).filter(
+			(change) => change.dataset.change === "worse",
+		);
+
+		expect(readingOfSegment(panel, "change")).toMatch(
+			/^CHANGE ▼ 3 days \(−20 %\) No change ▲ 1 day \(\+20 %\)$/i,
+		);
+		expect(worse.map(readingOf)).toEqual(["▲ 1 day (+20 %)"]);
 	});
 
 	// @us-03 @slice-03 @contract-shape:pure-function
@@ -186,13 +262,14 @@ describe("The panels of a report", () => {
 		openTheReport();
 
 		const panel = await thePanel(THROUGHPUT_PANEL);
-		const reading = readingOf(panel);
+		const then = readingOfSegment(panel, "then");
 
-		expect(reading).toContain("Total 52 Work Items");
-		expect(reading).toContain("0.58 per day · 90 days");
-		expect(reading).toContain("+0.14 per day");
-		expect(reading).toContain("Days beyond Then's limits: 2 above");
-		expect(readingOf(changesIn(panel)[0])).toMatch(/\+24%.*▲/);
+		expect(then).toMatch(/^THEN · 90 days /i);
+		expect(then).toContain("Total 52 Work Items");
+		expect(then).toContain("0.58 per day");
+		expect(then.match(/90 days/g)).toHaveLength(1);
+		expect(readingOf(panel)).toContain("Days beyond Then's limits: 2 above");
+		expect(readingOf(changesIn(panel)[0])).toBe("▲ 0.14 per day (+24 %)");
 		expect(changesIn(panel)[0].dataset.change).toBe("better");
 	});
 
@@ -202,9 +279,13 @@ describe("The panels of a report", () => {
 
 		const panel = await thePanel(WIP_PANEL);
 
-		expect(readingOf(panel)).toContain("Average 9 (6–12) · 90 days");
-		expect(readingOf(panel)).toContain("Average 7 (5–9) · 90 days");
-		expect(readingOf(changesIn(panel)[0])).toMatch(/−22%.*▼/);
+		expect(readingOfSegment(panel, "then")).toMatch(
+			/^THEN · 90 days Average 9 \(6–12\)$/i,
+		);
+		expect(readingOfSegment(panel, "now")).toMatch(
+			/^NOW · 90 days Average 7 \(5–9\)$/i,
+		);
+		expect(readingOf(changesIn(panel)[0])).toMatch(/^▼ .*\(−22 %\)$/);
 	});
 
 	// @us-05 @slice-05 @contract-shape:pure-function
@@ -213,8 +294,7 @@ describe("The panels of a report", () => {
 
 		const panel = await thePanel(AGE_PANEL);
 
-		expect(readingOf(panel)).toContain("+270 days");
-		expect(readingOf(changesIn(panel)[0])).toMatch(/\+44%.*▲/);
+		expect(readingOf(changesIn(panel)[0])).toBe("▲ 270 days (+44 %)");
 		expect(changesIn(panel)[0].dataset.change).toBe("worse");
 	});
 
@@ -240,9 +320,10 @@ describe("The panels of a report", () => {
 		};
 		openTheReport();
 
-		const panel = readingOf(await thePanel("Lead Time: Then & Now"));
+		const panel = await thePanel("Lead Time");
 
-		expect(panel).toContain("85th 21 days · 38 Tickets");
+		expect(readingOfSegment(panel, "then")).toMatch(/^THEN · 38 Tickets /i);
+		expect(readingOfSegment(panel, "now")).toMatch(/^NOW · 41 Tickets /i);
 		expect(readingOf(document.body)).not.toContain("Cycle Time");
 		expect(readingOf(document.body)).not.toContain("Work Items");
 	});
@@ -255,16 +336,22 @@ describe("Values a report cannot show", () => {
 	it("shows a dash and says Then had no finished Work Items", async () => {
 		openTheReport(
 			withCycleTime({
-				atThen: { p85: aDash("no-finished-items") },
-				atNow: { p85: shown(12, 41) },
+				atThen: {
+					p85: aDash("no-finished-items"),
+					p70: aDash("no-finished-items"),
+					p50: aDash("no-finished-items"),
+				},
+				atNow: { p85: shown(12, 41), p70: shown(7, 41), p50: shown(4, 41) },
 				beyondThenLimits: null,
 			}),
 		);
 
 		const panel = await thePanel(CYCLE_TIME_PANEL);
+		const then = readingOfSegment(panel, "then");
 
-		expect(readingOf(panel)).toContain("No finished Work Items in Then");
-		expect(readingOf(panel)).toContain("—");
+		expect(then).toContain("No finished Work Items in Then");
+		expect(then).toMatch(/85th —.*70th —.*50th —/);
+		expect(then).not.toMatch(/\d+ days/);
 		expect(changesIn(panel)).toHaveLength(0);
 	});
 
@@ -272,8 +359,8 @@ describe("Values a report cannot show", () => {
 	it.skip("shows a dash for the counts beyond Then's limits when Then had too few points to have any", async () => {
 		openTheReport(
 			withCycleTime({
-				atThen: { p85: shown(21, 4) },
-				atNow: { p85: shown(12, 41) },
+				atThen: { p85: shown(21, 4), p70: shown(10, 4), p50: shown(5, 4) },
+				atNow: { p85: shown(12, 41), p70: shown(7, 41), p50: shown(4, 41) },
 				beyondThenLimits: {
 					above: aDash("too-few-points"),
 					below: aDash("too-few-points"),
@@ -281,10 +368,12 @@ describe("Values a report cannot show", () => {
 			}),
 		);
 
-		const panel = readingOf(await thePanel(CYCLE_TIME_PANEL));
+		const panel = await thePanel(CYCLE_TIME_PANEL);
 
-		expect(panel).toContain("Then has too few points for limits");
-		expect(panel).toContain("85th 21 days · 4 Work Items");
+		expect(readingOf(panel)).toContain("Then has too few points for limits");
+		expect(readingOfSegment(panel, "then")).toMatch(
+			/^THEN · 4 Work Items 85th 21 days/i,
+		);
 	});
 
 	// @us-04 @slice-04 @error @contract-shape:pure-function
@@ -338,7 +427,7 @@ describe("Values a report cannot show", () => {
 		const wip = readingOf(await thePanel(WIP_PANEL));
 		const age = await thePanel(AGE_PANEL);
 
-		expect(wip).toContain("Average 0 (0–0) · 90 days");
+		expect(wip).toMatch(/THEN · 90 days Average 0 \(0–0\)/i);
 		expect(wip).not.toContain("No Work Items in progress");
 		expect(readingOf(age)).toContain("No Work Items in progress");
 	});
@@ -348,15 +437,17 @@ describe("Values a report cannot show", () => {
 	it.skip("says the counts beyond Then's limits were not captured for a report made before they existed", async () => {
 		openTheReport(
 			withCycleTime({
-				atThen: { p85: shown(21, 38) },
-				atNow: { p85: shown(12, 41) },
+				atThen: { p85: shown(21, 38), p70: shown(10, 38), p50: shown(5, 38) },
+				atNow: { p85: shown(12, 41), p70: shown(7, 41), p50: shown(4, 41) },
 			}),
 		);
 
-		const panel = readingOf(await thePanel(CYCLE_TIME_PANEL));
+		const panel = await thePanel(CYCLE_TIME_PANEL);
 
-		expect(panel).toContain(NOT_CAPTURED);
-		expect(panel).toContain("85th 21 days · 38 Work Items");
+		expect(readingOf(panel)).toContain(NOT_CAPTURED);
+		expect(readingOfSegment(panel, "then")).toMatch(
+			/^THEN · 38 Work Items 85th 21 days/i,
+		);
 	});
 
 	// @us-01 @slice-01 @boundary @contract-shape:pure-function
@@ -364,16 +455,20 @@ describe("Values a report cannot show", () => {
 	it("shows a value backed by very few Work Items with that number beside it", async () => {
 		openTheReport(
 			withCycleTime({
-				atThen: { p85: shown(9, 2) },
-				atNow: { p85: shown(5, 3) },
+				atThen: { p85: shown(9, 2), p70: shown(9, 2), p50: shown(4, 2) },
+				atNow: { p85: shown(5, 3), p70: shown(5, 3), p50: shown(3, 3) },
 				beyondThenLimits: null,
 			}),
 		);
 
-		const panel = readingOf(await thePanel(CYCLE_TIME_PANEL));
+		const panel = await thePanel(CYCLE_TIME_PANEL);
 
-		expect(panel).toContain("85th 9 days · 2 Work Items");
-		expect(panel).toContain("85th 5 days · 3 Work Items");
+		expect(readingOfSegment(panel, "then")).toMatch(
+			/^THEN · 2 Work Items 85th 9 days/i,
+		);
+		expect(readingOfSegment(panel, "now")).toMatch(
+			/^NOW · 3 Work Items 85th 5 days/i,
+		);
 	});
 
 	// @us-04 @slice-04 @error @contract-shape:unbounded-preservation

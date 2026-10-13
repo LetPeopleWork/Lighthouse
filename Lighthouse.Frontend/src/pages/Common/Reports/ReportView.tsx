@@ -56,7 +56,7 @@ const ReportPanels: React.FC<{ readonly report: IReport }> = ({ report }) => {
 		return (
 			<Panel
 				key={key}
-				title={`${getTerm(panel.titleTermKey)}: Then & Now`}
+				title={getTerm(panel.titleTermKey)}
 				metric={metric}
 				workItems={workItems}
 				directionOfGood={panel.directionOfGood}

@@ -130,15 +130,14 @@ describe("Step two: Then", () => {
 	});
 
 	// @us-01 @slice-01 @contract-shape:pure-function
-	it("starts as the 90 days ending today and says which days that is, frozen when created", async () => {
+	it("starts as the 90 days ending today and says which days that is", async () => {
 		await openTheWizard();
 		await next();
 
 		expect(await theThenEndField()).toHaveValue("2026-10-02");
 		expect(await theThenLengthField()).toHaveValue(90);
-		expect(await theWizard()).toHaveTextContent(
-			"= 5 Jul – 2 Oct 2026 · frozen when you create it",
-		);
+		expect(await theWizard()).toHaveTextContent("= 5 Jul – 2 Oct 2026");
+		expect(await theWizard()).not.toHaveTextContent(/frozen/);
 	});
 
 	// @us-02 @slice-02 @contract-shape:pure-function
@@ -148,9 +147,7 @@ describe("Step two: Then", () => {
 
 		await chooseThenEnd("2026-07-31");
 
-		expect(await theWizard()).toHaveTextContent(
-			"= 3 May – 31 Jul 2026 · frozen when you create it",
-		);
+		expect(await theWizard()).toHaveTextContent("= 3 May – 31 Jul 2026");
 	});
 
 	// @us-02 @slice-02 @contract-shape:pure-function
@@ -161,9 +158,7 @@ describe("Step two: Then", () => {
 		await chooseThenEnd("2026-09-13");
 		await enterNumber(await theThenLengthField(), 45);
 
-		expect(await theWizard()).toHaveTextContent(
-			"= 31 Jul – 13 Sep 2026 · frozen when you create it",
-		);
+		expect(await theWizard()).toHaveTextContent("= 31 Jul – 13 Sep 2026");
 	});
 
 	// @us-02 @slice-02 @error @contract-shape:pure-function
@@ -320,9 +315,7 @@ describe("Step two: Then", () => {
 
 		await chooseThenEnd("2025-01-31");
 
-		expect(await theWizard()).toHaveTextContent(
-			"= 3 Nov 2024 – 31 Jan 2025 · frozen when you create it",
-		);
+		expect(await theWizard()).toHaveTextContent("= 3 Nov 2024 – 31 Jan 2025");
 		expect(await theWizard()).not.toHaveTextContent(/no longer kept/);
 		expect(
 			within(await theWizard()).getByRole("button", { name: "Next" }),

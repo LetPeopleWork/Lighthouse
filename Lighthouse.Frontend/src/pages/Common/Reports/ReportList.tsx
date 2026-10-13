@@ -1,8 +1,8 @@
 import type React from "react";
 import { useMemo } from "react";
-import { Link } from "react-router";
 import DataGridBase from "../../../components/Common/DataGrid/DataGridBase";
 import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
+import StyledLink from "../../../components/Common/StyledLink/StyledLink";
 import type {
 	IReportListItem,
 	IReportOwner,
@@ -28,7 +28,7 @@ const ReportList: React.FC<Readonly<ReportListProps>> = ({
 				flex: 1,
 				hideable: false,
 				renderCell: ({ row }) => (
-					<Link to={reportPathOf(owner, row.id)}>{row.name}</Link>
+					<StyledLink to={reportPathOf(owner, row.id)}>{row.name}</StyledLink>
 				),
 			},
 			{

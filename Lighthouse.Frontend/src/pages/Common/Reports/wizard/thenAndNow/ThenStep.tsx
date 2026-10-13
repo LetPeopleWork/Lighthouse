@@ -77,9 +77,7 @@ const ThenStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 				<Typography variant="body2">days</Typography>
 			</Box>
 			{days !== null && (
-				<Typography color="text.secondary">
-					{`= ${days} · frozen when you create it`}
-				</Typography>
+				<Typography color="text.secondary">{`= ${days}`}</Typography>
 			)}
 		</Stack>
 	);

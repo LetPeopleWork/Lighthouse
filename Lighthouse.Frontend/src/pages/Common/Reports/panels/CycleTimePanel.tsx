@@ -1,21 +1,32 @@
-import { Box, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
 import type React from "react";
-import type { IReportValue } from "../../../../models/Reports/Report";
+import { ForecastLevel } from "../../../../components/Common/Forecasts/ForecastLevel";
+import type {
+	IReportValue,
+	ReportMetricSide,
+} from "../../../../models/Reports/Report";
 import type { ReportPanelProps } from "./reportPanelRegistry";
-import ThenNowPanelFrame from "./ThenNowPanelFrame";
+import ThenNowPanelFrame, { PanelLine } from "./ThenNowPanelFrame";
 import {
 	absentReasonText,
 	type ChangeVerdict,
+	changeText,
 	compareThenNow,
 	type DirectionOfGood,
 	type ReportSide,
 	roundForDisplay,
-	signed,
+	sideHeading,
 } from "./thenNowComparison";
 
 const NOT_CAPTURED = "Not captured for this report";
 const DASH = "—";
 const DECIMALS = 0;
+
+const PERCENTILES = [
+	{ key: "p85", label: "85th", percentile: 85 },
+	{ key: "p70", label: "70th", percentile: 70 },
+	{ key: "p50", label: "50th", percentile: 50 },
+] as const;
 
 const verdictColours: Record<ChangeVerdict, string> = {
 	better: "success.main",
@@ -25,56 +36,73 @@ const verdictColours: Record<ChangeVerdict, string> = {
 
 const dayWord = (value: number) => (Math.abs(value) === 1 ? "day" : "days");
 
+const daysText = (value: number) => `${value} ${dayWord(value)}`;
+
 const shownValue = (value: IReportValue | null | undefined): number | null =>
 	value?.value === null || value?.value === undefined
 		? null
 		: roundForDisplay(value.value, DECIMALS);
 
-interface PercentileLineProps {
-	label: string;
-	value: IReportValue | null | undefined;
-	side: ReportSide;
+const sampleSizeOf = (side: ReportMetricSide): number | null =>
+	PERCENTILES.map(({ key }) => side[key]?.sampleSize).find(
+		(size) => size !== null && size !== undefined,
+	) ?? null;
+
+/** Each distinct reason once, below the lines, so three dashes for the same cause do not say it three times. */
+const reasonsOf = (
+	side: ReportMetricSide,
+	sideName: ReportSide,
+	workItems: string,
+): string[] => {
+	const reasons = PERCENTILES.filter(
+		({ key }) => shownValue(side[key]) === null,
+	).map(({ key }) => {
+		const reason = side[key]?.absentReason;
+		return reason
+			? absentReasonText(reason, sideName, workItems)
+			: NOT_CAPTURED;
+	});
+	return [...new Set(reasons)];
+};
+
+interface SideProps {
+	side: ReportMetricSide;
+	sideName: ReportSide;
 	workItems: string;
-	withSampleSize: boolean;
-	children?: React.ReactNode;
 }
 
-const PercentileLine: React.FC<Readonly<PercentileLineProps>> = ({
-	label,
-	value,
+const PercentileLines: React.FC<Readonly<SideProps>> = ({
 	side,
+	sideName,
 	workItems,
-	withSampleSize,
-	children,
-}) => {
-	const shown = shownValue(value);
-	const sampleSize =
-		withSampleSize &&
-		value?.sampleSize !== null &&
-		value?.sampleSize !== undefined
-			? ` · ${value.sampleSize} ${workItems}`
-			: "";
-	const reason = value?.absentReason
-		? absentReasonText(value.absentReason, side, workItems)
-		: NOT_CAPTURED;
-	return (
-		<Box>
-			<Box sx={{ display: "flex", flexWrap: "wrap", columnGap: 3 }}>
-				<Typography component="span">
-					{shown === null
-						? `${label} ${DASH}`
-						: `${label} ${shown} ${dayWord(shown)}${sampleSize}`}
-				</Typography>
-				{children}
-			</Box>
-			{shown === null && (
-				<Typography variant="body2" color="text.secondary">
-					{reason}
-				</Typography>
-			)}
-		</Box>
-	);
-};
+}) => (
+	<>
+		{PERCENTILES.map(({ key, label, percentile }) => {
+			const level = new ForecastLevel(percentile);
+			const Icon = level.IconComponent;
+			const shown = shownValue(side[key]);
+			return (
+				<PanelLine key={key}>
+					<Icon fontSize="small" sx={{ color: level.color }} />
+					<Typography component="span">
+						<span>{label}</span>{" "}
+						<Typography
+							component="span"
+							sx={{ fontWeight: "bold", color: level.color }}
+						>
+							{shown === null ? DASH : daysText(shown)}
+						</Typography>
+					</Typography>
+				</PanelLine>
+			);
+		})}
+		{reasonsOf(side, sideName, workItems).map((reason) => (
+			<Typography key={reason} variant="body2" color="text.secondary">
+				{reason}
+			</Typography>
+		))}
+	</>
+);
 
 const Change: React.FC<{
 	readonly then: number | null;
@@ -84,74 +112,59 @@ const Change: React.FC<{
 	if (then === null || now === null) {
 		return <Typography component="span">{DASH}</Typography>;
 	}
-	const { delta, percent, arrow, verdict } = compareThenNow(
-		then,
-		now,
-		directionOfGood,
-		DECIMALS,
-	);
-	const percentText = percent === null ? "Then was 0" : `${signed(percent)}%`;
+	const change = compareThenNow(then, now, directionOfGood, DECIMALS);
 	return (
 		<Typography
 			component="span"
-			data-change={verdict}
-			sx={{ color: verdictColours[verdict], fontWeight: "bold" }}
+			data-change={change.verdict}
+			sx={{ color: verdictColours[change.verdict], fontWeight: "bold" }}
 		>
-			{`${signed(delta)} ${dayWord(delta)} ${percentText} ${arrow}`.trim()}
+			{changeText(change, daysText(Math.abs(change.delta)))}
 		</Typography>
 	);
 };
 
-/** Then's 85th percentile against Now's 85th, 70th and 50th, the change told on the 85th. */
+/** Then's 85th, 70th and 50th percentiles beside Now's, with the change on each. */
 const CycleTimePanel: React.FC<Readonly<ReportPanelProps>> = ({
 	title,
 	metric,
 	workItems,
 	directionOfGood,
-}) => (
-	<ThenNowPanelFrame
-		title={title}
-		then={
-			<PercentileLine
-				label="85th"
-				value={metric.atThen.p85}
-				side="Then"
-				workItems={workItems}
-				withSampleSize
-			/>
-		}
-		now={
-			<>
-				<PercentileLine
-					label="85th"
-					value={metric.atNow.p85}
-					side="Now"
+}) => {
+	const restsOn = (side: ReportMetricSide) => {
+		const size = sampleSizeOf(side);
+		return size === null ? null : `${size} ${workItems}`;
+	};
+	return (
+		<ThenNowPanelFrame
+			title={title}
+			thenHeading={sideHeading("Then", restsOn(metric.atThen))}
+			then={
+				<PercentileLines
+					side={metric.atThen}
+					sideName="Then"
 					workItems={workItems}
-					withSampleSize
-				>
+				/>
+			}
+			nowHeading={sideHeading("Now", restsOn(metric.atNow))}
+			now={
+				<PercentileLines
+					side={metric.atNow}
+					sideName="Now"
+					workItems={workItems}
+				/>
+			}
+			change={PERCENTILES.map(({ key }) => (
+				<PanelLine key={key}>
 					<Change
-						then={shownValue(metric.atThen.p85)}
-						now={shownValue(metric.atNow.p85)}
+						then={shownValue(metric.atThen[key])}
+						now={shownValue(metric.atNow[key])}
 						directionOfGood={directionOfGood}
 					/>
-				</PercentileLine>
-				<PercentileLine
-					label="70th"
-					value={metric.atNow.p70}
-					side="Now"
-					workItems={workItems}
-					withSampleSize={false}
-				/>
-				<PercentileLine
-					label="50th"
-					value={metric.atNow.p50}
-					side="Now"
-					workItems={workItems}
-					withSampleSize={false}
-				/>
-			</>
-		}
-	/>
-);
+				</PanelLine>
+			))}
+		/>
+	);
+};
 
 export default CycleTimePanel;

@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { ReportAbsentReason } from "../../../../models/Reports/Report";
 import {
 	absentReasonText,
+	changeText,
 	compareThenNow,
 	type DirectionOfGood,
 	roundForDisplay,
+	sideHeading,
 	signed,
 } from "./thenNowComparison";
 
@@ -106,6 +108,32 @@ describe("signed", () => {
 		[0, "0"],
 	])("writes %d as %s", (value, expected) => {
 		expect(signed(value)).toBe(expected);
+	});
+});
+
+describe("changeText", () => {
+	it.each<[number, number, DirectionOfGood, string, string]>([
+		[21, 12, "lower", "9 days", "▼ 9 days (−43 %)"],
+		[5, 6, "lower", "1 day", "▲ 1 day (+20 %)"],
+		[9, 9, "lower", "0 days", "No change"],
+		[0, 24, "higher", "24 per day", "▲ 24 per day (Then was 0)"],
+	])(
+		"tells Then %d against Now %d as written",
+		(then, now, good, magnitude, expected) => {
+			expect(changeText(compareThenNow(then, now, good, 0), magnitude)).toBe(
+				expected,
+			);
+		},
+	);
+});
+
+describe("sideHeading", () => {
+	it.each<["Then" | "Now", string | null, string]>([
+		["Then", "38 Tickets", "Then · 38 Tickets"],
+		["Now", "90 days", "Now · 90 days"],
+		["Then", null, "Then"],
+	])("heads %s resting on %s as %s", (side, restsOn, expected) => {
+		expect(sideHeading(side, restsOn)).toBe(expected);
 	});
 });
 

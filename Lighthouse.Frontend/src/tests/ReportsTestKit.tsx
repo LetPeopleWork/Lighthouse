@@ -151,7 +151,7 @@ export const aDash = (absentReason: ReportAbsentReason): IReportValue => ({
 	absentReason,
 });
 
-/** The engagement-start report: {Cycle Time} 21 → 12 days, {Throughput} 52 → 65, {WIP} 9 → 7, {Work Item Age} 610 → 880 days. */
+/** The engagement-start report: {Cycle Time} 85th 21 → 12, 70th 10 → 7, 50th 5 → 4 days, {Throughput} 52 → 65, {WIP} 9 → 7, {Work Item Age} 610 → 880 days. */
 export const theEngagementStartReport = (
 	overrides: Partial<IReport> = {},
 ): IReport => ({
@@ -170,7 +170,7 @@ export const theEngagementStartReport = (
 		thenRebuildable: true,
 		metrics: {
 			"cycle-time": {
-				atThen: { p85: shown(21, 38) },
+				atThen: { p85: shown(21, 38), p70: shown(10, 38), p50: shown(5, 38) },
 				atNow: { p85: shown(12, 41), p70: shown(7, 41), p50: shown(4, 41) },
 				beyondThenLimits: {
 					above: shown(1, 41),

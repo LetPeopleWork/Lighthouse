@@ -59,6 +59,23 @@ export const compareThenNow = (
 	};
 };
 
+/** "▼ 3 days (−20 %)", where the magnitude already carries its unit; a change of nothing reads "No change". */
+export const changeText = (
+	change: ThenNowChange,
+	magnitude: string,
+): string => {
+	if (change.delta === 0) return "No change";
+	const percent =
+		change.percent === null ? "Then was 0" : `${signed(change.percent)} %`;
+	return `${change.arrow} ${magnitude} (${percent})`;
+};
+
+/** A side's heading names what its values rest on once, so the value lines do not repeat it. */
+export const sideHeading = (
+	side: ReportSide,
+	restsOn: string | null,
+): string => (restsOn === null ? side : `${side} · ${restsOn}`);
+
 const reasonTexts: Record<
 	ReportAbsentReason,
 	(side: ReportSide, workItems: string) => string

@@ -13,11 +13,16 @@ const ThenAndNowHeader: React.FC<Readonly<ThenAndNowHeaderProps>> = ({
 	name,
 }) => (
 	<Breadcrumbs aria-label="breadcrumb">
-		<Link component={RouterLink} to={reportsPath} underline="hover">
+		<Link
+			component={RouterLink}
+			to={reportsPath}
+			underline="hover"
+			variant="body1"
+		>
 			Reports
 		</Link>
 		{name !== undefined && (
-			<Typography variant="h5" component="h1" color="text.primary">
+			<Typography variant="body1" color="text.primary">
 				{name}
 			</Typography>
 		)}

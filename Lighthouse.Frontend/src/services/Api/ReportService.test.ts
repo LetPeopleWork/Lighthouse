@@ -88,7 +88,7 @@ const theEngagementStartReport = (
 		thenRebuildable: true,
 		metrics: {
 			"cycle-time": {
-				atThen: { p85: shown(21, 38) },
+				atThen: { p85: shown(21, 38), p70: shown(10, 38), p50: shown(5, 38) },
 				atNow: { p85: shown(12, 41), p50: shown(4, 41) },
 				beyondThenLimits: {
 					above: shown(1, 41),
