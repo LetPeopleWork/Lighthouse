@@ -36,9 +36,37 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         // @driving_port @real-io @us-04 @slice-04 @kpi-OUT-5878-K2-reports-reopened @contract-shape:pure-function
+        // Then is the 90 days to 31 Jul 2026 (3 May - 31 Jul), Now the last 90 days (5 Jul - 2 Oct): the two
+        // overlap by 27 days, and the Work Items finished in those days count on both sides.
         [Test]
         [Ignore(PendingSlice04)]
-        public async Task Higher_Throughput_is_shown_as_total_and_per_day_with_the_days_above_Thens_limit()
+        public async Task Higher_Throughput_is_shown_as_the_total_and_the_average_per_day()
+        {
+            var lightspeed = GivenLightspeedFinishedFiftyTwoWorkItemsInThenAndSixtyFiveInNow();
+            var reportId = await GivenTheAdminCreated(lightspeed, new NewReport
+            {
+                ThenEnd = new DateOnly(2026, 7, 31),
+                ThenLengthDays = 90,
+                NowLengthDays = 90,
+                Shown = [CycleTime, Throughput],
+            });
+
+            var report = await TheReport(lightspeed, reportId);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ThenValueIn(report, Throughput, Total), Is.EqualTo(Shown(52, 90)));
+                Assert.That(ThenValueIn(report, Throughput, PerDay).Value, Is.EqualTo(52d / 90).Within(1e-9));
+                Assert.That(ThenValueIn(report, Throughput, PerDay).SampleSize, Is.EqualTo(90));
+                Assert.That(NowValueIn(report, Throughput, Total), Is.EqualTo(Shown(65, 90)));
+                Assert.That(NowValueIn(report, Throughput, PerDay).Value, Is.EqualTo(65d / 90).Within(1e-9));
+                Assert.That(NowValueIn(report, Throughput, PerDay).SampleSize, Is.EqualTo(90));
+            }
+        }
+
+        // @driving_port @real-io @us-04 @slice-04 @contract-shape:pure-function
+        [Test]
+        [Ignore(PendingSlice04)]
+        public async Task Days_of_Now_with_Throughput_above_Thens_limit_are_counted()
         {
             var gravity = GivenGravityFinishedOneAndTwoWorkItemsOnAlternateDaysInAugust();
             var reportId = await GivenTheAdminCreated(gravity, ThirtyDaysToTheEndOfAugust([CycleTime, Throughput]));
@@ -155,6 +183,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             NowLengthDays = 30,
             Shown = shown,
         };
+
+        /// <summary>
+        /// From 3 May to 2 Oct 2026, one Work Item a day on chosen days: 39 from 3 May to 4 Jul, 13 from 5 to 31
+        /// Jul, 52 from 1 Aug to 2 Oct - so 52 in Then and 65 in Now.
+        /// </summary>
+        private OwnerUnderTest GivenLightspeedFinishedFiftyTwoWorkItemsInThenAndSixtyFiveInNow()
+        {
+            var lightspeed = ATeam(Lightspeed);
+            int[] beforeTheOverlap = [.. Enumerable.Range(0, 63).Select(day => day < 39 ? 1 : 0)];
+            int[] theOverlap = [.. Enumerable.Range(0, 27).Select(day => day % 2 == 0 && day < 26 ? 1 : 0)];
+            int[] afterTheOverlap = [.. Enumerable.Range(0, 63).Select(day => day < 52 ? 1 : 0)];
+
+            TheTeamFinishedPerDay(lightspeed, new DateOnly(2026, 5, 3), [.. beforeTheOverlap, .. theOverlap, .. afterTheOverlap]);
+            return lightspeed;
+        }
 
         private OwnerUnderTest GivenGravityFinishedOneAndTwoWorkItemsOnAlternateDaysInAugust()
         {

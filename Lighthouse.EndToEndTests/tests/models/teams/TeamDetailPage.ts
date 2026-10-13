@@ -198,7 +198,7 @@ export class TeamDetailPage {
 	async goToReports(): Promise<ReportsListPage> {
 		await this.reportsTab.click();
 		await this.page.waitForURL(/\/teams\/\d+\/reports$/);
-		return new ReportsListPage(this.page);
+		return new ReportsListPage(this.page).waitUntilReady();
 	}
 
 	async getLastUpdatedDate(): Promise<Date> {

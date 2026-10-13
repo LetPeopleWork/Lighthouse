@@ -2,8 +2,8 @@ import { expect, testWithDemoData } from "../../fixutres/LighthouseFixture";
 
 // Premium scenario: it seeds Team Lightspeed with its history, and a premium instance has no cap on
 // reports. CI uploads a licence to the instance before Playwright runs.
-const ITS_NOT_ALWAYS_WHAT_IT_SEEMS_SCENARIO_ID = 11;
-const testWithDemo = testWithDemoData(ITS_NOT_ALWAYS_WHAT_IT_SEEMS_SCENARIO_ID);
+const TEAM_LIGHTSPEED_HISTORY_SCENARIO_ID = 11;
+const testWithDemo = testWithDemoData(TEAM_LIGHTSPEED_HISTORY_SCENARIO_ID);
 
 const LIGHTSPEED = "Team Lightspeed";
 

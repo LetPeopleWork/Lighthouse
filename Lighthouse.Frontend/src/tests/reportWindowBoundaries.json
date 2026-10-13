@@ -1,0 +1,90 @@
+{
+	"bounds": {
+		"today": "2026-10-02",
+		"earliestStart": "2025-10-02",
+		"minimumLengthDays": 14
+	},
+	"rows": [
+		{
+			"case": "a Then of 13 days",
+			"side": "then",
+			"end": "2026-10-02",
+			"lengthDays": 13,
+			"refusal": "then-too-short"
+		},
+		{
+			"case": "a Then of 14 days",
+			"side": "then",
+			"end": "2026-10-02",
+			"lengthDays": 14,
+			"refusal": null
+		},
+		{
+			"case": "a Then ending today",
+			"side": "then",
+			"end": "2026-10-02",
+			"lengthDays": 90,
+			"refusal": null
+		},
+		{
+			"case": "a Then ending tomorrow",
+			"side": "then",
+			"end": "2026-10-03",
+			"lengthDays": 90,
+			"refusal": "then-ends-in-the-future"
+		},
+		{
+			"case": "a Then starting on the earliest day",
+			"side": "then",
+			"end": "2025-12-30",
+			"lengthDays": 90,
+			"refusal": null
+		},
+		{
+			"case": "a Then starting the day before the earliest day",
+			"side": "then",
+			"end": "2025-12-29",
+			"lengthDays": 90,
+			"refusal": "then-before-cutoff"
+		},
+		{
+			"case": "a Then starting long before any kept day, when every finished item is kept",
+			"side": "then",
+			"end": "2024-06-30",
+			"lengthDays": 90,
+			"keepsEveryFinishedItem": true,
+			"refusal": null
+		},
+		{
+			"case": "a Now of 13 days",
+			"side": "now",
+			"lengthDays": 13,
+			"refusal": "now-too-short"
+		},
+		{
+			"case": "a Now of 14 days",
+			"side": "now",
+			"lengthDays": 14,
+			"refusal": null
+		},
+		{
+			"case": "a Now starting on the earliest day",
+			"side": "now",
+			"lengthDays": 366,
+			"refusal": null
+		},
+		{
+			"case": "a Now starting the day before the earliest day",
+			"side": "now",
+			"lengthDays": 367,
+			"refusal": "now-before-cutoff"
+		},
+		{
+			"case": "a Now reaching back two years, when every finished item is kept",
+			"side": "now",
+			"lengthDays": 730,
+			"keepsEveryFinishedItem": true,
+			"refusal": null
+		}
+	]
+}

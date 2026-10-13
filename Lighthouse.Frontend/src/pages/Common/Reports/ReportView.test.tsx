@@ -5,6 +5,7 @@ import type { IReport } from "../../../models/Reports/Report";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { deferred } from "../../../tests/HeldMetricsService";
 import {
+	A_LATER_METRIC,
 	aDash,
 	aRefusal,
 	aReportService,
@@ -15,6 +16,8 @@ import {
 	ENGAGEMENT_START_ID,
 	LIGHTSPEED,
 	LOADING,
+	MADE_BY_A_NEWER_VERSION,
+	METRIC_FROM_A_NEWER_VERSION,
 	NO_LONGER_EXISTS,
 	NOT_CAPTURED,
 	readingOf,
@@ -372,12 +375,31 @@ describe("Values a report cannot show", () => {
 		expect(panel).toContain("85th 9 days · 2 Work Items");
 		expect(panel).toContain("85th 5 days · 3 Work Items");
 	});
+
+	// @us-04 @slice-04 @error @contract-shape:unbounded-preservation
+	// A later version may add a metric this one has no panel for; the rest of the report still reads.
+	it.skip("puts a plain note in place of a metric this version cannot show, and shows the others", async () => {
+		const report = theEngagementStartReport({
+			shownMetricKeys: ["cycle-time", A_LATER_METRIC],
+		});
+		report.thenAndNow.metrics[A_LATER_METRIC] = {
+			atThen: { p85: shown(30, 12) },
+			atNow: { p85: shown(20, 12) },
+			beyondThenLimits: null,
+		};
+		openTheReport(report);
+		await theReportIsReady();
+
+		expect(await thePanel(CYCLE_TIME_PANEL)).toBeVisible();
+		expect(screen.getByText(METRIC_FROM_A_NEWER_VERSION)).toBeVisible();
+		expect(screen.queryByText(COULD_NOT_LOAD)).toBeNull();
+	});
 });
 
 describe("A report on a slow or failing connection", () => {
 	beforeEach(beforeEachReportTest);
 
-	// @us-01 @slice-01 @boundary @contract-shape:pure-function
+	// @us-01 @slice-01 @boundary @ac-1.8 @contract-shape:pure-function
 	it.skip("shows only the way back and a spinner while the report is on its way", async () => {
 		const held = deferred<IReport>();
 		renderWithReports(
@@ -395,7 +417,7 @@ describe("A report on a slow or failing connection", () => {
 		expect(document.querySelector('[data-report-status="ready"]')).toBeNull();
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:pure-function
+	// @us-01 @slice-01 @error @ac-1.8 @contract-shape:pure-function
 	it.skip("says the report could not be loaded and offers Retry, showing no numbers", async () => {
 		const getReport = vi
 			.fn()
@@ -414,7 +436,7 @@ describe("A report on a slow or failing connection", () => {
 		expect(await thePanel(CYCLE_TIME_PANEL)).toBeVisible();
 	});
 
-	// @us-08 @slice-08 @error @contract-shape:pure-function
+	// @us-08 @slice-08 @error @ac-1.8 @contract-shape:pure-function
 	// Deleted, or another owner's: either way there is nothing here to show.
 	it.skip("says a report that is gone no longer exists and leads back to the list", async () => {
 		renderWithReports(
@@ -431,6 +453,28 @@ describe("A report on a slow or failing connection", () => {
 			screen.getByRole("link", { name: "Back to Reports" }),
 		).toHaveAttribute("href", `/teams/${LIGHTSPEED.id}/reports`);
 		expect(screen.queryByText(COULD_NOT_LOAD)).toBeNull();
+	});
+
+	// @us-01 @slice-01 @error @contract-shape:pure-function
+	// An instance rolled back from a later version still holds that version's reports.
+	it.skip("says a report made by a newer version cannot be shown here and leads back to the list", async () => {
+		renderWithReports(
+			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
+			{
+				reportService: aReportService({
+					getReport: vi
+						.fn()
+						.mockRejectedValue(aRefusal(422, "template-not-supported")),
+				}),
+			},
+		);
+
+		expect(await screen.findByText(MADE_BY_A_NEWER_VERSION)).toBeVisible();
+		expect(
+			screen.getByRole("link", { name: "Back to Reports" }),
+		).toHaveAttribute("href", `/teams/${LIGHTSPEED.id}/reports`);
+		expect(screen.queryByText(COULD_NOT_LOAD)).toBeNull();
+		expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation

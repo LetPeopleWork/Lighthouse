@@ -8,7 +8,7 @@ import type {
 } from "../../models/Reports/Report";
 import { BaseApiService } from "./BaseApiService";
 
-// RED scaffold written by DISTILL for Epic #5878; DELIVER replaces the bodies and removes the marker.
+// Placeholder until the Reports endpoints are wired; every method is replaced with the real call.
 export const __SCAFFOLD__ = true;
 
 /** The reports of one Team or one Portfolio. Refusals arrive as an ApiError carrying the reason's code. */

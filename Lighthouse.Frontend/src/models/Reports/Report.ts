@@ -18,10 +18,15 @@ export interface IReportTemplate {
 	metrics: { key: ReportMetricKey }[];
 }
 
-/** What can be created today: the dates are the owner's calendar days, as yyyy-MM-dd. */
+/**
+ * What can be created today, and the bounds every window entered in the wizard is held to. The days are the
+ * instance's calendar days as yyyy-MM-dd; `earliestStart` is null when the owner keeps every finished item.
+ * The server answers them so the browser never holds a copy of the rule.
+ */
 export interface IReportTemplates {
 	today: string;
-	earliestStart: string;
+	earliestStart: string | null;
+	minimumLengthDays: number;
 	templates: IReportTemplate[];
 }
 
@@ -32,8 +37,11 @@ export interface IReportListItem {
 	ownerKind: "team" | "portfolio";
 	ownerId: number;
 	createdOn: string;
-	/** False once Then reaches back past the oldest finished Work Item the owner still keeps. */
-	thenRebuildable: boolean;
+	/** Missing on a report of a type this version cannot read. */
+	thenAndNow?: {
+		/** False once Then reaches back past the oldest finished Work Item the owner still keeps. */
+		thenRebuildable: boolean;
+	};
 }
 
 export interface IReportList {
@@ -76,7 +84,7 @@ export type ReportMetricSide = Partial<
 >;
 
 /**
- * The server names the two sides `then` and `now`. They are renamed on the way in because an object
+ * The two sides of a metric, named as the server names them. Neither side is called `then`: an object
  * carrying a `then` member looks like a promise to anything that awaits it.
  */
 export interface IReportMetric {

@@ -53,7 +53,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(ThenWindowIn(report), Is.EqualTo(new ReportWindow("2026-05-03", "2026-07-31", 90)));
-                Assert.That(NowWindowIn(report), Is.EqualTo(NinetyDaysToTheDayOfTheStory));
+                Assert.That(NowWindowIn(report), Is.EqualTo(NinetyDaysToToday));
             }
         }
 

@@ -42,7 +42,8 @@ import {
 export const LIGHTSPEED: IReportOwner = { kind: "team", id: 1 };
 export const APOLLO: IReportOwner = { kind: "portfolio", id: 3 };
 
-export const THE_DAY_OF_THE_STORY = "2026-10-02";
+/** The instance's day every example is set on; the browser's own clock never decides it. */
+export const TODAY_ON_THE_INSTANCE = "2026-10-02";
 export const ENGAGEMENT_START = "Then & Now — engagement start";
 export const ENGAGEMENT_START_ID = 42;
 
@@ -68,7 +69,9 @@ export const CAP_SENTENCE =
 	"Community includes 2 reports per Team. Delete one, or use Premium for unlimited reports.";
 export const CUTOFF_REFUSAL =
 	"The Then window must start on or after 2 Oct 2025 — older finished Work Items are no longer kept.";
-export const THEN_TOO_SHORT = "Then needs at least 14 days.";
+export const thenNeedsAtLeast = (days: number) =>
+	`Then needs at least ${days} days.`;
+export const THEN_TOO_SHORT = thenNeedsAtLeast(14);
 export const NO_METRIC = "Choose at least one metric";
 export const NOT_CAPTURED = "Not captured for this report";
 export const FROZEN = "frozen, can't be changed";
@@ -79,10 +82,28 @@ export const LOADING = "Loading report…";
 export const COULD_NOT_LOAD =
 	"This report couldn't be loaded. Reload to try again.";
 export const NO_LONGER_EXISTS = "This report no longer exists.";
+export const MADE_BY_A_NEWER_VERSION =
+	"This report was made by a newer version of Lighthouse and can't be shown here.";
+export const METRIC_FROM_A_NEWER_VERSION =
+	"This metric can't be shown in this version of Lighthouse.";
+export const NOT_SUPPORTED_IN_THIS_VERSION = "Not supported in this version";
+export const LIST_COULD_NOT_LOAD =
+	"Reports couldn't be loaded. Reload to try again.";
+export const TYPES_COULD_NOT_LOAD = "Report types couldn't be loaded.";
 
-export const aTemplateList = (): IReportTemplates => ({
-	today: THE_DAY_OF_THE_STORY,
+/** A type of report a later version adds; this version lists it but cannot show it. */
+export const A_LATER_TYPE = "signals";
+
+/** A metric a later version adds; this version has no panel for it. */
+export const A_LATER_METRIC = "lead-time-distribution" as ReportMetricKey;
+
+export const aTemplateList = (
+	overrides: Partial<IReportTemplates> = {},
+): IReportTemplates => ({
+	today: TODAY_ON_THE_INSTANCE,
 	earliestStart: "2025-10-02",
+	minimumLengthDays: 14,
+	...overrides,
 	templates: [
 		{
 			templateKey: "then-and-now",
@@ -100,8 +121,18 @@ export const aListedReport = (
 	ownerKind: "team",
 	ownerId: LIGHTSPEED.id,
 	createdOn: "2026-08-01",
-	thenRebuildable: true,
+	thenAndNow: { thenRebuildable: true },
 	...overrides,
+});
+
+/** A report a later version created, listed with no Then & Now part. */
+export const aListedReportOfALaterType = (): IReportListItem => ({
+	id: 44,
+	name: "Signals — flow alerts",
+	templateKey: A_LATER_TYPE,
+	ownerKind: "team",
+	ownerId: LIGHTSPEED.id,
+	createdOn: "2026-09-20",
 });
 
 export const aReportList = (

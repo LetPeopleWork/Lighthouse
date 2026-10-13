@@ -114,7 +114,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
                 Assert.That(belowTheCap, Is.False);
                 Assert.That(CreationBlockedByCapIn(atTheCap), Is.True);
                 Assert.That(atTheCap.GetProperty("communityCap").GetInt32(), Is.EqualTo(2));
-                Assert.That(refused.IsSuccessStatusCode, Is.False, body);
+                Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), body);
                 Assert.That(body, Does.Contain(Reason.ReportCapReached));
                 Assert.That(stillListed, Has.Count.EqualTo(2));
             }
@@ -200,7 +200,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(opened, Is.All.EqualTo(HttpStatusCode.OK));
-                Assert.That(refused.IsSuccessStatusCode, Is.False, refusal);
+                Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), refusal);
                 Assert.That(refusal, Does.Contain(Reason.ReportCapReached));
                 Assert.That(deleted.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
                 Assert.That(ReportsIn(afterOneDelete), Has.Count.EqualTo(3));
@@ -240,7 +240,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             var reportId = await GivenTheAdminCreated(lightspeed, new NewReport { ThenEnd = new DateOnly(2025, 12, 30) });
             var onTheDayItWasCreated = ThenRebuildableIn(await TheReport(lightspeed, reportId));
 
-            TodayIs(TheDayOfTheStory.AddDays(1));
+            TodayIs(TodayOnTheInstance.AddDays(1));
 
             var report = await TheReport(lightspeed, reportId);
             var listed = ReportsIn(await TheReportsListOf(lightspeed)).Single();
@@ -248,7 +248,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             {
                 Assert.That(onTheDayItWasCreated, Is.True);
                 Assert.That(ThenRebuildableIn(report), Is.False);
-                Assert.That(listed.GetProperty("thenRebuildable").GetBoolean(), Is.False,
+                Assert.That(ThenRebuildableIn(listed), Is.False,
                     "the list's delete button warns as well, so the list has to know");
             }
         }

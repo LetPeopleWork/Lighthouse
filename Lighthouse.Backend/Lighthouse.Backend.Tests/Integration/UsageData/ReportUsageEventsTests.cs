@@ -198,19 +198,32 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             Assert.That(names, Is.EqualTo(OnlyThenAndNow), "the list of report types usage data may name");
         }
 
-        // @us-01 @us-06 @slice-01 @slice-06 @contract-shape:bounded-change
-        // Data leaving that the page does not describe is data nobody was told about.
-        [TestCase("/teams/:id/reports", Ignore = PendingSlice01)]
-        [TestCase(TemplateOnTheWire, Ignore = PendingSlice01)]
-        [TestCase(ReportCreated, Ignore = PendingSlice01)]
-        [TestCase(ReportOpened, Ignore = PendingSlice01)]
-        [TestCase("/portfolios/:id/reports", Ignore = PendingSlice06)]
-        [TestCase(ReportDeleted, Ignore = PendingSlice08)]
-        public void The_usage_data_page_describes_what_Reports_send(string described)
+        // @us-01 @us-06 @us-08 @slice-01 @slice-06 @slice-08 @contract-shape:bounded-change
+        // Data leaving that the page does not describe is data nobody was told about. Each row is found by what
+        // its first column says, and must name what travels with it.
+        [TestCase("A report was created", "`ThenAndNow`", Ignore = PendingSlice01)]
+        [TestCase("A report was opened", "`ThenAndNow`", Ignore = PendingSlice01)]
+        [TestCase("Which type of report", "`ThenAndNow`", Ignore = PendingSlice01)]
+        [TestCase("A Team tab was opened", "seven Team tabs", Ignore = PendingSlice01)]
+        [TestCase("A Portfolio tab was opened", "six Portfolio tabs", Ignore = PendingSlice06)]
+        [TestCase("A report was deleted", "| Nothing", Ignore = PendingSlice08)]
+        public void The_usage_data_page_has_a_row_for_what_Reports_send(string rowSays, string rowNames)
         {
-            var page = File.ReadAllText(Path.Combine(RepositoryRoot(), UsageDataPage.Replace('/', Path.DirectorySeparatorChar)));
+            var rows = TheUsageDataPage().Split('\n')
+                .Select(line => line.Trim())
+                .Where(line => line.StartsWith($"| {rowSays} |", StringComparison.Ordinal))
+                .ToList();
 
-            Assert.That(page, Does.Contain(described));
+            Assert.That(rows, Has.Count.EqualTo(1), $"the page has one row starting \"{rowSays}\"");
+            Assert.That(rows, Has.All.Contains(rowNames));
+        }
+
+        // @us-01 @us-06 @slice-01 @slice-06 @contract-shape:bounded-change
+        [TestCase("/teams/:id/reports", Ignore = PendingSlice01)]
+        [TestCase("/portfolios/:id/reports", Ignore = PendingSlice06)]
+        public void The_usage_data_page_lists_the_Reports_address_among_those_it_publishes(string address)
+        {
+            Assert.That(TheUsageDataPage(), Does.Contain($"`{address}`"));
         }
 
         // --- Steps ---
@@ -271,6 +284,9 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         private static List<string> PropertyNames(JsonElement carried)
             => [.. carried.EnumerateObject().Select(property => property.Name)];
+
+        private static string TheUsageDataPage()
+            => File.ReadAllText(Path.Combine(RepositoryRoot(), UsageDataPage.Replace('/', Path.DirectorySeparatorChar)));
 
         private static string RepositoryRoot()
         {

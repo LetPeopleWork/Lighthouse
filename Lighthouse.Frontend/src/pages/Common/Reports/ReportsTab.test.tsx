@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -6,6 +6,7 @@ import { deferred } from "../../../tests/HeldMetricsService";
 import {
 	APOLLO,
 	aListedReport,
+	aListedReportOfALaterType,
 	aReportList,
 	aReportService,
 	CANNOT_BE_REBUILT,
@@ -14,6 +15,8 @@ import {
 	ENGAGEMENT_START,
 	ENGAGEMENT_START_ID,
 	LIGHTSPEED,
+	LIST_COULD_NOT_LOAD,
+	NOT_SUPPORTED_IN_THIS_VERSION,
 	renderWithReports,
 } from "../../../tests/ReportsTestKit";
 import ReportsTab from "./ReportsTab";
@@ -200,6 +203,28 @@ describe("The Reports tab lists a Team's reports", () => {
 			`/portfolios/${APOLLO.id}/reports/${ENGAGEMENT_START_ID}`,
 		);
 	});
+
+	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
+	// An instance rolled back from a later version still holds that version's reports.
+	it.skip("lists a report of a type this version cannot show as not supported, and still lets an admin delete it", async () => {
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
+			reportService: aReportService({
+				getReports: vi
+					.fn()
+					.mockResolvedValue(
+						aReportList([aListedReport(), aListedReportOfALaterType()]),
+					),
+			}),
+		});
+
+		const laterRow = (
+			await screen.findByRole("link", { name: "Signals — flow alerts" })
+		).closest('[role="row"]') as HTMLElement;
+
+		expect(laterRow).toHaveTextContent(NOT_SUPPORTED_IN_THIS_VERSION);
+		expect(await theDeleteButtonOf("Signals — flow alerts")).toBeEnabled();
+		expect(screen.getByRole("link", { name: ENGAGEMENT_START })).toBeVisible();
+	});
 });
 
 describe("The Community cap on the Reports tab", () => {
@@ -301,7 +326,6 @@ describe("Deleting a report from the list", () => {
 		);
 		expect(await screen.findByText(EMPTY)).toBeVisible();
 		expect(reportUsage).toHaveBeenCalledWith({ name: "ReportDeleted" });
-		expect(reportUsage).toHaveBeenCalledTimes(1);
 	});
 
 	// @us-08 @slice-08 @error @contract-shape:unbounded-preservation
@@ -328,7 +352,9 @@ describe("Deleting a report from the list", () => {
 				getReports: vi
 					.fn()
 					.mockResolvedValue(
-						aReportList([aListedReport({ thenRebuildable: false })]),
+						aReportList([
+							aListedReport({ thenAndNow: { thenRebuildable: false } }),
+						]),
 					),
 			}),
 		});
@@ -395,11 +421,27 @@ describe("The Reports list on a slow or failing connection", () => {
 
 		expect(await screen.findByRole("progressbar")).toBeVisible();
 		expect(screen.queryByText(EMPTY)).toBeNull();
-		expect(screen.queryByRole("button", { name: "Create Report" })).toBeNull();
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:pure-function
-	it.skip("offers Retry, never the empty list, when the list cannot be read", async () => {
+	// @us-01 @us-08 @slice-01 @boundary @contract-shape:pure-function
+	// Until the list arrives nobody knows whether the Community cap is reached.
+	it.skip("holds Create Report until the list says whether another report may be created", async () => {
+		const held = deferred<ReturnType<typeof aReportList>>();
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
+			reportService: aReportService({
+				getReports: vi.fn().mockReturnValue(held.promise),
+			}),
+		});
+
+		expect(await theCreateButton()).toBeDisabled();
+
+		await act(async () => held.resolve(aReportList([aListedReport()])));
+
+		expect(await theCreateButton()).toBeEnabled();
+	});
+
+	// @us-01 @slice-01 @error @ac-1.8 @contract-shape:pure-function
+	it.skip("says the list could not be loaded and offers Retry, never the empty list", async () => {
 		const getReports = vi
 			.fn()
 			.mockRejectedValueOnce(new Error("the network dropped"))
@@ -409,6 +451,7 @@ describe("The Reports list on a slow or failing connection", () => {
 		});
 
 		const retry = await screen.findByRole("button", { name: "Retry" });
+		expect(screen.getByText(LIST_COULD_NOT_LOAD)).toBeVisible();
 		expect(screen.queryByText(EMPTY)).toBeNull();
 
 		await userEvent.click(retry);

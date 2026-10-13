@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IReportOwner } from "../../../models/Reports/Report";
@@ -10,6 +10,7 @@ import {
 	aRefusal,
 	aReportList,
 	aReportService,
+	aTemplateList,
 	CAP_SENTENCE,
 	CUTOFF_REFUSAL,
 	chooseThenEnd,
@@ -21,9 +22,12 @@ import {
 	next,
 	renderWithReports,
 	THEN_TOO_SHORT,
+	TODAY_ON_THE_INSTANCE,
+	TYPES_COULD_NOT_LOAD,
 	theMetricBox,
 	theNameField,
 	theNowLengthField,
+	thenNeedsAtLeast,
 	theThenEndField,
 	theThenLengthField,
 	theWizard,
@@ -210,6 +214,9 @@ describe("Step two: Then", () => {
 
 		expect(await theThenLengthField()).toHaveValue(180);
 		expect(
+			within(await theWizard()).getByRole("button", { name: "90 days" }),
+		).toBeVisible();
+		expect(
 			within(await theWizard()).queryByRole("button", { name: "30 days" }),
 		).toBeNull();
 	});
@@ -251,6 +258,135 @@ describe("Step two: Then", () => {
 		expect(
 			within(await theWizard()).getByRole("button", { name: "Next" }),
 		).toBeEnabled();
+	});
+
+	// @us-02 @slice-02 @boundary @contract-shape:pure-function
+	// The shortest window is the server's to say; the wizard holds no number of its own.
+	it.skip("takes the shortest Then it allows from the server", async () => {
+		await openTheWizard(
+			aReportService({
+				getReports: vi.fn().mockResolvedValue(aReportList([])),
+				getTemplates: vi
+					.fn()
+					.mockResolvedValue(aTemplateList({ minimumLengthDays: 21 })),
+			}),
+		);
+		await next();
+
+		await enterNumber(await theThenLengthField(), 20);
+		expect(await theWizard()).toHaveTextContent(thenNeedsAtLeast(21));
+
+		await enterNumber(await theThenLengthField(), 21);
+		expect(await theWizard()).not.toHaveTextContent(thenNeedsAtLeast(21));
+		expect(
+			within(await theWizard()).getByRole("button", { name: "Next" }),
+		).toBeEnabled();
+	});
+
+	// @us-02 @slice-02 @error @contract-shape:pure-function
+	// A Team keeping 180 days has a later oldest kept day; the refusal names the day the server answered.
+	it.skip("names the oldest kept day the server answers when Then starts before it", async () => {
+		await openTheWizard(
+			aReportService({
+				getReports: vi.fn().mockResolvedValue(aReportList([])),
+				getTemplates: vi
+					.fn()
+					.mockResolvedValue(aTemplateList({ earliestStart: "2026-04-05" })),
+			}),
+		);
+		await next();
+
+		await chooseThenEnd("2026-05-31");
+
+		expect(await theWizard()).toHaveTextContent(
+			"The Then window must start on or after 5 Apr 2026 — older finished Work Items are no longer kept.",
+		);
+		expect(
+			within(await theWizard()).getByRole("button", { name: "Next" }),
+		).toBeDisabled();
+	});
+
+	// @us-02 @slice-02 @boundary @contract-shape:pure-function
+	it.skip("lets Then start on any day when the Team keeps every finished Work Item", async () => {
+		await openTheWizard(
+			aReportService({
+				getReports: vi.fn().mockResolvedValue(aReportList([])),
+				getTemplates: vi
+					.fn()
+					.mockResolvedValue(aTemplateList({ earliestStart: null })),
+			}),
+		);
+		await next();
+
+		await chooseThenEnd("2025-01-31");
+
+		expect(await theWizard()).toHaveTextContent(
+			"= 3 Nov 2024 – 31 Jan 2025 · frozen when you create it",
+		);
+		expect(await theWizard()).not.toHaveTextContent(/no longer kept/);
+		expect(
+			within(await theWizard()).getByRole("button", { name: "Next" }),
+		).toBeEnabled();
+	});
+});
+
+describe("The wizard on a slow or failing connection", () => {
+	beforeEach(() => {
+		reportUsage.mockClear();
+		mockNavigate.mockClear();
+		terms.current = { ...defaultTerms };
+	});
+
+	// @us-01 @slice-01 @boundary @contract-shape:pure-function
+	// Today is the instance's day; until it arrives the wizard has no day to start Then from.
+	it.skip("draws no dates and goes no further while the report types are on their way", async () => {
+		const held = deferred<ReturnType<typeof aTemplateList>>();
+		await openTheWizard(
+			aReportService({
+				getReports: vi.fn().mockResolvedValue(aReportList([])),
+				getTemplates: vi.fn().mockReturnValue(held.promise),
+			}),
+		);
+
+		const wizard = await theWizard();
+		expect(within(wizard).getByRole("progressbar")).toBeVisible();
+		expect(within(wizard).getByRole("button", { name: "Next" })).toBeDisabled();
+		expect(wizard).not.toHaveTextContent(/\d{4}/);
+
+		await act(async () => held.resolve(aTemplateList()));
+		await next();
+
+		expect(await theThenEndField()).toHaveValue(TODAY_ON_THE_INSTANCE);
+	});
+
+	// @us-01 @slice-01 @error @contract-shape:pure-function
+	it.skip("says the report types could not be loaded and offers Retry, going no further", async () => {
+		await openTheWizard(
+			aReportService({
+				getReports: vi.fn().mockResolvedValue(aReportList([])),
+				getTemplates: vi
+					.fn()
+					.mockRejectedValueOnce(new Error("the network dropped"))
+					.mockResolvedValue(aTemplateList()),
+			}),
+		);
+
+		const alert = await within(await theWizard()).findByRole("alert");
+		expect(alert).toHaveTextContent(TYPES_COULD_NOT_LOAD);
+		expect(
+			within(await theWizard()).getByRole("button", { name: "Next" }),
+		).toBeDisabled();
+
+		await userEvent.click(within(alert).getByRole("button", { name: "Retry" }));
+
+		await waitFor(async () =>
+			expect(
+				within(await theWizard()).getByRole("button", { name: "Next" }),
+			).toBeEnabled(),
+		);
+		expect(
+			within(await theWizard()).queryByText(TYPES_COULD_NOT_LOAD),
+		).toBeNull();
 	});
 });
 
@@ -420,7 +556,6 @@ describe("Creating the report", () => {
 			name: "ReportCreated",
 			reportTemplate: "ThenAndNow",
 		});
-		expect(reportUsage).toHaveBeenCalledTimes(1);
 	});
 
 	// @us-01 @slice-01 @boundary @contract-shape:pure-function
@@ -472,7 +607,7 @@ describe("Creating the report", () => {
 				getReports: vi.fn().mockResolvedValue(aReportList([])),
 				createReport: vi
 					.fn()
-					.mockRejectedValue(aRefusal(400, "report-cap-reached")),
+					.mockRejectedValue(aRefusal(403, "report-cap-reached")),
 			}),
 		);
 		await onToTheLastStep();

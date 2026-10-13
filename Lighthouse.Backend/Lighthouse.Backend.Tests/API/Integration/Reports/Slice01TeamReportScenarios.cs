@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             {
                 Assert.That(TextOf(report, "name"), Is.EqualTo(EngagementStart));
                 Assert.That(TextOf(report, "templateKey"), Is.EqualTo(ThenAndNow));
-                Assert.That(ThenWindowIn(report), Is.EqualTo(NinetyDaysToTheDayOfTheStory));
+                Assert.That(ThenWindowIn(report), Is.EqualTo(NinetyDaysToToday));
                 Assert.That(ThenValueIn(report, CycleTime, P85), Is.EqualTo(Shown(21, 20)));
                 Assert.That(NowValueIn(report, CycleTime, P85), Is.EqualTo(Shown(21, 20)));
                 Assert.That(NowValueIn(report, CycleTime, P70), Is.EqualTo(Shown(11, 20)));
@@ -68,7 +68,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             {
                 Assert.That(TextOf(reports[0], "name"), Is.EqualTo(EngagementStart));
                 Assert.That(TextOf(reports[0], "templateKey"), Is.EqualTo(ThenAndNow));
-                Assert.That(TextOf(reports[0], "createdOn"), Is.EqualTo(TheDayOfTheStoryOnTheWire));
+                Assert.That(TextOf(reports[0], "createdOn"), Is.EqualTo(TodayOnTheWire));
             }
         }
 
@@ -85,8 +85,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(TextOf(templates, "today"), Is.EqualTo(TheDayOfTheStoryOnTheWire));
+                Assert.That(TextOf(templates, "today"), Is.EqualTo(TodayOnTheWire));
                 Assert.That(TextOf(templates, "earliestStart"), Is.EqualTo("2025-10-02"));
+                Assert.That(templates.GetProperty("minimumLengthDays").GetInt32(), Is.EqualTo(14));
                 Assert.That(MetricKeysOfThenAndNowIn(templates), Does.Contain(CycleTime));
             }
         }
@@ -106,7 +107,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             var report = await TheReport(lightspeed, reportId);
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(ThenWindowIn(report), Is.EqualTo(NinetyDaysToTheDayOfTheStory));
+                Assert.That(ThenWindowIn(report), Is.EqualTo(NinetyDaysToToday));
                 Assert.That(NowWindowIn(report), Is.EqualTo(new ReportWindow("2026-08-02", "2026-10-30", 90)));
                 Assert.That(ThenValueIn(report, CycleTime, P85), Is.EqualTo(Shown(21, 20)));
                 Assert.That(NowValueIn(report, CycleTime, P85), Is.EqualTo(Shown(12, 10)));
@@ -170,16 +171,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         public async Task A_reader_cannot_create_a_report()
         {
             var lightspeed = GivenLightspeedFinishedTwentyWorkItemsSinceEarlyJuly();
+            await GivenTheAdminCreated(lightspeed, new NewReport());
 
             TheCallerOnlyReads(lightspeed);
             var listed = await TheReportsListOf(lightspeed);
-            using var refused = await CreateAReport(lightspeed, new NewReport());
+            using var refused = await CreateAReport(lightspeed, new NewReport { Name = "Then & Now — a reader's own" });
 
             await ThenItIsForbidden(refused);
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(ReportNamesIn(listed), Is.Empty, "the reader can read the list, so the refusal is about writing");
-                Assert.That(StoredReports(), Is.Zero);
+                Assert.That(ReportNamesIn(listed), Is.EqualTo(TheEngagementStartAlone), "the reader reads the list, so the refusal is about writing");
+                Assert.That(StoredReports(), Is.EqualTo(1));
             }
         }
 
@@ -276,9 +278,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             var today = DateOnly.ParseExact(TextOf(templates, "today") ?? "", "yyyy-MM-dd", CultureInfo.InvariantCulture);
             using var created = await CreateAReport(lightspeed, new NewReport { ThenEnd = today });
 
-            Assert.That(TextOf(templates, "today"), Is.EqualTo(TheDayOfTheStoryOnTheWire));
+            Assert.That(TextOf(templates, "today"), Is.EqualTo(TodayOnTheWire));
             var report = await TheReport(lightspeed, await ThenItWasCreated(created));
-            Assert.That(ThenWindowIn(report), Is.EqualTo(NinetyDaysToTheDayOfTheStory));
+            Assert.That(ThenWindowIn(report), Is.EqualTo(NinetyDaysToToday));
         }
 
         // @driving_port @real-io @us-08 @slice-01 @contract-shape:bounded-change
@@ -313,16 +315,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             var reportId = await GivenTheAdminCreated(lightspeed, new NewReport());
             TheStoredReportBecomesOfType(reportId, LaterTemplate);
 
-            var listed = ReportNamesIn(await TheReportsListOf(lightspeed));
+            var listed = ReportsIn(await TheReportsListOf(lightspeed));
             using var opened = await AskForTheReport(lightspeed, reportId);
-            var body = await opened.Content.ReadAsStringAsync();
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(listed, Is.EqualTo(TheEngagementStartAlone));
-                Assert.That((int)opened.StatusCode, Is.InRange(400, 499), body);
-                Assert.That(body, Does.Contain(Reason.TemplateNotSupported));
+                Assert.That(listed.Select(report => TextOf(report, "name")), Is.EqualTo(TheEngagementStartAlone));
+                Assert.That(listed.Select(report => report.TryGetProperty("thenAndNow", out _)), Is.All.False,
+                    "a type this version cannot read carries no Then & Now part");
             }
+
+            await ThenItIsRefusedWith(opened, HttpStatusCode.UnprocessableEntity, Reason.TemplateNotSupported);
         }
 
         // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:unbounded-preservation
@@ -357,7 +360,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That((int)opened.StatusCode, Is.InRange(400, 499), "the report this version cannot read is refused, not crashed on");
+                Assert.That(opened.StatusCode, Is.EqualTo(HttpStatusCode.UnprocessableEntity), "the report this version cannot read is refused, not crashed on");
                 Assert.That(problems, Is.Not.Empty, "nothing tells the operator why the report will not open");
                 Assert.That(problems.Select(problem => TextOf(problem, "message")), Has.None.Contains(EngagementStart));
             }

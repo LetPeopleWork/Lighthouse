@@ -953,6 +953,7 @@ describe("OverviewDashboard", () => {
 		const askToDeleteTheFirstRowOf = async (
 			section: "portfolios" | "teams",
 			reports: number,
+			reportService = withReports(reports),
 		) => {
 			const rbacService = createMockRbacService();
 			rbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
@@ -961,7 +962,6 @@ describe("OverviewDashboard", () => {
 				canCreateTeam: true,
 				canCreatePortfolio: true,
 			});
-			const reportService = withReports(reports);
 			renderWithProviders(<OverviewDashboard />, {
 				rbacService,
 				reportService,
@@ -1029,6 +1029,45 @@ describe("OverviewDashboard", () => {
 				expect(reportUsage).toHaveBeenCalledWith({ name: "TeamDeleted" }),
 			);
 			expect(reportUsage).not.toHaveBeenCalledWith({ name: "ReportDeleted" });
+		});
+
+		// @us-08 @slice-08 @boundary @contract-shape:pure-function
+		// Deleting before the count arrives would take reports along that the dialog never named.
+		it.skip("holds Delete until it knows how many reports go with it", async () => {
+			const { dialog } = await askToDeleteTheFirstRowOf(
+				"teams",
+				0,
+				aReportService({
+					getReports: vi.fn().mockReturnValue(new Promise(() => {})),
+				}),
+			);
+
+			expect(within(dialog).getByRole("progressbar")).toBeVisible();
+			expect(
+				within(dialog).getByRole("button", { name: "Delete" }),
+			).toBeDisabled();
+		});
+
+		// @us-08 @slice-08 @error @contract-shape:pure-function
+		it.skip("says any reports it has go with it when their number cannot be read", async () => {
+			const { dialog } = await askToDeleteTheFirstRowOf(
+				"teams",
+				0,
+				aReportService({
+					getReports: vi
+						.fn()
+						.mockRejectedValue(new Error("the network dropped")),
+				}),
+			);
+
+			await waitFor(() =>
+				expect(dialog).toHaveTextContent(
+					"Do you really want to delete Test Team 1 and any reports it has?",
+				),
+			);
+			expect(
+				within(dialog).getByRole("button", { name: "Delete" }),
+			).toBeEnabled();
 		});
 	});
 

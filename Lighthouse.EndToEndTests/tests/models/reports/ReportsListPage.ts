@@ -9,6 +9,16 @@ import { ReportPage } from "./ReportPage";
 export class ReportsListPage {
 	constructor(private readonly page: Page) {}
 
+	/** The list marks itself ready once it has read the reports; until then Create Report waits too. */
+	get ready(): Locator {
+		return this.page.locator('[data-widget-status="ready"]').first();
+	}
+
+	async waitUntilReady(): Promise<ReportsListPage> {
+		await this.ready.waitFor();
+		return this;
+	}
+
 	get createReportButton(): Locator {
 		return this.page.getByRole("button", { name: "Create Report" });
 	}

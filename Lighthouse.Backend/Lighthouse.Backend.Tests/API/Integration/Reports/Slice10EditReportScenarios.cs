@@ -58,7 +58,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             {
                 Assert.That(saved.StatusCode, Is.EqualTo(HttpStatusCode.OK));
                 Assert.That(NowWindowIn(report), Is.EqualTo(new ReportWindow("2026-09-03", "2026-10-02", 30)));
-                Assert.That(ThenWindowIn(report), Is.EqualTo(NinetyDaysToTheDayOfTheStory));
+                Assert.That(ThenWindowIn(report), Is.EqualTo(NinetyDaysToToday));
             }
         }
 
@@ -100,22 +100,63 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         // @driving_port @real-io @us-10 @slice-10 @error @contract-shape:unbounded-preservation
-        // An edit has no Then in it; one that brings Then along anyway still leaves Then as it was.
+        // An edit has no Then in it; one that brings Then along anyway is saved as if Then were not there.
         [Test]
         [Ignore(PendingSlice10)]
         public async Task Then_cannot_be_edited()
         {
             var lightspeed = ATeam(Lightspeed);
+            TheTeamFinishedPerDay(lightspeed, ThenStarts, [.. Enumerable.Repeat(1, 90)]);
             var reportId = await GivenTheAdminCreated(lightspeed, new NewReport());
-            var edit = AnEdit(await TheReport(lightspeed, reportId));
+            var asCreated = await TheReport(lightspeed, reportId);
+            var edit = AnEdit(asCreated, name: SinceAugust);
             var thenAndNow = edit["thenAndNow"]!.AsObject();
             thenAndNow["thenEndDate"] = "2026-07-31";
             thenAndNow["thenLengthDays"] = 30;
 
-            using var attempt = await EditTheReport(lightspeed, reportId, edit);
+            using var saved = await EditTheReport(lightspeed, reportId, edit);
 
-            Assert.That(ThenWindowIn(await TheReport(lightspeed, reportId)), Is.EqualTo(NinetyDaysToTheDayOfTheStory),
-                $"answered {(int)attempt.StatusCode}");
+            var report = await TheReport(lightspeed, reportId);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(saved.StatusCode, Is.EqualTo(HttpStatusCode.OK), await saved.Content.ReadAsStringAsync());
+                Assert.That(TextOf(report, "name"), Is.EqualTo(SinceAugust));
+                Assert.That(ThenWindowIn(report), Is.EqualTo(NinetyDaysToToday));
+                Assert.That(ThenValueIn(report, Throughput, Total), Is.EqualTo(ThenValueIn(asCreated, Throughput, Total)));
+                Assert.That(ThenValueIn(report, CycleTime, P85), Is.EqualTo(ThenValueIn(asCreated, CycleTime, P85)));
+            }
+        }
+
+        // @driving_port @real-io @us-10 @slice-10 @boundary @contract-shape:bounded-change
+        // A later version may have stored members this one does not know; an edit here must not strip them.
+        [Test]
+        [Ignore(PendingSlice10)]
+        public async Task An_edit_changes_the_name_the_shown_metrics_and_how_long_Now_is_and_nothing_else()
+        {
+            var lightspeed = ATeam(Lightspeed);
+            TheTeamFinishedPerDay(lightspeed, ThenStarts, [.. Enumerable.Repeat(1, 90)]);
+            var reportId = await GivenTheAdminCreated(lightspeed, new NewReport { Shown = [CycleTime] });
+            var neighbourId = await GivenTheAdminCreated(lightspeed, new NewReport { Name = "Then & Now — hand-over" });
+            TheStoredPayloadIsReshaped(reportId, payload => payload["authorNotes"] = new JsonObject { [CycleTime] = "a note a later version wrote" });
+            var before = TheStoredRowOf(reportId);
+            var neighbourBefore = TheStoredRowOf(neighbourId);
+
+            using var saved = await EditTheReport(lightspeed, reportId,
+                AnEdit(await TheReport(lightspeed, reportId), name: SinceAugust, shown: [CycleTime, Throughput], nowLengthDays: 30));
+
+            var after = TheStoredRowOf(reportId);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(saved.StatusCode, Is.EqualTo(HttpStatusCode.OK), await saved.Content.ReadAsStringAsync());
+                Assert.That(after["Name"], Is.EqualTo(SinceAugust));
+                Assert.That(after["ShownMetricKeysJson"], Is.Not.EqualTo(before["ShownMetricKeysJson"]));
+                Assert.That(after["ConcurrencyToken"], Is.Not.EqualTo(before["ConcurrencyToken"]));
+                Assert.That(WithoutTheMayChangeColumns(after), Is.EqualTo(WithoutTheMayChangeColumns(before)),
+                    "owner, type, creation and payload version stay as they were");
+                Assert.That(JsonNode.DeepEquals(WithoutNowLength(after), WithoutNowLength(before)), Is.True,
+                    $"Then, every capture and the members a later version wrote stay as they were: {after[PayloadColumn]}");
+                Assert.That(TheStoredRowOf(neighbourId), Is.EqualTo(neighbourBefore), "the Team's other report is not written");
+            }
         }
 
         // @driving_port @real-io @us-10 @us-07 @slice-10 @error @contract-shape:unbounded-preservation
@@ -139,24 +180,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @error @contract-shape:unbounded-preservation
+        // @driving_port @real-io @us-10 @slice-10 @error @ac-10.6 @contract-shape:unbounded-preservation
+        // Two admins of the Team opened the same report; the one who saves second has not seen the first's change.
         [Test]
         [Ignore(PendingSlice10)]
-        public async Task An_edit_saved_over_somebody_elses_is_refused()
+        public async Task A_save_over_another_admins_change_is_refused_and_overwrites_nothing()
         {
             var lightspeed = ATeam(Lightspeed);
             var reportId = await GivenTheAdminCreated(lightspeed, new NewReport());
-            var readByBoth = await TheReport(lightspeed, reportId);
-            using var first = await EditTheReport(lightspeed, reportId, AnEdit(readByBoth, name: SinceAugust));
+            var openedByBoth = await TheReport(lightspeed, reportId);
 
-            using var second = await EditTheReport(lightspeed, reportId, AnEdit(readByBoth, name: "Something else"));
+            AnotherAdminOf(lightspeed);
+            using var renamed = await EditTheReport(lightspeed, reportId, AnEdit(openedByBoth, name: SinceAugust));
 
-            var name = TextOf(await TheReport(lightspeed, reportId), "name");
+            TheCallerAdministers(lightspeed);
+            using var refused = await EditTheReport(lightspeed, reportId, AnEdit(openedByBoth, nowLengthDays: 30));
+
+            var report = await TheReport(lightspeed, reportId);
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(first.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-                Assert.That(second.StatusCode, Is.EqualTo(HttpStatusCode.Conflict));
-                Assert.That(name, Is.EqualTo(SinceAugust));
+                Assert.That(renamed.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.Conflict));
+                Assert.That(TextOf(report, "name"), Is.EqualTo(SinceAugust));
+                Assert.That(NowWindowIn(report).LengthDays, Is.EqualTo(90));
             }
         }
 
@@ -218,5 +264,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         private static readonly string?[] OnlyCycleTime = [CycleTime];
 
         private static readonly string?[] CycleTimeAndThroughput = [CycleTime, Throughput];
+
+        private const string PayloadColumn = "TemplatePayloadJson";
+
+        private static readonly string[] MayChangeOnEdit = ["Name", "ShownMetricKeysJson", "ConcurrencyToken", PayloadColumn];
+
+        private static Dictionary<string, string?> WithoutTheMayChangeColumns(Dictionary<string, string?> row)
+            => row.Where(column => !MayChangeOnEdit.Contains(column.Key)).ToDictionary(column => column.Key, column => column.Value);
+
+        /// <summary>The stored payload with the Now length taken out - the one payload member an edit may change.</summary>
+        private static JsonObject WithoutNowLength(Dictionary<string, string?> row)
+        {
+            var payload = JsonNode.Parse(row[PayloadColumn] ?? "{}")!.AsObject();
+            var nowLength = payload.FirstOrDefault(member => member.Key.Equals("nowLengthDays", StringComparison.OrdinalIgnoreCase)).Key;
+            if (nowLength is not null)
+            {
+                payload.Remove(nowLength);
+            }
+
+            return payload;
+        }
     }
 }

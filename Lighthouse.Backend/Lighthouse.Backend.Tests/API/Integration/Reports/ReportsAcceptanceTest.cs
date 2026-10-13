@@ -70,9 +70,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         protected const string AverageLastDay = "averageLastDay";
 
         /// <summary>A Then of 90 days ending on the day every scenario is set, 2 Oct 2026: 5 Jul to 2 Oct 2026, both days counted.</summary>
-        protected static readonly ReportWindow NinetyDaysToTheDayOfTheStory = new("2026-07-05", "2026-10-02", 90);
+        protected static readonly ReportWindow NinetyDaysToToday = new("2026-07-05", "2026-10-02", 90);
 
-        protected const string TheDayOfTheStoryOnTheWire = "2026-10-02";
+        protected const string TodayOnTheWire = "2026-10-02";
 
         /// <summary>
         /// The closed set of reasons a value is shown as "—" or a request is refused. The frontend turns each
@@ -101,8 +101,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         protected static readonly TimeZoneInfo InstanceZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Zurich");
 
-        /// <summary>Friday 2 Oct 2026, a morning in the instance's zone: the day the coach's examples are told on.</summary>
-        protected static readonly DateOnly TheDayOfTheStory = new(2026, 10, 2);
+        /// <summary>Friday 2 Oct 2026, a morning in the instance's zone: today, unless a scenario moves the clock.</summary>
+        protected static readonly DateOnly TodayOnTheInstance = new(2026, 10, 2);
 
         private bool premiumLicence;
 
@@ -115,7 +115,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         public void Init()
         {
             premiumLicence = false;
-            Clock = new FakeLighthouseClock(MorningOf(TheDayOfTheStory), InstanceZone);
+            Clock = new FakeLighthouseClock(MorningOf(TodayOnTheInstance), InstanceZone);
             RootFactory = new TestWebApplicationFactory<Program>();
 
             var licenseService = new Mock<ILicenseService>();
@@ -395,6 +395,34 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
+        /// <summary>Every column of one stored report, as text, keyed by the column's name.</summary>
+        protected Dictionary<string, string?> TheStoredRowOf(int reportId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            var connection = context.Database.GetDbConnection();
+            connection.Open();
+            try
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = "SELECT * FROM \"Reports\" WHERE \"Id\" = @id";
+                var id = command.CreateParameter();
+                id.ParameterName = "@id";
+                id.Value = reportId;
+                command.Parameters.Add(id);
+
+                using var reader = command.ExecuteReader();
+                Assert.That(reader.Read(), Is.True, $"Report {reportId} is not stored");
+                return Enumerable.Range(0, reader.FieldCount).ToDictionary(
+                    reader.GetName,
+                    column => reader.IsDBNull(column) ? null : Convert.ToString(reader.GetValue(column), CultureInfo.InvariantCulture));
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
+
         /// <summary>The stored report becomes one of a type a later version adds, the way a rollback leaves it.</summary>
         protected void TheStoredReportBecomesOfType(int reportId, string templateKey)
         {
@@ -481,6 +509,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             else
             {
                 Client.AsPortfolioViewer(owner.Id);
+            }
+        }
+
+        /// <summary>A second admin of the same owner, signed in as somebody else.</summary>
+        protected void AnotherAdminOf(OwnerUnderTest owner)
+        {
+            if (owner.Kind == OwnerKind.Team)
+            {
+                Client.AsTeamAdmin(owner.Id, "another-team-admin");
+            }
+            else
+            {
+                Client.AsPortfolioAdmin(owner.Id, "another-portfolio-admin");
             }
         }
 
@@ -580,13 +621,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             return document.RootElement.GetProperty("id").GetInt32();
         }
 
-        protected static async Task ThenItIsRefusedFor(HttpResponseMessage response, string reason)
+        protected static Task ThenItIsRefusedFor(HttpResponseMessage response, string reason)
+            => ThenItIsRefusedWith(response, HttpStatusCode.BadRequest, reason);
+
+        protected static async Task ThenItIsRefusedWith(HttpResponseMessage response, HttpStatusCode status, string reason)
         {
             var body = await response.Content.ReadAsStringAsync();
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), body);
+                Assert.That(response.StatusCode, Is.EqualTo(status), body);
                 Assert.That(body, Does.Contain(reason), "the refusal must name its reason from the closed list");
             }
         }
@@ -625,10 +669,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         protected static ReportWindow NowWindowIn(JsonElement report) => WindowIn(report, "nowWindow");
 
         /// <summary>A value Then froze; <paramref name="member"/> is the value's name (p85, total, perDay, average, …).</summary>
-        protected static CapturedValue ThenValueIn(JsonElement report, string metric, string member) => ValueIn(report, metric, "then", member);
+        protected static CapturedValue ThenValueIn(JsonElement report, string metric, string member) => ValueIn(report, metric, "atThen", member);
 
         /// <summary>A value Now shows, computed over the Now window on the day of reading.</summary>
-        protected static CapturedValue NowValueIn(JsonElement report, string metric, string member) => ValueIn(report, metric, "now", member);
+        protected static CapturedValue NowValueIn(JsonElement report, string metric, string member) => ValueIn(report, metric, "atNow", member);
 
         protected static CapturedValue AboveThenLimitsIn(JsonElement report, string metric) => BeyondThenLimitsIn(report, metric, "above");
 
@@ -677,7 +721,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
                 : null;
 
         /// <summary>
-        /// One value of a metric's panel - <paramref name="side"/> is "then" or "now", <paramref name="member"/>
+        /// One value of a metric's panel - <paramref name="side"/> is "atThen" or "atNow", <paramref name="member"/>
         /// the value's name (p85, total, perDay, average, …). A value that is not there at all reads as absent
         /// with no reason, which no scenario accepts as a "—".
         /// </summary>
@@ -802,7 +846,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         {
             public string TemplateKey { get; init; } = ThenAndNow;
             public string Name { get; init; } = EngagementStart;
-            public DateOnly ThenEnd { get; init; } = TheDayOfTheStory;
+            public DateOnly ThenEnd { get; init; } = TodayOnTheInstance;
             public int ThenLengthDays { get; init; } = 90;
             public int? NowLengthDays { get; init; } = 90;
             public IReadOnlyList<string> Shown { get; init; } = [CycleTime];

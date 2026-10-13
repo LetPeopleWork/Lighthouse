@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(TextOf(report, "ownerKind"), Is.EqualTo("portfolio").IgnoreCase);
-                Assert.That(ThenWindowIn(report), Is.EqualTo(NinetyDaysToTheDayOfTheStory));
+                Assert.That(ThenWindowIn(report), Is.EqualTo(NinetyDaysToToday));
                 Assert.That(ThenValueIn(report, CycleTime, P85), Is.EqualTo(Shown(34, 3)));
                 Assert.That(MetricIn(report, Throughput), Is.Not.Null);
                 Assert.That(MetricIn(report, Wip), Is.Not.Null);

@@ -114,7 +114,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             var lightspeed = ATeam(Lightspeed);
 
             TheCallerAdministers(lightspeed);
-            using var refused = await CreateAReport(lightspeed, ThenOf(90, TheDayOfTheStory.AddDays(1)));
+            using var refused = await CreateAReport(lightspeed, ThenOf(90, TodayOnTheInstance.AddDays(1)));
 
             await ThenItIsRefusedFor(refused, Reason.ThenEndsInTheFuture);
             await ThenTheOwnerHoldsNoReport(lightspeed);
@@ -161,6 +161,23 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
             Assert.That(TextOf(templates, "earliestStart"), Is.EqualTo("2026-04-05"));
             await ThenItIsRefusedFor(refused, Reason.ThenBeforeCutoff);
+        }
+
+        // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:bounded-change
+        // A Team set to keep every finished Work Item has no oldest kept day, so Then may start on any day.
+        [Test]
+        [Ignore(PendingSlice02)]
+        public async Task A_Team_that_keeps_every_finished_Work_Item_has_no_earliest_start()
+        {
+            var pulsar = ATeam("Team Pulsar", keepsFinishedItemsForDays: 0);
+
+            TheCallerAdministers(pulsar);
+            var templates = await TheTypesOfReportFor(pulsar);
+            using var created = await CreateAReport(pulsar, ThenOf(90, new DateOnly(2024, 6, 30)));
+
+            Assert.That(templates.GetProperty("earliestStart").ValueKind, Is.EqualTo(JsonValueKind.Null));
+            var report = await TheReport(pulsar, await ThenItWasCreated(created));
+            Assert.That(ThenWindowIn(report), Is.EqualTo(new ReportWindow("2024-04-02", "2024-06-30", 90)));
         }
 
         // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:unbounded-preservation

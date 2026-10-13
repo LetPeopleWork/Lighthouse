@@ -188,7 +188,8 @@ describe("Editing a report", () => {
 		expect(await theWizard()).toHaveTextContent(NO_METRIC);
 	});
 
-	// @us-10 @slice-10 @error @contract-shape:unbounded-preservation
+	// @us-10 @slice-10 @error @ac-10.6 @contract-shape:unbounded-preservation
+	// Another Team Admin saved a change after this wizard was opened.
 	it.skip("says the report was changed by someone else when the save comes too late, keeping the edit", async () => {
 		await openTheEditWizard(
 			aReportService({
