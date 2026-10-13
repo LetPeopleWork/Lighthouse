@@ -186,7 +186,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-02 @slice-02 @error @contract-shape:unbounded-preservation
         [TestCase("thenEndDate")]
         [TestCase("thenLengthDays")]
-        [Ignore(PendingSlice02)]
         public async Task A_Then_missing_its_end_or_its_length_is_refused(string leftOut)
         {
             var lightspeed = ATeam(Lightspeed);
@@ -204,7 +203,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         [TestCase("31.07.2026")]
         [TestCase("2026-02-30")]
         [TestCase("yesterday")]
-        [Ignore(PendingSlice02)]
         public async Task A_Then_end_that_is_not_a_day_is_refused(string notADay)
         {
             var lightspeed = ATeam(Lightspeed);
