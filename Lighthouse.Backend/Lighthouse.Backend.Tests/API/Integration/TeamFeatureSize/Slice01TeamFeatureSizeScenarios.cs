@@ -189,6 +189,50 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
             ThenTheWindowIsRefused();
         }
 
+        // A window is read in whole days with both ends counted, so one that starts and ends on the
+        // same day is a day long rather than refused. Gravity closed the Feature with its part of 3
+        // three days ago, and no other Feature that day.
+        [Test]
+        [Category("us-01")]
+        [Category("contract-shape:pure-function")]
+        public async Task A_one_day_window_shows_the_Feature_the_Team_closed_that_day()
+        {
+            GivenGravityClosedTenFeaturesInTheWindowWithPartsOneToTen();
+
+            await WhenGravityIsAskedForTheSingleDay(AllFeaturesForSizeChart, daysAgo: 3);
+
+            ThenTheFeaturesShownAre(OnlyTheFeatureGravityClosedThreeDaysAgo);
+            ThenTheFeatureReads(GravityClosedItThreeDaysAgo, 3);
+        }
+
+        [Test]
+        [Category("us-01")]
+        [Category("contract-shape:pure-function")]
+        public async Task A_one_day_window_has_the_size_percentiles_of_the_Feature_the_Team_closed_that_day()
+        {
+            GivenGravityClosedTenFeaturesInTheWindowWithPartsOneToTen();
+
+            await WhenGravityIsAskedForTheSingleDay(SizePercentiles, daysAgo: 3);
+
+            ThenTheSizePercentilesAre(3, 3, 3, 3);
+        }
+
+        // A Feature can sit in several Portfolios, and each decides for itself what blocked means.
+        // Ocean Explorer counts a Feature in progress as blocked and Orion does not, so a Feature in
+        // both is blocked: blocked in any one of its Portfolios is enough.
+        [TestCase(AllFeaturesForSizeChart)]
+        [TestCase(FeaturesInProgress)]
+        [Category("us-01")]
+        [Category("contract-shape:pure-function")]
+        public async Task A_Feature_blocked_in_only_one_of_its_Portfolios_reads_blocked_on_the_Team(string list)
+        {
+            GivenGravityIsWorkingOnAFeatureOnlyOneOfItsPortfoliosCountsAsBlocked();
+
+            await WhenGravityIsAskedForItsFeatures(list);
+
+            ThenTheFeatureIsBlocked(InTwoPortfolios);
+        }
+
         // Lighthouse tracks only the Features some Portfolio loads. A Team with no Work Item at all
         // and a Team whose Work Items sit under a parent no Portfolio loads both get an empty answer,
         // which the scatter shows as its empty state.

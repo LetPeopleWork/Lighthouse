@@ -123,6 +123,40 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
             ThenTheWindowIsRefused();
         }
 
+        // A window is read in whole days with both ends counted, so one that starts and ends on the
+        // same day is a day long rather than refused, and the period before it is the day before.
+        // Gravity's part of the Feature it closed three days ago is 3, and of the one it closed the
+        // day before that is 4: the trend is down.
+        [Test]
+        [Category("us-02")]
+        [Category("contract-shape:pure-function")]
+        public async Task A_one_day_window_is_compared_with_the_day_before_it()
+        {
+            GivenGravityClosedTenFeaturesInTheWindowWithPartsOneToTen();
+
+            await WhenTheFeatureSizePercentilesAreAskedForTheSingleDay(Gravity, daysAgo: 3);
+
+            ThenThePercentilesAre(3, 3, 3, 3);
+            ThenTheTrendReads("down", previousMedian: 4);
+        }
+
+        // The period before a 30-day window is the 30 days just before it, ending the day before the
+        // window starts. Gravity closed one Feature on its first day, one on the window's first day,
+        // and one the day before the period before began; only the first counts as before.
+        [Test]
+        [Category("us-02")]
+        [Category("contract-shape:pure-function")]
+        public async Task The_period_before_is_as_long_as_the_window_and_ends_the_day_before_it_starts()
+        {
+            GivenGravityClosedTenFeaturesInTheWindowWithPartsOneToTen();
+            GivenGravityClosedFeaturesOnTheEdgesOfThePeriodBefore();
+
+            await WhenTheFeatureSizePercentilesAreAskedFor(Gravity);
+
+            ThenThePeriodBeforeRuns(WindowStart.AddDays(-30), WindowStart.AddDays(-1));
+            ThenTheMedianOfThePeriodBeforeIs(6);
+        }
+
         // Every Feature is loaded with what hangs off it, so a database command per Feature would
         // slip in easily. Each answer is asked for right after a refresh, so it is computed afresh
         // and never served from what the Team remembers.

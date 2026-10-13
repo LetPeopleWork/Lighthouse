@@ -1,6 +1,9 @@
 using System.Text.Json;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.WorkItemRules;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
 {
@@ -23,6 +26,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         private const string SizedByThePortfolioDefault = "OE-203";
         private const string GravityClosedItBeforeTheWindow = "OE-204";
         private const string OrionsFeature = "OR-001";
+        private const string InTwoPortfolios = "OE-601";
+
+        // Seeded by GivenGravityClosedTenFeaturesInTheWindowWithPartsOneToTen, with Gravity's part of 3.
+        private const string GravityClosedItThreeDaysAgo = "OE-303";
+
+        private static readonly string[] OnlyTheFeatureGravityClosedThreeDaysAgo = [GravityClosedItThreeDaysAgo];
 
         private static readonly string[] TeamsWorkingOnOceanExplorer = [Equinox, Gravity, Lightspeed, Zenith, Meridian];
 
@@ -105,6 +114,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
             SeedFeature("OE-392", StateCategories.Done, [oceanExplorer], [(gravity, 100)], closedDaysAgo: 45);
         }
 
+        /// <summary>
+        /// OE-601, In Progress, sits in Ocean Explorer and in Orion, and Gravity has a Work Item in
+        /// progress under it. Only Ocean Explorer counts a Feature in progress as blocked.
+        /// </summary>
+        private void GivenGravityIsWorkingOnAFeatureOnlyOneOfItsPortfoliosCountsAsBlocked()
+        {
+            var oceanExplorer = PortfolioNamed(OceanExplorer);
+            var orion = PortfolioNamed(Orion);
+            var gravity = TeamNamed(Gravity);
+
+            CountFeaturesInProgressAsBlocked(oceanExplorer);
+            SeedFeature(InTwoPortfolios, StateCategories.Doing, [oceanExplorer, orion], [(gravity, 4)]);
+            SeedWorkItemInProgress(gravity, InTwoPortfolios);
+        }
+
         // --- When ---
 
         private async Task WhenTheFeatureSizesAreAskedFor(string team)
@@ -159,6 +183,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         {
             Client.AsSystemAdmin();
             await Ask(TeamMetric(TeamNamed(team), metric, WindowEnd, WindowStart));
+        }
+
+        private async Task WhenGravityIsAskedForTheSingleDay(string metric, int daysAgo)
+        {
+            var day = Today.UtcDateTime.Date.AddDays(-daysAgo);
+
+            Client.AsSystemAdmin();
+            await Ask(TeamMetric(TeamNamed(Gravity), metric, day, day));
+        }
+
+        private async Task WhenGravityIsAskedForItsFeatures(string list)
+        {
+            var gravity = TeamNamed(Gravity);
+            var route = list == FeaturesInProgress
+                ? TeamFeaturesInProgress(gravity)
+                : TeamMetric(gravity, list, WindowStart, WindowEnd);
+
+            Client.AsSystemAdmin();
+            await Ask(route);
         }
 
         private async Task WhenTheSizePercentilesAreAskedFor(string team)
@@ -218,6 +261,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
             Assert.That(portfolioNames, Is.EquivalentTo(portfolios), $"Body: {Body}");
         }
 
+        private void ThenTheFeatureIsBlocked(string referenceId)
+        {
+            Assert.That(TheFeature(referenceId).GetProperty("isBlocked").GetBoolean(), Is.True,
+                $"{referenceId} is blocked in one of its Portfolios. Body: {Body}");
+        }
+
         private void ThenNoFeatureIsShown()
         {
             Assert.That(SizesShown(), Is.Empty, $"Body: {Body}");
@@ -252,6 +301,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         }
 
         // --- Helpers ---
+
+        private void CountFeaturesInProgressAsBlocked(int portfolioId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var portfolios = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>();
+            var portfolio = portfolios.GetById(portfolioId)!;
+
+            portfolio.BlockedRuleSetJson = JsonSerializer.Serialize(new WorkItemRuleSet
+            {
+                Mode = WorkItemRuleSet.ModeOr,
+                Conditions =
+                [
+                    new WorkItemRuleCondition { FieldKey = "feature.state", Operator = RuleOperators.Equals, Value = InProgress },
+                ],
+            });
+
+            portfolios.Update(portfolio);
+            portfolios.Save().GetAwaiter().GetResult();
+        }
 
         private Dictionary<string, int> SizesShown()
         {

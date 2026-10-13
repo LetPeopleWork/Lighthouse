@@ -25,6 +25,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
             }
         }
 
+        /// <summary>
+        /// Gravity's part of the Feature closed on the first day of the period before is 6, of the one
+        /// closed the day before that 50, and of the one closed on the window's first day 1.
+        /// </summary>
+        private void GivenGravityClosedFeaturesOnTheEdgesOfThePeriodBefore()
+        {
+            var oceanExplorer = PortfolioNamed(OceanExplorer);
+            var gravity = TeamNamed(Gravity);
+            var windowStartDaysAgo = (Today.UtcDateTime.Date - WindowStart).Days;
+
+            SeedFeature("OE-701", StateCategories.Done, [oceanExplorer], [(gravity, 6)], closedDaysAgo: windowStartDaysAgo + 30);
+            SeedFeature("OE-702", StateCategories.Done, [oceanExplorer], [(gravity, 50)], closedDaysAgo: windowStartDaysAgo + 31);
+            SeedFeature("OE-703", StateCategories.Done, [oceanExplorer], [(gravity, 1)], closedDaysAgo: windowStartDaysAgo);
+        }
+
         private void GivenFeaturesClosedInTheWindowThatAreNotGravitys()
         {
             var oceanExplorer = PortfolioNamed(OceanExplorer);
@@ -51,6 +66,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         {
             Client.AsSystemAdmin();
             await Ask(TeamMetric(TeamNamed(team), FeatureSizePercentilesInfo, WindowStart, WindowEnd));
+        }
+
+        private async Task WhenTheFeatureSizePercentilesAreAskedForTheSingleDay(string team, int daysAgo)
+        {
+            var day = Today.UtcDateTime.Date.AddDays(-daysAgo);
+
+            Client.AsSystemAdmin();
+            await Ask(TeamMetric(TeamNamed(team), FeatureSizePercentilesInfo, day, day));
         }
 
         private async Task WhenTheFeatureSizePercentilesOfATeamThatDoesNotExistAreAskedFor()
@@ -114,6 +137,32 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
                 Assert.That(medianRow.GetProperty("previousValue").GetString(),
                     Is.EqualTo(previousMedian.ToString(CultureInfo.InvariantCulture)), $"Body: {Body}");
             }
+        }
+
+        /// <summary>The period the widget names as the one compared against, both ends counted.</summary>
+        private void ThenThePeriodBeforeRuns(DateTime firstDay, DateTime lastDay)
+        {
+            ThenTheAnswerArrived();
+
+            using var document = JsonDocument.Parse(Body);
+            var previousLabel = document.RootElement.GetProperty("comparison").GetProperty("previousLabel").GetString();
+
+            Assert.That(previousLabel,
+                Is.EqualTo(string.Create(CultureInfo.InvariantCulture, $"{firstDay:yyyy-MM-dd} – {lastDay:yyyy-MM-dd}")),
+                $"Body: {Body}");
+        }
+
+        private void ThenTheMedianOfThePeriodBeforeIs(int previousMedian)
+        {
+            ThenTheAnswerArrived();
+
+            using var document = JsonDocument.Parse(Body);
+            var medianRow = document.RootElement.GetProperty("comparison").GetProperty("detailRows")
+                .EnumerateArray()
+                .Single(row => row.GetProperty("label").GetString() == "50th");
+
+            Assert.That(medianRow.GetProperty("previousValue").GetString(),
+                Is.EqualTo(previousMedian.ToString(CultureInfo.InvariantCulture)), $"Body: {Body}");
         }
 
         // --- Helpers ---
