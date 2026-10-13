@@ -11,8 +11,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
     /// </summary>
     public partial class Slice02TeamFeatureSizePercentilesTest : TeamFeatureSizeAcceptanceTest
     {
-        private const string Pending = "Story #6251 — pending DELIVER: Feature Size Percentiles on a Team.";
-
         // --- Given ---
 
         /// <summary>Closed 35 days ago and after, inside the 30 days before the window.</summary>

@@ -84,7 +84,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("us-02")]
         [Category("error")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task Someone_who_cannot_read_the_Team_is_told_there_is_no_such_Team_while_its_reader_is_answered()
         {
             GivenGravityClosedTenFeaturesInTheWindowWithPartsOneToTen();
@@ -100,7 +99,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("us-02")]
         [Category("error")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task A_Team_that_does_not_exist_has_no_Feature_Size_Percentiles()
         {
             GivenGravityClosedTenFeaturesInTheWindowWithPartsOneToTen();
@@ -116,7 +114,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("us-02")]
         [Category("error")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task A_window_that_ends_before_it_starts_is_refused()
         {
             GivenGravityClosedTenFeaturesInTheWindowWithPartsOneToTen();
@@ -133,7 +130,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("us-02")]
         [Category("perf")]
         [Category("contract-shape:unbounded-preservation")]
-        [Ignore(Pending)]
         public async Task Asking_a_Team_for_its_Feature_Size_Percentiles_costs_as_much_of_the_database_for_twenty_Features_as_for_two()
         {
             GivenGravityWorksOnFeatures(2);
