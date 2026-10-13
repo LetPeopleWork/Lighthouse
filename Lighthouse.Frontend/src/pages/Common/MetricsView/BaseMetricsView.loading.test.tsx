@@ -1572,7 +1572,7 @@ describe("Feature Size on a Team's and a Portfolio's dashboard", () => {
 	});
 
 	// @us-06 @contract-shape:bounded-change
-	it.skip("a Team's Feature Size explains that it counts only this Team's Work Items", () => {
+	it("a Team's Feature Size explains that it counts only this Team's Work Items", () => {
 		openTheDashboard("team", "portfolio");
 
 		fireEvent.click(

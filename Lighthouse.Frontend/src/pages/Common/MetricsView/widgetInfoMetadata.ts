@@ -398,6 +398,34 @@ export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
 	},
 };
 
-export function getWidgetInfo(widgetKey: string): WidgetInfoEntry | undefined {
-	return widgetInfoMetadata[widgetKey];
+export interface WidgetInfoTerms {
+	readonly feature: string;
+	readonly team: string;
+	readonly workItems: string;
+}
+
+export interface WidgetInfoOwner {
+	readonly kind: "team" | "portfolio";
+	readonly terms: WidgetInfoTerms;
+}
+
+// A Team sees each Feature only through its own Work Items, so these widgets say so on a Team.
+const teamDescriptions: Record<string, (terms: WidgetInfoTerms) => string> = {
+	featureSize: ({ feature, team, workItems }) =>
+		`${feature} sizes, counting only this ${team}'s ${workItems}, on a scatter plot filterable by state, to spot size/cycle-time correlations.`,
+};
+
+export function getWidgetInfo(
+	widgetKey: string,
+	owner?: WidgetInfoOwner,
+): WidgetInfoEntry | undefined {
+	const entry = widgetInfoMetadata[widgetKey];
+	if (owner?.kind !== "team") {
+		return entry;
+	}
+	const describeForTeam = teamDescriptions[widgetKey];
+	if (!entry || !describeForTeam) {
+		return entry;
+	}
+	return { ...entry, description: describeForTeam(owner.terms) };
 }

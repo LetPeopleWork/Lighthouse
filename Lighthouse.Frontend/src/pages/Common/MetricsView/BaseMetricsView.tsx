@@ -156,7 +156,7 @@ import { useShowTips } from "./useShowTips";
 import type { ViewDataPayload } from "./WidgetShell";
 import WidgetShell from "./WidgetShell";
 import WipOverviewWidget from "./WipOverviewWidget";
-import { getWidgetInfo } from "./widgetInfoMetadata";
+import { getWidgetInfo, type WidgetInfoOwner } from "./widgetInfoMetadata";
 import {
 	type FetchKeyStates,
 	widgetHasData,
@@ -1974,6 +1974,14 @@ export const BaseMetricsView = <
 		),
 	};
 
+	const infoOwner: WidgetInfoOwner = {
+		kind: ownerType,
+		terms: {
+			feature: getTerm(TERMINOLOGY_KEYS.FEATURE),
+			team: getTerm(TERMINOLOGY_KEYS.TEAM),
+			workItems: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
+		},
+	};
 	const activeWidgets = getWidgetsForCategory(selectedCategory, ownerType);
 	const dashboardItems: DashboardItem[] = activeWidgets
 		.filter((w) => isPlaced(w.widgetKey, widgetNodes[w.widgetKey], fetchStates))
@@ -1985,7 +1993,7 @@ export const BaseMetricsView = <
 					widgetKey={w.widgetKey}
 					showTips={showTips}
 					header={widgetFooters[w.widgetKey]}
-					info={getWidgetInfo(w.widgetKey)}
+					info={getWidgetInfo(w.widgetKey, infoOwner)}
 					viewData={widgetViewData[w.widgetKey]}
 					trend={widgetTrends[w.widgetKey]}
 					{...frameStateOf(w.widgetKey, fetchStates, isCommitPending)}
