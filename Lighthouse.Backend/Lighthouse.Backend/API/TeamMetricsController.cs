@@ -143,7 +143,7 @@ namespace Lighthouse.Backend.API
             {
                 var workItems = teamMetricsService.GetWipSnapshotForTeam(team, asOfDate).ToList();
 
-                // UPSTREAM-7: for a past range, "is it blocked" cannot be answered by evaluating the
+                // For a past range, "is it blocked" cannot be answered by evaluating the
                 // blocked rule against today's item — the tags/state it matches on have moved on since.
                 // The blocked-transition history is the record of what was true back then, so a historic
                 // read prefers it. An item with no history at all predates blocked capture, and there the
@@ -621,9 +621,10 @@ namespace Lighthouse.Backend.API
             });
         }
 
-        // Reconciliation guard (ADR-099): where a captured BlockedCountSnapshot exists for the requested date,
-        // compare it against the interval-reconstructed membership count. A divergence signals a
-        // transition-capture gap and must never be silent — surface it as a structured warning.
+        // The blocked list for a past day is rebuilt from the blocked-transition history. Where a count
+        // was also captured on that day, the two should agree; when they do not, some transitions were
+        // never recorded and the rebuilt list is wrong, so say so in a warning rather than serve it
+        // silently.
         private void ReconcileReconstructedCountWithSnapshot(int ownerId, OwnerType ownerType, DateOnly targetDate, int reconstructedCount)
         {
             var snapshot = blockedCountSnapshotRepository.GetByPredicate(

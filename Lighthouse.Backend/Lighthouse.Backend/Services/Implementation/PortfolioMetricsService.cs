@@ -241,7 +241,7 @@ namespace Lighthouse.Backend.Services.Implementation
         /// <summary>
         /// The state each of <paramref name="features"/> held on <paramref name="asOfDate"/>, keyed by
         /// feature id. Features absent from the result have no history covering that day and keep
-        /// their current state (UPSTREAM-7).
+        /// their current state.
         /// </summary>
         /// <remarks>
         /// The team side applies the same rule by projecting onto WorkItem copies; a Feature cannot be
@@ -312,10 +312,10 @@ namespace Lighthouse.Backend.Services.Implementation
 
             return GetFromCacheIfExists(portfolio, $"WorkItemAgePercentiles_{endDate:yyyy-MM-dd}", () =>
             {
-                // D15, portfolio half of CI2 — see the matching comment in TeamMetricsService.
-                // GetInProgressFeaturesForPortfolio is already date-correct (D14); only the
-                // projection was today-anchored. The age > 0 guard is retained and now means
-                // "had not started on that day".
+                // Age is measured on the last day of the selected range, not today: the Features are
+                // already the ones in progress on that day, and measuring them against today would
+                // zero every Feature that has closed since. An age of zero means the Feature had not
+                // started on that day, so it is left out.
                 var ages = GetInProgressFeaturesForPortfolio(portfolio, endDate).Select(f => f.AgeOnDay(Clock.Zone, DateOnly.FromDateTime(endDate))).Where(age => age > 0).ToList();
 
                 return BuildPercentiles(ages);

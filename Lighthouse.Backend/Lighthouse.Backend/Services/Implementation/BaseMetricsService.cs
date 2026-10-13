@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         /// <summary>
         /// The state an item was in on <paramref name="asOf"/>, or null when the history says nothing
-        /// about that day and the caller should keep the item's current state (UPSTREAM-7).
+        /// about that day and the caller should keep the item's current state.
         /// </summary>
         /// <remarks>
         /// Day granularity, deliberately: a transition part-way through the end date belongs to that
@@ -421,7 +421,7 @@ namespace Lighthouse.Backend.Services.Implementation
             // the end, is reopened below it, and reaches it again ends on the final re-close — aligning
             // with the default Cycle Time's ClosedDate and keeping a wider window from measuring shorter
             // than a narrower one). A re-stamp that never dropped below the boundary is NOT a new crossing,
-            // so dwell inside the end state is still excluded (D10).
+            // so time spent sitting in the end state does not count towards the cycle time.
             DateTime? endMoment = null;
             var previousRank = int.MinValue;
             foreach (var entry in stateEntries)

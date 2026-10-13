@@ -326,14 +326,11 @@ namespace Lighthouse.Backend.Services.Implementation
 
             return GetFromCacheIfExists(team, $"WorkItemAgePercentiles_{endDate:yyyy-MM-dd}", () =>
             {
-                // D15: age as of the LAST DAY of the selected range, not as of today. The population
-                // is already date-correct (GetWipSnapshotForTeam filters through WasItemProgressOnDay,
-                // D14) — only this projection was today-anchored, which zeroed every item that has
-                // closed since and then dropped it via the age > 0 guard.
+                // Age is measured on the last day of the selected range, not today: the snapshot already
+                // holds the items that were in progress on that day, and measuring them against today
+                // would zero every item that has closed since and drop it from the percentiles.
                 //
-                // The guard is RETAINED (DESIGN open question 1, answered by the AgeOnDay tests): it
-                // now means "the item had not started on that day", which is a real exclusion, rather
-                // than the accidental "not Doing right now" filter it used to be.
+                // An age of zero means the item had not started on that day, so it is left out.
                 var ages = GetWipSnapshotForTeam(team, endDate).Select(i => i.AgeOnDay(Clock.Zone, DateOnly.FromDateTime(endDate))).Where(age => age > 0).ToList();
 
                 return BuildPercentiles(ages);
@@ -663,9 +660,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Size Percentiles for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
-            var doneFeatures = FeaturesTheTeamHasARealShareOf(team)
-                .Where(f => f.StateCategory == StateCategories.Done)
-                .ToList();
+            var doneFeatures = FeaturesTheTeamHasARealShareOf(team, onlyIn: StateCategories.Done).ToList();
 
             var sizes = ClosedInDateRange(doneFeatures, startDate, endDate)
                 .Select(f => f.SizeFor(team.Id))
@@ -688,9 +683,12 @@ namespace Lighthouse.Backend.Services.Implementation
         }
 
         // A Feature sized by its Portfolio's default carries made-up work for Teams that never had any,
-        // so it is left out explicitly rather than trusted to show this Team a share of zero.
-        private IQueryable<Feature> FeaturesTheTeamHasARealShareOf(Team team) =>
+        // so it is left out explicitly rather than trusted to show this Team a share of zero. The state
+        // goes into the same query because the repository loads every match, forecasts included,
+        // before anything else can filter it.
+        private IQueryable<Feature> FeaturesTheTeamHasARealShareOf(Team team, StateCategories? onlyIn = null) =>
             featureRepository.GetAllByPredicate(f =>
+                (onlyIn == null || f.StateCategory == onlyIn) &&
                 !f.IsUsingDefaultFeatureSize &&
                 f.FeatureWork.Any(fw => fw.TeamId == team.Id && fw.TotalWorkItems > 0));
 
@@ -716,11 +714,11 @@ namespace Lighthouse.Backend.Services.Implementation
         /// <paramref name="asOf"/>, resolved from the synced state-transition history.
         /// </summary>
         /// <remarks>
-        /// UPSTREAM-7: the population returned by GenerateWorkInProgressByDay is already date-correct
-        /// (D14), and D16 made the age as-of, but the State stayed today-anchored. For any past range
-        /// the selected items have usually moved on to a Done state since, so the aging chart — which
-        /// buckets by state and drops anything outside the team's DoingStates — rendered them into no
-        /// column at all and reported "no work items in progress" while WIP-over-time showed them.
+        /// GenerateWorkInProgressByDay already picks the items that were in progress on that day, and
+        /// their age is measured on that day too, but their State is whatever it is today. For any past
+        /// range the selected items have usually moved on to a Done state since, so the aging chart —
+        /// which buckets by state and drops anything outside the team's DoingStates — would put them in
+        /// no column at all and report "no work items in progress" while WIP-over-time showed them.
         ///
         /// Items with no transition at or before <paramref name="asOf"/> (synced before state history
         /// was captured, or a connector that supplies none) keep their current values — the exact
