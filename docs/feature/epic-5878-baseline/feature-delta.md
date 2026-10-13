@@ -2114,3 +2114,52 @@ new CI framework, no observability rewrite.
 | Checklist: "K3 may justify one closed-enum property on 'report created' … DEVOPS decides or drops K3" | No property; **K3 dropped** (maintainer 2026-10-03) | A property at creation would miss every Now length changed through Edit report, which has no event (D33) |
 | DESIGN: "the report view's nested route should map to the same key or its own — DEVOPS decides" | Neither; it maps to no key | `ReportOpened` is the report's event; the key stays the list's; no double count |
 | K1, K2, K4, G1 phrased per instance or per report | Per browser (proxies above) | The pipe has no instance, owner or report identity, by design |
+
+---
+
+## Wave: DISTILL / [REF] Maintainer decisions — UI sketches (2026-10-13)
+
+Walked through with the maintainer at the start of DISTILL, one screen at a time, before any scenario was written.
+DELIVER re-sketches only what is listed as open below.
+
+- **[DT1] Reports list is a table** — reuses `DataGridBase` (the feature-list style). Columns: **Name** (links to the
+  report), **Type**, **Created**, and a delete icon for editors. Above it, right-aligned, `+ Create Report`. At the
+  Community cap the button is disabled and the D29 sentence sits under it. Empty states as D18 (editor: "No reports
+  yet." + Create Report; reader: "No reports yet. A {Team} Admin can create one.").
+- **[DT2] "Type", never "Template", in anything a user sees** — list column, create wizard, Edit. "Template" stays the
+  code's word (`templateKey`, `IReportTemplate`). Supersedes D19's "choose a Template" wording.
+- **[DT3] Create Report is a wizard on `CreateWizardShell`** (the Create {Team} / {Portfolio} stepper), not one dialog.
+  Steps for Then & Now: ① Type → ② Then → ③ Now → ④ Metrics & name. ① shows one card in v1 ("Then & Now — Set today's
+  flow against a window that stays as it was."), pre-selected. **Each type contributes its own steps after ①**, so
+  Signals (5935) and later general metric reports add types without reshaping the wizard (maintainer: "design with the
+  future extensions in mind"). Step ② shows the resolved window ("= 16 Jul – 13 Oct 2026 · frozen when you create it")
+  and the D21 refusal under the field; step ③ "= the last 90 days, always ending today"; step ④ the four metrics ticked
+  and the default name, which follows the window until the user edits it. While creating, Create shows a spinner and
+  inputs are disabled; on failure an error alert in the wizard keeps every input. Supersedes DESIGN's
+  `CreateReportDialog.tsx` (now a wizard component).
+- **[DT4] Edit report reopens the same wizard in edit mode** — ① Type and ② Then shown read-only and locked ("frozen,
+  can't be changed"); ③ Now and ④ Metrics & name editable; Save on the last step. A metric without a capture shows
+  disabled with "Not captured for this report" (D27). A stale save (409) reads "This report was changed by someone
+  else. Reload to see their changes." Supersedes DESIGN's `EditReportDialog.tsx`.
+- **[DT5] Report view panels stacked full width**, one per row in catalog order ({Cycle Time}, {Throughput}, {WIP},
+  {Work Item Age}), as in the DISCUSS mockup. Header actions: Edit report, Delete (editors only).
+- **[DT6] Loading and failure looks, `WidgetShell` style** (report view and Reports list alike). First load: the
+  breadcrumb and a lone spinner "Loading report…" — nothing drawn that could pass for "no data". Re-read after Edit:
+  the current report dimmed under a small spinner, never shown as fresh. Failure: "This report couldn't be loaded.
+  Reload to try again." with Retry, and no stale numbers. A report that does not exist (deleted, or another owner's —
+  the 404): "This report no longer exists." with Back to Reports. Keyed TanStack queries, so a late answer for an
+  older report or window never lands. E2E page objects wait for a ready marker, not for visibility.
+- **[DT7] Delete reuses `DeleteConfirmationDialog`, extended with one optional warning line** — used for "This Then
+  window can no longer be rebuilt." when `thenRebuildable` is false (D30). After delete: back to the list; the cap
+  message clears when the count drops below 2. The owner's existing delete dialog appends "and its N reports" only when
+  N ≥ 1 (D42).
+
+Open for DELIVER: none of the layout; only exact spacing and the wizard's step labels if `CreateWizardShell` imposes a
+form.
+
+### [REF] Reconciliation
+
+Reconciliation passed — 0 contradictions across `discuss/`, `design/` and `devops/` wave decisions (DISCUSS was
+updated in place for D45–D48 after DESIGN; DEVOPS's supersession of D33 is recorded in its Changed Assumptions).
+Upstream changes from this walkthrough: DT2 (wording), DT3/DT4 (wizard instead of the two dialogs DESIGN named), DT7
+(an optional prop on a shared component).
