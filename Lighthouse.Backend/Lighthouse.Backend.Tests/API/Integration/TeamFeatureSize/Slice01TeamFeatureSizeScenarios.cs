@@ -23,7 +23,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("us-01")]
         [Category("walking_skeleton")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task A_Team_sees_a_Feature_four_Teams_work_on_as_big_as_its_own_part_of_it()
         {
             GivenTheOceanExplorerPortfolioAndTheTeamsThatWorkOnIt();
@@ -41,7 +40,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("us-01")]
         [Category("kpi")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task The_parts_each_Team_sees_add_up_to_the_Feature_s_size_on_its_Portfolio(string feature, int sizeOnThePortfolio)
         {
             GivenTheOceanExplorerPortfolioAndTheTeamsThatWorkOnIt();
@@ -59,7 +57,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("us-01")]
         [Category("us-06")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task A_Team_sees_the_Features_closed_in_the_window_and_every_open_one()
         {
             GivenTheOceanExplorerPortfolioAndTheTeamsThatWorkOnIt();
@@ -75,7 +72,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("us-05")]
         [Category("error")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task A_Feature_the_Team_has_no_Work_Item_in_is_not_shown_even_from_the_Portfolio_it_works_in()
         {
             GivenTheOceanExplorerPortfolioAndTheTeamsThatWorkOnIt();
@@ -91,7 +87,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("us-05")]
         [Category("error")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task A_Feature_sized_by_its_Portfolio_s_default_is_not_shown_even_with_work_made_up_for_the_Team()
         {
             GivenTheOceanExplorerPortfolioAndTheTeamsThatWorkOnIt();

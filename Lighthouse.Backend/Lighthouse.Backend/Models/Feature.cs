@@ -97,11 +97,15 @@ namespace Lighthouse.Backend.Models
         /// size a Feature by this, never by the whole Feature, so the number is that Team's own. A
         /// Feature sized by its Portfolio's default is not broken down, so it has no share to count.
         /// </summary>
-        // SCAFFOLD: the share is not worked out yet. This answers one less than nothing, a share no
-        // Team can have, so every scenario that reads one fails on its number rather than on an error.
-        // It reads Size, which is never below zero, only because a plain "=> -1" uses nothing of the
-        // Feature, and the build fails any method that uses nothing of its object and is not static.
-        public int SizeFor(int teamId) => -1 - Math.Min(Size, 0);
+        public int SizeFor(int teamId)
+        {
+            if (IsUsingDefaultFeatureSize)
+            {
+                return 0;
+            }
+
+            return FeatureWork.Where(fw => fw.TeamId == teamId).Sum(fw => fw.TotalWorkItems);
+        }
 
         public int EstimatedSize { get; set; } = 0;
 

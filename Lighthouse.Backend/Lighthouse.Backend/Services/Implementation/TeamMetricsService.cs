@@ -645,6 +645,23 @@ namespace Lighthouse.Backend.Services.Implementation
             return totalWorkItemAge.Value;
         }
 
+        public IEnumerable<Feature> GetAllFeaturesForSizeChart(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting All Features For Size Chart for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            // A Feature sized by its Portfolio's default carries made-up work for Teams that never had
+            // any, so it is left out by name rather than trusted to show a share of zero.
+            var teamFeatures = featureRepository.GetAllByPredicate(f =>
+                    !f.IsUsingDefaultFeatureSize &&
+                    f.FeatureWork.Any(fw => fw.TeamId == team.Id && fw.TotalWorkItems > 0) &&
+                    (f.StateCategory == StateCategories.Done ||
+                     f.StateCategory == StateCategories.ToDo ||
+                     f.StateCategory == StateCategories.Doing))
+                .ToList();
+
+            return InSizeChartWindow(teamFeatures, startDate, endDate).ToList();
+        }
+
         public IEnumerable<WorkItem> GetWipSnapshotForTeam(Team team, DateTime endDate)
         {
             logger.LogDebug("Getting WIP snapshot for Team {TeamName} at {EndDate}", team.Name, endDate.Date);

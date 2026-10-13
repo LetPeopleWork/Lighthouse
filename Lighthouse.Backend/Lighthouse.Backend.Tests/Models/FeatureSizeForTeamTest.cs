@@ -26,8 +26,6 @@ namespace Lighthouse.Backend.Tests.Models
     [Category("us-05")]
     public class FeatureSizeForTeamTest
     {
-        private const string Pending = "Story #6251 — pending DELIVER: a Feature's size on one Team.";
-
         private const int EquinoxId = 1;
         private const int GravityId = 2;
         private const int LightspeedId = 3;
@@ -44,7 +42,6 @@ namespace Lighthouse.Backend.Tests.Models
         [TestCase(LightspeedId, 4)]
         [TestCase(ZenithId, 3)]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public void A_Feature_several_Teams_work_on_is_as_big_on_each_Team_as_that_Team_s_own_part(int teamId, int expectedShare)
         {
             var feature = CoralReefRestoration();
@@ -55,7 +52,6 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         [Category("kpi")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public void The_parts_of_every_Team_add_up_to_the_Feature_s_size()
         {
             var feature = CoralReefRestoration();
@@ -68,7 +64,6 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         [Category("error")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public void A_Team_with_no_Work_Item_under_the_Feature_has_no_part_of_it()
         {
             var feature = CoralReefRestoration();
@@ -80,7 +75,6 @@ namespace Lighthouse.Backend.Tests.Models
         // is left to do.
         [Test]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public void A_Team_s_part_counts_its_finished_Work_Items_as_well_as_its_open_ones()
         {
             var feature = new Feature();
@@ -94,7 +88,6 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         [Category("error")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public void A_Feature_sized_by_its_Portfolio_s_default_has_no_part_for_any_Team_even_with_work_made_up_for_it()
         {
             var feature = new Feature { IsUsingDefaultFeatureSize = true };

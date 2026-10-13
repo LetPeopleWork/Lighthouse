@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.API.DTO
         
         public bool IsUsingDefaultFeatureSize { get; }
 
-        public int Size { get; }
+        public int Size { get; init; }
 
         public string OwningTeam { get; }
 
