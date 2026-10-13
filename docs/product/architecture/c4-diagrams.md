@@ -1708,9 +1708,10 @@ flowchart TB
         TPL["ThenAndNowTemplate<br/><i>IReportTemplate</i>"]
         CAT["ReportMetricCatalog<br/>IReportMetric × 4"]
         SER["IReportMetricSeries<br/><i>Team / Portfolio adapters</i>"]
-        WIN["ReportWindowPolicy<br/><i>pure</i>"]
+        WIN["ReportWindowPolicy<br/><i>pure: (window, today, cutoff days)</i>"]
         BL["BeyondLimits<br/><i>pure</i>"]
-        CAP["ReportCapPolicy<br/><i>pure</i>"]
+        CAP["ReportCapPolicy<br/><i>pure: (premium, count for owner)</i>"]
+        OWN["IReportOwnerLookup<br/><i>owner exists? cutoff days; read-only</i>"]
         RDR["IReportReader<br/><i>get · list · count for owner; no write member</i>"]
         WTR["IReportWriter<br/><i>add · update · remove · save</i>"]
         REPO["ReportRepository<br/><i>EF; implements both</i>"]
@@ -1736,12 +1737,18 @@ flowchart TB
     TRC -->|"changes via"| C
     PRC -->|"reads via"| Q
     PRC -->|"changes via"| C
-    C -->|"checks the count with"| CAP
-    CAP --> LIC
-    C -->|"freezes Then with"| TPL
-    Q -->|"captures Now with"| TPL
+    C -->|"reads the licence from"| LIC
+    Q -->|"reads the licence for creationBlockedByCap from"| LIC
+    C -->|"reads today from"| CLK
+    Q -->|"reads today from"| CLK
+    C -->|"reads the owner's cutoff from"| OWN
+    Q -->|"reads the owner's cutoff from"| OWN
+    C -->|"passes licence and count to"| CAP
+    Q -->|"passes licence and count to"| CAP
+    Q -->|"asks for the wizard's bounds"| WIN
+    C -->|"freezes Then with (today, cutoff)"| TPL
+    Q -->|"captures Now with (today, cutoff)"| TPL
     TPL -->|"validates windows with"| WIN
-    WIN --> CLK
     TPL -->|"captures each metric through"| CAT
     CAT -->|"reads series from"| SER
     SER --> TMS
@@ -1762,9 +1769,11 @@ Read the graph for the three things that make it safe:
    series `SER` returns (ADR-221, E2).
 2. **No backend component decides good or bad.** Direction of good exists only in `REG`; `PAN` computes change, % and
    colour from the facts in the read (ADR-220).
-3. **Only `C` writes, and that holds by type.** `Q` has an arrow only to `RDR`, a port with no write member; `WTR`
-   is reached from `C` alone. Both are implemented by `REPO`, which nothing outside the composition root sees as
-   `IRepository<Report>`. The read computes Now without touching a row (ADR-219, E4).
+3. **Only `C` writes, and that holds by type.** `Q`'s persistence arrows reach only `RDR` and `OWN`, ports with no
+   write member; `WTR` is reached from `C` alone. Both are implemented by `REPO`, which only the composition root
+   names (E14) and nothing sees as `IRepository<Report>`. The read computes Now without touching a row (ADR-219, E4).
+4. **The policies read nothing.** `WIN`, `CAP` and `BL` have no outgoing arrow: `today`, the licence result, the
+   owner's cutoff and the count are read by `Q` / `C` and passed in as arguments (E15).
 
 The SPA side (`TRC` stands for either controller): `LST` is a `DataGridBase` list whose delete icon opens the shared
 `DeleteConfirmationDialog` with its optional warning line when Then can no longer be rebuilt; `WIZ` is the one

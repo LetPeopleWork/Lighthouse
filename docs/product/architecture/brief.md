@@ -9387,16 +9387,23 @@ external integration or technology. **This is the first stored Report**: ADR-209
   `then` or `now` anywhere in the read (a `then` member makes the object a thenable). (ADR-221)
 - **I13 — the server is the window rule's only authority.** `GET …/reports/templates` returns `today`,
   `earliestStart` and `minimumLengthDays` from `ReportWindowPolicy`; the wizard pre-checks against those values only
-  (no number or cutoff in the frontend), and Create / Save re-validate on the server. (ADR-222)
+  and its copy interpolates them, and Create / Save re-validate on the server. The rule's values have one source; its
+  comparisons have two implementations held together by one shared boundary table. `earliestStart` null (cutoff 0)
+  = no lower bound. The presets (Team 30 / 90, Portfolio 90 / 180) are UI shortcuts, not rule values. (ADR-222)
 - **I14 — an edit changes only what it names.** Name, shown keys, Now length and the token of the addressed row;
   every other column and payload member — including members a later version wrote — stays byte-identical; Then
   members in an edit body are ignored. (ADR-219)
+- **I15 — the policies read nothing.** `ReportWindowPolicy`, `ReportCapPolicy` and `BeyondLimits` take `today`, the
+  cutoff, the licence result and the owner's count as arguments; `ReportQueries` / `ReportCommands` read them (from
+  `ILighthouseClock`, `IReportOwnerLookup`, `ILicenseService`, `IReportReader`). Template create is read-only I/O
+  returning a payload; only the command persists. (ADR-219, ADR-222)
 
 ### Component decomposition (headline)
 
 Backend NEW: `Report` + Then & Now payload records; `IReportQueries` (write-free) / `IReportCommands`; `IReportTemplate`
 + `ThenAndNowTemplate`; `IReportMetric` × 4 + `ReportMetricCatalog`; `IReportMetricSeries` + Team / Portfolio adapters;
 pure `ReportWindowPolicy`, `BeyondLimits`, `ReportCapPolicy`; `IReportReader` / `IReportWriter` + `ReportOwner`;
+read-only `IReportOwnerLookup` (owner exists, cutoff days);
 `ReportRepository` (implements both ports); two controllers. EXTEND: `XmRCalculator` (`Limits`), `BaseMetricsService` (shared cycle-time
 selection), `ITeamMetricsService` / `IPortfolioMetricsService` (finished cycle-time and daily total WIA series),
 `LighthouseAppContext`, usage-data enums (DEVOPS). Frontend NEW: shared `Reports/*` tab with a `DataGridBase` list;
@@ -9405,7 +9412,7 @@ for Then & Now ② Then, ③ Now, ④ Metrics & name; edit starts at ③) with t
 panel frame, four panels, `UnsupportedMetricPanel`, `reportPanelRegistry`, `ReportService` (wire names as they are).
 NEW (extracted): `WizardStepperFrame` from `CreateWizardShell`, which keeps its props and behaviour. EXTEND
 `DeleteConfirmationDialog` (one optional `warning` line; no report-specific delete dialog), `WidgetShell` (body look
-exported), `TeamDetail.tsx`, `PortfolioDetail.tsx`, router, owner delete dialogs.
+exported, with optional `failureMessage` and `onRetry`; dashboard widgets pass neither and are unchanged), `TeamDetail.tsx`, `PortfolioDetail.tsx`, router, owner delete dialogs.
 
 ### Driving / driven ports
 
@@ -9428,8 +9435,8 @@ another owner's report 404; a stored report of a type this version cannot read 4
 
 Application ports: `IReportQueries` (templates, list, get — write-free) and `IReportCommands` (create, edit, delete),
 each operation taking a `ReportOwner`. Driven: `IReportReader` and `IReportWriter` (new, both on the EF
-`ReportRepository`), `IReportMetricSeries` (new, adapters over the metrics services), reused `ILighthouseClock`,
-`ILicenseService`, owner repositories, `RbacGuard`.
+`ReportRepository`), `IReportOwnerLookup` (new, read-only, over the owner repositories), `IReportMetricSeries`
+(new, adapters over the metrics services), reused `ILighthouseClock`, `ILicenseService`, `RbacGuard`.
 
 ### Data and migrations
 
@@ -9450,8 +9457,10 @@ table in the feature delta.
   logs every create's elapsed time and measures on the dev instance's busiest Team with a 365-day Then before slice
   02; the fallback is one item load per owner per request, never the update queue; if that misses, DESIGN reopens
   before slice 04. Metrics tab byte-identical.
-- **Loading and failure looks** (slow-connection rule): every surface reuses `WidgetShell`'s exported body look and
-  keyed TanStack queries, so a late answer for an old key never lands. List: lone spinner, Create disabled until the
+- **Loading and failure looks** (slow-connection rule): the list and the report view reuse `WidgetShell`'s exported
+  body look — its could-not-load given the report's own sentence and a Retry through two optional props — and keyed
+  TanStack queries, so a late answer for an old key never lands; the templates query refetches whenever the wizard
+  opens. List: lone spinner, Create disabled until the
   envelope arrives; dimmed under a spinner on re-read; a could-not-load message with Retry and no empty state.
   Report view: "Loading report…"; dimmed after Edit; could-not-load with no stale numbers; 404 "no longer exists" and
   422 "made by a newer version", both with Back to Reports. Wizard: Next disabled until the server's bounds arrive,
@@ -9474,8 +9483,10 @@ owner PBC Baseline; E3 metrics only via the series port; E4 `ReportQueries` depe
 write member; E5 `Calculate` = `Limits` rounded; E6 Then parity with the Metrics endpoints; E7 payload round-trip; E8
 cross-owner 404 + cascade on both providers; E9 exhaustive panel registry, pure panels; E10 no user-facing "Baseline";
 E11 no `then` / `now` member in the read DTO (Biome's `noThenProperty` on the frontend); E12 one window boundary
-table run against `ReportWindowPolicy` (NUnit) and `reportWindowCheck` (Vitest); E13 the edit universe, asserted with
-a stored payload member this version does not know.
+table run against `ReportWindowPolicy` (NUnit) and `reportWindowCheck` (Vitest), including a cutoff-0 row, plus a
+copy-interpolation check; E13 the edit universe, asserted with a stored payload member this version does not know;
+E14 only the composition root references the concrete `ReportRepository`; E15 the pure policies depend on no clock,
+licence, lookup, reader, writer, repository or series port.
 
 ### ADR References (this feature)
 

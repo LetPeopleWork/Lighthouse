@@ -13,6 +13,15 @@ D45–D48 (recorded in DISCUSS and applied here, in the ADRs and in the SSOT).
 final UI decisions DT1–DT7 and `distill/upstream-issues.md`. DD19, DD24, DD25 revised; DD26–DD34 added; a
 "Loading and failure looks" section and an Observability quality attribute added; ADR-219..222 **Accepted**.
 
+**Revision 2026-10-13, round 2 (second-pass review: needs_revision).** NB1 contract-shape rows added for every
+REUSE / EXTEND on a report path; NB2 the policies take `today`, cutoff, licence result and count as arguments (new
+read-only `IReportOwnerLookup` so queries can read the cutoff without `IRepository<>`), template create reclassified
+as read-only I/O, C4 L3 arrows moved to the query / command; NH1 `WidgetShell`'s exported body look gains optional
+`failureMessage` / `onRetry`; NH2 / NM1 / NM2 DD26 restated (copy interpolates server values, presets are UI
+shortcuts, `earliestStart` null = no lower bound, values from one source and comparisons in two implementations);
+NL1 templates query refetches on wizard open; NL2 E14; NL3 list failure copy is the working copy; NL4 collision check
+recorded. **No wire-contract change.**
+
 Full text of everything below: `../feature-delta.md` → "Wave: DESIGN / …" sections. ADRs: ADR-219..ADR-222.
 
 ## Config
@@ -44,13 +53,15 @@ technology · no external integration (contract testing N/A).
 - **DD10** Beyond limits: > upper; < lower only when lower > 0, else "—".
 - **DD11** Freeze values (+ sample size, absent reason) and unrounded limits for every applicable metric; no series.
 - **DD12** Every value carries its sample size; "—" only when truly empty, as closed codes; no threshold (D45).
-- **DD13** Inclusive instance-zone day windows on the server; `ReportWindowPolicy`, not `BaselineValidationService`.
+- **DD13** Inclusive instance-zone day windows on the server; `ReportWindowPolicy`, not `BaselineValidationService`;
+  `today` and the cutoff are arguments, read by the query / command (rev. 2026-10-13 round 2).
 - **DD14** Now length in the payload; edit only, under Write.
 - **DD15** Value definitions: M1 percentiles + per-item limits; M2 total and per-day average over the whole window,
   change on per-day, daily limits (D47); M3 average/min/max; M4 total and average, each as window average and last
   day, limits on daily totals (Q10, D48).
 - **DD16** *Withdrawn by D46* — no settings record, no notice.
-- **DD17** Cap policy in the create command; list envelope says `creationBlockedByCap`; race accepted.
+- **DD17** Cap policy in the create command, a pure function of (licence result, count for owner) which the command
+  and list query read and pass in; list envelope says `creationBlockedByCap`; race accepted.
 - **DD18** Two controllers (Team / Portfolio); Read on class, Write on actions; cross-owner 404; `useRbac` gating.
 - **DD19** `IReportQueries` (write-free) vs `IReportCommands`; persistence split into `IReportReader` /
   `IReportWriter`, both on `ReportRepository`; queries reach the reader only (rev. 2026-10-13).
@@ -65,14 +76,18 @@ technology · no external integration (contract testing N/A).
   length and token change; owner, type, created, schema version, Then window, captures and unknown payload members
   stay byte-identical; no other table. Then members in a body are ignored (200) (rev. 2026-10-13).
 - **DD26** Wizard pre-check from server bounds (`today`, `earliestStart`, `minimumLengthDays` on the templates
-  read); the server re-validates and stays the authority; one boundary table on both stacks.
+  read); the server re-validates and stays the authority; one boundary table on both stacks (with a cutoff-0 row and
+  a copy-interpolation check). Copy interpolates the server's values; presets are UI shortcuts, not rule values;
+  `earliestStart` null = no lower bound; values from one source, comparisons in two implementations; templates query
+  refetches on wizard open (rev. round 2).
 - **DD27** Wire names `atThen` / `atNow`.
 - **DD28** Closed refusal codes (DISTILL's eleven) in ProblemDetails; 400 validation, 403 cap, 404, 409, 422 for a
   stored report of an unknown type.
 - **DD29** Ports take a `ReportOwner`, never a user; controllers authorise. 5882's sender is the first user-less caller.
 - **DD30** One `ReportWizard` (create | edit) on a `WizardStepperFrame` extracted from `CreateWizardShell`;
   `DataGridBase` list; `DeleteConfirmationDialog` + optional warning.
-- **DD31** Loading / re-read / failure / not-found looks on `WidgetShell`'s body look and keyed queries.
+- **DD31** Loading / re-read / failure / not-found looks on `WidgetShell`'s body look (exported, with optional
+  `failureMessage` / `onRetry` for the report's own sentence and Retry; dashboards unchanged) and keyed queries.
 - **DD32** Unknown type: listed, opens to a not-found-family look; unknown metric: neutral frame.
 - **DD33** Then freezes the 85th only; no "Not captured" for Then's 70th / 50th.
 - **DD34** Create ≤ 10 s is a hypothesis; slice 01 measures; fallback cheaper captures; reopen DESIGN if it misses.
@@ -120,5 +135,6 @@ SSOT updated: `brief.md` (`## Application Architecture — epic-5878-baseline`),
 ## Handoff
 
 DEVOPS: usage-data route keys and events (D33, K1/K4/G1; K3 dropped in DEVOPS), one migration on both providers, `Program.cs`
-registration triggers the full Integration suite, no new job or configuration. Outcome collision check **not run**
-(no shell); the coordinator runs `nwave-ai outcomes check-delta docs/feature/epic-5878-baseline/feature-delta.md`.
+registration triggers the full Integration suite, no new job or configuration. Outcome collision check run by the
+coordinator on 2026-10-13: 6 outcomes checked, 0 collisions found (warnings only: `OUT-5878-*` referenced but not yet
+in the registry).

@@ -66,7 +66,9 @@ through a converter; `DeliveryNote` and `Delivery` are owner-scoped rows with a 
    controllers apply the owner's Read / Write guards and translate the route into the owner. A caller without a
    user — the first will be 5882's scheduled sender — decides its own authorisation before calling the query port.
 8. **The Community cap refuses with 403** and the code `report-cap-reached`, as every premium refusal in the API
-   does; the client tells it from an RBAC 403 by the code.
+   does; the client tells it from an RBAC 403 by the code. The cap policy is a pure function of the licence result
+   and the owner's report count; the create command (and the list query, for `creationBlockedByCap`) reads both and
+   passes them in.
 
 ## Alternatives considered
 
@@ -110,6 +112,9 @@ through a converter; `DeliveryNote` and `Delivery` are owner-scoped rows with a 
 - ArchUnitNET: nothing outside `API` and the composition root depends on the Reports module.
 - ArchUnitNET: the query implementation depends on `IReportReader` and on none of `IReportWriter`, `IRepository<>`,
   `LighthouseAppContext`; a reflection test asserts `IReportReader` declares no add / update / remove / save member.
+- ArchUnitNET: only the composition root references the concrete `ReportRepository`; everything else names the two
+  ports. (Chosen over forbidding a `RepositoryBase<Report>` base: reuse of the base is fine, reaching its writes past
+  the ports is not.)
 - NUnit: an edit leaves every column but name, shown keys, Now length and token — and every payload member but the
   Now length, including one this version does not know — unchanged, and touches no other table.
 - NUnit (both providers): deleting a Team or Portfolio removes its reports; a report row with both or neither owner

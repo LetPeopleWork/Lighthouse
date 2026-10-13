@@ -29,7 +29,8 @@ What exists:
 2. **A pure `ReportWindowPolicy`** validates both: length ≥ 14 inclusive days; end ≤ today; start ≥
    `today − DoneItemsCutoffDays` (a cutoff of 0 means no limit). A refusal is a closed reason code with the earliest
    allowed start, and the frontend writes the copy (no "Baseline"). It is checked for Then at creation, and for Now at
-   creation and on edit.
+   creation and on edit. The policy reads nothing: `today` and the cutoff days are arguments, read by the query or
+   command that calls it (from `ILighthouseClock` and the owner) — so its tests need no fakes.
 3. **The Now length is a template-specific member of the Then & Now payload**, written at creation (default = Then
    length) and changed only through the edit endpoint under Write. No query parameter on the read can change it.
 4. **Day arithmetic happens once.** Day counts shown in the header ("63 days since Then ended") are computed on the
@@ -41,7 +42,13 @@ What exists:
    `earliestStart`, length ≥ `minimumLengthDays` — and shows start = end − (L − 1) computed on plain calendar days
    from those strings. Create and Save re-validate on the server, which stays the only authority: a server refusal
    is shown with the same copy by its code, so a client slip can delay a refusal, never store a bad window. The
-   values of the rule (14, the cutoff, today) exist only on the server; the client holds three comparisons.
+   rule's **values** (14, the cutoff, today) come from one source, the server; the **comparison logic** has two
+   implementations — the policy and the wizard's pre-check, including its shown start — kept together by one shared
+   boundary table (Enforcement). Every copy that names a value interpolates the server's (`minimumLengthDays`,
+   `earliestStart`); the wizard's one-click presets (Team 30 / 90, Portfolio 90 / 180) are UI shortcuts, a product
+   choice of which lengths to offer, not rule values. **`earliestStart: null`** — an owner with a cutoff of 0 —
+   means no lower bound: the start comparison is skipped and no cutoff copy is shown. The templates read is fetched
+   afresh each time the wizard opens, so `today` cannot outlive midnight in a tab left open.
 
 ## Alternatives considered
 
@@ -78,6 +85,10 @@ What exists:
 - The read endpoint ignores any window parameter (contract test).
 - One boundary table (13 / 14 days; end = today / today + 1; start = earliest / earliest − 1; for Then and Now)
   runs against `ReportWindowPolicy` in NUnit and against the wizard's pre-check in Vitest, with the same rows and the
-  same expected codes, so the two cannot drift unnoticed.
+  same expected codes, so the two cannot drift unnoticed. It includes a cutoff-0 row (`earliestStart` null, an old
+  start, no refusal).
+- Vitest: with bounds whose `minimumLengthDays` and `earliestStart` differ from the shared table's, the refusal copy
+  names those values — a literal 14 or a fixed date in the copy fails.
+- ArchUnitNET: `ReportWindowPolicy` depends on neither `ILighthouseClock` nor any repository or port.
 
 Cross-refs: ADR-219, ADR-221; Bug #5567 conventions in the brief's `fix-backend-utc-today-anchor` section.

@@ -81,3 +81,12 @@ warning line. DESIGN now answers each item of `distill/upstream-issues.md` (mark
 | 8 unknown type has no look | designed (DD32), copy to confirm | adds a frontend case |
 | Copy: list failure | a sentence added beside Retry ("Loading and failure looks"), copy to confirm | yes, if confirmed |
 | Wizard bounds | `minimumLengthDays` added to the templates read; `earliestStart` nullable for cutoff 0 (DD26) | yes — test kit fixture and model |
+
+**Round 2 (2026-10-13, second-pass review).** No wire-contract change. Three test-visible consequences only:
+
+| Change | Changes a test? |
+|---|---|
+| Window refusal copy interpolates `minimumLengthDays` / `earliestStart` from the bounds (NH2) | yes — a Vitest check with non-default bounds; today's assertions ("at least 14 days" with the fixture's 14) stay as they are |
+| Cutoff-0 row in E12's shared boundary table: `earliestStart` null / cutoff 0, an old start, no refusal (NM1) | yes — one row in `reportWindowBoundaries.json`, run by both stacks |
+| `WidgetShell`'s exported body look gains optional `failureMessage` and `onRetry` (NH1) | the report surfaces' failure sentence + Retry are as DISTILL pinned; dashboard `WidgetShell` tests unchanged |
+| List failure copy "Reports couldn't be loaded. Reload to try again." + Retry is the working copy (NL3) | no — already pinned; DELIVER's sketch may re-word it |
