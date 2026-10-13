@@ -83,6 +83,9 @@ are reviewed is complete.
    3. **Mutation testing** (`/mutation-testing`) — ≥ 80 % kill rate on each stack the feature touched.
       Kill real survivors with tests; justify equivalent ones in writing. It runs **only here, once**, on
       frozen code: any later edit shifts the mutated line ranges and makes earlier scores stale.
+      Configure it for cheap re-runs from the first run (`coverageAnalysis: "perTest"` plus incremental
+      mode — see `/mutation-testing`, "Make re-runs cheap"), and stop iterating once each stack is
+      ≥ 80 % with the remaining survivors recorded; tell the agent so in its prompt.
 7. **HOLD.** Write the summary (what shipped locally, gate numbers, decisions taken, open questions,
    commits ahead of origin), set `status: "holding"`, send one push notification, and do nothing more.
    Do not finalize, do not push, do not start the next feature.

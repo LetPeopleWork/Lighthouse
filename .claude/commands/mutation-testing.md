@@ -138,6 +138,27 @@ Three frontend-specific traps:
 
 ---
 
+## Make re-runs cheap — set this up before the first run
+
+Killing survivors means several runs: run, add tests, run again. Without the two settings below every
+run re-tests every mutant against every scoped spec, so it never gets faster. Epic 5878 paid for it:
+five frontend runs of ~32 min each over 905 mutants, where only the survivors needed re-checking.
+
+- **`"coverageAnalysis": "perTest"`** (frontend; the vitest runner supports it). Stryker first records
+  which tests cover which mutant and then runs only those per mutant. `"off"` runs the whole scoped
+  suite for each mutant — fine for a few dozen mutants, ruinous for hundreds.
+- **Incremental mode.** Frontend: run with `--incremental` and set
+  `"incrementalFile": "reports/mutation/stryker-incremental-<id>.json"` (`reports/mutation/` is gitignored — never commit it).
+  The next run re-tests only mutants whose code or covering tests changed. Backend: Stryker.NET's
+  `--with-baseline` with a disk baseline (`"baseline": { "provider": "disk" }`) does the same job;
+  confirm on first use that the second run reports reused results before relying on it.
+- Use a plain first run (no `--incremental` file yet, or `--force`) for the score you record if you
+  changed the config between runs; incremental results from a different config are not comparable.
+- Stop at the gate. Once a stack is ≥ 80 % and the remaining survivors are triaged, record them —
+  further rounds are optional and must be asked for, not assumed.
+
+---
+
 ## Long runs
 
 Runs take minutes to an hour. Background them **with output redirected to a log file**, not just to a
