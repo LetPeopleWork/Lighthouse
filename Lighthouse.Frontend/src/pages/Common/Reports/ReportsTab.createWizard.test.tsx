@@ -470,7 +470,7 @@ describe("Step four: metrics and name", () => {
 	});
 
 	// @us-02 @slice-02 @contract-shape:pure-function
-	it.skip("names the report after its Then until the name is edited", async () => {
+	it("names the report after its Then until the name is edited", async () => {
 		await openTheWizard();
 		await next();
 		await chooseThenEnd("2026-07-31");
