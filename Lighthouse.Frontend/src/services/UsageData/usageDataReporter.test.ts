@@ -13,6 +13,7 @@ import {
 import { takeWhatWasNoticed } from "./usageDataBuffer";
 import { useUsageDataEventDetector } from "./usageDataEvents";
 import {
+	usageDataReportTemplateOf,
 	usageDataWorkTrackingSystemFor,
 	useUsageDataReporter,
 } from "./usageDataReporter";
@@ -108,6 +109,15 @@ describe("usageDataWorkTrackingSystemFor", () => {
 		["ServiceNow"],
 	] as const)("discloses %s as itself", (system) => {
 		expect(usageDataWorkTrackingSystemFor(system)).toBe(system);
+	});
+});
+
+describe("usageDataReportTemplateOf", () => {
+	it.each([
+		["then-and-now", "ThenAndNow"],
+		["a-type-from-a-later-version", undefined],
+	])("discloses a report of Type %j as %j", (templateKey, expected) => {
+		expect(usageDataReportTemplateOf(templateKey)).toBe(expected);
 	});
 });
 

@@ -1,0 +1,94 @@
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
+import type {
+	IReportTemplates,
+	ReportMetricKey,
+} from "../../../../../models/Reports/Report";
+import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
+import MetricsAndNameStep from "./MetricsAndNameStep";
+import { newThenAndNowDraft, type ThenAndNowDraft } from "./thenAndNowDraft";
+
+vi.mock("../../../../../services/TerminologyContext", () => ({
+	useTerminology: () => ({
+		getTerm: (key: string) =>
+			key === TERMINOLOGY_KEYS.CYCLE_TIME ? "Lead Time" : key,
+		isLoading: false,
+		error: null,
+		refetchTerminology: () => {},
+	}),
+}));
+
+const NO_METRIC = "Choose at least one metric";
+
+const offering = (...keys: string[]): IReportTemplates => ({
+	today: "2026-10-02",
+	earliestStart: null,
+	minimumLengthDays: 14,
+	templates: [
+		{
+			templateKey: "then-and-now",
+			metrics: keys.map((key) => ({ key: key as ReportMetricKey })),
+		},
+	],
+});
+
+const renderStep = (
+	templates: IReportTemplates,
+	shownMetricKeys: ReportMetricKey[] | null,
+) => {
+	const onChange = vi.fn<(draft: ThenAndNowDraft) => void>();
+	const draft = { ...newThenAndNowDraft(), shownMetricKeys };
+	render(
+		<MetricsAndNameStep
+			owner={{ kind: "team", id: 7 }}
+			templates={templates}
+			draft={draft}
+			onChange={onChange}
+			disabled={false}
+		/>,
+	);
+	return onChange;
+};
+
+describe("the Metrics & name step", () => {
+	it("ticks every offered metric, named in the instance's words, until one is unticked", () => {
+		renderStep(offering("cycle-time"), null);
+
+		expect(screen.getByRole("checkbox", { name: "Lead Time" })).toBeChecked();
+		expect(screen.queryByText(NO_METRIC)).not.toBeInTheDocument();
+	});
+
+	it("names a metric this version has no panel for by its key", () => {
+		renderStep(offering("cycle-time", "a-later-metric"), null);
+
+		expect(
+			screen.getByRole("checkbox", { name: "a-later-metric" }),
+		).toBeChecked();
+	});
+
+	it("drops an unticked metric and keeps the others", async () => {
+		const onChange = renderStep(offering("cycle-time", "a-later-metric"), null);
+
+		await userEvent.click(screen.getByRole("checkbox", { name: "Lead Time" }));
+
+		expect(onChange).toHaveBeenCalledWith(
+			expect.objectContaining({ shownMetricKeys: ["a-later-metric"] }),
+		);
+	});
+
+	it("asks for a metric while none is ticked, and adds the one ticked", async () => {
+		const onChange = renderStep(offering("cycle-time"), []);
+
+		expect(
+			screen.getByRole("checkbox", { name: "Lead Time" }),
+		).not.toBeChecked();
+		expect(screen.getByText(NO_METRIC)).toBeInTheDocument();
+
+		await userEvent.click(screen.getByRole("checkbox", { name: "Lead Time" }));
+
+		expect(onChange).toHaveBeenCalledWith(
+			expect.objectContaining({ shownMetricKeys: ["cycle-time"] }),
+		);
+	});
+});

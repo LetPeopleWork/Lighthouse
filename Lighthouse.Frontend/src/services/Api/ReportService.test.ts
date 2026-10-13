@@ -273,6 +273,11 @@ describe("ReportService", () => {
 		],
 		["says there is no oldest kept day", { earliestStart: null }, null],
 		["says nothing of an oldest kept day", {}, undefined],
+		[
+			"names something that is not a day",
+			{ earliestStart: 20251003 },
+			undefined,
+		],
 	])(
 		"hands on the oldest kept day a refusal %s exactly as it was given",
 		async (_, body, earliestStart) => {

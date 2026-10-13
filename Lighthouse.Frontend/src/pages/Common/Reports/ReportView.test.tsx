@@ -637,6 +637,83 @@ describe("A report on a slow or failing connection", () => {
 		).toBeVisible();
 		expect(getReport).toHaveBeenCalledTimes(2);
 	});
+
+	it("asks again when the server fails to answer", async () => {
+		const getReport = vi
+			.fn()
+			.mockRejectedValueOnce(aRefusal(500, "unexpected"))
+			.mockResolvedValue(theEngagementStartReport());
+		renderWithReports(
+			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
+			{ reportService: aReportService({ getReport }), retry: 2 },
+		);
+
+		expect(
+			await screen.findByText(ENGAGEMENT_START, undefined, { timeout: 3000 }),
+		).toBeVisible();
+		expect(getReport).toHaveBeenCalledTimes(2);
+	});
+
+	it("asks no more often than the instance's usual retries before saying the report could not be loaded", async () => {
+		const getReport = vi
+			.fn()
+			.mockRejectedValue(new Error("the network dropped"));
+		renderWithReports(
+			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
+			{ reportService: aReportService({ getReport }), retry: 1 },
+		);
+
+		expect(
+			await screen.findByText(COULD_NOT_LOAD, undefined, { timeout: 3000 }),
+		).toBeVisible();
+		expect(getReport).toHaveBeenCalledTimes(2);
+	});
+
+	it.each([
+		["a 422 for another reason", aRefusal(422, "then-too-short")],
+		[
+			"another status naming the newer Type",
+			aRefusal(400, "template-not-supported"),
+		],
+	])(
+		"offers Retry, not the way back, when the report fails with %s",
+		async (_, refusal) => {
+			renderWithReports(
+				<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
+				{
+					reportService: aReportService({
+						getReport: vi.fn().mockRejectedValue(refusal),
+					}),
+				},
+			);
+
+			expect(await screen.findByText(COULD_NOT_LOAD)).toBeVisible();
+			expect(screen.getByRole("button", { name: "Retry" })).toBeVisible();
+			expect(
+				screen.queryByRole("link", { name: "Back to Reports" }),
+			).toBeNull();
+		},
+	);
+
+	it("says it is busy while the report is on its way, and no longer once it is shown", async () => {
+		const held = deferred<IReport>();
+		renderWithReports(
+			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
+			{
+				reportService: aReportService({
+					getReport: vi.fn().mockReturnValue(held.promise),
+				}),
+			},
+		);
+
+		await screen.findByText(LOADING);
+		expect(document.querySelector('[aria-busy="true"]')).not.toBeNull();
+
+		await act(async () => held.resolve(theEngagementStartReport()));
+		await theReportIsReady();
+
+		expect(document.querySelector("[aria-busy]")).toBeNull();
+	});
 });
 
 describe("Who may change a report from its page", () => {

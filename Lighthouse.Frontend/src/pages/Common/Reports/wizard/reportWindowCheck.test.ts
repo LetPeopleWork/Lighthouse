@@ -49,6 +49,26 @@ describe("the edges of a report window, checked as the server checks them", () =
 		},
 	);
 
+	// From 2 Oct 2026, 739 891 days reach back exactly to 1 Jan of the year 1, the first day the server can name.
+	it.each([
+		[739_891, "accepted"],
+		[739_892, "then-too-long"],
+	])(
+		"answers a Then of %i days ending today with %s",
+		(lengthDays, expected) => {
+			const bounds = { ...boundaries.bounds, earliestStart: null };
+
+			expect(
+				answer(
+					reportWindowCheck(
+						{ side: "then", end: bounds.today, lengthDays },
+						bounds,
+					),
+				),
+			).toBe(expected);
+		},
+	);
+
 	// @us-07 @slice-07 @boundary @contract-shape:pure-function
 	it.skip.each(rows.filter((row) => row.side === "now"))(
 		"answers $case as the server does",
