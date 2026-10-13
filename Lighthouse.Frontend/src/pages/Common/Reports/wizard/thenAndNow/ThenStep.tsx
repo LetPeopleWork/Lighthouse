@@ -7,10 +7,12 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
+import { reportWindowPresetsFor } from "../../panels/reportWindowPresets";
+import { useRefusalWords, windowRefusalCopyFor } from "../reportRefusalCopy";
 import type { ReportTypeStepProps } from "../reportTypes";
+import { reportWindowCheck } from "../reportWindowCheck";
 import {
 	lengthOf,
-	lengthPresetsFor,
 	resolvedThenDays,
 	type ThenAndNowDraft,
 	thenEndOf,
@@ -25,8 +27,13 @@ const ThenStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 }) => {
 	const end = thenEndOf(draft, templates);
 	const lengthDays = lengthOf(draft.thenLength);
-	const presets = lengthPresetsFor(owner);
+	const presets = reportWindowPresetsFor(owner);
 	const days = resolvedThenDays(end, lengthDays);
+	const refusalWordsFor = useRefusalWords(owner);
+	const refusal =
+		lengthDays === null
+			? null
+			: reportWindowCheck({ side: "then", end, lengthDays }, templates);
 
 	const chooseLength = (thenLength: string) =>
 		onChange({ ...draft, thenLength });
@@ -78,6 +85,11 @@ const ThenStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 			</Box>
 			{days !== null && (
 				<Typography color="text.secondary">{`= ${days}`}</Typography>
+			)}
+			{refusal !== null && (
+				<Typography color="error">
+					{windowRefusalCopyFor(refusal, refusalWordsFor(templates))}
+				</Typography>
 			)}
 		</Stack>
 	);

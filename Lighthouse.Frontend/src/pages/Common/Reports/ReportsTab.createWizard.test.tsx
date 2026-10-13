@@ -141,7 +141,7 @@ describe("Step two: Then", () => {
 	});
 
 	// @us-02 @slice-02 @contract-shape:pure-function
-	it.skip("says the days of a Then that ended in the past", async () => {
+	it("says the days of a Then that ended in the past", async () => {
 		await openTheWizard();
 		await next();
 
@@ -151,7 +151,7 @@ describe("Step two: Then", () => {
 	});
 
 	// @us-02 @slice-02 @contract-shape:pure-function
-	it.skip("says the days of a Then of a custom length", async () => {
+	it("says the days of a Then of a custom length", async () => {
 		await openTheWizard();
 		await next();
 
@@ -176,7 +176,7 @@ describe("Step two: Then", () => {
 	});
 
 	// @us-02 @slice-02 @contract-shape:pure-function
-	it.skip("offers a Team's Then as 30 or 90 days with one click", async () => {
+	it("offers a Team's Then as 30 or 90 days with one click", async () => {
 		await openTheWizard();
 		await next();
 
@@ -243,7 +243,7 @@ describe("Step two: Then", () => {
 	});
 
 	// @us-02 @slice-02 @boundary @contract-shape:pure-function
-	it.skip("accepts a Then of exactly 14 days", async () => {
+	it("accepts a Then of exactly 14 days", async () => {
 		await openTheWizard();
 		await next();
 
@@ -257,7 +257,7 @@ describe("Step two: Then", () => {
 
 	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	// The shortest window is the server's to say; the wizard holds no number of its own.
-	it.skip("takes the shortest Then it allows from the server", async () => {
+	it("takes the shortest Then it allows from the server", async () => {
 		await openTheWizard(
 			aReportService({
 				getReports: vi.fn().mockResolvedValue(aReportList([])),

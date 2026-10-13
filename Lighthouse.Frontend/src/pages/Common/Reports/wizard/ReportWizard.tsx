@@ -9,16 +9,14 @@ import type {
 	IReportTemplates,
 	ReportTemplateKey,
 } from "../../../../models/Reports/Report";
-import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
-import { useTerminology } from "../../../../services/TerminologyContext";
 import {
 	usageDataReportTemplateFor,
 	useUsageDataReporter,
 } from "../../../../services/UsageData/usageDataReporter";
 import { queryStatusOf } from "../../MetricsView/widgetStatus";
-import { ownerTermKeyOf, reportPathOf } from "../reportOwner";
-import { type RefusalWords, refusalCopyFor } from "./reportRefusalCopy";
+import { reportPathOf } from "../reportOwner";
+import { refusalCopyFor, useRefusalWords } from "./reportRefusalCopy";
 import { reportTypes } from "./reportTypes";
 import TypeStep from "./TypeStep";
 
@@ -39,7 +37,6 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 	const queryClient = useQueryClient();
 	const navigate = useNavigate();
 	const reportUsage = useUsageDataReporter();
-	const { getTerm } = useTerminology();
 	const [activeStep, setActiveStep] = useState(TYPE_STEP);
 	const chosen: ReportTemplateKey = "then-and-now";
 	const type = reportTypes[chosen];
@@ -65,12 +62,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 		templates !== undefined &&
 		(current === undefined || current.isComplete(draft, templates));
 
-	const refusalWordsFor = (bounds: IReportTemplates): RefusalWords => ({
-		minimumLengthDays: bounds.minimumLengthDays,
-		earliestStart: bounds.earliestStart,
-		ownerTerm: getTerm(ownerTermKeyOf(owner)),
-		workItemsTerm: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
-	});
+	const refusalWordsFor = useRefusalWords(owner);
 
 	const create = async (bounds: IReportTemplates) => {
 		setIsCreating(true);

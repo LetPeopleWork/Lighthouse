@@ -1,7 +1,6 @@
 import { format, subDays } from "date-fns";
 import type {
 	INewReport,
-	IReportOwner,
 	IReportTemplates,
 	ReportMetricKey,
 } from "../../../../../models/Reports/Report";
@@ -25,9 +24,6 @@ export const newThenAndNowDraft = (): ThenAndNowDraft => ({
 	name: null,
 	shownMetricKeys: null,
 });
-
-export const lengthPresetsFor = (owner: IReportOwner): readonly number[] =>
-	owner.kind === "team" ? [30, 90] : [90, 180];
 
 export const thenEndOf = (
 	draft: ThenAndNowDraft,

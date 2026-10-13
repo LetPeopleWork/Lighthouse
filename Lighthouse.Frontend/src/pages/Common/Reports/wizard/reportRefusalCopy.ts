@@ -1,7 +1,14 @@
 import { format } from "date-fns";
+import type { IReportOwner } from "../../../../models/Reports/Report";
+import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { ApiError } from "../../../../services/Api/ApiError";
+import { useTerminology } from "../../../../services/TerminologyContext";
 import { parseLocalDate } from "../../../../utils/date/localDate";
-import type { ReportWindowRefusal } from "./reportWindowCheck";
+import { ownerTermKeyOf } from "../reportOwner";
+import type {
+	ReportWindowBounds,
+	ReportWindowRefusal,
+} from "./reportWindowCheck";
 
 /** Every reason the server gives for refusing a report it was asked to create or change. */
 export type ReportRefusalCode =
@@ -21,6 +28,19 @@ export interface RefusalWords {
 	ownerTerm: string;
 	workItemsTerm: string;
 }
+
+/** The words a refusal names, from the bounds the server answered and the instance's own terms. */
+export const useRefusalWords = (
+	owner: IReportOwner,
+): ((bounds: ReportWindowBounds) => RefusalWords) => {
+	const { getTerm } = useTerminology();
+	return (bounds) => ({
+		minimumLengthDays: bounds.minimumLengthDays,
+		earliestStart: bounds.earliestStart,
+		ownerTerm: getTerm(ownerTermKeyOf(owner)),
+		workItemsTerm: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
+	});
+};
 
 const COULD_NOT_CREATE = "The report couldn't be created. Try again.";
 
@@ -53,6 +73,12 @@ const REFUSAL_COPY: Record<ReportRefusalCode, (words: RefusalWords) => string> =
 		"report-cap-reached": (words) =>
 			`Community includes 2 reports per ${words.ownerTerm}. Delete one, or use Premium for unlimited reports.`,
 	};
+
+/** The sentence for a window the wizard itself refuses, worded as the server's refusal would be. */
+export const windowRefusalCopyFor = (
+	refusal: ReportWindowRefusal,
+	words: RefusalWords,
+): string => REFUSAL_COPY[refusal](words);
 
 const isRefusalCode = (code: string): code is ReportRefusalCode =>
 	Object.keys(REFUSAL_COPY).includes(code);
