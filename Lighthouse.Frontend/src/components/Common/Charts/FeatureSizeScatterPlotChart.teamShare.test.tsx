@@ -149,7 +149,7 @@ beforeEach(() => {
 
 describe("the Feature Size scatter on a Team counts that Team's Work Items", () => {
 	// @us-06 @contract-shape:bounded-change
-	it.skip("names the size axis as this Team's Work Items", () => {
+	it("names the size axis as this Team's Work Items", () => {
 		render(
 			<FeatureSizeScatterPlotChart
 				ownerKind="team"
@@ -161,7 +161,7 @@ describe("the Feature Size scatter on a Team counts that Team's Work Items", () 
 	});
 
 	// @us-06 @contract-shape:bounded-change
-	it.skip("names the size axis as this Team's Work Items in the Closed Date mode too", () => {
+	it("names the size axis as this Team's Work Items in the Closed Date mode too", () => {
 		render(
 			<FeatureSizeScatterPlotChart
 				ownerKind="team"
@@ -175,7 +175,7 @@ describe("the Feature Size scatter on a Team counts that Team's Work Items", () 
 	});
 
 	// @us-06 @contract-shape:bounded-change
-	it.skip("a bubble of two Features says each holds that many of this Team's Work Items", () => {
+	it("a bubble of two Features says each holds that many of this Team's Work Items", () => {
 		render(
 			<FeatureSizeScatterPlotChart
 				ownerKind="team"
@@ -189,7 +189,7 @@ describe("the Feature Size scatter on a Team counts that Team's Work Items", () 
 	});
 
 	// @us-06 @contract-shape:bounded-change
-	it.skip("a bubble of one Feature names it in the singular", () => {
+	it("a bubble of one Feature names it in the singular", () => {
 		render(
 			<FeatureSizeScatterPlotChart
 				ownerKind="team"
@@ -203,7 +203,7 @@ describe("the Feature Size scatter on a Team counts that Team's Work Items", () 
 	});
 
 	// @us-06 @contract-shape:bounded-change
-	it.skip("a bubble's button names the same share for a screen reader", () => {
+	it("a bubble's button names the same share for a screen reader", () => {
 		render(
 			<FeatureSizeScatterPlotChart
 				ownerKind="team"
@@ -219,7 +219,7 @@ describe("the Feature Size scatter on a Team counts that Team's Work Items", () 
 	});
 
 	// @us-06 @contract-shape:bounded-change
-	it.skip("says it in the words this instance uses", () => {
+	it("says it in the words this instance uses", () => {
 		terms.current = {
 			...seededTerms,
 			feature: "Epic",

@@ -82,7 +82,36 @@ type MarkerOptions = {
 	featuresTerm: string;
 	colorMap: Record<string, string>;
 	onShowItems: (items: IFeature[]) => void;
+	describeBubble: BubbleDescriber;
 };
+
+type BubbleText = { title: string; ariaLabel: string };
+
+type BubbleDescriber = (featureCount: number, size: number) => BubbleText;
+
+const describePortfolioBubble =
+	(featuresTerm: string): BubbleDescriber =>
+	(featureCount, size) => {
+		const itemCountText = featureCount > 1 ? "s" : "";
+		const featureTerm =
+			featureCount > 1 ? featuresTerm : featuresTerm.slice(0, -1);
+		return {
+			title: `${featureCount} item${itemCountText} with size ${size} child items`,
+			ariaLabel: `View ${featureCount} ${featureTerm} with size ${size} child items`,
+		};
+	};
+
+const describeTeamBubble =
+	(
+		featureTerm: string,
+		featuresTerm: string,
+		teamWorkItems: string,
+	): BubbleDescriber =>
+	(featureCount, size) => {
+		const features = featureCount === 1 ? featureTerm : featuresTerm;
+		const share = `${featureCount} ${features} with ${size} of ${teamWorkItems}`;
+		return { title: share, ariaLabel: `View ${share}` };
+	};
 
 const renderFallbackMarker = (
 	props: ScatterPropsExtended,
@@ -116,8 +145,14 @@ const renderFallbackMarker = (
 };
 
 const ScatterMarker = (props: ScatterMarkerProps, options: MarkerOptions) => {
-	const { seriesGroupedDataMap, theme, featuresTerm, colorMap, onShowItems } =
-		options;
+	const {
+		seriesGroupedDataMap,
+		theme,
+		featuresTerm,
+		colorMap,
+		onShowItems,
+		describeBubble,
+	} = options;
 
 	// v9: use seriesId (string) + dataIndex for direct lookup
 	const group = (seriesGroupedDataMap?.get(props.seriesId) ?? [])[
@@ -145,9 +180,7 @@ const ScatterMarker = (props: ScatterMarkerProps, options: MarkerOptions) => {
 		}
 	};
 
-	const itemCountText = group.items.length > 1 ? "s" : "";
-	const featureTerm =
-		group.items.length > 1 ? featuresTerm : featuresTerm.slice(0, -1);
+	const { title, ariaLabel } = describeBubble(group.items.length, group.size);
 
 	return (
 		<>
@@ -158,13 +191,13 @@ const ScatterMarker = (props: ScatterMarkerProps, options: MarkerOptions) => {
 				color: bubbleColor,
 				isHighlighted: props.isHighlighted,
 				theme,
-				title: `${group.items.length} item${itemCountText} with size ${group.size} child items`,
+				title,
 			})}
 			{renderMarkerButton({
 				x: props.x,
 				y: props.y,
 				size: bubbleSize,
-				ariaLabel: `View ${group.items.length} ${featureTerm} with size ${group.size} child items`,
+				ariaLabel,
 				onClick: handleOpenFeatures,
 			})}
 		</>
@@ -326,7 +359,7 @@ const formatSeriesValue = (
 type YAxisLabelOptions = {
 	isClosedDateMode: boolean;
 	useEstimationYAxis: boolean;
-	sizeTerm: string;
+	sizeAxisLabel: string;
 	cycleTimeTerm: string;
 	estimationUnit: string | null | undefined;
 };
@@ -334,12 +367,12 @@ type YAxisLabelOptions = {
 const getYAxisLabel = ({
 	isClosedDateMode,
 	useEstimationYAxis,
-	sizeTerm,
+	sizeAxisLabel,
 	cycleTimeTerm,
 	estimationUnit,
 }: YAxisLabelOptions): string => {
 	if (isClosedDateMode) {
-		return `${sizeTerm} (Child Items)`;
+		return sizeAxisLabel;
 	}
 	if (useEstimationYAxis) {
 		return estimationUnit ?? "Estimation";
@@ -360,6 +393,18 @@ const FeatureSizeScatterPlotChart: React.FC<
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 	const sizeTerm = "Size";
+	const isTeam = ownerKind === "team";
+	const teamWorkItems = `this ${getTerm(TERMINOLOGY_KEYS.TEAM)}'s ${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)}`;
+	const sizeAxisLabel = isTeam
+		? `${sizeTerm} (${teamWorkItems})`
+		: `${sizeTerm} (Child Items)`;
+	const describeBubble = isTeam
+		? describeTeamBubble(
+				getTerm(TERMINOLOGY_KEYS.FEATURE),
+				featuresTerm,
+				teamWorkItems,
+			)
+		: describePortfolioBubble(featuresTerm);
 
 	const showEstimationToggle =
 		estimationData?.status === "Ready" && !!estimationData?.estimationUnit;
@@ -600,7 +645,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 		: {
 				id: "sizeAxis",
 				scaleType: "linear" as const,
-				label: `${sizeTerm} (Child Items)`,
+				label: sizeAxisLabel,
 				height: 56,
 				min: 0,
 				max:
@@ -616,7 +661,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 	const yAxisLabel = getYAxisLabel({
 		isClosedDateMode,
 		useEstimationYAxis,
-		sizeTerm,
+		sizeAxisLabel,
 		cycleTimeTerm,
 		estimationUnit: estimationData?.estimationUnit,
 	});
@@ -766,6 +811,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 										featuresTerm,
 										colorMap,
 										onShowItems: handleShowItems,
+										describeBubble,
 									}),
 							}}
 						/>
