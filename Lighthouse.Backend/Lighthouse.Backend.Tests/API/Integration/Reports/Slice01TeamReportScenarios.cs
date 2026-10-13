@@ -115,7 +115,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:unbounded-preservation
         // Rebuilding Then without LS-17 would give an 85th percentile of 17 days, so 21 can only be the frozen value.
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task The_frozen_Then_does_not_move_when_the_tracker_later_drops_a_Work_Item()
         {
             var lightspeed = GivenLightspeedFinishedTwentyWorkItemsSinceEarlyJuly();
@@ -129,7 +128,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task Thin_data_shows_the_value_with_its_sample_size()
         {
             var pulsar = ATeam("Team Pulsar");
@@ -146,7 +144,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task No_finished_Work_Items_show_a_dash_and_the_reason_never_a_zero()
         {
             var nova = ATeam("Team Nova");
@@ -263,7 +260,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:bounded-change
         // Half past one in the morning in the instance's zone is still the previous day in UTC.
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task Then_ending_today_means_the_instances_today_just_after_midnight()
         {
             var lightspeed = GivenLightspeedFinishedTwentyWorkItemsSinceEarlyJuly();
