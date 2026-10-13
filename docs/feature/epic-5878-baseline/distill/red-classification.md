@@ -54,3 +54,32 @@ already true: "says nothing about reports when there are none" now first proves 
 reports; "reports the Team deleted and never a report deleted" now first proves the dialog named the 2 reports;
 "names no tab for the address of one report" now first proves the Reports tab itself is named. All three fail on
 the second run.
+
+## Revision run (2026-10-13, after DESIGN's revision) — 260 cases
+
+Same procedure (Ignores and `.Ignore(…)` stripped, `it.skip` / `it.skip.each` → `it` / `it.each`, run, files restored
+from copies, suites re-run skipped: backend 144 skipped, frontend 116 skipped, both green).
+
+**Result: 260 of 260 runnable cases fail, every one for missing behaviour. None broken.**
+
+Backend — `dotnet test … --filter "FullyQualifiedName~API.Integration.Reports|FullyQualifiedName~ReportUsageEventsTests"`
+→ Failed 144, Passed 0:
+
+| Failure | Cases | Classification |
+|---|---|---|
+| "The report was not created" — create answers 404 | 78 | MISSING_FUNCTIONALITY (no endpoint) |
+| `…/reports/templates answered 404` — includes all 12 rows of `ReportWindowBoundaryScenarios` | 19 | MISSING_FUNCTIONALITY |
+| multiple-assert scopes over 404 answers (list, read, edit, delete) | 25 | MISSING_FUNCTIONALITY |
+| usage events refused or not on the list; enum `UsageDataReportTemplate` absent | 13 | MISSING_FUNCTIONALITY |
+| `docs/settings/usagedata.md` has no "A report was …" / "Which type of report" rows, the tab rows still say six Team / five Portfolio tabs, the addresses are not listed | 8 | MISSING_FUNCTIONALITY |
+| without sign-in, create answers 404 | 1 | MISSING_FUNCTIONALITY |
+
+Frontend — `pnpm exec vitest run` on the nine files → 116 failed (35 existing `OverviewDashboard` cases passed):
+
+| Failure | Cases | Classification |
+|---|---|---|
+| `Not yet implemented -- RED scaffold: the Reports tab of team/portfolio N` | 50 | MISSING_FUNCTIONALITY (scaffold throws) |
+| `Not yet implemented -- RED scaffold: report N of team N` | 36 | MISSING_FUNCTIONALITY |
+| `Not yet implemented -- RED scaffold: checking a then/now window …` (`reportWindowCheck`, the shared table) | 12 | MISSING_FUNCTIONALITY |
+| no Reports tab, no report view, no tab opening for `/teams/7/reports` | 12 | MISSING_FUNCTIONALITY |
+| Overview delete dialog: no report count, no spinner, no "and any reports it has" | 6 | MISSING_FUNCTIONALITY |

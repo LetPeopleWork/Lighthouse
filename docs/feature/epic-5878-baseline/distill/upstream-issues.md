@@ -92,3 +92,30 @@ DISCUSS and the DT walkthrough fixed most of the words; these are the ones a tes
   colour is never the only carrier.
 - Each panel is a `region` named by its title, such as "Cycle Time: Then & Now".
 - The Type card in wizard step ① is a radio.
+
+## Resolved in the DISTILL revision (2026-10-13)
+
+Every DESIGN answer above is now in the tests, and nothing listed here is open any more except the copy marked for
+DELIVER's sketch:
+
+- **1** — list rows read `thenAndNow.thenRebuildable` (`Slice08DeleteAndCommunityCapScenarios`, `ReportsTab.test.tsx`,
+  `ReportsTestKit.aListedReport`); a row of a type this version cannot read carries no `thenAndNow` (slice 01).
+  **Resolved.**
+- **2** — `ThenValueIn` / `NowValueIn` read `atThen` / `atNow`; the model's comment no longer speaks of a mapping.
+  **Resolved.**
+- **3** — unchanged. **Resolved.**
+- **4** — cap 403 (slice 08, wizard), opening an unknown type 422 (slice 01, report view), an edit carrying Then
+  answered 200 with Then unchanged (`Then_cannot_be_edited`), and the edit universe pinned by
+  `An_edit_changes_the_name_the_shown_metrics_and_how_long_Now_is_and_nothing_else`. **Resolved.**
+- **5**, **7** — nothing to change in the tests. **Resolved.**
+- **6** — the dialog's Delete waits while the count loads, and reads "and any reports it has" when it cannot be read
+  (`OverviewDashboard.test.tsx`). **Resolved**; the clause's copy is DESIGN's, confirmed at DELIVER's sketch.
+- **8** — the report view shows DD32's sentence with Back to Reports; the list's Type column reads "Not supported in
+  this version"; a metric without a panel shows "This metric can't be shown in this version of Lighthouse."
+  **Resolved**; copy confirmed at DELIVER's sketch.
+- **Copy**: the wizard's step ② presets are recorded as [DT8] (they were in the approved DT3 sketch). The Reports
+  list failure takes DESIGN's sentence beside Retry, "Reports couldn't be loaded. Reload to try again.". The wizard's
+  refusal copy takes the shortest length and the oldest kept day from the templates read (`minimumLengthDays`,
+  `earliestStart`); with no `earliestStart` no cutoff refusal shows.
+- **New, confirm**: the disclosure page's field row is pinned as "Which type of report" (DT2: users read *Type*), where
+  DEVOPS wrote "Which report template". Changing it means editing one `TestCase` in `ReportUsageEventsTests`.

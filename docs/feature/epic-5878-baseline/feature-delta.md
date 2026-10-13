@@ -1436,7 +1436,9 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
   threshold.
 - **DD13** Windows: inclusive calendar days in the instance zone, computed on the server from `ILighthouseClock.Today`;
   `DateOnly` on the wire in and out; a pure `ReportWindowPolicy` (≥ 14 inclusive days, end ≤ today, start ≥ today −
-  cutoff, refusal = code + earliest start). `BaselineValidationService` is **not** reused (ADR-222).
+  cutoff, refusal = code + earliest start). *Revised 2026-10-13 (NB2)*: the policy reads nothing — `today` and the
+  owner's cutoff days are **arguments**; `ReportQueries` / `ReportCommands` read `ILighthouseClock.Today` and the
+  cutoff (through `IReportOwnerLookup`, below) and pass them in. `BaselineValidationService` is **not** reused (ADR-222).
 - **DD14** Now length lives in the Then & Now payload; set at creation (default = Then length), changed only by the
   edit endpoint under Write; no read parameter changes it (ADR-222; D43).
 - **DD15** Value definitions per metric (window `[start, end]` inclusive):
@@ -1457,8 +1459,10 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
     - limits and count over the daily totals `T[d]`.
 - **DD16** *Withdrawn by D46.* No settings snapshot is stored and nothing is compared on read. (Was: one digest per
   settings category and a header notice.)
-- **DD17** Cap: `ReportCapPolicy` = `CanUsePremiumFeatures() || countForOwner < 2`, checked inside the create command;
-  the list envelope returns `creationBlockedByCap` so the UI does not restate the rule. The concurrent-create race is
+- **DD17** Cap: `ReportCapPolicy(premium, countForOwner)` = `premium || countForOwner < 2`, a pure function of its two
+  arguments (*revised 2026-10-13, NB2*): the create command — and the list query, for `creationBlockedByCap` — reads
+  `ILicenseService.CanUsePremiumFeatures()` and the `IReportReader` count and passes both in; checked inside the
+  create command; the list envelope returns `creationBlockedByCap` so the UI does not restate the rule. The concurrent-create race is
   accepted (ADR-219). The refusal is **403** with code `report-cap-reached`, matching every premium refusal the API
   already gives (`TeamsController` CSV cap, `DeliveriesController` archive, `OptionalFeaturesController`); the
   frontend tells it from an RBAC 403 by the code alone.
@@ -1505,7 +1509,20 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
   window against those three values — end ≤ `today`, start ≥ `earliestStart`, length ≥ `minimumLengthDays` — and
   compute the shown start as end − (L − 1) on the server's day strings (plain calendar days, never a `Date` in the
   viewer's zone). Create and Save re-validate on the server; a server refusal maps to the same copy by its code, so a
-  frontend slip can delay a refusal, never store a bad window. No number or cutoff lives in the frontend. Rejected: a
+  frontend slip can delay a refusal, never store a bad window. *Revised 2026-10-13 (NH2, NM1, NM2)*:
+  - **No rule value lives in the frontend.** The minimum length, the cutoff and today arrive from the server, and every
+    copy that names one interpolates the server's value — "at least {minimumLengthDays} days", "must start on or after
+    {earliestStart}" (a server refusal's own `earliestStart` when the copy answers a 400). The presets (Team 30 / 90,
+    Portfolio 90 / 180) are **UI shortcuts** — D37's product choice of which lengths to offer in one click — not rule
+    values; a preset the bounds refuse is refused like a typed length.
+  - **`earliestStart: null`** (the owner keeps every finished item, cutoff 0) means **no lower bound**: the start
+    comparison is skipped, no cutoff refusal can arise and no cutoff copy is shown.
+  - **Values from one source; comparison logic in two implementations.** `ReportWindowPolicy` and `reportWindowCheck`
+    (with its shown start = end − (L − 1)) each implement the three comparisons; E12's shared boundary table is what
+    keeps them from drifting. Not "one source of the rule" — one source of its values.
+  - The templates query refetches each time the wizard opens (NL1), so `today` cannot go stale past midnight in a tab
+    left open.
+  Rejected: a
   window-check endpoint (one source of the comparisons too, but a round-trip on every keystroke, Next waiting on the
   network, and a third loading/failure look inside a wizard step); copying 14 and the cutoff into the frontend (two
   sources of the rule's values). Enforced by one boundary table run on both stacks (E12).
@@ -1570,7 +1587,8 @@ Backend (`Lighthouse.Backend/Lighthouse.Backend/…`):
 | `Services/Implementation/Reports/ThenAndNowTemplate.cs` | NEW | Create (freeze Then), edit (Now length), read (capture Now, count) |
 | `Services/Implementation/Reports/Metrics/{CycleTime,Throughput,Wip,WorkItemAge}ReportMetric.cs`, `ReportMetricCatalog.cs` | NEW | DD5, DD15 |
 | `Services/Implementation/Reports/TeamReportMetricSeries.cs`, `PortfolioReportMetricSeries.cs` | NEW | Adapters over the metrics services |
-| `Services/Implementation/Reports/ReportWindowPolicy.cs`, `BeyondLimits.cs`, `ReportCapPolicy.cs` | NEW | Pure policies (DD10, DD13, DD17) |
+| `Services/Implementation/Reports/ReportWindowPolicy.cs`, `BeyondLimits.cs`, `ReportCapPolicy.cs` | NEW | Pure policies (DD10, DD13, DD17); every input an argument (NB2) |
+| `Services/Interfaces/Reports/IReportOwnerLookup.cs` + adapter over `IRepository<Team>` / `IRepository<Portfolio>` | NEW (*2026-10-13, NB2*) | Read-only: does the owner exist, and its `DoneItemsCutoffDays`. Lets `ReportQueries` gather the window policy's cutoff without naming `IRepository<>` (E4) |
 | `Services/Implementation/Repositories/ReportRepository.cs` | NEW | Implements `IReportReader` and `IReportWriter` (may derive from `RepositoryBase<Report>`; nothing outside the composition root sees it as `IRepository<Report>`) |
 | `API/TeamReportsController.cs`, `API/PortfolioReportsController.cs` (+ request DTOs in `API/DTO/Reports`) | NEW | Driving adapters (DD18) |
 | `Services/Implementation/XmRCalculator.cs` | EXTEND | Extract `Limits` (DD9) |
@@ -1589,7 +1607,7 @@ Frontend (`Lighthouse.Frontend/src/…`):
 | `components/Common/CreateWizards/WizardStepperFrame.tsx` | NEW (extracted) | Stepper chrome shared by `CreateWizardShell` and `ReportWizard` (DD30) |
 | `components/Common/CreateWizards/CreateWizardShell.tsx` | EXTEND (refactor) | Renders inside the extracted frame; props and behaviour unchanged |
 | `components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog.tsx` | EXTEND | One optional `warning` line (DT7); existing callers unchanged |
-| `pages/Common/MetricsView/WidgetShell.tsx` | EXTEND (export) | Export the body look (lone spinner / dimmed under a small spinner / could-not-load) for the list and the report view |
+| `pages/Common/MetricsView/WidgetShell.tsx` | EXTEND (export + optional `failureMessage`, `onRetry`) | Export the body look (lone spinner / dimmed under a small spinner / could-not-load) for the list and the report view; the two optional props carry the report's failure sentence and Retry, absent for every dashboard widget (NH1) |
 | `pages/Common/Reports/ReportView.tsx`, `ThenAndNowHeader.tsx` | NEW | Fetch once; header (D35: both windows, days since Then ended); render shown panels |
 | `pages/Common/Reports/panels/ThenNowPanelFrame.tsx`, `{CycleTime,Throughput,Wip,WorkItemAge}Panel.tsx`, `UnsupportedMetricPanel.tsx`, `reportPanelRegistry.ts`, `thenNowComparison.ts`, `reportWindowPresets.ts` | NEW | DD6, DD7, DD32; presets Team 30/90, Portfolio 90/180 (one-click buttons beside the custom length, as approved in the wizard sketch) |
 | `services/Api/ReportService.ts`, `models/Reports/*.ts` | NEW | API client and models (Zod `.nullable()` for every nullable); wire names used as they are, no renaming (DD27) |
@@ -1655,7 +1673,7 @@ nullable (S6964); no `[JsonRequired]` on anything a stored client might omit.
 | `IReportMetricSeries` (NEW) | `TeamReportMetricSeries`, `PortfolioReportMetricSeries` | Delegate to `ITeamMetricsService` / `IPortfolioMetricsService`: cycle-time percentiles, finished cycle-time series, daily {Throughput}, daily {WIP}, daily total {Work Item Age} |
 | `ILighthouseClock` (reused) | existing | `Today`, `Zone` |
 | `ILicenseService` (reused) | existing | `CanUsePremiumFeatures()` |
-| `IRepository<Team>` / `IRepository<Portfolio>` (reused) | existing | Owner lookup, cutoff |
+| `IReportOwnerLookup` (NEW, *NB2*) | adapter over `IRepository<Team>` / `IRepository<Portfolio>` (reused) | Owner exists?, cutoff days. Read-only; the only way the Reports module reaches an owner, so E4 holds for `ReportQueries` |
 | `IRbacAdministrationService` (reused, via `RbacGuard`) | existing | No new requirement |
 
 Earned trust: no external dependency. The two substrate behaviours the design leans on are probed by tests rather
@@ -1702,7 +1720,7 @@ No licensing change. Contract testing (Pact): **N/A**, no external integration.
 | `CreateWizardShell` (*2026-10-13, H2*) | `components/Common/CreateWizards/CreateWizardShell.tsx` | Stepper wizard look (DT3: "on `CreateWizardShell`") | **EXTEND by extraction** | Its props are the Create {Team} / {Portfolio} flow's (connections, data-retrieval wizards, states) and its steps are hard-wired to `STEPS`; it cannot host report steps as is. Extract the chrome into `WizardStepperFrame`; the shell renders inside it unchanged; `ReportWizard` composes the same frame (DD30) |
 | `DataGridBase` (*H2*) | `components/Common/DataGrid/DataGridBase.tsx` | Reports list table | **REUSE** | The feature-list table style DT1 names; no change |
 | `DeleteConfirmationDialog` (*H2*) | `components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog.tsx` | Delete a report | **EXTEND** | One optional `warning` prop rendered as a warning line (DT7); every current caller passes none and is unchanged. Replaces DESIGN's former `DeleteReportDialog` |
-| `WidgetShell` body look + `WidgetStatus` (*H5*) | `pages/Common/MetricsView/WidgetShell.tsx`, `widgetStatus.ts` | Loading / re-read / failure looks | **EXTEND (export)** | Export the body look so the list and report view reuse it rather than invent one; `WidgetStatus` reused as is. The widget header (info, RAG) is not used |
+| `WidgetShell` body look + `WidgetStatus` (*H5*) | `pages/Common/MetricsView/WidgetShell.tsx`, `widgetStatus.ts` | Loading / re-read / failure looks | **EXTEND (export + two optional props)** | Export the body look so the list and report view reuse it rather than invent one; `WidgetStatus` reused as is. The widget header (info, RAG) is not used. *Revised 2026-10-13 (NH1)*: today's could-not-load says "This chart couldn't be loaded. Change the dates or reload to try again." and has no Retry, while DT6's report failure has its own sentence and a Retry — so the exported look gains an optional `failureMessage` (default: today's sentence) and an optional `onRetry` (default: none, no button). Every dashboard widget passes neither and is unchanged. Chosen over a report-only failure variant reusing just the spinner / dim: one failure look, not two that drift |
 | TanStack Query keyed queries (*H5*) | existing app-wide | Late answers never land | **REUSE** | Keys per owner and report (see "Loading and failure looks") |
 | `LoadingAnimation` | `components/Common/LoadingAnimation` | Spinner | **REJECT for the report view** | No dimmed-under-spinner state and no could-not-load copy; `WidgetShell`'s body look has both |
 
@@ -1757,6 +1775,10 @@ C4Container
 (reached by `IReportQueries` and, for the cap count, by `IReportCommands`) and `IReportWriter` (reached by
 `IReportCommands` only), both implemented by `ReportRepository`. The SPA subgraph gains `ReportWizard` →
 `WizardStepperFrame`. "Only `C` writes" now holds by type: `Q` has no arrow to a port with a write member.
+*Revised 2026-10-13 (NB2)*: the policies have no outgoing arrow. `ReportCommands` reads `ILicenseService`,
+`ILighthouseClock` and `IReportOwnerLookup` and hands the cap policy (licence result, count) and the template (today,
+cutoff) their arguments; `ReportQueries` reads `ILighthouseClock`, `ILicenseService` (for `creationBlockedByCap`) and
+`IReportOwnerLookup` the same way and asks the window policy for the templates read's bounds.
 
 ---
 
@@ -1812,34 +1834,45 @@ the new table.
 
 | Component | Shape | Universe / assertion |
 |---|---|---|
-| `ReportWindowPolicy`, `BeyondLimits`, `XmRCalculator.Limits`, `ReportCapPolicy`, `thenRebuildable` | pure function (return only) | table/property tests; no repository or series port in their dependency graph (ArchUnit) |
+| `ReportWindowPolicy`, `ReportCapPolicy`, `BeyondLimits`, `XmRCalculator.Limits`, `thenRebuildable` (*revised NB2*) | pure function (return only); every input is an argument | universe = the arguments, nothing else: window policy (entered window, `today`, cutoff days); cap (`premium` — the licence result — and `countForOwner`); beyond-limits (frozen limits, Now series); `Limits` (values); `thenRebuildable` (Then start, `today`, cutoff days). `ReportQueries` / `ReportCommands` read `ILighthouseClock`, `ILicenseService`, `IReportOwnerLookup` and `IReportReader` and pass the results in. Assertion: table / property tests with no fakes; ArchUnit E15 — none depends on `ILighthouseClock`, `ILicenseService` or any reader, writer, lookup, repository or series port |
 | `IReportMetric` capture (*reclassified 2026-10-13, M4*) | **read-only I/O**: reads through `IReportMetricSeries`, returns a capture value, writes nothing | depends on `IReportMetricSeries` only (E3); that port has no write member. Its arithmetic over a series is pure and unit-tested with a faked series port |
 | `TeamReportMetricSeries`, `PortfolioReportMetricSeries` (*M5*) | read-only I/O (driven adapters) | delegate to the metrics services' read methods only; parity tests against the Metrics endpoints (E6) are their probe — a series that differs from the Metrics tab fails there, not in a report |
-| `IReportQueries` templates / list / get | pure read (with read-only I/O) | `ReportQueries` depends on `IReportReader`, never `IReportWriter`, `IRepository<>`, `LighthouseAppContext` or `SaveChanges` (ArchUnit E4); integration test: row counts and the `Reports` row's columns unchanged across a get |
+| `IReportQueries` templates / list / get | pure read (with read-only I/O; reads `ILighthouseClock`, `ILicenseService`, `IReportOwnerLookup` to gather the pure policies' arguments — NB2) | `ReportQueries` depends on `IReportReader`, never `IReportWriter`, `IRepository<>`, `LighthouseAppContext` or `SaveChanges` (ArchUnit E4); integration test: row counts and the `Reports` row's columns unchanged across a get |
 | Owner-delete count (*M5, DD23*) | pure read | it **is** `IReportQueries` list (the length of `reports`); no new member, no count endpoint |
 | `IReportTemplate` read (Then & Now: capture Now, count beyond limits) | read-only I/O, returns a read value | reached only from `ReportQueries`; same assertion as the row above |
-| `IReportTemplate` create (freeze Then) | returns a payload value; persistence only in the command | no `IReportWriter` in its graph (ArchUnit) |
+| `IReportTemplate` create (freeze Then) (*reclassified NB2*) | **read-only I/O**: captures Then through the catalog (`IReportMetric` → `IReportMetricSeries`) and returns a payload value or a refusal | delta = **none** — no row, no table; the only write is `IReportCommands.Create` persisting the returned payload. Universe = its arguments (owner, request, `today`, cutoff days) + the series port's reads. Assertion: no `IReportWriter`, `IReportReader`, `IRepository<>` or `LighthouseAppContext` in its graph (ArchUnit, E4 extended to the template); unit tests with a faked series port assert the payload from fixed series |
 | `IReportTemplate` edit (*M5*) | pure function: (stored payload, edit request, window bounds) → payload or refusal | returns the stored payload with `nowLengthDays` replaced and every other member — including members this version does not know — kept; unit test with an unknown member present |
 | `IReportCommands.Create` | bounded change | one `Reports` row added, nothing else; row counts of every other table before/after in an integration test |
 | `IReportCommands.Edit` (*B2*) | bounded change | mutation set = `Name`, `ShownMetricKeysJson`, payload `nowLengthDays`, `ConcurrencyToken` of the addressed row; universe = every other column of that row, every other payload member (compared as JSON trees with `nowLengthDays` removed), every other row and table — asserted unchanged in one integration test (DD25) |
 | `IReportCommands.Delete` | bounded change | the addressed row removed; every other row and table unchanged |
 | Frontend `reportWindowCheck` (*B3*) | pure function: (entered window, server bounds) → refusal code or none | boundary table shared with the backend's `ReportWindowPolicy` test (E12) |
 | Frontend panels, `ThenNowPanelFrame`, `UnsupportedMetricPanel` | pure function of props | identical props → identical output, no network (E9) |
+| `BaseMetricsService` cycle-time selection (EXTEND by extraction, *NB1*) | behaviour-preserving refactor; the extracted selection is a pure function (finished items → cycle-time series by close date then id, cycle time > 0) | universe = the PBC builder's output, unchanged. Assertion: the existing `BaseMetricsService` / PBC tests stay unchanged and green in the refactor commit; E6 parity for the report's use |
+| `ITeamMetricsService` / `IPortfolioMetricsService` new public reads — finished cycle-time series, daily total {Work Item Age} series (EXTEND, *NB1*) | read-only I/O | expose computations that exist privately today; write nothing; reached by the Reports module only through `IReportMetricSeries` (E3). Assertion: E6 parity with the Metrics endpoints; existing metrics-service tests unchanged |
+| `RepositoryBase<T>` behind `ReportRepository` (REUSE, *NB1*) | unchanged; read I/O through `IReportReader`, bounded change through `IReportWriter` | writes reach the `Reports` table only, and only from `IReportCommands` (see Create / Edit / Delete rows). `RepositoryBase<T>` itself is not changed and its tests are untouched. Assertion: E4 + E14 (only the composition root names `ReportRepository`) |
+| `CreateWizardShell` → `WizardStepperFrame` (NEW, extracted, *NB1*) | behaviour-preserving refactor; the frame is a pure function of props | `CreateWizardShell`'s existing tests stay unchanged and green in the refactor commit (the assertion that its behaviour did not move); frame: identical props → identical output, no network |
+| `DeleteConfirmationDialog` optional `warning` (EXTEND, *NB1*) | pure function of props | identical props → identical output; without `warning` the output is today's — existing tests unchanged as the assertion |
+| `WidgetShell` body look, exported with optional `failureMessage` / `onRetry` (EXTEND, *NB1, NH1*) | pure function of props | identical props → identical output, no network; with neither new prop the output is today's — `WidgetShell.status.test.tsx` and the dashboard loading tests unchanged as the assertion |
+| `DataGridBase` (REUSE) | pure function of props, unchanged | no change; its tests untouched |
 
 ---
 
 ## Wave: DESIGN / [REF] Loading and failure looks
 
 *Added 2026-10-13 (H5); consistent with DT6, which is final.* Every look reuses `WidgetShell`'s body look (exported,
-see Reuse Analysis) and `WidgetStatus` (`loading` / `error` / `ready`). Never: the previous answer shown as current,
+see Reuse Analysis) and `WidgetStatus` (`loading` / `error` / `ready`). *Revised 2026-10-13 (NH1)*: the body look's
+could-not-load is today the chart's sentence with no Retry; the report surfaces pass the exported look's two new
+optional props — `failureMessage` (their own sentence below) and `onRetry` (refetch the keyed query, shown as Retry).
+Dashboard widgets pass neither and keep today's sentence and no button. The wizard's error alerts and the owner delete
+dialog's clause are not body looks and do not use it. Never: the previous answer shown as current,
 an empty area that could pass for "no data", or a value the reader cannot tell is stale. Check by hand with the
 browser throttled to a slow connection.
 
 | Surface | Query key | First load | Re-read | Failure | Not found / unsupported |
 |---|---|---|---|---|---|
-| Reports list (tab) | `['reports', ownerKind, ownerId]` | lone spinner where the table goes; `+ Create Report` disabled until the envelope arrives (the cap state is unknown) | after create / edit / delete (invalidated): current table dimmed under a small spinner | "Reports couldn't be loaded. Reload to try again." with Retry; no table, no empty state (*copy to confirm; DISTILL proposed Retry alone*) | — |
+| Reports list (tab) | `['reports', ownerKind, ownerId]` | lone spinner where the table goes; `+ Create Report` disabled until the envelope arrives (the cap state is unknown) | after create / edit / delete (invalidated): current table dimmed under a small spinner | "Reports couldn't be loaded. Reload to try again." with Retry; no table, no empty state. *NL3*: this sentence + Retry is the **working copy** (DISTILL pins it); DELIVER's slice-01 sketch confirms it with the maintainer, and only a change agreed there re-words it | — |
 | Report view | `['report', ownerKind, ownerId, reportId]` | breadcrumb + lone spinner "Loading report…" (DT6) | after Edit (invalidated): current report dimmed under a small spinner, never shown as fresh (DT6) | "This report couldn't be loaded. Reload to try again." + Retry, no stale numbers (DT6) | 404: "This report no longer exists." + Back to Reports (DT6); 422 `template-not-supported`: DD32's sentence + Back to Reports |
-| Wizard (create and edit) | `['reportTemplates', ownerKind, ownerId]` | step ① shows a lone spinner; Next disabled — no default dates are drawn from the viewer's clock while the server's `today` is on its way | — | error alert in the wizard "Report types couldn't be loaded." + Retry; Next disabled | — |
+| Wizard (create and edit) | `['reportTemplates', ownerKind, ownerId]`, refetched each time the wizard opens (stale at once, NL1) so `today` never outlives midnight | step ① shows a lone spinner; Next disabled — no default dates are drawn from the viewer's clock while the server's `today` is on its way | — | error alert in the wizard "Report types couldn't be loaded." + Retry; Next disabled | — |
 | Wizard submit | mutation | — | Create / Save shows a spinner; inputs disabled (DT3) | error alert in the wizard naming the refusal by its code's copy, every input kept (DT3); 409 on Save: DT4's sentence | — |
 | Owner delete dialog (Overview) | the owner's list key | the clause shows a small spinner; Delete disabled until the count arrives | — | the clause reads "and any reports it has"; Delete enabled (*copy to confirm*) | — |
 
@@ -1890,9 +1923,19 @@ ArchUnitNET + NUnit + TypeScript:
 - **E12** *(2026-10-13)* one window boundary table — 13 / 14 days, end = today / today + 1, start = earliest /
   earliest − 1, for Then and for Now — run against `ReportWindowPolicy` (NUnit) and `reportWindowCheck` (Vitest) with
   the same rows and the same expected codes (DD26), so the frontend pre-check cannot drift from the rule unnoticed.
+  *Revised 2026-10-13 (NM1, NH2)*: plus a **cutoff-0 row** — `earliestStart` null (backend: cutoff days 0), a start
+  far in the past, no refusal — and a **copy-interpolation check** on the Vitest side: with bounds whose
+  `minimumLengthDays` and `earliestStart` differ from the shared table's (e.g. 21 days, another date), the refusal
+  copy names those values, so a literal 14 or a hard-coded date in the copy fails.
 - **E13** *(2026-10-13)* edit universe (DD25): one integration test stores a payload carrying a member this version
   does not know, edits name, keys and Now length, and asserts every other column and payload member unchanged and no
   other table touched.
+- **E14** *(2026-10-13, NL2)* only the composition root references the concrete `ReportRepository` (ArchUnitNET);
+  everything else names `IReportReader` / `IReportWriter`. Chosen over forbidding `RepositoryBase<Report>`: the
+  repository may reuse the base class; what must not happen is a caller reaching its write members past the ports.
+- **E15** *(2026-10-13, NB2)* the pure policies (`ReportWindowPolicy`, `ReportCapPolicy`, `BeyondLimits`) depend on
+  none of `ILighthouseClock`, `ILicenseService`, `IReportOwnerLookup`, `IReportReader`, `IReportWriter`,
+  `IReportMetricSeries`, `IRepository<>` (ArchUnitNET).
 
 ---
 
@@ -2008,7 +2051,8 @@ To `nw-platform-architect`: this DESIGN section, ADR-219..222, `design/wave-deci
 - **External integrations / contract tests**: none — N/A.
 - **Operational**: no new configuration, no background work, no new secret.
 - **Outcome collision check**: `nwave-ai outcomes check-delta docs/feature/epic-5878-baseline/feature-delta.md` was
-  **not run** (no shell in this session); the coordinator runs it.
+  **run by the coordinator on 2026-10-13: 6 outcomes checked, 0 collisions found** (warnings only: the `OUT-5878-*`
+  outcomes are referenced but not yet in the registry).
 
 ---
 
@@ -2458,6 +2502,9 @@ DELIVER re-sketches only what is listed as open below.
   window can no longer be rebuilt." when `thenRebuildable` is false (D30). After delete: back to the list; the cap
   message clears when the count drops below 2. The owner's existing delete dialog appends "and its N reports" only when
   N ≥ 1 (D42).
+- **[DT8] Preset choices** — the approved DT3 sketch showed step ②'s lengths as one single-select group,
+  `( 30 days ) (● 90 days ) ( Custom: [ ] days )`: a Team offers 30 / 90, a Portfolio 90 / 180, plus a custom number of
+  days.
 
 Open for DELIVER: none of the layout; only exact spacing and the wizard's step labels if `CreateWizardShell` imposes a
 form.
@@ -2483,19 +2530,30 @@ ADO Story), `it.skip` (frontend), `test.fixme` (E2E). DELIVER un-skips a slice's
 
 | Slice | Scenarios | Cases | Error + boundary cases |
 |---|---|---|---|
-| 01 Reports tab, Team report, {Cycle Time} | 63 | 78 | 41 |
-| 02 Then ended in the past | 22 | 28 | 21 |
+| 01 Reports tab, Team report, {Cycle Time} | 69 | 85 | 46 |
+| 02 Then ended in the past | 28 | 51 | 44 |
 | 03 {Cycle Time} beyond Then's limits | 9 | 10 | 8 |
-| 04 {Throughput} and the shown metrics | 12 | 12 | 6 |
+| 04 {Throughput} and the shown metrics | 14 | 14 | 7 |
 | 05 {WIP} and {Work Item Age} | 10 | 10 | 3 |
 | 06 Reports on Portfolios | 14 | 14 | 4 |
-| 07 Now length, days since Then ended | 13 | 16 | 10 |
-| 08 Delete and the Community cap | 31 | 32 | 21 |
-| 10 Edit a report | 19 | 21 | 15 |
-| **Total** | **193** | **221** | **129 (58%); error alone 94 (43%)** |
+| 07 Now length, days since Then ended | 14 | 21 | 15 |
+| 08 Delete and the Community cap | 33 | 34 | 23 |
+| 10 Edit a report | 20 | 22 | 16 |
+| **Total** | **211** | **261** | **166 (64%); error alone 110 (42%)** |
 
-By layer: 127 backend cases, 93 frontend cases, 1 E2E walking skeleton. A scenario naming two slices is listed under
-the first; where its cases depend on the later slice, each case carries that slice's own marker (`ReportUsageEventsTests`).
+By layer: 144 backend cases, 116 frontend cases, 1 E2E walking skeleton. A scenario naming two slices is listed under
+the first; where its cases depend on the later slice, each case carries that slice's own marker (`ReportUsageEventsTests`,
+`ReportWindowBoundaryScenarios`). *Revised 2026-10-13 after DESIGN's revision* (rows 7, 14, 15, 36, 101, 149, 180,
+188, 190 changed; rows 194–211 new). Of the 24 boundary-table cases (12 per stack), the 10 that expect a refusal are
+counted as error cases.
+
+**Traceability of the ACs DISCUSS added on 2026-10-13**: AC-1.8 (loading and failure looks) → rows 14, 15, 36, 149
+(`@ac-1.8`); AC-10.6 (a save over another Team Admin's change) → rows 180 and 190 (`@ac-10.6`). The {Throughput}
+example now on Team Lightspeed (Then 90 days to 31 Jul 2026, Now 5 Jul – 2 Oct 2026, 52 → 65) → row 206 and the
+frontend kit's engagement-start report; the Team Gravity case stays for the days-above-the-limit count (row 101).
+
+**The frontend's outbound contract is the `ReportService` port.** A write is asserted by at most one payload check on
+that port (or on the usage reporter), next to what the screen then shows; no case counts calls.
 
 Every case also carries `@contract-shape:` and, where a KPI is counted, `@kpi-OUT-5878-K1-report-created`,
 `@kpi-OUT-5878-K2-reports-reopened`, `@kpi-OUT-5878-K4-community-cap-reached` or
@@ -2510,15 +2568,15 @@ Metrics tab's for the same days) is `The_rebuilt_Then_matches_the_Metrics_tab_fo
 | 4 | Opening the Reports tab travels as a tab opening naming that tab | 01 | 01,06 | `ReportUsageEventsTests.cs` | backend AT (HTTP, real EF) | happy | 2 | @driving_port @kpi-OUT-5878-K1-report-created @contract-shape:bounded-change |
 | 5 | The report events are appended to the list of names never inserted | 01 | 01,08 | `ReportUsageEventsTests.cs` | backend AT (HTTP, real EF) | happy | 3 | @contract-shape:bounded-change |
 | 6 | Then and Now is the first report type on its own list | 01 | 01 | `ReportUsageEventsTests.cs` | backend AT (HTTP, real EF) | happy | 1 | @contract-shape:bounded-change |
-| 7 | The usage data page describes what Reports send | 01 | 01,06 | `ReportUsageEventsTests.cs` | backend AT (HTTP, real EF) | happy | 6 | @contract-shape:bounded-change |
+| 7 | The usage data page has a row for what Reports send (full rows, found by their first column) | 01 | 01,06,08 | `ReportUsageEventsTests.cs` | backend AT (HTTP, real EF) | happy | 6 | @contract-shape:bounded-change |
 | 8 | names the report and leads back to the Reports list | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
 | 9 | shows the Cycle Time panel with Then's and Now's 85th percentile and the Work Items behind them | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @contract-shape:pure-function |
 | 10 | tells a shorter Cycle Time as better by sign and arrow as well as colour | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
 | 11 | names every metric and the Work Items in the instance's words | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
 | 12 | shows a dash and says Then had no finished Work Items | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
 | 13 | shows a value backed by very few Work Items with that number beside it | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
-| 14 | shows only the way back and a spinner while the report is on its way | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
-| 15 | says the report could not be loaded and offers Retry, showing no numbers | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 14 | shows only the way back and a spinner while the report is on its way | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @ac-1.8 @contract-shape:pure-function |
+| 15 | says the report could not be loaded and offers Retry, showing no numbers | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @ac-1.8 @contract-shape:pure-function |
 | 16 | never lets a late answer for the report opened before land on the one opened now | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:unbounded-preservation |
 | 17 | reports one report opened, with its Type, once it has been open for five seconds | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @kpi-OUT-5878-K2-reports-reopened @contract-shape:bounded-change |
 | 18 | reports nothing for a report left within five seconds | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:unbounded-preservation |
@@ -2539,7 +2597,7 @@ Metrics tab's for the same days) is `The_rebuilt_Then_matches_the_Metrics_tab_fo
 | 33 | shows an admin of a Team without reports an empty list and Create Report | 01 | 01 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
 | 34 | tells a reader of a Team without reports that a Team Admin can create one | 01 | 01 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
 | 35 | shows a spinner, never the empty list, while the list is on its way | 01 | 01 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
-| 36 | offers Retry, never the empty list, when the list cannot be read | 01 | 01 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 36 | says the list could not be loaded and offers Retry, never the empty list | 01 | 01 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @ac-1.8 @contract-shape:pure-function |
 | 37 | Without sign in anybody creates a report | 01 | 01 | `ReportsWithoutSignInScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
 | 38 | A coach freezes the Cycle Time of the last ninety days for a Team | 01 | 01 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @kpi-OUT-5878-K1-report-created @contract-shape:bounded-change |
 | 39 | Every reader of the Team finds the report in its list | 01 | 01 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
@@ -2604,7 +2662,7 @@ Metrics tab's for the same days) is `The_rebuilt_Then_matches_the_Metrics_tab_fo
 | 98 | ticks all four metrics, named in the instance's words | 04 | 04 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
 | 99 | cannot create a report showing no metric | 04 | 04 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
 | 100 | A Team can be reported on Cycle Time and Throughput | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
-| 101 | Higher Throughput is shown as total and per day with the days above Thens limit | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @kpi-OUT-5878-K2-reports-reopened @contract-shape:pure-function |
+| 101 | Days of Now with Throughput above Thens limit are counted (Team Gravity, 30-day windows) | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
 | 102 | A metric that is not shown is still frozen | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
 | 103 | A report that shows no metric is refused | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
 | 104 | A metric that is not in the catalog is refused | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
@@ -2652,7 +2710,7 @@ Metrics tab's for the same days) is `The_rebuilt_Then_matches_the_Metrics_tab_fo
 | 146 | reports the Team deleted and never a report deleted | 08 | 08 | `OverviewDashboard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:unbounded-preservation |
 | 147 | A report deleted travels as its name alone | 08 | 08 | `ReportUsageEventsTests.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:bounded-change |
 | 148 | A report deleted carrying its type is refused | 08 | 08 | `ReportUsageEventsTests.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
-| 149 | says a report that is gone no longer exists and leads back to the list | 08 | 08 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 149 | says a report that is gone no longer exists and leads back to the list | 08 | 08 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @ac-1.8 @contract-shape:pure-function |
 | 150 | offers an admin Edit report and Delete | 08 | 08,10 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
 | 151 | offers a reader neither | 08 | 08,10 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:unbounded-preservation |
 | 152 | deletes the report after asking, warns when its Then cannot be rebuilt, and goes back to the list | 08 | 08 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:bounded-change |
@@ -2683,7 +2741,7 @@ Metrics tab's for the same days) is `The_rebuilt_Then_matches_the_Metrics_tab_fo
 | 177 | saves a new name, a new Now and the shown metrics, never Then, over the report as it was read | 10 | 07,10 | `ReportView.editWizard.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @contract-shape:bounded-change |
 | 178 | cannot tick a metric the report never captured, and says why | 10 | 10 | `ReportView.editWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
 | 179 | cannot save a report showing no metric | 10 | 10 | `ReportView.editWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
-| 180 | says the report was changed by someone else when the save comes too late, keeping the edit | 10 | 10 | `ReportView.editWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:unbounded-preservation |
+| 180 | says the report was changed by someone else when the save comes too late, keeping the edit | 10 | 10 | `ReportView.editWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @ac-10.6 @contract-shape:unbounded-preservation |
 | 181 | dims the report under a spinner while it is read again after the save | 10 | 10 | `ReportView.editWizard.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
 | 182 | reports the report opened once, however often it is read again after edits | 10 | 01,10 | `ReportView.editWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @kpi-OUT-5878-K2-reports-reopened @contract-shape:unbounded-preservation |
 | 183 | Without sign in anybody edits a report | 10 | 10 | `ReportsWithoutSignInScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
@@ -2691,12 +2749,30 @@ Metrics tab's for the same days) is `The_rebuilt_Then_matches_the_Metrics_tab_fo
 | 185 | A changed Now length is stored for everyone | 10 | 07,10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
 | 186 | Ticking a metric that was frozen but hidden shows Then as it was on the day of creation | 10 | 04,10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
 | 187 | A metric the report never captured cannot be shown | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
-| 188 | Then cannot be edited | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 188 | Then cannot be edited (the edit is answered 200, Then members ignored, Then as frozen) | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
 | 189 | A reader cannot edit a report not even how long Now is | 10 | 07,10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
-| 190 | An edit saved over somebody elses is refused | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 190 | A save over another admins change is refused and overwrites nothing | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @ac-10.6 @contract-shape:unbounded-preservation |
 | 191 | An edit breaking the rules a new report follows is refused and changes nothing | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 3 | @driving_port @contract-shape:unbounded-preservation |
 | 192 | An edit that shows no metric is refused | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
 | 193 | Editing through another Teams address changes nothing | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 194 | The usage data page lists the Reports address among those it publishes | 01 | 01,06 | `ReportUsageEventsTests.cs` | backend AT (HTTP, real EF) | happy | 2 | @contract-shape:bounded-change |
+| 195 | lists a report of a type this version cannot show as not supported, and still lets an admin delete it | 01 | 01 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:unbounded-preservation |
+| 196 | holds Create Report until the list says whether another report may be created | 01 | 01,08 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 197 | draws no dates and goes no further while the report types are on their way | 01 | 01 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 198 | says the report types could not be loaded and offers Retry, going no further | 01 | 01 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 199 | says a report made by a newer version cannot be shown here and leads back to the list | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 200 | A Team that keeps every finished Work Item has no earliest start | 02 | 02 | `Slice02ThenInThePastScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:bounded-change |
+| 201 | A window at an edge is answered as the table says (the shared boundary table, E12: 7 Then rows marked slice 02, 5 Now rows marked slice 07) | 02 | 02,07 | `ReportWindowBoundaryScenarios.cs` | backend AT (HTTP, real EF) | boundary | 12 | @driving_port @contract-shape:unbounded-preservation |
+| 202 | answers each Then row of the boundary table as the server does | 02 | 02 | `wizard/reportWindowCheck.test.ts` | frontend unit (Vitest, pure function) | boundary | 7 | @contract-shape:pure-function |
+| 203 | takes the shortest Then it allows from the server | 02 | 02 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 204 | names the oldest kept day the server answers when Then starts before it | 02 | 02 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 205 | lets Then start on any day when the Team keeps every finished Work Item | 02 | 02 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 206 | Higher Throughput is shown as the total and the average per day (Team Lightspeed: Then 90 days to 31 Jul 2026, Now 5 Jul – 2 Oct 2026, 52 → 65) | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @kpi-OUT-5878-K2-reports-reopened @contract-shape:pure-function |
+| 207 | puts a plain note in place of a metric this version cannot show, and shows the others | 04 | 04 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:unbounded-preservation |
+| 208 | answers each Now row of the boundary table as the server does | 07 | 07 | `wizard/reportWindowCheck.test.ts` | frontend unit (Vitest, pure function) | boundary | 5 | @contract-shape:pure-function |
+| 209 | holds Delete until it knows how many reports go with it | 08 | 08 | `OverviewDashboard.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 210 | says any reports it has go with it when their number cannot be read | 08 | 08 | `OverviewDashboard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 211 | An edit changes the name, the shown metrics and how long Now is, and nothing else (the edit universe: owner, type, creation, payload version, Then, every capture, unknown payload members and the Team's other report unchanged) | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:bounded-change |
 
 ## Wave: DISTILL / [REF] WS strategy
 
@@ -2717,6 +2793,7 @@ the real Reports tab and report view. Tier B: not used (DST-11).
 | `Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.test.tsx`, `ReportsTab.createWizard.test.tsx`, `ReportView.test.tsx`, `ReportView.editWizard.test.tsx` | Colocated with the components; `Common/` because Teams and Portfolios share them |
 | `…/pages/Teams/Detail/TeamDetail.reportsTab.test.tsx`, `…/pages/Portfolios/Detail/PortfolioDetail.reportsTab.test.tsx`, `src/services/UsageData/usageDataRouteKeys.reports.test.ts`, a new block in `src/pages/Overview/OverviewDashboard.test.tsx` | `<component>.<concern>.test.tsx` (refinement) |
 | `Lighthouse.Frontend/src/tests/ReportsTestKit.tsx` | Fixtures and steps shared by the Reports tests (the `RefinementTabTestKit` precedent) |
+| `Lighthouse.Frontend/src/tests/reportWindowBoundaries.json`, read by `…/Reports/wizard/reportWindowCheck.test.ts` and `Lighthouse.Backend.Tests/API/Integration/Reports/ReportWindowBoundaryScenarios.cs` | One table, two stacks (E12); the backend finds it from `Lighthouse.sln`, as `ReportUsageEventsTests` finds `docs/settings/usagedata.md` |
 | `Lighthouse.EndToEndTests/tests/specs/teams/Reports.spec.ts` + POMs `tests/models/reports/ReportsListPage.ts`, `ReportPage.ts`; `TeamDetailPage` gains `reportsTab`, `goToReports()` | Specs through POMs only, demo data |
 
 ## Wave: DISTILL / [REF] Driving adapter coverage
@@ -2759,9 +2836,13 @@ providers).
 | `Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.tsx`, `ReportView.tsx` | `__SCAFFOLD__` | throw on render |
 | `Lighthouse.Frontend/src/models/Reports/Report.ts` | types only | — |
 | `IApiServiceContext.reportService` (+ default and mock entries) | additive | read by no production code yet |
+| `Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportWindowCheck.ts` | `__SCAFFOLD__` | throws; the pure window check over the server's bounds (DD26), named by DESIGN |
+| `Lighthouse.Frontend/src/tests/reportWindowBoundaries.json` | test data | the shared boundary table (E12), read by `reportWindowCheck.test.ts` and by `ReportWindowBoundaryScenarios` |
 
 No wizard component is scaffolded: the tests reach it through the tab and the view, so DELIVER is free to shape it
-(upstream issue 5). Backend: none (DST-1). No EF migration.
+(upstream issue 5). Backend: none (DST-1) — the backend half of the boundary table runs through the create endpoint,
+not against `ReportWindowPolicy`, so it needs no guessed type. No EF migration. Scaffold comments say what they stand
+in for, in plain words.
 
 ## Wave: DISTILL / [REF] Pre-requisites
 
@@ -2780,9 +2861,8 @@ Reports endpoints (fake).
 
 ## Wave: DISTILL / [REF] RED classification
 
-220 of 220 runnable cases fail for missing behaviour when un-skipped (127 backend, 93 frontend); none broken. Three
-frontend cases that were green on the first run were tightened so each first proves the new behaviour is there. E2E
-type-checked and listed, not run live. Detail: `distill/red-classification.md`.
+260 of 260 runnable cases fail for missing behaviour when un-skipped (144 backend, 116 frontend); none broken (re-run
+2026-10-13 after the revision). E2E type-checked and listed, not run live. Detail: `distill/red-classification.md`.
 
 
 ## Wave: DISTILL / [REF] Review
@@ -2804,3 +2884,26 @@ were not re-dispatched: those waves were reviewed and pushed before this run and
 | (medium) The tab opening's route key is not asserted, only the published address | Kept, as in the sibling usage-event tests: the published address is what the disclosure page promises |
 | (low) Comments citing "the report mockup", "the day of the story", "DESIGN"; awkward names ("todays", "Thens limits", "at the engagement start"); `%s` in a test title; an unused reason code; a negative-only dialog check; error share framed as error + boundary | Fixed |
 | (low) "Is open to a reader" asserts `toBeEnabled` | Kept: a switched-off MUI tab is disabled, so it can fail |
+
+**Second round (2026-10-13), after the Final Wave Review Gate and DESIGN's revision.** DISTILL reviewer findings:
+
+| Finding | Resolution |
+|---|---|
+| (high-1) The preset buttons were proposed copy, not a recorded decision | They were in the approved DT3 sketch; recorded as [DT8] in the maintainer-decisions block |
+| (high-2) `toHaveBeenCalledTimes` and several payload checks per write | No call counts remain; at most one payload check per write on the `ReportService` port or the usage reporter, beside the on-screen outcome |
+| (low-1) The Portfolio preset case never showed 90 days | It asserts the 90-days button too |
+| (low-2) The reader's list was empty, so it proved nothing about reading | A report is created first and the reader's list must hold it |
+| (low-3), (low-4) | Kept as they were, following the sibling suites' precedent |
+| (low-5) "The day of the story" names | `TodayOnTheInstance`, `TodayOnTheWire`, `NinetyDaysToToday`, `TODAY_ON_THE_INSTANCE` |
+| (low-6) Scaffold comments named a wave and an Epic | Plain words saying what each placeholder stands in for |
+| (low-7) `ITS_NOT_ALWAYS_WHAT_IT_SEEMS_SCENARIO_ID` | `TEAM_LIGHTSPEED_HISTORY_SCENARIO_ID` |
+| (low-8) The disclosure check matched bare names | Each row is found by its first column and must name what travels; the addresses by their code span |
+
+DESIGN's contract changes folded in: `atThen` / `atNow` on the wire (DD27); `thenAndNow.thenRebuildable` on list rows
+(DD24); `minimumLengthDays` and a nullable `earliestStart` on the templates read, the wizard's refusal copy taking both
+from it (DD26, with the shared boundary table E12 run on both stacks, cutoff 0 included); cap 403, unknown type 422, an
+edit carrying Then answered 200 with Then unchanged (DD28, DD25); the edit universe (DD25, row 211); the looks of
+"Loading and failure looks" and DD32. Copy DESIGN added is the working copy here and **DELIVER's sketch confirms it**:
+"Reports couldn't be loaded. Reload to try again.", "Report types couldn't be loaded.", "Not supported in this
+version", "This report was made by a newer version of Lighthouse and can't be shown here.", "This metric can't be shown
+in this version of Lighthouse.", "and any reports it has".
