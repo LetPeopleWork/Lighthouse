@@ -78,6 +78,7 @@ export const createMockApiServiceContext = (
 		refinementService:
 			null as unknown as IApiServiceContext["refinementService"],
 		sizingLogService: null as unknown as IApiServiceContext["sizingLogService"],
+		reportService: null as unknown as IApiServiceContext["reportService"],
 		...overrides,
 	};
 };

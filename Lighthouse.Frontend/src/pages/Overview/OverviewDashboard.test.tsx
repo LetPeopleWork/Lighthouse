@@ -1,5 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import type React from "react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
@@ -20,6 +26,11 @@ import {
 	createMockUpdateSubscriptionService,
 	createMockWorkTrackingSystemService,
 } from "../../tests/MockApiServiceProvider";
+import {
+	aListedReport,
+	aReportList,
+	aReportService,
+} from "../../tests/ReportsTestKit";
 import OverviewDashboard from "./OverviewDashboard";
 
 // The one pair of events nothing else can keep straight. Both call sites sit in the same handler,
@@ -922,6 +933,102 @@ describe("OverviewDashboard", () => {
 			await waitFor(() =>
 				expect(reportUsage).toHaveBeenCalledWith({ name: "TeamDeleted" }),
 			);
+		});
+	});
+
+	// A Team or Portfolio takes its reports with it, so the confirmation says how many go too.
+	describe("deleting a Team or Portfolio that has reports", () => {
+		const withReports = (count: number) =>
+			aReportService({
+				getReports: vi.fn().mockResolvedValue(
+					aReportList(
+						Array.from({ length: count }, (_, index) =>
+							aListedReport({ id: index + 1, name: `Report ${index + 1}` }),
+						),
+						count >= 2,
+					),
+				),
+			});
+
+		const askToDeleteTheFirstRowOf = async (
+			section: "portfolios" | "teams",
+			reports: number,
+		) => {
+			const rbacService = createMockRbacService();
+			rbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+				isRbacEnabled: true,
+				isSystemAdmin: true,
+				canCreateTeam: true,
+				canCreatePortfolio: true,
+			});
+			const reportService = withReports(reports);
+			renderWithProviders(<OverviewDashboard />, {
+				rbacService,
+				reportService,
+			});
+			await waitFor(() => {
+				expect(screen.getByText("Portfolios")).toBeInTheDocument();
+			});
+			const grids = screen.getAllByTestId("datagrid-container");
+			fireEvent.click(
+				(section === "portfolios" ? grids[0] : grids[1]).querySelectorAll(
+					'[data-testid="delete-item-button"]',
+				)[0],
+			);
+			return { dialog: await screen.findByRole("dialog"), reportService };
+		};
+
+		// @us-08 @slice-08 @driving_port @contract-shape:pure-function
+		it.skip.each([
+			["teams", "Test Team 1"],
+			["portfolios", "Test Project 1"],
+		] as const)(
+			"names how many reports go with it when one of the %s is deleted",
+			async (section, name) => {
+				const { dialog } = await askToDeleteTheFirstRowOf(section, 2);
+
+				await waitFor(() =>
+					expect(dialog).toHaveTextContent(
+						`Do you really want to delete ${name} and its 2 reports?`,
+					),
+				);
+			},
+		);
+
+		// @us-08 @slice-08 @boundary @contract-shape:pure-function
+		it.skip("says nothing about reports when there are none", async () => {
+			const { dialog, reportService } = await askToDeleteTheFirstRowOf(
+				"teams",
+				0,
+			);
+
+			await waitFor(() =>
+				expect(reportService.getReports).toHaveBeenCalledWith({
+					kind: "team",
+					id: 1,
+				}),
+			);
+			expect(dialog).toHaveTextContent(
+				"Do you really want to delete Test Team 1?",
+			);
+			expect(dialog).not.toHaveTextContent(/report/i);
+		});
+
+		// @us-08 @slice-08 @error @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:unbounded-preservation
+		// Reports going with their Team are not somebody deleting a report.
+		it.skip("reports the Team deleted and never a report deleted", async () => {
+			reportUsage.mockClear();
+			const { dialog } = await askToDeleteTheFirstRowOf("teams", 2);
+			await waitFor(() =>
+				expect(dialog).toHaveTextContent("and its 2 reports"),
+			);
+
+			fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
+
+			await waitFor(() =>
+				expect(reportUsage).toHaveBeenCalledWith({ name: "TeamDeleted" }),
+			);
+			expect(reportUsage).not.toHaveBeenCalledWith({ name: "ReportDeleted" });
 		});
 	});
 

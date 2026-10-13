@@ -1,0 +1,302 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+	fireEvent,
+	type RenderResult,
+	render,
+	screen,
+	within,
+} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import type React from "react";
+import { MemoryRouter } from "react-router";
+import { vi } from "vitest";
+import type {
+	IReport,
+	IReportList,
+	IReportListItem,
+	IReportOwner,
+	IReportTemplates,
+	IReportValue,
+	ReportAbsentReason,
+	ReportMetricKey,
+} from "../models/Reports/Report";
+import { TERMINOLOGY_KEYS } from "../models/TerminologyKeys";
+import { ApiError } from "../services/Api/ApiError";
+import { ApiServiceContext } from "../services/Api/ApiServiceContext";
+import type { IReportService } from "../services/Api/ReportService";
+import {
+	createMockApiServiceContext,
+	createMockRbacService,
+} from "./MockApiServiceProvider";
+
+/**
+ * The Reports of one Team or Portfolio as a browser sees them, on the day every example is set: 2 Oct 2026,
+ * with finished Work Items kept back to 2 Oct 2025. The report the examples open is the engagement-start
+ * report of Team Lightspeed - Then the 90 days to 31 Jul 2026, Now the last 90 days - with one set of
+ * numbers for each of the four metrics, chosen so every change has a sign and a whole percentage.
+ *
+ * Who counts as an editor comes from useRbac() alone, so a viewer is set up by the authorisation summary
+ * the page reads, never by a flag handed to the component.
+ */
+
+export const LIGHTSPEED: IReportOwner = { kind: "team", id: 1 };
+export const APOLLO: IReportOwner = { kind: "portfolio", id: 3 };
+
+export const THE_DAY_OF_THE_STORY = "2026-10-02";
+export const ENGAGEMENT_START = "Then & Now — engagement start";
+export const ENGAGEMENT_START_ID = 42;
+
+export const ALL_FOUR_METRICS: ReportMetricKey[] = [
+	"cycle-time",
+	"throughput",
+	"wip",
+	"work-item-age",
+];
+
+/** The seeded words, so a test that renames one shows the page uses the instance's word. */
+export const defaultTerms: Record<string, string> = {
+	[TERMINOLOGY_KEYS.TEAM]: "Team",
+	[TERMINOLOGY_KEYS.PORTFOLIO]: "Portfolio",
+	[TERMINOLOGY_KEYS.WORK_ITEMS]: "Work Items",
+	[TERMINOLOGY_KEYS.CYCLE_TIME]: "Cycle Time",
+	[TERMINOLOGY_KEYS.THROUGHPUT]: "Throughput",
+	[TERMINOLOGY_KEYS.WIP]: "WIP",
+	[TERMINOLOGY_KEYS.WORK_ITEM_AGE]: "Work Item Age",
+};
+
+export const CAP_SENTENCE =
+	"Community includes 2 reports per Team. Delete one, or use Premium for unlimited reports.";
+export const CUTOFF_REFUSAL =
+	"The Then window must start on or after 2 Oct 2025 — older finished Work Items are no longer kept.";
+export const THEN_TOO_SHORT = "Then needs at least 14 days.";
+export const NO_METRIC = "Choose at least one metric";
+export const NOT_CAPTURED = "Not captured for this report";
+export const FROZEN = "frozen, can't be changed";
+export const STALE_SAVE =
+	"This report was changed by someone else. Reload to see their changes.";
+export const CANNOT_BE_REBUILT = "This Then window can no longer be rebuilt.";
+export const LOADING = "Loading report…";
+export const COULD_NOT_LOAD =
+	"This report couldn't be loaded. Reload to try again.";
+export const NO_LONGER_EXISTS = "This report no longer exists.";
+
+export const aTemplateList = (): IReportTemplates => ({
+	today: THE_DAY_OF_THE_STORY,
+	earliestStart: "2025-10-02",
+	templates: [
+		{
+			templateKey: "then-and-now",
+			metrics: ALL_FOUR_METRICS.map((key) => ({ key })),
+		},
+	],
+});
+
+export const aListedReport = (
+	overrides: Partial<IReportListItem> = {},
+): IReportListItem => ({
+	id: ENGAGEMENT_START_ID,
+	name: ENGAGEMENT_START,
+	templateKey: "then-and-now",
+	ownerKind: "team",
+	ownerId: LIGHTSPEED.id,
+	createdOn: "2026-08-01",
+	thenRebuildable: true,
+	...overrides,
+});
+
+export const aReportList = (
+	reports: IReportListItem[],
+	creationBlockedByCap = false,
+): IReportList => ({ reports, creationBlockedByCap, communityCap: 2 });
+
+export const shown = (
+	value: number,
+	sampleSize: number | null = null,
+): IReportValue => ({ value, sampleSize, absentReason: null });
+
+export const aDash = (absentReason: ReportAbsentReason): IReportValue => ({
+	value: null,
+	sampleSize: null,
+	absentReason,
+});
+
+/** The engagement-start report: {Cycle Time} 21 → 12 days, {Throughput} 52 → 65, {WIP} 9 → 7, {Work Item Age} 610 → 880 days. */
+export const theEngagementStartReport = (
+	overrides: Partial<IReport> = {},
+): IReport => ({
+	id: ENGAGEMENT_START_ID,
+	name: ENGAGEMENT_START,
+	templateKey: "then-and-now",
+	ownerKind: "team",
+	ownerId: LIGHTSPEED.id,
+	createdOn: "2026-08-01",
+	concurrencyToken: "token-1",
+	shownMetricKeys: [...ALL_FOUR_METRICS],
+	thenAndNow: {
+		thenWindow: { start: "2026-05-03", end: "2026-07-31", lengthDays: 90 },
+		nowWindow: { start: "2026-07-05", end: "2026-10-02", lengthDays: 90 },
+		daysSinceThenEnded: 63,
+		thenRebuildable: true,
+		metrics: {
+			"cycle-time": {
+				atThen: { p85: shown(21, 38) },
+				atNow: { p85: shown(12, 41), p70: shown(7, 41), p50: shown(4, 41) },
+				beyondThenLimits: {
+					above: shown(1, 41),
+					below: aDash("lower-limit-zero"),
+				},
+			},
+			throughput: {
+				atThen: { total: shown(52, 90), perDay: shown(0.58, 90) },
+				atNow: { total: shown(65, 90), perDay: shown(0.72, 90) },
+				beyondThenLimits: { above: shown(2, 90), below: shown(0, 90) },
+			},
+			wip: {
+				atThen: {
+					average: shown(9, 90),
+					min: shown(6, 90),
+					max: shown(12, 90),
+				},
+				atNow: { average: shown(7, 90), min: shown(5, 90), max: shown(9, 90) },
+				beyondThenLimits: { above: shown(0, 90), below: shown(0, 90) },
+			},
+			"work-item-age": {
+				atThen: {
+					totalWindowAverage: shown(610, 10),
+					totalLastDay: shown(640, 10),
+					averageWindowAverage: shown(61, 10),
+					averageLastDay: shown(64, 10),
+				},
+				atNow: {
+					totalWindowAverage: shown(880, 10),
+					totalLastDay: shown(910, 10),
+					averageWindowAverage: shown(88, 10),
+					averageLastDay: shown(91, 10),
+				},
+				beyondThenLimits: {
+					above: shown(6, 90),
+					below: aDash("lower-limit-zero"),
+				},
+			},
+		},
+	},
+	...overrides,
+});
+
+/** A report service answering every read with the engagement-start report of Team Lightspeed. */
+export const aReportService = (
+	overrides: Partial<IReportService> = {},
+): IReportService => ({
+	getTemplates: vi.fn().mockResolvedValue(aTemplateList()),
+	getReports: vi.fn().mockResolvedValue(aReportList([aListedReport()])),
+	getReport: vi.fn().mockResolvedValue(theEngagementStartReport()),
+	createReport: vi.fn().mockResolvedValue(ENGAGEMENT_START_ID),
+	editReport: vi.fn().mockResolvedValue(theEngagementStartReport()),
+	deleteReport: vi.fn().mockResolvedValue(undefined),
+	...overrides,
+});
+
+/** A refusal the way the API service hands it on: the status and the reason's code. */
+export const aRefusal = (status: number, reason: string): ApiError =>
+	new ApiError(status, `refused: ${reason}`, undefined, undefined, reason);
+
+export type Viewer = "admin" | "reader" | "rbacOff";
+
+const summaryFor = (viewer: Viewer, owner: IReportOwner) => ({
+	isRbacEnabled: viewer !== "rbacOff",
+	isSystemAdmin: false,
+	canCreateTeam: false,
+	canCreatePortfolio: false,
+	adminTeamIds: viewer === "admin" && owner.kind === "team" ? [owner.id] : [],
+	adminPortfolioIds:
+		viewer === "admin" && owner.kind === "portfolio" ? [owner.id] : [],
+});
+
+export const renderWithReports = (
+	ui: React.ReactElement,
+	{
+		reportService,
+		viewer = "admin",
+		owner = LIGHTSPEED,
+	}: {
+		reportService: IReportService;
+		viewer?: Viewer;
+		owner?: IReportOwner;
+	},
+): RenderResult & { rerenderWith: (element: React.ReactElement) => void } => {
+	const rbacService = createMockRbacService();
+	rbacService.getAuthorizationSummary = vi
+		.fn()
+		.mockResolvedValue(summaryFor(viewer, owner));
+
+	const queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+	});
+
+	const wrap = (element: React.ReactElement) => (
+		<QueryClientProvider client={queryClient}>
+			<MemoryRouter>
+				<ApiServiceContext.Provider
+					value={createMockApiServiceContext({ reportService, rbacService })}
+				>
+					{element}
+				</ApiServiceContext.Provider>
+			</MemoryRouter>
+		</QueryClientProvider>
+	);
+
+	const rendered = render(wrap(ui));
+	return {
+		...rendered,
+		rerenderWith: (element: React.ReactElement) =>
+			rendered.rerender(wrap(element)),
+	};
+};
+
+/** Text as a reader sees it: every run of white space read as one space. */
+export const readingOf = (element: HTMLElement): string =>
+	(element.textContent ?? "").replaceAll(/\s+/g, " ").trim();
+
+export const thePanel = async (title: string) =>
+	screen.findByRole("region", { name: title });
+
+export const thePanelTitles = () =>
+	screen
+		.queryAllByRole("region")
+		.map((panel) => readingOf(within(panel).getAllByRole("heading")[0]));
+
+// --- The create wizard, step by step ---
+
+export const theWizard = async () => screen.findByRole("dialog");
+
+export const next = async () =>
+	userEvent.click(
+		within(await theWizard()).getByRole("button", { name: "Next" }),
+	);
+
+export const theThenEndField = async () =>
+	within(await theWizard()).findByLabelText("Then ends on");
+
+export const theThenLengthField = async () =>
+	within(await theWizard()).findByRole("spinbutton", {
+		name: "Then length in days",
+	});
+
+export const theNowLengthField = async () =>
+	within(await theWizard()).findByRole("spinbutton", {
+		name: "Now length in days",
+	});
+
+export const theNameField = async () =>
+	within(await theWizard()).findByRole("textbox", { name: "Name" });
+
+export const chooseThenEnd = async (date: string) =>
+	fireEvent.change(await theThenEndField(), { target: { value: date } });
+
+export const enterNumber = async (field: HTMLElement, days: number) => {
+	await userEvent.clear(field);
+	await userEvent.type(field, String(days));
+};
+
+export const theMetricBox = async (name: string) =>
+	within(await theWizard()).findByRole("checkbox", { name });

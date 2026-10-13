@@ -1,6 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import { getLastUpdatedDateFromText } from "../../helpers/dates";
 import { MetricsPage } from "../metrics/MetricsPage";
+import { ReportsListPage } from "../reports/ReportsListPage";
 import { TeamEditPage } from "./TeamEditPage";
 import { TeamRefinementPage } from "./TeamRefinementPage";
 
@@ -188,6 +189,16 @@ export class TeamDetailPage {
 		await this.refinementTab.click();
 		await this.page.waitForURL(/\/teams\/\d+\/refinement$/);
 		return new TeamRefinementPage(this.page);
+	}
+
+	get reportsTab(): Locator {
+		return this.page.getByRole("tab", { name: "Reports", exact: true });
+	}
+
+	async goToReports(): Promise<ReportsListPage> {
+		await this.reportsTab.click();
+		await this.page.waitForURL(/\/teams\/\d+\/reports$/);
+		return new ReportsListPage(this.page);
 	}
 
 	async getLastUpdatedDate(): Promise<Date> {
