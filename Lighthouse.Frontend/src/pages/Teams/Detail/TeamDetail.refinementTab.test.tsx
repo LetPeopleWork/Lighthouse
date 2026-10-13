@@ -289,6 +289,7 @@ describe("The Refinement tab on a Team page", () => {
 			"Forecasts",
 			"Metrics",
 			"Refinement",
+			"Reports",
 			"Settings",
 			"Access",
 		]);

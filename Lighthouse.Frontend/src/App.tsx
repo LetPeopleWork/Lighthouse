@@ -227,6 +227,10 @@ const App: React.FC = () => {
 											</Route>
 											<Route path="/teams">
 												<Route path=":id/:tab?" element={<TeamDetail />} />
+												<Route
+													path=":id/:tab/:reportId"
+													element={<TeamDetail />}
+												/>
 												<Route path="edit/:id" element={<TeamEditRedirect />} />
 												<Route path="new" element={<EditTeam />} />
 											</Route>

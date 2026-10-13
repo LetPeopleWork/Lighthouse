@@ -159,7 +159,7 @@ describe("The Reports tab on a Team page", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:pure-function
-	it.skip("sits between Refinement and Settings", async () => {
+	it("sits between Refinement and Settings", async () => {
 		renderTheTeamPage("teamAdmin");
 
 		await theReportsTab();
@@ -178,14 +178,14 @@ describe("The Reports tab on a Team page", () => {
 	});
 
 	// @us-01 @slice-01 @contract-shape:pure-function
-	it.skip("is open to a reader", async () => {
+	it("is open to a reader", async () => {
 		renderTheTeamPage("reader");
 
 		expect(await theReportsTab()).toBeEnabled();
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:pure-function
-	it.skip("opens the Team's reports and puts the tab in the address", async () => {
+	it("opens the Team's reports and puts the tab in the address", async () => {
 		renderTheTeamPage("reader");
 
 		await userEvent.click(await theReportsTab());
@@ -199,7 +199,7 @@ describe("The Reports tab on a Team page", () => {
 	});
 
 	// @us-01 @slice-01 @contract-shape:pure-function
-	it.skip("opens straight onto the Team's reports from an address that names the tab", async () => {
+	it("opens straight onto the Team's reports from an address that names the tab", async () => {
 		mockParams = { id: "1", tab: "reports" };
 		renderTheTeamPage("reader");
 
@@ -208,7 +208,7 @@ describe("The Reports tab on a Team page", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:pure-function
-	it.skip("opens one report under the Reports tab from an address that names it", async () => {
+	it("opens one report under the Reports tab from an address that names it", async () => {
 		mockParams = { id: "1", tab: "reports", reportId: "42" };
 		renderTheTeamPage("reader");
 

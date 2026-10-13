@@ -41,6 +41,8 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 import { reportFailedNavigation } from "../../../utils/navigation";
+import ReportsTab from "../../Common/Reports/ReportsTab";
+import ReportView from "../../Common/Reports/ReportView";
 import RefinementView from "./Refinement/RefinementView";
 import TeamFeaturesView from "./TeamFeaturesView";
 import TeamForecastView from "./TeamForecastView";
@@ -51,6 +53,7 @@ const TEAM_VIEWS = [
 	"forecasts",
 	"metrics",
 	"refinement",
+	"reports",
 	"settings",
 	"access",
 ] as const;
@@ -83,7 +86,11 @@ const refinementTabTooltip = (
 
 const TeamDetail: React.FC = () => {
 	const navigate = useNavigate();
-	const { id, tab } = useParams<{ id: string; tab?: string }>();
+	const { id, tab, reportId } = useParams<{
+		id: string;
+		tab?: string;
+		reportId?: string;
+	}>();
 	const teamId = Number(id);
 
 	const { getTerm } = useTerminology();
@@ -545,6 +552,7 @@ const TeamDetail: React.FC = () => {
 												disabled={!team.refinementConfigured}
 												aria-label={refinementTerm}
 											/>
+											<Tab label="Reports" value="reports" />
 											{showSettingsTab && (
 												<Tab label="Settings" value="settings" />
 											)}
@@ -594,6 +602,16 @@ const TeamDetail: React.FC = () => {
 								{activeView === "refinement" && team.refinementConfigured && (
 									<RefinementView team={team} />
 								)}
+
+								{activeView === "reports" &&
+									(reportId ? (
+										<ReportView
+											owner={{ kind: "team", id: team.id }}
+											reportId={Number(reportId)}
+										/>
+									) : (
+										<ReportsTab owner={{ kind: "team", id: team.id }} />
+									))}
 
 								{activeView === "settings" && team && (
 									<ModifyTeamSettings
