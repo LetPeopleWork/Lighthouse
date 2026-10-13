@@ -1,5 +1,5 @@
 ---
-description: AFK mode — drive a feature autonomously through DESIGN → DEVOPS → DISTILL → DELIVER, then refactor → adversarial review → mutation, and HOLD. Stops only for a decision that genuinely needs the maintainer. Never pushes. Stays on until explicitly switched off.
+description: AFK mode — drive a feature autonomously through DESIGN → DEVOPS → DISTILL → DELIVER, with refactor + adversarial review and a 5-minute review window after each slice, then a final refactor → review → mutation, and HOLD. Stops only for a decision that genuinely needs the maintainer. Never pushes. Stays on until explicitly switched off.
 argument-hint: "[feature-id] | off | status"
 ---
 
@@ -32,7 +32,7 @@ never be committed):
 
 Update `position` at every wave or step boundary and append one line to `log` per meaningful event
 (wave done, gate result, decision taken, commit). Read the marker at the start of **every** turn while
-it exists: if it exists and says `running` or `blocked`, you are in AFK mode, whatever the new message
+it exists: if it exists and says `running`, `blocked` or `paused`, you are in AFK mode, whatever the new message
 says.
 
 ## Leaving AFK mode — only on an explicit word
@@ -59,13 +59,30 @@ are reviewed is complete.
 4. **DISTILL** (`nw-distill`), including its mandatory multi-reviewer gate.
 5. **DELIVER** (`nw-deliver`): roadmap → roadmap review → every step through DES → integrity check.
    Stop at the end of the steps — **do not** run DELIVER's own finalize or push.
-6. **Quality gates, in this order**:
-   1. **Refactor** (L1–L6, `nw-refactor`).
-   2. **Adversarial review** — on a strong model, never a lightweight one; demand a verbatim quote for
-      every cited line and spot-check any citation before acting on it. One revision pass for its
-      findings; blockers must be fixed and proven (a test that fails before the fix and passes after).
+   **At the end of every slice** (the last step of a roadmap phase is committed), before the next
+   slice's first step:
+   1. **Refactor** the slice's code (L1–L6, `nw-refactor`), scoped to what the slice touched.
+   2. **Adversarial review** of the slice, with the same rules as the final review below (strong model,
+      verbatim quotes, one revision pass, blockers fixed and proven).
+   3. **Review window — 5 minutes.** Post a slice summary (what the slice delivered, its commits, the
+      refactor and review outcome, anything worth a look) ending with: *"Review window open for 5 min:
+      say **hold** to pause before the next slice; otherwise I carry on at HH:MM."* Start a background
+      timer (`sleep 300` via Bash `run_in_background`) and end the turn. Dispatch nothing while the
+      window is open.
+      - If the timer fires with no reply, continue with the next slice.
+      - If the maintainer says **hold** (or "wait", "pause"), set `status: "paused"` in the marker and
+        wait, still in AFK mode, until they say "go on" / "continue" / "resume". Any other reply in the
+        window is remote input: apply it, then continue as soon as the window closes.
+      - Delete or ignore the timer's notification once the window is already settled.
+6. **Final quality gates, after the last slice**, in this order:
+   1. **Refactor** (L1–L6, `nw-refactor`) across the whole feature.
+   2. **Adversarial review** of the whole feature — on a strong model, never a lightweight one; demand a
+      verbatim quote for every cited line and spot-check any citation before acting on it. One revision
+      pass for its findings; blockers must be fixed and proven (a test that fails before the fix and
+      passes after).
    3. **Mutation testing** (`/mutation-testing`) — ≥ 80 % kill rate on each stack the feature touched.
-      Kill real survivors with tests; justify equivalent ones in writing.
+      Kill real survivors with tests; justify equivalent ones in writing. It runs **only here, once**, on
+      frozen code: any later edit shifts the mutated line ranges and makes earlier scores stale.
 7. **HOLD.** Write the summary (what shipped locally, gate numbers, decisions taken, open questions,
    commits ahead of origin), set `status: "holding"`, send one push notification, and do nothing more.
    Do not finalize, do not push, do not start the next feature.
