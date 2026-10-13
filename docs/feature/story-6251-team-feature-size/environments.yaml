@@ -5,11 +5,13 @@
 # the axes along which the acceptance scenarios vary, and only where this story can behave differently.
 #
 # Left out on purpose:
-#   - operating system: nothing here is platform-sensitive.
+#   - operating system: nothing here is platform-sensitive. CI runs Linux only, so the platform lists below are
+#     informational, not tested.
 #   - premium vs free licence: both widgets are free on both owners (DESIGN DDD-12). The screenshot run is the
 #     one exception and carries the premium fixture as a precondition.
-#   - renamed terminology: the new copy goes through the existing terminology hooks like every other widget
-#     caption. DISTILL adds the axis only if the sketched copy names a term in a new way.
+#
+# Amended 2026-10-13 (review round): renamed-terminology, reader-permission and portfolio-empty-range axes added;
+# postgres no longer claimed as covered by CI; screenshot-capture made unconditional; demo Teams corrected.
 
 schema_version: 1
 feature_id: story-6251-team-feature-size
@@ -24,17 +26,27 @@ target_environments:
 
   - name: multi-team-demo
     description: >
-      Demo data with the Ocean Explorer Portfolio. The only place a Feature has several contributing Teams
-      (OE-002: Equinox, Gravity, Zenith; OE-007: Gravity, Zenith). The dev instance has one Team and can't
-      produce one.
+      Demo data, "Dependencies" scenario (DemoDataService.cs:447-463) with Project Ocean Explorer and Teams Zenith,
+      Lightspeed, Gravity, Meridian and Equinox. The only place a Feature has several contributing Teams, per the
+      demo CSVs: OE-001 (Gravity, Meridian, Zenith), OE-002 (Equinox, Gravity, Lightspeed, Zenith),
+      OE-007 (Gravity, Lightspeed, Zenith), OE-008 (Gravity, Zenith). OE-008 is in the Portfolio, and a Delivery
+      leaving it out does not matter here. The dev instance has one Team and can't produce one.
+      (amended 2026-10-13: Lightspeed added to OE-002/OE-007; OE-001 and OE-008 added)
     platform: [linux]
     preconditions:
-      - "Demo data loaded (Settings → Demo data, or the E2E demo seed)"
+      - "Demo data loaded (Settings → Demo data, or the E2E demo seed), including the premium Dependencies scenario"
 
   - name: team-without-portfolio
-    description: A Team whose Work Items have parents that no Portfolio loads. Drives the Team empty state.
+    description: A Team whose Work Items have parents that no Portfolio loads. Drives the Team empty state, `No {Features} to show.` (UI-2).
     platform: [linux, macos]
     preconditions: ["A Team with no Portfolio around its hierarchy"]
+
+  - name: portfolio-empty-range
+    description: >
+      A Portfolio with no Feature closed in the selected range and none To Do or In Progress. Drives the Portfolio's
+      always-placed scatter frame with `No {Features} to show.` (UI-2, AC-1.10). (added 2026-10-13)
+    platform: [linux]
+    preconditions: ["A Portfolio and a range with no Done Feature closed in it and no open Feature"]
 
   - name: same-id-team-and-portfolio
     description: >
@@ -44,16 +56,41 @@ target_environments:
     preconditions: ["Team.Id == Portfolio.Id, each with work in the selected range"]
 
   - name: postgres
-    description: The multi-replica and SaaS provider. CI runs it via ci_verifypostgres.
+    description: >
+      The PostgreSQL provider. CI does NOT exercise the Team Feature Size routes on it: the backend suites run on
+      SQLite, and no E2E spec opens a Team's Feature Size (AFK-4). Covered by a manual DELIVER exit gate at the end
+      of slice 01 (AFK-3). (amended 2026-10-13: was "CI runs it via ci_verifypostgres")
     platform: [linux]
-    preconditions: ["PostgreSQL provider"]
+    preconditions: ["PostgreSQL provider (Database__Provider=postgres)", "Demo data loaded"]
+
+  - name: renamed-terminology
+    description: >
+      Feature, Team and Work Item renamed under Settings → Terminology. The Team scatter's axis label, tooltip and
+      screen-reader label, and both Team info descriptions, render the renamed words. Portfolio strings are unchanged.
+      (added 2026-10-13)
+    platform: [linux]
+    preconditions: ["Terminology for Feature, Team and Work Item set to non-default words"]
+
+  - name: reader-with-team-read-only
+    description: >
+      Authentication on; the reader holds TeamRead on the Team and no read on at least one Portfolio a plotted
+      Feature belongs to. The Feature is shown; that Portfolio is not named (AFK-6). (added 2026-10-13)
+    platform: [linux]
+    preconditions: ["Auth enabled", "RBAC grant: TeamRead on the Team only"]
+
+  - name: reader-without-team-read
+    description: Authentication on; the reader has no TeamRead on the Team. The three routes answer 404 (AFK-1). (added 2026-10-13)
+    platform: [linux]
+    preconditions: ["Auth enabled", "No RBAC grant on the Team"]
 
   - name: screenshot-capture
-    description: The @screenshot run, if DISTILL adds a Team Feature Size image to the docs.
+    description: >
+      The @screenshot run for the docs. Unconditional: run at finalize whatever DISTILL decided about a Team image.
+      (amended 2026-10-13: was conditional)
     platform: [linux]
     preconditions:
-      - "Premium licence fixture present (gitignored, ABSENT in a worktree; copy it from the main checkout)"
-      - "Target PNG deleted before the run (a diff under the pixel threshold silently keeps the old file)"
+      - "DELIVER step: copy the premium licence fixture from the main checkout (gitignored, ABSENT in a worktree)"
+      - "DELIVER step: delete each target PNG before the run (a diff under the pixel threshold silently keeps the old file)"
 
 scenario_axes:
   owner_scoped_cache:
@@ -61,7 +98,7 @@ scenario_axes:
     vary_over: [same-id-team-and-portfolio]
     rationale: The collision exists only when the ids match.
   team_share:
-    criteria: [AC-1.1, AC-1.2, AC-1.3, AC-2.1]
+    criteria: [AC-1.1, AC-1.2, AC-1.3, AC-1.9, AC-2.1]
     vary_over: [clean, multi-team-demo]
     rationale: AC-1.2 (shares add up to the Portfolio size) needs a multi-team Feature.
   query_shape:
@@ -69,11 +106,20 @@ scenario_axes:
     vary_over: [clean, postgres]
     rationale: >
       The Team's Features are selected by a predicate over FeatureWork that runs in SQL. A predicate EF
-      translates on SQLite and not on Postgres would show here. CI runs both providers.
+      translates on SQLite and not on Postgres would show here. CI covers SQLite only; Postgres is the manual
+      DELIVER exit gate (command and the three responses recorded in the evolution record). Residual risk accepted.
   empty_state:
-    criteria: [AC-1.6]
-    vary_over: [team-without-portfolio]
-    rationale: Only reachable without a Portfolio around the Team's hierarchy.
+    criteria: [AC-1.6, AC-1.10]
+    vary_over: [team-without-portfolio, portfolio-empty-range]
+    rationale: The empty state is the same on both owners (UI-2), and each owner reaches it differently.
+  terminology:
+    criteria: [AC-1.5, AC-2.4]
+    vary_over: [clean, renamed-terminology]
+    rationale: The Team copy names Feature, Team and Work Item; it must render the reader's words.
+  reader_permission:
+    criteria: [AC-1.7, AC-2.6]
+    vary_over: [reader-with-team-read-only, reader-without-team-read]
+    rationale: TeamRead decides 200 or 404; with TeamRead alone, unreadable Portfolios stay unnamed.
 
 coexistence_matrix:
   - tool: "Portfolio Feature Size scatter, percentiles, PBC and estimation routes"
@@ -85,8 +131,15 @@ coexistence_matrix:
   - tool: "Lighthouse-Clients CLI and MCP"
     must_not_break: true
     note: "They read Portfolio and Team metrics routes whose shapes do not change."
-  - tool: "Work Items dialog (featureSize context)"
+  - tool: "Work Items dialog (featureSize and inProgress contexts)"
     must_not_break: true
+    note: "On a Team, the Size column shows the Team's share (AFK-5)."
+  - tool: "Team Flow Overview with the new Feature Size Percentiles widget"
+    must_not_break: true
+    note: "The widget joins the category; the other widgets keep their places and looks."
+  - tool: "A Team page open across a Portfolio refresh"
+    must_not_break: true
+    note: "Shows the share from before the refresh until its queries are asked again (AFK-8). Accepted and documented."
 
 platform_coverage:
   Linux: [Ubuntu 22.04, Ubuntu 24.04]
@@ -94,9 +147,12 @@ platform_coverage:
   Windows: [Server 2022]
   WSL: [WSL2]
   CI: [GitHub Actions ubuntu-latest]
+  note: "Informational. CI runs Linux only, and nothing in this story is platform-sensitive."
 
 deployment_assumptions:
   - "No installation step, no migration, no new setting, no new secret."
   - "The metrics cache lives only in memory per process. A new key format needs no data migration: old entries die with the old process."
-  - "Under a rolling update each replica keeps its own cache, so nothing is shared across versions."
-  - "Frontend and backend ship in one artifact, so the browser never meets a backend without the new routes."
+  - "Under a rolling update each replica keeps its own cache, so nothing is shared across versions. Cache invalidation was already per replica before this story."
+  - "During a rolling update, a new frontend can reach an old replica that lacks the three Team routes; the Team widgets show could-not-load until every replica runs the new build."
+  - "Frontend and backend ship in one artifact, so a single process never serves the new frontend without the new routes."
+  - "DELIVER, by hand: with the browser throttled to a slow connection, check the scatter's and the percentiles widget's loading and could-not-load looks on a Team and on a Portfolio."

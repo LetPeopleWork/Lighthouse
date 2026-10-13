@@ -8145,3 +8145,27 @@ jobs:
       anxiety: The same Feature shows a different size on the Team than on the Portfolio and reads as a bug
       habit: Judging a Feature's size by eye on the board, or not at all
     opportunity_score: {importance: 3, current_satisfaction: 1, gap: 2}
+  - id: job-flow-coach-trust-the-team-numbers-are-the-teams
+    title: Trust that every number on my Team's page is my Team's own
+    persona: flow-coach
+    feature_context: story-6251-team-feature-size
+    ado: Story #6251 (slice 00, folded in by the maintainer at DESIGN)
+    created: 2026-10-13
+    note: >
+      The metrics cache keyed each entry by the owner's id alone, and Teams and Portfolios number their ids
+      separately. So a Team and a Portfolio with the same id could be served each other's cached figures for
+      about twenty metrics, depending on which page was opened first. Reproduced at DISTILL.
+    job_story: >
+      When I read my Team's Flow Overview in a review,
+      I want every figure to be my Team's own,
+      so I can act on it without cross-checking the Portfolio.
+    dimensions:
+      functional: Every Team metric shows the Team's own value, whichever Team or Portfolio page was opened before it
+      emotional: From "is this even our number?" to reading the card out as it stands
+      social: Quote the Team's throughput in a review without someone pointing at the Portfolio's
+    forces:
+      push: On an instance where a Team and a Portfolio share an id, Total Throughput and Cycle Time showed the other owner's number (reproduced at DISTILL; Team throughput 3 against the Portfolio's 5, Cycle Time 50th 2 against 21)
+      pull: Each owner already has its own metrics service, so only the cache key needs to tell them apart
+      anxiety: A fix that changes some single-owner number by accident
+      habit: Reloading or opening the other page to see whether the number moves
+    opportunity_score: {importance: 4, current_satisfaction: 2, gap: 2}

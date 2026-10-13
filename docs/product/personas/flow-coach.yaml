@@ -25,6 +25,7 @@ primary_jobs:
   - job-snow-flow-coach-see-flow-metrics  # epic-5513-servicenow-integration (2026-07-27, #5513): same flow metrics on ServiceNow work as on Jira/ADO work
   - job-flow-coach-act-before-sle-breach  # epic-4127-sle-risk (2026-09-16, #4127): per-item probability of breaching the published SLE, while there is still time to act
   - job-flow-coach-know-how-much-of-a-feature-we-take-on  # story-6251-team-feature-size (2026-10-13, #6251): this Team's share of each Feature, sized against its own percentiles
+  - job-flow-coach-trust-the-team-numbers-are-the-teams  # story-6251-team-feature-size (2026-10-13, #6251 slice 00): every figure on the Team's page is the Team's own, never a Portfolio's with the same id
 
 goals:
   - Spot work that's been sitting too long before it shows up as a missed forecast
