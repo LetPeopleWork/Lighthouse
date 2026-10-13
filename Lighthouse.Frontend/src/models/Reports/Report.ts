@@ -104,7 +104,8 @@ export interface IReportWindow {
 export interface IThenAndNow {
 	thenWindow: IReportWindow;
 	nowWindow: IReportWindow;
-	daysSinceThenEnded: number;
+	/** Not yet sent by the server; becomes required once it is. */
+	daysSinceThenEnded?: number;
 	thenRebuildable: boolean;
 	/** A metric the report never captured is missing here. */
 	metrics: Partial<Record<ReportMetricKey, IReportMetric | null>>;
@@ -212,7 +213,7 @@ export const ReportSchema: z.ZodType<IReport> = z.object({
 	thenAndNow: z.object({
 		thenWindow: ReportWindowSchema,
 		nowWindow: ReportWindowSchema,
-		daysSinceThenEnded: z.number(),
+		daysSinceThenEnded: z.number().optional(),
 		thenRebuildable: z.boolean(),
 		metrics: z.record(
 			z.string(),

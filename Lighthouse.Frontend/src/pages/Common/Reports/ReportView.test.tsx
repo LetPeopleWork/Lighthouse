@@ -129,7 +129,7 @@ describe("The report header", () => {
 	});
 
 	// @us-01 @slice-01 @contract-shape:pure-function
-	it.skip("names the report and leads back to the Reports list", async () => {
+	it("names the report and leads back to the Reports list", async () => {
 		openTheReport();
 
 		await theReportIsReady();
@@ -146,7 +146,7 @@ describe("The panels of a report", () => {
 	beforeEach(beforeEachReportTest);
 
 	// @us-01 @slice-01 @driving_port @contract-shape:pure-function
-	it.skip("shows the Cycle Time panel with Then's and Now's 85th percentile and the Work Items behind them", async () => {
+	it("shows the Cycle Time panel with Then's and Now's 85th percentile and the Work Items behind them", async () => {
 		openTheReport();
 
 		const panel = readingOf(await thePanel(CYCLE_TIME_PANEL));
@@ -159,7 +159,7 @@ describe("The panels of a report", () => {
 
 	// @us-01 @slice-01 @contract-shape:pure-function
 	// Colour alone tells nobody who cannot see it; the sign and the arrow say the same.
-	it.skip("tells a shorter Cycle Time as better by sign and arrow as well as colour", async () => {
+	it("tells a shorter Cycle Time as better by sign and arrow as well as colour", async () => {
 		openTheReport();
 
 		const panel = await thePanel(CYCLE_TIME_PANEL);
@@ -232,7 +232,7 @@ describe("The panels of a report", () => {
 	});
 
 	// @us-01 @slice-01 @contract-shape:pure-function
-	it.skip("names every metric and the Work Items in the instance's words", async () => {
+	it("names every metric and the Work Items in the instance's words", async () => {
 		terms.current = {
 			...defaultTerms,
 			[TERMINOLOGY_KEYS.CYCLE_TIME]: "Lead Time",
@@ -252,7 +252,7 @@ describe("Values a report cannot show", () => {
 	beforeEach(beforeEachReportTest);
 
 	// @us-01 @slice-01 @error @contract-shape:pure-function
-	it.skip("shows a dash and says Then had no finished Work Items", async () => {
+	it("shows a dash and says Then had no finished Work Items", async () => {
 		openTheReport(
 			withCycleTime({
 				atThen: { p85: aDash("no-finished-items") },
@@ -361,7 +361,7 @@ describe("Values a report cannot show", () => {
 
 	// @us-01 @slice-01 @boundary @contract-shape:pure-function
 	// Thin data is shown, not hidden: the number of Work Items behind it lets the reader judge.
-	it.skip("shows a value backed by very few Work Items with that number beside it", async () => {
+	it("shows a value backed by very few Work Items with that number beside it", async () => {
 		openTheReport(
 			withCycleTime({
 				atThen: { p85: shown(9, 2) },
