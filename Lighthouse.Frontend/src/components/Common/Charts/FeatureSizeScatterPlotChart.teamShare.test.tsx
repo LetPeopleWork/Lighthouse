@@ -374,7 +374,7 @@ describe.each(["team", "portfolio"] as const)(
 	"the Feature Size scatter on a %s with no Features to plot",
 	(ownerKind) => {
 		// @us-03 @error @contract-shape:bounded-change
-		it.skip("shows its title and says there are no Features to show", () => {
+		it("shows its title and says there are no Features to show", () => {
 			render(
 				<FeatureSizeScatterPlotChart
 					ownerKind={ownerKind}
@@ -390,7 +390,7 @@ describe.each(["team", "portfolio"] as const)(
 		});
 
 		// @us-03 @error @contract-shape:bounded-change
-		it.skip("says so in the words this instance uses", () => {
+		it("says so in the words this instance uses", () => {
 			terms.current = { ...seededTerms, feature: "Epic", features: "Epics" };
 
 			render(

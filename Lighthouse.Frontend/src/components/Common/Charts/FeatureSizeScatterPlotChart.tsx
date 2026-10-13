@@ -804,9 +804,16 @@ const FeatureSizeScatterPlotChart: React.FC<
 			)}
 		</>
 	) : (
-		<Typography variant="body2" color="text.secondary">
-			No data available
-		</Typography>
+		<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
+			<CardContent>
+				<Typography variant="h6">
+					{featuresTerm} {sizeTerm}
+				</Typography>
+				<Typography variant="body2" color="text.secondary">
+					No {featuresTerm} to show.
+				</Typography>
+			</CardContent>
+		</Card>
 	);
 };
 

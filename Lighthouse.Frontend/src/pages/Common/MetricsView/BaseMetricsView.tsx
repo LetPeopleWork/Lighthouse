@@ -1189,15 +1189,14 @@ function buildWidgetNodes(ctx: {
 					ownerKind={ctx.ownerType}
 				/>
 			) : null,
-		featureSize:
-			ctx.allFeaturesForSizeChart.length > 0 ? (
-				<FeatureSizeScatterPlotChart
-					sizeDataPoints={ctx.allFeaturesForSizeChart}
-					sizePercentileValues={ctx.sizePercentileValues}
-					estimationData={ctx.featureSizeEstimationData ?? undefined}
-					ownerKind={ctx.ownerType}
-				/>
-			) : null,
+		featureSize: (
+			<FeatureSizeScatterPlotChart
+				sizeDataPoints={ctx.allFeaturesForSizeChart}
+				sizePercentileValues={ctx.sizePercentileValues}
+				estimationData={ctx.featureSizeEstimationData ?? undefined}
+				ownerKind={ctx.ownerType}
+			/>
+		),
 		arrivals: ctx.arrivalsData ? (
 			<BarRunChart
 				title={`${ctx.title} Started`}
@@ -1288,16 +1287,13 @@ function frameStateOf(
 	};
 }
 
-// These appear only once their data says there is something to show: estimation set up, or
-// Features in the window. A frame put up for them early could be taken away again.
-const placedOnlyOnceTheirDataSaysSo = new Set([
-	"estimationVsCycleTime",
-	"featureSize",
-]);
+// Estimation vs. Cycle Time appears only once its data says estimation is set up. A frame put up
+// for it early could be taken away again.
+const placedOnlyOnceTheirDataSaysSo = new Set(["estimationVsCycleTime"]);
 
 // Every chart the category places takes its frame from the first render, so the layout never
-// reshuffles as the data arrives. The two above keep a frame only once they have something to
-// show, or to say that their data could not be loaded.
+// reshuffles as the data arrives. The one above keeps a frame only once it has something to
+// show, or to say that its data could not be loaded.
 function isPlaced(
 	widgetKey: string,
 	node: ReactNode,

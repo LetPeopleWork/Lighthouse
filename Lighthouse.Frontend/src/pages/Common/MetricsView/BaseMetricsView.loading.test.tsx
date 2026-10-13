@@ -1230,7 +1230,7 @@ describe("a dashboard as it opens", () => {
 	);
 
 	// @us-03 @contract-shape:bounded-change
-	it.skip.each(everyOwnerAndCategory.filter(isPortfolioAndFeatures))(
+	it.each(everyOwnerAndCategory.filter(isPortfolioAndFeatures))(
 		"a %s's %s opens with every chart's frame in its place, each with a spinner, before any data arrives",
 		opensWithEveryFrameInPlace,
 	);
@@ -1253,7 +1253,7 @@ describe("a dashboard as it opens", () => {
 	});
 
 	// @us-03 @contract-shape:bounded-change
-	it.skip("a portfolio's Portfolio & Features opens with the Work Item distribution and Feature Size framed", () => {
+	it("a portfolio's Portfolio & Features opens with the Work Item distribution and Feature Size framed", () => {
 		openTheDashboard("portfolio", "portfolio");
 
 		expect(widgetsOnScreen()).toEqual(["workDistribution", "featureSize"]);
@@ -1284,7 +1284,7 @@ describe("a dashboard as it opens", () => {
 	);
 
 	// @us-03 @contract-shape:bounded-change
-	it.skip.each(everyOwnerAndCategory.filter(isPortfolioAndFeatures))(
+	it.each(everyOwnerAndCategory.filter(isPortfolioAndFeatures))(
 		"a %s's %s adds and removes no chart once its data has arrived",
 		addsAndRemovesNoChartOnceItsDataHasArrived,
 	);
@@ -1475,7 +1475,7 @@ describe("Feature Size on a Team's and a Portfolio's dashboard", () => {
 		within(frameOf("featureSize")).getByTestId("feature-size-chart");
 
 	// @us-03 @contract-shape:bounded-change
-	it.skip.each(owners)(
+	it.each(owners)(
 		"a %s's Feature Size is framed from the first render, under a lone spinner",
 		(owner) => {
 			openTheDashboard(owner, "portfolio");
@@ -1489,7 +1489,7 @@ describe("Feature Size on a Team's and a Portfolio's dashboard", () => {
 	);
 
 	// @us-03 @error @contract-shape:bounded-change
-	it.skip.each(owners)(
+	it.each(owners)(
 		"a %s's Feature Size keeps its place, ready, and hands the chart an empty list when the window holds no Features",
 		async (owner) => {
 			openTheDashboard(owner, "portfolio");
@@ -1506,7 +1506,7 @@ describe("Feature Size on a Team's and a Portfolio's dashboard", () => {
 	);
 
 	// @us-03 @error @contract-shape:bounded-change
-	it.skip("a Team's Feature Size says it couldn't be loaded when its Features cannot be loaded", async () => {
+	it("a Team's Feature Size says it couldn't be loaded when its Features cannot be loaded", async () => {
 		openTheDashboard("team", "portfolio");
 
 		await act(async () => held.fail({ method: "getAllFeaturesForSizeChart" }));
