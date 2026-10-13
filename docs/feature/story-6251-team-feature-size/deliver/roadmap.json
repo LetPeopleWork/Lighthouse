@@ -305,7 +305,7 @@
         {
           "id": "01-06",
           "name": "The dashboard asks a Team for its Feature sizes, and never takes a Team for a Portfolio",
-          "description": "Frontend: standalone IFeatureSizeMetricsService (getAllFeaturesForSizeChart, getSizePercentiles; getFeatureSizePercentilesInfo is NOT added here: its Team route arrives in slice 02, and slice 01 must ship alone without asking a route that does not exist yet) extended by ITeamMetricsService and IProjectMetricsService; implementations move from ProjectMetricsService into the shared BaseMetricsService<T>; providesFeatureSize(service) drives featureSizeData; isProjectMetricsService also rules out a Team's service (DISTILL finding 13); the portfolioService cast and its comment are replaced; remove ownerFilter portfolio-only from featureSize and correct the categoryMetadata comment; the Team mock gains the methods.",
+          "description": "Frontend: standalone IFeatureSizeMetricsService (getAllFeaturesForSizeChart, getSizePercentiles; getFeatureSizePercentilesInfo is NOT added here: its Team route arrives in slice 02, and slice 01 must ship alone without asking a route that does not exist yet) extended by ITeamMetricsService and IProjectMetricsService; implementations move from ProjectMetricsService into the shared BaseMetricsService<T>; providesFeatureSize(service) drives featureSizeData; the portfolioService cast and its comment are replaced; remove ownerFilter portfolio-only from featureSize and correct the categoryMetadata comment; the Team mock gains the methods.",
           "agent": "nw-software-crafter",
           "commit_type": "feat",
           "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts",
@@ -344,7 +344,7 @@
             "A service lacking only the PBC or the estimate is not treated as a Portfolio but is still asked for sizes.",
             "The Feature Size PBC stays Portfolio-only; the Portfolio's requests are unchanged."
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: Vitest example tests by DISTILL; see paradigm_note. providesFeatureSize checks the two slice-01 methods (getAllFeaturesForSizeChart, getSizePercentiles); 02-03 widens it to getFeatureSizePercentilesInfo. Four skipped tests of rows 1.33/1.34 assert slice-02 behaviour (featureSizePercentilesInfo or the featureSizePercentiles widget) and must STAY SKIPPED here; 02-03 un-skips them: 'a Team's Flow Overview offers Feature Size Percentiles last, as a Portfolio's does', 'a Team asks for the Feature sizes whenever either widget is shown' (Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts); 'asks a team metrics service for its Feature sizes, and never for a Feature Size process behaviour chart or estimate', 'a service missing %s is not treated as a portfolio service, but is still asked for its Feature sizes' (Lighthouse.Frontend/src/hooks/useMetricsData.test.ts). Rows: 4 (1.33 and 1.34 completed by 02-03)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: Vitest example tests by DISTILL; see paradigm_note. providesFeatureSize checks the two slice-01 methods (getAllFeaturesForSizeChart, getSizePercentiles); 02-03 widens it to getFeatureSizePercentilesInfo. Four skipped tests of rows 1.33/1.34 assert slice-02 behaviour (featureSizePercentilesInfo or the featureSizePercentiles widget) and must STAY SKIPPED here; 02-03 un-skips them: 'a Team's Flow Overview offers Feature Size Percentiles last, as a Portfolio's does', 'a Team asks for the Feature sizes whenever either widget is shown' (Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts); 'asks a team metrics service for its Feature sizes, and never for a Feature Size process behaviour chart or estimate', 'a service missing %s is not treated as a portfolio service, but is still asked for its Feature sizes' (Lighthouse.Frontend/src/hooks/useMetricsData.test.ts). Rows: 4 (1.33 and 1.34 completed by 02-03). Amended in DELIVER (test commit 09421163d): a Team's fetch keys drop featureSizePbc and featureSizeEstimation; the two Team loading rows wait for 01-07; the getFeatureSizePercentilesInfo probe row waits for 02-03; ruling a Team's service out of isProjectMetricsService moves to 02-03. BaseMetricsView.test.tsx 'still renders every widget header and drill-in table on team/portfolio' is edited here per the disposition."
         },
         {
           "id": "01-07",
@@ -367,7 +367,9 @@
             "1.25 :: BaseMetricsView.loading.test.tsx :: Feature Size framed from the first render under a lone spinner (Team, Portfolio)",
             "1.26 :: BaseMetricsView.loading.test.tsx :: keeps its place, ready, and hands the chart an empty list (Team, Portfolio)",
             "1.27 :: BaseMetricsView.loading.test.tsx :: Team Feature Size could not be loaded",
-            "1.32 :: BaseMetricsView.loading.test.tsx :: a Portfolio's Portfolio & Features opens with every frame (incl. Feature Size) … / opens with Work Item distribution and Feature Size framed"
+            "1.32 :: BaseMetricsView.loading.test.tsx :: a Portfolio's Portfolio & Features opens with every frame (incl. Feature Size) … / opens with Work Item distribution and Feature Size framed",
+            "1.24 (Team row) :: Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx :: a team's Portfolio & Features opens with every chart's frame in its place, each with a spinner, before any data arrives",
+            "1.24 (Team row) :: Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx :: a team's Portfolio & Features adds and removes no chart once its data has arrived"
           ],
           "guards_kept_green": [
             "1.28 :: BaseMetricsView.loading.test.tsx :: Portfolio Feature Size could not be loaded, first answer and next window"
@@ -575,7 +577,7 @@
         {
           "id": "02-03",
           "name": "The Team's Flow Overview offers Feature Size Percentiles",
-          "description": "getFeatureSizePercentilesInfo joins IFeatureSizeMetricsService and the shared base; providesFeatureSize drives featureSizePercentilesInfo; remove ownerFilter portfolio-only from featureSizePercentiles; the card's looks come from WidgetShell.",
+          "description": "getFeatureSizePercentilesInfo joins IFeatureSizeMetricsService and the shared base; providesFeatureSize drives featureSizePercentilesInfo; remove ownerFilter portfolio-only from featureSizePercentiles; the card's looks come from WidgetShell. isProjectMetricsService also rules out a Team's service even when it carries the Portfolio-only methods (moved here from 01-06).",
           "agent": "nw-software-crafter",
           "commit_type": "feat",
           "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
@@ -593,7 +595,8 @@
             "2.13 :: Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts :: a Team's Flow Overview offers Feature Size Percentiles last, as a Portfolio's does",
             "1.33 (remainder) :: Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts :: a Team asks for the Feature sizes whenever either widget is shown",
             "1.34 :: Lighthouse.Frontend/src/hooks/useMetricsData.test.ts :: asks a team metrics service for its Feature sizes, and never for a Feature Size process behaviour chart or estimate",
-            "1.34 :: Lighthouse.Frontend/src/hooks/useMetricsData.test.ts :: a service missing %s is not treated as a portfolio service, but is still asked for its Feature sizes"
+            "1.34 :: Lighthouse.Frontend/src/hooks/useMetricsData.test.ts :: a service missing %s is not treated as a portfolio service, but is still asked for its Feature sizes",
+            "1.34 :: Lighthouse.Frontend/src/hooks/useMetricsData.test.ts :: does not treat a service missing getFeatureSizePercentilesInfo as a portfolio service"
           ],
           "guards_kept_green": [],
           "files_to_modify": [
