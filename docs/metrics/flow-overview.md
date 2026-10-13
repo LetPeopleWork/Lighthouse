@@ -340,7 +340,7 @@ Although the widget displays only started items, its status is based on the same
 # Feature Size Percentiles
 
 |--------------|-------------------------|
-| **Applies to** | Portfolios |
+| **Applies to** | Teams and Portfolios |
 | **Flow Metric** | Feature Size |
 | **Affected by Filtering** | Yes |
 
@@ -350,8 +350,10 @@ This overview widget shows the 50th, 70th, 85th, and 95th percentiles of feature
 
 The trend indicator compares the selected date range against the immediately preceding period of the same length. Its direction is derived from the 50th percentile, while the tooltip shows a per-percentile breakdown in `previous → **current**` format.
 
+Use the **View Data** button to list the Features the percentiles are based on: the Features closed in the selected date range, with their size.
+
 {: .note}
-This widget is only available for Portfolios.
+On a Team, the size of a Feature is the Team's share of it: only the Team's own Work Items under the Feature are counted. See [Feature Size on a Team](portfolio-features.html#feature-size-on-a-team).
 
 {: .note}
 The displayed percentiles summarize historical feature sizes, but the status indicator evaluates your currently active features against the 85th and 70th percentile thresholds derived from those same historical sizes.

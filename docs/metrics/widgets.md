@@ -19,10 +19,10 @@ Widgets are grouped into four categories, each built around a different question
 
 | Category | Question it answers | Widgets |
 |---|---|---|
-| [**Flow Overview**](./flow-overview.html) | How is my system doing at a glance? | WIP Overview, Blocked Overview, Stale Items Overview, Features Worked On Overview (Teams only), Total Work Item Age, Flow Efficiency, Predictability Score, Cycle Time Percentiles, Work Item Age Percentiles, Total Throughput, Total Arrivals, Feature Size Percentiles (Portfolios only) |
+| [**Flow Overview**](./flow-overview.html) | How is my system doing at a glance? | WIP Overview, Blocked Overview, Stale Items Overview, Features Worked On Overview (Teams only), Total Work Item Age, Flow Efficiency, Predictability Score, Cycle Time Percentiles, Work Item Age Percentiles, Total Throughput, Total Arrivals, Feature Size Percentiles |
 | [**Flow Metrics**](./flow-metrics.html) | What do detailed flow trends look like? | Cycle Time Scatterplot, Work Item Aging Chart, Throughput Run Chart, WIP Over Time, Total Work Item Age Over Time, Arrivals Run Chart, Simplified CFD, Load Balance Matrix, Cumulative Time per State, Blocked Over Time |
 | [**Predictability**](./predictability.html) | Can we trust our forecasts? | Predictability Score Details, Percentiles Over Time, PBC Over Time, Process Behaviour Charts (Throughput, Cycle Time, WIP, Total Work Item Age, Feature Size), Arrivals Process Behaviour Chart |
-| [**Portfolio & Features**](./portfolio-features.html) | How do features flow through the system? | Work Distribution, Feature Size (Portfolios only), Estimation vs. Cycle Time |
+| [**Portfolio & Features**](./portfolio-features.html) | How do features flow through the system? | Work Distribution, Feature Size, Estimation vs. Cycle Time |
 
 {: .note}
 A few widgets are scoped to Teams only or Portfolios only, as noted above and in each widget's own section.
@@ -54,7 +54,7 @@ Hovering over a widget reveals an **Expand** button in its top-right corner. Cli
 
 Widgets that are backed by a concrete set of work items include a **View Data** button (table icon) in their header. Clicking it opens a dialog showing the full set of work items that feed the widget. This gives you quick access to the underlying data without navigating away.
 
-**Total Throughput** and **Total Arrivals** carry a **View Data** button too: it lists the items closed (respectively started) in the selected date range, so the rollup number can always be traced back to the items behind it. **Feature Size Percentiles** and **Predictability Score** remain rollup-only — they summarize a distribution rather than a concrete item set.
+**Total Throughput** and **Total Arrivals** carry a **View Data** button too: it lists the items closed (respectively started) in the selected date range, so the rollup number can always be traced back to the items behind it. **Feature Size Percentiles** lists the Features closed in the selected date range, the ones its percentiles are based on. **Predictability Score** remains rollup-only — it summarizes a distribution rather than a concrete item set.
 
 Some charts also support **chart-specific drill-ins**: clicking a bar, bubble, data point, or pie segment opens a dialog scoped to that particular subset (e.g. items for a single day or a specific parent feature).
 

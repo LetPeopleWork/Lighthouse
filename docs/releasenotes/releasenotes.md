@@ -6,6 +6,14 @@ nav_order: 95
 
 # Lighthouse vNext
 
+## Feature Size on the Team
+
+How much of a Feature does your Team usually take on? Until now, the only Feature Size chart was the Portfolio's, and it counts every Team's Work Items. A Team that wanted its own number had to open the Portfolio and subtract everyone else's.
+
+Every Team now has the **Feature Size** chart and the **Feature Size Percentiles** widget. On a Team, a Feature's size is the Team's own share of it, and the Status Indicator flags an open Feature whose share has already grown past what the Team usually finishes. Reading the Team is enough: Features from Portfolios you cannot open are counted too, without naming those Portfolios.
+
+**Feature Size Percentiles** also gets **View Data**, on Teams and on Portfolios, listing the closed Features its percentiles are based on. Full detail: [Feature Size on a Team](https://docs.lighthouse.letpeople.work/metrics/portfolio-features.html#feature-size-on-a-team).
+
 ## Bugfixes and Improvements
 
 - **Clicking a chart now lists the Work Items with the columns that explain why they are there.** The Estimation vs. Cycle Time dialog shows each Work Item's Estimate next to its Cycle Time, the Blocked list shows since when each Work Item is Blocked, a Feature's child items show when each started and closed, and **Manage columns** offers the rest; the layout you choose is remembered for each chart. Full detail: [Viewing the Data Behind a Widget](https://docs.lighthouse.letpeople.work/metrics/widgets.html#columns-in-the-work-items-dialog).

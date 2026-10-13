@@ -9,7 +9,7 @@ nav_order: 36
 The **Portfolio & Features** category answers *how do features flow through the system*. These widgets look one level above individual work items: how work is distributed across features, how big features get, and how estimates compare to what actually happened.
 
 {: .note}
-Some widgets in this category are only available for Portfolios, as they need the context of parent features. This is noted per widget.
+All widgets in this category are available for Teams and Portfolios. On a Team, a Feature's size counts only the Team's own Work Items: see [Feature Size on a Team](#feature-size-on-a-team).
 
 - TOC
 {:toc}
@@ -61,7 +61,7 @@ The chart combines both completed work items (from the selected date range) and 
 # Feature Size
 
 |--------------|-------------------------|
-| **Applies to** | Portfolios |
+| **Applies to** | Teams and Portfolios |
 | **Flow Metric** | Cycle Time, Work Item Age, Throughput |
 | **Affected by Filtering** | Yes |
 
@@ -74,7 +74,7 @@ The chart displays features from your selected time range. A toggle above the ch
 | Mode | X-axis | Y-axis | Available when |
 |---|---|---|---|
 | **Cycle Time** (default when no estimation field) | Feature size (child items) | Cycle time / Work item age (see below) | Always |
-| **\<Estimation Unit\>** (default when an estimation field is configured) | Feature size (child items) | Estimation value | Estimation field configured |
+| **\<Estimation Unit\>** (default when an estimation field is configured) | Feature size (child items) | Estimation value | Estimation field configured (Portfolios only) |
 | **Closed Date** | Closed date | Feature size (child items) | Always |
 
 {: .note}
@@ -132,6 +132,21 @@ The Feature Size chart evaluates every active (To Do and In Progress) feature ag
 
 {: .note}
 If no active features exist, the status defaults to **Sustain**.
+
+## Feature Size on a Team
+
+On a Team, a Feature's size is **this Team's share** of it: the number of the Team's own Work Items under that Feature, in any state. Other Teams' Work Items under the same Feature are not counted. This answers *how much of a Feature do we usually take on*, and pairs with the Team's own Cycle Time.
+
+- **Which Features are shown:** every Feature that a Portfolio in Lighthouse loads and that has at least one of the Team's Work Items under it. The Team does not need to be part of that Portfolio. Features using the [Default Feature Size](../portfolios/edit.html#default-feature-size) are left out, as they are not broken down yet.
+- **What the chart says:** the size axis reads *Size (this Team's Work Items)*, and a bubble's tooltip names its size as this Team's share.
+- **Modes:** **Cycle Time** and **Closed Date**. The estimate of a Feature is configured on its Portfolio, so there is no estimation mode on a Team.
+- **Dates:** a Feature's closed date and Cycle Time are the Feature's own, not the day the Team finished its share.
+- **Access:** reading the Team is enough to see all of these Features. Portfolios you may not read are not named to you.
+- **Everywhere on the Team's page:** wherever the Team's page lists a Feature's size, such as the Features in the [Features Worked On Overview](flow-overview.html#features-worked-on-overview), the Size is the Team's share too.
+
+The Status Indicator applies the same rules as on a Portfolio, comparing each open Feature's share with the shares of the Features the Team finished.
+
+When there are no Features to show, the chart says *No Features to show.*
 
 # Estimation vs. Cycle Time
 

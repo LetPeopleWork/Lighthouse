@@ -134,7 +134,7 @@ What the shape tells you:
 - **The band narrows** — variability is shrinking and the process is becoming more predictable.
 - **The whole band shifts up or down** — the average level moved. Together with the special-cause signals on the point-in-time chart, this is how you tell whether a change you made actually stuck.
 
-Use the toggle in the widget header to pick the metric family. Lighthouse records natural process limits for **Throughput**, **Work Item Age**, **Work In Progress**, **Cycle Time**, and **Arrivals**, plus **Feature Size** on a Portfolio — a Team has no feature sizes to chart, so that family is not offered there.
+Use the toggle in the widget header to pick the metric family. Lighthouse records natural process limits for **Throughput**, **Work Item Age**, **Work In Progress**, **Cycle Time**, and **Arrivals**, plus **Feature Size** on a Portfolio. A Team sees its share of each Feature in [Feature Size](portfolio-features.html#feature-size-on-a-team) and [Feature Size Percentiles](flow-overview.html#feature-size-percentiles), but not over time, so that family is not offered there.
 
 {: .important}
 The limits are only as meaningful as the *baseline* they are computed from. Configure it in your Team ([Create/Edit Teams](../teams/edit.html#process-behaviour-chart-baseline)) or Portfolio ([Create/Edit Portfolios](../portfolios/edit.html#process-behaviour-chart-baseline)) settings. Without one, Lighthouse falls back to a rolling window ending today — so the recorded limits move as that window slides, for reasons that have nothing to do with your process. On a fixed baseline, movement in this chart is a real signal.
