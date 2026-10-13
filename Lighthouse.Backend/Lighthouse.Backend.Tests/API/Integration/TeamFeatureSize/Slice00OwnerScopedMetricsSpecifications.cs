@@ -9,8 +9,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
     /// </summary>
     public partial class Slice00OwnerScopedMetricsTest : TeamFeatureSizeAcceptanceTest
     {
-        private const string Pending = "Story #6251 — pending DELIVER: metrics remembered per owner, not per number.";
-
         private const int TeamThroughput = 3;
         private const int PortfolioThroughput = 5;
 
