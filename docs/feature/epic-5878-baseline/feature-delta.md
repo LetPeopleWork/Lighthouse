@@ -2163,3 +2163,339 @@ Reconciliation passed — 0 contradictions across `discuss/`, `design/` and `dev
 updated in place for D45–D48 after DESIGN; DEVOPS's supersession of D33 is recorded in its Changed Assumptions).
 Upstream changes from this walkthrough: DT2 (wording), DT3/DT4 (wizard instead of the two dialogs DESIGN named), DT7
 (an optional prop on a shared component).
+
+## Wave: DISTILL / [REF] Scope
+
+**Agent**: Quinn (`nw-acceptance-designer`) · **Date**: 2026-10-13 · **Mode**: autonomous subagent, after the UI
+sketch walkthrough above. **Scope**: US-01..US-08 and US-10 — slices 01–08 and 10 (ADO #6159–#6168). Slices 09 and
+11 were dropped by DISCUSS. Reconciliation: see the section above (0 contradictions, not re-run). Decisions
+DST-1..DST-13: `distill/wave-decisions.md`. Gaps found and the choice pinned for each: `distill/upstream-issues.md`.
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+Every case is **pending**: `[Ignore(PendingSliceNN)]` or `Ignore = PendingSliceNN` (backend, naming the slice and its
+ADO Story), `it.skip` (frontend), `test.fixme` (E2E). DELIVER un-skips a slice's cases when it starts that slice.
+
+| Slice | Scenarios | Cases | Error + boundary cases |
+|---|---|---|---|
+| 01 Reports tab, Team report, {Cycle Time} | 63 | 78 | 41 |
+| 02 Then ended in the past | 22 | 28 | 21 |
+| 03 {Cycle Time} beyond Then's limits | 9 | 10 | 8 |
+| 04 {Throughput} and the shown metrics | 12 | 12 | 6 |
+| 05 {WIP} and {Work Item Age} | 10 | 10 | 3 |
+| 06 Reports on Portfolios | 14 | 14 | 4 |
+| 07 Now length, days since Then ended | 13 | 16 | 10 |
+| 08 Delete and the Community cap | 31 | 32 | 21 |
+| 10 Edit a report | 19 | 21 | 15 |
+| **Total** | **193** | **221** | **129 (58%); error alone 94 (43%)** |
+
+By layer: 127 backend cases, 93 frontend cases, 1 E2E walking skeleton. A scenario naming two slices is listed under
+the first; where its cases depend on the later slice, each case carries that slice's own marker (`ReportUsageEventsTests`).
+
+Every case also carries `@contract-shape:` and, where a KPI is counted, `@kpi-OUT-5878-K1-report-created`,
+`@kpi-OUT-5878-K2-reports-reopened`, `@kpi-OUT-5878-K4-community-cap-reached` or
+`@kpi-OUT-5878-guardrail-quick-deletes`. The G3 parity guardrail (`@kpi-OUT-5878-G3`: rebuilt Then values equal the
+Metrics tab's for the same days) is `The_rebuilt_Then_matches_the_Metrics_tab_for_the_same_days` (02) and `Thens_last_day_total_age_matches_the_Metrics_tab_for_that_day` (05).
+
+| # | Scenario | Slice | US | File | Layer | Kind | Cases | Tags |
+|---|---|---|---|---|---|---|---|---|
+| 1 | A report created or opened travels with its type and nothing else | 01 | 01 | `ReportUsageEventsTests.cs` | backend AT (HTTP, real EF) | happy | 2 | @driving_port @kpi-OUT-5878-K1-report-created @kpi-OUT-5878-K2-reports-reopened @contract-shape:bounded-change |
+| 2 | A report event without a type from the list or carrying anything more is refused | 01 | 01 | `ReportUsageEventsTests.cs` | backend AT (HTTP, real EF) | error | 6 | @driving_port @contract-shape:unbounded-preservation |
+| 3 | A tab opening carrying a report type is refused | 01 | 01 | `ReportUsageEventsTests.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 4 | Opening the Reports tab travels as a tab opening naming that tab | 01 | 01,06 | `ReportUsageEventsTests.cs` | backend AT (HTTP, real EF) | happy | 2 | @driving_port @kpi-OUT-5878-K1-report-created @contract-shape:bounded-change |
+| 5 | The report events are appended to the list of names never inserted | 01 | 01,08 | `ReportUsageEventsTests.cs` | backend AT (HTTP, real EF) | happy | 3 | @contract-shape:bounded-change |
+| 6 | Then and Now is the first report type on its own list | 01 | 01 | `ReportUsageEventsTests.cs` | backend AT (HTTP, real EF) | happy | 1 | @contract-shape:bounded-change |
+| 7 | The usage data page describes what Reports send | 01 | 01,06 | `ReportUsageEventsTests.cs` | backend AT (HTTP, real EF) | happy | 6 | @contract-shape:bounded-change |
+| 8 | names the report and leads back to the Reports list | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 9 | shows the Cycle Time panel with Then's and Now's 85th percentile and the Work Items behind them | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 10 | tells a shorter Cycle Time as better by sign and arrow as well as colour | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 11 | names every metric and the Work Items in the instance's words | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 12 | shows a dash and says Then had no finished Work Items | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 13 | shows a value backed by very few Work Items with that number beside it | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 14 | shows only the way back and a spinner while the report is on its way | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 15 | says the report could not be loaded and offers Retry, showing no numbers | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 16 | never lets a late answer for the report opened before land on the one opened now | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:unbounded-preservation |
+| 17 | reports one report opened, with its Type, once it has been open for five seconds | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @kpi-OUT-5878-K2-reports-reopened @contract-shape:bounded-change |
+| 18 | reports nothing for a report left within five seconds | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:unbounded-preservation |
+| 19 | reports nothing for a report that could not be loaded | 01 | 01 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:unbounded-preservation |
+| 20 | a coach creates a Then & Now report on a Team and it opens with Then frozen and the Cycle Time panel | 01 | 01 | `Reports.spec.ts` | E2E (Playwright, demo data) | happy | 1 | @walking_skeleton @driving_port @kpi-OUT-5878-K1-report-created @contract-shape:bounded-change |
+| 21 | offers Then & Now as the one Type, already chosen, saying what it is for | 01 | 01 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 22 | starts as the 90 days ending today and says which days that is, frozen when created | 01 | 01 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 23 | cannot create a report without a name | 01 | 01 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 24 | creates the report as chosen, opens it, and reports one report created with its Type | 01 | 01 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @kpi-OUT-5878-K1-report-created @contract-shape:bounded-change |
+| 25 | shows that the report is being created and holds every input still meanwhile | 01 | 01 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 26 | keeps every input and reports nothing when creating fails | 01 | 01 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:unbounded-preservation |
+| 27 | creates nothing and reports nothing when the wizard is closed | 01 | 01 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:unbounded-preservation |
+| 28 | lists each report by name, linking to it, with its Type and when it was created | 01 | 01 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 29 | never says Template | 01 | 01 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:unbounded-preservation |
+| 30 | offers an admin Create Report | 01 | 01 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 31 | shows a reader the reports but nothing to create or delete them with | 01 | 01 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:unbounded-preservation |
+| 32 | lets everybody create and delete when roles are not enforced | 01 | 01 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 33 | shows an admin of a Team without reports an empty list and Create Report | 01 | 01 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 34 | tells a reader of a Team without reports that a Team Admin can create one | 01 | 01 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 35 | shows a spinner, never the empty list, while the list is on its way | 01 | 01 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 36 | offers Retry, never the empty list, when the list cannot be read | 01 | 01 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 37 | Without sign in anybody creates a report | 01 | 01 | `ReportsWithoutSignInScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
+| 38 | A coach freezes the Cycle Time of the last ninety days for a Team | 01 | 01 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @kpi-OUT-5878-K1-report-created @contract-shape:bounded-change |
+| 39 | Every reader of the Team finds the report in its list | 01 | 01 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 40 | The types of report offered name today and the earliest day Then may start | 01 | 01,02 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 41 | Now moves with the calendar while Then stays as it was frozen | 01 | 01 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 42 | The frozen Then does not move when the tracker later drops a Work Item | 01 | 01 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 43 | Thin data shows the value with its sample size | 01 | 01 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:pure-function |
+| 44 | No finished Work Items show a dash and the reason never a zero | 01 | 01 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:pure-function |
+| 45 | A reader cannot create a report | 01 | 01 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 46 | Somebody with no role on the Team cannot see that it has reports | 01 | 01 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 47 | A report reached through another Teams address is not found | 01 | 01 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:pure-function |
+| 48 | A report that does not exist is not found | 01 | 01 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:pure-function |
+| 49 | A report without a name is refused and nothing is created | 01 | 01 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | error | 2 | @driving_port @contract-shape:unbounded-preservation |
+| 50 | A type of report this version does not offer is refused | 01 | 01 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 51 | Then ending today means the instances today just after midnight | 01 | 01 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:bounded-change |
+| 52 | Deleting a Team deletes its reports | 01 | 08 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
+| 53 | A report of a type this version does not know is listed but opening it is refused never a crash | 01 | 01 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 54 | A report carrying values this version does not know still opens | 01 | 01 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 55 | The operator is warned when a stored report cannot be read and the warning does not name it | 01 | 01 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:bounded-change |
+| 56 | sits between Refinement and Settings | 01 | 01 | `TeamDetail.reportsTab.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 57 | is open to a reader | 01 | 01 | `TeamDetail.reportsTab.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 58 | opens the Team's reports and puts the tab in the address | 01 | 01 | `TeamDetail.reportsTab.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 59 | opens straight onto the Team's reports from an address that names the tab | 01 | 01 | `TeamDetail.reportsTab.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 60 | opens one report under the Reports tab from an address that names it | 01 | 01 | `TeamDetail.reportsTab.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 61 | answers a Team's Reports tab as a Team tab opening naming that tab | 01 | 01 | `usageDataRouteKeys.reports.test.ts` | frontend AT (Vitest + RTL) | happy | 1 | @kpi-OUT-5878-K1-report-created @contract-shape:pure-function |
+| 62 | names no tab for the address of one report | 01 | 01 | `usageDataRouteKeys.reports.test.ts` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 63 | names the same tab whichever Team it belongs to, so nothing in it can tell Teams apart | 01 | 01 | `usageDataRouteKeys.reports.test.ts` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 64 | says the days of a Then that ended in the past | 02 | 02 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 65 | says the days of a Then of a custom length | 02 | 02 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 66 | cannot end in the future | 02 | 02 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 67 | offers a Team's Then as 30 or 90 days with one click | 02 | 02 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 68 | refuses a Then starting before the oldest kept day, naming that day, and goes no further | 02 | 02 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 69 | refuses a Then shorter than 14 days and goes no further | 02 | 02 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 70 | accepts a Then of exactly 14 days | 02 | 02 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 71 | names the report after its Then until the name is edited | 02 | 02 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 72 | keeps an edited name when Then changes afterwards | 02 | 02 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 73 | names the oldest kept day when the server refuses Then for starting before it | 02 | 02 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:unbounded-preservation |
+| 74 | A coach freezes a Then that ended the day before the engagement began | 02 | 02 | `Slice02ThenInThePastScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
+| 75 | The rebuilt Then matches the Metrics tab for the same days | 02 | 02 | `Slice02ThenInThePastScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @kpi-OUT-5878-G3 @contract-shape:pure-function |
+| 76 | A coach freezes a Then of a custom length | 02 | 02 | `Slice02ThenInThePastScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
+| 77 | A Then of exactly fourteen days is accepted | 02 | 02 | `Slice02ThenInThePastScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:bounded-change |
+| 78 | A Then shorter than fourteen days is refused and nothing is created | 02 | 02 | `Slice02ThenInThePastScenarios.cs` | backend AT (HTTP, real EF) | error | 4 | @driving_port @contract-shape:unbounded-preservation |
+| 79 | A Then ending after today is refused | 02 | 02 | `Slice02ThenInThePastScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 80 | A Then reaching past the data cutoff is refused naming the earliest start | 02 | 02 | `Slice02ThenInThePastScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 81 | A Then starting on the oldest kept day is accepted | 02 | 02 | `Slice02ThenInThePastScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:bounded-change |
+| 82 | The earliest start follows how long the Team keeps finished Work Items | 02 | 02 | `Slice02ThenInThePastScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 83 | Later views read the frozen Then not a rebuild | 02 | 02 | `Slice02ThenInThePastScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 84 | A Then missing its end or its length is refused | 02 | 02 | `Slice02ThenInThePastScenarios.cs` | backend AT (HTTP, real EF) | error | 2 | @driving_port @contract-shape:unbounded-preservation |
+| 85 | A Then end that is not a day is refused | 02 | 02 | `Slice02ThenInThePastScenarios.cs` | backend AT (HTTP, real EF) | error | 3 | @driving_port @contract-shape:unbounded-preservation |
+| 86 | counts Now's Work Items beyond Then's limits, and says why there is no count below | 03 | 03 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 87 | shows a dash for the counts beyond Then's limits when Then had too few points to have any | 03 | 03 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 88 | says the counts beyond Then's limits were not captured for a report made before they existed | 03 | 03 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 89 | Unusually slow Work Items are counted above the limits Then set | 03 | 03 | `Slice03CycleTimeBeyondThenLimitsScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @kpi-OUT-5878-K2-reports-reopened @contract-shape:pure-function |
+| 90 | The limits Then set are frozen unrounded | 03 | 03 | `Slice03CycleTimeBeyondThenLimitsScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:pure-function |
+| 91 | A lower limit at zero shows a dash below and still counts above | 03 | 03 | `Slice03CycleTimeBeyondThenLimitsScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:pure-function |
+| 92 | Fewer than two Then points show a dash on both sides | 03 | 03 | `Slice03CycleTimeBeyondThenLimitsScenarios.cs` | backend AT (HTTP, real EF) | error | 2 | @driving_port @contract-shape:pure-function |
+| 93 | The Teams process behaviour baseline does not move the counts | 03 | 03 | `Slice03CycleTimeBeyondThenLimitsScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 94 | A report created before the count existed has no limits captured | 03 | 03 | `Slice03CycleTimeBeyondThenLimitsScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 95 | shows Throughput as a total and a per-day average, compared per day | 04 | 04 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 96 | stacks only the shown metrics, in the catalog's order whatever order they were ticked in | 04 | 04 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 97 | shows no percentage for a change from a Then of zero | 04 | 04 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 98 | ticks all four metrics, named in the instance's words | 04 | 04 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 99 | cannot create a report showing no metric | 04 | 04 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 100 | A Team can be reported on Cycle Time and Throughput | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 101 | Higher Throughput is shown as total and per day with the days above Thens limit | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @kpi-OUT-5878-K2-reports-reopened @contract-shape:pure-function |
+| 102 | A metric that is not shown is still frozen | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
+| 103 | A report that shows no metric is refused | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 104 | A metric that is not in the catalog is refused | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 105 | An older report did not capture Throughput | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 106 | A Then where nothing finished shows zero and a dash for the days beyond | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:pure-function |
+| 107 | shows WIP as an average with its range | 05 | 05 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 108 | tells a growing Work Item Age as worse by sign and arrow as well as colour | 05 | 05 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 109 | shows WIP as a real 0 and the average Work Item Age as a dash when Then had nothing in progress | 05 | 05 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 110 | A Team can be reported on all four metrics | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 111 | Lower WIP is shown as the average and its range with the days below Thens limit | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 112 | Days with WIP above Thens upper limit are counted | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 113 | Older work in progress shows both totals and both averages on each side | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 114 | Thens last day total age matches the Metrics tab for that day | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @kpi-OUT-5878-G3 @contract-shape:pure-function |
+| 115 | Days with nothing in progress are left out of the average age but not out of the total | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:pure-function |
+| 116 | With nothing in progress the average age is a dash and the total a real zero | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:pure-function |
+| 117 | sits between Metrics and Settings | 06 | 06 | `PortfolioDetail.reportsTab.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 118 | opens the Portfolio's reports for a reader | 06 | 06 | `PortfolioDetail.reportsTab.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 119 | opens one report under the Reports tab from an address that names it | 06 | 06 | `PortfolioDetail.reportsTab.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 120 | offers a Portfolio's Then as 90 or 180 days with one click | 06 | 06 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 121 | tells a reader of a Portfolio without reports that a Portfolio Admin can create one, in the instance's words | 06 | 01,06 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 122 | links a Portfolio's report to its place under the Portfolio | 06 | 06 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 123 | A Portfolio admin creates a Then and Now report about its Features | 06 | 06 | `Slice06PortfolioReportScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @kpi-OUT-5878-K1-report-created @contract-shape:bounded-change |
+| 124 | A Portfolio can be reported on all four metrics | 06 | 06 | `Slice06PortfolioReportScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 125 | A Portfolio with no finished Features shows a dash and the reason | 06 | 06 | `Slice06PortfolioReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:pure-function |
+| 126 | A Portfolio reader finds the report and cannot create one | 06 | 06 | `Slice06PortfolioReportScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 127 | A report reached through another Portfolios address is not found | 06 | 06 | `Slice06PortfolioReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:pure-function |
+| 128 | A Teams report cannot be reached through a Portfolios address | 06 | 06 | `Slice06PortfolioReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:pure-function |
+| 129 | Deleting a Portfolio deletes its reports | 06 | 06,08 | `Slice06PortfolioReportScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
+| 130 | answers a Portfolio's Reports tab as a Portfolio tab opening naming that tab | 06 | 06 | `usageDataRouteKeys.reports.test.ts` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 131 | names Then as frozen, Now as the last days ending today, and how long ago Then ended | 07 | 01,02,07 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 132 | is as long as Then until changed, always ending today | 07 | 07 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 133 | refuses a Now shorter than 14 days and goes no further | 07 | 07 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 134 | refuses a Now reaching back past the oldest kept day and goes no further | 07 | 07 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 135 | A coach sets a shorter Now and every later view uses it | 07 | 07 | `Slice07NowLengthScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
+| 136 | Now may overlap Then and is used in full | 07 | 07 | `Slice07NowLengthScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:pure-function |
+| 137 | The report says how many days ago Then ended | 07 | 07 | `Slice07NowLengthScenarios.cs` | backend AT (HTTP, real EF) | happy | 2 | @driving_port @contract-shape:pure-function |
+| 138 | Without a Now length Now is as long as Then | 07 | 07 | `Slice07NowLengthScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:bounded-change |
+| 139 | A Now shorter than fourteen days is refused | 07 | 07 | `Slice07NowLengthScenarios.cs` | backend AT (HTTP, real EF) | error | 2 | @driving_port @contract-shape:unbounded-preservation |
+| 140 | A Now starting on the oldest kept day is accepted | 07 | 07 | `Slice07NowLengthScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:bounded-change |
+| 141 | A Now reaching past the data cutoff is refused | 07 | 07 | `Slice07NowLengthScenarios.cs` | backend AT (HTTP, real EF) | error | 2 | @driving_port @contract-shape:unbounded-preservation |
+| 142 | Asking for another Now in the address changes nothing | 07 | 07 | `Slice07NowLengthScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 143 | Throughput with a Now of another length is compared per day | 07 | 04,07 | `Slice07NowLengthScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 144 | names how many reports go with it when one of the teams or portfolios is deleted | 08 | 08 | `OverviewDashboard.test.tsx` | frontend AT (Vitest + RTL) | happy | 2 | @driving_port @contract-shape:pure-function |
+| 145 | says nothing about reports when there are none | 08 | 08 | `OverviewDashboard.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 146 | reports the Team deleted and never a report deleted | 08 | 08 | `OverviewDashboard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:unbounded-preservation |
+| 147 | A report deleted travels as its name alone | 08 | 08 | `ReportUsageEventsTests.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:bounded-change |
+| 148 | A report deleted carrying its type is refused | 08 | 08 | `ReportUsageEventsTests.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 149 | says a report that is gone no longer exists and leads back to the list | 08 | 08 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 150 | offers an admin Edit report and Delete | 08 | 08,10 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 151 | offers a reader neither | 08 | 08,10 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:unbounded-preservation |
+| 152 | deletes the report after asking, warns when its Then cannot be rebuilt, and goes back to the list | 08 | 08 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:bounded-change |
+| 153 | says the cap was reached when the server refuses for it | 08 | 08 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @kpi-OUT-5878-K4-community-cap-reached @contract-shape:unbounded-preservation |
+| 154 | disables Create Report at the cap and says why, in the instance's word for a Team | 08 | 08 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @kpi-OUT-5878-K4-community-cap-reached @contract-shape:pure-function |
+| 155 | says nothing about the cap below it | 08 | 08 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 156 | enables Create Report again once a report deleted brings the count below the cap | 08 | 08 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:bounded-change |
+| 157 | asks first, deletes the report, takes it off the list and reports one report deleted | 08 | 08 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:bounded-change |
+| 158 | keeps the report and reports nothing when the delete is cancelled | 08 | 08 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:unbounded-preservation |
+| 159 | warns that a Then reaching past the kept history can no longer be rebuilt | 08 | 08 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 160 | does not warn about rebuilding a Then that can still be rebuilt | 08 | 08 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 161 | keeps the report listed and reports nothing when the delete fails | 08 | 08 | `ReportsTab.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:unbounded-preservation |
+| 162 | Without sign in anybody deletes a report | 08 | 08 | `ReportsWithoutSignInScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
+| 163 | An admin deletes a report and it is gone for everybody | 08 | 08 | `Slice08DeleteAndCommunityCapScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:bounded-change |
+| 164 | A reader cannot delete a report | 08 | 08 | `Slice08DeleteAndCommunityCapScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 165 | Deleting through another Teams address deletes nothing | 08 | 08 | `Slice08DeleteAndCommunityCapScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 166 | Deleting a report twice finds nothing the second time | 08 | 08 | `Slice08DeleteAndCommunityCapScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:bounded-change |
+| 167 | Community stops at two reports per Team | 08 | 08 | `Slice08DeleteAndCommunityCapScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @kpi-OUT-5878-K4-community-cap-reached @contract-shape:unbounded-preservation |
+| 168 | The cap counts reports of every type | 08 | 08 | `Slice08DeleteAndCommunityCapScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:pure-function |
+| 169 | The cap is per Team | 08 | 08 | `Slice08DeleteAndCommunityCapScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:bounded-change |
+| 170 | Premium creates as many reports as it needs | 08 | 08 | `Slice08DeleteAndCommunityCapScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
+| 171 | A lapsed licence keeps every report readable and deletable but stops creating | 08 | 08 | `Slice08DeleteAndCommunityCapScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:bounded-change |
+| 172 | Deleting below the cap frees a place for a new report | 08 | 08 | `Slice08DeleteAndCommunityCapScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:bounded-change |
+| 173 | A Then older than what the Team keeps says it can no longer be rebuilt | 08 | 08 | `Slice08DeleteAndCommunityCapScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:pure-function |
+| 174 | A report of a type this version does not know can still be deleted | 08 | 08 | `Slice08DeleteAndCommunityCapScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:bounded-change |
+| 175 | shows the Type locked | 10 | 10 | `ReportView.editWizard.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 176 | shows Then as it was frozen, locked | 10 | 10 | `ReportView.editWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:unbounded-preservation |
+| 177 | saves a new name, a new Now and the shown metrics, never Then, over the report as it was read | 10 | 07,10 | `ReportView.editWizard.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @contract-shape:bounded-change |
+| 178 | cannot tick a metric the report never captured, and says why | 10 | 10 | `ReportView.editWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 179 | cannot save a report showing no metric | 10 | 10 | `ReportView.editWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 180 | says the report was changed by someone else when the save comes too late, keeping the edit | 10 | 10 | `ReportView.editWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:unbounded-preservation |
+| 181 | dims the report under a spinner while it is read again after the save | 10 | 10 | `ReportView.editWizard.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 182 | reports the report opened once, however often it is read again after edits | 10 | 01,10 | `ReportView.editWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @kpi-OUT-5878-K2-reports-reopened @contract-shape:unbounded-preservation |
+| 183 | Without sign in anybody edits a report | 10 | 10 | `ReportsWithoutSignInScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
+| 184 | An admin renames a report and every reader sees the new name | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
+| 185 | A changed Now length is stored for everyone | 10 | 07,10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
+| 186 | Ticking a metric that was frozen but hidden shows Then as it was on the day of creation | 10 | 04,10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
+| 187 | A metric the report never captured cannot be shown | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 188 | Then cannot be edited | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 189 | A reader cannot edit a report not even how long Now is | 10 | 07,10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 190 | An edit saved over somebody elses is refused | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 191 | An edit breaking the rules a new report follows is refused and changes nothing | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 3 | @driving_port @contract-shape:unbounded-preservation |
+| 192 | An edit that shows no metric is refused | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 193 | Editing through another Teams address changes nothing | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+
+## Wave: DISTILL / [REF] WS strategy
+
+One walking skeleton, E2E (DST-4): demo scenario 11, Team Lightspeed → **Reports** → **Create Report** → each step
+waited for by what it says, then Next →
+**Create** → the report opens with "Then: … — frozen" and the "Cycle Time: Then & Now" panel. Real browser, real app,
+seeded demo data, through page objects; it waits for `data-report-status="ready"`, never for visibility. Backend
+scenarios run the production composition root (`WebApplicationFactory<Program>`, real EF, real metrics services over
+seeded Work Items) with only the licence, the clock and the usage-data publisher faked. Frontend scenarios render
+the real Reports tab and report view. Tier B: not used (DST-11).
+
+## Wave: DISTILL / [REF] Test placement
+
+| Where | Why (precedent) |
+|---|---|
+| `Lighthouse.Backend.Tests/API/Integration/Reports/` — `ReportsAcceptanceTest` (harness) + `Slice01TeamReportScenarios` … `Slice10EditReportScenarios`, `ReportsWithoutSignInScenarios` | Per-feature folder, one class per slice (refinement) |
+| `Lighthouse.Backend.Tests/Integration/UsageData/ReportUsageEventsTests.cs` | Beside `TeamRefinementNeedUsageEventsTests` on `UsageDataCollectorObservationTest` |
+| `Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.test.tsx`, `ReportsTab.createWizard.test.tsx`, `ReportView.test.tsx`, `ReportView.editWizard.test.tsx` | Colocated with the components; `Common/` because Teams and Portfolios share them |
+| `…/pages/Teams/Detail/TeamDetail.reportsTab.test.tsx`, `…/pages/Portfolios/Detail/PortfolioDetail.reportsTab.test.tsx`, `src/services/UsageData/usageDataRouteKeys.reports.test.ts`, a new block in `src/pages/Overview/OverviewDashboard.test.tsx` | `<component>.<concern>.test.tsx` (refinement) |
+| `Lighthouse.Frontend/src/tests/ReportsTestKit.tsx` | Fixtures and steps shared by the Reports tests (the `RefinementTabTestKit` precedent) |
+| `Lighthouse.EndToEndTests/tests/specs/teams/Reports.spec.ts` + POMs `tests/models/reports/ReportsListPage.ts`, `ReportPage.ts`; `TeamDetailPage` gains `reportsTab`, `goToReports()` | Specs through POMs only, demo data |
+
+## Wave: DISTILL / [REF] Driving adapter coverage
+
+| Driving adapter (DESIGN, with DT1–DT7) | Covered by |
+|---|---|
+| `GET …/teams/{id}/reports/templates` | slices 01, 02, 04, 05 (today, earliest start, the four metrics) |
+| `GET …/teams/{id}/reports` | slices 01, 08, 10 (list, `creationBlockedByCap`, `thenRebuildable`, forward tolerance) |
+| `POST …/teams/{id}/reports` | every create scenario and every create refusal (slices 01–05, 07, 08) |
+| `GET …/teams/{id}/reports/{reportId}` | slices 01–05, 07, 10 (windows, values, dashes, shown metrics, days since Then ended; unknown type refused, never 500) |
+| `PUT …/teams/{id}/reports/{reportId}` | slice 10 (name, Now, shown metrics, stale token 409, Then untouched, refusals) |
+| `DELETE …/teams/{id}/reports/{reportId}` | slice 08 (writers only, list shrinks, cap clears) |
+| The same six under `…/portfolios/{id}/reports` | slice 06 |
+| `DELETE …/teams/{id}`, `DELETE …/portfolios/{id}` (cascade) | slice 01 (`Deleting_a_Team_deletes_its_reports`) and slice 06 (the Portfolio) |
+| RBAC: read 404 for no role, write 403 for readers, another owner's address 404; auth off lets anybody write | slices 01, 06, 08, 10 and `ReportsWithoutSignInScenarios` |
+| `POST /usagedata/events` (`ReportCreated`, `ReportOpened`, `ReportDeleted`, `TeamDetail_Reports`, `PortfolioDetail_Reports`) | `ReportUsageEventsTests` |
+| UI: Team and Portfolio Reports tab, `/teams/:id/reports[/:reportId]`, `/portfolios/:id/reports[/:reportId]` | `TeamDetail.reportsTab`, `PortfolioDetail.reportsTab`, E2E |
+| UI: Reports list (DT1), create wizard (DT3), report view (DT5), edit wizard (DT4), delete dialog (DT7), loading and failure looks (DT6) | `ReportsTab.test`, `ReportsTab.createWizard.test`, `ReportView.test`, `ReportView.editWizard.test` |
+| UI: Team / Portfolio delete dialog naming the reports | `OverviewDashboard.test.tsx` new block |
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+| Driven adapter | Real I/O scenario |
+|---|---|
+| EF `Reports` table, cascade FKs to Team and Portfolio (new) | every backend scenario; the cascade in slices 01 and 06; rows reshaped by SQL for forward tolerance and the uncaptured metric (policy row appended) |
+| EF Work Items and the metrics services the capture reuses | every value scenario (seeded finished, in-progress and per-day Work Items), and the two G3 parity scenarios against the Metrics endpoints |
+| `ILicenseService` | `Mock<ILicenseService>`, switchable per scenario: Community cap, Premium unlimited, lapsed licence |
+| `ILighthouseClock` | `FakeLighthouseClock`, 2 Oct 2026 09:00 Europe/Zurich, moved to 30 Nov 2026 for "every later view" |
+| `IUsageDataPublisher` + outbound recorder | `ReportUsageEventsTests` |
+| Logging (`GET /api/latest/logs/problems`) | the one warning line for a report of an unknown type, without the report's name (slice 01) |
+
+No new external adapter: contract testing not applicable. The migration is DELIVER's (`CreateMigration`, both
+providers).
+
+## Wave: DISTILL / [REF] Scaffolds
+
+| File | Marker | Until DELIVER |
+|---|---|---|
+| `Lighthouse.Frontend/src/services/Api/ReportService.ts` | `__SCAFFOLD__` | every method returns `Promise.reject(new Error("Not yet implemented -- RED scaffold: …"))` |
+| `Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.tsx`, `ReportView.tsx` | `__SCAFFOLD__` | throw on render |
+| `Lighthouse.Frontend/src/models/Reports/Report.ts` | types only | — |
+| `IApiServiceContext.reportService` (+ default and mock entries) | additive | read by no production code yet |
+
+No wizard component is scaffolded: the tests reach it through the tab and the view, so DELIVER is free to shape it
+(upstream issue 5). Backend: none (DST-1). No EF migration.
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+DESIGN: the six endpoints per owner, the `Reports` table and payload, RBAC Read / Write, the catalog of four metrics.
+DEVOPS: the three events and two route keys, names appended after `TeamRefinementDayVerdictShown`, enum
+`UsageDataReportTemplate { ThenAndNow }` sent as `report_template`, forward tolerance. DELIVER owns: the migration via
+`CreateMigration`; the App routes; `UsageDataEventName`, `UsageDataRouteKey` and the frontend mirrors; the rows in
+`docs/settings/usagedata.md` (the disclosure test reads them); `ARCHITECTURE.md` for the new module. No demo data
+change: the skeleton creates its own report on Team Lightspeed's seeded history.
+
+## Wave: DISTILL / [REF] Policy rows appended
+
+`docs/architecture/atdd-infrastructure-policy.md` gains two rows: stored report rows reshaped by SQL on the test
+host's connection (driven internal, real), and `aReportService` in `ReportsTestKit.tsx` for the frontend's view of the
+Reports endpoints (fake).
+
+## Wave: DISTILL / [REF] RED classification
+
+220 of 220 runnable cases fail for missing behaviour when un-skipped (127 backend, 93 frontend); none broken. Three
+frontend cases that were green on the first run were tightened so each first proves the new behaviour is there. E2E
+type-checked and listed, not run live. Detail: `distill/red-classification.md`.
+
+
+## Wave: DISTILL / [REF] Review
+
+Final-gate review: `nw-acceptance-designer-reviewer` (Sentinel), one iteration — **rejected pending revisions**, 1
+blocker, 3 high, 5 medium, 11 low; all but two addressed in this hand-off. The DISCUSS, DESIGN and DEVOPS reviewers
+were not re-dispatched: those waves were reviewed and pushed before this run and are unchanged by it.
+
+| Finding | Resolution |
+|---|---|
+| (blocker) Frontend showed {WIP} with nothing in progress as a dash; backend pins it as a real 0 | Frontend follows the backend: {WIP} 0 is shown, the dash with "No Work Items in progress" sits on the average {Work Item Age} |
+| (high) No scenario for the Team 30 / 90 and Portfolio 90 / 180 presets; "Not captured for this report" never asserted on the report view | Preset scenarios added for both owners (one-click buttons "30 days" etc., proposed in `upstream-issues.md`); a report made before the counts existed shows "Not captured for this report" in its panel |
+| (high) The lapsed-licence scenario never tried to create | It now creates after the lapse and is refused with `report-cap-reached` |
+| (high) "Cannot end in the future" checked only the date field's limit | It now types 3 Oct 2026 and expects "Then cannot end after today." with Next disabled |
+| (medium) "Then ending today" sent a fixed end date | It sends the `today` the templates read answered |
+| (medium) Changing the Team's process behaviour baseline was not read back | The step reads the Team back and fails if the baseline did not change |
+| (medium) The E2E page object clicked Next blind | It waits for each step's own line before advancing |
+| (medium) DST-5 said the real components render everywhere | Amended: the two tab-placement files stand the Reports components in |
+| (medium) The tab opening's route key is not asserted, only the published address | Kept, as in the sibling usage-event tests: the published address is what the disclosure page promises |
+| (low) Comments citing "the report mockup", "the day of the story", "DESIGN"; awkward names ("todays", "Thens limits", "at the engagement start"); `%s` in a test title; an unused reason code; a negative-only dialog check; error share framed as error + boundary | Fixed |
+| (low) "Is open to a reader" asserts `toBeEnabled` | Kept: a switched-off MUI tab is disabled, so it can fail |

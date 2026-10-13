@@ -1,0 +1,56 @@
+# RED classification — epic-5878-baseline DISTILL (2026-10-13)
+
+Every pending case was un-skipped once, run, classified and skipped again (`[Ignore(PendingSliceNN)]` /
+`Ignore = PendingSliceNN` removed; `it.skip` → `it`). Copies of the files were restored afterwards, and the suites
+re-run skipped (backend 127 skipped, frontend 93 skipped, both green).
+
+**Result: 220 of 220 runnable cases fail, every one for missing behaviour. None broken, none vacuously green.**
+The E2E walking skeleton is type-checked and collected by Playwright (`--list`), not run live: it is `test.fixme`,
+no instance was running, and its first step (the Reports tab) does not exist yet.
+
+## Backend — 127 cases
+
+Run: `dotnet test Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --no-build --filter
+"FullyQualifiedName~API.Integration.Reports|FullyQualifiedName~ReportUsageEventsTests"` → Failed 127, Passed 0.
+
+| Class | Cases | Failure | Classification |
+|---|---|---|---|
+| `Slice01TeamReportScenarios` | 19 | `…/teams/1/reports` and `…/reports/templates` answer 404; "The report was not created: expected Created but was NotFound" | MISSING_FUNCTIONALITY (no endpoint) |
+| `Slice02ThenInThePastScenarios` | 18 | same; refusals expected 400, got 404 | MISSING_FUNCTIONALITY |
+| `Slice03CycleTimeBeyondThenLimitsScenarios` | 7 | create answers 404 | MISSING_FUNCTIONALITY |
+| `Slice04ThroughputAndShownMetricsScenarios` | 7 | same | MISSING_FUNCTIONALITY |
+| `Slice05WipAndWorkItemAgeScenarios` | 7 | same | MISSING_FUNCTIONALITY |
+| `Slice06PortfolioReportScenarios` | 7 | `…/portfolios/1/reports…` answers 404 | MISSING_FUNCTIONALITY |
+| `Slice07NowLengthScenarios` | 12 | same as slice 01 | MISSING_FUNCTIONALITY |
+| `Slice08DeleteAndCommunityCapScenarios` | 12 | same | MISSING_FUNCTIONALITY |
+| `Slice10EditReportScenarios` | 12 | same | MISSING_FUNCTIONALITY |
+| `ReportsWithoutSignInScenarios` | 3 | same | MISSING_FUNCTIONALITY |
+| `ReportUsageEventsTests` | 23 | `ReportCreated` / `ReportOpened` / `ReportDeleted` refused with 400 (name not on the list); `TeamDetail_Reports` / `PortfolioDetail_Reports` refused; `UsageDataReportTemplate` and the three names absent from the enums; `docs/settings/usagedata.md` lacks the rows | MISSING_FUNCTIONALITY |
+
+The scenarios expecting 404 or 403 cannot be vacuously green on a missing route: each first creates a report, or
+reads the list, through an endpoint that has to answer 2xx, so a 404 from a missing route fails before the refusal
+is asserted. Validation refusals expect 400 with the reason code, which a missing route does not give.
+The one refusal that was accepted today, a tab opening carrying `reportTemplate`, fails because the pipe ignores the
+unknown member; it goes green only once `reportTemplate` is known and limited to the two report events.
+
+## Frontend — 93 cases
+
+Run: `pnpm exec vitest run` on the eight files below, un-skipped. (The 35 existing cases in
+`OverviewDashboard.test.tsx` passed throughout.)
+
+| File | Cases | Failure | Classification |
+|---|---|---|---|
+| `pages/Common/Reports/ReportsTab.test.tsx` | 19 | `Not yet implemented -- RED scaffold: the Reports tab of team 1` | MISSING_FUNCTIONALITY (scaffold throws) |
+| `pages/Common/Reports/ReportsTab.createWizard.test.tsx` | 24 | same | MISSING_FUNCTIONALITY |
+| `pages/Common/Reports/ReportView.test.tsx` | 26 | `Not yet implemented -- RED scaffold: report 42 of team 1` | MISSING_FUNCTIONALITY |
+| `pages/Common/Reports/ReportView.editWizard.test.tsx` | 8 | same | MISSING_FUNCTIONALITY |
+| `pages/Teams/Detail/TeamDetail.reportsTab.test.tsx` | 5 | no tab named Reports; no Reports view or report view rendered | MISSING_FUNCTIONALITY |
+| `pages/Portfolios/Detail/PortfolioDetail.reportsTab.test.tsx` | 3 | same | MISSING_FUNCTIONALITY |
+| `services/UsageData/usageDataRouteKeys.reports.test.ts` | 4 | `/teams/7/reports` answers no tab opening | MISSING_FUNCTIONALITY |
+| `pages/Overview/OverviewDashboard.test.tsx` (new block) | 4 | the delete dialog does not name the reports, nor ask for them | MISSING_FUNCTIONALITY |
+
+Three cases were green on the first run and were rewritten before hand-off, because each asserted only something
+already true: "says nothing about reports when there are none" now first proves the Overview asked for that Team's
+reports; "reports the Team deleted and never a report deleted" now first proves the dialog named the 2 reports;
+"names no tab for the address of one report" now first proves the Reports tab itself is named. All three fail on
+the second run.
