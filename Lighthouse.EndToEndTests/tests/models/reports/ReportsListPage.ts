@@ -39,7 +39,7 @@ export class ReportsListPage {
 		// Each step is waited for by what it says, so a step that never appears fails here, not later.
 		const whatEachStepSays = [
 			/Set today's flow against a window that stays as it was\./,
-			/frozen when you create it/,
+			/^= \d{1,2} \w{3,4}/,
 			/always ending today/,
 		];
 		for (const says of whatEachStepSays) {

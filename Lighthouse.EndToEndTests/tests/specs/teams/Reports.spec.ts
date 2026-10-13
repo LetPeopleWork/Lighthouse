@@ -20,6 +20,6 @@ testWithDemo(
 		await expect(report.title).toHaveText(
 			/^Then & Now — 90 days to \d{1,2} \w{3,4} \d{4}$/,
 		);
-		await expect(report.panel("Cycle Time: Then & Now")).toBeVisible();
+		await expect(report.panel("Cycle Time")).toBeVisible();
 	},
 );
