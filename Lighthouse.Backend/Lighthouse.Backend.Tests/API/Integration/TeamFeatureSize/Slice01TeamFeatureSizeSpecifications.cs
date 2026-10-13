@@ -10,8 +10,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
     /// </summary>
     public partial class Slice01TeamFeatureSizeTest : TeamFeatureSizeAcceptanceTest
     {
-        private const string Pending = "Story #6251 — pending DELIVER: the Feature Size scatter on a Team.";
-
         // Ocean Explorer's demo Features that several Teams work on, and one only Gravity works on.
         private const string DeepSeaMapping = "OE-001";
         private const string CoralReefRestoration = "OE-002";

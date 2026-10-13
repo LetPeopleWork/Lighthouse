@@ -245,7 +245,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [TestCase(Zenith, CoralReefRestoration, 3)]
         [Category("us-01")]
         [Category("contract-shape:bounded-change")]
-        [Ignore(Pending)]
         public async Task The_Features_a_Team_is_working_on_are_as_big_as_its_own_part_of_them(string team, string feature, int part)
         {
             GivenTheOceanExplorerPortfolioAndTheTeamsThatWorkOnIt();

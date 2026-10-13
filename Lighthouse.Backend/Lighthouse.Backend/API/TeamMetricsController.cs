@@ -132,7 +132,7 @@ namespace Lighthouse.Backend.API
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
                     forecastWindowStart, FeatureForecastWindow.EndFor(forecastWindowStart, features));
 
-                return features.Select(f => new FeatureDto(f, clock, blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null));
+                return features.Select(f => new FeatureDto(f, clock, blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null) { Size = f.SizeFor(team.Id) });
             });
         }
 
