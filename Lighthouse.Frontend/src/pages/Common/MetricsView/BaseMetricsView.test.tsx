@@ -6557,6 +6557,7 @@ describe("BaseMetricsView component", () => {
 				],
 				viewData: [
 					"blockedOverview",
+					"featureSizePercentiles",
 					"percentiles",
 					"sleRisk",
 					"staleOverview",
@@ -6626,6 +6627,7 @@ describe("BaseMetricsView component", () => {
 				],
 				viewData: [
 					"blockedOverview",
+					"featureSizePercentiles",
 					"percentiles",
 					"staleOverview",
 					"totalArrivals",
@@ -6873,6 +6875,7 @@ describe("which lists carry the risk column", () => {
 		"stacked",
 		"estimationVsCycleTime",
 		"featureSize",
+		"featureSizePercentiles",
 		"throughputPbc",
 		"wipPbc",
 		"totalWorkItemAgePbc",
@@ -7022,6 +7025,7 @@ describe("which lists carry the risk column", () => {
 		stacked: "startedAndClosed",
 		estimationVsCycleTime: "estimation",
 		featureSize: "featureSize",
+		featureSizePercentiles: "featureSize",
 		throughputPbc: "closedItems",
 		wipPbc: "inProgress",
 		totalWorkItemAgePbc: "inProgress",

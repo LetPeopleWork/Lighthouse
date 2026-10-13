@@ -1898,7 +1898,7 @@ describe("Feature Size Percentiles' data, on a Team's and a Portfolio's Flow Ove
 			.map((row) => row.textContent);
 
 	// @us-02 @contract-shape:bounded-change
-	it.skip.each(owners)(
+	it.each(owners)(
 		"a %s's Feature Size Percentiles offers its data as a table",
 		async (owner) => {
 			await openTheFlowOverviewAnsweredWith(owner, finishedAndOpenFeatures);
@@ -1908,7 +1908,7 @@ describe("Feature Size Percentiles' data, on a Team's and a Portfolio's Flow Ove
 	);
 
 	// @us-02 @contract-shape:bounded-change
-	it.skip.each(owners)(
+	it.each(owners)(
 		"a %s's Feature Size Percentiles table is titled Closed Features, in the instance's words",
 		async (owner) => {
 			await openTheFlowOverviewAnsweredWith(owner, finishedAndOpenFeatures, {
@@ -1920,7 +1920,7 @@ describe("Feature Size Percentiles' data, on a Team's and a Portfolio's Flow Ove
 	);
 
 	// @us-02 @contract-shape:pure-function
-	it.skip.each(owners)(
+	it.each(owners)(
 		"a %s's Feature Size Percentiles table lists only the Features finished in the window, none still open",
 		async (owner) => {
 			await openTheFlowOverviewAnsweredWith(owner, finishedAndOpenFeatures);
@@ -1930,7 +1930,7 @@ describe("Feature Size Percentiles' data, on a Team's and a Portfolio's Flow Ove
 	);
 
 	// @us-02 @error @contract-shape:pure-function
-	it.skip("a Portfolio's Feature Size Percentiles table leaves out a finished Feature sized by the Portfolio's default, as its percentiles do", async () => {
+	it("a Portfolio's Feature Size Percentiles table leaves out a finished Feature sized by the Portfolio's default, as its percentiles do", async () => {
 		await openTheFlowOverviewAnsweredWith("portfolio", [
 			aFeature("OE-011", "Done", 4),
 			aFeature("OE-013", "Done", 0, true),
@@ -1941,7 +1941,7 @@ describe("Feature Size Percentiles' data, on a Team's and a Portfolio's Flow Ove
 
 	// OE-001 holds 17 Work Items on the Portfolio; this Team's answer carries its part, 4.
 	// @us-02 @contract-shape:bounded-change
-	it.skip("a Team's Feature Size Percentiles table shows each Feature at the Team's own part of it", async () => {
+	it("a Team's Feature Size Percentiles table shows each Feature at the Team's own part of it", async () => {
 		await openTheFlowOverviewAnsweredWith("team", [
 			aFeature("OE-001", "Done", 4),
 			aFeature("OE-011", "Done", 4),

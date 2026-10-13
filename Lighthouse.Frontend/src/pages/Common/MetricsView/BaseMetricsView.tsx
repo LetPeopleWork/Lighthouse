@@ -776,6 +776,14 @@ export function buildViewData(
 			items: inputs.allFeaturesForSizeChart as unknown as IWorkItem[],
 			...opens("featureSize"),
 		},
+		featureSizePercentiles: {
+			title: `Closed ${terms.features}`,
+			// A Feature sized by the default is left out of the percentiles, so the table leaves it out too.
+			items: inputs.allFeaturesForSizeChart.filter(
+				(feature) => feature.stateCategory === "Done" && feature.size > 0,
+			) as unknown as IWorkItem[],
+			...opens("featureSize"),
+		},
 		throughputPbc: {
 			title: `${inputs.title} Completed`,
 			items: throughputItems,
