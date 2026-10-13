@@ -45,7 +45,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         [TestCase(KeepsEverything, "0001-12-31", 365, null)]
         public void ThenRefusal_refuses_a_Then_starting_before_the_oldest_kept_day(int doneItemsCutoffDays, string thenEnd, int lengthDays, string? expected)
         {
-            var refusal = ReportWindowPolicy.ThenRefusal(DateOnly.Parse(thenEnd, CultureInfo.InvariantCulture), lengthDays, Today, doneItemsCutoffDays);
+            var refusal = ReportWindowPolicy.ThenRefusal(Day(thenEnd), lengthDays, Today, doneItemsCutoffDays);
 
             Assert.That(refusal, Is.EqualTo(expected));
         }
@@ -55,18 +55,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         public void ThenRefusal_answers_every_Then_row_of_the_boundary_table_as_it_says(ReportWindowBoundaryScenarios.BoundaryRow row)
         {
             var bounds = ReportWindowBoundaryScenarios.TheTable.Bounds;
-            var today = DateOnly.Parse(bounds.Today, CultureInfo.InvariantCulture);
-            var doneItemsCutoffDays = row.KeepsEveryFinishedItem ? KeepsEverything : today.DayNumber - DateOnly.Parse(bounds.EarliestStart!, CultureInfo.InvariantCulture).DayNumber;
+            var today = Day(bounds.Today);
+            var doneItemsCutoffDays = row.KeepsEveryFinishedItem ? KeepsEverything : today.DayNumber - Day(bounds.EarliestStart!).DayNumber;
 
-            var refusal = ReportWindowPolicy.ThenRefusal(DateOnly.Parse(row.End!, CultureInfo.InvariantCulture), row.LengthDays, today, doneItemsCutoffDays);
+            var refusal = ReportWindowPolicy.ThenRefusal(Day(row.End!), row.LengthDays, today, doneItemsCutoffDays);
 
             Assert.That(refusal, Is.EqualTo(row.Refusal));
         }
 
         private static IEnumerable<TestCaseData> TheThenRowsOfTheBoundaryTable()
             => ReportWindowBoundaryScenarios.TheTable.Rows
-                .Where(row => row.Side == "then")
+                .Where(row => row.IsThen)
                 .Select(row => new TestCaseData(row).SetName($"ThenRefusal_answers_every_Then_row_of_the_boundary_table_as_it_says({row.Case})"));
+
+        private static DateOnly Day(string yearMonthDay) => DateOnly.ParseExact(yearMonthDay, "yyyy-MM-dd", CultureInfo.InvariantCulture);
 
         [TestCase(365, "2025-10-02")]
         [TestCase(180, "2026-04-05")]

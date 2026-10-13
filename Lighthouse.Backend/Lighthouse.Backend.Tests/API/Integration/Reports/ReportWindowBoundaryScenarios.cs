@@ -1,4 +1,4 @@
-using System.Net;
+using System.Globalization;
 using System.Text.Json;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Reports
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             => TheTable.Rows.Select(row =>
             {
                 var testCase = new TestCaseData(row).SetName($"A_window_at_an_edge_is_answered_as_the_table_says({row.Case})");
-                return row.Side == "then" ? testCase : testCase.Ignore(PendingSlice07);
+                return row.IsThen ? testCase : testCase.Ignore(PendingSlice07);
             });
 
         private static BoundaryTableFile ReadTheTable()
@@ -87,14 +87,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         public sealed record BoundaryRow(string Case, string Side, string? End, int LengthDays, string? Refusal, bool KeepsEveryFinishedItem = false)
         {
+            public bool IsThen => Side == "then";
+
             public override string ToString() => Case;
         }
 
         /// <summary>A Then row moves Then and leaves Now at 90 days; a Now row keeps Then at the 90 days to today.</summary>
-        private static NewReport AsNewReport(BoundaryRow row) => row.Side == "then"
+        private static NewReport AsNewReport(BoundaryRow row) => row.IsThen
             ? new NewReport
             {
-                ThenEnd = DateOnly.ParseExact(row.End ?? string.Empty, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+                ThenEnd = DateOnly.ParseExact(row.End ?? string.Empty, "yyyy-MM-dd", CultureInfo.InvariantCulture),
                 ThenLengthDays = row.LengthDays,
                 NowLengthDays = 90,
             }

@@ -31,12 +31,12 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return ReportRefusalCodes.ThenEndsInTheFuture;
             }
 
-            return StartsBefore(EarliestStart(today, doneItemsCutoffDays), thenEnd, lengthDays) ? ReportRefusalCodes.ThenBeforeCutoff : null;
+            return StartsBefore(EarliestStart(today, doneItemsCutoffDays), ReportWindow.EndingOn(thenEnd, lengthDays)) ? ReportRefusalCodes.ThenBeforeCutoff : null;
         }
 
-        // Day numbers rather than AddDays, so a length reaching past the start of the calendar is still answered.
-        private static bool StartsBefore(DateOnly? earliest, DateOnly end, int lengthDays)
-            => earliest is DateOnly earliestDay && (long)end.DayNumber - (lengthDays - 1) < earliestDay.DayNumber;
+        // A window too long for the calendar to name starts before any day the owner can keep.
+        private static bool StartsBefore(DateOnly? earliest, ReportWindow? window)
+            => earliest is DateOnly earliestDay && (window is null || window.Start < earliestDay);
 
         public static ReportWindow? NowWindow(DateOnly today, int lengthDays) => ReportWindow.EndingOn(today, lengthDays);
     }
