@@ -731,4 +731,90 @@ describe("Creating the report", () => {
 
 		expect(await theNameField()).toHaveAttribute("maxlength", "200");
 	});
+
+	it("closes and asks for the list again once the report is created", async () => {
+		const reportService = await openTheWizard();
+		await onToTheLastStep();
+		const listsAskedFor = vi.mocked(reportService.getReports).mock.calls.length;
+
+		await userEvent.click(await theCreateButton());
+
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(reportService.getReports).toHaveBeenCalledTimes(listsAskedFor + 1);
+	});
+
+	it.each([
+		["a refusal for another reason", aRefusal(400, "name-too-long")],
+		["a failure that is no refusal", new Error("the network dropped")],
+	])(
+		"asks for the bounds again only when Then is refused for the oldest kept day, not after %s",
+		async (_, failure) => {
+			const reportService = await openTheWizard(
+				aReportService({
+					getReports: vi.fn().mockResolvedValue(aReportList([])),
+					createReport: vi.fn().mockRejectedValue(failure),
+				}),
+			);
+			await onToTheLastStep();
+			const templatesAskedFor = vi.mocked(reportService.getTemplates).mock.calls
+				.length;
+
+			await userEvent.click(await theCreateButton());
+
+			expect(await within(await theWizard()).findByRole("alert")).toBeVisible();
+			expect(reportService.getTemplates).toHaveBeenCalledTimes(
+				templatesAskedFor,
+			);
+		},
+	);
+
+	it("takes back what the last refusal said while creating again", async () => {
+		const held = deferred<number>();
+		await openTheWizard(
+			aReportService({
+				getReports: vi.fn().mockResolvedValue(aReportList([])),
+				createReport: vi
+					.fn()
+					.mockRejectedValueOnce(aRefusal(400, "name-too-long"))
+					.mockReturnValue(held.promise),
+			}),
+		);
+		await onToTheLastStep();
+		await userEvent.click(await theCreateButton());
+		expect(await within(await theWizard()).findByRole("alert")).toBeVisible();
+		const create = await theCreateButton();
+		await waitFor(() => expect(create).toBeEnabled());
+
+		await userEvent.click(create);
+
+		await waitFor(() =>
+			expect(
+				within(screen.getByRole("dialog")).queryByRole("alert"),
+			).toBeNull(),
+		);
+	});
+});
+
+describe("The wizard's steps", () => {
+	beforeEach(() => {
+		reportUsage.mockClear();
+		mockNavigate.mockClear();
+		terms.current = { ...defaultTerms };
+	});
+
+	it("names its steps Type, Then, Now and Metrics & name", async () => {
+		await openTheWizard();
+
+		for (const step of ["Type", "Then", "Now", "Metrics & name"]) {
+			expect(within(await theWizard()).getByText(step)).toBeVisible();
+		}
+	});
+
+	it("offers no way back from the first step", async () => {
+		await openTheWizard();
+
+		expect(
+			within(await theWizard()).queryByRole("button", { name: "Back" }),
+		).toBeNull();
+	});
 });

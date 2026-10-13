@@ -460,4 +460,73 @@ describe("The Reports list on a slow or failing connection", () => {
 			await screen.findByRole("link", { name: ENGAGEMENT_START }),
 		).toBeVisible();
 	});
+
+	it("says it is busy while the list is on its way, and no longer once it is shown", async () => {
+		const held = deferred<ReturnType<typeof aReportList>>();
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
+			reportService: aReportService({
+				getReports: vi.fn().mockReturnValue(held.promise),
+			}),
+		});
+
+		await screen.findByRole("progressbar");
+		expect(screen.getByTestId("reports-list")).toHaveAttribute(
+			"aria-busy",
+			"true",
+		);
+
+		await act(async () => held.resolve(aReportList([aListedReport()])));
+		await screen.findByRole("link", { name: ENGAGEMENT_START });
+
+		expect(screen.getByTestId("reports-list")).not.toHaveAttribute("aria-busy");
+	});
+});
+
+describe("The columns of the Reports list", () => {
+	beforeEach(() => {
+		reportUsage.mockClear();
+		terms.current = { ...defaultTerms };
+	});
+
+	it("names each report's Type and the day it was created", async () => {
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
+			reportService: aReportService({
+				getReports: vi
+					.fn()
+					.mockResolvedValue(
+						aReportList([
+							aListedReport({
+								name: "Engagement start",
+								createdOn: "2026-08-01",
+							}),
+						]),
+					),
+			}),
+		});
+
+		const row = (
+			await screen.findByRole("link", { name: "Engagement start" })
+		).closest('[role="row"]') as HTMLElement;
+
+		expect(row).toHaveTextContent("Then & Now");
+		expect(row).toHaveTextContent(new Date(2026, 7, 1).toLocaleDateString());
+	});
+
+	it("names a Type this version does not know as not supported", async () => {
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
+			reportService: aReportService({
+				getReports: vi
+					.fn()
+					.mockResolvedValue(aReportList([aListedReportOfALaterType()])),
+			}),
+		});
+
+		const row = (
+			await screen.findByRole("link", {
+				name: aListedReportOfALaterType().name,
+			})
+		).closest('[role="row"]') as HTMLElement;
+
+		expect(row).toHaveTextContent(NOT_SUPPORTED_IN_THIS_VERSION);
+	});
 });
