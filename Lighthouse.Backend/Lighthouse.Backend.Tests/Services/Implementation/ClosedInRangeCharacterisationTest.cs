@@ -50,7 +50,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private static readonly (string Name, StateCategories State, DateTime? ClosedAt, int Size)[] Universe =
         [
             (ClosedOnTheFirstDay, StateCategories.Done, At(2026, 9, 1, 12), 1),
-            (ClosedOnTheLastDay, StateCategories.Done, At(2026, 9, 30, 5), 2),
+            (ClosedOnTheLastDay, StateCategories.Done, At(2026, 9, 30, 5), 6),
             (ClosedTheDayBefore, StateCategories.Done, At(2026, 8, 31, 5), 4),
             (ClosedTheDayAfter, StateCategories.Done, At(2026, 10, 1, 12), 8),
             (DoneWithoutAClosedDate, StateCategories.Done, null, 16),
@@ -90,10 +90,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(features.Select(f => f.Name), Is.EquivalentTo(closedInTheRange.Concat([StillToDo, InProgress])));
         }
 
-        // The sizes closed in the range are 1, 2 and 5 in UTC, and 1, 2 and 3 in Auckland. Of three
-        // sizes, the 50th is the smallest and the other three are the middle one.
-        [TestCase(Utc, 1, 2, 2, 2)]
-        [TestCase(Auckland, 1, 2, 2, 2)]
+        // The sizes closed in the range are 1, 5 and 6 in UTC, and 1, 3 and 6 in Auckland. Of three
+        // sizes, the 50th is the smallest and the other three are the middle one, so the middle size
+        // differs between the zones and an answer that ignored the instance's zone would be caught.
+        [TestCase(Utc, 1, 5, 5, 5)]
+        [TestCase(Auckland, 1, 3, 3, 3)]
         public void A_Portfolio_s_size_percentiles_come_from_the_Features_closed_in_the_range(string zone, int p50, int p70, int p85, int p95)
         {
             var percentiles = PortfolioMetrics(zone).GetSizePercentilesForPortfolio(portfolio, FirstDay, LastDay);
