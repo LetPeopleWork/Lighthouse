@@ -86,6 +86,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             public const string LowerLimitZero = "lower-limit-zero";
 
             public const string ThenTooShort = "then-too-short";
+            public const string ThenTooLong = "then-too-long";
             public const string ThenEndsInTheFuture = "then-ends-in-the-future";
             public const string ThenBeforeCutoff = "then-before-cutoff";
             public const string NowTooShort = "now-too-short";

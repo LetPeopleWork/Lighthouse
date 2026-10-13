@@ -125,7 +125,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             using var refused = await CreateAReport(lightspeed, ThenOf(90, new DateOnly(2025, 11, 15)));
 
             await ThenItIsRefusedFor(refused, Reason.ThenBeforeCutoff);
-            Assert.That(await refused.Content.ReadAsStringAsync(), Does.Contain("2025-10-02"));
+            Assert.That(await EarliestStartNamedBy(refused), Is.EqualTo("2025-10-02"));
         }
 
         // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:bounded-change
@@ -150,7 +150,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             var templates = await TheTypesOfReportFor(gravity);
             using var refused = await CreateAReport(gravity, ThenOf(14, new DateOnly(2026, 4, 17)));
 
-            Assert.That(TextOf(templates, "earliestStart"), Is.EqualTo("2026-04-05"));
+            var earliestStartRefusedWith = await EarliestStartNamedBy(refused);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TextOf(templates, "earliestStart"), Is.EqualTo("2026-04-05"));
+                Assert.That(earliestStartRefusedWith, Is.EqualTo("2026-04-05"), "the refusal names the same day");
+            }
+
             await ThenItIsRefusedFor(refused, Reason.ThenBeforeCutoff);
         }
 
@@ -224,6 +231,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             ThenLengthDays = lengthDays,
             NowLengthDays = lengthDays,
         };
+
+        private static async Task<string?> EarliestStartNamedBy(HttpResponseMessage refusal)
+        {
+            using var body = JsonDocument.Parse(await refusal.Content.ReadAsStringAsync());
+            return TextOf(body.RootElement, "earliestStart");
+        }
 
         /// <summary>
         /// Ten Work Items finished inside 3 May - 31 Jul 2026 (85th percentile 18 days), plus one finished the

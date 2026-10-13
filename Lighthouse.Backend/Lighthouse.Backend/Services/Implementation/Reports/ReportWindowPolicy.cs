@@ -10,9 +10,19 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
     {
         public const int MinimumLengthDays = 14;
 
-        /// <summary>The first day the owner still holds finished items for, or null when it keeps every one of them.</summary>
+        /// <summary>
+        /// The first day the owner still holds finished items for, or null when it keeps every one of them. A cutoff
+        /// reaching back before the first day the calendar can name holds everything from that first day on.
+        /// </summary>
         public static DateOnly? EarliestStart(DateOnly today, int doneItemsCutoffDays)
-            => doneItemsCutoffDays > 0 ? today.AddDays(-doneItemsCutoffDays) : null;
+        {
+            if (doneItemsCutoffDays <= 0)
+            {
+                return null;
+            }
+
+            return doneItemsCutoffDays < today.DayNumber ? today.AddDays(-doneItemsCutoffDays) : DateOnly.MinValue;
+        }
 
         /// <summary>Whether Then could still be computed afresh from what the owner holds today.</summary>
         public static bool ThenRebuildable(DateOnly thenStart, DateOnly today, int doneItemsCutoffDays)
@@ -26,17 +36,18 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return ReportRefusalCodes.ThenTooShort;
             }
 
+            if (ReportWindow.EndingOn(thenEnd, lengthDays) is not ReportWindow window)
+            {
+                return ReportRefusalCodes.ThenTooLong;
+            }
+
             if (thenEnd > today)
             {
                 return ReportRefusalCodes.ThenEndsInTheFuture;
             }
 
-            return StartsBefore(EarliestStart(today, doneItemsCutoffDays), ReportWindow.EndingOn(thenEnd, lengthDays)) ? ReportRefusalCodes.ThenBeforeCutoff : null;
+            return EarliestStart(today, doneItemsCutoffDays) is DateOnly earliest && window.Start < earliest ? ReportRefusalCodes.ThenBeforeCutoff : null;
         }
-
-        // A window too long for the calendar to name starts before any day the owner can keep.
-        private static bool StartsBefore(DateOnly? earliest, ReportWindow? window)
-            => earliest is DateOnly earliestDay && (window is null || window.Start < earliestDay);
 
         public static ReportWindow? NowWindow(DateOnly today, int lengthDays) => ReportWindow.EndingOn(today, lengthDays);
     }

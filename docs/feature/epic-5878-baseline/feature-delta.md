@@ -1650,7 +1650,8 @@ beyondThenLimits.above / .below: a value whose `value` is the count (no sample s
 A metric the report never captured is missing from `metrics`; a member it never captured is missing or null — both
 read "Not captured for this report" (D27), except Then's 70th and 50th, which Then never holds (DD33).
 
-**Refusal codes** (closed; DISTILL's set, adopted — DD28). Window: `then-too-short`, `then-ends-in-the-future`,
+**Refusal codes** (closed; DISTILL's set, adopted — DD28). Window: `then-too-short`,
+`then-too-long` (Then would start before 1 Jan of the year 1, the first day the calendar can name; checked after too-short, before ends-in-the-future), `then-ends-in-the-future`,
 `then-before-cutoff` (+ `earliestStart`), `now-too-short`, `now-before-cutoff` (+ `earliestStart`). Request:
 `name-missing`, `no-metric-shown`, `unknown-metric`, `metric-not-captured` (edit only). Type:
 `template-not-supported` (400 on create; 422 when opening a stored report). Licence: `report-cap-reached` (403).

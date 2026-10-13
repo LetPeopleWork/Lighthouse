@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
 
             if (ReportWindow.EndingOn(settings.ThenEndDate, settings.ThenLengthDays) is not ReportWindow thenWindow)
             {
-                return ReportOutcome<string>.Refused(ReportRefusalCodes.ThenBeforeCutoff);
+                return ReportOutcome<string>.Refused(ReportRefusalCodes.ThenTooLong);
             }
 
             var nowLengthDays = settings.NowLengthDays ?? settings.ThenLengthDays;
