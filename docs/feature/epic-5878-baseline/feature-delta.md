@@ -2541,6 +2541,26 @@ and DD33; slice 01 is reworked to them before slice 02 starts, and every later p
 - The report name in the list uses the theme's link colour (it rendered in the browser's visited purple, unreadable in
   dark mode).
 
+**Maintainer decision after the slice-02 live check (2026-10-13)** — built in slice 03, before its panels:
+
+- **[DT14] The report page carries a summary header** between the one-line breadcrumb and the first panel, in two
+  segments matching the panels' sides. Each side names its window and how many {Work Items} were closed in it; the
+  panels' side headings drop their "· N {Work Items}" (a panel whose count differs, e.g. {WIP}, keeps its own line).
+  No "frozen on" or "always the last N days" lines (maintainer: they add nothing). More general information may join
+  the header later, but only after the maintainer has seen a sketch of it. Prompted by a live report whose Then (90
+  days) and Now (10 days) both ended 13 Oct: only the window lengths explained 203 against 27 {Work Items}, and the page
+  did not show them.
+  ```
+  Reports / Then & Now — 90 days to 13 Oct 2026
+  ┌──────────────────────────────────────┬───────────────────────────────────────┐
+  │ THEN                                 │ NOW                                   │
+  │ 16 Jul – 13 Oct 2026 · 90 days       │ 4 Oct – 13 Oct 2026 · 10 days         │
+  │ 203 Work Items closed                │ 27 Work Items closed                  │
+  └──────────────────────────────────────┴───────────────────────────────────────┘
+  ┌ Cycle Time ──────────────────────────────────────────────────────────────────┐
+  │ THEN                    │ NOW                    │ CHANGE                  │
+  ```
+
 ### [REF] Reconciliation
 
 Reconciliation passed — 0 contradictions across `discuss/`, `design/` and `devops/` wave decisions (DISCUSS was
