@@ -86,5 +86,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
             Assert.That(earliest?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), Is.EqualTo(expected));
         }
+
+        // Today is 2 Oct 2026, so a Team keeping 365 days holds finished items from 2 Oct 2025 on.
+        [TestCase(365, "2025-10-02", true)]
+        [TestCase(365, "2025-10-03", true)]
+        [TestCase(365, "2025-10-01", false)]
+        [TestCase(KeepsEverything, "0001-01-01", true)]
+        public void ThenRebuildable_holds_while_Then_starts_on_or_after_the_oldest_kept_day(int doneItemsCutoffDays, string thenStart, bool expected)
+        {
+            Assert.That(ReportWindowPolicy.ThenRebuildable(Day(thenStart), Today, doneItemsCutoffDays), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void NowWindow_of_a_single_day_is_today_alone()
+        {
+            Assert.That(ReportWindowPolicy.NowWindow(Today, 1), Is.EqualTo(new ReportWindow(Today, Today, 1)));
+        }
     }
 }

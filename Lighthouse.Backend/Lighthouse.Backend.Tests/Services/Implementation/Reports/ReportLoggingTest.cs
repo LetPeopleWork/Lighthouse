@@ -68,6 +68,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         }
 
         [Test]
+        public async Task A_create_taking_exactly_ten_seconds_is_not_yet_slow()
+        {
+            await CreateTakingSeconds(10);
+
+            Assert.That(logger.Lines.Single().Level, Is.EqualTo(LogLevel.Information));
+        }
+
+        [Test]
+        public async Task A_create_without_a_Now_length_logs_Now_as_long_as_Then()
+        {
+            var outcome = await Subject(seconds: 0).Create(Lightspeed, new NewReport(
+                ThenAndNowTemplate.TemplateKey, SecretName, ["cycle-time"], new NewThenAndNow(new DateOnly(2026, 10, 2), 90, null)));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Status, Is.EqualTo(ReportOutcomeStatus.Done));
+                Assert.That(logger.Lines.Single().Fields["NowLengthDays"], Is.EqualTo(90));
+            }
+        }
+
+        [Test]
         public async Task A_refused_create_logs_its_reason_and_never_the_name_or_dates()
         {
             var thenEnd = new DateOnly(2026, 9, 17);
