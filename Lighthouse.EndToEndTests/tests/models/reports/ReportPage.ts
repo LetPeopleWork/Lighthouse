@@ -16,6 +16,11 @@ export class ReportPage {
 		return this;
 	}
 
+	/** The report's name, the page's top heading. */
+	get title(): Locator {
+		return this.page.getByRole("heading", { level: 1 });
+	}
+
 	/** The line naming the frozen Then window, such as "Then: 90 days to 31 Jul 2026 — frozen". */
 	get thenWindow(): Locator {
 		return this.page.getByText(

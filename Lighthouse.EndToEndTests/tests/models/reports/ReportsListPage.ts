@@ -11,7 +11,9 @@ export class ReportsListPage {
 
 	/** The list marks itself ready once it has read the reports; until then Create Report waits too. */
 	get ready(): Locator {
-		return this.page.locator('[data-widget-status="ready"]').first();
+		return this.page.locator(
+			'[data-testid="reports-list"][data-widget-status="ready"]',
+		);
 	}
 
 	async waitUntilReady(): Promise<ReportsListPage> {
