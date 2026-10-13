@@ -9,10 +9,6 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
     {
         public const double SlowCreationMilliseconds = 10_000;
 
-        private const string NameMissing = "name-missing";
-
-        private const string TemplateNotSupported = "template-not-supported";
-
         private readonly List<IReportTemplate> templates = [.. templates];
 
         public async Task<ReportOutcome<ReportRead>> Create(ReportOwner owner, NewReport request)
@@ -26,19 +22,19 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
 
             if (string.IsNullOrWhiteSpace(request.Name))
             {
-                return Refuse(owner, TemplateFor(request)?.Key, NameMissing);
+                return Refuse(owner, TemplateFor(request)?.Key, ReportRefusalCodes.NameMissing);
             }
 
             if (TemplateFor(request) is not IReportTemplate template)
             {
-                return Refuse(owner, null, TemplateNotSupported);
+                return Refuse(owner, null, ReportRefusalCodes.TemplateNotSupported);
             }
 
             var calendar = new ReportCalendar(clock.Today, facts.DoneItemsCutoffDays);
             var frozen = template.Freeze(owner, request, calendar);
             if (frozen.Status != ReportOutcomeStatus.Done || frozen.Value is null)
             {
-                return Refuse(owner, template.Key, frozen.Code ?? TemplateNotSupported);
+                return Refuse(owner, template.Key, frozen.Code ?? ReportRefusalCodes.TemplateNotSupported);
             }
 
             var report = Report.For(owner, template.Key, request.Name.Trim(), clock.Now.UtcDateTime);

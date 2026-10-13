@@ -11,8 +11,6 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
 
         public const double SlowReadMilliseconds = 2_000;
 
-        private const string TemplateNotSupported = "template-not-supported";
-
         private readonly List<IReportTemplate> templates = [.. templates];
 
         public ReportOutcome<ReportTemplatesRead> Templates(ReportOwner owner)
@@ -62,7 +60,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             if (TemplateOf(report) is not IReportTemplate template)
             {
                 LogUnreadable(report, null);
-                return ReportOutcome<ReportRead>.Unsupported(TemplateNotSupported);
+                return ReportOutcome<ReportRead>.Unsupported(ReportRefusalCodes.TemplateNotSupported);
             }
 
             try
@@ -72,7 +70,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             catch (JsonException exception)
             {
                 LogUnreadable(report, exception);
-                return ReportOutcome<ReportRead>.Unsupported(TemplateNotSupported);
+                return ReportOutcome<ReportRead>.Unsupported(ReportRefusalCodes.TemplateNotSupported);
             }
         }
 

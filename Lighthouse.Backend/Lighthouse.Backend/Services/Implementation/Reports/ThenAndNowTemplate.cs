@@ -15,10 +15,6 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
     {
         public const string TemplateKey = "then-and-now";
 
-        private const string ThenTooShort = "then-too-short";
-
-        private const string NowTooShort = "now-too-short";
-
         public string Key => TemplateKey;
 
         public IReadOnlyList<string> MetricKeysFor(ReportOwnerKind ownerKind) => [.. catalog.For(ownerKind).Select(metric => metric.Key)];
@@ -27,12 +23,12 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
         {
             if (request.ThenAndNow is not NewThenAndNow settings || settings.ThenLengthDays < 1)
             {
-                return ReportOutcome<string>.Refused(ThenTooShort);
+                return ReportOutcome<string>.Refused(ReportRefusalCodes.ThenTooShort);
             }
 
             if (settings.NowLengthDays < 1)
             {
-                return ReportOutcome<string>.Refused(NowTooShort);
+                return ReportOutcome<string>.Refused(ReportRefusalCodes.NowTooShort);
             }
 
             var thenWindow = ReportWindow.EndingOn(settings.ThenEndDate, settings.ThenLengthDays);
