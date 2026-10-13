@@ -7,6 +7,7 @@ using Lighthouse.Backend.Models.ConnectionHealth;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.Refinement;
+using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Models.OptionalFeatures;
@@ -90,6 +91,8 @@ namespace Lighthouse.Backend.Data
         public DbSet<ConnectionHealthVerdict> ConnectionHealthVerdicts { get; set; } = null!;
 
         public DbSet<SizingLogEntry> SizingLogEntries { get; set; } = null!;
+
+        public DbSet<Report> Reports { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -635,6 +638,37 @@ namespace Lighthouse.Backend.Data
 
             ConfigureRefinementSettings(modelBuilder);
             ConfigureSizingLog(modelBuilder);
+            ConfigureReports(modelBuilder);
+        }
+
+        private static void ConfigureReports(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Report>(entity =>
+            {
+                entity.HasKey(report => report.Id);
+
+                // A report belongs to exactly one Team or one Portfolio. The database holds that rule itself, so a
+                // row written by any other path, or by an older release, still cannot break it.
+                entity.ToTable(table => table.HasCheckConstraint(
+                    "CK_Reports_ExactlyOneOwner",
+                    """("TeamId" IS NOT NULL AND "PortfolioId" IS NULL) OR ("TeamId" IS NULL AND "PortfolioId" IS NOT NULL)"""));
+
+                entity.HasOne<Team>()
+                      .WithMany()
+                      .HasForeignKey(report => report.TeamId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne<Portfolio>()
+                      .WithMany()
+                      .HasForeignKey(report => report.PortfolioId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(report => report.TemplateKey).IsRequired().HasMaxLength(Report.LongestTemplateKey);
+                entity.Property(report => report.Name).IsRequired().HasMaxLength(Report.LongestName);
+                entity.Property(report => report.ShownMetricKeysJson).IsRequired();
+                entity.Property(report => report.TemplatePayloadJson).IsRequired();
+                entity.Property(report => report.ConcurrencyToken).IsConcurrencyToken();
+            });
         }
 
         private static void ConfigureSizingLog(ModelBuilder modelBuilder)

@@ -1289,6 +1289,58 @@ namespace Lighthouse.Backend.Migrations
                     b.ToTable("RefreshLogs");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.Reports.Report", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PayloadSchemaVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("PortfolioId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ShownMetricKeysJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("TeamId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TemplateKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TemplatePayloadJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PortfolioId");
+
+                    b.HasIndex("TeamId");
+
+                    b.ToTable("Reports", t =>
+                        {
+                            t.HasCheckConstraint("CK_Reports_ExactlyOneOwner", "(\"TeamId\" IS NOT NULL AND \"PortfolioId\" IS NULL) OR (\"TeamId\" IS NULL AND \"PortfolioId\" IS NOT NULL)");
+                        });
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.Team", b =>
                 {
                     b.Property<int>("Id")
@@ -1970,6 +2022,19 @@ namespace Lighthouse.Backend.Migrations
                         .WithMany()
                         .HasForeignKey("VoterProfileId")
                         .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.Reports.Report", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.Portfolio", null)
+                        .WithMany()
+                        .HasForeignKey("PortfolioId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Lighthouse.Backend.Models.Team", null)
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Team", b =>
