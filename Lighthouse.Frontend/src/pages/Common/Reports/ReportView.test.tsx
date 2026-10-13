@@ -400,7 +400,7 @@ describe("A report on a slow or failing connection", () => {
 	beforeEach(beforeEachReportTest);
 
 	// @us-01 @slice-01 @boundary @ac-1.8 @contract-shape:pure-function
-	it.skip("shows only the way back and a spinner while the report is on its way", async () => {
+	it("shows only the way back and a spinner while the report is on its way", async () => {
 		const held = deferred<IReport>();
 		renderWithReports(
 			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
@@ -419,7 +419,7 @@ describe("A report on a slow or failing connection", () => {
 	});
 
 	// @us-01 @slice-01 @error @ac-1.8 @contract-shape:pure-function
-	it.skip("says the report could not be loaded and offers Retry, showing no numbers", async () => {
+	it("says the report could not be loaded and offers Retry, showing no numbers", async () => {
 		const getReport = vi
 			.fn()
 			.mockRejectedValueOnce(new Error("the network dropped"))
@@ -458,7 +458,7 @@ describe("A report on a slow or failing connection", () => {
 
 	// @us-01 @slice-01 @error @contract-shape:pure-function
 	// An instance rolled back from a later version still holds that version's reports.
-	it.skip("says a report made by a newer version cannot be shown here and leads back to the list", async () => {
+	it("says a report made by a newer version cannot be shown here and leads back to the list", async () => {
 		renderWithReports(
 			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
 			{
@@ -479,7 +479,7 @@ describe("A report on a slow or failing connection", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it.skip("never lets a late answer for the report opened before land on the one opened now", async () => {
+	it("never lets a late answer for the report opened before land on the one opened now", async () => {
 		const first = deferred<IReport>();
 		const getReport = vi
 			.fn()

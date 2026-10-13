@@ -174,6 +174,14 @@ function chartIsOnScreen(look: BodyLook): boolean {
 
 const fullHeight: SxProps<Theme> = { height: "100%" };
 
+const loadingMessageSx: SxProps<Theme> = {
+	position: "absolute",
+	top: `calc(50% + ${SPINNER_SIZE / 2 + 8}px)`,
+	left: 0,
+	right: 0,
+	textAlign: "center",
+};
+
 const bodySx: Record<BodyLook, SxProps<Theme>> = {
 	ready: fullHeight,
 	dimmed: { height: "100%", opacity: LOADING_OPACITY, pointerEvents: "none" },
@@ -202,6 +210,8 @@ export interface WidgetBodyProps {
 	readonly failureMessage?: string;
 	/** Offers Retry on the could-not-load look; without it, reloading is the only way to ask again. */
 	readonly onRetry?: () => void;
+	/** Said beneath the lone spinner while there is nothing yet to dim; without it the spinner stands alone. */
+	readonly loadingMessage?: string;
 	readonly children: React.ReactNode;
 }
 
@@ -211,6 +221,7 @@ export const WidgetBody: React.FC<WidgetBodyProps> = ({
 	hasContentToDim,
 	failureMessage = COULD_NOT_LOAD_MESSAGE,
 	onRetry,
+	loadingMessage,
 	children,
 }) => {
 	const look = bodyLookFor(status, hasContentToDim);
@@ -237,6 +248,15 @@ export const WidgetBody: React.FC<WidgetBodyProps> = ({
 				)}
 			</Box>
 			{status === "loading" && centredSpinner}
+			{look === "waiting" && loadingMessage && (
+				<Typography
+					variant="body2"
+					color="text.secondary"
+					sx={loadingMessageSx}
+				>
+					{loadingMessage}
+				</Typography>
+			)}
 		</Box>
 	);
 };

@@ -1,25 +1,38 @@
-import { Stack } from "@mui/material";
+import { Box, Button, Stack } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import type React from "react";
 import { useContext } from "react";
+import { Link as RouterLink } from "react-router";
 import type { IReport, IReportOwner } from "../../../models/Reports/Report";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { WidgetBody } from "../MetricsView/WidgetShell";
+import type { WidgetStatus } from "../MetricsView/widgetStatus";
 import { panelFor } from "./panels/reportPanelRegistry";
 import ThenAndNowHeader from "./ThenAndNowHeader";
+
+const LOADING = "Loading report…";
+const COULD_NOT_LOAD = "This report couldn't be loaded. Reload to try again.";
+const MADE_BY_A_NEWER_VERSION =
+	"This report was made by a newer version of Lighthouse and can't be shown here.";
+const BODY_MIN_HEIGHT = 120;
 
 interface ReportViewProps {
 	owner: IReportOwner;
 	reportId: number;
 }
 
-type ReportStatus = "loading" | "error" | "ready";
-
-function statusOf(hasReport: boolean, isError: boolean): ReportStatus {
-	if (isError) return "error";
-	return hasReport ? "ready" : "loading";
+function statusOf(isFetching: boolean, isError: boolean): WidgetStatus {
+	if (isFetching) return "loading";
+	return isError ? "error" : "ready";
 }
+
+const isMadeByANewerVersion = (error: Error | null): boolean =>
+	error instanceof ApiError &&
+	error.code === 422 &&
+	error.problemCode === "template-not-supported";
 
 const ReportPanels: React.FC<{ readonly report: IReport }> = ({ report }) => {
 	const { getTerm } = useTerminology();
@@ -47,21 +60,56 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 	reportId,
 }) => {
 	const { reportService } = useContext(ApiServiceContext);
-	const { data: report, isError } = useQuery({
+	const {
+		data: report,
+		isFetching,
+		isError,
+		error,
+		refetch,
+	} = useQuery({
 		queryKey: ["report", owner.kind, owner.id, reportId],
 		queryFn: () => reportService.getReport(owner, reportId),
 	});
 
+	const reportsPath = `/${owner.kind}s/${owner.id}/reports`;
+	const status = statusOf(isFetching, isError);
+	const madeByANewerVersion = isMadeByANewerVersion(error);
+
 	return (
-		<Stack
-			spacing={2}
-			data-report-status={statusOf(report !== undefined, isError)}
-		>
-			<ThenAndNowHeader
-				reportsPath={`/${owner.kind}s/${owner.id}/reports`}
-				name={report?.name}
-			/>
-			{report !== undefined && <ReportPanels report={report} />}
+		<Stack spacing={2} data-report-status={status}>
+			<ThenAndNowHeader reportsPath={reportsPath} name={report?.name} />
+			<Box
+				aria-busy={status === "loading" ? "true" : undefined}
+				sx={{
+					display: "flex",
+					flexDirection: "column",
+					minHeight: BODY_MIN_HEIGHT,
+				}}
+			>
+				<WidgetBody
+					widgetKey="report"
+					status={status}
+					hasContentToDim={report !== undefined}
+					loadingMessage={LOADING}
+					failureMessage={
+						madeByANewerVersion ? MADE_BY_A_NEWER_VERSION : COULD_NOT_LOAD
+					}
+					onRetry={madeByANewerVersion ? undefined : () => refetch()}
+				>
+					{report !== undefined && (
+						<Stack spacing={2}>
+							<ReportPanels report={report} />
+						</Stack>
+					)}
+				</WidgetBody>
+			</Box>
+			{status === "error" && madeByANewerVersion && (
+				<Box>
+					<Button component={RouterLink} to={reportsPath}>
+						Back to Reports
+					</Button>
+				</Box>
+			)}
 		</Stack>
 	);
 };
