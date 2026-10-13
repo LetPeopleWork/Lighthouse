@@ -40,7 +40,7 @@ const answer = (refusal: ReportWindowRefusal | null) => refusal ?? "accepted";
 
 describe("the edges of a report window, checked as the server checks them", () => {
 	// @us-02 @slice-02 @boundary @contract-shape:pure-function
-	it.skip.each(rows.filter((row) => row.side === "then"))(
+	it.each(rows.filter((row) => row.side === "then"))(
 		"answers $case as the server does",
 		(row) => {
 			expect(answer(reportWindowCheck(entered(row), boundsFor(row)))).toBe(
