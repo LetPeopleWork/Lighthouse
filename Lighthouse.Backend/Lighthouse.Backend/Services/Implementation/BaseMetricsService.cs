@@ -881,6 +881,39 @@ namespace Lighthouse.Backend.Services.Implementation
             return runChartData;
         }
 
+        protected IEnumerable<TItem> ClosedInDateRange<TItem>(IEnumerable<TItem> items, DateTime startDate, DateTime endDate) where TItem : WorkItemBase
+        {
+            var firstDay = DateOnly.FromDateTime(startDate);
+            var lastDay = DateOnly.FromDateTime(endDate);
+
+            return items.Where(item => WasClosedBetween(item, firstDay, lastDay));
+        }
+
+        protected IEnumerable<TItem> InSizeChartWindow<TItem>(IEnumerable<TItem> items, DateTime startDate, DateTime endDate) where TItem : WorkItemBase
+        {
+            var firstDay = DateOnly.FromDateTime(startDate);
+            var lastDay = DateOnly.FromDateTime(endDate);
+
+            return items.Where(item =>
+                (item.StateCategory == StateCategories.Done && WasClosedBetween(item, firstDay, lastDay)) ||
+                item.StateCategory == StateCategories.ToDo ||
+                item.StateCategory == StateCategories.Doing);
+        }
+
+        // The stored close instant is reduced to a day once, in the instance's time zone, and compared
+        // against day bounds the caller already reduced, so a late-evening close lands on its local day.
+        private bool WasClosedBetween(WorkItemBase item, DateOnly firstDay, DateOnly lastDay)
+        {
+            if (!item.ClosedDate.HasValue)
+            {
+                return false;
+            }
+
+            var closedDay = Clock.ToInstanceDay(item.ClosedDate.Value);
+
+            return closedDay >= firstDay && closedDay <= lastDay;
+        }
+
         private int GetClosedIndexForItem(DateTime startDate, WorkItemBase item)
         {
             return GetDateIndexBasedOnStartDate(startDate, item.ClosedDate);
