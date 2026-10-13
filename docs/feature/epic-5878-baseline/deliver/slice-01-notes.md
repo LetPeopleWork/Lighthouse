@@ -74,3 +74,49 @@ Team (a database-side `DELETE`) removes its report.
   reached "Application started", applied `20261013082234_AddReports`, no `PendingModelChanges` in the log.
 - `HistoricalSchemaPatch` fixtures (`BlockedRuleSetMigrationTests`, `DeliveryMetricSnapshotDayKeyMigrationTests`):
   green (13/13) with no new entry — `Reports` is a new table, not a column on `Teams`, `Portfolios` or `Deliveries`.
+
+## Step 01-20: create timing against the 10-second budget
+
+**Verdict: within budget by more than an order of magnitude. The fallback (one item load per owner per create) was
+not applied.** Every create of a 365-day Then took 0.23–0.60 s server-side, at load averages from ~11 to ~30 on a
+shared machine; opening the report took 0.11–0.26 s.
+
+**Source: a seeded large Team, not the dev instance.** The local instance on :5169 was not running this slice-01
+build (it belongs to another session and was seen restarting and stopping), so it could not answer for this code, and
+it was not touched. The measurement comes from `ReportCreationTimingProbe`
+(`Lighthouse.Backend.Tests/API/Integration/Reports/`), `[Explicit]`, so it never runs in the default or CI filters:
+in the connector-excluded run, the Reports-filtered run and the `TestCategory=epic-5878-baseline` run it reports
+`NotExecuted`.
+
+**Team size.** 2 000 finished Work Items over 400 days (5 a day, Cycle Times 1–30 days), 150 in progress (started
+4–120 days ago), on SQLite through the real ASP.NET host (`WebApplicationFactory`). Then's 85th percentile rested on
+1 825 finished Work Items, so the full year was read. For comparison, the busiest real Team in the dev database
+finished ~615 Work Items in a year.
+
+**Request.** `POST /api/latest/teams/{id}/reports` with `thenAndNow { thenEndDate: today, thenLengthDays: 365,
+nowLengthDays: 365 }`, then `GET /api/latest/teams/{id}/reports/{reportId}` once per reading. `ElapsedMs` is read off
+the structured property of the "report created" Information line from `ReportCommands`; the POST is also timed from
+the caller's side.
+
+**Readings** (each run: one unrecorded warm-up create, then three readings; load is `/proc/loadavg` 1/5/15 min).
+
+| Run | Reading | Load | POST (ms) | Logged ElapsedMs (ms) | Open GET (ms) |
+|---|---|---|---|---|---|
+| 1 (15:07) | warm-up | 11.45 4.28 5.45 | 633 | 390 | 202 |
+| 1 | 1 | 10.69 4.24 5.43 | 289 | 251 | 147 |
+| 1 | 2 | 10.69 4.24 5.43 | 250 | 236 | 113 |
+| 1 | 3 | 10.69 4.24 5.43 | 249 | 231 | 125 |
+| 2 (15:09) | warm-up | 17.77 7.59 6.50 | 896 | 544 | 263 |
+| 2 | 1 | 17.70 7.75 6.55 | 463 | 436 | 222 |
+| 2 | 2 | 17.70 7.75 6.55 | 594 | 567 | 212 |
+| 2 | 3 | 17.70 7.75 6.55 | 626 | 602 | 206 |
+| 3 (15:19) | warm-up | 29.58 25.59 16.03 | 923 | 564 | 264 |
+| 3 | 1 | 29.58 25.59 16.03 | 571 | 541 | 259 |
+| 3 | 2 | 29.77 25.70 16.11 | 614 | 586 | 214 |
+| 3 | 3 | 29.77 25.70 16.11 | 614 | 588 | 216 |
+
+No reading came near 10 s, so there was no reason to wait for a quieter moment or to re-measure after a change.
+The quietest run (load ~11) is the lowest the shared machine reached during the step.
+
+**Run it again:** `dotnet test --filter "FullyQualifiedName~ReportCreationTimingProbe" --logger "console;verbosity=detailed"`
+— the readings are printed as `[create timing]` lines.
