@@ -9344,8 +9344,10 @@ all.
 Feature: epic-5878-baseline — a **Reports** tab on Teams and Portfolios; the first template, **Then & Now**, freezes a
 past window (Then) at creation and sets a rolling, saved-length Now beside it, one panel per metric ({Cycle Time},
 {Throughput}, {WIP}, {Work Item Age}) with Then, Now, change, % change and Now's points beyond Then's frozen limits.
-No verdicts. DESIGN 2026-10-03, PROPOSE. Full design: `docs/feature/epic-5878-baseline/feature-delta.md` → "Wave:
-DESIGN / …" (DD1–DD25, reuse table, storage, seams); summary in `design/wave-decisions.md`.
+No verdicts. DESIGN 2026-10-03, PROPOSE; revised 2026-10-13 after the final review (read / write persistence ports,
+the report wizard, wire names, refusal statuses, owner scoping, loading and failure looks, observability). Full
+design: `docs/feature/epic-5878-baseline/feature-delta.md` → "Wave: DESIGN / …" (DD1–DD34, reuse table, storage,
+seams); summary in `design/wave-decisions.md`.
 
 ### Architectural pattern
 
@@ -9373,25 +9375,61 @@ external integration or technology. **This is the first stored Report**: ADR-209
 - **I8 — panels are pure functions of props**, so 5882 can render them server-side (Spike 6052).
 - **I9 — every value travels with its sample size**; "—" only when there is nothing to compute; no threshold; nothing
   about the owner's settings is stored or compared (D45, D46; ADR-221).
+- **I10 — the read path cannot name a write.** Persistence is two driven ports, `IReportReader` (get, list, count for
+  an owner; no write member) and `IReportWriter` (add, update, remove, save), both implemented by the one
+  `ReportRepository`. `ReportQueries` depends on the reader only; `ReportCommands` on both. There is no
+  `IReportRepository`. (ADR-219)
+- **I11 — owner scoping in the application ports, authorisation in the driving adapters.** Every `IReportQueries` /
+  `IReportCommands` operation takes a `ReportOwner` (kind + id) and returns only that owner's reports; none takes a
+  user. The controllers apply `RbacGuard` and translate the route into a `ReportOwner`, so 5882's sender can call
+  `IReportQueries.Get` and decide its own authorisation. (ADR-219)
+- **I12 — the two sides of a metric are `atThen` and `atNow` on the wire**, as in the browser; no member is named
+  `then` or `now` anywhere in the read (a `then` member makes the object a thenable). (ADR-221)
+- **I13 — the server is the window rule's only authority.** `GET …/reports/templates` returns `today`,
+  `earliestStart` and `minimumLengthDays` from `ReportWindowPolicy`; the wizard pre-checks against those values only
+  (no number or cutoff in the frontend), and Create / Save re-validate on the server. (ADR-222)
+- **I14 — an edit changes only what it names.** Name, shown keys, Now length and the token of the addressed row;
+  every other column and payload member — including members a later version wrote — stays byte-identical; Then
+  members in an edit body are ignored. (ADR-219)
 
 ### Component decomposition (headline)
 
 Backend NEW: `Report` + Then & Now payload records; `IReportQueries` (write-free) / `IReportCommands`; `IReportTemplate`
 + `ThenAndNowTemplate`; `IReportMetric` × 4 + `ReportMetricCatalog`; `IReportMetricSeries` + Team / Portfolio adapters;
-pure `ReportWindowPolicy`, `BeyondLimits`, `ReportCapPolicy`;
-`ReportRepository`; two controllers. EXTEND: `XmRCalculator` (`Limits`), `BaseMetricsService` (shared cycle-time
+pure `ReportWindowPolicy`, `BeyondLimits`, `ReportCapPolicy`; `IReportReader` / `IReportWriter` + `ReportOwner`;
+`ReportRepository` (implements both ports); two controllers. EXTEND: `XmRCalculator` (`Limits`), `BaseMetricsService` (shared cycle-time
 selection), `ITeamMetricsService` / `IPortfolioMetricsService` (finished cycle-time and daily total WIA series),
-`LighthouseAppContext`, usage-data enums (DEVOPS). Frontend NEW: shared
-`Reports/*` tab, dialogs, report view, panel frame, four panels, `reportPanelRegistry`, `ReportService`; EXTEND
-`TeamDetail.tsx`, `PortfolioDetail.tsx`, router, owner delete dialogs.
+`LighthouseAppContext`, usage-data enums (DEVOPS). Frontend NEW: shared `Reports/*` tab with a `DataGridBase` list;
+one `ReportWizard` (mode create | edit; step ① Type, then the type's own steps from an exhaustive `reportTypeSteps`;
+for Then & Now ② Then, ③ Now, ④ Metrics & name; edit starts at ③) with the pure `reportWindowCheck`; report view,
+panel frame, four panels, `UnsupportedMetricPanel`, `reportPanelRegistry`, `ReportService` (wire names as they are).
+NEW (extracted): `WizardStepperFrame` from `CreateWizardShell`, which keeps its props and behaviour. EXTEND
+`DeleteConfirmationDialog` (one optional `warning` line; no report-specific delete dialog), `WidgetShell` (body look
+exported), `TeamDetail.tsx`, `PortfolioDetail.tsx`, router, owner delete dialogs.
 
 ### Driving / driven ports
 
-HTTP under `…/teams/{teamId}/reports` and `…/portfolios/{portfolioId}/reports`: `GET templates`, `GET` list (with
-`creationBlockedByCap`), `POST` create, `GET {id}` read (Now computed), `PUT {id}` edit, `DELETE {id}`; Read on the
-class, Write on create / edit / delete; no new requirement. Driven: `IReportRepository` (new, EF),
-`IReportMetricSeries` (new, adapters over the metrics services), reused `ILighthouseClock`, `ILicenseService`, owner
-repositories.
+HTTP under `…/teams/{teamId}/reports` and `…/portfolios/{portfolioId}/reports` (Read on the class, Write on create /
+edit / delete; no new requirement):
+
+- `GET templates` → `{ today, earliestStart, minimumLengthDays, templates }` (`earliestStart` null when the owner
+  keeps every finished item);
+- `GET` list → `{ reports, creationBlockedByCap, communityCap }`, each row carrying `thenAndNow.thenRebuildable`
+  (the per-row delete warning; a row of a type this version cannot read has no `thenAndNow`); also the owner-delete
+  count;
+- `POST` create (201 + read), `GET {id}` read with Now computed, `PUT {id}` edit (name, shown keys, token,
+  `thenAndNow.nowLengthDays`; 409 on a stale token), `DELETE {id}` (204).
+
+Template-specific members sit in one object named after the template (`thenAndNow`) in requests and reads alike. The
+read carries per metric `atThen`, `atNow` and `beyondThenLimits`; every value is `{ value, sampleSize, absentReason }`.
+Refusals are a closed set of codes in a ProblemDetails `code` extension: validation 400 (window codes add
+`earliestStart`); cap 403 `report-cap-reached`, like every premium refusal; RBAC 403 with no code; a missing or
+another owner's report 404; a stored report of a type this version cannot read 422 `template-not-supported`.
+
+Application ports: `IReportQueries` (templates, list, get — write-free) and `IReportCommands` (create, edit, delete),
+each operation taking a `ReportOwner`. Driven: `IReportReader` and `IReportWriter` (new, both on the EF
+`ReportRepository`), `IReportMetricSeries` (new, adapters over the metrics services), reused `ILighthouseClock`,
+`ILicenseService`, owner repositories, `RbacGuard`.
 
 ### Data and migrations
 
@@ -9408,27 +9446,48 @@ table in the feature delta.
 
 ### Quality attributes
 
-Create ≤ 10 s in-request, all-or-nothing; open ≤ 2 s; Metrics tab byte-identical. Security: owner guards,
-non-disclosing 404, payload holds aggregate numbers only. **Contract testing (Pact): N/A** — no external
-integration.
+- **Performance**: create ≤ 10 s in-request, all-or-nothing, and open ≤ 2 s are **unverified hypotheses**. Slice 01
+  logs every create's elapsed time and measures on the dev instance's busiest Team with a 365-day Then before slice
+  02; the fallback is one item load per owner per request, never the update queue; if that misses, DESIGN reopens
+  before slice 04. Metrics tab byte-identical.
+- **Loading and failure looks** (slow-connection rule): every surface reuses `WidgetShell`'s exported body look and
+  keyed TanStack queries, so a late answer for an old key never lands. List: lone spinner, Create disabled until the
+  envelope arrives; dimmed under a spinner on re-read; a could-not-load message with Retry and no empty state.
+  Report view: "Loading report…"; dimmed after Edit; could-not-load with no stale numbers; 404 "no longer exists" and
+  422 "made by a newer version", both with Back to Reports. Wizard: Next disabled until the server's bounds arrive,
+  no default dates from the viewer's clock; refusals shown by their code's copy with every input kept. Owner delete
+  dialog: Delete disabled until the count arrives, a neutral clause if it cannot load. The view sets
+  `data-report-status`, the list `data-widget-status`; E2E waits for `ready`.
+- **Observability** through the existing `ILogger` pipeline and the problems log, never naming a report, an owner's
+  name or a Work Item: Warning for a stored report that cannot be read (unknown template key, unreadable payload,
+  unknown schema version) and for a stored metric key outside the catalog (skipped on read); Error for an unexpected
+  create / edit failure (nothing half-stored); Information for every create with elapsed ms and window lengths.
+  Refusals (400 / 403 / 409) are not logged above Debug. Usage events are DEVOPS's.
+- **Security**: owner guards, non-disclosing 404, payload holds aggregate numbers only.
+- **Contract testing (Pact): N/A** — no external integration.
 
 ### Architectural Enforcement (this feature)
 
 ArchUnitNET + NUnit + TypeScript: E1 module isolation; E2 no dependency on `ProcessBehaviourChart`, `XmRResult` or the
-owner PBC Baseline; E3 metrics only via the series port; E4 read path write-free; E5 `Calculate` = `Limits` rounded;
-E6 Then parity with the Metrics endpoints; E7 payload round-trip; E8 cross-owner 404 + cascade on both providers; E9
-exhaustive panel registry, pure panels; E10 no user-facing "Baseline".
+owner PBC Baseline; E3 metrics only via the series port; E4 `ReportQueries` depends on `IReportReader` and on none of
+`IReportWriter`, `IRepository<>`, `LighthouseAppContext`, plus a reflection test that `IReportReader` declares no
+write member; E5 `Calculate` = `Limits` rounded; E6 Then parity with the Metrics endpoints; E7 payload round-trip; E8
+cross-owner 404 + cascade on both providers; E9 exhaustive panel registry, pure panels; E10 no user-facing "Baseline";
+E11 no `then` / `now` member in the read DTO (Biome's `noThenProperty` on the frontend); E12 one window boundary
+table run against `ReportWindowPolicy` (NUnit) and `reportWindowCheck` (Vitest); E13 the edit universe, asserted with
+a stored payload member this version does not know.
 
 ### ADR References (this feature)
 
 - [ADR-219](./adr-219-a-report-is-an-owner-scoped-record-with-a-template-payload.md) — Report model; supersedes
-  ADR-209's deferral. **Proposed.**
+  ADR-209's deferral; read / write persistence ports, owner scoping in the ports, cap status. **Accepted**
+  (2026-10-13); not built.
 - [ADR-220](./adr-220-a-metric-catalog-captures-values-and-the-frontend-panel-owns-the-direction-of-good.md) — catalog
-  and panel registry. **Proposed.**
+  and panel registry; unknown type and metric looks. **Accepted** (2026-10-13); not built.
 - [ADR-221](./adr-221-then-is-frozen-as-captured-values-and-unrounded-limits-from-its-own-series.md) — what Then
-  freezes. **Proposed.**
-- [ADR-222](./adr-222-report-windows-are-inclusive-instance-days-and-now-length-is-stored-on-the-report.md) — windows
-  and the stored Now length. **Proposed.**
+  freezes ({Cycle Time} 85th only); wire names `atThen` / `atNow`. **Accepted** (2026-10-13); not built.
+- [ADR-222](./adr-222-report-windows-are-inclusive-instance-days-and-now-length-is-stored-on-the-report.md) — windows,
+  the stored Now length, the wizard's pre-check from server bounds. **Accepted** (2026-10-13); not built.
 - Cross-refs: ADR-209 (status note added), ADR-160 (pin precedent), ADR-211 (client reads facts), ADR-214 / ADR-064
   (JSON text), ADR-027 (modules, tokens), ADR-208 (one computation, two callers).
 

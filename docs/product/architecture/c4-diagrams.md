@@ -1640,7 +1640,7 @@ Read the graph for the three things that make it safe:
 
 Feature: epic-5878-baseline (ADO Epic #5878 "Then & Now"; the Reports foundation for Epics 5882 and 5935)
 Wave: DESIGN
-Date: 2026-10-03
+Date: 2026-10-03 (revised 2026-10-13: read / write persistence ports, the report wizard)
 Architect: Morgan (Solution Architect)
 
 ## C4 Level 1 — System Context
@@ -1668,7 +1668,7 @@ C4Container
   title Container — Reports (Then & Now)
   Person(coach, "Flow coach")
   Person(reader, "Reader")
-  Container(spa, "Lighthouse SPA", "React 18 + TypeScript", "Reports tab, create / edit / delete dialogs, report view with one registered panel per metric")
+  Container(spa, "Lighthouse SPA", "React 18 + TypeScript", "Reports tab (DataGridBase list), Create / Edit report wizard on the extracted stepper frame, DeleteConfirmationDialog with a warning line, report view with one registered panel per metric")
   Container(api, "Lighthouse backend", "ASP.NET Core .NET 10", "Team/PortfolioReportsController, Reports module, existing metrics services")
   ContainerDb(db, "Relational store", "SQLite or PostgreSQL", "Reports table (payload JSON, FK cascade to Teams / Portfolios); Work Items")
   System_Ext(wts, "Work tracking system")
@@ -1683,12 +1683,15 @@ No container is added; no queue, push channel or background job.
 
 ## C4 Level 3 — Component: the Reports module
 
-Earns its place: fourteen components of its own, and the arrows answer the two questions a reviewer will ask — "where can Then's
+Earns its place: more than fourteen components of its own, and the arrows answer the two questions a reviewer will ask — "where can Then's
 limits come from?" and "where does good-or-bad get decided?".
 
 ```mermaid
 flowchart TB
     subgraph SPA["SPA"]
+        LST["ReportList<br/><i>DataGridBase; delete via DeleteConfirmationDialog + warning</i>"]
+        WIZ["ReportWizard<br/><i>mode create or edit; type-contributed steps; window pre-check from server bounds</i>"]
+        WSF["WizardStepperFrame<br/><i>extracted from CreateWizardShell</i>"]
         RV["ReportView<br/><i>fetches once</i>"]
         REG["reportPanelRegistry<br/><i>panel + title token + direction of good</i>"]
         PAN["Panels × 4 in ThenNowPanelFrame<br/><i>pure; change, %, colour</i>"]
@@ -1700,7 +1703,7 @@ flowchart TB
     end
 
     subgraph REP["Reports module"]
-        Q["IReportQueries<br/><i>list · get — write-free</i>"]
+        Q["IReportQueries<br/><i>templates · list · get — write-free</i>"]
         C["IReportCommands<br/><i>create · edit · delete</i>"]
         TPL["ThenAndNowTemplate<br/><i>IReportTemplate</i>"]
         CAT["ReportMetricCatalog<br/>IReportMetric × 4"]
@@ -1708,7 +1711,9 @@ flowchart TB
         WIN["ReportWindowPolicy<br/><i>pure</i>"]
         BL["BeyondLimits<br/><i>pure</i>"]
         CAP["ReportCapPolicy<br/><i>pure</i>"]
-        REPO["IReportRepository"]
+        RDR["IReportReader<br/><i>get · list · count for owner; no write member</i>"]
+        WTR["IReportWriter<br/><i>add · update · remove · save</i>"]
+        REPO["ReportRepository<br/><i>EF; implements both</i>"]
     end
 
     subgraph EXIST["Existing (reused / extended)"]
@@ -1721,6 +1726,9 @@ flowchart TB
 
     DB[("Reports table")]
 
+    LST -->|"lists and deletes reports through"| TRC
+    WIZ -->|"renders its steps in"| WSF
+    WIZ -->|"reads bounds from and creates / edits through"| TRC
     RV -->|"reads one report from"| TRC
     RV -->|"looks up panels in"| REG
     REG --> PAN
@@ -1740,9 +1748,12 @@ flowchart TB
     SER --> PMS
     CAT -->|"computes Then's limits with"| XMR
     TPL -->|"counts Now against frozen limits with"| BL
-    C -->|"adds, updates, removes in"| REPO
-    Q -->|"reads from"| REPO
-    REPO --> DB
+    Q -->|"reads from"| RDR
+    C -->|"counts the owner's reports with"| RDR
+    C -->|"adds, updates, removes through"| WTR
+    REPO -.->|"implements"| RDR
+    REPO -.->|"implements"| WTR
+    REPO -->|"reads and writes rows in"| DB
 ```
 
 Read the graph for the three things that make it safe:
@@ -1751,5 +1762,12 @@ Read the graph for the three things that make it safe:
    series `SER` returns (ADR-221, E2).
 2. **No backend component decides good or bad.** Direction of good exists only in `REG`; `PAN` computes change, % and
    colour from the facts in the read (ADR-220).
-3. **Only `C` writes.** `Q` reaches `REPO` to read; the read computes Now without touching a row (E4).
+3. **Only `C` writes, and that holds by type.** `Q` has an arrow only to `RDR`, a port with no write member; `WTR`
+   is reached from `C` alone. Both are implemented by `REPO`, which nothing outside the composition root sees as
+   `IRepository<Report>`. The read computes Now without touching a row (ADR-219, E4).
+
+The SPA side (`TRC` stands for either controller): `LST` is a `DataGridBase` list whose delete icon opens the shared
+`DeleteConfirmationDialog` with its optional warning line when Then can no longer be rebuilt; `WIZ` is the one
+`ReportWizard` for create and edit on the stepper frame extracted from `CreateWizardShell` — there are no separate
+create, edit or delete report dialogs.
 
