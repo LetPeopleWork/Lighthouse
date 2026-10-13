@@ -817,4 +817,44 @@ describe("The wizard's steps", () => {
 			within(await theWizard()).queryByRole("button", { name: "Back" }),
 		).toBeNull();
 	});
+
+	it("is named Create Report and offers Create only on its last step", async () => {
+		await openTheWizard();
+
+		expect(screen.getByRole("dialog", { name: "Create Report" })).toBeVisible();
+		expect(
+			within(await theWizard()).queryByRole("button", { name: CREATE }),
+		).toBeNull();
+	});
+
+	it("asks the server for today's bounds every time it opens", async () => {
+		const reportService = await openTheWizard();
+		await userEvent.click(
+			within(await theWizard()).getByRole("button", { name: "Cancel" }),
+		);
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Create Report" }),
+		);
+		await theWizard();
+
+		await waitFor(() =>
+			expect(reportService.getTemplates).toHaveBeenCalledTimes(2),
+		);
+	});
+
+	it("starts Then on the 90-day preset, and keeps it when that preset is clicked again", async () => {
+		await openTheWizard();
+		await next();
+		const ninetyDays = within(await theWizard()).getByRole("button", {
+			name: "90 days",
+		});
+
+		expect(ninetyDays).toHaveAttribute("aria-pressed", "true");
+
+		await userEvent.click(ninetyDays);
+
+		expect(await theThenLengthField()).toHaveValue(90);
+	});
 });

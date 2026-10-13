@@ -708,6 +708,11 @@ describe("A report on a slow or failing connection", () => {
 
 		await screen.findByText(LOADING);
 		expect(document.querySelector('[aria-busy="true"]')).not.toBeNull();
+		expect(
+			within(
+				screen.getByRole("navigation", { name: "breadcrumb" }),
+			).getAllByRole("listitem"),
+		).toHaveLength(1);
 
 		await act(async () => held.resolve(theEngagementStartReport()));
 		await theReportIsReady();

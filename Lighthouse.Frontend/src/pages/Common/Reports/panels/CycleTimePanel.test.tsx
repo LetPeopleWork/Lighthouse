@@ -65,6 +65,26 @@ describe("the Cycle Time panel", () => {
 		expect(headingOf("then")).toBe("Then · 38 Work Items");
 	});
 
+	it("names what a side rests on when its first percentile is missing altogether", () => {
+		renderPanel({
+			atThen: { p70: shown(10, 38), p50: shown(5, 38) },
+			atNow: NOW_IN_FULL,
+		});
+
+		expect(headingOf("then")).toBe("Then · 38 Work Items");
+	});
+
+	it("shows no change where Now has no value", () => {
+		renderPanel({
+			atThen: { p85: shown(21, 38), p70: shown(10, 38), p50: shown(5, 38) },
+			atNow: { ...NOW_IN_FULL, p70: aDash("too-few-points") },
+		});
+
+		expect(segment("change")).toHaveTextContent(
+			/^Change ▼ 9 days \(−43 %\) — ▼ 1 day \(−20 %\)$/,
+		);
+	});
+
 	it("names nothing a side rests on when no percentile says", () => {
 		renderPanel({
 			atThen: {
