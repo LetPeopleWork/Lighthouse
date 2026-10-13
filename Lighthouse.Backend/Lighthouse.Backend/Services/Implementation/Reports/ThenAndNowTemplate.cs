@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return ReportOutcome<string>.Refused(ReportRefusalCodes.ThenTooShort);
             }
 
-            if (ReportWindowPolicy.ThenRefusal(settings.ThenEndDate, settings.ThenLengthDays, calendar.Today) is string thenRefusal)
+            if (ReportWindowPolicy.ThenRefusal(settings.ThenEndDate, settings.ThenLengthDays, calendar.Today, calendar.DoneItemsCutoffDays) is string thenRefusal)
             {
                 return ReportOutcome<string>.Refused(thenRefusal);
             }

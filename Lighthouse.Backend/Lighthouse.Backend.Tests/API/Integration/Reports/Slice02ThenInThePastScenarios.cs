@@ -117,7 +117,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-02 @slice-02 @error @contract-shape:unbounded-preservation
         // 90 days ending 15 Nov 2025 start on 18 Aug 2025; the Team keeps finished Work Items from 2 Oct 2025.
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task A_Then_reaching_past_the_data_cutoff_is_refused_naming_the_earliest_start()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -131,7 +130,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task A_Then_starting_on_the_oldest_kept_day_is_accepted()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -144,7 +142,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:unbounded-preservation
         // The cutoff is the Team's own setting, so a Team that keeps 180 days cannot reach back to April's 4th.
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task The_earliest_start_follows_how_long_the_Team_keeps_finished_Work_Items()
         {
             var gravity = ATeam("Team Gravity", keepsFinishedItemsForDays: 180);
@@ -160,7 +157,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:bounded-change
         // A Team set to keep every finished Work Item has no oldest kept day, so Then may start on any day.
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task A_Team_that_keeps_every_finished_Work_Item_has_no_earliest_start()
         {
             var pulsar = ATeam("Team Pulsar", keepsFinishedItemsForDays: 0);
