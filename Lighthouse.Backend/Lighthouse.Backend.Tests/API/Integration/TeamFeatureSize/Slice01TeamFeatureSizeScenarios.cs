@@ -101,7 +101,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Test]
         [Category("us-04")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task A_reader_of_the_Team_sees_its_part_of_a_Feature_from_a_Portfolio_they_cannot_read_without_learning_its_name()
         {
             GivenTheOceanExplorerPortfolioAndTheTeamsThatWorkOnIt();
@@ -116,7 +115,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Test]
         [Category("us-04")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task Someone_who_may_read_every_Portfolio_sees_each_Feature_name_the_Portfolio_it_comes_from()
         {
             GivenTheOceanExplorerPortfolioAndTheTeamsThatWorkOnIt();
@@ -134,7 +132,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("us-04")]
         [Category("error")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task Someone_who_cannot_read_the_Team_is_told_there_is_no_such_Team_while_its_reader_is_answered(string metric)
         {
             GivenTheOceanExplorerPortfolioAndTheTeamsThatWorkOnIt();
@@ -200,7 +197,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("us-03")]
         [Category("error")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task A_Team_none_of_whose_Work_Items_belong_to_a_tracked_Feature_has_no_Features_to_show(PolarisHas work)
         {
             GivenTheOceanExplorerPortfolioAndTheTeamsThatWorkOnIt();
