@@ -25,6 +25,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Auth|Authorization|Licensing)($|\..*)";
         internal const string RefinementPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Refinement($|\..*)";
+        internal const string ReportsPattern =
+            @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Reports($|\..*)";
         private const string PlatformPersistencePattern =
             @"^Lighthouse\.Backend\.(Data|Services\.(Implementation|Interfaces)\.(Repositories|DatabaseManagement|DomainEvents|Seeding|OAuth))($|\..*)";
 
@@ -47,6 +49,9 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly GivenTypesConjunctionWithDescription RefinementModule =
             Types().That().ResideInNamespaceMatching(RefinementPattern).As("Refinement");
+
+        private static readonly GivenTypesConjunctionWithDescription ReportsModule =
+            Types().That().ResideInNamespaceMatching(ReportsPattern).As("Reports");
 
         private static readonly GivenTypesConjunctionWithDescription PlatformPersistenceModule =
             Types().That().ResideInNamespaceMatching(PlatformPersistencePattern).As("Platform/Persistence");
@@ -103,6 +108,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Assert.That(RbacIdentityModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(PlatformPersistenceModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(RefinementModule.GetObjects(Architecture), Is.Not.Empty);
+                Assert.That(ReportsModule.GetObjects(Architecture), Is.Not.Empty);
             }
         }
     }
