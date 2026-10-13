@@ -2,7 +2,7 @@
   "roadmap": {
     "project_id": "story-6251-team-feature-size",
     "created_at": "2026-10-13",
-    "total_steps": 15,
+    "total_steps": 16,
     "total_phases": 3,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
@@ -652,6 +652,35 @@
             "On a Team the info (i) description says it counts this Team's Work Items, in the instance's words; on a Portfolio it is unchanged (AC-2.4, UI-3)."
           ],
           "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. The scatter's own status footer reads the same data, so 2.10 holds for it too (DISTILL finding 8). Rows: 3."
+        },
+        {
+          "id": "02-05",
+          "name": "Feature Size Percentiles shows the closed Features behind it",
+          "description": "Maintainer decision VD-1 (live testing, 2026-10-13): Feature Size Percentiles gets View Data on both owners. buildViewData gains featureSizePercentiles: title `Closed {Features}`, the Feature list columns the Feature Size View Data uses, items = exactly the Features the percentiles count (Done and closed in the window), taken from the Feature sizes the dashboard already fetches. On a Team the Size column carries the Team's share.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
+          "scenario_name": "Feature Size Percentiles' View Data lists the closed Features it counts (Team, Portfolio)",
+          "ledger_rows": [
+            "2.17"
+          ],
+          "unskips": [
+            "2.17 :: tests added by the acceptance designer for VD-1 (titles recorded in the DISTILL amendment commit)"
+          ],
+          "guards_kept_green": [],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx (edit - featureSizePercentiles view data)",
+            "the VD-1 test file(s) (edit - remove it.skip)"
+          ],
+          "dependencies": [
+            "02-04"
+          ],
+          "criteria": [
+            "On a Team and on a Portfolio, Feature Size Percentiles shows the View Data table icon.",
+            "It opens `Closed {Features}` listing exactly the Features closed in the window that the percentiles count, with the Feature list columns.",
+            "On a Team the Size column shows the Team's share; on a Portfolio it is unchanged."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. No new backend route. Added after the hold at the maintainer's request."
         }
       ]
     }

@@ -1366,3 +1366,14 @@ can keep or drop it.
 | R-3 | **The Blocked flag can come from a Portfolio the reader cannot read.** A Feature reads blocked if any of its Portfolios counts it blocked, as on `featuresInProgress`, so the flag can reflect a Portfolio whose name is withheld (DDD-7, under AFK-6 and AFK-9). | Not pinned. | Narrowing it to readable Portfolios adds one scenario to slice 01 and diverges from `featuresInProgress`. |
 | R-4 | **The Size column header on a Team.** The "Features worked on" and Feature Size dialogs keep the header `Size` (`workItemColumns.tsx:460`) on a Team, although the number is the Team's share (DDD-1). UI-1 named the share on the scatter's axis and tooltip only. DESIGN proposes no wording. | 1.35 pins the value in the column, not its header. | A Team-only header (sketched first, per the project's UI rule) adds one dialog test; the Portfolio header stays `Size`. |
 | R-5 | **A performance guard via a database-command counter.** 1.14 and 2.6 (`@perf`) count every query, scalar and write the host sends to answer one uncached request, and require as many for twenty Features as for two (DDD-5). They pin no business outcome, and they fail on a read added per Feature even when every number is right. | Pending with the slice that adds each route; left out of the business-outcome counts. | Dropping them leaves DDD-5's cost unguarded; a fixed budget instead of "as many as for two" would break with every include DESIGN adds. |
+
+## Wave: DELIVER / [REF] Maintainer decision during live testing (2026-10-13)
+
+While testing live, the maintainer missed View Data on Feature Size Percentiles. The widget has none on a
+Portfolio either; `buildViewData` has no entry for it. Asked with a sketch, the maintainer chose:
+
+| ID | Decision | Applies to |
+|----|----------|------------|
+| VD-1 | Feature Size Percentiles gets View Data on **both owners**. The table icon opens the same Features table the Feature Size scatter's View Data uses (the Feature list columns), titled `Closed {Features}`, listing exactly the Features the percentiles count: Done and closed in the window. On a Team the Size column is the Team's share, as everywhere on a Team's page. | New step 02-05 (frontend). No new route: the closed Features come from the Feature sizes the dashboard already fetches for the scatter and the status. |
+
+Rejected: a second group with the previous period's closed Features; a separate story.
