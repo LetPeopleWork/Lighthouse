@@ -1,13 +1,4 @@
-import {
-	Alert,
-	Box,
-	Button,
-	Step,
-	StepLabel,
-	Stepper,
-	TextField,
-	Typography,
-} from "@mui/material";
+import { Box, Button, TextField, Typography } from "@mui/material";
 import type React from "react";
 import {
 	STEP_CHOOSE_CONNECTION,
@@ -19,10 +10,9 @@ import {
 import type { IBoardInformation } from "../../../models/Boards/BoardInformation";
 import type { IDataRetrievalWizard } from "../../../models/DataRetrievalWizard/DataRetrievalWizard";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
-import ActionButton from "../ActionButton/ActionButton";
-import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import StatesList from "../StatesList/StatesList";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
+import WizardStepperFrame from "./WizardStepperFrame";
 
 export interface CreateWizardShellProps {
 	activeStep: number;
@@ -151,155 +141,133 @@ const CreateWizardShell: React.FC<CreateWizardShellProps> = ({
 			/>
 		);
 
+	const configureError =
+		activeStep === STEP_CONFIGURE && validationError
+			? { message: validationError, details: validationTechnicalDetails }
+			: null;
+
 	return (
-		<LoadingAnimation isLoading={loading} hasError={false}>
-			<Box sx={{ width: "100%", p: 3 }}>
-				<Stepper activeStep={activeStep} sx={{ mb: 3 }}>
-					{STEPS.map((label) => (
-						<Step key={label}>
-							<StepLabel>{label}</StepLabel>
-						</Step>
+		<WizardStepperFrame
+			steps={STEPS}
+			activeStep={activeStep}
+			busy={loading}
+			onCancel={onCancel}
+			onBack={activeStep > STEP_CHOOSE_CONNECTION ? onBack : undefined}
+			next={
+				activeStep === STEP_CONFIGURE
+					? {
+							label: "Next",
+							onClick: onNext,
+							disabled: !configInputsValid || validating,
+						}
+					: undefined
+			}
+			primaryAction={
+				activeStep === STEP_NAME_CREATE
+					? {
+							label: "Create",
+							onClick: onCreate,
+							disabled: name.trim() === "" || saving,
+						}
+					: undefined
+			}
+			error={configureError}
+		>
+			{activeStep === STEP_CHOOSE_CONNECTION && (
+				<Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
+					<Typography variant="body1">
+						Select the connection to use for this {entityLabel}:
+					</Typography>
+					{connections.map((connection) => (
+						<Button
+							key={connection.id}
+							variant="outlined"
+							onClick={() => onSelectConnection(connection)}
+							sx={{ justifyContent: "flex-start", textTransform: "none" }}
+						>
+							{connection.name}
+						</Button>
 					))}
-				</Stepper>
+				</Box>
+			)}
 
-				{activeStep === STEP_CHOOSE_CONNECTION && (
-					<Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
-						<Typography variant="body1">
-							Select the connection to use for this {entityLabel}:
-						</Typography>
-						{connections.map((connection) => (
-							<Button
-								key={connection.id}
-								variant="outlined"
-								onClick={() => onSelectConnection(connection)}
-								sx={{ justifyContent: "flex-start", textTransform: "none" }}
-							>
-								{connection.name}
-							</Button>
-						))}
+			{activeStep === STEP_LOAD_DATA && (
+				<Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
+					<Typography variant="body1">
+						Use a wizard to quickly load your {entityLabel} data, or configure
+						manually:
+					</Typography>
+					<Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+						{renderWizardButtons()}
 					</Box>
-				)}
+					<Button
+						variant="outlined"
+						onClick={() => onSetActiveStep(STEP_CONFIGURE)}
+						sx={{ alignSelf: "flex-start" }}
+					>
+						Configure Manually
+					</Button>
+					{renderActiveWizardDialog()}
+				</Box>
+			)}
 
-				{activeStep === STEP_LOAD_DATA && (
-					<Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
-						<Typography variant="body1">
-							Use a wizard to quickly load your {entityLabel} data, or configure
-							manually:
-						</Typography>
-						<Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+			{activeStep === STEP_CONFIGURE && (
+				<Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
+					{availableWizards.length > 0 && (
+						<Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
 							{renderWizardButtons()}
 						</Box>
-						<Button
-							variant="outlined"
-							onClick={() => onSetActiveStep(STEP_CONFIGURE)}
-							sx={{ alignSelf: "flex-start" }}
-						>
-							Configure Manually
-						</Button>
-						{renderActiveWizardDialog()}
-					</Box>
-				)}
-
-				{activeStep === STEP_CONFIGURE && (
-					<Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
-						{availableWizards.length > 0 && (
-							<Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
-								{renderWizardButtons()}
-							</Box>
-						)}
-						{showDataRetrievalField && (
-							<TextField
-								label={dataRetrievalLabel}
-								placeholder={dataRetrievalPlaceholder}
-								helperText={dataRetrievalHelpText}
-								multiline
-								rows={4}
-								fullWidth
-								value={dataRetrievalValue}
-								onChange={(e) => onDataRetrievalChange(e.target.value)}
-							/>
-						)}
-						{showWorkItemTypes && (
-							<WorkItemTypesComponent
-								workItemTypes={workItemTypes}
-								onAddWorkItemType={onAddWorkItemType}
-								onRemoveWorkItemType={onRemoveWorkItemType}
-								isForTeam={isForTeam}
-							/>
-						)}
-						<StatesList
-							toDoStates={toDoStates}
-							onAddToDoState={onAddToDoState}
-							onRemoveToDoState={onRemoveToDoState}
-							onReorderToDoStates={onReorderToDoStates}
-							doingStates={doingStates}
-							onAddDoingState={onAddDoingState}
-							onRemoveDoingState={onRemoveDoingState}
-							onReorderDoingStates={onReorderDoingStates}
-							doneStates={doneStates}
-							onAddDoneState={onAddDoneState}
-							onRemoveDoneState={onRemoveDoneState}
-							onReorderDoneStates={onReorderDoneStates}
+					)}
+					{showDataRetrievalField && (
+						<TextField
+							label={dataRetrievalLabel}
+							placeholder={dataRetrievalPlaceholder}
+							helperText={dataRetrievalHelpText}
+							multiline
+							rows={4}
+							fullWidth
+							value={dataRetrievalValue}
+							onChange={(e) => onDataRetrievalChange(e.target.value)}
+						/>
+					)}
+					{showWorkItemTypes && (
+						<WorkItemTypesComponent
+							workItemTypes={workItemTypes}
+							onAddWorkItemType={onAddWorkItemType}
+							onRemoveWorkItemType={onRemoveWorkItemType}
 							isForTeam={isForTeam}
 						/>
-						{renderActiveWizardDialog()}
-						{validationError && (
-							<Alert severity="error" sx={{ mt: 1 }}>
-								<Typography variant="body2">{validationError}</Typography>
-								{validationTechnicalDetails && (
-									<Typography
-										variant="caption"
-										sx={{ display: "block", mt: 1 }}
-									>
-										{validationTechnicalDetails}
-									</Typography>
-								)}
-							</Alert>
-						)}
-					</Box>
-				)}
-
-				{activeStep === STEP_NAME_CREATE && (
-					<Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
-						<TextField
-							label={nameLabel}
-							fullWidth
-							value={name}
-							onChange={(e) => onNameChange(e.target.value)}
-						/>
-					</Box>
-				)}
-
-				<Box
-					sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 3 }}
-				>
-					<Button onClick={onCancel} variant="outlined">
-						Cancel
-					</Button>
-					{activeStep > STEP_CHOOSE_CONNECTION && (
-						<Button onClick={onBack} variant="outlined">
-							Back
-						</Button>
 					)}
-					{activeStep === STEP_CONFIGURE && (
-						<ActionButton
-							buttonText="Next"
-							onClickHandler={() => Promise.resolve(onNext())}
-							buttonVariant="contained"
-							disabled={!configInputsValid || validating}
-						/>
-					)}
-					{activeStep === STEP_NAME_CREATE && (
-						<ActionButton
-							buttonText="Create"
-							onClickHandler={() => Promise.resolve(onCreate())}
-							buttonVariant="contained"
-							disabled={name.trim() === "" || saving}
-						/>
-					)}
+					<StatesList
+						toDoStates={toDoStates}
+						onAddToDoState={onAddToDoState}
+						onRemoveToDoState={onRemoveToDoState}
+						onReorderToDoStates={onReorderToDoStates}
+						doingStates={doingStates}
+						onAddDoingState={onAddDoingState}
+						onRemoveDoingState={onRemoveDoingState}
+						onReorderDoingStates={onReorderDoingStates}
+						doneStates={doneStates}
+						onAddDoneState={onAddDoneState}
+						onRemoveDoneState={onRemoveDoneState}
+						onReorderDoneStates={onReorderDoneStates}
+						isForTeam={isForTeam}
+					/>
+					{renderActiveWizardDialog()}
 				</Box>
-			</Box>
-		</LoadingAnimation>
+			)}
+
+			{activeStep === STEP_NAME_CREATE && (
+				<Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
+					<TextField
+						label={nameLabel}
+						fullWidth
+						value={name}
+						onChange={(e) => onNameChange(e.target.value)}
+					/>
+				</Box>
+			)}
+		</WizardStepperFrame>
 	);
 };
 
