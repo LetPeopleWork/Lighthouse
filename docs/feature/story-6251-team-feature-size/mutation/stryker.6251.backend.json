@@ -1,0 +1,24 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/API/TeamFeatureSizeMetricsController.cs",
+      "**/API/TeamMetricsController.cs",
+      "**/API/DTO/FeatureDto.cs",
+      "**/Models/Feature.cs",
+      "**/Services/Implementation/MetricsCacheKey.cs",
+      "**/Services/Implementation/BaseMetricsService.cs",
+      "**/Services/Implementation/PortfolioMetricsService.cs",
+      "**/Services/Implementation/TeamMetricsService.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Tests.Services.Implementation.TeamMetricsService|FullyQualifiedName~Tests.Services.Implementation.PortfolioMetricsService|FullyQualifiedName~Tests.Services.Implementation.BaseMetricsService|FullyQualifiedName~MetricsCacheKeyTest|FullyQualifiedName~ClosedInRangeCharacterisationTest|FullyQualifiedName~FeatureSizeForTeamTest|FullyQualifiedName~Tests.Models.FeatureTest|FullyQualifiedName~FeatureDtoTest|FullyQualifiedName~TeamMetricsControllerTest|FullyQualifiedName~API.Integration.TeamFeatureSize)&FullyQualifiedName!~Integration.Containers",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
