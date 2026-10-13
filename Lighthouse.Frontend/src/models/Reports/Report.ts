@@ -143,7 +143,10 @@ export interface IReportEdit {
 }
 
 const day = z.string();
-const ownerKind = z.enum(["team", "portfolio"]);
+/** The server names the owner kind by its capitalised enum name; the browser reads it lower-case, as its routes do. */
+const ownerKind = z
+	.enum(["Team", "Portfolio", "team", "portfolio"])
+	.transform((kind) => kind.toLowerCase() as IReportOwner["kind"]);
 
 /** A later version may show a metric this one has no name for; it is passed on so the view can say it cannot show it. */
 const metricKey = z.custom<ReportMetricKey>((key) => typeof key === "string");

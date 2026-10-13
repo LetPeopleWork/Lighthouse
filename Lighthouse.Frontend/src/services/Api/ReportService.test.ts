@@ -182,6 +182,25 @@ describe("ReportService", () => {
 		expect(result).toEqual(report);
 	});
 
+	it("reads the owner kind as the server sends it, by its capitalised name", async () => {
+		const listed = { ...aListedReport(), ownerKind: "Team" };
+		const portfolioReport = {
+			...theEngagementStartReport({ ownerId: 3 }),
+			ownerKind: "Portfolio",
+		};
+		mockedAxios.get
+			.mockResolvedValueOnce({
+				data: { ...aReportList([]), reports: [listed] },
+			})
+			.mockResolvedValueOnce({ data: portfolioReport });
+
+		const list = await subject.getReports(LIGHTSPEED);
+		const report = await subject.getReport(APOLLO, ENGAGEMENT_START_ID);
+
+		expect(list.reports[0].ownerKind).toBe("team");
+		expect(report.ownerKind).toBe("portfolio");
+	});
+
 	it("refuses a list that is not the shape the server promises", async () => {
 		mockedAxios.get.mockResolvedValueOnce({
 			data: { reports: [{ id: 1, name: null }] },
