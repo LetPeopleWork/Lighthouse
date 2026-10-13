@@ -1,6 +1,7 @@
 using System.Globalization;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Services.Implementation.Reports;
+using Lighthouse.Backend.Tests.API.Integration.Reports;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 {
@@ -48,6 +49,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
             Assert.That(refusal, Is.EqualTo(expected));
         }
+
+        // The same Then rows the browser's wizard and the server's acceptance suite are checked against.
+        [TestCaseSource(nameof(TheThenRowsOfTheBoundaryTable))]
+        public void ThenRefusal_answers_every_Then_row_of_the_boundary_table_as_it_says(ReportWindowBoundaryScenarios.BoundaryRow row)
+        {
+            var bounds = ReportWindowBoundaryScenarios.TheTable.Bounds;
+            var today = DateOnly.Parse(bounds.Today, CultureInfo.InvariantCulture);
+            var doneItemsCutoffDays = row.KeepsEveryFinishedItem ? KeepsEverything : today.DayNumber - DateOnly.Parse(bounds.EarliestStart!, CultureInfo.InvariantCulture).DayNumber;
+
+            var refusal = ReportWindowPolicy.ThenRefusal(DateOnly.Parse(row.End!, CultureInfo.InvariantCulture), row.LengthDays, today, doneItemsCutoffDays);
+
+            Assert.That(refusal, Is.EqualTo(row.Refusal));
+        }
+
+        private static IEnumerable<TestCaseData> TheThenRowsOfTheBoundaryTable()
+            => ReportWindowBoundaryScenarios.TheTable.Rows
+                .Where(row => row.Side == "then")
+                .Select(row => new TestCaseData(row).SetName($"ThenRefusal_answers_every_Then_row_of_the_boundary_table_as_it_says({row.Case})"));
 
         [TestCase(365, "2025-10-02")]
         [TestCase(180, "2026-04-05")]

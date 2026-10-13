@@ -51,17 +51,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // --- The shared table ---
 
-        private static readonly BoundaryTableFile TheTable = ReadTheTable();
+        // Declared before TheTable: static fields initialise in the order they are written.
+        private static readonly JsonSerializerOptions TableReading = new() { PropertyNameCaseInsensitive = true };
+
+        internal static readonly BoundaryTableFile TheTable = ReadTheTable();
 
         private static IEnumerable<TestCaseData> TheRowsOfTheBoundaryTable()
-            => TheTable.Rows.Select(row => new TestCaseData(row)
-                .SetName($"A_window_at_an_edge_is_answered_as_the_table_says({row.Case})")
-                .Ignore(row.Side == "then" ? PendingSlice02 : PendingSlice07));
+            => TheTable.Rows.Select(row =>
+            {
+                var testCase = new TestCaseData(row).SetName($"A_window_at_an_edge_is_answered_as_the_table_says({row.Case})");
+                return row.Side == "then" ? testCase : testCase.Ignore(PendingSlice07);
+            });
 
         private static BoundaryTableFile ReadTheTable()
         {
             var path = Path.Combine(RepositoryRoot(), BoundaryTable.Replace('/', Path.DirectorySeparatorChar));
-            return JsonSerializer.Deserialize<BoundaryTableFile>(File.ReadAllText(path), new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+            return JsonSerializer.Deserialize<BoundaryTableFile>(File.ReadAllText(path), TableReading)
                 ?? throw new InvalidOperationException($"{BoundaryTable} holds no table");
         }
 
