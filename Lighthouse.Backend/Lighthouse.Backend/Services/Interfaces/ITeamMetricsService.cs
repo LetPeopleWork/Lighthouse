@@ -50,6 +50,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         IEnumerable<Feature> GetAllFeaturesForSizeChart(Team team, DateTime startDate, DateTime endDate);
 
+        IEnumerable<PercentileValue> GetSizePercentilesForTeam(Team team, DateTime startDate, DateTime endDate);
+
         IEnumerable<WorkItem> GetWipSnapshotForTeam(Team team, DateTime endDate);
 
         IEnumerable<WorkItem> GetBlockedEligibleItemsForTeam(Team team);

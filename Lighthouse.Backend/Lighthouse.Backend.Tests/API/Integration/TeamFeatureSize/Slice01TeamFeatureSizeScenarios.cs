@@ -167,7 +167,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("us-01")]
         [Category("error")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task A_Team_that_does_not_exist_has_no_Feature_sizes(string metric)
         {
             GivenTheOceanExplorerPortfolioAndTheTeamsThatWorkOnIt();
@@ -184,7 +183,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("us-01")]
         [Category("error")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task A_window_that_ends_before_it_starts_is_refused(string metric)
         {
             GivenTheOceanExplorerPortfolioAndTheTeamsThatWorkOnIt();
@@ -221,7 +219,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Test]
         [Category("us-01")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task A_Team_s_size_percentiles_come_from_its_parts_of_the_Features_closed_in_the_window()
         {
             GivenGravityClosedTenFeaturesInTheWindowWithPartsOneToTen();
@@ -236,7 +233,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("us-01")]
         [Category("error")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task A_Team_with_no_Feature_closed_in_the_window_has_no_size_percentiles()
         {
             GivenBiggerFeaturesThatDoNotCount();
@@ -272,7 +268,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("us-01")]
         [Category("perf")]
         [Category("contract-shape:unbounded-preservation")]
-        [Ignore(Pending)]
         public async Task Asking_a_Team_for_its_Feature_sizes_costs_as_much_of_the_database_for_twenty_Features_as_for_two(string metric)
         {
             GivenGravityWorksOnFeatures(2);

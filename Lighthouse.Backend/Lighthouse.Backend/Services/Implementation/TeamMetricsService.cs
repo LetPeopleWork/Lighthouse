@@ -662,6 +662,21 @@ namespace Lighthouse.Backend.Services.Implementation
             return InSizeChartWindow(teamFeatures, startDate, endDate).ToList();
         }
 
+        public IEnumerable<PercentileValue> GetSizePercentilesForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Size Percentiles for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            var closedFeaturesOfTeam = featureRepository.GetAllByPredicate(f =>
+                    !f.IsUsingDefaultFeatureSize &&
+                    f.StateCategory == StateCategories.Done &&
+                    f.FeatureWork.Any(fw => fw.TeamId == team.Id && fw.TotalWorkItems > 0))
+                .ToList();
+
+            var sizes = ClosedInDateRange(closedFeaturesOfTeam, startDate, endDate).Select(f => f.SizeFor(team.Id)).ToList();
+
+            return sizes.Count == 0 ? [] : BuildPercentiles(sizes);
+        }
+
         public IEnumerable<WorkItem> GetWipSnapshotForTeam(Team team, DateTime endDate)
         {
             logger.LogDebug("Getting WIP snapshot for Team {TeamName} at {EndDate}", team.Name, endDate.Date);

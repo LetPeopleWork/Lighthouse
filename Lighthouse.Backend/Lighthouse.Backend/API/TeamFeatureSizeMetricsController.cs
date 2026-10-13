@@ -2,6 +2,7 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
@@ -50,6 +51,18 @@ namespace Lighthouse.Backend.API
                     Size = f.SizeFor(team.Id),
                 });
             });
+        }
+
+        [HttpGet("sizePercentiles")]
+        public ActionResult<IEnumerable<PercentileValue>> GetSizePercentiles(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
+                teamMetricsService.GetSizePercentilesForTeam(team, startDate, endDate));
         }
 
         // A reader of the Team may see a Feature from a Portfolio they cannot open; the Feature still
