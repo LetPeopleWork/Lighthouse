@@ -399,3 +399,83 @@ E2E page objects wait for `data-widget-status="ready"`.
 
 Upstream note: the DISCUSS sections above are left as written. Read the stories, ACs and DoD together with
 this section.
+
+## Wave: DEVOPS / [REF] Pre-requisites
+
+DEVOPS 2026-10-13. Nothing is installed, provisioned or configured, so the platform answers are the project's
+standing ones. The DESIGN constraints the platform has to satisfy:
+- No migration and no new setting (DDD-1…DDD-14).
+- The metrics cache is in memory per process (DDD-6). The new key format needs no migration and nothing to drain.
+- The Team's Features are selected by a predicate that EF translates to SQL (DDD-4), so both providers have to run it.
+
+## Wave: DEVOPS / [REF] Environment Matrix
+
+See `environments.yaml`. These are the axes the acceptance scenarios vary over, not targets to stand up:
+
+| Environment | Why it exists | Criteria |
+|---|---|---|
+| `clean` | Baseline: SQLite, seeded terminology | all |
+| `multi-team-demo` | The only place a Feature has several Teams (OE-002, OE-007) | AC-1.2, the share |
+| `team-without-portfolio` | The Team empty state | AC-1.6 |
+| `same-id-team-and-portfolio` | The cache collision needs matching ids (any one-Team, one-Portfolio instance) | AC-0.1…AC-0.4 |
+| `postgres` | The `FeatureWork` predicate must translate on both providers | AC-1.1, AC-1.3 |
+| `screenshot-capture` | Only if DISTILL adds a Team Feature Size image | docs |
+
+## Wave: DEVOPS / [REF] CI/CD Pipeline Outline
+
+No pipeline change. `ci.yml` on push to `main` runs, in order:
+1. `ci_backend`: build with warnings as errors, then the NUnit suites.
+2. `ci_frontend`: Vitest, then Biome and the build.
+3. `ci_sonar_gates`.
+4. `ci_verifysqlite` and `ci_verifypostgres`: the packaged app plus the Playwright E2E suite.
+
+`Program.cs` does not change, so the full backend Integration suite is not forced.
+
+## Wave: DEVOPS / [REF] Monitoring Contracts
+
+| KPI | Instrument |
+|---|---|
+| `OUT-6251-share-adds-up` | An acceptance test over demo data (AC-1.2), and a by-hand check of Ocean Explorer at dogfood. No runtime signal is needed. |
+| `OUT-6251-not-read-as-a-bug` | Not instrumented. ADO Bugs and community reports that mention Feature Size are reviewed 60 days after release, together with Steve's confirmation on #6251. |
+| `OUT-6251-used` | **Dropped.** No usage-data event (see Usage Data). |
+
+**Usage data: N/A, maintainer decision 2026-10-13.** No event is added to `UsageDataEventName`. `TeamTabOpened`
+already exists, and adoption of the Team's Feature Size is judged from feedback, not counted.
+`docs/settings/usagedata.md` does not change, and DELIVER has no emission step.
+
+## Wave: DEVOPS / [REF] Deployment Strategy
+
+The standing release flow: trunk-based on `main`, a calver release through `/release`, and a standalone app and
+container image. Rolling update on Kubernetes tenants. Each replica's metrics cache starts empty under the new key
+format. Rollback means deploying the previous release; nothing is persisted that it would have to undo.
+
+## Wave: DEVOPS / [REF] Mutation Testing Strategy
+
+**per-feature** (project standard, `CLAUDE.md`), run last on frozen code: Stryker.NET on the changed backend
+lines, covering `Feature.SizeFor`, the lifted window rule, the Team service methods and the cache-key builder,
+and StrykerJS on the changed frontend lines. Kill rate at least 80 %. The acceptance suite is excluded from the
+Stryker run.
+
+## Wave: DEVOPS / [REF] Observability Stack
+
+No change. The new service methods follow the existing `logger.LogDebug` entry-trace pattern. No new metric,
+trace or alert.
+
+## Wave: DEVOPS / [REF] Branching Strategy
+
+Trunk-based: commit to `main`, push only after the maintainer reviews, and never push red. CI triggers are unchanged.
+
+## Wave: DEVOPS / [REF] Coexistence Matrix
+
+| Must keep working | Note |
+|---|---|
+| The Portfolio's Feature Size routes and numbers | Only the scatter frame changes (always placed) |
+| Every other cached Team and Portfolio metric | Slice 00 re-keys them. Invalidation must still clear exactly one owner |
+| Lighthouse-Clients CLI and MCP | No route or shape they read changes |
+| Work Items dialog, `featureSize` context | Size column shows the share on the Team |
+
+## Wave: DEVOPS / [REF] Changed Assumptions
+
+- DISCUSS Outcome KPIs listed `OUT-6251-used` ("Feature Size on a Team is opened on at least 10 % of instances
+  that report usage data … The usage-data event DEVOPS decides on, if any"). The maintainer chose no event, so that
+  KPI is dropped. DISCUSS DoD item 6 ("The usage-data event from DEVOPS, if any, is emitted …") resolves to N/A.

@@ -1,0 +1,102 @@
+# environments.yaml — consumed by DISTILL for Mandate 4 (Environmental Realism)
+#
+# story-6251-team-feature-size. Installs nothing and provisions nothing: it adds three read routes, a domain
+# method, an owner-scoped key for the in-memory metrics cache, and widget changes. The environments below are
+# the axes along which the acceptance scenarios vary, and only where this story can behave differently.
+#
+# Left out on purpose:
+#   - operating system: nothing here is platform-sensitive.
+#   - premium vs free licence: both widgets are free on both owners (DESIGN DDD-12). The screenshot run is the
+#     one exception and carries the premium fixture as a precondition.
+#   - renamed terminology: the new copy goes through the existing terminology hooks like every other widget
+#     caption. DISTILL adds the axis only if the sketched copy names a term in a new way.
+
+schema_version: 1
+feature_id: story-6251-team-feature-size
+updated: 2026-10-13
+wave: DEVOPS
+
+target_environments:
+  - name: clean
+    description: Default instance, seeded terminology, SQLite. The baseline for every scenario.
+    platform: [linux, macos, windows, wsl]
+    preconditions: []
+
+  - name: multi-team-demo
+    description: >
+      Demo data with the Ocean Explorer Portfolio. The only place a Feature has several contributing Teams
+      (OE-002: Equinox, Gravity, Zenith; OE-007: Gravity, Zenith). The dev instance has one Team and can't
+      produce one.
+    platform: [linux]
+    preconditions:
+      - "Demo data loaded (Settings → Demo data, or the E2E demo seed)"
+
+  - name: team-without-portfolio
+    description: A Team whose Work Items have parents that no Portfolio loads. Drives the Team empty state.
+    platform: [linux, macos]
+    preconditions: ["A Team with no Portfolio around its hierarchy"]
+
+  - name: same-id-team-and-portfolio
+    description: >
+      A Team and a Portfolio with the same database id, both with metrics. This is what slice 00's collision
+      needs, and an instance with one Team and one Portfolio always has it (both get id 1).
+    platform: [linux]
+    preconditions: ["Team.Id == Portfolio.Id, each with work in the selected range"]
+
+  - name: postgres
+    description: The multi-replica and SaaS provider. CI runs it via ci_verifypostgres.
+    platform: [linux]
+    preconditions: ["PostgreSQL provider"]
+
+  - name: screenshot-capture
+    description: The @screenshot run, if DISTILL adds a Team Feature Size image to the docs.
+    platform: [linux]
+    preconditions:
+      - "Premium licence fixture present (gitignored, ABSENT in a worktree; copy it from the main checkout)"
+      - "Target PNG deleted before the run (a diff under the pixel threshold silently keeps the old file)"
+
+scenario_axes:
+  owner_scoped_cache:
+    criteria: [AC-0.1, AC-0.2, AC-0.3, AC-0.4]
+    vary_over: [same-id-team-and-portfolio]
+    rationale: The collision exists only when the ids match.
+  team_share:
+    criteria: [AC-1.1, AC-1.2, AC-1.3, AC-2.1]
+    vary_over: [clean, multi-team-demo]
+    rationale: AC-1.2 (shares add up to the Portfolio size) needs a multi-team Feature.
+  query_shape:
+    criteria: [AC-1.1, AC-1.3]
+    vary_over: [clean, postgres]
+    rationale: >
+      The Team's Features are selected by a predicate over FeatureWork that runs in SQL. A predicate EF
+      translates on SQLite and not on Postgres would show here. CI runs both providers.
+  empty_state:
+    criteria: [AC-1.6]
+    vary_over: [team-without-portfolio]
+    rationale: Only reachable without a Portfolio around the Team's hierarchy.
+
+coexistence_matrix:
+  - tool: "Portfolio Feature Size scatter, percentiles, PBC and estimation routes"
+    must_not_break: true
+    note: "Numbers unchanged; only the scatter frame becomes always-placed (DESIGN Changed Assumptions)."
+  - tool: "Every other cached Team and Portfolio metric"
+    must_not_break: true
+    note: "Slice 00 changes their cache keys. Invalidation by Team or Portfolio must still clear exactly that owner."
+  - tool: "Lighthouse-Clients CLI and MCP"
+    must_not_break: true
+    note: "They read Portfolio and Team metrics routes whose shapes do not change."
+  - tool: "Work Items dialog (featureSize context)"
+    must_not_break: true
+
+platform_coverage:
+  Linux: [Ubuntu 22.04, Ubuntu 24.04]
+  macOS: [13.x, 14.x]
+  Windows: [Server 2022]
+  WSL: [WSL2]
+  CI: [GitHub Actions ubuntu-latest]
+
+deployment_assumptions:
+  - "No installation step, no migration, no new setting, no new secret."
+  - "The metrics cache lives only in memory per process. A new key format needs no data migration: old entries die with the old process."
+  - "Under a rolling update each replica keeps its own cache, so nothing is shared across versions."
+  - "Frontend and backend ship in one artifact, so the browser never meets a backend without the new routes."
