@@ -2,7 +2,7 @@ import AddIcon from "@mui/icons-material/Add";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import type React from "react";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { useRbac } from "../../../hooks/useRbac";
 import type {
 	IReportListItem,
@@ -14,6 +14,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import { WidgetBody } from "../MetricsView/WidgetShell";
 import type { WidgetStatus } from "../MetricsView/widgetStatus";
 import ReportList from "./ReportList";
+import ReportWizard from "./wizard/ReportWizard";
 
 const LIST_COULD_NOT_LOAD = "Reports couldn't be loaded. Reload to try again.";
 const NO_REPORTS = "No reports yet.";
@@ -43,6 +44,7 @@ const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({ owner }) => {
 	const { reportService } = useContext(ApiServiceContext);
 	const rbac = useRbac();
 	const { getTerm } = useTerminology();
+	const [isCreating, setIsCreating] = useState(false);
 
 	const { data, isFetching, isError, refetch } = useQuery({
 		queryKey: ["reports", owner.kind, owner.id],
@@ -72,10 +74,14 @@ const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({ owner }) => {
 						variant="contained"
 						startIcon={<AddIcon />}
 						disabled={data === undefined}
+						onClick={() => setIsCreating(true)}
 					>
 						Create Report
 					</Button>
 				</Box>
+			)}
+			{isCreating && (
+				<ReportWizard owner={owner} onClose={() => setIsCreating(false)} />
 			)}
 			<Box
 				data-testid="reports-list"

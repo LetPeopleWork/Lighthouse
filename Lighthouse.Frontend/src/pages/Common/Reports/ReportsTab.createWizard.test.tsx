@@ -109,7 +109,7 @@ describe("Step one: the Type of report", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:pure-function
-	it.skip("offers Then & Now as the one Type, already chosen, saying what it is for", async () => {
+	it("offers Then & Now as the one Type, already chosen, saying what it is for", async () => {
 		await openTheWizard();
 
 		const card = within(await theWizard()).getByRole("radio", {
@@ -130,7 +130,7 @@ describe("Step two: Then", () => {
 	});
 
 	// @us-01 @slice-01 @contract-shape:pure-function
-	it.skip("starts as the 90 days ending today and says which days that is, frozen when created", async () => {
+	it("starts as the 90 days ending today and says which days that is, frozen when created", async () => {
 		await openTheWizard();
 		await next();
 
@@ -339,7 +339,7 @@ describe("The wizard on a slow or failing connection", () => {
 
 	// @us-01 @slice-01 @boundary @contract-shape:pure-function
 	// Today is the instance's day; until it arrives the wizard has no day to start Then from.
-	it.skip("draws no dates and goes no further while the report types are on their way", async () => {
+	it("draws no dates and goes no further while the report types are on their way", async () => {
 		const held = deferred<ReturnType<typeof aTemplateList>>();
 		await openTheWizard(
 			aReportService({
@@ -360,7 +360,7 @@ describe("The wizard on a slow or failing connection", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:pure-function
-	it.skip("says the report types could not be loaded and offers Retry, going no further", async () => {
+	it("says the report types could not be loaded and offers Retry, going no further", async () => {
 		await openTheWizard(
 			aReportService({
 				getReports: vi.fn().mockResolvedValue(aReportList([])),
@@ -509,7 +509,7 @@ describe("Step four: metrics and name", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:pure-function
-	it.skip("cannot create a report without a name", async () => {
+	it("cannot create a report without a name", async () => {
 		await openTheWizard();
 		await onToTheLastStep();
 
