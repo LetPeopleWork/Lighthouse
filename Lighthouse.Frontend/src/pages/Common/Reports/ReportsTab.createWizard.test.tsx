@@ -162,7 +162,7 @@ describe("Step two: Then", () => {
 	});
 
 	// @us-02 @slice-02 @error @contract-shape:pure-function
-	it.skip("cannot end in the future", async () => {
+	it("cannot end in the future", async () => {
 		await openTheWizard();
 		await next();
 
@@ -217,7 +217,7 @@ describe("Step two: Then", () => {
 	});
 
 	// @us-02 @slice-02 @error @contract-shape:pure-function
-	it.skip("refuses a Then starting before the oldest kept day, naming that day, and goes no further", async () => {
+	it("refuses a Then starting before the oldest kept day, naming that day, and goes no further", async () => {
 		await openTheWizard();
 		await next();
 
@@ -230,7 +230,7 @@ describe("Step two: Then", () => {
 	});
 
 	// @us-02 @slice-02 @error @contract-shape:pure-function
-	it.skip("refuses a Then shorter than 14 days and goes no further", async () => {
+	it("refuses a Then shorter than 14 days and goes no further", async () => {
 		await openTheWizard();
 		await next();
 
@@ -280,7 +280,7 @@ describe("Step two: Then", () => {
 
 	// @us-02 @slice-02 @error @contract-shape:pure-function
 	// A Team keeping 180 days has a later oldest kept day; the refusal names the day the server answered.
-	it.skip("names the oldest kept day the server answers when Then starts before it", async () => {
+	it("names the oldest kept day the server answers when Then starts before it", async () => {
 		await openTheWizard(
 			aReportService({
 				getReports: vi.fn().mockResolvedValue(aReportList([])),
@@ -302,7 +302,7 @@ describe("Step two: Then", () => {
 	});
 
 	// @us-02 @slice-02 @boundary @contract-shape:pure-function
-	it.skip("lets Then start on any day when the Team keeps every finished Work Item", async () => {
+	it("lets Then start on any day when the Team keeps every finished Work Item", async () => {
 		await openTheWizard(
 			aReportService({
 				getReports: vi.fn().mockResolvedValue(aReportList([])),
@@ -615,7 +615,7 @@ describe("Creating the report", () => {
 
 	// @us-02 @slice-02 @error @contract-shape:unbounded-preservation
 	// The oldest kept day moves on at midnight; a wizard left open overnight can still be refused.
-	it.skip("names the oldest kept day when the server refuses Then for starting before it", async () => {
+	it("names the oldest kept day when the server refuses Then for starting before it", async () => {
 		await openTheWizard(
 			aReportService({
 				getReports: vi.fn().mockResolvedValue(aReportList([])),

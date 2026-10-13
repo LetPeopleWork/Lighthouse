@@ -10,12 +10,12 @@ import type React from "react";
 import { reportWindowPresetsFor } from "../../panels/reportWindowPresets";
 import { useRefusalWords, windowRefusalCopyFor } from "../reportRefusalCopy";
 import type { ReportTypeStepProps } from "../reportTypes";
-import { reportWindowCheck } from "../reportWindowCheck";
 import {
 	lengthOf,
 	resolvedThenDays,
 	type ThenAndNowDraft,
 	thenEndOf,
+	thenRefusalOf,
 } from "./thenAndNowDraft";
 
 const ThenStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
@@ -30,10 +30,7 @@ const ThenStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 	const presets = reportWindowPresetsFor(owner);
 	const days = resolvedThenDays(end, lengthDays);
 	const refusalWordsFor = useRefusalWords(owner);
-	const refusal =
-		lengthDays === null
-			? null
-			: reportWindowCheck({ side: "then", end, lengthDays }, templates);
+	const refusal = thenRefusalOf(draft, templates);
 
 	const chooseLength = (thenLength: string) =>
 		onChange({ ...draft, thenLength });

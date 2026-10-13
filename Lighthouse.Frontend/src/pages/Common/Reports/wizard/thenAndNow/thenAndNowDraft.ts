@@ -5,6 +5,10 @@ import type {
 	ReportMetricKey,
 } from "../../../../../models/Reports/Report";
 import { parseLocalDate } from "../../../../../utils/date/localDate";
+import {
+	type ReportWindowRefusal,
+	reportWindowCheck,
+} from "../reportWindowCheck";
 
 const DEFAULT_LENGTH_DAYS = 90;
 
@@ -33,6 +37,20 @@ export const thenEndOf = (
 export const lengthOf = (text: string): number | null => {
 	const days = Number(text);
 	return text.trim() !== "" && Number.isInteger(days) && days > 0 ? days : null;
+};
+
+/** Why the server would refuse the Then entered, or null while it has no length yet or would be accepted. */
+export const thenRefusalOf = (
+	draft: ThenAndNowDraft,
+	templates: IReportTemplates,
+): ReportWindowRefusal | null => {
+	const lengthDays = lengthOf(draft.thenLength);
+	return lengthDays === null
+		? null
+		: reportWindowCheck(
+				{ side: "then", end: thenEndOf(draft, templates), lengthDays },
+				templates,
+			);
 };
 
 /** Now is as long as Then until somebody changes it. */

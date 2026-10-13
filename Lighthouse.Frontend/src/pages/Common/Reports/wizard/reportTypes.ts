@@ -18,6 +18,7 @@ import {
 	shownMetricsOf,
 	type ThenAndNowDraft,
 	thenEndOf,
+	thenRefusalOf,
 } from "./thenAndNow/thenAndNowDraft";
 
 export interface ReportTypeStepProps<TDraft> {
@@ -60,7 +61,8 @@ export const reportTypes: {
 				component: ThenStep,
 				isComplete: (draft, templates) =>
 					parseLocalDate(thenEndOf(draft, templates)) !== null &&
-					lengthOf(draft.thenLength) !== null,
+					lengthOf(draft.thenLength) !== null &&
+					thenRefusalOf(draft, templates) === null,
 			},
 			{
 				label: "Now",
