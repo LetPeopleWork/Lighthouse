@@ -32,6 +32,7 @@ export class ReportsListPage {
 	}
 
 	async createTheDefaultReport(): Promise<ReportPage> {
+		await this.waitUntilReady();
 		await this.createReportButton.click();
 		// Each step is waited for by what it says, so a step that never appears fails here, not later.
 		const whatEachStepSays = [

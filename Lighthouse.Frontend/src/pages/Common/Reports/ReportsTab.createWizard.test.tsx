@@ -40,7 +40,7 @@ import ReportsTab from "./ReportsTab";
  * is sent, and the last step creates the report and opens it. The examples are set on 2 Oct 2026, with
  * finished Work Items kept back to 2 Oct 2025.
  *
- * The date field is driven as a plain date input; if DELIVER uses a date picker instead, only the step
+ * The date field is driven as a plain date input; if the wizard uses a date picker instead, only the step
  * in the test kit that picks the date changes.
  */
 

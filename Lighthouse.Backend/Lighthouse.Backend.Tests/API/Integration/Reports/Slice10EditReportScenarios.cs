@@ -109,6 +109,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             TheTeamFinishedPerDay(lightspeed, ThenStarts, [.. Enumerable.Repeat(1, 90)]);
             var reportId = await GivenTheAdminCreated(lightspeed, new NewReport());
             var asCreated = await TheReport(lightspeed, reportId);
+            var before = TheStoredRowOf(reportId);
             var edit = AnEdit(asCreated, name: SinceAugust);
             var thenAndNow = edit["thenAndNow"]!.AsObject();
             thenAndNow["thenEndDate"] = "2026-07-31";
@@ -117,13 +118,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             using var saved = await EditTheReport(lightspeed, reportId, edit);
 
             var report = await TheReport(lightspeed, reportId);
+            var after = TheStoredRowOf(reportId);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(saved.StatusCode, Is.EqualTo(HttpStatusCode.OK), await saved.Content.ReadAsStringAsync());
                 Assert.That(TextOf(report, "name"), Is.EqualTo(SinceAugust));
                 Assert.That(ThenWindowIn(report), Is.EqualTo(NinetyDaysToToday));
-                Assert.That(ThenValueIn(report, Throughput, Total), Is.EqualTo(ThenValueIn(asCreated, Throughput, Total)));
-                Assert.That(ThenValueIn(report, CycleTime, P85), Is.EqualTo(ThenValueIn(asCreated, CycleTime, P85)));
+                Assert.That(WithoutTheMayChangeColumns(after), Is.EqualTo(WithoutTheMayChangeColumns(before)));
+                Assert.That(JsonNode.DeepEquals(WithoutNowLength(after), WithoutNowLength(before)), Is.True,
+                    $"the stored Then stays as it was frozen: {after[PayloadColumn]}");
             }
         }
 
@@ -145,10 +148,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
                 AnEdit(await TheReport(lightspeed, reportId), name: SinceAugust, shown: [CycleTime, Throughput], nowLengthDays: 30));
 
             var after = TheStoredRowOf(reportId);
+            var readBack = await TheReport(lightspeed, reportId);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(saved.StatusCode, Is.EqualTo(HttpStatusCode.OK), await saved.Content.ReadAsStringAsync());
                 Assert.That(after["Name"], Is.EqualTo(SinceAugust));
+                Assert.That(NowWindowIn(readBack).LengthDays, Is.EqualTo(30), "the new Now length is the one stored");
                 Assert.That(after["ShownMetricKeysJson"], Is.Not.EqualTo(before["ShownMetricKeysJson"]));
                 Assert.That(after["ConcurrencyToken"], Is.Not.EqualTo(before["ConcurrencyToken"]));
                 Assert.That(WithoutTheMayChangeColumns(after), Is.EqualTo(WithoutTheMayChangeColumns(before)),

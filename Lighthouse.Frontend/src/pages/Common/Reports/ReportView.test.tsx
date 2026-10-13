@@ -412,6 +412,7 @@ describe("A report on a slow or failing connection", () => {
 		);
 
 		expect(await screen.findByText(LOADING)).toBeVisible();
+		expect(screen.getByRole("progressbar")).toBeVisible();
 		expect(screen.getByRole("link", { name: "Reports" })).toBeVisible();
 		expect(screen.queryByRole("region")).toBeNull();
 		expect(document.querySelector('[data-report-status="ready"]')).toBeNull();
