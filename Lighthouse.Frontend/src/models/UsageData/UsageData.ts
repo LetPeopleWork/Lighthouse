@@ -65,6 +65,7 @@ export const UsageDataRouteKey = {
 	PortfolioDetail_Deliveries: "PortfolioDetail_Deliveries",
 	PortfolioDetail_Settings: "PortfolioDetail_Settings",
 	PortfolioDetail_Access: "PortfolioDetail_Access",
+	TeamDetail_Reports: "TeamDetail_Reports",
 } as const;
 
 export type UsageDataRouteKey =
