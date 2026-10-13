@@ -483,7 +483,7 @@ describe("Step four: metrics and name", () => {
 	});
 
 	// @us-02 @slice-02 @boundary @contract-shape:pure-function
-	it.skip("keeps an edited name when Then changes afterwards", async () => {
+	it("keeps an edited name when Then changes afterwards", async () => {
 		await openTheWizard();
 		await onToTheLastStep();
 		await userEvent.clear(await theNameField());
@@ -496,7 +496,8 @@ describe("Step four: metrics and name", () => {
 			within(await theWizard()).getByRole("button", { name: "Back" }),
 		);
 		await chooseThenEnd("2026-07-31");
-		await onToTheLastStep();
+		await next();
+		await next();
 
 		expect(await theNameField()).toHaveValue("Engagement start");
 	});
