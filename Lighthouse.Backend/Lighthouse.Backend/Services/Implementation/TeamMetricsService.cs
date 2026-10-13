@@ -649,14 +649,11 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting All Features For Size Chart for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
-            // A Feature sized by its Portfolio's default carries made-up work for Teams that never had
-            // any, so it is left out by name rather than trusted to show a share of zero.
-            var teamFeatures = featureRepository.GetAllByPredicate(f =>
-                    !f.IsUsingDefaultFeatureSize &&
-                    f.FeatureWork.Any(fw => fw.TeamId == team.Id && fw.TotalWorkItems > 0) &&
-                    (f.StateCategory == StateCategories.Done ||
-                     f.StateCategory == StateCategories.ToDo ||
-                     f.StateCategory == StateCategories.Doing))
+            var teamFeatures = FeaturesTheTeamHasARealShareOf(team)
+                .Where(f =>
+                    f.StateCategory == StateCategories.Done ||
+                    f.StateCategory == StateCategories.ToDo ||
+                    f.StateCategory == StateCategories.Doing)
                 .ToList();
 
             return InSizeChartWindow(teamFeatures, startDate, endDate).ToList();
@@ -666,7 +663,11 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Size Percentiles for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
-            var sizes = ClosedInDateRange(GetDoneFeaturesTheTeamHasARealShareOf(team), startDate, endDate)
+            var doneFeatures = FeaturesTheTeamHasARealShareOf(team)
+                .Where(f => f.StateCategory == StateCategories.Done)
+                .ToList();
+
+            var sizes = ClosedInDateRange(doneFeatures, startDate, endDate)
                 .Select(f => f.SizeFor(team.Id))
                 .ToList();
 
@@ -686,14 +687,12 @@ namespace Lighthouse.Backend.Services.Implementation
             return BuildFeatureSizePercentilesInfoDto(currentPercentiles, previousPercentiles, currentStart: startDate, currentEnd: endDate, previousStart: previousStart, previousEnd: previousEnd);
         }
 
-        // A Feature sized by its Portfolio's default carries made-up work for Teams that never had
-        // any, so it does not count as finished work of this Team.
-        private List<Feature> GetDoneFeaturesTheTeamHasARealShareOf(Team team) =>
+        // A Feature sized by its Portfolio's default carries made-up work for Teams that never had any,
+        // so it is left out explicitly rather than trusted to show this Team a share of zero.
+        private IQueryable<Feature> FeaturesTheTeamHasARealShareOf(Team team) =>
             featureRepository.GetAllByPredicate(f =>
-                    !f.IsUsingDefaultFeatureSize &&
-                    f.StateCategory == StateCategories.Done &&
-                    f.FeatureWork.Any(fw => fw.TeamId == team.Id && fw.TotalWorkItems > 0))
-                .ToList();
+                !f.IsUsingDefaultFeatureSize &&
+                f.FeatureWork.Any(fw => fw.TeamId == team.Id && fw.TotalWorkItems > 0));
 
         public IEnumerable<WorkItem> GetWipSnapshotForTeam(Team team, DateTime endDate)
         {
