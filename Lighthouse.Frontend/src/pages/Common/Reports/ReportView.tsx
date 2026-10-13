@@ -9,8 +9,9 @@ import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { WidgetBody } from "../MetricsView/WidgetShell";
-import type { WidgetStatus } from "../MetricsView/widgetStatus";
+import { queryStatusOf } from "../MetricsView/widgetStatus";
 import { panelFor } from "./panels/reportPanelRegistry";
+import { reportsPathOf } from "./reportOwner";
 import ThenAndNowHeader from "./ThenAndNowHeader";
 import { useReportOpenedReporter } from "./useReportOpenedReporter";
 
@@ -23,11 +24,6 @@ const BODY_MIN_HEIGHT = 120;
 interface ReportViewProps {
 	owner: IReportOwner;
 	reportId: number;
-}
-
-function statusOf(isFetching: boolean, isError: boolean): WidgetStatus {
-	if (isFetching) return "loading";
-	return isError ? "error" : "ready";
 }
 
 const isMadeByANewerVersion = (error: Error | null): boolean =>
@@ -74,8 +70,8 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 
 	useReportOpenedReporter(isError ? undefined : report);
 
-	const reportsPath = `/${owner.kind}s/${owner.id}/reports`;
-	const status = statusOf(isFetching, isError);
+	const reportsPath = reportsPathOf(owner);
+	const status = queryStatusOf(isFetching, isError);
 	const madeByANewerVersion = isMadeByANewerVersion(error);
 
 	return (

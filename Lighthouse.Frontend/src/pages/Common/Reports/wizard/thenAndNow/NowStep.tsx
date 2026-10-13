@@ -1,6 +1,6 @@
 import { Stack, TextField, Typography } from "@mui/material";
 import type React from "react";
-import type { ReportTypeStepProps } from "../reportTypeSteps";
+import type { ReportTypeStepProps } from "../reportTypes";
 import { nowLengthOf, type ThenAndNowDraft } from "./thenAndNowDraft";
 
 /** Now always ends on the server's today; its length follows Then until changed. */

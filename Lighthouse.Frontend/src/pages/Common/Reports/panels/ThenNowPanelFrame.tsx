@@ -6,8 +6,6 @@ interface ThenNowPanelFrameProps {
 	title: string;
 	then: React.ReactNode;
 	now: React.ReactNode;
-	/** Left empty for now: the place a note on the panel will go. */
-	footer?: React.ReactNode;
 }
 
 const ColumnLabel: React.FC<{ readonly children: string }> = ({ children }) => (
@@ -26,7 +24,6 @@ const ThenNowPanelFrame: React.FC<Readonly<ThenNowPanelFrameProps>> = ({
 	title,
 	then,
 	now,
-	footer,
 }) => {
 	const titleId = useId();
 	return (
@@ -61,7 +58,6 @@ const ThenNowPanelFrame: React.FC<Readonly<ThenNowPanelFrameProps>> = ({
 					{now}
 				</Stack>
 			</Box>
-			{footer}
 		</Paper>
 	);
 };

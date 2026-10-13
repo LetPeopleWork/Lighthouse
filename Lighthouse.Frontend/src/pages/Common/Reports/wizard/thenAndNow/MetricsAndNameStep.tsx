@@ -10,7 +10,7 @@ import type React from "react";
 import type { ReportMetricKey } from "../../../../../models/Reports/Report";
 import { useTerminology } from "../../../../../services/TerminologyContext";
 import { panelFor } from "../../panels/reportPanelRegistry";
-import type { ReportTypeStepProps } from "../reportTypeSteps";
+import type { ReportTypeStepProps } from "../reportTypes";
 import {
 	nameOf,
 	offeredMetricsOf,

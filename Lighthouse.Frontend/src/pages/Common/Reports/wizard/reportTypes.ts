@@ -47,7 +47,7 @@ interface DraftByType {
 	"then-and-now": ThenAndNowDraft;
 }
 
-export const reportTypeSteps: {
+export const reportTypes: {
 	[K in ReportTemplateKey]: ReportTypeDefinition<DraftByType[K]>;
 } = {
 	"then-and-now": {
@@ -78,3 +78,9 @@ export const reportTypeSteps: {
 		toNewReport: newReportOf,
 	},
 };
+
+/** The title of a Type as the server names it, or undefined for one this version does not know. */
+export const reportTypeTitleOf = (templateKey: string): string | undefined =>
+	Object.keys(reportTypes).includes(templateKey)
+		? reportTypes[templateKey as ReportTemplateKey].title
+		: undefined;

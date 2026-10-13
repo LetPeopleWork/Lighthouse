@@ -7,7 +7,7 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
-import type { ReportTypeStepProps } from "../reportTypeSteps";
+import type { ReportTypeStepProps } from "../reportTypes";
 import {
 	lengthOf,
 	lengthPresetsFor,

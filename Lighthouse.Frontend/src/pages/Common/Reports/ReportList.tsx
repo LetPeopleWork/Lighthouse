@@ -8,13 +8,13 @@ import type {
 	IReportOwner,
 } from "../../../models/Reports/Report";
 import { parseLocalDate } from "../../../utils/date/localDate";
+import { reportPathOf } from "./reportOwner";
+import { reportTypeTitleOf } from "./wizard/reportTypes";
 
 interface ReportListProps {
 	owner: IReportOwner;
 	reports: IReportListItem[];
 }
-
-const TYPE_NAMES: Record<string, string> = { "then-and-now": "Then & Now" };
 
 const ReportList: React.FC<Readonly<ReportListProps>> = ({
 	owner,
@@ -28,9 +28,7 @@ const ReportList: React.FC<Readonly<ReportListProps>> = ({
 				flex: 1,
 				hideable: false,
 				renderCell: ({ row }) => (
-					<Link to={`/${owner.kind}s/${owner.id}/reports/${row.id}`}>
-						{row.name}
-					</Link>
+					<Link to={reportPathOf(owner, row.id)}>{row.name}</Link>
 				),
 			},
 			{
@@ -38,7 +36,7 @@ const ReportList: React.FC<Readonly<ReportListProps>> = ({
 				headerName: "Type",
 				width: 200,
 				valueGetter: (_value, row) =>
-					TYPE_NAMES[row.templateKey] ?? "Not supported in this version",
+					reportTypeTitleOf(row.templateKey) ?? "Not supported in this version",
 			},
 			{
 				field: "createdOn",

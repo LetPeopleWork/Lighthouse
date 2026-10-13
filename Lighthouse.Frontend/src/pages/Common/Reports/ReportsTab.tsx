@@ -8,12 +8,12 @@ import type {
 	IReportListItem,
 	IReportOwner,
 } from "../../../models/Reports/Report";
-import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { WidgetBody } from "../MetricsView/WidgetShell";
-import type { WidgetStatus } from "../MetricsView/widgetStatus";
+import { queryStatusOf } from "../MetricsView/widgetStatus";
 import ReportList from "./ReportList";
+import { ownerTermKeyOf } from "./reportOwner";
 import ReportWizard from "./wizard/ReportWizard";
 
 const LIST_COULD_NOT_LOAD = "Reports couldn't be loaded. Reload to try again.";
@@ -22,11 +22,6 @@ const LIST_MIN_HEIGHT = 120;
 
 interface ReportsTabProps {
 	owner: IReportOwner;
-}
-
-function statusOf(isFetching: boolean, isError: boolean): WidgetStatus {
-	if (isFetching) return "loading";
-	return isError ? "error" : "ready";
 }
 
 const ListOrEmpty: React.FC<{
@@ -57,10 +52,8 @@ const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({ owner }) => {
 			? rbac.isTeamAdmin(owner.id)
 			: rbac.isPortfolioAdmin(owner.id));
 
-	const status = statusOf(isFetching, isError);
-	const ownerTerm = getTerm(
-		owner.kind === "team" ? TERMINOLOGY_KEYS.TEAM : TERMINOLOGY_KEYS.PORTFOLIO,
-	);
+	const status = queryStatusOf(isFetching, isError);
+	const ownerTerm = getTerm(ownerTermKeyOf(owner));
 	const emptyMessage =
 		isEditor || rbac.isLoading
 			? NO_REPORTS

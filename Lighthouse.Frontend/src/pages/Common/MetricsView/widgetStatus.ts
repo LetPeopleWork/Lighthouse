@@ -35,6 +35,15 @@ export function combineWidgetStatuses(
 	return "ready";
 }
 
+/** Where a view's one query stands; a refetch reads as loading even after an earlier failure. */
+export function queryStatusOf(
+	isFetching: boolean,
+	isError: boolean,
+): WidgetStatus {
+	if (isFetching) return "loading";
+	return isError ? "error" : "ready";
+}
+
 function inputsOf(widgetKey: string): readonly MetricsFetchKey[] {
 	return getFetchRequirementsForWidget(widgetKey) ?? [];
 }

@@ -16,9 +16,11 @@ import {
 	usageDataReportTemplateFor,
 	useUsageDataReporter,
 } from "../../../../services/UsageData/usageDataReporter";
-import { refusalCopyFor } from "./reportRefusalCopy";
-import { reportTypeSteps } from "./reportTypeSteps";
-import TypeStep, { type ReportTypesStatus } from "./TypeStep";
+import { queryStatusOf } from "../../MetricsView/widgetStatus";
+import { ownerTermKeyOf, reportPathOf } from "../reportOwner";
+import { type RefusalWords, refusalCopyFor } from "./reportRefusalCopy";
+import { reportTypes } from "./reportTypes";
+import TypeStep from "./TypeStep";
 
 const TITLE_ID = "report-wizard-title";
 const TYPE_STEP = 0;
@@ -26,11 +28,6 @@ const TYPE_STEP = 0;
 interface ReportWizardProps {
 	owner: IReportOwner;
 	onClose: () => void;
-}
-
-function statusOf(isFetching: boolean, isError: boolean): ReportTypesStatus {
-	if (isFetching) return "loading";
-	return isError ? "error" : "ready";
 }
 
 /** Creates a report: the Type first, then the steps that Type adds. */
@@ -45,7 +42,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 	const { getTerm } = useTerminology();
 	const [activeStep, setActiveStep] = useState(TYPE_STEP);
 	const chosen: ReportTemplateKey = "then-and-now";
-	const type = reportTypeSteps[chosen];
+	const type = reportTypes[chosen];
 	const [draft, setDraft] = useState(type.newDraft);
 	const [isCreating, setIsCreating] = useState(false);
 	const [refusal, setRefusal] = useState<string | null>(null);
@@ -59,7 +56,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 		refetchOnWindowFocus: false,
 	});
 
-	const status = statusOf(isFetching, isError);
+	const status = queryStatusOf(isFetching, isError);
 	const templates = status === "ready" ? data : undefined;
 	const typeStep = activeStep - 1;
 	const current = typeStep >= 0 ? type.steps[typeStep] : undefined;
@@ -67,6 +64,13 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 	const isComplete =
 		templates !== undefined &&
 		(current === undefined || current.isComplete(draft, templates));
+
+	const refusalWordsFor = (bounds: IReportTemplates): RefusalWords => ({
+		minimumLengthDays: bounds.minimumLengthDays,
+		earliestStart: bounds.earliestStart,
+		ownerTerm: getTerm(ownerTermKeyOf(owner)),
+		workItemsTerm: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
+	});
 
 	const create = async (bounds: IReportTemplates) => {
 		setIsCreating(true);
@@ -78,18 +82,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 				type.toNewReport(draft, bounds),
 			);
 		} catch (error) {
-			setRefusal(
-				refusalCopyFor(error, {
-					minimumLengthDays: bounds.minimumLengthDays,
-					earliestStart: bounds.earliestStart,
-					ownerTerm: getTerm(
-						owner.kind === "team"
-							? TERMINOLOGY_KEYS.TEAM
-							: TERMINOLOGY_KEYS.PORTFOLIO,
-					),
-					workItemsTerm: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
-				}),
-			);
+			setRefusal(refusalCopyFor(error, refusalWordsFor(bounds)));
 			setIsCreating(false);
 			return;
 		}
@@ -102,7 +95,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 			queryKey: ["reports", owner.kind, owner.id],
 		});
 		onClose();
-		navigate(`/${owner.kind}s/${owner.id}/reports/${reportId}`);
+		navigate(reportPathOf(owner, reportId));
 	};
 
 	const StepContent = current?.component;
@@ -116,9 +109,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 			fullWidth
 		>
 			<DialogTitle id={TITLE_ID}>Create Report</DialogTitle>
-			{/* A fresh frame per step: its Next button stays disabled for a moment after each click. */}
 			<WizardStepperFrame
-				key={activeStep}
 				steps={["Type", ...type.steps.map((step) => step.label)]}
 				activeStep={activeStep}
 				busy={false}

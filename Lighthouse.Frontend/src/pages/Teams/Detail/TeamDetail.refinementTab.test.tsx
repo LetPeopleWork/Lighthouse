@@ -277,7 +277,7 @@ describe("The Refinement tab on a Team page", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:pure-function
-	it("sits between Metrics and Settings", async () => {
+	it("sits between Metrics and Reports", async () => {
 		renderTheTeamPage({ viewer: "teamAdmin", teamReads: [aTeam(true)] });
 
 		await theRefinementTab();

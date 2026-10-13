@@ -10,19 +10,18 @@ import {
 } from "@mui/material";
 import type React from "react";
 import type { ReportTemplateKey } from "../../../../models/Reports/Report";
-import { reportTypeSteps } from "./reportTypeSteps";
+import type { WidgetStatus } from "../../MetricsView/widgetStatus";
+import { reportTypes } from "./reportTypes";
 
 const TYPES_COULD_NOT_LOAD = "Report types couldn't be loaded.";
 
-export type ReportTypesStatus = "loading" | "error" | "ready";
-
 interface TypeStepProps {
-	status: ReportTypesStatus;
+	status: WidgetStatus;
 	chosen: ReportTemplateKey;
 	onRetry: () => void;
 }
 
-const typeKeys = Object.keys(reportTypeSteps) as ReportTemplateKey[];
+const typeKeys = Object.keys(reportTypes) as ReportTemplateKey[];
 
 const TypeStep: React.FC<Readonly<TypeStepProps>> = ({
 	status,
@@ -62,10 +61,10 @@ const TypeStep: React.FC<Readonly<TypeStepProps>> = ({
 					label={
 						<Box>
 							<Typography variant="subtitle1">
-								{reportTypeSteps[key].title}
+								{reportTypes[key].title}
 							</Typography>
 							<Typography variant="body2" color="text.secondary">
-								{reportTypeSteps[key].purpose}
+								{reportTypes[key].purpose}
 							</Typography>
 						</Box>
 					}

@@ -88,8 +88,11 @@ const WizardStepperFrame: React.FC<WizardStepperFrameProps> = ({
 						Back
 					</Button>
 				)}
-				{next && <WizardActionButton action={next} />}
-				{primaryAction && <WizardActionButton action={primaryAction} />}
+				{/* A button holds itself disabled for a moment after its click; keyed by step, that pause stays with the step it was clicked on. */}
+				{next && <WizardActionButton key={activeStep} action={next} />}
+				{primaryAction && (
+					<WizardActionButton key={activeStep} action={primaryAction} />
+				)}
 			</Box>
 		</Box>
 	</LoadingAnimation>
