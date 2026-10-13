@@ -2508,7 +2508,8 @@ DELIVER re-sketches only what is listed as open below.
   N ≥ 1 (D42).
 - **[DT8] Preset choices** — the approved DT3 sketch showed step ②'s lengths as one single-select group,
   `( 30 days ) (● 90 days ) ( Custom: [ ] days )`: a Team offers 30 / 90, a Portfolio 90 / 180, plus a custom number of
-  days.
+  days. The group is built as a toggle group of buttons (`aria-pressed`), which is why the tests find the presets by
+  the role "button".
 
 Open for DELIVER: none of the layout; only exact spacing and the wizard's step labels if `CreateWizardShell` imposes a
 form.
@@ -2557,7 +2558,15 @@ example now on Team Lightspeed (Then 90 days to 31 Jul 2026, Now 5 Jul – 2 Oct
 frontend kit's engagement-start report; the Team Gravity case stays for the days-above-the-limit count (row 101).
 
 **The frontend's outbound contract is the `ReportService` port.** A write is asserted by at most one payload check on
-that port (or on the usage reporter), next to what the screen then shows; no case counts calls.
+that port, next to what the screen then shows; "nothing was sent" is a not-called check on the port. The events a
+usage reporter received are asserted as a list where exactly once is the requirement (`ReportOpened`, once per mount,
+which K2 counts on).
+
+**Notes to rows 188 and 211.** Row 188: the edit is answered as a success, the Then members it carries are ignored, and
+the stored Then part (every payload member but the Now length, and every column an edit may not change) is compared
+whole before and after. Row 211 is the edit's bounded change: the name, the shown metrics, the Now length (read back as
+the new 30 days) and the token change; owner, type, creation day, payload version, Then, every capture, members a later
+version wrote and the Team's other report stay as they were.
 
 Every case also carries `@contract-shape:` and, where a KPI is counted, `@kpi-OUT-5878-K1-report-created`,
 `@kpi-OUT-5878-K2-reports-reopened`, `@kpi-OUT-5878-K4-community-cap-reached` or
@@ -2753,7 +2762,7 @@ Metrics tab's for the same days) is `The_rebuilt_Then_matches_the_Metrics_tab_fo
 | 185 | A changed Now length is stored for everyone | 10 | 07,10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
 | 186 | Ticking a metric that was frozen but hidden shows Then as it was on the day of creation | 10 | 04,10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
 | 187 | A metric the report never captured cannot be shown | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
-| 188 | Then cannot be edited (the edit is answered 200, Then members ignored, Then as frozen) | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 188 | Then cannot be edited, even by an edit that brings Then along | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
 | 189 | A reader cannot edit a report not even how long Now is | 10 | 07,10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
 | 190 | A save over another admins change is refused and overwrites nothing | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @ac-10.6 @contract-shape:unbounded-preservation |
 | 191 | An edit breaking the rules a new report follows is refused and changes nothing | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | error | 3 | @driving_port @contract-shape:unbounded-preservation |
@@ -2776,7 +2785,7 @@ Metrics tab's for the same days) is `The_rebuilt_Then_matches_the_Metrics_tab_fo
 | 208 | answers each Now row of the boundary table as the server does | 07 | 07 | `wizard/reportWindowCheck.test.ts` | frontend unit (Vitest, pure function) | boundary | 5 | @contract-shape:pure-function |
 | 209 | holds Delete until it knows how many reports go with it | 08 | 08 | `OverviewDashboard.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
 | 210 | says any reports it has go with it when their number cannot be read | 08 | 08 | `OverviewDashboard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
-| 211 | An edit changes the name, the shown metrics and how long Now is, and nothing else (the edit universe: owner, type, creation, payload version, Then, every capture, unknown payload members and the Team's other report unchanged) | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:bounded-change |
+| 211 | An edit changes the name, the shown metrics and how long Now is, and nothing else | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:bounded-change |
 
 ## Wave: DISTILL / [REF] WS strategy
 
@@ -2894,9 +2903,9 @@ were not re-dispatched: those waves were reviewed and pushed before this run and
 | Finding | Resolution |
 |---|---|
 | (high-1) The preset buttons were proposed copy, not a recorded decision | They were in the approved DT3 sketch; recorded as [DT8] in the maintainer-decisions block |
-| (high-2) `toHaveBeenCalledTimes` and several payload checks per write | No call counts remain; at most one payload check per write on the `ReportService` port or the usage reporter, beside the on-screen outcome |
+| (high-2) `toHaveBeenCalledTimes` and several payload checks per write | No `toHaveBeenCalledTimes` remains. A write gets one payload check per outbound port, beside the on-screen outcome; "nothing was sent" is a not-called check; the usage reporter's events are asserted as a list where exactly once is the requirement (`ReportOpened` per mount, K2) — DST-15 |
 | (low-1) The Portfolio preset case never showed 90 days | It asserts the 90-days button too |
-| (low-2) The reader's list was empty, so it proved nothing about reading | A report is created first and the reader's list must hold it |
+| (low-2) The reader's list was empty, so it proved nothing about reading | Backend `A_reader_cannot_create_a_report`: an admin creates a report first and the reader's list must hold it. The frontend reader case renders the test kit's default list, which already holds one report |
 | (low-3), (low-4) | Kept as they were, following the sibling suites' precedent |
 | (low-5) "The day of the story" names | `TodayOnTheInstance`, `TodayOnTheWire`, `NinetyDaysToToday`, `TODAY_ON_THE_INSTANCE` |
 | (low-6) Scaffold comments named a wave and an Epic | Plain words saying what each placeholder stands in for |
@@ -2907,7 +2916,7 @@ DESIGN's contract changes folded in: `atThen` / `atNow` on the wire (DD27); `the
 (DD24); `minimumLengthDays` and a nullable `earliestStart` on the templates read, the wizard's refusal copy taking both
 from it (DD26, with the shared boundary table E12 run on both stacks, cutoff 0 included); cap 403, unknown type 422, an
 edit carrying Then answered 200 with Then unchanged (DD28, DD25); the edit universe (DD25, row 211); the looks of
-"Loading and failure looks" and DD32. Copy DESIGN added is the working copy here and **DELIVER's sketch confirms it**:
+"Loading and failure looks" and DD32. Copy DESIGN added is the working copy here and **DELIVER's sketch is to confirm it**:
 "Reports couldn't be loaded. Reload to try again.", "Report types couldn't be loaded.", "Not supported in this
 version", "This report was made by a newer version of Lighthouse and can't be shown here.", "This metric can't be shown
 in this version of Lighthouse.", "and any reports it has".
