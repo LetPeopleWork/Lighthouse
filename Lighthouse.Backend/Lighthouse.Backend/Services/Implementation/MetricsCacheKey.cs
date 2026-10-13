@@ -11,13 +11,10 @@ namespace Lighthouse.Backend.Services.Implementation
     /// </summary>
     public static class MetricsCacheKey
     {
-        // SCAFFOLD: the name built from the id alone, which is exactly the collision this class
-        // exists to end. Nothing calls it yet.
         public static string For<TEntity>(TEntity owner, string metricIdentifier) where TEntity : class, IEntity
-            => $"{owner.Id}_{metricIdentifier}";
+            => $"{PrefixFor(owner)}{metricIdentifier}";
 
-        // SCAFFOLD: the matching prefix built from the id alone.
         public static string PrefixFor<TEntity>(TEntity owner) where TEntity : class, IEntity
-            => $"{owner.Id}_";
+            => $"{typeof(TEntity).Name}_{owner.Id}_";
     }
 }

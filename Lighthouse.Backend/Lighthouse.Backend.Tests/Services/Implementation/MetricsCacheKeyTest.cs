@@ -21,8 +21,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
     [Category("us-00")]
     public class MetricsCacheKeyTest
     {
-        private const string Pending = "Story #6251 — pending DELIVER: metrics remembered per owner, not per id.";
-
         private static readonly string[] MetricsBothOwnersRemember =
         [
             "Throughput_2026-08-18_2026-09-16",
@@ -54,7 +52,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [TestCaseSource(nameof(MetricsBothOwnersRemember))]
         [Category("error")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public void A_Team_and_a_Portfolio_with_the_same_id_never_share_a_remembered_metric(string metric)
         {
             foreach (var id in Ids)
@@ -69,7 +66,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [TestCaseSource(nameof(MetricsBothOwnersRemember))]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
-        [Ignore(Pending)]
         public void Clearing_one_owner_reaches_none_of_the_other_owner_s_metrics(string metric)
         {
             foreach (var id in Ids)

@@ -26,7 +26,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("walking_skeleton")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]
-        [Ignore(Pending)]
         public async Task A_Team_and_a_Portfolio_with_the_same_number_each_see_their_own_numbers_whichever_is_asked_first(
             RememberedMetric metric, Owner askedFirst)
         {
@@ -48,7 +47,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [Category("us-00")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
-        [Ignore(Pending)]
         public async Task Refreshing_one_owner_leaves_the_numbers_remembered_for_the_other_alone(Owner refreshed)
         {
             GivenATeamAndAPortfolioWithTheSameNumber();

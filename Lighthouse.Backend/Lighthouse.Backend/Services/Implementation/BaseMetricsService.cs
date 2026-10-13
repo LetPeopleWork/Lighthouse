@@ -940,7 +940,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         protected TMetric GetFromCacheIfExists<TMetric, TEntity>(TEntity entity, string metricIdentifier, Func<TMetric> calculateMetric, ILogger logger) where TMetric : class where TEntity : class, IEntity
         {
-            var cacheKey = GetCacheKey(entity.Id, metricIdentifier);
+            var cacheKey = MetricsCacheKey.For(entity, metricIdentifier);
 
             var cachedMetric = GetMetricFromCache<TMetric>(cacheKey);
 
@@ -961,7 +961,8 @@ namespace Lighthouse.Backend.Services.Implementation
         protected void InvalidateMetrics<TEntity>(TEntity entity, ILogger logger) where TEntity : class, IEntity
         {
             logger.LogDebug("Invalidating Metrics for Entity Id: {EntityId}", entity.Id);
-            var entityKeys = MetricsCache.Keys.Where(k => k.StartsWith($"{entity.Id}_")).ToList();
+            var ownerPrefix = MetricsCacheKey.PrefixFor(entity);
+            var entityKeys = MetricsCache.Keys.Where(k => k.StartsWith(ownerPrefix)).ToList();
             foreach (var entry in entityKeys)
             {
                 MetricsCache.Remove(entry);
@@ -1355,11 +1356,6 @@ namespace Lighthouse.Backend.Services.Implementation
             var metric = MetricsCache.Get(key);
 
             return metric as TMetric;
-        }
-
-        private static string GetCacheKey(int entityId, string metricIdentifier)
-        {
-            return $"{entityId}_{metricIdentifier}";
         }
     }
 }
