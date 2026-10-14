@@ -34,7 +34,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     public abstract class ReportsAcceptanceTest
     {
         protected const string PendingSlice01 = "Epic #5878 slice 01 (#6159) - pending DELIVER";
-        protected const string PendingSlice03 = "Epic #5878 slice 03 (#6161) - pending DELIVER";
         protected const string PendingSlice04 = "Epic #5878 slice 04 (#6162) - pending DELIVER";
         protected const string PendingSlice05 = "Epic #5878 slice 05 (#6163) - pending DELIVER";
         protected const string PendingSlice06 = "Epic #5878 slice 06 (#6164) - pending DELIVER";
@@ -61,12 +60,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         protected const string Total = "total";
         protected const string PerDay = "perDay";
         protected const string Average = "average";
+        protected const string Median = "median";
         protected const string Min = "min";
         protected const string Max = "max";
-        protected const string TotalWindowAverage = "totalWindowAverage";
-        protected const string TotalLastDay = "totalLastDay";
-        protected const string AverageWindowAverage = "averageWindowAverage";
-        protected const string AverageLastDay = "averageLastDay";
 
         /// <summary>A Then of 90 days ending on the day every scenario is set, 2 Oct 2026: 5 Jul to 2 Oct 2026, both days counted.</summary>
         protected static readonly ReportWindow NinetyDaysToToday = new("2026-07-05", "2026-10-02", 90);
@@ -80,10 +76,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         protected static class Reason
         {
             public const string NoFinishedItems = "no-finished-items";
-            public const string TooFewPoints = "too-few-points";
-            public const string NoProcess = "no-process";
-            public const string NoWip = "no-wip";
-            public const string LowerLimitZero = "lower-limit-zero";
 
             public const string ThenTooShort = "then-too-short";
             public const string ThenTooLong = "then-too-long";
@@ -353,25 +345,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
             workItems.Remove(item.Id);
             workItems.Save().GetAwaiter().GetResult();
-        }
-
-        protected void TheTeamsProcessBehaviourBaselineBecomes(OwnerUnderTest team, DateOnly start, DateOnly end)
-        {
-            using var scope = Factory.Services.CreateScope();
-            var teams = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
-            var owner = teams.GetById(team.Id) ?? throw new InvalidOperationException($"{team.Name} was not seeded");
-
-            owner.ProcessBehaviourChartBaselineStartDate = During(start);
-            owner.ProcessBehaviourChartBaselineEndDate = During(end);
-            teams.Update(owner);
-            teams.Save().GetAwaiter().GetResult();
-
-            using var readBack = Factory.Services.CreateScope();
-            var stored = readBack.ServiceProvider.GetRequiredService<IRepository<Team>>().GetById(team.Id)!;
-            Assert.That(
-                (stored.ProcessBehaviourChartBaselineStartDate, stored.ProcessBehaviourChartBaselineEndDate),
-                Is.EqualTo((During(start), During(end))),
-                "the Team's process behaviour baseline did not change, so nothing could have moved");
         }
 
         // --- Rows another version of Lighthouse wrote ---
@@ -674,21 +647,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         /// <summary>A value Now shows, computed over the Now window on the day of reading.</summary>
         protected static CapturedValue NowValueIn(JsonElement report, string metric, string member) => ValueIn(report, metric, "atNow", member);
 
-        protected static CapturedValue AboveThenLimitsIn(JsonElement report, string metric) => BeyondThenLimitsIn(report, metric, "above");
-
-        protected static CapturedValue BelowThenLimitsIn(JsonElement report, string metric) => BeyondThenLimitsIn(report, metric, "below");
-
         protected static CapturedValue Shown(double value, int sampleSize) => new(true, value, sampleSize, null);
-
-        /// <summary>A count of Now's points beyond Then's limits, which carries no sample size of its own in the scenarios.</summary>
-        protected static void ThenTheCountIs(CapturedValue count, int expected)
-        {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(count.Value, Is.EqualTo(expected));
-                Assert.That(count.AbsentReason, Is.Null);
-            }
-        }
 
         protected static void ThenItIsADashFor(CapturedValue value, string reason)
         {
@@ -738,30 +697,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
 
             return CapturedValue.From(value);
-        }
-
-        /// <summary>How many of Now's points lie beyond Then's limits, on one side ("above" or "below").</summary>
-        private static CapturedValue BeyondThenLimitsIn(JsonElement report, string metric, string side)
-        {
-            var capture = MetricIn(report, metric);
-            if (capture is null
-                || !capture.Value.TryGetProperty("beyondThenLimits", out var beyond)
-                || beyond.ValueKind != JsonValueKind.Object
-                || !beyond.TryGetProperty(side, out var count)
-                || count.ValueKind != JsonValueKind.Object)
-            {
-                return CapturedValue.Missing;
-            }
-
-            return CapturedValue.From(count);
-        }
-
-        protected static bool LimitsAreCapturedIn(JsonElement report, string metric)
-        {
-            var capture = MetricIn(report, metric);
-            return capture is not null
-                && capture.Value.TryGetProperty("beyondThenLimits", out var beyond)
-                && beyond.ValueKind == JsonValueKind.Object;
         }
 
         /// <summary>A metric the report captured, or null when it is not captured for this report.</summary>

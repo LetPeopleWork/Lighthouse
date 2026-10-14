@@ -51,13 +51,14 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         // A report freezes what the Metrics tab showed; it never takes over the chart's own baseline or its
-        // limits, so changing the chart's baseline cannot change a report and the other way round.
+        // limits, so changing the chart's baseline cannot change a report and the other way round. A report
+        // computes no limits of its own either, so nothing in it can count points beyond them.
         [Test]
         public void The_Reports_module_does_not_use_the_process_behaviour_chart_or_its_baseline()
         {
             Types().That().ResideInNamespaceMatching(ModuleBoundariesArchUnitTest.ReportsPattern)
                 .Or().ResideInNamespaceMatching(ReportModelsPattern)
-                .Should().NotDependOnAny(typeof(ProcessBehaviourChart), typeof(XmRResult), typeof(BaselineValidationService))
+                .Should().NotDependOnAny(typeof(ProcessBehaviourChart), typeof(XmRResult), typeof(XmRCalculator), typeof(BaselineValidationService))
                 .Because("a report keeps its own windows and its own rules; the chart's baseline answers a different question.")
                 .Check(Architecture);
         }

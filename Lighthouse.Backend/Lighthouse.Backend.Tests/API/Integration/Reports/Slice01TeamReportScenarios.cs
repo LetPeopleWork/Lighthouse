@@ -136,6 +136,30 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
+        // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:unbounded-preservation
+        // The first reports froze the 85th percentile alone; Then's 70th and 50th were never captured for them.
+        [Test]
+        public async Task A_report_that_froze_only_the_85th_percentile_says_nothing_of_Thens_70th_and_50th()
+        {
+            var lightspeed = GivenLightspeedFinishedTwentyWorkItemsSinceEarlyJuly();
+            var reportId = await GivenTheAdminCreated(lightspeed, new NewReport());
+            TheStoredPayloadIsReshaped(reportId, payload =>
+            {
+                WithoutTheCaptureOf(payload, CycleTime, P70);
+                WithoutTheCaptureOf(payload, CycleTime, P50);
+            });
+
+            var report = await TheReport(lightspeed, reportId);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ThenValueIn(report, CycleTime, P85), Is.EqualTo(Shown(21, 20)));
+                Assert.That(ThenValueIn(report, CycleTime, P70), Is.EqualTo(CapturedValue.Missing), "never captured is neither a value nor a dash");
+                Assert.That(ThenValueIn(report, CycleTime, P50), Is.EqualTo(CapturedValue.Missing), "never captured is neither a value nor a dash");
+                Assert.That(NowValueIn(report, CycleTime, P70), Is.EqualTo(Shown(11, 20)));
+                Assert.That(NowValueIn(report, CycleTime, P50), Is.EqualTo(Shown(6, 20)));
+            }
+        }
+
         // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:pure-function
         [Test]
         public async Task Thin_data_shows_the_value_with_its_sample_size()

@@ -3,10 +3,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     /// <summary>
     /// A report shows the metrics its creator ticked, but freezes every metric that applies to its owner, so a
     /// metric ticked later still shows Then as it was. {Throughput} is the total finished in the window and the
-    /// average per day, Then and Now; Now's days beyond Then's limits are counted against the daily series.
+    /// average per day, Then and Now. Nothing finished is a real 0, never a "—": every day of a window has a count.
     ///
-    /// Gravity's Then (2-31 Aug 2026) finished 1 and 2 Work Items on alternate days: 45 in 30 days, 1.5 a day,
-    /// average moving range 1, so the upper limit is 1.5 + 2.66 = 4.16 and the lower one is clamped to 0.
+    /// Gravity's Then (2-31 Aug 2026) finished 1 and 2 Work Items on alternate days: 45 in 30 days, 1.5 a day.
     ///
     /// Driving ports: GET /teams/{id}/reports/templates, POST/GET /teams/{id}/reports.
     /// </summary>
@@ -60,28 +59,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
                 Assert.That(NowValueIn(report, Throughput, Total), Is.EqualTo(Shown(65, 90)));
                 Assert.That(NowValueIn(report, Throughput, PerDay).Value, Is.EqualTo(65d / 90).Within(1e-9));
                 Assert.That(NowValueIn(report, Throughput, PerDay).SampleSize, Is.EqualTo(90));
-            }
-        }
-
-        // @driving_port @real-io @us-04 @slice-04 @contract-shape:pure-function
-        [Test]
-        [Ignore(PendingSlice04)]
-        public async Task Days_of_Now_with_Throughput_above_Thens_limit_are_counted()
-        {
-            var gravity = GivenGravityFinishedOneAndTwoWorkItemsOnAlternateDaysInAugust();
-            var reportId = await GivenTheAdminCreated(gravity, ThirtyDaysToTheEndOfAugust([CycleTime, Throughput]));
-
-            GivenGravityFinishedTwoADayInNowWithTwoDaysOfFive(gravity);
-
-            var report = await TheReport(gravity, reportId);
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(ThenValueIn(report, Throughput, Total), Is.EqualTo(Shown(45, 30)));
-                Assert.That(ThenValueIn(report, Throughput, PerDay), Is.EqualTo(Shown(1.5, 30)));
-                Assert.That(NowValueIn(report, Throughput, Total), Is.EqualTo(Shown(66, 30)));
-                Assert.That(NowValueIn(report, Throughput, PerDay), Is.EqualTo(Shown(2.2, 30)));
-                ThenTheCountIs(AboveThenLimitsIn(report, Throughput), 2);
-                ThenItIsADashFor(BelowThenLimitsIn(report, Throughput), Reason.LowerLimitZero);
             }
         }
 
@@ -149,11 +126,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @error @contract-shape:pure-function
-        // Nothing finished on any day of Then: a real zero to show, but no spread to draw limits from.
+        // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:pure-function
+        // Nothing finished on any day of Then: a real zero, shown like any other count.
         [Test]
         [Ignore(PendingSlice04)]
-        public async Task A_Then_where_nothing_finished_shows_zero_and_a_dash_for_the_days_beyond()
+        public async Task A_Then_where_nothing_finished_shows_a_real_zero()
         {
             var nova = ATeam("Team Nova");
             var reportId = await GivenTheAdminCreated(nova, ThirtyDaysToTheEndOfAugust([Throughput]));
@@ -165,8 +142,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             {
                 Assert.That(ThenValueIn(report, Throughput, Total), Is.EqualTo(Shown(0, 30)));
                 Assert.That(ThenValueIn(report, Throughput, PerDay), Is.EqualTo(Shown(0, 30)));
-                ThenItIsADashFor(AboveThenLimitsIn(report, Throughput), Reason.NoProcess);
-                ThenItIsADashFor(BelowThenLimitsIn(report, Throughput), Reason.NoProcess);
+                Assert.That(NowValueIn(report, Throughput, Total), Is.EqualTo(Shown(3, 30)));
+                Assert.That(NowValueIn(report, Throughput, PerDay), Is.EqualTo(Shown(0.1, 30)));
             }
         }
 
@@ -205,9 +182,5 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             TheTeamFinishedPerDay(gravity, ThenStarts, [.. Enumerable.Range(0, 30).Select(day => day % 2 == 0 ? 1 : 2)]);
             return gravity;
         }
-
-        /// <summary>3 Sep - 2 Oct 2026: two a day, except 10 and 20 Sep with five each - 66 in 30 days.</summary>
-        private void GivenGravityFinishedTwoADayInNowWithTwoDaysOfFive(OwnerUnderTest gravity)
-            => TheTeamFinishedPerDay(gravity, NowStarts, [.. Enumerable.Range(0, 30).Select(day => day is 7 or 17 ? 5 : 2)]);
     }
 }
