@@ -216,7 +216,6 @@ class BudgetCheckTestCase(unittest.TestCase):
 
 
 class AFrontendFileOverTheBudgetFailsTheBuild(BudgetCheckTestCase):
-    @PENDING
     def test_a_run_with_every_file_under_the_budget_passes_without_annotations(self):
         timings = self.workspace.frontend_timings(
             {"src/pages/Overview.test.tsx": [12.0, 8.5], "src/utils/dates.test.ts": [0.2]}
@@ -279,7 +278,6 @@ class AFrontendFileOverTheBudgetFailsTheBuild(BudgetCheckTestCase):
                 else:
                     self.assert_passes_quietly(result)
 
-    @PENDING
     def test_a_file_is_judged_on_the_sum_of_its_tests_not_on_its_slowest_test(self):
         timings = self.workspace.frontend_timings(
             {"src/components/WorkItemsDialog.contexts.test.tsx": [25.0, 25.0, 25.0]}
@@ -292,7 +290,6 @@ class AFrontendFileOverTheBudgetFailsTheBuild(BudgetCheckTestCase):
             "75.0",
         )
 
-    @PENDING
     def test_the_verdict_does_not_depend_on_how_a_files_time_is_split_across_its_tests(self):
         within = ([60.0], [30.0, 30.0], [20.0, 20.0, 20.0], [59.999, 0.001])
         over = ([61.0], [30.5, 30.5], [20.0, 20.0, 21.0], [0.001] * 10 + [60.0])
@@ -341,7 +338,6 @@ class AFrontendFileOverTheBudgetFailsTheBuild(BudgetCheckTestCase):
             msg=self._explain(result),
         )
 
-    @PENDING
     def test_judging_a_run_leaves_every_file_in_the_folder_as_it_was(self):
         self.workspace.declare_test_class("CacheTest")
         timings = self.workspace.frontend_timings({"src/pages/Slow.test.tsx": [75.0]})
@@ -671,7 +667,6 @@ class WarnOnlySoftensABreachButNothingElse(BudgetCheckTestCase):
 
 
 class ABackendClassIsJudgedOnTheSumOfItsTests(BudgetCheckTestCase):
-    @PENDING
     def test_backend_tests_are_summed_per_class(self):
         timings = self.workspace.backend_timings(
             {
@@ -689,7 +684,6 @@ class ABackendClassIsJudgedOnTheSumOfItsTests(BudgetCheckTestCase):
         )
         self.assertEqual(len(self.annotations(result, "error")), 1, msg=self._explain(result))
 
-    @PENDING
     def test_a_class_is_named_without_its_method_or_arguments_even_when_the_arguments_contain_dots(self):
         embed_tests = "Lighthouse.Backend.Tests.API.S8_EmbedEntryPointTests"
         timings = self.workspace.backend_timings(
@@ -710,7 +704,6 @@ class ABackendClassIsJudgedOnTheSumOfItsTests(BudgetCheckTestCase):
 
 
 class TheCheckJudgesWhatTheConvertersWrite(BudgetCheckTestCase):
-    @PENDING
     def test_a_frontend_timing_file_written_by_the_vitest_converter_is_judged_end_to_end(self):
         frontend_root = self.workspace.root / "Lighthouse.Frontend"
         report = {
@@ -739,7 +732,6 @@ class TheCheckJudgesWhatTheConvertersWrite(BudgetCheckTestCase):
         self.assert_fails_naming(result, "src/pages/Slow.test.tsx", "75.0", "60", ALLOWLIST_NAME)
         self.assertNotIn("Fast.test.tsx", "\n".join(self.annotations(result, "error")))
 
-    @PENDING
     def test_a_backend_timing_file_written_by_the_trx_converter_is_judged_per_class(self):
         trx = f"""<?xml version="1.0" encoding="utf-8"?>
 <TestRun id="run" name="run" xmlns="{TRX_NS}">
