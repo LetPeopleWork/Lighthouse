@@ -432,8 +432,9 @@ describe("Step three: Now", () => {
 		await next();
 
 		expect(await theNowLengthField()).toHaveValue(45);
+		expect(await theWizard()).toHaveTextContent("= 19 Aug – 2 Oct 2026");
 		expect(await theWizard()).toHaveTextContent(
-			"= the last 45 days, always ending today",
+			"Sliding window, always ending today",
 		);
 	});
 
@@ -463,8 +464,9 @@ describe("Step three: Now", () => {
 		);
 
 		expect(await theNowLengthField()).toHaveValue(30);
+		expect(await theWizard()).toHaveTextContent("= 3 Sep – 2 Oct 2026");
 		expect(await theWizard()).toHaveTextContent(
-			"= the last 30 days, always ending today",
+			"Sliding window, always ending today",
 		);
 		expect(
 			within(await theWizard()).getByRole("button", { name: "90 days" }),
@@ -503,8 +505,9 @@ describe("Step three: Now", () => {
 
 		await enterNumber(await theNowLengthField(), 45);
 
+		expect(await theWizard()).toHaveTextContent("= 19 Aug – 2 Oct 2026");
 		expect(await theWizard()).toHaveTextContent(
-			"= the last 45 days, always ending today",
+			"Sliding window, always ending today",
 		);
 		for (const preset of ["30 days", "90 days"]) {
 			expect(

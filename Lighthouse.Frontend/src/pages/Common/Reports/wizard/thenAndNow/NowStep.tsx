@@ -6,6 +6,7 @@ import {
 	lengthOf,
 	nowLengthOf,
 	nowRefusalOf,
+	resolvedThenDays,
 	type ThenAndNowDraft,
 } from "./thenAndNowDraft";
 import WindowLengthControl from "./WindowLengthControl";
@@ -19,7 +20,7 @@ const NowStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 	disabled,
 }) => {
 	const nowLength = nowLengthOf(draft);
-	const nowDays = lengthOf(nowLength);
+	const nowDays = resolvedThenDays(templates.today, lengthOf(nowLength));
 	const refusalWordsFor = useRefusalWords(owner);
 	const refusal = nowRefusalOf(draft, templates);
 
@@ -37,9 +38,12 @@ const NowStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 				customLabel="or"
 			/>
 			{nowDays !== null && (
-				<Typography color="text.secondary">
-					{`= the last ${nowDays} days, always ending today`}
-				</Typography>
+				<Stack spacing={0.5}>
+					<Typography color="text.secondary">{`= ${nowDays}`}</Typography>
+					<Typography variant="body2" color="text.secondary">
+						Sliding window, always ending today
+					</Typography>
+				</Stack>
 			)}
 			{refusal !== null && (
 				<Typography color="error" role="alert">
