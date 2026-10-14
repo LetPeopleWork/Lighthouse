@@ -276,7 +276,7 @@ Worth a test later (not chased, the gate was met):
 # Mutation testing — 6164 (Reports on Portfolios, slice 06), backend only
 
 Run 2026-10-14 on `main` @ `5c922a2de`, once, on frozen code after the slice's review fixes and refactor.
-Config `stryker.6164.backend.json`. Frontend run deferred (maintainer: no long CPU jobs before the meeting);
+Config `stryker.6164.backend.json`. Frontend run deferred to after the maintainer's meeting (no long CPU jobs before it), then run below;
 survivors recorded, not chased.
 
 | file | tested | killed | survived | no coverage | score |
@@ -294,3 +294,19 @@ Survivors: problem-detail and exception message strings (`ReportsControllerBase`
 `PortfolioReportMetricSeries` L45, L48); the problem result's object initializer emptied (`ReportsControllerBase`
 L58, worth a status-code assertion later); `CycleTime > 0` → `>= 0` when counting finished Features
 (`PortfolioReportMetricSeries` L18), equivalent because a finished Feature's cycle time is at least one day.
+
+### Frontend (slice 06)
+
+StrykerJS, configs `stryker.6164.frontend.json` + `vitest.stryker.6164.config.ts`, mutating only the lines slice 06
+changed (`PortfolioDetail.tsx` 43–80, 297, 482, 534–545; `usageDataRouteKeys.ts` 30). 1 m 42 s.
+
+| file | tested | killed | survived | no coverage | score |
+| --- | --- | --- | --- | --- | --- |
+| pages/Portfolios/Detail/PortfolioDetail.tsx | 25 | 20 | 5 | 0 | 80.0 % |
+| services/UsageData/usageDataRouteKeys.ts | 2 | 2 | 0 | 0 | 100 % |
+| **Total** | **27** | **22** | **5** | **0** | **81.48 %** |
+
+Survivors, recorded and not chased (maintainer's call): the tab change's `navigate(..., { replace: true })` at
+L297 (address emptied, options emptied, `replace` flipped; no test reads the address after a tab click), and the
+initial `false` of `hasNoAccess` (L67) and `pendingPortfolioRefresh` (L78), pre-existing state the line range
+swept in; no test looks at the page before the first load settles them.
