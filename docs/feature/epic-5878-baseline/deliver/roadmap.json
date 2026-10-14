@@ -1563,14 +1563,14 @@
     },
     {
       "id": "07",
-      "name": "Slice 07 - set how long Now is, and see how long ago Then ended (US-07, ADO #6165)",
-      "description": "Backend: the Now length chosen at creation (default = Then), its refusals and cutoff edge, days since Then ended, no read parameter that changes Now, {Throughput} compared per day across lengths, and the boundary table's Now rows. Frontend: the Now rows of reportWindowCheck, step ③'s editable length and refusals, and the report header naming both windows.",
+      "name": "Slice 07 - set how long Now is, with the Then step's presets or a number of days (US-07, ADO #6165)",
+      "description": "Backend: the Now length chosen at creation (default = Then), its refusals and cutoff edge, days since Then ended kept on the wire though no page shows it (D58), no read parameter that changes Now, {Throughput} compared per day across lengths, and the boundary table's Now rows. Frontend: the Now rows of reportWindowCheck, and step ③'s preset buttons (the Then step's own, D59) beside an editable length, with its refusals. The report header is unchanged: its window lines already date both sides.",
       "default_agent": "nw-software-crafter",
       "default_deps_strategy": "sequential",
       "steps": [
         {
           "id": "07-01",
-          "name": "A coach sets a shorter Now at creation and every later view uses it; Now may overlap Then, the report says how long ago Then ended, and {Throughput} compares per day",
+          "name": "A coach sets a shorter Now at creation and every later view uses it; Now may overlap Then, the read carries the days since Then ended (the page does not show them, D58), and {Throughput} compares per day",
           "agent": "nw-software-crafter",
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice07NowLengthScenarios.cs",
           "scenario_name": "A_coach_sets_a_shorter_Now_and_every_later_view_uses_it",
@@ -1597,7 +1597,7 @@
           "dependencies": [
             "06-05"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: acceptance. DESIGN DD14 (Now length lives in the payload, changed only by the edit endpoint), D35, D47. 'Without a Now length' and the per-day comparison may pass on first un-skip (slice 01 defaulted Now = Then; slice 04 compares on perDay); record it. Commit: feat(reports): Now's length is set at creation (story 6165)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: acceptance. DESIGN DD14 (Now length lives in the payload, changed only by the edit endpoint), D35, D47. D58 (2026-10-14): no page shows daysSinceThenEnded; it stays on the wire and its scenario stays. 'Without a Now length' and the per-day comparison may pass on first un-skip (slice 01 defaulted Now = Then; slice 04 compares on perDay); record it. Commit: feat(reports): Now's length is set at creation (story 6165)."
         },
         {
           "id": "07-02",
@@ -1674,42 +1674,42 @@
         },
         {
           "id": "07-05",
-          "name": "Step ③ starts as long as Then and refuses a Now too short or too old before anything is sent; the report header names both windows and how long ago Then ended",
+          "name": "Step ③ offers the Then step's presets beside a number of days, starts as long as Then, and refuses a Now too short or too old before anything is sent",
           "agent": "nw-software-crafter",
           "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.createWizard.test.tsx",
           "scenario_name": "is as long as Then until changed, always ending today",
           "unskips": [
             "ReportsTab.createWizard.test.tsx :: is as long as Then until changed, always ending today",
+            "ReportsTab.createWizard.test.tsx :: starts on the length Then was given with one click, with that button pressed",
+            "ReportsTab.createWizard.test.tsx :: offers a Team's Now as 30 or 90 days with one click, beside its length in days",
+            "ReportsTab.createWizard.test.tsx :: offers a Portfolio's Now as 90 or 180 days with one click",
+            "ReportsTab.createWizard.test.tsx :: takes a Now of a custom length in days, pressing no button",
             "ReportsTab.createWizard.test.tsx :: refuses a Now shorter than 14 days and goes no further",
-            "ReportsTab.createWizard.test.tsx :: refuses a Now reaching back past the oldest kept day and goes no further",
-            "ReportView.test.tsx :: names Then as frozen, Now as the last days ending today, and how long ago Then ended"
+            "ReportsTab.createWizard.test.tsx :: refuses a Now reaching back past the oldest kept day and goes no further"
           ],
           "criteria": [
-            "Step ③'s 'Now length in days' starts at Then's length until changed and shows '= the last N days, always ending today'",
-            "A Now shorter than minimumLengthDays, or reaching back past earliestStart, shows its refusal (server values interpolated) and Next stays disabled",
-            "The header reads 'Then: N days to <day> — frozen', 'Now: last N days, <start> – <end>' and 'D days since Then ended', from the server's days, and never says Baseline",
-            "pnpm test, pnpm build and Biome clean",
-            "The E2E walking skeleton (Lighthouse.EndToEndTests/tests/specs/teams/Reports.spec.ts) regains its assertion that the report header shows the frozen Then line (ReportPage.thenWindow), run live before commit; slice 01 asserted only what slice 01 renders"
+            "Step ③ shows reportWindowPresetsFor(owner) as toggle buttons (Team 30 / 90, Portfolio 90 / 180 days) beside 'Now length in days', as the Then step does; a click sets the length and presses that button, a typed length presses none",
+            "Now starts at Then's length until changed (pressing the matching preset when Then's length is one) and shows '= the last N days, always ending today'",
+            "A Now shorter than minimumLengthDays, or reaching back past earliestStart, shows the existing window refusal copy (server values interpolated) and Next stays disabled, whether clicked or typed",
+            "No line says how long ago Then ended (D58); the summary header is untouched",
+            "pnpm test, pnpm build and Biome clean"
           ],
           "files_to_modify": [
             "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/NowStep.tsx",
             "Lighthouse.Frontend/src/pages/Common/Reports/wizard/ReportWizard.tsx",
-            "Lighthouse.Frontend/src/pages/Common/Reports/ThenAndNowHeader.tsx",
-            "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.createWizard.test.tsx",
-            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.test.tsx",
-            "Lighthouse.EndToEndTests/tests/specs/teams/Reports.spec.ts"
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.createWizard.test.tsx"
           ],
           "dependencies": [
             "07-04"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: RTL. DESIGN DD22 (no viewer clock: day arithmetic only on the server's days), DD26, D35, E10. Commit: feat(reports): Now length in the wizard and the window header (story 6165)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: RTL. DESIGN DD22 (no viewer clock: day arithmetic only on the server's days), DD26, E10. D58 (2026-10-14): the 'days since Then ended' line is dropped; its it.todo was removed and the E2E skeleton keeps only its title and Cycle Time panel assertions, since the header's window lines are pinned in ReportView.test.tsx. D59 (2026-10-14): reuse ThenStep's ToggleButtonGroup and reportWindowPresetsFor rather than a second preset control; extract a shared length control if both steps would otherwise copy it. Commit: feat(reports): Now length in the wizard (story 6165)."
         }
       ]
     },
     {
       "id": "08",
-      "name": "Slice 08 - delete reports, within Community's two (US-08, ADO #6166)",
-      "description": "Backend: DELETE for writers only, owner-scoped, the cap as a pure ReportCapPolicy fed by the licence and the owner's count, thenRebuildable, deleting reports of an unknown type, and ReportDeleted with its disclosure row. Frontend: delete from the list and from the view through DeleteConfirmationDialog's new optional warning, ReportDeleted, the cap state and refusal, the delete control's two slice-01 cases, the gone-report look, and the owner delete dialog naming its reports. SUPERSEDED CAP (D57, 2026-10-14): Community = exactly 1 report per owner per report type, Premium unlimited; re-DISTILL this slice's tests and copy (and re-sketch the cap copy) before its steps run.",
+      "name": "Slice 08 - delete reports, within Community's one per type (US-08, ADO #6166)",
+      "description": "Backend: DELETE for writers only, owner-scoped, the cap as a pure ReportCapPolicy fed by the licence and the owner's count, thenRebuildable, deleting reports of an unknown type, and ReportDeleted with its disclosure row. Frontend: delete from the list and from the view through DeleteConfirmationDialog's new optional warning, ReportDeleted, the cap state and refusal, the delete control's two slice-01 cases, the gone-report look, and the owner delete dialog naming its reports. Cap (D57, 2026-10-14): Community = exactly 1 report per owner per report type, Premium unlimited; tests and copy re-DISTILLed to it, cap copy per D60, owner delete wording per D61.",
       "default_agent": "nw-software-crafter",
       "default_deps_strategy": "sequential",
       "steps": [
@@ -1745,29 +1745,29 @@
           "dependencies": [
             "07-05"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: bounded change over real EF (the addressed row removed; every other row and table unchanged). DESIGN DD18, DD29, Contract shapes (IReportCommands.Delete). Both controllers gain DELETE under Write. Log lines in this step: DISTILL pins none; the crafter pins 'report deleted' (Information) in ReportLoggingTest. Commit: feat(reports): delete a report (story 6166)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: bounded change over real EF; the first scenario holds two reports, so it runs on Premium (the addressed row removed; every other row and table unchanged). DESIGN DD18, DD29, Contract shapes (IReportCommands.Delete). Both controllers gain DELETE under Write. Log lines in this step: DISTILL pins none; the crafter pins 'report deleted' (Information) in ReportLoggingTest. Commit: feat(reports): delete a report (story 6166)."
         },
         {
           "id": "08-02",
-          "name": "Community stops at two reports per owner across every type; Premium is unlimited; a lapsed licence keeps reports readable and deletable but stops creating; deleting frees a place",
+          "name": "Community keeps one report per owner per type; Premium is unlimited; a lapsed licence keeps reports readable and deletable but stops creating; deleting the report frees its place",
           "agent": "nw-software-crafter",
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice08DeleteAndCommunityCapScenarios.cs",
-          "scenario_name": "Community_stops_at_two_reports_per_Team",
+          "scenario_name": "Community_keeps_one_Then_and_Now_report_per_Team",
           "unskips": [
-            "Slice08DeleteAndCommunityCapScenarios.cs :: Community_stops_at_two_reports_per_Team",
-            "Slice08DeleteAndCommunityCapScenarios.cs :: The_cap_counts_reports_of_every_type",
+            "Slice08DeleteAndCommunityCapScenarios.cs :: Community_keeps_one_Then_and_Now_report_per_Team",
+            "Slice08DeleteAndCommunityCapScenarios.cs :: A_report_of_another_type_does_not_take_the_Then_and_Now_place",
             "Slice08DeleteAndCommunityCapScenarios.cs :: The_cap_is_per_Team",
             "Slice08DeleteAndCommunityCapScenarios.cs :: Premium_creates_as_many_reports_as_it_needs",
             "Slice08DeleteAndCommunityCapScenarios.cs :: A_lapsed_licence_keeps_every_report_readable_and_deletable_but_stops_creating",
-            "Slice08DeleteAndCommunityCapScenarios.cs :: Deleting_below_the_cap_frees_a_place_for_a_new_report"
+            "Slice08DeleteAndCommunityCapScenarios.cs :: Deleting_the_report_frees_its_place_for_a_new_one"
           ],
           "criteria": [
-            "Without premium a third create for the same owner answers 403 with code report-cap-reached and adds no row; the list envelope says creationBlockedByCap true",
-            "The count includes reports of every type, including ones this version cannot read, and is per owner",
-            "Premium creates past two",
-            "After a licence lapses, every report stays readable and deletable and a create is refused with report-cap-reached",
-            "Deleting below two lets the next create through and clears creationBlockedByCap",
-            "ReportCapPolicy(premium, countForOwner) is pure and joins E15; the create command and the list query read ILicenseService and the IReportReader count and pass them in"
+            "Without premium a second Then & Now create for the same owner answers 403 with code report-cap-reached and adds no row; the list envelope says creationBlockedByCap true and communityCap 1",
+            "The count is per owner and per type: a stored report of another type (including one this version cannot read) leaves the Then & Now place free",
+            "Premium creates past one",
+            "After a licence lapses, every report stays readable and deletable and a create is refused with report-cap-reached while one of that type remains",
+            "Deleting the one report lets the next create through and clears creationBlockedByCap",
+            "ReportCapPolicy(premium, countForOwnerOfThatType) is pure and joins E15; the create command and the list query read ILicenseService and the IReportReader count for the owner and the type being created, and pass them in"
           ],
           "files_to_modify": [
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportCapPolicy.cs",
@@ -1780,7 +1780,7 @@
           "dependencies": [
             "08-01"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: acceptance with Mock<ILicenseService>; ReportCapPolicy gets a two-argument truth table. DESIGN DD17 (403 with code, as every premium refusal; the concurrent-create race is accepted), NB2, ADR-219. Reuse the shape of AdditionalFieldsHelper's cap but keep the policy separate (different business concept). In a worktree, copy the gitignored premium licence fixture first. Commit: feat(reports): Community keeps two reports per owner (story 6166)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: acceptance with Mock<ILicenseService>; ReportCapPolicy gets a two-argument truth table (premium, count of that type for the owner); the type is chosen by what is counted, not by the policy. With one creatable type, the list's single creationBlockedByCap speaks for Then & Now; a second creatable type will need it per type. DESIGN DD17 (403 with code, as every premium refusal; the concurrent-create race is accepted), NB2, ADR-219. Reuse the shape of AdditionalFieldsHelper's cap but keep the policy separate (different business concept). In a worktree, copy the gitignored premium licence fixture first. Commit: feat(reports): Community keeps one report per owner and type (story 6166)."
         },
         {
           "id": "08-03",
@@ -1869,24 +1869,27 @@
         },
         {
           "id": "08-06",
-          "name": "Create Report is disabled at the cap with the reason, enabled again below it, the wizard names a cap refusal, and the delete control serves everybody without roles and reports of an unknown type",
+          "name": "Create Report is disabled at the cap with the reason and the Premium licence tooltip, enabled again once the report is deleted, the wizard names a cap refusal, and the delete control serves everybody without roles and reports of an unknown type",
           "agent": "nw-software-crafter",
           "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.test.tsx",
           "scenario_name": "disables Create Report at the cap and says why, in the instance's word for a Team",
           "unskips": [
             "ReportsTab.test.tsx :: disables Create Report at the cap and says why, in the instance's word for a Team",
+            "ReportsTab.test.tsx :: explains the disabled Create Report with the Premium licence tooltip",
             "ReportsTab.test.tsx :: says nothing about the cap below it",
-            "ReportsTab.test.tsx :: enables Create Report again once a report deleted brings the count below the cap",
+            "ReportsTab.test.tsx :: enables Create Report again once the report is deleted",
             "ReportsTab.test.tsx :: lets everybody create and delete when roles are not enforced (tagged slice 01, RD-2)",
             "ReportsTab.test.tsx :: lists a report of a type this version cannot show as not supported, and still lets an admin delete it (tagged slice 01, RD-2)",
             "ReportsTab.createWizard.test.tsx :: says the cap was reached when the server refuses for it"
           ],
           "criteria": [
-            "creationBlockedByCap true disables + Create Report and shows the D29 sentence under it with the instance's word for a {Team}; below the cap no cap sentence shows",
-            "After a delete brings the count below two the re-read enables Create Report",
+            "creationBlockedByCap true disables + Create Report and shows 'Community includes 1 Then & Now report per {Team}. Delete it, or use Premium for unlimited reports.' (D60) under it with the instance's word for a {Team} or {Portfolio}; below the cap no cap sentence shows",
+            "The disabled Create Report sits in the existing LicenseTooltip (canUseFeature = !creationBlockedByCap), wrapped in a span as AdditionalFieldsEditor's Add Field is, so hovering it shows the premium licence link",
+            "After the report is deleted the re-read enables Create Report",
             "A 403 report-cap-reached on create shows the cap copy in the wizard, keeps every input, and reports nothing",
             "With roles not enforced everybody sees enabled Create and delete controls",
             "A row of a type this version cannot show reads 'Not supported in this version' in the Type column and its delete control is enabled for an admin",
+            "reportRefusalCopy.ts's report-cap-reached copy becomes the D60 sentence, and the live row in reportRefusalCopy.test.ts changes with it (DISTILL left that live row at the old copy so the suite stays green)",
             "pnpm test, pnpm build and Biome clean"
           ],
           "files_to_modify": [
@@ -1894,12 +1897,14 @@
             "Lighthouse.Frontend/src/pages/Common/Reports/ReportList.tsx",
             "Lighthouse.Frontend/src/pages/Common/Reports/wizard/ReportWizard.tsx",
             "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.test.tsx",
-            "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.createWizard.test.tsx"
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.createWizard.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.test.ts"
           ],
           "dependencies": [
             "08-05"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: RTL. DESIGN DD17 (the frontend tells a cap 403 from an RBAC 403 by the code alone; the UI does not restate the rule), DD32. The two slice-01 cases may pass on first un-skip once 08-05's delete icon exists; record it. SKETCH FIRST (RD-5): 'Not supported in this version' is copy to confirm. Commit: feat(reports): the Community cap in the UI (story 6166)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: RTL. DESIGN DD17 (the frontend tells a cap 403 from an RBAC 403 by the code alone; the UI does not restate the rule), DD32. D60 (2026-10-14): the cap sentence names the type and the button reuses LicenseTooltip. The two slice-01 cases may pass on first un-skip once 08-05's delete icon exists; record it. SKETCH FIRST (RD-5): 'Not supported in this version' is copy to confirm. Commit: feat(reports): the Community cap in the UI (story 6166)."
         },
         {
           "id": "08-07",
@@ -1927,19 +1932,19 @@
         },
         {
           "id": "08-08",
-          "name": "The owner delete dialog names how many reports go with the Team or Portfolio, waits for that number, and falls back to 'and any reports it has'",
+          "name": "The owner delete dialog names the reports going with the Team or Portfolio, 'and its report' for one and 'and its N reports' otherwise, waits for that number, and falls back to 'and any reports it has'",
           "agent": "nw-software-crafter",
           "test_file": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx",
-          "scenario_name": "names how many reports go with it when one of the teams or portfolios is deleted",
+          "scenario_name": "names the reports that go with it when one of the teams or portfolios is deleted",
           "unskips": [
-            "OverviewDashboard.test.tsx :: names how many reports go with it when one of the %s is deleted - 2 cases (teams, portfolios)",
+            "OverviewDashboard.test.tsx :: names the reports that go with it when one of the %s is deleted (%i) - 3 cases (teams 1, portfolios 1, teams 3)",
             "OverviewDashboard.test.tsx :: says nothing about reports when there are none",
             "OverviewDashboard.test.tsx :: reports the Team deleted and never a report deleted",
             "OverviewDashboard.test.tsx :: holds Delete until it knows how many reports go with it",
             "OverviewDashboard.test.tsx :: says any reports it has go with it when their number cannot be read"
           ],
           "criteria": [
-            "Opening the Overview's delete dialog for a Team or Portfolio reads that owner's report list and asks 'Do you really want to delete <name> and its N reports?' when N >= 1, and the usual question when N = 0",
+            "Opening the Overview's delete dialog for a Team or Portfolio reads that owner's report list and asks 'Do you really want to delete <name> and its report?' for one, 'Do you really want to delete <name> and its N reports?' for N >= 2 (a Premium or lapsed instance, D61), and the usual question when N = 0",
             "While the count is on its way the clause shows a small spinner and Delete is disabled; if it cannot be read the clause reads 'and any reports it has' and Delete is enabled",
             "Deleting a Team reports TeamDeleted and never ReportDeleted",
             "pnpm test, pnpm build and Biome clean"

@@ -1,5 +1,10 @@
 # Slice 07 — Set Now's length at creation; days since Then ended
 
+> **Superseded (D58, D59, 2026-10-14):** no page says how long ago Then ended (`daysSinceThenEnded` stays on the wire,
+> unused); the Now step offers the Then step's preset buttons (Team 30 / 90, Portfolio 90 / 180 days) beside a days
+> field, defaulting to Then's length. Where the text below says otherwise, these decisions win; DISTILL reworked the
+> pending tests to them.
+
 **Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-07 (ADO #6165) · **Estimate**: ~½d · **Tier**: Community ·
 `job_id: job-flow-coach-show-whether-flow-changed`
 

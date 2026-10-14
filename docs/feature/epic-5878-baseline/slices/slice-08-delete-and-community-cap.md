@@ -1,6 +1,11 @@
 # Slice 08 — Delete reports; Community's two; Premium unlimited
 
 > **Superseded cap (D57, 2026-10-14):** Community holds exactly **1** report per owner **per report type**, not 2 across every template. Every "2 reports" below becomes 1; DISTILL reworks this slice's tests and copy before DELIVER.
+>
+> **Also superseded (D60, D61, 2026-10-14):** the cap sentence reads "Community includes 1 Then & Now report per {Team}.
+> Delete it, or use Premium for unlimited reports." and the disabled Create Report carries the existing `LicenseTooltip`;
+> the owner delete dialog says "and its report" for one and "and its N reports" otherwise. DISTILL reworked the pending
+> tests to D57, D60 and D61.
 
 **Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-08 (ADO #6166) · **Estimate**: ~1d · **Tier**: Community cap,
 Premium unlimited · `job_id: job-flow-coach-show-whether-flow-changed`
