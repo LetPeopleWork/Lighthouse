@@ -310,3 +310,109 @@ Survivors, recorded and not chased (maintainer's call): the tab change's `naviga
 L297 (address emptied, options emptied, `replace` flipped; no test reads the address after a tab click), and the
 initial `false` of `hasNoAccess` (L67) and `pendingPortfolioRefresh` (L78), pre-existing state the line range
 swept in; no test looks at the page before the first load settles them.
+
+---
+
+# Slices 07, 08 and 10 (Stories 6165, 6166, 6168) — frontend
+
+StrykerJS, configs `stryker.6165-6168.frontend.json` + `vitest.stryker.6165-6168.config.ts` (copy the vitest
+config into `Lighthouse.Frontend/` before running; it narrows the run to the specs covering the mutated files).
+`DeleteConfirmationDialog.tsx` is mutated on lines 15–80 only, `OverviewDashboard.tsx` on 45–104, 225–260 and
+680–690 (the lines the slices touched). `useReportEditing.tsx`, added after the first run, is in the config for
+the re-run.
+
+## First run
+
+On `main` before `97fddb11b` (edit from the list), so `ReportList`, `ReportsTab`, `ReportView`,
+`reportRefusalCopy` and `ReportWizard` line numbers below are those of that run.
+
+| file | tested | killed | survived | no coverage | score |
+| --- | --- | --- | --- | --- | --- |
+| components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog.tsx (15–80) | 10 | 7 | 3 | 0 | 70.0 % |
+| pages/Common/Reports/ReportList.tsx | 34 | 23 | 11 | 0 | 67.6 % |
+| pages/Common/Reports/ReportView.tsx | 99 | 90 | 9 | 0 | 90.9 % |
+| pages/Common/Reports/ReportsTab.tsx | 57 | 47 | 10 | 0 | 82.5 % |
+| pages/Common/Reports/ThenAndNowHeader.tsx | 20 | 16 | 4 | 0 | 80.0 % |
+| pages/Common/Reports/reportOwner.ts | 12 | 12 | 0 | 0 | 100 % |
+| pages/Common/Reports/useMayEditReports.ts | 10 | 10 | 0 | 0 | 100 % |
+| pages/Common/Reports/useOwnerReports.ts | 3 | 3 | 0 | 0 | 100 % |
+| pages/Common/Reports/useReportDeletion.tsx | 59 | 45 | 13 | 1 | 76.3 % |
+| pages/Common/Reports/wizard/ReportWizard.tsx | 152 | 141 | 11 | 0 | 92.8 % |
+| pages/Common/Reports/wizard/TypeStep.tsx | 23 | 17 | 5 | 1 | 73.9 % |
+| pages/Common/Reports/wizard/reportRefusalCopy.ts | 63 | 61 | 2 | 0 | 96.8 % |
+| pages/Common/Reports/wizard/reportTypes.ts | 44 | 43 | 1 | 0 | 97.7 % |
+| pages/Common/Reports/wizard/reportWindowCheck.ts | 56 | 56 | 0 | 0 | 100 % |
+| pages/Common/Reports/wizard/thenAndNow/MetricsAndNameStep.tsx | 37 | 36 | 1 | 0 | 97.3 % |
+| pages/Common/Reports/wizard/thenAndNow/NowStep.tsx | 14 | 13 | 1 | 0 | 92.9 % |
+| pages/Common/Reports/wizard/thenAndNow/ThenStep.tsx | 25 | 22 | 2 | 1 | 88.0 % |
+| pages/Common/Reports/wizard/thenAndNow/WindowLengthControl.tsx | 21 | 12 | 9 | 0 | 57.1 % |
+| pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts | 115 | 106 | 9 | 0 | 92.2 % |
+| pages/Overview/OverviewDashboard.tsx (45–104, 225–260, 680–690) | 62 | 48 | 10 | 4 | 77.4 % |
+| **Total** | **916** | **808** | **101** | **7** | **88.21 %** |
+
+## Killed by this pass (`b0a164714`, `15eef3144`)
+
+Every new assertion was checked by breaking the production line it guards and watching it fail.
+
+- `useReportDeletion` L32, L35 (×2), L64, L90, L96: a report of a later type has no Then & Now part and is asked
+  about without a warning; a delete refused for a reason other than "already gone" (403) says it couldn't be
+  deleted; a second report can be deleted after the first (the dialog no longer stays "deleting"); only the
+  deleted report is forgotten and only the owner's list is read again.
+- `ReportsTab` L106 (`false`, `===`): the other reports stay on screen, dimmed, while the list is read again
+  after a delete.
+- `ReportList` L27, L29, L30, L52, L55, L61, L68, L82: the Actions column is headed and offers no sort; a Team's
+  saved layout (keyed `reports-team`) may hide Type and Created but never Name or the actions; sorting by Name
+  orders the list.
+- `ReportView` L130, L151: an admin gets no Edit or Delete on a report that is gone; the panels stay on screen
+  under the spinner while the saved report is read again.
+- `ReportWizard` L100, L104, L146, L154, L173, L213: focusing the window mid-wizard asks for no bounds again; on
+  reopening, Next waits for today's bounds instead of using the kept answer; no Create is offered while the
+  bounds are re-read after a cutoff refusal; creating and saving invalidate only their own owner's entries;
+  Cancel and Back are held while a save is on its way.
+- `NowStep` L40 and `reportTypes` L82: a Now length that is no whole number of days names no window and holds
+  Next. The existing test for this looked for copy the step no longer shows (`"= the last"`), so it could not
+  fail; it now asserts the current copy and the held Next.
+- `WindowLengthControl` L42 (whole condition `true`/`false`, `||`, `===`): Now names its Length before the presets.
+- `thenAndNowDraft` L45, L47, L139 (×4): only metrics holding values count as captured; `windowDaysOf` names no
+  days when either end is not a day.
+- `DeleteConfirmationDialog` L49: no warning box without a warning.
+- `OverviewDashboard` L235, L247 (no coverage), L249, L254, L259 (no coverage): a Team that cannot be deleted
+  keeps its reports in memory and the page says something went wrong; Add Work Tracking System goes to
+  `/connections/new`.
+- `useReportEditing` (not in the first run): a gone report is forgotten without touching the others' entries;
+  the could-not-load message can be dismissed and does not come back once Edit is pressed again.
+
+## Justified, not tested
+
+- **Styling (cosmetic):** `sx` objects and their strings in `ReportsTab` L61–64, L97–99; `ReportView` L142–144;
+  `ThenAndNowHeader` L29–32; `TypeStep` L38 (×3), L77, L79; `MetricsAndNameStep` L67; `WindowLengthControl` L41
+  (×3), L71; `DeleteConfirmationDialog` L50, L57; `OverviewDashboard` L60 (the space before the counting
+  spinner) and L64. `ThenStep` L41 (×2), the date field's label `shrink`, is label placement only.
+- **Equivalent:**
+  - `useReportDeletion` L57 / L63: `ask` and `close` both clear the failure, and `close` always runs before the
+    next `ask`, so either one alone is enough. L72: `"already-gone"` emptied still takes the "not failed, not
+    deleted" path. L77 (×3, and the no-coverage `return`): Confirm is reachable only from an open dialog, and
+    React disables Delete before a second click lands, so the guard never fires. L92 `exact: false`: no cache
+    key extends a single report's key.
+  - `ReportsTab` L106 `true`: on the first load there is nothing to dim, and the spinner shows either way.
+  - `ReportList` L26: the Actions column draws its own buttons and can be neither sorted nor hidden, so nothing
+    reads its field.
+  - `ReportView` L67, L69, L106: the retry branches for a client whose default `retry` is `true` or unset; the
+    app's `QueryClient` sets `retry: 2`. L167: a "no longer exists" or "newer version" failure is never retried,
+    so it is always shown as an error.
+  - `ReportWizard` L96 (×2) and L99: `staleTime: 0` makes every opening read the bounds afresh whatever the key
+    or `refetchOnMount` say (pinned by "asks the server for today's bounds every time it opens"). L106:
+    `steps[-1]` is `undefined`, the same as the else branch.
+  - `TypeStep` L34 and `ThenStep` L21 (no coverage): the `frozen = false` default; every caller passes `frozen`.
+  - `reportRefusalCopy` L54: `parseLocalDate(null)` already returns `null`. L105: `isRefusalCode(undefined)` is
+    false, so the `code === undefined` half is redundant.
+  - `thenAndNowDraft` L69: `null > 0` is false anyway. L109: `reportWindowCheck` treats any side but `"then"` as
+    Now. L166: the fallback's stand-in entry maps to an undefined key, which `panelFor` drops.
+  - `WindowLengthControl` L42 (`leadingLabel !== undefined` → `true`): the Then step gets an empty paragraph.
+  - `OverviewDashboard` L232 (×2) and L682: the delete dialog only exists while both the item and its type are
+    set. L241: the type is either portfolio or team, so the `else if` only ever sees team.
+- **Not chased:** `OverviewDashboard` L237 (`setIsLoading(true)` during a delete) is the dashboard's
+  pre-existing loading overlay, swept in by the line range; L248 is the `console.error` text. `ReportList` L72:
+  the created day is a required date from the server; the optional chain only covers one that cannot be read.
+- **Expected killed by `97fddb11b`'s edit-from-list tests:** `ReportList` L76 (the column memo's dependencies,
+  now read for the Edit button's waiting state) and `ReportWizard` L47 (the "Edit report" title).
