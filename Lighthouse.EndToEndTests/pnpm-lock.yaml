@@ -174,8 +174,8 @@ importers:
         specifier: ^6.0.5
         version: 6.0.5
       pixelmatch:
-        specifier: ^7.2.0
-        version: 7.2.0
+        specifier: ^8.0.0
+        version: 8.0.0
       pngjs:
         specifier: ^7.0.0
         version: 7.0.0
@@ -197,7 +197,7 @@ importers:
         version: 7.0.2
       wait-on:
         specifier: ^9.5.1
-        version: 9.5.1
+        version: 9.5.1(debug@4.4.3)
 
 packages:
 
@@ -548,8 +548,8 @@ packages:
     resolution: {integrity: sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==}
     engines: {node: '>=8'}
 
-  pixelmatch@7.2.0:
-    resolution: {integrity: sha512-xhcb4yHu9sM/G7foGzoLtXYcC0zHEaOXXjRKhGup0fw78Nf2Tkiapv4EQyMzrbcmQPsllAI7DbFY2UT7PlI9Pg==}
+  pixelmatch@8.0.0:
+    resolution: {integrity: sha512-cIqOLfh5k52us715qf3B3+kTOxZv+WDv77HN7xokLScYQGYQHi4m/ynoDIPpvF2LvCyUJGyvzY64i0QCXtzu1g==}
     hasBin: true
 
   playwright-core@1.63.0:
@@ -739,9 +739,9 @@ snapshots:
 
   asynckit@0.4.0: {}
 
-  axios@1.20.0:
+  axios@1.20.0(debug@4.4.3):
     dependencies:
-      follow-redirects: 1.16.0
+      follow-redirects: 1.16.0(debug@4.4.3)
       form-data: 4.0.6
       https-proxy-agent: 5.0.1
       proxy-from-env: 2.1.0
@@ -796,7 +796,9 @@ snapshots:
       has-tostringtag: 1.0.2
       hasown: 2.0.4
 
-  follow-redirects@1.16.0: {}
+  follow-redirects@1.16.0(debug@4.4.3):
+    optionalDependencies:
+      debug: 4.4.3
 
   form-data@4.0.6:
     dependencies:
@@ -871,7 +873,7 @@ snapshots:
 
   path-key@3.1.1: {}
 
-  pixelmatch@7.2.0:
+  pixelmatch@8.0.0:
     dependencies:
       pngjs: 7.0.0
 
@@ -922,9 +924,9 @@ snapshots:
 
   undici-types@8.9.0: {}
 
-  wait-on@9.5.1:
+  wait-on@9.5.1(debug@4.4.3):
     dependencies:
-      axios: 1.20.0
+      axios: 1.20.0(debug@4.4.3)
       joi: 18.2.9
       lodash: 4.18.1
       rxjs: 7.8.2
