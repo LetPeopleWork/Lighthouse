@@ -65,11 +65,27 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
         // version wrote, which this one cannot name, survive the edit untouched.
         public ReportOutcome<string> Edit(Report report, ReportEdit edit, ReportCalendar calendar)
         {
+            if (ShownMetricsRefusal(edit.ShownMetricKeys, report.OwnedBy().Kind) is string shownRefusal)
+            {
+                return ReportOutcome<string>.Refused(shownRefusal);
+            }
+
+            var captured = PayloadOf(report).Captures ?? [];
+            if (!edit.ShownMetricKeys.All(captured.ContainsKey))
+            {
+                return ReportOutcome<string>.Refused(ReportRefusalCodes.MetricNotCaptured);
+            }
+
             var payload = JsonNode.Parse(report.TemplatePayloadJson) as JsonObject
                 ?? throw new JsonException($"Report {report.Id} holds no Then & Now payload");
 
             if (edit.NowLengthDays is int nowLengthDays)
             {
+                if (ReportWindowPolicy.NowRefusal(nowLengthDays, calendar.Today, calendar.DoneItemsCutoffDays) is string nowRefusal)
+                {
+                    return ReportOutcome<string>.Refused(nowRefusal);
+                }
+
                 payload[NowLengthMemberOf(payload)] = nowLengthDays;
             }
 

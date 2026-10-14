@@ -21,14 +21,9 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return ReportOutcome<ReportRead>.NotFound();
             }
 
-            if (string.IsNullOrWhiteSpace(request.Name))
+            if (NameRefusal(request.Name) is string nameRefusal)
             {
-                return Refuse(owner, TemplateFor(request)?.Key, ReportRefusalCodes.NameMissing);
-            }
-
-            if (request.Name.Trim().Length > Report.LongestName)
-            {
-                return Refuse(owner, TemplateFor(request)?.Key, ReportRefusalCodes.NameTooLong);
+                return Refuse(owner, TemplateFor(request)?.Key, nameRefusal);
             }
 
             if (TemplateFor(request) is not IReportTemplate template)
@@ -71,11 +66,16 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return ReportOutcome<ReportRead>.Unsupported(ReportRefusalCodes.TemplateNotSupported);
             }
 
+            if (NameRefusal(edit.Name) is string nameRefusal)
+            {
+                return RefuseEdit(report, nameRefusal);
+            }
+
             var calendar = new ReportCalendar(clock.Today, facts.DoneItemsCutoffDays);
             var edited = template.Edit(report, edit, calendar);
             if (edited.Status != ReportOutcomeStatus.Done || edited.Value is null)
             {
-                return ReportOutcome<ReportRead>.Refused(edited.Code ?? ReportRefusalCodes.TemplateNotSupported);
+                return RefuseEdit(report, edited.Code ?? ReportRefusalCodes.TemplateNotSupported);
             }
 
             writer.ExpectUnchangedSince(report, edit.ConcurrencyToken);
@@ -110,6 +110,24 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             logger.LogInformation("Report creation refused with {Reason} for {OwnerKind} {OwnerId} with template {TemplateKey}",
                 reason, owner.Kind, owner.Id, templateKey);
             return ReportOutcome<ReportRead>.Refused(reason);
+        }
+
+        private ReportOutcome<ReportRead> RefuseEdit(Report report, string reason)
+        {
+            var owner = report.OwnedBy();
+            logger.LogInformation("Edit of report {ReportId} of {OwnerKind} {OwnerId} refused with {Reason}",
+                report.Id, owner.Kind, owner.Id, reason);
+            return ReportOutcome<ReportRead>.Refused(reason);
+        }
+
+        private static string? NameRefusal(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return ReportRefusalCodes.NameMissing;
+            }
+
+            return name.Trim().Length > Report.LongestName ? ReportRefusalCodes.NameTooLong : null;
         }
 
         private void LogCreated(Report report, NewReport request, double elapsedMs)

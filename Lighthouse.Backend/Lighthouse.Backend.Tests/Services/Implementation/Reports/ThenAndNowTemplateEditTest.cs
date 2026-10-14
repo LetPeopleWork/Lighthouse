@@ -22,6 +22,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
         private static readonly string[] CycleTimeShown = [CycleTimeReportMetric.MetricKey];
 
+        private static readonly string[] CycleTimeAndThroughput = [CycleTimeReportMetric.MetricKey, ThroughputReportMetric.MetricKey];
+
+        private static readonly string[] NoMetric = [];
+
+        private static readonly string[] NotInTheCatalog = ["velocity"];
+
+        private static readonly string[] CycleTimeShownTwice = [CycleTimeReportMetric.MetricKey, CycleTimeReportMetric.MetricKey];
+
         [TestCase(14)]
         [TestCase(30)]
         [TestCase(365)]
@@ -38,6 +46,72 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
                 Assert.That(edited.Status, Is.EqualTo(ReportOutcomeStatus.Done));
                 Assert.That(after["nowLengthDays"]!.GetValue<int>(), Is.EqualTo(nowLengthDays));
                 Assert.That(JsonNode.DeepEquals(WithoutNowLength(after), WithoutNowLength(before)), Is.True, edited.Value);
+            }
+        }
+
+        [TestCase(13, ReportRefusalCodes.NowTooShort)]
+        [TestCase(367, ReportRefusalCodes.NowBeforeCutoff)]
+        [TestCase(int.MaxValue, ReportRefusalCodes.NowTooLong)]
+        public void An_edit_to_a_Now_a_new_report_could_not_have_is_refused_and_changes_nothing(int nowLengthDays, string expectedRefusal)
+        {
+            var report = AReportWithALaterVersionsMember();
+            var stored = report.TemplatePayloadJson;
+
+            var edited = Subject().Edit(report, new ReportEdit(Name, CycleTimeShown, report.ConcurrencyToken, nowLengthDays), Calendar);
+
+            ThenItIsRefused(edited, expectedRefusal, report, stored);
+        }
+
+        [TestCaseSource(nameof(ShownListsANewReportCouldNotHave))]
+        public void An_edit_showing_metrics_a_new_report_could_not_show_is_refused_and_changes_nothing(string[] shown, string expectedRefusal)
+        {
+            var report = AReportWithALaterVersionsMember();
+            var stored = report.TemplatePayloadJson;
+
+            var edited = Subject().Edit(report, new ReportEdit(Name, shown, report.ConcurrencyToken, 30), Calendar);
+
+            ThenItIsRefused(edited, expectedRefusal, report, stored);
+        }
+
+        [Test]
+        public void A_metric_the_report_never_captured_cannot_be_shown()
+        {
+            var report = AReportWithALaterVersionsMember();
+            var payload = JsonNode.Parse(report.TemplatePayloadJson)!.AsObject();
+            payload["captures"]!.AsObject().Remove(ThroughputReportMetric.MetricKey);
+            report.TemplatePayloadJson = payload.ToJsonString();
+            var stored = report.TemplatePayloadJson;
+
+            var edited = Subject().Edit(report, new ReportEdit(Name, CycleTimeAndThroughput, report.ConcurrencyToken, 30), Calendar);
+
+            ThenItIsRefused(edited, ReportRefusalCodes.MetricNotCaptured, report, stored);
+        }
+
+        [Test]
+        public void A_metric_captured_at_creation_but_hidden_can_be_shown()
+        {
+            var report = AReportWithALaterVersionsMember();
+
+            var edited = Subject().Edit(report, new ReportEdit(Name, CycleTimeAndThroughput, report.ConcurrencyToken, 30), Calendar);
+
+            Assert.That(edited.Status, Is.EqualTo(ReportOutcomeStatus.Done));
+        }
+
+        private static IEnumerable<TestCaseData> ShownListsANewReportCouldNotHave()
+        {
+            yield return new TestCaseData(NoMetric, ReportRefusalCodes.NoMetricShown);
+            yield return new TestCaseData(NotInTheCatalog, ReportRefusalCodes.UnknownMetric);
+            yield return new TestCaseData(CycleTimeShownTwice, ReportRefusalCodes.DuplicateMetric);
+        }
+
+        private static void ThenItIsRefused(ReportOutcome<string> edited, string expectedRefusal, Report report, string stored)
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(edited.Status, Is.EqualTo(ReportOutcomeStatus.Refused));
+                Assert.That(edited.Code, Is.EqualTo(expectedRefusal));
+                Assert.That(edited.Value, Is.Null);
+                Assert.That(report.TemplatePayloadJson, Is.EqualTo(stored));
             }
         }
 
@@ -66,8 +140,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         {
             var series = new Mock<IReportMetricSeries>();
             series.Setup(s => s.CycleTimePercentiles(Lightspeed, It.IsAny<ReportWindow>())).Returns(new CycleTimePercentiles(6, 11, 21, 30, 20));
+            series.Setup(s => s.DailyThroughput(Lightspeed, It.IsAny<ReportWindow>())).Returns((ReportOwner _, ReportWindow window) => [.. Enumerable.Repeat(1, window.LengthDays)]);
             var clock = new FakeLighthouseClock(new DateTimeOffset(2026, 10, 2, 7, 0, 0, TimeSpan.Zero));
-            return new ThenAndNowTemplate(new ReportMetricCatalog([new CycleTimeReportMetric(series.Object)]), clock, NullLogger<ThenAndNowTemplate>.Instance);
+            var catalog = new ReportMetricCatalog([new CycleTimeReportMetric(series.Object), new ThroughputReportMetric(series.Object)]);
+            return new ThenAndNowTemplate(catalog, clock, NullLogger<ThenAndNowTemplate>.Instance);
         }
     }
 }

@@ -83,7 +83,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-10 @slice-10 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice10)]
         public async Task A_metric_the_report_never_captured_cannot_be_shown()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -212,7 +211,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         [TestCase("", null, Reason.NameMissing)]
         [TestCase(SinceAugust, 13, Reason.NowTooShort)]
         [TestCase(SinceAugust, 367, Reason.NowBeforeCutoff)]
-        [Ignore(PendingSlice10)]
         public async Task An_edit_breaking_the_rules_a_new_report_follows_is_refused_and_changes_nothing(string name, int? nowLengthDays, string reason)
         {
             var lightspeed = ATeam(Lightspeed);
@@ -231,7 +229,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-10 @slice-10 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice10)]
         public async Task An_edit_that_shows_no_metric_is_refused()
         {
             var lightspeed = ATeam(Lightspeed);
