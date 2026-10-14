@@ -61,6 +61,17 @@ describe("the Cycle Time panel", () => {
 		expect(headingOf("now")).toBe("Now");
 	});
 
+	it("shows a dash for a value absent for a reason this version does not know, and says it cannot be shown", () => {
+		renderPanel({
+			atThen: { ...NOW_IN_FULL, p85: aDash("unknown") },
+			atNow: NOW_IN_FULL,
+		});
+
+		expect(segment("then")).toHaveTextContent(
+			/^Then 85th — 70th 7 days 50th 4 days Can't be shown in this version of Lighthouse$/,
+		);
+	});
+
 	it("shows no change where Now has no value", () => {
 		renderPanel({
 			atThen: { p85: shown(21, 38), p70: shown(10, 38), p50: shown(5, 38) },

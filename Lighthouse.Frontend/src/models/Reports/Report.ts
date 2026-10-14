@@ -52,8 +52,8 @@ export interface IReportList {
 	communityCap: number;
 }
 
-/** Why a value cannot be shown; the value then reads as a dash. */
-export type ReportAbsentReason = "no-finished-items";
+/** Why a value cannot be shown; the value then reads as a dash. A reason this version has no words for reads as unknown. */
+export type ReportAbsentReason = "no-finished-items" | "unknown";
 
 export interface IReportValue {
 	value: number | null;
@@ -170,10 +170,24 @@ export const ReportListSchema: z.ZodType<IReportList> = z.object({
 	communityCap: z.number(),
 });
 
+const KNOWN_ABSENT_REASONS: readonly ReportAbsentReason[] = [
+	"no-finished-items",
+];
+
+/** A report frozen by a later version may give a reason this one does not know; refusing it would lose the whole report. */
+const absentReason = z
+	.string()
+	.nullable()
+	.transform((reason): ReportAbsentReason | null =>
+		reason === null
+			? null
+			: (KNOWN_ABSENT_REASONS.find((known) => known === reason) ?? "unknown"),
+	);
+
 const ReportValueSchema: z.ZodType<IReportValue> = z.object({
 	value: z.number().nullable(),
 	sampleSize: z.number().nullable(),
-	absentReason: z.enum(["no-finished-items"]).nullable(),
+	absentReason,
 });
 
 const ReportMetricSideSchema = z.record(

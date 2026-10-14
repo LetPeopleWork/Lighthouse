@@ -61,13 +61,14 @@ describe("the report schemas", () => {
 		).toBe("no-finished-items");
 	});
 
-	// Owned by slice 04 (Story 6162): no server ever sent these reasons, and no panel explains them any more.
-	it.each(["too-few-points", "no-process", "no-wip", "lower-limit-zero"])(
-		"refuse a value absent because of %j, a reason no server sends",
+	// A report frozen by a later version may give a reason this one has no words for; the rest of it must still read.
+	it.each(["too-few-points", "no-process", "a-reason-from-a-later-version"])(
+		"read a value absent because of %j, a reason this version does not know, as absent for an unknown reason",
 		(absentReason) => {
 			expect(
-				ReportSchema.safeParse(aReportWhoseThenIsADash(absentReason)).success,
-			).toBe(false);
+				ReportSchema.parse(aReportWhoseThenIsADash(absentReason)).thenAndNow
+					.metrics["cycle-time"]?.atThen.p85,
+			).toEqual({ value: null, sampleSize: null, absentReason: "unknown" });
 		},
 	);
 

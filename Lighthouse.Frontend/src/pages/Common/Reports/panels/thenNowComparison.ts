@@ -23,6 +23,9 @@ export const DASH = "—";
 
 const NOT_CAPTURED = "Not captured for this report";
 
+const REASON_FROM_A_NEWER_VERSION =
+	"Can't be shown in this version of Lighthouse";
+
 /** Halves round away from zero, so a fall and a rise of the same size read the same. */
 export const roundForDisplay = (value: number, decimals: number): number => {
 	const scale = 10 ** decimals;
@@ -93,6 +96,7 @@ const reasonTexts: Record<
 > = {
 	"no-finished-items": (side, workItems) =>
 		`No finished ${workItems} in ${side}`,
+	unknown: () => REASON_FROM_A_NEWER_VERSION,
 };
 
 export const absentReasonText = (
