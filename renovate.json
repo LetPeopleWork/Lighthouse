@@ -15,12 +15,18 @@
   "ignoreTests": false,
   "packageRules": [
     {
-      "description": "Node and pnpm move together in one pull request that a maintainer merges, because CI, local development, the Docker build and the lockfile format all follow them. Replacing ranges keeps .nvmrc on a bare major and engines on 'major.x', so only a new LTS major opens a pull request.",
+      "description": "Node and pnpm move together in one pull request, because CI, local development, the Docker build and the lockfile format all follow them. Replacing ranges keeps .nvmrc on a bare major and engines on 'major.x', so Node only opens a pull request for a new LTS major; pnpm is pinned exactly in packageManager, so every pnpm release opens one.",
       "matchManagers": ["nvm", "npm"],
       "matchDepNames": ["node", "pnpm"],
       "groupName": "Node and pnpm toolchain",
       "rangeStrategy": "replace",
-      "separateMajorMinor": false,
+      "separateMajorMinor": false
+    },
+    {
+      "description": "A new Node or pnpm major waits for a maintainer: a Node major changes the Docker build's base image, which no required check builds, and a pnpm major can change the lockfile format. Minor and patch pnpm releases merge on green CI like any other update.",
+      "matchManagers": ["nvm", "npm"],
+      "matchDepNames": ["node", "pnpm"],
+      "matchUpdateTypes": ["major"],
       "automerge": false
     },
     {
