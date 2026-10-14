@@ -1,0 +1,40 @@
+schema_version: 1
+feature_id: story-6302-ci-test-time
+updated: 2026-10-14
+note: >
+  ADO User Story #6302, no parent Epic. DISCOVER and DIVERGE not run; the CI measurement in the
+  feature delta stands in for discovery. Test suites and CI scripts only; no product surface.
+
+journeys:
+
+  - name: push-and-hear-back-in-time
+    goal: >
+      A developer pushes to main and gets the frontend and backend verify results in about the time
+      they took at the start of October, and a slow new test file is flagged on the commit that adds it.
+    persona: lighthouse-developer
+    job_id: job-dev-test-feedback-velocity
+
+    emotional_arc:
+      start: Restless - "the verify jobs take 17 minutes now; I've already moved on to something else."
+      middle: Reassured - "the slow files are named and fixed, and the tests still say the same things."
+      end: Confident - "back near 12 minutes, and the build tells me if I add a file that would undo it."
+
+    steps:
+      - step: Push a change to main
+        sees: Verify Frontend and Verify Backend start as today
+      - step: Wait for the verify jobs
+        sees: frontend median ≤12 min, backend ≤13.5 min (from 16.8 / 15.3 on 14 Oct)
+      - step: Add a test file that is slow
+        sees: the verify job fails naming the file, its time and the budget, and pointing to the allowlist
+      - step: Speed it up or allowlist it with a reason
+        sees: the job passes
+
+    error_paths:
+      - when: a normal run is slow because of the runner
+        then: the budget's headroom covers the 0.55-1.13 runner spread, so it stays green
+      - when: a test is slow for a real reason (container start-up)
+        then: it sits on the allowlist with that reason
+
+    shared_artifacts:
+      - name: test-timings-frontend.csv / test-timings-backend.csv
+        source: Scripts/test-timings/ run in ci_frontend.yml and ci_backend.yml
