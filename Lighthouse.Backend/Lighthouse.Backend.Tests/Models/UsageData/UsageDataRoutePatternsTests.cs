@@ -25,11 +25,13 @@ namespace Lighthouse.Backend.Tests.Models.UsageData
         [TestCase(UsageDataRouteKey.TeamDetail_Settings, "/teams/:id/settings")]
         [TestCase(UsageDataRouteKey.TeamDetail_Access, "/teams/:id/access")]
         [TestCase(UsageDataRouteKey.TeamDetail_Refinement, "/teams/:id/refinement")]
+        [TestCase(UsageDataRouteKey.TeamDetail_Reports, "/teams/:id/reports")]
         [TestCase(UsageDataRouteKey.PortfolioDetail_Features, "/portfolios/:id/features")]
         [TestCase(UsageDataRouteKey.PortfolioDetail_Metrics, "/portfolios/:id/metrics")]
         [TestCase(UsageDataRouteKey.PortfolioDetail_Deliveries, "/portfolios/:id/deliveries")]
         [TestCase(UsageDataRouteKey.PortfolioDetail_Settings, "/portfolios/:id/settings")]
         [TestCase(UsageDataRouteKey.PortfolioDetail_Access, "/portfolios/:id/access")]
+        [TestCase(UsageDataRouteKey.PortfolioDetail_Reports, "/portfolios/:id/reports")]
         public void APageTheBrowserNamed_IsPublishedAsTheAddressStandingInForIt(
             UsageDataRouteKey named, string published)
         {

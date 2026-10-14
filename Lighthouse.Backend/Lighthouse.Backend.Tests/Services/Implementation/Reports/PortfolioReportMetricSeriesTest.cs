@@ -16,6 +16,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
         private static readonly ReportWindow Window = new(new DateOnly(2026, 7, 5), new DateOnly(2026, 10, 2), 90);
 
+        private static readonly DateTime FirstDay = new(2026, 7, 5, 0, 0, 0, DateTimeKind.Unspecified);
+
+        private static readonly DateTime LastDay = new(2026, 10, 2, 0, 0, 0, DateTimeKind.Unspecified);
+
         private static readonly PercentileValue[] Percentiles = [new(50, 6), new(70, 11), new(85, 21), new(95, 30)];
 
         private Mock<IRepository<Portfolio>> portfolios = null!;
@@ -31,8 +35,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             portfolios.Setup(repository => repository.GetById(SharedId)).Returns(portfolio);
 
             metrics = new Mock<IPortfolioMetricsService>();
-            metrics.Setup(service => service.GetCycleTimePercentilesForPortfolio(portfolio, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(Percentiles);
-            metrics.Setup(service => service.GetCycleTimeDataForPortfolio(portfolio, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([]);
+            metrics.Setup(service => service.GetCycleTimePercentilesForPortfolio(portfolio, FirstDay, LastDay)).Returns(Percentiles);
+            metrics.Setup(service => service.GetCycleTimeDataForPortfolio(portfolio, FirstDay, LastDay)).Returns([]);
 
             subject = new PortfolioReportMetricSeries(portfolios.Object, metrics.Object, new FakeLighthouseClock(DateTimeOffset.UtcNow));
         }
@@ -48,7 +52,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         [Test]
         public void A_Portfolio_with_no_finished_Features_reads_no_percentiles_and_no_finished_Features()
         {
-            metrics.Setup(service => service.GetCycleTimePercentilesForPortfolio(portfolio, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([]);
+            metrics.Setup(service => service.GetCycleTimePercentilesForPortfolio(portfolio, FirstDay, LastDay)).Returns([]);
 
             var percentiles = subject.CycleTimePercentiles(ReportOwner.Portfolio(SharedId), Window);
 
