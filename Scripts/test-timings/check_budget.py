@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
@@ -70,6 +71,11 @@ class Finding:
     unit: str
     seconds: Decimal
     limit: Decimal
+    limit_kind: str
+
+
+SKIPPED_SOURCE_FOLDERS = ("bin", "obj", "StrykerOutput")
+DECLARATION = re.compile(r"\bnamespace\s+([\w.]+)|\bclass\s+(\w+)")
 
 
 def class_of(fully_qualified_name: str) -> str:
@@ -90,12 +96,49 @@ def seconds_per_unit(stack: str, rows: list[dict[str, str]]) -> dict[str, Decima
     return totals
 
 
-def judge(stack: str, rows: list[dict[str, str]], budget_seconds: Decimal) -> list[Finding]:
-    return [
-        Finding(unit, seconds, budget_seconds)
-        for unit, seconds in sorted(seconds_per_unit(stack, rows).items())
-        if seconds > budget_seconds
-    ]
+def judge(
+    stack: str,
+    rows: list[dict[str, str]],
+    budget_seconds: Decimal,
+    ceilings: dict[str, Decimal],
+) -> list[Finding]:
+    findings = []
+    for unit, seconds in sorted(seconds_per_unit(stack, rows).items()):
+        limit, limit_kind = (
+            (ceilings[unit], "ceiling") if unit in ceilings else (budget_seconds, "budget")
+        )
+        if seconds > limit:
+            findings.append(Finding(unit, seconds, limit, limit_kind))
+    return findings
+
+
+def stale_entries(allowlisted: list[str], still_present: set[str]) -> list[str]:
+    return [unit for unit in allowlisted if unit not in still_present]
+
+
+def _is_build_or_mutation_output(folder: str) -> bool:
+    return folder in SKIPPED_SOURCE_FOLDERS or folder.startswith(".stryker-tmp")
+
+
+def declared_classes(source_root: Path) -> set[str]:
+    classes = set()
+    for directory, folders, files in source_root.walk():
+        folders[:] = [folder for folder in folders if not _is_build_or_mutation_output(folder)]
+        for file in files:
+            if file.endswith(".cs"):
+                classes |= _classes_in((directory / file).read_text(encoding="utf-8-sig"))
+    return classes
+
+
+def _classes_in(source: str) -> set[str]:
+    namespace = ""
+    classes = set()
+    for match in DECLARATION.finditer(source):
+        if match[1]:
+            namespace = match[1]
+        else:
+            classes.add(f"{namespace}.{match[2]}" if namespace else match[2])
+    return classes
 
 
 def escaped(text: str) -> str:
@@ -106,7 +149,15 @@ def escaped(text: str) -> str:
 def annotation(finding: Finding, allowlist_name: str) -> str:
     return (
         f"::error::{escaped(finding.unit)} took {finding.seconds:.1f}s, "
-        f"over the {finding.limit}s budget set in {allowlist_name}"
+        f"over the {finding.limit}s {finding.limit_kind} set in {allowlist_name}"
+    )
+
+
+def stale_annotation(stack: str, unit: str, allowlist_name: str) -> str:
+    where = "the test run" if stack == "frontend" else "the backend test source"
+    return (
+        f"::error::{escaped(unit)} is allowlisted in {allowlist_name} "
+        f"but is no longer in {where}; remove its entry"
     )
 
 
@@ -115,12 +166,28 @@ def main(argv: list[str] | None = None) -> int:
     with arguments.csv.open(encoding="utf-8", newline="") as stream:
         rows = list(csv.DictReader(stream))
     document = json.loads(arguments.allowlist.read_text(encoding="utf-8"))
-    budget_seconds = Decimal(str(document[arguments.stack]["budget_seconds"]))
+    section = document[arguments.stack]
+    budget_seconds = Decimal(str(section["budget_seconds"]))
+    ceilings = {
+        entry["unit"]: Decimal(str(entry["ceiling_seconds"])) for entry in section.get("allowlist", [])
+    }
 
-    findings = judge(arguments.stack, rows, budget_seconds)
+    findings = judge(arguments.stack, rows, budget_seconds, ceilings)
+    stale = stale_entries(list(ceilings), _still_present(arguments, rows, ceilings))
     for finding in findings:
         print(annotation(finding, arguments.allowlist.name))
-    return 1 if findings else 0
+    for unit in stale:
+        print(stale_annotation(arguments.stack, unit, arguments.allowlist.name))
+    return 1 if findings or stale else 0
+
+
+def _still_present(
+    arguments: argparse.Namespace, rows: list[dict[str, str]], ceilings: dict[str, Decimal]
+) -> set[str]:
+    if arguments.stack == "frontend":
+        return set(seconds_per_unit("frontend", rows))
+    # Only the test source decides: a backend class may be filtered out of a run and still be alive.
+    return declared_classes(arguments.source_root) if ceilings else set()
 
 
 if __name__ == "__main__":

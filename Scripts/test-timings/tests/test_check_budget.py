@@ -345,21 +345,18 @@ class AFrontendFileOverTheBudgetFailsTheBuild(BudgetCheckTestCase):
 
 
 class AnAllowlistedUnitIsHeldToItsOwnCeiling(BudgetCheckTestCase):
-    @PENDING
     def test_an_allowlisted_file_under_its_own_ceiling_passes_although_it_is_over_the_budget(self):
         timings = self.workspace.frontend_timings({"src/pages/Heavy.test.tsx": [80.0]})
         self.workspace.budget(frontend_entries=[allowed("src/pages/Heavy.test.tsx", 90)])
 
         self.assert_passes_quietly(self.workspace.check("frontend", timings))
 
-    @PENDING
     def test_an_allowlisted_file_exactly_at_its_ceiling_passes(self):
         timings = self.workspace.frontend_timings({"src/pages/Heavy.test.tsx": [45.0, 45.0]})
         self.workspace.budget(frontend_entries=[allowed("src/pages/Heavy.test.tsx", 90)])
 
         self.assert_passes_quietly(self.workspace.check("frontend", timings))
 
-    @PENDING
     def test_an_allowlisted_file_over_its_own_ceiling_fails_naming_the_file_its_time_and_its_ceiling(self):
         timings = self.workspace.frontend_timings({"src/pages/Heavy.test.tsx": [95.0]})
         self.workspace.budget(frontend_entries=[allowed("src/pages/Heavy.test.tsx", 90)])
@@ -372,7 +369,6 @@ class AnAllowlistedUnitIsHeldToItsOwnCeiling(BudgetCheckTestCase):
             ALLOWLIST_NAME,
         )
 
-    @PENDING
     def test_a_frontend_allowlist_entry_for_a_file_no_longer_in_the_run_fails(self):
         timings = self.workspace.frontend_timings({"src/pages/Overview.test.tsx": [1.0]})
         self.workspace.budget(frontend_entries=[allowed("src/pages/Removed.test.tsx", 90)])
@@ -381,7 +377,6 @@ class AnAllowlistedUnitIsHeldToItsOwnCeiling(BudgetCheckTestCase):
             self.workspace.check("frontend", timings), "src/pages/Removed.test.tsx", ALLOWLIST_NAME
         )
 
-    @PENDING
     def test_a_backend_allowlist_entry_for_a_class_still_in_the_test_source_passes_when_the_class_did_not_run(self):
         self.workspace.declare_test_class("JiraConnectorTest")
         timings = self.workspace.backend_timings({f"{TESTS_NAMESPACE}.CacheTest.Reads": 1.0})
@@ -391,7 +386,6 @@ class AnAllowlistedUnitIsHeldToItsOwnCeiling(BudgetCheckTestCase):
 
         self.assert_passes_quietly(self.workspace.check("backend", timings))
 
-    @PENDING
     def test_an_allowlisted_backend_class_is_held_to_its_own_ceiling(self):
         for seconds, expected in ((90.0, "passes"), (95.0, "fails")):
             with self.subTest(seconds=seconds, expected=expected):
@@ -411,7 +405,6 @@ class AnAllowlistedUnitIsHeldToItsOwnCeiling(BudgetCheckTestCase):
                 else:
                     self.assert_passes_quietly(result)
 
-    @PENDING
     def test_a_backend_class_counts_as_in_the_source_whatever_the_file_it_is_declared_in_is_called(self):
         self.workspace.declare_test_class("CacheTest", file_name="CacheScenarios.cs")
         timings = self.workspace.backend_timings({f"{TESTS_NAMESPACE}.OtherTest.Reads": 1.0})
@@ -419,7 +412,6 @@ class AnAllowlistedUnitIsHeldToItsOwnCeiling(BudgetCheckTestCase):
 
         self.assert_passes_quietly(self.workspace.check("backend", timings))
 
-    @PENDING
     def test_a_class_of_the_same_name_in_another_namespace_does_not_keep_an_entry_alive(self):
         self.workspace.declare_test_class("CacheTest", namespace="Lighthouse.Backend.Tests.Other")
         timings = self.workspace.backend_timings({f"{TESTS_NAMESPACE}.OtherTest.Reads": 1.0})
@@ -429,7 +421,6 @@ class AnAllowlistedUnitIsHeldToItsOwnCeiling(BudgetCheckTestCase):
             self.workspace.check("backend", timings), f"{TESTS_NAMESPACE}.CacheTest"
         )
 
-    @PENDING
     def test_a_backend_allowlist_entry_for_a_class_no_longer_in_the_test_source_fails(self):
         timings = self.workspace.backend_timings({f"{TESTS_NAMESPACE}.CacheTest.Reads": 1.0})
         self.workspace.budget(
@@ -442,7 +433,6 @@ class AnAllowlistedUnitIsHeldToItsOwnCeiling(BudgetCheckTestCase):
             ALLOWLIST_NAME,
         )
 
-    @PENDING
     def test_a_class_left_only_in_build_or_mutation_output_does_not_count_as_still_in_the_source(self):
         for leftover in ("bin/Debug", "obj", ".stryker-tmp4711/Services", "StrykerOutput/2026-10-14"):
             with self.subTest(leftover=leftover):
