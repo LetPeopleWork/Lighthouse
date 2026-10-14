@@ -476,7 +476,7 @@ describe("Step four: metrics and name", () => {
 	});
 
 	// @us-04 @slice-04 @contract-shape:pure-function
-	it.skip("ticks all four metrics, named in the instance's words", async () => {
+	it("ticks all four metrics, named in the instance's words", async () => {
 		terms.current = {
 			...defaultTerms,
 			[TERMINOLOGY_KEYS.CYCLE_TIME]: "Lead Time",
