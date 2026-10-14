@@ -28,12 +28,12 @@ import { useMayEditReports } from "./useMayEditReports";
 import { useReportDeletion } from "./useReportDeletion";
 import { useReportOpenedReporter } from "./useReportOpenedReporter";
 import ReportWizard from "./wizard/ReportWizard";
+import { NO_LONGER_EXISTS } from "./wizard/reportRefusalCopy";
 
 const LOADING = "Loading report…";
 const COULD_NOT_LOAD = "This report couldn't be loaded. Reload to try again.";
 const MADE_BY_A_NEWER_VERSION =
 	"This report was made by a newer version of Lighthouse and can't be shown here.";
-const NO_LONGER_EXISTS = "This report no longer exists.";
 const BODY_MIN_HEIGHT = 120;
 
 /** A metric shown on a report made before it was captured reads as not captured on both sides. */

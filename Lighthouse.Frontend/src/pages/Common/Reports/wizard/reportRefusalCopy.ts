@@ -44,6 +44,7 @@ export const useRefusalWords = (
 
 const COULD_NOT_CREATE = "The report couldn't be created. Try again.";
 export const COULD_NOT_SAVE = "The report couldn't be saved. Try again.";
+export const NO_LONGER_EXISTS = "This report no longer exists.";
 
 /** Why a Community instance creates no further report for this Team or Portfolio. */
 export const capSentenceFor = (ownerTerm: string): string =>

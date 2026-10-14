@@ -243,6 +243,39 @@ describe("Editing a report", () => {
 		).toHaveTextContent("The report couldn't be saved. Try again.");
 	});
 
+	// @us-10 @slice-10 @error @contract-shape:pure-function
+	// Another Team Admin deleted the report after this wizard was opened.
+	it("says the report no longer exists when it was deleted before the save", async () => {
+		await openTheEditWizard(
+			aReportService({
+				editReport: vi.fn().mockRejectedValue(aRefusal(404, "not-found")),
+			}),
+		);
+		await onToTheLastStep();
+
+		await userEvent.click(await theSaveButton());
+
+		expect(
+			await within(await theWizard()).findByRole("alert"),
+		).toHaveTextContent("This report no longer exists.");
+	});
+
+	// @us-10 @slice-10 @error @contract-shape:pure-function
+	it("says the report couldn't be saved when the edit is not allowed", async () => {
+		await openTheEditWizard(
+			aReportService({
+				editReport: vi.fn().mockRejectedValue(aRefusal(403, "forbidden")),
+			}),
+		);
+		await onToTheLastStep();
+
+		await userEvent.click(await theSaveButton());
+
+		expect(
+			await within(await theWizard()).findByRole("alert"),
+		).toHaveTextContent("The report couldn't be saved. Try again.");
+	});
+
 	// @us-10 @slice-10 @boundary @contract-shape:pure-function
 	// The page shows the report the save answered with, dimmed until it has been read again.
 	it("dims the saved report under a spinner while it is read again after the save", async () => {

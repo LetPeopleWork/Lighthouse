@@ -25,6 +25,7 @@ import {
 } from "../reportOwner";
 import {
 	COULD_NOT_SAVE,
+	NO_LONGER_EXISTS,
 	type RefusalWords,
 	refusalCopyFor,
 	useRefusalWords,
@@ -52,10 +53,15 @@ const isStaleSave = (error: unknown): boolean =>
 const isThenBeforeCutoff = (error: unknown): boolean =>
 	error instanceof ApiError && error.problemCode === "then-before-cutoff";
 
-const saveFailureCopyFor = (error: unknown, words: RefusalWords): string =>
-	isStaleSave(error)
-		? STALE_SAVE
-		: refusalCopyFor(error, words, COULD_NOT_SAVE);
+/** Somebody else deleted the report after this edit read it. */
+const isGone = (error: unknown): boolean =>
+	error instanceof ApiError && error.code === 404;
+
+const saveFailureCopyFor = (error: unknown, words: RefusalWords): string => {
+	if (isStaleSave(error)) return STALE_SAVE;
+	if (isGone(error)) return NO_LONGER_EXISTS;
+	return refusalCopyFor(error, words, COULD_NOT_SAVE);
+};
 
 interface ReportWizardProps {
 	owner: IReportOwner;
