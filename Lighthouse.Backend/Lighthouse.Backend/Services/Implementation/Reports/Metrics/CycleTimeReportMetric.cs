@@ -5,8 +5,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports.Metrics
 {
     /// <summary>
     /// The Metrics tab's cycle-time percentiles over a window: the 95th, 85th, 70th and 50th. Each rests on the finished
-    /// items with a cycle time in its window. A report frozen before Then kept all four simply has no Then value for
-    /// the ones it lacks.
+    /// items with a cycle time in its window, and none is shown when nothing finished.
     /// </summary>
     public class CycleTimeReportMetric(IReportMetricSeries series) : WindowedReportMetric(series)
     {

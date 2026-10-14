@@ -66,7 +66,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         // @driving_port @real-io @us-05b @slice-05b @boundary @contract-shape:unbounded-preservation
-        // Reports created before this slice froze the 85th, 70th and 50th only. Nothing is added to them on
+        // Reports created before the 95th was captured froze the 85th, 70th and 50th only. Nothing is added to them on
         // reading: Then's 95th stays missing, and the page reads it as never captured, not as a dash.
         [Test]
         public async Task A_report_frozen_before_the_95th_was_captured_has_no_Then_95th_and_still_shows_Nows()
