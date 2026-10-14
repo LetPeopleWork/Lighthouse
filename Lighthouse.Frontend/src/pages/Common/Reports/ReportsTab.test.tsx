@@ -313,7 +313,7 @@ describe("Deleting a report from the list", () => {
 	});
 
 	// @us-08 @slice-08 @driving_port @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:bounded-change
-	it.skip("asks first, deletes the report, takes it off the list and reports one report deleted", async () => {
+	it("asks first, deletes the report, takes it off the list and reports one report deleted", async () => {
 		const reportService = aReportService({
 			getReports: vi
 				.fn()
@@ -342,7 +342,7 @@ describe("Deleting a report from the list", () => {
 	});
 
 	// @us-08 @slice-08 @error @contract-shape:unbounded-preservation
-	it.skip("keeps the report and reports nothing when the delete is cancelled", async () => {
+	it("keeps the report and reports nothing when the delete is cancelled", async () => {
 		const reportService = aReportService();
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, { reportService });
 
@@ -359,7 +359,7 @@ describe("Deleting a report from the list", () => {
 	});
 
 	// @us-08 @slice-08 @error @contract-shape:pure-function
-	it.skip("warns that a Then reaching past the kept history can no longer be rebuilt", async () => {
+	it("warns that a Then reaching past the kept history can no longer be rebuilt", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService({
 				getReports: vi
@@ -380,7 +380,7 @@ describe("Deleting a report from the list", () => {
 	});
 
 	// @us-08 @slice-08 @boundary @contract-shape:pure-function
-	it.skip("does not warn about rebuilding a Then that can still be rebuilt", async () => {
+	it("does not warn about rebuilding a Then that can still be rebuilt", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService(),
 		});
@@ -395,7 +395,7 @@ describe("Deleting a report from the list", () => {
 	});
 
 	// @us-08 @slice-08 @error @contract-shape:unbounded-preservation
-	it.skip("keeps the report listed and reports nothing when the delete fails", async () => {
+	it("keeps the report listed and reports nothing when the delete fails", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService({
 				deleteReport: vi

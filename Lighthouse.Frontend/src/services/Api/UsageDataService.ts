@@ -38,6 +38,7 @@ export const UsageDataEventName = {
 	TeamRefinementDayVerdictShown: "TeamRefinementDayVerdictShown",
 	ReportCreated: "ReportCreated",
 	ReportOpened: "ReportOpened",
+	ReportDeleted: "ReportDeleted",
 } as const;
 
 export type UsageDataEventName =

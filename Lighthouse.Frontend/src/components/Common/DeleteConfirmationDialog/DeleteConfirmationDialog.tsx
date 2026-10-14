@@ -16,6 +16,8 @@ interface DeleteConfirmationDialogProps {
 	onConfirm: () => void;
 	onCancel: () => void;
 	errorMessage?: string;
+	/** Something the deletion takes away for good, said before anybody confirms. */
+	warning?: string;
 }
 
 const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
@@ -24,6 +26,7 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
 	onConfirm,
 	onCancel,
 	errorMessage,
+	warning,
 }) => {
 	const alertDialogTitleId = useId();
 	const alertDialogDescriptionId = useId();
@@ -40,6 +43,11 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
 				<DialogContentText id={alertDialogDescriptionId}>
 					Do you really want to delete {itemName}?
 				</DialogContentText>
+				{warning && (
+					<Alert severity="warning" sx={{ mt: 2 }}>
+						{warning}
+					</Alert>
+				)}
 				{errorMessage && (
 					<Alert
 						severity="error"

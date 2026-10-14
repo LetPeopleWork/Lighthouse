@@ -1,3 +1,5 @@
+import DeleteIcon from "@mui/icons-material/Delete";
+import { IconButton, Tooltip } from "@mui/material";
 import type React from "react";
 import { useMemo } from "react";
 import DataGridBase from "../../../components/Common/DataGrid/DataGridBase";
@@ -14,14 +16,38 @@ import { reportTypeTitleOf } from "./wizard/reportTypes";
 interface ReportListProps {
 	owner: IReportOwner;
 	reports: IReportListItem[];
+	/** Given only to somebody who may delete; without it the list offers no delete control. */
+	onDelete?: (report: IReportListItem) => void;
 }
+
+const deleteColumn = (
+	onDelete: (report: IReportListItem) => void,
+): DataGridColumn<IReportListItem> => ({
+	field: "actions",
+	headerName: "Actions",
+	width: 100,
+	sortable: false,
+	hideable: false,
+	renderCell: ({ row }) => (
+		<Tooltip title="Delete">
+			<IconButton
+				aria-label={`Delete ${row.name}`}
+				color="primary"
+				onClick={() => onDelete(row)}
+			>
+				<DeleteIcon />
+			</IconButton>
+		</Tooltip>
+	),
+});
 
 const ReportList: React.FC<Readonly<ReportListProps>> = ({
 	owner,
 	reports,
+	onDelete,
 }) => {
-	const columns: DataGridColumn<IReportListItem>[] = useMemo(
-		() => [
+	const columns: DataGridColumn<IReportListItem>[] = useMemo(() => {
+		const shown: DataGridColumn<IReportListItem>[] = [
 			{
 				field: "name",
 				headerName: "Name",
@@ -45,9 +71,9 @@ const ReportList: React.FC<Readonly<ReportListProps>> = ({
 				renderCell: ({ row }) =>
 					parseLocalDate(row.createdOn)?.toLocaleDateString(),
 			},
-		],
-		[owner],
-	);
+		];
+		return onDelete === undefined ? shown : [...shown, deleteColumn(onDelete)];
+	}, [owner, onDelete]);
 
 	return (
 		<DataGridBase
