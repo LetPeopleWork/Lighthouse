@@ -1,7 +1,7 @@
 import { Box, Button, Stack } from "@mui/material";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router";
 import type {
 	IReport,
@@ -27,6 +27,7 @@ import ThenAndNowSummary from "./ThenAndNowSummary";
 import { useMayEditReports } from "./useMayEditReports";
 import { useReportDeletion } from "./useReportDeletion";
 import { useReportOpenedReporter } from "./useReportOpenedReporter";
+import ReportWizard from "./wizard/ReportWizard";
 
 const LOADING = "Loading report…";
 const COULD_NOT_LOAD = "This report couldn't be loaded. Reload to try again.";
@@ -123,19 +124,18 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 	const deletion = useReportDeletion(owner, () =>
 		reportFailedNavigation(navigate(reportsPath)),
 	);
+	const [editing, setEditing] = useState<IReport | null>(null);
 	const status = queryStatusOf(isFetching, isError);
 	const finalFailure = finalFailureOf(error);
+	const mayChange = isEditor && report !== undefined;
 
 	return (
 		<Stack spacing={2} data-report-status={status}>
 			<ThenAndNowHeader
 				reportsPath={reportsPath}
 				name={report?.name}
-				onDelete={
-					isEditor && report !== undefined
-						? () => deletion.ask(report)
-						: undefined
-				}
+				onEdit={mayChange ? () => setEditing(report) : undefined}
+				onDelete={mayChange ? () => deletion.ask(report) : undefined}
 			/>
 			<Box
 				aria-busy={status === "loading" ? "true" : undefined}
@@ -172,6 +172,13 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 				</Box>
 			)}
 			{deletion.dialog}
+			{editing !== null && (
+				<ReportWizard
+					owner={owner}
+					editing={editing}
+					onClose={() => setEditing(null)}
+				/>
+			)}
 		</Stack>
 	);
 };

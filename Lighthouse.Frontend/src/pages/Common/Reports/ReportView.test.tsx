@@ -1655,7 +1655,7 @@ describe("Who may change a report from its page", () => {
 	beforeEach(beforeEachReportTest);
 
 	// @us-10 @us-08 @slice-08 @slice-10 @contract-shape:pure-function
-	it.skip("offers an admin Edit report and Delete", async () => {
+	it("offers an admin Edit report and Delete", async () => {
 		openTheReport(theEngagementStartReport(), "admin");
 
 		await theReportIsReady();
@@ -1665,7 +1665,7 @@ describe("Who may change a report from its page", () => {
 	});
 
 	// @us-10 @us-08 @slice-08 @slice-10 @error @contract-shape:unbounded-preservation
-	it.skip("offers a reader neither", async () => {
+	it("offers a reader neither", async () => {
 		openTheReport(theEngagementStartReport(), "reader");
 
 		await theReportIsReady();

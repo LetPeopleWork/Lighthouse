@@ -104,7 +104,7 @@ describe("Editing a report", () => {
 	});
 
 	// @us-10 @slice-10 @driving_port @contract-shape:pure-function
-	it.skip("shows the Type locked", async () => {
+	it("shows the Type locked", async () => {
 		await openTheEditWizard();
 
 		const wizard = await theWizard();
@@ -117,7 +117,7 @@ describe("Editing a report", () => {
 	});
 
 	// @us-10 @slice-10 @error @contract-shape:unbounded-preservation
-	it.skip("shows Then as it was frozen, locked", async () => {
+	it("shows Then as it was frozen, locked", async () => {
 		await openTheEditWizard();
 		await next();
 
@@ -128,7 +128,7 @@ describe("Editing a report", () => {
 	});
 
 	// @us-10 @us-07 @slice-10 @driving_port @contract-shape:bounded-change
-	it.skip("saves a new name, a new Now and the shown metrics, never Then, over the report as it was read", async () => {
+	it("saves a new name, a new Now and the shown metrics, never Then, over the report as it was read", async () => {
 		const reportService = await openTheEditWizard();
 		await next();
 		await next();

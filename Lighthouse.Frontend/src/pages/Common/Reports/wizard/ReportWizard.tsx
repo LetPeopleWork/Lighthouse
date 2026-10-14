@@ -5,6 +5,7 @@ import { useContext, useState } from "react";
 import { useNavigate } from "react-router";
 import WizardStepperFrame from "../../../../components/Common/CreateWizards/WizardStepperFrame";
 import type {
+	IReport,
 	IReportOwner,
 	IReportTemplates,
 	ReportTemplateKey,
@@ -17,7 +18,11 @@ import {
 } from "../../../../services/UsageData/usageDataReporter";
 import { reportFailedNavigation } from "../../../../utils/navigation";
 import { queryStatusOf } from "../../MetricsView/widgetStatus";
-import { reportPathOf, reportsQueryKeyOf } from "../reportOwner";
+import {
+	reportPathOf,
+	reportQueryKeyOf,
+	reportsQueryKeyOf,
+} from "../reportOwner";
 import { refusalCopyFor, useRefusalWords } from "./reportRefusalCopy";
 import { reportTypes } from "./reportTypes";
 import TypeStep from "./TypeStep";
@@ -28,12 +33,15 @@ const TYPE_STEP = 0;
 interface ReportWizardProps {
 	owner: IReportOwner;
 	onClose: () => void;
+	/** The report as it was read, when the wizard changes it instead of creating one. */
+	editing?: IReport;
 }
 
-/** Creates a report: the Type first, then the steps that Type adds. */
+/** Creates a report, or edits one: the Type first, then the steps that Type adds. */
 const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 	owner,
 	onClose,
+	editing,
 }) => {
 	const { reportService } = useContext(ApiServiceContext);
 	const queryClient = useQueryClient();
@@ -42,8 +50,11 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 	const [activeStep, setActiveStep] = useState(TYPE_STEP);
 	const chosen: ReportTemplateKey = "then-and-now";
 	const type = reportTypes[chosen];
-	const [draft, setDraft] = useState(type.newDraft);
-	const [isCreating, setIsCreating] = useState(false);
+	const isEditing = editing !== undefined;
+	const [draft, setDraft] = useState(() =>
+		editing === undefined ? type.newDraft() : type.draftOf(editing),
+	);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [refusal, setRefusal] = useState<string | null>(null);
 
 	// Today and the bounds are the server's; an answer kept from an earlier opening may name yesterday.
@@ -59,15 +70,21 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 	const templates = status === "ready" ? data : undefined;
 	const typeStep = activeStep - 1;
 	const current = typeStep >= 0 ? type.steps[typeStep] : undefined;
+	const isFrozen = isEditing && current?.frozenOnEdit === true;
 	const isLastStep = activeStep === type.steps.length;
 	const isComplete =
 		templates !== undefined &&
-		(current === undefined || current.isComplete(draft, templates));
+		(current === undefined || isFrozen || current.isComplete(draft, templates));
 
 	const refusalWordsFor = useRefusalWords(owner);
 
+	const refuse = (error: unknown, bounds: IReportTemplates) => {
+		setRefusal(refusalCopyFor(error, refusalWordsFor(bounds)));
+		setIsSubmitting(false);
+	};
+
 	const create = async (bounds: IReportTemplates) => {
-		setIsCreating(true);
+		setIsSubmitting(true);
 		setRefusal(null);
 		let reportId: number;
 		try {
@@ -76,8 +93,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 				type.toNewReport(draft, bounds),
 			);
 		} catch (error) {
-			setRefusal(refusalCopyFor(error, refusalWordsFor(bounds)));
-			setIsCreating(false);
+			refuse(error, bounds);
 			// The oldest kept day has moved on since the wizard opened; ask again so Then's own check agrees.
 			if (
 				error instanceof ApiError &&
@@ -99,22 +115,50 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 		reportFailedNavigation(navigate(reportPathOf(owner, reportId)));
 	};
 
+	const save = async (report: IReport, bounds: IReportTemplates) => {
+		setIsSubmitting(true);
+		setRefusal(null);
+		try {
+			await reportService.editReport(owner, report.id, {
+				...type.toChange(draft, bounds),
+				concurrencyToken: report.concurrencyToken,
+			});
+		} catch (error) {
+			refuse(error, bounds);
+			return;
+		}
+
+		// Not awaited: the page shows the report it has while the saved one is read again.
+		queryClient
+			.invalidateQueries({ queryKey: reportQueryKeyOf(owner, report.id) })
+			.catch(() => undefined);
+		queryClient
+			.invalidateQueries({ queryKey: reportsQueryKeyOf(owner) })
+			.catch(() => undefined);
+		onClose();
+	};
+
+	const submit = (bounds: IReportTemplates) =>
+		editing === undefined ? create(bounds) : save(editing, bounds);
+
 	const StepContent = current?.component;
 
 	return (
 		<Dialog
 			open
-			onClose={isCreating ? undefined : onClose}
+			onClose={isSubmitting ? undefined : onClose}
 			aria-labelledby={TITLE_ID}
 			maxWidth="md"
 			fullWidth
 		>
-			<DialogTitle id={TITLE_ID}>Create Report</DialogTitle>
+			<DialogTitle id={TITLE_ID}>
+				{isEditing ? "Edit report" : "Create Report"}
+			</DialogTitle>
 			<WizardStepperFrame
 				steps={["Type", ...type.steps.map((step) => step.label)]}
 				activeStep={activeStep}
 				busy={false}
-				navigationDisabled={isCreating}
+				navigationDisabled={isSubmitting}
 				onCancel={onClose}
 				onBack={
 					activeStep > TYPE_STEP
@@ -133,23 +177,29 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 				primaryAction={
 					isLastStep && templates !== undefined
 						? {
-								label: "Create",
-								onClick: () => create(templates),
-								disabled: !isComplete || isCreating,
+								label: isEditing ? "Save" : "Create",
+								onClick: () => submit(templates),
+								disabled: !isComplete || isSubmitting,
 							}
 						: undefined
 				}
 				error={refusal === null ? null : { message: refusal }}
 			>
 				{StepContent === undefined || templates === undefined ? (
-					<TypeStep status={status} chosen={chosen} onRetry={() => refetch()} />
+					<TypeStep
+						status={status}
+						chosen={chosen}
+						onRetry={() => refetch()}
+						frozen={isEditing}
+					/>
 				) : (
 					<StepContent
 						owner={owner}
 						templates={templates}
 						draft={draft}
 						onChange={setDraft}
-						disabled={isCreating}
+						disabled={isSubmitting}
+						frozen={isFrozen}
 					/>
 				)}
 			</WizardStepperFrame>

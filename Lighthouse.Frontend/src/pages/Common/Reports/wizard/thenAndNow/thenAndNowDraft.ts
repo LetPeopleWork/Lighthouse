@@ -1,7 +1,9 @@
 import { format, isValid, subDays } from "date-fns";
 import type {
 	INewReport,
+	IReport,
 	IReportTemplates,
+	ReportChange,
 	ReportMetricKey,
 } from "../../../../../models/Reports/Report";
 import { parseLocalDate } from "../../../../../utils/date/localDate";
@@ -29,6 +31,15 @@ export const newThenAndNowDraft = (): ThenAndNowDraft => ({
 	nowLength: null,
 	name: null,
 	shownMetricKeys: null,
+});
+
+/** The report as it was read, with every field entered, so nothing follows a default that the server's today would move. */
+export const thenAndNowDraftOf = (report: IReport): ThenAndNowDraft => ({
+	thenEnd: report.thenAndNow.thenWindow.end,
+	thenLength: String(report.thenAndNow.thenWindow.lengthDays),
+	nowLength: String(report.thenAndNow.nowWindow.lengthDays),
+	name: report.name,
+	shownMetricKeys: [...report.shownMetricKeys],
 });
 
 export const thenEndOf = (
@@ -163,4 +174,14 @@ export const newReportOf = (
 		thenLengthDays: lengthOf(draft.thenLength) ?? 0,
 		nowLengthDays: lengthOf(nowLengthOf(draft)),
 	},
+});
+
+/** What saving an edit changes; Then is left out, it stays as it was frozen. Only called once every step is complete. */
+export const reportChangeOf = (
+	draft: ThenAndNowDraft,
+	templates: IReportTemplates,
+): ReportChange => ({
+	name: nameOf(draft, templates),
+	shownMetricKeys: shownMetricsOf(draft, templates),
+	thenAndNow: { nowLengthDays: lengthOf(nowLengthOf(draft)) ?? 0 },
 });

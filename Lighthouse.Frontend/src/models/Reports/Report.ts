@@ -134,6 +134,9 @@ export interface IReportEdit {
 	thenAndNow: { nowLengthDays: number };
 }
 
+/** An edit as the wizard makes it; the token comes from the report as it was read. */
+export type ReportChange = Omit<IReportEdit, "concurrencyToken">;
+
 const day = z.string();
 /** The server names the owner kind by its capitalised enum name; the browser reads it lower-case, as its routes do. */
 const ownerKind = z

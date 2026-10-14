@@ -1,4 +1,11 @@
-import { Box, Breadcrumbs, Button, Link, Typography } from "@mui/material";
+import {
+	Box,
+	Breadcrumbs,
+	Button,
+	Link,
+	Stack,
+	Typography,
+} from "@mui/material";
 import type React from "react";
 import { Link as RouterLink } from "react-router";
 
@@ -6,6 +13,8 @@ interface ThenAndNowHeaderProps {
 	reportsPath: string;
 	/** Unknown until the report has been read; the way back is there from the start. */
 	name?: string;
+	/** Given only to somebody who may edit the report, once it has been read. */
+	onEdit?: () => void;
 	/** Given only to somebody who may delete the report, once it has been read. */
 	onDelete?: () => void;
 }
@@ -13,6 +22,7 @@ interface ThenAndNowHeaderProps {
 const ThenAndNowHeader: React.FC<Readonly<ThenAndNowHeaderProps>> = ({
 	reportsPath,
 	name,
+	onEdit,
 	onDelete,
 }) => (
 	<Box
@@ -38,11 +48,18 @@ const ThenAndNowHeader: React.FC<Readonly<ThenAndNowHeaderProps>> = ({
 				</Typography>
 			)}
 		</Breadcrumbs>
-		{onDelete !== undefined && (
-			<Button variant="outlined" color="error" onClick={onDelete}>
-				Delete
-			</Button>
-		)}
+		<Stack direction="row" spacing={1}>
+			{onEdit !== undefined && (
+				<Button variant="outlined" onClick={onEdit}>
+					Edit report
+				</Button>
+			)}
+			{onDelete !== undefined && (
+				<Button variant="outlined" color="error" onClick={onDelete}>
+					Delete
+				</Button>
+			)}
+		</Stack>
 	</Box>
 );
 

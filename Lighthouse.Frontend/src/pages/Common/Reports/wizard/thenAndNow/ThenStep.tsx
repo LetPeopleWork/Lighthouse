@@ -1,5 +1,6 @@
 import { Stack, TextField, Typography } from "@mui/material";
 import type React from "react";
+import { FROZEN_NOTE } from "../frozenNote";
 import { useRefusalWords, windowRefusalCopyFor } from "../reportRefusalCopy";
 import type { ReportTypeStepProps } from "../reportTypes";
 import {
@@ -17,11 +18,14 @@ const ThenStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 	draft,
 	onChange,
 	disabled,
+	frozen = false,
 }) => {
 	const end = thenEndOf(draft, templates);
 	const days = resolvedThenDays(end, lengthOf(draft.thenLength));
+	const daysLine = frozen ? `= ${days} · ${FROZEN_NOTE}` : `= ${days}`;
 	const refusalWordsFor = useRefusalWords(owner);
-	const refusal = thenRefusalOf(draft, templates);
+	const refusal = frozen ? null : thenRefusalOf(draft, templates);
+	const locked = disabled || frozen;
 
 	return (
 		<Stack spacing={2}>
@@ -29,7 +33,7 @@ const ThenStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 				label="Then ends on"
 				type="date"
 				value={end}
-				disabled={disabled}
+				disabled={locked}
 				onChange={(event) =>
 					onChange({ ...draft, thenEnd: event.target.value })
 				}
@@ -42,14 +46,14 @@ const ThenStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 				owner={owner}
 				length={draft.thenLength}
 				onChange={(thenLength) => onChange({ ...draft, thenLength })}
-				disabled={disabled}
+				disabled={locked}
 				fieldLabel="Then length in days"
 				presetsLabel="Then length presets"
 				minimumLengthDays={templates.minimumLengthDays}
 				customLabel="Custom:"
 			/>
 			{days !== null && (
-				<Typography color="text.secondary">{`= ${days}`}</Typography>
+				<Typography color="text.secondary">{daysLine}</Typography>
 			)}
 			{refusal !== null && (
 				<Typography color="error" role="alert">

@@ -1,8 +1,10 @@
 import type React from "react";
 import type {
 	INewReport,
+	IReport,
 	IReportOwner,
 	IReportTemplates,
+	ReportChange,
 	ReportTemplateKey,
 } from "../../../../models/Reports/Report";
 import { parseLocalDate } from "../../../../utils/date/localDate";
@@ -16,8 +18,10 @@ import {
 	newThenAndNowDraft,
 	nowLengthOf,
 	nowRefusalOf,
+	reportChangeOf,
 	shownMetricsOf,
 	type ThenAndNowDraft,
+	thenAndNowDraftOf,
 	thenEndOf,
 	thenRefusalOf,
 } from "./thenAndNow/thenAndNowDraft";
@@ -28,12 +32,15 @@ export interface ReportTypeStepProps<TDraft> {
 	draft: TDraft;
 	onChange: (draft: TDraft) => void;
 	disabled: boolean;
+	/** Shown as the report was created and never changed, because the report is being edited. */
+	frozen?: boolean;
 }
 
 export interface ReportTypeStep<TDraft> {
 	label: string;
 	component: React.FC<Readonly<ReportTypeStepProps<TDraft>>>;
 	isComplete: (draft: TDraft, templates: IReportTemplates) => boolean;
+	frozenOnEdit?: boolean;
 }
 
 /** A type of report: how the first step offers it, and the steps it adds after that one. */
@@ -43,6 +50,8 @@ export interface ReportTypeDefinition<TDraft> {
 	newDraft: () => TDraft;
 	steps: readonly ReportTypeStep<TDraft>[];
 	toNewReport: (draft: TDraft, templates: IReportTemplates) => INewReport;
+	draftOf: (report: IReport) => TDraft;
+	toChange: (draft: TDraft, templates: IReportTemplates) => ReportChange;
 }
 
 interface DraftByType {
@@ -60,6 +69,7 @@ export const reportTypes: {
 			{
 				label: "Then",
 				component: ThenStep,
+				frozenOnEdit: true,
 				isComplete: (draft, templates) =>
 					parseLocalDate(thenEndOf(draft, templates)) !== null &&
 					lengthOf(draft.thenLength) !== null &&
@@ -81,6 +91,8 @@ export const reportTypes: {
 			},
 		],
 		toNewReport: newReportOf,
+		draftOf: thenAndNowDraftOf,
+		toChange: reportChangeOf,
 	},
 };
 
