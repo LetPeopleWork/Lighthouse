@@ -88,6 +88,14 @@ const CERTAINTY_OF_85TH_70TH_50TH = [
 	"ErrorOutlineOutlinedIcon",
 ];
 
+/** The average, median, min and max of WIP and Total Work Item Age, in that order. */
+const SPREAD_ICONS = [
+	"DragHandleIcon",
+	"VerticalAlignCenterIcon",
+	"VerticalAlignBottomIcon",
+	"VerticalAlignTopIcon",
+];
+
 const openTheReport = (
 	report: IReport = theEngagementStartReport(),
 	viewer: "admin" | "reader" = "reader",
@@ -123,7 +131,7 @@ const theSegment = (panel: HTMLElement, segment: Segment): HTMLElement => {
 const readingOfSegment = (panel: HTMLElement, segment: Segment) =>
 	readingOf(theSegment(panel, segment));
 
-const certaintyIconsIn = (segment: HTMLElement) =>
+const iconsIn = (segment: HTMLElement) =>
 	Array.from(segment.querySelectorAll<SVGElement>("svg[data-testid]")).map(
 		(icon) => icon.dataset.testid,
 	);
@@ -579,10 +587,10 @@ describe("The panels of a report", () => {
 
 		const panel = await thePanel(CYCLE_TIME_PANEL);
 
-		expect(certaintyIconsIn(theSegment(panel, "then"))).toEqual(
+		expect(iconsIn(theSegment(panel, "then"))).toEqual(
 			CERTAINTY_OF_85TH_70TH_50TH,
 		);
-		expect(certaintyIconsIn(theSegment(panel, "now"))).toEqual(
+		expect(iconsIn(theSegment(panel, "now"))).toEqual(
 			CERTAINTY_OF_85TH_70TH_50TH,
 		);
 	});
@@ -622,9 +630,32 @@ describe("The panels of a report", () => {
 		);
 
 		expect(readingOfSegment(panel, "change")).toMatch(
-			/^CHANGE ▼ 3 days \(−20 %\) No change ▲ 1 day \(\+20 %\)$/i,
+			/^CHANGE 85th: ▼ 3 days \(−20 %\) 70th: – No change 50th: ▲ 1 day \(\+20 %\)$/i,
 		);
 		expect(worse.map(readingOf)).toEqual(["▲ 1 day (+20 %)"]);
+	});
+
+	// @us-01 @slice-01 @boundary @contract-shape:pure-function
+	// The dash stands where an arrow would, so the column lines up; the words already say it, so it is not read out.
+	it("leads No change with a dash in the arrow's place, hidden from a screen reader", async () => {
+		openTheReport(
+			withCycleTime({
+				atThen: { p85: shown(15, 181), p70: shown(9, 181), p50: shown(5, 181) },
+				atNow: { p85: shown(12, 203), p70: shown(9, 203), p50: shown(6, 203) },
+			}),
+		);
+
+		const panel = await thePanel(CYCLE_TIME_PANEL);
+		const [fell, unchanged, rose] = changesIn(theSegment(panel, "change"));
+
+		expect(readingOf(unchanged)).toBe("– No change");
+		expect(unchanged.dataset.change).toBe("neutral");
+		expect(within(unchanged).getByText("–")).toHaveAttribute(
+			"aria-hidden",
+			"true",
+		);
+		expect(within(fell).getByText("▼")).not.toHaveAttribute("aria-hidden");
+		expect(within(rose).getByText("▲")).not.toHaveAttribute("aria-hidden");
 	});
 
 	// @us-04 @slice-04 @contract-shape:pure-function
@@ -700,6 +731,60 @@ describe("The panels of a report", () => {
 			"worse",
 		]);
 	});
+
+	// @us-05 @slice-05 @contract-shape:pure-function
+	it.each([WIP_PANEL, AGE_PANEL])(
+		"leads the average, median, min and max of %s with the same icons on both sides",
+		async (title) => {
+			openTheReport();
+
+			const panel = await thePanel(title);
+
+			expect(iconsIn(theSegment(panel, "then"))).toEqual(SPREAD_ICONS);
+			expect(iconsIn(theSegment(panel, "now"))).toEqual(SPREAD_ICONS);
+		},
+	);
+
+	// @us-04 @slice-04 @contract-shape:pure-function
+	it("leads Throughput's total and per-day lines with their icons on both sides", async () => {
+		openTheReport();
+
+		const panel = await thePanel(THROUGHPUT_PANEL);
+
+		for (const side of ["then", "now"] as const) {
+			expect(iconsIn(theSegment(panel, side))).toEqual([
+				"FunctionsIcon",
+				"CalendarTodayIcon",
+			]);
+		}
+	});
+
+	// @us-04 @us-05 @slice-05 @contract-shape:pure-function
+	// A screen reader reaches the change column apart from the labels beside it, so each change names its line.
+	it.each([
+		[
+			WIP_PANEL,
+			/^CHANGE Average: ▼ 2 \(−22 %\) Median: ▼ 2 \(−22 %\) Min: ▼ 1 \(−17 %\) Max: ▼ 3 \(−25 %\)$/i,
+		],
+		[
+			AGE_PANEL,
+			/^CHANGE Average: ▲ 270 days \(\+44 %\) Median: ▲ 270 days \(\+45 %\) Min: ▲ 220 days \(\+52 %\) Max: ▲ 230 days \(\+30 %\)$/i,
+		],
+		[THROUGHPUT_PANEL, /^CHANGE per day: ▲ 0\.14 per day \(\+24 %\)$/i],
+		[
+			CYCLE_TIME_PANEL,
+			/^CHANGE 85th: ▼ 9 days \(−43 %\) 70th: ▼ 3 days \(−30 %\) 50th: ▼ 1 day \(−20 %\)$/i,
+		],
+	])(
+		"names the line of every change on the %s panel",
+		async (title, reading) => {
+			openTheReport();
+
+			const panel = await thePanel(title);
+
+			expect(readingOfSegment(panel, "change")).toMatch(reading);
+		},
+	);
 
 	// @us-04 @slice-04 @contract-shape:pure-function
 	it("stacks only the shown metrics, in the catalog's order whatever order they were ticked in", async () => {

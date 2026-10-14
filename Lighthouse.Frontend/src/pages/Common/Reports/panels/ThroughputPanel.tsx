@@ -1,9 +1,12 @@
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import FunctionsIcon from "@mui/icons-material/Functions";
 import { Typography } from "@mui/material";
 import type React from "react";
 import type { ReportPanelProps } from "./reportPanelRegistry";
 import {
 	AbsenceNotes,
 	LineChanges,
+	NeutralLineIcon,
 	type ThenNowSideProps,
 } from "./ThenNowLineParts";
 import ThenNowPanelFrame, { PanelLine } from "./ThenNowPanelFrame";
@@ -17,7 +20,9 @@ import {
 const TOTAL_DECIMALS = 0;
 const PER_DAY_DECIMALS = 2;
 
-const CHANGE_LINES = [{ key: "perDay", decimals: PER_DAY_DECIMALS }] as const;
+const CHANGE_LINES = [
+	{ key: "perDay", label: "per day", decimals: PER_DAY_DECIMALS },
+] as const;
 
 const perDayText = (value: number) =>
 	`${value.toFixed(PER_DAY_DECIMALS)} per day`;
@@ -44,6 +49,7 @@ const ThroughputLines: React.FC<
 	return (
 		<>
 			<PanelLine>
+				<NeutralLineIcon Icon={FunctionsIcon} />
 				<Typography component="span">
 					{total === null
 						? `Total ${DASH}`
@@ -51,6 +57,7 @@ const ThroughputLines: React.FC<
 				</Typography>
 			</PanelLine>
 			<PanelLine>
+				<NeutralLineIcon Icon={CalendarTodayIcon} />
 				<Typography component="span" sx={{ fontWeight: "bold" }}>
 					{shownText(side.perDay, PER_DAY_DECIMALS, perDayText)}
 				</Typography>

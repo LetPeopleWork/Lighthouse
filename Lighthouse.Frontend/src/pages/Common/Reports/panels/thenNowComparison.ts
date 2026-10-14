@@ -8,10 +8,13 @@ export type DirectionOfGood = "lower" | "higher";
 
 export type ChangeVerdict = "better" | "worse" | "neutral";
 
+/** Leads "No change" where an arrow leads a change, so the marks line up; the words already say it. */
+export const NO_CHANGE_MARK = "–";
+
 export interface ThenNowChange {
 	delta: number;
 	percent: number | null;
-	arrow: "▲" | "▼" | "";
+	mark: "▲" | "▼" | typeof NO_CHANGE_MARK;
 	verdict: ChangeVerdict;
 }
 
@@ -19,9 +22,10 @@ export type ReportSide = "Then" | "Now";
 
 export type ReportMetricSideKey = keyof ReportMetricSide;
 
-/** A line of a panel that carries a change mark: the value it shows and the decimals it is shown to. */
+/** A line of a panel that carries a change mark: the value it shows, its label and the decimals it is shown to. */
 export interface ChangeLine {
 	readonly key: ReportMetricSideKey;
+	readonly label: string;
 	readonly decimals: number;
 }
 
@@ -76,10 +80,10 @@ const verdictOf = (delta: number, good: DirectionOfGood): ChangeVerdict => {
 	return fell === (good === "lower") ? "better" : "worse";
 };
 
-const arrowOf = (delta: number): ThenNowChange["arrow"] => {
+const markOf = (delta: number): ThenNowChange["mark"] => {
 	if (delta > 0) return "▲";
 	if (delta < 0) return "▼";
-	return "";
+	return NO_CHANGE_MARK;
 };
 
 export const compareThenNow = (
@@ -97,12 +101,12 @@ export const compareThenNow = (
 		delta,
 		percent:
 			shownThen === 0 ? null : roundForDisplay((delta / shownThen) * 100, 0),
-		arrow: arrowOf(delta),
+		mark: markOf(delta),
 		verdict: verdictOf(delta, good),
 	};
 };
 
-/** "▼ 3 days (−20 %)", where the magnitude already carries its unit; a change of nothing reads "No change". */
+/** "3 days (−20 %)", where the magnitude already carries its unit; a change of nothing reads "No change". Its mark is drawn apart. */
 export const changeText = (
 	change: ThenNowChange,
 	magnitude: string,
@@ -110,7 +114,7 @@ export const changeText = (
 	if (change.delta === 0) return "No change";
 	const percent =
 		change.percent === null ? "Then was 0" : `${signed(change.percent)} %`;
-	return `${change.arrow} ${magnitude} (${percent})`;
+	return `${magnitude} (${percent})`;
 };
 
 const reasonTexts: Record<

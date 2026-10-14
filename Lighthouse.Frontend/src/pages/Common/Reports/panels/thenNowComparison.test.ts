@@ -11,7 +11,7 @@ import {
 
 /**
  * The change a panel shows is worked out from the two values exactly as they are displayed, so Then plus the
- * change reads as Now on screen. Whether a change is good depends on the metric, and it is told by sign and arrow
+ * change reads as Now on screen. Whether a change is good depends on the metric, and it is told by sign and mark
  * as well as by the verdict the colour follows.
  */
 
@@ -46,10 +46,10 @@ describe("compareThenNow", () => {
 			"better",
 		],
 		["a growing Work Item Age", 610, 880, "lower", 0, 270, 44, "▲", "worse"],
-		["no change", 12, 12, "lower", 0, 0, 0, "", "neutral"],
-		["no change where higher is good", 5, 5, "higher", 0, 0, 0, "", "neutral"],
+		["no change", 12, 12, "lower", 0, 0, 0, "–", "neutral"],
+		["no change where higher is good", 5, 5, "higher", 0, 0, 0, "–", "neutral"],
 		["a rise from a Then of 0", 0, 24, "higher", 0, 24, null, "▲", "better"],
-		["a Then of 0 that stays 0", 0, 0, "higher", 0, 0, null, "", "neutral"],
+		["a Then of 0 that stays 0", 0, 0, "higher", 0, 0, null, "–", "neutral"],
 		[
 			"values compared as displayed, not as sent",
 			20.6,
@@ -85,11 +85,11 @@ describe("compareThenNow", () => {
 		],
 	])(
 		"%s: Then %d, Now %d",
-		(_case, then, now, good, decimals, delta, percent, arrow, verdict) => {
+		(_case, then, now, good, decimals, delta, percent, mark, verdict) => {
 			expect(compareThenNow(then, now, good, decimals)).toEqual({
 				delta,
 				percent,
-				arrow,
+				mark,
 				verdict,
 			});
 		},
@@ -125,10 +125,10 @@ describe("signed", () => {
 
 describe("changeText", () => {
 	it.each<[number, number, DirectionOfGood, string, string]>([
-		[21, 12, "lower", "9 days", "▼ 9 days (−43 %)"],
-		[5, 6, "lower", "1 day", "▲ 1 day (+20 %)"],
+		[21, 12, "lower", "9 days", "9 days (−43 %)"],
+		[5, 6, "lower", "1 day", "1 day (+20 %)"],
 		[9, 9, "lower", "0 days", "No change"],
-		[0, 24, "higher", "24 per day", "▲ 24 per day (Then was 0)"],
+		[0, 24, "higher", "24 per day", "24 per day (Then was 0)"],
 	])(
 		"tells Then %d against Now %d as written",
 		(then, now, good, magnitude, expected) => {

@@ -49,7 +49,7 @@ describe("the Cycle Time panel", () => {
 		expect(segment("then")).toHaveTextContent("Not captured for this report");
 		expect(headingOf("then")).toBe("Then");
 		expect(segment("change")).toHaveTextContent(
-			/^Change ▼ 9 days \(−43 %\) — —$/,
+			/^Change 85th: ▼ 9 days \(−43 %\) 70th: — 50th: —$/,
 		);
 	});
 
@@ -79,7 +79,7 @@ describe("the Cycle Time panel", () => {
 		});
 
 		expect(segment("change")).toHaveTextContent(
-			/^Change ▼ 9 days \(−43 %\) — ▼ 1 day \(−20 %\)$/,
+			/^Change 85th: ▼ 9 days \(−43 %\) 70th: — 50th: ▼ 1 day \(−20 %\)$/,
 		);
 	});
 });
