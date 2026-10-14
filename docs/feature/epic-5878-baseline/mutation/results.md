@@ -415,7 +415,51 @@ Every new assertion was checked by breaking the production line it guards and wa
   pre-existing loading overlay, swept in by the line range; L248 is the `console.error` text. `ReportList` L72:
   the created day is a required date from the server; the optional chain only covers one that cannot be read.
 - **Expected killed by `97fddb11b`'s edit-from-list tests:** `ReportList` L76 (the column memo's dependencies,
-  now read for the Edit button's waiting state) and `ReportWizard` L47 (the "Edit report" title).
+  now read for the Edit button's waiting state) and `ReportWizard` L47 (the "Edit report" title). The re-run
+  confirmed the first; the title still survives (below).
+
+## Re-run
+
+Once, incremental, on `main` @ `2f551266b` with `useReportEditing.tsx` added; 35 m 36 s. Line numbers are the
+current ones.
+
+| file | tested | killed | survived | no coverage | score |
+| --- | --- | --- | --- | --- | --- |
+| components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog.tsx (15–80) | 10 | 8 | 2 | 0 | 80.0 % |
+| pages/Common/Reports/ReportList.tsx | 50 | 47 | 3 | 0 | 94.0 % |
+| pages/Common/Reports/ReportView.tsx | 98 | 91 | 7 | 0 | 92.9 % |
+| pages/Common/Reports/ReportsTab.tsx | 58 | 50 | 8 | 0 | 86.2 % |
+| pages/Common/Reports/ThenAndNowHeader.tsx | 20 | 16 | 4 | 0 | 80.0 % |
+| pages/Common/Reports/reportOwner.ts | 12 | 12 | 0 | 0 | 100 % |
+| pages/Common/Reports/useMayEditReports.ts | 10 | 10 | 0 | 0 | 100 % |
+| pages/Common/Reports/useOwnerReports.ts | 3 | 3 | 0 | 0 | 100 % |
+| pages/Common/Reports/useReportDeletion.tsx | 59 | 51 | 7 | 1 | 86.4 % |
+| pages/Common/Reports/useReportEditing.tsx | 40 | 34 | 5 | 1 | 85.0 % |
+| pages/Common/Reports/wizard/ReportWizard.tsx | 152 | 147 | 5 | 0 | 96.7 % |
+| pages/Common/Reports/wizard/TypeStep.tsx | 23 | 17 | 5 | 1 | 73.9 % |
+| pages/Common/Reports/wizard/reportRefusalCopy.ts | 64 | 62 | 2 | 0 | 96.9 % |
+| pages/Common/Reports/wizard/reportTypes.ts | 44 | 44 | 0 | 0 | 100 % |
+| pages/Common/Reports/wizard/reportWindowCheck.ts | 56 | 56 | 0 | 0 | 100 % |
+| pages/Common/Reports/wizard/thenAndNow/MetricsAndNameStep.tsx | 37 | 36 | 1 | 0 | 97.3 % |
+| pages/Common/Reports/wizard/thenAndNow/NowStep.tsx | 14 | 14 | 0 | 0 | 100 % |
+| pages/Common/Reports/wizard/thenAndNow/ThenStep.tsx | 25 | 22 | 2 | 1 | 88.0 % |
+| pages/Common/Reports/wizard/thenAndNow/WindowLengthControl.tsx | 21 | 16 | 5 | 0 | 76.2 % |
+| pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts | 115 | 112 | 3 | 0 | 97.4 % |
+| pages/Overview/OverviewDashboard.tsx (45–104, 225–260, 680–690) | 62 | 53 | 9 | 0 | 85.5 % |
+| **Total** | **973** | **901** | **68** | **4** | **92.60 %** |
+
+Every survivor the first run left in files this pass touched is the justified set above, except these, recorded
+and not chased (one round only):
+
+- `ReportWizard` L47: the "Edit report" title emptied, which the existing text assertions on the dialog
+  did not catch (not traced further); a test naming the dialog (`getByRole("dialog", { name: "Edit report" })`) would kill it.
+- `ReportList` L38 (`isReading` → `true`): every row's Edit would show the spinner while one report is read; the
+  tests list one report only. Worth a two-row test.
+- `useReportEditing` (new to the run): L25 (×2), a read refused for another reason (an `ApiError` other than
+  404) would be treated as gone — worth the same 403 test the deletion got; L73 `failure === undefined` →
+  `false` draws an empty error alert under the list — worth a test; L54 `exact: false` is equivalent (no key
+  extends a single report's key); L64 (×2, and the no-coverage `return`) is equivalent, since every Edit is
+  disabled while a report is read.
 
 ---
 
