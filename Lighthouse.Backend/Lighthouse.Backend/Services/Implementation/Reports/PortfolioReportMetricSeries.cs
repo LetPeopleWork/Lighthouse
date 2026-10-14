@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Reports;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using static Lighthouse.Backend.Services.Implementation.Reports.ReportSeriesReading;
 
 namespace Lighthouse.Backend.Services.Implementation.Reports
 {
@@ -37,9 +38,6 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             return read(portfolio, start, end);
         }
 
-        private static int[] DailyCounts(RunChartData runChart)
-            => [.. runChart.WorkItemsPerUnitOfTime.OrderBy(day => day.Key).Select(day => day.Value.Count)];
-
         private Portfolio PortfolioOf(ReportOwner owner)
         {
             if (owner.Kind != ReportOwnerKind.Portfolio)
@@ -49,8 +47,5 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
 
             return portfolios.GetById(owner.Id) ?? throw new InvalidOperationException($"Portfolio {owner.Id} does not exist");
         }
-
-        private static (DateTime Start, DateTime End) DaysOf(ReportWindow window)
-            => (window.Start.ToDateTime(TimeOnly.MinValue), window.End.ToDateTime(TimeOnly.MinValue));
     }
 }

@@ -16,6 +16,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
         private static readonly ReportWindow Window = new(new DateOnly(2026, 7, 5), new DateOnly(2026, 10, 2), 90);
 
+        private static readonly DateTime FirstDay = new(2026, 7, 5, 0, 0, 0, DateTimeKind.Unspecified);
+
+        private static readonly DateTime LastDay = new(2026, 10, 2, 0, 0, 0, DateTimeKind.Unspecified);
+
         private static readonly PercentileValue[] Percentiles = [new(50, 6), new(70, 11), new(85, 21), new(95, 30)];
 
         private Mock<IRepository<Team>> teams = null!;
@@ -29,8 +33,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             teams.Setup(repository => repository.GetById(SharedId)).Returns(team);
 
             var metrics = new Mock<ITeamMetricsService>();
-            metrics.Setup(service => service.GetCycleTimePercentilesForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(Percentiles);
-            metrics.Setup(service => service.GetClosedItemsForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([]);
+            metrics.Setup(service => service.GetCycleTimePercentilesForTeam(team, FirstDay, LastDay)).Returns(Percentiles);
+            metrics.Setup(service => service.GetClosedItemsForTeam(team, FirstDay, LastDay)).Returns([]);
 
             subject = new TeamReportMetricSeries(teams.Object, metrics.Object, new FakeLighthouseClock(DateTimeOffset.UtcNow));
         }
