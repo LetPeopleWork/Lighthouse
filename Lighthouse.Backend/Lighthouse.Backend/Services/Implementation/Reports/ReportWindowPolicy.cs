@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
 
         /// <summary>Whether Then could still be computed afresh from what the owner holds today.</summary>
         public static bool ThenRebuildable(DateOnly thenStart, DateOnly today, int doneItemsCutoffDays)
-            => EarliestStart(today, doneItemsCutoffDays) is not DateOnly earliest || thenStart >= earliest;
+            => HoldsEverythingFrom(thenStart, today, doneItemsCutoffDays);
 
         /// <summary>Why Then, as entered, cannot be frozen; null when its length, end and start are acceptable.</summary>
         public static string? ThenRefusal(DateOnly thenEnd, int lengthDays, DateOnly today, int doneItemsCutoffDays)
@@ -46,7 +46,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return ReportRefusalCodes.ThenEndsInTheFuture;
             }
 
-            return EarliestStart(today, doneItemsCutoffDays) is DateOnly earliest && window.Start < earliest ? ReportRefusalCodes.ThenBeforeCutoff : null;
+            return HoldsEverythingFrom(window.Start, today, doneItemsCutoffDays) ? null : ReportRefusalCodes.ThenBeforeCutoff;
         }
 
         /// <summary>Why a Now of this length cannot be kept; null when it is long enough and starts on or after the oldest kept day.</summary>
@@ -62,9 +62,12 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return ReportRefusalCodes.NowBeforeCutoff;
             }
 
-            return EarliestStart(today, doneItemsCutoffDays) is DateOnly earliest && window.Start < earliest ? ReportRefusalCodes.NowBeforeCutoff : null;
+            return HoldsEverythingFrom(window.Start, today, doneItemsCutoffDays) ? null : ReportRefusalCodes.NowBeforeCutoff;
         }
 
         public static ReportWindow? NowWindow(DateOnly today, int lengthDays) => ReportWindow.EndingOn(today, lengthDays);
+
+        private static bool HoldsEverythingFrom(DateOnly start, DateOnly today, int doneItemsCutoffDays)
+            => EarliestStart(today, doneItemsCutoffDays) is not DateOnly earliest || start >= earliest;
     }
 }

@@ -34,7 +34,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     public abstract class ReportsAcceptanceTest
     {
         protected const string PendingSlice06 = "Epic #5878 slice 06 (#6164) - pending DELIVER";
-        protected const string PendingSlice07 = "Epic #5878 slice 07 (#6165) - pending DELIVER";
         protected const string PendingSlice08 = "Epic #5878 slice 08 (#6166) - pending DELIVER";
         protected const string PendingSlice10 = "Epic #5878 slice 10 (#6168) - pending DELIVER";
 
