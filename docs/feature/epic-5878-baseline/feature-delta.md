@@ -2321,7 +2321,7 @@ the header's CHANGE summary: it is derived in the browser (DD39). ~~except Then'
 **Refusal codes** (closed; DISTILL's set, adopted — DD28). Window: `then-too-short`,
 `then-too-long` (Then would start before 1 Jan of the year 1, the first day the calendar can name; checked after too-short, before ends-in-the-future), `then-ends-in-the-future`,
 `then-before-cutoff` (+ `earliestStart`), `now-too-short`, `now-before-cutoff` (+ `earliestStart`). Request:
-`name-missing`, `no-metric-shown`, `unknown-metric`, `metric-not-captured` (edit only). Type:
+`name-missing`, `no-metric-shown`, `unknown-metric`, `duplicate-metric` (a metric named twice; added in slice 04, the wizard cannot send it, so it has no copy of its own and reads as the generic could-not-create message), `metric-not-captured` (edit only). Type:
 `template-not-supported` (400 on create; 422 when opening a stored report). Licence: `report-cap-reached` (403).
 **Absence codes** (DD12; values, not refusals): `no-finished-items` on the wire ({Cycle Time} only); `then-was-zero`
 is the panel's own and never travels. *(Was also `too-few-points`, `no-process`, `no-wip`, `lower-limit-zero` —
