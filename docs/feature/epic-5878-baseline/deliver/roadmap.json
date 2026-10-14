@@ -956,6 +956,36 @@
       "default_deps_strategy": "sequential",
       "steps": [
         {
+          "id": "03-00",
+          "name": "The report page opens with a summary header: each side's window, its length and how many {Work Items} closed in it (DT14)",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.test.tsx",
+          "scenario_name": "opens with a summary of each side's window and how many Work Items closed in it",
+          "unskips": [
+            "ReportView.test.tsx :: the summary header cases written for DT14"
+          ],
+          "criteria": [
+            "Between the one-line breadcrumb and the first panel, a header in two segments, THEN and NOW, matching the panels' sides",
+            "Each segment shows its window as 'd MMM – d MMM yyyy · N days' and '{count} {Work Items} closed' in the owner's configurable term",
+            "The closed count is the side's {Cycle Time} sample size (every report captures {Cycle Time}, so older reports show it too); a side with no finished items reads '0 {Work Items} closed'; no count line when {Cycle Time} was never captured",
+            "The {Cycle Time} panel's side headings drop '· N {Work Items}' and read THEN / NOW only",
+            "No 'frozen on' or 'always the last N days' lines",
+            "The header sits inside the report's loading/failure looks: nothing is shown as current before the report has loaded",
+            "pnpm test, pnpm build and Biome clean"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ThenAndNowSummary.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/panels/CycleTimePanel.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/panels/CycleTimePanel.test.tsx"
+          ],
+          "dependencies": [
+            "02-09"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: RTL. Maintainer decision DT14 (feature-delta.md, sketch approved 2026-10-13). Frontend only: the count derives from the Cycle Time sample size already on the wire, so no backend change. Tests written by the acceptance designer first (pending), then made green. Commit: feat(reports): the report page opens with a summary of both windows (story 6161)."
+        },
+        {
           "id": "03-01",
           "name": "XmRCalculator.Limits and the cycle-time selection are extracted; the Metrics tab's charts are byte-identical",
           "agent": "nw-software-crafter",
@@ -973,7 +1003,7 @@
             "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/XmRCalculatorLimitsTest.cs"
           ],
           "dependencies": [
-            "02-09"
+            "03-00"
           ],
           "implementation_notes": "EXEMPT FROM PARADIGM: behaviour-preserving refactor; E5 is the one property-style test (random value lists: Calculate == round(Limits)). DESIGN DD9, 'Contract shapes' (BaseMetricsService cycle-time selection row), Reuse Analysis rows XmRCalculator and BaseMetricsService.cs:735-748. Commit: refactor(metrics): extract XmR limits and the cycle-time selection."
         },
