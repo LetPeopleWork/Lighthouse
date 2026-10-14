@@ -268,6 +268,9 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
+        public IReadOnlyList<int> GetDailyTotalWorkItemAgeForTeam(Team team, DateTime startDate, DateTime endDate)
+            => GetTotalWorkItemAgeOverTimeForTeam(team, startDate, endDate).Values;
+
         private (int[] Values, int[][] WorkItemIdsPerDay) GetTotalWorkItemAgeOverTimeForTeam(Team team, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Total Work Item Age for over Time for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);

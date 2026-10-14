@@ -12,6 +12,9 @@ namespace Lighthouse.Backend.Services.Interfaces.Reports
 
         /// <summary>The Work Items in progress on each day of the window, as the Metrics tab's WIP run chart counts them.</summary>
         IReadOnlyList<int> DailyWorkInProgress(ReportOwner owner, ReportWindow window);
+
+        /// <summary>The summed age of the Work Items in progress on each day of the window, as the Metrics tab's Total Work Item Age reads it.</summary>
+        IReadOnlyList<int> DailyTotalWorkItemAge(ReportOwner owner, ReportWindow window);
     }
 
     /// <summary>The Metrics tab's cycle-time percentiles, and how many finished items with a cycle time they rest on.</summary>

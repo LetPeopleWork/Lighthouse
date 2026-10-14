@@ -37,6 +37,14 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             return DailyCounts(metrics.GetWorkInProgressOverTimeForTeam(team, start, end));
         }
 
+        public IReadOnlyList<int> DailyTotalWorkItemAge(ReportOwner owner, ReportWindow window)
+        {
+            var team = TeamOf(owner);
+            var (start, end) = DaysOf(window);
+
+            return metrics.GetDailyTotalWorkItemAgeForTeam(team, start, end);
+        }
+
         private static int[] DailyCounts(RunChartData runChart)
             => [.. runChart.WorkItemsPerUnitOfTime.OrderBy(day => day.Key).Select(day => day.Value.Count)];
 

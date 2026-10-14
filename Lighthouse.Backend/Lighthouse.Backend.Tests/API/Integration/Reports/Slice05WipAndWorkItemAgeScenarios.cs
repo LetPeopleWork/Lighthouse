@@ -31,7 +31,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-05 @slice-05 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice05)]
         public async Task A_Team_can_be_reported_on_all_four_metrics()
         {
             var gravity = ATeam("Team Gravity");
@@ -46,7 +45,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // Then: 6 in progress on 2-11 Aug, 9 on 12-21 Aug, 12 on 22-31 Aug.
         // Now: 9 on 3-12 Sep, 7 on 13-22 Sep, 5 on 23 Sep - 2 Oct.
         [Test]
-        [Ignore(PendingSlice05)]
         public async Task Lower_WIP_shows_on_every_line()
         {
             var gravity = GivenGravityLoweredItsWipThroughSeptember();
@@ -67,7 +65,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // 8th, a 4. Now's 30 days: 4 in progress on 3-17 Sep, 2 on 18 Sep - 2 Oct. Sorted, the 15th and 16th
         // days are 2 and 4: the Median is the lower, 2, never their mean, 3.
         [Test]
-        [Ignore(PendingSlice05)]
         public async Task The_median_is_the_lower_middle_day_for_an_even_and_an_odd_number_of_days()
         {
             var vega = ATeam("Team Vega");
@@ -94,7 +91,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // Ten Work Items in progress since 1 Jul: Then's daily totals run 330, 340, … 620 days and Now's 650,
         // 660, … 940. The Median is the 15th of 30 days, 470 and 790, not the textbook 475 and 795.
         [Test]
-        [Ignore(PendingSlice05)]
         public async Task Older_work_in_progress_shows_a_growing_total_age_on_every_line()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -113,7 +109,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-05 @slice-05 @kpi-OUT-5878-G3 @contract-shape:pure-function
         // The Metrics tab's own total age, asked for each day of Then and summarised by the test itself.
         [Test]
-        [Ignore(PendingSlice05)]
         public async Task Thens_total_age_agrees_with_the_Metrics_tab_day_by_day()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -144,7 +139,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // Ten Work Items start on 17 Aug: 2-16 Aug have nothing in progress, 15 days of 0 that take part in
         // every line. Total age on 17-31 Aug: 10, 20, … 150 days, so the Average is 1,200 / 30 = 40, not 80.
         [Test]
-        [Ignore(PendingSlice05)]
         public async Task Days_with_nothing_in_progress_count_as_zero_on_every_line()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -162,7 +156,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-05 @slice-05 @error @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice05)]
         public async Task With_nothing_in_progress_every_line_is_a_real_zero()
         {
             var nova = ATeam("Team Nova");

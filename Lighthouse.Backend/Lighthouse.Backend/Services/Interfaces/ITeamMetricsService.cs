@@ -84,6 +84,9 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         int GetTotalWorkItemAge(Team team, DateTime endDate);
 
+        /// <summary>The total age of the Work Items in progress on each day, as the Metrics tab's Total Work Item Age chart reads it.</summary>
+        IReadOnlyList<int> GetDailyTotalWorkItemAgeForTeam(Team team, DateTime startDate, DateTime endDate);
+
         WipOverviewInfoDto GetWipOverviewInfoForTeam(Team team, DateTime startDate, DateTime endDate);
 
         FeaturesWorkedOnInfoDto GetFeaturesWorkedOnInfoForTeam(Team team, DateTime startDate, DateTime endDate);
