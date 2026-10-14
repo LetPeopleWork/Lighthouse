@@ -1091,3 +1091,35 @@ Medians, before → after: `BaseMetricsView.loading` 14.1 → 9.2 s (0.65), `ref
 **Remaining cause, and follow-up ADO item candidates:** (1) Production render of MUI DataGrid and dialogs in jsdom dominates every remaining file. It is cut only by fewer renders per test or a lighter grid under test, which is outside a set-up-and-waiting change. (2) The settings forms still wait out the real 300 ms autosave debounce inside each `waitFor` for a save, about 0.3 s a test. `ModifyTeamSettings.refinement.test.tsx`, which is outside this step, still has the 600 ms real-time sleep. Moving the clock there as well, and fast-forwarding the debounce before the save `waitFor`s, is a candidate follow-up. The CI medians (E-03b) are owed after push.
 
 **E-names** (base `7bb0cd0ad`; the 256 names for these four files in `s03-before-all.names`, all passing): `comm -23` prints nothing against the saved list, before1 or before4 for after1, after3 and the final series' after3. `comm -13` on not-passed prints nothing. Counts are unchanged: `BaseMetricsView.loading` 129, `refinementNeed` 52, `readiness` 47, `DataGridBase.paging` 28. **E-weaken:** no skip, `only` or `todo` was added, and the removed-`expect(` count is 0. `pnpm test`: 480 files passed, 1 skipped; 7594 tests passed, 37 skipped, 1 todo. An earlier full run, with `advanceTimeDelta: 1` at load 13, failed one `refinementNeed` test on the 5 s timeout and two untouched `RefinementView.comments` tests. That variant is gone, and the run above is green. `pnpm build` is clean, and `git status` after the build shows only this step's files.
+
+## Wave: DELIVER / slice 01
+
+### 01-01 — E-01: vite 8.3.2 vs 8.3.4 A/B (US-01, AC-01.1, AC-01.2)
+
+**Verdict: disproved.** Vite 8.3.4 did not slow the frontend suite. The two arms' spreads overlap, and arm B (8.3.4) has the lower median. Nothing is pinned; no file outside this delta changed.
+
+**Set-up.** Commit `1c775e251` for every run; only `package.json` and `pnpm-lock.yaml` differ between arms. Machine: AMD Ryzen 5 5600X (12 threads), Linux, Node 24.21.0, pnpm 12.10.1, `@mui/x-charts` 9.15.0. Command: `TZ=Europe/Zurich pnpm vitest run` in `Lighthouse.Frontend`. Arm A: `pnpm add -D vite@8.3.2 --save-exact`. Arm B: vite 8.3.4 as committed. Before every run the two files were restored with `git checkout`, `pnpm install --frozen-lockfile` was run, and `git status` was confirmed clean. Runs alternated A B A B A B A B, one at a time, each starting only when the 1-minute load average was below 8 (Vitest itself drives it to about 13 by the end of a run). Every run exited 0 with the same counts: 480 files passed, 1 skipped; 7594 tests passed, 37 skipped, 1 todo.
+
+| Pair | Arm | vite | Start (local) | Load at start | Vitest `Duration` |
+|---|---|---|---|---|---|
+| 1 | A | 8.3.2 | 21:09:54 | 1.37 | 173.06 s |
+| 1 | B | 8.3.4 | 21:13:33 | 6.47 | 171.38 s |
+| 2 | A | 8.3.2 | 21:17:11 | 6.41 | 174.60 s |
+| 2 | B | 8.3.4 | 21:20:36 | 7.81 | 192.50 s |
+| 3 | A | 8.3.2 | 21:24:35 | 6.56 | 172.95 s |
+| 3 | B | 8.3.4 | 21:28:14 | 6.88 | 171.30 s |
+| 4 | A | 8.3.2 | 21:31:37 | 7.57 | 173.81 s |
+| 4 | B | 8.3.4 | 21:35:02 | 7.44 | 173.45 s |
+
+| Arm | Runs | Median | Spread (min–max) |
+|---|---|---|---|
+| A, vite 8.3.2 | 4 | 173.4 s | 172.95–174.60 s |
+| B, vite 8.3.4 | 4 | 172.4 s | 171.30–192.50 s |
+
+**Non-overlap rule (AC-01.2).** B is slower only if its fastest run (171.30 s) is slower than A's slowest (174.60 s): it is not. A is slower only if its fastest (172.95 s) is slower than B's slowest (192.50 s): it is not. The spreads overlap, so the hypothesis is recorded as disproved. The one long B run (pair 2, 192.50 s) started at the highest load of the series (7.81); the other three B runs sit within 2.2 s of each other and below A's median.
+
+**Not counted.** A first attempt earlier the same day ran while another session's mutation run held the load at 8–29; it had a failing run and Durations from 181 s to 365 s, so none of it counts toward the verdict.
+
+**MUI bump (`641ac9c6f`) and pnpm 12.10 (`1bbde5105`):** not measured today (time-box); vite verdict above. E-01 asks for one repeat of each once vite is clean; they remain owed. With vite cleared, the about 9 % CI step from 13 Oct (630 s at `fc633d9dd`, 832 s at `3377a2015`) is not explained by vite.
+
+**Tree after the A/B:** vite 8.3.4 installed (`node_modules/vite/package.json` reads `8.3.4`), `git status` clean before this record was written.
