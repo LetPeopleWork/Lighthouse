@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
@@ -87,20 +87,28 @@ const gravityNeeding = (
 		rows,
 	);
 
-/** The Work Items on this page, top to bottom, each with the number in its "#" cell or "". */
+/**
+ * The Work Items on this page, top to bottom, each with the number in its "#" cell or "". Inside a
+ * row the link and cells are found by selector: a role query per row over 100 rows cost about half
+ * each test's time.
+ */
 const theRowsOnThisPage = () =>
-	screen
-		.getAllByRole("row")
-		.filter((row) => within(row).queryAllByRole("link").length > 0)
-		.map((row) => ({
-			row,
-			referenceId:
-				within(row).getAllByRole("link")[0].textContent?.split(":")[0] ?? "",
-			number: within(row).getAllByRole("gridcell")[0].textContent?.trim() ?? "",
-		}));
+	screen.getAllByRole("row").flatMap((row) => {
+		const link = row.querySelector("a[href]");
+		if (link === null) return [];
+		return [
+			{
+				row,
+				referenceId: link.textContent?.split(":")[0] ?? "",
+				number:
+					row.querySelector('[role="gridcell"]')?.textContent?.trim() ?? "",
+			},
+		];
+	});
 
+// By label, not by role: naming every button on a 100-row page to find this one took over half a second.
 const goToNextPage = async (user: UserEvent, rangeThere: string) => {
-	await user.click(screen.getByRole("button", { name: "Go to next page" }));
+	await user.click(screen.getByLabelText("Go to next page"));
 	await screen.findByText(rangeThere);
 };
 

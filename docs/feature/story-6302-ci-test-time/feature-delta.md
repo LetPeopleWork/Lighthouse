@@ -958,3 +958,30 @@ The three other final-gate reviewers (DISCUSS, DESIGN, DEVOPS) were not dispatch
 
 Also carried: the slice-06 brief and the journey named the budget file `Scripts/test-time-budget.json`, while DI-1 and the DO-7 trigger glob put it at `Scripts/test-timings/test-time-budget.json`. DELIVER follows DI-1; the brief and journey were corrected to match.
 
+
+## Wave: DELIVER / [REF] Slice 02 record — step 02-01 `RefinementView.paging.test.tsx`
+
+**E-02c cause (measured):** two whole-page role lookups in the test file itself, not the kit and not the DataGrid render: `getByRole("button", { name: "Go to next page" })` computes an accessible name for every button on a 100-row page (≈650 ms per call), and the page reader ran three role queries inside each of 100 rows (`within(row)…ByRole("link" | "gridcell")`), costing 0.3–0.5 s per read and up to four reads per test.
+
+**Fix (test file only; `RefinementTabTestKit.tsx` unchanged, so comments and votes are untouched):**
+
+- The page reader still finds rows with `screen.getAllByRole("row")`. Inside each row it now takes the link as `a[href]` and the first cell as `[role="gridcell"]`. These are the same elements, and the same `toEqual` assertions on reference ids and numbers read them.
+- `goToNextPage` finds the pager button with `getByLabelText("Go to next page")`, the button's own `aria-label`. That lookup only sets up a click. The page change is still proven by `findByText("101–143 of 143")` and the rows asserted after it. The assertion `queryByRole("button", { name: "Go to next page" })).not.toBeInTheDocument()` in the 38-row test stays a role query.
+- **Removed or shortened waits:** none. No `waitFor` or `findBy` was replaced or given a lower timeout. The filter test's `waitFor(…, { timeout: 5000 })` is unchanged; it simply polls a cheaper reader now.
+- **Removed `expect(` lines:** 0.
+
+**Local timing** (summed per-test durations from the run's Vitest JSON; paging, comments and votes run together, never two Vitest processes at once; another session's Stryker job was loading the machine):
+
+| Run | Load avg (1 min) | paging | comments | votes |
+|---|---|---|---|---|
+| before1 | 5.54 | 34.3 s | 13.0 s | 11.2 s |
+| before2 | 5.37 | 33.9 s | 12.5 s | 11.6 s |
+| before3 | 5.45 | 34.7 s | 13.4 s | 12.4 s |
+| after1 | 5.53 | 16.0 s | 12.8 s | 11.8 s |
+| after2 | 6.33 | 15.9 s | 12.7 s | 11.5 s |
+| after3 | 7.23 | 16.7 s | 13.3 s | 12.5 s |
+| before4 (bracket, base-commit worktree) | 8.06 | 34.7 s | 13.6 s | 12.2 s |
+
+The before median is 34.3 s and the after median is 16.0 s, a ratio of 0.47 (2.1× faster). Load rose during the after runs and the bracket before run still read 34.7 s, so load drift does not explain the gain. The remaining ~1.2 s per test is rendering 100 to 143 rows through the real DataGrid and re-rendering on the page change, which is production render time and outside this step.
+
+**E-names** (base `0c9e489f9` against the step's change; paging, comments, votes): `comm -23` prints nothing against before1 or before4, and `comm -13` on not-passed prints nothing. Counts are unchanged at paging 11, comments 24 and votes 33. **E-weaken:** the skip grep prints nothing and the removed-`expect(` count is 0.
