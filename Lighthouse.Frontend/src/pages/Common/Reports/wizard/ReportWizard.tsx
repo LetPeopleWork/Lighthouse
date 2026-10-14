@@ -28,7 +28,13 @@ import { reportTypes } from "./reportTypes";
 import TypeStep from "./TypeStep";
 
 const TITLE_ID = "report-wizard-title";
+const STALE_SAVE =
+	"This report was changed by someone else. Reload to see their changes.";
 const TYPE_STEP = 0;
+
+/** Somebody else saved the report after this edit read it, so the edit would overwrite theirs. */
+const isStaleSave = (error: unknown): boolean =>
+	error instanceof ApiError && error.code === 409;
 
 interface ReportWizardProps {
 	owner: IReportOwner;
@@ -78,8 +84,8 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 
 	const refusalWordsFor = useRefusalWords(owner);
 
-	const refuse = (error: unknown, bounds: IReportTemplates) => {
-		setRefusal(refusalCopyFor(error, refusalWordsFor(bounds)));
+	const refuse = (copy: string) => {
+		setRefusal(copy);
 		setIsSubmitting(false);
 	};
 
@@ -93,7 +99,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 				type.toNewReport(draft, bounds),
 			);
 		} catch (error) {
-			refuse(error, bounds);
+			refuse(refusalCopyFor(error, refusalWordsFor(bounds)));
 			// The oldest kept day has moved on since the wizard opened; ask again so Then's own check agrees.
 			if (
 				error instanceof ApiError &&
@@ -124,7 +130,11 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 				concurrencyToken: report.concurrencyToken,
 			});
 		} catch (error) {
-			refuse(error, bounds);
+			refuse(
+				isStaleSave(error)
+					? STALE_SAVE
+					: refusalCopyFor(error, refusalWordsFor(bounds)),
+			);
 			return;
 		}
 

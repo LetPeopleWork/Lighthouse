@@ -155,7 +155,7 @@ describe("Editing a report", () => {
 	});
 
 	// @us-10 @slice-10 @error @contract-shape:pure-function
-	it.skip("cannot tick a metric the report never captured, and says why", async () => {
+	it("cannot tick a metric the report never captured, and says why", async () => {
 		const report = theEngagementStartReport({
 			shownMetricKeys: ["cycle-time"],
 		});
@@ -173,7 +173,7 @@ describe("Editing a report", () => {
 	});
 
 	// @us-10 @slice-10 @error @contract-shape:pure-function
-	it.skip("cannot save a report showing no metric", async () => {
+	it("cannot save a report showing no metric", async () => {
 		const report = theEngagementStartReport({
 			shownMetricKeys: ["cycle-time"],
 		});
@@ -190,7 +190,7 @@ describe("Editing a report", () => {
 
 	// @us-10 @slice-10 @error @ac-10.6 @contract-shape:unbounded-preservation
 	// Another Team Admin saved a change after this wizard was opened.
-	it.skip("says the report was changed by someone else when the save comes too late, keeping the edit", async () => {
+	it("says the report was changed by someone else when the save comes too late, keeping the edit", async () => {
 		await openTheEditWizard(
 			aReportService({
 				editReport: vi.fn().mockRejectedValue(aRefusal(409, "conflict")),
@@ -209,7 +209,7 @@ describe("Editing a report", () => {
 
 	// @us-10 @slice-10 @boundary @contract-shape:pure-function
 	// The report already on screen is the one before the edit; it must not pass for the saved one.
-	it.skip("dims the report under a spinner while it is read again after the save", async () => {
+	it("dims the report under a spinner while it is read again after the save", async () => {
 		const reread = deferred<IReport>();
 		await openTheEditWizard(
 			aReportService({
@@ -244,7 +244,7 @@ describe("Editing does not count as opening the report again", () => {
 	});
 
 	// @us-10 @us-01 @slice-10 @kpi-OUT-5878-K2-reports-reopened @error @contract-shape:unbounded-preservation
-	it.skip("reports the report opened once, however often it is read again after edits", async () => {
+	it("reports the report opened once, however often it is read again after edits", async () => {
 		await openTheEditWizard();
 		await act(() => vi.advanceTimersByTimeAsync(5_100));
 		await onToTheLastStep();

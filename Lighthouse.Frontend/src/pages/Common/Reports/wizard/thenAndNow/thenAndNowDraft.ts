@@ -23,6 +23,8 @@ export interface ThenAndNowDraft {
 	nowLength: string | null;
 	name: string | null;
 	shownMetricKeys: ReportMetricKey[] | null;
+	/** The metrics a report being edited captured when it was created; a new report captures every one offered. */
+	capturedMetricKeys?: ReportMetricKey[];
 }
 
 export const newThenAndNowDraft = (): ThenAndNowDraft => ({
@@ -40,7 +42,17 @@ export const thenAndNowDraftOf = (report: IReport): ThenAndNowDraft => ({
 	nowLength: String(report.thenAndNow.nowWindow.lengthDays),
 	name: report.name,
 	shownMetricKeys: [...report.shownMetricKeys],
+	capturedMetricKeys: (
+		Object.keys(report.thenAndNow.metrics) as ReportMetricKey[]
+	).filter((key) => (report.thenAndNow.metrics[key] ?? null) !== null),
 });
+
+export const isCaptured = (
+	draft: ThenAndNowDraft,
+	key: ReportMetricKey,
+): boolean =>
+	draft.capturedMetricKeys === undefined ||
+	draft.capturedMetricKeys.includes(key);
 
 export const thenEndOf = (
 	draft: ThenAndNowDraft,
