@@ -9,7 +9,7 @@ import {
 import type React from "react";
 import type { ReportMetricKey } from "../../../../../models/Reports/Report";
 import { useTerminology } from "../../../../../services/TerminologyContext";
-import { panelFor } from "../../panels/reportPanelRegistry";
+import { metricNameTermKeyOf } from "../../panels/reportPanelRegistry";
 import type { ReportTypeStepProps } from "../reportTypes";
 import {
 	nameOf,
@@ -41,7 +41,7 @@ const MetricsAndNameStep: React.FC<
 				{offeredMetricsOf(templates).map((key) => (
 					<FormControlLabel
 						key={key}
-						label={getTerm(panelFor(key)?.titleTermKey ?? key)}
+						label={getTerm(metricNameTermKeyOf(key))}
 						control={
 							<Checkbox
 								checked={shown.includes(key)}

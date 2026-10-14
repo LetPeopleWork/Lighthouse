@@ -628,7 +628,7 @@ describe("The panels of a report", () => {
 	});
 
 	// @us-04 @slice-04 @contract-shape:pure-function
-	it.skip("shows Throughput as a total and a per-day average, compared per day", async () => {
+	it("shows Throughput as a total and a per-day average, compared per day", async () => {
 		openTheReport();
 
 		const panel = await thePanel(THROUGHPUT_PANEL);
@@ -702,7 +702,7 @@ describe("The panels of a report", () => {
 	});
 
 	// @us-04 @slice-04 @contract-shape:pure-function
-	it.skip("stacks only the shown metrics, in the catalog's order whatever order they were ticked in", async () => {
+	it("stacks only the shown metrics, in the catalog's order whatever order they were ticked in", async () => {
 		openTheReport(
 			theEngagementStartReport({
 				shownMetricKeys: ["throughput", "cycle-time"],
@@ -761,7 +761,7 @@ describe("Values a report cannot show", () => {
 
 	// @us-04 @slice-04 @error @contract-shape:pure-function
 	// A rise from nothing has no percentage; the difference itself still shows.
-	it.skip("shows no percentage for a change from a Then of zero", async () => {
+	it("shows no percentage for a change from a Then of zero", async () => {
 		const report = theEngagementStartReport();
 		report.thenAndNow.metrics.throughput = {
 			atThen: { total: shown(0, 90), perDay: shown(0, 90) },
@@ -860,7 +860,7 @@ describe("Values a report cannot show", () => {
 
 	// @us-04 @slice-04 @error @contract-shape:unbounded-preservation
 	// A later version may add a metric this one has no panel for; the rest of the report still reads.
-	it.skip("puts a plain note in place of a metric this version cannot show, and shows the others", async () => {
+	it("puts a plain note in place of a metric this version cannot show, and shows the others", async () => {
 		const report = theEngagementStartReport({
 			shownMetricKeys: ["cycle-time", A_LATER_METRIC],
 		});

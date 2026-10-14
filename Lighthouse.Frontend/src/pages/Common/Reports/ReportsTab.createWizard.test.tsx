@@ -488,7 +488,7 @@ describe("Step four: metrics and name", () => {
 	});
 
 	// @us-04 @slice-04 @error @contract-shape:pure-function
-	it.skip("cannot create a report showing no metric", async () => {
+	it("cannot create a report showing no metric", async () => {
 		await openTheWizard();
 		await onToTheLastStep();
 
