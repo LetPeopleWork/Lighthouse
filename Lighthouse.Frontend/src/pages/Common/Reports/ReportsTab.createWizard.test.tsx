@@ -1,6 +1,7 @@
+import { focusManager } from "@tanstack/react-query";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
 	IReportOwner,
 	ReportMetricKey,
@@ -37,6 +38,7 @@ import {
 	theWizard,
 } from "../../../tests/ReportsTestKit";
 import ReportsTab from "./ReportsTab";
+import { reportsQueryKeyOf } from "./reportOwner";
 
 /**
  * Creating a report is a wizard: the Type, then Then, then Now, then the metrics and the name. Each step
@@ -563,7 +565,10 @@ describe("Step three: Now", () => {
 				await userEvent.type(await theNowLengthField(), entered);
 			}
 
-			expect(await theWizard()).not.toHaveTextContent("= the last");
+			expect(await theWizard()).not.toHaveTextContent("Sliding window");
+			expect(
+				within(await theWizard()).getByRole("button", { name: "Next" }),
+			).toBeDisabled();
 		},
 	);
 
@@ -1063,5 +1068,122 @@ describe("The wizard's steps", () => {
 		await userEvent.click(ninetyDays);
 
 		expect(await theThenLengthField()).toHaveValue(90);
+	});
+});
+
+describe("The wizard while its bounds are read", () => {
+	beforeEach(() => {
+		reportUsage.mockClear();
+		mockNavigate.mockClear();
+		terms.current = { ...defaultTerms };
+	});
+
+	afterEach(() => focusManager.setFocused(undefined));
+
+	const theNextButton = async () =>
+		within(await theWizard()).getByRole("button", { name: "Next" });
+
+	it("keeps its step when the window regains focus, asking for no bounds again", async () => {
+		const reportService = await openTheWizard();
+		await next();
+		await theThenLengthField();
+
+		await act(async () => {
+			focusManager.setFocused(false);
+			focusManager.setFocused(true);
+		});
+
+		expect(reportService.getTemplates).toHaveBeenCalledTimes(1);
+		expect(await theThenLengthField()).toBeVisible();
+	});
+
+	it("holds Next on reopening until today's bounds have been read again", async () => {
+		const reread = deferred<ReturnType<typeof aTemplateList>>();
+		await openTheWizard(
+			aReportService({
+				getReports: vi.fn().mockResolvedValue(aReportList([])),
+				getTemplates: vi
+					.fn()
+					.mockResolvedValueOnce(aTemplateList())
+					.mockReturnValue(reread.promise),
+			}),
+		);
+		await waitFor(async () => expect(await theNextButton()).toBeEnabled());
+		await userEvent.click(
+			within(await theWizard()).getByRole("button", { name: "Cancel" }),
+		);
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Create Report" }),
+		);
+
+		expect(await theNextButton()).toBeDisabled();
+		expect(within(await theWizard()).getByRole("progressbar")).toBeVisible();
+	});
+
+	it("offers no Create while the bounds are read again after a refusal for the oldest kept day", async () => {
+		const reread = deferred<ReturnType<typeof aTemplateList>>();
+		const reportService = await openTheWizard(
+			aReportService({
+				getReports: vi.fn().mockResolvedValue(aReportList([])),
+				getTemplates: vi
+					.fn()
+					.mockResolvedValueOnce(aTemplateList())
+					.mockReturnValue(reread.promise),
+				createReport: vi
+					.fn()
+					.mockRejectedValue(aRefusal(400, "then-before-cutoff", "2025-10-03")),
+			}),
+		);
+		await onToTheLastStep();
+
+		await userEvent.click(await theCreateButton());
+		await waitFor(() =>
+			expect(reportService.getTemplates).toHaveBeenCalledTimes(2),
+		);
+
+		expect(
+			within(await theWizard()).queryByRole("button", { name: CREATE }),
+		).toBeNull();
+
+		await act(async () =>
+			reread.resolve(aTemplateList({ earliestStart: "2025-10-03" })),
+		);
+
+		expect(await theCreateButton()).toBeVisible();
+	});
+
+	it("reads only its own owner's list again once the report is created", async () => {
+		const anotherOwnersList = reportsQueryKeyOf(APOLLO);
+		const { queryClient } = renderWithReports(
+			<ReportsTab owner={LIGHTSPEED} />,
+			{
+				reportService: aReportService({
+					getReports: vi.fn().mockResolvedValue(aReportList([])),
+				}),
+			},
+		);
+		queryClient.setQueryData(anotherOwnersList, aReportList([]));
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Create Report" }),
+		);
+		await onToTheLastStep();
+
+		await userEvent.click(await theCreateButton());
+
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(queryClient.getQueryState(anotherOwnersList)?.isInvalidated).toBe(
+			false,
+		);
+	});
+
+	it("names Now's length before its presets", async () => {
+		await openTheWizard();
+		await next();
+		await next();
+		await theNowLengthField();
+
+		expect(within(await theWizard()).getByText("Length")).toBeVisible();
 	});
 });

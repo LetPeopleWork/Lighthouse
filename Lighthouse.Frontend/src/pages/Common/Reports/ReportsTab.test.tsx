@@ -6,7 +6,7 @@ import {
 	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { deferred } from "../../../tests/HeldMetricsService";
 import {
@@ -30,6 +30,7 @@ import {
 	theEngagementStartReport,
 } from "../../../tests/ReportsTestKit";
 import ReportsTab from "./ReportsTab";
+import { reportQueryKeyOf, reportsQueryKeyOf } from "./reportOwner";
 
 /**
  * The Reports tab of a Team or a Portfolio: the table of its reports, who may create, change and delete them, the
@@ -828,6 +829,68 @@ describe("Editing a report from the list", () => {
 		expect(await screen.findByText(EMPTY)).toBeVisible();
 	});
 
+	it("forgets a report that is gone, keeping the others it has read", async () => {
+		const another = reportQueryKeyOf(LIGHTSPEED, 7);
+		const { queryClient } = renderWithReports(
+			<ReportsTab owner={LIGHTSPEED} />,
+			{
+				reportService: aReportService({
+					getReport: vi.fn().mockRejectedValue(aRefusal(404, "not-found")),
+				}),
+			},
+		);
+		queryClient.setQueryData(another, theEngagementStartReport({ id: 7 }));
+
+		await userEvent.click(
+			(await theEditButtonOf(ENGAGEMENT_START)) as HTMLElement,
+		);
+
+		expect(await screen.findByText(NO_LONGER_EXISTS)).toBeVisible();
+		expect(
+			queryClient.getQueryState(
+				reportQueryKeyOf(LIGHTSPEED, ENGAGEMENT_START_ID),
+			),
+		).toBeUndefined();
+		expect(queryClient.getQueryState(another)?.isInvalidated).toBe(false);
+	});
+
+	it("lets what went wrong be dismissed, and takes it back when Edit is pressed again", async () => {
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
+			reportService: aReportService({
+				getReport: vi
+					.fn()
+					.mockRejectedValueOnce(new Error("the network dropped"))
+					.mockRejectedValueOnce(new Error("the network dropped"))
+					.mockResolvedValue(theEngagementStartReport()),
+			}),
+		});
+		const edit = async () =>
+			userEvent.click((await theEditButtonOf(ENGAGEMENT_START)) as HTMLElement);
+
+		await edit();
+		await userEvent.click(
+			within(
+				(await screen.findByText(COULD_NOT_LOAD)).closest(
+					'[role="alert"]',
+				) as HTMLElement,
+			).getByRole("button", { name: "Close" }),
+		);
+		expect(screen.queryByText(COULD_NOT_LOAD)).toBeNull();
+
+		await edit();
+		expect(await screen.findByText(COULD_NOT_LOAD)).toBeVisible();
+		await edit();
+
+		await userEvent.click(
+			within(await screen.findByRole("dialog")).getByRole("button", {
+				name: "Cancel",
+			}),
+		);
+
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(screen.queryByText(COULD_NOT_LOAD)).toBeNull();
+	});
+
 	it("says a report that could not be read could not be loaded, and opens nothing", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService({
@@ -842,5 +905,186 @@ describe("Editing a report from the list", () => {
 		expect(await screen.findByText(COULD_NOT_LOAD)).toBeVisible();
 		expect(screen.queryByRole("dialog")).toBeNull();
 		expect(screen.getByRole("link", { name: ENGAGEMENT_START })).toBeVisible();
+	});
+});
+
+describe("Deleting one report after another", () => {
+	const SINCE_AUGUST = "Since August";
+	const SINCE_AUGUST_ID = 7;
+	const aSecondReport = () =>
+		aListedReport({ id: SINCE_AUGUST_ID, name: SINCE_AUGUST });
+
+	const confirmTheDelete = async () =>
+		userEvent.click(
+			within(await screen.findByRole("dialog")).getByRole("button", {
+				name: "Delete",
+			}),
+		);
+
+	beforeEach(() => {
+		reportUsage.mockClear();
+		terms.current = { ...defaultTerms };
+	});
+
+	it("lets a second report be deleted once the first is gone", async () => {
+		const reportService = aReportService({
+			getReports: vi
+				.fn()
+				.mockResolvedValueOnce(aReportList([aListedReport(), aSecondReport()]))
+				.mockResolvedValue(aReportList([aSecondReport()])),
+		});
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, { reportService });
+
+		await userEvent.click(await theDeleteButtonOf(ENGAGEMENT_START));
+		await confirmTheDelete();
+		await waitFor(() =>
+			expect(screen.queryByRole("link", { name: ENGAGEMENT_START })).toBeNull(),
+		);
+		await userEvent.click(await theDeleteButtonOf(SINCE_AUGUST));
+		const confirm = within(await screen.findByRole("dialog")).getByRole(
+			"button",
+			{ name: "Delete" },
+		);
+
+		expect(confirm).toBeEnabled();
+		await userEvent.click(confirm);
+		await waitFor(() =>
+			expect(reportService.deleteReport).toHaveBeenLastCalledWith(
+				LIGHTSPEED,
+				SINCE_AUGUST_ID,
+			),
+		);
+	});
+
+	it("keeps the other reports on screen, dimmed, while the list is read again after a delete", async () => {
+		const reread = deferred<ReturnType<typeof aReportList>>();
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
+			reportService: aReportService({
+				getReports: vi
+					.fn()
+					.mockResolvedValueOnce(
+						aReportList([aListedReport(), aSecondReport()]),
+					)
+					.mockReturnValue(reread.promise),
+			}),
+		});
+
+		await userEvent.click(await theDeleteButtonOf(ENGAGEMENT_START));
+		await confirmTheDelete();
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+		expect(screen.getByTestId("reports-list")).toHaveAttribute(
+			"aria-busy",
+			"true",
+		);
+		expect(screen.getByRole("link", { name: SINCE_AUGUST })).toBeVisible();
+	});
+
+	it("says a delete the server refused couldn't be done, rather than taking the report off the list", async () => {
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
+			reportService: aReportService({
+				deleteReport: vi.fn().mockRejectedValue(aRefusal(403, "forbidden")),
+			}),
+		});
+
+		await userEvent.click(await theDeleteButtonOf(ENGAGEMENT_START));
+		await confirmTheDelete();
+
+		expect(await screen.findByTestId("delete-error-alert")).toHaveTextContent(
+			"This report couldn't be deleted. Try again.",
+		);
+		expect(screen.getByRole("dialog")).toBeVisible();
+	});
+
+	it("asks before deleting a report of a type this version cannot show, warning of nothing", async () => {
+		const later = aListedReportOfALaterType();
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
+			reportService: aReportService({
+				getReports: vi.fn().mockResolvedValue(aReportList([later])),
+			}),
+		});
+
+		await userEvent.click(await theDeleteButtonOf(later.name));
+		const dialog = await screen.findByRole("dialog");
+
+		expect(dialog).toHaveTextContent(
+			`Do you really want to delete ${later.name}?`,
+		);
+		expect(dialog).not.toHaveTextContent(/can no longer be rebuilt/);
+	});
+
+	it("forgets only the deleted report and reads only the list again", async () => {
+		const theDeleted = reportQueryKeyOf(LIGHTSPEED, ENGAGEMENT_START_ID);
+		const another = reportQueryKeyOf(LIGHTSPEED, SINCE_AUGUST_ID);
+		const anotherOwnersList = reportsQueryKeyOf(APOLLO);
+		const { queryClient } = renderWithReports(
+			<ReportsTab owner={LIGHTSPEED} />,
+			{ reportService: aReportService() },
+		);
+		queryClient.setQueryData(theDeleted, theEngagementStartReport());
+		queryClient.setQueryData(
+			another,
+			theEngagementStartReport({ id: SINCE_AUGUST_ID }),
+		);
+		queryClient.setQueryData(anotherOwnersList, aReportList([]));
+
+		await userEvent.click(await theDeleteButtonOf(ENGAGEMENT_START));
+		await confirmTheDelete();
+
+		await waitFor(() =>
+			expect(queryClient.getQueryData(theDeleted)).toBeUndefined(),
+		);
+		expect(queryClient.getQueryState(another)?.isInvalidated).toBe(false);
+		expect(queryClient.getQueryState(anotherOwnersList)?.isInvalidated).toBe(
+			false,
+		);
+	});
+});
+
+describe("The layout of the Reports list", () => {
+	beforeEach(() => {
+		reportUsage.mockClear();
+		terms.current = { ...defaultTerms };
+		localStorage.clear();
+	});
+
+	afterEach(() => localStorage.clear());
+
+	it("heads the row actions Actions, a column that cannot be sorted", async () => {
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
+			reportService: aReportService(),
+		});
+		await screen.findByRole("link", { name: ENGAGEMENT_START });
+
+		const sortButtonOf = (column: string) =>
+			within(
+				screen.getByRole("columnheader", { name: column }),
+			).queryByLabelText("Sort", { selector: "button" });
+
+		expect(sortButtonOf("Actions")).toBeNull();
+		expect(sortButtonOf("Created")).not.toBeNull();
+	});
+
+	it("follows a Team's saved layout, which may hide Type and Created but never Name or the actions", async () => {
+		localStorage.setItem(
+			"lighthouse:datagrid:reports-team:state",
+			JSON.stringify({
+				columnVisibilityModel: {
+					name: false,
+					templateKey: false,
+					createdOn: false,
+					actions: false,
+				},
+			}),
+		);
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
+			reportService: aReportService(),
+		});
+		await screen.findByRole("link", { name: ENGAGEMENT_START });
+
+		expect(screen.getByRole("columnheader", { name: "Name" })).toBeVisible();
+		expect(screen.getByRole("columnheader", { name: "Actions" })).toBeVisible();
+		expect(screen.queryByRole("columnheader", { name: "Type" })).toBeNull();
+		expect(screen.queryByRole("columnheader", { name: "Created" })).toBeNull();
 	});
 });

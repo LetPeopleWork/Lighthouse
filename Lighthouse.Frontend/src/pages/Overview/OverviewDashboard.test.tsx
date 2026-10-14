@@ -307,7 +307,7 @@ const renderWithProviders = (
 			</MemoryRouter>
 		</QueryClientProvider>,
 	);
-	return { ...rendered, queryClient };
+	return { ...rendered, queryClient, apiContext: mockApiServiceContext };
 };
 
 describe("OverviewDashboard", () => {
@@ -557,6 +557,24 @@ describe("OverviewDashboard", () => {
 		await waitFor(() => {
 			expect(screen.getByText("Add Work Tracking System")).toBeInTheDocument();
 		});
+	});
+
+	it("goes to a new connection from Add Work Tracking System", async () => {
+		mockNavigate.mockClear();
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: true,
+			canCreateTeam: true,
+			canCreatePortfolio: true,
+		});
+		renderWithProviders(<OverviewDashboard />, {
+			rbacService: mockRbacService,
+		});
+
+		fireEvent.click(await screen.findByText("Add Work Tracking System"));
+
+		expect(mockNavigate).toHaveBeenCalledWith("/connections/new");
 	});
 
 	it("hides Add Team button when RBAC is enabled and canCreateTeam is false", async () => {
@@ -967,10 +985,10 @@ describe("OverviewDashboard", () => {
 				canCreateTeam: true,
 				canCreatePortfolio: true,
 			});
-			const { queryClient } = renderWithProviders(<OverviewDashboard />, {
-				rbacService,
-				reportService,
-			});
+			const { queryClient, apiContext } = renderWithProviders(
+				<OverviewDashboard />,
+				{ rbacService, reportService },
+			);
 			await waitFor(() => {
 				expect(screen.getByText("Portfolios")).toBeInTheDocument();
 			});
@@ -984,6 +1002,7 @@ describe("OverviewDashboard", () => {
 				dialog: await screen.findByRole("dialog"),
 				reportService,
 				queryClient,
+				apiContext,
 			};
 		};
 
@@ -1074,6 +1093,31 @@ describe("OverviewDashboard", () => {
 			expect(queryClient.getQueryData(["report", "team", 2, 1])).toEqual({
 				name: "Kept",
 			});
+		});
+
+		it("keeps a Team's reports in memory and says something went wrong when the Team cannot be deleted", async () => {
+			reportUsage.mockClear();
+			const silenced = vi
+				.spyOn(console, "error")
+				.mockImplementation(() => undefined);
+			const { dialog, queryClient, apiContext } =
+				await askToDeleteTheFirstRowOf("teams", 1);
+			vi.mocked(apiContext.teamService.deleteTeam).mockRejectedValue(
+				new Error("the network dropped"),
+			);
+			queryClient.setQueryData(["report", "team", 1, 1], { name: "Report 1" });
+			await waitFor(() => expect(dialog).toHaveTextContent("and its report?"));
+
+			fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
+
+			expect(
+				await screen.findByTestId("loading-animation-error-message"),
+			).toBeVisible();
+			expect(queryClient.getQueryData(["report", "team", 1, 1])).toEqual({
+				name: "Report 1",
+			});
+			expect(reportUsage).not.toHaveBeenCalledWith({ name: "TeamDeleted" });
+			silenced.mockRestore();
 		});
 
 		// @us-08 @slice-08 @boundary @contract-shape:pure-function

@@ -21,11 +21,13 @@ import {
 	theMetricBox,
 	theNameField,
 	theNowLengthField,
+	thePanelTitles,
 	theThenEndField,
 	theThenLengthField,
 	theWizard,
 } from "../../../tests/ReportsTestKit";
 import ReportView from "./ReportView";
+import { reportQueryKeyOf } from "./reportOwner";
 import { useOwnerReports } from "./useOwnerReports";
 
 /**
@@ -305,6 +307,7 @@ describe("Editing a report", () => {
 		expect(screen.getByRole("progressbar")).toBeVisible();
 		expect(document.querySelector('[data-report-status="ready"]')).toBeNull();
 		expect(screen.getByText(SINCE_AUGUST)).toBeInTheDocument();
+		expect(thePanelTitles()).not.toHaveLength(0);
 		expect(screen.queryByText(ENGAGEMENT_START)).toBeNull();
 	});
 
@@ -337,6 +340,51 @@ describe("Editing a report", () => {
 				expect.objectContaining({ concurrencyToken: "token-2" }),
 			),
 		);
+	});
+
+	it("holds the wizard open, with Cancel and Back disabled, while the save is on its way", async () => {
+		await openTheEditWizard(
+			aReportService({
+				getReport: vi.fn().mockResolvedValue(theEngagementStartReport()),
+				editReport: vi.fn().mockReturnValue(deferred<IReport>().promise),
+			}),
+		);
+		await onToTheLastStep();
+
+		await userEvent.click(await theSaveButton());
+		const wizard = await theWizard();
+
+		expect(
+			within(wizard).getByRole("button", { name: "Cancel" }),
+		).toBeDisabled();
+		expect(within(wizard).getByRole("button", { name: "Back" })).toBeDisabled();
+	});
+
+	it("reads again only the saved report and its owner's list", async () => {
+		const anotherReport = reportQueryKeyOf(LIGHTSPEED, 7);
+		const { queryClient } = renderWithReports(
+			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
+			{
+				reportService: aReportService({
+					getReport: vi.fn().mockResolvedValue(theEngagementStartReport()),
+					editReport: vi.fn().mockResolvedValue(renamed()),
+				}),
+				viewer: "admin",
+			},
+		);
+		queryClient.setQueryData(
+			anotherReport,
+			theEngagementStartReport({ id: 7 }),
+		);
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Edit report" }),
+		);
+		await onToTheLastStep();
+
+		await userEvent.click(await theSaveButton());
+
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(queryClient.getQueryState(anotherReport)?.isInvalidated).toBe(false);
 	});
 
 	// @us-10 @slice-10 @driving_port @contract-shape:bounded-change

@@ -1674,6 +1674,24 @@ describe("Who may change a report from its page", () => {
 		expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
 	});
 
+	it("offers an admin neither on a report that is gone", async () => {
+		renderWithReports(
+			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
+			{
+				reportService: aReportService({
+					getReport: vi.fn().mockRejectedValue(aRefusal(404, "not-found")),
+				}),
+				viewer: "admin",
+			},
+		);
+
+		expect(await screen.findByText(NO_LONGER_EXISTS)).toBeVisible();
+		await act(async () => undefined);
+
+		expect(screen.queryByRole("button", { name: "Edit report" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
+	});
+
 	// @us-08 @slice-08 @contract-shape:pure-function
 	it("offers an admin Delete", async () => {
 		openTheReport(theEngagementStartReport(), "admin");

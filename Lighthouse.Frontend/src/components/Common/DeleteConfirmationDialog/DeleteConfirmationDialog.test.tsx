@@ -79,4 +79,21 @@ describe("DeleteConfirmationDialog", () => {
 			screen.getByText(`Do you really want to delete ${itemName}?`),
 		).toBeInTheDocument();
 	});
+
+	it("shows a warning only when there is something to warn about", () => {
+		const { rerender } = render(<DeleteConfirmationDialog {...defaultProps} />);
+
+		expect(screen.queryByRole("alert")).toBeNull();
+
+		rerender(
+			<DeleteConfirmationDialog
+				{...defaultProps}
+				warning="This cannot be undone."
+			/>,
+		);
+
+		expect(screen.getByRole("alert")).toHaveTextContent(
+			"This cannot be undone.",
+		);
+	});
 });

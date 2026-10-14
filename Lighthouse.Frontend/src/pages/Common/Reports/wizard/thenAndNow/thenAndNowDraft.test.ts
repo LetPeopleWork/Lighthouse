@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { IReportTemplates } from "../../../../../models/Reports/Report";
+import { theEngagementStartReport } from "../../../../../tests/ReportsTestKit";
 import {
 	defaultNameOf,
 	lengthOf,
@@ -7,7 +8,9 @@ import {
 	offeredMetricsOf,
 	resolvedThenDays,
 	type ThenAndNowDraft,
+	thenAndNowDraftOf,
 	thenRefusalOf,
+	windowDaysOf,
 } from "./thenAndNowDraft";
 
 const templates: IReportTemplates = {
@@ -96,5 +99,38 @@ describe("offeredMetricsOf", () => {
 
 	it("offers nothing when the server offers no Then & Now", () => {
 		expect(offeredMetricsOf({ ...templates, templates: [] })).toEqual([]);
+	});
+});
+
+describe("thenAndNowDraftOf", () => {
+	it("counts as captured only the metrics the report holds values for", () => {
+		const report = theEngagementStartReport();
+
+		const draft = thenAndNowDraftOf({
+			...report,
+			thenAndNow: {
+				...report.thenAndNow,
+				metrics: { ...report.thenAndNow.metrics, "work-item-age": null },
+			},
+		});
+
+		expect(draft.capturedMetricKeys).toEqual([
+			"cycle-time",
+			"throughput",
+			"wip",
+		]);
+	});
+});
+
+describe("windowDaysOf", () => {
+	it("names a window's first and last day", () => {
+		expect(windowDaysOf("2026-07-05", "2026-10-02")).toBe("5 Jul – 2 Oct 2026");
+	});
+
+	it.each([
+		["", "2026-10-02"],
+		["2026-07-05", "not a day"],
+	])("names no days when %j or %j is not a day", (start, end) => {
+		expect(windowDaysOf(start, end)).toBeNull();
 	});
 });

@@ -281,7 +281,10 @@ export const renderWithReports = (
 		owner?: IReportOwner;
 		retry?: number | false;
 	},
-): RenderResult & { rerenderWith: (element: React.ReactElement) => void } => {
+): RenderResult & {
+	rerenderWith: (element: React.ReactElement) => void;
+	queryClient: QueryClient;
+} => {
 	const rbacService = createMockRbacService();
 	rbacService.getAuthorizationSummary = vi
 		.fn()
@@ -306,6 +309,7 @@ export const renderWithReports = (
 	const rendered = render(wrap(ui));
 	return {
 		...rendered,
+		queryClient,
 		rerenderWith: (element: React.ReactElement) =>
 			rendered.rerender(wrap(element)),
 	};
