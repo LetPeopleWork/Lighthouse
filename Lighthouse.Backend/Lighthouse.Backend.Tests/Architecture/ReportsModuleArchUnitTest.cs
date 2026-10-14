@@ -1,18 +1,22 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using Lighthouse.Backend.API;
 using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Reports;
 using Lighthouse.Backend.Services.Implementation.Reports.Metrics;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Reports;
 using ArchUnitNET.Domain.Dependencies;
 using ArchUnitNET.NUnit;
+using Microsoft.AspNetCore.Mvc;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
@@ -34,6 +38,16 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly string[] WritingMemberPrefixes = ["Add", "Insert", "Create", "Update", "Upsert", "Remove", "Delete", "Save"];
 
         private static readonly string[] ForbiddenReadMemberNames = ["then", "now"];
+
+        private static readonly Type[] WriteVerbs = [typeof(HttpPostAttribute), typeof(HttpPutAttribute), typeof(HttpPatchAttribute), typeof(HttpDeleteAttribute)];
+
+        private static readonly Dictionary<RbacGuardRequirement, RbacGuardRequirement> WriteGuardOfOwner = new()
+        {
+            [RbacGuardRequirement.TeamRead] = RbacGuardRequirement.TeamWrite,
+            [RbacGuardRequirement.PortfolioRead] = RbacGuardRequirement.PortfolioWrite,
+        };
+
+        private static readonly string[] TheReportsControllers = [nameof(TeamReportsController), nameof(PortfolioReportsController)];
 
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
@@ -197,6 +211,41 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .AndShould().NotDependOnAny(Types().That().HaveFullNameMatching(RepositoryPortPattern))
                 .Because("a policy that fetches its own clock, licence or data can no longer be tested by handing it values.")
                 .Check(Architecture);
+        }
+
+        // Reading a report needs only the right to read its owner, which the controller grants as a whole; every
+        // action that changes a report has to raise that to the owner's write right itself, or a reader could
+        // change it.
+        [Test]
+        public void Every_write_to_a_report_needs_the_right_to_change_its_owner()
+        {
+            var controllers = typeof(Program).Assembly.GetTypes()
+                .Where(type => type.IsSubclassOf(typeof(ReportsControllerBase)) && !type.IsAbstract)
+                .ToList();
+            var unguarded = controllers
+                .SelectMany(controller => controller.GetMethods()
+                    .Where(action => WriteVerbs.Any(verb => action.IsDefined(verb, inherit: true)))
+                    .Where(action => !IsGuardedForWriting(controller, action))
+                    .Select(action => $"{controller.Name}.{action.Name}"))
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(controllers.Select(controller => controller.Name), Is.EquivalentTo(TheReportsControllers),
+                    "the rule finds the reports controllers by their base; without them it guards nothing");
+                Assert.That(unguarded, Is.Empty);
+            }
+        }
+
+        private static bool IsGuardedForWriting(Type controller, MethodInfo action)
+        {
+            var ownerGuard = controller.GetCustomAttribute<RbacGuardAttribute>();
+            var actionGuard = action.GetCustomAttribute<RbacGuardAttribute>();
+            return ownerGuard is not null
+                && actionGuard is not null
+                && WriteGuardOfOwner.TryGetValue(ownerGuard.Requirement, out var writeGuard)
+                && actionGuard.Requirement == writeGuard
+                && actionGuard.ScopeIdRouteKey == ownerGuard.ScopeIdRouteKey;
         }
 
         private static List<ArchUnitNET.Domain.IType> ReportsModuleTypes()

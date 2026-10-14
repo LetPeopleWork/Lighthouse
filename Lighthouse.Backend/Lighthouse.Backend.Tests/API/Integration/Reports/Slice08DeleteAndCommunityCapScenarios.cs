@@ -10,7 +10,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     /// whose Then starts before the oldest finished Work Item the owner still keeps says that it can no longer
     /// be rebuilt, so deleting it can warn first.
     ///
-    /// Driving ports: GET/POST /teams/{id}/reports, GET/DELETE /teams/{id}/reports/{reportId}.
+    /// Driving ports: GET/POST /teams/{id}/reports, GET/DELETE /teams/{id}/reports/{reportId}, and the same
+    /// under /portfolios/{id}.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
@@ -261,6 +262,54 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
             Assert.That(deleted.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
             await ThenTheOwnerHoldsNoReport(lightspeed);
+        }
+
+        // @driving_port @real-io @us-08 @slice-08 @error @contract-shape:unbounded-preservation
+        [Test]
+        public async Task A_Portfolio_reader_cannot_delete_its_report()
+        {
+            var apollo = APortfolio(Apollo);
+            var reportId = await GivenTheAdminCreated(apollo, new NewReport());
+
+            TheCallerOnlyReads(apollo);
+            using var refused = await DeleteTheReport(apollo, reportId);
+
+            await ThenItIsForbidden(refused);
+            Assert.That(ReportNamesIn(await TheReportsListOf(apollo)), Is.EqualTo(TheEngagementStartAlone));
+        }
+
+        // @driving_port @real-io @us-08 @slice-08 @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:bounded-change
+        [Test]
+        public async Task A_Portfolio_admin_deletes_its_report()
+        {
+            var apollo = APortfolio(Apollo);
+            var reportId = await GivenTheAdminCreated(apollo, new NewReport());
+
+            using var deleted = await DeleteTheReport(apollo, reportId);
+
+            Assert.That(deleted.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+            await ThenTheOwnerHoldsNoReport(apollo);
+        }
+
+        // @driving_port @real-io @us-08 @slice-08 @kpi-OUT-5878-K4-community-cap-reached @contract-shape:unbounded-preservation
+        [Test]
+        public async Task Community_keeps_one_Then_and_Now_report_per_Portfolio()
+        {
+            TheInstanceHasNoPremiumLicence();
+            var apollo = APortfolio(Apollo);
+            await GivenTheAdminCreated(apollo, new NewReport());
+
+            using var refused = await CreateAReport(apollo, new NewReport { Name = HandOver });
+            var body = await refused.Content.ReadAsStringAsync();
+            var stillListed = await TheReportsListOf(apollo);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), body);
+                Assert.That(body, Does.Contain(Reason.ReportCapReached));
+                Assert.That(CreationBlockedByCapIn(stillListed), Is.True);
+                Assert.That(ReportNamesIn(stillListed), Is.EqualTo(TheEngagementStartAlone));
+            }
         }
 
         // --- Steps ---
