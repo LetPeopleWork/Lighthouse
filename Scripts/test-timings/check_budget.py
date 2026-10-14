@@ -7,7 +7,7 @@ import csv
 import json
 import re
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 import trx_to_csv
@@ -74,6 +74,10 @@ class Finding:
     limit_kind: str
 
 
+class CannotJudge(Exception):
+    """An input the check cannot trust, so it gives no verdict rather than a wrong one."""
+
+
 SKIPPED_SOURCE_FOLDERS = ("bin", "obj", "StrykerOutput")
 DECLARATION = re.compile(r"\bnamespace\s+([\w.]+)|\bclass\s+(\w+)")
 
@@ -126,8 +130,15 @@ def declared_classes(source_root: Path) -> set[str]:
         folders[:] = [folder for folder in folders if not _is_build_or_mutation_output(folder)]
         for file in files:
             if file.endswith(".cs"):
-                classes |= _classes_in((directory / file).read_text(encoding="utf-8-sig"))
+                classes |= _classes_in(_source_of(directory / file))
     return classes
+
+
+def _source_of(file: Path) -> str:
+    try:
+        return file.read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeDecodeError) as error:
+        raise CannotJudge(f"{escaped(str(file))} cannot be read: {_reason(error)}") from error
 
 
 def _classes_in(source: str) -> set[str]:
@@ -161,16 +172,103 @@ def stale_annotation(stack: str, unit: str, allowlist_name: str) -> str:
     )
 
 
+def load_timings(stack: str, path: Path) -> list[dict[str, str]]:
+    name = escaped(str(path))
+    try:
+        with path.open(encoding="utf-8", newline="") as stream:
+            reader = csv.DictReader(stream)
+            columns = reader.fieldnames
+            rows = list(reader)
+    except (OSError, UnicodeDecodeError, csv.Error) as error:
+        raise CannotJudge(f"{name} cannot be read: {_reason(error)}") from error
+    expected_columns = vitest_to_csv.CSV_COLUMNS if stack == "frontend" else trx_to_csv.CSV_COLUMNS
+    if columns is None:
+        raise CannotJudge(f"{name} is empty")
+    if tuple(columns) != expected_columns:
+        raise CannotJudge(
+            f"{name} does not have the {stack} columns {', '.join(expected_columns)}"
+        )
+    if not rows:
+        # A green run always ran tests, so a timing file without any means it was written wrong.
+        raise CannotJudge(f"{name} holds no tests")
+    for line, row in enumerate(rows, start=2):
+        if _milliseconds(row[DURATION_COLUMN[stack]]) is None:
+            raise CannotJudge(f"{name} has an unreadable duration on line {line}")
+    return rows
+
+
+def _milliseconds(text: str | None) -> Decimal | None:
+    try:
+        value = Decimal(text)
+    except (InvalidOperation, TypeError):
+        return None
+    return value if value.is_finite() and value >= 0 else None
+
+
+def load_allowlist(stack: str, path: Path) -> tuple[Decimal, dict[str, Decimal]]:
+    name = escaped(str(path))
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, ValueError) as error:
+        raise CannotJudge(f"{name} cannot be read as JSON: {_reason(error)}") from error
+    section = document.get(stack) if isinstance(document, dict) else None
+    if not isinstance(section, dict):
+        raise CannotJudge(f"{name} has no {stack} section")
+    budget_seconds = _positive_seconds(section.get("budget_seconds"))
+    if budget_seconds is None:
+        raise CannotJudge(f"{name} sets no positive budget_seconds in its {stack} section")
+    entries = section.get("allowlist", [])
+    if not isinstance(entries, list):
+        raise CannotJudge(f"{name} has a {stack} allowlist that is not a list")
+    return budget_seconds, dict(_allowlisted(entry, stack, name) for entry in entries)
+
+
+def _allowlisted(entry: object, stack: str, name: str) -> tuple[str, Decimal]:
+    if not isinstance(entry, dict) or not _is_text(entry.get("unit")):
+        raise CannotJudge(f"{name} has a {stack} allowlist entry without a unit")
+    unit = escaped(entry["unit"])
+    if not _is_text(entry.get("reason")):
+        raise CannotJudge(f"{unit} is allowlisted in {name} without a reason")
+    ceiling_seconds = _positive_seconds(entry.get("ceiling_seconds"))
+    if ceiling_seconds is None:
+        raise CannotJudge(
+            f"{unit} is allowlisted in {name} without a positive number as its ceiling_seconds"
+        )
+    return entry["unit"], ceiling_seconds
+
+
+def _is_text(value: object) -> bool:
+    return isinstance(value, str) and value.strip() != ""
+
+
+def _positive_seconds(value: object) -> Decimal | None:
+    # JSON true arrives as a Python bool, which would otherwise pass as the number 1.
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    seconds = Decimal(str(value))
+    return seconds if seconds.is_finite() and seconds > 0 else None
+
+
+def _reason(error: Exception) -> str:
+    return escaped(error.strerror if isinstance(error, OSError) and error.strerror else str(error))
+
+
 def main(argv: list[str] | None = None) -> int:
     arguments = _build_arg_parser().parse_args(argv)
-    with arguments.csv.open(encoding="utf-8", newline="") as stream:
-        rows = list(csv.DictReader(stream))
-    document = json.loads(arguments.allowlist.read_text(encoding="utf-8"))
-    section = document[arguments.stack]
-    budget_seconds = Decimal(str(section["budget_seconds"]))
-    ceilings = {
-        entry["unit"]: Decimal(str(entry["ceiling_seconds"])) for entry in section.get("allowlist", [])
-    }
+    try:
+        return _check(arguments)
+    except CannotJudge as refusal:
+        print(f"::error::{refusal}")
+        return 2
+
+
+def _check(arguments: argparse.Namespace) -> int:
+    rows = load_timings(arguments.stack, arguments.csv)
+    budget_seconds, ceilings = load_allowlist(arguments.stack, arguments.allowlist)
+    if arguments.stack == "backend" and not arguments.source_root.is_dir():
+        raise CannotJudge(
+            f"the backend test source folder {escaped(str(arguments.source_root))} does not exist"
+        )
 
     findings = judge(arguments.stack, rows, budget_seconds, ceilings)
     stale = stale_entries(list(ceilings), _still_present(arguments, rows, ceilings))

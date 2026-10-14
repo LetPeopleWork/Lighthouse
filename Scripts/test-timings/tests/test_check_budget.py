@@ -449,7 +449,6 @@ class AnAllowlistedUnitIsHeldToItsOwnCeiling(BudgetCheckTestCase):
 
 
 class AnAllowlistThatCannotBeTrustedIsRefused(BudgetCheckTestCase):
-    @PENDING
     def test_a_backend_test_source_folder_that_does_not_exist_fails_closed(self):
         timings = self.workspace.backend_timings({f"{TESTS_NAMESPACE}.CacheTest.Reads": 1.0})
         self.workspace.budget(backend_entries=[allowed(f"{TESTS_NAMESPACE}.CacheTest", 120)])
@@ -459,7 +458,6 @@ class AnAllowlistThatCannotBeTrustedIsRefused(BudgetCheckTestCase):
             self.workspace.check("backend", timings), str(self.workspace.source_root)
         )
 
-    @PENDING
     def test_an_allowlist_entry_without_a_reason_is_rejected(self):
         for reason in (None, "", "   "):
             with self.subTest(reason=reason):
@@ -474,7 +472,6 @@ class AnAllowlistThatCannotBeTrustedIsRefused(BudgetCheckTestCase):
                     workspace.check("frontend", timings), "src/pages/Heavy.test.tsx", "reason"
                 )
 
-    @PENDING
     def test_an_allowlist_entry_without_a_usable_ceiling_is_rejected(self):
         for ceiling in (None, "lots", -5, 0, True):
             with self.subTest(ceiling=ceiling):
@@ -489,14 +486,12 @@ class AnAllowlistThatCannotBeTrustedIsRefused(BudgetCheckTestCase):
                     workspace.check("frontend", timings), "src/pages/Heavy.test.tsx", "ceiling"
                 )
 
-    @PENDING
     def test_an_allowlist_that_is_not_valid_json_fails_closed(self):
         timings = self.workspace.frontend_timings({"src/pages/Overview.test.tsx": [1.0]})
         self.workspace.raw_allowlist('{"frontend": {"budget_seconds": 60,')
 
         self.assert_refuses_to_judge(self.workspace.check("frontend", timings), ALLOWLIST_NAME)
 
-    @PENDING
     def test_an_allowlist_without_a_section_for_the_stack_fails_closed(self):
         timings = self.workspace.frontend_timings({"src/pages/Overview.test.tsx": [1.0]})
         self.workspace.raw_allowlist(
@@ -507,7 +502,6 @@ class AnAllowlistThatCannotBeTrustedIsRefused(BudgetCheckTestCase):
             self.workspace.check("frontend", timings), ALLOWLIST_NAME, "frontend"
         )
 
-    @PENDING
     def test_an_allowlist_section_without_a_budget_fails_closed(self):
         timings = self.workspace.frontend_timings({"src/pages/Overview.test.tsx": [1.0]})
         self.workspace.raw_allowlist(json.dumps({"frontend": {"allowlist": []}}))
@@ -516,7 +510,6 @@ class AnAllowlistThatCannotBeTrustedIsRefused(BudgetCheckTestCase):
             self.workspace.check("frontend", timings), ALLOWLIST_NAME, "budget"
         )
 
-    @PENDING
     def test_a_missing_allowlist_file_fails_closed(self):
         timings = self.workspace.frontend_timings({"src/pages/Overview.test.tsx": [1.0]})
 
@@ -524,7 +517,6 @@ class AnAllowlistThatCannotBeTrustedIsRefused(BudgetCheckTestCase):
 
 
 class ATimingFileThatCannotBeReadFailsClosed(BudgetCheckTestCase):
-    @PENDING
     def test_a_missing_timing_file_fails_closed_naming_the_file(self):
         self.workspace.budget()
 
@@ -532,7 +524,6 @@ class ATimingFileThatCannotBeReadFailsClosed(BudgetCheckTestCase):
 
         self.assert_refuses_to_judge(result, "test-timings-frontend.csv")
 
-    @PENDING
     def test_an_empty_timing_file_fails_closed(self):
         timings = self.workspace.raw_timings("test-timings-frontend.csv", "")
         self.workspace.budget()
@@ -541,7 +532,6 @@ class ATimingFileThatCannotBeReadFailsClosed(BudgetCheckTestCase):
             self.workspace.check("frontend", timings), "test-timings-frontend.csv"
         )
 
-    @PENDING
     def test_a_timing_file_with_a_header_and_no_tests_fails_closed(self):
         timings = self.workspace.frontend_timings({})
         self.workspace.budget()
@@ -550,7 +540,6 @@ class ATimingFileThatCannotBeReadFailsClosed(BudgetCheckTestCase):
             self.workspace.check("frontend", timings), "test-timings-frontend.csv"
         )
 
-    @PENDING
     def test_a_timing_file_with_the_other_stacks_columns_fails_closed(self):
         timings = self.workspace.backend_timings({f"{TESTS_NAMESPACE}.CacheTest.Reads": 1.0})
         self.workspace.budget()
@@ -559,7 +548,6 @@ class ATimingFileThatCannotBeReadFailsClosed(BudgetCheckTestCase):
             self.workspace.check("frontend", timings), "test-timings-backend.csv"
         )
 
-    @PENDING
     def test_a_timing_file_with_an_unreadable_duration_fails_closed(self):
         header = ",".join(FRONTEND_COLUMNS)
         timings = self.workspace.raw_timings(
