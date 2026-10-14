@@ -612,6 +612,12 @@ sketch review (2026-10-14); D53–D54 the maintainer's decisions after the slice
   <name>?", plus "This Then window can no longer be rebuilt." when it applies); Edit opens the Create wizard with Type
   and Then locked (DT4). Deleting a {Team} or {Portfolio} names its reports in the singular for one ("and its
   report") and with the count otherwise ("and its 3 reports").
+- [D62] **The Now step names Now's dates, not its length again** (maintainer 2026-10-14, slice-07 manual review:
+  "the whole label doesn't make sense, just repeats what is stated above … it should show the dates (from - to) for
+  the specified period. Together with a note … sliding window, always ending today"). Below the length controls the
+  step shows Now's first and last day the way the Then step shows Then's ("= 5 Jul – 2 Oct 2026", counted back from
+  the server's today), and under it the note "Sliding window, always ending today". The line "= the last N days,
+  always ending today" is gone. Supersedes that part of D59.
 
 ---
 
