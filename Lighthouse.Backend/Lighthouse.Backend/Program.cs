@@ -1342,6 +1342,7 @@ namespace Lighthouse.Backend
             services.AddScoped<IReportMetricSeries, TeamReportMetricSeries>();
             services.AddScoped<IReportMetric, CycleTimeReportMetric>();
             services.AddScoped<IReportMetric, ThroughputReportMetric>();
+            services.AddScoped<IReportMetric, WipReportMetric>();
             services.AddScoped<ReportMetricCatalog>();
             services.AddScoped<IReportTemplate, ThenAndNowTemplate>();
             services.AddScoped<IReportQueries, ReportQueries>();

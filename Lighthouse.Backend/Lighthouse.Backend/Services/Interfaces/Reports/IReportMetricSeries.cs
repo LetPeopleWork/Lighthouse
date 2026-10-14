@@ -9,6 +9,9 @@ namespace Lighthouse.Backend.Services.Interfaces.Reports
 
         /// <summary>The Work Items finished on each day of the window, as the Metrics tab's throughput run chart counts them.</summary>
         IReadOnlyList<int> DailyThroughput(ReportOwner owner, ReportWindow window);
+
+        /// <summary>The Work Items in progress on each day of the window, as the Metrics tab's WIP run chart counts them.</summary>
+        IReadOnlyList<int> DailyWorkInProgress(ReportOwner owner, ReportWindow window);
     }
 
     /// <summary>The Metrics tab's cycle-time percentiles, and how many finished items with a cycle time they rest on.</summary>

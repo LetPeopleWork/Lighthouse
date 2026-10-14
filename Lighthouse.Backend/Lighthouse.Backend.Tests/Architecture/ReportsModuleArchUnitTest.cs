@@ -6,6 +6,7 @@ using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Reports;
+using Lighthouse.Backend.Services.Implementation.Reports.Metrics;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -186,6 +187,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [TestCase(typeof(ReportWindowPolicy))]
+        [TestCase(typeof(DailySeriesSummary))]
         public void A_report_policy_is_handed_every_input(Type policy)
         {
             Types().That().HaveFullNameMatching(NameAndNestedTypesOf(policy))

@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Reports;
@@ -25,9 +26,19 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             var team = TeamOf(owner);
             var (start, end) = DaysOf(window);
 
-            var runChart = metrics.GetThroughputForTeam(team, start, end).WorkItemsPerUnitOfTime;
-            return [.. runChart.OrderBy(day => day.Key).Select(day => day.Value.Count)];
+            return DailyCounts(metrics.GetThroughputForTeam(team, start, end));
         }
+
+        public IReadOnlyList<int> DailyWorkInProgress(ReportOwner owner, ReportWindow window)
+        {
+            var team = TeamOf(owner);
+            var (start, end) = DaysOf(window);
+
+            return DailyCounts(metrics.GetWorkInProgressOverTimeForTeam(team, start, end));
+        }
+
+        private static int[] DailyCounts(RunChartData runChart)
+            => [.. runChart.WorkItemsPerUnitOfTime.OrderBy(day => day.Key).Select(day => day.Value.Count)];
 
         private Team TeamOf(ReportOwner owner)
         {
