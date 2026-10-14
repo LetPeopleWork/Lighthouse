@@ -65,7 +65,7 @@ export interface IUsageDataEvent {
 	sizingMoment?: UsageDataSizingMoment;
 	/** Only on a Refinement day's verdict being shown: which verdict the Refinement tab showed. */
 	refinementVerdict?: UsageDataRefinementVerdict;
-	/** Only on a report being created: its Type, from usage data's own list. */
+	/** Only when a report is created or opened: its Type, from usage data's own list. */
 	reportTemplate?: UsageDataReportTemplate;
 	/** How long before this batch was handed in the thing happened, so a reader can order them. */
 	offsetMs: number;
