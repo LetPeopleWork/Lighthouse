@@ -2,7 +2,7 @@
   "roadmap": {
     "project_id": "epic-5878-baseline",
     "created_at": "2026-10-13",
-    "total_steps": 65,
+    "total_steps": 64,
     "total_phases": 9,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
@@ -37,12 +37,13 @@
       "RD-7 No demo-data change is planned (DISTILL: the skeleton creates its own report on Team Lightspeed's seeded history). DESIGN's slice-03 open question - does one demo Team yield a non-zero beyond-limits count - gets its own check step (03-05); a CSV change happens only if no demo Team does, after grepping Lighthouse.EndToEndTests for that Team.",
       "RD-8 No finalize, user-facing docs/screenshots, review or mutation steps; the orchestrator runs those. Mutation (Stryker.NET + StrykerJS, >= 80%) runs once after phase 10 on frozen code, acceptance suite excluded (DEVOPS).",
       "RD-9 Slice 01 touches Program.cs, so CI runs the full live-connector Integration suite on that push; a red backend is judged by DEVOPS's signature table (at most one rerun, only when every failure matches a listed signature). Locally the connector categories stay excluded.",
-      "RD-10 Until 08-02 introduces ReportCapPolicy, the list envelope's creationBlockedByCap is false for every owner (there is no cap before slice 08); the frontend reads it from 01-12 on, so the cap UI needs no change when the policy lands."
+      "RD-10 Until 08-02 introduces ReportCapPolicy, the list envelope's creationBlockedByCap is false for every owner (there is no cap before slice 08); the frontend reads it from 01-12 on, so the cap UI needs no change when the policy lands.",
+      "RD-11 (2026-10-14) Maintainer D49-D52 after the slice 03-05 sketch review: no counts beyond Then's limits; WIP and Total Work Item Age as average/median/min/max of the daily series, each with change; summary header. Phase 03 = 03-00 (header, done) + 03-01 (done, reverted 058b4ba48); 03-02..03-05 withdrawn with Slice03CycleTimeBeyondThenLimitsScenarios.cs (deleted in 6f2bc352e). Phases 04 and 05 re-cut from the acceptance designer's proposal against the reworked tests (6f2bc352e, 431813206); every pending slice-04/05 case claimed once. RD-5's slice 03-05 copy and the 04-04 / 05-03 sketches were approved by the maintainer on 2026-10-14. RD-7's demo check is replaced by 05-02's 'a demo Team's daily WIP varies' check."
     ]
   },
   "validation": {
     "status": "approved",
-    "notes": "Scenario ownership counted against the DISTILL test files at HEAD 1d7e9f01a (methods by [Test]/[TestCaseSource] + [Ignore(PendingSliceNN)] or per-TestCase Ignore = PendingSliceNN, cases by TestCase/TestCaseSource rows; frontend by it.skip / it.skip.each rows; E2E by test.fixme). Every pending case is claimed by exactly one step; none orphaned, none claimed twice. TOTAL 261 = backend 144 + frontend 116 + E2E 1, matching DISTILL's 261. BACKEND (144): Slice01TeamReportScenarios.cs 18 methods / 19 cases -> 01-03:4, 01-04:4, 01-05:5 methods (6 cases), 01-06:5. ReportsWithoutSignInScenarios.cs 3 -> 01-03:1 (create, PendingSlice01), 08-01:1 (delete, PendingSlice08), 10-01:1 (edit, PendingSlice10). ReportUsageEventsTests.cs 10 methods / 25 cases -> 01-08:6, 01-09:8, 01-10:4 (18 marked PendingSlice01), 06-03:3 (PendingSlice06), 08-04:4 (PendingSlice08). Slice02ThenInThePastScenarios.cs 13 methods / 19 cases -> 02-01:4, 02-02:3 methods (6 cases), 02-03:4, 02-04:2 methods (5 cases). ReportWindowBoundaryScenarios.cs 1 method / 12 rows -> 02-05:7 (side then, PendingSlice02), 07-03:5 (side now, PendingSlice07). Slice03CycleTimeBeyondThenLimitsScenarios.cs 6 methods / 7 cases -> 03-02:4 methods (5 cases), 03-03:2. Slice04ThroughputAndShownMetricsScenarios.cs 8 -> 04-01:4, 04-02:4. Slice05WipAndWorkItemAgeScenarios.cs 7 -> 05-01:2, 05-02:5. Slice06PortfolioReportScenarios.cs 7 -> 06-01:4, 06-02:3. Slice07NowLengthScenarios.cs 9 methods / 12 cases -> 07-01:5 methods (6 cases), 07-02:4 methods (6 cases). Slice08DeleteAndCommunityCapScenarios.cs 12 -> 08-01:4, 08-02:6, 08-03:2. Slice10EditReportScenarios.cs 11 methods / 13 cases -> 10-01:4, 10-02:3 methods (5 cases), 10-03:4. FRONTEND (116): ReportsTab.test.tsx 21 -> 01-11:4, 01-12:5, 06-05:2, 08-05:5, 08-06:5. ReportsTab.createWizard.test.tsx 29 -> 01-15:5, 01-16:4, 02-07:5, 02-08:6, 02-09:2, 04-03:1, 05-04:1, 06-05:1, 07-05:3, 08-06:1. ReportView.test.tsx 28 -> 01-13:6, 01-14:4, 01-17:3, 03-04:3, 04-03:4, 05-03:3, 07-05:1, 08-07:2, 10-04:2. ReportView.editWizard.test.tsx 8 -> 10-04:3, 10-05:5. wizard/reportWindowCheck.test.ts 2 it.skip.each / 12 rows -> 02-06:7, 07-04:5. TeamDetail.reportsTab.test.tsx 5 -> 01-18:5. PortfolioDetail.reportsTab.test.tsx 3 -> 06-04:3. usageDataRouteKeys.reports.test.ts 4 -> 01-17:3, 06-05:1. OverviewDashboard.test.tsx reports block 5 definitions / 6 cases (one it.skip.each over teams and portfolios) -> 08-08:6. E2E: Reports.spec.ts 1 walking skeleton -> 01-19. PER PHASE: 01 = 78 (38 + 39 + 1), 02 = 46, 03 = 10, 04 = 13, 05 = 11, 06 = 17, 07 = 26, 08 = 36, 10 = 24. Five cases sit in a later phase than their @slice tag (RD-2); all others follow their marker. Steps with no DISTILL case (crafter-owned checks): 01-01 migration + DB constraint test, 01-02 refactor (existing suite), 01-07 ArchUnit rules, 01-20 DD34 timing, 01-21 rollback rehearsal, 03-01 Limits/selection refactor (E5), 03-05 demo-data check. Not yet peer-reviewed; the orchestrator runs the reviewer. REVISION 1 (2026-10-13, after review needs_revision: 1 blocker, 2 high, 5 low): (B) slice 01's create accepts any Then/Now length without the window refusals until 02, so 01-20's probe creates its 365-day Then through the real create endpoint and is the only slice-01 caller of a non-default length (01-03 notes, 01-20 criteria + notes); (H1) 'ReportsTab.createWizard.test.tsx :: cannot create a report showing no metric' moved back from 05-04 to 04-03, its DISTILL slice - ownership re-counted: still 261, each case once, 04-03 now 5 and 05-04 now 1, phase 04 = 13 and phase 05 = 11, RD-2 now lists five moved cases; (H2) every log-line criterion (01-03, 01-05, 01-06, 08-01, 10-01) names its crafter-written test in Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportLoggingTest.cs (one method per line, added to each step's files_to_modify), and each step's notes say which lines DISTILL pins (only 'a stored report cannot be read', 01-06) and which the crafter pins; (L) 01-09 tagged @sizing-review-needed; 01-11 notes that 08-06's moved case owns the create-open-to-everybody half; 08-07 notes that Delete-offer visibility is pinned at 10-04; 03-01's selection criterion rewritten without a method name; 01-20 lists the conditional production files and commits the DD20 fallback as feat(reports); roadmap.implementation_scope.source_directories added. REVIEW 2 (2026-10-13, nw-acceptance-designer-reviewer): approved, 0 blockers, 0 high; ownership 261 re-counted. Its two lows folded in by the orchestrator: 01-03 refuses malformed window input with 400 (crafter test until 02-04), 01-15 builds the no-metric guard. DELIVER 01-19 (2026-10-13): the walking skeleton asserted the header's Then line, which 07-05 builds; the orchestrator moved that assertion to 07-05 (criteria + files_to_modify) and slice 01's skeleton asserts the report's name and the Cycle Time panel."
+    "notes": "Scenario ownership counted against the DISTILL test files at HEAD 1d7e9f01a (methods by [Test]/[TestCaseSource] + [Ignore(PendingSliceNN)] or per-TestCase Ignore = PendingSliceNN, cases by TestCase/TestCaseSource rows; frontend by it.skip / it.skip.each rows; E2E by test.fixme). Every pending case is claimed by exactly one step; none orphaned, none claimed twice. TOTAL 261 = backend 144 + frontend 116 + E2E 1, matching DISTILL's 261. BACKEND (144): Slice01TeamReportScenarios.cs 18 methods / 19 cases -> 01-03:4, 01-04:4, 01-05:5 methods (6 cases), 01-06:5. ReportsWithoutSignInScenarios.cs 3 -> 01-03:1 (create, PendingSlice01), 08-01:1 (delete, PendingSlice08), 10-01:1 (edit, PendingSlice10). ReportUsageEventsTests.cs 10 methods / 25 cases -> 01-08:6, 01-09:8, 01-10:4 (18 marked PendingSlice01), 06-03:3 (PendingSlice06), 08-04:4 (PendingSlice08). Slice02ThenInThePastScenarios.cs 13 methods / 19 cases -> 02-01:4, 02-02:3 methods (6 cases), 02-03:4, 02-04:2 methods (5 cases). ReportWindowBoundaryScenarios.cs 1 method / 12 rows -> 02-05:7 (side then, PendingSlice02), 07-03:5 (side now, PendingSlice07). Slice03CycleTimeBeyondThenLimitsScenarios.cs 6 methods / 7 cases -> 03-02:4 methods (5 cases), 03-03:2. Slice04ThroughputAndShownMetricsScenarios.cs 8 -> 04-01:4, 04-02:4. Slice05WipAndWorkItemAgeScenarios.cs 7 -> 05-01:2, 05-02:5. Slice06PortfolioReportScenarios.cs 7 -> 06-01:4, 06-02:3. Slice07NowLengthScenarios.cs 9 methods / 12 cases -> 07-01:5 methods (6 cases), 07-02:4 methods (6 cases). Slice08DeleteAndCommunityCapScenarios.cs 12 -> 08-01:4, 08-02:6, 08-03:2. Slice10EditReportScenarios.cs 11 methods / 13 cases -> 10-01:4, 10-02:3 methods (5 cases), 10-03:4. FRONTEND (116): ReportsTab.test.tsx 21 -> 01-11:4, 01-12:5, 06-05:2, 08-05:5, 08-06:5. ReportsTab.createWizard.test.tsx 29 -> 01-15:5, 01-16:4, 02-07:5, 02-08:6, 02-09:2, 04-03:1, 05-04:1, 06-05:1, 07-05:3, 08-06:1. ReportView.test.tsx 28 -> 01-13:6, 01-14:4, 01-17:3, 03-04:3, 04-03:4, 05-03:3, 07-05:1, 08-07:2, 10-04:2. ReportView.editWizard.test.tsx 8 -> 10-04:3, 10-05:5. wizard/reportWindowCheck.test.ts 2 it.skip.each / 12 rows -> 02-06:7, 07-04:5. TeamDetail.reportsTab.test.tsx 5 -> 01-18:5. PortfolioDetail.reportsTab.test.tsx 3 -> 06-04:3. usageDataRouteKeys.reports.test.ts 4 -> 01-17:3, 06-05:1. OverviewDashboard.test.tsx reports block 5 definitions / 6 cases (one it.skip.each over teams and portfolios) -> 08-08:6. E2E: Reports.spec.ts 1 walking skeleton -> 01-19. PER PHASE: 01 = 78 (38 + 39 + 1), 02 = 46, 03 = 10, 04 = 13, 05 = 11, 06 = 17, 07 = 26, 08 = 36, 10 = 24. Five cases sit in a later phase than their @slice tag (RD-2); all others follow their marker. Steps with no DISTILL case (crafter-owned checks): 01-01 migration + DB constraint test, 01-02 refactor (existing suite), 01-07 ArchUnit rules, 01-20 DD34 timing, 01-21 rollback rehearsal, 03-01 Limits/selection refactor (E5), 03-05 demo-data check. Not yet peer-reviewed; the orchestrator runs the reviewer. REVISION 1 (2026-10-13, after review needs_revision: 1 blocker, 2 high, 5 low): (B) slice 01's create accepts any Then/Now length without the window refusals until 02, so 01-20's probe creates its 365-day Then through the real create endpoint and is the only slice-01 caller of a non-default length (01-03 notes, 01-20 criteria + notes); (H1) 'ReportsTab.createWizard.test.tsx :: cannot create a report showing no metric' moved back from 05-04 to 04-03, its DISTILL slice - ownership re-counted: still 261, each case once, 04-03 now 5 and 05-04 now 1, phase 04 = 13 and phase 05 = 11, RD-2 now lists five moved cases; (H2) every log-line criterion (01-03, 01-05, 01-06, 08-01, 10-01) names its crafter-written test in Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportLoggingTest.cs (one method per line, added to each step's files_to_modify), and each step's notes say which lines DISTILL pins (only 'a stored report cannot be read', 01-06) and which the crafter pins; (L) 01-09 tagged @sizing-review-needed; 01-11 notes that 08-06's moved case owns the create-open-to-everybody half; 08-07 notes that Delete-offer visibility is pinned at 10-04; 03-01's selection criterion rewritten without a method name; 01-20 lists the conditional production files and commits the DD20 fallback as feat(reports); roadmap.implementation_scope.source_directories added. REVIEW 2 (2026-10-13, nw-acceptance-designer-reviewer): approved, 0 blockers, 0 high; ownership 261 re-counted. Its two lows folded in by the orchestrator: 01-03 refuses malformed window input with 400 (crafter test until 02-04), 01-15 builds the no-metric guard. DELIVER 01-19 (2026-10-13): the walking skeleton asserted the header's Then line, which 07-05 builds; the orchestrator moved that assertion to 07-05 (criteria + files_to_modify) and slice 01's skeleton asserts the report's name and the Cycle Time panel. REVISION 2026-10-14 (RD-11): phase 03 = 2 steps, 04 = 5, 05 = 4; the 03-02..03-05 ownership counts above are obsolete; phases 04/05 ownership follows the reworked DISTILL files at 431813206."
   },
   "phases": [
     {
@@ -950,8 +951,8 @@
     },
     {
       "id": "03",
-      "name": "Slice 03 - {Cycle Time} beyond Then's limits (US-03, ADO #6161)",
-      "description": "Refactor first (XmRCalculator.Limits extracted, the cycle-time selection extracted from BaseMetricsService - both behaviour-preserving), then the pure BeyondLimits, the finished cycle-time series read, Then's unrounded limits frozen and Now's count on read; the panel's counts and dashes; and the demo-data check DESIGN left open.",
+      "name": "Slice 03 - the report's summary header (US-03, ADO #6161)",
+      "description": "Revised 2026-10-14 (maintainer D49/D52): the beyond-limits counts are dropped; the slice is the summary header (03-00). 03-01 was executed and then reverted (058b4ba48) once its only consumer was dropped; 03-02..03-05 are withdrawn.",
       "default_agent": "nw-software-crafter",
       "default_deps_strategy": "sequential",
       "steps": [
@@ -1005,188 +1006,103 @@
           "dependencies": [
             "03-00"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: behaviour-preserving refactor; E5 is the one property-style test (random value lists: Calculate == round(Limits)). DESIGN DD9, 'Contract shapes' (BaseMetricsService cycle-time selection row), Reuse Analysis rows XmRCalculator and BaseMetricsService.cs:735-748. Commit: refactor(metrics): extract XmR limits and the cycle-time selection."
-        },
-        {
-          "id": "03-02",
-          "name": "Then freezes its {Cycle Time} limits unrounded and Now's unusually slow {Work Items} are counted above them; a lower limit at 0 or too few points shows a dash",
-          "agent": "nw-software-crafter",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice03CycleTimeBeyondThenLimitsScenarios.cs",
-          "scenario_name": "Unusually_slow_Work_Items_are_counted_above_the_limits_Then_set",
-          "unskips": [
-            "Slice03CycleTimeBeyondThenLimitsScenarios.cs :: Unusually_slow_Work_Items_are_counted_above_the_limits_Then_set",
-            "Slice03CycleTimeBeyondThenLimitsScenarios.cs :: The_limits_Then_set_are_frozen_unrounded",
-            "Slice03CycleTimeBeyondThenLimitsScenarios.cs :: A_lower_limit_at_zero_shows_a_dash_below_and_still_counts_above",
-            "Slice03CycleTimeBeyondThenLimitsScenarios.cs :: Fewer_than_two_Then_points_show_a_dash_on_both_sides - 2 cases (0, 1)"
-          ],
-          "criteria": [
-            "A new report freezes {Cycle Time} limits { average, upper, lower, lowerClamped, pointCount } unrounded from Then's own finished cycle-time series",
-            "beyondThenLimits.above counts Now's {Work Items} with cycle time > upper; below counts < lower only when lower > 0, else a dash with lower-limit-zero",
-            "With fewer than two Then points both counts are absent with too-few-points",
-            "ITeamMetricsService exposes the finished cycle-time series as a public read, reached by the Reports module only through IReportMetricSeries; BeyondLimits is pure and joins E15"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/BeyondLimits.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/Metrics/CycleTimeReportMetric.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Reports/IReportMetricSeries.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/TeamReportMetricSeries.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ITeamMetricsService.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/BeyondLimitsTest.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice03CycleTimeBeyondThenLimitsScenarios.cs"
-          ],
-          "dependencies": [
-            "03-01"
-          ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: acceptance over real EF; BeyondLimits gets a value table (limits x series -> counts and codes) for Stryker. DESIGN DD8 (raw series, never Get*ProcessBehaviourChart), DD10, DD11, DD12, ADR-221. Commit: feat(reports): Cycle Time beyond Then's limits (story 6161)."
-        },
-        {
-          "id": "03-03",
-          "name": "The Team's process behaviour baseline never moves the counts, and a report made before counts existed says none were captured",
-          "agent": "nw-software-crafter",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice03CycleTimeBeyondThenLimitsScenarios.cs",
-          "scenario_name": "The_Teams_process_behaviour_baseline_does_not_move_the_counts",
-          "unskips": [
-            "Slice03CycleTimeBeyondThenLimitsScenarios.cs :: The_Teams_process_behaviour_baseline_does_not_move_the_counts",
-            "Slice03CycleTimeBeyondThenLimitsScenarios.cs :: A_report_created_before_the_count_existed_has_no_limits_captured"
-          ],
-          "criteria": [
-            "Changing the Team's PBC baseline (read back to prove it changed) leaves the report's limits and counts unchanged",
-            "A stored slice-01-shaped report (no limits member) reads beyondThenLimits as null - not captured - never a count"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice03CycleTimeBeyondThenLimitsScenarios.cs"
-          ],
-          "dependencies": [
-            "03-02"
-          ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: acceptance. DESIGN DD2 / D27 (absent member = not captured), DD8, E2. The baseline case should pass on first un-skip by construction; record it. Last backend step of the slice: dotnet build + filtered dotnet test. Commit: feat(reports): counts independent of the PBC baseline (story 6161)."
-        },
-        {
-          "id": "03-04",
-          "name": "The {Cycle Time} panel counts Now's {Work Items} beyond Then's limits and says why a count is missing",
-          "agent": "nw-software-crafter",
-          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.test.tsx",
-          "scenario_name": "counts Now's Work Items beyond Then's limits, and says why there is no count below",
-          "unskips": [
-            "ReportView.test.tsx :: counts Now's Work Items beyond Then's limits, and says why there is no count below",
-            "ReportView.test.tsx :: shows a dash for the counts beyond Then's limits when Then had too few points to have any",
-            "ReportView.test.tsx :: says the counts beyond Then's limits were not captured for a report made before they existed"
-          ],
-          "criteria": [
-            "The panel shows '{Work Items} beyond Then's limits: N above' and '— below' with 'Then's lower limit is 0' for lower-limit-zero",
-            "too-few-points shows a dash with 'Then has too few points for limits'",
-            "A report without captured limits shows 'Not captured for this report' in their place",
-            "pnpm test, pnpm build and Biome clean"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Frontend/src/pages/Common/Reports/panels/CycleTimePanel.tsx",
-            "Lighthouse.Frontend/src/pages/Common/Reports/panels/ThenNowPanelFrame.tsx",
-            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.test.tsx"
-          ],
-          "dependencies": [
-            "03-03"
-          ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: pure panel via RTL. SKETCH FIRST (RD-5): 'Then has too few points for limits' is DISTILL-proposed copy to confirm. Reason-code copy map exhaustive, no default: (E9). Commit: feat(reports): the beyond-limits counts in the Cycle Time panel (story 6161)."
-        },
-        {
-          "id": "03-05",
-          "name": "One demo Team is confirmed to show a non-zero beyond-limits count (check; change demo data only if none does)",
-          "agent": "nw-software-crafter",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataFactoryTest.cs",
-          "scenario_name": "a demo Team yields a non-zero Cycle Time beyond-limits count (pinned only if a CSV changes)",
-          "unskips": [],
-          "criteria": [
-            "On a locally started app with demo data, a default 90-day report on each candidate demo Team (Lightspeed first) is read and the Team(s) with a non-zero above or below count are recorded in deliver/slice-03-notes.md",
-            "If at least one does, no demo data changes and no test is added",
-            "If none does, one Team's CSV is adjusted after grepping Lighthouse.EndToEndTests for that Team (every E2E consumes demo data), a DemoDataFactoryTest case pins the property, and the E2E suite that uses the Team still passes"
-          ],
-          "files_to_modify": [
-            "docs/feature/epic-5878-baseline/deliver/slice-03-notes.md",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataFactoryTest.cs"
-          ],
-          "dependencies": [
-            "03-04"
-          ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: a data check. DESIGN 'Open questions for DISTILL / DELIVER' (Demo data, slice 03); DEVOPS Coexistence matrix (grep the E2E suite for the Team before any CSV change); DISTILL planned no demo-data change (RD-7). The test file is touched only on the CSV-change branch. Finalize screenshots need such a Team, which is why the check exists. Commit (only if anything changed): chore(demo-data): a Team with Work Items beyond Then's limits."
+          "implementation_notes": "EXEMPT FROM PARADIGM: behaviour-preserving refactor; E5 is the one property-style test (random value lists: Calculate == round(Limits)). DESIGN DD9, 'Contract shapes' (BaseMetricsService cycle-time selection row), Reuse Analysis rows XmRCalculator and BaseMetricsService.cs:735-748. Commit: refactor(metrics): extract XmR limits and the cycle-time selection. | REVERTED 058b4ba48 on 2026-10-14: D49 removed the only consumer of XmRCalculator.Limits."
         }
       ]
     },
     {
       "id": "04",
       "name": "Slice 04 - choose the shown metrics; {Throughput} Then & Now (US-04, ADO #6162)",
-      "description": "Backend: the {Throughput} capture (total, per-day, limits over the daily series), shown keys separate from captured metrics (every applicable metric frozen), the no-metric and unknown-metric refusals, older reports without {Throughput}. Frontend: the {Throughput} panel, catalog-ordered stacking, no % from a Then of 0, and the neutral note for a metric this version cannot show. Starts only when the DD34 result allows (RD-6).",
+      "description": "Revised 2026-10-14 (D49-D52): Throughput capture (total + per-day, no limits), shown-metric validation, the frontend model cleanup, the Throughput panel and catalog stacking, and the summary header's closed count from Throughput's total.",
       "default_agent": "nw-software-crafter",
       "default_deps_strategy": "sequential",
       "steps": [
         {
           "id": "04-01",
-          "name": "A Team is reported on {Cycle Time} and {Throughput}: total and per-day average, days above Then's limit, and a hidden metric still frozen",
+          "name": "A Team is reported on {Cycle Time} and {Throughput}: total and per-day average on each side, a real 0 when nothing finished, and a hidden metric still frozen",
           "agent": "nw-software-crafter",
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice04ThroughputAndShownMetricsScenarios.cs",
           "scenario_name": "Higher_Throughput_is_shown_as_the_total_and_the_average_per_day",
           "unskips": [
             "Slice04ThroughputAndShownMetricsScenarios.cs :: A_Team_can_be_reported_on_Cycle_Time_and_Throughput",
             "Slice04ThroughputAndShownMetricsScenarios.cs :: Higher_Throughput_is_shown_as_the_total_and_the_average_per_day",
-            "Slice04ThroughputAndShownMetricsScenarios.cs :: Days_of_Now_with_Throughput_above_Thens_limit_are_counted",
-            "Slice04ThroughputAndShownMetricsScenarios.cs :: A_metric_that_is_not_shown_is_still_frozen"
+            "Slice04ThroughputAndShownMetricsScenarios.cs :: A_metric_that_is_not_shown_is_still_frozen",
+            "Slice04ThroughputAndShownMetricsScenarios.cs :: A_Then_where_nothing_finished_shows_a_real_zero"
           ],
           "criteria": [
-            "metrics.throughput carries total (sum of daily counts) and perDay (total ÷ L, unrounded) on each side, sample size L days (Team Lightspeed: 52 -> 65)",
-            "Then's limits over the daily series are frozen and Now's days above / below are counted (Team Gravity, 30-day windows)",
+            "metrics.throughput carries total (sum of the daily counts) and perDay (total / L, unrounded) on each side, sample size L days (Team Lightspeed 52 -> 65)",
+            "A Then where nothing finished reads total 0 and perDay 0 as real zeros, absentReason null; no limits and no beyond-limits member anywhere",
             "The templates read lists cycle-time and throughput; a report showing only one still freezes every applicable metric",
-            "ThroughputReportMetric reads only IReportMetricSeries (E3), the daily {Throughput} series being the Metrics tab's run chart"
+            "ThroughputReportMetric reads only IReportMetricSeries (E3), the daily series being the Metrics tab's run chart; nothing in Reports references XmRCalculator (E2, live)"
           ],
           "files_to_modify": [
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/Metrics/ThroughputReportMetric.cs",
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/Metrics/ReportMetricCatalog.cs",
             "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Reports/IReportMetricSeries.cs",
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/TeamReportMetricSeries.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs",
             "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportReadModels.cs",
             "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThroughputReportMetricTest.cs",
             "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice04ThroughputAndShownMetricsScenarios.cs"
           ],
           "dependencies": [
-            "03-05",
-            "01-20"
+            "03-00"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: acceptance over real EF; ThroughputReportMetric unit table over a faked series. DESIGN DD5, DD11 (frozen for every applicable metric, ticked or not), DD15 M2 / D47. GATE (DD34, RD-6): do not start unless deliver/slice-01-notes.md records create <= 10 s, directly or after DD20's fallback; otherwise stop and report to the orchestrator - DESIGN reopens before this step. Commit: feat(reports): Throughput Then & Now (story 6162)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: acceptance over real EF; ThroughputReportMetric value table over a faked series. DESIGN DD5, DD11 (values only, no limits), DD15 M2 / D47, D49. GATE (DD34): deliver/slice-01-notes.md records create <= 10 s (01-20: 0.23-0.60 s). Commit: feat(reports): Throughput Then & Now (story 6162)."
         },
         {
           "id": "04-02",
-          "name": "A report showing no metric or an unknown metric is refused, an older report says {Throughput} was not captured, and a Then where nothing finished shows 0 with a dash for the days beyond",
+          "name": "A report showing no metric or an unknown metric is refused, and an older report says {Throughput} was not captured",
           "agent": "nw-software-crafter",
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice04ThroughputAndShownMetricsScenarios.cs",
           "scenario_name": "A_report_that_shows_no_metric_is_refused",
           "unskips": [
             "Slice04ThroughputAndShownMetricsScenarios.cs :: A_report_that_shows_no_metric_is_refused",
             "Slice04ThroughputAndShownMetricsScenarios.cs :: A_metric_that_is_not_in_the_catalog_is_refused",
-            "Slice04ThroughputAndShownMetricsScenarios.cs :: An_older_report_did_not_capture_Throughput",
-            "Slice04ThroughputAndShownMetricsScenarios.cs :: A_Then_where_nothing_finished_shows_zero_and_a_dash_for_the_days_beyond"
+            "Slice04ThroughputAndShownMetricsScenarios.cs :: An_older_report_did_not_capture_Throughput"
           ],
           "criteria": [
             "An empty shownMetricKeys answers 400 no-metric-shown; a key outside the catalog answers 400 unknown-metric; neither adds a row",
-            "A stored report captured before {Throughput} existed reads metrics without throughput (not captured), never zeros",
-            "A Then with nothing finished shows {Throughput} total 0 and per-day 0 as real zeros, and the days-beyond counts absent (no-process)",
-            "A stored shown-metric or capture key not in this version's catalog is skipped on read with one Warning naming the key (Observability)"
+            "A stored report captured before Throughput existed reads metrics without throughput (not captured), never zeros - this case is green before the step and must stay green",
+            "A stored shown-metric or capture key not in this version's catalog is skipped on read with one Warning naming the key"
           ],
           "files_to_modify": [
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/Metrics/ThroughputReportMetric.cs",
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportQueries.cs",
             "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice04ThroughputAndShownMetricsScenarios.cs"
           ],
           "dependencies": [
             "04-01"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: acceptance. DESIGN DD12 (no-process when Then's average and upper limit are both 0), DD28, DD32, D27. Last backend step of the slice: dotnet build + filtered dotnet test. Commit: feat(reports): shown metrics are validated (story 6162)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: acceptance. DESIGN DD28, DD32, D27. Last backend step of the slice: dotnet build + filtered dotnet test. Commit: feat(reports): shown metrics are validated (story 6162)."
         },
         {
           "id": "04-03",
+          "name": "The frontend report model drops what no server sends: the counts beyond Then's limits, the old {Work Item Age} sides and the four retired absence reasons",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/models/Reports/Report.test.ts",
+          "scenario_name": "keep nothing a payload says about Then's limits",
+          "unskips": [
+            "Report.test.ts :: refuse a value absent because of %j, a reason no server sends (4 rows)",
+            "Report.test.ts :: keep nothing a payload says about Then's limits"
+          ],
+          "criteria": [
+            "IReportMetric.beyondThenLimits and its Zod member are removed; a payload carrying it parses without it",
+            "ReportMetricSide loses totalWindowAverage, totalLastDay, averageWindowAverage, averageLastDay (median is already in)",
+            "ReportAbsentReason, its Zod enum and reasonTexts hold no-finished-items only; the four retired reasons fail to parse",
+            "pnpm test, pnpm build and Biome clean"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/Reports/Report.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.ts",
+            "Lighthouse.Frontend/src/models/Reports/Report.test.ts"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: schema unit cases. DESIGN DD37 (removed, not deprecated; no released backend ever sent them). Commit: refactor(reports): the report model carries only what the server sends (story 6162)."
+        },
+        {
+          "id": "04-04",
           "name": "The report view shows the {Throughput} panel compared per day, stacks only the shown metrics in catalog order, shows no % from a Then of 0, and puts a plain note in place of a metric it cannot show; the wizard cannot create a report showing no metric",
           "agent": "nw-software-crafter",
           "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.test.tsx",
@@ -1199,85 +1115,108 @@
             "ReportsTab.createWizard.test.tsx :: cannot create a report showing no metric"
           ],
           "criteria": [
-            "The '{Throughput}: Then & Now' panel shows 'Total N {Work Items}', the per-day average with its days, the change per day and its %, and a higher {Throughput} reads as better by sign and arrow",
-            "Panels stack full width in catalog order ({Cycle Time}, {Throughput}, {WIP}, {Work Item Age}) whatever order the keys were ticked in (DT5)",
-            "A change from a Then of 0 shows 'Then was 0' and no percentage",
-            "A shown key the frontend has no panel for renders 'This metric can't be shown in this version of Lighthouse.' in its place and the other panels still show",
-            "In wizard step ④, unticking every offered metric box disables Create and shows the no-metric copy (the server's no-metric-shown refusal is 04-02's)",
+            "The Throughput panel's sides read THEN / NOW alone, then 'Total N {Work Items}' and the per-day average (2 decimals); no days, no limits, no 'beyond' line; one change, per day, '▲ 0.14 per day (+24 %)' marked better",
+            "Panels stack in catalog order whatever order the keys were ticked in (DT5)",
+            "A change from a displayed Then of 0 reads '▲ 0.27 per day (Then was 0)', no %, no dash",
+            "A shown key with no panel renders 'This metric can't be shown in this version of Lighthouse.' and the others still show",
+            "Unticking every metric in step 4 disables Create with the no-metric copy",
             "pnpm test, pnpm build and Biome clean"
           ],
           "files_to_modify": [
             "Lighthouse.Frontend/src/pages/Common/Reports/panels/ThroughputPanel.tsx",
             "Lighthouse.Frontend/src/pages/Common/Reports/panels/UnsupportedMetricPanel.tsx",
             "Lighthouse.Frontend/src/pages/Common/Reports/panels/reportPanelRegistry.ts",
-            "Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.ts",
-            "Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.test.ts",
             "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.tsx",
             "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/MetricsAndNameStep.tsx",
             "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.test.tsx",
             "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.createWizard.test.tsx"
           ],
           "dependencies": [
-            "04-02"
+            "04-03"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: pure panels via RTL; extend the thenNowComparison table (then-was-zero). DESIGN DD6 (% from a Then of 0 is '—', then-was-zero is the panel's own code), DD7, DD32, DT5. SKETCH FIRST (RD-5): 'This metric can't be shown in this version of Lighthouse.' and 'Then was 0' are copy to confirm. 'cannot create a report showing no metric' stays in its DISTILL slice: the guard needs only the boxes the wizard offers (live since 01-15) and the server refusal lands in 04-02. The other slice-04 wizard case, 'ticks all four metrics…', needs all four boxes and is owned by 05-04 (RD-2). Commit: feat(reports): the Throughput panel and shown metrics (story 6162)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: pure panels via RTL. DESIGN DD6, DD7, DD32, DD36 (total 0 decimals, perDay 2), DT5, D52. Sketch APPROVED by the maintainer 2026-10-14 (Throughput panel; copy 'This metric can't be shown in this version of Lighthouse.' and 'Then was 0' confirmed). Commit: feat(reports): the Throughput panel and shown metrics (story 6162)."
+        },
+        {
+          "id": "04-05",
+          "name": "The summary header counts the closed {Work Items} from {Throughput}'s total when the report captured it, from the {Cycle Time} sample size before that",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.test.tsx",
+          "scenario_name": "counts as closed the Work Items Throughput finished, for %s",
+          "unskips": [
+            "ReportView.test.tsx :: counts as closed the Work Items Throughput finished, for %s (4 rows)"
+          ],
+          "criteria": [
+            "With Throughput captured, each side reads '{total} {Work Items} closed' (52 / 65 against Cycle Time's 38 / 41), whether or not the Throughput panel is shown and whether or not Cycle Time was captured",
+            "A Then where nothing finished reads '0 {Work Items} closed'",
+            "Without Throughput the live slice-03 cases still hold: the Cycle Time sample size, and no count line when neither was captured",
+            "pnpm test, pnpm build and Biome clean"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/ThenAndNowSummary.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.test.tsx"
+          ],
+          "dependencies": [
+            "04-04"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: RTL. Orchestrator decision 2026-10-14 (DST-18): the header must agree with the Throughput panel's 'Total N'. Frontend only; no wire change. Commit: feat(reports): the summary counts what Throughput finished (story 6162)."
         }
       ]
     },
     {
       "id": "05",
       "name": "Slice 05 - {WIP} and {Work Item Age} Then & Now (US-05, ADO #6163)",
-      "description": "Backend: the {WIP} capture (average, min, max, limits over the daily series) and the {Work Item Age} capture (window-average and last-day totals and averages, days without {WIP} left out of the average) through a newly public daily total-age read, with the G3 parity scenario. Frontend: the {WIP} and {Work Item Age} panels, the registry made exhaustive, and the wizard's four metric boxes.",
+      "description": "Revised 2026-10-14 (D50/D51): WIP and Total Work Item Age as average, median, min, max of the daily series, each with its own change; real zeros; the wizard offers all four metrics.",
       "default_agent": "nw-software-crafter",
       "default_deps_strategy": "sequential",
       "steps": [
         {
           "id": "05-01",
-          "name": "{WIP} is shown as an average with its range, with the days below and above Then's limits counted",
+          "name": "{WIP} shows Average, Median, Min and Max of the window's daily values on each side, the median being the lower middle day",
           "agent": "nw-software-crafter",
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice05WipAndWorkItemAgeScenarios.cs",
-          "scenario_name": "Lower_WIP_is_shown_as_the_average_and_its_range_with_the_days_below_Thens_limit",
+          "scenario_name": "Lower_WIP_shows_on_every_line",
           "unskips": [
-            "Slice05WipAndWorkItemAgeScenarios.cs :: Lower_WIP_is_shown_as_the_average_and_its_range_with_the_days_below_Thens_limit",
-            "Slice05WipAndWorkItemAgeScenarios.cs :: Days_with_WIP_above_Thens_upper_limit_are_counted"
+            "Slice05WipAndWorkItemAgeScenarios.cs :: Lower_WIP_shows_on_every_line",
+            "Slice05WipAndWorkItemAgeScenarios.cs :: The_median_is_the_lower_middle_day_for_an_even_and_an_odd_number_of_days"
           ],
           "criteria": [
-            "metrics.wip carries average (unrounded), min and max over the daily {WIP} series on each side, sample size the days counted",
-            "Then's limits over the daily {WIP} are frozen; Now's days above the upper and below a positive lower limit are counted"
+            "metrics.wip carries average (unrounded mean), median, min, max of the daily WIP series on each side, each with sample size L days",
+            "Median = PercentileCalculator.CalculatePercentile(copy, 50): 15 days -> the 7th smallest, 30 days -> the 15th, never a mean",
+            "One pure daily-series summary (DD35) shared with 05-02, handed a copy so the sorting cannot reorder its input; ArchUnit E15 gains its [TestCase]"
           ],
           "files_to_modify": [
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/Metrics/WipReportMetric.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/Metrics/DailySeriesSummary.cs",
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/Metrics/ReportMetricCatalog.cs",
             "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Reports/IReportMetricSeries.cs",
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/TeamReportMetricSeries.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportReadModels.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/WipReportMetricTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/DailySeriesSummaryTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs",
             "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice05WipAndWorkItemAgeScenarios.cs"
           ],
           "dependencies": [
-            "04-03"
+            "04-05"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: acceptance; WipReportMetric value table over a faked series. DESIGN DD15 M3 (the series GetWorkInProgressOverTimeForTeam the PBCs use). Commit: feat(reports): WIP Then & Now (story 6163)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: acceptance; DailySeriesSummary value table (even, odd, all zeros, unsorted input left unsorted). DESIGN DD15 M3, DD35, D50; series GetWorkInProgressOverTimeForTeam. The crafter names the summary type. Commit: feat(reports): WIP Then & Now (story 6163)."
         },
         {
           "id": "05-02",
-          "name": "{Work Item Age} shows both totals and both averages on each side, leaves days without {WIP} out of the average, and Then's last-day total matches the Metrics tab",
+          "name": "Total {Work Item Age} shows Average, Median, Min and Max of the window's daily total age, days with nothing in progress counting as 0, and agrees with the Metrics tab day by day",
           "agent": "nw-software-crafter",
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice05WipAndWorkItemAgeScenarios.cs",
-          "scenario_name": "Older_work_in_progress_shows_both_totals_and_both_averages_on_each_side",
+          "scenario_name": "Older_work_in_progress_shows_a_growing_total_age_on_every_line",
           "unskips": [
             "Slice05WipAndWorkItemAgeScenarios.cs :: A_Team_can_be_reported_on_all_four_metrics",
-            "Slice05WipAndWorkItemAgeScenarios.cs :: Older_work_in_progress_shows_both_totals_and_both_averages_on_each_side",
-            "Slice05WipAndWorkItemAgeScenarios.cs :: Thens_last_day_total_age_matches_the_Metrics_tab_for_that_day",
-            "Slice05WipAndWorkItemAgeScenarios.cs :: Days_with_nothing_in_progress_are_left_out_of_the_average_age_but_not_out_of_the_total",
-            "Slice05WipAndWorkItemAgeScenarios.cs :: With_nothing_in_progress_the_average_age_is_a_dash_and_the_total_a_real_zero"
+            "Slice05WipAndWorkItemAgeScenarios.cs :: Older_work_in_progress_shows_a_growing_total_age_on_every_line",
+            "Slice05WipAndWorkItemAgeScenarios.cs :: Thens_total_age_agrees_with_the_Metrics_tab_day_by_day",
+            "Slice05WipAndWorkItemAgeScenarios.cs :: Days_with_nothing_in_progress_count_as_zero_on_every_line",
+            "Slice05WipAndWorkItemAgeScenarios.cs :: With_nothing_in_progress_every_line_is_a_real_zero"
           ],
           "criteria": [
-            "metrics['work-item-age'] carries totalWindowAverage, totalLastDay, averageWindowAverage, averageLastDay per side as DD15 M4 defines; limits over the daily totals",
-            "Days with W[d] = 0 are left out of the average (sample size = days with {WIP}) but not out of the total; with no {WIP} at all the average is absent with no-wip and the total a real 0",
-            "Then's last-day total equals the Metrics tab's total age for that day (E6, G3)",
-            "ITeamMetricsService exposes the daily total {Work Item Age} series as a public read (today private), reached only through IReportMetricSeries; the templates read lists all four metrics"
+            "metrics['work-item-age'] carries average, median, min, max of the daily total-age series (GenerateTotalWorkItemAgeByDay, Doing + Done) per side, sample size L days; never absent",
+            "Nothing in progress reads 0 on every WIP and age line, absentReason null",
+            "Then's lines equal the summary of the Metrics tab's totalWorkItemAge for each day of Then (G3)",
+            "ITeamMetricsService exposes the daily total-age series as one public read, reached only through IReportMetricSeries; the templates read lists all four metrics"
           ],
           "files_to_modify": [
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/Metrics/WorkItemAgeReportMetric.cs",
@@ -1285,44 +1224,43 @@
             "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ITeamMetricsService.cs",
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs",
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/TeamReportMetricSeries.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs",
             "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/WorkItemAgeReportMetricTest.cs",
             "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice05WipAndWorkItemAgeScenarios.cs"
           ],
           "dependencies": [
             "05-01"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: acceptance + parity; WorkItemAgeReportMetric value table (T[d], W[d] -> the four values and no-wip). DESIGN DD15 M4 / D48, Reuse Analysis row 'Total WIA daily series' (TeamMetricsService.cs:271, EXTEND: expose one public read). Existing metrics-service tests stay unchanged. Last backend step: dotnet build + filtered dotnet test. Commit: feat(reports): Work Item Age Then & Now (story 6163)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: acceptance + parity. DESIGN DD15 M4, DD35, D51; reuses 05-01's summary. Existing metrics-service tests unchanged. Last backend step: dotnet build + filtered dotnet test. Demo-data check: a demo Team's daily WIP varies over the demo report's window. Commit: feat(reports): Total Work Item Age Then & Now (story 6163)."
         },
         {
           "id": "05-03",
-          "name": "The {WIP} and {Work Item Age} panels show their values, a growing age reads as worse, and nothing in progress shows {WIP} 0 with the average age as a dash",
+          "name": "The {WIP} and Total {Work Item Age} panels show four lines per side, each with its own change; a growing age reads as worse; nothing in progress is a real 0; a report made before them says not captured",
           "agent": "nw-software-crafter",
           "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.test.tsx",
-          "scenario_name": "tells a growing Work Item Age as worse by sign and arrow as well as colour",
+          "scenario_name": "shows WIP as its average, median, min and max, each with its own change, lower reading as better",
           "unskips": [
-            "ReportView.test.tsx :: shows WIP as an average with its range",
-            "ReportView.test.tsx :: tells a growing Work Item Age as worse by sign and arrow as well as colour",
-            "ReportView.test.tsx :: shows WIP as a real 0 and the average Work Item Age as a dash when Then had nothing in progress"
+            "ReportView.test.tsx :: shows WIP as its average, median, min and max, each with its own change, lower reading as better",
+            "ReportView.test.tsx :: tells a growing Total Work Item Age as worse on every line by sign and arrow as well as colour",
+            "ReportView.test.tsx :: shows every WIP and Total Work Item Age line as a real 0 when Then had nothing in progress",
+            "ReportView.test.tsx :: says WIP and Total Work Item Age were not captured for a report made before they existed"
           ],
           "criteria": [
-            "The '{WIP}: Then & Now' panel shows 'Average N (min–max) · L days' per side and the change by sign and arrow",
-            "The '{Work Item Age}: Then & Now' panel shows a growing age as worse (data-change='worse', ▲)",
-            "Nothing in progress shows {WIP} as a real 0 and the average {Work Item Age} as a dash with 'No {Work Items} in progress'",
-            "reportPanelRegistry is now exhaustive: satisfies Record<ReportMetricKey, PanelDefinition> (E9)"
+            "WIP sides read 'THEN Average 9 Median 9 Min 6 Max 12' (8.62 shown as 9, 0 decimals); changes '▼ 2 (−22 %)' per line, better",
+            "Panel titled 'Total {Work Item Age}', lines 'Average N days' ...; changes '▲ 270 days (+44 %)' per line, worse",
+            "A Then of 0 on every line reads 0 and each change '▲ ... (Then was 0)', no %, no dash, no 'in progress' text",
+            "A report without wip / work-item-age shows 'Not captured for this report' in both panels",
+            "reportPanelRegistry is exhaustive: satisfies Record<ReportMetricKey, PanelDefinition> (E9); one four-line layout serves both panels"
           ],
           "files_to_modify": [
             "Lighthouse.Frontend/src/pages/Common/Reports/panels/WipPanel.tsx",
             "Lighthouse.Frontend/src/pages/Common/Reports/panels/WorkItemAgePanel.tsx",
             "Lighthouse.Frontend/src/pages/Common/Reports/panels/reportPanelRegistry.ts",
-            "Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.ts",
-            "Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.test.ts",
             "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.test.tsx"
           ],
           "dependencies": [
             "05-02"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: pure panels via RTL. DESIGN DD7 (direction of good per metric lives in the registry), DD12; DISTILL review blocker resolution ({WIP} 0 is shown, the dash sits on the average age). SKETCH FIRST (RD-5): 'No Work Items in progress' is copy to confirm. Commit: feat(reports): the WIP and Work Item Age panels (story 6163)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: pure panels via RTL. DESIGN DD7, DD36, D50, D51, D52. Sketch APPROVED by the maintainer 2026-10-14 (four-line WIP and Total Work Item Age panels, WIP change without a unit). Commit: feat(reports): the WIP and Total Work Item Age panels (story 6163)."
         },
         {
           "id": "05-04",
@@ -1334,7 +1272,7 @@
             "ReportsTab.createWizard.test.tsx :: ticks all four metrics, named in the instance's words"
           ],
           "criteria": [
-            "Step ④ offers the four metrics the server lists and the frontend has panels for, all ticked, each named through Terminology",
+            "Step 4 offers the four metrics the server lists and the frontend has panels for, all ticked, each named through Terminology",
             "pnpm test, pnpm build and Biome clean"
           ],
           "files_to_modify": [
@@ -1344,7 +1282,7 @@
           "dependencies": [
             "05-03"
           ],
-          "implementation_notes": "EXEMPT FROM PARADIGM: RTL. The case is tagged slice 04 but needs all four boxes, and DD32 says the wizard never offers a key without a panel; the panels exist only after 05-03 (RD-2). Its sibling 'cannot create a report showing no metric' is owned by 04-03. Commit: feat(reports): choose the shown metrics in the wizard (story 6162)."
+          "implementation_notes": "EXEMPT FROM PARADIGM: RTL. Tagged slice 04, but it needs all four panels (DD32). Commit: feat(reports): choose the shown metrics in the wizard (story 6163)."
         }
       ]
     },
