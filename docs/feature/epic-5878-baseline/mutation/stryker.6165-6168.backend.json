@@ -1,0 +1,28 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Services/Implementation/Reports/ReportCapPolicy.cs",
+      "**/Services/Implementation/Reports/ReportCommands.cs",
+      "**/Services/Implementation/Reports/ReportQueries.cs",
+      "**/Services/Implementation/Reports/ReportWindowPolicy.cs",
+      "**/Services/Implementation/Reports/ThenAndNowTemplate.cs",
+      "**/Services/Implementation/Repositories/ReportRepository.cs",
+      "**/Models/Reports/ReportReadModels.cs",
+      "**/API/ReportsControllerBase.cs",
+      "**/API/PortfolioReportsController.cs",
+      "**/API/TeamReportsController.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTest",
+    "test-case-filter": "(FullyQualifiedName~Reports|FullyQualifiedName~ReportRepository|FullyQualifiedName~UsageData|FullyQualifiedName~PortfolioMetricsService)&FullyQualifiedName!~ReportCreationTimingProbe&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

@@ -416,3 +416,73 @@ Every new assertion was checked by breaking the production line it guards and wa
   the created day is a required date from the server; the optional chain only covers one that cannot be read.
 - **Expected killed by `97fddb11b`'s edit-from-list tests:** `ReportList` L76 (the column memo's dependencies,
   now read for the Edit button's waiting state) and `ReportWizard` L47 (the "Edit report" title).
+
+---
+
+# Slices 07, 08 and 10 (Stories 6165, 6166, 6168) — backend
+
+Stryker.NET, config `stryker.6165-6168.backend.json`, run once on frozen code, then once more after one round of
+tests (`77a5a266c`). Production code unchanged between the two runs.
+
+## First run
+
+| file | tested | killed | survived | no coverage | score |
+| --- | --- | --- | --- | --- | --- |
+| API/ReportsControllerBase.cs | 36 | 29 | 5 | 2 | 80.6 % |
+| Models/Reports/ReportReadModels.cs | 1 | 1 | 0 | 0 | 100 % |
+| Services/Implementation/Reports/ReportCapPolicy.cs | 3 | 3 | 0 | 0 | 100 % |
+| Services/Implementation/Reports/ReportCommands.cs | 46 | 42 | 4 | 0 | 91.3 % |
+| Services/Implementation/Reports/ReportQueries.cs | 15 | 15 | 0 | 0 | 100 % |
+| Services/Implementation/Reports/ReportWindowPolicy.cs | 20 | 19 | 1 | 0 | 95 % |
+| Services/Implementation/Reports/ThenAndNowTemplate.cs | 39 | 31 | 5 | 3 | 79.5 % |
+| Services/Implementation/Repositories/ReportRepository.cs | 13 | 12 | 1 | 0 | 92.3 % |
+| **Total** | **173** | **152** | **16** | **5** | **87.86 %** |
+
+## Targeted by this pass (`77a5a266c`)
+
+- `ReportsControllerBase` L74, the problem result's object initializer emptied: a refusal is now asserted on the
+  result's own status code (403 at the cap, 400 otherwise), not only on the status inside the problem body.
+- `ReportsControllerBase` L47, `request.ShownMetricKeys ?? []` and `request.Name ?? string.Empty` (no coverage):
+  an edit naming neither reaches the command as an empty name and an empty list. The name mutant was real: a null
+  name would otherwise have renamed the report to the mutated text instead of being refused as missing.
+- `ReportCommands` L42 / L77, `||` → `&&`: a template answering Done without a payload is refused on create and on
+  edit, nothing is added or saved, the report keeps its name and payload.
+- `ReportCommands` L119 statement and string: a refused edit logs its reason, report id and owner, never the name.
+- `ThenAndNowTemplate` L73, `Captures ?? []`: an edit of a payload holding no captures is refused as not captured.
+- `ThenAndNowTemplate` L106, `?? []` remove-left: a captured metric this version does not know is warned about
+  even when it is not shown (the existing test had it in both lists).
+- `ThenAndNowTemplate` L168, `FirstOrDefault` → `First` and the camel-case fallback removed: an edit of an older
+  payload with no `nowLengthDays` member adds one; one stored as `NowLengthDays` is overwritten in place, not doubled.
+- `ReportRepository` L14, `OrderBy` → `OrderByDescending`: the order (oldest first, by id) was already pinned by
+  `ReportRepositoryTest.An_owner_lists_its_reports_oldest_first`, but the config's test filter
+  (`FullyQualifiedName~Reports`) never ran that class — `ReportRepositoryTest` does not contain "Reports". The filter
+  now also takes `FullyQualifiedName~ReportRepository`. A filter gap, not a test gap.
+
+## Justified, not tested
+
+- `ReportWindowPolicy` L24, `<` → `<=` at `doneItemsCutoffDays == today.DayNumber`: **equivalent**. At that exact
+  value `today.AddDays(-today.DayNumber)` is 0001-01-01, which is `DateOnly.MinValue`, the other branch's answer.
+- Problem and exception message text: `ReportsControllerBase` L26, L44 (validation messages), L67 (problem title);
+  `ThenAndNowTemplate` L80, L99, L102, L165 (`JsonException` messages for corrupt payloads, three of them
+  unreachable without a hand-corrupted row). The client acts on the status and the `code` extension, never on the
+  text.
+- `ReportsControllerBase` L29, `request.TemplateKey ?? string.Empty` (no coverage): a missing key and the mutated
+  text are both an unknown template and get the same `template-not-supported` refusal.
+
+## Re-run
+
+| file | tested | killed | survived | no coverage | score |
+| --- | --- | --- | --- | --- | --- |
+| API/ReportsControllerBase.cs | 36 | 32 | 3 | 1 | 88.9 % |
+| Models/Reports/ReportReadModels.cs | 1 | 1 | 0 | 0 | 100 % |
+| Services/Implementation/Reports/ReportCapPolicy.cs | 3 | 3 | 0 | 0 | 100 % |
+| Services/Implementation/Reports/ReportCommands.cs | 46 | 46 | 0 | 0 | 100 % |
+| Services/Implementation/Reports/ReportQueries.cs | 15 | 15 | 0 | 0 | 100 % |
+| Services/Implementation/Reports/ReportWindowPolicy.cs | 20 | 19 | 1 | 0 | 95 % |
+| Services/Implementation/Reports/ThenAndNowTemplate.cs | 39 | 35 | 1 | 3 | 89.7 % |
+| Services/Implementation/Repositories/ReportRepository.cs | 13 | 13 | 0 | 0 | 100 % |
+| **Total** | **173** | **164** | **5** | **4** | **94.80 %** |
+
+Every targeted survivor was killed. What remains is exactly the justified list above: seven message strings
+(L26, L44, L67 survived; L80, L99, L165 no coverage; L102 survived), L29's template-key fallback (no coverage) and
+the equivalent L24 boundary.
