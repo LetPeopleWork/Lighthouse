@@ -20,7 +20,7 @@ import {
 const TOTAL_DECIMALS = 0;
 const PER_DAY_DECIMALS = 2;
 
-const CHANGE_LINES = [
+export const CHANGE_LINES = [
 	{ key: "perDay", label: "per day", decimals: PER_DAY_DECIMALS },
 ] as const;
 

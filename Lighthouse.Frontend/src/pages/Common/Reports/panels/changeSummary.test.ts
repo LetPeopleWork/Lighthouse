@@ -43,7 +43,7 @@ const metric = (
 
 describe("summariseChange", () => {
 	// @us-05b @slice-05b @contract-shape:pure-function
-	it.skip.each<[string, ChangeGroup["kind"], readonly Line[]]>([
+	it.each<[string, ChangeGroup["kind"], readonly Line[]]>([
 		[
 			"better on one line and unmoved on the rest",
 			"improved",
@@ -83,7 +83,7 @@ describe("summariseChange", () => {
 
 	// @us-05b @slice-05b @error @contract-shape:pure-function
 	// A dash is a line that cannot be compared, including one never captured; it neither moves a metric nor holds it.
-	it.skip.each<[string, ChangeGroup["kind"], readonly Line[]]>([
+	it.each<[string, ChangeGroup["kind"], readonly Line[]]>([
 		[
 			"a dash beside a better line",
 			"improved",
@@ -111,7 +111,7 @@ describe("summariseChange", () => {
 	});
 
 	// @us-05b @slice-05b @error @contract-shape:pure-function
-	it.skip("lists no metric whose every line is a dash, nor one with no change line at all", () => {
+	it("lists no metric whose every line is a dash, nor one with no change line at all", () => {
 		expect(
 			summariseChange([
 				metric("cycle-time", "dash", "dash", "dash", "dash"),
@@ -122,7 +122,7 @@ describe("summariseChange", () => {
 	});
 
 	// @us-05b @slice-05b @contract-shape:pure-function
-	it.skip("gives the groups as improved, got worse, mixed and unchanged, whatever order the metrics come in", () => {
+	it("gives the groups as improved, got worse, mixed and unchanged, whatever order the metrics come in", () => {
 		expect(
 			summariseChange([
 				metric("cycle-time", "neutral"),
@@ -139,7 +139,7 @@ describe("summariseChange", () => {
 	});
 
 	// @us-05b @slice-05b @contract-shape:pure-function
-	it.skip("keeps the metrics of one group in the order they came in, and leaves out a group with none", () => {
+	it("keeps the metrics of one group in the order they came in, and leaves out a group with none", () => {
 		expect(
 			summariseChange([
 				metric("cycle-time", "better"),
@@ -154,7 +154,7 @@ describe("summariseChange", () => {
 	});
 
 	// @us-05b @slice-05b @boundary @contract-shape:pure-function
-	it.skip.each<[string, readonly ShownMetricLines[]]>([
+	it.each<[string, readonly ShownMetricLines[]]>([
 		["no metric is shown", []],
 		[
 			"no shown metric has a line that can be compared",

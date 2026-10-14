@@ -55,7 +55,7 @@ const changeSegment = () =>
  */
 describe("every panel in the registry", () => {
 	// @us-05b @slice-05b @contract-shape:pure-function
-	it.skip.each<[ReportMetricKey, Mark[]]>([
+	it.each<[ReportMetricKey, Mark[]]>([
 		["cycle-time", ["dash", "better", "worse", "neutral"]],
 		["throughput", ["neutral"]],
 		["wip", ["better", "worse", "neutral", "dash"]],

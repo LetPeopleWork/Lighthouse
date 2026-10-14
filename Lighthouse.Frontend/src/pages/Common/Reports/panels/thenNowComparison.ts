@@ -4,10 +4,6 @@ import type {
 	ReportAbsentReason,
 	ReportMetricSide,
 } from "../../../../models/Reports/Report";
-import type { ReportPanelDefinition } from "./reportPanelRegistry";
-
-// RED scaffold for lineComparisonsOf, written with its tests; the change that builds it removes the marker.
-export const __SCAFFOLD__ = true;
 
 export type DirectionOfGood = "lower" | "higher";
 
@@ -117,15 +113,28 @@ export interface LineComparison {
 	readonly change: ThenNowChange | null;
 }
 
+/** What a panel compares: its change lines and which way is better. */
+export interface ComparedLines {
+	readonly changeLines: readonly ChangeLine[];
+	readonly directionOfGood: DirectionOfGood;
+}
+
 /** Each change line of the panel, in its row order, compared as the panel shows it. */
 export const lineComparisonsOf = (
 	metric: IReportMetric,
-	panel: ReportPanelDefinition,
-): readonly LineComparison[] => {
-	throw new Error(
-		`Not yet implemented -- RED scaffold: the change lines of a metric judged ${panel.directionOfGood} is better, Then holding ${Object.keys(metric.atThen).length} values`,
-	);
-};
+	panel: ComparedLines,
+): readonly LineComparison[] =>
+	panel.changeLines.map(({ key, decimals }) => {
+		const then = shownValue(metric.atThen[key], decimals);
+		const now = shownValue(metric.atNow[key], decimals);
+		return {
+			key,
+			change:
+				then === null || now === null
+					? null
+					: compareThenNow(then, now, panel.directionOfGood, decimals),
+		};
+	});
 
 /** "3 days (−20 %)", where the magnitude already carries its unit; a change of nothing reads "No change". Its mark is drawn apart. */
 export const changeText = (

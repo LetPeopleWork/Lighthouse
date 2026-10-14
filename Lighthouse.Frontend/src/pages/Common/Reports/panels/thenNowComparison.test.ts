@@ -222,7 +222,7 @@ const changeOn = (metric: IReportMetric, key: ReportMetricKey, line: string) =>
 describe("lineComparisonsOf", () => {
 	// @us-05b @slice-05b @contract-shape:pure-function
 	// Throughput's total carries no change mark, so it is no change line; the 95th sits above the 85th.
-	it.skip.each<[ReportMetricKey, string[]]>([
+	it.each<[ReportMetricKey, string[]]>([
 		["cycle-time", ["p95", "p85", "p70", "p50"]],
 		["throughput", ["perDay"]],
 		["wip", ["average", "median", "min", "max"]],
@@ -237,7 +237,7 @@ describe("lineComparisonsOf", () => {
 	);
 
 	// @us-05b @slice-05b @error @contract-shape:pure-function
-	it.skip.each<[string, IReportMetric]>([
+	it.each<[string, IReportMetric]>([
 		[
 			"a report frozen before it was captured has no Then for it",
 			{
@@ -269,9 +269,7 @@ describe("lineComparisonsOf", () => {
 
 	// @us-05b @slice-05b @boundary @contract-shape:pure-function
 	// A move too small to show on the panel is no move; one the panel shows counts, however small.
-	it.skip.each<
-		[string, ReportMetricKey, string, IReportMetric, number, string]
-	>([
+	it.each<[string, ReportMetricKey, string, IReportMetric, number, string]>([
 		[
 			"an average WIP of 8.62 against 8.71, both shown as 9",
 			"wip",
@@ -325,7 +323,7 @@ describe("lineComparisonsOf", () => {
 
 	// @us-05b @slice-05b @boundary @contract-shape:pure-function
 	// A rise from nothing has no percentage, but it is still a rise, and the summary counts it.
-	it.skip("compares a line whose Then was 0, with no percentage", () => {
+	it("compares a line whose Then was 0, with no percentage", () => {
 		const metric = withSides({ perDay: aValue(0) }, { perDay: aValue(0.27) });
 
 		expect(changeOn(metric, "throughput", "perDay")).toEqual({

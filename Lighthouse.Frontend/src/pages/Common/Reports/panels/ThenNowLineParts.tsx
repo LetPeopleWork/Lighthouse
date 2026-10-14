@@ -10,12 +10,11 @@ import {
 	type ChangeLine,
 	type ChangeVerdict,
 	changeText,
-	compareThenNow,
 	DASH,
 	type DirectionOfGood,
+	lineComparisonsOf,
 	NO_CHANGE_MARK,
 	type ReportSide,
-	shownValue,
 	type ThenNowChange,
 } from "./thenNowComparison";
 
@@ -72,16 +71,12 @@ export const NeutralLineIcon: React.FC<{ readonly Icon: SvgIconComponent }> = ({
 
 /** The change on one line, told by sign and arrow as well as colour; a dash when either side is one. */
 const LineChange: React.FC<{
-	readonly then: number | null;
-	readonly now: number | null;
-	readonly directionOfGood: DirectionOfGood;
-	readonly decimals: number;
+	readonly change: ThenNowChange | null;
 	readonly magnitudeText: (magnitude: number) => string;
-}> = ({ then, now, directionOfGood, decimals, magnitudeText }) => {
-	if (then === null || now === null) {
+}> = ({ change, magnitudeText }) => {
+	if (change === null) {
 		return <Typography component="span">{DASH}</Typography>;
 	}
-	const change = compareThenNow(then, now, directionOfGood, decimals);
 	return (
 		<Typography
 			component="span"
@@ -100,19 +95,21 @@ export const LineChanges: React.FC<{
 	readonly lines: readonly ChangeLine[];
 	readonly directionOfGood: DirectionOfGood;
 	readonly magnitudeText: (magnitude: number) => string;
-}> = ({ metric, lines, directionOfGood, magnitudeText }) =>
-	lines.map(({ key, label, decimals }) => (
+}> = ({ metric, lines, directionOfGood, magnitudeText }) => {
+	const comparisons = lineComparisonsOf(metric, {
+		changeLines: lines,
+		directionOfGood,
+	});
+	return lines.map(({ key, label }, index) => (
 		<PanelLine key={key}>
 			<LineName label={label} />
 			<LineChange
-				then={shownValue(metric.atThen[key], decimals)}
-				now={shownValue(metric.atNow[key], decimals)}
-				directionOfGood={directionOfGood}
-				decimals={decimals}
+				change={comparisons[index].change}
 				magnitudeText={magnitudeText}
 			/>
 		</PanelLine>
 	));
+};
 
 /** A label and its value in bold, led by an icon and coloured where the panel gives one. */
 export const ValueLine: React.FC<{

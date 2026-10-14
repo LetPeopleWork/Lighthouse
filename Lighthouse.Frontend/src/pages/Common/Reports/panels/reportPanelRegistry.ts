@@ -4,9 +4,10 @@ import type {
 	ReportMetricKey,
 } from "../../../../models/Reports/Report";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
-import CycleTimePanel from "./CycleTimePanel";
-import ThroughputPanel from "./ThroughputPanel";
-import type { DirectionOfGood } from "./thenNowComparison";
+import CycleTimePanel, { PERCENTILES } from "./CycleTimePanel";
+import { SPREAD_LINES } from "./DailySpreadPanel";
+import ThroughputPanel, { CHANGE_LINES } from "./ThroughputPanel";
+import type { ChangeLine, DirectionOfGood } from "./thenNowComparison";
 import WipPanel from "./WipPanel";
 import WorkItemAgePanel from "./WorkItemAgePanel";
 
@@ -23,6 +24,8 @@ export interface ReportPanelDefinition {
 	component: React.FC<Readonly<ReportPanelProps>>;
 	titleOf: (getTerm: (key: string) => string) => string;
 	directionOfGood: DirectionOfGood;
+	/** The lines the panel draws a change mark on, in its row order. */
+	changeLines: readonly ChangeLine[];
 }
 
 /** Every metric in the order its panel stacks, each named in the instance's words. */
@@ -42,21 +45,25 @@ export const reportPanelRegistry = {
 		component: CycleTimePanel,
 		titleOf: (getTerm) => getTerm(TERMINOLOGY_KEYS.CYCLE_TIME),
 		directionOfGood: "lower",
+		changeLines: PERCENTILES,
 	},
 	throughput: {
 		component: ThroughputPanel,
 		titleOf: (getTerm) => getTerm(TERMINOLOGY_KEYS.THROUGHPUT),
 		directionOfGood: "higher",
+		changeLines: CHANGE_LINES,
 	},
 	wip: {
 		component: WipPanel,
 		titleOf: (getTerm) => getTerm(TERMINOLOGY_KEYS.WIP),
 		directionOfGood: "lower",
+		changeLines: SPREAD_LINES,
 	},
 	"work-item-age": {
 		component: WorkItemAgePanel,
 		titleOf: (getTerm) => `Total ${getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE)}`,
 		directionOfGood: "lower",
+		changeLines: SPREAD_LINES,
 	},
 } satisfies Record<ReportMetricKey, ReportPanelDefinition>;
 

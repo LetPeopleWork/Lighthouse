@@ -16,7 +16,7 @@ import {
 
 const DECIMALS = 0;
 
-const PERCENTILES = [
+export const PERCENTILES = [
 	{ key: "p95", label: "95th", percentile: 95, decimals: DECIMALS },
 	{ key: "p85", label: "85th", percentile: 85, decimals: DECIMALS },
 	{ key: "p70", label: "70th", percentile: 70, decimals: DECIMALS },

@@ -16,7 +16,7 @@ import { distinctAbsenceNotesOf, shownText } from "./thenNowComparison";
 
 const DECIMALS = 0;
 
-const SPREAD_LINES = [
+export const SPREAD_LINES = [
 	{
 		key: "average",
 		label: "Average",
