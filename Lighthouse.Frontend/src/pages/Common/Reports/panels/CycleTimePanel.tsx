@@ -17,6 +17,7 @@ import {
 const DECIMALS = 0;
 
 const PERCENTILES = [
+	{ key: "p95", label: "95th", percentile: 95, decimals: DECIMALS },
 	{ key: "p85", label: "85th", percentile: 85, decimals: DECIMALS },
 	{ key: "p70", label: "70th", percentile: 70, decimals: DECIMALS },
 	{ key: "p50", label: "50th", percentile: 50, decimals: DECIMALS },
@@ -47,7 +48,7 @@ const PercentileLines: React.FC<Readonly<ThenNowSideProps>> = ({
 	</>
 );
 
-/** Then's 85th, 70th and 50th percentiles beside Now's, with the change on each. */
+/** Then's 95th, 85th, 70th and 50th percentiles beside Now's, with the change on each. */
 const CycleTimePanel: React.FC<Readonly<ReportPanelProps>> = ({
 	title,
 	metric,

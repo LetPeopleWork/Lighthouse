@@ -987,7 +987,7 @@ describe("The panels of a report", () => {
 
 	// @us-01 @us-05b @slice-01 @slice-05b @contract-shape:pure-function
 	// The same icons as the Metrics tab's Cycle Time percentiles, so a reader knows the 50th is a coin toss.
-	it.skip("marks every percentile on both sides with the certainty icon the Metrics tab shows for it", async () => {
+	it("marks every percentile on both sides with the certainty icon the Metrics tab shows for it", async () => {
 		openTheReport();
 
 		const panel = await thePanel(CYCLE_TIME_PANEL);
@@ -1002,7 +1002,7 @@ describe("The panels of a report", () => {
 
 	// @us-05b @slice-05b @driving_port @contract-shape:pure-function
 	// Forecasts at the highest certainty lean on the 95th, so it opens the panel, above the 85th.
-	it.skip("opens the Cycle Time panel with the 95th for Then and for Now, and its change", async () => {
+	it("opens the Cycle Time panel with the 95th for Then and for Now, and its change", async () => {
 		openTheReport();
 
 		const panel = await thePanel(CYCLE_TIME_PANEL);
@@ -1019,7 +1019,7 @@ describe("The panels of a report", () => {
 
 	// @us-01 @us-05b @slice-01 @slice-05b @contract-shape:pure-function
 	// Colour alone tells nobody who cannot see it; the sign and the arrow say the same.
-	it.skip("tells a shorter Cycle Time as better on every percentile by arrow and sign as well as colour", async () => {
+	it("tells a shorter Cycle Time as better on every percentile by arrow and sign as well as colour", async () => {
 		openTheReport();
 
 		const panel = await thePanel(CYCLE_TIME_PANEL);
@@ -1207,7 +1207,7 @@ describe("The panels of a report", () => {
 	);
 
 	// @us-01 @us-05b @slice-01 @slice-05b @contract-shape:pure-function
-	it.skip("names the line of every change on the Cycle Time panel, the 95th first", async () => {
+	it("names the line of every change on the Cycle Time panel, the 95th first", async () => {
 		openTheReport();
 
 		const panel = await thePanel(CYCLE_TIME_PANEL);
