@@ -1,5 +1,7 @@
 # Slice 08 — Delete reports; Community's two; Premium unlimited
 
+> **Superseded cap (D57, 2026-10-14):** Community holds exactly **1** report per owner **per report type**, not 2 across every template. Every "2 reports" below becomes 1; DISTILL reworks this slice's tests and copy before DELIVER.
+
 **Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-08 (ADO #6166) · **Estimate**: ~1d · **Tier**: Community cap,
 Premium unlimited · `job_id: job-flow-coach-show-whether-flow-changed`
 

@@ -423,7 +423,7 @@ sketch review (2026-10-14); D53–D54 the maintainer's decisions after the slice
   them, reuse the existing chart components (5882 renders them server-side); Then & Now shows none (D39). No
   app-level Reports page in v1; a later cross-owner listing of viewable reports is not to be blocked. The cap (D29)
   stays at 2 across all templates, signals included: it is meant to get tight. *(Cap superseded by D55 (2026-10-14):
-  2 per owner per report type.)*
+  2 per owner per report type; then by D57: exactly 1 per owner per report type.)*
 - [D37] **Then window: end date and length** (maintainer 2026-10-03, Q1; supersedes D20). The user picks Then's end
   date (default today; e.g. the day the coach came in, 7 Sep) and a length going back. Presets: {Team} 30 / 90 days, {Portfolio} 90 / 180 days, plus a custom number of days. Minimum 14 days; the
   whole window inside `DoneItemsCutoffDays` (D21 applies). Calendar days, inclusive at both ends, in the instance's
@@ -582,6 +582,13 @@ sketch review (2026-10-14); D53–D54 the maintainer's decisions after the slice
   types to come; amends D36's cap). The cap was 2 per owner across every type, Signals included; it is now 2 per owner
   for each type, so a Community {Team} can hold 2 Then & Now reports and, later, 2 signals and 2 custom reports.
   Premium stays unlimited. Built in slice 08 (US-08), which counts by owner and type.
+- [D57] **Community allows exactly ONE report per owner per report type** (maintainer 2026-10-14: "Premium unlimited
+  reports, community exactly one report per type and owner … it will scale with new report types. I think that's
+  fair."; supersedes D55's 2 and D29's 2-across-templates). A Community {Team} or {Portfolio} holds one Then & Now
+  report, and later one of each new type. Premium stays unlimited; a lapsed licence keeps every report readable and
+  deletable but stops creating. Every "2 reports" in the slice-08 story, its scenarios and its copy becomes 1 (the
+  singular, e.g. "Community includes 1 report per {Team} for each type"); slice 08's DISTILL reworks its tests and
+  copy before DELIVER, and the copy gets a maintainer sketch then.
 - [D56] **Value lines carry neutral icons; an unchanged line gets a dash mark** (maintainer 2026-10-14, after the
   slice-05 live check: "quite text heavy … Cycle Time stands out as we have icons"). Average, Median, Min and Max carry
   grey icons (an equals-like handle, then the vertical-align middle, bottom and top marks), Throughput's Total and per

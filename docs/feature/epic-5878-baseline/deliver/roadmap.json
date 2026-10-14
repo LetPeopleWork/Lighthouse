@@ -1709,7 +1709,7 @@
     {
       "id": "08",
       "name": "Slice 08 - delete reports, within Community's two (US-08, ADO #6166)",
-      "description": "Backend: DELETE for writers only, owner-scoped, the cap as a pure ReportCapPolicy fed by the licence and the owner's count, thenRebuildable, deleting reports of an unknown type, and ReportDeleted with its disclosure row. Frontend: delete from the list and from the view through DeleteConfirmationDialog's new optional warning, ReportDeleted, the cap state and refusal, the delete control's two slice-01 cases, the gone-report look, and the owner delete dialog naming its reports.",
+      "description": "Backend: DELETE for writers only, owner-scoped, the cap as a pure ReportCapPolicy fed by the licence and the owner's count, thenRebuildable, deleting reports of an unknown type, and ReportDeleted with its disclosure row. Frontend: delete from the list and from the view through DeleteConfirmationDialog's new optional warning, ReportDeleted, the cap state and refusal, the delete control's two slice-01 cases, the gone-report look, and the owner delete dialog naming its reports. SUPERSEDED CAP (D57, 2026-10-14): Community = exactly 1 report per owner per report type, Premium unlimited; re-DISTILL this slice's tests and copy (and re-sketch the cap copy) before its steps run.",
       "default_agent": "nw-software-crafter",
       "default_deps_strategy": "sequential",
       "steps": [

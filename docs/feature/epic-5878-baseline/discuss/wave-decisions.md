@@ -231,3 +231,4 @@ maintainer, K5) · demo history is short; screenshots may need a CSV adjustment 
 verdicts the differentiation against ValueFlow rests on the frozen Then and the count against frozen limits *(since
 D49, 2026-10-14: on the frozen Then alone)*.
 - **D55** (maintainer 2026-10-14) Community allows 2 reports per owner **per report type** (was 2 across every type, D36); Premium unlimited; built in slice 08.
+- **D57** (maintainer 2026-10-14) Community allows exactly **1** report per owner per report type (supersedes D55's 2); Premium unlimited; slice 08 DISTILL reworks its tests and copy.
