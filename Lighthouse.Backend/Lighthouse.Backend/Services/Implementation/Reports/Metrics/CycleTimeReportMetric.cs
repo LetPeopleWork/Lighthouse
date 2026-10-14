@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Services.Interfaces.Reports;
@@ -27,18 +26,10 @@ namespace Lighthouse.Backend.Services.Implementation.Reports.Metrics
         public bool AppliesTo(ReportOwnerKind ownerKind) => true;
 
         public JsonObject CaptureThen(ReportOwner owner, ReportWindow thenWindow)
-            => new(ValuesOf(series.CycleTimePercentiles(owner, thenWindow))
-                .Select(value => KeyValuePair.Create(value.Key, JsonSerializer.SerializeToNode(value.Value, ThenAndNowPayload.JsonOptions))));
+            => CapturedMembers.ToJson(ValuesOf(series.CycleTimePercentiles(owner, thenWindow)));
 
         public MetricRead Read(JsonObject? capturedThen, ReportOwner owner, ReportWindow nowWindow)
-        {
-            var atThen = Percentiles
-                .Select(member => (Member: member, Frozen: capturedThen?[member]?.Deserialize<CapturedValue>(ThenAndNowPayload.JsonOptions)))
-                .Where(captured => captured.Frozen is not null)
-                .ToDictionary(captured => captured.Member, captured => captured.Frozen!);
-
-            return new MetricRead(atThen, ValuesOf(series.CycleTimePercentiles(owner, nowWindow)));
-        }
+            => new(CapturedMembers.FromJson(capturedThen, Percentiles), ValuesOf(series.CycleTimePercentiles(owner, nowWindow)));
 
         private static Dictionary<string, CapturedValue> ValuesOf(CycleTimePercentiles percentiles) => new()
         {

@@ -23,7 +23,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-04 @slice-04 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice04)]
         public async Task A_Team_can_be_reported_on_Cycle_Time_and_Throughput()
         {
             var gravity = ATeam("Team Gravity");
@@ -38,7 +37,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // Then is the 90 days to 31 Jul 2026 (3 May - 31 Jul), Now the last 90 days (5 Jul - 2 Oct): the two
         // overlap by 27 days, and the Work Items finished in those days count on both sides.
         [Test]
-        [Ignore(PendingSlice04)]
         public async Task Higher_Throughput_is_shown_as_the_total_and_the_average_per_day()
         {
             var lightspeed = GivenLightspeedFinishedFiftyTwoWorkItemsInThenAndSixtyFiveInNow();
@@ -65,7 +63,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-04 @slice-04 @contract-shape:bounded-change
         // Every metric that applies is frozen, ticked or not, so ticking it later still shows Then as it was.
         [Test]
-        [Ignore(PendingSlice04)]
         public async Task A_metric_that_is_not_shown_is_still_frozen()
         {
             var gravity = GivenGravityFinishedOneAndTwoWorkItemsOnAlternateDaysInAugust();

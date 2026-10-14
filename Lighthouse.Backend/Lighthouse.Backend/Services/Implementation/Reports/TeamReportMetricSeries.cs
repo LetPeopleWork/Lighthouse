@@ -11,19 +11,35 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
     {
         public CycleTimePercentiles CycleTimePercentiles(ReportOwner owner, ReportWindow window)
         {
-            if (owner.Kind != ReportOwnerKind.Team)
-            {
-                throw new ArgumentException($"Only a Team's series can be read here, not a {owner.Kind}'s", nameof(owner));
-            }
-
-            var team = teams.GetById(owner.Id) ?? throw new InvalidOperationException($"Team {owner.Id} does not exist");
-            var start = window.Start.ToDateTime(TimeOnly.MinValue);
-            var end = window.End.ToDateTime(TimeOnly.MinValue);
+            var team = TeamOf(owner);
+            var (start, end) = DaysOf(window);
 
             var percentiles = metrics.GetCycleTimePercentilesForTeam(team, start, end).ToDictionary(percentile => percentile.Percentile, percentile => percentile.Value);
             var finishedItems = metrics.GetClosedItemsForTeam(team, start, end).Count(item => item.CycleTime(clock.Zone) > 0);
 
             return new CycleTimePercentiles(percentiles[50], percentiles[70], percentiles[85], finishedItems);
         }
+
+        public IReadOnlyList<int> DailyThroughput(ReportOwner owner, ReportWindow window)
+        {
+            var team = TeamOf(owner);
+            var (start, end) = DaysOf(window);
+
+            var runChart = metrics.GetThroughputForTeam(team, start, end).WorkItemsPerUnitOfTime;
+            return [.. runChart.OrderBy(day => day.Key).Select(day => day.Value.Count)];
+        }
+
+        private Team TeamOf(ReportOwner owner)
+        {
+            if (owner.Kind != ReportOwnerKind.Team)
+            {
+                throw new ArgumentException($"Only a Team's series can be read here, not a {owner.Kind}'s", nameof(owner));
+            }
+
+            return teams.GetById(owner.Id) ?? throw new InvalidOperationException($"Team {owner.Id} does not exist");
+        }
+
+        private static (DateTime Start, DateTime End) DaysOf(ReportWindow window)
+            => (window.Start.ToDateTime(TimeOnly.MinValue), window.End.ToDateTime(TimeOnly.MinValue));
     }
 }
