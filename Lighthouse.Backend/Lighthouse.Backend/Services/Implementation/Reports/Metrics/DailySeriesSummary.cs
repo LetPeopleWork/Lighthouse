@@ -10,10 +10,10 @@ namespace Lighthouse.Backend.Services.Implementation.Reports.Metrics
     /// </summary>
     public static class DailySeriesSummary
     {
-        public const string Average = "average";
-        public const string Median = "median";
-        public const string Min = "min";
-        public const string Max = "max";
+        private const string Average = "average";
+        private const string Median = "median";
+        private const string Min = "min";
+        private const string Max = "max";
 
         public static Dictionary<string, CapturedValue> Of(IReadOnlyList<int> daily)
         {

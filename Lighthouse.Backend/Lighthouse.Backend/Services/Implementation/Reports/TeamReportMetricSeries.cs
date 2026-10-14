@@ -11,38 +11,29 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
     public class TeamReportMetricSeries(IRepository<Team> teams, ITeamMetricsService metrics, ILighthouseClock clock) : IReportMetricSeries
     {
         public CycleTimePercentiles CycleTimePercentiles(ReportOwner owner, ReportWindow window)
-        {
-            var team = TeamOf(owner);
-            var (start, end) = DaysOf(window);
+            => OverWindow(owner, window, (team, start, end) =>
+            {
+                var percentiles = metrics.GetCycleTimePercentilesForTeam(team, start, end).ToDictionary(percentile => percentile.Percentile, percentile => percentile.Value);
+                var finishedItems = metrics.GetClosedItemsForTeam(team, start, end).Count(item => item.CycleTime(clock.Zone) > 0);
 
-            var percentiles = metrics.GetCycleTimePercentilesForTeam(team, start, end).ToDictionary(percentile => percentile.Percentile, percentile => percentile.Value);
-            var finishedItems = metrics.GetClosedItemsForTeam(team, start, end).Count(item => item.CycleTime(clock.Zone) > 0);
-
-            return new CycleTimePercentiles(percentiles[50], percentiles[70], percentiles[85], finishedItems);
-        }
+                return new CycleTimePercentiles(percentiles[50], percentiles[70], percentiles[85], finishedItems);
+            });
 
         public IReadOnlyList<int> DailyThroughput(ReportOwner owner, ReportWindow window)
-        {
-            var team = TeamOf(owner);
-            var (start, end) = DaysOf(window);
-
-            return DailyCounts(metrics.GetThroughputForTeam(team, start, end));
-        }
+            => OverWindow(owner, window, (team, start, end) => DailyCounts(metrics.GetThroughputForTeam(team, start, end)));
 
         public IReadOnlyList<int> DailyWorkInProgress(ReportOwner owner, ReportWindow window)
-        {
-            var team = TeamOf(owner);
-            var (start, end) = DaysOf(window);
-
-            return DailyCounts(metrics.GetWorkInProgressOverTimeForTeam(team, start, end));
-        }
+            => OverWindow(owner, window, (team, start, end) => DailyCounts(metrics.GetWorkInProgressOverTimeForTeam(team, start, end)));
 
         public IReadOnlyList<int> DailyTotalWorkItemAge(ReportOwner owner, ReportWindow window)
+            => OverWindow(owner, window, metrics.GetDailyTotalWorkItemAgeForTeam);
+
+        private T OverWindow<T>(ReportOwner owner, ReportWindow window, Func<Team, DateTime, DateTime, T> read)
         {
             var team = TeamOf(owner);
             var (start, end) = DaysOf(window);
 
-            return metrics.GetDailyTotalWorkItemAgeForTeam(team, start, end);
+            return read(team, start, end);
         }
 
         private static int[] DailyCounts(RunChartData runChart)
