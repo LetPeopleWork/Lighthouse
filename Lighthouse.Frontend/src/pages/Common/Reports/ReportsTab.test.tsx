@@ -1065,6 +1065,28 @@ describe("The layout of the Reports list", () => {
 		expect(sortButtonOf("Created")).not.toBeNull();
 	});
 
+	it("sorts the reports by name", async () => {
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
+			reportService: aReportService({
+				getReports: vi
+					.fn()
+					.mockResolvedValue(
+						aReportList([
+							aListedReport({ id: 1, name: "Zenith" }),
+							aListedReport({ id: 2, name: "Apex" }),
+						]),
+					),
+			}),
+		});
+		await screen.findByRole("link", { name: "Zenith" });
+
+		await userEvent.click(screen.getByRole("columnheader", { name: "Name" }));
+
+		expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual(
+			["Apex", "Zenith"],
+		);
+	});
+
 	it("follows a Team's saved layout, which may hide Type and Created but never Name or the actions", async () => {
 		localStorage.setItem(
 			"lighthouse:datagrid:reports-team:state",
