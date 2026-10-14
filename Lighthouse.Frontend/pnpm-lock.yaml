@@ -215,8 +215,8 @@ importers:
         specifier: ^9.15.0
         version: 9.15.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(react@19.3.0))(@mui/material@9.4.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@mui/system@9.4.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(date-fns@4.4.0)(dayjs@1.11.23)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@svar-ui/react-gantt':
-        specifier: 2.7.3
-        version: 2.7.3(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        specifier: 2.8.0
+        version: 2.8.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@tanstack/react-query':
         specifier: ^5.104.1
         version: 5.104.1(react@19.3.0)
@@ -1357,32 +1357,29 @@ packages:
   '@svar-ui/filter-store@2.6.1':
     resolution: {integrity: sha512-2UHeXuNYN56MokBhB48EJ7KvKDVAJbRP2nIbE6t7lbsnWhRsBGxPc4jjUQn/9K+MTGkxrzPrOfeoH8L4p3Hy5g==}
 
-  '@svar-ui/gantt-data-provider@2.7.2':
-    resolution: {integrity: sha512-4j+fWq0y7+qfBcu0R5YS13M1u9fKJiH9YQt/81fRRFcRu12Rvpi/HDXeOVpE/APvsM8NoHJdd5kKK6f59qmE+w==}
+  '@svar-ui/gantt-data-provider@2.8.0':
+    resolution: {integrity: sha512-tH+Jc19Ka1N8KV6fVserIaFwFykt2rozF85wGk1YoJ2GA/G8i3MDJxL/k20kiosQMavI59oNDoz4Kehzuo0NUQ==}
 
-  '@svar-ui/gantt-locales@2.7.2':
-    resolution: {integrity: sha512-yEihUiPx9dgr0FLfAoNpgS6QcVjYLqdW2TbyilZ0UaA3YLORly9lbmCI0PPnAALa73ws0qUy2AYaL1nTq0T4/w==}
+  '@svar-ui/gantt-locales@2.8.0':
+    resolution: {integrity: sha512-Lbh7cXo9oFd5vFWlbE4EFaw94bKbmVOchihUJUa9HQ8rL+vhGel4q5ntvowTueWn2c7kXZ8Lxbza5J/AqwPcBA==}
 
-  '@svar-ui/gantt-store@2.7.2':
-    resolution: {integrity: sha512-krax1GzUWBOTcMVTaaqYlMuJ5lNBkzA6VIhNCnHq+0kFnHg52Hx+D0MQnMkSOUyFA2w0SoiYvUYuAGiQx4eA9A==}
+  '@svar-ui/gantt-store@2.8.0':
+    resolution: {integrity: sha512-9ukS3hCYqPRANPszRCFQzRPJkuIIPt9S2y0z8ZZF95JV5rZSXwtJ8NnvEdkbjoI4dVSAFk4mW7FWWg475rxe6Q==}
 
-  '@svar-ui/grid-data-provider@2.7.3':
-    resolution: {integrity: sha512-MFobgoczW6wBPjKq8fTORlJEEn2f6jHKWH1h3pC6qmcKr8GRA+TaRaFPVcI2iD5pOc+h/JZxuKE6L+x99S2Uwg==}
+  '@svar-ui/grid-data-provider@2.7.4':
+    resolution: {integrity: sha512-ri/XB+1kClw4+Q75IJnb33ayVvhcZ3cLnkeJYbG4aXnOkLHYcn2AcG2x5OY74EtBUVh6Mqw49T7pfTE+RhrdWQ==}
 
-  '@svar-ui/grid-locales@2.7.3':
-    resolution: {integrity: sha512-bgB2TfSKjY7mYeTzJjCyOoPco7boz+SQ0xFFsnRp849QN5sJoJEtOl/xnzbR58bLdxq57ne5Z708ozxXDT36lQ==}
+  '@svar-ui/grid-locales@2.7.4':
+    resolution: {integrity: sha512-YaTaydguY8vVPcgZ3K+WOnv70i4vRw+Gosiek6afDS0mkjjMVZT8W+yzMfHuTf6INJOdUUev5yi+EEAW3faMnA==}
 
-  '@svar-ui/grid-store@2.7.3':
-    resolution: {integrity: sha512-YVmLnFLq7P3ACAos0EiMYHLQbnmjaukmUaMoraTG8vhFsI5BwVaeSFdeC9MQIjbIMlxn/uMA0eEXmZuSxHk2hA==}
-
-  '@svar-ui/lib-data-provider@1.7.1':
-    resolution: {integrity: sha512-5Bi9ywngcMTKpGtan0s7q8ivd84Bp0ZnRP+5bLZg6oiRB7YMyN5D5X+apc3CWDAnG4zZn3en4YwS2qc/aHIIuQ==}
-
-  '@svar-ui/lib-data-provider@1.7.2':
-    resolution: {integrity: sha512-Od93Iiy0vBwVzgJm25WdizH3d4Xlli/HAA2kqoUj1pzeZ2SWBeFzvE59iihQz8NuIlfAtQJ6MMe168458T+2lQ==}
+  '@svar-ui/grid-store@2.7.4':
+    resolution: {integrity: sha512-JWsex5LdWvyZB/wgQ6eDIRkeFaZPDAbUzZMZ/NZf9+we56yV9IQ+xg1EhjSpwpYWBqsD8+BosiiTjHwlmfh3mw==}
 
   '@svar-ui/lib-data-provider@1.7.3':
     resolution: {integrity: sha512-+UAM1VybQco5N52iv6rVcDwOJ5G1qE+V+nvaoBHx41H05w4TZTFJL+UnRy99NDLrVbLoCWhoH3L8vyNmZVjTvw==}
+
+  '@svar-ui/lib-data-provider@1.7.4':
+    resolution: {integrity: sha512-aDNMqd4kKK7aGTkF6F2zrjchaE3cjVKAYNCzm2fsLXKiGLn6gpxUAXGgsEuPrgop5wvOfJVJGr7cO/3dEsdHpA==}
 
   '@svar-ui/lib-dom@0.11.1':
     resolution: {integrity: sha512-4wgerhDVttvrQ9t6OjHur34Of+VVr2VygA16HHGcWHytgdnOuGgfZb5PeBEhCJw/pO3RKfJvBHbaMIzL4IR//g==}
@@ -1401,6 +1398,9 @@ packages:
 
   '@svar-ui/lib-react@1.3.0':
     resolution: {integrity: sha512-jVcREYAMAXOhZB/lbMmLteGKIZoUW3rzmoXCMcFLGcHIGUH7AjFrKOAG/SJvgV0grcG9XyuRTG3jp++6NIGtuw==}
+
+  '@svar-ui/lib-state@1.10.1':
+    resolution: {integrity: sha512-Gdxm1F0dv6jhy5SM473spM9TX8qH8ZycTRggawHpJikdSME3FN7v6b+ER202PjGB4VnWWlqFRHZqkVWsSyZ8Wg==}
 
   '@svar-ui/lib-state@1.9.6':
     resolution: {integrity: sha512-twoHa8wZvzdxtES68s6Wnp4Xi1WivScNaFFK6sJ6WDgqVYOzJw0ZhVVrdwHQgieLITTKl/DYh/U3nuqtMetKYw==}
@@ -1432,14 +1432,14 @@ packages:
       react: '>=18'
       react-dom: '>=18'
 
-  '@svar-ui/react-gantt@2.7.3':
-    resolution: {integrity: sha512-1kLEXrfJ3fkXp5NCvMHIpsjdEphy0EC5ce2nphs8GOFlsiSp6nRau+GY0Go6ivGDPdcchPkZ8a0Q1iKk3HtyRA==}
+  '@svar-ui/react-gantt@2.8.0':
+    resolution: {integrity: sha512-BqZi9r3GKaR5woucqJR2i9FPW8jrEg8WH1t8RheR+LQxcCF2munZE+H1KPOMzyRNWdJJDt7yjdUu38Z3iK4orw==}
     peerDependencies:
       react: '>=18'
       react-dom: '>=18'
 
-  '@svar-ui/react-grid@2.7.4':
-    resolution: {integrity: sha512-m3AbGuQNeEnniDcyBesEOg+IirwW5NasJQCfJd7jIFhUyfQ79w+crSnLbinEVS59/OKGrqkmxnLDcDwEKbu4rg==}
+  '@svar-ui/react-grid@2.7.5':
+    resolution: {integrity: sha512-HtswR/kqA/xc1LmHZZxtSwGXCEYRNON0H1p/6fcmoZJ2Wb/p3Kr4jBVjz+YVgTpoHV8blT61q0Ww0YiNaCDCNg==}
     peerDependencies:
       react: '>=18'
       react-dom: '>=18'
@@ -4433,39 +4433,36 @@ snapshots:
     dependencies:
       '@svar-ui/lib-state': 1.9.6
 
-  '@svar-ui/gantt-data-provider@2.7.2':
+  '@svar-ui/gantt-data-provider@2.8.0':
     dependencies:
-      '@svar-ui/lib-data-provider': 1.7.1
+      '@svar-ui/lib-data-provider': 1.7.4
 
-  '@svar-ui/gantt-locales@2.7.2': {}
+  '@svar-ui/gantt-locales@2.8.0': {}
 
-  '@svar-ui/gantt-store@2.7.2':
+  '@svar-ui/gantt-store@2.8.0':
     dependencies:
-      '@svar-ui/lib-state': 1.9.7
+      '@svar-ui/lib-dom': 0.14.0
+      '@svar-ui/lib-state': 1.10.1
       date-fns: 3.6.0
 
-  '@svar-ui/grid-data-provider@2.7.3':
+  '@svar-ui/grid-data-provider@2.7.4':
     dependencies:
-      '@svar-ui/lib-data-provider': 1.7.2
+      '@svar-ui/lib-data-provider': 1.7.4
 
-  '@svar-ui/grid-locales@2.7.3': {}
+  '@svar-ui/grid-locales@2.7.4': {}
 
-  '@svar-ui/grid-store@2.7.3':
+  '@svar-ui/grid-store@2.7.4':
     dependencies:
       '@svar-ui/lib-dom': 0.12.1
-      '@svar-ui/lib-state': 1.9.6
-
-  '@svar-ui/lib-data-provider@1.7.1':
-    dependencies:
-      '@svar-ui/lib-state': 1.9.6
-
-  '@svar-ui/lib-data-provider@1.7.2':
-    dependencies:
-      '@svar-ui/lib-state': 1.9.6
+      '@svar-ui/lib-state': 1.10.1
 
   '@svar-ui/lib-data-provider@1.7.3':
     dependencies:
       '@svar-ui/lib-state': 1.9.6
+
+  '@svar-ui/lib-data-provider@1.7.4':
+    dependencies:
+      '@svar-ui/lib-state': 1.10.1
 
   '@svar-ui/lib-dom@0.11.1': {}
 
@@ -4482,6 +4479,8 @@ snapshots:
   '@svar-ui/lib-react@1.3.0':
     dependencies:
       '@svar-ui/lib-dom': 0.12.2
+
+  '@svar-ui/lib-state@1.10.1': {}
 
   '@svar-ui/lib-state@1.9.6': {}
 
@@ -4531,21 +4530,21 @@ snapshots:
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)
 
-  '@svar-ui/react-gantt@2.7.3(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+  '@svar-ui/react-gantt@2.8.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
       '@svar-ui/core-locales': 2.6.1
-      '@svar-ui/gantt-data-provider': 2.7.2
-      '@svar-ui/gantt-locales': 2.7.2
-      '@svar-ui/gantt-store': 2.7.2
-      '@svar-ui/grid-store': 2.7.3
+      '@svar-ui/gantt-data-provider': 2.8.0
+      '@svar-ui/gantt-locales': 2.8.0
+      '@svar-ui/gantt-store': 2.8.0
+      '@svar-ui/grid-store': 2.7.4
       '@svar-ui/lib-dom': 0.14.0
       '@svar-ui/lib-react': 1.3.0
-      '@svar-ui/lib-state': 1.9.7
+      '@svar-ui/lib-state': 1.10.1
       '@svar-ui/react-comments': 2.6.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@svar-ui/react-core': 2.6.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@svar-ui/react-editor': 2.6.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@svar-ui/react-filter': 2.6.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@svar-ui/react-grid': 2.7.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@svar-ui/react-grid': 2.7.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@svar-ui/react-menu': 2.6.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@svar-ui/react-tasklist': 2.6.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@svar-ui/react-toolbar': 2.6.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -4553,18 +4552,17 @@ snapshots:
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)
 
-  '@svar-ui/react-grid@2.7.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+  '@svar-ui/react-grid@2.7.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
-      '@svar-ui/grid-data-provider': 2.7.3
-      '@svar-ui/grid-locales': 2.7.3
-      '@svar-ui/grid-store': 2.7.3
+      '@svar-ui/grid-data-provider': 2.7.4
+      '@svar-ui/grid-locales': 2.7.4
+      '@svar-ui/grid-store': 2.7.4
       '@svar-ui/lib-dom': 0.14.0
       '@svar-ui/lib-react': 1.3.0
-      '@svar-ui/lib-state': 1.9.7
+      '@svar-ui/lib-state': 1.10.1
       '@svar-ui/react-core': 2.6.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@svar-ui/react-editor': 2.6.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@svar-ui/react-filter': 2.6.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@svar-ui/react-menu': 2.6.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@svar-ui/react-toolbar': 2.6.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)
 
