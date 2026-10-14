@@ -41,7 +41,7 @@ The complete list of events:
 | Event | When it is sent | What travels with it |
 |---|---|---|
 | A Team tab was opened | Somebody opened a tab on a Team page **and was still on it five seconds later** | Which of the seven Team tabs it was. **Never which Team** |
-| A Portfolio tab was opened | Somebody opened a tab on a Portfolio page **and was still on it five seconds later** | Which of the five Portfolio tabs it was. **Never which Portfolio** |
+| A Portfolio tab was opened | Somebody opened a tab on a Portfolio page **and was still on it five seconds later** | Which of the six Portfolio tabs it was. **Never which Portfolio** |
 | A Team was created | Somebody finished creating a Team, or with `lh team create` | Nothing. **Not its name, not its identifier** |
 | A Team was deleted | Somebody confirmed deleting a Team, or with `lh team delete` | Nothing. **Not its name, not its identifier** |
 | A Portfolio was created | Somebody finished creating a Portfolio, or with `lh portfolio create` | Nothing. **Not its name, not its identifier** |
@@ -85,7 +85,7 @@ Every event carries these, attached by **your** server rather than by your brows
 |---|---|---|
 | Identifier | A random value your Lighthouse generates and stores **on your own server**, against the record of one answer — a browser's, `lh`'s on one machine, or one running shared MCP server's — the first time somebody agrees there. Derived from nothing — not your hostname, not your licence key, not your account. Neither your browser nor `lh` ever sees it or sends it | `a7f2…` |
 | Source | Where the event came from, as one of `Browser`, `Cli` and `Mcp`: the web page, the `lh` command line, or an MCP server. Your server attaches it from what the client declares when it hands the event in. It is declared, not verified: your server has no way to check which client is really talking to it | `Browser`, `Cli`, `Mcp` |
-| Which tab was opened | **Only on the two tab openings above.** One of twelve addresses this product publishes about itself, listed in full below. Your browser never sends an address; it sends a label, and your server looks the published address up. On the other sixteen events this field is not empty — it is not there at all | `/teams/:id/metrics` |
+| Which tab was opened | **Only on the two tab openings above.** One of thirteen addresses this product publishes about itself, listed in full below. Your browser never sends an address; it sends a label, and your server looks the published address up. On the other sixteen events this field is not empty — it is not there at all | `/teams/:id/metrics` |
 | Which setting was switched | **Only on a setting being switched.** A fixed word this product publishes for the setting, and there is one: `FeatureOrder`, for *Let Lighthouse own the order of your Features*. **Never the key the setting is stored under, and never its name as you see it on screen.** On the other seventeen events this field is not empty — it is not there at all | `FeatureOrder` |
 | Which way it was switched | **Only on a setting being switched.** `true` when the setting is now on, `false` when it is now off. On the other seventeen events this field is not `false` — it is not there at all | `true`, `false` |
 | When it happened in refinement | **Only on a sizing vote and on a Work Item made Ready by votes.** A fixed word for when it happened relative to the Team's Refinement, and there are three: `OnRefinementDay`, on a day the Team has a Refinement; `OnOtherDay`, on any other day; and `NoCadence`, for a Team that has no Refinement cadence. **Never a date, a time or a day of the week.** On the other sixteen events this field is not empty — it is not there at all | `OnRefinementDay`, `OnOtherDay`, `NoCadence` |
@@ -104,13 +104,13 @@ That number never leaves your browser. What the browser records is not a shorten
 fixed label chosen from a closed list, so there is no address present to shorten and nothing to
 accidentally get wrong.
 
-Your server turns that label into the address this product publishes for it. There are twelve of
+Your server turns that label into the address this product publishes for it. There are thirteen of
 those, and this is all of them:
 
 `/teams/:id/features`, `/teams/:id/forecasts`, `/teams/:id/metrics`, `/teams/:id/settings`,
 `/teams/:id/access`, `/teams/:id/refinement`, `/teams/:id/reports`, `/portfolios/:id/features`,
 `/portfolios/:id/metrics`, `/portfolios/:id/deliveries`, `/portfolios/:id/settings`,
-`/portfolios/:id/access`
+`/portfolios/:id/access`, `/portfolios/:id/reports`
 
 The `:id` is written that way in Lighthouse's own source. It is not a real identifier that something
 stripped on the way out — there was never a real one there to strip.

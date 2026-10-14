@@ -19,8 +19,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     [Category("epic-5878-baseline")]
     public class ReportUsageEventsTests : UsageDataCollectorObservationTest
     {
-        private const string PendingSlice06 = "Epic #5878 slice 06 (#6164) - pending DELIVER";
-
         private const string PendingSlice08 = "Epic #5878 slice 08 (#6166) - pending DELIVER";
 
         private const string ReportCreated = "ReportCreated";
@@ -117,7 +115,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @driving_port @real-io @us-01 @us-06 @slice-01 @slice-06 @kpi-OUT-5878-K1-report-created @contract-shape:bounded-change
         [TestCase(TabOpened, TeamReportsTab, "/teams/:id/reports")]
-        [TestCase(PortfolioTabOpened, PortfolioReportsTab, "/portfolios/:id/reports", Ignore = PendingSlice06)]
+        [TestCase(PortfolioTabOpened, PortfolioReportsTab, "/portfolios/:id/reports")]
         public async Task Opening_the_Reports_tab_travels_as_a_tab_opening_naming_that_tab(string name, string tab, string publishedAddress)
         {
             var token = await ABrowserThatAgreedAsync();
@@ -199,7 +197,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [TestCase("A report was opened", "`ThenAndNow`")]
         [TestCase("Which type of report", "`ThenAndNow`")]
         [TestCase("A Team tab was opened", "seven Team tabs")]
-        [TestCase("A Portfolio tab was opened", "six Portfolio tabs", Ignore = PendingSlice06)]
+        [TestCase("A Portfolio tab was opened", "six Portfolio tabs")]
         [TestCase("A report was deleted", "| Nothing", Ignore = PendingSlice08)]
         public void The_usage_data_page_has_a_row_for_what_Reports_send(string rowSays, string rowNames)
         {
@@ -214,7 +212,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @us-01 @us-06 @slice-01 @slice-06 @contract-shape:bounded-change
         [TestCase("/teams/:id/reports")]
-        [TestCase("/portfolios/:id/reports", Ignore = PendingSlice06)]
+        [TestCase("/portfolios/:id/reports")]
         public void The_usage_data_page_lists_the_Reports_address_among_those_it_publishes(string address)
         {
             Assert.That(TheUsageDataPage(), Does.Contain($"`{address}`"));
