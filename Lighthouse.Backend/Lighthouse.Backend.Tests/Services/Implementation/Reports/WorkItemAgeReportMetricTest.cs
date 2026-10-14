@@ -40,6 +40,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         }
 
         [Test]
+        public void Then_reads_its_own_window_and_Now_reads_its_own()
+        {
+            var thenWindow = WindowOf(new DateOnly(2026, 8, 31), 3);
+            var nowWindow = WindowOf(new DateOnly(2026, 10, 2), 3);
+            var subject = new WorkItemAgeReportMetric(SeriesAnswering((thenWindow, [10, 20, 30]), (nowWindow, [100, 200, 600])));
+
+            var read = subject.Read(subject.CaptureThen(Owner, thenWindow), Owner, nowWindow);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(read.AtThen["average"], Is.EqualTo(CapturedValue.Shown(20, 3)));
+                Assert.That(read.AtThen["max"], Is.EqualTo(CapturedValue.Shown(30, 3)));
+                Assert.That(read.AtNow["average"], Is.EqualTo(CapturedValue.Shown(300, 3)));
+                Assert.That(read.AtNow["max"], Is.EqualTo(CapturedValue.Shown(600, 3)));
+            }
+        }
+
+        [Test]
         public void A_window_with_nothing_in_progress_is_a_real_zero_never_a_dash()
         {
             var window = WindowOf(new DateOnly(2026, 8, 31), 30);
