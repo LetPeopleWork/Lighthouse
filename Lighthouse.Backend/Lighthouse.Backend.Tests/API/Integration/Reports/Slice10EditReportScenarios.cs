@@ -98,7 +98,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-10 @slice-10 @error @contract-shape:unbounded-preservation
         // An edit has no Then in it; one that brings Then along anyway is saved as if Then were not there.
         [Test]
-        [Ignore(PendingSlice10)]
         public async Task Then_cannot_be_edited()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -162,7 +161,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-10 @us-07 @slice-10 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice10)]
         public async Task A_reader_cannot_edit_a_report_not_even_how_long_Now_is()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -184,7 +182,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-10 @slice-10 @error @ac-10.6 @contract-shape:unbounded-preservation
         // Two admins of the Team opened the same report; the one who saves second has not seen the first's change.
         [Test]
-        [Ignore(PendingSlice10)]
         public async Task A_save_over_another_admins_change_is_refused_and_overwrites_nothing()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -242,7 +239,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-10 @slice-10 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice10)]
         public async Task Editing_through_another_Teams_address_changes_nothing()
         {
             var lightspeed = ATeam(Lightspeed);
