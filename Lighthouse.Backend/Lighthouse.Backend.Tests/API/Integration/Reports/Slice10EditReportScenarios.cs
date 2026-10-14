@@ -204,6 +204,28 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
+        // @driving_port @real-io @us-10 @slice-10 @error @ac-10.6 @contract-shape:unbounded-preservation
+        // An edit that does not name the version of the report it was made on could silently overwrite anybody's change.
+        [Test]
+        public async Task An_edit_that_does_not_name_the_version_it_was_made_on_is_refused_and_changes_nothing()
+        {
+            var lightspeed = ATeam(Lightspeed);
+            var reportId = await GivenTheAdminCreated(lightspeed, new NewReport());
+            var edit = AnEdit(await TheReport(lightspeed, reportId), name: SinceAugust, nowLengthDays: 30);
+            edit.Remove("concurrencyToken");
+
+            using var refused = await EditTheReport(lightspeed, reportId, edit);
+
+            var answer = await refused.Content.ReadAsStringAsync();
+            var report = await TheReport(lightspeed, reportId);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), answer);
+                Assert.That(TextOf(report, "name"), Is.EqualTo(EngagementStart));
+                Assert.That(NowWindowIn(report).LengthDays, Is.EqualTo(90));
+            }
+        }
+
         // @driving_port @real-io @us-10 @slice-10 @error @contract-shape:unbounded-preservation
         [TestCase("", null, Reason.NameMissing)]
         [TestCase(SinceAugust, 13, Reason.NowTooShort)]

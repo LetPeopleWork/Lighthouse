@@ -26,6 +26,7 @@ import {
 	theWizard,
 } from "../../../tests/ReportsTestKit";
 import ReportView from "./ReportView";
+import { useOwnerReports } from "./useOwnerReports";
 
 /**
  * Edit report reopens the create wizard on the report as it is. The Type and Then are shown but locked -
@@ -91,6 +92,12 @@ const back = async () =>
 const onToTheLastStep = async () => {
 	await theNowLengthField();
 	await next();
+};
+
+/** The Reports tab's list, mounted beside the report so a refresh of it can be seen. */
+const TheReportList = () => {
+	useOwnerReports(LIGHTSPEED);
+	return null;
 };
 
 const theSaveButton = async () =>
@@ -329,6 +336,34 @@ describe("Editing a report", () => {
 				ENGAGEMENT_START_ID,
 				expect.objectContaining({ concurrencyToken: "token-2" }),
 			),
+		);
+	});
+
+	// @us-10 @slice-10 @driving_port @contract-shape:bounded-change
+	it("has the report list read again after the save", async () => {
+		const reportService = aReportService({
+			getReport: vi.fn().mockResolvedValue(theEngagementStartReport()),
+			editReport: vi.fn().mockResolvedValue(renamed()),
+		});
+		renderWithReports(
+			<>
+				<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />
+				<TheReportList />
+			</>,
+			{ reportService, viewer: "admin" },
+		);
+		await waitFor(() =>
+			expect(reportService.getReports).toHaveBeenCalledTimes(1),
+		);
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Edit report" }),
+		);
+		await onToTheLastStep();
+
+		await userEvent.click(await theSaveButton());
+
+		await waitFor(() =>
+			expect(reportService.getReports).toHaveBeenCalledTimes(2),
 		);
 	});
 });
