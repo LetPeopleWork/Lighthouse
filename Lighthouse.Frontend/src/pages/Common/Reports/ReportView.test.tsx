@@ -78,7 +78,7 @@ vi.mock("react-router", async () => ({
 const CYCLE_TIME_PANEL = "Cycle Time";
 const THROUGHPUT_PANEL = "Throughput";
 const WIP_PANEL = "WIP";
-const AGE_PANEL = "Work Item Age";
+const AGE_PANEL = "Total Work Item Age";
 const READY = "ready";
 
 /** The icons the Metrics tab's Cycle Time percentiles carry for the 85th, 70th and 50th. */
@@ -178,8 +178,18 @@ const withThenCycleTime = (atThen: ReportMetricSide): IReport =>
 	withCycleTime({
 		atThen,
 		atNow: { p85: shown(12, 41), p70: shown(7, 41), p50: shown(4, 41) },
-		beyondThenLimits: null,
 	});
+
+/**
+ * A report made before Throughput was captured. Its summary counts the closed Work Items from its Cycle Time;
+ * one that captured Throughput counts them from Throughput's total, which takes in every finished Work Item.
+ */
+const madeBeforeThroughput = (
+	report: IReport = theEngagementStartReport(),
+): IReport => {
+	report.thenAndNow.metrics.throughput = undefined;
+	return report;
+};
 
 const noneFinished = {
 	value: null,
@@ -196,18 +206,12 @@ const beforeEachReportTest = () => {
 describe("The report header", () => {
 	beforeEach(beforeEachReportTest);
 
-	// @us-01 @us-02 @us-07 @slice-07 @driving_port @contract-shape:pure-function
-	it.skip("names Then as frozen, Now as the last days ending today, and how long ago Then ended", async () => {
-		openTheReport();
-
-		await theReportIsReady();
-		const page = readingOf(document.body);
-
-		expect(page).toContain("Then: 90 days to 31 Jul 2026 — frozen");
-		expect(page).toContain("Now: last 90 days, 5 Jul – 2 Oct 2026");
-		expect(page).toContain("63 days since Then ended");
-		expect(page).not.toMatch(/baseline/i);
-	});
+	// @us-07 @slice-07 @driving_port @contract-shape:pure-function
+	// Where and in what words the summary says how long ago Then ended waits for a sketch the maintainer has
+	// seen; the lines naming Then as frozen and Now as the last days were dropped and are pinned as absent below.
+	it.todo(
+		"says how long ago Then ended, in the words of the sketch the maintainer approves",
+	);
 
 	// @us-01 @slice-01 @contract-shape:pure-function
 	it("names the report on one line after Reports, which leads back to the list, with no large heading", async () => {
@@ -232,8 +236,9 @@ describe("The report's summary header", () => {
 	beforeEach(beforeEachReportTest);
 
 	// @us-01 @slice-03 @driving_port @contract-shape:pure-function
+	// A report made before Throughput was captured counts from its Cycle Time; the count from Throughput is slice 04's.
 	it("opens with a summary of each side's window and how many Work Items closed in it", async () => {
-		openTheReport();
+		openTheReport(madeBeforeThroughput());
 
 		await theReportIsReady();
 
@@ -296,10 +301,9 @@ describe("The report's summary header", () => {
 		const report = withCycleTime({
 			atThen: { p85: shown(21, 38), p70: shown(10, 38), p50: shown(5, 38) },
 			atNow: { p85: shown(3, 1), p70: shown(3, 1), p50: shown(3, 1) },
-			beyondThenLimits: null,
 		});
 		report.thenAndNow.nowWindow = aWindow("2026-10-02", "2026-10-02", 1);
-		openTheReport(report);
+		openTheReport(madeBeforeThroughput(report));
 
 		await theReportIsReady();
 
@@ -310,8 +314,8 @@ describe("The report's summary header", () => {
 	// @us-01 @slice-03 @error @contract-shape:pure-function
 	it.each([
 		[
-			"the Work Items behind the first percentile that has any",
-			{ p85: aDash("too-few-points"), p70: shown(10, 4), p50: shown(5, 4) },
+			"the Work Items behind the first percentile that has any, the 85th recorded as never captured",
+			{ p85: null, p70: shown(10, 4), p50: shown(5, 4) },
 			"4 Work Items closed",
 		],
 		[
@@ -334,7 +338,7 @@ describe("The report's summary header", () => {
 			"0 Work Items closed",
 		],
 	])("counts as closed in Then %s", async (_, atThen, countLine) => {
-		openTheReport(withThenCycleTime(atThen));
+		openTheReport(madeBeforeThroughput(withThenCycleTime(atThen)));
 
 		await theReportIsReady();
 
@@ -349,13 +353,13 @@ describe("The report's summary header", () => {
 		["missing from the report", undefined],
 		["recorded as never captured", null],
 	])(
-		"names both windows but no closed count when Cycle Time is %s",
+		"names both windows but no closed count when neither Throughput nor Cycle Time was captured, Cycle Time %s",
 		async (_, cycleTime) => {
 			const report = theEngagementStartReport({
 				shownMetricKeys: ["throughput"],
 			});
 			report.thenAndNow.metrics["cycle-time"] = cycleTime;
-			openTheReport(report);
+			openTheReport(madeBeforeThroughput(report));
 
 			await theReportIsReady();
 
@@ -373,7 +377,9 @@ describe("The report's summary header", () => {
 	// Every report keeps its Cycle Time, so the count is there even when its panel is not.
 	it("counts the closed Work Items even when the report does not show its Cycle Time panel", async () => {
 		openTheReport(
-			theEngagementStartReport({ shownMetricKeys: ["throughput"] }),
+			madeBeforeThroughput(
+				theEngagementStartReport({ shownMetricKeys: ["throughput"] }),
+			),
 		);
 
 		await theReportIsReady();
@@ -381,6 +387,67 @@ describe("The report's summary header", () => {
 		expect(readingOfSummary("then")).toMatch(/ 38 Work Items closed$/);
 		expect(readingOfSummary("now")).toMatch(/ 41 Work Items closed$/);
 	});
+
+	// @us-03 @us-04 @slice-04 @driving_port @contract-shape:pure-function
+	// Throughput counts every finished Work Item, Cycle Time only those whose cycle time it can measure. Once a
+	// report captured Throughput, the summary reads its total, so the summary and the Throughput panel agree.
+	it.skip.each<[string, (report: IReport) => IReport, string, string]>([
+		[
+			"a report that captured both",
+			(report) => report,
+			"52 Work Items closed",
+			"65 Work Items closed",
+		],
+		[
+			"a report that does not show its Throughput panel",
+			(report) => ({ ...report, shownMetricKeys: ["cycle-time"] }),
+			"52 Work Items closed",
+			"65 Work Items closed",
+		],
+		[
+			"a report whose Cycle Time was never captured",
+			(report) => {
+				report.thenAndNow.metrics["cycle-time"] = null;
+				return report;
+			},
+			"52 Work Items closed",
+			"65 Work Items closed",
+		],
+		[
+			"a Then where nothing finished",
+			(report) => {
+				report.thenAndNow.metrics.throughput = {
+					atThen: { total: shown(0, 90), perDay: shown(0, 90) },
+					atNow: { total: shown(65, 90), perDay: shown(0.72, 90) },
+				};
+				report.thenAndNow.metrics["cycle-time"] = {
+					atThen: {
+						p85: aDash("no-finished-items"),
+						p70: aDash("no-finished-items"),
+						p50: aDash("no-finished-items"),
+					},
+					atNow: { p85: shown(12, 41), p70: shown(7, 41), p50: shown(4, 41) },
+				};
+				return report;
+			},
+			"0 Work Items closed",
+			"65 Work Items closed",
+		],
+	])(
+		"counts as closed the Work Items Throughput finished, for %s",
+		async (_, shape, thenLine, nowLine) => {
+			openTheReport(shape(theEngagementStartReport()));
+
+			await theReportIsReady();
+
+			expect(readingOfSummary("then")).toMatch(
+				new RegExp(`^THEN 3 May – 31 Jul 2026 · 90 days ${thenLine}$`, "i"),
+			);
+			expect(readingOfSummary("now")).toMatch(
+				new RegExp(`^NOW 5 Jul – 2 Oct 2026 · 90 days ${nowLine}$`, "i"),
+			);
+		},
+	);
 
 	// @us-01 @slice-03 @contract-shape:pure-function
 	it("names the closed Work Items in the instance's words", async () => {
@@ -393,9 +460,8 @@ describe("The report's summary header", () => {
 		report.thenAndNow.metrics["cycle-time"] = {
 			atThen: { p85: shown(21, 38), p70: shown(10, 38), p50: shown(5, 38) },
 			atNow: { p85: shown(3, 1), p70: shown(3, 1), p50: shown(3, 1) },
-			beyondThenLimits: null,
 		};
-		openTheReport(report);
+		openTheReport(madeBeforeThroughput(report));
 
 		await theReportIsReady();
 
@@ -547,7 +613,6 @@ describe("The panels of a report", () => {
 			withCycleTime({
 				atThen: { p85: shown(15, 181), p70: shown(9, 181), p50: shown(5, 181) },
 				atNow: { p85: shown(12, 203), p70: shown(9, 203), p50: shown(6, 203) },
-				beyondThenLimits: null,
 			}),
 		);
 
@@ -562,17 +627,6 @@ describe("The panels of a report", () => {
 		expect(worse.map(readingOf)).toEqual(["▲ 1 day (+20 %)"]);
 	});
 
-	// @us-03 @slice-03 @contract-shape:pure-function
-	it.skip("counts Now's Work Items beyond Then's limits, and says why there is no count below", async () => {
-		openTheReport();
-
-		const panel = readingOf(await thePanel(CYCLE_TIME_PANEL));
-
-		expect(panel).toContain("Work Items beyond Then's limits: 1 above");
-		expect(panel).toContain("— below");
-		expect(panel).toContain("Then's lower limit is 0");
-	});
-
 	// @us-04 @slice-04 @contract-shape:pure-function
 	it.skip("shows Throughput as a total and a per-day average, compared per day", async () => {
 		openTheReport();
@@ -580,38 +634,71 @@ describe("The panels of a report", () => {
 		const panel = await thePanel(THROUGHPUT_PANEL);
 		const then = readingOfSegment(panel, "then");
 
-		expect(then).toMatch(/^THEN · 90 days /i);
-		expect(then).toContain("Total 52 Work Items");
-		expect(then).toContain("0.58 per day");
-		expect(then.match(/90 days/g)).toHaveLength(1);
-		expect(readingOf(panel)).toContain("Days beyond Then's limits: 2 above");
+		expect(then).toMatch(/^THEN Total 52 Work Items /i);
+		expect(then).toMatch(/ 0\.58 per day$/);
+		expect(readingOfSegment(panel, "now")).toMatch(
+			/^NOW Total 65 Work Items .*0\.72 per day$/i,
+		);
+		expect(readingOf(panel)).not.toMatch(/\d+ days|limit|beyond/i);
+		expect(changesIn(panel)).toHaveLength(1);
 		expect(readingOf(changesIn(panel)[0])).toBe("▲ 0.14 per day (+24 %)");
 		expect(changesIn(panel)[0].dataset.change).toBe("better");
 	});
 
 	// @us-05 @slice-05 @contract-shape:pure-function
-	it.skip("shows WIP as an average with its range", async () => {
+	// The average 8.62 shows as 9 and 7.38 as 7, and the change is worked out from what is shown.
+	it.skip("shows WIP as its average, median, min and max, each with its own change, lower reading as better", async () => {
 		openTheReport();
 
 		const panel = await thePanel(WIP_PANEL);
+		const changes = changesIn(theSegment(panel, "change"));
 
 		expect(readingOfSegment(panel, "then")).toMatch(
-			/^THEN · 90 days Average 9 \(6–12\)$/i,
+			/^THEN Average 9 Median 9 Min 6 Max 12$/i,
 		);
 		expect(readingOfSegment(panel, "now")).toMatch(
-			/^NOW · 90 days Average 7 \(5–9\)$/i,
+			/^NOW Average 7 Median 7 Min 5 Max 9$/i,
 		);
-		expect(readingOf(changesIn(panel)[0])).toMatch(/^▼ .*\(−22 %\)$/);
+		expect(changes.map(readingOf)).toEqual([
+			"▼ 2 (−22 %)",
+			"▼ 2 (−22 %)",
+			"▼ 1 (−17 %)",
+			"▼ 3 (−25 %)",
+		]);
+		expect(changes.map((change) => change.dataset.change)).toEqual([
+			"better",
+			"better",
+			"better",
+			"better",
+		]);
 	});
 
 	// @us-05 @slice-05 @contract-shape:pure-function
-	it.skip("tells a growing Work Item Age as worse by sign and arrow as well as colour", async () => {
+	// Colour alone tells nobody who cannot see it; the sign and the arrow say the same.
+	it.skip("tells a growing Total Work Item Age as worse on every line by sign and arrow as well as colour", async () => {
 		openTheReport();
 
 		const panel = await thePanel(AGE_PANEL);
+		const changes = changesIn(theSegment(panel, "change"));
 
-		expect(readingOf(changesIn(panel)[0])).toBe("▲ 270 days (+44 %)");
-		expect(changesIn(panel)[0].dataset.change).toBe("worse");
+		expect(readingOfSegment(panel, "then")).toMatch(
+			/^THEN Average 610 days Median 600 days Min 420 days Max 760 days$/i,
+		);
+		expect(readingOfSegment(panel, "now")).toMatch(
+			/^NOW Average 880 days Median 870 days Min 640 days Max 990 days$/i,
+		);
+		expect(changes.map(readingOf)).toEqual([
+			"▲ 270 days (+44 %)",
+			"▲ 270 days (+45 %)",
+			"▲ 220 days (+52 %)",
+			"▲ 230 days (+30 %)",
+		]);
+		expect(changes.map((change) => change.dataset.change)).toEqual([
+			"worse",
+			"worse",
+			"worse",
+			"worse",
+		]);
 	});
 
 	// @us-04 @slice-04 @contract-shape:pure-function
@@ -639,8 +726,9 @@ describe("The panels of a report", () => {
 
 		await thePanel("Lead Time");
 
-		expect(readingOfSummary("then")).toMatch(/ 38 Tickets closed$/);
-		expect(readingOfSummary("now")).toMatch(/ 41 Tickets closed$/);
+		for (const side of SIDES) {
+			expect(readingOfSummary(side)).toMatch(/ \d+ Tickets closed$/);
+		}
 		expect(readingOf(document.body)).not.toContain("Cycle Time");
 		expect(readingOf(document.body)).not.toContain("Work Items");
 	});
@@ -659,7 +747,6 @@ describe("Values a report cannot show", () => {
 					p50: aDash("no-finished-items"),
 				},
 				atNow: { p85: shown(12, 41), p70: shown(7, 41), p50: shown(4, 41) },
-				beyondThenLimits: null,
 			}),
 		);
 
@@ -672,25 +759,6 @@ describe("Values a report cannot show", () => {
 		expect(changesIn(panel)).toHaveLength(0);
 	});
 
-	// @us-03 @slice-03 @error @contract-shape:pure-function
-	it.skip("shows a dash for the counts beyond Then's limits when Then had too few points to have any", async () => {
-		openTheReport(
-			withCycleTime({
-				atThen: { p85: shown(21, 4), p70: shown(10, 4), p50: shown(5, 4) },
-				atNow: { p85: shown(12, 41), p70: shown(7, 41), p50: shown(4, 41) },
-				beyondThenLimits: {
-					above: aDash("too-few-points"),
-					below: aDash("too-few-points"),
-				},
-			}),
-		);
-
-		const panel = await thePanel(CYCLE_TIME_PANEL);
-
-		expect(readingOf(panel)).toContain("Then has too few points for limits");
-		expect(readingOfSegment(panel, "then")).toMatch(/^THEN 85th 21 days/i);
-	});
-
 	// @us-04 @slice-04 @error @contract-shape:pure-function
 	// A rise from nothing has no percentage; the difference itself still shows.
 	it.skip("shows no percentage for a change from a Then of zero", async () => {
@@ -698,80 +766,88 @@ describe("Values a report cannot show", () => {
 		report.thenAndNow.metrics.throughput = {
 			atThen: { total: shown(0, 90), perDay: shown(0, 90) },
 			atNow: { total: shown(24, 90), perDay: shown(0.27, 90) },
-			beyondThenLimits: {
-				above: aDash("no-process"),
-				below: aDash("no-process"),
-			},
 		};
 		openTheReport(report);
 
 		const panel = readingOf(await thePanel(THROUGHPUT_PANEL));
 
 		expect(panel).toContain("Total 0 Work Items");
-		expect(panel).toContain("Then was 0");
-		expect(panel).toContain("Then never varied from 0");
-		expect(panel).not.toMatch(/%|Infinity|NaN/);
+		expect(panel).toContain("▲ 0.27 per day (Then was 0)");
+		expect(panel).not.toMatch(/%|Infinity|NaN|—/);
 	});
 
 	// @us-05 @slice-05 @error @contract-shape:pure-function
-	// Nothing in progress is a real WIP of 0, but an average age over no Work Items does not exist.
-	it.skip("shows WIP as a real 0 and the average Work Item Age as a dash when Then had nothing in progress", async () => {
+	// A day with nothing in progress is a real 0 for both metrics; only the percentage from a Then of 0 is missing.
+	it.skip("shows every WIP and Total Work Item Age line as a real 0 when Then had nothing in progress", async () => {
+		const zero = shown(0, 90);
 		const report = theEngagementStartReport();
 		report.thenAndNow.metrics.wip = {
-			atThen: { average: shown(0, 90), min: shown(0, 90), max: shown(0, 90) },
-			atNow: { average: shown(7, 90), min: shown(5, 90), max: shown(9, 90) },
-			beyondThenLimits: null,
+			atThen: { average: zero, median: zero, min: zero, max: zero },
+			atNow: {
+				average: shown(7, 90),
+				median: shown(7, 90),
+				min: shown(5, 90),
+				max: shown(9, 90),
+			},
 		};
 		report.thenAndNow.metrics["work-item-age"] = {
-			atThen: {
-				totalWindowAverage: shown(0, 90),
-				totalLastDay: shown(0, 90),
-				averageWindowAverage: aDash("no-wip"),
-				averageLastDay: aDash("no-wip"),
-			},
+			atThen: { average: zero, median: zero, min: zero, max: zero },
 			atNow: {
-				totalWindowAverage: shown(880, 10),
-				totalLastDay: shown(910, 10),
-				averageWindowAverage: shown(88, 10),
-				averageLastDay: shown(91, 10),
+				average: shown(880, 90),
+				median: shown(870, 90),
+				min: shown(640, 90),
+				max: shown(990, 90),
 			},
-			beyondThenLimits: null,
 		};
 		openTheReport(report);
 
-		const wip = readingOf(await thePanel(WIP_PANEL));
+		const wip = await thePanel(WIP_PANEL);
 		const age = await thePanel(AGE_PANEL);
 
-		expect(wip).toMatch(/THEN · 90 days Average 0 \(0–0\)/i);
-		expect(wip).not.toContain("No Work Items in progress");
-		expect(readingOf(age)).toContain("No Work Items in progress");
+		expect(readingOfSegment(wip, "then")).toMatch(
+			/^THEN Average 0 Median 0 Min 0 Max 0$/i,
+		);
+		expect(readingOfSegment(age, "then")).toMatch(
+			/^THEN Average 0 days Median 0 days Min 0 days Max 0 days$/i,
+		);
+		for (const panel of [wip, age]) {
+			const changes = changesIn(theSegment(panel, "change")).map(readingOf);
+			expect(changes).toHaveLength(4);
+			for (const change of changes) {
+				expect(change).toMatch(/^▲ .*\(Then was 0\)$/);
+			}
+			expect(readingOf(panel)).not.toMatch(/%|—|in progress/);
+		}
 	});
 
-	// @us-03 @slice-03 @boundary @contract-shape:pure-function
-	// A report created before the counts existed never froze Then's limits, so it cannot count against them.
-	it.skip("says the counts beyond Then's limits were not captured for a report made before they existed", async () => {
-		openTheReport(
-			withCycleTime({
-				atThen: { p85: shown(21, 38), p70: shown(10, 38), p50: shown(5, 38) },
-				atNow: { p85: shown(12, 41), p70: shown(7, 41), p50: shown(4, 41) },
-			}),
+	// @us-05 @slice-05 @boundary @contract-shape:unbounded-preservation
+	// A report made before WIP and Work Item Age were captured has nothing frozen for them.
+	it.skip("says WIP and Total Work Item Age were not captured for a report made before they existed", async () => {
+		const report = theEngagementStartReport();
+		report.thenAndNow.metrics.wip = undefined;
+		report.thenAndNow.metrics["work-item-age"] = undefined;
+		openTheReport(report);
+
+		for (const title of [WIP_PANEL, AGE_PANEL]) {
+			const panel = await thePanel(title);
+			expect(readingOf(panel)).toContain(NOT_CAPTURED);
+			expect(readingOf(panel)).not.toMatch(/Average \d/);
+		}
+		expect(readingOfSegment(await thePanel(CYCLE_TIME_PANEL), "then")).toMatch(
+			/^THEN 85th 21 days/i,
 		);
-
-		const panel = await thePanel(CYCLE_TIME_PANEL);
-
-		expect(readingOf(panel)).toContain(NOT_CAPTURED);
-		expect(readingOfSegment(panel, "then")).toMatch(/^THEN 85th 21 days/i);
 	});
 
 	// @us-01 @slice-01 @boundary @contract-shape:pure-function
 	// Thin data is shown, not hidden: the number of Work Items behind it, in the summary above, lets the reader judge.
 	it("shows a value backed by very few Work Items, with that number in the summary above", async () => {
 		openTheReport(
-			withCycleTime({
-				atThen: { p85: shown(9, 2), p70: shown(9, 2), p50: shown(4, 2) },
-				atNow: { p85: shown(5, 3), p70: shown(5, 3), p50: shown(3, 3) },
-				beyondThenLimits: null,
-			}),
+			madeBeforeThroughput(
+				withCycleTime({
+					atThen: { p85: shown(9, 2), p70: shown(9, 2), p50: shown(4, 2) },
+					atNow: { p85: shown(5, 3), p70: shown(5, 3), p50: shown(3, 3) },
+				}),
+			),
 		);
 
 		const panel = await thePanel(CYCLE_TIME_PANEL);
@@ -791,7 +867,6 @@ describe("Values a report cannot show", () => {
 		report.thenAndNow.metrics[A_LATER_METRIC] = {
 			atThen: { p85: shown(30, 12) },
 			atNow: { p85: shown(20, 12) },
-			beyondThenLimits: null,
 		};
 		openTheReport(report);
 		await theReportIsReady();

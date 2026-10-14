@@ -23,8 +23,10 @@ else.
    `NowValueIn` pass `"atThen"` / `"atNow"`; `ReportService` drops its mapping; the frontend model stays as it is.
 3. **Member names inside a metric side, pinned by DISTILL** (DESIGN named the stored captures, not the read):
    `p85`, `p70`, `p50` ({Cycle Time}); `total`, `perDay` ({Throughput}); `average`, `min`, `max` ({WIP});
-   `totalWindowAverage`, `totalLastDay`, `averageWindowAverage`, `averageLastDay` ({Work Item Age}); each one
-   `{ value, sampleSize, absentReason }`. `beyondThenLimits` is `{ above, below }` of the same shape. Windows are
+   ~~`totalWindowAverage`, `totalLastDay`, `averageWindowAverage`, `averageLastDay` ({Work Item Age});~~ each one
+   `{ value, sampleSize, absentReason }`. ~~`beyondThenLimits` is `{ above, below }` of the same shape.~~
+   *(Superseded 2026-10-14 by D49–D51 and DESIGN DD37: no `beyondThenLimits`; {WIP} and {Work Item Age} — the
+   daily total age — are both `average`, `median`, `min`, `max`. The tests follow.)* Windows are
    `{ start, end, lengthDays }` with `yyyy-MM-dd` dates. A metric or member the report never captured is missing or
    null.
    **DESIGN answer (2026-10-13): adopted unchanged** into the read contract (feature-delta → Driving ports, ADR-221).
@@ -71,9 +73,9 @@ DISCUSS and the DT walkthrough fixed most of the words; these are the ones a tes
 
 | Where | Proposed |
 |---|---|
-| Value dash, `too-few-points` | "Then has too few points for limits" |
-| Value dash, `no-process` | "Then never varied from 0" |
-| Value dash, `no-wip` (the average {Work Item Age}; {WIP} itself is a real 0) | "No Work Items in progress" ({Work Items} is the Terminology token) |
+| ~~Value dash, `too-few-points`~~ | ~~"Then has too few points for limits"~~ *(dropped 2026-10-14 with the reason, D49)* |
+| ~~Value dash, `no-process`~~ | ~~"Then never varied from 0"~~ *(dropped 2026-10-14 with the reason, D49)* |
+| ~~Value dash, `no-wip` (the average {Work Item Age}; {WIP} itself is a real 0)~~ | ~~"No Work Items in progress"~~ *(dropped 2026-10-14 with the per-item average age, D51: nothing in progress is a real 0 on every line)* |
 | Change with a Then of 0 | "Then was 0", and no percentage |
 | Wizard step ② future end | "Then cannot end after today." |
 | Wizard step ② presets | One-click buttons "30 days" and "90 days" on a Team, "90 days" and "180 days" on a Portfolio, beside the custom number of days |

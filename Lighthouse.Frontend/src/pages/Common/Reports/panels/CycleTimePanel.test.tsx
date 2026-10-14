@@ -63,7 +63,7 @@ describe("the Cycle Time panel", () => {
 	it("shows no change where Now has no value", () => {
 		renderPanel({
 			atThen: { p85: shown(21, 38), p70: shown(10, 38), p50: shown(5, 38) },
-			atNow: { ...NOW_IN_FULL, p70: aDash("too-few-points") },
+			atNow: { ...NOW_IN_FULL, p70: aDash("no-finished-items") },
 		});
 
 		expect(segment("change")).toHaveTextContent(

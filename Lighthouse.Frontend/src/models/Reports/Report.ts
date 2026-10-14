@@ -75,6 +75,7 @@ export type ReportMetricSide = Partial<
 		| "total"
 		| "perDay"
 		| "average"
+		| "median"
 		| "min"
 		| "max"
 		| "totalWindowAverage"

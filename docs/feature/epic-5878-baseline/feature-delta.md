@@ -2875,8 +2875,9 @@ and DD33; slice 01 is reworked to them before slice 02 starts, and every later p
 - **[DT9] Then freezes the 85th, 70th and 50th**, mirroring Now row by row (supersedes DD33's "85th only"). `atThen` for
   `cycle-time` becomes `{ p85, p70, p50 }`; each value keeps its sample size and absent reason.
 - **[DT10] A metric panel is three segments, `| Then | Now | Change |`**, titled by the metric word alone
-  ("{Cycle Time}", not "{Cycle Time}: Then & Now"). Each side's heading carries the sample size —
-  "THEN · 181 {Work Items}", "NOW · 203 {Work Items}" — and the value lines carry none. Each percentile line carries the
+  ("{Cycle Time}", not "{Cycle Time}: Then & Now"). ~~Each side's heading carries the sample size —
+  "THEN · 181 {Work Items}", "NOW · 203 {Work Items}" —~~ *(superseded by DT14 and D52 (2026-10-14): the side headings
+  read just THEN / NOW; the count sits once, in the summary header)* and the value lines carry none. Each percentile line carries the
   certainty icon and colour of `ForecastLevel`, exactly as the Metrics tab's {Cycle Time} percentiles do, on both sides.
 - **[DT11] The Change segment** has its own heading "CHANGE" and one line per percentile: sign and arrow plus days and
   per cent, e.g. "▼ 3 days (−20 %)"; a zero reads "No change". Better or worse is carried by the arrow and sign, never by
@@ -2899,7 +2900,9 @@ and DD33; slice 01 is reworked to them before slice 02 starts, and every later p
 
 - **[DT14] The report page carries a summary header** between the one-line breadcrumb and the first panel, in two
   segments matching the panels' sides. Each side names its window and how many {Work Items} were closed in it; the
-  panels' side headings drop their "· N {Work Items}" (a panel whose count differs, e.g. {WIP}, keeps its own line).
+  panels' side headings drop their "· N {Work Items}" ~~(a panel whose count differs, e.g. {WIP}, keeps its own line)~~
+  *(superseded by D52 (2026-10-14): every panel's side headings read just THEN / NOW, {WIP} and Total {Work Item Age}
+  included; their values rest on the window's days, which the summary already names)*.
   No "frozen on" or "always the last N days" lines (maintainer: they add nothing). More general information may join
   the header later, but only after the maintainer has seen a sketch of it. Prompted by a live report whose Then (90
   days) and Now (10 days) both ended 13 Oct: only the window lengths explained 203 against 27 {Work Items}, and the page
@@ -2929,6 +2932,12 @@ sketch walkthrough above. **Scope**: US-01..US-08 and US-10 — slices 01–08 a
 11 were dropped by DISCUSS. Reconciliation: see the section above (0 contradictions, not re-run). Decisions
 DST-1..DST-13: `distill/wave-decisions.md`. Gaps found and the choice pinned for each: `distill/upstream-issues.md`.
 
+**Rework 2026-10-14 (D49–D52, after slices 01–03 shipped).** Quinn re-cut the pending cases to the maintainer's
+simpler panels: the slice-03 beyond-limits cases are gone and slice 03's rows are the summary-header cases that
+shipped with it; {Throughput} keeps no days-beyond line; {WIP} and Total {Work Item Age} are four lines per side; the
+summary's closed count comes from {Throughput}'s total once a report captured it (slice 04), from the {Cycle Time}
+sample size before that. Decisions DST-16..DST-21 in `distill/wave-decisions.md`.
+
 ## Wave: DISTILL / [REF] Scenario list with tags
 
 Every case is **pending**: `[Ignore(PendingSliceNN)]` or `Ignore = PendingSliceNN` (backend, naming the slice and its
@@ -2936,18 +2945,19 @@ ADO Story), `it.skip` (frontend), `test.fixme` (E2E). DELIVER un-skips a slice's
 
 | Slice | Scenarios | Cases | Error + boundary cases |
 |---|---|---|---|
-| 01 Reports tab, Team report, {Cycle Time} | 69 | 85 | 46 |
+| 01 Reports tab, Team report, {Cycle Time} | 70 | 86 | 47 |
 | 02 Then ended in the past | 28 | 51 | 44 |
-| 03 {Cycle Time} beyond Then's limits | 9 | 10 | 8 |
-| 04 {Throughput} and the shown metrics | 14 | 14 | 7 |
-| 05 {WIP} and {Work Item Age} | 10 | 10 | 3 |
+| 03 Summary header *(re-cut 2026-10-14, D49, D52; shipped)* | 11 | 19 | 15 |
+| 04 {Throughput} and the shown metrics | 16 | 22 | 12 |
+| 05 {WIP} and Total {Work Item Age} | 12 | 12 | 5 |
 | 06 Reports on Portfolios | 14 | 14 | 4 |
-| 07 Now length, days since Then ended | 14 | 21 | 15 |
+| 07 Now length, days since Then ended | 14 | 20 | 15 |
 | 08 Delete and the Community cap | 33 | 34 | 23 |
 | 10 Edit a report | 20 | 22 | 16 |
-| **Total** | **211** | **261** | **166 (64%); error alone 110 (42%)** |
+| **Total** | **218** | **280** | **181 (65%); error alone 117 (42%)** |
 
-By layer: 144 backend cases, 116 frontend cases, 1 E2E walking skeleton. A scenario naming two slices is listed under
+By layer: 137 backend cases, 142 frontend cases, 1 E2E walking skeleton *(2026-10-14; was 144 / 116)*. Slices
+01–03 have shipped, so their cases are live; the rest stay pending. A scenario naming two slices is listed under
 the first; where its cases depend on the later slice, each case carries that slice's own marker (`ReportUsageEventsTests`,
 `ReportWindowBoundaryScenarios`). *Revised 2026-10-13 after DESIGN's revision* (rows 7, 14, 15, 36, 101, 149, 180,
 188, 190 changed; rows 194–211 new). Of the 24 boundary-table cases (12 per stack), the 10 that expect a refusal are
@@ -2957,6 +2967,7 @@ counted as error cases.
 (`@ac-1.8`); AC-10.6 (a save over another Team Admin's change) → rows 180 and 190 (`@ac-10.6`). The {Throughput}
 example now on Team Lightspeed (Then 90 days to 31 Jul 2026, Now 5 Jul – 2 Oct 2026, 52 → 65) → row 206 and the
 frontend kit's engagement-start report; the Team Gravity case stays for the days-above-the-limit count (row 101).
+*(Row 101 dropped 2026-10-14 by D49: there is no days-above-the-limit count.)*
 
 **The frontend's outbound contract is the `ReportService` port.** A write is asserted by at most one payload check on
 that port, next to what the screen then shows; "nothing was sent" is a not-called check on the port. The events a
@@ -2972,7 +2983,11 @@ version wrote and the Team's other report stay as they were.
 Every case also carries `@contract-shape:` and, where a KPI is counted, `@kpi-OUT-5878-K1-report-created`,
 `@kpi-OUT-5878-K2-reports-reopened`, `@kpi-OUT-5878-K4-community-cap-reached` or
 `@kpi-OUT-5878-guardrail-quick-deletes`. The G3 parity guardrail (`@kpi-OUT-5878-G3`: rebuilt Then values equal the
-Metrics tab's for the same days) is `The_rebuilt_Then_matches_the_Metrics_tab_for_the_same_days` (02) and `Thens_last_day_total_age_matches_the_Metrics_tab_for_that_day` (05).
+Metrics tab's for the same days) is `The_rebuilt_Then_matches_the_Metrics_tab_for_the_same_days` (02) and `Thens_total_age_agrees_with_the_Metrics_tab_day_by_day` (05; *2026-10-14*, was the last day's total only, which D51 dropped).
+
+**Also 2026-10-14**: the ArchUnit rule `The_Reports_module_does_not_use_the_process_behaviour_chart_or_its_baseline`
+names `XmRCalculator` too (DESIGN E2, live; a throwaway dependency from `ReportWindowPolicy` made it fail once). It is
+an architecture rule, not a scenario, and is not counted below.
 
 | # | Scenario | Slice | US | File | Layer | Kind | Cases | Tags |
 |---|---|---|---|---|---|---|---|---|
@@ -3061,37 +3076,37 @@ Metrics tab's for the same days) is `The_rebuilt_Then_matches_the_Metrics_tab_fo
 | 83 | Later views read the frozen Then not a rebuild | 02 | 02 | `Slice02ThenInThePastScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:unbounded-preservation |
 | 84 | A Then missing its end or its length is refused | 02 | 02 | `Slice02ThenInThePastScenarios.cs` | backend AT (HTTP, real EF) | error | 2 | @driving_port @contract-shape:unbounded-preservation |
 | 85 | A Then end that is not a day is refused | 02 | 02 | `Slice02ThenInThePastScenarios.cs` | backend AT (HTTP, real EF) | error | 3 | @driving_port @contract-shape:unbounded-preservation |
-| 86 | counts Now's Work Items beyond Then's limits, and says why there is no count below | 03 | 03 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
-| 87 | shows a dash for the counts beyond Then's limits when Then had too few points to have any | 03 | 03 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
-| 88 | says the counts beyond Then's limits were not captured for a report made before they existed | 03 | 03 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
-| 89 | Unusually slow Work Items are counted above the limits Then set | 03 | 03 | `Slice03CycleTimeBeyondThenLimitsScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @kpi-OUT-5878-K2-reports-reopened @contract-shape:pure-function |
-| 90 | The limits Then set are frozen unrounded | 03 | 03 | `Slice03CycleTimeBeyondThenLimitsScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:pure-function |
-| 91 | A lower limit at zero shows a dash below and still counts above | 03 | 03 | `Slice03CycleTimeBeyondThenLimitsScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:pure-function |
-| 92 | Fewer than two Then points show a dash on both sides | 03 | 03 | `Slice03CycleTimeBeyondThenLimitsScenarios.cs` | backend AT (HTTP, real EF) | error | 2 | @driving_port @contract-shape:pure-function |
-| 93 | The Teams process behaviour baseline does not move the counts | 03 | 03 | `Slice03CycleTimeBeyondThenLimitsScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:unbounded-preservation |
-| 94 | A report created before the count existed has no limits captured | 03 | 03 | `Slice03CycleTimeBeyondThenLimitsScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 86 | opens with a summary of each side's window and how many Work Items closed in it *(re-cut 2026-10-14; was the beyond-limits count, D49)* | 03 | 03 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 87 | names both windows and their lengths for %s, a year written once where both ends share it | 03 | 03 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | boundary | 4 | @contract-shape:pure-function |
+| 88 | says one day and one Work Item in the singular | 03 | 03 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 89 | counts as closed in Then %s (from {Cycle Time}, a report made before {Throughput} was captured) | 03 | 03 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 4 | @contract-shape:pure-function |
+| 90 | names both windows but no closed count when neither Throughput nor Cycle Time was captured | 03 | 03,04 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 2 | @contract-shape:pure-function |
+| 91 | counts the closed Work Items even when the report does not show its Cycle Time panel | 03 | 03 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
+| 92 | names the closed Work Items in the instance's words | 03 | 03 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 93 | says nothing of Then being frozen or of Now always being the last days | 03 | 03 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 94 | sits between the line naming the report and the first panel, inside the report's loading look | 03 | 03 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
 | 95 | shows Throughput as a total and a per-day average, compared per day | 04 | 04 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
 | 96 | stacks only the shown metrics, in the catalog's order whatever order they were ticked in | 04 | 04 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
 | 97 | shows no percentage for a change from a Then of zero | 04 | 04 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
 | 98 | ticks all four metrics, named in the instance's words | 04 | 04 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
 | 99 | cannot create a report showing no metric | 04 | 04 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
 | 100 | A Team can be reported on Cycle Time and Throughput | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
-| 101 | Days of Now with Throughput above Thens limit are counted (Team Gravity, 30-day windows) | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 101 | ~~Days of Now with Throughput above Thens limit are counted~~ *(dropped 2026-10-14, D49)* | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | — | 0 | — |
 | 102 | A metric that is not shown is still frozen | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
 | 103 | A report that shows no metric is refused | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
 | 104 | A metric that is not in the catalog is refused | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:unbounded-preservation |
 | 105 | An older report did not capture Throughput | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:unbounded-preservation |
-| 106 | A Then where nothing finished shows zero and a dash for the days beyond | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:pure-function |
-| 107 | shows WIP as an average with its range | 05 | 05 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
-| 108 | tells a growing Work Item Age as worse by sign and arrow as well as colour | 05 | 05 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
-| 109 | shows WIP as a real 0 and the average Work Item Age as a dash when Then had nothing in progress | 05 | 05 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
+| 106 | A Then where nothing finished shows a real zero *(2026-10-14; was "… and a dash for the days beyond")* | 04 | 04 | `Slice04ThroughputAndShownMetricsScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:pure-function |
+| 107 | shows WIP as its average, median, min and max, each with its own change, lower reading as better | 05 | 05 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 108 | tells a growing Total Work Item Age as worse on every line by sign and arrow as well as colour | 05 | 05 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
+| 109 | shows every WIP and Total Work Item Age line as a real 0 when Then had nothing in progress | 05 | 05 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
 | 110 | A Team can be reported on all four metrics | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
-| 111 | Lower WIP is shown as the average and its range with the days below Thens limit | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
-| 112 | Days with WIP above Thens upper limit are counted | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
-| 113 | Older work in progress shows both totals and both averages on each side | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
-| 114 | Thens last day total age matches the Metrics tab for that day | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @kpi-OUT-5878-G3 @contract-shape:pure-function |
-| 115 | Days with nothing in progress are left out of the average age but not out of the total | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:pure-function |
-| 116 | With nothing in progress the average age is a dash and the total a real zero | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:pure-function |
+| 111 | Lower WIP shows on every line (Average, Median, Min, Max, Then and Now) | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @kpi-OUT-5878-K2-reports-reopened @contract-shape:pure-function |
+| 112 | The median is the lower middle day for an even and an odd number of days | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:pure-function |
+| 113 | Older work in progress shows a growing total age on every line | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 114 | Thens total age agrees with the Metrics tab day by day | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @kpi-OUT-5878-G3 @contract-shape:pure-function |
+| 115 | Days with nothing in progress count as zero on every line | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:pure-function |
+| 116 | With nothing in progress every line is a real zero | 05 | 05 | `Slice05WipAndWorkItemAgeScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:pure-function |
 | 117 | sits between Metrics and Settings | 06 | 06 | `PortfolioDetail.reportsTab.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @contract-shape:pure-function |
 | 118 | opens the Portfolio's reports for a reader | 06 | 06 | `PortfolioDetail.reportsTab.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @contract-shape:pure-function |
 | 119 | opens one report under the Reports tab from an address that names it | 06 | 06 | `PortfolioDetail.reportsTab.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
@@ -3106,7 +3121,7 @@ Metrics tab's for the same days) is `The_rebuilt_Then_matches_the_Metrics_tab_fo
 | 128 | A Teams report cannot be reached through a Portfolios address | 06 | 06 | `Slice06PortfolioReportScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:pure-function |
 | 129 | Deleting a Portfolio deletes its reports | 06 | 06,08 | `Slice06PortfolioReportScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
 | 130 | answers a Portfolio's Reports tab as a Portfolio tab opening naming that tab | 06 | 06 | `usageDataRouteKeys.reports.test.ts` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
-| 131 | names Then as frozen, Now as the last days ending today, and how long ago Then ended | 07 | 01,02,07 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @driving_port @contract-shape:pure-function |
+| 131 | says how long ago Then ended, in the words of the sketch the maintainer approves (`it.todo`; *2026-10-14*, was "names Then as frozen, Now as the last days ending today, and how long ago Then ended" — the first two lines were dropped by D52 and are pinned absent by row 93) | 07 | 07 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 0 | @driving_port @contract-shape:pure-function |
 | 132 | is as long as Then until changed, always ending today | 07 | 07 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | happy | 1 | @contract-shape:pure-function |
 | 133 | refuses a Now shorter than 14 days and goes no further | 07 | 07 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
 | 134 | refuses a Now reaching back past the oldest kept day and goes no further | 07 | 07 | `ReportsTab.createWizard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
@@ -3187,6 +3202,14 @@ Metrics tab's for the same days) is `The_rebuilt_Then_matches_the_Metrics_tab_fo
 | 209 | holds Delete until it knows how many reports go with it | 08 | 08 | `OverviewDashboard.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:pure-function |
 | 210 | says any reports it has go with it when their number cannot be read | 08 | 08 | `OverviewDashboard.test.tsx` | frontend AT (Vitest + RTL) | error | 1 | @contract-shape:pure-function |
 | 211 | An edit changes the name, the shown metrics and how long Now is, and nothing else | 10 | 10 | `Slice10EditReportScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:bounded-change |
+| 212 | shows no summary while the report is on its way, and shows it once the report is here | 03 | 03 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @ac-1.8 @contract-shape:pure-function |
+| 213 | shows no summary when the report %s (could not be loaded, made by a newer version) | 03 | 03 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | error | 2 | @ac-1.8 @contract-shape:pure-function |
+| 214 | A report that froze only the 85th percentile says nothing of Thens 70th and 50th (live) | 01 | 01 | `Slice01TeamReportScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 215 | counts as closed the Work Items Throughput finished, for %s (both captured; Throughput panel not shown; Cycle Time never captured; a Then where nothing finished) | 04 | 03,04 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | happy | 4 | @driving_port @contract-shape:pure-function |
+| 216 | refuse a value absent because of %j, a reason no server sends | 04 | 04 | `Report.test.ts` | frontend unit (Vitest, schema) | error | 4 | @contract-shape:pure-function |
+| 217 | keep nothing a payload says about Then's limits | 04 | 04 | `Report.test.ts` | frontend unit (Vitest, schema) | boundary | 1 | @contract-shape:pure-function |
+| 218 | says WIP and Total Work Item Age were not captured for a report made before they existed | 05 | 05 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:unbounded-preservation |
+| 219 | read a side of daily values as its average, median, min and max (live) | 05 | 05 | `Report.test.ts` | frontend unit (Vitest, schema) | happy | 1 | @contract-shape:pure-function |
 
 ## Wave: DISTILL / [REF] WS strategy
 
@@ -3276,7 +3299,9 @@ Reports endpoints (fake).
 ## Wave: DISTILL / [REF] RED classification
 
 260 of 260 runnable cases fail for missing behaviour when un-skipped (144 backend, 116 frontend); none broken (re-run
-2026-10-13 after the revision). E2E type-checked and listed, not run live. Detail: `distill/red-classification.md`.
+2026-10-13 after the revision). *Re-run 2026-10-14 for the reworked slice 04 and 05 cases*: every one fails for
+missing behaviour except `An_older_report_did_not_capture_Throughput`, which holds vacuously until slice 04 captures
+{Throughput} (a guard slice 04 must keep green). E2E type-checked and listed, not run live. Detail: `distill/red-classification.md`.
 
 
 ## Wave: DISTILL / [REF] Review

@@ -89,15 +89,25 @@ const theEngagementStartReport = (
 		metrics: {
 			"cycle-time": {
 				atThen: { p85: shown(21, 38), p70: shown(10, 38), p50: shown(5, 38) },
-				atNow: { p85: shown(12, 41), p50: shown(4, 41) },
-				beyondThenLimits: {
-					above: shown(1, 41),
-					below: aDash("lower-limit-zero"),
+				atNow: {
+					p85: shown(12, 41),
+					p70: aDash("no-finished-items"),
+					p50: shown(4, 41),
 				},
 			},
 			wip: {
-				atThen: { average: shown(9, 90) },
-				atNow: { average: aDash("no-wip") },
+				atThen: {
+					average: shown(8.62, 90),
+					median: shown(9, 90),
+					min: shown(6, 90),
+					max: shown(12, 90),
+				},
+				atNow: {
+					average: shown(7, 90),
+					median: shown(7, 90),
+					min: shown(5, 90),
+					max: shown(9, 90),
+				},
 			},
 		},
 	},
@@ -161,19 +171,15 @@ describe("ReportService", () => {
 
 		expect(mockedAxios.get).toHaveBeenCalledWith("/teams/1/reports/42");
 		expect(result).toEqual(report);
-		expect(
-			result.thenAndNow.metrics["cycle-time"]?.beyondThenLimits?.below,
-		).toEqual(aDash("lower-limit-zero"));
+		expect(result.thenAndNow.metrics["cycle-time"]?.atNow.p70).toEqual(
+			aDash("no-finished-items"),
+		);
 	});
 
-	it("reads a report with a metric that has no value and one without limits", async () => {
+	it("reads a report with a metric that has no value and one with nothing on either side", async () => {
 		const report = theEngagementStartReport();
 		report.thenAndNow.metrics.throughput = null;
-		report.thenAndNow.metrics.wip = {
-			atThen: {},
-			atNow: {},
-			beyondThenLimits: null,
-		};
+		report.thenAndNow.metrics.wip = { atThen: {}, atNow: {} };
 		mockedAxios.get.mockResolvedValueOnce({ data: report });
 
 		const result = await subject.getReport(APOLLO, ENGAGEMENT_START_ID);

@@ -153,7 +153,13 @@ export const aDash = (absentReason: ReportAbsentReason): IReportValue => ({
 	absentReason,
 });
 
-/** The engagement-start report: {Cycle Time} 85th 21 → 12, 70th 10 → 7, 50th 5 → 4 days, {Throughput} 52 → 65, {WIP} 9 → 7, {Work Item Age} 610 → 880 days. */
+/**
+ * The engagement-start report: {Cycle Time} 85th 21 → 12, 70th 10 → 7, 50th 5 → 4 days over 38 → 41 finished
+ * Work Items; {Throughput} 52 → 65 finished, 0.58 → 0.72 per day; {WIP} Average 8.62 → 7.38 (shown 9 → 7), Median
+ * 9 → 7, Min 6 → 5, Max 12 → 9; Total {Work Item Age} Average 610.4 → 880 days (shown 610 → 880), Median 600 → 870,
+ * Min 420 → 640, Max 760 → 990. Throughput's totals differ from Cycle Time's counts on purpose: Cycle Time counts
+ * only the finished Work Items it can measure, so the two must never be mistaken for each other.
+ */
 export const theEngagementStartReport = (
 	overrides: Partial<IReport> = {},
 ): IReport => ({
@@ -174,41 +180,37 @@ export const theEngagementStartReport = (
 			"cycle-time": {
 				atThen: { p85: shown(21, 38), p70: shown(10, 38), p50: shown(5, 38) },
 				atNow: { p85: shown(12, 41), p70: shown(7, 41), p50: shown(4, 41) },
-				beyondThenLimits: {
-					above: shown(1, 41),
-					below: aDash("lower-limit-zero"),
-				},
 			},
 			throughput: {
 				atThen: { total: shown(52, 90), perDay: shown(0.58, 90) },
 				atNow: { total: shown(65, 90), perDay: shown(0.72, 90) },
-				beyondThenLimits: { above: shown(2, 90), below: shown(0, 90) },
 			},
 			wip: {
 				atThen: {
-					average: shown(9, 90),
+					average: shown(8.62, 90),
+					median: shown(9, 90),
 					min: shown(6, 90),
 					max: shown(12, 90),
 				},
-				atNow: { average: shown(7, 90), min: shown(5, 90), max: shown(9, 90) },
-				beyondThenLimits: { above: shown(0, 90), below: shown(0, 90) },
+				atNow: {
+					average: shown(7.38, 90),
+					median: shown(7, 90),
+					min: shown(5, 90),
+					max: shown(9, 90),
+				},
 			},
 			"work-item-age": {
 				atThen: {
-					totalWindowAverage: shown(610, 10),
-					totalLastDay: shown(640, 10),
-					averageWindowAverage: shown(61, 10),
-					averageLastDay: shown(64, 10),
+					average: shown(610.4, 90),
+					median: shown(600, 90),
+					min: shown(420, 90),
+					max: shown(760, 90),
 				},
 				atNow: {
-					totalWindowAverage: shown(880, 10),
-					totalLastDay: shown(910, 10),
-					averageWindowAverage: shown(88, 10),
-					averageLastDay: shown(91, 10),
-				},
-				beyondThenLimits: {
-					above: shown(6, 90),
-					below: aDash("lower-limit-zero"),
+					average: shown(880, 90),
+					median: shown(870, 90),
+					min: shown(640, 90),
+					max: shown(990, 90),
 				},
 			},
 		},

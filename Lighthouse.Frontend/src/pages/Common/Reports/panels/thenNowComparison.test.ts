@@ -34,6 +34,17 @@ describe("compareThenNow", () => {
 		["a higher Throughput", 0.58, 0.72, "higher", 2, 0.14, 24, "▲", "better"],
 		["a lower Throughput", 0.72, 0.58, "higher", 2, -0.14, -19, "▼", "worse"],
 		["a lower WIP", 9, 7, "lower", 0, -2, -22, "▼", "better"],
+		[
+			"an average WIP of 8.62 shown as 9",
+			8.62,
+			7.38,
+			"lower",
+			0,
+			-2,
+			-22,
+			"▼",
+			"better",
+		],
 		["a growing Work Item Age", 610, 880, "lower", 0, 270, 44, "▲", "worse"],
 		["no change", 12, 12, "lower", 0, 0, 0, "", "neutral"],
 		["no change where higher is good", 5, 5, "higher", 0, 0, 0, "", "neutral"],
@@ -93,6 +104,8 @@ describe("roundForDisplay", () => {
 		[0.575, 1, 0.6],
 		[0.13999999999999999, 2, 0.14],
 		[7, 2, 7],
+		// The binary double is rounded, not the decimal text: 1.005 × 100 is just below 100.5, so it rounds down. Accepted.
+		[1.005, 2, 1],
 	])("rounds %d to %d decimals as %d", (value, decimals, expected) => {
 		expect(roundForDisplay(value, decimals)).toBe(expected);
 	});
@@ -130,10 +143,6 @@ describe("absentReasonText", () => {
 	it.each<[ReportAbsentReason, "Then" | "Now", string]>([
 		["no-finished-items", "Then", "No finished Tickets in Then"],
 		["no-finished-items", "Now", "No finished Tickets in Now"],
-		["too-few-points", "Then", "Then has too few points for limits"],
-		["no-process", "Then", "Then never varied from 0"],
-		["no-wip", "Now", "No Tickets in progress"],
-		["lower-limit-zero", "Then", "Then's lower limit is 0"],
 	])("says why %s on %s reads as a dash", (reason, side, expected) => {
 		expect(absentReasonText(reason, side, "Tickets")).toBe(expected);
 	});

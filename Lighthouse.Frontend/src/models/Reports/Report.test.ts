@@ -54,15 +54,84 @@ describe("the report schemas", () => {
 		).toBe(read);
 	});
 
-	it.each(["no-finished-items", "too-few-points", "no-process"])(
-		"read a value absent because of %j",
+	it("read a value absent because nothing finished", () => {
+		expect(
+			ReportSchema.parse(aReportWhoseThenIsADash("no-finished-items"))
+				.thenAndNow.metrics["cycle-time"]?.atThen.p85?.absentReason,
+		).toBe("no-finished-items");
+	});
+
+	// Owned by slice 04 (Story 6162): no server ever sent these reasons, and no panel explains them any more.
+	it.skip.each(["too-few-points", "no-process", "no-wip", "lower-limit-zero"])(
+		"refuse a value absent because of %j, a reason no server sends",
 		(absentReason) => {
 			expect(
-				ReportSchema.parse(aReportWhoseThenIsADash(absentReason)).thenAndNow
-					.metrics["cycle-time"]?.atThen.p85?.absentReason,
-			).toBe(absentReason);
+				ReportSchema.safeParse(aReportWhoseThenIsADash(absentReason)).success,
+			).toBe(false);
 		},
 	);
+
+	// Owned by slice 04 (Story 6162): a report counts nothing beyond Then's limits, so the read keeps no such member.
+	it.skip("keep nothing a payload says about Then's limits", () => {
+		const sent = aReportWhoseThenIsADash("no-finished-items");
+		const withLimits = {
+			...sent,
+			thenAndNow: {
+				...sent.thenAndNow,
+				metrics: {
+					"cycle-time": {
+						...sent.thenAndNow.metrics["cycle-time"],
+						beyondThenLimits: {
+							above: { value: 2, sampleSize: 41, absentReason: null },
+							below: { value: 0, sampleSize: 41, absentReason: null },
+						},
+					},
+				},
+			},
+		};
+
+		expect(
+			ReportSchema.parse(withLimits).thenAndNow.metrics["cycle-time"],
+		).not.toHaveProperty("beyondThenLimits");
+	});
+
+	it("read a side of daily values as its average, median, min and max", () => {
+		const daily = (value: number) => ({
+			value,
+			sampleSize: 90,
+			absentReason: null,
+		});
+		const sent = aReportWhoseThenIsADash("no-finished-items");
+		const withWip = {
+			...sent,
+			thenAndNow: {
+				...sent.thenAndNow,
+				metrics: {
+					wip: {
+						atThen: {
+							average: daily(8.62),
+							median: daily(9),
+							min: daily(6),
+							max: daily(12),
+						},
+						atNow: {
+							average: daily(7),
+							median: daily(7),
+							min: daily(5),
+							max: daily(9),
+						},
+					},
+				},
+			},
+		};
+
+		expect(ReportSchema.parse(withWip).thenAndNow.metrics.wip?.atThen).toEqual({
+			average: daily(8.62),
+			median: daily(9),
+			min: daily(6),
+			max: daily(12),
+		});
+	});
 
 	it("refuses report types whose metric is named by anything but a key", () => {
 		expect(

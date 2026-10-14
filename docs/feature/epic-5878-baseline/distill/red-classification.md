@@ -17,7 +17,7 @@ Run: `dotnet test Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --no-
 |---|---|---|---|
 | `Slice01TeamReportScenarios` | 19 | `…/teams/1/reports` and `…/reports/templates` answer 404; "The report was not created: expected Created but was NotFound" | MISSING_FUNCTIONALITY (no endpoint) |
 | `Slice02ThenInThePastScenarios` | 18 | same; refusals expected 400, got 404 | MISSING_FUNCTIONALITY |
-| `Slice03CycleTimeBeyondThenLimitsScenarios` | 7 | create answers 404 | MISSING_FUNCTIONALITY |
+| ~~`Slice03CycleTimeBeyondThenLimitsScenarios`~~ | ~~7~~ | ~~create answers 404~~ | *deleted 2026-10-14 (D49); see the re-run below* |
 | `Slice04ThroughputAndShownMetricsScenarios` | 7 | same | MISSING_FUNCTIONALITY |
 | `Slice05WipAndWorkItemAgeScenarios` | 7 | same | MISSING_FUNCTIONALITY |
 | `Slice06PortfolioReportScenarios` | 7 | `…/portfolios/1/reports…` answers 404 | MISSING_FUNCTIONALITY |
@@ -83,3 +83,20 @@ Frontend — `pnpm exec vitest run` on the nine files → 116 failed (35 existin
 | `Not yet implemented -- RED scaffold: checking a then/now window …` (`reportWindowCheck`, the shared table) | 12 | MISSING_FUNCTIONALITY |
 | no Reports tab, no report view, no tab opening for `/teams/7/reports` | 12 | MISSING_FUNCTIONALITY |
 | Overview delete dialog: no report count, no spinner, no "and any reports it has" | 6 | MISSING_FUNCTIONALITY |
+
+## Re-run 2026-10-14 — the pending slice 04 and 05 cases after D49–D52
+
+Slices 01–03 have shipped, so the endpoints exist and the failures are now about the missing metrics, not a 404.
+Each file was un-skipped in a copy, run, and restored.
+
+| Where | Cases | Failure | Classification |
+|---|---|---|---|
+| `Slice04ThroughputAndShownMetricsScenarios` | 7 | 6 fail: the templates read lists only `cycle-time`; no `throughput` capture; no `no-metric-shown` / `unknown-metric` refusal (a report is created). `An_older_report_did_not_capture_Throughput` passes already: nothing captures {Throughput} yet, so "not captured" holds vacuously until slice 04 starts capturing it — it is a preservation guard slice 04 must keep green | MISSING_FUNCTIONALITY (6); vacuously green before its slice (1) |
+| `Slice05WipAndWorkItemAgeScenarios` | 7 | every line of `wip` / `work-item-age` reads as not in the report (`IsPresent` false, value null); templates list only `cycle-time` | MISSING_FUNCTIONALITY |
+| `ReportView.test.tsx` (slices 04, 05, 08, 10) | 16 run, 15 fail | no Throughput / WIP / Total Work Item Age panel; the summary still counts from {Cycle Time} (38 / 41, expected 52 / 65); no unsupported-metric note; slice 08/10 cases unchanged. "offers a reader neither" passes vacuously, as before | MISSING_FUNCTIONALITY |
+| `Report.test.ts` (slice 04) | 5 | the schema still accepts the four retired absence reasons and keeps `beyondThenLimits` | MISSING_FUNCTIONALITY |
+
+The slice-07 placeholder "says how long ago Then ended…" is an `it.todo` until the maintainer has seen a sketch of
+the line; it has no assertion to classify. Suites re-run skipped afterwards: backend Reports filter 366 passed, 69
+skipped; frontend full suite green with skips.
+
