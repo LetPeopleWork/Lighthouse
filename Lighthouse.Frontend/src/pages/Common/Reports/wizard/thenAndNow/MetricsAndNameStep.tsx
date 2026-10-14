@@ -7,7 +7,7 @@ import {
 	TextField,
 } from "@mui/material";
 import type React from "react";
-import { Fragment } from "react";
+import { Fragment, useId } from "react";
 import type { ReportMetricKey } from "../../../../../models/Reports/Report";
 import { useTerminology } from "../../../../../services/TerminologyContext";
 import { metricNameTermKeyOf } from "../../panels/reportPanelRegistry";
@@ -28,6 +28,7 @@ const MetricsAndNameStep: React.FC<
 	Readonly<ReportTypeStepProps<ThenAndNowDraft>>
 > = ({ templates, draft, onChange, disabled }) => {
 	const { getTerm } = useTerminology();
+	const idPrefix = useId();
 	const shown = shownMetricsOf(draft, templates);
 
 	const toggle = (key: ReportMetricKey, ticked: boolean) =>
@@ -43,20 +44,27 @@ const MetricsAndNameStep: React.FC<
 			<FormGroup>
 				{offeredMetricsOf(templates).map((key) => {
 					const captured = isCaptured(draft, key);
+					const isShown = shown.includes(key);
+					const whyId = `${idPrefix}-${key}-not-captured`;
 					return (
 						<Fragment key={key}>
 							<FormControlLabel
 								label={getTerm(metricNameTermKeyOf(key))}
 								control={
 									<Checkbox
-										checked={shown.includes(key)}
-										disabled={disabled || !captured}
+										checked={isShown}
+										disabled={disabled || !(captured || isShown)}
 										onChange={(event) => toggle(key, event.target.checked)}
+										slotProps={{
+											input: {
+												"aria-describedby": captured ? undefined : whyId,
+											},
+										}}
 									/>
 								}
 							/>
 							{!captured && (
-								<FormHelperText sx={{ mt: 0, ml: 4 }}>
+								<FormHelperText id={whyId} sx={{ mt: 0, ml: 4 }}>
 									{NOT_CAPTURED}
 								</FormHelperText>
 							)}

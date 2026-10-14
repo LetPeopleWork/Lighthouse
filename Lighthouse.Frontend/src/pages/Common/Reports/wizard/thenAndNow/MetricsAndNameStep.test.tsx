@@ -33,12 +33,19 @@ const offering = (...keys: string[]): IReportTemplates => ({
 	],
 });
 
+const NOT_CAPTURED = "Not captured for this report";
+
 const renderStep = (
 	templates: IReportTemplates,
 	shownMetricKeys: ReportMetricKey[] | null,
+	capturedMetricKeys?: ReportMetricKey[],
 ) => {
 	const onChange = vi.fn<(draft: ThenAndNowDraft) => void>();
-	const draft = { ...newThenAndNowDraft(), shownMetricKeys };
+	const draft = {
+		...newThenAndNowDraft(),
+		shownMetricKeys,
+		capturedMetricKeys,
+	};
 	render(
 		<MetricsAndNameStep
 			owner={{ kind: "team", id: 7 }}
@@ -90,6 +97,35 @@ describe("the Metrics & name step", () => {
 
 		expect(onChange).toHaveBeenCalledWith(
 			expect.objectContaining({ shownMetricKeys: ["cycle-time"] }),
+		);
+	});
+
+	it("says on the box itself why a metric the report never captured cannot be ticked", () => {
+		renderStep(
+			offering("cycle-time", "throughput"),
+			["throughput"],
+			["throughput"],
+		);
+
+		const neverCaptured = screen.getByRole("checkbox", { name: "Lead Time" });
+		expect(neverCaptured).toBeDisabled();
+		expect(neverCaptured).toHaveAccessibleDescription(NOT_CAPTURED);
+		expect(
+			screen.getByRole("checkbox", { name: "throughput" }),
+		).not.toHaveAccessibleDescription(NOT_CAPTURED);
+	});
+
+	it("lets a metric the report shows but never captured be unticked", async () => {
+		const onChange = renderStep(
+			offering("cycle-time", "throughput"),
+			["cycle-time", "throughput"],
+			["throughput"],
+		);
+
+		await userEvent.click(screen.getByRole("checkbox", { name: "Lead Time" }));
+
+		expect(onChange).toHaveBeenCalledWith(
+			expect.objectContaining({ shownMetricKeys: ["throughput"] }),
 		);
 	});
 });
