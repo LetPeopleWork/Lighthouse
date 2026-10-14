@@ -209,23 +209,36 @@ export async function openManageColumns(
 ): Promise<void> {
 	await user.click(within(scope()).getByLabelText("Name column menu"));
 	const manageColumns = await waitFor(() => {
-		const item = byRole(document, "menuitem").find(
+		const items = byRole(document, "menuitem").filter(
 			(candidate) => candidate.textContent?.trim() === "Manage columns",
 		);
-		if (!item) {
-			throw new Error("The column menu offers no Manage columns");
+		if (items.length !== 1) {
+			throw new Error(
+				`Expected one Manage columns in the column menu, found ${items.length}`,
+			);
 		}
-		return item;
+		return items[0];
 	});
 	await user.click(manageColumns);
+	await waitFor(checkboxesOffered);
 }
 
-/** A switch is a checkbox input too, but it never stands for a column. */
-const checkboxesOffered = (): HTMLInputElement[] => [
-	...document.querySelectorAll<HTMLInputElement>(
-		'input[type="checkbox"]:not([role])',
-	),
-];
+/**
+ * A switch is a checkbox input too, but it never stands for a column. A selector finds nothing
+ * without complaint, so an empty panel throws here: a check that a column is not offered must not
+ * pass because the panel never opened.
+ */
+const checkboxesOffered = (): HTMLInputElement[] => {
+	const boxes = [
+		...document.querySelectorAll<HTMLInputElement>(
+			'input[type="checkbox"]:not([role])',
+		),
+	];
+	if (boxes.length === 0) {
+		throw new Error("Manage columns is not open: it offers no columns");
+	}
+	return boxes;
+};
 
 /** What Manage columns lists, in its order, and whether each is on. */
 export const columnsOffered = (): { field: string; shown: boolean }[] =>
@@ -242,11 +255,11 @@ export const catalogueOffered = () =>
 /** Turns several columns on or off in one visit to Manage columns, in the order given. */
 export async function turnColumns(
 	user: UserEvent,
-	changes: Record<string, boolean>,
+	changes: ReadonlyArray<readonly [field: string, shown: boolean]>,
 	scope: GridScope = theDialog,
 ): Promise<void> {
 	await openManageColumns(user, scope);
-	for (const [field, shown] of Object.entries(changes)) {
+	for (const [field, shown] of changes) {
 		const box = checkboxesOffered().find(
 			(candidate) => candidate.getAttribute("name") === field,
 		);
@@ -266,7 +279,7 @@ export async function turnColumn(
 	shown: boolean,
 	scope: GridScope = theDialog,
 ): Promise<void> {
-	await turnColumns(user, { [field]: shown }, scope);
+	await turnColumns(user, [[field, shown]], scope);
 }
 
 export async function resetTheLayout(

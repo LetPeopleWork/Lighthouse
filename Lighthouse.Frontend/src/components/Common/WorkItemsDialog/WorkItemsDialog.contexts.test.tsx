@@ -457,7 +457,10 @@ async function theReadersLayoutComesBackOnReopen({
 	const hidden = columns[columns.length - 1];
 	const turnedOn = offered[columns.length];
 	const first = openTheDialog({ context, items, ...extra });
-	await turnColumns(user, { [hidden]: false, [turnedOn]: true });
+	await turnColumns(user, [
+		[hidden, false],
+		[turnedOn, true],
+	]);
 	first.unmount();
 
 	openTheDialog({ context, items, ...extra });
@@ -623,7 +626,10 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 			const user = userEvent.setup();
 			openTheDialog({ context: "estimation", items: finishedStories });
 
-			await turnColumns(user, { parent: true, startedDate: true });
+			await turnColumns(user, [
+				["parent", true],
+				["startedDate", true],
+			]);
 
 			expect(contextColumnsShown()).toEqual([
 				"estimate",
@@ -1309,7 +1315,7 @@ describe("what each catalogue column says, and how it sorts", () => {
 			if (turnOn.length > 0) {
 				await turnColumns(
 					user,
-					Object.fromEntries(turnOn.map((field) => [field, true])),
+					turnOn.map((field) => [field, true] as const),
 				);
 			}
 

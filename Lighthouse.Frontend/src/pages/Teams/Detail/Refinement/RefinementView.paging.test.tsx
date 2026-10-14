@@ -94,8 +94,12 @@ const gravityNeeding = (
  */
 const theRowsOnThisPage = () =>
 	screen.getAllByRole("row").flatMap((row) => {
-		const link = row.querySelector("a[href]");
-		if (link === null) return [];
+		const links = row.querySelectorAll("a[href]");
+		if (links.length === 0) return [];
+		if (links.length > 1) {
+			throw new Error(`Expected one link in a row, found ${links.length}`);
+		}
+		const link = links[0];
 		return [
 			{
 				row,
