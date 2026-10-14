@@ -168,6 +168,10 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
+        public IReadOnlyList<int> GetDailyTotalWorkItemAgeForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
+            => GetFromCacheIfExists(portfolio, $"TotalWorkItemAgeOverTime_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}",
+                () => Array.AsReadOnly(GetTotalWorkItemAgeOverTime(portfolio, startDate, endDate).Values), logger);
+
         private (int[] Values, int[][] WorkItemIdsPerDay) GetTotalWorkItemAgeOverTime(Portfolio portfolio, DateTime startDate,
             DateTime endDate)
         {

@@ -19,7 +19,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     {
         // @driving_port @real-io @us-06 @slice-06 @kpi-OUT-5878-K1-report-created @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice06)]
         public async Task A_Portfolio_admin_creates_a_Then_and_Now_report_about_its_Features()
         {
             var apollo = GivenApolloFinishedThreeFeaturesInThen();
@@ -40,7 +39,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-06 @slice-06 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice06)]
         public async Task A_Portfolio_can_be_reported_on_all_four_metrics()
         {
             var apollo = APortfolio(Apollo);
@@ -57,7 +55,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-06 @slice-06 @error @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice06)]
         public async Task A_Portfolio_with_no_finished_Features_shows_a_dash_and_the_reason()
         {
             var orion = APortfolio("Project Orion");
@@ -69,7 +66,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-06 @slice-06 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice06)]
         public async Task A_Portfolio_reader_finds_the_report_and_cannot_create_one()
         {
             var apollo = GivenApolloFinishedThreeFeaturesInThen();

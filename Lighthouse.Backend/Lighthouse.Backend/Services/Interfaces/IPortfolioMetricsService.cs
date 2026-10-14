@@ -68,6 +68,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         int GetTotalWorkItemAge(Portfolio portfolio, DateTime endDate);
 
+        IReadOnlyList<int> GetDailyTotalWorkItemAgeForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
+
         ThroughputInfoDto GetThroughputInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
         ArrivalsInfoDto GetArrivalsInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
