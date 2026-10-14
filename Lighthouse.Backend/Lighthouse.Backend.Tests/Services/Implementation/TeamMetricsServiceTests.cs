@@ -945,6 +945,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void GetDailyTotalWorkItemAgeForTeam_CachedDaysCannotBeChangedByACaller()
+        {
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-2);
+            var endDate = TestToday.AmbientAsUtcMidnight;
+            AddWorkItem(StateCategories.Doing, 1, string.Empty).StartedDate = DateTime.UtcNow.AddDays(-5);
+
+            var days = subject.GetDailyTotalWorkItemAgeForTeam(testTeam, startDate, endDate);
+
+            Assert.That(days, Is.Not.InstanceOf<int[]>().And.InstanceOf<System.Collections.ObjectModel.ReadOnlyCollection<int>>());
+        }
+
+        [Test]
         public void GetDailyTotalWorkItemAgeForTeam_InvalidateCache()
         {
             var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-2);

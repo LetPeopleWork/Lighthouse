@@ -270,7 +270,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public IReadOnlyList<int> GetDailyTotalWorkItemAgeForTeam(Team team, DateTime startDate, DateTime endDate)
             => GetFromCacheIfExists(team, $"TotalWorkItemAgeOverTime_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}",
-                () => GetTotalWorkItemAgeOverTimeForTeam(team, startDate, endDate).Values, logger);
+                () => Array.AsReadOnly(GetTotalWorkItemAgeOverTimeForTeam(team, startDate, endDate).Values), logger);
 
         private (int[] Values, int[][] WorkItemIdsPerDay) GetTotalWorkItemAgeOverTimeForTeam(Team team, DateTime startDate, DateTime endDate)
         {

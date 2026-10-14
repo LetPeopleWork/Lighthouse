@@ -68,6 +68,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             }
         }
 
+        [Test]
+        public void The_average_per_day_divides_by_the_days_actually_summed_not_the_stored_window_length()
+        {
+            var window = WindowOf(new DateOnly(2026, 10, 2), 30);
+            var subject = new ThroughputReportMetric(SeriesAnswering((window, SpreadOver(20, 10))));
+
+            var read = subject.Read(null, Owner, window);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(read.AtNow["total"], Is.EqualTo(CapturedValue.Shown(10, 20)));
+                Assert.That(read.AtNow["perDay"], Is.EqualTo(CapturedValue.Shown(0.5, 20)));
+            }
+        }
+
         private static ReportWindow WindowOf(DateOnly end, int lengthDays) => ReportWindow.EndingOn(end, lengthDays)!;
 
         private static int[] SpreadOver(int lengthDays, int finished)

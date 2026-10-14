@@ -18,8 +18,9 @@ namespace Lighthouse.Backend.Services.Implementation.Reports.Metrics
 
         protected override Dictionary<string, CapturedValue> ValuesOver(ReportOwner owner, ReportWindow window)
         {
-            var total = Series.DailyThroughput(owner, window).Sum();
-            var days = window.LengthDays;
+            var daily = Series.DailyThroughput(owner, window);
+            var total = daily.Sum();
+            var days = daily.Count;
 
             return new()
             {
