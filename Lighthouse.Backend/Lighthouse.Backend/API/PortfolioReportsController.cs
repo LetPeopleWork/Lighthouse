@@ -26,6 +26,10 @@ namespace Lighthouse.Backend.API
         [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "portfolioId")]
         public Task<ActionResult<ReportRead>> CreateReport(int portfolioId, [FromBody] NewReportRequest request) => Create(ReportOwner.Portfolio(portfolioId), request);
 
+        [HttpPut("{reportId:int}")]
+        [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "portfolioId")]
+        public Task<ActionResult<ReportRead>> EditReport(int portfolioId, int reportId, [FromBody] ReportEditRequest request) => Edit(ReportOwner.Portfolio(portfolioId), reportId, request);
+
         [HttpDelete("{reportId:int}")]
         [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "portfolioId")]
         public Task<IActionResult> DeleteReport(int portfolioId, int reportId) => Delete(ReportOwner.Portfolio(portfolioId), reportId);

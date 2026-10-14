@@ -61,6 +61,21 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             return ReportOutcome<string>.Done(payload.ToJson());
         }
 
+        // The stored payload is edited as a JSON tree rather than through the payload record, so members a later
+        // version wrote, which this one cannot name, survive the edit untouched.
+        public ReportOutcome<string> Edit(Report report, ReportEdit edit, ReportCalendar calendar)
+        {
+            var payload = JsonNode.Parse(report.TemplatePayloadJson) as JsonObject
+                ?? throw new JsonException($"Report {report.Id} holds no Then & Now payload");
+
+            if (edit.NowLengthDays is int nowLengthDays)
+            {
+                payload[NowLengthMemberOf(payload)] = nowLengthDays;
+            }
+
+            return ReportOutcome<string>.Done(payload.ToJsonString());
+        }
+
         public ReportRead Read(Report report, ReportCalendar calendar)
         {
             var payload = PayloadOf(report);
@@ -132,6 +147,10 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
 
         private static ThenAndNowPayload PayloadOf(Report report)
             => ThenAndNowPayload.FromJson(report.TemplatePayloadJson) ?? throw new JsonException($"Report {report.Id} holds no Then & Now payload");
+
+        private static string NowLengthMemberOf(JsonObject payload)
+            => payload.Select(member => member.Key).FirstOrDefault(key => key.Equals(nameof(ThenAndNowPayload.NowLengthDays), StringComparison.OrdinalIgnoreCase))
+                ?? JsonNamingPolicy.CamelCase.ConvertName(nameof(ThenAndNowPayload.NowLengthDays));
 
         private static JsonObject? CaptureOf(ThenAndNowPayload payload, string metricKey)
             => payload.Captures?.GetValueOrDefault(metricKey);

@@ -59,6 +59,35 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             return ReportOutcome<ReportRead>.Done(template.Read(report, calendar));
         }
 
+        public async Task<ReportOutcome<ReportRead>> Edit(ReportOwner owner, int reportId, ReportEdit edit)
+        {
+            if (owners.Find(owner) is not ReportOwnerFacts facts || writer.FindForEdit(owner, reportId) is not Report report)
+            {
+                return ReportOutcome<ReportRead>.NotFound();
+            }
+
+            if (templates.Find(candidate => candidate.Key == report.TemplateKey) is not IReportTemplate template)
+            {
+                return ReportOutcome<ReportRead>.Unsupported(ReportRefusalCodes.TemplateNotSupported);
+            }
+
+            var calendar = new ReportCalendar(clock.Today, facts.DoneItemsCutoffDays);
+            var edited = template.Edit(report, edit, calendar);
+            if (edited.Status != ReportOutcomeStatus.Done || edited.Value is null)
+            {
+                return ReportOutcome<ReportRead>.Refused(edited.Code ?? ReportRefusalCodes.TemplateNotSupported);
+            }
+
+            writer.ExpectUnchangedSince(report, edit.ConcurrencyToken);
+            report.Name = edit.Name.Trim();
+            report.ShownMetricKeysJson = JsonSerializer.Serialize(edit.ShownMetricKeys, ThenAndNowPayload.JsonOptions);
+            report.TemplatePayloadJson = edited.Value;
+            await writer.Save();
+
+            logger.LogDebug("Report {ReportId} of {OwnerKind} {OwnerId} was edited", report.Id, owner.Kind, owner.Id);
+            return ReportOutcome<ReportRead>.Done(template.Read(report, calendar));
+        }
+
         public async Task<ReportOutcomeStatus> Delete(ReportOwner owner, int reportId)
         {
             if (writer.Remove(owner, reportId) is not Report removed)

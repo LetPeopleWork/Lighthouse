@@ -18,6 +18,11 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         public void Add(Report report) => context.Reports.Add(report);
 
+        public Report? FindForEdit(ReportOwner owner, int reportId)
+            => OwnedBy(owner).SingleOrDefault(report => report.Id == reportId);
+
+        public void ExpectUnchangedSince(Report report, Guid concurrencyToken) => context.ApplyConcurrencyTokenForEdit(report, concurrencyToken);
+
         public Report? Remove(ReportOwner owner, int reportId)
         {
             var report = OwnedBy(owner).SingleOrDefault(candidate => candidate.Id == reportId);

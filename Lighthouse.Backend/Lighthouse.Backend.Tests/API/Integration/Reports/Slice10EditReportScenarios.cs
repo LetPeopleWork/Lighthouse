@@ -24,7 +24,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-10 @slice-10 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice10)]
         public async Task An_admin_renames_a_report_and_every_reader_sees_the_new_name()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -44,7 +43,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-10 @us-07 @slice-10 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice10)]
         public async Task A_changed_Now_length_is_stored_for_everyone()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -65,7 +63,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-10 @us-04 @slice-10 @contract-shape:bounded-change
         // Work Items that turn up for Then's days after creation must not reach the Throughput ticked later.
         [Test]
-        [Ignore(PendingSlice10)]
         public async Task Ticking_a_metric_that_was_frozen_but_hidden_shows_Then_as_it_was_on_the_day_of_creation()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -133,7 +130,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-10 @slice-10 @boundary @contract-shape:bounded-change
         // A later version may have stored members this one does not know; an edit here must not strip them.
         [Test]
-        [Ignore(PendingSlice10)]
         public async Task An_edit_changes_the_name_the_shown_metrics_and_how_long_Now_is_and_nothing_else()
         {
             TheInstanceHasAPremiumLicence();

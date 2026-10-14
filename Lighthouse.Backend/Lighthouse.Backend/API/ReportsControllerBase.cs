@@ -37,6 +37,19 @@ namespace Lighthouse.Backend.API
             return Refusal(created, owner);
         }
 
+        protected async Task<ActionResult<ReportRead>> Edit(ReportOwner owner, int reportId, ReportEditRequest request)
+        {
+            if (request.ConcurrencyToken is not Guid concurrencyToken)
+            {
+                return ValidationProblem("An edit needs the concurrency token of the report it was made on.");
+            }
+
+            var edit = new ReportEdit(request.Name ?? string.Empty, request.ShownMetricKeys ?? [], concurrencyToken, request.ThenAndNow?.NowLengthDays);
+
+            var edited = await commands.Edit(owner, reportId, edit);
+            return edited is { Status: ReportOutcomeStatus.Done, Value: ReportRead read } ? Ok(read) : Refusal(edited, owner);
+        }
+
         protected async Task<IActionResult> Delete(ReportOwner owner, int reportId)
             => await commands.Delete(owner, reportId) == ReportOutcomeStatus.Done ? NoContent() : NotFound();
 

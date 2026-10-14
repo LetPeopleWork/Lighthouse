@@ -21,6 +21,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
         private static readonly string[] LoggedDeletionFields = ["ReportId", "OwnerKind", "OwnerId", "TemplateKey"];
 
+        private static readonly string[] LoggedEditFields = ["ReportId", "OwnerKind", "OwnerId"];
+
         private const string NotInTheCatalog = "velocity";
 
         private static readonly string[] OnlyCycleTime = [CycleTimeReportMetric.MetricKey];
@@ -216,6 +218,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             }
         }
 
+        [Test]
+        public async Task A_report_edited_logs_at_debug_without_the_name_or_shown_keys()
+        {
+            var created = await CreateTakingSeconds(0);
+            logger.Lines.Clear();
+
+            var outcome = await Subject(seconds: 0).Edit(Lightspeed, 17, new ReportEdit(SecretName, OnlyCycleTime, created.ConcurrencyToken, 30));
+
+            var line = logger.Lines.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Status, Is.EqualTo(ReportOutcomeStatus.Done));
+                Assert.That(line.Level, Is.EqualTo(LogLevel.Debug));
+                Assert.That(line.Fields.Keys.Where(key => key != "{OriginalFormat}"), Is.EquivalentTo(LoggedEditFields));
+                Assert.That(line.Fields["ReportId"], Is.EqualTo(17));
+                Assert.That(line.Fields["OwnerKind"], Is.EqualTo(ReportOwnerKind.Team));
+                Assert.That(line.Fields["OwnerId"], Is.EqualTo(42));
+                Assert.That(line.Message, Does.Not.Contain(SecretName));
+                Assert.That(line.Message, Does.Not.Contain(CycleTimeReportMetric.MetricKey));
+            }
+        }
+
         private async Task ReadTakingMilliseconds(int milliseconds)
         {
             await CreateTakingSeconds(0);
@@ -251,6 +275,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
                 stored = report;
             });
             writer.Setup(w => w.Remove(Lightspeed, 17)).Returns(() => stored);
+            writer.Setup(w => w.FindForEdit(Lightspeed, 17)).Returns(() => stored);
             writer.Setup(w => w.Save()).Callback(() => timeProvider.Advance(TimeSpan.FromSeconds(seconds))).Returns(Task.CompletedTask);
 
             return new ReportCommands(writer.Object, Owners(), [Template(clock)], Mock.Of<ILicenseService>(), clock, timeProvider, logger);
