@@ -270,3 +270,27 @@ Worth a test later (not chased, the gate was met):
 - `thenAndNowDraft` L92: a window with neither day entered.
 - `ReportView` L55/L57/L127/L145: retry/loading branches already covered by E2E-shaped tests elsewhere;
   hand-check before chasing (StrykerJS reports false survivors on this repo).
+
+---
+
+# Mutation testing — 6164 (Reports on Portfolios, slice 06), backend only
+
+Run 2026-10-14 on `main` @ `5c922a2de`, once, on frozen code after the slice's review fixes and refactor.
+Config `stryker.6164.backend.json`. Frontend run deferred (maintainer: no long CPU jobs before the meeting);
+survivors recorded, not chased.
+
+| file | tested | killed | survived | no coverage | score |
+| --- | --- | --- | --- | --- | --- |
+| API/ReportsControllerBase.cs | 26 | 22 | 3 | 1 | 84.6 % |
+| Models/UsageData/UsageDataRoutePatterns.cs | 13 | 13 | 0 | 0 | 100 % |
+| Services/Implementation/Reports/PortfolioReportMetricSeries.cs | 7 | 4 | 2 | 1 | 57.1 % |
+| Services/Implementation/Reports/ReportMetricSeriesByOwner.cs | 3 | 3 | 0 | 0 | 100 % |
+| **Total** | **49** | **42** | **5** | **2** | **85.71 %** |
+
+`PortfolioReportsController.cs`, `TeamReportsController.cs` and `ReportSeriesReading.cs` produced no mutants of
+their own (routing attributes; the shared code sits in the base class).
+
+Survivors: problem-detail and exception message strings (`ReportsControllerBase` L26, L29, L51;
+`PortfolioReportMetricSeries` L45, L48); the problem result's object initializer emptied (`ReportsControllerBase`
+L58, worth a status-code assertion later); `CycleTime > 0` → `>= 0` when counting finished Features
+(`PortfolioReportMetricSeries` L18), equivalent because a finished Feature's cycle time is at least one day.
