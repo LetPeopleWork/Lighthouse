@@ -109,7 +109,7 @@ describe("The Reports tab on a Portfolio page", () => {
 	});
 
 	// @us-06 @slice-06 @driving_port @contract-shape:pure-function
-	it.skip("sits between Metrics and Settings", async () => {
+	it("sits between Metrics and Settings", async () => {
 		renderThePortfolioPage(`/portfolios/${APOLLO_ID}`, "portfolioAdmin");
 
 		await theReportsTab();
@@ -126,7 +126,7 @@ describe("The Reports tab on a Portfolio page", () => {
 	});
 
 	// @us-06 @slice-06 @driving_port @contract-shape:pure-function
-	it.skip("opens the Portfolio's reports for a reader", async () => {
+	it("opens the Portfolio's reports for a reader", async () => {
 		renderThePortfolioPage(`/portfolios/${APOLLO_ID}`, "reader");
 
 		await userEvent.click(await theReportsTab());
@@ -137,7 +137,7 @@ describe("The Reports tab on a Portfolio page", () => {
 	});
 
 	// @us-06 @slice-06 @contract-shape:pure-function
-	it.skip("opens one report under the Reports tab from an address that names it", async () => {
+	it("opens one report under the Reports tab from an address that names it", async () => {
 		renderThePortfolioPage(`/portfolios/${APOLLO_ID}/reports/42`, "reader");
 
 		expect(await screen.findByTestId("report-view")).toHaveTextContent(

@@ -237,6 +237,10 @@ const App: React.FC = () => {
 											<Route path="/portfolios">
 												<Route path=":id/:tab?" element={<PortfolioDetail />} />
 												<Route
+													path=":id/:tab/:reportId"
+													element={<PortfolioDetail />}
+												/>
+												<Route
 													path="edit/:id"
 													element={<PortfolioEditRedirect />}
 												/>

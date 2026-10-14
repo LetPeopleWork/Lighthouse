@@ -34,20 +34,33 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 import { reportFailedNavigation } from "../../../utils/navigation";
+import ReportsTab from "../../Common/Reports/ReportsTab";
+import ReportView from "../../Common/Reports/ReportView";
 import PortfolioDeliveryView from "./PortfolioDeliveryView";
 import PortfolioForecastView from "./PortfolioForecastView";
 import PortfolioMetricsView from "./PortfolioMetricsView";
 
-type PortfolioViewType =
-	| "features"
-	| "metrics"
-	| "deliveries"
-	| "settings"
-	| "access";
+const PORTFOLIO_VIEWS = [
+	"features",
+	"deliveries",
+	"metrics",
+	"reports",
+	"settings",
+	"access",
+] as const;
+
+type PortfolioViewType = (typeof PORTFOLIO_VIEWS)[number];
+
+const initialViewFor = (tabParam: string | undefined): PortfolioViewType =>
+	PORTFOLIO_VIEWS.find((view) => view === tabParam) ?? "features";
 
 const PortfolioDetail: React.FC = () => {
 	const navigate = useNavigate();
-	const { id, tab } = useParams<{ id: string; tab?: string }>();
+	const { id, tab, reportId } = useParams<{
+		id: string;
+		tab?: string;
+		reportId?: string;
+	}>();
 	const portfolioId = Number(id);
 
 	const [portfolio, setPortfolio] = useState<Portfolio>();
@@ -59,16 +72,8 @@ const PortfolioDetail: React.FC = () => {
 	const [lastPortfolioRefreshFailed, setLastPortfolioRefreshFailed] =
 		useState<boolean>(false);
 
-	const getInitialActiveView = (tabParam?: string): PortfolioViewType => {
-		if (tabParam === "metrics") return "metrics";
-		if (tabParam === "deliveries") return "deliveries";
-		if (tabParam === "settings") return "settings";
-		if (tabParam === "access") return "access";
-		return "features";
-	};
-
 	const [activeView, setActiveView] = useState<PortfolioViewType>(
-		getInitialActiveView(tab),
+		initialViewFor(reportId ? "reports" : tab),
 	);
 	const [pendingPortfolioRefresh, setPendingPortfolioRefresh] = useState(false);
 	const [portfolioMembers, setPortfolioMembers] = useState<
@@ -283,20 +288,13 @@ const PortfolioDetail: React.FC = () => {
 		await portfolioService.refreshFeaturesForPortfolio(portfolio.id);
 	};
 
-	const getTabPath = (newView: PortfolioViewType): string => {
-		if (newView === "features") return "features";
-		if (newView === "deliveries") return "deliveries";
-		return newView;
-	};
-
 	const handleViewChange = (
 		_event: React.SyntheticEvent,
 		newView: PortfolioViewType,
 	) => {
 		setActiveView(newView);
-		const tabPath = getTabPath(newView);
 		reportFailedNavigation(
-			navigate(`/portfolios/${id}/${tabPath}`, { replace: true }),
+			navigate(`/portfolios/${id}/${newView}`, { replace: true }),
 		);
 	};
 
@@ -481,6 +479,7 @@ const PortfolioDetail: React.FC = () => {
 											<Tab label={featuresTerm} value="features" />
 											<Tab label={deliveriesTerm} value="deliveries" />
 											<Tab label="Metrics" value="metrics" />
+											<Tab label="Reports" value="reports" />
 											{showSettingsTab && (
 												<Tab label="Settings" value="settings" />
 											)}
@@ -531,6 +530,18 @@ const PortfolioDetail: React.FC = () => {
 								{activeView === "metrics" && portfolio && (
 									<PortfolioMetricsView portfolio={portfolio} />
 								)}
+
+								{activeView === "reports" &&
+									(reportId ? (
+										<ReportView
+											owner={{ kind: "portfolio", id: portfolio.id }}
+											reportId={Number(reportId)}
+										/>
+									) : (
+										<ReportsTab
+											owner={{ kind: "portfolio", id: portfolio.id }}
+										/>
+									))}
 
 								{activeView === "settings" && portfolio && (
 									<ModifyProjectSettings
