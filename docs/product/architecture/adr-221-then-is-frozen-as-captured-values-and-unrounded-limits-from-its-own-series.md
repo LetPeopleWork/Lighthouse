@@ -11,9 +11,10 @@ series" — the limits went with D49; see "Amended 2026-10-14" below. The file n
 
 ## Context
 
-D26 and D40: at creation, Then's shown values and Then's XmR average and limits are frozen, **unrounded**, for every
-metric that applies to the owner (not only the ticked ones); Now's points are counted against those limits, split
-above / below; the limits never come from the owner's PBC Baseline setting nor from Now. Whether the full Then series
+D26 and D40: at creation, Then's shown values ~~and Then's XmR average and limits~~ are frozen, **unrounded**, for every
+metric that applies to the owner (not only the ticked ones)~~; Now's points are counted against those limits, split
+above / below; the limits never come from the owner's PBC Baseline setting nor from Now~~ *(limits and the count
+superseded by D49, 2026-10-14)*; nothing frozen comes from the owner's PBC Baseline setting. Whether the full Then series
 is stored is DESIGN's call. D41 (wording since superseded by D45): no new thresholds, never a misleading 0.
 
 What the code does today (verified):
@@ -31,7 +32,9 @@ What the code does today (verified):
 
 The maintainer then decided (2026-10-03, after this design's first draft): every value is shown with its sample size
 and "—" appears only when truly empty (D45); no settings snapshot or notice (D46); {Throughput} as total and per-day
-average (D47); average {Work Item Age} as window average and last day (D48).
+average (D47); ~~average {Work Item Age} as window average and last day (D48)~~ *(D48 superseded by D51, 2026-10-14)*.
+*(2026-10-14: the sample size is now shown once in the summary header — each side's window length and closed count —
+not on every line; see Decision 6.)*
 
 ## Decision
 
@@ -50,7 +53,9 @@ average (D47); average {Work Item Age} as window average and last day (D48).
    reason~~ *(limits superseded by D49, 2026-10-14)*. Captures are taken for **every applicable metric**, ticked or not.
 5. **The full Then series is not stored.** No panel or chart needs it (D39), D27 already says later values read "Not
    captured for this report", and the payload can gain a series member additively if a later slice ever needs one.
-6. **Every value carries its sample size and the panel always shows it** (D45). A value is absent only when there is
+6. **Every value carries its sample size** ~~**and the panel always shows it** (D45)~~ *(2026-10-14, D52: the panel
+   shows the sample size once, in the summary header — window length in days and the closed count — not on each
+   daily-series or percentile line; the wire still carries `sampleSize` on every value)*. A value is absent only when there is
    nothing to compute, as closed reason codes — no threshold:
    - `no-finished-items` — no finished {Work Item} with a cycle time in the window (percentiles; per-item limits);
    - `too-few-points` — fewer than 2 points for a moving range (limits);
@@ -61,29 +66,34 @@ average (D47); average {Work Item Age} as window average and last day (D48).
    *(Amended 2026-10-14: only `no-finished-items` remains on the wire, and `then-was-zero` in the panel; the other
    four went with D49 and D51.)*
 7. **Value definitions** (window `[start, end]`, L inclusive days; the same code for Then at creation and Now on read):
-   - **{Cycle Time}**: the 50th / 70th / 85th percentile from the Metrics tab's percentile read (Then freezes the 85th);
-     sample size = finished {Work Items} with a cycle time in the window; limits over those cycle times by close date.
+   - **{Cycle Time}**: the 50th / 70th / 85th percentile from the Metrics tab's percentile read (Then freezes all three,
+     DT9 — see Decision 9); sample size = finished {Work Items} with a cycle time in the window~~; limits over those
+     cycle times by close date~~ *(D49)*.
    - **{Throughput}** (D47): `total` = sum of the daily finished counts; `perDay` = total ÷ L, unrounded; sample
-     size = L days. Change and % change are on `perDay`, so a Now of another length compares correctly. Limits and the
-     beyond-limits count over the daily counts.
-   - **{WIP}**: average of the daily {WIP} (unrounded), its minimum and maximum; limits over the daily values.
+     size = L days. Change and % change are on `perDay`, so a Now of another length compares correctly. ~~Limits and the
+     beyond-limits count over the daily counts.~~ *(D49)*
+   - **{WIP}**: ~~average of the daily {WIP} (unrounded), its minimum and maximum; limits over the daily values.~~
      *(Amended 2026-10-14 by D50: Average, Median, Min, Max of the daily {WIP}; no limits.)*
-   - **{Work Item Age}** (Q10, D48), from the daily total age `T[d]` and the daily {WIP} `W[d]` of the same
+   - **{Work Item Age}** ~~(Q10, D48), from the daily total age `T[d]` and the daily {WIP} `W[d]` of the same
      population: total window average = mean of `T[d]` over all L days; total last day = `T[end]`; average window
      average = mean of `T[d] ÷ W[d]` over the days with `W[d] > 0`; average last day = `T[end] ÷ W[end]` (sample size
-     `W[end]` {Work Items}). Limits and count over `T[d]`. *(Amended 2026-10-14 by D51: Average, Median, Min, Max of
+     `W[end]` {Work Items}). Limits and count over `T[d]`.~~ *(Amended 2026-10-14 by D51: Average, Median, Min, Max of
      `T[d]` only; no per-item average, no last day, no limits.)*
    - *(Amended 2026-10-14: the {Cycle Time} limits and the {Throughput} limits and count above are gone too, D49.)*
 8. **Nothing about the owner's settings is stored** (D46). Now uses today's settings; Then stays as frozen; the
    report does not compare them.
-9. **Then freezes the {Cycle Time} 85th percentile only** (2026-10-13). The panel's Then column shows the 85th alone,
+9. ~~**Then freezes the {Cycle Time} 85th percentile only** (2026-10-13). The panel's Then column shows the 85th alone,
    as in the approved mockup; Now shows the 85th, 70th and 50th. Then's 70th and 50th were never Then's, so no "Not
-   captured" sentence appears for them; that sentence stays for a metric or value the report predates (D27).
+   captured" sentence appears for them; that sentence stays for a metric or value the report predates (D27).~~
+   *(Superseded by DT9, 2026-10-13, DISTILL.)* **Then freezes the {Cycle Time} 85th, 70th and 50th percentiles**, as
+   `CycleTimeReportMetric` captures them. A report stored before DT9 holds the 85th only: its Then 70th and 50th are
+   missing from the stored payload — neither a value nor a "—" — and the panel reads them "Not captured for this
+   report" (D27); Now shows all three either way.
 10. **On the wire the two sides of a metric are `atThen` and `atNow`** (2026-10-13), in the read and in the browser
    alike. A member named `then` is a Biome error (`noThenProperty`) and turns the object into a thenable for anything
-   that awaits it. Member names inside a side: `p85`, `p70`, `p50`; `total`, `perDay`; `average`, `min`, `max`;
-   `totalWindowAverage`, `totalLastDay`, `averageWindowAverage`, `averageLastDay`; each `{ value, sampleSize,
-   absentReason }`. `beyondThenLimits` is `{ above, below }` of the same shape, the count in `value`. *(Amended
+   that awaits it. Member names inside a side: `p85`, `p70`, `p50`; `total`, `perDay`; ~~`average`, `min`, `max`;
+   `totalWindowAverage`, `totalLastDay`, `averageWindowAverage`, `averageLastDay`;~~ each `{ value, sampleSize,
+   absentReason }`. ~~`beyondThenLimits` is `{ above, below }` of the same shape, the count in `value`.~~ *(Amended
    2026-10-14: `wip` and `work-item-age` are both `average`, `median`, `min`, `max`; `beyondThenLimits` is dropped.)*
 
 ## Alternatives considered
@@ -135,13 +145,14 @@ average (D47); average {Work Item Age} as window average and last day (D48).
 counts Now's points beyond Then's XmR limits, and Then no longer freezes an XmR average or limits (D49); {WIP} reads
 Average, Median, Min and Max of the window's daily values, each with its own change (D50); the {Work Item Age} panel
 becomes "Total {Work Item Age}", the same four lines over the daily total age, with no per-item average and no
-last-day value (D51); a summary header carries each side's window and closed count (D52, frontend only). Slices 01–02
-are shipped; their stored reports hold `cycle-time` values only.
+last-day value (D51); a summary header carries each side's window and closed count (D52, frontend only — it needs no
+change to this ADR: it reads members the wire already carries). Slices 01–02 are shipped; their stored reports hold
+`cycle-time` values only (slice 01 wrote the 85th only; the 70th and 50th are frozen from DT9 on).
 
 **Decision.**
 
 1. **Then freezes captured values only.** No limits member in any capture; no beyond-limits count on the wire
-   (`beyondThenLimits` dropped — no released backend ever sent it). `XmRCalculator` is not extended and the Reports
+   (`beyondThenLimits` dropped — no release carried it). `XmRCalculator` is not extended and the Reports
    module must not depend on it (ArchUnitNET, added to the existing rule that keeps it off `ProcessBehaviourChart`
    and `XmRResult`). The extraction made in c206d65bd was reverted in 058b4ba48.
 2. **Value shapes**: `cycle-time` `{ p85, p70, p50 }` (unchanged); `throughput` `{ total, perDay }` (unchanged but

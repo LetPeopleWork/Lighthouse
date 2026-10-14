@@ -9379,7 +9379,8 @@ external integration or technology. **This is the first stored Report**: ADR-209
   `DateOnly` on the wire; Now's length is stored on the report and changed only by an edit under Write. (ADR-222)
 - **I8 — panels are pure functions of props**, so 5882 can render them server-side (Spike 6052).
 - **I9 — every value travels with its sample size**; "—" only when there is nothing to compute; no threshold; nothing
-  about the owner's settings is stored or compared (D45, D46; ADR-221).
+  about the owner's settings is stored or compared (D45, D46; ADR-221). *Since 2026-10-14 (D52) the panel shows the
+  sample size once, in the summary header — each side's length and closed count — not on every line.*
 - **I10 — the read path cannot name a write.** Persistence is two driven ports, `IReportReader` (get, list, count for
   an owner; no write member) and `IReportWriter` (add, update, remove, save), both implemented by the one
   `ReportRepository`. `ReportQueries` depends on the reader only among the persistence ports; `ReportCommands` on both. There is no
@@ -9453,10 +9454,12 @@ owner. Slices 02–10 add payload members only.
 
 ### Reuse Analysis
 
-23 overlaps examined: 12 reused, 5 extended, 6 rejected with evidence — the PBC builders (owner baseline, rounding,
+~~23 overlaps examined: 12 reused, 5 extended, 6 rejected~~ *(restated 2026-10-14)* 30 overlaps examined: 15 reused,
+6 extended, 7 rejected with evidence, 2 (`XmRCalculator`, the `BaseMetricsService` cycle-time selection) no longer
+touched since D49. Rejected: the PBC builders (owner baseline, rounding,
 empty on invalid baseline), `BaselineValidationService` (off by one under inclusive counting; "Baseline" copy), the
-day-keyed snapshot tables, the info-widget comparison, the percentile widget, the `TeamDeleted` cleanup path. Full
-table in the feature delta.
+day-keyed snapshot tables, the info-widget comparison, the percentile widget, the `TeamDeleted` cleanup path,
+`LoadingAnimation` for the report view. Full table in the feature delta.
 
 ### Quality attributes
 
@@ -9503,8 +9506,10 @@ licence, lookup, reader, writer, repository or series port.
 - [ADR-220](./adr-220-a-metric-catalog-captures-values-and-the-frontend-panel-owns-the-direction-of-good.md) — catalog
   and panel registry; unknown type and metric looks. **Accepted** (2026-10-13); not built.
 - [ADR-221](./adr-221-then-is-frozen-as-captured-values-and-unrounded-limits-from-its-own-series.md) — what Then
-  freezes ({Cycle Time} 85th only); wire names `atThen` / `atNow`. **Accepted** (2026-10-13); not built. **Amended
-  2026-10-14**: no limits, one absence code, {WIP} / Total {Work Item Age} as Average, Median, Min, Max.
+  freezes ({Cycle Time} 85th, 70th and 50th since DT9; ~~85th only~~ — a report stored before DT9 reads Then's 70th and
+  50th "Not captured for this report"); wire names `atThen` / `atNow`. **Accepted** (2026-10-13); not built. **Amended
+  2026-10-14**: no limits, one absence code, {WIP} / Total {Work Item Age} as Average, Median, Min, Max; Decision 9
+  struck for DT9; D52 needs no ADR change.
 - [ADR-222](./adr-222-report-windows-are-inclusive-instance-days-and-now-length-is-stored-on-the-report.md) — windows,
   the stored Now length, the wizard's pre-check from server bounds. **Accepted** (2026-10-13); not built.
 - Cross-refs: ADR-209 (status note added), ADR-160 (pin precedent), ADR-211 (client reads facts), ADR-214 / ADR-064
@@ -9517,10 +9522,23 @@ L1, L2 and L3 (the Reports module) in `c4-diagrams.md` → "C4 Architecture Diag
 ### Maintainer decisions (2026-10-03)
 
 Accepted: payload as JSON in one table · owner as two cascading FKs · Then series not stored · change and % computed
-in the panel. Changed: every value shows its sample size, "—" only when truly empty (D45) · no settings-changed
-notice and nothing about settings stored, slice 09 dropped (D46) · {Throughput} as total and per-day average over the
-whole window, change on the per-day average (D47) · average {Work Item Age} as window average and last day, like the
-total (D48). Value definitions: ADR-221 §7.
+in the panel. Changed: every value shows its sample size, "—" only when truly empty (D45; *where it shows superseded
+by D52*) · no settings-changed notice and nothing about settings stored, slice 09 dropped (D46) · {Throughput} as total
+and per-day average over the whole window, change on the per-day average (D47) · ~~average {Work Item Age} as window
+average and last day, like the total (D48)~~ *(superseded by D51, 2026-10-14)*. Value definitions: ADR-221 §7.
+
+### Maintainer decisions (2026-10-14)
+
+After the DISTILL sketch review, "start simple": **D49** no XmR average or limits are frozen and no panel counts Now's
+points beyond them (Signals, Epic 5935, owns "is this a real change") · **D50** {WIP} reads Average, Median, Min and
+Max of the window's daily values, each with its own change · **D51** the {Work Item Age} panel becomes "Total {Work
+Item Age}", the same four lines over the daily total age · **D52** a summary header shows each side's window and "N
+{Work Items} closed" ({Throughput} total once captured, from slice 04; else the {Cycle Time} sample size; no line
+when neither was captured) — frontend only, and the sample size shows there, not per line; "days since Then ended"
+waits for a sketch at slice 07. DT9 (DISTILL, 2026-10-13) stands: Then freezes the {Cycle Time} 85th, 70th and 50th.
+The median is `PercentileCalculator`'s 50th (lower middle) — the architect's call, flagged to the maintainer the same
+day, no objection yet. Display rounding accepts binary doubles (`roundForDisplay(1.005, 2)` is 1; peer review,
+2026-10-14). ADR-221 amended.
 
 ---
 

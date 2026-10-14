@@ -26,8 +26,14 @@ recorded. **No wire-contract change.**
 nothing is counted beyond them (D49): DD9, DD10 withdrawn, DD11 values only, `BeyondLimits` not built, E5 withdrawn,
 E15 repointed, E2 extended to `XmRCalculator`; one absence code left (`no-finished-items`); {WIP} and Total {Work
 Item Age} as Average, Median, Min, Max of daily values (D50, D51); DD35–DD37 added; ADR-221 amended. **Wire change**:
-`beyondThenLimits` dropped (never sent), `wip` / `work-item-age` sides become `{ average, median, min, max }`.
+`beyondThenLimits` dropped (no release carried it), `wip` / `work-item-age` sides become `{ average, median, min, max }`.
 Superseded text below is kept and marked.
+
+**Revision 2026-10-14, second pass (peer review of D49–D52: needs_revision 1B/2H/8M/7L).** DD33 struck for DT9 (Then
+freezes the 85th, 70th and 50th; a pre-DT9 report reads Then's 70th / 50th "Not captured for this report"); DD12 states
+the header's closed count and that the sample size shows in the header, not per line; "days since Then ended" waits
+for slice 07's sketch; DD35's median flagged to the maintainer; DD36 accepts binary-double rounding; reuse count
+restated. No wire change.
 
 Full text of everything below: `../feature-delta.md` → "Wave: DESIGN / …" sections. ADRs: ADR-219..ADR-222.
 
@@ -64,7 +70,13 @@ technology · no external integration (contract testing N/A).
   *(limits superseded by D49 (2026-10-14).)*
 - **DD12** Every value carries its sample size; "—" only when truly empty, as closed codes; no threshold (D45).
   *Revised 2026-10-14*: one code left on the wire, `no-finished-items` ({Cycle Time}); {Throughput}, {WIP} and Total
-  {Work Item Age} are never absent (a 0 is real); the sample size shows once, in the summary header (D52).
+  {Work Item Age} are never absent (a 0 is real); the sample size shows once, in the summary header (D52) — each
+  side's length in days and "N {Work Items} closed" — not per line, superseding D45's "visible on every value" for
+  the daily-series and percentile lines. Closed count (frontend only, DST-18): from slice 04 the side's {Throughput}
+  `total` when captured, else its {Cycle Time} sample size (closed with a cycle time > 0); no count line when neither
+  was captured; "0 … closed" when the source is 0 or `no-finished-items`. "Days since Then ended" (D35) is not in the
+  header; it returns only after the maintainer approves a sketch at slice 07, and `daysSinceThenEnded` stays on the
+  wire meanwhile.
 - **DD13** Inclusive instance-zone day windows on the server; `ReportWindowPolicy`, not `BaselineValidationService`;
   `today` and the cutoff are arguments, read by the query / command (rev. 2026-10-13 round 2).
 - **DD14** Now length in the payload; edit only, under Write.
@@ -103,16 +115,22 @@ technology · no external integration (contract testing N/A).
 - **DD31** Loading / re-read / failure / not-found looks on `WidgetShell`'s body look (exported, with optional
   `failureMessage` / `onRetry` for the report's own sentence and Retry; dashboards unchanged) and keyed queries.
 - **DD32** Unknown type: listed, opens to a not-found-family look; unknown metric: neutral frame.
-- **DD33** Then freezes the 85th only; no "Not captured" for Then's 70th / 50th.
+- ~~**DD33** Then freezes the 85th only; no "Not captured" for Then's 70th / 50th.~~ *(Superseded by DT9, 2026-10-13:
+  Then freezes the 85th, 70th and 50th; a report stored before DT9 holds the 85th only and reads Then's 70th and 50th
+  "Not captured for this report" (D27), pinned by
+  `A_report_that_froze_only_the_85th_percentile_says_nothing_of_Thens_70th_and_50th`.)*
 - **DD34** Create ≤ 10 s is a hypothesis; slice 01 measures; fallback cheaper captures; reopen DESIGN if it misses.
 - **DD35** *(2026-10-14)* One pure daily-series summary (Average, Median, Min, Max) shared by {WIP} and Total {Work
   Item Age}. Median = `PercentileCalculator.CalculatePercentile(values, 50)`, the Metrics tab's 50th: position
   max(1, ⌊n ÷ 2⌋) of the sorted values — the lower middle for an even count, just below the middle for an odd one;
-  called on a copy (it sorts in place). Sample size of a daily-series value = L days.
+  called on a copy (it sorts in place). Sample size of a daily-series value = L days. The median convention is the
+  architect's call, flagged to the maintainer on 2026-10-14; no objection yet, so it stands.
 - **DD36** *(2026-10-14)* Display rounding through `roundForDisplay` / `compareThenNow`: {WIP} and Total {Work Item
   Age} 0 decimals (as {Cycle Time}); {Throughput} total 0, per day 2; change and % from displayed values (DD6).
+  Binary doubles accepted: `roundForDisplay(1.005, 2)` is 1, not 1.01 — pinned by the row `[1.005, 2, 1]` in
+  `panels/thenNowComparison.test.ts` (DST-20).
 - **DD37** *(2026-10-14)* `beyondThenLimits`, the old `work-item-age` keys and four absence codes removed from the
-  frontend model in slice 04 (the backend never sent them); `median` added to `ReportMetricSide`.
+  frontend model in slice 04 (no release carried them); `median` added to `ReportMetricSide`.
 
 ## Storage
 
@@ -123,16 +141,22 @@ One expand-only migration in slice 01 (`CreateMigration`, SQLite + PostgreSQL): 
 
 ## Reuse summary
 
-23 overlaps examined: 12 reused (as code or pattern), 5 extended (~~`XmRCalculator`, the cycle-time selection in
-`BaseMetricsService`,~~ *not used since D49, 2026-10-14*; the two metrics interfaces' WIA series, owner tabs and delete dialogs, usage-data enums), 6
-rejected with evidence (PBC builders, `BaselineValidationService`, the day-keyed PBC/percentile tables, info-widget
-comparison, `CycleTimePercentiles` widget, `TeamDeleted` cleanup). Added 2026-10-13: `CreateWizardShell` (extend by
+~~23 overlaps examined: 12 reused (as code or pattern), 5 extended (`XmRCalculator`, the cycle-time selection in
+`BaseMetricsService`, the two metrics interfaces' WIA series, owner tabs and delete dialogs, usage-data enums), 6
+rejected with evidence~~ *(count restated 2026-10-14 below)*. Rejected with evidence: PBC builders, `BaselineValidationService`, the day-keyed PBC/percentile tables, info-widget
+comparison, `CycleTimePercentiles` widget, `TeamDeleted` cleanup. Added 2026-10-13: `CreateWizardShell` (extend by
 extracting its stepper frame), `DataGridBase` (reuse), `DeleteConfirmationDialog` (extend: optional warning),
 `WidgetShell` body look (extend: export), keyed TanStack queries (reuse), `LoadingAnimation` (rejected for the view). CREATE NEW: the report entity / table / repository,
 templates, catalog, window policy, ~~beyond-limits policy~~ *(not built, D49)*, panels and tab. Added 2026-10-14:
 `PercentileCalculator` reused for the median; DD35's daily-series summary created (nothing gives the four statistics
 together). (`FetchFingerprint` was an extension only for
 the settings notice and left the list with D46.)
+
+**Count as of 2026-10-14: 30 overlaps examined — 15 reused (12 + `DataGridBase`, keyed TanStack queries,
+`PercentileCalculator`), 6 extended (the two metrics interfaces' daily total-age read, owner tabs and delete dialogs,
+usage-data enums, `CreateWizardShell`, `DeleteConfirmationDialog`, `WidgetShell`), 7 rejected (the six above +
+`LoadingAnimation`), and 2 examined but no longer touched since D49 (`XmRCalculator`, the cycle-time selection in
+`BaseMetricsService`).**
 
 ## Decisions for the maintainer to confirm — resolved 2026-10-03
 

@@ -1683,8 +1683,11 @@ No container is added; no queue, push channel or background job.
 
 ## C4 Level 3 — Component: the Reports module
 
-Earns its place: more than fourteen components of its own, and the arrows answer the two questions a reviewer will ask — "where can Then's
-limits come from?" and "where does good-or-bad get decided?".
+Earns its place: more than fourteen components of its own, and the arrows answer the two questions a reviewer will ask — "what can
+Then's frozen values come from, and can the read path write?" (only the series port over the Metrics tab's own reads, never the PBC
+builders, the owner's PBC Baseline or `XmRCalculator`; the query side reaches no write member) and "where does good-or-bad get
+decided?" (only in the frontend panels). *(Rewritten 2026-10-14: the first question used to be "where can Then's limits come from?";
+since D49 Then freezes no limits.)*
 
 ```mermaid
 flowchart TB

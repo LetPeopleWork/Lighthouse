@@ -403,6 +403,9 @@ sketch review (2026-10-14). Superseded decisions are kept, marked, and not appli
   cut after slice 10, because D43 and D44 make Edit report part of v1.
 - [D35] **No intervention date.** The header reads "Then: 90 days to 31 Jul 2026 — frozen · Now: last 90 days, 5 Jul –
   2 Oct 2026 · 63 days since Then ended". Confirmed by D39.
+  *(Header superseded by D52 (2026-10-14): the summary header shows each side's window, its length and "N {Work Items}
+  closed"; no "frozen" or "last N days" wording. "Days since Then ended" returns only after the maintainer approves a
+  sketch at slice 07. Still in force: no intervention date.)*
 - [D36] **One reporting foundation for Epics 5878, 5882 and 5935** (maintainer 2026-10-03; updated the same day for
   D39). Reports is the shared home; a template is a flavor on it. Then & Now asks "how did we improve?" (frozen Then
   against a live Now); a future Signal asks "should we act?" (live, optionally snapshotted on a cadence). What 5878
@@ -483,7 +486,9 @@ sketch review (2026-10-14). Superseded decisions are kept, marked, and not appli
   lower limit is 0 (Q8); the % change when the Then value is 0 (Q9). No new threshold. Never a misleading 0 (C4).
   *(Superseded in part by D49 (2026-10-14): the three limit reasons — fewer than 2 points for Then's limits, a
   collapsed band, the below-count when Then's lower limit is 0 — go with the beyond-limits count. Still in force: no
-  finished {Work Item} in the window, and Then was 0 for the % change.)*
+  finished {Work Item} in the window, and Then was 0 for the % change.)* *(Where the sample size shows superseded by
+  D52 (2026-10-14): it shows once per side in the summary header — the window's length and the {Work Items} closed —
+  not beside every value.)*
 - [D46] **No settings-changed notice** (maintainer 2026-10-03, after DESIGN; supersedes D31). "Settings will
   inevitably change; just accept it." Nothing about the owner's settings is stored on the report and nothing is
   compared. Slice 09 is dropped (ADO Story #6167, the maintainer's call); US-09 is dropped.
@@ -1598,8 +1603,8 @@ place: DD12 and DD15 rewritten, DD16 withdrawn, the settings snapshot and the we
 bounded-change universe declared (DD25); the wizard's window refusal before Create (DD26); wire names `atThen` /
 `atNow` (DD27); the closed refusal set and its statuses (DD28); owner identity in the application ports (DD29); the
 Create/Edit wizard on an extracted stepper frame, the list on `DataGridBase`, delete on `DeleteConfirmationDialog`
-(DD30); loading / failure / not-found looks (new section); unknown type and metric looks (DD32); Then freezes the
-85th only (DD33); the create budget as a hypothesis with a gate (DD34); Observability added to Quality attributes.
+(DD30); loading / failure / not-found looks (new section); unknown type and metric looks (DD32); ~~Then freezes the
+85th only (DD33)~~ *(DD33 superseded by DT9: Then freezes the 85th, 70th and 50th)*; the create budget as a hypothesis with a gate (DD34); Observability added to Quality attributes.
 ADR-219..222 corrected and **Accepted**. Additional reads this round: DISTILL sections and upstream issues,
 `ReportsAcceptanceTest.cs` (reason codes, helpers), `Slice01/08/10` scenarios, `models/Reports/Report.ts`,
 `ReportsTestKit.tsx`, `ReportsTab.createWizard.test.tsx`, `CreateWizardShell.tsx`, `DeleteConfirmationDialog.tsx`,
@@ -1612,8 +1617,10 @@ text kept and marked: no XmR average or limits are frozen and nothing is counted
 DD12's absence codes shrink to `no-finished-items`; DD15's M3 and M4 become Average, Median, Min and Max of the
 window's daily {WIP} and daily total age (D50, D51); new **DD35** (daily-series summaries, the median convention,
 sample size), **DD36** (display rounding) and **DD37** (wire members removed); storage, slice plan, contract shapes and
-ADR-221 amended. The summary header (D52) was delivered frontend-only (`ThenAndNowSummary.tsx`, from the {Cycle Time}
-sample size) and needs no backend change. Additional reads this round: `ThenAndNowPayload.cs`, `ReportReadModels.cs`,
+ADR-221 amended. The summary header (D52) is frontend-only (`ThenAndNowSummary.tsx`) and needs no backend change; its
+closed count reads the {Cycle Time} sample size, and from slice 04 the {Throughput} total (DD12). *Second pass
+2026-10-14 (peer review)*: DD12, DD33, DD35 (median flagged to the maintainer) and DD36 (binary-double rounding)
+revised; DT9 carried through. Additional reads this round: `ThenAndNowPayload.cs`, `ReportReadModels.cs`,
 `CycleTimeReportMetric.cs`, `IReportMetricSeries.cs`, `PercentileCalculator.cs`, `BaseMetricsService.CumulativeMedian`,
 `TeamMetricsService.GetTotalWorkItemAgeOverTimeForTeam`, `models/Reports/Report.ts`, `panels/thenNowComparison.ts`,
 `CycleTimePanel.tsx`, `ReportsModuleArchUnitTest.cs`.
@@ -1685,19 +1692,24 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
   `{average, upper, lower, lowerClamped, pointCount}` unrounded~~ — for **every applicable metric**, ticked or not. The
   full Then series is **not** stored (ADR-221; D26; maintainer-accepted). *(limits superseded by D49 (2026-10-14):
   Then freezes its values only.)*
-- **DD12** Thin data (D45): every value travels with its sample size and the panel always shows it ("· 3 {Work
-  Items}"). A value is absent only when there is nothing to compute, as closed codes: `no-finished-items`,
-  `too-few-points` (< 2 points for limits), `no-process` (Then's average and upper limit both 0), `no-wip` (average
-  {Work Item Age} with no {WIP}), `lower-limit-zero` (below-count, Q8), `then-was-zero` (% change, panel, Q9). No
-  threshold.
+- **DD12** Thin data (D45): every value travels with its sample size ~~and the panel always shows it ("· 3 {Work
+  Items}")~~ *(D52: shown once in the summary header)*. A value is absent only when there is nothing to compute, as
+  closed codes: `no-finished-items`, ~~`too-few-points` (< 2 points for limits), `no-process` (Then's average and upper
+  limit both 0), `no-wip` (average {Work Item Age} with no {WIP}), `lower-limit-zero` (below-count, Q8),~~
+  `then-was-zero` (% change, panel, Q9). No threshold. *(Struck codes superseded by D49 and D51, 2026-10-14.)*
   *Revised 2026-10-14 (D49, D50, D51, D52)*: **one absence code remains on the wire, `no-finished-items`** — {Cycle
   Time} only, no finished {Work Item} with a cycle time in the window. `too-few-points`, `no-process` and
   `lower-limit-zero` went with the beyond-limits count (D49); `no-wip` went with the per-item average age (D51).
   {Throughput}, {WIP} and Total {Work Item Age} are **never absent** and need no code: a window has at least 14 days
   (DD13), every day yields a value, and nothing finished, nothing in progress or no age is a real 0 (D47, D50, D51).
   `then-was-zero` stays the panel's own (Q9) and never travels. The sample size still travels with every value;
-  *where* it shows is reshaped by D52 — once, in the summary header (each side's "N {Work Items} closed", read from
-  the {Cycle Time} sample size, and each side's length in days), not on every panel line (DD35).
+  *where* it shows is reshaped by D52 — once, in the summary header (each side's length in days and its "N {Work
+  Items} closed"), not on every panel line (DD35). This supersedes D45's "visible on every value" for the daily-series
+  and percentile lines on the DESIGN side. **The closed count** (frontend only, no wire change; DISTILL DST-18): from
+  slice 04, a side's {Throughput} `total` when the report captured {Throughput}; otherwise (older reports, and any
+  report that did not capture {Throughput}) that side's {Cycle Time} sample size — the {Work Items} closed with a
+  cycle time > 0; **no count line** when the report captured neither; "0 {Work Items} closed" when the source is 0 or
+  `no-finished-items`.
 - **DD13** Windows: inclusive calendar days in the instance zone, computed on the server from `ILighthouseClock.Today`;
   `DateOnly` on the wire in and out; a pure `ReportWindowPolicy` (≥ 14 inclusive days, end ≤ today, start ≥ today −
   cutoff, refusal = code + earliest start). *Revised 2026-10-13 (NB2)*: the policy reads nothing — `today` and the
@@ -1707,7 +1719,8 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
   edit endpoint under Write; no read parameter changes it (ADR-222; D43).
 - **DD15** Value definitions per metric (window `[start, end]` inclusive):
   - **M1 {Cycle Time}**: percentiles from `GetCycleTimePercentilesFor*` (the Metrics tab's values). Then freezes the
-    85th *(85th, 70th and 50th since DT9)*; Now captures 85th / 70th / 50th. ~~Limits over finished items' cycle times
+    85th, 70th and 50th (DT9; ~~85th only, DD33~~); a report stored before DT9 holds the 85th only, and its Then 70th
+    and 50th read "Not captured for this report" (D27). Now captures 85th / 70th / 50th. ~~Limits over finished items' cycle times
     (cycle time > 0, by close date then id — the PBC's own selection); count = Now's items beyond.~~ *(superseded by
     D49 (2026-10-14): no limits, no count.)* Sample size = the finished items with a cycle time in that window (D45);
     `no-finished-items` when there are none.
@@ -1833,11 +1846,14 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
   here." and Back to Reports (*copy to confirm at DELIVER's sketch*). A metric key in a read that the frontend has no
   panel for renders a neutral frame "This metric can't be shown in this version of Lighthouse." in its place; the
   wizard does not offer a key it has no panel for. Neither ever crashes the view.
-- **DD33** *(2026-10-13, M9)* **Then freezes the 85th percentile only** *(superseded 2026-10-13 by DT9: Then freezes the 85th, 70th and 50th)* (D26 as DESIGN shaped it): the {Cycle Time}
+- ~~**DD33** *(2026-10-13, M9)* **Then freezes the 85th percentile only** (D26 as DESIGN shaped it): the {Cycle Time}
   panel's Then column shows the 85th alone, as in the approved mockup; Now shows 85th / 70th / 50th. Then's missing
-  70th and 50th are not "absent" values — they were never Then's — so no "Not captured" sentence appears for them.
-  "Not captured for this report" stays reserved for a metric or value the report predates (D27): one the catalog
-  captures for reports created later.
+  70th and 50th are not "absent" values — they were never Then's — so no "Not captured" sentence appears for them.~~
+  *(Superseded 2026-10-13 by DT9.)* **Then freezes the 85th, 70th and 50th**, as `CycleTimeReportMetric` captures
+  them. A report stored before DT9 holds the 85th only: its Then 70th and 50th are missing from the stored payload —
+  neither a value nor a "—" — and read "Not captured for this report" (D27), while Now shows all three (DISTILL's
+  `A_report_that_froze_only_the_85th_percentile_says_nothing_of_Thens_70th_and_50th`). "Not captured for this report"
+  is the one sentence for any metric or value a report predates.
 - **DD34** *(2026-10-13, M8)* **Create ≤ 10 s is an unverified hypothesis.** Gate: slice 01 logs the elapsed time of
   every create (Observability) and measures on the dev instance's busiest Team with a 365-day Then before slice 02
   starts; the result is recorded in the slice's evolution notes. If it misses, the fallback (DD20) is cheaper
@@ -1854,7 +1870,8 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
     of the two middle values**, never their mean (90 days → the 45th smallest), so a median is always one of the
     window's own daily values and a whole number. For an **odd** count it is the value just below the middle (91 days
     → the 45th, not the 46th) — a quirk of the shared function, accepted so that a report's "Median" and its "50th"
-    are never computed two ways; changing it is a Metrics-wide decision, not this feature's.
+    are never computed two ways; changing it is a Metrics-wide decision, not this feature's. *This is the architect's
+    call; it was flagged to the maintainer on 2026-10-14 and has drawn no objection yet. DD35 stands until it does.*
   - `CalculatePercentile` **sorts its argument in place**. The summary hands it a copy, never the series it also takes
     the average, min and max from, so it stays a pure function of its input (a unit test with an unsorted series whose
     order matters pins it).
@@ -1868,9 +1885,13 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
   panel (`DECIMALS = 0` in `CycleTimePanel.tsx`) — an Average of 8.5 shows 9; Median, Min and Max are whole numbers
   already. {Throughput}: `total` 0 decimals, `perDay` 2 decimals (D47's "0.58 per day"). Change = displayed Now −
   displayed Then; % change = change ÷ displayed Then, 0 decimals; a displayed Then of 0 gives "—" with "Then was 0"
-  (Q9). The server sends unrounded values; no rounding on the wire.
+  (Q9). The server sends unrounded values; no rounding on the wire. *Binary doubles (peer review 2026-10-14,
+  accepted):* `roundForDisplay` rounds the double it is given, so a decimal that has no exact binary form can round
+  down: `roundForDisplay(1.005, 2)` is `1` (1.005 × 100 is just below 100.5), not 1.01. Accepted, not fixed; one
+  table row in `panels/thenNowComparison.test.ts` pins it (`[1.005, 2, 1]`, DISTILL DST-20). A {Throughput} per day
+  lands on such a value only by coincidence and is off by 0.01 at most.
 - **DD37** *(2026-10-14, D49, D51)* **Wire members removed, not deprecated.** `beyondThenLimits` is dropped from the
-  read: the backend never sent it (`MetricRead` carries `AtThen` / `AtNow` only; slices 01–02 shipped without it), so
+  read: no release carried it (`MetricRead` carries `AtThen` / `AtNow` only; slices 01–02 shipped without it), so
   no client depends on it and no stored report holds limits. The frontend's optional `IReportMetric.beyondThenLimits?`
   and its Zod member, the side keys `totalWindowAverage`, `totalLastDay`, `averageWindowAverage`, `averageLastDay`,
   and the absent reasons `too-few-points`, `no-process`, `no-wip`, `lower-limit-zero` (type, Zod enum and the panel's
@@ -1917,7 +1938,7 @@ Frontend (`Lighthouse.Frontend/src/…`):
 | `components/Common/CreateWizards/CreateWizardShell.tsx` | EXTEND (refactor) | Renders inside the extracted frame; props and behaviour unchanged |
 | `components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog.tsx` | EXTEND | One optional `warning` line (DT7); existing callers unchanged |
 | `pages/Common/MetricsView/WidgetShell.tsx` | EXTEND (export + optional `failureMessage`, `onRetry`) | Export the body look (lone spinner / dimmed under a small spinner / could-not-load) for the list and the report view; the two optional props carry the report's failure sentence and Retry, absent for every dashboard widget (NH1) |
-| `pages/Common/Reports/ReportView.tsx`, `ThenAndNowHeader.tsx` | NEW | Fetch once; header (D35: both windows, days since Then ended); render shown panels |
+| `pages/Common/Reports/ReportView.tsx`, `ThenAndNowHeader.tsx` | NEW | Fetch once; header ~~(D35: both windows, days since Then ended)~~ *(D52 replaces D35's header sentence: `ThenAndNowSummary.tsx` shows each side's window and closed count; "days since Then ended" returns only once the maintainer approves its sketch at slice 07 — the frontend holds an `it.todo` for it)*; render shown panels |
 | `pages/Common/Reports/panels/ThenNowPanelFrame.tsx`, `{CycleTime,Throughput,Wip,WorkItemAge}Panel.tsx`, `UnsupportedMetricPanel.tsx`, `reportPanelRegistry.ts`, `thenNowComparison.ts`, `reportWindowPresets.ts` | NEW | DD6, DD7, DD32; presets Team 30/90, Portfolio 90/180 (one-click buttons beside the custom length, as approved in the wizard sketch) |
 | `services/Api/ReportService.ts`, `models/Reports/*.ts` | NEW | API client and models (Zod `.nullable()` for every nullable); wire names used as they are, no renaming (DD27) |
 | `pages/Teams/Detail/TeamDetail.tsx`, `pages/Portfolios/Detail/PortfolioDetail.tsx`, router | EXTEND | Reports tab after Metrics; nested report route |
@@ -1945,7 +1966,7 @@ twin the metrics controllers carry). Days are `yyyy-MM-dd`.
 { id, name, templateKey, ownerKind, ownerId, createdOn, concurrencyToken, shownMetricKeys,
   thenAndNow: {
     thenWindow { start, end, lengthDays }, nowWindow { start, end, lengthDays },   -- yyyy-MM-dd, inclusive
-    daysSinceThenEnded, thenRebuildable,
+    daysSinceThenEnded, thenRebuildable,     -- daysSinceThenEnded stays on the wire; its consumer waits for slice 07's sketch (D52)
     metrics: { [metricKey]: { atThen: Side, atNow: Side } }
   } }
 Side per metric (each member a value = { value: number | null, sampleSize: int | null, absentReason: code | null }):
@@ -1957,14 +1978,15 @@ Side per metric (each member a value = { value: number | null, sampleSize: int |
 
 *Revised 2026-10-14 (D49, D50, D51; DD37).* Was: `metrics[key]` also carried `beyondThenLimits: { above, below } |
 null` (a value whose `value` is the count); `wip` was `{ average, min, max }`; `work-item-age` was
-`{ totalWindowAverage, totalLastDay, averageWindowAverage, averageLastDay }`. `beyondThenLimits` is dropped — the
-backend never sent it; the {WIP} and Total {Work Item Age} sides use the same four keys, so one panel layout serves
+`{ totalWindowAverage, totalLastDay, averageWindowAverage, averageLastDay }`. `beyondThenLimits` is dropped — no
+release carried it; the {WIP} and Total {Work Item Age} sides use the same four keys, so one panel layout serves
 both. Example, a {WIP} side: `{ "average": { "value": 8.62, "sampleSize": 90, "absentReason": null }, "median": {
 "value": 9, … }, "min": { "value": 6, … }, "max": { "value": 12, … } }`; nothing in progress: every `value` 0,
 `absentReason` null.
 
 A metric the report never captured is missing from `metrics`; a member it never captured is missing or null — both
-read "Not captured for this report" (D27), except Then's 70th and 50th, which Then never holds (DD33).
+read "Not captured for this report" (D27). That includes Then's 70th and 50th on a report stored before DT9, which
+froze the 85th only. ~~except Then's 70th and 50th, which Then never holds (DD33).~~
 
 **Refusal codes** (closed; DISTILL's set, adopted — DD28). Window: `then-too-short`,
 `then-too-long` (Then would start before 1 Jan of the year 1, the first day the calendar can name; checked after too-short, before ends-in-the-future), `then-ends-in-the-future`,
@@ -1973,7 +1995,7 @@ read "Not captured for this report" (D27), except Then's 70th and 50th, which Th
 `template-not-supported` (400 on create; 422 when opening a stored report). Licence: `report-cap-reached` (403).
 **Absence codes** (DD12; values, not refusals): `no-finished-items` on the wire ({Cycle Time} only); `then-was-zero`
 is the panel's own and never travels. *(Was also `too-few-points`, `no-process`, `no-wip`, `lower-limit-zero` —
-superseded by D49 and D51 (2026-10-14); none was ever sent by a released backend.)*
+superseded by D49 and D51 (2026-10-14); no release carried them.)*
 
 Template-specific members sit in one object named after the template (`thenAndNow`), in requests and in the read
 alike, and are validated by the template named in `templateKey`; a second template adds its own sibling object, so
@@ -2128,7 +2150,7 @@ cutoff) their arguments; `ReportQueries` reads `ILighthouseClock`, `ILicenseServ
 thenWindow    { start, end, lengthDays }                       -- DateOnly days, inclusive
 nowLengthDays                                                  -- edited only through PUT
 captures {
-  "cycle-time":    { p85, p70, p50 }                            [01; p70 / p50 since DT9]
+  "cycle-time":    { p85, p70, p50 }                            [01 wrote p85 only; p70 / p50 from DT9]
   "throughput":    { total, perDay }                            [04]
   "wip":           { average, median, min, max }                [05]
   "work-item-age": { average, median, min, max }                [05]   -- daily TOTAL age
@@ -2138,8 +2160,8 @@ value  = { value: double | null, sampleSize: int | null, absentReason: code | nu
 
 *Revised 2026-10-14 (D49, D50, D51).* Was: a `limits` member on every capture (`{ average, upper, lower: double,
 lowerClamped: bool, pointCount: int } | { absentReason: code }`, first written in slice 03), `wip` without `median`,
-and `work-item-age` as `{ totalWindowAverage, totalLastDay, averageWindowAverage, averageLastDay }`. No stored report
-ever held any of these (slices 01–02 wrote `cycle-time` values only), so nothing needs migrating and no reader needs
+and `work-item-age` as `{ totalWindowAverage, totalLastDay, averageWindowAverage, averageLastDay }`. No release
+carried any of these (slices 01–02 wrote `cycle-time` values only), so nothing needs migrating and no reader needs
 to tolerate them; a payload member a later version adds is still kept by an edit (DD25).
 
 Sample sizes: percentiles = finished {Work Items} with a cycle time; every {Throughput}, {WIP} and Total {Work Item
@@ -2147,7 +2169,7 @@ Age} value = L, the days in the window (DD35). ~~`averageLastDay` = {Work Items}
 *(superseded by D51)* Nothing about the owner's settings is stored (D46). The Now side is computed on read into the
 same value shapes and is never stored.
 
-**Per slice**: 01 table + Team adapter + `cycle-time` p85 + Now length (= Then); 02 window policy with end date and
+**Per slice**: 01 table + Team adapter + `cycle-time` p85 (p70 / p50 from DT9) + Now length (= Then); 02 window policy with end date and
 custom length; 03 ~~`Limits` extraction + `BeyondLimits` + cycle-time limits~~ the summary header, frontend only, no
 backend or payload change (*re-cut 2026-10-14, D49, D52*); 04 shown-key picker + throughput + the frontend model
 cleanup of DD37; 05 wip + work-item-age (+ the daily {WIP} read and the one new public daily total-age read; DD35's
@@ -2303,7 +2325,8 @@ ArchUnitNET + NUnit + TypeScript:
 - **Maintainability / testability**: one capture code for both sides; owner differences in two adapters; pure
   policies; ArchUnit rules above.
 - **Usability**: windows from the server, so every reader sees the same Now; terminology tokens; sign + number never
-  colour alone; every value shows its sample size (D45).
+  colour alone; ~~every value shows its sample size (D45)~~ the sample size shows once, in the summary header — each
+  side's length in days and its closed count (D52, DD12).
 - **Compatibility**: additive endpoints only; Lighthouse-Clients N/A (D15).
 
 ---
@@ -2319,6 +2342,8 @@ ArchUnitNET + NUnit + TypeScript:
 | "{Work Item Age} — total and average … Then and Now" (D39) with only the total defined (Q10) | **Resolved by D48**: the average also has a window average and a last-day value. *(Superseded by D51, 2026-10-14: the total only, as Average, Median, Min and Max of the daily totals.)* | D48, D51 |
 | Then freezes unrounded XmR average and limits; Now's points are counted beyond them, by side (D26, D40; DD9–DD11) | **Resolved by D49 (2026-10-14)**: no limits frozen, no beyond-limits count on any panel; `XmRCalculator` and `BaseMetricsService` untouched (the extraction was reverted); `BeyondLimits` not built; four absence codes gone. | D49 |
 | {WIP} as average with its range, one change on the average (D39 M3) | **Resolved by D50 (2026-10-14)**: Average, Median, Min and Max of the daily values, each with its own change; median per DD35. | D50 |
+| Then freezes the {Cycle Time} 85th only; Then's 70th and 50th were never Then's (DD33) | **Resolved by DT9 (2026-10-13)**: Then freezes the 85th, 70th and 50th; a report stored before DT9 reads its Then 70th and 50th "Not captured for this report" (D27). | DT9 |
+| Sample size visible on every value (D45); header with both windows and days since Then ended (D35) | **Resolved by D52 (2026-10-14)**: the summary header shows each side's window and closed count, once; no per-line sample size. "Days since Then ended" returns only after the maintainer approves a sketch at slice 07; `daysSinceThenEnded` stays on the wire meanwhile. | D52 |
 | ADR-209 "a report is a response, not a record" | Superseded in its deferral by ADR-219; the Reality Check stays a response. | ADR-219 |
 
 ---
@@ -2341,7 +2366,8 @@ No open decision remains for the maintainer from DESIGN.
 *Added 2026-10-14, for the maintainer to know rather than decide:* the median follows the codebase's
 `PercentileCalculator` (DD35), which for an odd number of days takes the value just below the middle (15 days → the
 7th smallest). Kept so a report's Median and its 50th never disagree; say so if the textbook middle is wanted, and it
-becomes a Metrics-wide change.
+becomes a Metrics-wide change. This is the architect's call; it was flagged to the maintainer on 2026-10-14 and has
+drawn no objection yet, so DD35 stands.
 
 ---
 
@@ -2357,8 +2383,8 @@ becomes a Metrics-wide change.
   for the owner delete dialog's loading and failure clause).
 - DELIVER: SQLite check constraint support through `CreateMigration` — if awkward, the factory alone enforces "exactly
   one owner" and a test pins it.
-- DISTILL: sample size visible on every value (D45) and the five "—" cases as boundary scenarios — no finished items,
-  < 2 Then points, collapsed band, lower limit 0 (Q8), Then was 0 (Q9), plus no {WIP} for average {Work Item Age};
+- DISTILL: ~~sample size visible on every value (D45) and the five "—" cases as boundary scenarios — no finished items,
+  < 2 Then points, collapsed band, lower limit 0 (Q8), Then was 0 (Q9), plus no {WIP} for average {Work Item Age};~~
   {Throughput} with a Now length different from Then (D47); the edit refusal for an uncaptured key. *(Revised
   2026-10-14, D49–D52: two "—" cases remain — no finished items ({Cycle Time}) and Then was 0 (% change); the
   limit cases and no-{WIP} go. New boundaries: a window with nothing in progress reads 0 on every {WIP} and Total
@@ -2385,10 +2411,11 @@ becomes a Metrics-wide change.
   — metric catalog + panel registry; direction of good frontend-only; unknown type and metric looks. **Accepted**
   (2026-10-13).
 - [ADR-221](../../product/architecture/adr-221-then-is-frozen-as-captured-values-and-unrounded-limits-from-its-own-series.md)
-  — what Then freezes (85th only for {Cycle Time}); unrounded limits; sufficiency codes; wire names `atThen` /
+  — what Then freezes ({Cycle Time} 85th, 70th and 50th since DT9; ~~85th only~~ — a report stored before DT9 reads
+  Then's 70th and 50th "Not captured for this report"); ~~unrounded limits~~; sufficiency codes; wire names `atThen` /
   `atNow`. **Accepted** (2026-10-13). **Amended 2026-10-14** (D49–D51): no limits frozen and no beyond-limits count;
-  one absence code; {WIP} and Total {Work Item Age} as Average, Median, Min, Max of daily values; median convention.
-  The file name keeps "unrounded limits" so links resolve.
+  one absence code; {WIP} and Total {Work Item Age} as Average, Median, Min, Max of daily values; median convention;
+  Decision 9 struck for DT9. D52 needs no change to it. The file name keeps "unrounded limits" so links resolve.
 - [ADR-222](../../product/architecture/adr-222-report-windows-are-inclusive-instance-days-and-now-length-is-stored-on-the-report.md)
   — windows, the stored Now length, the wizard's pre-check from server bounds. **Accepted** (2026-10-13).
 
@@ -2438,7 +2465,7 @@ the Refinement precedent (`epic-5510-5881-refinement`), re-read for this feature
 | Read | Status |
 |---|---|
 | This file: DISCUSS Outcome KPIs (K1–K5, G1–G3), Locked Decisions D33/D34/D15/D29/D42, Project DISCUSS Checklist (usage-data row), Story Map, WS strategy + NFRs, Handoff | ✓ |
-| This file: every `## Wave: DESIGN / …` section (DD1–DD25, components, driving/driven ports, storage + migration plan, contract shapes, seams for 5882/5935, enforcement E1–E10, quality attributes, open questions, Handoff to DEVOPS) | ✓ |
+| This file: every `## Wave: DESIGN / …` section (DD1–DD25, components, driving/driven ports, storage + migration plan, contract shapes, seams for 5882/5935, enforcement E1–E10, quality attributes, open questions, Handoff to DEVOPS) *(as read on 2026-10-03/13; the DESIGN sections now run DD1–DD37 and E1–E15, E5 withdrawn — nothing added since changes the platform)* | ✓ |
 | `design/wave-decisions.md`, `design/upstream-changes.md`, `discuss/wave-decisions.md` | ✓ |
 | Precedent: `epic-5510-5881-refinement/devops/wave-decisions.md`, its `environments.yaml`, its `## Wave: DEVOPS / …` sections | ✓ |
 | `Models/UsageData/UsageDataEventName.cs` (2026-10-03: last `TeamForecastRealityCheckRun = 11`; **re-read 2026-10-13 on `main`: last `TeamRefinementDayVerdictShown = 15`**), `UsageDataRouteKey.cs` (2026-10-03: last `PortfolioDetail_Access = 9`; **re-read 2026-10-13: last `TeamDetail_Refinement = 10`**), `UsageDataRoutePatterns.cs`, `UsageDataEventShapes.cs` (`IsCarriedExactlyWhenDeclared`), `UsageDataEventReported.cs`, `UsageDataOptionalFeature.cs` (usage data's own list, not the product's keys) | ✓ |
@@ -2488,7 +2515,7 @@ never a connector); hosted tenant (platform torn down; Postgres covers the provi
 | Stage | Workflow | What it does for this feature |
 |---|---|---|
 | Change detection | `ci_changes.yml` (`path-classifier.sh`) | Flags backend and frontend. **Slice 01 registers the Reports module in `Program.cs`** → `connector_shared=true` → the full live-connector `Integration` category runs (shared Linear key, unauthenticated GitHub pair can rate-limit). Expect it; the acceptance rule below says what may be re-run and what blocks |
-| Backend | `ci_backend.yml` | `dotnet build` zero warnings; NUnit unit + WebApplicationFactory acceptance tests (RBAC on every write, cross-owner 404, cap, window policy, parity E6, payload round-trip E7, cascade E8, bounded-change row counts); ArchUnitNET E1–E5; `ExpandOnlyMigrationGuard` over the one migration |
+| Backend | `ci_backend.yml` | `dotnet build` zero warnings; NUnit unit + WebApplicationFactory acceptance tests (RBAC on every write, cross-owner 404, cap, window policy, parity E6, payload round-trip E7, cascade E8, bounded-change row counts); ArchUnitNET ~~E1–E5~~ E1–E4, E14, E15 *(E5 withdrawn by D49, 2026-10-14; E2 now also keeps Reports off `XmRCalculator`)*; `ExpandOnlyMigrationGuard` over the one migration |
 | Frontend | `ci_frontend.yml` | Vitest (panels pure, registry exhaustive, reason-code maps, dialogs, usage-data emission per event, route keys); `pnpm build` (`tsc -b`, Biome `--write` in prebuild) |
 | E2E (compile) | `ci_e2e.yml` | Compiles the suite only |
 | Verify SQLite / Postgres | `ci_verifysqlite.yml`, `ci_verifypostgres.yml` | **Where E2E runs, twice.** One walking skeleton (thin-sanity rule), slice 01: through a Page Object on demo Team Lightspeed, open Reports, create a 30-day report, see the {Cycle Time} panel. Everything else — Portfolio, cap, edit, delete, the "—" cases — sits below E2E |
@@ -2613,7 +2640,7 @@ shared tab.
 | **K5** consultants show a report to client management (≥ 2 in 90 days) | maintainer conversation log (DISCOVER R1, R2) | — | Qualitative, unchanged; no telemetry |
 | **G1** reports deleted within 1 day of creation ≤ 20% of created | `ReportDeleted` + `ReportCreated` | per browser: `ReportDeleted` within 24 h after a `ReportCreated` from the same browser ÷ `ReportCreated` | **Proxy — accepted by the maintainer 2026-10-03.** Without a report id, a delete cannot be paired with *its* create; a same-day delete of an older report counts too, so the proxy reads high — safe for a ceiling guardrail. Readable from slice 08 |
 | **G2** open ≤ 2 s, create ≤ 10 s | slice 01 timing on the dev instance's busiest Team (manual, DELIVER); DISTILL timing check; the `ElapsedMs` field of the *report created* log line, Warning above 10 s; **a Warning `report-read-slow` when a single report read exceeds 2 s** — logged only when exceeded (Observability) | per instance, in the log and *Recent problems* | Not telemetry. In the field it is the operator's signal, not ours |
-| **G3** no report shows 0 where data is absent; Metrics tab PBCs unchanged | DISTILL boundary scenarios (the five "—" codes, DD12) + E5 byte-identical `Calculate` + E6 parity *(revised 2026-10-14, D49–D51: the one remaining "—" code `no-finished-items` and real-zero scenarios for {WIP} / Total {Work Item Age}; E5 withdrawn — `XmRCalculator` is untouched, and E2 keeps Reports off it)* | CI | Not telemetry |
+| **G3** no report shows 0 where data is absent; Metrics tab PBCs unchanged | DISTILL boundary scenarios ~~(the five "—" codes, DD12) + E5 byte-identical `Calculate`~~ (the one "—" code on the wire, `no-finished-items`, DD12) + E6 parity *(revised 2026-10-14, D49–D51: the one remaining "—" code `no-finished-items` and real-zero scenarios for {WIP} / Total {Work Item Age}; E5 withdrawn — `XmRCalculator` is untouched, and E2 keeps Reports off it)* | CI | Not telemetry |
 
 **Smuggling refused, explicitly**: no report name, report id, owner id, metric value, window length, shown-metric
 list, sample size or count travels. The template is the only property, carried by `ReportCreated` and `ReportOpened`, and it is a closed enum.

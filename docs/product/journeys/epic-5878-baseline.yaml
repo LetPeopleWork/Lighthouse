@@ -10,7 +10,7 @@ note: >
   D49; a summary header names each side's window and closed count, D52). No verdicts, no generated
   text, no charts - people interpret. No Lighthouse user has walked these journeys yet. Terms in braces ({team},
   {portfolio}, {feature}, {work items}, {cycle time}, {throughput}, {wip}, {work item age}) render as the instance's
-  configured words. No user-facing "Baseline" (it names the PBC setting). Decisions D17-D48 and slices 01-11 (09 and 11
+  configured words. No user-facing "Baseline" (it names the PBC setting). Decisions D17-D52 and slices 01-11 (09 and 11
   dropped) live in docs/feature/epic-5878-baseline/feature-delta.md.
 
 journeys:
@@ -44,7 +44,7 @@ journeys:
           Scenario: A coach freezes a Then that ended at the engagement start
             Given Team Lightspeed's engagement started on 1 Aug 2026
             When Elena creates a Then & Now report with a Then of 90 days ending 31 Jul 2026
-            Then the report shows "Then: 90 days to 31 Jul 2026 - frozen"
+            Then the report's summary header shows Then's 90 days ending 31 Jul 2026 and how many {work items} closed in them
       - id: 2
         name: Read Then and Now
         action: "Open the report; read the summary header (each side's window and closed count), then each metric's panel - Then left, Now right, change, % change"
@@ -52,7 +52,7 @@ journeys:
         shared_artifacts: [then_window, then_values, now_window, now_values, direction_of_good]
         failure_modes:
           - Now overlaps Then - shown as is; the header shows both windows
-          - Thin data - every value shows its sample size; "—" with a reason only when truly empty, never a zero (D45)
+          - Thin data - the summary header shows each side's length and closed count (D52); "—" with a reason only when truly empty, never a zero (D45)
           - Nothing in progress in a window - {wip} and total {work item age} read 0, a real 0, never a dash (D50, D51)
           - Settings changed since creation - no notice (D46); Now uses today's settings, Then stays frozen
           - Owner's PBC Baseline changed later - Then's values do not move; nothing comes from the PBC Baseline
@@ -127,7 +127,7 @@ journeys:
           - Client changed settings after the hand-over - Now uses today's settings, Then stays as frozen; no notice (D46)
 
 shared_artifacts:
-  then_window: {source: "the stored report (end date + length, picked at creation, never editable)", consumers: [header, default name, days since Then ended, delete warning]}
+  then_window: {source: "the stored report (end date + length, picked at creation, never editable)", consumers: [summary header, default name, delete warning, "days since Then ended (stays on the wire as daysSinceThenEnded; shown only once the maintainer approves its sketch at slice 07, D52)"]}
   then_values: {source: "frozen at creation for every applicable metric - the values its panel shows", consumers: [Then side of every panel, change, "% change"]}
   now_length: {source: "the stored report (set at creation, changed only through Edit report)", consumers: [header, now_window, scheduled sending later (Epic 5882)]}
   now_window: {source: "derived - now_length days ending today, never clipped", consumers: [header, Now side of every panel]}
@@ -172,3 +172,9 @@ changelog:
       failure modes replaced; {wip} and total {work item age} read Average, Median, Min and Max of the daily values
       (a window with nothing in progress reads 0, never a dash); a summary header names each side's window and how
       many {work items} closed.
+  - date: 2026-10-14
+    feature: epic-5878-baseline
+    change: >
+      DESIGN peer-review pass - D52 replaces D35's header sentence: the summary header no longer says "frozen" or
+      "days since Then ended" (that line waits for slice 07's sketch); the sample size shows in the header, not on
+      every value; the closed count is {throughput}'s total once captured, else the {cycle time} sample size.
