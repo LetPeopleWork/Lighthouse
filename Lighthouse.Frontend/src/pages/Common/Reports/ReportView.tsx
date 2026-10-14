@@ -28,10 +28,12 @@ import { useMayEditReports } from "./useMayEditReports";
 import { useReportDeletion } from "./useReportDeletion";
 import { useReportOpenedReporter } from "./useReportOpenedReporter";
 import ReportWizard from "./wizard/ReportWizard";
-import { NO_LONGER_EXISTS } from "./wizard/reportRefusalCopy";
+import {
+	COULD_NOT_LOAD_REPORT,
+	NO_LONGER_EXISTS,
+} from "./wizard/reportRefusalCopy";
 
 const LOADING = "Loading report…";
-const COULD_NOT_LOAD = "This report couldn't be loaded. Reload to try again.";
 const MADE_BY_A_NEWER_VERSION =
 	"This report was made by a newer version of Lighthouse and can't be shown here.";
 const BODY_MIN_HEIGHT = 120;
@@ -150,7 +152,7 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 					status={status}
 					hasContentToDim={report !== undefined}
 					loadingMessage={LOADING}
-					failureMessage={finalFailure ?? COULD_NOT_LOAD}
+					failureMessage={finalFailure ?? COULD_NOT_LOAD_REPORT}
 					onRetry={finalFailure === undefined ? () => refetch() : undefined}
 				>
 					{report !== undefined && (

@@ -18,18 +18,21 @@ import {
 	aReportService,
 	CANNOT_BE_REBUILT,
 	CAP_SENTENCE,
+	COULD_NOT_LOAD,
 	defaultTerms,
 	ENGAGEMENT_START,
 	ENGAGEMENT_START_ID,
 	LIGHTSPEED,
 	LIST_COULD_NOT_LOAD,
+	NO_LONGER_EXISTS,
 	NOT_SUPPORTED_IN_THIS_VERSION,
 	renderWithReports,
+	theEngagementStartReport,
 } from "../../../tests/ReportsTestKit";
 import ReportsTab from "./ReportsTab";
 
 /**
- * The Reports tab of a Team or a Portfolio: the table of its reports, who may create and delete them, the
+ * The Reports tab of a Team or a Portfolio: the table of its reports, who may create, change and delete them, the
  * Community cap, and what the tab shows while its list is on its way or could not be read. Opening the tab
  * itself is reported as a tab opening by the page, not here; deleting a report is reported here.
  */
@@ -653,5 +656,191 @@ describe("The columns of the Reports list", () => {
 		).closest('[role="row"]') as HTMLElement;
 
 		expect(row).toHaveTextContent(NOT_SUPPORTED_IN_THIS_VERSION);
+	});
+});
+
+describe("Editing a report from the list", () => {
+	beforeEach(() => {
+		reportUsage.mockClear();
+		terms.current = { ...defaultTerms };
+	});
+
+	const theEditButtonOf = async (name: string) => {
+		const row = (await screen.findByRole("link", { name })).closest(
+			'[role="row"]',
+		) as HTMLElement;
+		return within(row).queryByRole("button", { name: `Edit ${name}` });
+	};
+
+	const theNowLength = async () =>
+		within(await screen.findByRole("dialog")).findByRole("spinbutton", {
+			name: "Now length in days",
+		});
+
+	it("offers an admin Edit on a Then & Now report, before its Delete", async () => {
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
+			reportService: aReportService(),
+		});
+
+		const edit = await theEditButtonOf(ENGAGEMENT_START);
+
+		expect(edit).toBeEnabled();
+		const row = edit?.closest('[role="row"]') as HTMLElement;
+		expect(
+			within(row)
+				.getAllByRole("button")
+				.map((button) => button.getAttribute("aria-label")),
+		).toEqual([`Edit ${ENGAGEMENT_START}`, `Delete ${ENGAGEMENT_START}`]);
+	});
+
+	it("offers a reader no Edit", async () => {
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
+			reportService: aReportService(),
+			viewer: "reader",
+		});
+
+		expect(await theEditButtonOf(ENGAGEMENT_START)).toBeNull();
+		expect(screen.queryByRole("button", { name: /^Edit/ })).toBeNull();
+	});
+
+	// An instance rolled back from a later version cannot show, and so cannot change, that version's reports.
+	it("offers only Delete on a report of a type this version cannot show", async () => {
+		const later = aListedReportOfALaterType();
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
+			reportService: aReportService({
+				getReports: vi
+					.fn()
+					.mockResolvedValue(aReportList([aListedReport(), later])),
+			}),
+		});
+
+		expect(await theEditButtonOf(later.name)).toBeNull();
+		expect(await theDeleteButtonOf(later.name)).toBeEnabled();
+		expect(await theEditButtonOf(ENGAGEMENT_START)).toBeEnabled();
+	});
+
+	it("reads the report and opens Edit report on Now, with the report's values", async () => {
+		const reportService = aReportService({
+			getReport: vi.fn().mockResolvedValue(
+				theEngagementStartReport({
+					thenAndNow: {
+						...theEngagementStartReport().thenAndNow,
+						nowWindow: {
+							start: "2026-09-03",
+							end: "2026-10-02",
+							lengthDays: 30,
+						},
+					},
+				}),
+			),
+		});
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, { reportService });
+
+		await userEvent.click(
+			(await theEditButtonOf(ENGAGEMENT_START)) as HTMLElement,
+		);
+
+		const wizard = await screen.findByRole("dialog");
+		expect(wizard).toHaveTextContent("Edit report");
+		expect(await theNowLength()).toHaveValue(30);
+		expect(reportService.getReport).toHaveBeenCalledWith(
+			LIGHTSPEED,
+			ENGAGEMENT_START_ID,
+		);
+	});
+
+	it("saves once over the report as it was read, and reads the list again", async () => {
+		const reportService = aReportService({
+			getReport: vi
+				.fn()
+				.mockResolvedValue(
+					theEngagementStartReport({ concurrencyToken: "token-7" }),
+				),
+		});
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, { reportService });
+		await waitFor(() =>
+			expect(reportService.getReports).toHaveBeenCalledTimes(1),
+		);
+
+		await userEvent.click(
+			(await theEditButtonOf(ENGAGEMENT_START)) as HTMLElement,
+		);
+		await theNowLength();
+		await userEvent.click(
+			within(await screen.findByRole("dialog")).getByRole("button", {
+				name: "Next",
+			}),
+		);
+		await userEvent.click(
+			await within(await screen.findByRole("dialog")).findByRole("button", {
+				name: "Save",
+			}),
+		);
+
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(reportService.editReport).toHaveBeenCalledTimes(1);
+		expect(reportService.editReport).toHaveBeenCalledWith(
+			LIGHTSPEED,
+			ENGAGEMENT_START_ID,
+			expect.objectContaining({ concurrencyToken: "token-7" }),
+		);
+		await waitFor(() =>
+			expect(reportService.getReports).toHaveBeenCalledTimes(2),
+		);
+	});
+
+	it("reads the report once however quickly Edit is pressed twice, and shows it is on its way", async () => {
+		const held = deferred<ReturnType<typeof theEngagementStartReport>>();
+		const reportService = aReportService({
+			getReport: vi.fn().mockReturnValue(held.promise),
+		});
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, { reportService });
+
+		const edit = (await theEditButtonOf(ENGAGEMENT_START)) as HTMLElement;
+		fireEvent.click(edit);
+		fireEvent.click(edit);
+
+		expect(await within(edit).findByRole("progressbar")).toBeVisible();
+		expect(edit).toBeDisabled();
+		await act(async () => held.resolve(theEngagementStartReport()));
+
+		expect(await screen.findByRole("dialog")).toHaveTextContent("Edit report");
+		expect(reportService.getReport).toHaveBeenCalledTimes(1);
+	});
+
+	// Somebody else deleted it after the list was read.
+	it("says a report that is gone no longer exists, opens nothing and reads the list again", async () => {
+		const reportService = aReportService({
+			getReports: vi
+				.fn()
+				.mockResolvedValueOnce(aReportList([aListedReport()]))
+				.mockResolvedValue(aReportList([])),
+			getReport: vi.fn().mockRejectedValue(aRefusal(404, "not-found")),
+		});
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, { reportService });
+
+		await userEvent.click(
+			(await theEditButtonOf(ENGAGEMENT_START)) as HTMLElement,
+		);
+
+		expect(await screen.findByText(NO_LONGER_EXISTS)).toBeVisible();
+		expect(screen.queryByRole("dialog")).toBeNull();
+		expect(await screen.findByText(EMPTY)).toBeVisible();
+	});
+
+	it("says a report that could not be read could not be loaded, and opens nothing", async () => {
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
+			reportService: aReportService({
+				getReport: vi.fn().mockRejectedValue(new Error("the network dropped")),
+			}),
+		});
+
+		await userEvent.click(
+			(await theEditButtonOf(ENGAGEMENT_START)) as HTMLElement,
+		);
+
+		expect(await screen.findByText(COULD_NOT_LOAD)).toBeVisible();
+		expect(screen.queryByRole("dialog")).toBeNull();
+		expect(screen.getByRole("link", { name: ENGAGEMENT_START })).toBeVisible();
 	});
 });

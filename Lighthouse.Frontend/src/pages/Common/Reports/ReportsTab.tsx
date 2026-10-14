@@ -10,11 +10,12 @@ import type {
 import { useTerminology } from "../../../services/TerminologyContext";
 import { WidgetBody } from "../MetricsView/WidgetShell";
 import { queryStatusOf } from "../MetricsView/widgetStatus";
-import ReportList from "./ReportList";
+import ReportList, { type ReportListActions } from "./ReportList";
 import { ownerTermKeyOf } from "./reportOwner";
 import { useMayEditReports } from "./useMayEditReports";
 import { useOwnerReports } from "./useOwnerReports";
 import { useReportDeletion } from "./useReportDeletion";
+import { useReportEditing } from "./useReportEditing";
 import ReportWizard from "./wizard/ReportWizard";
 import { capSentenceFor } from "./wizard/reportRefusalCopy";
 
@@ -30,12 +31,12 @@ const ListOrEmpty: React.FC<{
 	readonly owner: IReportOwner;
 	readonly reports: IReportListItem[];
 	readonly emptyMessage: string;
-	readonly onDelete?: (report: IReportListItem) => void;
-}> = ({ owner, reports, emptyMessage, onDelete }) =>
+	readonly actions?: ReportListActions;
+}> = ({ owner, reports, emptyMessage, actions }) =>
 	reports.length === 0 ? (
 		<Typography color="text.secondary">{emptyMessage}</Typography>
 	) : (
-		<ReportList owner={owner} reports={reports} onDelete={onDelete} />
+		<ReportList owner={owner} reports={reports} actions={actions} />
 	);
 
 const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({ owner }) => {
@@ -43,6 +44,7 @@ const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({ owner }) => {
 	const [isCreating, setIsCreating] = useState(false);
 	const { isEditor, isLoading: rolesAreLoading } = useMayEditReports(owner);
 	const deletion = useReportDeletion(owner);
+	const editing = useReportEditing(owner);
 
 	const { data, isFetching, isError, refetch } = useOwnerReports(owner);
 
@@ -90,6 +92,7 @@ const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({ owner }) => {
 			{isCreating && (
 				<ReportWizard owner={owner} onClose={() => setIsCreating(false)} />
 			)}
+			{editing.element}
 			<Box
 				data-testid="reports-list"
 				data-widget-status={status}
@@ -112,7 +115,15 @@ const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({ owner }) => {
 							owner={owner}
 							reports={data.reports}
 							emptyMessage={emptyMessage}
-							onDelete={isEditor ? deletion.ask : undefined}
+							actions={
+								isEditor
+									? {
+											onEdit: editing.ask,
+											onDelete: deletion.ask,
+											readingId: editing.readingId,
+										}
+									: undefined
+							}
 						/>
 					)}
 				</WidgetBody>
