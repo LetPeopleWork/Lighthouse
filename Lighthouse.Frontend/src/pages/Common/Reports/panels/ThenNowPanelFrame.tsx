@@ -2,22 +2,20 @@ import { Box, Paper, Stack, Typography } from "@mui/material";
 import type React from "react";
 import { useId } from "react";
 
-type PanelSegment = "then" | "now" | "change";
-
 interface ThenNowPanelFrameProps {
 	title: string;
-	thenHeading: string;
 	then: React.ReactNode;
-	nowHeading: string;
 	now: React.ReactNode;
 	change: React.ReactNode;
 }
 
-interface SegmentProps {
-	segment: PanelSegment;
-	heading: string;
-	children: React.ReactNode;
-}
+type DataAttributes = { readonly [attribute: `data-${string}`]: string };
+
+type ThenNowColumnProps = DataAttributes & {
+	readonly heading: string;
+	readonly first: boolean;
+	readonly children: React.ReactNode;
+};
 
 /**
  * One row of a segment. Rows share a height so a percentile lines up across Then, Now and Change, and each
@@ -33,42 +31,58 @@ export const PanelLine: React.FC<{ readonly children: React.ReactNode }> = ({
 	</>
 );
 
-const Segment: React.FC<Readonly<SegmentProps>> = ({
-	segment,
+/** Side-by-side columns that stack on a narrow screen. */
+export const ThenNowColumns: React.FC<{
+	readonly count: number;
+	readonly children: React.ReactNode;
+}> = ({ count, children }) => (
+	<Box
+		sx={{
+			display: "grid",
+			gridTemplateColumns: {
+				xs: "1fr",
+				md: `repeat(${count}, minmax(0, 1fr))`,
+			},
+			gap: 2,
+		}}
+	>
+		{children}
+	</Box>
+);
+
+/** A small heading over its lines; every column after the first is set off by a divider on a wide screen. */
+export const ThenNowColumn: React.FC<ThenNowColumnProps> = ({
 	heading,
+	first,
 	children,
-}) => {
-	const first = segment === "then";
-	return (
-		<Stack
-			spacing={0.5}
-			data-segment={segment}
-			sx={{
-				minWidth: 0,
-				pl: { md: first ? 0 : 2 },
-				borderLeft: { md: first ? 0 : 1 },
-				borderColor: "divider",
-			}}
+	...dataAttributes
+}) => (
+	<Stack
+		{...dataAttributes}
+		spacing={0.5}
+		sx={{
+			minWidth: 0,
+			pl: { md: first ? 0 : 2 },
+			borderLeft: { md: first ? 0 : 1 },
+			borderColor: "divider",
+		}}
+	>
+		<Typography
+			variant="overline"
+			color="text.secondary"
+			component="div"
+			sx={{ lineHeight: 1.5 }}
 		>
-			<Typography
-				variant="overline"
-				color="text.secondary"
-				component="div"
-				sx={{ lineHeight: 1.5 }}
-			>
-				{heading}
-			</Typography>{" "}
-			{children}
-		</Stack>
-	);
-};
+			{heading}
+		</Typography>{" "}
+		{children}
+	</Stack>
+);
 
 /** The shared look of every Then & Now panel: the metric's name over three segments, Then, Now and Change. */
 const ThenNowPanelFrame: React.FC<Readonly<ThenNowPanelFrameProps>> = ({
 	title,
-	thenHeading,
 	then,
-	nowHeading,
 	now,
 	change,
 }) => {
@@ -83,23 +97,17 @@ const ThenNowPanelFrame: React.FC<Readonly<ThenNowPanelFrameProps>> = ({
 			<Typography id={titleId} variant="h6" component="h2" gutterBottom>
 				{title}
 			</Typography>
-			<Box
-				sx={{
-					display: "grid",
-					gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
-					gap: 2,
-				}}
-			>
-				<Segment segment="then" heading={thenHeading}>
+			<ThenNowColumns count={3}>
+				<ThenNowColumn data-segment="then" heading="Then" first>
 					{then}
-				</Segment>
-				<Segment segment="now" heading={nowHeading}>
+				</ThenNowColumn>
+				<ThenNowColumn data-segment="now" heading="Now" first={false}>
 					{now}
-				</Segment>
-				<Segment segment="change" heading="Change">
+				</ThenNowColumn>
+				<ThenNowColumn data-segment="change" heading="Change" first={false}>
 					{change}
-				</Segment>
-			</Box>
+				</ThenNowColumn>
+			</ThenNowColumns>
 		</Paper>
 	);
 };

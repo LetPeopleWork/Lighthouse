@@ -70,12 +70,6 @@ export const changeText = (
 	return `${change.arrow} ${magnitude} (${percent})`;
 };
 
-/** A side's heading names what its values rest on once, so the value lines do not repeat it. */
-export const sideHeading = (
-	side: ReportSide,
-	restsOn: string | null,
-): string => (restsOn === null ? side : `${side} · ${restsOn}`);
-
 const reasonTexts: Record<
 	ReportAbsentReason,
 	(side: ReportSide, workItems: string) => string

@@ -127,7 +127,6 @@ const CycleTimePanel: React.FC<Readonly<ReportPanelProps>> = ({
 }) => (
 	<ThenNowPanelFrame
 		title={title}
-		thenHeading="Then"
 		then={
 			<PercentileLines
 				side={metric.atThen}
@@ -135,7 +134,6 @@ const CycleTimePanel: React.FC<Readonly<ReportPanelProps>> = ({
 				workItems={workItems}
 			/>
 		}
-		nowHeading="Now"
 		now={
 			<PercentileLines
 				side={metric.atNow}

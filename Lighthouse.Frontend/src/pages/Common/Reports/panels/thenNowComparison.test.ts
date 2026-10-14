@@ -6,7 +6,6 @@ import {
 	compareThenNow,
 	type DirectionOfGood,
 	roundForDisplay,
-	sideHeading,
 	signed,
 } from "./thenNowComparison";
 
@@ -125,16 +124,6 @@ describe("changeText", () => {
 			);
 		},
 	);
-});
-
-describe("sideHeading", () => {
-	it.each<["Then" | "Now", string | null, string]>([
-		["Then", "38 Tickets", "Then · 38 Tickets"],
-		["Now", "90 days", "Now · 90 days"],
-		["Then", null, "Then"],
-	])("heads %s resting on %s as %s", (side, restsOn, expected) => {
-		expect(sideHeading(side, restsOn)).toBe(expected);
-	});
 });
 
 describe("absentReasonText", () => {

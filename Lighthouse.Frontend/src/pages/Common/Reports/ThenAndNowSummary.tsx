@@ -1,4 +1,4 @@
-import { Box, Paper, Stack, Typography } from "@mui/material";
+import { Paper, Typography } from "@mui/material";
 import type React from "react";
 import type {
 	IReportMetric,
@@ -8,11 +8,10 @@ import type {
 } from "../../../models/Reports/Report";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { ThenNowColumn, ThenNowColumns } from "./panels/ThenNowPanelFrame";
 import { resolvedThenDays } from "./wizard/thenAndNow/thenAndNowDraft";
 
 const CYCLE_TIME_PERCENTILES = ["p85", "p70", "p50"] as const;
-
-type SummarySide = "then" | "now";
 
 /** Every Work Item that closed in a window has a Cycle Time, so the percentiles' sample size is the count closed. */
 const closedCountOf = (side: ReportMetricSide): number | null => {
@@ -32,49 +31,13 @@ const windowLineOf = (window: IReportWindow): string => {
 	return days === null ? length : `${days} · ${length}`;
 };
 
-interface SideProps {
-	side: SummarySide;
-	heading: string;
-	window: IReportWindow;
-	closedLine: string | null;
-}
-
-/** Each line ends in a space, as a panel's do, so the summary reads as separate lines. */
-const Side: React.FC<Readonly<SideProps>> = ({
-	side,
-	heading,
-	window,
-	closedLine,
-}) => {
-	const first = side === "then";
-	return (
-		<Stack
-			spacing={0.5}
-			data-summary-side={side}
-			sx={{
-				minWidth: 0,
-				pl: { md: first ? 0 : 2 },
-				borderLeft: { md: first ? 0 : 1 },
-				borderColor: "divider",
-			}}
-		>
-			<Typography
-				variant="overline"
-				color="text.secondary"
-				component="div"
-				sx={{ lineHeight: 1.5 }}
-			>
-				{heading}
-			</Typography>{" "}
-			<Typography component="div">{windowLineOf(window)}</Typography>{" "}
-			{closedLine !== null && (
-				<>
-					<Typography component="div">{closedLine}</Typography>{" "}
-				</>
-			)}
-		</Stack>
+/** Ends in a space so the summary reads as separate lines to a screen reader or anything else taking its text. */
+const SummaryLine: React.FC<{ readonly text: string | null }> = ({ text }) =>
+	text === null ? null : (
+		<>
+			<Typography component="div">{text}</Typography>{" "}
+		</>
 	);
-};
 
 /** Each side's window, its length and how many Work Items closed in it, so two windows of different lengths are not misread. */
 const ThenAndNowSummary: React.FC<{ readonly thenAndNow: IThenAndNow }> = ({
@@ -95,26 +58,16 @@ const ThenAndNowSummary: React.FC<{ readonly thenAndNow: IThenAndNow }> = ({
 
 	return (
 		<Paper variant="outlined" data-report-summary sx={{ p: 2, width: "100%" }}>
-			<Box
-				sx={{
-					display: "grid",
-					gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
-					gap: 2,
-				}}
-			>
-				<Side
-					side="then"
-					heading="Then"
-					window={thenAndNow.thenWindow}
-					closedLine={closedLineOf(cycleTime?.atThen)}
-				/>
-				<Side
-					side="now"
-					heading="Now"
-					window={thenAndNow.nowWindow}
-					closedLine={closedLineOf(cycleTime?.atNow)}
-				/>
-			</Box>
+			<ThenNowColumns count={2}>
+				<ThenNowColumn data-summary-side="then" heading="Then" first>
+					<SummaryLine text={windowLineOf(thenAndNow.thenWindow)} />
+					<SummaryLine text={closedLineOf(cycleTime?.atThen)} />
+				</ThenNowColumn>
+				<ThenNowColumn data-summary-side="now" heading="Now" first={false}>
+					<SummaryLine text={windowLineOf(thenAndNow.nowWindow)} />
+					<SummaryLine text={closedLineOf(cycleTime?.atNow)} />
+				</ThenNowColumn>
+			</ThenNowColumns>
 		</Paper>
 	);
 };
