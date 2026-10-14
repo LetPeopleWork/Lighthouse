@@ -23,7 +23,11 @@ import {
 	reportQueryKeyOf,
 	reportsQueryKeyOf,
 } from "../reportOwner";
-import { refusalCopyFor, useRefusalWords } from "./reportRefusalCopy";
+import {
+	COULD_NOT_SAVE,
+	refusalCopyFor,
+	useRefusalWords,
+} from "./reportRefusalCopy";
 import { reportTypes } from "./reportTypes";
 import TypeStep from "./TypeStep";
 
@@ -133,7 +137,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 			refuse(
 				isStaleSave(error)
 					? STALE_SAVE
-					: refusalCopyFor(error, refusalWordsFor(bounds)),
+					: refusalCopyFor(error, refusalWordsFor(bounds), COULD_NOT_SAVE),
 			);
 			return;
 		}

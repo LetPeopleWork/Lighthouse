@@ -43,6 +43,7 @@ export const useRefusalWords = (
 };
 
 const COULD_NOT_CREATE = "The report couldn't be created. Try again.";
+export const COULD_NOT_SAVE = "The report couldn't be saved. Try again.";
 
 /** Why a Community instance creates no further report for this Team or Portfolio. */
 export const capSentenceFor = (ownerTerm: string): string =>
@@ -92,11 +93,15 @@ const isRefusalCode = (code: string): code is ReportRefusalCode =>
  * The sentence for a failed create or save: the refusal's own copy, or a plain retry for anything else. A day
  * the refusal names itself wins over the one the wizard was opened with, which may be a day old by now.
  */
-export const refusalCopyFor = (error: unknown, words: RefusalWords): string => {
-	if (!(error instanceof ApiError)) return COULD_NOT_CREATE;
+export const refusalCopyFor = (
+	error: unknown,
+	words: RefusalWords,
+	couldNot: string = COULD_NOT_CREATE,
+): string => {
+	if (!(error instanceof ApiError)) return couldNot;
 
 	const code = error.problemCode;
-	if (code === undefined || !isRefusalCode(code)) return COULD_NOT_CREATE;
+	if (code === undefined || !isRefusalCode(code)) return couldNot;
 
 	return REFUSAL_COPY[code]({
 		...words,

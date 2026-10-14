@@ -207,6 +207,22 @@ describe("Editing a report", () => {
 		expect(await theNameField()).toHaveValue(SINCE_AUGUST);
 	});
 
+	// @us-10 @slice-10 @error @contract-shape:pure-function
+	it("says the report couldn't be saved when the save fails for no reason it names", async () => {
+		await openTheEditWizard(
+			aReportService({
+				editReport: vi.fn().mockRejectedValue(new Error("network down")),
+			}),
+		);
+		await onToTheLastStep();
+
+		await userEvent.click(await theSaveButton());
+
+		expect(
+			await within(await theWizard()).findByRole("alert"),
+		).toHaveTextContent("The report couldn't be saved. Try again.");
+	});
+
 	// @us-10 @slice-10 @boundary @contract-shape:pure-function
 	// The report already on screen is the one before the edit; it must not pass for the saved one.
 	it("dims the report under a spinner while it is read again after the save", async () => {
