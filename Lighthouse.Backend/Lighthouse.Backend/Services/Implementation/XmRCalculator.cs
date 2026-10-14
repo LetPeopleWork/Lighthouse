@@ -8,31 +8,58 @@ namespace Lighthouse.Backend.Services.Implementation
         int LowerNaturalProcessLimit,
         IReadOnlyList<IReadOnlyList<SpecialCauseType>> SpecialCauseClassifications);
 
+    public record XmRLimits(
+        double Average,
+        double Upper,
+        double Lower,
+        bool LowerClamped,
+        int PointCount);
+
     public static class XmRCalculator
     {
         private const double MovingRangeMultiplier = 2.66;
 
         public static XmRResult Calculate(int[] baselineValues, int[] displayValues)
         {
-            if (baselineValues.Length == 0)
-            {
-                var emptyClassifications = CreateEmptyClassifications(displayValues.Length);
-                return new XmRResult(0, 0, 0, emptyClassifications);
-            }
+            var (limits, averageMovingRange) = Spread(baselineValues);
 
-            var average = baselineValues.Average();
-
-            if (baselineValues.Length < 2)
+            if (limits.PointCount < 2)
             {
                 var classifications = CreateEmptyClassifications(displayValues.Length);
-                var roundedAverage = (int)Math.Round(average);
+                var roundedAverage = Round(limits.Average);
                 return new XmRResult(roundedAverage, roundedAverage, roundedAverage, classifications);
             }
 
-            var movingRanges = new double[baselineValues.Length - 1];
-            for (var i = 1; i < baselineValues.Length; i++)
+            var sigma = averageMovingRange / 1.128;
+
+            var specialCauseClassifications = ClassifyAllPoints(
+                displayValues, limits.Average, limits.Upper, limits.Lower, sigma);
+
+            return new XmRResult(Round(limits.Average), Round(limits.Upper), Round(limits.Lower), specialCauseClassifications);
+        }
+
+        public static XmRLimits Limits(int[] values) => Spread(values).Limits;
+
+        private static int Round(double value) => (int)Math.Round(value);
+
+        private static (XmRLimits Limits, double AverageMovingRange) Spread(int[] values)
+        {
+            if (values.Length == 0)
             {
-                movingRanges[i - 1] = Math.Abs(baselineValues[i] - baselineValues[i - 1]);
+                return (new XmRLimits(0, 0, 0, false, 0), 0);
+            }
+
+            var average = values.Average();
+
+            if (values.Length < 2)
+            {
+                return (new XmRLimits(average, average, average, false, values.Length), 0);
+            }
+
+            var movingRanges = new double[values.Length - 1];
+            for (var i = 1; i < values.Length; i++)
+            {
+                movingRanges[i - 1] = Math.Abs(values[i] - values[i - 1]);
             }
 
             var mrBar = movingRanges.Average();
@@ -40,17 +67,11 @@ namespace Lighthouse.Backend.Services.Implementation
             var unpl = average + MovingRangeMultiplier * mrBar;
             var lnpl = average - MovingRangeMultiplier * mrBar;
 
-            // Zero-bounded data: clamp negative lower sigma lines to zero.
-            // When a sigma line is zero it is considered not drawn and
-            // any detection rule that depends on it becomes invalid.
-            lnpl = lnpl < 0 ? 0 : lnpl;
+            // Cycle times and counts cannot go below zero, so a negative lower limit is drawn at zero.
+            // A lower limit of zero cannot be crossed, which switches off every rule that needs it.
+            var lowerClamped = lnpl < 0;
 
-            var sigma = mrBar / 1.128;
-
-            var specialCauseClassifications = ClassifyAllPoints(
-                displayValues, average, unpl, lnpl, sigma);
-
-            return new XmRResult((int)Math.Round(average), (int)Math.Round(unpl), (int)Math.Round(lnpl), specialCauseClassifications);
+            return (new XmRLimits(average, unpl, lowerClamped ? 0 : lnpl, lowerClamped, values.Length), mrBar);
         }
 
         private static SpecialCauseType[][] CreateEmptyClassifications(int length)

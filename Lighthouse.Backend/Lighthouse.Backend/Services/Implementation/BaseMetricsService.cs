@@ -732,17 +732,8 @@ namespace Lighthouse.Backend.Services.Implementation
                 };
             }
 
-            var baselineItems = getClosedItems(baselineStart!.Value, baselineEnd!.Value)
-                .Where(i => i.CycleTime(Clock.Zone) > 0)
-                .OrderBy(i => i.ClosedDate)
-                .ThenBy(i => i.Id)
-                .ToList();
-
-            var displayItems = getClosedItems(displayStart, displayEnd)
-                .Where(i => i.CycleTime(Clock.Zone) > 0)
-                .OrderBy(i => i.ClosedDate)
-                .ThenBy(i => i.Id)
-                .ToList();
+            var baselineItems = CycleTimeSeries(getClosedItems(baselineStart!.Value, baselineEnd!.Value), Clock.Zone);
+            var displayItems = CycleTimeSeries(getClosedItems(displayStart, displayEnd), Clock.Zone);
 
             var baselineValues = baselineItems.Select(i => i.CycleTime(Clock.Zone)).ToArray();
             var displayValues = displayItems.Select(i => i.CycleTime(Clock.Zone)).ToArray();
@@ -772,6 +763,15 @@ namespace Lighthouse.Backend.Services.Implementation
                 BaselineConfigured = baselineConfigured,
                 DataPoints = dataPoints,
             };
+        }
+
+        protected static List<WorkItemBase> CycleTimeSeries(IEnumerable<WorkItemBase> closedItems, TimeZoneInfo zone)
+        {
+            return closedItems
+                .Where(i => i.CycleTime(zone) > 0)
+                .OrderBy(i => i.ClosedDate)
+                .ThenBy(i => i.Id)
+                .ToList();
         }
 
         private static int[] ExtractDailyCounts(RunChartData runChartData)
