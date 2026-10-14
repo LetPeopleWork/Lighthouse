@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@types/pngjs": "^6.0.5",
-    "pixelmatch": "^7.2.0",
+    "pixelmatch": "^8.0.0",
     "pngjs": "^7.0.0"
   }
 }
