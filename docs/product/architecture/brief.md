@@ -9973,3 +9973,22 @@ from, so they cannot be confused with another feature's I1…I6 in this brief)
 - [ADR-236](./adr-236-on-a-teams-metrics-routes-a-features-size-is-that-teams-share.md): on a Team's metrics routes,
   a Feature's size is that Team's share, defined once by `Feature.SizeFor`. **Accepted (maintainer, 2026-10-13); decisions 5-6 and the AFK-6/AFK-8/AFK-9 consequences pending ratification.** (amended 2026-10-13, review L-R3-1)
 - Cross-refs: ADR-233 (widget loading and could-not-load looks), ADR-235 (init-only property on the same DTO).
+
+---
+
+## Application Architecture — story-6302-ci-test-time (DESIGN delta)
+
+Test-suite and CI-script design (ADO User Story #6302; follows `backend-test-speed`, ADR-074). Product runtime architecture **unchanged** — this delta governs the two verify jobs' test-time budget and the backend acceptance-harness host lifetime only.
+
+- **Locked**: a test-time budget check reads the `test-timings-*.csv` files the jobs already produce (column names from the converters), and runs as the **last** step of `Verify Frontend` / `Verify Backend`, only after a green test run, so it can neither mask a test failure nor skip the Sonar steps. No new `[NonParallelizable]`; the allowlist guard from ADR-074 stays as it is. Harness set-up is measured with the existing `FixtureSetupTimer` before any harness changes.
+- **Locked under the maintainer's AFK recommended-option rule (may revisit; rejected alternatives in the feature delta)**: (ADR-237) a new `Scripts/test-timings/check_budget.py`; unit = summed time per frontend file / backend class; fixed seconds per stack with recorded runner headroom; checked-in JSON allowlist with a reason and own ceiling per entry; frontend fails, backend warns until ≥5 post-fix runs show headroom, then fails; fails closed on a missing CSV; the script folder's unit tests run in the same step. Refinement/Reports/TeamFeatureSize harnesses build their host once per fixture where measurement shows set-up dominates (a reusable default base only later, on evidence). Frontend fixes go inside the existing test kits, otherwise per file.
+- **Cross-cutting**: RBAC / Lighthouse-Clients / Website all **N/A** (tests and CI scripts only).
+
+### C4
+
+System Context & Container: **unchanged for the Lighthouse product**. CI test-timing topology (jobs → reports → converters → CSV → budget check + allowlist) in `docs/feature/story-6302-ci-test-time/feature-delta.md` → "Wave: DESIGN / [REF] C4 — CI test-timing topology".
+
+### ADR References (this feature)
+
+- [ADR-237](./adr-237-test-time-budget-guard.md): a test file or class over its time budget fails the verify job. Accepted 2026-10-14 (AFK recommended-option rule; maintainer may revisit).
+- Cross-ref: ADR-074 (per-fixture host ownership, `[NonParallelizable]` allowlist guard) — unchanged; amended only if a reusable host later becomes the default for acceptance harnesses.
