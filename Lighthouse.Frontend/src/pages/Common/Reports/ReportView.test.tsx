@@ -1,7 +1,12 @@
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { IReport } from "../../../models/Reports/Report";
+import type {
+	IReport,
+	IReportMetric,
+	IReportWindow,
+	ReportMetricSide,
+} from "../../../models/Reports/Report";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { deferred } from "../../../tests/HeldMetricsService";
 import {
@@ -30,9 +35,9 @@ import {
 import ReportView from "./ReportView";
 
 /**
- * One report as a reader opens it: one line "Reports / <name>", the header naming both windows, and one
- * panel per shown metric in the catalog's order. A panel is three segments, Then | Now | Change; each side's
- * heading says how many Work Items or days it rests on, every percentile carries the certainty icon the
+ * One report as a reader opens it: one line "Reports / <name>", a summary naming each side's window, its
+ * length and how many Work Items closed in it, and one panel per shown metric in the catalog's order. A panel
+ * is three segments, Then | Now | Change, headed by the side alone; every percentile carries the certainty icon the
  * Metrics tab shows for it, and a value that cannot be shown is a dash with its reason. A change is told by
  * its sign and arrow as well as its colour.
  *
@@ -131,6 +136,57 @@ const withCycleTime = (
 	return report;
 };
 
+type Side = "then" | "now";
+
+const SIDES: Side[] = ["then", "now"];
+
+const theSummary = (): HTMLElement | null =>
+	document.querySelector<HTMLElement>("[data-report-summary]");
+
+const readingOfTheSummary = (): string => {
+	const found = theSummary();
+	expect(found, "the report has no summary").not.toBeNull();
+	return readingOf(found as HTMLElement);
+};
+
+/** One side of the summary as read aloud; its lines end in a space, as a panel's do, so they read apart. */
+const readingOfSummary = (side: Side): string => {
+	const found = theSummary()?.querySelector<HTMLElement>(
+		`[data-summary-side="${side}"]`,
+	);
+	expect(found, `the summary has no ${side} side`).toBeTruthy();
+	return readingOf(found as HTMLElement);
+};
+
+const aWindow = (
+	start: string,
+	end: string,
+	lengthDays: number,
+): IReportWindow => ({ start, end, lengthDays });
+
+const withWindows = (
+	thenWindow: IReportWindow,
+	nowWindow: IReportWindow,
+): IReport => {
+	const report = theEngagementStartReport();
+	report.thenAndNow.thenWindow = thenWindow;
+	report.thenAndNow.nowWindow = nowWindow;
+	return report;
+};
+
+const withThenCycleTime = (atThen: ReportMetricSide): IReport =>
+	withCycleTime({
+		atThen,
+		atNow: { p85: shown(12, 41), p70: shown(7, 41), p50: shown(4, 41) },
+		beyondThenLimits: null,
+	});
+
+const noneFinished = {
+	value: null,
+	sampleSize: 0,
+	absentReason: "no-finished-items" as const,
+};
+
 const beforeEachReportTest = () => {
 	reportUsage.mockClear();
 	mockNavigate.mockClear();
@@ -170,23 +226,276 @@ describe("The report header", () => {
 	});
 });
 
+// Two windows of different lengths can end on the same day; without their lengths, 203 against 27 closed
+// Work Items reads as a collapse rather than a shorter window.
+describe("The report's summary header", () => {
+	beforeEach(beforeEachReportTest);
+
+	// @us-01 @slice-03 @driving_port @contract-shape:pure-function
+	it.skip("opens with a summary of each side's window and how many Work Items closed in it", async () => {
+		openTheReport();
+
+		await theReportIsReady();
+
+		expect(readingOfSummary("then")).toMatch(
+			/^THEN 3 May – 31 Jul 2026 · 90 days 38 Work Items closed$/i,
+		);
+		expect(readingOfSummary("now")).toMatch(
+			/^NOW 5 Jul – 2 Oct 2026 · 90 days 41 Work Items closed$/i,
+		);
+	});
+
+	// @us-01 @slice-03 @boundary @contract-shape:pure-function
+	it.skip.each([
+		[
+			"a Then and a Now within one year",
+			aWindow("2026-07-16", "2026-10-13", 90),
+			aWindow("2026-10-04", "2026-10-13", 10),
+			"16 Jul – 13 Oct 2026 · 90 days",
+			"4 Oct – 13 Oct 2026 · 10 days",
+		],
+		[
+			"a Then reaching back into the year before",
+			aWindow("2025-12-20", "2026-01-13", 25),
+			aWindow("2026-01-01", "2026-01-13", 13),
+			"20 Dec 2025 – 13 Jan 2026 · 25 days",
+			"1 Jan – 13 Jan 2026 · 13 days",
+		],
+		[
+			"a Then wholly in the year before Now",
+			aWindow("2025-10-02", "2025-12-30", 90),
+			aWindow("2025-12-31", "2026-01-13", 14),
+			"2 Oct – 30 Dec 2025 · 90 days",
+			"31 Dec 2025 – 13 Jan 2026 · 14 days",
+		],
+	])(
+		"names both windows and their lengths for %s, a year written once where both ends share it",
+		async (_, thenWindow, nowWindow, thenLine, nowLine) => {
+			openTheReport(withWindows(thenWindow, nowWindow));
+
+			await theReportIsReady();
+
+			expect(readingOfSummary("then")).toMatch(
+				new RegExp(`^THEN ${thenLine} `, "i"),
+			);
+			expect(readingOfSummary("now")).toMatch(
+				new RegExp(`^NOW ${nowLine} `, "i"),
+			);
+		},
+	);
+
+	// @us-01 @slice-03 @boundary @contract-shape:pure-function
+	it.skip("says one day and one Work Item in the singular", async () => {
+		const report = withCycleTime({
+			atThen: { p85: shown(21, 38), p70: shown(10, 38), p50: shown(5, 38) },
+			atNow: { p85: shown(3, 1), p70: shown(3, 1), p50: shown(3, 1) },
+			beyondThenLimits: null,
+		});
+		report.thenAndNow.nowWindow = aWindow("2026-10-02", "2026-10-02", 1);
+		openTheReport(report);
+
+		await theReportIsReady();
+
+		expect(readingOfSummary("now")).toMatch(/ · 1 day 1 Work Item closed$/);
+		expect(readingOfSummary("now")).not.toMatch(/days|Items/);
+	});
+
+	// @us-01 @slice-03 @error @contract-shape:pure-function
+	it.skip.each([
+		[
+			"the Work Items behind the first percentile that has any",
+			{ p85: aDash("too-few-points"), p70: shown(10, 4), p50: shown(5, 4) },
+			"4 Work Items closed",
+		],
+		[
+			"the Work Items of a side whose 85th was never kept",
+			{ p70: shown(10, 38), p50: shown(5, 38) },
+			"38 Work Items closed",
+		],
+		[
+			"none for a side with no finished Work Items",
+			{
+				p85: aDash("no-finished-items"),
+				p70: aDash("no-finished-items"),
+				p50: aDash("no-finished-items"),
+			},
+			"0 Work Items closed",
+		],
+		[
+			"none for a side whose percentiles rest on no Work Items",
+			{ p85: noneFinished, p70: noneFinished, p50: noneFinished },
+			"0 Work Items closed",
+		],
+	])("counts as closed in Then %s", async (_, atThen, countLine) => {
+		openTheReport(withThenCycleTime(atThen));
+
+		await theReportIsReady();
+
+		expect(readingOfSummary("then")).toMatch(
+			new RegExp(`^THEN 3 May – 31 Jul 2026 · 90 days ${countLine}$`, "i"),
+		);
+		expect(readingOfSummary("now")).toMatch(/ · 90 days 41 Work Items closed$/);
+	});
+
+	// @us-01 @slice-03 @error @contract-shape:pure-function
+	it.skip.each<[string, IReportMetric | null | undefined]>([
+		["missing from the report", undefined],
+		["recorded as never captured", null],
+	])(
+		"names both windows but no closed count when Cycle Time is %s",
+		async (_, cycleTime) => {
+			const report = theEngagementStartReport({
+				shownMetricKeys: ["throughput"],
+			});
+			report.thenAndNow.metrics["cycle-time"] = cycleTime;
+			openTheReport(report);
+
+			await theReportIsReady();
+
+			expect(readingOfSummary("then")).toMatch(
+				/^THEN 3 May – 31 Jul 2026 · 90 days$/i,
+			);
+			expect(readingOfSummary("now")).toMatch(
+				/^NOW 5 Jul – 2 Oct 2026 · 90 days$/i,
+			);
+			expect(readingOfTheSummary()).not.toContain("closed");
+		},
+	);
+
+	// @us-01 @slice-03 @boundary @contract-shape:pure-function
+	// Every report keeps its Cycle Time, so the count is there even when its panel is not.
+	it.skip("counts the closed Work Items even when the report does not show its Cycle Time panel", async () => {
+		openTheReport(
+			theEngagementStartReport({ shownMetricKeys: ["throughput"] }),
+		);
+
+		await theReportIsReady();
+
+		expect(readingOfSummary("then")).toMatch(/ 38 Work Items closed$/);
+		expect(readingOfSummary("now")).toMatch(/ 41 Work Items closed$/);
+	});
+
+	// @us-01 @slice-03 @contract-shape:pure-function
+	it.skip("names the closed Work Items in the instance's words", async () => {
+		terms.current = {
+			...defaultTerms,
+			[TERMINOLOGY_KEYS.WORK_ITEM]: "Ticket",
+			[TERMINOLOGY_KEYS.WORK_ITEMS]: "Tickets",
+		};
+		const report = theEngagementStartReport();
+		report.thenAndNow.metrics["cycle-time"] = {
+			atThen: { p85: shown(21, 38), p70: shown(10, 38), p50: shown(5, 38) },
+			atNow: { p85: shown(3, 1), p70: shown(3, 1), p50: shown(3, 1) },
+			beyondThenLimits: null,
+		};
+		openTheReport(report);
+
+		await theReportIsReady();
+
+		expect(readingOfSummary("then")).toMatch(/ · 90 days 38 Tickets closed$/);
+		expect(readingOfSummary("now")).toMatch(/ · 90 days 1 Ticket closed$/);
+		expect(readingOfTheSummary()).not.toContain("Work Item");
+	});
+
+	// @us-01 @slice-03 @contract-shape:pure-function
+	it.skip("says nothing of Then being frozen or of Now always being the last days", async () => {
+		openTheReport();
+
+		await theReportIsReady();
+
+		expect(readingOfTheSummary()).not.toMatch(/frozen|always|last \d+ days/i);
+	});
+
+	// @us-01 @slice-03 @contract-shape:pure-function
+	it.skip("sits between the line naming the report and the first panel, inside the report's loading look", async () => {
+		openTheReport();
+
+		const firstPanel = await thePanel(CYCLE_TIME_PANEL);
+		const breadcrumb = screen.getByRole("navigation", { name: "breadcrumb" });
+		const summary = theSummary();
+
+		expect(summary).not.toBeNull();
+		expect(
+			breadcrumb.compareDocumentPosition(summary as HTMLElement) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+		expect(
+			(summary as HTMLElement).compareDocumentPosition(firstPanel) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+		expect(screen.getByTestId("widget-shell-body-report")).toContainElement(
+			summary,
+		);
+	});
+
+	// @us-01 @slice-03 @boundary @ac-1.8 @contract-shape:pure-function
+	it.skip("shows no summary while the report is on its way, and shows it once the report is here", async () => {
+		const held = deferred<IReport>();
+		renderWithReports(
+			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
+			{
+				reportService: aReportService({
+					getReport: vi.fn().mockReturnValue(held.promise),
+				}),
+			},
+		);
+
+		await screen.findByText(LOADING);
+
+		expect(theSummary()).toBeNull();
+		expect(readingOf(document.body)).not.toMatch(/closed|\d+ days/);
+
+		await act(async () => held.resolve(theEngagementStartReport()));
+		await theReportIsReady();
+
+		for (const side of SIDES) {
+			expect(readingOfSummary(side)).toMatch(
+				/ · 90 days \d+ Work Items closed$/,
+			);
+		}
+	});
+
+	// @us-01 @slice-03 @error @ac-1.8 @contract-shape:pure-function
+	it.skip.each([
+		["could not be loaded", new Error("the network dropped"), COULD_NOT_LOAD],
+		[
+			"was made by a newer version",
+			aRefusal(422, "template-not-supported"),
+			MADE_BY_A_NEWER_VERSION,
+		],
+	])("shows no summary when the report %s", async (_, failure, message) => {
+		renderWithReports(
+			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
+			{
+				reportService: aReportService({
+					getReport: vi.fn().mockRejectedValue(failure),
+				}),
+			},
+		);
+
+		expect(await screen.findByText(message)).toBeVisible();
+		expect(theSummary()).toBeNull();
+		expect(readingOf(document.body)).not.toMatch(/closed|\d+ days/);
+	});
+});
+
 describe("The panels of a report", () => {
 	beforeEach(beforeEachReportTest);
 
 	// @us-01 @slice-01 @driving_port @contract-shape:pure-function
-	it("shows the Cycle Time panel as Then, Now and Change, each side's Work Items named once in its heading", async () => {
+	// The closed Work Items are counted once, in the summary above, not again on each panel.
+	it.skip("shows the Cycle Time panel as Then, Now and Change, each side headed by its name alone", async () => {
 		openTheReport();
 
 		const panel = await thePanel(CYCLE_TIME_PANEL);
 		const then = readingOfSegment(panel, "then");
 		const now = readingOfSegment(panel, "now");
 
-		expect(then).toMatch(/^THEN · 38 Work Items /i);
+		expect(then).toMatch(/^THEN 85th /i);
 		expect(then).toMatch(/85th 21 days.*70th 10 days.*50th 5 days$/);
-		expect(now).toMatch(/^NOW · 41 Work Items /i);
+		expect(now).toMatch(/^NOW 85th /i);
 		expect(now).toMatch(/85th 12 days.*70th 7 days.*50th 4 days$/);
-		expect(then.match(/Work Items/g)).toHaveLength(1);
-		expect(now.match(/Work Items/g)).toHaveLength(1);
+		expect(readingOf(panel)).not.toContain("Work Items");
 		expect(readingOfSegment(panel, "change")).toMatch(/^CHANGE /i);
 	});
 
@@ -312,18 +621,19 @@ describe("The panels of a report", () => {
 	});
 
 	// @us-01 @slice-01 @contract-shape:pure-function
-	it("names every metric and the Work Items in the instance's words", async () => {
+	it.skip("names every metric and the Work Items in the instance's words", async () => {
 		terms.current = {
 			...defaultTerms,
 			[TERMINOLOGY_KEYS.CYCLE_TIME]: "Lead Time",
+			[TERMINOLOGY_KEYS.WORK_ITEM]: "Ticket",
 			[TERMINOLOGY_KEYS.WORK_ITEMS]: "Tickets",
 		};
 		openTheReport();
 
-		const panel = await thePanel("Lead Time");
+		await thePanel("Lead Time");
 
-		expect(readingOfSegment(panel, "then")).toMatch(/^THEN · 38 Tickets /i);
-		expect(readingOfSegment(panel, "now")).toMatch(/^NOW · 41 Tickets /i);
+		expect(readingOfSummary("then")).toMatch(/ 38 Tickets closed$/);
+		expect(readingOfSummary("now")).toMatch(/ 41 Tickets closed$/);
 		expect(readingOf(document.body)).not.toContain("Cycle Time");
 		expect(readingOf(document.body)).not.toContain("Work Items");
 	});
@@ -371,9 +681,7 @@ describe("Values a report cannot show", () => {
 		const panel = await thePanel(CYCLE_TIME_PANEL);
 
 		expect(readingOf(panel)).toContain("Then has too few points for limits");
-		expect(readingOfSegment(panel, "then")).toMatch(
-			/^THEN · 4 Work Items 85th 21 days/i,
-		);
+		expect(readingOfSegment(panel, "then")).toMatch(/^THEN 85th 21 days/i);
 	});
 
 	// @us-04 @slice-04 @error @contract-shape:pure-function
@@ -445,14 +753,12 @@ describe("Values a report cannot show", () => {
 		const panel = await thePanel(CYCLE_TIME_PANEL);
 
 		expect(readingOf(panel)).toContain(NOT_CAPTURED);
-		expect(readingOfSegment(panel, "then")).toMatch(
-			/^THEN · 38 Work Items 85th 21 days/i,
-		);
+		expect(readingOfSegment(panel, "then")).toMatch(/^THEN 85th 21 days/i);
 	});
 
 	// @us-01 @slice-01 @boundary @contract-shape:pure-function
-	// Thin data is shown, not hidden: the number of Work Items behind it lets the reader judge.
-	it("shows a value backed by very few Work Items with that number beside it", async () => {
+	// Thin data is shown, not hidden: the number of Work Items behind it, in the summary above, lets the reader judge.
+	it.skip("shows a value backed by very few Work Items, with that number in the summary above", async () => {
 		openTheReport(
 			withCycleTime({
 				atThen: { p85: shown(9, 2), p70: shown(9, 2), p50: shown(4, 2) },
@@ -463,12 +769,10 @@ describe("Values a report cannot show", () => {
 
 		const panel = await thePanel(CYCLE_TIME_PANEL);
 
-		expect(readingOfSegment(panel, "then")).toMatch(
-			/^THEN · 2 Work Items 85th 9 days/i,
-		);
-		expect(readingOfSegment(panel, "now")).toMatch(
-			/^NOW · 3 Work Items 85th 5 days/i,
-		);
+		expect(readingOfSegment(panel, "then")).toMatch(/^THEN 85th 9 days/i);
+		expect(readingOfSegment(panel, "now")).toMatch(/^NOW 85th 5 days/i);
+		expect(readingOfSummary("then")).toMatch(/ 2 Work Items closed$/);
+		expect(readingOfSummary("now")).toMatch(/ 3 Work Items closed$/);
 	});
 
 	// @us-04 @slice-04 @error @contract-shape:unbounded-preservation

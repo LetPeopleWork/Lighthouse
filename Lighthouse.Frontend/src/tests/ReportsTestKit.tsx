@@ -58,6 +58,7 @@ export const ALL_FOUR_METRICS: ReportMetricKey[] = [
 export const defaultTerms: Record<string, string> = {
 	[TERMINOLOGY_KEYS.TEAM]: "Team",
 	[TERMINOLOGY_KEYS.PORTFOLIO]: "Portfolio",
+	[TERMINOLOGY_KEYS.WORK_ITEM]: "Work Item",
 	[TERMINOLOGY_KEYS.WORK_ITEMS]: "Work Items",
 	[TERMINOLOGY_KEYS.CYCLE_TIME]: "Cycle Time",
 	[TERMINOLOGY_KEYS.THROUGHPUT]: "Throughput",
