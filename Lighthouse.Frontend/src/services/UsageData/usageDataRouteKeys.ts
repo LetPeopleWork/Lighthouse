@@ -27,6 +27,7 @@ const portfolioViews = new Map<string, UsageDataRouteKey>([
 	["deliveries", UsageDataRouteKey.PortfolioDetail_Deliveries],
 	["settings", UsageDataRouteKey.PortfolioDetail_Settings],
 	["access", UsageDataRouteKey.PortfolioDetail_Access],
+	["reports", UsageDataRouteKey.PortfolioDetail_Reports],
 ]);
 
 const detailPages = [

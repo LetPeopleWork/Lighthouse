@@ -198,7 +198,7 @@ describe("Step two: Then", () => {
 	});
 
 	// @us-06 @slice-06 @contract-shape:pure-function
-	it.skip("offers a Portfolio's Then as 90 or 180 days with one click", async () => {
+	it("offers a Portfolio's Then as 90 or 180 days with one click", async () => {
 		await openTheWizard(
 			aReportService({
 				getReports: vi.fn().mockResolvedValue(aReportList([])),

@@ -17,7 +17,7 @@ describe("the Reports tab is a tab like the others", () => {
 	});
 
 	// @us-06 @slice-06 @contract-shape:pure-function
-	it.skip("answers a Portfolio's Reports tab as a Portfolio tab opening naming that tab", () => {
+	it("answers a Portfolio's Reports tab as a Portfolio tab opening naming that tab", () => {
 		expect(usageDataPageOpeningFor("/portfolios/7/reports")).toEqual({
 			name: UsageDataEventName.PortfolioTabOpened,
 			route: "PortfolioDetail_Reports",

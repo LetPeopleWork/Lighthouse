@@ -161,7 +161,7 @@ describe("The Reports tab lists a Team's reports", () => {
 	});
 
 	// @us-01 @us-06 @slice-06 @boundary @contract-shape:pure-function
-	it.skip("tells a reader of a Portfolio without reports that a Portfolio Admin can create one, in the instance's words", async () => {
+	it("tells a reader of a Portfolio without reports that a Portfolio Admin can create one, in the instance's words", async () => {
 		terms.current = {
 			...defaultTerms,
 			[TERMINOLOGY_KEYS.PORTFOLIO]: "Programme",
@@ -182,7 +182,7 @@ describe("The Reports tab lists a Team's reports", () => {
 	});
 
 	// @us-06 @slice-06 @driving_port @contract-shape:pure-function
-	it.skip("links a Portfolio's report to its place under the Portfolio", async () => {
+	it("links a Portfolio's report to its place under the Portfolio", async () => {
 		renderWithReports(<ReportsTab owner={APOLLO} />, {
 			reportService: aReportService({
 				getReports: vi
