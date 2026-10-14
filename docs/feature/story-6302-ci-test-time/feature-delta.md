@@ -1018,3 +1018,34 @@ The raw medians are 45.1 s before and 40.4 s after, a ratio of 0.90. The load ro
 **E-names** (base `219acea1f` against the step's change; all ten `WorkItemsDialogTestKit` importers plus `RefinementView.paging`): `comm -23` prints nothing against before1 and before4 for after1, after3 and after4 (after4 = final kit). `comm -13` on not-passed prints nothing. Counts are unchanged: contexts 108, `BaseMetricsView` 192, `featureChildItemsDialog` 15, `DataGridBase.defaults` 13, `RefinementView.paging` 11, `WorkItemsDialog.loading` 16, `layout` 7, `cumulativeStateTimeDialog` 6, `WorkItemsDialog.paging` 1, `LineRunChart.dialog` 1. **E-weaken:** the skip grep prints nothing and the removed-`expect(` count is 0. `pnpm test`: 480 files passed, 1 skipped; 7594 tests passed, 37 skipped, 1 todo.
 
 **Review revision (adversarial review).** The selector that replaced `getAllByRole("checkbox")` returned an empty list where the role query threw, so a "not offered" check passed on a Manage columns panel that never opened. Proof on `…neither shows nor offers Time in State when the caller says nothing…` (both cases), with the kit broken so the final click on "Manage columns" never happens: on `b5b749981` the 2 cases **passed**; with the fix and the same break they **failed** with "Manage columns is not open: it offers no columns". The break was removed afterwards. Fix: `checkboxesOffered` throws when no column checkbox exists, and `openManageColumns` waits for one after its click. Also: the "Manage columns" menu item must match exactly once; `turnColumns` takes `[field, shown]` pairs, so the order given is the order applied (record keys put integer-like names first); `RefinementView.paging` rows must carry at most one link. **E-names:** the ten kit importers plus `RefinementView.paging`, 370 names, identical before and after, all passing. **E-weaken:** no skip added, no `expect(` removed. `pnpm test`: 480 files passed, 1 skipped; 7594 tests passed, 37 skipped, 1 todo.
+
+## Wave: DELIVER / [REF] Slice 03 record — step 03-01 `RefinementView.comments` and `RefinementView.votes`
+
+**Did slice 02's pattern carry over?** No. 02-01's fix lives in `RefinementView.paging.test.tsx`, not in `RefinementTabTestKit.tsx`, so these files never inherited it, and the cost it removed is not present here. Paging reads a 100-row page; comments and votes render two to six rows. A role query with a name is cheap on a page that small.
+
+**E-03a cause (measured, one CPU profile per file, single-file runs):** the time is production render, not test set-up. React's render and commit of the tab, its DataGrid and the MUI dialogs, reached through `user.click` and `user.type`, account for most of each file's CPU: `renderRootSync` 4.5 s and 5.1 s, `commitRoot` 4.2 s and 3.6 s, `pointerAction` 3.4 s and 3.6 s (comments and votes, overlapping, under the profiler). jsdom's `getComputedStyle` is 3.0 s and 1.8 s. In comments, half of that (1.5 s) is MUI `TextareaAutosize` re-measuring the multiline comment and condition boxes after every typed character. Every named role query together is 1.3 s and 1.2 s. The largest single test-side cost is the kit's `theButton`, `within(row).getByRole("button", { name })`, at 0.4 s and 0.8 s. Each remaining role query in the test files costs at most about 0.1 s.
+
+**What was tried, and why nothing is committed in the test files or the kit:**
+
+- `theButton` read each row button's name from its `aria-label` or text, with an exactly-one guard, instead of computing it the way a named role query does. Wall-clock medians moved within noise (table below, ratio 0.98 summed), so the change was reverted. A change that buys nothing measurable is not worth carrying in a helper that four Refinement test files call.
+- Zero MUI transition durations through a kit theme: one paired run read comments 10.9 s and votes 10.0 s, against 10.8 s and 9.7 s without it. The tests are CPU-bound; the dialogs' enter and exit timers are not where the time goes. Reverted, never measured further.
+- Not tried: replacing `user.type` with `user.paste` for the condition and comment text. Typing is the action under test in those cases, not set-up, so it is out of this step's scope.
+- **Removed or shortened waits:** none. No `waitFor` or `findBy` was replaced, and no timeout was lowered.
+- **Removed `expect(` lines:** 0. The step's diff touches no test file and no kit.
+
+**Local timing** (summed per-test durations from each run's Vitest JSON; the two files run together, one Vitest at a time; before runs from a temporary worktree of `7bb0cd0ad`; after runs carry the `theButton` variant that was then reverted):
+
+| Run | Load avg (1 min) | comments | votes |
+|---|---|---|---|
+| before1 | 5.14 | 11.4 s | 10.1 s |
+| before2 | 5.12 | 12.4 s | 10.5 s |
+| before3 | 5.53 | 12.0 s | 10.7 s |
+| after1 | 6.20 | 11.5 s | 10.1 s |
+| after2 | 6.52 | 11.6 s | 10.5 s |
+| after3 | 6.69 | 12.0 s | 10.4 s |
+| before4 (bracket, base-commit worktree) | 6.39 | 12.2 s | 10.6 s |
+| final (committed tree, no test or kit change) | 5.30 | 11.0 s | 9.9 s |
+
+Medians: comments 12.0 s → 11.6 s (0.97), votes 10.5 s → 10.4 s (0.99). The bracket before4 at matched load reads 12.2 s and 10.6 s, so the small difference is within run-to-run spread. The committed tree is the base for these files, so their CI time stays at about 34 s and 29 s. **That leaves the slice-03 target of ≤70 s for all six files at risk**: these two alone take about 63 s on CI. Bringing them down needs a cut in production render cost or fewer renders per test, both outside a set-up-and-waiting change. Step 03-02 should report the other four files' share against that.
+
+**E-names** (base `7bb0cd0ad`; `s03-before-all.names` holds all six slice-03 files, 313 names, all passing): for comments and votes, `comm -23` prints nothing against the saved list, before1 or before4 for after1, after3 and final. `comm -13` on not-passed prints nothing. Counts are unchanged at comments 24 and votes 33. **E-weaken:** the step changes no test file and no kit, so there is no added skip and no removed assertion.
