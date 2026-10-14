@@ -9,6 +9,10 @@
 >
 > Revised 2026-10-03 after DESIGN: {Throughput} is the total and the per-day average over the whole window, not a
 > weekly median (D47); every value shows its sample size (D45).
+>
+> Revised 2026-10-14 (D49; maintainer, after the DISTILL sketch review): no count of days beyond Then's limits — the
+> {Throughput} panel is the total and the per-day average, with change and % change on the per-day average, nothing
+> else. Panel side headings read just THEN / NOW; the closed counts live in the summary header (D52, slice 03).
 
 ## Goal
 
@@ -20,8 +24,8 @@ The coach chooses which metrics the report shows before looking at Now, and gets
 - Metric picker in Create Report; every metric in the catalog ticked by default; at least one required ("Choose at
   least one metric").
 - {Throughput} panel (D47): total {Work Items} finished in the window and the average per day, Then and Now; change
-  and % change on the per-day average (correct also when Now's length differs from Then's); good = up. Days of Now
-  beyond Then's frozen limits, by side (D40): above green, below red.
+  and % change on the per-day average (correct also when Now's length differs from Then's); good = up. ~~Days of Now
+  beyond Then's frozen limits, by side (D40): above green, below red.~~ *(dropped 2026-10-14, D49)*
 - A Then of 0 shows no % change: "—" with "Then was 0" (Q9, confirmed 2026-10-03).
 - Every value with its sample size; "—" with a reason only when truly empty (D45).
 - One panel registration per metric. Every applicable metric frozen at creation (D26). Reports created before this
@@ -29,22 +33,24 @@ The coach chooses which metrics the report shows before looking at Now, and gets
 
 ## OUT
 
-{WIP} and {Work Item Age} panels (05); changing the selection later (10).
+{WIP} and {Work Item Age} panels (05); changing the selection later (10); any count beyond Then's limits (D49).
 
 ## Learning hypothesis
 
-**This disproves "a per-day average reads sensibly beside a count of days beyond"** if dogfood readers misread the
-per-day average or ask what "days beyond" means. Then the {Throughput} panel needs different wording.
+**This disproves "a per-day average reads sensibly beside the total"** if dogfood readers misread the per-day
+average. Then the {Throughput} panel needs different wording. *(Was: "… beside a count of days beyond", superseded by
+D49.)*
 
 ## Data and dogfood moment
 
-- Demo: Team Gravity's daily series (≈35 days); check a single busy day appears as "1 above", nothing more.
+- Demo: Team Gravity's daily series (≈35 days); check the total and per-day average match the Metrics tab for the
+  same dates. *(Was: "check a single busy day appears as '1 above'", superseded by D49.)*
 - Dogfood: one report per dev-instance Team; show the {Throughput} panel to a reader who is not a flow expert.
 
 ## Acceptance criteria
 
-AC-4.1 … AC-4.6 in `feature-delta.md` (US-04).
+AC-4.1 … AC-4.6 in `feature-delta.md` (US-04); AC-4.3 is dropped (D49).
 
 ## Dependencies
 
-Slice 03 (the count against frozen limits).
+Slice 03 (the summary header; *was*: the count against frozen limits, D49).

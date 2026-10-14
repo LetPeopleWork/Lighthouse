@@ -14,6 +14,12 @@ Slices 03, 04, 05, 07, 10 re-cut; slice 11 dropped. Slice numbers kept so ADO St
 visible), D46 (no settings-changed notice; slice 09 dropped), D47 ({Throughput} total and per-day average), D48
 (average {Work Item Age} as window average and last day).
 
+**Revision 2026-10-14 (after the DISTILL sketch review).** The maintainer decided D49 (no counts beyond Then's limits
+on any panel; Then no longer freezes XmR average and limits), D50 ({WIP} as Average, Median, Min, Max), D51 (Total
+{Work Item Age} as Average, Median, Min, Max of the daily total age; supersedes D48 and Q10) and D52 (summary header;
+panel side headings read just THEN / NOW). Slice 03 (ADO #6161) becomes the summary header; 04 and 05 lose their
+beyond-limits parts. Superseded entries below are marked, not deleted.
+
 Full text of everything below: `../feature-delta.md` → "Wave: DISCUSS" sections. Slice briefs: `../slices/`.
 
 ## Config (given, not asked)
@@ -21,9 +27,9 @@ Full text of everything below: `../feature-delta.md` → "Wave: DISCUSS" section
 feature_type user-facing (full stack) · walking skeleton brownfield · research depth comprehensive, reusing DIVERGE ·
 JTBD light (job reused, not re-derived) · density lean.
 
-## Scope Assessment: PASS — 9 stories, 1 new module (reports + metric catalog with panels) on 3 existing ones (metrics, licence, RBAC), estimated ~9 days (slice 01 re-estimated 1 → 1½ days on 2026-10-13; was ~8½)
+## Scope Assessment: PASS — 9 stories, 1 new module (reports + metric catalog with panels) on 3 existing ones (metrics, licence, RBAC), estimated ~8½ days (slice 01 re-estimated 1 → 1½ days on 2026-10-13; slice 03 re-cut to the summary header, 1 → ½ day, on 2026-10-14; was ~9)
 
-Slice 11 dropped on 2026-10-03 and slice 09 after DESIGN (D46), so the story count is 9; effort ~9 days, under 2 weeks; one user outcome,
+Slice 11 dropped on 2026-10-03 and slice 09 after DESIGN (D46), so the story count is 9; effort ~8½ days, under 2 weeks; one user outcome,
 nothing ships without the Reports tab. No Epic split. The release is cut after slice 10 (Edit report is part of v1
 since D43/D44); no slice is cancellable any more.
 
@@ -44,7 +50,7 @@ since D43/D44); no slice is cancellable any more.
 - **D24** *Superseded by D39* (was: verdict rules, sustained signal for Holds).
 - **D25** *Reshaped by D41* (was: own minimum-data thresholds).
 - **D26** Frozen at creation for every applicable metric: the Then values the panel shows, Then's XmR average and
-  limits unrounded, sample sizes; plus window, Now length, template, selection, name (no settings snapshot, D46). The
+  limits unrounded *(superseded by D49, 2026-10-14: no XmR average or limits frozen)*, sample sizes; plus window, Now length, template, selection, name (no settings snapshot, D46). The
   full Then series is not stored (DESIGN, maintainer-accepted). Never recomputed; all-or-nothing creation. *Reshaped by D40.*
 - **D27** Metrics added later: "Not captured for this report".
 - **D28** *Superseded by D39* (was: zero-clamp sentence; the fact behind it is Q8).
@@ -70,21 +76,40 @@ since D43/D44); no slice is cancellable any more.
 - **D39** (Q3) No verdicts, no narrative, no charts, no Stable/Unstable or data-maturity label. One registered panel
   per metric, ValueFlow-style (Then left, accent bar, Now right with change and % change). v1: M1 {Cycle Time}
   (Then 85th; Now 85th/70th/50th), M2 {Throughput} (total and per-day average, reshaped by D47), M3 {WIP} (average,
-  range), M4 {Work Item Age} (total and average, each as window average and last day — Q10, D48). Green/red by a fixed per-metric direction of good, known only to the frontend panel. Room
+  range — *reshaped by D50*: Average, Median, Min, Max), M4 {Work Item Age} (total and average, each as window
+  average and last day — Q10, D48; *reshaped by D51*: Total {Work Item Age} only, Average, Median, Min, Max). Green/red by a fixed per-metric direction of good, known only to the frontend panel. Room
   for a later per-panel author note.
-- **D40** (Q3 follow-up) Each PBC metric's panel counts Now's points beyond the XmR limits frozen from Then, split
+- **D40** *Superseded by D49 (2026-10-14).* (Q3 follow-up) Each PBC metric's panel counts Now's points beyond the XmR limits frozen from Then, split
   above / below, coloured by direction of good; limits frozen unrounded, never the owner's PBC Baseline.
 - **D41** (Q4) Too little data: no new thresholds; never 0. *Wording superseded by D45* (was: "—" where the Metrics
   page's existing guards refuse a value — DESIGN found no percentile minimum guard exists).
 - **D45** (after DESIGN) Every value shows its sample size ("85th: 12 days · 3 {Work Items}"); "—" + reason only when
   truly empty: no finished {Work Item}, < 2 points for Then's limits, collapsed band, lower limit 0 for the
-  below-count (Q8), Then was 0 for % (Q9). No threshold.
+  below-count (Q8), Then was 0 for % (Q9). No threshold. *(The three limit reasons are superseded by D49,
+  2026-10-14.)*
 - **D46** (after DESIGN) No settings-changed notice; nothing about settings stored; slice 09 and US-09 dropped (ADO
   #6167 is the maintainer's call).
 - **D47** (after DESIGN) {Throughput} over the whole window: total finished and the average per day, Then and Now;
-  change and % change on the per-day average; no weekly median, no week count; beyond-limits count unchanged.
-- **D48** (after DESIGN) Average {Work Item Age}, like the total, has two values per side: the window average (mean
+  change and % change on the per-day average; no weekly median, no week count; beyond-limits count unchanged
+  *(that count dropped by D49, 2026-10-14)*.
+- **D48** *Superseded by D51 (2026-10-14).* (after DESIGN) Average {Work Item Age}, like the total, has two values per side: the window average (mean
   over the window's days of total age ÷ {WIP}, days without {WIP} left out) and the last day's value.
+- **D49** (maintainer 2026-10-14, after DISTILL sketch review) No counts beyond Then's limits, on any panel ("start
+  simple"); supersedes D40, the beyond-limits parts of M1–M4 and D47, and D45's three limit reasons (Q8, too few
+  points, collapsed band). Then no longer freezes XmR average and limits. A process-behaviour entry may come later;
+  Signals (Epic 5935) owns "is this a real change".
+- **D50** (maintainer 2026-10-14, after DISTILL sketch review) {WIP}: Average, Median, Min and Max of the window's
+  daily {WIP}, Then and Now, rows "Average N", "Median N", "Min N", "Max N", each with its own change and % change,
+  like the {Cycle Time} percentiles. Was: "Average 9 (6–12)" with one change.
+- **D51** (maintainer 2026-10-14, after DISTILL sketch review) {Work Item Age} shows the total age only, in a panel
+  titled "Total {Work Item Age}": Average, Median, Min and Max of the window's daily total age (sum of the ages of
+  every in-progress {Work Item} that day), rows "Average N days" … "Max N days", each with its own change and %
+  change; growing age reads worse. No per-item average age, no last-day rows; supersedes D48 and Q10. Nothing in
+  progress = total age 0, a real 0 (no dash), as {WIP} 0 is.
+- **D52** (maintainer 2026-10-14, after DISTILL sketch review; records DT14) Summary header between breadcrumb and
+  first panel: each side's window, its length and "N {Work Items} closed"; panel side headings read just THEN / NOW
+  (no "· N {Work Items}", no "· N days"). More header content only after a maintainer-seen sketch. Slice 03 (#6161)
+  is this header plus a behaviour-preserving refactor already done.
 - **D42** (Q5) Reports are deleted with their Team/Portfolio; its delete confirmation names "and its N reports".
 - **D43** (Q6) Now length set at creation (default = Then length; same presets + custom), saved on the report, not
   in the address; viewers cannot change it; editors can, stored for everyone. Scheduled sending (5882) needs it.
@@ -98,11 +123,12 @@ since D43/D44); no slice is cancellable any more.
   reader `delivery-lead-rte` (Martin Achterberg, Viewer).
 - **What**: a Reports tab on Teams and Portfolios; a "Then & Now" report that freezes a Then window (picked end date,
   preset or custom length, inside the data cutoff) and sets a saved-length rolling Now beside it, one panel per
-  metric: Then and Now values, change, % change, and Now's points beyond Then's frozen limits, coloured by each
+  metric: Then and Now values, change, % change, and Now's points beyond Then's frozen limits *(dropped by D49,
+  2026-10-14; a summary header with each side's window and closed count instead, D52)*, coloured by each
   metric's direction of good. No verdicts; people interpret.
 - **Slices (order = priority)**: 01 Reports tab + Team report + {Cycle Time} panel (WS) · 02 past end date + custom
-  length · 03 {Cycle Time} points beyond Then's limits · 04 metric picker + {Throughput} panel · 05 {WIP} + {Work Item
-  Age} panels · 06 Portfolio · 07 Now length at creation + days since · 08 delete + cap + lapse + owner deletion ·
+  length · 03 summary header (D52; *was* {Cycle Time} points beyond Then's limits, dropped by D49) · 04 metric picker
+  + {Throughput} panel · 05 {WIP} + Total {Work Item Age} panels (Average, Median, Min, Max; D50, D51) · 06 Portfolio · 07 Now length at creation + days since · 08 delete + cap + lapse + owner deletion ·
   ~~09 settings notice~~ dropped (D46) · 10 Edit report · ~~11 claim chart~~ dropped.
 - **KPIs**: north star K2 (≥ 40% of report-creating instances return to Reports ≥ 7 days later); K1 activation
   ≥ 10% in 90 days; ~~K3 reports saved with a Now shorter than Then~~ (dropped, maintainer 2026-10-03); K4 cap hits
@@ -113,6 +139,7 @@ since D43/D44); no slice is cancellable any more.
 
 - RBAC: create/edit/delete = `TeamWrite`/`PortfolioWrite`; view = Read; UI via `useRbac()` only.
 - Then limits come from Then, frozen unrounded (`XmRResult` rounds), never from the owner's PBC Baseline setting.
+  *(Superseded by D49, 2026-10-14: no limits are frozen or shown.)*
 - The direction of good is a fixed frontend panel property; never stored or computed in the backend.
 - No synthesised values; every value shows its sample size; "—" with a reason only when truly empty (D45).
 - One expand-only migration in slice 01 via `CreateMigration`, all providers; cascade with the owner.
@@ -126,7 +153,8 @@ since D43/D44); no slice is cancellable any more.
   workaround is assumed; no settings-changed notice (D46) against O5, guardrail G4.
 - Out of scope: CLI/MCP, export, Delivery level, cross-owner reports, verdicts, rules/thresholds, narrative, charts,
   author note (later), viewer-changeable Now, editing Then, nice-to-have metrics, a settings-changed notice (D46), a
-  {Throughput} weekly median (D47).
+  {Throughput} weekly median (D47), counts beyond Then's limits (D49), a per-item average {Work Item Age} and
+  last-day values (D51).
 
 ## Upstream Changes
 
@@ -160,10 +188,15 @@ totals and the actual total on the window's last day.
 **Resolved 2026-10-03 (DESIGN's decisions to confirm)**: thin data → D45 · settings notice → D46 (dropped) ·
 {Throughput} → D47 · average {Work Item Age} → D48.
 
+**Decided 2026-10-14 (after the DISTILL sketch review)**: D49–D52 (above). Q8 is superseded by D49 (no below-count);
+Q10 by D51. **Open**: whether "days since Then ended" (slice 07, D35) still joins the summary header — per D52 it
+needs a sketch the maintainer has seen first.
+
 ## Risks carried forward
 
 R-A sponsors may read a red panel without context — there is no narrative to soften it, by design; the author note
-(later) is the answer · R-C/R-D low counts and the zero clamp make the beyond-limits count mute on per-item data
-(tested first, slice 03; Q8) · R-E evidence base (DISCOVER G1–G3 failed; interview protocol still owed by the
+(later) is the answer · ~~R-C/R-D low counts and the zero clamp make the beyond-limits count mute on per-item data
+(tested first, slice 03; Q8)~~ (retired by D49, 2026-10-14) · R-E evidence base (DISCOVER G1–G3 failed; interview protocol still owed by the
 maintainer, K5) · demo history is short; screenshots may need a CSV adjustment (checked in slice 03) · without
-verdicts the differentiation against ValueFlow rests on the frozen Then and the count against frozen limits.
+verdicts the differentiation against ValueFlow rests on the frozen Then and the count against frozen limits *(since
+D49, 2026-10-14: on the frozen Then alone)*.

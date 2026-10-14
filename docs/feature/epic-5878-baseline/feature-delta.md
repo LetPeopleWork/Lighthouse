@@ -247,6 +247,13 @@ the value with its sample size), D46 (no settings-changed notice — slice 09 dr
 per-day average over the whole window, no weekly median), D48 (average {Work Item Age} as window average and last
 day). Applied below; superseded text is marked.
 
+**Revision 2026-10-14 (after the DISTILL sketch review).** While planning slices 03–05 the maintainer decided D49 (no
+counts beyond Then's limits on any panel; Then no longer freezes XmR average and limits), D50 ({WIP} as Average,
+Median, Min, Max of the daily values, each with its own change), D51 ({Work Item Age} as the total age only, Average,
+Median, Min, Max; supersedes D48 and Q10) and D52 (a summary header; panel side headings read just THEN / NOW).
+Slice 03 becomes the summary header (ADO #6161); 04 and 05 lose their beyond-limits parts. Superseded text is marked
+in place, not deleted.
+
 | Read | Status |
 |---|---|
 | `docs/product/jobs.yaml` (`job-flow-coach-show-whether-flow-changed`) | ✓ (wording updated 2026-10-03: no verdicts) |
@@ -315,9 +322,9 @@ DISCOVER and DIVERGE documents are not edited; these supersede them for DESIGN o
 | Step 1 "pick the engagement start date"; `intervention_date` artifact (DISCOVER journey) | No intervention-date field. **The Then window's end date is the anchor**, and the header shows days since Then ended. | Converged direction (D11, D12, recommendation §3); confirmed by D39. |
 | Step 3 "hand over a result management reads without Lighthouse open" (DISCOVER journey) | v1 is read **in Lighthouse**, by a Viewer. PDF/email is out of scope, not blocked. | D13. |
 | Journey job ids `job-flow-coach-prove-engagement-value`, `job-flow-coach-hand-over-a-starting-point` | Both re-pointed to `job-flow-coach-show-whether-flow-changed`. The short assessment is a Then that ends today, frozen at hand-over. | DIVERGE note; D14. |
-| DIVERGE direction "Claims checklist": chosen claims read Holds / Does not hold / No change yet / Not enough data, Then → Now on the row, chart on expand (recommendation, D16, DV-3) | **Metric panels, no verdicts.** One titled panel per metric in the style of Thrivve's ValueFlow report: Then left, Now right with change and % change, coloured by a fixed per-metric direction of good, plus the count of Now's points beyond Then's frozen limits. No verdict, no generated text, no chart. | Maintainer 2026-10-03 (D39, D40): the report shows, people interpret. |
+| DIVERGE direction "Claims checklist": chosen claims read Holds / Does not hold / No change yet / Not enough data, Then → Now on the row, chart on expand (recommendation, D16, DV-3) | **Metric panels, no verdicts.** One titled panel per metric in the style of Thrivve's ValueFlow report: Then left, Now right with change and % change, coloured by a fixed per-metric direction of good, plus the count of Now's points beyond Then's frozen limits *(that count dropped by D49, 2026-10-14)*. No verdict, no generated text, no chart. | Maintainer 2026-10-03 (D39, D40): the report shows, people interpret. |
 | DIVERGE catalog C1–C6 (claims with rules) | v1 catalog M1–M4: {Cycle Time}, {Throughput}, {WIP}, {Work Item Age}. C5 ({Cycle Time} predictable) is dropped — it was a stability judgement. C6's familiar 85th percentile and its % change live in the {Cycle Time} panel. | D39. |
-| "Freeze the Then values and the frozen limits" (recommendation §3); then "freeze the Then **series** as well; limits recomputed from it on each view" (DISCUSS 2026-10-02) | **Superseded 2026-10-03.** Freeze Then's shown values and Then's XmR average and limits **unrounded**. Whether the full series is also stored is DESIGN's call; no chart needs it any more. | D26 as reshaped by D40; S3 (`XmRResult` rounds). |
+| "Freeze the Then values and the frozen limits" (recommendation §3); then "freeze the Then **series** as well; limits recomputed from it on each view" (DISCUSS 2026-10-02) | **Superseded 2026-10-03.** Freeze Then's shown values and Then's XmR average and limits **unrounded**. Whether the full series is also stored is DESIGN's call; no chart needs it any more. *(Superseded 2026-10-14 by D49: only Then's shown values are frozen; no XmR average or limits.)* | D26 as reshaped by D40; S3 (`XmRResult` rounds). |
 | "Holds: ≥1 special cause on the good side" (DV-3), narrowed to "sustained signal only" (DISCUSS 2026-10-02, D24) | **Superseded 2026-10-03.** There are no verdicts at all. | D39. |
 | Now never reaches back into Then (DISCUSS 2026-10-02, D23) | Now is the full rolling window ending today and may overlap Then. | D38. |
 | Now length chosen per view in the page address (DIVERGE D11 "selectable rolling window"; DISCUSS D22) | Now length is set at creation, saved on the report, changed only by editors. | D43: scheduled sending (Epic 5882) needs a defined window. |
@@ -327,7 +334,8 @@ DISCOVER and DIVERGE documents are not edited; these supersede them for DESIGN o
 ## Wave: DISCUSS / [REF] Locked Decisions
 
 Numbering continues after D16 (DIVERGE). "Provisional" = autonomous call pending the maintainer (see Open questions).
-D37–D44 are the maintainer's answers to Q1–Q7 (2026-10-03). Superseded decisions are kept, marked, and not applied.
+D37–D44 are the maintainer's answers to Q1–Q7 (2026-10-03). D49–D52 are the maintainer's decisions after the DISTILL
+sketch review (2026-10-14). Superseded decisions are kept, marked, and not applied.
 
 - [D16, DIVERGE] **Partly superseded by D39.** Its rule/verdict part ("each item has a rule that judges it good or
   not") no longer applies. The user-selected, extensible catalog stands, as a catalog of metrics.
@@ -360,7 +368,8 @@ D37–D44 are the maintainer's answers to Q1–Q7 (2026-10-03). Superseded decis
   for per-item claims; a non-zero Then series for daily claims) (provisional, Q4).
 - [D26] **What is frozen at creation** (reshaped by D40), for every metric that applies to the owner, not only the
   ticked ones (DV-6): the Then values its panel shows; for metrics with a process-behaviour chart, Then's XmR average
-  and limits **unrounded**; and whether Then had enough data for each value. Plus the creation date, the Then window,
+  and limits **unrounded** *(superseded by D49 (2026-10-14): no XmR average or limits are frozen any more)*; and
+  whether Then had enough data for each value. Plus the creation date, the Then window,
   the Now length, the template key, the selection and the name. *(A snapshot of the settings that shape the values
   (D31) was part of this list; superseded by D46 — nothing about settings is stored.)* Whether the full Then series is stored as well is DESIGN's call — no chart needs it any more. Then is never
   recomputed. Creation either completes or fails whole; nobody sees a half-frozen report. *Was*: the Then series,
@@ -419,15 +428,19 @@ D37–D44 are the maintainer's answers to Q1–Q7 (2026-10-03). Superseded decis
   Now"), Then values on the left, a vertical accent bar, Now values on the right with the absolute change and the %
   change. v1 catalog:
   - **M1 {Cycle Time}** — Then: 85th percentile. Now: 85th, 70th and 50th percentile; change and % change on the
-    85th; Now's {Work Items} beyond Then's limits (D40). Good = down.
+    85th; Now's {Work Items} beyond Then's limits (D40) *(superseded by D49 (2026-10-14): no beyond-limits count)*.
+    Good = down.
   - **M2 {Throughput}** — *reshaped by D47*: total {Work Items} finished in the window and the average per day, Then
-    and Now; change and % change on the per-day average; Now's days beyond Then's limits. Good = up. *(Was: weekly
-    median and the number of weeks in each sample.)*
-  - **M3 {WIP}** — average {WIP} Then and Now with its range, change and % change on the average; Now's days beyond
-    Then's limits. Good = down.
-  - **M4 {Work Item Age}** — total and average {Work Item Age} Then and Now, change and % change on each; Now's days
-    beyond Then's limits of the total. Good = down. Each of total (Q10) and average (D48) shows two values per side:
-    the window average and the window's last day.
+    and Now; change and % change on the per-day average; Now's days beyond Then's limits *(superseded by D49
+    (2026-10-14): no beyond-limits count)*. Good = up. *(Was: weekly median and the number of weeks in each sample.)*
+  - **M3 {WIP}** — *reshaped by D50 (2026-10-14)*: Average, Median, Min and Max of the window's daily {WIP}, Then and
+    Now, each line with its own change and % change. Good = down. *(Was: average {WIP} Then and Now with its range,
+    change and % change on the average; Now's days beyond Then's limits — superseded by D50 and D49.)*
+  - **M4 {Work Item Age}** — *reshaped by D51 (2026-10-14)*: the total age only — Average, Median, Min and Max of the
+    window's daily total {Work Item Age}, Then and Now, each line with its own change and % change. Good = down.
+    *(Was: total and average {Work Item Age} Then and Now, change and % change on each; Now's days beyond Then's
+    limits of the total; each of total (Q10) and average (D48) with two values per side, the window average and the
+    window's last day — superseded by D51 and D49.)*
 
   A change in the good direction is green, in the bad direction red, no change neutral; a sign and the number always
   carry the meaning too, never the colour alone. The direction of good is a fixed property of each metric, known only
@@ -435,7 +448,8 @@ D37–D44 are the maintainer's answers to Q1–Q7 (2026-10-03). Superseded decis
   Stable/Unstable label; no data-maturity label; no intervention date (D35 stands); no per-metric chart. A
   user-written author note per panel is out of v1, and the panel leaves room for it, so adding it later does not
   reshape the panel. Every metric word is a Terminology token; nothing user-facing says "Baseline".
-- [D40] **Points beyond Then's frozen limits** (Q3 follow-up). For metrics with a process-behaviour chart (M1–M4)
+- [D40] **Superseded by D49 (2026-10-14)** — no panel counts points beyond Then's limits, and Then's XmR average and
+  limits are no longer frozen. *Was*: **Points beyond Then's frozen limits** (Q3 follow-up). For metrics with a process-behaviour chart (M1–M4)
   the panel counts Now's points beyond the XmR limits frozen from Then, split by side: "2 above · 0 below". Each side
   is coloured by the metric's direction of good (UI only): for {Throughput} the points above Then's upper limit are
   green, so a consistently higher {Throughput} shows as a good change; for {Cycle Time}, {WIP} and {Work Item Age}
@@ -467,6 +481,9 @@ D37–D44 are the maintainer's answers to Q1–Q7 (2026-10-03). Superseded decis
   short reason appears only when there is truly nothing to compute: no finished {Work Item} in the window; fewer than
   2 points for Then's limits; a collapsed band (Then's average and upper limit both 0); the below-count when Then's
   lower limit is 0 (Q8); the % change when the Then value is 0 (Q9). No new threshold. Never a misleading 0 (C4).
+  *(Superseded in part by D49 (2026-10-14): the three limit reasons — fewer than 2 points for Then's limits, a
+  collapsed band, the below-count when Then's lower limit is 0 — go with the beyond-limits count. Still in force: no
+  finished {Work Item} in the window, and Then was 0 for the % change.)*
 - [D46] **No settings-changed notice** (maintainer 2026-10-03, after DESIGN; supersedes D31). "Settings will
   inevitably change; just accept it." Nothing about the owner's settings is stored on the report and nothing is
   compared. Slice 09 is dropped (ADO Story #6167, the maintainer's call); US-09 is dropped.
@@ -477,21 +494,50 @@ D37–D44 are the maintainer's answers to Q1–Q7 (2026-10-03). Superseded decis
   count of {Work Items}. Both stay right when the Now length differs from Then. Per DESIGN DD6 (maintainer-accepted),
   change and % change are computed in the panel from the values **as displayed** (rounded): 0.58 → 0.72 per day shows
   +0.14 and +24%, although the unrounded totals 52 → 65 would give +25%. Every figure in this document is as displayed. No weekly median, no week count. The beyond-limits count is unchanged: Now's
-  daily values against Then's frozen limits.
-- [D48] **Average {Work Item Age} has two values per side, like the total** (maintainer 2026-10-03, after DESIGN; Q10
+  daily values against Then's frozen limits. *(That last sentence is superseded by D49 (2026-10-14): {Throughput}
+  has no beyond-limits line. The rest of D47 stands.)*
+- [D48] **Superseded by D51 (2026-10-14)** — no per-item average age and no last-day values. *Was*: **Average {Work
+  Item Age} has two values per side, like the total** (maintainer 2026-10-03, after DESIGN; Q10
   extended). The window average — the mean, over the window's days, of that day's average age (that day's total age ÷
   that day's {WIP}) — and the last day's value (the last day's total age ÷ that day's {WIP}). Change and % change on
   each. A day with no {WIP} has no average age and is left out of the window average (DESIGN, DD15); "—" only when
   no day of the window had {WIP} (or, for the last-day value, when the last day had none).
+- [D49] **No counts beyond Then's limits, on any panel** (maintainer 2026-10-14, after DISTILL sketch review;
+  supersedes D40, the beyond-limits parts of M1–M4 and D47, and D45's three limit reasons). "Start simple." No panel
+  shows Now's {Work Items} or days beyond Then's XmR limits, so the reasons "Then's lower limit is 0" (Q8), "too few
+  points for limits" and "Then never varied from 0" (collapsed band) go too. Then no longer freezes an XmR average or
+  limits (reshapes D26). A process-behaviour entry may be added to the report later if it is needed — out of scope
+  now; Signals (Epic 5935) owns "is this a real change". US-03's old subject is dropped; slice 03 becomes the summary
+  header (D52).
+- [D50] **{WIP} shows four lines per side** (maintainer 2026-10-14, after DISTILL sketch review; reshapes D39's M3).
+  Average, Median, Min and Max of the window's daily {WIP} values, Then and Now; each line has its own change and %
+  change, exactly like the {Cycle Time} percentiles. The rows read "Average N", "Median N", "Min N", "Max N"
+  (maintainer addition, 2026-10-14). Good = down. A day with nothing in progress is {WIP} 0, a real 0.
+  *(Was: "Average 9 (6–12)", one change on the average.)*
+- [D51] **{Work Item Age} shows the total age only, four lines per side** (maintainer 2026-10-14, after DISTILL
+  sketch review; supersedes D48 and Q10's two-values-per-side shape; reshapes D39's M4). Average, Median, Min and Max
+  of the window's daily total age — that day's total is the sum of the ages of every {Work Item} in progress that day —
+  Then and Now; each line has its own change and % change. A growing age reads as worse (good = down). No per-item
+  average age (total ÷ {WIP}) and no last-day rows. A window with nothing in progress shows a total age of 0 as a real
+  0, not a dash — the same as {WIP} 0 is a real 0; a % change from a Then of 0 follows Q9. The panel is titled
+  "Total {Work Item Age}", because it shows only the total figures, and its rows read "Average N days", "Median N
+  days", "Min N days", "Max N days" (maintainer addition, 2026-10-14).
+- [D52] **The report page has a summary header** (maintainer 2026-10-14, after DISTILL sketch review; records DT14
+  as a DISCUSS decision). Between the one-line breadcrumb and the first panel, two segments matching the panels'
+  sides: each side names its window ("3 May – 31 Jul 2026 · 90 days") and "N {Work Items} closed". Panel side headings
+  read just THEN / NOW — no "· N {Work Items}", no "· N days". No "frozen on" or "always the last N days" lines; more
+  information joins the header only after the maintainer has seen a sketch of it. Slice 03 (ADO #6161) is this
+  header, plus a behaviour-preserving refactor already done.
 
 ---
 
 ## Wave: DISCUSS / [REF] Scope Assessment
 
-**PASS.** 9 stories (slice 11 dropped on 2026-10-03, slice 09 dropped after DESIGN by D46), ~9 days (slice 01
-re-estimated 1 → 1½ days on 2026-10-13; was ~8½), one new module (reports and the metric catalog with
+**PASS.** 9 stories (slice 11 dropped on 2026-10-03, slice 09 dropped after DESIGN by D46), ~8½ days (slice 01
+re-estimated 1 → 1½ days on 2026-10-13; slice 03 re-cut to the summary header and re-estimated 1 → ½ day on
+2026-10-14, D49, D52; was ~9), one new module (reports and the metric catalog with
 its panels) standing on existing metrics, licence and RBAC; one user outcome; nothing ships independently of the
-Reports tab. No oversize signal fires (9 stories, not more than 10; ~9 days of effort, under 2 weeks). No Epic split. The
+Reports tab. No oversize signal fires (9 stories, not more than 10; ~8½ days of effort, under 2 weeks). No Epic split. The
 release is cut after slice 10 (D34): with D43 and D44 the edit dialog is part of v1, so no slice is cancellable any
 more.
 
@@ -504,9 +550,9 @@ more.
 
 | Open Reports | Freeze Then | Choose metrics | Read Then & Now | Trust the numbers | Manage |
 |---|---|---|---|---|---|
-| **01 tab + create (Team)** | **01 Then ends today** | **01 {Cycle Time} panel** | **01 header + panel** | 03 {Cycle Time} beyond Then's limits | 08 delete + cap |
+| **01 tab + create (Team)** | **01 Then ends today** | **01 {Cycle Time} panel** | **01 header + panel** | ~~03 {Cycle Time} beyond Then's limits~~ (dropped, D49) | 08 delete + cap |
 | 06 Portfolio | 02 past end date, custom length | 04 picker + {Throughput} | 07 Now length + days since | ~~09 settings notice~~ (dropped, D46) | 10 Edit report |
-| | | 05 {WIP} + {Work Item Age} | | ~~11 claim chart~~ (dropped) | |
+| | | 05 {WIP} + Total {Work Item Age} | 03 summary header (D52) | ~~11 claim chart~~ (dropped) | |
 
 **Walking skeleton = slice 01** (brownfield): existing Team page and tab pattern, existing metrics calls, a new stored
 report, the first registered panel. It crosses every activity thinly — tab → create → freeze → view Now live — and
@@ -516,10 +562,11 @@ proves the freeze-and-store shape that every later slice extends.
 |---|---|---|---|---|
 | 01 | Reports tab; create a Then & Now report for a Team; Then ends today (30 / 90 days); {Cycle Time} panel: Then 85th, Now 85th / 70th / 50th, change, % change, coloured | 1½d (was 1d; re-estimated 2026-10-13, see taste tests) | #6159 | "Freezing at creation is fast and simple enough" — if creating a 90-day report on the dev instance's busiest Team takes > 10 s, freezing must move off the request |
 | 02 | A Then that ended on a picked date; a custom length of 14 days or more | 1d | #6160 | "History rebuilds a past Then credibly" — if a Then ending 31 Jul rebuilt today differs from the Metrics tab for the same dates, the rebuild is wrong |
-| 03 | The {Cycle Time} panel counts Now's {Work Items} beyond Then's frozen limits, above and below | 1d | #6161 | "A count against frozen limits says something on real Teams" — if on the dev instance every Team reads 0 above and "—" below over the 63 days since 31 Jul, the count is mute for per-item data and must change before three more panels copy it |
-| 04 | Choose the metrics a report shows; {Throughput} panel (total and per-day average over the whole window, change and % change on the per-day average, days beyond Then's limits) (D47) | 1d | #6162 | "A per-day average reads sensibly beside a count of days beyond" — if dogfood readers misread the per-day average or ask what "days beyond" means, the {Throughput} panel needs different wording |
-| 05 | {WIP} and {Work Item Age} panels; all four metrics ticked by default | 1d | #6163 | "Coaches keep the default of all four" — if dogfood users untick two or more on most reports, the default selection is wrong |
-| 06 | Reports on Portfolios (90 / 180 days or custom) | 1d | #6164 | "Panels say something at Portfolio level" — if every demo and dev Portfolio shows "—" on {Cycle Time} and 0 · 0 beyond the limits on the rest, Portfolio needs other metrics (e.g. {Feature} size) before it is useful |
+| 03 | **Re-cut 2026-10-14 (D49, D52):** the report's summary header — each side's window, its length and "N {Work Items} closed"; panel side headings read just THEN / NOW (plus a behaviour-preserving refactor already done) | ½d (was 1d) | #6161 | "The window lengths explain the counts" — if a dogfood reader of a report whose Then and Now differ in length still asks why one side has so few {Work Items}, the header needs more than window and count (sketch first, D52) |
+| ~~03~~ | *Was (superseded by D49):* ~~The {Cycle Time} panel counts Now's {Work Items} beyond Then's frozen limits, above and below~~ | ~~1d~~ | #6161 | "A count against frozen limits says something on real Teams" — if on the dev instance every Team reads 0 above and "—" below over the 63 days since 31 Jul, the count is mute for per-item data and must change before three more panels copy it |
+| 04 | Choose the metrics a report shows; {Throughput} panel (total and per-day average over the whole window, change and % change on the per-day average) (D47); ~~days beyond Then's limits~~ (dropped 2026-10-14, D49) | 1d | #6162 | "A per-day average reads sensibly beside the total" — if dogfood readers misread the per-day average, the {Throughput} panel needs different wording *(was: "… beside a count of days beyond", superseded by D49)* |
+| 05 | {WIP} panel and Total {Work Item Age} panel, each as Average, Median, Min and Max of the window's daily values with a change per line (D50, D51, revised 2026-10-14); all four metrics ticked by default | 1d | #6163 | "Coaches keep the default of all four" — if dogfood users untick two or more on most reports, the default selection is wrong |
+| 06 | Reports on Portfolios (90 / 180 days or custom) | 1d | #6164 | "Panels say something at Portfolio level" — if every demo and dev Portfolio shows "—" on {Cycle Time} and no change on the rest *(was: "0 · 0 beyond the limits", superseded by D49)*, Portfolio needs other metrics (e.g. {Feature} size) before it is useful |
 | 07 | Choose Now's length at creation (saved); header shows both windows and days since Then ended | ½d | #6165 | "A saved rolling Now answers the 4-week shape" (D14) — if Dev Malhotra's case or a dogfood coach still asks for a window "since the start", D11 is reopened |
 | 08 | Delete; Community cap of 2 across templates; Premium unlimited; lapse; deleting an owner names its reports | 1d | #6166 | "2 reports is enough for Community" — if dogfood or early instances hit the cap within a month, the cap is either a Premium lever (good) or a blocker (check K4) |
 | 09 | **Dropped 2026-10-03** — no settings-changed notice (D46) | — | #6167 (maintainer's call) | — |
@@ -538,8 +585,12 @@ Order 01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 10 (09 dropped, D4
 - **01** is the walking skeleton.
 - **02, 03 next — riskiest first.** The past-dated rebuild (D12, X2) and the count against frozen, unrounded limits
   on real, low-count, zero-clamped per-item data (D40, Q8) are the two assumptions that could make the report wrong
-  or mute. 02 comes first because a count can only be dogfooded against a Then that ended weeks ago.
-- **04, 05** complete the Team catalog (value); 04 brings the picker and the first daily-series count. **06**
+  or mute. 02 comes first because a count can only be dogfooded against a Then that ended weeks ago. *(Superseded
+  2026-10-14 by D49 and D52: 03 is now the summary header. It still comes before 04 because the slice-02 live check
+  showed the panels cannot be read without each side's window and count, and every later panel drops its own
+  count line in favour of the header.)*
+- **04, 05** complete the Team catalog (value); 04 brings the picker and the first daily-series panel *(was: "count",
+  superseded by D49)*. **06**
   Portfolio once the panels exist (same panels, thinner data).
 - **07** before **08** because the Now length serves the 4-week shape (D14); **08** before release (D34).
 - ~~**09** guards trust over time~~ (dropped, D46). **10** last: Edit report needs every
@@ -551,9 +602,9 @@ Order 01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 10 (09 dropped, D4
 |---|---|
 | 4+ new components in one slice? | **Borderline fail** (re-checked 2026-10-13). 01 adds the Reports tab, the Reports list (DT1), the Create wizard (DT3, on the existing `CreateWizardShell`), the report view with its loading and failure looks (DT6) and the first panel, plus the usage events. Kept as one slice: it is the walking skeleton and each piece is in its thinnest form; the usage events stay in 01 because DEVOPS placed them there. Re-estimated 1d → 1½d. *Was*: "Pass — the largest (01) adds a tab, a create dialog, a report view and one panel." |
 | Every slice depends on a new abstraction? | Pass — the panel registry is born in 01 with one panel, its first consumer. |
-| Disproves a pre-commitment? | Pass — 02 tests D12, 03 D40, 07 D14, 08 DV-7. |
+| Disproves a pre-commitment? | Pass — 02 tests D12, 03 D52 (was D40, superseded by D49), 07 D14, 08 DV-7. |
 | Synthetic-data-only slices? | Pass — each is dogfooded on the dev instance (`:5169`, real history); demo data covers E2E and screenshots only. |
-| Two slices alike except scale? | Borderline — 05 applies 04's panel pattern to two more metrics. Kept separate because 04 also carries the picker and the first daily-series count, and the default-selection hypothesis needs all four panels. 06 is the same report on a different owner with a different data shape, kept separate on purpose. |
+| Two slices alike except scale? | Borderline — 05 applies 04's panel pattern to two more metrics. Kept separate because 04 also carries the picker and the first daily-series panel (was "count", D49), and the default-selection hypothesis needs all four panels. 06 is the same report on a different owner with a different data shape, kept separate on purpose. |
 
 ---
 
@@ -562,6 +613,53 @@ Order 01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 10 (09 dropped, D4
 SSOT: `docs/product/journeys/epic-5878-baseline.yaml` (refined this wave, revised 2026-10-03). Emotional arc:
 **exposed → anchored → informed** (vindicated when the panels show green, honest when they do not). The reader's arc:
 **sceptical → oriented in one look**.
+
+Redrawn 2026-10-14 (D49–D52, on DT10–DT12 and DT14): Team Lightspeed, Then 90 days to 31 Jul 2026, opened on
+2 Oct 2026.
+
+```
+Reports / Then & Now — 90 days to 31 Jul 2026                                    [Edit report] [Delete]
+┌────────────────────────────────────────────────────┬───────────────────────────────────────────────────┐
+│ THEN                                               │ NOW                                               │
+│ 3 May – 31 Jul 2026 · 90 days                      │ 5 Jul – 2 Oct 2026 · 90 days                      │
+│ 52 Work Items closed                               │ 65 Work Items closed                              │
+└────────────────────────────────────────────────────┴───────────────────────────────────────────────────┘
+┌ Cycle Time ────────────────────────────────────────────────────────────────────────────────────────────┐
+│ THEN                             │ NOW                              │ CHANGE                           │
+│ 85th  21 days                    │ 85th  12 days                    │ ▼ 9 days (−43 %) (green)         │
+│ 70th  11 days                    │ 70th   7 days                    │ ▼ 4 days (−36 %) (green)         │
+│ 50th   6 days                    │ 50th   4 days                    │ ▼ 2 days (−33 %) (green)         │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌ Throughput ────────────────────────────────────────────────────────────────────────────────────────────┐
+│ THEN                             │ NOW                              │ CHANGE                           │
+│ Total 52 Work Items              │ Total 65 Work Items              │                                  │
+│ 0.58 per day                     │ 0.72 per day                     │ ▲ 0.14 per day (+24 %) (green)   │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌ WIP ───────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ THEN                             │ NOW                              │ CHANGE                           │
+│ Average 9                        │ Average 7                        │ ▼ 2 (−22 %) (green)              │
+│ Median 9                         │ Median 7                         │ ▼ 2 (−22 %) (green)              │
+│ Min 6                            │ Min 5                            │ ▼ 1 (−17 %) (green)              │
+│ Max 12                           │ Max 9                            │ ▼ 3 (−25 %) (green)              │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌ Total Work Item Age ───────────────────────────────────────────────────────────────────────────────────┐
+│ THEN                             │ NOW                              │ CHANGE                           │
+│ Average 610 days                 │ Average 880 days                 │ ▲ 270 days (+44 %) (red)         │
+│ Median 600 days                  │ Median 870 days                  │ ▲ 270 days (+45 %) (red)         │
+│ Min 420 days                     │ Min 640 days                     │ ▲ 220 days (+52 %) (red)         │
+│ Max 760 days                     │ Max 1,050 days                   │ ▲ 290 days (+38 %) (red)         │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+The summary header carries each side's window and how many {Work Items} closed in it (D52); panel side headings read
+just THEN / NOW, with no count and no number of days. Each {Cycle Time} percentile line also carries the
+`ForecastLevel` certainty icon (DT10), left out here. No line counts anything beyond Then's limits (D49). {WIP} and
+Total {Work Item Age} show Average, Median, Min and Max of the window's daily values, each with its own change (D50,
+D51); the daily total age is the sum of the ages of every {Work Item} in progress that day. A window with nothing in
+progress reads 0 and 0 days, real zeros. Whether "days since Then ended" (slice 07, D35) still joins the header is
+open: per D52 it needs a sketch the maintainer has seen first.
+
+*Superseded mockup (revised after DESIGN, 2026-10-03; replaced 2026-10-14 by D49–D52), kept for history:*
 
 ```
 Team Lightspeed › Reports › Then & Now — engagement start                          [Edit report]
@@ -610,18 +708,22 @@ Shared artifacts (registry, single source each):
 | Artifact | Source of truth | Consumers |
 |---|---|---|
 | `then_window` (start, end, length) | the stored report, set at creation (D37), never editable (D44) | header, default name, days since Then ended, delete warning |
-| `then_values` and `then_limits` (unrounded) | frozen at creation (D26, D40) | Then side of every panel; change and % change; points beyond limits |
+| `then_values` | frozen at creation (D26) | Then side of every panel; change and % change |
+| ~~`then_limits` (unrounded)~~ | **dropped (D49, 2026-10-14)** — no XmR average or limits are frozen | — *(was: points beyond limits)* |
+| `then_closed_count` | frozen at creation with `then_values` (the {Work Items} closed in Then) | summary header, THEN side (D52) |
+| `now_closed_count` | `now_values`, today's settings | summary header, NOW side (D52) |
 | `now_length` | the stored report (D43), changed only through Edit report (D44) | header, `now_window`, scheduled sending later (5882) |
-| `now_window` | derived: `now_length` days ending today (D38) | header, Now side of every panel, points beyond limits |
-| `now_values` | existing metrics calls over `now_window`, today's settings | Now side of every panel; change and % change; points beyond limits |
-| `direction_of_good` | fixed per metric in its frontend panel (D39); stored nowhere | colour of change and of each side of the points-beyond count |
+| `now_window` | derived: `now_length` days ending today (D38) | header, Now side of every panel *(points beyond limits dropped, D49)* |
+| `now_values` | existing metrics calls over `now_window`, today's settings | Now side of every panel; change and % change *(points beyond limits dropped, D49)* |
+| `direction_of_good` | fixed per metric in its frontend panel (D39); stored nowhere | colour of every change line *(was also: each side of the points-beyond count, dropped by D49)* |
 | ~~`settings_snapshot`~~ | **dropped (D46)** — nothing about settings is stored | — |
 | `report_count` per owner | stored reports of that owner, all templates | Create Report enablement, cap message (08), owner delete confirmation (D42) |
 | Terminology tokens | Settings → Terminology | every panel title, label and message |
 
 Integration checkpoints: the Then side never changes between views (slice 01 onwards); the Now window in the header is
 the window the Now side and the points-beyond count use; the count uses Then's frozen limits, never the owner's PBC
-Baseline; the cap and the owner delete confirmation count the same reports; the direction of good appears in exactly
+Baseline *(the points-beyond count is dropped by D49, 2026-10-14; instead each header side's "N {Work Items} closed"
+is the count of the same window its panels use, D52)*; the cap and the owner delete confirmation count the same reports; the direction of good appears in exactly
 one place per metric.
 
 ---
@@ -633,7 +735,7 @@ one place per metric.
 System constraints (all stories): Team and Portfolio only (D8) · every metric word through Terminology · RBAC: create,
 edit and delete need Write on the owner, viewing needs Read; UI gating via `useRbac()`, never fetching
 `/api/latest/authorization/my-summary` · works with auth off · Then limits come from Then, frozen unrounded, never
-from the owner's PBC Baseline (S4) · no verdicts and no generated text (D39); the direction of good lives only in
+from the owner's PBC Baseline (S4) *(superseded by D49, 2026-10-14: no limits are frozen or shown)* · no verdicts and no generated text (D39); the direction of good lives only in
 each metric's frontend panel · no synthesised values; absent data shows "—" with a reason from the existing guards
 only (D41) · expand-only migrations via `CreateMigration` · Community unless stated · calendar days in the instance
 time zone, windows inclusive at both ends · no CLI/MCP, no export.
@@ -769,9 +871,74 @@ today's settings. AC-2.4 Refusal copy names the earliest start or the 14-day min
 once; later views read the frozen values. AC-2.6 The default name reflects length and end date.
 **KPI**: K1, K5. **Tech**: same calls with a shifted window (Story 6053 precedent); calendar-day handling per Bug #5567.
 
-### US-03 — See how many of Now's {Work Items} fall outside Then's {Cycle Time} limits (slice 03)
+### US-03 — See each side's window and how many {Work Items} closed in it (slice 03)
 
-`job_id: job-flow-coach-show-whether-flow-changed` · persona `flow-coach` (Elena, Priya) and reader Martin
+`job_id: job-flow-coach-show-whether-flow-changed` · persona `flow-coach` (Elena, Dev) and reader Martin
+
+> Re-cut 2026-10-14 (D49, D52). The story was "See how many of Now's {Work Items} fall outside Then's {Cycle Time}
+> limits"; that subject is dropped (D49). The old text is kept below, marked superseded. ADO #6161 is unchanged.
+
+**Problem**: Dev Malhotra's report on Team Gravity has a 90-day Then and a 30-day Now. The {Cycle Time} panel reads
+52 {Work Items} against 24, and Martin asks why Now has so few. Nothing on the page says how long each window is, so
+a difference that comes from the window lengths looks like a difference in the flow. (Seen on a live report after
+slice 02, DT14.)
+
+#### Elevator Pitch
+
+Before: the panels' side headings read "THEN · 52 Work Items" and "NOW · 24 Work Items", but neither window's dates
+nor length shows anywhere on the report.
+After: the report → a summary header between the breadcrumb and the first panel: THEN "3 May – 31 Jul 2026 · 90
+days", "52 Work Items closed" │ NOW "3 Sep – 2 Oct 2026 · 30 days", "24 Work Items closed"; the panels' side headings
+read just THEN and NOW.
+Decision enabled: whether a difference in a panel comes from the flow or only from windows of different length.
+
+**Examples**: (1) Elena's report on Team Lightspeed, Then 90 days to 31 Jul 2026, opened on 2 Oct 2026: THEN "3 May
+– 31 Jul 2026 · 90 days", "52 Work Items closed"; NOW "5 Jul – 2 Oct 2026 · 90 days", "65 Work Items closed".
+(2) Dev's report on Team Gravity keeps a 30-day Now beside its 90-day Then: NOW "3 Sep – 2 Oct 2026 · 30 days", "24
+Work Items closed" — the lengths explain 52 against 24. (3) Team Nova closed nothing in its Then: THEN reads "0 Work
+Items closed", a real 0, because it is a count. (4) On 30 Oct 2026 Elena opens her report again: THEN still reads
+"52 Work Items closed"; NOW moves to "1 Aug – 30 Oct 2026 · 90 days". (5) The {Cycle Time} panel's side headings read
+"THEN" and "NOW", with no count.
+
+```gherkin
+Scenario: Each side of the report names its window and how many Work Items closed in it
+  Given Elena created a report on Team Lightspeed with a Then of 90 days ending 31 Jul 2026
+  When Elena opens it on 2 Oct 2026
+  Then the THEN side of the summary reads "3 May – 31 Jul 2026 · 90 days" and "52 Work Items closed"
+  And the NOW side reads "5 Jul – 2 Oct 2026 · 90 days" and "65 Work Items closed"
+
+Scenario: Windows of different length show their lengths side by side
+  Given Dev's report on Team Gravity has a Then of 90 days ending 31 Jul 2026 and a Now of 30 days
+  When Martin opens it on 2 Oct 2026
+  Then the summary reads "90 days" and "52 Work Items closed" for Then
+  And "3 Sep – 2 Oct 2026 · 30 days" and "24 Work Items closed" for Now
+
+Scenario: A window where nothing closed reads zero closed
+  Given Team Nova closed no Work Items in its Then
+  When Priya opens Team Nova's report
+  Then the THEN side of the summary reads "0 Work Items closed"
+
+Scenario: The panels no longer repeat the count
+  Given Elena's report on Team Lightspeed shows its summary header
+  When Elena looks at the Cycle Time panel
+  Then its side headings read "THEN" and "NOW" with no number of Work Items and no number of days
+```
+
+**AC**: AC-3.1 A summary header sits between the one-line breadcrumb and the first panel, in two segments matching
+the panels' sides, THEN and NOW (D52, DT14). AC-3.2 Each side shows its window as "start – end · N days" (calendar
+days, inclusive at both ends, instance time zone) and "N {Work Items} closed" ({Features} on a Portfolio, from slice
+06). AC-3.3 Then's count never moves after creation; Now's is today's. A count of 0 is shown as 0, never a dash.
+AC-3.4 The panels' side headings read just THEN and NOW — no "· N {Work Items}", no "· N days". AC-3.5 No "frozen on"
+or "always the last N days" line; anything more in the header waits for a sketch the maintainer has seen (D52).
+AC-3.6 The header follows the report's loading and failure looks (DT6): no header numbers while loading or after a
+failed load.
+**KPI**: K2. **Tech**: no new storage expected (Then's closed count is the {Cycle Time} sample size frozen since
+slice 01 — DESIGN confirms). The behaviour-preserving refactor that opened the slice (XmR limits and the cycle-time
+selection extracted) is already in.
+
+#### Superseded 2026-10-14 by D49 — See how many of Now's {Work Items} fall outside Then's {Cycle Time} limits
+
+*Kept for history; not applied.*
 
 **Problem**: Martin sees 21 → 12 days and asks "is that a real shift or a good month?". A percentile alone does not
 show him how unusual Now's {Work Items} are against the way Then behaved.
@@ -841,8 +1008,8 @@ Time}, and Priya wants the metrics fixed before she sees the numbers.
 
 Before: a report shows one panel.
 After: Create Report → the metric list with {Cycle Time} and {Throughput} ticked → sees a "Throughput: Then & Now" panel:
-total 52, 0.58 per day over 90 days │ total 65, 0.72 per day over 90 days, +0.14 per day, +24%, days beyond Then's
-limits 2 above · 0 below — both in green (D47).
+total 52, 0.58 per day over 90 days │ total 65, 0.72 per day over 90 days, +0.14 per day, +24% in green (D47).
+*(Revised 2026-10-14: "days beyond Then's limits 2 above · 0 below" dropped by D49.)*
 Decision enabled: which metrics the Team commits to showing before looking at Now.
 
 **Examples**: (1) Priya keeps both ticked: two panels. (2) Elena unticks {Throughput}: one panel; {Throughput} is still
@@ -859,9 +1026,8 @@ Scenario: The available metrics are ticked by default
 Scenario: Higher Throughput shows as a change for the better
   Given Team Lightspeed's Then of 90 days to 31 Jul 2026 (3 May – 31 Jul) finished 52 Work Items, 0.58 per day
   And its Now, the last 90 days (5 Jul – 2 Oct 2026), finished 65 Work Items, 0.72 per day
-  And 2 days of Now finished more Work Items than Then's upper limit
   When Elena opens the report
-  Then the Throughput panel shows "+0.14 per day" and "+24%" and 2 days above Then's limits, all marked as an improvement
+  Then the Throughput panel shows "+0.14 per day" and "+24%", marked as an improvement
 
 Scenario: A Now of a different length compares per day
   Given Dev's report froze a 90-day Then with 0.58 Work Items per day
@@ -879,10 +1045,13 @@ Scenario: An older report did not capture Throughput
   Then Throughput reads "Not captured for this report" and cannot be ticked
 ```
 
+*(Revised 2026-10-14 by D49: "Higher Throughput shows as a change for the better" lost its step "And 2 days of Now
+finished more Work Items than Then's upper limit" and its assertion "and 2 days above Then's limits".)*
+
 **AC**: AC-4.1 Metric picker in Create Report; every v1 metric ticked by default; at least one required. AC-4.2
 {Throughput} panel per D47: total finished in the window and the average per day, Then and Now; change and %
-change on the per-day average; good = up. AC-4.3 Days
-beyond Then's frozen limits, by side (D40); above green, below red. AC-4.4 Every applicable metric frozen whatever is
+change on the per-day average; good = up. ~~AC-4.3 Days
+beyond Then's frozen limits, by side (D40); above green, below red.~~ *(AC-4.3 dropped 2026-10-14 by D49.)* AC-4.4 Every applicable metric frozen whatever is
 ticked (D26). AC-4.5 Reports created before this slice: "Not captured for this report" (D27). AC-4.6 A Then of 0 shows
 the absolute change and "—" for the % with "Then was 0" (Q9, confirmed 2026-10-03).
 **KPI**: K2. **Tech**: one panel registration per metric; total and per-day average from the daily series (D47).
@@ -894,7 +1063,69 @@ the absolute change and "—" for the % with "Then was 0" (Q9, confirmed 2026-10
 **Problem**: Priya's WIP limit is meant to lower {WIP} and the age of what is in progress. The sponsor wants to see
 both, next to {Cycle Time} and {Throughput}.
 
+> Revised 2026-10-14 (D49, D50, D51): {WIP} and Total {Work Item Age} each show Average, Median, Min and Max of the
+> window's daily values with a change per line; no per-item average age, no last-day values, no beyond-limits count.
+> The old text is kept below, marked superseded.
+
 #### Elevator Pitch
+
+Before: the report shows {Cycle Time} and {Throughput} only.
+After: Create Report → all four metrics ticked → sees a "{WIP}" panel — Average 9 → 7 (▼ 2, −22%), Median 9 → 7
+(▼ 2, −22%), Min 6 → 5 (▼ 1, −17%), Max 12 → 9 (▼ 3, −25%), all green — and a "Total {Work Item Age}" panel —
+Average 610 → 880 days (▲ 270 days, +44%), Median 600 → 870 days (▲ 270 days, +45%), Min 420 → 640 days (▲ 220
+days, +52%), Max 760 → 1,050 days (▲ 290 days, +38%), all red (D50, D51).
+Decision enabled: whether the WIP limit is showing in the numbers the sponsor cares about, or whether to talk about
+the ageing items first.
+
+**Examples**: (1) Team Gravity's daily {WIP} in Then: Average 9, Median 9, Min 6, Max 12; in Now: 7, 7, 5, 9 → each
+line falls, −22%, −22%, −17%, −25%, green. (2) Team Lightspeed's daily total {Work Item Age} in Then: Average 610
+days, Median 600, Min 420, Max 760; in Now: 880, 870, 640, 1,050 → each line rises, +44%, +45%, +52%, +38%, red.
+(3) On 31 Jul 2026 Team Lightspeed had 10 {Work Items} in progress whose ages add up to 640 days: that day's total
+age is 640 days — one of the daily values behind Then's four lines. (4) Team Nova had nothing in progress on any day
+of Then: {WIP} reads "Average 0", "Median 0", "Min 0", "Max 0" and Total {Work Item Age} "Average 0 days" … "Max 0
+days" — real zeros, never a dash; each % change from a Then of 0 shows "—" with "Then was 0" (Q9). (5) A new report
+has all four metrics ticked.
+
+```gherkin
+Scenario: Lower WIP shows as a change for the better on every line
+  Given Team Gravity's daily WIP in Then had average 9, median 9, min 6 and max 12
+  And its daily WIP in Now has average 7, median 7, min 5 and max 9
+  When Priya opens the report
+  Then the WIP panel shows Average, Median, Min and Max for Then and Now, each with its change and % change
+  And the Average line shows "−2" and "−22%" marked as an improvement
+
+Scenario: Older work in progress shows as a change for the worse
+  Given Team Lightspeed's daily total Work Item Age averaged 610 days in Then and 880 days in Now
+  When Elena opens the report
+  Then the Total Work Item Age panel's Average line shows "+270 days" and "+44%" marked as worse
+  And its Median, Min and Max lines each show their own change and % change
+
+Scenario: A window with nothing in progress shows real zeros
+  Given Team Nova had no Work Item in progress on any day of its Then
+  When Priya opens Team Nova's report
+  Then every Then line of the WIP panel reads 0 and every Then line of the Total Work Item Age panel reads 0 days
+  And no Then line shows a dash
+  And each % change reads "—" with "Then was 0"
+
+Scenario: All four metrics are ticked by default
+  When Priya creates a report for Team Gravity
+  Then Cycle Time, Throughput, WIP and Work Item Age are ticked
+```
+
+**AC**: AC-5.1 {WIP} panel: Average, Median, Min and Max of the window's daily {WIP}, Then and Now, rows reading
+"Average N", "Median N", "Min N", "Max N"; each line with its own change and % change; good = down (D50). AC-5.2 Total
+{Work Item Age} panel, titled "Total {Work Item Age}": Average, Median, Min and Max of the window's daily total age
+(the sum of the ages of every {Work Item} in progress that day), Then and Now, rows reading "Average N days", "Median
+N days", "Min N days", "Max N days"; each line with its own change and % change; good = down (a growing age reads as
+worse) (D51). No per-item average age and no last-day values. AC-5.3 A day with nothing in progress counts as {WIP}
+0 and total age 0; a window with nothing in progress shows 0 and 0 days, never a dash; a % change from a Then of 0
+shows "—" with "Then was 0" (Q9). AC-5.4 All four metrics ticked by default. AC-5.5 Reports created before this
+slice: "Not captured for this report" (D27).
+**KPI**: K2. **Tech**: two panel registrations; the daily {WIP} and total-age series already exist (S5).
+
+#### Superseded 2026-10-14 by D49, D50 and D51 — the old {WIP} and {Work Item Age} shape
+
+*Kept for history; not applied.*
 
 Before: the report shows {Cycle Time} and {Throughput} only.
 After: Create Report → all four metrics ticked → sees "WIP: Then & Now" average 9 (6–12) │ 7 (5–9), −2, −22% in green,
@@ -1192,7 +1423,10 @@ even for one view, and a Now in the page address (D43) · editing Then's window 
 an intervention-date field (D35) · **nice-to-have metrics**: {Cycle Time} predictability (was C5), {SLE} breaches,
 arrivals against {Throughput}, {WIP} streaks, {Feature} size (Portfolio), the Team-only forecast comparison · a second
 template (Epics 5882, 5935) · any user-facing "Baseline" · **a settings-changed notice**, or storing anything about
-the owner's settings on a report (D46; slice 09 dropped) · a weekly median or week count for {Throughput} (D47).
+the owner's settings on a report (D46; slice 09 dropped) · a weekly median or week count for {Throughput} (D47) ·
+**counts beyond Then's limits on any panel, and freezing Then's XmR average and limits** (D49, 2026-10-14) — a
+process-behaviour entry may join the report later if needed; Signals (Epic 5935) owns "is this a real change" · a
+per-item average {Work Item Age} and last-day values (D51).
 
 ---
 
@@ -1216,7 +1450,8 @@ cap tests (slice 08). None block slice 01.
 - **Performance**: creating a 90-day report on a Team with 365 days of history ≤ 10 s; opening a report ≤ 2 s; the
   Metrics tab and its PBCs unchanged (no shared setting altered).
 - **Accessibility**: meaning is never carried by colour alone — every change shows its sign and number, every
-  beyond-limits count its number, whatever the colour (D39, AC-1.5, AC-3.3). The Create / Edit wizard (DT3, DT4) is
+  beyond-limits count its number, whatever the colour (D39, AC-1.5, AC-3.3) *(the beyond-limits count is dropped by
+  D49, 2026-10-14; the rule stands for every change line)*. The Create / Edit wizard (DT3, DT4) is
   operable by keyboard alone, and so are the report's actions (Edit report, Delete, Retry).
 - **Concurrency**: a save over a report someone else changed after it was opened is refused, nothing is overwritten,
   and the user is told "This report was changed by someone else. Reload to see their changes." (DT4, AC-10.6).
@@ -1267,9 +1502,9 @@ No silent N/A — every item answered.
 | **RBAC impact** | **New guards, no new requirement.** Create, edit (Edit report) and delete = `TeamWrite` / `PortfolioWrite` (Team/Portfolio Admin, System Admin); list and view = `TeamRead` / `PortfolioRead`. UI: `rbac.isTeamAdmin(id)` / `rbac.isPortfolioAdmin(id)` from `useRbac()`; nothing fetches `/api/latest/authorization/my-summary`. Auth off or RBAC off: everyone may create and edit (permissive). Docs: `docs/settings/rbac.md` gains the Reports row at finalize. |
 | **Lighthouse-Clients CLI/MCP** | **N/A, because the maintainer excluded CLI/MCP on 2026-10-02 (D15).** All new endpoints are additive; no existing response shape changes, so no client release is forced. |
 | **Website / marketing surface** | **Owed at finalize (after slice 10, D34)**: features list entry (Community; Premium = unlimited reports), and a ValueFlow-style "show what changed since the engagement started" line for the consulting audience. Website is a separate repo that hot-links `docs/assets` from `@main`, so new screenshots go live there on push. Confirm copy with the maintainer before editing. |
-| **Docs + screenshots** | **Owed at finalize, not batched**: new page for Reports and the Then & Now Type (DT2; *was* "template") (the four panels, what change, % change and "beyond Then's limits" mean, why the colours, why every value shows its
+| **Docs + screenshots** | **Owed at finalize, not batched**: new page for Reports and the Then & Now Type (DT2; *was* "template") (the four panels, what change, % change and "beyond Then's limits" mean *("beyond Then's limits" dropped by D49, 2026-10-14; the summary header and the four-line {WIP} / Total {Work Item Age} panels instead)*, why the colours, why every value shows its
 sample size, the "—" cases, that Now uses today's settings while Then stays as frozen, the cap, Edit report); `docs/teams/detail.md` and `docs/portfolios/detail.md` (new tab); `docs/licensing/licensing.md` (2 reports Community); `docs/settings/rbac.md`; the Team/Portfolio delete wording (D42). `@screenshot` one per theme: a Team report with green, red and "—" values, and the create dialog. Docs wait for the maintainer's confirmation. |
-| **Demo data** | **Checked in slice 03 and again at finalize; no CSV change planned.** Demo history is relative to load day and short (S11). Team Lightspeed (≈100 days) must give a 30-day Then and a Now with at least one visible change and a non-zero beyond-limits count for the screenshot; adjust its CSV only if it does not. The Portfolios stay thin on purpose, showing "—". No pre-seeded report — the E2E creates one, and a seeded report would freeze on load day. |
+| **Demo data** | **Checked in slice 03 and again at finalize; no CSV change planned.** Demo history is relative to load day and short (S11). Team Lightspeed (≈100 days) must give a 30-day Then and a Now with at least one visible change and a non-zero beyond-limits count *(dropped by D49, 2026-10-14)* for the screenshot; adjust its CSV only if it does not. The Portfolios stay thin on purpose, showing "—". No pre-seeded report — the E2E creates one, and a seeded report would freeze on load day. |
 | **Terminology** | **No new key.** "Report", "Then", "Now", "Then & Now" are product words, not a tracker's noun (D32); a key can be added later, additively. Every panel title and label uses {Cycle Time}, {Throughput}, {WIP}, {Work Item Age}, {Work Item(s)}, {Feature(s)}, {Team}, {Portfolio}. |
 | **Usage-data event** | **Wanted (D33), designed in DEVOPS.** Tab opens: existing `TeamTabOpened` / `PortfolioTabOpened` with new route keys `TeamDetail_Reports`, `PortfolioDetail_Reports` (K2). New name-only candidates appended to `UsageDataEventName` (next free integer on `main`, never renumber): report created (K1), report deleted (G1), report creation refused at cap (K4). K3 may justify one closed-enum property on "report created" (Now shorter / same / longer than Then); DEVOPS decides or drops K3. Editing gets no event (D33). *Superseded by DEVOPS (maintainer, 2026-10-03)*: `ReportCreated` and `ReportOpened` carry closed enum `report_template` {ThenAndNow} (slice 01); `ReportDeleted` name-only (slice 08); no cap-refusal event; K3 dropped. Emitted in the slice that first makes each usable (01, 08), listed in `docs/settings/usagedata.md`. |
 | **EF migrations** | **Owed in slice 01**: new report storage (owner, template key, name, Then window, Now length, created date, selection, frozen per-metric values with sample sizes and unrounded limits; no settings snapshot, D46), additive, cascade with its owner (D42). Later slices store inside that shape; DESIGN confirms no further migration. Expand-only, `CreateMigration`, all providers. |
@@ -1288,11 +1523,11 @@ Re-run 2026-10-03 after the revision; re-run 2026-10-13 after the Final Wave Rev
 | 1 | Problem clear, domain language | WAIVED — clear, not validated (maintainer-accepted risk D2) | **Clear. Not validated**: DISCOVER G1 FAIL (0 interviews), proceeding is a maintainer-accepted risk (D2, 2026-10-02). US-01's spreadsheet workaround is an **assumption** from desk research, not observed. Every story opens with Elena, Priya, Dev or Martin's situation; no "implement X" titles; no verdict language left in problems. |
 | 2 | Persona specific | PASS | `flow-coach` consulting (Elena, Team Admin, Lightspeed, engagement from 1 Aug 2026), short assessment (Dev, Gravity, ends 2 Oct 2026) and internal (Priya, Gravity, WIP limit from 14 Sep); reader `delivery-lead-rte` (Martin, Viewer). |
 | 3 | 3+ domain examples, real data | PASS | Each story lists ≥ 3 examples with Team names, dates (2 Oct 2026, 31 Jul 2026, 2 Oct 2025 cutoff) and values (21 → 12 days, −43%; 610 → 880 days, +44%). |
-| 4 | UAT G/W/T, 3–7 | PASS | US-01: 5, US-02: 5, US-03: 5, US-04: 4, US-05: 4, US-06: 3, US-07: 4, US-08: 4, US-09: dropped (D46), US-10: 6 (after DESIGN: US-01: 6, US-04: 5, US-05: 5, US-06: 4; 2026-10-13: US-01: 7 with the cannot-be-loaded scenario, US-10: 7 with the stale-save scenario). Each includes an error or boundary path. |
+| 4 | UAT G/W/T, 3–7 | PASS | US-01: 5, US-02: 5, US-03: 5, US-04: 4, US-05: 4, US-06: 3, US-07: 4, US-08: 4, US-09: dropped (D46), US-10: 6 (after DESIGN: US-01: 6, US-04: 5, US-05: 5, US-06: 4; 2026-10-13: US-01: 7 with the cannot-be-loaded scenario, US-10: 7 with the stale-save scenario; 2026-10-14: US-03: 4 on the summary header, US-04: 5 with one step and assertion removed, US-05: 4 on the four-line shape). Each includes an error or boundary path. |
 | 5 | AC from UAT | PASS | AC-n.m per story trace to its scenarios and to D-decisions. |
 | 6 | Right-sized | PASS, two at the edge | Every slice ≤ 1 day (07: ½ day) except 01, re-estimated to 1½ days on 2026-10-13 (walking skeleton; the 4+-components taste test is a borderline fail). US-10 carries 7 scenarios in 1 day (6 before 2026-10-13); it stays one slice because all three fields share one wizard step set (DT4) and one guard. |
-| 7 | Technical notes | PASS | Inventory S1–S11; unrounded limits (S3, D40); PBC Baseline independence (S4); counting against frozen limits needs a limits-in path (US-03); NFRs for performance, accessibility, concurrency and report volume. |
-| 8 | Dependencies tracked | PASS | 02–10 depend on 01; 03 on 02 (dogfood against a past Then); 04 on 03 (the count); 05 on 04 (picker); 06 on 05 (catalog complete); 07 on 01; 08 on 06; ~~09 on 01's snapshot~~ (09 dropped, D46); 10 on 05 and 07; release after 10 (D34). Three new provisional answers (Q8–Q10) are tracked below. The Team tab order depends on Epic 5510 (Refinement sits between Metrics and Reports when it lands, D18) — tracked, not blocking. |
+| 7 | Technical notes | PASS | Inventory S1–S11; ~~unrounded limits (S3, D40); PBC Baseline independence (S4); counting against frozen limits needs a limits-in path (US-03)~~ (superseded by D49, 2026-10-14; US-03 now notes that no new storage is expected for the header); NFRs for performance, accessibility, concurrency and report volume. |
+| 8 | Dependencies tracked | PASS | 02–10 depend on 01; 03 on 02 (dogfood against a past Then; since D52 also: the header was found missing in 02's live check); 04 on 03 (the header; was: the count, D49); 05 on 04 (picker); 06 on 05 (catalog complete); 07 on 01; 08 on 06; ~~09 on 01's snapshot~~ (09 dropped, D46); 10 on 05 and 07; release after 10 (D34). Three new provisional answers (Q8–Q10) are tracked below. The Team tab order depends on Epic 5510 (Refinement sits between Metrics and Reports when it lands, D18) — tracked, not blocking. |
 | 9 | Outcome KPIs | PASS | K1–K5 with targets, baselines, measurement, re-checked against D39; guardrails G1–G3. |
 
 **DoR status: PASSED, with item 1 waived** (clear but not validated; the maintainer accepted the risk in D2, 2026-10-02). Q8–Q10 were confirmed by the maintainer on 2026-10-03; no provisional answer remains.
@@ -1307,13 +1542,14 @@ choice → D43 · Q7 renaming → D44.
 
 **Found while applying them, resolved 2026-10-03** (maintainer): Q8 and Q9 as proposed; Q10 changed to show both values.
 
-8. **Q8 — A lower limit at zero.** For most {Cycle Time} data, Then's lower limit is clamped at 0, so no {Work Item}
+8. *(Superseded by D49, 2026-10-14: there is no below-count any more.)* **Q8 — A lower limit at zero.** For most {Cycle Time} data, Then's lower limit is clamped at 0, so no {Work Item}
    can fall below it; "0 below" would read as "nothing got faster" when nothing could. *Confirmed (AC-3.4)*: show
    "—" with "Then's lower limit is 0" — the same fact `XmRCalculator` already uses to switch off the rules that need
    that limit, not a new threshold. The same applies to {WIP} and {Work Item Age} when their lower limit is 0.
 9. **Q9 — % change from a Then of 0.** A Then value of 0 (e.g. a {Throughput} of 0 per day on a slow Team) has
    no % change. *Confirmed (AC-4.6)*: show the absolute change and "—" for the % with "Then was 0".
-10. **Q10 — What "total {Work Item Age}" means for a window.** Lighthouse's total {Work Item Age} is a daily series;
+10. *(Superseded by D51, 2026-10-14: Average, Median, Min and Max of the daily totals, no last-day value; and by D49:
+    no breaches counted.)* **Q10 — What "total {Work Item Age}" means for a window.** Lighthouse's total {Work Item Age} is a daily series;
     the panel needs one number per window. *Decided (AC-5.2)*: show **both** — the average of the daily totals over
     the window (resists one unusual day) and the actual total on the window's last day ("where you are"), each
     with its change and % change. Breaches against Then's frozen limits count the daily totals (D40).
@@ -1331,10 +1567,13 @@ DESIGN:
   rule engine (D36);
 - the direction of good as a fixed frontend panel property, stored nowhere (D39); note that 5882's server-side
   rendering then has to render the panels themselves rather than re-derive colours on the server;
-- freezing Then's XmR average and limits unrounded, and whether the full Then series is stored too (D40, S3);
-- counting Now's points beyond frozen limits, by side, with a limits-in path (`XmRCalculator` takes values today),
-  never the owner's PBC Baseline (S4);
-- ~~weekly buckets for the {Throughput} median and the week count~~ (superseded by D47); total {Work Item Age} as window average and last-day value (Q10);
+- ~~freezing Then's XmR average and limits unrounded, and whether the full Then series is stored too (D40, S3);~~
+- ~~counting Now's points beyond frozen limits, by side, with a limits-in path (`XmRCalculator` takes values today),
+  never the owner's PBC Baseline (S4);~~ (both superseded by D49, 2026-10-14)
+- *(added 2026-10-14)* the summary header's per-side window and closed count (D52); {WIP} and Total {Work Item Age}
+  as Average, Median, Min, Max of the daily values, each with its own change (D50, D51) — including how a median or
+  average of daily values is rounded for display;
+- ~~weekly buckets for the {Throughput} median and the week count~~ (superseded by D47); total {Work Item Age} as window average and last-day value (Q10) *(superseded by D51)*;
 - ~~the settings snapshot contents (D31)~~ (superseded by D46); calendar-day windows (Bug #5567); creation time budget (≤ 10 s);
 - D36 — shape the report model and the Reports view so a live Signal template (5935) and per-report PDF / email /
   schedule (5882, which needs the saved Now length, D43) land without reshaping them: template-specific payload

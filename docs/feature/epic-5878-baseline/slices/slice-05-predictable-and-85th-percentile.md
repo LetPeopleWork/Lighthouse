@@ -10,30 +10,49 @@
 >
 > Revised 2026-10-03 after DESIGN: average {Work Item Age} has two values per side like the total (D48); every value
 > shows its sample size (D45).
+>
+> Revised 2026-10-14 (D49, D50, D51; maintainer, after the DISTILL sketch review): {WIP} and Total {Work Item Age}
+> each show Average, Median, Min and Max of the window's daily values, each line with its own change and % change.
+> No per-item average age, no last-day values (D48 and Q10 superseded), no count beyond Then's limits. The previous
+> {WIP} and {Work Item Age} scope is kept below, struck through.
 
 ## Goal
 
-The last two v1 panels, so a report shows all four metrics by default: "{WIP}: Then & Now" and "{Work Item Age}: Then
-& Now".
+The last two v1 panels, so a report shows all four metrics by default: "{WIP}" and "Total {Work Item Age}".
+*(Was: "{WIP}: Then & Now" and "{Work Item Age}: Then & Now".)*
 
 ## IN
 
-- {WIP} panel: average {WIP} Then and Now with its range, change and % change on the average; good = down.
-- {Work Item Age} panel: total and average {Work Item Age} Then and Now, change and % change on each; good = down.
+- {WIP} panel (D50): Average, Median, Min and Max of the window's daily {WIP}, Then and Now, rows "Average N",
+  "Median N", "Min N", "Max N"; each line with its own change and % change; good = down.
+- Total {Work Item Age} panel (D51), titled "Total {Work Item Age}": Average, Median, Min and Max of the window's
+  daily total age (the sum of the ages of every {Work Item} in progress that day), Then and Now, rows "Average N
+  days", "Median N days", "Min N days", "Max N days"; each line with its own change and % change; good = down (a
+  growing age reads as worse).
+- A day with nothing in progress is {WIP} 0 and total age 0; a window with nothing in progress shows 0 and 0 days,
+  real zeros, never a dash. A % change from a Then of 0 shows "—" with "Then was 0" (Q9).
+- Panel side headings read just THEN / NOW (D52).
+- All four metrics ticked by default.
+- Reports created before this slice show both as "Not captured for this report" (D27).
+
+*Superseded 2026-10-14 by D49, D50 and D51 (kept for history, not applied):*
+
+- ~~{WIP} panel: average {WIP} Then and Now with its range, change and % change on the average; good = down.~~
+- ~~{Work Item Age} panel: total and average {Work Item Age} Then and Now, change and % change on each; good = down.
   Total {Work Item Age} shows both the average of the daily totals over the window and the actual total on the
   window's last day, each with change and % change (Q10, confirmed 2026-10-03). Average {Work Item Age} likewise
   shows the window average (mean over the window's days of that day's total age ÷ that day's {WIP}; days without
   {WIP} left out) and the last day's value (last day's total age ÷ that day's {WIP}), each with change and % change
-  (D48).
-- Days of Now beyond Then's frozen limits, by side, for {WIP} and total {Work Item Age} (D40): above red, below green.
-- All four metrics ticked by default. Every value with its sample size; "—" with a reason only when truly empty, e.g. no
-  {WIP} for an average age (D45).
-- Reports created before this slice show both as "Not captured for this report" (D27).
+  (D48).~~
+- ~~Days of Now beyond Then's frozen limits, by side, for {WIP} and total {Work Item Age} (D40): above red, below green.~~
+- ~~All four metrics ticked by default. Every value with its sample size; "—" with a reason only when truly empty, e.g. no
+  {WIP} for an average age (D45).~~
 
 ## OUT
 
 Nice-to-have metrics ({SLE} breaches, arrivals, {WIP} streaks, {Feature} size, forecast lens); {Cycle Time}
-predictability (dropped, D39).
+predictability (dropped, D39); a per-item average {Work Item Age} and last-day values (D51); any count beyond Then's
+limits (D49).
 
 ## Learning hypothesis
 
@@ -47,7 +66,7 @@ most reports. Then the template's default selection is wrong.
 
 ## Acceptance criteria
 
-AC-5.1 … AC-5.5 in `feature-delta.md` (US-05).
+AC-5.1 … AC-5.5 in `feature-delta.md` (US-05), rewritten 2026-10-14.
 
 ## Dependencies
 
