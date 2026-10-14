@@ -14,7 +14,6 @@ import {
 	useTheme,
 } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
-import { useQuery } from "@tanstack/react-query";
 import type React from "react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
@@ -42,6 +41,7 @@ import { UsageDataEventName } from "../../services/Api/UsageDataService";
 import { useTerminology } from "../../services/TerminologyContext";
 import { useUsageDataReporter } from "../../services/UsageData/usageDataReporter";
 import { reportFailedNavigation } from "../../utils/navigation";
+import { useOwnerReports } from "../Common/Reports/useOwnerReports";
 
 /** What goes with a Team or Portfolio besides itself, said once its reports have been counted. */
 const reportsClauseOf = (
@@ -71,11 +71,7 @@ const OwnerDeleteDialog: React.FC<{
 	readonly onConfirm: () => void;
 	readonly onCancel: () => void;
 }> = ({ owner, name, open, onConfirm, onCancel }) => {
-	const { reportService } = useContext(ApiServiceContext);
-	const { data, isFetching, isError } = useQuery({
-		queryKey: ["reports", owner.kind, owner.id],
-		queryFn: () => reportService.getReports(owner),
-	});
+	const { data, isFetching, isError } = useOwnerReports(owner);
 	const clause = reportsClauseOf(
 		isFetching,
 		isError,

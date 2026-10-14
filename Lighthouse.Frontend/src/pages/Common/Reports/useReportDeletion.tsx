@@ -2,11 +2,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useContext, useState } from "react";
 import DeleteConfirmationDialog from "../../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog";
-import { useRbac } from "../../../hooks/useRbac";
 import type { IReportOwner } from "../../../models/Reports/Report";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
+import { reportsQueryKeyOf } from "./reportOwner";
 
 const CANNOT_BE_REBUILT = "This Then window can no longer be rebuilt.";
 const COULD_NOT_DELETE = "This report couldn't be deleted. Try again.";
@@ -23,18 +23,6 @@ export interface ReportDeletion {
 	ask: (report: DeletableReport) => void;
 	dialog: React.ReactNode;
 }
-
-/** Whether the viewer may create, change and delete this owner's reports; nobody may until the roles are known. */
-export const useMayEditReports = (
-	owner: IReportOwner,
-): { isEditor: boolean; isLoading: boolean } => {
-	const rbac = useRbac();
-	const isAdmin =
-		owner.kind === "team"
-			? rbac.isTeamAdmin(owner.id)
-			: rbac.isPortfolioAdmin(owner.id);
-	return { isEditor: !rbac.isLoading && isAdmin, isLoading: rbac.isLoading };
-};
 
 /** A Then whose days have fallen out of the kept history is gone for good once its report is. */
 const rebuildWarningOf = (report: DeletableReport): string | undefined =>
@@ -78,7 +66,7 @@ export const useReportDeletion = (
 		close();
 		onDeleted();
 		await queryClient.invalidateQueries({
-			queryKey: ["reports", owner.kind, owner.id],
+			queryKey: reportsQueryKeyOf(owner),
 		});
 	};
 

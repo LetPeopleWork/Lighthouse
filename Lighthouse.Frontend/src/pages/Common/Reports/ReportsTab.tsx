@@ -1,20 +1,20 @@
 import AddIcon from "@mui/icons-material/Add";
 import { Box, Button, Stack, Typography } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
 import type React from "react";
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
 import type {
 	IReportListItem,
 	IReportOwner,
 } from "../../../models/Reports/Report";
-import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { WidgetBody } from "../MetricsView/WidgetShell";
 import { queryStatusOf } from "../MetricsView/widgetStatus";
-import { useMayEditReports, useReportDeletion } from "./ReportDeletion";
 import ReportList from "./ReportList";
 import { ownerTermKeyOf } from "./reportOwner";
+import { useMayEditReports } from "./useMayEditReports";
+import { useOwnerReports } from "./useOwnerReports";
+import { useReportDeletion } from "./useReportDeletion";
 import ReportWizard from "./wizard/ReportWizard";
 import { capSentenceFor } from "./wizard/reportRefusalCopy";
 
@@ -39,16 +39,12 @@ const ListOrEmpty: React.FC<{
 	);
 
 const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({ owner }) => {
-	const { reportService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
 	const [isCreating, setIsCreating] = useState(false);
 	const { isEditor, isLoading: rolesAreLoading } = useMayEditReports(owner);
 	const deletion = useReportDeletion(owner);
 
-	const { data, isFetching, isError, refetch } = useQuery({
-		queryKey: ["reports", owner.kind, owner.id],
-		queryFn: () => reportService.getReports(owner),
-	});
+	const { data, isFetching, isError, refetch } = useOwnerReports(owner);
 
 	const status = queryStatusOf(isFetching, isError);
 	const isAtTheCap = data?.creationBlockedByCap === true;

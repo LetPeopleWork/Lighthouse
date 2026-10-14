@@ -989,7 +989,7 @@ describe("OverviewDashboard", () => {
 			["portfolios", "Test Project 1", 1, "and its report"],
 			["teams", "Test Team 1", 3, "and its 3 reports"],
 		] as const)(
-			"names the reports that go with it when one of the %s is deleted (%i)",
+			"names the reports that go with one of the %s (%s) holding %i when it is deleted",
 			async (section, name, reports, clause) => {
 				const { dialog } = await askToDeleteTheFirstRowOf(section, reports);
 

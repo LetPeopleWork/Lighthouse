@@ -21,10 +21,11 @@ import {
 	panelFor,
 } from "./panels/reportPanelRegistry";
 import UnsupportedMetricPanel from "./panels/UnsupportedMetricPanel";
-import { useMayEditReports, useReportDeletion } from "./ReportDeletion";
 import { reportsPathOf } from "./reportOwner";
 import ThenAndNowHeader from "./ThenAndNowHeader";
 import ThenAndNowSummary from "./ThenAndNowSummary";
+import { useMayEditReports } from "./useMayEditReports";
+import { useReportDeletion } from "./useReportDeletion";
 import { useReportOpenedReporter } from "./useReportOpenedReporter";
 
 const LOADING = "Loading report…";

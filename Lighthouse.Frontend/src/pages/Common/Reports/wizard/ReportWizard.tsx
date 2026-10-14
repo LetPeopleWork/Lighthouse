@@ -17,7 +17,7 @@ import {
 } from "../../../../services/UsageData/usageDataReporter";
 import { reportFailedNavigation } from "../../../../utils/navigation";
 import { queryStatusOf } from "../../MetricsView/widgetStatus";
-import { reportPathOf } from "../reportOwner";
+import { reportPathOf, reportsQueryKeyOf } from "../reportOwner";
 import { refusalCopyFor, useRefusalWords } from "./reportRefusalCopy";
 import { reportTypes } from "./reportTypes";
 import TypeStep from "./TypeStep";
@@ -93,7 +93,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 			reportTemplate: usageDataReportTemplateFor(chosen),
 		});
 		await queryClient.invalidateQueries({
-			queryKey: ["reports", owner.kind, owner.id],
+			queryKey: reportsQueryKeyOf(owner),
 		});
 		onClose();
 		reportFailedNavigation(navigate(reportPathOf(owner, reportId)));
