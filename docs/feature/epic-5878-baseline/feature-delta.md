@@ -3301,7 +3301,11 @@ form.
 and DD33; slice 01 is reworked to them before slice 02 starts, and every later panel copies the same shape:
 
 - **[DT9] Then freezes the 85th, 70th and 50th**, mirroring Now row by row (supersedes DD33's "85th only"). `atThen` for
-  `cycle-time` becomes `{ p85, p70, p50 }`; each value keeps its sample size and absent reason.
+  `cycle-time` becomes `{ p85, p70, p50 }`; each value keeps its sample size and absent reason. *(Extended by D54
+  (2026-10-14, DD38): Then freezes the 95th as well and Now computes it, so `atThen` / `atNow` are
+  `{ p95, p85, p70, p50 }`, the 95th on the same sample size and `no-finished-items` rule as the others. A report
+  stored before D54 carries no Then `p95` member at all — not a null, not a dash — and reads "Not captured for this
+  report"; one stored before DT9 lacks the 95th, 70th and 50th alike. Backend scenarios: rows 220–229.)*
 - **[DT10] A metric panel is three segments, `| Then | Now | Change |`**, titled by the metric word alone
   ("{Cycle Time}", not "{Cycle Time}: Then & Now"). ~~Each side's heading carries the sample size —
   "THEN · 181 {Work Items}", "NOW · 203 {Work Items}" —~~ *(superseded by DT14 and D52 (2026-10-14): the side headings
@@ -3378,13 +3382,14 @@ ADO Story), `it.skip` (frontend), `test.fixme` (E2E). DELIVER un-skips a slice's
 | 03 Summary header *(re-cut 2026-10-14, D49, D52; shipped)* | 11 | 19 | 15 |
 | 04 {Throughput} and the shown metrics | 16 | 22 | 12 |
 | 05 {WIP} and Total {Work Item Age} | 12 | 12 | 5 |
+| 05b {Cycle Time} 95th *(added 2026-10-14, D54; backend only so far — the CHANGE summary (D53) and the 95th's panel row are frontend and come in their own pass)* | 10 | 12 | 6 |
 | 06 Reports on Portfolios | 14 | 14 | 4 |
 | 07 Now length, days since Then ended | 14 | 20 | 15 |
 | 08 Delete and the Community cap | 33 | 34 | 23 |
 | 10 Edit a report | 20 | 22 | 16 |
-| **Total** | **218** | **280** | **181 (65%); error alone 117 (42%)** |
+| **Total** | **228** | **292** | **187 (64%); error alone 119 (41%)** |
 
-By layer: 137 backend cases, 142 frontend cases, 1 E2E walking skeleton *(2026-10-14; was 144 / 116)*. Slices
+By layer: 149 backend cases, 142 frontend cases, 1 E2E walking skeleton *(2026-10-14; was 144 / 116, then 137 / 142 before slice 05b's backend cases)*. Slices
 01–03 have shipped, so their cases are live; the rest stay pending. A scenario naming two slices is listed under
 the first; where its cases depend on the later slice, each case carries that slice's own marker (`ReportUsageEventsTests`,
 `ReportWindowBoundaryScenarios`). *Revised 2026-10-13 after DESIGN's revision* (rows 7, 14, 15, 36, 101, 149, 180,
@@ -3411,7 +3416,7 @@ version wrote and the Team's other report stay as they were.
 Every case also carries `@contract-shape:` and, where a KPI is counted, `@kpi-OUT-5878-K1-report-created`,
 `@kpi-OUT-5878-K2-reports-reopened`, `@kpi-OUT-5878-K4-community-cap-reached` or
 `@kpi-OUT-5878-guardrail-quick-deletes`. The G3 parity guardrail (`@kpi-OUT-5878-G3`: rebuilt Then values equal the
-Metrics tab's for the same days) is `The_rebuilt_Then_matches_the_Metrics_tab_for_the_same_days` (02) and `Thens_total_age_agrees_with_the_Metrics_tab_day_by_day` (05; *2026-10-14*, was the last day's total only, which D51 dropped).
+Metrics tab's for the same days) is `The_rebuilt_Then_matches_the_Metrics_tab_for_the_same_days` (02) and `Thens_total_age_agrees_with_the_Metrics_tab_day_by_day` (05; *2026-10-14*, was the last day's total only, which D51 dropped), and `Thens_95th_is_the_95th_the_Metrics_tab_shows_for_the_same_days` (05b).
 
 **Also 2026-10-14**: the ArchUnit rule `The_Reports_module_does_not_use_the_process_behaviour_chart_or_its_baseline`
 names `XmRCalculator` too (DESIGN E2, live; a throwaway dependency from `ReportWindowPolicy` made it fail once). It is
@@ -3638,6 +3643,26 @@ an architecture rule, not a scenario, and is not counted below.
 | 217 | keep nothing a payload says about Then's limits | 04 | 04 | `Report.test.ts` | frontend unit (Vitest, schema) | boundary | 1 | @contract-shape:pure-function |
 | 218 | says WIP and Total Work Item Age were not captured for a report made before they existed | 05 | 05 | `ReportView.test.tsx` | frontend AT (Vitest + RTL) | boundary | 1 | @contract-shape:unbounded-preservation |
 | 219 | read a side of daily values as its average, median, min and max (live) | 05 | 05 | `Report.test.ts` | frontend unit (Vitest, schema) | happy | 1 | @contract-shape:pure-function |
+| 220 | The Cycle Time panel shows the 95th for Then and Now | 05b | 05b | `Slice05bCycleTime95thScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @contract-shape:bounded-change |
+| 221 | Thens 95th is the 95th the Metrics tab shows for the same days | 05b | 05b | `Slice05bCycleTime95thScenarios.cs` | backend AT (HTTP, real EF) | happy | 1 | @driving_port @kpi-OUT-5878-G3 @contract-shape:pure-function |
+| 222 | A report frozen before the 95th was captured has no Then 95th and still shows Nows | 05b | 05b | `Slice05bCycleTime95thScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 223 | A report that froze only the 85th has no Then 95th either | 05b | 05b | `Slice05bCycleTime95thScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:unbounded-preservation |
+| 224 | With a single finished Work Item the 95th is that item with its sample size | 05b | 05b | `Slice05bCycleTime95thScenarios.cs` | backend AT (HTTP, real EF) | boundary | 1 | @driving_port @contract-shape:pure-function |
+| 225 | With no finished Work Items the 95th is a dash with the reason, never a zero | 05b | 05b | `Slice05bCycleTime95thScenarios.cs` | backend AT (HTTP, real EF) | error | 1 | @driving_port @contract-shape:pure-function |
+| 226 | Then freezes and Now shows the 95th beside the others on the same sample size | 05b | 05b | `CycleTimeReportMetricTest.cs` | backend unit (NUnit, series faked) | happy | 3 | @contract-shape:pure-function |
+| 227 | A window without finished items shows the 95th as a dash with its reason too | 05b | 05b | `CycleTimeReportMetricTest.cs` | backend unit (NUnit, series faked) | error | 1 | @contract-shape:pure-function |
+| 228 | A report stored before Then kept the 95th opens with Thens 95th not captured and Nows shown | 05b | 05b | `CycleTimeReportMetricTest.cs` | backend unit (NUnit, series faked) | boundary | 1 | @contract-shape:unbounded-preservation |
+| 229 | A frozen 95th is one more member of the capture and reads back with its sample size (live) | 05b | 05b | `ThenAndNowPayloadRoundTripTest.cs` | backend unit (NUnit, payload) | happy | 1 | @contract-shape:pure-function |
+
+**Slice 05b, backend (2026-10-14).** Rows 220–228 are pending under `PendingSlice05b` ("Epic #5878 slice 05b (#6163) -
+pending DELIVER"); row 229 is live, because the payload already keeps any member it is given (DD38: no migration,
+`PayloadSchemaVersion` stays 1). The unit cases build the series' answer through one test-side record,
+`CycleTimeReportMetricTest.Answer(P95, P85, P70, P50, FinishedItems)`, which drops `P95` until
+`CycleTimePercentiles` carries it — that one line is the crafter's first edit (DD38's "extend the test builder
+first"). Rows 222 and 223 remove the stored `p95` member by SQL, the way an older version left the row; until Then
+freezes the 95th there is no member to remove, which is their RED. The frontend's 05b cases (the panel's 95th row
+above the 85th with `ForecastLevel(95)`, "Not captured for this report" and "—" for a pre-D54 report, the header's
+CHANGE segment) are DISTILLed in a separate frontend pass.
 
 ## Wave: DISTILL / [REF] WS strategy
 
@@ -3729,7 +3754,9 @@ Reports endpoints (fake).
 260 of 260 runnable cases fail for missing behaviour when un-skipped (144 backend, 116 frontend); none broken (re-run
 2026-10-13 after the revision). *Re-run 2026-10-14 for the reworked slice 04 and 05 cases*: every one fails for
 missing behaviour except `An_older_report_did_not_capture_Throughput`, which holds vacuously until slice 04 captures
-{Throughput} (a guard slice 04 must keep green). E2E type-checked and listed, not run live. Detail: `distill/red-classification.md`.
+{Throughput} (a guard slice 04 must keep green). E2E type-checked and listed, not run live. *Slice 05b backend (2026-10-14)*: all 11 pending cases fail for missing
+behaviour when un-skipped — the 95th is absent from both sides, or (rows 222, 223) the stored capture holds no `p95`
+to remove; every non-95th assertion in them already passes. Detail: `distill/red-classification.md`.
 
 
 ## Wave: DISTILL / [REF] Review

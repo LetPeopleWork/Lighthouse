@@ -35,6 +35,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     {
         protected const string PendingSlice01 = "Epic #5878 slice 01 (#6159) - pending DELIVER";
         protected const string PendingSlice05 = "Epic #5878 slice 05 (#6163) - pending DELIVER";
+        protected const string PendingSlice05b = "Epic #5878 slice 05b (#6163) - pending DELIVER";
         protected const string PendingSlice06 = "Epic #5878 slice 06 (#6164) - pending DELIVER";
         protected const string PendingSlice07 = "Epic #5878 slice 07 (#6165) - pending DELIVER";
         protected const string PendingSlice08 = "Epic #5878 slice 08 (#6166) - pending DELIVER";
@@ -53,6 +54,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         protected const string EngagementStart = "Then & Now — engagement start";
 
+        protected const string P95 = "p95";
         protected const string P85 = "p85";
         protected const string P70 = "p70";
         protected const string P50 = "p50";

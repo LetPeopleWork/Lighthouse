@@ -100,3 +100,15 @@ The slice-07 placeholder "says how long ago Then ended…" is an `it.todo` until
 the line; it has no assertion to classify. Suites re-run skipped afterwards: backend Reports filter 366 passed, 69
 skipped; frontend full suite green with skips.
 
+
+## Slice 05b, backend (2026-10-14)
+
+Each file was un-skipped in a copy, run, and restored.
+
+| Where | Cases | Failure | Classification |
+|---|---|---|---|
+| `Slice05bCycleTime95thScenarios` | 6 | four read Then's and Now's `p95` as not in the report (`IsPresent` false); the two older-report cases stop in their Given, because the stored capture holds no `p95` to remove. Every non-95th assertion in them passes, so the seeded data is right | MISSING_FUNCTIONALITY |
+| `CycleTimeReportMetricTest` | 5 | the sides hold `p85`, `p70`, `p50` only; reading `p95` finds no such key | MISSING_FUNCTIONALITY |
+
+`ThenAndNowPayloadRoundTripTest.A_frozen_95th_is_one_more_member_of_the_capture_and_reads_back_with_its_sample_size`
+is live and green: the payload already keeps a member it is given.
