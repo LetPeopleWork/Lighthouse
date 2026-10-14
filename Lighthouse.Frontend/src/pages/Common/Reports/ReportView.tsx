@@ -2,7 +2,7 @@ import { Box, Button, Stack } from "@mui/material";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useContext } from "react";
-import { Link as RouterLink } from "react-router";
+import { Link as RouterLink, useNavigate } from "react-router";
 import type {
 	IReport,
 	IReportMetric,
@@ -12,6 +12,7 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { reportFailedNavigation } from "../../../utils/navigation";
 import { WidgetBody } from "../MetricsView/WidgetShell";
 import { queryStatusOf } from "../MetricsView/widgetStatus";
 import {
@@ -20,6 +21,7 @@ import {
 	panelFor,
 } from "./panels/reportPanelRegistry";
 import UnsupportedMetricPanel from "./panels/UnsupportedMetricPanel";
+import { useMayEditReports, useReportDeletion } from "./ReportDeletion";
 import { reportsPathOf } from "./reportOwner";
 import ThenAndNowHeader from "./ThenAndNowHeader";
 import ThenAndNowSummary from "./ThenAndNowSummary";
@@ -29,6 +31,7 @@ const LOADING = "Loading report…";
 const COULD_NOT_LOAD = "This report couldn't be loaded. Reload to try again.";
 const MADE_BY_A_NEWER_VERSION =
 	"This report was made by a newer version of Lighthouse and can't be shown here.";
+const NO_LONGER_EXISTS = "This report no longer exists.";
 const BODY_MIN_HEIGHT = 120;
 
 /** A metric shown on a report made before it was captured reads as not captured on both sides. */
@@ -43,6 +46,13 @@ const isMadeByANewerVersion = (error: Error | null): boolean =>
 	error instanceof ApiError &&
 	error.code === 422 &&
 	error.problemCode === "template-not-supported";
+
+/** What to say about an answer that asking again will not change; nothing for one that might. */
+const finalFailureOf = (error: Error | null): string | undefined => {
+	if (isMadeByANewerVersion(error)) return MADE_BY_A_NEWER_VERSION;
+	if (error instanceof ApiError && error.code === 404) return NO_LONGER_EXISTS;
+	return undefined;
+};
 
 const ANSWERS_THAT_DO_NOT_CHANGE = new Set<string | number>([404, 422]);
 
@@ -107,12 +117,25 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 	useReportOpenedReporter(isError ? undefined : report);
 
 	const reportsPath = reportsPathOf(owner);
+	const navigate = useNavigate();
+	const { isEditor } = useMayEditReports(owner);
+	const deletion = useReportDeletion(owner, () =>
+		reportFailedNavigation(navigate(reportsPath)),
+	);
 	const status = queryStatusOf(isFetching, isError);
-	const madeByANewerVersion = isMadeByANewerVersion(error);
+	const finalFailure = finalFailureOf(error);
 
 	return (
 		<Stack spacing={2} data-report-status={status}>
-			<ThenAndNowHeader reportsPath={reportsPath} name={report?.name} />
+			<ThenAndNowHeader
+				reportsPath={reportsPath}
+				name={report?.name}
+				onDelete={
+					isEditor && report !== undefined
+						? () => deletion.ask(report)
+						: undefined
+				}
+			/>
 			<Box
 				aria-busy={status === "loading" ? "true" : undefined}
 				sx={{
@@ -126,10 +149,8 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 					status={status}
 					hasContentToDim={report !== undefined}
 					loadingMessage={LOADING}
-					failureMessage={
-						madeByANewerVersion ? MADE_BY_A_NEWER_VERSION : COULD_NOT_LOAD
-					}
-					onRetry={madeByANewerVersion ? undefined : () => refetch()}
+					failureMessage={finalFailure ?? COULD_NOT_LOAD}
+					onRetry={finalFailure === undefined ? () => refetch() : undefined}
 				>
 					{report !== undefined && (
 						<Stack spacing={2}>
@@ -142,13 +163,14 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 					)}
 				</WidgetBody>
 			</Box>
-			{status === "error" && madeByANewerVersion && (
+			{status === "error" && finalFailure !== undefined && (
 				<Box>
 					<Button component={RouterLink} to={reportsPath}>
 						Back to Reports
 					</Button>
 				</Box>
 			)}
+			{deletion.dialog}
 		</Stack>
 	);
 };

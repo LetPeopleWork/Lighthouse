@@ -1464,7 +1464,7 @@ describe("A report on a slow or failing connection", () => {
 
 	// @us-08 @slice-08 @error @ac-1.8 @contract-shape:pure-function
 	// Deleted, or another owner's: either way there is nothing here to show.
-	it.skip("says a report that is gone no longer exists and leads back to the list", async () => {
+	it("says a report that is gone no longer exists and leads back to the list", async () => {
 		renderWithReports(
 			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
 			{
@@ -1548,7 +1548,7 @@ describe("A report on a slow or failing connection", () => {
 			{ reportService: aReportService({ getReport }), retry: 2 },
 		);
 
-		expect(await screen.findByText(COULD_NOT_LOAD)).toBeVisible();
+		expect(await screen.findByText(NO_LONGER_EXISTS)).toBeVisible();
 		expect(getReport).toHaveBeenCalledTimes(1);
 	});
 
@@ -1675,7 +1675,7 @@ describe("Who may change a report from its page", () => {
 	});
 
 	// @us-08 @slice-08 @driving_port @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:bounded-change
-	it.skip("deletes the report after asking, warns when its Then cannot be rebuilt, and goes back to the list", async () => {
+	it("deletes the report after asking, warns when its Then cannot be rebuilt, and goes back to the list", async () => {
 		const reportService = openTheReport(
 			theEngagementStartReport({
 				thenAndNow: {
