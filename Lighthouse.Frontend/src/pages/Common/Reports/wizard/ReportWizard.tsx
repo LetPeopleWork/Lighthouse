@@ -146,8 +146,9 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 
 	const save = async (report: IReport, bounds: IReportTemplates) => {
 		startSubmitting();
+		let saved: IReport;
 		try {
-			await reportService.editReport(owner, report.id, {
+			saved = await reportService.editReport(owner, report.id, {
 				...type.toChange(draft, bounds),
 				concurrencyToken: report.concurrencyToken,
 			});
@@ -156,7 +157,9 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 			return;
 		}
 
-		// Not awaited: the page shows the report it has while the saved one is read again.
+		// The saved report carries the new token, so the next edit is not refused as somebody else's change.
+		queryClient.setQueryData(reportQueryKeyOf(owner, report.id), saved);
+		// Not awaited: the page shows the saved report, dimmed, while it is read again.
 		queryClient
 			.invalidateQueries({ queryKey: reportQueryKeyOf(owner, report.id) })
 			.catch(() => undefined);

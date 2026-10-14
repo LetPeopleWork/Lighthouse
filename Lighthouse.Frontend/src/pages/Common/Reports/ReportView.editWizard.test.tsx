@@ -244,8 +244,8 @@ describe("Editing a report", () => {
 	});
 
 	// @us-10 @slice-10 @boundary @contract-shape:pure-function
-	// The report already on screen is the one before the edit; it must not pass for the saved one.
-	it("dims the report under a spinner while it is read again after the save", async () => {
+	// The page shows the report the save answered with, dimmed until it has been read again.
+	it("dims the saved report under a spinner while it is read again after the save", async () => {
 		const reread = deferred<IReport>();
 		await openTheEditWizard(
 			aReportService({
@@ -264,7 +264,39 @@ describe("Editing a report", () => {
 		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 		expect(screen.getByRole("progressbar")).toBeVisible();
 		expect(document.querySelector('[data-report-status="ready"]')).toBeNull();
-		expect(screen.getByText(ENGAGEMENT_START)).toBeInTheDocument();
+		expect(screen.getByText(SINCE_AUGUST)).toBeInTheDocument();
+		expect(screen.queryByText(ENGAGEMENT_START)).toBeNull();
+	});
+
+	// @us-10 @slice-10 @ac-10.6 @boundary @contract-shape:bounded-change
+	// A second edit made before the re-read lands must not be refused as somebody else's change.
+	it("edits the saved report, not the one before, when Edit is chosen again", async () => {
+		const reportService = await openTheEditWizard(
+			aReportService({
+				getReport: vi
+					.fn()
+					.mockResolvedValueOnce(theEngagementStartReport())
+					.mockReturnValue(deferred<IReport>().promise),
+				editReport: vi.fn().mockResolvedValue(renamed()),
+			}),
+		);
+		await onToTheLastStep();
+		await renameTo(SINCE_AUGUST);
+		await userEvent.click(await theSaveButton());
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+		await userEvent.click(screen.getByRole("button", { name: "Edit report" }));
+		await onToTheLastStep();
+
+		expect(await theNameField()).toHaveValue(SINCE_AUGUST);
+		await userEvent.click(await theSaveButton());
+		await waitFor(() =>
+			expect(reportService.editReport).toHaveBeenLastCalledWith(
+				LIGHTSPEED,
+				ENGAGEMENT_START_ID,
+				expect.objectContaining({ concurrencyToken: "token-2" }),
+			),
+		);
 	});
 });
 
