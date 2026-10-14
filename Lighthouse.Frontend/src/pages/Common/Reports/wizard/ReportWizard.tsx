@@ -36,6 +36,11 @@ const TITLE_ID = "report-wizard-title";
 const STALE_SAVE =
 	"This report was changed by someone else. Reload to see their changes.";
 const TYPE_STEP = 0;
+/** Type and Then are locked on an edit, so it opens on Now, the first step it can change. */
+const FIRST_EDITABLE_STEP = 2;
+
+const firstStepOf = (isEditing: boolean): number =>
+	isEditing ? FIRST_EDITABLE_STEP : TYPE_STEP;
 
 const CREATING = { title: "Create Report", action: "Create" };
 const EDITING = { title: "Edit report", action: "Save" };
@@ -69,10 +74,10 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 	const queryClient = useQueryClient();
 	const navigate = useNavigate();
 	const reportUsage = useUsageDataReporter();
-	const [activeStep, setActiveStep] = useState(TYPE_STEP);
 	const chosen: ReportTemplateKey = "then-and-now";
 	const type = reportTypes[chosen];
 	const isEditing = editing !== undefined;
+	const [activeStep, setActiveStep] = useState(firstStepOf(isEditing));
 	const words = isEditing ? EDITING : CREATING;
 	const [draft, setDraft] = useState(() =>
 		editing === undefined ? type.newDraft() : type.draftOf(editing),

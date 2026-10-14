@@ -83,9 +83,13 @@ const openTheEditWizard = async (
 	return reportService;
 };
 
+const back = async () =>
+	userEvent.click(
+		within(await theWizard()).getByRole("button", { name: "Back" }),
+	);
+
 const onToTheLastStep = async () => {
-	await next();
-	await next();
+	await theNowLengthField();
 	await next();
 };
 
@@ -104,8 +108,25 @@ describe("Editing a report", () => {
 	});
 
 	// @us-10 @slice-10 @driving_port @contract-shape:pure-function
+	it("opens on Now, the first step an edit can change", async () => {
+		await openTheEditWizard();
+
+		expect(await theNowLengthField()).toBeEnabled();
+		expect(
+			within(await theWizard()).queryByLabelText("Then ends on"),
+		).toBeNull();
+		expect(
+			within(await theWizard()).queryByRole("radio", { name: /Then & Now/ }),
+		).toBeNull();
+	});
+
+	// @us-10 @slice-10 @driving_port @contract-shape:pure-function
 	it("shows the Type locked", async () => {
 		await openTheEditWizard();
+		await theNowLengthField();
+		await back();
+		await theThenEndField();
+		await back();
 
 		const wizard = await theWizard();
 
@@ -119,7 +140,8 @@ describe("Editing a report", () => {
 	// @us-10 @slice-10 @error @contract-shape:unbounded-preservation
 	it("shows Then as it was frozen, locked", async () => {
 		await openTheEditWizard();
-		await next();
+		await theNowLengthField();
+		await back();
 
 		expect(await theThenEndField()).toHaveValue("2026-07-31");
 		expect(await theThenEndField()).toBeDisabled();
@@ -130,8 +152,6 @@ describe("Editing a report", () => {
 	// @us-10 @us-07 @slice-10 @driving_port @contract-shape:bounded-change
 	it("saves a new name, a new Now and the shown metrics, never Then, over the report as it was read", async () => {
 		const reportService = await openTheEditWizard();
-		await next();
-		await next();
 		await enterNumber(await theNowLengthField(), 30);
 		await next();
 		await userEvent.click(await theMetricBox("Work Item Age"));
