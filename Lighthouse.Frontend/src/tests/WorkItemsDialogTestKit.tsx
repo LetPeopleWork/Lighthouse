@@ -267,7 +267,7 @@ export async function turnColumns(
 			assert.fail(`Manage columns does not offer ${field}`);
 		}
 		if (box.checked !== shown) {
-			await user.click(box);
+			await user.click(box); // NOSONAR each click re-renders the Manage columns panel, so clicks must not overlap and run in the order given
 		}
 	}
 	await user.keyboard("{Escape}");
