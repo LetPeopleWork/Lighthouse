@@ -44,13 +44,15 @@ const ThenStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 				onChange={(thenLength) => onChange({ ...draft, thenLength })}
 				disabled={disabled}
 				fieldLabel="Then length in days"
+				presetsLabel="Then length presets"
+				minimumLengthDays={templates.minimumLengthDays}
 				customLabel="Custom:"
 			/>
 			{days !== null && (
 				<Typography color="text.secondary">{`= ${days}`}</Typography>
 			)}
 			{refusal !== null && (
-				<Typography color="error">
+				<Typography color="error" role="alert">
 					{windowRefusalCopyFor(refusal, refusalWordsFor(templates))}
 				</Typography>
 			)}

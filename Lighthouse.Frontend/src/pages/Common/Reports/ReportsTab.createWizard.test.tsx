@@ -524,7 +524,9 @@ describe("Step three: Now", () => {
 
 		await enterNumber(await theNowLengthField(), 13);
 
-		expect(await theWizard()).toHaveTextContent("Now needs at least 14 days.");
+		expect(within(await theWizard()).getByRole("alert")).toHaveTextContent(
+			"Now needs at least 14 days.",
+		);
 		expect(
 			within(await theWizard()).getByRole("button", { name: "Next" }),
 		).toBeDisabled();
@@ -544,6 +546,59 @@ describe("Step three: Now", () => {
 		expect(
 			within(await theWizard()).getByRole("button", { name: "Next" }),
 		).toBeDisabled();
+	});
+
+	it.each(["", "-5", "14.5"])(
+		"names no window while its length reads %j, not a whole number of days",
+		async (entered) => {
+			await openTheWizard();
+			await next();
+			await next();
+
+			await userEvent.clear(await theNowLengthField());
+			if (entered !== "") {
+				await userEvent.type(await theNowLengthField(), entered);
+			}
+
+			expect(await theWizard()).not.toHaveTextContent("= the last");
+		},
+	);
+
+	it("names the presets of each window for a screen reader", async () => {
+		await openTheWizard();
+		await next();
+
+		expect(
+			within(await theWizard()).getByRole("group", {
+				name: "Then length presets",
+			}),
+		).toBeVisible();
+
+		await next();
+
+		expect(
+			within(await theWizard()).getByRole("group", {
+				name: "Now length presets",
+			}),
+		).toBeVisible();
+	});
+
+	it("allows no fewer days in either length field than the server's shortest window", async () => {
+		await openTheWizard(
+			aReportService({
+				getReports: vi.fn().mockResolvedValue(aReportList([])),
+				getTemplates: vi
+					.fn()
+					.mockResolvedValue(aTemplateList({ minimumLengthDays: 21 })),
+			}),
+		);
+		await next();
+
+		expect(await theThenLengthField()).toHaveAttribute("min", "21");
+
+		await next();
+
+		expect(await theNowLengthField()).toHaveAttribute("min", "21");
 	});
 });
 

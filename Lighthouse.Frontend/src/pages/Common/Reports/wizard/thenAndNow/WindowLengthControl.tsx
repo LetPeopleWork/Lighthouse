@@ -16,6 +16,8 @@ interface WindowLengthControlProps {
 	onChange: (length: string) => void;
 	disabled: boolean;
 	fieldLabel: string;
+	presetsLabel: string;
+	minimumLengthDays: number;
 	leadingLabel?: string;
 	customLabel: string;
 }
@@ -27,6 +29,8 @@ const WindowLengthControl: React.FC<Readonly<WindowLengthControlProps>> = ({
 	onChange,
 	disabled,
 	fieldLabel,
+	presetsLabel,
+	minimumLengthDays,
 	leadingLabel,
 	customLabel,
 }) => {
@@ -41,6 +45,7 @@ const WindowLengthControl: React.FC<Readonly<WindowLengthControlProps>> = ({
 			<ToggleButtonGroup
 				exclusive
 				size="small"
+				aria-label={presetsLabel}
 				disabled={disabled}
 				value={presets.includes(lengthDays ?? 0) ? lengthDays : null}
 				onChange={(_, preset: number | null) => {
@@ -61,7 +66,7 @@ const WindowLengthControl: React.FC<Readonly<WindowLengthControlProps>> = ({
 				disabled={disabled}
 				onChange={(event) => onChange(event.target.value)}
 				slotProps={{
-					htmlInput: { "aria-label": fieldLabel, min: 1 },
+					htmlInput: { "aria-label": fieldLabel, min: minimumLengthDays },
 				}}
 				sx={{ width: 100 }}
 			/>

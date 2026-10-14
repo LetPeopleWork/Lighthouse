@@ -3,6 +3,7 @@ import type React from "react";
 import { useRefusalWords, windowRefusalCopyFor } from "../reportRefusalCopy";
 import type { ReportTypeStepProps } from "../reportTypes";
 import {
+	lengthOf,
 	nowLengthOf,
 	nowRefusalOf,
 	type ThenAndNowDraft,
@@ -18,6 +19,7 @@ const NowStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 	disabled,
 }) => {
 	const nowLength = nowLengthOf(draft);
+	const nowDays = lengthOf(nowLength);
 	const refusalWordsFor = useRefusalWords(owner);
 	const refusal = nowRefusalOf(draft, templates);
 
@@ -29,14 +31,18 @@ const NowStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 				onChange={(length) => onChange({ ...draft, nowLength: length })}
 				disabled={disabled}
 				fieldLabel="Now length in days"
+				presetsLabel="Now length presets"
+				minimumLengthDays={templates.minimumLengthDays}
 				leadingLabel="Length"
 				customLabel="or"
 			/>
-			<Typography color="text.secondary">
-				{`= the last ${nowLength} days, always ending today`}
-			</Typography>
+			{nowDays !== null && (
+				<Typography color="text.secondary">
+					{`= the last ${nowDays} days, always ending today`}
+				</Typography>
+			)}
 			{refusal !== null && (
-				<Typography color="error">
+				<Typography color="error" role="alert">
 					{windowRefusalCopyFor(refusal, refusalWordsFor(templates))}
 				</Typography>
 			)}
