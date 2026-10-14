@@ -147,6 +147,7 @@ dotnet-nunit:NUnit2056 ::: cs ::: Assert\.Multiple\( ::: Use `using (Assert.Ente
 dotnet-nunit:NUnit2010 ::: cs ::: Assert\.That\(.*\.Equals\( ::: Use `Is.Not.EqualTo` constraint, not direct `.Equals()` inside `Assert.That` (NUnit2010).
 csharpsquid:S8733 ::: cs ::: \.AsSplitQuery\( ::: Never call `.AsSplitQuery()` — split-query is configured globally per provider in `DatabaseConfigurator`/`LighthouseAppContextFactory`, and it is relational-only so it breaks the InMemory test fixtures. If S8733 fires, `#pragma warning disable S8733` at the call site. See the 2026-07-30 S8733 entry.
 typescript:S7761 ::: ts,tsx ::: (get|set|has|remove)Attribute\(\s*["'`]data- ::: S7761 — read and write `data-*` attributes through `el.dataset.camelName`, never `getAttribute("data-…")`/`setAttribute`. A CSS selector string such as `[data-field="x"]` is fine. See the 2026-10-11 S7761 entry.
+typescript:S3358 ::: ts,tsx ::: ^\s*[?:]\s.*\$\{[^}]*\s\?\s ::: S3358 — a ternary inside a template-literal `${…}` slot on a ternary branch counts as nested. Extract a helper with an early return and a named local (e.g. `noun`). See the 2026-05-16 S3358 entry (Recurrence: 3).
 <!-- LEDGER-CHECKS:END -->
 
 ## Preflight rules — apply by habit before every edit (non-greppable dedup)
@@ -1247,6 +1248,7 @@ get re-applied.
   git diff -U0 origin/main... -- '*.tsx' | grep '^+' | grep -v '^+++' | grep -c '?'
   ```
   Any added line carrying two or more `?` is the one to refactor.
+- **Recurrence: 3** — 2026-10-14, epic-5878 Then & Now (`ThroughputPanel.tsx:56`, run 38550230563). Same construct a third time: `` : `Total ${total} ${total === 1 ? workItem : workItems}` `` as the else-branch of a `total === null` ternary. Biome's formatter splits the outer ternary across lines, so the "two `?` on one line" grep above saw only one and missed it. Fixed the recorded way: a `totalText(total, workItem, workItems)` helper with an early return and a named `noun`. **Now a hard ledger check** (`typescript:S3358` in the machine-readable list): an added line that opens with a ternary branch (`?` or `:`) and holds a ternary inside a `${…}` slot is blocked at commit. Inside a worktree that hook is blind (see the 2026-08-01 note), so grep the diff by hand there.
 
 ### 2026-05-20 — typescript:S107 / S3776 / S3358 land together when a UI feature grows a third axis-mode in one component
 

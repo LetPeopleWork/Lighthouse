@@ -41,6 +41,16 @@ const absenceNotesOf = ({
 	return [absenceTextOf(explained, sideName, workItems)];
 };
 
+const totalText = (
+	total: number | null,
+	workItem: string,
+	workItems: string,
+): string => {
+	if (total === null) return `Total ${DASH}`;
+	const noun = total === 1 ? workItem : workItems;
+	return `Total ${total} ${noun}`;
+};
+
 const ThroughputLines: React.FC<
 	Readonly<ThenNowSideProps & { workItem: string }>
 > = ({ workItem, ...sideProps }) => {
@@ -51,9 +61,7 @@ const ThroughputLines: React.FC<
 			<PanelLine>
 				<NeutralLineIcon Icon={FunctionsIcon} />
 				<Typography component="span">
-					{total === null
-						? `Total ${DASH}`
-						: `Total ${total} ${total === 1 ? workItem : workItems}`}
+					{totalText(total, workItem, workItems)}
 				</Typography>
 			</PanelLine>
 			<PanelLine>
