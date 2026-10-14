@@ -238,19 +238,19 @@ jobs:
           fi
 
       - name: Upload signed DMG artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: Lighthouse-osx-dmg-${{ inputs.version }}
           path: ./Lighthouse-${{ inputs.version }}.dmg
 
       - name: Upload signed app zip artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: Lighthouse-osx-app-${{ inputs.version }}
           path: ./Lighthouse-${{ inputs.version }}.app.zip
 
       - name: Upload macOS updater artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: Lighthouse-osx-updater-${{ inputs.version }}
           path: |
