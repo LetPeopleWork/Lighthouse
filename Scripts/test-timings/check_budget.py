@@ -2,6 +2,23 @@
 
 from __future__ import annotations
 
+import sys
+
+MINIMUM_PYTHON = (3, 12)
+
+
+def require_python(version_info: tuple) -> None:
+    if tuple(version_info[:2]) < MINIMUM_PYTHON:
+        found = ".".join(str(part) for part in version_info[:3])
+        raise SystemExit(
+            f"check_budget.py needs Python {'.'.join(map(str, MINIMUM_PYTHON))} or newer, "
+            f"but runs on Python {found}"
+        )
+
+
+# Refuse before importing anything an older interpreter might not be able to load.
+require_python(sys.version_info)
+
 import argparse
 import csv
 import json
@@ -157,9 +174,9 @@ def escaped(text: str) -> str:
     return text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
 
 
-def annotation(finding: Finding, allowlist_name: str) -> str:
+def annotation(finding: Finding, allowlist_name: str, kind: str = "error") -> str:
     return (
-        f"::error::{escaped(finding.unit)} took {finding.seconds:.1f}s, "
+        f"::{kind}::{escaped(finding.unit)} took {finding.seconds:.1f}s, "
         f"over the {finding.limit}s {finding.limit_kind} set in {allowlist_name}"
     )
 
@@ -272,11 +289,13 @@ def _check(arguments: argparse.Namespace) -> int:
 
     findings = judge(arguments.stack, rows, budget_seconds, ceilings)
     stale = stale_entries(list(ceilings), _still_present(arguments, rows, ceilings))
+    kind = "warning" if arguments.warn_only else "error"
     for finding in findings:
-        print(annotation(finding, arguments.allowlist.name))
+        print(annotation(finding, arguments.allowlist.name, kind))
     for unit in stale:
         print(stale_annotation(arguments.stack, unit, arguments.allowlist.name))
-    return 1 if findings or stale else 0
+    breached = bool(findings) and not arguments.warn_only
+    return 1 if breached or stale else 0
 
 
 def _still_present(

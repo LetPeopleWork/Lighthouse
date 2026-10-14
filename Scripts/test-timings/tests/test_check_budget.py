@@ -17,8 +17,6 @@ CHECK_BUDGET = SCRIPTS / "check_budget.py"
 VITEST_TO_CSV = SCRIPTS / "vitest_to_csv.py"
 TRX_TO_CSV = SCRIPTS / "trx_to_csv.py"
 
-PENDING = unittest.skip("pending — DELIVER slice 06")
-
 BUDGET_SECONDS = 60
 ALLOWLIST_NAME = "test-time-budget.json"
 TESTS_NAMESPACE = "Lighthouse.Backend.Tests.Services"
@@ -562,7 +560,6 @@ class ATimingFileThatCannotBeReadFailsClosed(BudgetCheckTestCase):
 
 
 class WarnOnlySoftensABreachButNothingElse(BudgetCheckTestCase):
-    @PENDING
     def test_warn_only_reports_a_class_over_the_budget_as_a_warning_and_passes(self):
         timings = self.workspace.backend_timings(
             {f"{TESTS_NAMESPACE}.CacheTest.ConcurrentReadersAndWriters": 61.0}
@@ -577,7 +574,6 @@ class WarnOnlySoftensABreachButNothingElse(BudgetCheckTestCase):
             ALLOWLIST_NAME,
         )
 
-    @PENDING
     def test_warn_only_reports_an_allowlisted_class_over_its_ceiling_as_a_warning_and_passes(self):
         self.workspace.declare_test_class("DataProtectionKeyRingTest")
         timings = self.workspace.backend_timings(
@@ -594,7 +590,6 @@ class WarnOnlySoftensABreachButNothingElse(BudgetCheckTestCase):
             "45",
         )
 
-    @PENDING
     def test_warn_only_still_fails_on_a_missing_timing_file(self):
         for stack in ("frontend", "backend"):
             with self.subTest(stack=stack):
@@ -606,7 +601,6 @@ class WarnOnlySoftensABreachButNothingElse(BudgetCheckTestCase):
 
                 self.assert_refuses_to_judge(result, f"test-timings-{stack}.csv")
 
-    @PENDING
     def test_warn_only_still_fails_on_an_allowlist_entry_for_a_class_no_longer_in_the_source(self):
         timings = self.workspace.backend_timings({f"{TESTS_NAMESPACE}.CacheTest.Reads": 1.0})
         self.workspace.budget(
@@ -619,7 +613,6 @@ class WarnOnlySoftensABreachButNothingElse(BudgetCheckTestCase):
             ALLOWLIST_NAME,
         )
 
-    @PENDING
     def test_warn_only_still_fails_on_a_malformed_timing_file(self):
         timings = self.workspace.raw_timings("test-timings-backend.csv", "this is not a timing file\n")
         self.workspace.budget()
@@ -628,7 +621,6 @@ class WarnOnlySoftensABreachButNothingElse(BudgetCheckTestCase):
             self.workspace.check("backend", timings, "--warn-only"), "test-timings-backend.csv"
         )
 
-    @PENDING
     def test_warn_only_still_fails_on_a_malformed_allowlist(self):
         timings = self.workspace.backend_timings({f"{TESTS_NAMESPACE}.CacheTest.Reads": 1.0})
         self.workspace.raw_allowlist("not json at all")
@@ -636,6 +628,18 @@ class WarnOnlySoftensABreachButNothingElse(BudgetCheckTestCase):
         self.assert_refuses_to_judge(
             self.workspace.check("backend", timings, "--warn-only"), ALLOWLIST_NAME
         )
+
+
+class AnOldPythonIsRefused(unittest.TestCase):
+    def test_an_interpreter_older_than_3_12_is_refused_naming_the_version_needed_and_found(self):
+        import check_budget
+
+        with self.assertRaises(SystemExit) as refusal:
+            check_budget.require_python((3, 11, 9, "final", 0))
+
+        self.assertNotIn(refusal.exception.code, (0, None))
+        self.assertIn("3.12", str(refusal.exception.code))
+        self.assertIn("3.11.9", str(refusal.exception.code))
 
 
 class ABackendClassIsJudgedOnTheSumOfItsTests(BudgetCheckTestCase):
