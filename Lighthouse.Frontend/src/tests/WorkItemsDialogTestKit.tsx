@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { waitFor, within } from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
 import { assert } from "vitest";
 import WorkItemsDialog, {
@@ -127,21 +127,36 @@ export function openTheDialog(options: DialogOptions): OpenedDialog {
 	};
 }
 
-export const theDialog = () => screen.getByRole("dialog");
+/**
+ * The grid's own elements are found by their role attribute rather than by role queries: a role
+ * query asks jsdom for the computed style of every match and its ancestors, and the stylesheet
+ * the grid brings makes each of those lookups cost milliseconds.
+ */
+const byRole = (scope: ParentNode, role: string): HTMLElement[] => [
+	...scope.querySelectorAll<HTMLElement>(`[role="${role}"]`),
+];
+
+export const theDialog = (): HTMLElement => {
+	const dialogs = byRole(document, "dialog");
+	if (dialogs.length !== 1) {
+		assert.fail(`Expected one dialog, found ${dialogs.length}`);
+	}
+	return dialogs[0];
+};
+
+const headersShown = (): HTMLElement[] => byRole(theDialog(), "columnheader");
 
 export const columnsShown = (): string[] =>
-	within(theDialog())
-		.queryAllByRole("columnheader")
-		.map((header) => header.dataset.field ?? "");
+	headersShown().map((header) => header.dataset.field ?? "");
 
 /** The columns shown besides the fixed ones, in the order they stand. */
 export const contextColumnsShown = (): string[] =>
 	columnsShown().filter((field) => !FIXED_COLUMNS.includes(field));
 
 export const columnHeader = (field: string): HTMLElement => {
-	const header = within(theDialog())
-		.queryAllByRole("columnheader")
-		.find((candidate) => candidate.dataset.field === field);
+	const header = headersShown().find(
+		(candidate) => candidate.dataset.field === field,
+	);
 	if (!header) {
 		assert.fail(`No ${field} column; shown: ${columnsShown().join(", ")}`);
 	}
@@ -154,10 +169,9 @@ export const headerText = (field: string): string =>
 		?.textContent?.trim() ?? "";
 
 export const sortedDescendingBy = (): string | null =>
-	within(theDialog())
-		.queryAllByRole("columnheader")
-		.find((header) => header.getAttribute("aria-sort") === "descending")
-		?.dataset.field ?? null;
+	headersShown().find(
+		(header) => header.getAttribute("aria-sort") === "descending",
+	)?.dataset.field ?? null;
 
 const rowsShown = (): HTMLElement[] => [
 	...theDialog().querySelectorAll<HTMLElement>(".MuiDataGrid-row"),
@@ -194,23 +208,56 @@ export async function openManageColumns(
 	scope: GridScope = theDialog,
 ): Promise<void> {
 	await user.click(within(scope()).getByLabelText("Name column menu"));
-	await user.click(
-		await screen.findByRole("menuitem", { name: "Manage columns" }),
-	);
+	const manageColumns = await waitFor(() => {
+		const item = byRole(document, "menuitem").find(
+			(candidate) => candidate.textContent?.trim() === "Manage columns",
+		);
+		if (!item) {
+			throw new Error("The column menu offers no Manage columns");
+		}
+		return item;
+	});
+	await user.click(manageColumns);
 }
 
 /** What Manage columns lists, in its order, and whether each is on. */
+const checkboxesOffered = (): HTMLInputElement[] => [
+	...document.querySelectorAll<HTMLInputElement>(
+		'input[type="checkbox"]:not([role])',
+	),
+];
+
 export const columnsOffered = (): { field: string; shown: boolean }[] =>
-	screen
-		.queryAllByRole("checkbox")
+	checkboxesOffered()
 		.map((box) => ({
 			field: box.getAttribute("name") ?? "",
-			shown: (box as HTMLInputElement).checked,
+			shown: box.checked,
 		}))
 		.filter(({ field }) => field !== "" && field !== "Show/Hide All");
 
 export const catalogueOffered = () =>
 	columnsOffered().filter(({ field }) => !FIXED_COLUMNS.includes(field));
+
+/** Turns several columns on or off in one visit to Manage columns, in the order given. */
+export async function turnColumns(
+	user: UserEvent,
+	changes: Record<string, boolean>,
+	scope: GridScope = theDialog,
+): Promise<void> {
+	await openManageColumns(user, scope);
+	for (const [field, shown] of Object.entries(changes)) {
+		const box = checkboxesOffered().find(
+			(candidate) => candidate.getAttribute("name") === field,
+		);
+		if (!box) {
+			assert.fail(`Manage columns does not offer ${field}`);
+		}
+		if (box.checked !== shown) {
+			await user.click(box);
+		}
+	}
+	await user.keyboard("{Escape}");
+}
 
 export async function turnColumn(
 	user: UserEvent,
@@ -218,17 +265,7 @@ export async function turnColumn(
 	shown: boolean,
 	scope: GridScope = theDialog,
 ): Promise<void> {
-	await openManageColumns(user, scope);
-	const box = screen
-		.getAllByRole("checkbox")
-		.find((candidate) => candidate.getAttribute("name") === field);
-	if (!box) {
-		assert.fail(`Manage columns does not offer ${field}`);
-	}
-	if ((box as HTMLInputElement).checked !== shown) {
-		await user.click(box);
-	}
-	await user.keyboard("{Escape}");
+	await turnColumns(user, { [field]: shown }, scope);
 }
 
 export async function resetTheLayout(

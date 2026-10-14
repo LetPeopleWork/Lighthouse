@@ -23,6 +23,7 @@ import {
 	rowOrder,
 	sortedDescendingBy,
 	turnColumn,
+	turnColumns,
 } from "../../../tests/WorkItemsDialogTestKit";
 import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
 import type { SleRiskColumnDescriptor } from "../../../utils/charts/sleRisk";
@@ -456,8 +457,7 @@ async function theReadersLayoutComesBackOnReopen({
 	const hidden = columns[columns.length - 1];
 	const turnedOn = offered[columns.length];
 	const first = openTheDialog({ context, items, ...extra });
-	await turnColumn(user, hidden, false);
-	await turnColumn(user, turnedOn, true);
+	await turnColumns(user, { [hidden]: false, [turnedOn]: true });
 	first.unmount();
 
 	openTheDialog({ context, items, ...extra });
@@ -623,8 +623,7 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 			const user = userEvent.setup();
 			openTheDialog({ context: "estimation", items: finishedStories });
 
-			await turnColumn(user, "parent", true);
-			await turnColumn(user, "startedDate", true);
+			await turnColumns(user, { parent: true, startedDate: true });
 
 			expect(contextColumnsShown()).toEqual([
 				"estimate",
@@ -1307,8 +1306,11 @@ describe("what each catalogue column says, and how it sorts", () => {
 		async ({ context, items, extra, turnOn, fields }) => {
 			const user = userEvent.setup();
 			openTheDialog({ context, items, ...extra });
-			for (const field of turnOn) {
-				await turnColumn(user, field, true);
+			if (turnOn.length > 0) {
+				await turnColumns(
+					user,
+					Object.fromEntries(turnOn.map((field) => [field, true])),
+				);
 			}
 
 			for (const field of fields) {

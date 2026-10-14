@@ -985,3 +985,34 @@ Also carried: the slice-06 brief and the journey named the budget file `Scripts/
 The before median is 34.3 s and the after median is 16.0 s, a ratio of 0.47 (2.1× faster). Load rose during the after runs and the bracket before run still read 34.7 s, so load drift does not explain the gain. The remaining ~1.2 s per test is rendering 100 to 143 rows through the real DataGrid and re-rendering on the page change, which is production render time and outside this step.
 
 **E-names** (base `0c9e489f9` against the step's change; paging, comments, votes): `comm -23` prints nothing against before1 or before4, and `comm -13` on not-passed prints nothing. Counts are unchanged at paging 11, comments 24 and votes 33. **E-weaken:** the skip grep prints nothing and the removed-`expect(` count is 0.
+
+## Wave: DELIVER / [REF] Slice 02 record — step 02-02 `WorkItemsDialog.contexts.test.tsx`
+
+**E-02c cause (measured, CPU profile of the whole file):** about 40 % of the file's CPU time is jsdom's `getComputedStyle`, which matches every one of the ~311 emotion style rules the dialog and DataGrid inject. Opening Manage columns triggers it through Popper's scroll-parent walk and the focus moves inside the grid (production render, ≈250 ms per opening, about 70 openings in the file), and the kit's set-up role queries trigger it as well (`getByRole("dialog")`, `queryAllByRole("columnheader")`, `getAllByRole("checkbox")`, `findByRole("menuitem", { name })`, ≈5 s of CPU across the file).
+
+**Same pattern as 02-01?** Partly. The role-query half is the same: a `*ByRole` used only to find something to click or read pays a per-element style or accessible-name computation on a page full of DataGrid markup. The larger half is not the same. It is production render cost (Popper and focus in jsdom), so it is cut only by opening the Manage columns panel fewer times. For slice 03 and the shared-helper decision, the shared part is "don't use role queries for set-up on DataGrid pages". Each kit fixes that in a few lines with `querySelectorAll('[role=…]')` or `getByLabelText`, so no shared helper is warranted on this evidence (DS-Q3 option C not triggered).
+
+**Fix (kit and test file; production untouched):**
+
+- `WorkItemsDialogTestKit.tsx`: `theDialog` reads `[role="dialog"]` and still fails unless there is exactly one. The column headers are `[role="columnheader"]` inside the dialog. The Manage columns entries are `input[type="checkbox"]:not([role])`, the same set the implicit-checkbox role query found (MUI `Switch` carries `role="switch"` and stays excluded), still filtered by `name`. "Manage columns" in the column menu is found among `[role="menuitem"]` by its text, inside `waitFor`. New `turnColumns(user, changes)` turns several columns in one Manage columns visit, in the order given. `turnColumn` delegates to it, so the other nine importers are unchanged.
+- `WorkItemsDialog.contexts.test.tsx`: the 13 `…comes back with the reader's own layout…` cases, `a column turned on appears in its place in the fixed order`, and the `every column named here sorts on a header click` cases now make their column changes in one Manage columns visit instead of one visit per column. The changes and their order are the same, and the assertions are untouched.
+- **Removed or shortened waits:** one wait was replaced. `screen.findByRole("menuitem", { name: "Manage columns" })` in `openManageColumns` became `waitFor(…)`, which polls for a `[role="menuitem"]` whose text is "Manage columns". The default timeout is the same 1000 ms, and the wait is still a wait, not a one-shot query. It only finds the entry to click. Every caller's behaviour is still proven by the assertions that follow, such as `catalogueOffered()` equalling the expected list and `contextColumnsShown()` after a change. No timeout was lowered.
+- **Removed `expect(` lines:** 0. No role query that is itself an assertion was touched. All the removed `*ByRole` calls were set-up lookups inside kit helpers.
+
+**Local timing** (summed per-test durations from each run's Vitest JSON; the 9 other kit importers plus `RefinementView.paging` run together, one Vitest at a time. Another session's backend tests and Vitest run were loading the machine, and load climbed from ~5 to ~14 during the series). `RefinementView.paging` is untouched by this step and serves as the in-run control:
+
+| Run | Load avg (1 min, start) | contexts | RefinementView.paging (control) | contexts ÷ control |
+|---|---|---|---|---|
+| before1 | 4.76 | 34.3 s | 18.9 s | 1.81 |
+| before2 | 6.31 | 45.1 s | 25.9 s | 1.74 |
+| before3 | 8.38 | 45.4 s | 26.8 s | 1.69 |
+| after1 | 10.44 | 46.3 s | 32.7 s | 1.42 |
+| after2 | 14.36 | 40.4 s | 28.1 s | 1.44 |
+| after3 | 13.21 | 40.4 s | 28.2 s | 1.43 |
+| before4 (bracket, base-commit worktree) | 13.91 | 50.3 s | 28.1 s | 1.79 |
+
+The raw medians are 45.1 s before and 40.4 s after, a ratio of 0.90. The load rose by ~2× between the series, though, and the raw ratio understates the gain. At matched load the bracket before4 read 50.3 s against after2/after3 at 40.4 s, a ratio of 0.80, with the control flat at 28.1–28.2 s. The control-normalised medians are 1.74 → 1.43, also 0.82. Single-file runs on a quieter machine agree: 27.9 s at load 2.2 before, 22.4 s at load 6.4 after (0.80). The file runs about 1.25× faster, not a large fraction. The remaining ~200 ms per test is DataGrid render, plus the ~250 ms Popper/focus cost of each Manage columns opening that a test needs, both production render time.
+
+**Two-file sum (RefinementView.paging + contexts, one run's JSON, these two files only):** pafter1 45.1 s (load 12.4), pafter2 49.9 s (load 14.3), pbefore1 53.6 s (load 10.9). **The 40 s criterion is not shown under this load.** On the quieter readings the parts add to about 38 s: contexts 22.4 s at load 6.4, and paging 16.0 s, 02-01's after median at load 5.5–7. That sum is not from one run, so it does not satisfy the criterion's wording. The run needs repeating on an idle machine.
+
+**E-names** (base `219acea1f` against the step's change; all ten `WorkItemsDialogTestKit` importers plus `RefinementView.paging`): `comm -23` prints nothing against before1 and before4 for after1, after3 and after4 (after4 = final kit). `comm -13` on not-passed prints nothing. Counts are unchanged: contexts 108, `BaseMetricsView` 192, `featureChildItemsDialog` 15, `DataGridBase.defaults` 13, `RefinementView.paging` 11, `WorkItemsDialog.loading` 16, `layout` 7, `cumulativeStateTimeDialog` 6, `WorkItemsDialog.paging` 1, `LineRunChart.dialog` 1. **E-weaken:** the skip grep prints nothing and the removed-`expect(` count is 0. `pnpm test`: 480 files passed, 1 skipped; 7594 tests passed, 37 skipped, 1 todo.
