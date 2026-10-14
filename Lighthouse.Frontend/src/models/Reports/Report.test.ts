@@ -72,7 +72,7 @@ describe("the report schemas", () => {
 		},
 	);
 
-	// Owned by slice 04 (Story 6162): a report counts nothing beyond Then's limits, so the read keeps no such member.
+	// A report counts nothing beyond Then's limits, so the read keeps no such member.
 	it("keep nothing a payload says about Then's limits", () => {
 		const sent = aReportWhoseThenIsADash("no-finished-items");
 		const withLimits = {

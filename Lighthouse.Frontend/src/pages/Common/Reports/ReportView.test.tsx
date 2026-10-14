@@ -247,7 +247,7 @@ describe("The report's summary header", () => {
 	beforeEach(beforeEachReportTest);
 
 	// @us-01 @slice-03 @driving_port @contract-shape:pure-function
-	// A report made before Throughput was captured counts from its Cycle Time; the count from Throughput is slice 04's.
+	// A report made before Throughput was captured counts from its Cycle Time; the count from Throughput is tested where Throughput is shown.
 	it("opens with a summary of each side's window and how many Work Items closed in it", async () => {
 		openTheReport(madeBeforeThroughput());
 
