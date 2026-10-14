@@ -30,7 +30,7 @@ import {
 	refusalCopyFor,
 	useRefusalWords,
 } from "./reportRefusalCopy";
-import { reportTypes } from "./reportTypes";
+import { type ReportTypeStep, reportTypes } from "./reportTypes";
 import TypeStep from "./TypeStep";
 
 const TITLE_ID = "report-wizard-title";
@@ -62,6 +62,15 @@ const saveFailureCopyFor = (error: unknown, words: RefusalWords): string => {
 	if (isGone(error)) return NO_LONGER_EXISTS;
 	return refusalCopyFor(error, words, COULD_NOT_SAVE);
 };
+
+const canMoveOn = <TDraft,>(
+	step: ReportTypeStep<TDraft> | undefined,
+	isFrozen: boolean,
+	draft: TDraft,
+	templates: IReportTemplates | undefined,
+): boolean =>
+	templates !== undefined &&
+	(step === undefined || isFrozen || step.isComplete(draft, templates));
 
 interface ReportWizardProps {
 	owner: IReportOwner;
@@ -106,9 +115,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 	const current = typeStep >= 0 ? type.steps[typeStep] : undefined;
 	const isFrozen = isEditing && current?.frozenOnEdit === true;
 	const isLastStep = activeStep === type.steps.length;
-	const isComplete =
-		templates !== undefined &&
-		(current === undefined || isFrozen || current.isComplete(draft, templates));
+	const isComplete = canMoveOn(current, isFrozen, draft, templates);
 
 	const refusalWordsFor = useRefusalWords(owner);
 
