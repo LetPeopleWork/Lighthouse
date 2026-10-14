@@ -21,7 +21,7 @@ import {
 	panelFor,
 } from "./panels/reportPanelRegistry";
 import UnsupportedMetricPanel from "./panels/UnsupportedMetricPanel";
-import { reportsPathOf } from "./reportOwner";
+import { reportQueryKeyOf, reportsPathOf } from "./reportOwner";
 import ThenAndNowHeader from "./ThenAndNowHeader";
 import ThenAndNowSummary from "./ThenAndNowSummary";
 import { useMayEditReports } from "./useMayEditReports";
@@ -110,7 +110,7 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 		error,
 		refetch,
 	} = useQuery({
-		queryKey: ["report", owner.kind, owner.id, reportId],
+		queryKey: reportQueryKeyOf(owner, reportId),
 		queryFn: () => reportService.getReport(owner, reportId),
 		retry: retriesUnlessFinal(usualRetry),
 	});

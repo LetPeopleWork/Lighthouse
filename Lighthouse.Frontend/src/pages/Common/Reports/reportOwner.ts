@@ -13,3 +13,11 @@ export const ownerTermKeyOf = (owner: IReportOwner): string =>
 /** The one cache entry for an owner's report list, so every reader and every change agree on it. */
 export const reportsQueryKeyOf = (owner: IReportOwner) =>
 	["reports", owner.kind, owner.id] as const;
+
+/** Every cache entry holding one of an owner's reports, so all of them can be dropped at once. */
+export const ownerReportQueryKeysOf = (owner: IReportOwner) =>
+	["report", owner.kind, owner.id] as const;
+
+/** The one cache entry for a single report, so its page and its deletion agree on it. */
+export const reportQueryKeyOf = (owner: IReportOwner, reportId: number) =>
+	[...ownerReportQueryKeysOf(owner), reportId] as const;

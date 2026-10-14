@@ -1674,6 +1674,24 @@ describe("Who may change a report from its page", () => {
 		expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
 	});
 
+	// @us-08 @slice-08 @contract-shape:pure-function
+	it("offers an admin Delete", async () => {
+		openTheReport(theEngagementStartReport(), "admin");
+
+		await theReportIsReady();
+
+		expect(screen.getByRole("button", { name: "Delete" })).toBeEnabled();
+	});
+
+	// @us-08 @slice-08 @error @contract-shape:unbounded-preservation
+	it("offers a reader no Delete", async () => {
+		openTheReport(theEngagementStartReport(), "reader");
+
+		await theReportIsReady();
+
+		expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
+	});
+
 	// @us-08 @slice-08 @driving_port @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:bounded-change
 	it("deletes the report after asking, warns when its Then cannot be rebuilt, and goes back to the list", async () => {
 		const reportService = openTheReport(
@@ -1704,6 +1722,68 @@ describe("Who may change a report from its page", () => {
 			ENGAGEMENT_START_ID,
 		);
 		expect(reportUsage).toHaveBeenCalledWith({ name: "ReportDeleted" });
+		expect(reportUsage).toHaveBeenCalledTimes(1);
+	});
+
+	// @us-08 @slice-08 @error @contract-shape:bounded-change
+	// Going Back after a delete must not bring the deleted report up as if it were still there.
+	it("never shows a deleted report again when it is opened once more", async () => {
+		const reportService = aReportService({
+			getReport: vi
+				.fn()
+				.mockResolvedValueOnce(theEngagementStartReport())
+				.mockReturnValue(deferred<IReport>().promise),
+		});
+		const { rerenderWith } = renderWithReports(
+			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
+			{ reportService, viewer: "admin" },
+		);
+		await theReportIsReady();
+		await userEvent.click(screen.getByRole("button", { name: "Delete" }));
+		await userEvent.click(
+			within(await screen.findByRole("dialog")).getByRole("button", {
+				name: "Delete",
+			}),
+		);
+		await waitFor(() => expect(mockNavigate).toHaveBeenCalled());
+
+		rerenderWith(<div />);
+		rerenderWith(
+			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
+		);
+
+		expect(await screen.findByText(LOADING)).toBeVisible();
+		expect(screen.queryByText(ENGAGEMENT_START)).toBeNull();
+	});
+
+	// @us-08 @slice-08 @error @contract-shape:bounded-change
+	// Somebody else got there first: the report is gone either way, but nobody here deleted it.
+	it("goes back to the list without reporting a deletion when the report was already deleted", async () => {
+		renderWithReports(
+			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
+			{
+				reportService: aReportService({
+					deleteReport: vi.fn().mockRejectedValue(aRefusal(404, "not-found")),
+				}),
+				viewer: "admin",
+			},
+		);
+		await theReportIsReady();
+
+		await userEvent.click(screen.getByRole("button", { name: "Delete" }));
+		await userEvent.click(
+			within(await screen.findByRole("dialog")).getByRole("button", {
+				name: "Delete",
+			}),
+		);
+
+		await waitFor(() =>
+			expect(mockNavigate).toHaveBeenCalledWith(
+				`/teams/${LIGHTSPEED.id}/reports`,
+			),
+		);
+		expect(screen.queryByRole("dialog")).toBeNull();
+		expect(reportUsage).not.toHaveBeenCalledWith({ name: "ReportDeleted" });
 	});
 });
 

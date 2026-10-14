@@ -1,4 +1,10 @@
-import { act, screen, waitFor, within } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -7,6 +13,7 @@ import {
 	APOLLO,
 	aListedReport,
 	aListedReportOfALaterType,
+	aRefusal,
 	aReportList,
 	aReportService,
 	CANNOT_BE_REBUILT,
@@ -339,6 +346,7 @@ describe("Deleting a report from the list", () => {
 		);
 		expect(await screen.findByText(EMPTY)).toBeVisible();
 		expect(reportUsage).toHaveBeenCalledWith({ name: "ReportDeleted" });
+		expect(reportUsage).toHaveBeenCalledTimes(1);
 	});
 
 	// @us-08 @slice-08 @error @contract-shape:unbounded-preservation
@@ -411,7 +419,113 @@ describe("Deleting a report from the list", () => {
 			}),
 		);
 
-		expect(await screen.findByTestId("delete-error-alert")).toBeVisible();
+		expect(await screen.findByTestId("delete-error-alert")).toHaveTextContent(
+			"This report couldn't be deleted. Try again.",
+		);
+		// The open dialog hides the list from role queries, so the row is found by its text.
+		expect(screen.getByText(ENGAGEMENT_START)).toBeVisible();
+		expect(reportUsage).not.toHaveBeenCalled();
+	});
+
+	// @us-08 @slice-08 @error @contract-shape:unbounded-preservation
+	it("lets Delete be pressed again after a delete failed", async () => {
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
+			reportService: aReportService({
+				deleteReport: vi
+					.fn()
+					.mockRejectedValue(new Error("the network dropped")),
+			}),
+		});
+
+		await userEvent.click(await theDeleteButtonOf(ENGAGEMENT_START));
+		const dialog = await screen.findByRole("dialog");
+		await userEvent.click(
+			within(dialog).getByRole("button", { name: "Delete" }),
+		);
+
+		await screen.findByTestId("delete-error-alert");
+		expect(
+			within(dialog).getByRole("button", { name: "Delete" }),
+		).toBeEnabled();
+	});
+
+	// @us-08 @slice-08 @boundary @contract-shape:bounded-change
+	it("sends one delete however quickly Delete is pressed twice", async () => {
+		const held = deferred<void>();
+		const reportService = aReportService({
+			deleteReport: vi.fn().mockReturnValue(held.promise),
+		});
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, { reportService });
+
+		await userEvent.click(await theDeleteButtonOf(ENGAGEMENT_START));
+		const confirm = within(await screen.findByRole("dialog")).getByRole(
+			"button",
+			{ name: "Delete" },
+		);
+		fireEvent.click(confirm);
+		fireEvent.click(confirm);
+		await act(async () => held.resolve());
+
+		await waitFor(() =>
+			expect(reportUsage).toHaveBeenCalledWith({ name: "ReportDeleted" }),
+		);
+		expect(reportService.deleteReport).toHaveBeenCalledTimes(1);
+		expect(reportUsage).toHaveBeenCalledTimes(1);
+	});
+
+	// @us-08 @slice-08 @error @contract-shape:bounded-change
+	// A dialog that looked cancelled must not turn out to have deleted the report after all.
+	it("holds the question open while the delete is on its way, whatever is pressed", async () => {
+		const held = deferred<void>();
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
+			reportService: aReportService({
+				deleteReport: vi.fn().mockReturnValue(held.promise),
+			}),
+		});
+
+		await userEvent.click(await theDeleteButtonOf(ENGAGEMENT_START));
+		const dialog = await screen.findByRole("dialog");
+		await userEvent.click(
+			within(dialog).getByRole("button", { name: "Delete" }),
+		);
+		expect(
+			within(dialog).getByRole("button", { name: "Delete" }),
+		).toBeDisabled();
+		await userEvent.click(
+			within(dialog).getByRole("button", { name: "Cancel" }),
+		);
+		await userEvent.keyboard("{Escape}");
+
+		expect(screen.getByRole("dialog")).toBeVisible();
+		expect(reportUsage).not.toHaveBeenCalled();
+
+		await act(async () => held.resolve());
+
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(reportUsage).toHaveBeenCalledWith({ name: "ReportDeleted" });
+	});
+
+	// @us-08 @slice-08 @error @contract-shape:bounded-change
+	// Somebody else got there first: the report is gone either way, but nobody here deleted it.
+	it("takes a report somebody else already deleted off the list and reports nothing", async () => {
+		const reportService = aReportService({
+			getReports: vi
+				.fn()
+				.mockResolvedValueOnce(aReportList([aListedReport()]))
+				.mockResolvedValue(aReportList([])),
+			deleteReport: vi.fn().mockRejectedValue(aRefusal(404, "not-found")),
+		});
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, { reportService });
+
+		await userEvent.click(await theDeleteButtonOf(ENGAGEMENT_START));
+		await userEvent.click(
+			within(await screen.findByRole("dialog")).getByRole("button", {
+				name: "Delete",
+			}),
+		);
+
+		expect(await screen.findByText(EMPTY)).toBeVisible();
+		expect(screen.queryByRole("dialog")).toBeNull();
 		expect(reportUsage).not.toHaveBeenCalled();
 	});
 });
