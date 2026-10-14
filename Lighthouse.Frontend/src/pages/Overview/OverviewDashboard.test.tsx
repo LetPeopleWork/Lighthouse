@@ -298,7 +298,7 @@ const renderWithProviders = (
 		...overrides,
 	});
 
-	return render(
+	const rendered = render(
 		<QueryClientProvider client={queryClient}>
 			<MemoryRouter>
 				<ApiServiceContext.Provider value={mockApiServiceContext}>
@@ -307,6 +307,7 @@ const renderWithProviders = (
 			</MemoryRouter>
 		</QueryClientProvider>,
 	);
+	return { ...rendered, queryClient };
 };
 
 describe("OverviewDashboard", () => {
@@ -966,7 +967,7 @@ describe("OverviewDashboard", () => {
 				canCreateTeam: true,
 				canCreatePortfolio: true,
 			});
-			renderWithProviders(<OverviewDashboard />, {
+			const { queryClient } = renderWithProviders(<OverviewDashboard />, {
 				rbacService,
 				reportService,
 			});
@@ -979,7 +980,11 @@ describe("OverviewDashboard", () => {
 					'[data-testid="delete-item-button"]',
 				)[0],
 			);
-			return { dialog: await screen.findByRole("dialog"), reportService };
+			return {
+				dialog: await screen.findByRole("dialog"),
+				reportService,
+				queryClient,
+			};
 		};
 
 		// @us-08 @slice-08 @driving_port @contract-shape:pure-function
@@ -991,13 +996,20 @@ describe("OverviewDashboard", () => {
 		] as const)(
 			"names the reports that go with one of the %s (%s) holding %i when it is deleted",
 			async (section, name, reports, clause) => {
-				const { dialog } = await askToDeleteTheFirstRowOf(section, reports);
+				const { dialog, reportService } = await askToDeleteTheFirstRowOf(
+					section,
+					reports,
+				);
 
 				await waitFor(() =>
 					expect(dialog).toHaveTextContent(
 						`Do you really want to delete ${name} ${clause}?`,
 					),
 				);
+				expect(reportService.getReports).toHaveBeenCalledWith({
+					kind: section === "portfolios" ? "portfolio" : "team",
+					id: 1,
+				});
 			},
 		);
 
@@ -1035,6 +1047,35 @@ describe("OverviewDashboard", () => {
 			expect(reportUsage).not.toHaveBeenCalledWith({ name: "ReportDeleted" });
 		});
 
+		// @us-08 @slice-08 @error @contract-shape:bounded-change
+		// A deleted Team's reports are gone with it, so nothing may still answer for them from memory.
+		it("forgets the deleted Team's reports", async () => {
+			const { dialog, queryClient } = await askToDeleteTheFirstRowOf(
+				"teams",
+				1,
+			);
+			queryClient.setQueryData(["report", "team", 1, 1], { name: "Report 1" });
+			queryClient.setQueryData(["report", "team", 2, 1], { name: "Kept" });
+			await waitFor(() => expect(dialog).toHaveTextContent("and its report?"));
+
+			fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
+
+			await waitFor(() =>
+				expect(reportUsage).toHaveBeenCalledWith({ name: "TeamDeleted" }),
+			);
+			await waitFor(() =>
+				expect(
+					queryClient.getQueryData(["reports", "team", 1]),
+				).toBeUndefined(),
+			);
+			expect(
+				queryClient.getQueryData(["report", "team", 1, 1]),
+			).toBeUndefined();
+			expect(queryClient.getQueryData(["report", "team", 2, 1])).toEqual({
+				name: "Kept",
+			});
+		});
+
 		// @us-08 @slice-08 @boundary @contract-shape:pure-function
 		// Deleting before the count arrives would take reports along that the dialog never named.
 		it("holds Delete until it knows how many reports go with it", async () => {
@@ -1046,7 +1087,11 @@ describe("OverviewDashboard", () => {
 				}),
 			);
 
-			expect(within(dialog).getByRole("progressbar")).toBeVisible();
+			expect(
+				within(dialog).getByRole("progressbar", {
+					name: "Counting its reports",
+				}),
+			).toBeVisible();
 			expect(
 				within(dialog).getByRole("button", { name: "Delete" }),
 			).toBeDisabled();

@@ -14,6 +14,7 @@ import {
 	useTheme,
 } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
+import { useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
@@ -41,6 +42,10 @@ import { UsageDataEventName } from "../../services/Api/UsageDataService";
 import { useTerminology } from "../../services/TerminologyContext";
 import { useUsageDataReporter } from "../../services/UsageData/usageDataReporter";
 import { reportFailedNavigation } from "../../utils/navigation";
+import {
+	ownerReportQueryKeysOf,
+	reportsQueryKeyOf,
+} from "../Common/Reports/reportOwner";
 import { useOwnerReports } from "../Common/Reports/useOwnerReports";
 
 /** What goes with a Team or Portfolio besides itself, said once its reports have been counted. */
@@ -53,7 +58,11 @@ const reportsClauseOf = (
 		return (
 			<>
 				{" "}
-				<CircularProgress size={14} sx={{ verticalAlign: "middle" }} />
+				<CircularProgress
+					size={14}
+					aria-label="Counting its reports"
+					sx={{ verticalAlign: "middle" }}
+				/>
 			</>
 		);
 	}
@@ -125,6 +134,7 @@ const OverviewDashboard: React.FC = () => {
 	const initialFilterText = queryParams.get("filter") ?? "";
 	const [filterText, setFilterText] = useState(initialFilterText);
 
+	const queryClient = useQueryClient();
 	const { getTerm } = useTerminology();
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
@@ -212,9 +222,17 @@ const OverviewDashboard: React.FC = () => {
 		setDeleteType(null);
 	}, []);
 
+	/** Reports go with their Team or Portfolio, so nothing may answer for them from memory afterwards. */
+	const forgetReportsOf = (owner: IReportOwner) => {
+		queryClient.removeQueries({ queryKey: reportsQueryKeyOf(owner) });
+		queryClient.removeQueries({ queryKey: ownerReportQueryKeysOf(owner) });
+	};
+
 	const handleConfirmDelete = async () => {
 		if (!selectedItem || !deleteType) return;
 
+		const owner: IReportOwner = { kind: deleteType, id: selectedItem.id };
+		let deleted = false;
 		try {
 			setIsLoading(true);
 			if (deleteType === "portfolio") {
@@ -224,6 +242,7 @@ const OverviewDashboard: React.FC = () => {
 				await teamService.deleteTeam(selectedItem.id);
 				reportUsage({ name: UsageDataEventName.TeamDeleted });
 			}
+			deleted = true;
 			await fetchData();
 		} catch (error) {
 			console.error(`Error deleting ${deleteType}:`, error);
@@ -231,6 +250,8 @@ const OverviewDashboard: React.FC = () => {
 		} finally {
 			closeDeleteDialog();
 		}
+		// Only once the dialog counting its reports has closed, or it would ask the server for them again.
+		if (deleted) forgetReportsOf(owner);
 	};
 
 	// Connection handlers
