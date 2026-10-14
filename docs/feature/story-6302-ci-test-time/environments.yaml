@@ -1,0 +1,64 @@
+# environments.yaml — story-6302-ci-test-time (ADO #6302)
+# Consumed by DISTILL for Mandate 4 (Environmental Realism).
+# This feature deploys NOTHING. The "environments" are the places the test suites and the
+# test-time budget check (Scripts/test-timings/check_budget.py, ADR-237) run. The realism axes
+# that matter: the Python interpreter (developer 3.14 vs runner system 3.12), which backend
+# test classes a run contains (connector categories join only on some runs), and local-only
+# directories (Stryker sandboxes, bin/obj) that a source scan could mistake for source.
+
+target_environments:
+  - name: local-dev
+    description: "Developer machine: the test suites on the inner loop, and the budget check run against a downloaded or locally produced timing CSV"
+    platform: [linux]
+    preconditions:
+      - "python3 on PATH (3.14.8 observed 2026-10-14); stdlib only, no pip install"
+      - "a test-timings-frontend.csv / test-timings-backend.csv from `gh run download <run> -n test-timings-<stack>`, or from vitest_to_csv.py / trx_to_csv.py run locally"
+      - "same command as CI: python3 Scripts/test-timings/check_budget.py --stack <frontend|backend> --csv <file>"
+      - "self-tests: python3 -m unittest discover -s Scripts/test-timings/tests (33 tests green before this feature)"
+      - "may contain gitignored .stryker-tmp*/, StrykerOutput/, bin/, obj/ under the backend test source root"
+      - "in a worktree, valid_not_expired_license.json copied from the main checkout before judging backend results"
+
+  - name: ci-runner
+    description: "GitHub Actions ubuntu-latest, `Build And Deploy Lighthouse` → Verify Frontend (ci_frontend.yml) and Verify Backend (ci_backend.yml); the check is the last step of each job"
+    platform: [linux]
+    runner_image: "ubuntu-24.04, image 20261004"
+    preconditions:
+      - "system python3 of the image (3.12 line expected; the step prints `python3 --version`); no actions/setup-python, no pip"
+      - "runs only after a green test step (default success()); never on the partial JSON a bail:1 failure leaves"
+      - "test-timings-*.csv at the repository root, written by the always-run extract steps"
+      - "backend: coverage always on (ci.yml passes run_sonar: true); class set varies with the connector filter"
+      - "frontend breaches fail the job; backend breaches warn (--warn-only) until >= 5 post-fix main runs show headroom"
+
+coexistence_matrix:
+  - tool: "timing extract + upload steps (always()) in ci_frontend.yml / ci_backend.yml"
+    must_not_break: true   # the check reads their CSV, never writes it; upload still runs on a red check
+  - tool: "Scripts/test-timings/summarise.py top-20 log output"
+    must_not_break: true
+  - tool: "SonarCloud: frontend scan (build-frontend composite), backend begin/end + report metadata"
+    must_not_break: true   # all run before the check; Scripts/** already excluded from the backend scanner
+  - tool: "coverage collection (Vitest --coverage lcov, backend opencover) read by Sonar"
+    must_not_break: true   # no test command changes
+  - tool: "BackendTestParallelizationGuardTest ([NonParallelizable] allowlist guard)"
+    must_not_break: true   # untouched; no new [NonParallelizable] (DDD-6)
+  - tool: "Stryker.NET / StrykerJS per-feature runs and their temp dirs (.stryker-tmp*, StrykerOutput/)"
+    must_not_break: true   # the backend source-existence scan skips them, and bin/ and obj/
+  - tool: "vitest.config.ts bail: 1 on CI"
+    must_not_break: true
+  - tool: "ci_changes.yml backend filter / connector selection"
+    must_not_break: true   # varying class set handled by checking backend allowlist entries against source
+  - tool: "Verify Workflow Scripts job (node --test .github/scripts)"
+    must_not_break: true
+
+platform_coverage:
+  Linux: [Ubuntu 24.04]
+  CI: [GitHub Actions ubuntu-latest (ubuntu-24.04, image 20261004)]
+  Python: ["3.12 (runner system interpreter, the floor)", "3.14.8 (local dev)"]
+
+deployment_assumptions:
+  - "No deployment artifact: CI steps, a stdlib Python script with its JSON budget/allowlist, and test code only. Nothing reaches the image, the chart or a running Lighthouse."
+  - "The check reads only existing artifacts (the timing CSVs, the checked-in JSON, and for the backend the test source tree); it starts no second test run."
+  - "The check is idempotent and side-effect free apart from its exit code and its output (stdout, including ::error::/::warning:: annotation lines); it writes no file and calls no network."
+  - "A missing, empty or malformed CSV or allowlist after a green run fails the step in both stacks, warn mode included (fail closed)."
+  - "Behaviour preserved (D7): same test names and assertions; per-stack test counts do not drop."
+  - "Script and tests use nothing newer than the Python 3.12 stdlib."
+  - "A push touching only Scripts/test-timings/** must start the verify jobs once DO-7 lands (ci.yml paths + ci_changes.yml patterns)."

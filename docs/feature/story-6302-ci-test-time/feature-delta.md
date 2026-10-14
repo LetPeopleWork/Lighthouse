@@ -2,8 +2,8 @@
 
 ADO source: [User Story #6302 — Investigate why the backend and frontend CI stages got slower](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6302) (state: `Active`, no parent Epic, as of 2026-10-14)
 Density: `lean` (DISCUSS hard default). No Tier-2 trigger fired: one persona, one context (CI test suites), no AC ambiguity, no compliance terms, no walking skeleton.
-Waves complete: DISCUSS; DESIGN (all choices locked 2026-10-14 under the maintainer's AFK recommended-option rule; ADR-237).
-Next wave: DEVOPS.
+Waves complete: DISCUSS; DESIGN (all choices locked 2026-10-14 under the maintainer's AFK recommended-option rule; ADR-237); DEVOPS (2026-10-14, same rule; DO-1..DO-7, usage-data event N/A).
+Next wave: DISTILL.
 
 **Lineage:** follows `backend-test-speed` (#5258), which parallelised the backend suite and published per-test timing CSVs from both CI jobs (`Scripts/test-timings/`). This story uses those CSVs as its evidence and builds its guard on them.
 
@@ -514,3 +514,144 @@ flowchart TD
 - **Reuse**: two CREATE NEW (script, data file), everything else EXTEND or REUSE AS-IS.
 - **Corrections to DISCUSS**: F1, F5, F6 back-propagated (see Changed assumptions, DESIGN); F3 is why the backend budget starts in warn mode.
 - **Handoff**: DEVOPS (usage-data event expected N/A) → DISTILL.
+
+---
+---
+
+# DEVOPS
+
+Density: `lean`, Tier-1 [REF] only. This feature deploys nothing and adds no infrastructure: one new last step in each of the two existing verify jobs, plus test-only changes. The maintainer was AFK; every engineering choice below took the recommended option and is recorded as a DO-* decision (none changes what a Lighthouse user sees; the maintainer may revisit). Machine artifact: `docs/feature/story-6302-ci-test-time/environments.yaml`. KPI contracts appended to `docs/product/kpi-contracts.yaml` (`OUT-6302-*`).
+
+Prior-wave reading: ✓ this delta (DISCUSS KPIs, DESIGN DDD-1..10, DS-Q1..Q3), ✓ ADR-237, ✓ `ci.yml`, `ci_frontend.yml`, `ci_backend.yml`, `ci_changes.yml`, `ci_workflow-scripts.yml`, `.github/actions/build-frontend`, ✓ `Scripts/test-timings/` (3 scripts, 3 test modules, fixtures), ✓ `backend-test-speed` DEVOPS + `environments.yaml` (format precedent), ✓ `kpi-contracts.yaml` (format), ✓ `docs/ci-learnings.md` (timing CSVs, pipefail, piping a gate's output, Python under backend Sonar, Stryker temp dirs, pnpm).
+
+## Wave: DEVOPS / [REF] Environment matrix
+
+| Environment | Platform | Python | Preconditions | Role |
+|---|---|---|---|---|
+| `local-dev` | linux (the maintainer's box; macOS/WSL work but are not the reference) | `python3` 3.14.8 (observed 2026-10-14) | a `test-timings-*.csv` downloaded with `gh run download <run> -n test-timings-frontend` (or `-backend`), or produced locally by the converters | Same command as CI: `python3 Scripts/test-timings/check_budget.py --stack <frontend\|backend> --csv <file>`; self-tests `python3 -m unittest discover -s Scripts/test-timings/tests` (33 tests, OK, 0.006 s today) |
+| `ci-runner` | GitHub Actions `ubuntu-latest` = ubuntu-24.04, image 20261004 | the image's system `python3` (3.12 line expected; the step prints `python3 --version` so the first run confirms it) | green test step; CSV written by the always-run extract step; repository checked out at the run's SHA | Gate: frontend fails the job, backend warns (DDD-4) |
+
+**DO-1 — stdlib floor is the runner's Python, not the developer's.** The script and its tests use nothing newer than Python 3.12 (local dev is 3.14, so a 3.13+ stdlib API would pass locally and break on CI). No `actions/setup-python`, no `pip install`: the check is `csv`, `json`, `argparse`, `pathlib`, `unittest` only (DESIGN technology choices).
+
+## Wave: DEVOPS / [REF] CI/CD pipeline outline
+
+No new workflow, job or stage; one appended step per verify job (DESIGN component table; `feedback-ci-and-e2e-minimalism`). Callers unchanged: `Build And Deploy Lighthouse` (`ci.yml`) → `Verify Frontend` (`ci_frontend.yml`, job `frontend`) and `Verify Backend` (`ci_backend.yml`, job `backend`, called with `run_sonar: true` on every run). No other workflow calls either file, so the guard runs on `main` pushes, `features/**` pushes and PRs alike.
+
+**Verify Frontend / frontend** (step order after the change):
+
+| # | Step | Condition | Note |
+|---|---|---|---|
+| 1 | checkout | — | |
+| 2 | Build Frontend (composite): install → `pnpm run build` → `pnpm run sonarreport` (`vitest run --coverage`, `bail: 1` on CI) → Sonar cache → Sonar scan | success | tests and the Sonar scan both live inside the composite, before the guard |
+| 3 | Extract frontend per-test timings (`vitest_to_csv.py`, `summarise.py --top 20`) | `always()` | unchanged |
+| 4 | Upload frontend per-test timings | `always()` | unchanged; the CSV the guard judged is published even when the guard is red |
+| 5 | Upload Sonar report metadata | success | unchanged |
+| **6** | **Check test-time budget** (new, last) | default `success()` | runs only if 1–5 succeeded, so only after a green, complete Vitest run (F2) |
+
+**Verify Backend / backend**:
+
+| # | Step | Condition | Note |
+|---|---|---|---|
+| 1–9 | checkout … Begin SonarCloud … Build … Compute filter | as today | unchanged |
+| 10 | Test Backend (with Coverage) / (without Coverage) | `run_sonar` / `!run_sonar` | `ci.yml` always passes `run_sonar: true`, so coverage is always on; the budget is calibrated under coverage |
+| 11 | Extract backend per-test timings (`trx_to_csv.py`, `summarise.py`) | `always()` | unchanged |
+| 12 | Upload backend per-test timings | `always()` | unchanged |
+| 13 | End SonarCloud analysis | `run_sonar` | unchanged; runs before the guard, so a breach never skips Sonar (DDD-2) |
+| 14 | Upload Sonar report metadata | `run_sonar` | unchanged |
+| **15** | **Check test-time budget** (new, last) | default `success()` | only after a green test step; skipped Sonar steps do not block it |
+
+**Step body (both jobs, same three commands; DO-2):**
+
+1. `python3 --version` — records the interpreter on the log (DO-1).
+2. `python3 -m unittest discover -s Scripts/test-timings/tests` — the guard's own tests plus the existing converter and `summarise` tests, which no workflow runs today (F7). Any failure fails the step in **both** stacks; warn mode never softens it.
+3. `python3 Scripts/test-timings/check_budget.py --stack frontend --csv test-timings-frontend.csv` / `--stack backend --csv test-timings-backend.csv --source-root Lighthouse.Backend/Lighthouse.Backend.Tests --warn-only`.
+
+**DO-3 — frontend fails, backend warns, and what "warn" covers.** Frontend: a breach exits non-zero and fails the job. Backend: `--warn-only` turns a *budget breach* into a warning and exit 0; the one-line switch to failing (DDD-4) is deleting that flag in `ci_backend.yml` once ≥5 post-fix `main` runs stay under budget. Warn mode never softens a missing, empty or malformed CSV, an unparseable allowlist or a failing self-test: those fail closed in both stacks (ADR-237 §7).
+
+**DO-4 — how the verdict reaches the reader: annotations, not a piped summary.** Each breach is printed as a GitHub workflow-command line, `::error::` for the frontend and `::warning::` for the backend, naming the unit, its seconds, the budget and the allowlist file to edit. GitHub lifts these onto the run's summary page, so the job summary shows the verdict with no `$GITHUB_STEP_SUMMARY` write and no `| tee`. Rejected: teeing the output into the step summary — a pipe on a gate's output is exactly what `ci-learnings.md` warns about, and under the default `bash -e` shell (no `pipefail`) `tee` would swallow the guard's exit code.
+
+**DO-5 — commands run from the repository root,** with paths as the existing extract steps write them (`test-timings-*.csv` at the root; backend source root `Lighthouse.Backend/Lighthouse.Backend.Tests`). No `working-directory`, no new env var, no secret.
+
+Cost: the guard reads one CSV of ~8–11 k rows and the self-tests take milliseconds; the step adds well under 5 s to each job.
+
+## Wave: DEVOPS / [REF] Monitoring contracts (KPI → instrument)
+
+All are `vendor_repository` measurements, read with `gh` by the maintainer at named check points (D9: median of ≥5 `main` runs after the slice lands). No dashboard, no scheduled job, no alert beyond the job turning red. Contracts in `docs/product/kpi-contracts.yaml`.
+
+| KPI | Instrument | How it is read |
+|---|---|---|
+| OUT-6302-fe-job (16.8 → ≤12 min) | GitHub Actions job timing for `Verify Frontend / frontend` | `gh run list -R LetPeopleWork/Lighthouse -w "Build And Deploy Lighthouse" -b main -e push --status completed --limit 30 --json databaseId,headSha`, then per run `gh api repos/LetPeopleWork/Lighthouse/actions/runs/<id>/jobs --paginate`, keep the job of that name with conclusion `success` or `failure` (skipped/cancelled out), minutes = `completed_at − started_at`; median over ≥5 runs after slice 03. Cross-check the run ids against `git log` SHAs (the run-list API has served stale pages). |
+| OUT-6302-be-job (15.3 → ≤13.5 min) | same, job `Verify Backend / backend` | as above, after slice 05. Also report the median over runs whose "Compute Test Backend filter" log shows `filter=Category!=Integration` alone, because runs that pull in connector categories are slower for reasons outside this story (F3). |
+| OUT-6302-fe-slow-files (~456 → ≤110 s) | `test-timings-frontend.csv` artifact | `gh run download <id> -n test-timings-frontend`; sum `duration_ms` grouped by `file` for the eight named files; median of the per-run sum over ≥5 runs. |
+| OUT-6302-coverage-kept (7,630 / 10,198, not lower) | CI log test counts | Frontend: the Vitest summary line (`Tests  N passed`) in the `pnpm run sonarreport` log; backend: the `dotnet test` summary (`Passed!  - Failed: 0, Passed: N`). Backend counts compared only between runs with the same filter (F3). The CSV row count of passed rows is the cross-check. The frontend baseline is re-read from the 14 Oct run at DELIVER start: the DISCUSS evidence quotes 7,204–7,540 tests while the KPI row says 7,630. |
+| OUT-6302-guard (red on a planted file) | the guard step itself | Every run: the self-tests carry a planted over-budget unit (red), an allowlisted one (green) and a missing CSV (red), so the step proves itself whenever it runs. At slice 06: one local run of `check_budget.py` against a real downloaded CSV with a planted over-budget row, output recorded in this delta. `main` is never pushed red to show it (green-before-push). |
+
+## Wave: DEVOPS / [REF] Deployment strategy
+
+**N/A**, because there is no deployable artifact: the change is CI steps, a stdlib Python script with its JSON data, and test code. Nothing reaches a Lighthouse instance, the Docker image or the Helm chart.
+
+Rollback, designed first: (a) a misfiring frontend guard is relieved in one line by adding `--warn-only` to its step, or (b) by an allowlist entry with a reason and ceiling, or (c) by `git revert` of the step commit. The backend flip to failing is a one-line change, so its rollback is one line too. Test-harness changes (DS-Q2, DS-Q3) roll back with `git revert`; the suites are their own safety net (3 consecutive green full-assembly runs, DS-Q2).
+
+## Wave: DEVOPS / [REF] Mutation testing strategy
+
+**per-feature** (CLAUDE.md, unchanged; ≥80 % kill rate). Applied as follows:
+
+- **Production C# and TS**: expected untouched (DESIGN: test kits, harness bases, CI script only). Stryker.NET and StrykerJS mutate production code, so with no production file in the diff there is nothing in scope. If DELIVER does touch a production file after all, Stryker runs on that file and the 80 % gate applies (DoD 5); mutation runs last, on frozen code.
+- **Test code** (`RefinementTabTestKit`, `WorkItemsDialogTestKit`, the eight files, the three harness bases, the four outlier tests): not mutated, because it is the mutation oracle, not its target. D7 ("same names, same assertions, counts do not drop") is the guard on it.
+- **`check_budget.py` (Python)**: **no mutation run**, because the repository has no Python mutation tool (no mutmut, cosmic-ray or equivalent; no Python requirements file; Stryker covers C#, JS and TS only), and adding one plus its install step for one stdlib script would bring a dependency into a step designed to need none (DO-1). Substitute, pinned by DISTILL: the pure core's unit tests probe both sides of every boundary a mutant would flip — a unit exactly at the budget and just over it, an allowlisted unit at and over its ceiling, the backend class name from a dotted argument (`"https://evil.example/steal"`), a stale frontend entry, an entry with no reason or no ceiling, and a missing, empty or wrong-header CSV.
+
+No CLAUDE.md change.
+
+## Wave: DEVOPS / [REF] Observability stack
+
+Reuse, nothing added: the `test-timings-{frontend,backend}` artifacts (#5020, `backend-test-speed`), the guard's annotations on the run summary page (DO-4), the existing `summarise.py --top 20` log lines, and GitHub's own job timings read with `gh`. No metrics, log or trace stack, and nothing a running Lighthouse emits (self-hosted, no phone-home posture).
+
+## Wave: DEVOPS / [REF] Branching strategy
+
+**Trunk-based on `main`** (project standard): each slice is a focused local commit set, pushed at the slice boundary, CI awaited green, then ADO transitioned. No feature branch, no PR. `ci.yml` also triggers on `features/**` pushes and PRs; the guard runs there unchanged, which keeps a contributor PR honest without extra config.
+
+## Wave: DEVOPS / [REF] Coexistence matrix
+
+| Existing thing | Why it keeps working |
+|---|---|
+| Timing extract + upload steps (`always()`) in both jobs | Unchanged. The guard only reads the CSV they write and runs after them; the upload still happens on a red test run and on a red guard. |
+| `summarise.py --top 20` log output | Unchanged; the guard does not import or replace it (DESIGN reuse: REUSE AS-IS). |
+| Frontend Sonar (inside the build composite) and backend Sonar begin/end + report metadata | All run before the guard, so a breach never skips a scan. A red frontend guard makes the job `failure`, which skips `sonar-gates` for that run, exactly as a red test does today; the analysis itself has already been submitted. Backend warn mode leaves the job green. |
+| SonarCloud on the new Python | `Scripts/**` is already in the backend scanner's `sonar.exclusions` and `sonar.coverage.exclusions` (the 2026-08-31 learning), and the frontend scan's base dir is `Lighthouse.Frontend`, so the script raises no Sonar issue. |
+| Coverage upload (Vitest `--coverage` lcov and backend opencover, both read by Sonar) | The guard reads neither and changes no test command; coverage collection is untouched. |
+| `[NonParallelizable]` allowlist guard (`BackendTestParallelizationGuardTest`) | Runs inside `dotnet test`, code untouched; DDD-6 adds no `[NonParallelizable]`. Its name → reason shape is copied, not shared, so the two allowlists cannot collide. |
+| Stryker temp dirs (`.stryker-tmp*`, `StrykerOutput/`, gitignored) | Never present on CI. Locally, the backend allowlist's "class still exists in source" scan must skip them along with `bin/` and `obj/`, or a deleted class surviving in a sandbox copy keeps a stale entry green on the developer's box and red on CI (DO-6; DISTILL pins it). |
+| `bail: 1` in `vitest.config.ts` | The guard runs on `success()` only, so it never reads the partial JSON a failing run leaves (F2). |
+| Backend filter / connector selection (`ci_changes.yml`, "Compute Test Backend filter") | Unchanged. The guard copes with a varying class set by checking backend allowlist entries against source, not against the run (F3). |
+| `Verify Workflow Scripts` (`node --test .github/scripts/*.test.mjs`) | Untouched; the Python self-tests live in the guard step per DS-Q1, not in that Node job. |
+| E2E and verify-sqlite/postgres/auth workflows | Do not call `ci_frontend.yml` or `ci_backend.yml`; unaffected. |
+
+**DO-6 — the backend source scan skips build and mutation output** (`bin/`, `obj/`, `.stryker-tmp*/`, `StrykerOutput/`), so local and CI answers agree.
+
+## Wave: DEVOPS / [REF] Pre-requisites
+
+- Timing CSVs written and uploaded by both jobs (verified in `ci_frontend.yml` and `ci_backend.yml`).
+- `Scripts/test-timings/tests` green with plain `python3 -m unittest discover` today: 33 tests, OK (verified locally, Python 3.14.8). The modules put their parent folder on `sys.path` themselves, so no `__init__.py` or package install is needed.
+- `Scripts/**` excluded from the backend Sonar project (verified).
+- **DO-7 — the trigger paths must include `Scripts/test-timings/**`** (DELIVER slice 06, same commit as the guard steps). Today `ci.yml`'s `push` paths filter has no `Scripts/**` entry, and `ci_changes.yml` sets `frontend`/`backend` only for `Lighthouse.Frontend/`, `Lighthouse.Backend*/` or `ci*.yml` changes. A push that touches only the guard, its allowlist or a converter would therefore run neither verify job, and the change would first be checked by whichever unrelated push comes next. Recommended: add `Scripts/test-timings/**` to the `ci.yml` push paths and to both the frontend and backend patterns in `ci_changes.yml`. (Normally an allowlist entry rides with the slow test it excuses and so triggers anyway; the gap is a script-only or allowlist-only commit.)
+- The budget numbers need ≥5 post-fix `main` runs (slice 06 comes last for this reason).
+- `gh` authenticated against `LetPeopleWork/Lighthouse` for the monitoring reads.
+- In a worktree, copy `valid_not_expired_license.json` from the main checkout before judging backend results.
+
+## Wave: DEVOPS / [REF] Usage-data event
+
+**N/A, because the feature changes CI and tests only; no Lighthouse user action is new or changed, so there is nothing for the opt-in usage-data catalogue (`UsageDataEventName`) to count.** Confirmed against the stories: US-01 is a local A/B measurement, US-02/03 speed up frontend test files, US-04/05 change backend test harnesses and tests, US-06 adds a CI step; the DISCUSS driving ports are `pnpm`/`dotnet test` CLIs, the GitHub Actions verify jobs and the timing scripts, with "no HTTP, UI or client surface changes". No `UsageDataEventName` entry, no `docs/settings/usagedata.md` change.
+
+## Wave: DEVOPS / [REF] Contradictions with DESIGN
+
+1. **Trigger gap (DO-7).** ADR-237 §8 says the step "proves itself on every run", but a commit touching only `Scripts/test-timings/**` starts no verify run, so the proof waits for an unrelated push. Not a change to the design; a missing piece of wiring, assigned to slice 06.
+2. **Allowlist file count, wording only.** DS-Q1 says "one checked-in JSON beside the script, per stack"; ADR-237 §4 says one JSON file with one section per stack. The ADR wording is the decision; DISTILL and DELIVER follow it.
+3. **Python version split (DO-1).** DESIGN says "already on the runner"; true, but the runner's system Python is older than the developer's, so the script is held to the 3.12 stdlib.
+
+## Wave: DEVOPS / [REF] Wave-decisions summary (DEVOPS)
+
+- **Deployment**: none, N/A with reason. **CI/CD**: existing GitHub Actions; one last step per verify job; no new workflow, job or stage. **Branching**: trunk-based. **Observability**: the timing artifacts, guard annotations and `gh` job timings. **Mutation**: per-feature, unchanged; nothing in scope unless a production file is touched; no Python mutation tool, substitute boundary tests named.
+- **Decided (AFK recommended option, maintainer may revisit)**: DO-1 runner-Python stdlib floor, no setup-python, no pip; DO-2 step = `--version`, self-tests, check; DO-3 backend `--warn-only` softens breaches only, never fail-closed errors; DO-4 annotations, no tee into the step summary; DO-5 repo-root paths, no env or secret; DO-6 source scan skips `bin`/`obj`/Stryker output; DO-7 `Scripts/test-timings/**` added to the CI trigger paths in slice 06.
+- **Usage-data event**: N/A (section above).
+- **Upstream changes**: none to DISCUSS or DESIGN decisions; contradictions 1–3 are wiring and wording, carried forward.
+- **Handoff**: DISTILL. `environments.yaml` gives the local-vs-CI axis (Python version, presence of Stryker sandboxes, varying backend class set); the KPI contracts name the instruments.

@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-10-02
+updated: 2026-10-14
 description: >
   KPI contracts — per-outcome data collection, dashboard mapping, alerting thresholds.
   Created during the DEVOPS wave of work-tracking-oauth-authentication.
@@ -1910,4 +1910,87 @@ outcomes:
     acceptance_scenarios: "clients slice 03: one case per D8 lh row and every N/A command reporting nothing; slice 04: the 6 MCP tools"
     measurement_window: "after each clients release, then monthly"
     alerting: []
+    status: designed-not-shipped
+
+  - id: OUT-6302-fe-job
+    feature: story-6302-ci-test-time
+    title: The frontend verify job answers in about its early-October time again
+    target: "Verify Frontend / frontend median job time <= 12 min over >= 5 main runs after slice 03"
+    ga_baseline: "16.8 min (MEASURED 2026-10-14, median of that day's main runs; 11.2-11.4 on 1-3 Oct)"
+    measurement_scope: vendor_repository
+    measured_by: >
+      gh run list -R LetPeopleWork/Lighthouse -w "Build And Deploy Lighthouse" -b main -e push
+      --status completed --limit 30 --json databaseId,headSha, then per run
+      gh api repos/LetPeopleWork/Lighthouse/actions/runs/<id>/jobs --paginate, keeping the job named
+      "Verify Frontend / frontend" with conclusion success or failure; minutes = completed_at - started_at;
+      median. Run ids cross-checked against git log (the run-list API has served stale pages).
+    measurement_window: once at least 5 main runs follow slice 03, then at the DoD check point
+    acceptance_scenarios: "none; a gh query at the DoD check point (D9)"
+    alerting: []
+    status: designed-not-shipped
+
+  - id: OUT-6302-be-job
+    feature: story-6302-ci-test-time
+    title: The backend verify job sheds the time its new and outlier tests added
+    target: "Verify Backend / backend median job time <= 13.5 min over >= 5 main runs after slice 05"
+    ga_baseline: "15.3 min (MEASURED 2026-10-14; 13.1-13.2 on 1-3 Oct)"
+    measurement_scope: vendor_repository
+    measured_by: >
+      Same gh query as OUT-6302-fe-job, job "Verify Backend / backend". Also reported over the runs whose
+      "Compute Test Backend filter" log shows filter=Category!=Integration alone, because runs that pull in
+      live-connector categories are slower for reasons outside this story.
+    measurement_window: once at least 5 main runs follow slice 05, then at the DoD check point
+    acceptance_scenarios: "none; a gh query at the DoD check point (D9)"
+    alerting:
+      - condition: "a backend class over its budget"
+        action: "::warning:: annotation on the run (check_budget.py --warn-only); becomes a failing job once >= 5 post-fix main runs show headroom (ADR-237)"
+    status: designed-not-shipped
+
+  - id: OUT-6302-fe-slow-files
+    feature: story-6302-ci-test-time
+    title: The eight slow new frontend test files stop carrying the job
+    target: "Summed CI time of the eight named files <= 110 s (median over >= 5 main runs)"
+    ga_baseline: "~456 s (MEASURED 2026-10-14 from test-timings-frontend.csv: RefinementView.paging 115, WorkItemsDialog.contexts 105, BaseMetricsView.loading 53, ModifyTeamSettings.refinementNeed 49, ModifyTeamSettings.readiness 39, RefinementView.comments 34, DataGridBase.paging 32, RefinementView.votes 29)"
+    measurement_scope: vendor_repository
+    measured_by: >
+      gh run download <id> -R LetPeopleWork/Lighthouse -n test-timings-frontend; sum duration_ms grouped by
+      the file column for the eight files; median of the per-run sum.
+    measurement_window: after slices 02 and 03, at least 5 main runs each
+    acceptance_scenarios: "slice 02 AC-02.2 (two files <= 40 s), slice 03 AC-03.2 (six files <= 70 s)"
+    alerting:
+      - condition: "any frontend test file over the per-file budget"
+        action: "Verify Frontend fails with an ::error:: annotation naming file, seconds, budget and the allowlist file (ADR-237)"
+    status: designed-not-shipped
+
+  - id: OUT-6302-coverage-kept
+    feature: story-6302-ci-test-time
+    title: Faster suites keep every test they had
+    target: "Frontend and backend test counts not lower than the baseline at any check point"
+    ga_baseline: "7,630 frontend / 10,198 backend (DISCUSS; the frontend figure is re-read from the 14 Oct run log at DELIVER start, since the DISCUSS evidence quotes 7,204-7,540)"
+    measurement_scope: vendor_repository
+    measured_by: >
+      CI logs: the Vitest summary line (Tests N passed) in the pnpm run sonarreport step, and the dotnet
+      test summary (Passed! - Failed: 0, Passed: N). Backend counts compared only between runs with the same
+      test filter. Cross-check: passed-row count of the matching test-timings CSV.
+    measurement_window: at every slice boundary and the DoD check point
+    acceptance_scenarios: "D7 checks per slice: same test names, same per-file counts"
+    alerting: []
+    status: designed-not-shipped
+
+  - id: OUT-6302-guard
+    feature: story-6302-ci-test-time
+    title: A slow test file fails the build on the commit that adds it
+    target: "A planted over-budget unit turns the check red; an allowlisted one stays green; a missing CSV fails closed"
+    ga_baseline: "none (no check existed before this story)"
+    measurement_scope: vendor_repository
+    measured_by: >
+      The guard step itself: python3 -m unittest discover -s Scripts/test-timings/tests runs the planted
+      over-budget, allowlisted and missing-CSV cases on every verify run before the real check. At slice 06,
+      one local run of check_budget.py against a real downloaded CSV with a planted over-budget row, its
+      output recorded in the feature delta (main is never pushed red to show it).
+    measurement_window: every Build And Deploy Lighthouse run once slice 06 lands
+    acceptance_scenarios: "US-06 AC-06.3 (guard self-tests, pinned in DISTILL)"
+    alerting:
+      - condition: "self-test failure, or a missing, empty or malformed CSV after a green run"
+        action: "step fails in both stacks, backend warn mode included"
     status: designed-not-shipped
