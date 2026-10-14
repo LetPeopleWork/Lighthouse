@@ -81,7 +81,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-06 @slice-06 @error @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice06)]
         public async Task A_report_reached_through_another_Portfolios_address_is_not_found()
         {
             var apollo = GivenApolloFinishedThreeFeaturesInThen();
@@ -98,7 +97,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-06 @slice-06 @error @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice06)]
         public async Task A_Teams_report_cannot_be_reached_through_a_Portfolios_address()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -115,7 +113,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-06 @us-08 @slice-06 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice06)]
         public async Task Deleting_a_Portfolio_deletes_its_reports()
         {
             var apollo = GivenApolloFinishedThreeFeaturesInThen();
