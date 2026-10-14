@@ -391,7 +391,7 @@ describe("The report's summary header", () => {
 	// @us-03 @us-04 @slice-04 @driving_port @contract-shape:pure-function
 	// Throughput counts every finished Work Item, Cycle Time only those whose cycle time it can measure. Once a
 	// report captured Throughput, the summary reads its total, so the summary and the Throughput panel agree.
-	it.skip.each<[string, (report: IReport) => IReport, string, string]>([
+	it.each<[string, (report: IReport) => IReport, string, string]>([
 		[
 			"a report that captured both",
 			(report) => report,

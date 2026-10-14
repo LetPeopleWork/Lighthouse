@@ -23,8 +23,7 @@ const VISUALLY_HIDDEN = {
 	whiteSpace: "nowrap",
 } as const;
 
-/** The Work Items behind the Cycle Time percentiles: those that closed in the window with a Cycle Time. */
-const closedCountOf = (side: ReportMetricSide): number | null => {
+const cycleTimeSampleSizeOf = (side: ReportMetricSide): number | null => {
 	const values = CYCLE_TIME_PERCENTILES.map((key) => side[key]);
 	const size = values
 		.map((value) => value?.sampleSize)
@@ -33,6 +32,22 @@ const closedCountOf = (side: ReportMetricSide): number | null => {
 	return values.some((value) => value?.absentReason === "no-finished-items")
 		? 0
 		: null;
+};
+
+/**
+ * How many Work Items closed in the window. Throughput counts every one that finished, so a report that captured it
+ * reads its total and agrees with the Throughput panel. An older report falls back to the Work Items behind its
+ * Cycle Time percentiles, which leaves out any whose Cycle Time could not be measured.
+ */
+const closedCountOf = (
+	throughputSide: ReportMetricSide | undefined,
+	cycleTimeSide: ReportMetricSide | undefined,
+): number | null => {
+	const total = throughputSide?.total?.value;
+	if (total !== null && total !== undefined) return total;
+	return cycleTimeSide === undefined
+		? null
+		: cycleTimeSampleSizeOf(cycleTimeSide);
 };
 
 const windowLineOf = (reportWindow: IReportWindow): string => {
@@ -54,11 +69,16 @@ const ThenAndNowSummary: React.FC<{ readonly thenAndNow: IThenAndNow }> = ({
 	thenAndNow,
 }) => {
 	const { getTerm } = useTerminology();
+	const throughput: IReportMetric | null | undefined =
+		thenAndNow.metrics.throughput;
 	const cycleTime: IReportMetric | null | undefined =
 		thenAndNow.metrics["cycle-time"];
 
-	const closedLineOf = (side: ReportMetricSide | undefined): string | null => {
-		const count = side === undefined ? null : closedCountOf(side);
+	const closedLineOf = (
+		throughputSide: ReportMetricSide | undefined,
+		cycleTimeSide: ReportMetricSide | undefined,
+	): string | null => {
+		const count = closedCountOf(throughputSide, cycleTimeSide);
 		if (count === null) return null;
 		const term = getTerm(
 			count === 1 ? TERMINOLOGY_KEYS.WORK_ITEM : TERMINOLOGY_KEYS.WORK_ITEMS,
@@ -78,11 +98,15 @@ const ThenAndNowSummary: React.FC<{ readonly thenAndNow: IThenAndNow }> = ({
 			<ThenNowColumns count={2}>
 				<ThenNowColumn data-summary-side="then" heading="Then" first>
 					<SummaryLine text={windowLineOf(thenAndNow.thenWindow)} />
-					<SummaryLine text={closedLineOf(cycleTime?.atThen)} />
+					<SummaryLine
+						text={closedLineOf(throughput?.atThen, cycleTime?.atThen)}
+					/>
 				</ThenNowColumn>
 				<ThenNowColumn data-summary-side="now" heading="Now" first={false}>
 					<SummaryLine text={windowLineOf(thenAndNow.nowWindow)} />
-					<SummaryLine text={closedLineOf(cycleTime?.atNow)} />
+					<SummaryLine
+						text={closedLineOf(throughput?.atNow, cycleTime?.atNow)}
+					/>
 				</ThenNowColumn>
 			</ThenNowColumns>
 		</Paper>
