@@ -600,6 +600,36 @@ describe("Step three: Now", () => {
 
 		expect(await theNowLengthField()).toHaveAttribute("min", "21");
 	});
+
+	it("keeps an edited Now when Then changes afterwards", async () => {
+		await openTheWizard();
+		await next();
+		await next();
+		await enterNumber(await theNowLengthField(), 60);
+
+		await userEvent.click(
+			within(await theWizard()).getByRole("button", { name: "Back" }),
+		);
+		await enterNumber(await theThenLengthField(), 45);
+		await next();
+
+		expect(await theNowLengthField()).toHaveValue(60);
+	});
+
+	it("follows a Then changed afterwards while Now is still untouched", async () => {
+		await openTheWizard();
+		await next();
+		await next();
+		expect(await theNowLengthField()).toHaveValue(90);
+
+		await userEvent.click(
+			within(await theWizard()).getByRole("button", { name: "Back" }),
+		);
+		await enterNumber(await theThenLengthField(), 45);
+		await next();
+
+		expect(await theNowLengthField()).toHaveValue(45);
+	});
 });
 
 describe("Step four: metrics and name", () => {
