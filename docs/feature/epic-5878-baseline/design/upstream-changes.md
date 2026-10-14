@@ -114,3 +114,21 @@ finding of DESIGN's; DESIGN applies them. **This one changes the wire contract**
 | DD36 binary doubles (peer review 2026-10-14) | accepted: `roundForDisplay(1.005, 2)` is 1, not 1.01 | yes — one row `[1.005, 2, 1]` in `thenNowComparison.test.ts` (DST-20) |
 | DD33 → DT9 (2026-10-13) | Then freezes the {Cycle Time} 85th, 70th and 50th; a report stored before DT9 holds the 85th only and reads Then's 70th and 50th "Not captured for this report" (D27). DD33's "85th only" and "no Not-captured sentence for Then's 70th / 50th" are struck | yes — `A_report_that_froze_only_the_85th_percentile_says_nothing_of_Thens_70th_and_50th` (backend, DST-21); `CycleTimePanel.test.tsx` already shows the sentence |
 | D52 summary header (DD12) | frontend only, no wire change. Each side's window and "N {Work Items} closed": from slice 04 the {Throughput} `total` when the report captured {Throughput}, else the {Cycle Time} sample size (items closed with a cycle time > 0); no count line when neither was captured; "0 … closed" when the source is 0 or `no-finished-items`. Sample size shows here, not per line. "Days since Then ended" waits for slice 07's sketch; `daysSinceThenEnded` stays on the wire | yes — DST-18 cases; slice 07's `it.todo` (DST-19) |
+
+## 9. The header's CHANGE segment and the {Cycle Time} 95th (D53, D54, 2026-10-14; slice 05b)
+
+**Origin**: the maintainer's decisions after the slice-04 live check, recorded in DISCUSS (D53, D54, US-05b, Q11). Not
+an upstream finding of DESIGN's; DESIGN applies them. **Wire change**: the `cycle-time` sides gain `p95`; nothing
+else.
+
+| Decision | DESIGN item | Changes a test? |
+|---|---|---|
+| D54 the 95th on both sides | DD38, DD15 M1, DD12 (same sample size as the other percentiles), DD33 lineage (extends DT9), read contract and storage gain `p95`; no migration; `CycleTimePercentiles` gains `P95`; `CycleTimeReportMetric` adds `p95` | yes — backend `CycleTimeReportMetricTest` (freeze-and-show gains the 95th; a capture without `p95` reads back without it), `ReportsAcceptanceTest` helpers (`P95`), new Cycle Time scenarios for slice 05b (freeze and show; a report stored before the 95th; parity with the Metrics endpoint's 95th), `ThenAndNowPayloadRoundTripTest` (payload with and without `p95`) |
+| D54 old reports | a report stored before D54 has no Then `p95`: `WindowedReportMetric` reads back only the Then members Now produces and the capture holds, so the member is missing and reads "Not captured for this report" — DT9's path, no code added | yes — one backend scenario and one frontend case pin it |
+| D54 the panel | 95th row above the 85th (Q11d); `new ForecastLevel(95)` = Certain, as the Metrics tab maps it (`CycleTimePercentiles.tsx:57-58`) | yes — `CycleTimePanel.test.tsx` gains the 95th row, its icon, change and the not-captured case; `ReportView.test.tsx`'s certainty-icon case gains the 95th; `ReportsTestKit.tsx` fixtures gain `p95` |
+| D53 CHANGE segment | DD39: frontend only, never stored or sent; `changeLines` per registry entry; `lineComparisonsOf` (per line, null for a dash or not captured) feeds the panels' change columns and `summariseChange` (new `panels/changeSummary.ts`); the header adds a third column; "—" when nothing is comparable (Q11a); catalog order inside a group (Q11b); "Not captured" ignored like a dash (Q11c); a long group wraps (Q11e); loading and failure from the report body's `WidgetBody` | yes — new `changeSummary.test.ts`; `thenNowComparison.test.ts` gains `lineComparisonsOf` cases; a new registry parity test (E16); `ReportView.test.tsx` gains the header's CHANGE cases (US-05b's scenarios, the "—" case, renamed Terminology, a key with no panel, loading and failure) |
+| D53 enforcement | E16: the header cannot judge a line differently from its panel (table test, registry parity, purity scan) | yes — the three Vitest checks above |
+
+Nothing in DISCUSS needed correcting: US-05b's Tech note ("DESIGN confirms no migration"; "derived from the panels'
+marks in the frontend, never stored") is confirmed as written. Q11's five provisional details are adopted as the
+working shape and still go to the maintainer's sketch at the start of DISTILL.

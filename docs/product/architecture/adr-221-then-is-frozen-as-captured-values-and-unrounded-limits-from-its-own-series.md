@@ -4,9 +4,9 @@
 series" — the limits went with D49; see "Amended 2026-10-14" below. The file name keeps the old words so links resolve.*
 
 - **Status**: Accepted (2026-10-13, after the Final Wave Review; proposed in DESIGN 2026-10-03). **Amended 2026-10-14**
-  (maintainer decisions D49–D51) — still Accepted.
+  (maintainer decisions D49–D51), and again the same day for D54 (the {Cycle Time} 95th) — still Accepted.
 - **Date**: 2026-10-03
-- **Feature**: epic-5878-baseline (slices 01, 02, 03, 04, 05)
+- **Feature**: epic-5878-baseline (slices 01, 02, 03, 04, 05, 05b)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)
 
 ## Context
@@ -186,6 +186,17 @@ change to this ADR: it reads members the wire already carries). Slices 01–02 a
 - **Negative**: a report says nothing about whether a change is beyond routine variation; Signals (Epic 5935) owns
   that question, and a process-behaviour entry may join the report later (D49).
 - **Neutral**: reports already stored are unaffected (they hold `cycle-time` values only).
+
+## Amended 2026-10-14 (D54)
+
+**The 95th joins Then's frozen {Cycle Time} values.** `cycle-time` is `{ p95, p85, p70, p50 }` on both sides, the 95th
+read from the same Metrics-tab percentile read as the others (which already computes it) with the same sample size
+and absence code. The payload gains one member, additively: no migration, schema version unchanged, older payloads
+read as before. A report frozen before D54 holds no Then `p95`; because a windowed metric reads back only the Then
+members its Now produces **and** the capture holds, that report's Then 95th is simply missing and reads "Not captured
+for this report" — the path a pre-DT9 report's 70th and 50th already take (Decision 9). Nothing is backfilled: a
+frozen Then is never recomputed. Rejected: backfilling Then's 95th from the current series (it would no longer be
+what Then was when frozen).
 
 Cross-refs: [ADR-208](./adr-208-a-past-day-is-computed-by-the-recorders-own-code.md) (one computation, two callers), ADR-219,
 ADR-220.

@@ -1,8 +1,9 @@
 # ADR-220: A metric catalog captures values on the server; one frontend panel per metric owns its direction of good
 
-- **Status**: Accepted (2026-10-13, after the Final Wave Review; proposed in DESIGN 2026-10-03)
+- **Status**: Accepted (2026-10-13, after the Final Wave Review; proposed in DESIGN 2026-10-03). **Amended
+  2026-10-14** (D53, the header's CHANGE summary) — still Accepted.
 - **Date**: 2026-10-03
-- **Feature**: epic-5878-baseline (slices 01, 03, 04, 05, 06)
+- **Feature**: epic-5878-baseline (slices 01, 03, 04, 05, 05b, 06)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)
 
 ## Context
@@ -85,6 +86,18 @@ info widgets compute a previous-period comparison in the backend with neutral ar
 - Vitest: every panel renders identically when its props are identical and no network call is made (purity).
 - ArchUnitNET: `IReportMetric` implementations depend on `IReportMetricSeries`, never on `ITeamMetricsService` or
   `IPortfolioMetricsService` directly.
+
+## Amended 2026-10-14 (D53)
+
+The report's summary header gains a third segment, CHANGE, that places each shown metric as Improved, Got worse,
+Mixed or Unchanged by its panel's own better / worse / no-change marks. **It derives from the panels' judgement and
+from nothing else, in the frontend only; it is never stored and never sent.** Each registry entry lists the lines that
+carry a change mark (`changeLines`, with their display decimals); one pure function, `lineComparisonsOf`, compares
+those lines with the entry's direction of good, and both the panel's change column and the header's tally
+(`summariseChange`, in `panels/changeSummary.ts`) consume its result. The direction of good therefore still has one
+home, the registry, and the header cannot judge a line differently from the panel below it — held by a parity test
+over every registry entry. Rejected: a server-side tally (a second home for direction of good), reading the rendered
+marks from the DOM (breaks the pure-props seam), one summary method per panel (one rule, four implementations).
 
 Cross-refs: [ADR-211](./adr-211-a-reality-check-grade-is-read-in-the-client-from-facts-the-server-already-sends.md),
 [ADR-208](./adr-208-a-past-day-is-computed-by-the-recorders-own-code.md) (one family list per scope), ADR-219,

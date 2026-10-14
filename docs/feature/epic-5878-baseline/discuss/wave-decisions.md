@@ -230,3 +230,4 @@ R-A sponsors may read a red panel without context — there is no narrative to s
 maintainer, K5) · demo history is short; screenshots may need a CSV adjustment (checked in slice 03) · without
 verdicts the differentiation against ValueFlow rests on the frozen Then and the count against frozen limits *(since
 D49, 2026-10-14: on the frozen Then alone)*.
+- **D55** (maintainer 2026-10-14) Community allows 2 reports per owner **per report type** (was 2 across every type, D36); Premium unlimited; built in slice 08.

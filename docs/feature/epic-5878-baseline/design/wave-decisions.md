@@ -35,6 +35,13 @@ the header's closed count and that the sample size shows in the header, not per 
 for slice 07's sketch; DD35's median flagged to the maintainer; DD36 accepts binary-double rounding; reuse count
 restated. No wire change.
 
+**Revision 2026-10-14, third pass (maintainer decisions D53, D54, after the slice-04 live check; slice 05b).** DD38:
+the {Cycle Time} 95th joins both sides as an additive payload member `p95` (no migration; a pre-D54 report reads
+Then's 95th "Not captured for this report" through `WindowedReportMetric`'s read-back, as DT9's 70th / 50th); DD39:
+the header's CHANGE segment is derived in the frontend only from the panels' own per-line verdicts
+(`lineComparisonsOf` → `summariseChange` in `panels/changeSummary.ts`), never stored or sent; E16 parity test;
+ADR-220 and ADR-221 amended; slice 05b's steps and test list added. **Wire change**: `cycle-time` sides gain `p95`.
+
 Full text of everything below: `../feature-delta.md` → "Wave: DESIGN / …" sections. ADRs: ADR-219..ADR-222.
 
 ## Config
@@ -131,6 +138,19 @@ technology · no external integration (contract testing N/A).
   `panels/thenNowComparison.test.ts` (DST-20).
 - **DD37** *(2026-10-14)* `beyondThenLimits`, the old `work-item-age` keys and four absence codes removed from the
   frontend model in slice 04 (no release carried them); `median` added to `ReportMetricSide`.
+- **DD38** *(2026-10-14, D54)* The {Cycle Time} 95th: `cycle-time` sides are `{ p95, p85, p70, p50 }`; the
+  `CycleTimePercentiles` record gains `P95`, filled from the same Metrics-tab percentile read; same sample size and
+  `no-finished-items` rule; additive payload member, schema version 1, no migration. A report frozen before D54 has
+  no Then `p95` (`WindowedReportMetric` reads back only Then members that Now produces and the capture holds) and
+  reads it "Not captured for this report" — DT9's path. The 95th row sits above the 85th with
+  `new ForecastLevel(95)` = Certain, the Metrics tab's own mapping (`CycleTimePercentiles.tsx:57-58`).
+- **DD39** *(2026-10-14, D53)* The header's CHANGE segment is frontend-only, never stored or sent. Registry entries
+  list their change-marked lines (`changeLines`: key + decimals); `lineComparisonsOf(metric, panel)` in
+  `panels/thenNowComparison.ts` gives one `{ key, change | null }` per line (null = a dash or not captured on either
+  side) and feeds both the panel's change column and `summariseChange(shown)` in `panels/changeSummary.ts`, which
+  returns the groups Improved, Got worse, Mixed, Unchanged in that order, empty ones dropped, keys in catalog order,
+  `[]` (rendered "—") when nothing is comparable. Names are the panel titles; colour from `verdictColours`; loading
+  and failure follow the report body's `WidgetBody`.
 
 ## Storage
 
@@ -180,6 +200,8 @@ See `upstream-changes.md`: the missing percentile guard (resolved by D45), `Base
 Age} (D48, *superseded by D51*). DISCUSS was updated in place for D45–D48. ADR-209 gains a status note (superseded
 deferral). *2026-10-14*: D49–D52 (no limits or counts; {WIP} and total age as four lines; the summary header) were
 recorded in DISCUSS by the maintainer's decision and applied here and in ADR-221 — see `upstream-changes.md` §8.
+D53 and D54 (the CHANGE segment, the {Cycle Time} 95th) likewise, applied as DD38, DD39 and E16 and in ADR-220 and
+ADR-221 — see §9.
 
 SSOT updated: `brief.md` (`## Application Architecture — epic-5878-baseline`), `c4-diagrams.md` (L1–L3),
 `ARCHITECTURE.md` (ADR index row 219–222 and the 209 row; §4/§6 concepts follow the Refinement precedent and land when slice 01 ships), ADR-219..222, ADR-209 status note.

@@ -9347,7 +9347,12 @@ past window (Then) at creation and sets a rolling, saved-length Now beside it, o
 No verdicts. *Amended 2026-10-14 (D49–D52): no limits are frozen and nothing is counted beyond them; {WIP} and Total
 {Work Item Age} show Average, Median, Min and Max of the window's daily values (median = `PercentileCalculator`'s
 50th, as the Metrics tab); a summary header carries each side's window and closed count; the read drops
-`beyondThenLimits`. Detail: the feature delta's DD9–DD12, DD15, DD35–DD37 and ADR-221's amendment.* DESIGN 2026-10-03, PROPOSE; revised 2026-10-13 after the final review (read / write persistence ports,
+`beyondThenLimits`. Detail: the feature delta's DD9–DD12, DD15, DD35–DD37 and ADR-221's amendment. The same day,
+D53 and D54 (slice 05b): the summary header gains a third segment, CHANGE — each shown metric placed as Improved, Got
+worse, Mixed or Unchanged by its panel's own marks, derived in the frontend only (`lineComparisonsOf` →
+`summariseChange`), never stored or sent — and the {Cycle Time} panel adds the 95th on both sides, an additive
+payload member `p95` with no migration (a report stored before it reads Then's 95th "Not captured for this report").
+Detail: DD38, DD39, E16 and the amendments to ADR-220 and ADR-221.* DESIGN 2026-10-03, PROPOSE; revised 2026-10-13 after the final review (read / write persistence ports,
 the report wizard, wire names, refusal statuses, owner scoping, loading and failure looks, observability). Full
 design: `docs/feature/epic-5878-baseline/feature-delta.md` → "Wave: DESIGN / …" (DD1–DD34, reuse table, storage,
 seams); summary in `design/wave-decisions.md`.
@@ -9436,7 +9441,8 @@ edit / delete; no new requirement):
 
 Template-specific members sit in one object named after the template (`thenAndNow`) in requests and reads alike. The
 read carries per metric `atThen` and `atNow` ~~and `beyondThenLimits`~~ *(dropped 2026-10-14, D49)*; every value is `{ value, sampleSize, absentReason }`;
-the `wip` and `work-item-age` sides are `{ average, median, min, max }`; the only absence code is `no-finished-items`.
+the `cycle-time` sides are `{ p95, p85, p70, p50 }` (the 95th since slice 05b, D54); the `wip` and `work-item-age`
+sides are `{ average, median, min, max }`; the only absence code is `no-finished-items`.
 Refusals are a closed set of codes in a ProblemDetails `code` extension: validation 400 (the two cutoff codes add
 `earliestStart`); cap 403 `report-cap-reached`, like every premium refusal; RBAC 403 with no code; a missing or
 another owner's report 404; a stored report of a type this version cannot read 422 `template-not-supported`.

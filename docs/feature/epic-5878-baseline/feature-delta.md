@@ -422,7 +422,8 @@ sketch review (2026-10-14); D53–D54 the maintainer's decisions after the slice
   whatever its template, so they stay out of the template; none of it is built here. Charts, where a template has
   them, reuse the existing chart components (5882 renders them server-side); Then & Now shows none (D39). No
   app-level Reports page in v1; a later cross-owner listing of viewable reports is not to be blocked. The cap (D29)
-  stays at 2 across all templates, signals included: it is meant to get tight.
+  stays at 2 across all templates, signals included: it is meant to get tight. *(Cap superseded by D55 (2026-10-14):
+  2 per owner per report type.)*
 - [D37] **Then window: end date and length** (maintainer 2026-10-03, Q1; supersedes D20). The user picks Then's end
   date (default today; e.g. the day the coach came in, 7 Sep) and a length going back. Presets: {Team} 30 / 90 days, {Portfolio} 90 / 180 days, plus a custom number of days. Minimum 14 days; the
   whole window inside `DoneItemsCutoffDays` (D21 applies). Calendar days, inclusive at both ends, in the instance's
@@ -577,6 +578,10 @@ sketch review (2026-10-14); D53–D54 the maintainer's decisions after the slice
   D53 like every other line. A report frozen before D54 has no Then 95th and reads "Not captured for this report" for
   it (D27). The backend already computes the 95th (`BaseMetricsService.BuildPercentiles` builds 50 / 70 / 85 / 95);
   it was never decided against, only not requested at DT9. Built in slice 05b (US-05b).
+- [D55] **Community allows 2 reports per owner per report type** (maintainer 2026-10-14, while planning the report
+  types to come; amends D36's cap). The cap was 2 per owner across every type, Signals included; it is now 2 per owner
+  for each type, so a Community {Team} can hold 2 Then & Now reports and, later, 2 signals and 2 custom reports.
+  Premium stays unlimited. Built in slice 08 (US-08), which counts by owner and type.
 
 ---
 
@@ -1830,6 +1835,17 @@ revised; DT9 carried through. Additional reads this round: `ThenAndNowPayload.cs
 `TeamMetricsService.GetTotalWorkItemAgeOverTimeForTeam`, `models/Reports/Report.ts`, `panels/thenNowComparison.ts`,
 `CycleTimePanel.tsx`, `ReportsModuleArchUnitTest.cs`.
 
+**Revision 2026-10-14, third pass (maintainer decisions D53, D54, after the slice-04 live check; slice 05b).**
+Amended in place, nothing superseded: the {Cycle Time} 95th joins both sides (DD15 M1, DD12, DD33 lineage, read
+contract, storage — additive payload member `p95`, no migration; **DD38**); the summary header's CHANGE segment is
+derived in the frontend only, from the panels' own per-line judgement through one pure function, never stored and
+never sent (**DD39**, E16); component, contract-shape, enforcement and slice-plan rows added ("Slice 05b" section);
+ADR-220 and ADR-221 carry an "Amended 2026-10-14 (D53, D54)" note. Additional reads this round: US-05b, Q11, the
+slice-05b brief, `CycleTimeReportMetric.cs`, `WindowedReportMetric.cs` (after 6f6fbf6bf), `IReportMetricSeries.cs`,
+`TeamReportMetricSeries.cs`, `BaseMetricsService.BuildPercentiles`, `ThenAndNowSummary.tsx`, `ReportView.tsx`,
+`panels/{reportPanelRegistry,thenNowComparison,ThenNowLineParts,CycleTimePanel}`, `models/Reports/Report.ts`,
+`components/Common/Forecasts/ForecastLevel.ts`, `components/Common/Charts/CycleTimePercentiles.tsx`.
+
 | Read | Status |
 |---|---|
 | `docs/product/architecture/brief.md` (tail: story-6053, epic-5510 sections; style of `## Application Architecture — …`) | ✓ (paged; 9 256 lines) |
@@ -1915,6 +1931,11 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
   report that did not capture {Throughput}) that side's {Cycle Time} sample size — the {Work Items} closed with a
   cycle time > 0; **no count line** when the report captured neither; "0 {Work Items} closed" when the source is 0 or
   `no-finished-items`.
+  *Extended 2026-10-14 (D54)*: the {Cycle Time} **95th** carries the same sample size as the 85th, 70th and 50th — the
+  finished {Work Items} with a cycle time in the window, or `no-finished-items` when there are none — because all four
+  come from one percentile read over one population. The closed count's fallback is therefore unchanged by it: on a
+  report stored before D54, Then's 95th is missing (no value, no sample size) and the fallback reads the first
+  percentile that has one, as it does today.
 - **DD13** Windows: inclusive calendar days in the instance zone, computed on the server from `ILighthouseClock.Today`;
   `DateOnly` on the wire in and out; a pure `ReportWindowPolicy` (≥ 14 inclusive days, end ≤ today, start ≥ today −
   cutoff, refusal = code + earliest start). *Revised 2026-10-13 (NB2)*: the policy reads nothing — `today` and the
@@ -1925,7 +1946,11 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
 - **DD15** Value definitions per metric (window `[start, end]` inclusive):
   - **M1 {Cycle Time}**: percentiles from `GetCycleTimePercentilesFor*` (the Metrics tab's values). Then freezes the
     85th, 70th and 50th (DT9; ~~85th only, DD33~~); a report stored before DT9 holds the 85th only, and its Then 70th
-    and 50th read "Not captured for this report" (D27). Now captures 85th / 70th / 50th. ~~Limits over finished items' cycle times
+    and 50th read "Not captured for this report" (D27). Now captures 85th / 70th / 50th. *Extended 2026-10-14
+    (D54)*: Then freezes and Now captures the **95th** as well — `{ p95, p85, p70, p50 }` — read from the same
+    `GetCycleTimePercentilesFor*` call (`BaseMetricsService.BuildPercentiles` and the Portfolio read already yield 50 /
+    70 / 85 / 95; the adapters simply stop dropping the 95th). A report stored before D54 has no Then 95th and reads it
+    "Not captured for this report", by the same path as a pre-DT9 report's 70th and 50th (DD38). ~~Limits over finished items' cycle times
     (cycle time > 0, by close date then id — the PBC's own selection); count = Now's items beyond.~~ *(superseded by
     D49 (2026-10-14): no limits, no count.)* Sample size = the finished items with a cycle time in that window (D45);
     `no-finished-items` when there are none.
@@ -2059,6 +2084,9 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
   neither a value nor a "—" — and read "Not captured for this report" (D27), while Now shows all three (DISTILL's
   `A_report_that_froze_only_the_85th_percentile_says_nothing_of_Thens_70th_and_50th`). "Not captured for this report"
   is the one sentence for any metric or value a report predates.
+  *(Lineage 2026-10-14: D54 extends DT9 — Then freezes the 95th too, so Then holds `{ p95, p85, p70, p50 }`; a report
+  stored before D54 reads Then's 95th "Not captured for this report" by the same path, and one stored before DT9
+  reads all three of its 95th, 70th and 50th that way. See DD38.)*
 - **DD34** *(2026-10-13, M8)* **Create ≤ 10 s is an unverified hypothesis.** Gate: slice 01 logs the elapsed time of
   every create (Observability) and measures on the dev instance's busiest Team with a 365-day Then before slice 02
   starts; the result is recorded in the slice's evolution notes. If it misses, the fallback (DD20) is cheaper
@@ -2104,6 +2132,90 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
   `ReportMetricSide` in slice 05 (or 04, if the crafter does both at once). Older reports keep reading: slices 01–02
   stored `cycle-time` values only, which are unchanged; their missing `throughput`, `wip` and `work-item-age` Then
   captures read "Not captured for this report" (D27) as before.
+- **DD38** *(2026-10-14, D54)* **The {Cycle Time} 95th is one more member of the same shape, additive end to end.**
+  - **Wire and storage**: `cycle-time` `atThen` / `atNow` become `{ p95, p85, p70, p50 }`, each the usual
+    `{ value, sampleSize, absentReason }`. The payload gains the member `p95` inside the existing frozen-value object
+    for Then; nothing else changes, `PayloadSchemaVersion` stays `1`, **no migration** (the payload is JSON text and
+    members are only ever added, DD2). An older payload deserialises unchanged: the payload is read as `JsonObject`s
+    of `CapturedValue`s per metric, so a missing `p95` is simply absent (E7).
+  - **Backend**: the `CycleTimePercentiles` record on `IReportMetricSeries` gains `P95`; `TeamReportMetricSeries`
+    (and the Portfolio adapter when slice 06 builds it) fills it from the same `GetCycleTimePercentilesFor*` result it
+    already turns into a dictionary (`percentiles[95]`); `CycleTimeReportMetric.ValuesOver` adds `p95` with the same
+    sample size and the same `no-finished-items` rule as the other three. The record is positional and shared by the
+    test fakes, so the crafter greps its constructions and extends the test builder first (shared-contract rule).
+  - **Old reports, confirmed against the code after 6f6fbf6bf**: `CycleTimeReportMetric` is a
+    `WindowedReportMetric`, whose `Read` computes Now's values and then reads back from the stored capture **only
+    the members whose names Now produced and which the capture holds** (`FrozenIn` iterates Now's keys and drops a
+    member the capture lacks). Adding `p95` to `ValuesOver` therefore makes Now carry `p95` on every report, and a
+    report frozen before D54 carries **no `p95` in `atThen`** — not a null, not a zero, not a dash. The frontend reads
+    a missing member as "Not captured for this report" (`absenceTextOf` with no `absentReason`, D27) and its change as
+    "—"; the CHANGE tally ignores that line (DD39). This is exactly the DT9 path for a pre-DT9 report's 70th and 50th
+    (DD33 lineage); no code is added for it.
+  - **Frontend model**: `ReportMetricSide` gains `p95` (and its Zod member wherever the side's members are listed,
+    `.nullable()` like the rest). `ThenAndNowSummary`'s closed-count fallback needs no change (DD12).
+  - **Panel**: the 95th row sits **above** the 85th (Q11d; rows in descending order). Its certainty icon is the one
+    the Metrics tab shows for the 95th: the Metrics tab's `CycleTimePercentiles` widget maps a percentile to its icon
+    with `getForecastLevel = (percentile) => new ForecastLevel(percentile)`
+    (`components/Common/Charts/CycleTimePercentiles.tsx:57-58`), and `ForecastLevel`
+    (`components/Common/Forecasts/ForecastLevel.ts`, thresholds 50 / 70 / 85) places 95 in its last branch,
+    **Certain** (`CheckCircle`, `certainColor`). `CycleTimePanel` already calls `new ForecastLevel(percentile)` per
+    row, so the 95th gets that icon by adding the row with `percentile: 95` — no mapping of its own (DT10).
+- **DD39** *(2026-10-14, D53)* **The header's CHANGE segment is derived in the frontend only, from the same
+  per-line judgement the panels draw, through one pure function; it is never stored and never sent.**
+  - **Why the frontend**: the direction of good lives only in the frontend panel registry (D39, ADR-220, DD6); a
+    server-side tally would declare it a second time, and a stored tally would freeze a judgement of a Now that is
+    recomputed on every read. Nothing about D53 reaches the wire, the payload or the backend.
+  - **One source per line.** `ReportPanelDefinition` gains `changeLines`: the panel's lines **that carry a change
+    mark**, in the panel's row order, each `{ key, decimals }` — {Cycle Time} `p95, p85, p70, p50` (0 decimals);
+    {Throughput} `perDay` only (2 decimals; the `total` line carries no mark, AC-5b.4); {WIP} and Total {Work Item
+    Age} `average, median, min, max` (0 decimals). The panel's change column is drawn from this list and nothing
+    else: a panel keeps no second, private list of its change lines (one constant per panel module, referenced by
+    the panel and by its registry entry).
+  - **Per-line comparison** — `lineComparisonsOf(metric: IReportMetric, panel: ReportPanelDefinition): readonly
+    LineComparison[]`, where `LineComparison = { key: ReportMetricSideKey; change: ThenNowChange | null }`, in
+    `panels/thenNowComparison.ts` beside `compareThenNow`. It applies `shownValue` to both sides at the line's
+    decimals and `compareThenNow` with the panel's `directionOfGood` — the calls `LineChange` makes today — and
+    returns `change: null` when either side reads as a dash: an absent reason, a null value, or a missing member
+    ("Not captured for this report"). The panel's change column renders these comparisons (`LineChange` takes the
+    computed `ThenNowChange | null` instead of recomputing it), so the mark a reader sees and the verdict the header
+    tallies are one computed value. A line whose % change is "—" because Then was 0 (Q9) still has a `change` and
+    counts (AC-5b.4).
+  - **The tally** — `summariseChange(shown: readonly ShownMetricLines[]): readonly ChangeGroup[]`, in a new pure
+    module `panels/changeSummary.ts` next to `thenNowComparison.ts` and `reportPanelRegistry.ts`:
+    - `ShownMetricLines = { key: ReportMetricKey; lines: readonly LineComparison[] }`, given in catalog order;
+    - `ChangeGroup = { kind: ChangeKind; keys: readonly ReportMetricKey[] }`,
+      `ChangeKind = "improved" | "worse" | "mixed" | "unchanged"`;
+    - per metric, over its lines with `change ≠ null`: none → the metric is **not listed**; at least one `better`
+      and at least one `worse` → `mixed`; else at least one `better` → `improved`; else at least one `worse` →
+      `worse`; else `unchanged`. No weighting, no threshold — a 1-day or 0.01-per-day move is a `better` / `worse`
+      verdict already (AC-5b.5);
+    - output always in the order improved, worse, mixed, unchanged; an empty group is dropped; inside a group the
+      keys keep their input order, i.e. catalog / panel order (Q11b);
+    - no shown metric comparable → `[]`, which the header renders as "—" under its CHANGE heading (Q11a), never as
+      an empty area.
+    It knows no React, no Terminology and no copy; it maps comparisons to groups.
+  - **The header** (`ThenAndNowSummary`, extended): three columns, `ThenNowColumns count={3}`, the third headed
+    "Change" (`data-summary-side="change"`), so the header reads THEN │ NOW │ CHANGE like the panels (AC-5b.1). It
+    builds `summariseChange`'s input from `inCatalogOrder(report.shownMetricKeys)`, keeping a key only when
+    `panelFor(key)` exists and the read holds `metrics[key]` — so only shown metrics count (AC-5b.5), and a key
+    rendered as `UnsupportedMetricPanel` (no direction of good) or with no capture is not listed — and passing each
+    to `lineComparisonsOf`. Each group is one line: mark, word, colon, the metrics' names joined by ", "
+    ("✔ Improved: Cycle Time, Throughput"); a long group wraps under its mark on a narrow page and stays one group
+    (Q11e). Names are the panel titles exactly as `ReportPanels` passes them as `title` — one title function per
+    registry entry used by both, so "Total {Work Item Age}" in the instance's Terminology is composed once.
+    Colour: Improved `success.main`, Got worse `error.main`, Mixed and Unchanged `text.secondary` — the
+    `verdictColours` already in `ThenNowLineParts`, shared rather than restated; the mark and the word carry the
+    meaning without colour (AC-5b.6). The header takes the shown keys as a prop and stays a pure function of props.
+  - **Loading and failure look**: the CHANGE segment is part of `ThenAndNowSummary`, which already renders only
+    inside the report view's `WidgetBody` and only when the keyed read (`['report', ownerKind, ownerId, reportId]`)
+    has answered. First load: the body's lone spinner, no summary. Re-read after Edit: the whole body, summary
+    included, dimmed under the small spinner, never shown as fresh. Failure: the body's failure look and Retry
+    replace it, so no CHANGE segment and never a stale one (AC-5b.7, DT6). It has no fetch of its own and so no look
+    of its own to design.
+  - **Rejected**: the tally on the server (a second home for direction of good; ADR-220 forbids it); the header
+    reading the panels' rendered `data-change` marks from the DOM (couples the header to markup, breaks the pure-props
+    seam 5882's server-side rendering needs); a `summarise()` per panel (four implementations of one rule, free to
+    drift); a majority or "85th leads" rule (D53, Out of Scope).
 
 ---
 
@@ -2121,7 +2233,8 @@ Backend (`Lighthouse.Backend/Lighthouse.Backend/…`):
 | `Services/Implementation/Reports/ReportQueries.cs`, `ReportCommands.cs` | NEW | Compose templates, catalog, policies, repository |
 | `Services/Implementation/Reports/ThenAndNowTemplate.cs` | NEW | Create (freeze Then), edit (Now length), read (capture Now~~, count~~) *(count superseded by D49 (2026-10-14))* |
 | `Services/Implementation/Reports/Metrics/{CycleTime,Throughput,Wip,WorkItemAge}ReportMetric.cs`, `ReportMetricCatalog.cs` | NEW | DD5, DD15; *(2026-10-14)* `Wip` and `WorkItemAge` share DD35's pure daily-series summary (Average, Median, Min, Max) |
-| `Services/Implementation/Reports/TeamReportMetricSeries.cs`, `PortfolioReportMetricSeries.cs` | NEW | Adapters over the metrics services |
+| `Services/Implementation/Reports/TeamReportMetricSeries.cs`, `PortfolioReportMetricSeries.cs` | NEW | Adapters over the metrics services. *(2026-10-14, D54, slice 05b)*: fill the 95th from the percentile read they already make |
+| `Services/Interfaces/Reports/IReportMetricSeries.cs` (`CycleTimePercentiles` record), `Metrics/CycleTimeReportMetric.cs` | EXTEND (*2026-10-14, D54, slice 05b*) | The record gains `P95`; the metric's `ValuesOver` adds `p95` (DD38) |
 | `Services/Implementation/Reports/ReportWindowPolicy.cs`, ~~`BeyondLimits.cs`~~, `ReportCapPolicy.cs` | NEW | Pure policies (~~DD10~~, DD13, DD17); every input an argument (NB2). *(`BeyondLimits` superseded by D49 (2026-10-14): not built.)* |
 | `Services/Interfaces/Reports/IReportOwnerLookup.cs` + adapter over `IRepository<Team>` / `IRepository<Portfolio>` | NEW (*2026-10-13, NB2*) | Read-only: does the owner exist, and its `DoneItemsCutoffDays`. Lets `ReportQueries` gather the window policy's cutoff without naming `IRepository<>` (E4) |
 | `Services/Implementation/Repositories/ReportRepository.cs` | NEW | Implements `IReportReader` and `IReportWriter` (may derive from `RepositoryBase<Report>`; nothing outside the composition root sees it as `IRepository<Report>`) |
@@ -2148,6 +2261,10 @@ Frontend (`Lighthouse.Frontend/src/…`):
 | `services/Api/ReportService.ts`, `models/Reports/*.ts` | NEW | API client and models (Zod `.nullable()` for every nullable); wire names used as they are, no renaming (DD27) |
 | `pages/Teams/Detail/TeamDetail.tsx`, `pages/Portfolios/Detail/PortfolioDetail.tsx`, router | EXTEND | Reports tab after Metrics; nested report route |
 | Team / Portfolio delete dialogs (Overview) | EXTEND | "and its N reports" when N ≥ 1, N from the owner's list endpoint (D42, DD23) |
+| `pages/Common/Reports/panels/changeSummary.ts` | NEW (*2026-10-14, D53, slice 05b*) | `summariseChange`: the pure per-metric tally into Improved / Got worse / Mixed / Unchanged (DD39) |
+| `panels/thenNowComparison.ts`, `panels/reportPanelRegistry.ts`, `panels/ThenNowLineParts.tsx`, every panel | EXTEND (*slice 05b*) | `lineComparisonsOf` beside `compareThenNow`; `changeLines` and one title function per registry entry; `LineChange` renders a computed comparison; each panel's change column drawn from its `changeLines` (DD39) |
+| `pages/Common/Reports/ThenAndNowSummary.tsx` | EXTEND (*slice 05b*) | Third column, CHANGE, from `summariseChange` over the shown metrics (DD39) |
+| `panels/CycleTimePanel.tsx`, `models/Reports/Report.ts` | EXTEND (*slice 05b*) | The 95th row above the 85th, `ForecastLevel(95)`; `p95` on `ReportMetricSide` (DD38) |
 
 ---
 
@@ -2175,7 +2292,7 @@ twin the metrics controllers carry). Days are `yyyy-MM-dd`.
     metrics: { [metricKey]: { atThen: Side, atNow: Side } }
   } }
 Side per metric (each member a value = { value: number | null, sampleSize: int | null, absentReason: code | null }):
-  cycle-time      atThen { p85, p70, p50 }    atNow { p85, p70, p50 }          -- DT9; sampleSize = finished items
+  cycle-time      atThen { p95, p85, p70, p50 }    atNow { p95, p85, p70, p50 }   -- DT9, D54; sampleSize = finished items
   throughput      { total, perDay }                                         -- sampleSize = L days
   wip             { average, median, min, max }                             -- D50; sampleSize = L days
   work-item-age   { average, median, min, max }                             -- D51; daily TOTAL age; sampleSize = L days
@@ -2191,7 +2308,8 @@ both. Example, a {WIP} side: `{ "average": { "value": 8.62, "sampleSize": 90, "a
 
 A metric the report never captured is missing from `metrics`; a member it never captured is missing or null — both
 read "Not captured for this report" (D27). That includes Then's 70th and 50th on a report stored before DT9, which
-froze the 85th only. ~~except Then's 70th and 50th, which Then never holds (DD33).~~
+froze the 85th only, and Then's 95th on a report stored before D54 (slice 05b, DD38). Nothing in the read carries
+the header's CHANGE summary: it is derived in the browser (DD39). ~~except Then's 70th and 50th, which Then never holds (DD33).~~
 
 **Refusal codes** (closed; DISTILL's set, adopted — DD28). Window: `then-too-short`,
 `then-too-long` (Then would start before 1 Jan of the year 1, the first day the calendar can name; checked after too-short, before ends-in-the-future), `then-ends-in-the-future`,
@@ -2355,7 +2473,7 @@ cutoff) their arguments; `ReportQueries` reads `ILighthouseClock`, `ILicenseServ
 thenWindow    { start, end, lengthDays }                       -- DateOnly days, inclusive
 nowLengthDays                                                  -- edited only through PUT
 captures {
-  "cycle-time":    { p85, p70, p50 }                            [01 wrote p85 only; p70 / p50 from DT9]
+  "cycle-time":    { p95, p85, p70, p50 }                       [01 wrote p85 only; p70 / p50 from DT9; p95 from 05b, D54]
   "throughput":    { total, perDay }                            [04]
   "wip":           { average, median, min, max }                [05]
   "work-item-age": { average, median, min, max }                [05]   -- daily TOTAL age
@@ -2378,7 +2496,8 @@ same value shapes and is never stored.
 custom length; 03 ~~`Limits` extraction + `BeyondLimits` + cycle-time limits~~ the summary header, frontend only, no
 backend or payload change (*re-cut 2026-10-14, D49, D52*); 04 shown-key picker + throughput + the frontend model
 cleanup of DD37; 05 wip + work-item-age (+ the daily {WIP} read and the one new public daily total-age read; DD35's
-summary); 06 Portfolio adapter + controller; 07 Now length at creation; 08 delete + cap + owner-delete count (cascade
+summary); 05b *(added 2026-10-14, D53, D54)* the {Cycle Time} `p95` member (Then and Now; no migration) and the
+header's CHANGE segment (frontend only, nothing stored); 06 Portfolio adapter + controller (with `p95` from the start); 07 Now length at creation; 08 delete + cap + owner-delete count (cascade
 already from 01); 09 dropped (D46); 10 PUT.
 **No further migration** after slice 01. DELIVER checks whether any test fixture patches a historical schema and needs
 the new table.
@@ -2410,6 +2529,10 @@ the new table.
 | `DeleteConfirmationDialog` optional `warning` (EXTEND, *NB1*) | pure function of props | identical props → identical output; without `warning` the output is today's — existing tests unchanged as the assertion |
 | `WidgetShell` body look, exported with optional `failureMessage` / `onRetry` (EXTEND, *NB1, NH1*) | pure function of props | identical props → identical output, no network; with neither new prop the output is today's — `WidgetShell.status.test.tsx` and the dashboard loading tests unchanged as the assertion |
 | `DataGridBase` (REUSE) | pure function of props, unchanged | no change; its tests untouched |
+| `CycleTimeReportMetric` + `CycleTimePercentiles.P95` (EXTEND, *2026-10-14, D54*) | read-only I/O, unchanged in shape | one more member from the same read; writes nothing. Assertion: `CycleTimeReportMetricTest` with a faked series port (Then and Now carry `p95`; a capture without `p95` reads back without it); E6 parity extended to the 95th |
+| `lineComparisonsOf` (NEW, *2026-10-14, D53*) | pure function (return only): (metric read, panel definition) → one `{ key, change \| null }` per change line | universe = its two arguments. Assertion: Vitest table — a dash, an absent reason and a missing member each give `null`; values compared at the line's decimals; Then 0 still gives a change |
+| `summariseChange` (NEW, *2026-10-14, D53*) | pure function (return only): shown metrics' line comparisons in catalog order → groups in fixed order, empty ones dropped | universe = its one argument; no React, Terminology or copy in its module. Assertion: Vitest table over the four kinds, ignored lines, unlisted metrics, group and key order, the empty result (E16) |
+| `ThenAndNowSummary` with CHANGE (EXTEND, *D53*) | pure function of props | identical props → identical output, no network; it renders `summariseChange` and adds only names, marks and colour |
 
 ---
 
@@ -2436,6 +2559,11 @@ A late answer for an older report, owner or window never lands: every query is k
 only the answer for its current key. The report view sets `data-report-status` (`loading` / `error` / `ready`) and
 the list `data-widget-status`; E2E page objects wait for `ready`, not for visibility. Edit opens from the report
 already in hand (the wizard needs the templates query only for its bounds).
+
+*Added 2026-10-14 (D53, slice 05b)*: the summary header's CHANGE segment needs no look of its own. It is part of
+`ThenAndNowSummary`, which renders inside the report view's `WidgetBody` only once the keyed read has answered: nothing
+but the lone spinner on first load, dimmed with the rest of the body on a re-read, replaced by the failure look and
+Retry after a failed load — never a stale summary (AC-5b.7, DT6; DD39).
 
 ---
 
@@ -2502,6 +2630,14 @@ ArchUnitNET + NUnit + TypeScript:
   `ReportsModuleArchUnitTest.A_report_policy_is_handed_every_input` carries `[TestCase(typeof(ReportWindowPolicy))]`
   today; slice 08 adds `ReportCapPolicy`; no `BeyondLimits` case is ever added. DD35's daily-series summary is held to
   the same rule — a third `[TestCase]` in slice 05.)*
+- **E16** *(2026-10-14, D53, slice 05b)* **The header can never judge a line differently from its panel.** Three
+  Vitest checks: (a) a table test of `summariseChange` (DD39's rule, order and empty result); (b) a **registry
+  parity test** — for every entry of `reportPanelRegistry` and one fixture read with better, worse, unchanged and dash
+  lines, the `data-change` marks the rendered panel shows, in order, equal the verdicts `lineComparisonsOf` returns
+  for that entry, and a dash line shows no mark — so a panel that draws a line the definition does not list, or
+  rounds it differently, fails; (c) `changeSummary.ts` and `lineComparisonsOf` import nothing from React, MUI or
+  Terminology (a source-scan test, as the panels' purity check). No backend rule: nothing about D53 exists there, and
+  the existing "read DTO has no member about direction or colour" shape test (ADR-220) keeps it that way.
 
 ---
 
@@ -2550,6 +2686,8 @@ ArchUnitNET + NUnit + TypeScript:
 | Then freezes the {Cycle Time} 85th only; Then's 70th and 50th were never Then's (DD33) | **Resolved by DT9 (2026-10-13)**: Then freezes the 85th, 70th and 50th; a report stored before DT9 reads its Then 70th and 50th "Not captured for this report" (D27). | DT9 |
 | Sample size visible on every value (D45); header with both windows and days since Then ended (D35) | **Resolved by D52 (2026-10-14)**: the summary header shows each side's window and closed count, once; no per-line sample size. "Days since Then ended" returns only after the maintainer approves a sketch at slice 07; `daysSinceThenEnded` stays on the wire meanwhile. | D52 |
 | ADR-209 "a report is a response, not a record" | Superseded in its deferral by ADR-219; the Reality Check stays a response. | ADR-219 |
+| The {Cycle Time} panel stops at the 85th (D39 M1, DT9) | **Extended by D54 (2026-10-14)**: Then and Now carry the 95th too, additive, no migration; a report stored before D54 reads Then's 95th "Not captured for this report". | D54, DD38 |
+| The summary header has two segments, THEN and NOW (D52) | **Extended by D53 (2026-10-14)**: a third, CHANGE, derived in the browser from the panels' own per-line verdicts through `lineComparisonsOf` and `summariseChange`; never stored or sent. | D53, DD39 |
 
 ---
 
@@ -2607,6 +2745,54 @@ drawn no objection yet, so DD35 stands.
 
 ---
 
+## Wave: DESIGN / [REF] Slice 05b — CHANGE summary and the {Cycle Time} 95th (D53, D54)
+
+*Added 2026-10-14.* After slice 05 (all four panels exist) and before slice 06, which inherits both for Portfolios.
+No migration, no wire member besides `p95`, no new endpoint, no backend change for D53. Q11's provisional details are
+adopted as DESIGN's working shape (a–e, DD38, DD39) and confirmed with a sketch at the **start of DISTILL** — the
+CHANGE segment and the 95th row are user-visible, so the sketch (loaded, loading and failure looks; a report with
+every group; one with nothing comparable; a pre-D54 report) comes before any scenario is written.
+
+**Steps** (each a focused commit; backend first so the frontend reads a real `p95`):
+
+1. **Backend — the 95th (D54, DD38).** `CycleTimePercentiles` gains `P95` (extend the test builder / fakes first);
+   `TeamReportMetricSeries` fills it; `CycleTimeReportMetric.ValuesOver` adds `p95`. Then freezes it at creation, Now
+   computes it on read, an older capture reads back without it. Parity with the Metrics endpoint's 95th (E6).
+2. **Frontend — the 95th row (D54, DD38).** `p95` on `ReportMetricSide` (and Zod); `CycleTimePanel` gains the 95th
+   row above the 85th with `ForecastLevel(95)` (Certain, as the Metrics tab); its change and % change; "Not captured
+   for this report" and "—" for a pre-D54 Then.
+3. **Frontend — one per-line judgement (D53, DD39), behaviour-preserving refactor.** `changeLines` and one title
+   function per registry entry; `lineComparisonsOf` in `thenNowComparison.ts`; `LineChange` renders a computed
+   comparison; every panel draws its change column from its `changeLines`. No visible change; existing panel tests
+   stay green unchanged, and the registry parity test (E16 b) is added here.
+4. **Frontend — the tally and the CHANGE segment (D53, DD39).** `panels/changeSummary.ts` (`summariseChange`) with its
+   table test; `ThenAndNowSummary` gains the third column, fed from the shown metrics in catalog order, named by the
+   panel titles, coloured by `verdictColours`, "—" when nothing is comparable.
+
+**Tests the acceptance designer writes or changes** (the scenarios and copy pinned after the DISTILL sketch):
+
+| Stack / file | Change |
+|---|---|
+| Backend `CycleTimeReportMetricTest` | the freeze-and-show case gains the 95th (its `Percentiles` list gains `p95`); new: a capture stored without `p95` reads `AtThen` without it while `AtNow` has it; `no-finished-items` on the 95th like the others |
+| Backend `ReportsAcceptanceTest` helpers | a `P95` member name beside `P85` / `P70` / `P50`; fixtures that build `CycleTimePercentiles` gain the 95th |
+| Backend acceptance, new `Slice05bCycleTime95thScenarios` | Then freezes and Now shows the 95th with its sample size (Lightspeed, 34 → 19 days); a report stored before the 95th (seeded payload of `p85` / `p70` / `p50`) has no Then `p95` and a Now `p95`; Then's 95th equals the Metrics endpoint's 95th for the same window (the AC-2.3 parity scenario extended) |
+| Backend `ThenAndNowPayloadRoundTripTest` | a payload without `p95` reads back unchanged; one with it reads it (E7) |
+| Backend `Slice06PortfolioReportScenarios` | when slice 06 is built: the Portfolio side carries `p95` too (no change before then) |
+| Frontend `models/Reports/Report.test.ts` | the side accepts `p95` |
+| Frontend `panels/thenNowComparison.test.ts` | `lineComparisonsOf`: dash, absent reason and missing member → `null`; comparison at the line's decimals; Then 0 → a change with `percent` null that still counts |
+| Frontend `panels/changeSummary.test.ts` (NEW) | the four kinds; lines with `null` ignored; a metric with no comparable line unlisted; groups in fixed order, empty dropped; keys in input order; `[]` when nothing is comparable; a 1-day / 0.01-per-day move counts |
+| Frontend registry parity (NEW, E16 b) | every registered panel's rendered `data-change` marks equal `lineComparisonsOf` for one mixed fixture |
+| Frontend `panels/CycleTimePanel.test.tsx` | the 95th row first, with the Certain icon; its change ("▼ 15 days", "−44 %", better); a pre-D54 Then reads "Not captured for this report" with "—" for the 95th's change |
+| Frontend `ReportView.test.tsx` | the summary reads THEN │ NOW │ CHANGE; US-05b's seven scenarios (Improved + Got worse; Mixed; one-day move + Unchanged; all dashes unlisted; only shown metrics; the 95th; a pre-D54 report judged on the 85th, 70th and 50th); "—" when nothing is comparable; names follow renamed Terminology ("Total {Work Item Age}"); a key with no panel is not listed; no CHANGE segment while loading or after a failed load; marks carry symbol and word. The existing "certainty icon … 85th, 70th and 50th" case gains the 95th; fixtures in `ReportsTestKit.tsx` gain `p95` first, since a fixture without it now reads Now's 95th as not captured |
+| E2E | none required (one walking skeleton per flow); if the report skeleton is touched, it may check the CHANGE heading once `data-report-status="ready"` |
+
+**Cross-cutting**: RBAC none (read-only, same Read guard); usage data N/A — `ReportOpened` already counts opens and
+D53's learning signal is the share of Mixed on dogfood reports, read by hand; mutation scope unchanged (the DEVOPS
+globs `pages/Common/Reports/**` and `Services/Implementation/Reports/**` already cover the new and changed files);
+no DEVOPS change.
+
+---
+
 ## Wave: DESIGN / [REF] ADRs
 
 - [ADR-219](../../product/architecture/adr-219-a-report-is-an-owner-scoped-record-with-a-template-payload.md) — Report
@@ -2614,13 +2800,16 @@ drawn no objection yet, so DD35 stands.
   **Accepted** (2026-10-13).
 - [ADR-220](../../product/architecture/adr-220-a-metric-catalog-captures-values-and-the-frontend-panel-owns-the-direction-of-good.md)
   — metric catalog + panel registry; direction of good frontend-only; unknown type and metric looks. **Accepted**
-  (2026-10-13).
+  (2026-10-13). **Amended 2026-10-14 (D53)**: the header's CHANGE summary derives from the panels' own per-line
+  judgement (`lineComparisonsOf` → `summariseChange`), in the frontend only — the direction of good keeps one home.
 - [ADR-221](../../product/architecture/adr-221-then-is-frozen-as-captured-values-and-unrounded-limits-from-its-own-series.md)
   — what Then freezes ({Cycle Time} 85th, 70th and 50th since DT9; ~~85th only~~ — a report stored before DT9 reads
   Then's 70th and 50th "Not captured for this report"); ~~unrounded limits~~; sufficiency codes; wire names `atThen` /
   `atNow`. **Accepted** (2026-10-13). **Amended 2026-10-14** (D49–D51): no limits frozen and no beyond-limits count;
   one absence code; {WIP} and Total {Work Item Age} as Average, Median, Min, Max of daily values; median convention;
   Decision 9 struck for DT9. D52 needs no change to it. The file name keeps "unrounded limits" so links resolve.
+  **Amended 2026-10-14 (D54)**: the 95th joins Then's frozen {Cycle Time} values (`{ p95, p85, p70, p50 }`); a report
+  stored before D54 reads Then's 95th "Not captured for this report".
 - [ADR-222](../../product/architecture/adr-222-report-windows-are-inclusive-instance-days-and-now-length-is-stored-on-the-report.md)
   — windows, the stored Now length, the wizard's pre-check from server bounds. **Accepted** (2026-10-13).
 
