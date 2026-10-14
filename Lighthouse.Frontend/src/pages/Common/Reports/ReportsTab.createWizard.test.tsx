@@ -425,7 +425,7 @@ describe("Step three: Now", () => {
 	});
 
 	// @us-07 @slice-07 @contract-shape:pure-function
-	it.skip("is as long as Then until changed, always ending today", async () => {
+	it("is as long as Then until changed, always ending today", async () => {
 		await openTheWizard();
 		await next();
 		await enterNumber(await theThenLengthField(), 45);
@@ -438,7 +438,7 @@ describe("Step three: Now", () => {
 	});
 
 	// @us-07 @slice-07 @contract-shape:pure-function
-	it.skip("starts on the length Then was given with one click, with that button pressed", async () => {
+	it("starts on the length Then was given with one click, with that button pressed", async () => {
 		await openTheWizard();
 		await next();
 		await userEvent.click(
@@ -453,7 +453,7 @@ describe("Step three: Now", () => {
 	});
 
 	// @us-07 @slice-07 @contract-shape:pure-function
-	it.skip("offers a Team's Now as 30 or 90 days with one click, beside its length in days", async () => {
+	it("offers a Team's Now as 30 or 90 days with one click, beside its length in days", async () => {
 		await openTheWizard();
 		await next();
 		await next();
@@ -475,7 +475,7 @@ describe("Step three: Now", () => {
 	});
 
 	// @us-07 @us-06 @slice-07 @contract-shape:pure-function
-	it.skip("offers a Portfolio's Now as 90 or 180 days with one click", async () => {
+	it("offers a Portfolio's Now as 90 or 180 days with one click", async () => {
 		await openTheWizard(
 			aReportService({
 				getReports: vi.fn().mockResolvedValue(aReportList([])),
@@ -496,7 +496,7 @@ describe("Step three: Now", () => {
 	});
 
 	// @us-07 @slice-07 @contract-shape:pure-function
-	it.skip("takes a Now of a custom length in days, pressing no button", async () => {
+	it("takes a Now of a custom length in days, pressing no button", async () => {
 		await openTheWizard();
 		await next();
 		await next();
@@ -517,7 +517,7 @@ describe("Step three: Now", () => {
 	});
 
 	// @us-07 @slice-07 @error @contract-shape:pure-function
-	it.skip("refuses a Now shorter than 14 days and goes no further", async () => {
+	it("refuses a Now shorter than 14 days and goes no further", async () => {
 		await openTheWizard();
 		await next();
 		await next();
@@ -531,7 +531,7 @@ describe("Step three: Now", () => {
 	});
 
 	// @us-07 @slice-07 @error @contract-shape:pure-function
-	it.skip("refuses a Now reaching back past the oldest kept day and goes no further", async () => {
+	it("refuses a Now reaching back past the oldest kept day and goes no further", async () => {
 		await openTheWizard();
 		await next();
 		await next();

@@ -63,6 +63,17 @@ export const thenRefusalOf = (
 export const nowLengthOf = (draft: ThenAndNowDraft): string =>
 	draft.nowLength ?? draft.thenLength;
 
+/** Why the server would refuse the Now entered, or null while it has no whole number of days yet or would be accepted. */
+export const nowRefusalOf = (
+	draft: ThenAndNowDraft,
+	templates: IReportTemplates,
+): ReportWindowRefusal | null => {
+	const lengthDays = wholeDaysOf(nowLengthOf(draft));
+	return lengthDays === null
+		? null
+		: reportWindowCheck({ side: "now", lengthDays }, templates);
+};
+
 const LONG_DAY = "d MMM yyyy";
 
 const daysFromTo = (startDay: Date, endDay: Date): string => {

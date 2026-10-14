@@ -15,6 +15,7 @@ import {
 	newReportOf,
 	newThenAndNowDraft,
 	nowLengthOf,
+	nowRefusalOf,
 	shownMetricsOf,
 	type ThenAndNowDraft,
 	thenEndOf,
@@ -67,7 +68,9 @@ export const reportTypes: {
 			{
 				label: "Now",
 				component: NowStep,
-				isComplete: (draft) => lengthOf(nowLengthOf(draft)) !== null,
+				isComplete: (draft, templates) =>
+					lengthOf(nowLengthOf(draft)) !== null &&
+					nowRefusalOf(draft, templates) === null,
 			},
 			{
 				label: "Metrics & name",
