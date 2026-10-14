@@ -22,7 +22,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-07 @slice-07 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice07)]
         public async Task A_coach_sets_a_shorter_Now_and_every_later_view_uses_it()
         {
             var gravity = ATeam("Team Gravity");
@@ -42,7 +41,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-07 @slice-07 @boundary @contract-shape:pure-function
         // 27 days of this Now lie inside Then; they are compared as they are, never clipped away.
         [Test]
-        [Ignore(PendingSlice07)]
         public async Task Now_may_overlap_Then_and_is_used_in_full()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -60,7 +58,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-07 @slice-07 @contract-shape:pure-function
         [TestCase(2026, 7, 31, 63)]
         [TestCase(2026, 10, 2, 0)]
-        [Ignore(PendingSlice07)]
         public async Task The_report_says_how_many_days_ago_Then_ended(int year, int month, int day, int daysAgo)
         {
             var lightspeed = ATeam(Lightspeed);
@@ -72,7 +69,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-07 @slice-07 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice07)]
         public async Task Without_a_Now_length_Now_is_as_long_as_Then()
         {
             var gravity = ATeam("Team Gravity");
@@ -149,7 +145,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-04 @us-07 @slice-07 @contract-shape:pure-function
         // Totals over different lengths cannot be compared, so the change is read on the per-day average.
         [Test]
-        [Ignore(PendingSlice07)]
         public async Task Throughput_with_a_Now_of_another_length_is_compared_per_day()
         {
             var dev = ATeam("Team Gravity");

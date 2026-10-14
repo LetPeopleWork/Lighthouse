@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
 {
     /// <summary>
     /// Then is frozen at creation: every metric that applies to the owner is captured over Then's window and kept on
-    /// the row. Now is never stored; each read computes it over a window of its own length ending today.
+    /// the row. Only Now's length is stored; each read computes Now afresh over that many days ending today.
     /// </summary>
     public class ThenAndNowTemplate(ReportMetricCatalog catalog, ILighthouseClock clock, ILogger<ThenAndNowTemplate> logger) : IReportTemplate
     {

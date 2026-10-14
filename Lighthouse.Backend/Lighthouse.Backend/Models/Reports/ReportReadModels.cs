@@ -52,7 +52,11 @@ namespace Lighthouse.Backend.Models.Reports
         public ThenAndNowRead? ThenAndNow { get; init; }
     }
 
-    public sealed record ThenAndNowRead(ReportWindow ThenWindow, ReportWindow NowWindow, bool ThenRebuildable, IReadOnlyDictionary<string, MetricRead> Metrics);
+    public sealed record ThenAndNowRead(ReportWindow ThenWindow, ReportWindow NowWindow, bool ThenRebuildable, IReadOnlyDictionary<string, MetricRead> Metrics)
+    {
+        /// <summary>Now always ends today, so this is how long ago Then ended; 0 when Then ends today.</summary>
+        public int DaysSinceThenEnded => NowWindow.End.DayNumber - ThenWindow.End.DayNumber;
+    }
 
     /// <summary>One metric's two sides, each a value per member (p85, total, …).</summary>
     public sealed record MetricRead(IReadOnlyDictionary<string, CapturedValue> AtThen, IReadOnlyDictionary<string, CapturedValue> AtNow);
