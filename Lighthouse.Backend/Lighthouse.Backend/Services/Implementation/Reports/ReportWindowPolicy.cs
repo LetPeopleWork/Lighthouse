@@ -49,6 +49,22 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             return EarliestStart(today, doneItemsCutoffDays) is DateOnly earliest && window.Start < earliest ? ReportRefusalCodes.ThenBeforeCutoff : null;
         }
 
+        /// <summary>Why a Now of this length cannot be kept; null when it is long enough and starts on or after the oldest kept day.</summary>
+        public static string? NowRefusal(int lengthDays, DateOnly today, int doneItemsCutoffDays)
+        {
+            if (lengthDays < MinimumLengthDays)
+            {
+                return ReportRefusalCodes.NowTooShort;
+            }
+
+            if (NowWindow(today, lengthDays) is not ReportWindow window)
+            {
+                return ReportRefusalCodes.NowBeforeCutoff;
+            }
+
+            return EarliestStart(today, doneItemsCutoffDays) is DateOnly earliest && window.Start < earliest ? ReportRefusalCodes.NowBeforeCutoff : null;
+        }
+
         public static ReportWindow? NowWindow(DateOnly today, int lengthDays) => ReportWindow.EndingOn(today, lengthDays);
     }
 }

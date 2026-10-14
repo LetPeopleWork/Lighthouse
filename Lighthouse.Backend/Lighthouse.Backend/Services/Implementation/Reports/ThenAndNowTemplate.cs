@@ -38,20 +38,15 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return ReportOutcome<string>.Refused(thenRefusal);
             }
 
-            if (settings.NowLengthDays < 1)
-            {
-                return ReportOutcome<string>.Refused(ReportRefusalCodes.NowTooShort);
-            }
-
             if (ReportWindow.EndingOn(settings.ThenEndDate, settings.ThenLengthDays) is not ReportWindow thenWindow)
             {
                 return ReportOutcome<string>.Refused(ReportRefusalCodes.ThenTooLong);
             }
 
             var nowLengthDays = settings.NowLengthDays ?? settings.ThenLengthDays;
-            if (ReportWindowPolicy.NowWindow(calendar.Today, nowLengthDays) is null)
+            if (ReportWindowPolicy.NowRefusal(nowLengthDays, calendar.Today, calendar.DoneItemsCutoffDays) is string nowRefusal)
             {
-                return ReportOutcome<string>.Refused(ReportRefusalCodes.NowBeforeCutoff);
+                return ReportOutcome<string>.Refused(nowRefusal);
             }
 
             var captures = catalog.For(owner.Kind).ToDictionary(metric => metric.Key, metric => metric.CaptureThen(owner, thenWindow));

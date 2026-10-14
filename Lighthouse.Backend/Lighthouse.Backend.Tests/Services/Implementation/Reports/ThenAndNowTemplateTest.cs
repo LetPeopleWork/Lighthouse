@@ -20,9 +20,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
         private static readonly string[] CycleTimeShownTwice = [CycleTimeReportMetric.MetricKey, CycleTimeReportMetric.MetricKey];
 
-        [TestCase(1, null)]
-        [TestCase(0, ReportRefusalCodes.NowTooShort)]
-        public void A_Now_of_at_least_one_day_is_accepted(int nowLengthDays, string? expectedRefusal)
+        [TestCase(14, null)]
+        [TestCase(13, ReportRefusalCodes.NowTooShort)]
+        public void A_Now_of_at_least_fourteen_days_is_accepted(int nowLengthDays, string? expectedRefusal)
         {
             var frozen = Subject().Freeze(
                 Lightspeed,

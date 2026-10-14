@@ -97,6 +97,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             Assert.That(ReportWindowPolicy.ThenRebuildable(Day(thenStart), Today, doneItemsCutoffDays), Is.EqualTo(expected));
         }
 
+        // Today is 2 Oct 2026, so a Team keeping 365 days holds finished items from 2 Oct 2025 on.
+        [TestCase(365, 14, null)]
+        [TestCase(365, 90, null)]
+        [TestCase(365, 366, null)]
+        [TestCase(365, 13, ReportRefusalCodes.NowTooShort)]
+        [TestCase(365, 0, ReportRefusalCodes.NowTooShort)]
+        [TestCase(365, -30, ReportRefusalCodes.NowTooShort)]
+        [TestCase(365, 367, ReportRefusalCodes.NowBeforeCutoff)]
+        [TestCase(365, 500, ReportRefusalCodes.NowBeforeCutoff)]
+        [TestCase(180, 181, null)]
+        [TestCase(180, 182, ReportRefusalCodes.NowBeforeCutoff)]
+        [TestCase(365, int.MaxValue, ReportRefusalCodes.NowBeforeCutoff)]
+        [TestCase(KeepsEverything, 730, null)]
+        [TestCase(KeepsEverything, 13, ReportRefusalCodes.NowTooShort)]
+        [TestCase(KeepsEverything, int.MaxValue, ReportRefusalCodes.NowBeforeCutoff)]
+        public void NowRefusal_refuses_a_Now_too_short_or_starting_before_the_oldest_kept_day(int doneItemsCutoffDays, int lengthDays, string? expected)
+        {
+            var refusal = ReportWindowPolicy.NowRefusal(lengthDays, Today, doneItemsCutoffDays);
+
+            Assert.That(refusal, Is.EqualTo(expected));
+        }
+
         [Test]
         public void NowWindow_of_a_single_day_is_today_alone()
         {

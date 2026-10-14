@@ -81,7 +81,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-07 @slice-07 @error @contract-shape:unbounded-preservation
         [TestCase(13)]
         [TestCase(0)]
-        [Ignore(PendingSlice07)]
         public async Task A_Now_shorter_than_fourteen_days_is_refused(int nowLengthDays)
         {
             var gravity = ATeam("Team Gravity");
@@ -96,7 +95,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-07 @slice-07 @boundary @contract-shape:bounded-change
         // 366 days ending 2 Oct 2026 start on 2 Oct 2025, the oldest day the Team keeps.
         [Test]
-        [Ignore(PendingSlice07)]
         public async Task A_Now_starting_on_the_oldest_kept_day_is_accepted()
         {
             var gravity = ATeam("Team Gravity");
@@ -109,7 +107,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-07 @slice-07 @error @contract-shape:unbounded-preservation
         [TestCase(367)]
         [TestCase(500)]
-        [Ignore(PendingSlice07)]
         public async Task A_Now_reaching_past_the_data_cutoff_is_refused(int nowLengthDays)
         {
             var gravity = ATeam("Team Gravity");
@@ -124,7 +121,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-07 @slice-07 @error @contract-shape:unbounded-preservation
         // Now is stored on the report; a reader cannot change it, not even for one view.
         [Test]
-        [Ignore(PendingSlice07)]
         public async Task Asking_for_another_Now_in_the_address_changes_nothing()
         {
             var gravity = ATeam("Team Gravity");
