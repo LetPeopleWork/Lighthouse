@@ -7,7 +7,7 @@ import {
 	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IRefinementSettings } from "../../../models/Refinement/Refinement";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -171,8 +171,20 @@ const theRefinementLastSaved = () => {
 // Opening the form is not an edit, so nothing may be saved even once the autosave would have fired.
 const AUTOSAVE_DELAY_AND_MARGIN_MS = 600;
 
+// The clock is moved on rather than waited out, so the autosave's timer has surely run by the
+// time nothing is checked as saved, however slowly the machine is going.
 const pastTheAutosaveDelay = () =>
-	new Promise((resolve) => setTimeout(resolve, AUTOSAVE_DELAY_AND_MARGIN_MS));
+	act(async () => {
+		await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_AND_MARGIN_MS);
+	});
+
+beforeEach(() => {
+	vi.useFakeTimers({ shouldAdvanceTime: true });
+});
+
+afterEach(() => {
+	vi.useRealTimers();
+});
 
 const replaceTheNumberIn = async (label: string, value: string) => {
 	const field = await screen.findByRole("spinbutton", { name: label });

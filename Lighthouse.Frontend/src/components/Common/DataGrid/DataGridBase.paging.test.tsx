@@ -70,17 +70,23 @@ const showTheList = (rows: ListedItem[], loading = false) => {
 };
 
 /** The names on the rows the grid shows right now, top to bottom. */
+const theRows = () => {
+	const rows = [...document.querySelectorAll('[role="row"]')];
+	if (rows.length === 0)
+		throw new Error("The grid shows no rows, not even its header");
+	return rows;
+};
+
 const namesShown = () =>
-	screen.getAllByRole("row").flatMap((row) => {
+	theRows().flatMap((row) => {
 		const cell = row.querySelector('[role="gridcell"][data-field="name"]');
 		return cell === null ? [] : [cell.textContent ?? ""];
 	});
 
 const ROW_RANGE = /^\d+–\d+ of \d+$/;
 
-const nextPage = () => screen.getByRole("button", { name: "Go to next page" });
-const previousPage = () =>
-	screen.getByRole("button", { name: "Go to previous page" });
+const nextPage = () => screen.getByLabelText("Go to next page");
+const previousPage = () => screen.getByLabelText("Go to previous page");
 
 const goToNextPage = async (user: UserEvent, rangeThere: string) => {
 	await user.click(nextPage());
@@ -584,13 +590,11 @@ describe("Turning a page brings the top of the list into view", () => {
 
 describe("A list follows what its page hands it on every render", () => {
 	const firstRowOnShow = () =>
-		screen
-			.getAllByRole("row")
-			.find(
-				(row) =>
-					row.querySelector('[role="gridcell"][data-field="name"]')
-						?.textContent === "Row 001",
-			) as HTMLElement;
+		theRows().find(
+			(row) =>
+				row.querySelector('[role="gridcell"][data-field="name"]')
+					?.textContent === "Row 001",
+		) as HTMLElement;
 
 	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
 	it(

@@ -1049,3 +1049,45 @@ The raw medians are 45.1 s before and 40.4 s after, a ratio of 0.90. The load ro
 Medians: comments 12.0 s → 11.6 s (0.97), votes 10.5 s → 10.4 s (0.99). The bracket before4 at matched load reads 12.2 s and 10.6 s, so the small difference is within run-to-run spread. The committed tree is the base for these files, so their CI time stays at about 34 s and 29 s. **That leaves the slice-03 target of ≤70 s for all six files at risk**: these two alone take about 63 s on CI. Bringing them down needs a cut in production render cost or fewer renders per test, both outside a set-up-and-waiting change. Step 03-02 should report the other four files' share against that.
 
 **E-names** (base `7bb0cd0ad`; `s03-before-all.names` holds all six slice-03 files, 313 names, all passing): for comments and votes, `comm -23` prints nothing against the saved list, before1 or before4 for after1, after3 and final. `comm -13` on not-passed prints nothing. Counts are unchanged at comments 24 and votes 33. **E-weaken:** the step changes no test file and no kit, so there is no added skip and no removed assertion.
+
+
+## Wave: DELIVER / [REF] Slice 03 record — step 03-02 `BaseMetricsView.loading`, both `ModifyTeamSettings` files, `DataGridBase.paging`
+
+**E-03a cause (measured: one CPU profile per file, single-file runs, plus a timing experiment):**
+
+- `ModifyTeamSettings.refinementNeed` and `ModifyTeamSettings.readiness`: much of the time is real wall-clock waiting, not CPU. Every "saves nothing" check first sleeps 600 ms of real time (`pastTheAutosaveDelay`) so that the 300 ms autosave debounce has surely fired. An experiment that set that sleep to 0 (it was reverted at once, because a 0 wait would weaken the check) took the two files from 39.9 s to 27.8 s, so the sleeps cost about 12 s. The rest is production render (`renderRootSync` 6.1 s and 4.5 s under the profiler), real 300 ms debounce waits inside each `waitFor` for a save, and role queries, which total 2.8 s and 2.3 s spread thinly across many assertions.
+- `BaseMetricsView.loading`: about 2.5 s of the file's 4.0 s of role queries is set-up. `fireEvent.click(screen.getByRole("button", { name }))` computes an accessible name for every button on the dashboard just to find the file's own stand-in buttons (`theReaderPicks`, `theReaderOpens`, "Previous 7 days" and others). No fake timers are involved and no `waitFor` runs to its timeout. The other large cost is production render (`renderRootSync` 6.4 s).
+- `DataGridBase.paging`: the same cost as 02-01. `getAllByRole("row")` in the row reader, and `getByRole("button", { name: "Go to next/previous page" })` on a page of 100 rows, cost about 1.6 s. Production render of the 100-row grid and `user.click` make up the rest (`renderRootSync` 4.6 s, `pointerAction` 3.5 s).
+
+**One pattern for the slow new files?** No. Two causes recur: role queries used only for set-up on large pages (02-01, 02-02, `DataGridBase.paging` and `BaseMetricsView.loading`) and production render (02-02, 03-01 and every file here). The biggest single saving in this step comes from a third cause, real-time sleeps in the settings forms, and only those two files have it. The role-query fix is two to five lines per file and looks different in each (`getByLabelText` for MUI pager arrows, `[role="row"]` with a non-empty guard, `getByText(…, { selector: "button" })` for a file's own stand-ins). **Option C, a shared helper, is not earned.**
+
+**Fix (test files only; production untouched):**
+
+- Both `ModifyTeamSettings` files run on Vitest fake timers that still move with real time (`vi.useFakeTimers({ shouldAdvanceTime: true })` in a file-level `beforeEach`, and `vi.useRealTimers()` in `afterEach`). This is the same setting `useModifySettings.autosave.test.ts` already uses. `pastTheAutosaveDelay` moves the clock 600 ms forward inside `act` instead of sleeping. A probe confirmed that a save the autosave makes has already been recorded when `pastTheAutosaveDelay` returns: with the call placed after a valid edit, `expect(saveTeamSettings).toHaveBeenCalledTimes(1)` passed 3 of 3 runs. The probe was reverted afterwards. So every "saves nothing" check still fails if a save happens. A first try with `advanceTimeDelta: 1` timed out one test under load 13, because the fake clock then lags real time. The committed setting is the default 20 ms step.
+- `BaseMetricsView.loading`: a `theButton(label)` helper uses `screen.getByText(label, { selector: "button" })` and replaces the 14 `screen.getByRole("button", { name })` look-ups that only find a stand-in button to click. `getBy` still fails unless exactly one button matches. Every status assertion (`data-widget-status`, `progressbar` role queries, opacity, messages) is unchanged.
+- `DataGridBase.paging`: `theRows()` reads `[role="row"]` and throws when the grid shows no row at all, not even its header. `namesShown` and `firstRowOnShow` use it. The pager arrows are found with `getByLabelText`. The `queryByRole("button", { name: "Go to next page" })` assertions in `expectNoFooter` stay role queries.
+- **Removed or shortened waits:** one. `pastTheAutosaveDelay`, in both settings files, no longer sleeps 600 ms of real time; it moves the fake clock forward by the same 600 ms. What still proves the behaviour is each "saves nothing" check, such as `expect(saveTeamSettings).not.toHaveBeenCalled()`, which the probe above shows still catches a save. No `waitFor` or `findBy` was replaced, and no timeout was lowered.
+- **Removed `expect(` lines:** 0.
+
+**Local timing** (summed per-test durations from each run's Vitest JSON; the four files run together, one Vitest at a time; before runs from a temporary worktree of `7bb0cd0ad`). An earlier series, measured at load 9.6–15.8 with the `advanceTimeDelta: 1` variant, read 87.3 s before and 70.9 s after (medians, 0.81). That variant was replaced, so the series below is the one that counts:
+
+| Run | Load avg (1 min) | BaseMetricsView.loading | refinementNeed | readiness | DataGridBase.paging | Sum |
+|---|---|---|---|---|---|---|
+| before1 | 10.77 | 15.6 s | 22.2 s | 19.8 s | 11.9 s | 69.5 s |
+| before2 | 8.52 | 14.1 s | 21.2 s | 18.3 s | 10.8 s | 64.4 s |
+| before3 | 7.67 | 14.1 s | 20.9 s | 18.4 s | 10.7 s | 64.1 s |
+| after1 | 6.47 | 9.5 s | 16.4 s | 15.1 s | 8.9 s | 49.9 s |
+| after2 | 6.39 | 9.1 s | 16.2 s | 15.1 s | 8.4 s | 48.8 s |
+| after3 | 5.60 | 9.2 s | 16.4 s | 15.2 s | 8.5 s | 49.3 s |
+| before4 (bracket, base-commit worktree) | 4.96 | 12.9 s | 20.8 s | 18.4 s | 9.9 s | 62.0 s |
+
+Medians, before → after: `BaseMetricsView.loading` 14.1 → 9.2 s (0.65), `refinementNeed` 21.2 → 16.4 s (0.77), `readiness` 18.4 → 15.1 s (0.82), `DataGridBase.paging` 10.8 → 8.5 s (0.79), four-file sum 64.4 → 49.3 s (0.77, about 1.3× faster). Load fell during the series. The bracket before4, at a lower load than any after run, still reads 62.0 s, so falling load does not explain the gain.
+
+**Six- and eight-file sums (one run each, the committed tree):**
+
+- The six slice-03 files: **76.4 s at load 4.24. The ≤70 s target is missed by 6.4 s.** Comments 11.2 s and votes 10.4 s are unchanged since 03-01 (production render). The four files of this step add 54.8 s.
+- All eight named files: **140.7 s at load 4.28. The ≤110 s target is missed by 30.7 s.** `WorkItemsDialog.contexts` 26.9 s and `RefinementView.paging` 17.7 s carry the remaining DataGrid render and Manage-columns Popper cost described in 02-01 and 02-02.
+
+**Remaining cause, and follow-up ADO item candidates:** (1) Production render of MUI DataGrid and dialogs in jsdom dominates every remaining file. It is cut only by fewer renders per test or a lighter grid under test, which is outside a set-up-and-waiting change. (2) The settings forms still wait out the real 300 ms autosave debounce inside each `waitFor` for a save, about 0.3 s a test. `ModifyTeamSettings.refinement.test.tsx`, which is outside this step, still has the 600 ms real-time sleep. Moving the clock there as well, and fast-forwarding the debounce before the save `waitFor`s, is a candidate follow-up. The CI medians (E-03b) are owed after push.
+
+**E-names** (base `7bb0cd0ad`; the 256 names for these four files in `s03-before-all.names`, all passing): `comm -23` prints nothing against the saved list, before1 or before4 for after1, after3 and the final series' after3. `comm -13` on not-passed prints nothing. Counts are unchanged: `BaseMetricsView.loading` 129, `refinementNeed` 52, `readiness` 47, `DataGridBase.paging` 28. **E-weaken:** no skip, `only` or `todo` was added, and the removed-`expect(` count is 0. `pnpm test`: 480 files passed, 1 skipped; 7594 tests passed, 37 skipped, 1 todo. An earlier full run, with `advanceTimeDelta: 1` at load 13, failed one `refinementNeed` test on the 5 s timeout and two untouched `RefinementView.comments` tests. That variant is gone, and the run above is green. `pnpm build` is clean, and `git status` after the build shows only this step's files.

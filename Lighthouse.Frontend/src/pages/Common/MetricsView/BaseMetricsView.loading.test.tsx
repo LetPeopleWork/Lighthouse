@@ -419,6 +419,11 @@ function openTheDashboard(
 	);
 }
 
+// The buttons are this file's own stand-ins, each labelled by its text, so finding one by its text
+// skips the accessible-name computation a role query runs over the whole dashboard.
+const theButton = (label: string) =>
+	screen.getByText(label, { selector: "button" });
+
 const frameOf = (widgetKey: string) =>
 	screen.getByTestId(`widget-shell-${widgetKey}`);
 const statusOf = (widgetKey: string) =>
@@ -502,11 +507,11 @@ async function everythingHasLoaded(): Promise<void> {
 }
 
 function theReaderPicks(presetLabel: string): void {
-	fireEvent.click(screen.getByRole("button", { name: presetLabel }));
+	fireEvent.click(theButton(presetLabel));
 }
 
 function theReaderOpens(category: CategoryKey): void {
-	fireEvent.click(screen.getByRole("button", { name: `Open ${category}` }));
+	fireEvent.click(theButton(`Open ${category}`));
 }
 
 async function throughputAnswersFor(window: string): Promise<void> {
@@ -577,9 +582,7 @@ describe("a team's charts while the window is changing", () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 
-		fireEvent.click(
-			screen.getByRole("button", { name: "Pick a start date a month earlier" }),
-		);
+		fireEvent.click(theButton("Pick a start date a month earlier"));
 
 		expect(statusOf("throughput")).toBe("loading");
 		await act(async () => held.answer({ window: LAST_60_DAYS }));
@@ -590,7 +593,7 @@ describe("a team's charts while the window is changing", () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
 
-		fireEvent.click(screen.getByRole("button", { name: "Previous 7 days" }));
+		fireEvent.click(theButton("Previous 7 days"));
 
 		expect(screen.getByTestId("step-waiting")).toHaveTextContent(/^true$/);
 		expect(statusOf("throughput")).toBe("loading");
@@ -818,7 +821,7 @@ describe("a team's chart whose data cannot be loaded", () => {
 	it("stepping the window after a failure shows the chart loading at once, before the step is asked for", async () => {
 		await givenThe90DayThroughputFailed();
 
-		fireEvent.click(screen.getByRole("button", { name: "Previous 7 days" }));
+		fireEvent.click(theButton("Previous 7 days"));
 
 		expect(screen.getByTestId("step-waiting")).toHaveTextContent(/^true$/);
 		expect(statusOf("throughput")).toBe("loading");
@@ -952,9 +955,7 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 			new RegExp(`^${text.replace("+", "\\+")}$`),
 		);
 	const theReaderOpensThePicker = () =>
-		fireEvent.click(
-			screen.getByRole("button", { name: "Open the Work Item picker" }),
-		);
+		fireEvent.click(theButton("Open the Work Item picker"));
 	const candidatesAskedFor = (window: string) =>
 		held.calls.filter(
 			(call) =>
@@ -965,9 +966,7 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 	it("a window change drops the chosen stretch, as it does today, and a late answer for it never shows", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
-		fireEvent.click(
-			screen.getByRole("button", { name: "Count only the In Review stretch" }),
-		);
+		fireEvent.click(theButton("Count only the In Review stretch"));
 
 		theReaderPicks("Last 90 days");
 		await act(async () => held.answer({ window: LAST_90_DAYS }));
@@ -979,9 +978,7 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 	it("going back to the window a stretch was chosen in does not bring the stretch back", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
-		fireEvent.click(
-			screen.getByRole("button", { name: "Count only the In Review stretch" }),
-		);
+		fireEvent.click(theButton("Count only the In Review stretch"));
 		await everythingAsked();
 		expectCountsToRead(`scope 7, ${LAST_30_DAYS}`);
 
@@ -996,9 +993,7 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 	it("Work Items chosen in the picker stay chosen and are counted again for the new window", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
-		fireEvent.click(
-			screen.getByRole("button", { name: "Choose Work Items 11 and 12" }),
-		);
+		fireEvent.click(theButton("Choose Work Items 11 and 12"));
 		await everythingAsked();
 		expectCountsToRead(`Work Items 11+12, ${LAST_30_DAYS}`);
 
@@ -1011,9 +1006,7 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 	it("a choice of Work Items answered late for the window the reader left never replaces the current one", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
-		fireEvent.click(
-			screen.getByRole("button", { name: "Choose Work Items 11 and 12" }),
-		);
+		fireEvent.click(theButton("Choose Work Items 11 and 12"));
 
 		theReaderPicks("Last 90 days");
 		await act(async () => held.answer({ window: LAST_90_DAYS }));
@@ -1055,9 +1048,7 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 	it("is loading while chosen Work Items are counted again for the new window", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
-		fireEvent.click(
-			screen.getByRole("button", { name: "Choose Work Items 11 and 12" }),
-		);
+		fireEvent.click(theButton("Choose Work Items 11 and 12"));
 		await everythingAsked();
 
 		theReaderPicks("Last 90 days");
@@ -1070,9 +1061,7 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 	it("says it couldn't be loaded when the chosen stretch's numbers cannot be loaded", async () => {
 		openTheDashboard("team", "flow-metrics");
 		await everythingHasLoaded();
-		fireEvent.click(
-			screen.getByRole("button", { name: "Count only the In Review stretch" }),
-		);
+		fireEvent.click(theButton("Count only the In Review stretch"));
 
 		await act(async () =>
 			held.fail({ method: "getCumulativeStateTimeForTeam" }),
@@ -1095,7 +1084,7 @@ describe("Cumulative Time per State narrowed by the reader, across a window chan
 			const chart = within(frameOf("stateTimeCumulative")).getByTestId(
 				"time-per-state-chart",
 			);
-			const chosenWith = screen.getByRole("button", { name: control });
+			const chosenWith = theButton(control);
 
 			fireEvent.click(chosenWith);
 
@@ -1244,7 +1233,7 @@ describe.each(chartsThatFetchForThemselves)(
 			await act(async () => held.fail({ method }));
 			await everythingHasLoaded();
 
-			fireEvent.click(screen.getByRole("button", { name: "Previous 7 days" }));
+			fireEvent.click(theButton("Previous 7 days"));
 
 			expect(screen.getByTestId("step-waiting")).toHaveTextContent(/^true$/);
 			expect(statusOf(widgetKey)).toBe("error");
