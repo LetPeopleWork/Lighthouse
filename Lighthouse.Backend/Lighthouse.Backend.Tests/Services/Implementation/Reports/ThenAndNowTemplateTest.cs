@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Services.Implementation.Reports;
 using Lighthouse.Backend.Services.Implementation.Reports.Metrics;
@@ -17,6 +18,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
         private static readonly string[] CycleTimeShown = [CycleTimeReportMetric.MetricKey];
 
+        private static readonly string[] CycleTimeShownTwice = [CycleTimeReportMetric.MetricKey, CycleTimeReportMetric.MetricKey];
+
         [TestCase(1, null)]
         [TestCase(0, ReportRefusalCodes.NowTooShort)]
         public void A_Now_of_at_least_one_day_is_accepted(int nowLengthDays, string? expectedRefusal)
@@ -31,6 +34,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
                 Assert.That(frozen.Code, Is.EqualTo(expectedRefusal));
                 Assert.That(ThenAndNowPayload.FromJson(frozen.Value ?? "null")?.NowLengthDays, Is.EqualTo(expectedRefusal is null ? nowLengthDays : null));
             }
+        }
+
+        [Test]
+        public void A_stored_report_that_repeats_a_shown_metric_reads_it_back_once()
+        {
+            var calendar = new ReportCalendar(Today, 365);
+            var subject = Subject();
+            var frozen = subject.Freeze(
+                Lightspeed,
+                new NewReport(ThenAndNowTemplate.TemplateKey, "Engagement start", CycleTimeShown, new NewThenAndNow(Today, 90, 90)),
+                calendar);
+            var report = Report.For(Lightspeed, ThenAndNowTemplate.TemplateKey, "Engagement start", new DateTime(2026, 10, 2, 7, 0, 0, DateTimeKind.Utc));
+            report.TemplatePayloadJson = frozen.Value ?? "{}";
+            report.ShownMetricKeysJson = JsonSerializer.Serialize(CycleTimeShownTwice);
+
+            var read = subject.Read(report, calendar);
+
+            Assert.That(read.ShownMetricKeys, Is.EqualTo(CycleTimeShown));
         }
 
         private static ThenAndNowTemplate Subject()

@@ -85,6 +85,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             public const string NameMissing = "name-missing";
             public const string NoMetricShown = "no-metric-shown";
             public const string UnknownMetric = "unknown-metric";
+            public const string DuplicateMetric = "duplicate-metric";
             public const string MetricNotCaptured = "metric-not-captured";
             public const string TemplateNotSupported = "template-not-supported";
             public const string ReportCapReached = "report-cap-reached";

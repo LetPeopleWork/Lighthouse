@@ -91,7 +91,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             return new ReportRead(report.Id, report.Name, report.TemplateKey, owner.Kind, owner.Id, clock.ToInstanceDay(report.CreatedAt))
             {
                 ConcurrencyToken = report.ConcurrencyToken,
-                ShownMetricKeys = [.. storedShown.Where(known.Contains)],
+                ShownMetricKeys = [.. storedShown.Where(known.Contains).Distinct()],
                 ThenAndNow = new ThenAndNowRead(thenWindow, nowWindow, IsRebuildable(thenWindow, calendar), metrics),
             };
         }
@@ -114,7 +114,12 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return ReportRefusalCodes.NoMetricShown;
             }
 
-            return shown.All(KnownMetricKeys(ownerKind).Contains) ? null : ReportRefusalCodes.UnknownMetric;
+            if (!shown.All(KnownMetricKeys(ownerKind).Contains))
+            {
+                return ReportRefusalCodes.UnknownMetric;
+            }
+
+            return shown.Distinct().Count() == shown.Count ? null : ReportRefusalCodes.DuplicateMetric;
         }
 
         // A newer version may have stored a metric this one has never heard of; the report still opens without it.

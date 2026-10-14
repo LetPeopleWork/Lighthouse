@@ -103,6 +103,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenTheOwnerHoldsNoReport(gravity);
         }
 
+        // @driving_port @real-io @us-04 @slice-04 @error @contract-shape:unbounded-preservation
+        [Test]
+        public async Task A_metric_shown_twice_is_refused()
+        {
+            var gravity = ATeam("Team Gravity");
+
+            TheCallerAdministers(gravity);
+            using var refused = await CreateAReport(gravity, ThirtyDaysToTheEndOfAugust([Throughput, Throughput]));
+
+            await ThenItIsRefusedFor(refused, Reason.DuplicateMetric);
+            await ThenTheOwnerHoldsNoReport(gravity);
+        }
+
         // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:unbounded-preservation
         [Test]
         public async Task An_older_report_did_not_capture_Throughput()

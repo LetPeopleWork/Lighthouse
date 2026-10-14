@@ -24,5 +24,7 @@ namespace Lighthouse.Backend.Models.Reports
         public const string NoMetricShown = "no-metric-shown";
 
         public const string UnknownMetric = "unknown-metric";
+
+        public const string DuplicateMetric = "duplicate-metric";
     }
 }
