@@ -126,13 +126,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         [TestCase(365, 500, ReportRefusalCodes.NowBeforeCutoff)]
         [TestCase(180, 181, null)]
         [TestCase(180, 182, ReportRefusalCodes.NowBeforeCutoff)]
-        [TestCase(365, int.MaxValue, ReportRefusalCodes.NowBeforeCutoff)]
+        [TestCase(365, int.MaxValue, ReportRefusalCodes.NowTooLong)]
         [TestCase(KeepsEverything, 730, null)]
         [TestCase(KeepsEverything, 13, ReportRefusalCodes.NowTooShort)]
-        [TestCase(KeepsEverything, int.MaxValue, ReportRefusalCodes.NowBeforeCutoff)]
+        [TestCase(KeepsEverything, int.MaxValue, ReportRefusalCodes.NowTooLong)]
         public void NowRefusal_refuses_a_Now_too_short_or_starting_before_the_oldest_kept_day(int doneItemsCutoffDays, int lengthDays, string? expected)
         {
             var refusal = ReportWindowPolicy.NowRefusal(lengthDays, Today, doneItemsCutoffDays);
+
+            Assert.That(refusal, Is.EqualTo(expected));
+        }
+
+        // From 2 Oct 2026, 739 891 days reach back exactly to 1 Jan of the year 1, the first day the calendar can name.
+        [TestCase(739_891, null)]
+        [TestCase(739_892, ReportRefusalCodes.NowTooLong)]
+        public void NowRefusal_refuses_a_Now_reaching_back_before_the_first_day_the_calendar_can_name(int lengthDays, string? expected)
+        {
+            var refusal = ReportWindowPolicy.NowRefusal(lengthDays, Today, KeepsEverything);
 
             Assert.That(refusal, Is.EqualTo(expected));
         }

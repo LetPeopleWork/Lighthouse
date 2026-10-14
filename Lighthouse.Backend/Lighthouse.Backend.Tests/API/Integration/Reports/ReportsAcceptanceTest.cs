@@ -79,6 +79,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             public const string ThenEndsInTheFuture = "then-ends-in-the-future";
             public const string ThenBeforeCutoff = "then-before-cutoff";
             public const string NowTooShort = "now-too-short";
+            public const string NowTooLong = "now-too-long";
             public const string NowBeforeCutoff = "now-before-cutoff";
             public const string NameMissing = "name-missing";
             public const string NoMetricShown = "no-metric-shown";

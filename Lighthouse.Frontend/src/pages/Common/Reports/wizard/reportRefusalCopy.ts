@@ -61,6 +61,7 @@ const REFUSAL_COPY: Record<ReportRefusalCode, (words: RefusalWords) => string> =
 		"then-before-cutoff": (words) => cutoffRefusal("Then", words),
 		"now-too-short": (words) =>
 			`Now needs at least ${words.minimumLengthDays} days.`,
+		"now-too-long": () => "Now can't reach back that far.",
 		"now-before-cutoff": (words) => cutoffRefusal("Now", words),
 		"name-missing": () => "Give the report a name.",
 		"name-too-long": () => "A report name can be at most 200 characters.",

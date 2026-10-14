@@ -78,4 +78,15 @@ describe("the edges of a report window, checked as the server checks them", () =
 			);
 		},
 	);
+
+	it.each([
+		[739_891, "accepted"],
+		[739_892, "now-too-long"],
+	])("answers a Now of %i days with %s", (lengthDays, expected) => {
+		const bounds = { ...boundaries.bounds, earliestStart: null };
+
+		expect(answer(reportWindowCheck({ side: "now", lengthDays }, bounds))).toBe(
+			expected,
+		);
+	});
 });

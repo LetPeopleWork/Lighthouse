@@ -100,6 +100,13 @@
 			"lengthDays": 730,
 			"keepsEveryFinishedItem": true,
 			"refusal": null
+		},
+		{
+			"case": "a Now starting before the first day the calendar can name, when every finished item is kept",
+			"side": "now",
+			"lengthDays": 1000000,
+			"keepsEveryFinishedItem": true,
+			"refusal": "now-too-long"
 		}
 	]
 }

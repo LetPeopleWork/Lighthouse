@@ -7,6 +7,7 @@ export type ReportWindowRefusal =
 	| "then-ends-in-the-future"
 	| "then-before-cutoff"
 	| "now-too-short"
+	| "now-too-long"
 	| "now-before-cutoff";
 
 /** The bounds the server answered with the report types; the wizard holds no copy of them. */
@@ -72,6 +73,10 @@ const nowRefusal = (
 ): ReportWindowRefusal | null => {
 	if (lengthDays < bounds.minimumLengthDays) {
 		return "now-too-short";
+	}
+
+	if (startDayNumber(bounds.today, lengthDays) < FIRST_CALENDAR_DAY) {
+		return "now-too-long";
 	}
 
 	return startsBefore(bounds.earliestStart, bounds.today, lengthDays)

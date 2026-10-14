@@ -35,6 +35,7 @@ describe("refusalCopyFor", () => {
 			"The Then window must start on or after 2 Oct 2025 — older finished Work Items are no longer kept.",
 		],
 		["now-too-short", "Now needs at least 14 days."],
+		["now-too-long", "Now can't reach back that far."],
 		[
 			"now-before-cutoff",
 			"The Now window must start on or after 2 Oct 2025 — older finished Work Items are no longer kept.",

@@ -49,7 +49,10 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             return HoldsEverythingFrom(window.Start, today, doneItemsCutoffDays) ? null : ReportRefusalCodes.ThenBeforeCutoff;
         }
 
-        /// <summary>Why a Now of this length cannot be kept; null when it is long enough and starts on or after the oldest kept day.</summary>
+        /// <summary>
+        /// Why a Now of this length cannot be kept; null when it is long enough, starts on or after the first day the
+        /// calendar can name, and on or after the oldest kept day.
+        /// </summary>
         public static string? NowRefusal(int lengthDays, DateOnly today, int doneItemsCutoffDays)
         {
             if (lengthDays < MinimumLengthDays)
@@ -59,7 +62,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
 
             if (NowWindow(today, lengthDays) is not ReportWindow window)
             {
-                return ReportRefusalCodes.NowBeforeCutoff;
+                return ReportRefusalCodes.NowTooLong;
             }
 
             return HoldsEverythingFrom(window.Start, today, doneItemsCutoffDays) ? null : ReportRefusalCodes.NowBeforeCutoff;

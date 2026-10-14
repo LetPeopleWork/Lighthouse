@@ -420,7 +420,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // Crafter-written: a window reaching back past the first day the calendar can name is refused before
         // anything is stored, never saved and then crashed on.
         [TestCase(800_000, 90, Reason.ThenTooLong)]
-        [TestCase(90, 800_000, Reason.NowBeforeCutoff)]
+        [TestCase(90, 800_000, Reason.NowTooLong)]
         public async Task A_window_longer_than_the_calendar_reaches_is_refused_and_stores_nothing(int thenLengthDays, int nowLengthDays, string reason)
         {
             var lightspeed = ATeam(Lightspeed);
