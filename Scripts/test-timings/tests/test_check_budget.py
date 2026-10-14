@@ -224,14 +224,12 @@ class AFrontendFileOverTheBudgetFailsTheBuild(BudgetCheckTestCase):
 
         self.assert_passes_quietly(self.workspace.check("frontend", timings))
 
-    @PENDING
     def test_a_file_exactly_at_the_budget_passes(self):
         timings = self.workspace.frontend_timings({"src/pages/Overview.test.tsx": [30.0, 30.0]})
         self.workspace.budget()
 
         self.assert_passes_quietly(self.workspace.check("frontend", timings))
 
-    @PENDING
     def test_a_file_over_the_budget_fails_naming_the_file_its_time_the_budget_and_the_allowlist(self):
         timings = self.workspace.frontend_timings(
             {"src/pages/RefinementView.paging.test.tsx": [40.0, 35.0]}
@@ -244,7 +242,6 @@ class AFrontendFileOverTheBudgetFailsTheBuild(BudgetCheckTestCase):
             result, "src/pages/RefinementView.paging.test.tsx", "75.0", "60", ALLOWLIST_NAME
         )
 
-    @PENDING
     def test_a_file_a_millisecond_over_the_budget_fails(self):
         timings = self.workspace.frontend_timings({"src/pages/Overview.test.tsx": [60.001]})
         self.workspace.budget()
@@ -253,7 +250,6 @@ class AFrontendFileOverTheBudgetFailsTheBuild(BudgetCheckTestCase):
             self.workspace.check("frontend", timings), "src/pages/Overview.test.tsx"
         )
 
-    @PENDING
     def test_each_stack_is_held_to_the_budget_its_own_section_sets(self):
         cases = (
             ("frontend", 40.0, "fails"),
@@ -308,7 +304,6 @@ class AFrontendFileOverTheBudgetFailsTheBuild(BudgetCheckTestCase):
                     workspace.check("frontend", timings), "src/pages/Split.test.tsx"
                 )
 
-    @PENDING
     def test_only_the_file_over_the_budget_is_named_when_others_are_under_it(self):
         timings = self.workspace.frontend_timings(
             {
@@ -324,7 +319,6 @@ class AFrontendFileOverTheBudgetFailsTheBuild(BudgetCheckTestCase):
         self.assert_fails_naming(result, "src/pages/Slow.test.tsx")
         self.assertEqual(len(self.annotations(result, "error")), 1, msg=self._explain(result))
 
-    @PENDING
     def test_a_file_name_containing_a_percent_sign_and_a_line_break_is_reported_on_one_escaped_line(self):
         timings = self.workspace.frontend_timings({"src/pages/100%\nDone.test.tsx": [75.0]})
         self.workspace.budget()

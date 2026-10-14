@@ -98,9 +98,14 @@ def judge(stack: str, rows: list[dict[str, str]], budget_seconds: Decimal) -> li
     ]
 
 
+def escaped(text: str) -> str:
+    # A raw line break would end the annotation and let the rest of a unit name pose as a workflow command.
+    return text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+
 def annotation(finding: Finding, allowlist_name: str) -> str:
     return (
-        f"::error::{finding.unit} took {finding.seconds:.1f}s, "
+        f"::error::{escaped(finding.unit)} took {finding.seconds:.1f}s, "
         f"over the {finding.limit}s budget set in {allowlist_name}"
     )
 
