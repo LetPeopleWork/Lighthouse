@@ -128,9 +128,9 @@ export function openTheDialog(options: DialogOptions): OpenedDialog {
 }
 
 /**
- * The grid's own elements are found by their role attribute rather than by role queries: a role
- * query asks jsdom for the computed style of every match and its ancestors, and the stylesheet
- * the grid brings makes each of those lookups cost milliseconds.
+ * The dialog, the grid and its menus are found by their role attribute rather than by role
+ * queries: a role query asks jsdom for the computed style of every match and its ancestors, and
+ * the stylesheet the grid brings makes each of those lookups cost milliseconds.
  */
 const byRole = (scope: ParentNode, role: string): HTMLElement[] => [
 	...scope.querySelectorAll<HTMLElement>(`[role="${role}"]`),
@@ -220,13 +220,14 @@ export async function openManageColumns(
 	await user.click(manageColumns);
 }
 
-/** What Manage columns lists, in its order, and whether each is on. */
+/** A switch is a checkbox input too, but it never stands for a column. */
 const checkboxesOffered = (): HTMLInputElement[] => [
 	...document.querySelectorAll<HTMLInputElement>(
 		'input[type="checkbox"]:not([role])',
 	),
 ];
 
+/** What Manage columns lists, in its order, and whether each is on. */
 export const columnsOffered = (): { field: string; shown: boolean }[] =>
 	checkboxesOffered()
 		.map((box) => ({
