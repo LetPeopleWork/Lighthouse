@@ -596,6 +596,22 @@ sketch review (2026-10-14); D53–D54 the maintainer's decisions after the slice
   for better and worse. "No change" is led by a grey "–" mark, matching the ▲ ▼ marks of a change. Each change line
   also names its line for screen readers. Also settles the wording for a Then of 0: the change reads
   "▲ 7 (Then was 0)", no % and no dash, as built since slice 01; the earlier "—" wording is corrected to match.
+- [D58] **No "days since Then ended" line** (maintainer 2026-10-14, slice-07 sketch walkthrough: "Drop it").
+  The summary header's window lines already date both sides; D35's sentence does not return. The frontend `it.todo`
+  for it is removed; `daysSinceThenEnded` stays on the wire, unused by the page.
+- [D59] **The Now step offers presets plus a number of days** (maintainer 2026-10-14, slice 07). It reuses the Then
+  step's toggle buttons (Team 30 / 90, Portfolio 90 / 180 days) beside a days field for a custom length; Now defaults
+  to Then's length, is at least 14 days and inside the kept history (D43), and refusals use the existing window copy.
+  The line "= the last N days, always ending today" stays.
+- [D60] **The cap sentence names the report type, and Create Report carries the licence tooltip** (maintainer
+  2026-10-14, slice 08, applying D57): "Community includes 1 Then & Now report per {Team}. Delete it, or use Premium
+  for unlimited reports." The disabled Create Report reuses the existing `LicenseTooltip`, which links to Premium on
+  hover, as other Premium-limited controls do.
+- [D61] **Edit report and Delete are two buttons beside the breadcrumb, editors only** (maintainer 2026-10-14,
+  slices 08 and 10, as sketched). Delete asks through `DeleteConfirmationDialog` ("Do you really want to delete
+  <name>?", plus "This Then window can no longer be rebuilt." when it applies); Edit opens the Create wizard with Type
+  and Then locked (DT4). Deleting a {Team} or {Portfolio} names its reports in the singular for one ("and its
+  report") and with the count otherwise ("and its 3 reports").
 
 ---
 
