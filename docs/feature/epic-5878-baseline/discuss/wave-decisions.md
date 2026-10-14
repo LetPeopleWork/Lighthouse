@@ -20,6 +20,11 @@ on any panel; Then no longer freezes XmR average and limits), D50 ({WIP} as Aver
 panel side headings read just THEN / NOW). Slice 03 (ADO #6161) becomes the summary header; 04 and 05 lose their
 beyond-limits parts. Superseded entries below are marked, not deleted.
 
+**Revision 2026-10-14 (after the slice-04 live check).** The maintainer decided D53 (the summary header gains a third
+segment, CHANGE: per shown metric, Improved / Got worse / Mixed / Unchanged from the panels' own marks) and D54 (the
+{Cycle Time} panel adds the 95th percentile). Both go into a new slice 05b, after slice 05 and before the final
+quality gates, within this Epic (ADO Story: to be created); US-05b added.
+
 Full text of everything below: `../feature-delta.md` → "Wave: DISCUSS" sections. Slice briefs: `../slices/`.
 
 ## Config (given, not asked)
@@ -27,9 +32,9 @@ Full text of everything below: `../feature-delta.md` → "Wave: DISCUSS" section
 feature_type user-facing (full stack) · walking skeleton brownfield · research depth comprehensive, reusing DIVERGE ·
 JTBD light (job reused, not re-derived) · density lean.
 
-## Scope Assessment: PASS — 9 stories, 1 new module (reports + metric catalog with panels) on 3 existing ones (metrics, licence, RBAC), estimated ~8½ days (slice 01 re-estimated 1 → 1½ days on 2026-10-13; slice 03 re-cut to the summary header, 1 → ½ day, on 2026-10-14; was ~9)
+## Scope Assessment: PASS — 10 stories, 1 new module (reports + metric catalog with panels) on 3 existing ones (metrics, licence, RBAC), estimated ~9–9½ days (slice 05b added 2026-10-14, ~½–1 day; was ~8½; slice 01 re-estimated 1 → 1½ days on 2026-10-13; slice 03 re-cut to the summary header, 1 → ½ day, on 2026-10-14; was ~9)
 
-Slice 11 dropped on 2026-10-03 and slice 09 after DESIGN (D46), so the story count is 9; effort ~8½ days, under 2 weeks; one user outcome,
+Slice 11 dropped on 2026-10-03 and slice 09 after DESIGN (D46), so the story count was 9; slice 05b (D53, D54, 2026-10-14) makes it 10 — at the limit, not over it; effort ~9–9½ days, under 2 weeks; one user outcome,
 nothing ships without the Reports tab. No Epic split. The release is cut after slice 10 (Edit report is part of v1
 since D43/D44); no slice is cancellable any more.
 
@@ -75,7 +80,7 @@ since D43/D44); no slice is cancellable any more.
 - **D38** (Q2) Now is the full rolling window ending today and may overlap Then; never clipped.
 - **D39** (Q3) No verdicts, no narrative, no charts, no Stable/Unstable or data-maturity label. One registered panel
   per metric, ValueFlow-style (Then left, accent bar, Now right with change and % change). v1: M1 {Cycle Time}
-  (Then 85th; Now 85th/70th/50th), M2 {Throughput} (total and per-day average, reshaped by D47), M3 {WIP} (average,
+  (Then 85th; Now 85th/70th/50th; *Then 70th/50th too since DT9, and the 95th on both sides by D54*), M2 {Throughput} (total and per-day average, reshaped by D47), M3 {WIP} (average,
   range — *reshaped by D50*: Average, Median, Min, Max), M4 {Work Item Age} (total and average, each as window
   average and last day — Q10, D48; *reshaped by D51*: Total {Work Item Age} only, Average, Median, Min, Max). Green/red by a fixed per-metric direction of good, known only to the frontend panel. Room
   for a later per-panel author note.
@@ -109,7 +114,26 @@ since D43/D44); no slice is cancellable any more.
 - **D52** (maintainer 2026-10-14, after DISTILL sketch review; records DT14) Summary header between breadcrumb and
   first panel: each side's window, its length and "N {Work Items} closed"; panel side headings read just THEN / NOW
   (no "· N {Work Items}", no "· N days"). More header content only after a maintainer-seen sketch. Slice 03 (#6161)
-  is this header plus a behaviour-preserving refactor already done.
+  is this header plus a behaviour-preserving refactor already done. *(Extended by D53, 2026-10-14: a third segment,
+  CHANGE.)*
+- **D53** (maintainer 2026-10-14, after the slice-04 live check; extends D52) The summary header gains a third
+  segment, CHANGE, matching the panels' THEN | NOW | CHANGE. Per **shown metric** (not per line), judged by the
+  panels' own better / worse / no-change marks on that metric's lines (direction of good as in D39: lower is better
+  for {Cycle Time}, {WIP}, {Work Item Age}; higher for {Throughput}): **✔ Improved** ≥ 1 line better, none worse ·
+  **✘ Got worse** ≥ 1 worse, none better · **± Mixed** ≥ 1 better and ≥ 1 worse · **– Unchanged** no line changed.
+  Groups always in that order; an empty group is left out; the metrics of one group share a line ("✔ Improved:
+  {Throughput}, {WIP}"), named as the panel titles in the instance's Terminology ("Total {Work Item Age}"). A line with
+  a dash on either side is ignored; a metric whose lines are all dashes is not listed; only shown metrics count. No
+  weighting, no threshold: a 1-day move counts. Colour backs the marks (green, red, neutral, neutral); mark and word
+  carry the meaning. Why: per-metric counts scale as panels are added; "Mixed" is honest when the 85th worsens while
+  the 50th improves (the spread widened), where a majority rule would hide the tail forecasts lean on. "The 85th
+  leads" is a possible later refinement only if Mixed proves too common. Sketch approved by the maintainer (in
+  `feature-delta.md`, D53). Slice 05b.
+- **D54** (maintainer 2026-10-14, after the slice-04 live check; extends M1 and DT9) The {Cycle Time} panel adds the
+  95th percentile: Then freezes it with the 85th, 70th and 50th; Now computes it; its line carries the `ForecastLevel`
+  icon like the others (DT10), has its own change line and feeds D53. A report frozen before D54 reads "Not captured
+  for this report" for Then's 95th (D27). The backend already computes it (`BaseMetricsService.BuildPercentiles`:
+  50 / 70 / 85 / 95); it was never decided against, only not requested at DT9. Slice 05b.
 - **D42** (Q5) Reports are deleted with their Team/Portfolio; its delete confirmation names "and its N reports".
 - **D43** (Q6) Now length set at creation (default = Then length; same presets + custom), saved on the report, not
   in the address; viewers cannot change it; editors can, stored for everyone. Scheduled sending (5882) needs it.
@@ -128,7 +152,7 @@ since D43/D44); no slice is cancellable any more.
   metric's direction of good. No verdicts; people interpret.
 - **Slices (order = priority)**: 01 Reports tab + Team report + {Cycle Time} panel (WS) · 02 past end date + custom
   length · 03 summary header (D52; *was* {Cycle Time} points beyond Then's limits, dropped by D49) · 04 metric picker
-  + {Throughput} panel · 05 {WIP} + Total {Work Item Age} panels (Average, Median, Min, Max; D50, D51) · 06 Portfolio · 07 Now length at creation + days since · 08 delete + cap + lapse + owner deletion ·
+  + {Throughput} panel · 05 {WIP} + Total {Work Item Age} panels (Average, Median, Min, Max; D50, D51) · 05b the header's CHANGE summary + the {Cycle Time} 95th (D53, D54; added 2026-10-14) · 06 Portfolio · 07 Now length at creation + days since · 08 delete + cap + lapse + owner deletion ·
   ~~09 settings notice~~ dropped (D46) · 10 Edit report · ~~11 claim chart~~ dropped.
 - **KPIs**: north star K2 (≥ 40% of report-creating instances return to Reports ≥ 7 days later); K1 activation
   ≥ 10% in 90 days; ~~K3 reports saved with a Now shorter than Then~~ (dropped, maintainer 2026-10-03); K4 cap hits
@@ -154,7 +178,8 @@ since D43/D44); no slice is cancellable any more.
 - Out of scope: CLI/MCP, export, Delivery level, cross-owner reports, verdicts, rules/thresholds, narrative, charts,
   author note (later), viewer-changeable Now, editing Then, nice-to-have metrics, a settings-changed notice (D46), a
   {Throughput} weekly median (D47), counts beyond Then's limits (D49), a per-item average {Work Item Age} and
-  last-day values (D51).
+  last-day values (D51); in the CHANGE summary, weighting, thresholds, a majority rule and "the 85th leads" (D53);
+  any {Cycle Time} percentile beyond the 95th (D54).
 
 ## Upstream Changes
 
@@ -191,6 +216,11 @@ totals and the actual total on the window's last day.
 **Decided 2026-10-14 (after the DISTILL sketch review)**: D49–D52 (above). Q8 is superseded by D49 (no below-count);
 Q10 by D51. **Open**: whether "days since Then ended" (slice 07, D35) still joins the summary header — per D52 it
 needs a sketch the maintainer has seen first.
+
+**Decided 2026-10-14 (after the slice-04 live check)**: D53, D54 (above). **Provisional, to confirm with a sketch at
+the start of DISTILL (Q11)**: (a) a CHANGE segment with no metric to list reads "—"; (b) metrics inside a group in
+panel order; (c) "Not captured for this report" ignored like a dash; (d) the 95th row above the 85th; (e) a long
+group wraps under its mark on a narrow page.
 
 ## Risks carried forward
 
