@@ -62,7 +62,7 @@ describe("the report schemas", () => {
 	});
 
 	// Owned by slice 04 (Story 6162): no server ever sent these reasons, and no panel explains them any more.
-	it.skip.each(["too-few-points", "no-process", "no-wip", "lower-limit-zero"])(
+	it.each(["too-few-points", "no-process", "no-wip", "lower-limit-zero"])(
 		"refuse a value absent because of %j, a reason no server sends",
 		(absentReason) => {
 			expect(
@@ -72,7 +72,7 @@ describe("the report schemas", () => {
 	);
 
 	// Owned by slice 04 (Story 6162): a report counts nothing beyond Then's limits, so the read keeps no such member.
-	it.skip("keep nothing a payload says about Then's limits", () => {
+	it("keep nothing a payload says about Then's limits", () => {
 		const sent = aReportWhoseThenIsADash("no-finished-items");
 		const withLimits = {
 			...sent,

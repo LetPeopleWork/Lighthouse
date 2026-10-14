@@ -76,10 +76,6 @@ const reasonTexts: Record<
 > = {
 	"no-finished-items": (side, workItems) =>
 		`No finished ${workItems} in ${side}`,
-	"too-few-points": (side) => `${side} has too few points for limits`,
-	"no-process": () => "Then never varied from 0",
-	"no-wip": (_side, workItems) => `No ${workItems} in progress`,
-	"lower-limit-zero": () => "Then's lower limit is 0",
 };
 
 export const absentReasonText = (

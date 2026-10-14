@@ -53,12 +53,7 @@ export interface IReportList {
 }
 
 /** Why a value cannot be shown; the value then reads as a dash. */
-export type ReportAbsentReason =
-	| "no-finished-items"
-	| "too-few-points"
-	| "no-process"
-	| "no-wip"
-	| "lower-limit-zero";
+export type ReportAbsentReason = "no-finished-items";
 
 export interface IReportValue {
 	value: number | null;
@@ -77,11 +72,7 @@ export type ReportMetricSide = Partial<
 		| "average"
 		| "median"
 		| "min"
-		| "max"
-		| "totalWindowAverage"
-		| "totalLastDay"
-		| "averageWindowAverage"
-		| "averageLastDay",
+		| "max",
 		IReportValue | null
 	>
 >;
@@ -93,7 +84,6 @@ export type ReportMetricSide = Partial<
 export interface IReportMetric {
 	atThen: ReportMetricSide;
 	atNow: ReportMetricSide;
-	beyondThenLimits?: { above: IReportValue; below: IReportValue } | null;
 }
 
 export interface IReportWindow {
@@ -183,15 +173,7 @@ export const ReportListSchema: z.ZodType<IReportList> = z.object({
 const ReportValueSchema: z.ZodType<IReportValue> = z.object({
 	value: z.number().nullable(),
 	sampleSize: z.number().nullable(),
-	absentReason: z
-		.enum([
-			"no-finished-items",
-			"too-few-points",
-			"no-process",
-			"no-wip",
-			"lower-limit-zero",
-		])
-		.nullable(),
+	absentReason: z.enum(["no-finished-items"]).nullable(),
 });
 
 const ReportMetricSideSchema = z.record(
@@ -225,10 +207,6 @@ export const ReportSchema: z.ZodType<IReport> = z.object({
 				.object({
 					atThen: ReportMetricSideSchema,
 					atNow: ReportMetricSideSchema,
-					beyondThenLimits: z
-						.object({ above: ReportValueSchema, below: ReportValueSchema })
-						.nullable()
-						.optional(),
 				})
 				.nullable(),
 		),
