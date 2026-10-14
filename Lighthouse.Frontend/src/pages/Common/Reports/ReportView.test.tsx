@@ -217,13 +217,6 @@ const beforeEachReportTest = () => {
 describe("The report header", () => {
 	beforeEach(beforeEachReportTest);
 
-	// @us-07 @slice-07 @driving_port @contract-shape:pure-function
-	// Where and in what words the summary says how long ago Then ended waits for a sketch the maintainer has
-	// seen; the lines naming Then as frozen and Now as the last days were dropped and are pinned as absent below.
-	it.todo(
-		"says how long ago Then ended, in the words of the sketch the maintainer approves",
-	);
-
 	// @us-01 @slice-01 @contract-shape:pure-function
 	it("names the report on one line after Reports, which leads back to the list, with no large heading", async () => {
 		openTheReport();

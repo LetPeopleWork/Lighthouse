@@ -437,6 +437,85 @@ describe("Step three: Now", () => {
 		);
 	});
 
+	// @us-07 @slice-07 @contract-shape:pure-function
+	it.skip("starts on the length Then was given with one click, with that button pressed", async () => {
+		await openTheWizard();
+		await next();
+		await userEvent.click(
+			within(await theWizard()).getByRole("button", { name: "30 days" }),
+		);
+		await next();
+
+		expect(await theNowLengthField()).toHaveValue(30);
+		expect(
+			within(await theWizard()).getByRole("button", { name: "30 days" }),
+		).toHaveAttribute("aria-pressed", "true");
+	});
+
+	// @us-07 @slice-07 @contract-shape:pure-function
+	it.skip("offers a Team's Now as 30 or 90 days with one click, beside its length in days", async () => {
+		await openTheWizard();
+		await next();
+		await next();
+
+		await userEvent.click(
+			within(await theWizard()).getByRole("button", { name: "30 days" }),
+		);
+
+		expect(await theNowLengthField()).toHaveValue(30);
+		expect(await theWizard()).toHaveTextContent(
+			"= the last 30 days, always ending today",
+		);
+		expect(
+			within(await theWizard()).getByRole("button", { name: "90 days" }),
+		).toBeVisible();
+		expect(
+			within(await theWizard()).queryByRole("button", { name: "180 days" }),
+		).toBeNull();
+	});
+
+	// @us-07 @us-06 @slice-07 @contract-shape:pure-function
+	it.skip("offers a Portfolio's Now as 90 or 180 days with one click", async () => {
+		await openTheWizard(
+			aReportService({
+				getReports: vi.fn().mockResolvedValue(aReportList([])),
+			}),
+			APOLLO,
+		);
+		await next();
+		await next();
+
+		await userEvent.click(
+			within(await theWizard()).getByRole("button", { name: "180 days" }),
+		);
+
+		expect(await theNowLengthField()).toHaveValue(180);
+		expect(
+			within(await theWizard()).queryByRole("button", { name: "30 days" }),
+		).toBeNull();
+	});
+
+	// @us-07 @slice-07 @contract-shape:pure-function
+	it.skip("takes a Now of a custom length in days, pressing no button", async () => {
+		await openTheWizard();
+		await next();
+		await next();
+
+		await enterNumber(await theNowLengthField(), 45);
+
+		expect(await theWizard()).toHaveTextContent(
+			"= the last 45 days, always ending today",
+		);
+		for (const preset of ["30 days", "90 days"]) {
+			expect(
+				within(await theWizard()).getByRole("button", { name: preset }),
+			).toHaveAttribute("aria-pressed", "false");
+		}
+		expect(
+			within(await theWizard()).getByRole("button", { name: "Next" }),
+		).toBeEnabled();
+	});
+
 	// @us-07 @slice-07 @error @contract-shape:pure-function
 	it.skip("refuses a Now shorter than 14 days and goes no further", async () => {
 		await openTheWizard();
