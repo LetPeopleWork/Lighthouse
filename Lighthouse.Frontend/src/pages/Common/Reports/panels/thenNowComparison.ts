@@ -1,6 +1,7 @@
 import type {
 	IReportValue,
 	ReportAbsentReason,
+	ReportMetricSide,
 } from "../../../../models/Reports/Report";
 
 export type DirectionOfGood = "lower" | "higher";
@@ -15,6 +16,14 @@ export interface ThenNowChange {
 }
 
 export type ReportSide = "Then" | "Now";
+
+export type ReportMetricSideKey = keyof ReportMetricSide;
+
+/** A line of a panel that carries a change mark: the value it shows and the decimals it is shown to. */
+export interface ChangeLine {
+	readonly key: ReportMetricSideKey;
+	readonly decimals: number;
+}
 
 const MINUS = "−";
 
@@ -40,6 +49,16 @@ export const shownValue = (
 	value?.value === null || value?.value === undefined
 		? null
 		: roundForDisplay(value.value, decimals);
+
+/** The value in its unit, or a dash for one that cannot be shown. */
+export const shownText = (
+	value: IReportValue | null | undefined,
+	decimals: number,
+	valueText: (value: number) => string,
+): string => {
+	const shown = shownValue(value, decimals);
+	return shown === null ? DASH : valueText(shown);
+};
 
 const dayWord = (value: number) => (Math.abs(value) === 1 ? "day" : "days");
 
@@ -118,3 +137,16 @@ export const absenceTextOf = (
 	value?.absentReason
 		? absentReasonText(value.absentReason, side, workItems)
 		: NOT_CAPTURED;
+
+/** Each distinct reason once, so several dashes for the same cause do not say it several times. */
+export const distinctAbsenceNotesOf = (
+	lines: readonly ChangeLine[],
+	side: ReportMetricSide,
+	sideName: ReportSide,
+	workItems: string,
+): string[] => {
+	const notes = lines
+		.filter(({ key, decimals }) => shownValue(side[key], decimals) === null)
+		.map(({ key }) => absenceTextOf(side[key], sideName, workItems));
+	return [...new Set(notes)];
+};

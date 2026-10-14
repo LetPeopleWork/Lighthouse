@@ -1,55 +1,39 @@
-import { Typography } from "@mui/material";
 import type React from "react";
 import type { ReportPanelProps } from "./reportPanelRegistry";
 import {
 	AbsenceNotes,
-	LineChange,
+	LineChanges,
 	type ThenNowSideProps,
+	ValueLine,
 } from "./ThenNowLineParts";
-import ThenNowPanelFrame, { PanelLine } from "./ThenNowPanelFrame";
-import { absenceTextOf, DASH, shownValue } from "./thenNowComparison";
+import ThenNowPanelFrame from "./ThenNowPanelFrame";
+import { distinctAbsenceNotesOf, shownText } from "./thenNowComparison";
 
 const DECIMALS = 0;
 
-const LINES = [
-	{ key: "average", label: "Average" },
-	{ key: "median", label: "Median" },
-	{ key: "min", label: "Min" },
-	{ key: "max", label: "Max" },
+const SPREAD_LINES = [
+	{ key: "average", label: "Average", decimals: DECIMALS },
+	{ key: "median", label: "Median", decimals: DECIMALS },
+	{ key: "min", label: "Min", decimals: DECIMALS },
+	{ key: "max", label: "Max", decimals: DECIMALS },
 ] as const;
 
 type ValueText = (value: number) => string;
 
-/** Each distinct reason once, so four dashes for the same cause do not say it four times. */
-const absenceNotesOf = ({
-	side,
-	sideName,
-	workItems,
-}: ThenNowSideProps): string[] => {
-	const notes = LINES.filter(
-		({ key }) => shownValue(side[key], DECIMALS) === null,
-	).map(({ key }) => absenceTextOf(side[key], sideName, workItems));
-	return [...new Set(notes)];
-};
-
 const SpreadLines: React.FC<
 	Readonly<ThenNowSideProps & { valueText: ValueText }>
-> = ({ valueText, ...sideProps }) => (
+> = ({ side, sideName, workItems, valueText }) => (
 	<>
-		{LINES.map(({ key, label }) => {
-			const shown = shownValue(sideProps.side[key], DECIMALS);
-			return (
-				<PanelLine key={key}>
-					<Typography component="span">
-						<span>{label}</span>{" "}
-						<Typography component="span" sx={{ fontWeight: "bold" }}>
-							{shown === null ? DASH : valueText(shown)}
-						</Typography>
-					</Typography>
-				</PanelLine>
-			);
-		})}
-		<AbsenceNotes notes={absenceNotesOf(sideProps)} />
+		{SPREAD_LINES.map(({ key, label, decimals }) => (
+			<ValueLine
+				key={key}
+				label={label}
+				value={shownText(side[key], decimals, valueText)}
+			/>
+		))}
+		<AbsenceNotes
+			notes={distinctAbsenceNotesOf(SPREAD_LINES, side, sideName, workItems)}
+		/>
 	</>
 );
 
@@ -75,17 +59,14 @@ const DailySpreadPanel: React.FC<
 				valueText={valueText}
 			/>
 		}
-		change={LINES.map(({ key }) => (
-			<PanelLine key={key}>
-				<LineChange
-					then={shownValue(metric.atThen[key], DECIMALS)}
-					now={shownValue(metric.atNow[key], DECIMALS)}
-					directionOfGood={directionOfGood}
-					decimals={DECIMALS}
-					magnitudeText={valueText}
-				/>
-			</PanelLine>
-		))}
+		change={
+			<LineChanges
+				metric={metric}
+				lines={SPREAD_LINES}
+				directionOfGood={directionOfGood}
+				magnitudeText={valueText}
+			/>
+		}
 	/>
 );
 

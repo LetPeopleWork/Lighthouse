@@ -3,14 +3,21 @@ import type React from "react";
 import type { ReportPanelProps } from "./reportPanelRegistry";
 import {
 	AbsenceNotes,
-	LineChange,
+	LineChanges,
 	type ThenNowSideProps,
 } from "./ThenNowLineParts";
 import ThenNowPanelFrame, { PanelLine } from "./ThenNowPanelFrame";
-import { absenceTextOf, DASH, shownValue } from "./thenNowComparison";
+import {
+	absenceTextOf,
+	DASH,
+	shownText,
+	shownValue,
+} from "./thenNowComparison";
 
 const TOTAL_DECIMALS = 0;
 const PER_DAY_DECIMALS = 2;
+
+const CHANGE_LINES = [{ key: "perDay", decimals: PER_DAY_DECIMALS }] as const;
 
 const perDayText = (value: number) =>
 	`${value.toFixed(PER_DAY_DECIMALS)} per day`;
@@ -34,7 +41,6 @@ const ThroughputLines: React.FC<
 > = ({ workItem, ...sideProps }) => {
 	const { side, workItems } = sideProps;
 	const total = shownValue(side.total, TOTAL_DECIMALS);
-	const perDay = shownValue(side.perDay, PER_DAY_DECIMALS);
 	return (
 		<>
 			<PanelLine>
@@ -46,7 +52,7 @@ const ThroughputLines: React.FC<
 			</PanelLine>
 			<PanelLine>
 				<Typography component="span" sx={{ fontWeight: "bold" }}>
-					{perDay === null ? DASH : perDayText(perDay)}
+					{shownText(side.perDay, PER_DAY_DECIMALS, perDayText)}
 				</Typography>
 			</PanelLine>
 			<AbsenceNotes notes={absenceNotesOf(sideProps)} />
@@ -83,15 +89,12 @@ const ThroughputPanel: React.FC<Readonly<ReportPanelProps>> = ({
 		change={
 			<>
 				<PanelLine>{null}</PanelLine>
-				<PanelLine>
-					<LineChange
-						then={shownValue(metric.atThen.perDay, PER_DAY_DECIMALS)}
-						now={shownValue(metric.atNow.perDay, PER_DAY_DECIMALS)}
-						directionOfGood={directionOfGood}
-						decimals={PER_DAY_DECIMALS}
-						magnitudeText={perDayText}
-					/>
-				</PanelLine>
+				<LineChanges
+					metric={metric}
+					lines={CHANGE_LINES}
+					directionOfGood={directionOfGood}
+					magnitudeText={perDayText}
+				/>
 			</>
 		}
 	/>
