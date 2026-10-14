@@ -926,6 +926,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void GetDailyTotalWorkItemAgeForTeam_CachesValue()
+        {
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-2);
+            var endDate = TestToday.AmbientAsUtcMidnight;
+            AddWorkItem(StateCategories.Doing, 1, string.Empty).StartedDate = DateTime.UtcNow.AddDays(-5);
+
+            var first = subject.GetDailyTotalWorkItemAgeForTeam(testTeam, startDate, endDate).ToList();
+
+            AddWorkItem(StateCategories.Doing, 1, string.Empty).StartedDate = DateTime.UtcNow.AddDays(-5);
+            var second = subject.GetDailyTotalWorkItemAgeForTeam(testTeam, startDate, endDate).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(first, Has.All.GreaterThan(0));
+                Assert.That(second, Is.EqualTo(first));
+            }
+        }
+
+        [Test]
+        public void GetDailyTotalWorkItemAgeForTeam_InvalidateCache()
+        {
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-2);
+            var endDate = TestToday.AmbientAsUtcMidnight;
+            AddWorkItem(StateCategories.Doing, 1, string.Empty).StartedDate = DateTime.UtcNow.AddDays(-5);
+
+            var first = subject.GetDailyTotalWorkItemAgeForTeam(testTeam, startDate, endDate).ToList();
+            subject.InvalidateTeamMetrics(testTeam);
+
+            AddWorkItem(StateCategories.Doing, 1, string.Empty).StartedDate = DateTime.UtcNow.AddDays(-5);
+            var second = subject.GetDailyTotalWorkItemAgeForTeam(testTeam, startDate, endDate).ToList();
+
+            Assert.That(second, Is.EqualTo(first.Select(age => age * 2)));
+        }
+
+        [Test]
         public void GetTotalWorkItemAge_MultipleItemsInProgress_ReturnsSumOfAges()
         {
             var workItem1 = AddWorkItem(StateCategories.Doing, 1, string.Empty);

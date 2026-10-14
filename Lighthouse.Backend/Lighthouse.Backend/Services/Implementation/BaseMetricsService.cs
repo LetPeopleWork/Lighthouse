@@ -853,11 +853,11 @@ namespace Lighthouse.Backend.Services.Implementation
             for (var index = 0; index < totalDays; index++)
             {
                 var currentDate = startDate.AddDays(index);
-                var itemsInProgressOnDay = items.Where(i => WasItemProgressOnDay(currentDate, i));
+                var itemsInProgressOnDay = items.Where(i => WasItemProgressOnDay(currentDate, i)).ToList();
 
                 var currentDay = DateOnly.FromDateTime(currentDate);
                 var totalAge = itemsInProgressOnDay.Sum(item => AgeInDaysOn(currentDay, item.StartedDate ?? item.CreatedDate));
-                
+
                 values[index] = totalAge;
                 workItemIdsPerDay[index] = itemsInProgressOnDay.Select(i => i.Id).ToArray();
             }
