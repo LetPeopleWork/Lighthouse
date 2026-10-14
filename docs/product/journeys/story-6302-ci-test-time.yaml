@@ -23,18 +23,30 @@ journeys:
       - step: Push a change to main
         sees: Verify Frontend and Verify Backend start as today
       - step: Wait for the verify jobs
-        sees: frontend median ≤12 min, backend ≤13.5 min (from 16.8 / 15.3 on 14 Oct)
+        sees: >
+          targets measured as medians over >= 5 main runs, not what a single run shows: frontend
+          ≤12 min, backend ≤13.5 min (from 16.8 / 15.3 on 14 Oct). One run can land above or below
+          them with the runner.
       - step: Add a test file that is slow
-        sees: the verify job fails naming the file, its time and the budget, and pointing to the allowlist
+        sees: >
+          a slow frontend file fails Verify Frontend, naming the file, its time and the budget, and
+          pointing to the allowlist. A slow backend class gets the same line as a warning on a green
+          Verify Backend until the backend budget is calibrated, and fails the job after that.
       - step: Speed it up or allowlist it with a reason
         sees: the job passes
 
     error_paths:
       - when: a normal run is slow because of the runner
-        then: the budget's headroom covers the 0.55-1.13 runner spread, so it stays green
+        then: the budget is at least 2.1 x the largest non-allowlisted unit (and at most 0.55 x the smallest regression it must catch), which covers the 0.55-1.13 runner spread, so it stays green
+      - when: a backend class goes over its budget while the backend check is still in warn mode
+        then: >
+          Verify Backend stays green and shows a warning naming the class, its time and the budget;
+          the developer speeds it up or allowlists it before the switch to failing would turn it red
       - when: a test is slow for a real reason (container start-up)
         then: it sits on the allowlist with that reason
 
     shared_artifacts:
       - name: test-timings-frontend.csv / test-timings-backend.csv
         source: Scripts/test-timings/ run in ci_frontend.yml and ci_backend.yml
+      - name: Scripts/test-time-budget.json
+        source: checked in by hand (budget per stack, allowlist entries with reason and ceiling); read by check_budget.py in both verify jobs

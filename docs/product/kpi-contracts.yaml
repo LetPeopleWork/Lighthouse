@@ -1925,7 +1925,8 @@ outcomes:
       "Verify Frontend / frontend" with conclusion success or failure; minutes = completed_at - started_at;
       median. Run ids cross-checked against git log (the run-list API has served stale pages).
     measurement_window: once at least 5 main runs follow slice 03, then at the DoD check point
-    acceptance_scenarios: "none; a gh query at the DoD check point (D9)"
+    acceptance_scenarios: "Evidence check E-KPI in the feature delta (gh query at the DoD check point, D9)"
+    gate: soft (measured, not asserted)
     alerting: []
     status: designed-not-shipped
 
@@ -1940,10 +1941,14 @@ outcomes:
       "Compute Test Backend filter" log shows filter=Category!=Integration alone, because runs that pull in
       live-connector categories are slower for reasons outside this story.
     measurement_window: once at least 5 main runs follow slice 05, then at the DoD check point
-    acceptance_scenarios: "none; a gh query at the DoD check point (D9)"
+    acceptance_scenarios: >
+      Evidence check E-KPI in the feature delta (gh query at the DoD check point); the warn-only alerting
+      below is pinned by test_check_budget.py
+      test_warn_only_reports_a_class_over_the_budget_as_a_warning_and_passes.
+    gate: soft (measured, not asserted)
     alerting:
       - condition: "a backend class over its budget"
-        action: "::warning:: annotation on the run (check_budget.py --warn-only); becomes a failing job once >= 5 post-fix main runs show headroom (ADR-237)"
+        action: "::warning:: annotation on the run (check_budget.py --warn-only); becomes a failing job once >= 5 backend main runs after the budget commit show zero budget warnings (ADR-237)"
     status: designed-not-shipped
 
   - id: OUT-6302-fe-slow-files
@@ -1954,26 +1959,49 @@ outcomes:
     measurement_scope: vendor_repository
     measured_by: >
       gh run download <id> -R LetPeopleWork/Lighthouse -n test-timings-frontend; sum duration_ms grouped by
-      the file column for the eight files; median of the per-run sum.
+      the file column for the eight files; median of the per-run sum over >= 5 main runs.
     measurement_window: after slices 02 and 03, at least 5 main runs each
-    acceptance_scenarios: "slice 02 AC-02.2 (two files <= 40 s), slice 03 AC-03.2 (six files <= 70 s)"
+    acceptance_scenarios: >
+      Evidence checks E-02b and E-03b in the feature delta (DISTILL, Acceptance checks); the alerting
+      condition below is pinned by test_check_budget.py
+      test_a_file_over_the_budget_fails_naming_the_file_its_time_the_budget_and_the_allowlist.
+    gate: soft (measured at the slice boundary, median of >= 5 main runs)
     alerting:
       - condition: "any frontend test file over the per-file budget"
         action: "Verify Frontend fails with an ::error:: annotation naming file, seconds, budget and the allowlist file (ADR-237)"
     status: designed-not-shipped
 
+  - id: OUT-6302-be-new-integration
+    feature: story-6302-ci-test-time
+    title: The new backend integration classes stop paying full host set-up per test
+    target: "Summed CI time of the 34 in-scope classes <= 192 s, a third less than the baseline (median over >= 5 main runs)"
+    ga_baseline: "288 s (MEASURED 2026-10-14, run 38570239004: the 34 classes under API.Integration.Refinement., .Reports. and .TeamFeatureSize.)"
+    measurement_scope: vendor_repository
+    measured_by: >
+      gh run download <id> -R LetPeopleWork/Lighthouse -n test-timings-backend; sum the duration column for
+      rows whose fully_qualified_name starts with Lighthouse.Backend.Tests.API.Integration.Refinement.,
+      .Reports. or .TeamFeatureSize.; median of the per-run sum over >= 5 main runs.
+    measurement_window: once at least 5 main runs follow slice 04, then at the DoD check point
+    acceptance_scenarios: "Evidence check E-04d in the feature delta (DISTILL, Acceptance checks)"
+    gate: soft (measured at the slice boundary, median of >= 5 main runs)
+    alerting: []
+    status: designed-not-shipped
+
   - id: OUT-6302-coverage-kept
     feature: story-6302-ci-test-time
     title: Faster suites keep every test they had
-    target: "Frontend and backend test counts not lower than the baseline at any check point"
-    ga_baseline: "7,630 frontend / 10,198 backend (DISCUSS; the frontend figure is re-read from the 14 Oct run log at DELIVER start, since the DISCUSS evidence quotes 7,204-7,540)"
+    target: "Passed + skipped + todo test total per stack not lower than the named baseline run at any check point"
+    ga_baseline: "Frontend 7,630 (run 38553818860, 14 Oct 11:02, commit b73a10fad: Vitest 7585 passed | 44 skipped | 1 todo (7630); 479 passed | 2 skipped (481) files). Backend 10,198 (run 38570239004). The 7,204-7,540 frontend counts in the evidence table are earlier 13-14 Oct runs."
     measurement_scope: vendor_repository
     measured_by: >
-      CI logs: the Vitest summary line (Tests N passed) in the pnpm run sonarreport step, and the dotnet
-      test summary (Passed! - Failed: 0, Passed: N). Backend counts compared only between runs with the same
-      test filter. Cross-check: passed-row count of the matching test-timings CSV.
+      CI logs: the Vitest summary line (Tests N passed | M skipped | K todo (T)) in the pnpm run sonarreport
+      step, total compared against run 38553818860; the dotnet test summary, passed + skipped + todo, compared against
+      run 38570239004. Backend counts compared only between runs with the same test filter. Cross-check: passed-row count of the matching test-timings CSV.
     measurement_window: at every slice boundary and the DoD check point
-    acceptance_scenarios: "D7 checks per slice: same test names, same per-file counts"
+    acceptance_scenarios: >
+      Evidence checks E-02a, E-03a, E-04a and E-05a in the feature delta (DISTILL, Acceptance checks):
+      sorted test-name lists before and after each slice, no name lost, no new skip/todo/only.
+    gate: hard at each slice boundary (a lost name blocks the slice)
     alerting: []
     status: designed-not-shipped
 
@@ -1989,7 +2017,14 @@ outcomes:
       one local run of check_budget.py against a real downloaded CSV with a planted over-budget row, its
       output recorded in the feature delta (main is never pushed red to show it).
     measurement_window: every Build And Deploy Lighthouse run once slice 06 lands
-    acceptance_scenarios: "US-06 AC-06.3 (guard self-tests, pinned in DISTILL)"
+    acceptance_scenarios: >
+      Scripts/test-timings/tests/test_check_budget.py (42 tests, run by the guard step on every verify run):
+      AFrontendFileOverTheBudgetFailsTheBuild (planted over-budget file red, at-budget green),
+      AnAllowlistedUnitIsHeldToItsOwnCeiling (allowlisted green, over its ceiling red, stale entry red),
+      ATimingFileThatCannotBeReadFailsClosed (missing, empty, header-only, wrong-column, unreadable CSV),
+      AnAllowlistThatCannotBeTrustedIsRefused, WarnOnlySoftensABreachButNothingElse,
+      TheCheckJudgesWhatTheConvertersWrite (converter-to-guard seam, both stacks). Pending until slice 06.
+    gate: hard (the step fails the job on any self-test failure, both stacks)
     alerting:
       - condition: "self-test failure, or a missing, empty or malformed CSV after a green run"
         action: "step fails in both stacks, backend warn mode included"

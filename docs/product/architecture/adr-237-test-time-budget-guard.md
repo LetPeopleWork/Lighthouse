@@ -1,9 +1,9 @@
 # ADR-237: A Test File or Class Over Its Time Budget Fails the Verify Job
 
-**Status**: Accepted (2026-10-14). Locked while the maintainer was away, under their standing rule to take the recommended option when it does not change what a user sees; the maintainer may revisit.
+**Status**: Accepted (provisional — taken while the maintainer was away; pending ratification).
 **Date**: 2026-10-14
-**Feature**: story-6302-ci-test-time (ADO User Story #6302). Follows `backend-test-speed` (ADR-074).
-**Decider**: Morgan (Solution Architect), interaction mode = PROPOSE; recommended options locked under the AFK rule above.
+**Feature**: ADO User Story #6302 (the frontend and backend CI verify stages got slower). Follows `backend-test-speed` (ADR-074).
+**Decider**: Morgan (Solution Architect), interaction mode = PROPOSE; the recommended options were taken under the maintainer's standing rule for decisions that do not change what a user sees.
 
 ---
 
@@ -23,14 +23,14 @@ Three facts constrain any check built on them:
 
 1. **One script reads the CSVs.** A new `Scripts/test-timings/check_budget.py`, beside the converters, takes its column names from them. Its core is a pure function (timing rows + budget + allowlist → breaches); the script around it only reads files, prints, and sets the exit code. Developers run the same command locally against a downloaded artifact.
 2. **The unit is a frontend file or a backend class**, measured as the sum of its tests' durations. A backend class is the full test name up to the last dot, after removing the argument list (arguments can contain dots, such as URLs).
-3. **The budget is a fixed number of seconds per stack**, set from at least five `main` runs after the slow files are fixed: at least 1.25 × the largest unit not on the allowlist, and at most 0.55 × the slowest regression it must catch (so a 115 s file still trips it on the fastest runner). The calculation is written down next to the number and in `docs/ci-learnings.md`, and is redone if the runners change.
-4. **The allowlist is a checked-in JSON file**, one section per stack. Every entry carries a reason and its own ceiling in seconds, so an accepted slow test (a container start-up, say) cannot grow without limit. A frontend entry whose file no longer appears in the timings fails the check; a backend entry is only checked for still existing in source, because the backend set varies per run.
+3. **The budget is a fixed number of seconds per stack**, set from at least five `main` runs after the slow files are fixed. With L the largest unit not on the allowlist over those runs, the budget B is at least 2.1 × L, because the fastest and slowest runners differ by a factor of about 2.05 (1.13 / 0.55) and a unit seen at L on a fast runner must not trip the budget on a slow one. B is also at most 0.55 × the smallest regression it must catch, so that regression still trips it on the fastest runner; for the frontend, a 115 s file gives B ≤ about 63 s. If both bounds cannot hold, the units above B / 2.1 go on the allowlist with a reason and their own ceiling. The calculation is written down next to the number and in `docs/ci-learnings.md`, and is redone if the runners change.
+4. **The allowlist is a checked-in JSON file**, one section per stack. Every entry carries a reason and its own ceiling in seconds, set at least 2.1 × that unit's largest observed time for the same runner-spread reason as the budget, so an accepted slow test (a container start-up, say) cannot grow without limit. A frontend entry whose file no longer appears in the timings fails the check; a backend entry is only checked for still existing in source, because the backend set varies per run.
 5. **It runs as the last step of each verify job, and only after a green test run.** It cannot hide a test failure, never reads a partial file, and never stops the Sonar steps from running.
-6. **Frontend breaches fail the job from the start. Backend breaches print as warnings** until at least five post-fix `main` runs show headroom under the budget; then one line switches them to failing.
-7. **It fails closed.** A missing, empty or malformed CSV after a green run fails the step with a message naming the file.
+6. **Frontend breaches fail the job from the start. Backend breaches print as warnings** until at least five backend `main` runs **after the budget commit** show zero budget warnings (the largest backend unit at or under the budget on each); then one line switches them to failing. The runs the budget was derived from cannot count, because they sit under it by construction. Warn mode softens only budget breaches; a stale allowlist entry fails in both stacks.
+7. **It fails closed.** A missing, empty or malformed CSV after a green run fails the step with a message naming the file. On a Python older than 3.12 the script stops at once with a message naming the version it needs.
 8. **It proves itself on every run.** The step first runs the script folder's unit tests, including a planted over-budget unit, an allowlisted one and a missing file. This also puts the existing converter tests in CI for the first time.
 
-The failure message names the file or class, its time, the budget, and the allowlist file to edit.
+The failure message names the file or class, its time, the budget, and the allowlist file to edit. It is written as a GitHub workflow-command annotation, with `%`, CR and LF percent-encoded so that a unit name cannot break the line or start another command.
 
 ## Alternatives considered
 

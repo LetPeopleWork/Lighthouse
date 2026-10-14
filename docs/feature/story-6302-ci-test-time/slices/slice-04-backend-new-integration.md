@@ -1,6 +1,6 @@
 # Slice 04 — New backend integration classes stop repeating set-up
 
-**Goal**: The new `API.Integration.Refinement.*`, `Reports.*` and `TeamFeatureSize.*` classes (~300 s summed) drop by at least a third, with every test kept.
+**Goal**: The new `API.Integration.Refinement.*`, `Reports.*` and `TeamFeatureSize.*` classes (34 classes, 288 s summed in run 38570239004 on 14 Oct) drop by at least a third, to ≤192 s, with every test kept.
 
 **Owner story**: US-04. **Effort**: 1 day. **Reference class**: `backend-test-speed` slice 06 (per-fixture WAF reuse, read-API cluster).
 

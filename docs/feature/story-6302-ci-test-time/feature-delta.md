@@ -2,8 +2,8 @@
 
 ADO source: [User Story #6302 — Investigate why the backend and frontend CI stages got slower](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6302) (state: `Active`, no parent Epic, as of 2026-10-14)
 Density: `lean` (DISCUSS hard default). No Tier-2 trigger fired: one persona, one context (CI test suites), no AC ambiguity, no compliance terms, no walking skeleton.
-Waves complete: DISCUSS; DESIGN (all choices locked 2026-10-14 under the maintainer's AFK recommended-option rule; ADR-237); DEVOPS (2026-10-14, same rule; DO-1..DO-7, usage-data event N/A).
-Next wave: DISTILL.
+Waves complete: DISCUSS; DESIGN (all choices locked 2026-10-14 under the maintainer's AFK recommended-option rule; ADR-237); DEVOPS (2026-10-14, same rule; DO-1..DO-7, usage-data event N/A); DISTILL (2026-10-14, same rule; DI-1..DI-13; 42 pending guard tests + evidence checks E-01..E-06e). Final-wave review findings applied 2026-10-14 across all four waves (maintainer away; decisions taken by the reviewers' recommendations).
+Next wave: DELIVER (slice 01 first).
 
 **Lineage:** follows `backend-test-speed` (#5258), which parallelised the backend suite and published per-test timing CSVs from both CI jobs (`Scripts/test-timings/`). This story uses those CSVs as its evidence and builds its guard on them.
 
@@ -13,7 +13,7 @@ Next wave: DISTILL.
 
 ## Wave: DISCUSS / [REF] Persona ID
 
-`lighthouse-developer`: the maintainer or a contributor pushing to `main` and waiting on `Build And Deploy Lighthouse`. In two weeks the wait went from ~11 to ~17 minutes per verify job, long enough to switch context, then come back to a result that is stale.
+`lighthouse-developer`: the maintainer or a contributor pushing to `main` and waiting on `Build And Deploy Lighthouse`. In two weeks the wait went from ~11 to ~17 minutes for the frontend verify job and from ~13 to ~15 for the backend one, long enough to switch context, then come back to a result that is stale.
 
 ---
 
@@ -48,8 +48,9 @@ Raw data: 157 runs of `Build And Deploy Lighthouse` on `main` since 24 Sep, 225 
 | Eight new frontend files carry ~456 s | `RefinementView.paging` 115 s (11 tests, ~10 s each), `WorkItemsDialog.contexts` 105 s (108 tests; 0.7 s before story 6248), `BaseMetricsView.loading` 53 s, `ModifyTeamSettings.refinementNeed` 49 s, `ModifyTeamSettings.readiness` 39 s, `RefinementView.comments` 34 s, `DataGridBase.paging` 32 s, `RefinementView.votes` 29 s. From stories 6202, 6248, 6251 and the refinement work. |
 | A further ~9 % uniform frontend slowdown from 13 Oct, cause open | Unchanged files ran at speed index 0.99–1.08 on 8–12 Oct, 1.05–1.13 after. Two runs with identical test sets (459 files, 7,204 tests): fc633d9dd 630 s vs 3377a2015 832 s. 3377a2015 is vite 8.3.2→8.3.4; MUI (641ac9c6f) and pnpm 12.10 (1bbde5105) bumps landed the same day. Runner variance (0.55–1.13 for the same commit) confounds it. **Inferred, not proven.** |
 | Backend growth is the test step; +24–28 % tests | `Test Backend (with Coverage)` ~9.0 → 10.2–10.8 min; dotnet 8m46s / 7,959 tests (36977323096) → 11m46s / 10,198 tests (38570239004). Build ~2.0, Sonar end ~1.2, NuGet 0.4 min: flat. |
-| Backend: about half the summed growth is new integration classes | Summed class time 1,991 → 2,653 s. New `API.Integration` classes: `Refinement.Slice13Readiness` 31 s, `TeamFeatureSize.Slice01` 25 s, `Refinement.Slice11CastAVote` 19 s, `Slice03StageRules` 19 s, `Slice04RefinementCadence` 18 s, `Reports.Slice01TeamReportScenarios` 18 s, `Slice12Comments` 18 s, … (these classes do not use `IntegrationTestBase`: their harness bases — `RefinementAcceptanceTest`, `ReportsAcceptanceTest`, `TeamFeatureSizeAcceptanceTest` — build a new `TestWebApplicationFactory` host and a fresh database in `[SetUp]` for every test; corrected in DESIGN). |
-| Backend: the other half is a few old tests that now take 30–60 s alone | 38570239004: `S8_EmbedEntryPointTests…ReturnPathPointsOffHost("https://evil.example/steal")` 62 s, `CacheTest.ConcurrentReadersAndWriters…` 61 s, `BlockedCountSnapshotMigrationTests…OnPostgres` 51 s, `DataProtectionKeyRingTest…Redis` 43 s. Which of these are waits/timeouts vs container start-up is not yet known; the agent judged the per-run growers in old classes noisy. |
+| Backend: 52 % of the summed growth is new test classes, and 288 s of it is 34 new integration classes | Summed class time 1,991 → 2,653 s (+662 s). All 88 new backend classes add 346 s of that growth (52 %). The 34 new classes under `API.Integration.Refinement.`, `.Reports.` and `.TeamFeatureSize.` sum to 288 s in run 38570239004. The largest: `Refinement.Slice13Readiness` 31 s, `TeamFeatureSize.Slice01` 25 s, `Refinement.Slice11CastAVote` 19 s, `Slice03StageRules` 19 s, `Slice04RefinementCadence` 18 s, `Reports.Slice01TeamReportScenarios` 18 s, `Slice12Comments` 18 s, … (these classes do not use `IntegrationTestBase`: their harness bases — `RefinementAcceptanceTest`, `ReportsAcceptanceTest`, `TeamFeatureSizeAcceptanceTest` — build a new `TestWebApplicationFactory` host in `[SetUp]` for every test; corrected in DESIGN. Whether each test also gets a fresh database was not measured). |
+| Backend: the other 48 % is in old classes, where a few tests now take 40–60 s alone | 38570239004: `S8_EmbedEntryPointTests…ReturnPathPointsOffHost("https://evil.example/steal")` 62 s, `CacheTest.ConcurrentReadersAndWriters…` 61 s, `BlockedCountSnapshotMigrationTests…OnPostgres` 51 s, `DataProtectionKeyRingTest…Redis` 43 s. Which of these are waits/timeouts vs container start-up is not yet known; the agent judged the per-run growers in old classes noisy. |
+| Test-count baselines (14 Oct) | Frontend **7,630**, from run 38553818860 (14 Oct 11:02, commit b73a10fad): Vitest `Tests 7585 passed \| 44 skipped \| 1 todo (7630)`, `Test Files 479 passed \| 2 skipped (481)`. The 7,204–7,540 counts quoted above come from earlier 13–14 Oct runs. Backend **10,198**, from run 38570239004. |
 | Ruled out (measured) | Runner image (ubuntu-24.04, 20260927 → 20261004; unchanged files ran at index ~1.0 on the new image 8–12 Oct). NuGet and Sonar caches always hit; pnpm cache misses on lockfile changes but install stays ≤0.2 min. Vitest pool/worker/coverage config unchanged in the window. |
 
 ---
@@ -63,7 +64,7 @@ Raw data: 157 runs of `Build And Deploy Lighthouse` on `main` since 24 Sep, 225 
 | D3 | UX research depth | Lightweight | One persona, the developer. |
 | D4 | JTBD | Yes, reuse `job-dev-test-feedback-velocity` | The developer is the user; not the infrastructure-only escape valve. |
 | D5 | Scope | **Fix both stacks** | Maintainer decision 2026-10-14 (offered: fix frontend + A/B vite only; fix both stacks; name the cause and file follow-ups). |
-| D6 | Regression guard | **Per-file time budget read from the existing timing CSVs** | Maintainer decision 2026-10-14. A slow file is caught the day it lands, not two weeks later as a trend. Applies to both stacks (frontend per file, backend per class), because the CI jobs already write both CSVs (`vitest_to_csv.py` → `test-timings-frontend.csv`, `trx_to_csv.py` → `test-timings-backend.csv`; `summarise.py` only prints a top-N table from the raw reports — corrected in DESIGN); DESIGN may narrow it to frontend only if the backend budget proves too noisy. |
+| D6 | Regression guard | **Per-file time budget read from the existing timing CSVs** | Maintainer decision 2026-10-14. A slow file is caught the day it lands, not two weeks later as a trend. Applies to both stacks (frontend per file, backend per class), because the CI jobs already write both CSVs (`vitest_to_csv.py` → `test-timings-frontend.csv`, `trx_to_csv.py` → `test-timings-backend.csv`; `summarise.py` only prints a top-N table from the raw reports — corrected in DESIGN). The frontend fails the build from the start. The backend warns until its budget is calibrated, then fails: its set of classes changes from run to run and coverage slows it unevenly, so a limit set before the fixes land would trip on noise. |
 | D7 | Behaviour preserved | Same tests, same assertions | A faster test must still fail on the bug it guards. No test deleted, skipped or weakened; frontend and backend test counts do not drop; coverage on the touched areas does not drop. |
 | D8 | The vite question is settled by an A/B, not by reverting on suspicion | Local A/B of vite 8.3.2 vs 8.3.4 on an unchanged test set, ≥3 runs each | CI runner variance (0.55–1.13 for one commit) is too large to judge a ~9 % effect from CI runs. |
 | D9 | Measuring a win | Median of ≥5 `main` runs after a slice lands | Single runs swing by several minutes with the runner. |
@@ -89,7 +90,7 @@ Raw data: 157 runs of `Build And Deploy Lighthouse` on `main` since 24 Sep, 225 
 ### US-01 — Settle whether the 13 Oct dependency bumps slowed every frontend test
 
 **As** a Lighthouse developer **I want** to know whether vite 8.3.4 (or MUI / pnpm 12.10 from the same day) slowed the whole Vitest run **so that** I either reclaim ~9 % for free or stop suspecting it.
-**Job traceability**: `job-dev-test-feedback-velocity`
+**job_id**: `job-dev-test-feedback-velocity`
 
 #### Elevator Pitch
 Before: a ~9 % slowdown of unchanged frontend tests from 13 Oct is visible in CI but buried in runner variance; nobody knows whether a dependency caused it.
@@ -98,16 +99,16 @@ Decision enabled: pin or report upstream if one bump costs time; otherwise drop 
 
 #### Acceptance criteria
 - AC-01.1: Median Vitest `Duration` for each A/B arm, ≥3 runs each on the same machine and the same test set, is recorded with the commit it ran on.
-- AC-01.2: If an arm is slower by more than its own run-to-run spread, the cause is fixed (pin, config, or upstream issue linked) and the fix is shown on the A/B; otherwise the hypothesis is recorded as disproved.
+- AC-01.2: An arm's spread is the min–max of its ≥3 runs. A difference counts only when the slower arm's minimum exceeds the faster arm's maximum (the two spreads do not overlap). If it counts, the cause is fixed (pin, config, or upstream issue linked) and the fix is shown on the A/B; otherwise the hypothesis is recorded as disproved.
 
 ### US-02 — The two slowest new frontend files run in a fraction of their time
 
 **As** a Lighthouse developer **I want** `RefinementView.paging.test.tsx` and `WorkItemsDialog.contexts.test.tsx` to stop costing 220 s of test time **so that** the frontend job sheds most of its new weight in one step.
-**Job traceability**: `job-dev-test-feedback-velocity`
+**job_id**: `job-dev-test-feedback-velocity`
 
 #### Elevator Pitch
 Before: two files added this month take 115 s and 105 s; one paging test runs ~10 s on its own.
-After: run `pnpm vitest run RefinementView.paging WorkItemsDialog.contexts` → sees both files pass with the same test names, together in ≤40 s locally, and the next CI `test-timings-frontend.csv` shows each under the per-file budget.
+After: run `pnpm vitest run RefinementView.paging WorkItemsDialog.contexts` → sees both files pass with the same test names, together in ≤40 s locally, and the next CI `test-timings-frontend.csv` shows each file down against its 14 Oct time (115 s and 105 s).
 Decision enabled: whether the cause (large row counts through the real DataGrid, per-test full renders, `waitFor` timeouts) is the pattern to apply to the next six files.
 
 #### Acceptance criteria
@@ -118,11 +119,11 @@ Decision enabled: whether the cause (large row counts through the real DataGrid,
 ### US-03 — The next six slow frontend files follow
 
 **As** a Lighthouse developer **I want** the remaining slow new files sped up the same way **so that** the frontend test step is back near its early-October time.
-**Job traceability**: `job-dev-test-feedback-velocity`
+**job_id**: `job-dev-test-feedback-velocity`
 
 #### Elevator Pitch
 Before: `BaseMetricsView.loading`, `ModifyTeamSettings.refinementNeed`, `ModifyTeamSettings.readiness`, `RefinementView.comments`, `DataGridBase.paging` and `RefinementView.votes` take ~236 s together.
-After: run `pnpm test` → all green; the CI `Verify Frontend / frontend` job median is ≤12 min and the six files are each under the per-file budget in `test-timings-frontend.csv`.
+After: run `pnpm test` → all green; the CI `Verify Frontend / frontend` job median is ≤12 min, and `test-timings-frontend.csv` shows each of the six files down against its 14 Oct time.
 Decision enabled: whether the frontend is fixed or a further cause remains (then named in a follow-up item).
 
 #### Acceptance criteria
@@ -133,26 +134,26 @@ Decision enabled: whether the frontend is fixed or a further cause remains (then
 ### US-04 — New backend integration classes stop paying full set-up per test
 
 **As** a Lighthouse developer **I want** the new Refinement, Reports and TeamFeatureSize integration classes to share what they safely can **so that** backend growth stays proportional to the coverage added, not to the set-up repeated.
-**Job traceability**: `job-dev-test-feedback-velocity`
+**job_id**: `job-dev-test-feedback-velocity`
 
 #### Elevator Pitch
-Before: ~15 new `API.Integration` classes add ~300 s of summed time; their harness bases (not `IntegrationTestBase`) build a whole new `TestWebApplicationFactory` host and a fresh database for every test, and nobody knows how much of that is set-up.
+Before: 34 new `API.Integration` classes under Refinement, Reports and TeamFeatureSize add 288 s of summed time (run 38570239004, 14 Oct); their harness bases (not `IntegrationTestBase`) build a whole new `TestWebApplicationFactory` host for every test, and nobody knows how much of that is set-up.
 After: run `dotnet test --filter "FullyQualifiedName~API.Integration.Refinement|FullyQualifiedName~API.Integration.Reports|FullyQualifiedName~API.Integration.TeamFeatureSize"` → sees the same tests green, and the `FixtureSetupTimer` output plus `test-timings-backend.csv` show set-up share and summed time for those classes, down against the 14 Oct baseline.
 Decision enabled: whether the fixture-reuse pattern from `backend-test-speed` slice 06 should become the default for new integration classes.
 
 #### Acceptance criteria
-- AC-04.1: For each class in scope, set-up vs body time is measured before any change (`FixtureSetupTimer`, first added to the three harness bases, which do not call it today).
-- AC-04.2: Classes where set-up dominates adopt fixture reuse; parallel-safety rules from `docs/ci-learnings.md` and the `[NonParallelizable]` allowlist guard still hold.
+- AC-04.1: Set-up time and body time are reported per harness, for every class in scope, before any change. The instrument is `FixtureSetupTimer`, first added to the three harness bases, which do not call it today.
+- AC-04.2: In classes where set-up dominates, the set-up cost per test drops (the mechanism is DESIGN's choice); parallel-safety rules from `docs/ci-learnings.md` and the `[NonParallelizable]` allowlist guard still hold.
 - AC-04.3: D7 holds; summed time of the in-scope classes drops by at least a third, or the slice records why set-up is not the cost.
 
 ### US-05 — The 30–60 s single backend tests are explained, and fixed where they wait for nothing
 
 **As** a Lighthouse developer **I want** to know why a handful of old backend tests each take 40–60 s **so that** time spent waiting on a timeout or a container is either removed or knowingly accepted.
-**Job traceability**: `job-dev-test-feedback-velocity`
+**job_id**: `job-dev-test-feedback-velocity`
 
 #### Elevator Pitch
 Before: `S8_EmbedEntryPointTests` (one case 62 s), `CacheTest.ConcurrentReadersAndWriters…` (61 s), `BlockedCountSnapshotMigrationTests…OnPostgres` (51 s), `DataProtectionKeyRingTest…Redis` (43 s) dominate the slowest-test list, and it is unknown whether that is a timeout, a retry, or a container starting.
-After: run `dotnet test --filter` on each class → sees each class's time with the cause noted in this delta, and the timeout- or wait-bound ones finishing in seconds.
+After: run `dotnet test --filter "FullyQualifiedName~S8_EmbedEntryPointTests"`, and the same with `CacheTest`, `BlockedCountSnapshotMigrationTests` and `DataProtectionKeyRingTest` → sees each class's time with the cause noted in this delta, and every timeout- or wait-bound test, once fixed, taking under 10 s locally.
 Decision enabled: fix, or accept with a reason (container start-up is real work), recorded so the budget guard can allow it.
 
 #### Acceptance criteria
@@ -161,18 +162,18 @@ Decision enabled: fix, or accept with a reason (container start-up is real work)
 
 ### US-06 — A slow test file fails the build the day it lands
 
-**As** a Lighthouse developer **I want** CI to flag any test file (frontend) or class (backend) over a time budget **so that** this kind of drift is caught on the commit that causes it.
-**Job traceability**: `job-dev-test-feedback-velocity`
+**As** a Lighthouse developer **I want** CI to fail the build on any frontend test file over its time budget, and to warn on any backend test class over its budget until that budget is calibrated, then fail **so that** this kind of drift is caught on the commit that causes it.
+**job_id**: `job-dev-test-feedback-velocity`
 
 #### Elevator Pitch
 Before: a 115 s test file merged on 12 Oct and was noticed only as a two-week trend in job durations.
-After: push a commit adding a file over budget → sees the verify job fail with a line naming the file, its time and the budget, and pointing to the allowlist; a commit under budget passes as today.
+After: push a commit adding a frontend file over budget → sees `Verify Frontend` fail with a line naming the file, its time and the budget, and pointing to the allowlist. A backend class over budget shows the same line as a warning on a green `Verify Backend` until the backend budget is calibrated and switched to failing; after that it fails too. A commit under budget passes as today.
 Decision enabled: speed the file up, or add it to the allowlist with a reason, before it merges.
 
 #### Acceptance criteria
-- AC-06.1: The check reads the `test-timings-*.csv` the jobs already produce (no second test run).
-- AC-06.2: The budget is calibrated on the post-fix distribution with headroom for runner variance (the 0.55–1.13 spread), so a normal run never trips it; the number and its derivation are recorded.
-- AC-06.3: A planted over-budget file turns the check red; an allowlisted one stays green; the allowlist carries a reason per entry.
+- AC-06.1: The check judges the run that just finished without a second test run: it reads the `test-timings-*.csv` the jobs already produce.
+- AC-06.2: Per stack, the budget follows the DS-Q1 rule (at least 2.1 × the largest non-allowlisted unit, at most 0.55 × the smallest regression it must catch) and its derivation is recorded. Pass when zero non-allowlisted units are over the budget across the ≥5 `main` runs after the budget commit; any over-budget unit there fails the criterion. The runs the budget was derived from do not count as evidence, because they sit under it by construction.
+- AC-06.3: A planted over-budget frontend file turns the check red. A planted over-budget backend class prints a warning and leaves the job green while the backend is in warn mode, and turns the check red once it is switched to failing. An allowlisted unit stays green; the allowlist carries a reason per entry.
 - AC-06.4: `docs/ci-learnings.md` gains the rule: a new test file over the budget fails CI; speed it up or allowlist it with a reason.
 
 ---
@@ -255,11 +256,11 @@ No HTTP, UI or client surface changes.
 | 03 frontend-next-six | US-03 | 1 d | "One pattern explains the slow new frontend files" |
 | 04 backend-new-integration | US-04 | 1 d | "Set-up, not test bodies, is what the new integration classes pay for" |
 | 05 backend-outliers | US-05 | ½ d | "The 40–60 s tests are waiting on nothing" |
-| 06 budget-guard | US-06 | ½ d | "A budget can be set that catches a slow file without tripping on runner variance" |
+| 06 budget-guard | US-06 | ½ d of work, plus elapsed time for ≥5 post-fix `main` runs before calibrating and ≥5 more before the backend flip | "A budget can be set that catches a slow file without tripping on runner variance" |
 
 **Order:** 01 first (cheapest, highest uncertainty, and its result changes the baseline the other slices are measured against); 02 then 03 (biggest win, and 02's finding sets 03's pattern); 04, 05; 06 last, because the budget is calibrated on the post-fix distribution.
 
-Every slice has developer-visible output (a faster command, a recorded measurement, a red build); none is purely `@infrastructure`. All use production CI data, not synthetic timings.
+Every slice has developer-visible output (a faster command, a recorded measurement, a red build); none is purely `@infrastructure`. Slices 01 and 05 are investigation slices: their output is a recorded measurement and a verdict, plus whatever fix the verdict calls for. All use production CI data, not synthetic timings.
 
 ---
 
@@ -269,15 +270,16 @@ Every slice has developer-visible output (a faster command, a recorded measureme
 |---|---|---|---|---|
 | OUT-6302-fe-job | `Verify Frontend / frontend` median job minutes | 16.8 | ≤12 | ≥5 success/failure runs on `main` after slice 03 |
 | OUT-6302-be-job | `Verify Backend / backend` median job minutes | 15.3 | ≤13.5 | ≥5 runs on `main` after slice 05 |
-| OUT-6302-fe-slow-files | Summed CI time of the eight named frontend files | ~456 s | ≤110 s | `test-timings-frontend.csv` |
-| OUT-6302-coverage-kept | Frontend and backend test counts | 7,630 / 10,198 | not lower | CI logs |
+| OUT-6302-fe-slow-files | Summed CI time of the eight named frontend files | ~456 s | ≤110 s | Median over ≥5 `main` runs, from `test-timings-frontend.csv` |
+| OUT-6302-be-new-integration | Summed CI time of the 34 in-scope classes under `API.Integration.Refinement.`, `.Reports.` and `.TeamFeatureSize.` | 288 s (run 38570239004) | ≤192 s (a third less) | Median over ≥5 `main` runs, from `test-timings-backend.csv` |
+| OUT-6302-coverage-kept | Passed + skipped + todo test total per stack | Frontend 7,630 (run 38553818860: 7,585 passed, 44 skipped, 1 todo); backend 10,198 (run 38570239004) | not lower than the named run, per stack | CI logs (Vitest and `dotnet test` summaries); backend compared only on runs with the same test filter |
 | OUT-6302-guard | Over-budget file fails the build | none | red on a planted file | US-06 AC-06.3 |
 
 ---
 
 ## Wave: DISCUSS / [REF] Definition of Ready (9-item gate)
 
-1. Persona: ✓ `lighthouse-developer`.
+1. Persona: ✓ `lighthouse-developer` — the maintainer or a contributor who pushes to `main` and waits on both verify jobs before moving on; at ~17 min the wait is long enough to switch context and lose the thread.
 2. JTBD: ✓ `job-dev-test-feedback-velocity` (existing).
 3. Stories sized: ✓ 6 stories, each ≤1 day.
 4. ACs testable: ✓ each has a timing threshold, a recorded measurement or a binary gate.
@@ -342,8 +344,8 @@ Outcome Collision Check: **skipped** — no product typed-contract surface (no e
 |---|---|---|---|
 | DDD-1 | Guard input | The `test-timings-*.csv` files the jobs already write; column names come from the converters' `CSV_COLUMNS` (one source for the column contract) | Locked (AC-06.1, F1) |
 | DDD-2 | Guard runs after a green test run only, as the **last** step of each verify job | Default `success()` condition. Placed after the Sonar end + metadata steps, so a budget breach never skips Sonar; the CSV upload keeps `if: always()` | Locked (F2; must not mask or pre-empt test failures) |
-| DDD-3 | Guard shape: where it lives, the unit, the budget rule, the allowlist file | New `check_budget.py`; summed time per FE file / BE class; fixed seconds with recorded headroom; JSON allowlist with reason + ceiling; fail closed; self-tests in the step | **LOCKED** (AFK recommended-option rule; ADR-237) |
-| DDD-4 | Backend stack in the guard | Both wired; frontend fails, backend warns until ≥5 runs show headroom, then fails | **LOCKED** (AFK recommended-option rule; ADR-237) |
+| DDD-3 | Guard shape: where it lives, the unit, the budget rule, the allowlist file | New `check_budget.py`; summed time per FE file / BE class; fixed seconds per stack, B ≥ 2.1 × L and B ≤ 0.55 × the smallest regression to catch (DS-Q1); JSON allowlist with reason + ceiling; fail closed; self-tests in the step | **LOCKED** (AFK recommended-option rule; ADR-237) |
+| DDD-4 | Backend stack in the guard | Both wired; frontend fails, backend warns until ≥5 backend `main` runs after the budget commit show zero budget warnings, then fails | **LOCKED** (AFK recommended-option rule; ADR-237) |
 | DDD-5 | Backend harness host lifetime | Option A: host once per fixture, per measured harness | **LOCKED** (AFK recommended-option rule) |
 | DDD-6 | No new `[NonParallelizable]`; the allowlist guard and its seven entries stay as they are | Host reuse keeps fixture-level parallelism and a host per fixture | Locked (AC-04.2, ADR-074) |
 | DDD-7 | Measure before changing: `FixtureSetupTimer` added to the three harness bases' set-up/tear-down | Test-only, reuses the existing timer | Locked (AC-04.1, F6) |
@@ -359,9 +361,13 @@ All three were written as proposals; the maintainer was AFK. **Locked under AFK 
 
 - **Where**: a new `Scripts/test-timings/check_budget.py` that reads the CSVs and takes its column names from the converters. Local and CI run the same command.
 - **Unit**: summed test time per frontend file, and per backend class (class = the full name before the last `.` once the `(…)` argument tail is removed, F4).
-- **Budget**: fixed seconds per stack. Budget ≥ 1.25 × the largest non-allowlisted unit over ≥5 post-fix `main` runs, and ≤ 0.55 × the regression it must catch (a 115 s file on the fastest runner is ~63 s). The calculation is recorded here and in `ci-learnings.md`, and re-derived if the runner population changes.
-- **Allowlist**: one checked-in JSON beside the script, per stack, each entry with a reason and its own ceiling in seconds. Frontend fails on an entry whose file is absent from the CSV; backend checks only that the class still exists in source (F3).
-- **Stacks**: both wired. Frontend fails the job; backend prints the same breach as a warning until ≥5 post-fix `main` runs show headroom, then a one-line switch makes it fail.
+- **Budget**: fixed seconds per stack, one formula everywhere. Let L be the largest non-allowlisted unit observed over ≥5 post-fix `main` runs. Then:
+  - **B ≥ 2.1 × L.** The same commit runs anywhere from 0.55× to 1.13× its typical time, a ratio of about 2.05 between the fastest and the slowest runner, so a unit seen at L on a fast runner can take about 2.05 × L on a slow one. A 1.25× headroom would trip on an ordinary slow runner.
+  - **B ≤ 0.55 × the smallest regression the guard must catch,** so that regression still trips the guard on the fastest runner. For the frontend that regression is the 115 s file that started this story, so B ≤ about 63 s, which in turn means L must be ≤ about 30 s.
+  - **If both cannot hold,** the units that break the lower bound (larger than B / 2.1) go on the allowlist, each with a reason and its own ceiling, and L is recomputed without them.
+  - The derivation (the runs used, L, the regression anchor, B, and any unit moved to the allowlist) is recorded here, next to the number, and in `ci-learnings.md`, and re-derived if the runner population changes.
+- **Allowlist**: one checked-in JSON file beside the script, with a section per stack, each entry with a reason and its own ceiling in seconds. An entry's ceiling is at least 2.1 × that unit's largest observed time over the derivation runs, for the same runner-spread reason as the budget. Frontend fails on an entry whose file is absent from the CSV; backend checks only that the class still exists in source (F3).
+- **Stacks**: both wired. Frontend fails the job; backend prints the same breach as a warning, then a one-line switch makes it fail. The switch needs ≥5 backend `main` runs **after the budget commit** with zero budget warnings, measured as the largest backend unit time on each of those runs against B. The runs the budget was calibrated on cannot serve: B is derived from them, so they are under it by construction.
 - **Missing or malformed CSV after a green run**: fail closed, with a message naming the file.
 - **Self-proof**: the step runs `python3 -m unittest discover Scripts/test-timings/tests` before the check, which also brings the existing converter tests into CI (F7).
 
@@ -413,7 +419,7 @@ Rejected:
 | Surface | Form | Change |
 |---|---|---|
 | `Verify Frontend` / `Verify Backend` jobs | GitHub Actions | New last step: "Check test-time budget" — fails naming unit, time, budget and the allowlist file |
-| `python3 Scripts/test-timings/check_budget.py --stack <frontend\|backend> --csv <file>` | Local CLI | Same command against a downloaded `test-timings-*` artifact (`gh run download`) |
+| `python3 Scripts/test-timings/check_budget.py --stack <frontend\|backend> --csv <file> [--allowlist <json>] [--source-root <backend test dir>] [--warn-only]` | Local CLI | Same command against a downloaded `test-timings-*` artifact (`gh run download`). Defaults, exit codes and annotation format: DISTILL DI-1..DI-9, DI-13 |
 | `pnpm vitest run <file>`, `dotnet test --filter …` with `LIGHTHOUSE_FIXTURE_TIMING=1` | Local CLI | Unchanged; the timer now covers the three harness bases |
 
 ## Wave: DESIGN / [REF] Driven ports + adapters
@@ -442,8 +448,8 @@ No production port or adapter changes.
 |---|---|---|
 | DDD-1 | Guard reads the CSVs, column names from the converters | Locked |
 | DDD-2 | Guard is the last step, runs only after green tests | Locked |
-| DDD-3 | New `check_budget.py`; summed time per FE file / BE class; fixed seconds with recorded headroom; JSON allowlist with reason + ceiling; fail closed; self-tests in the step | LOCKED (AFK rule) — ADR-237 |
-| DDD-4 | Frontend fails; backend warns, then fails after ≥5 runs show headroom | LOCKED (AFK rule) — ADR-237 |
+| DDD-3 | New `check_budget.py`; summed time per FE file / BE class; fixed seconds per stack, 2.1 × L ≤ B ≤ 0.55 × the smallest regression to catch; JSON allowlist with reason + ceiling; fail closed; self-tests in the step | LOCKED (AFK rule) — ADR-237 |
+| DDD-4 | Frontend fails; backend warns, then fails after ≥5 backend `main` runs after the budget commit show zero budget warnings | LOCKED (AFK rule) — ADR-237 |
 | DDD-5 | Host once per fixture, per measured harness (option A) | LOCKED (AFK rule) |
 | DDD-6 | No new `[NonParallelizable]`; guard untouched | Locked |
 | DDD-7 | Timer in the three harness bases before changing them | Locked |
@@ -470,7 +476,7 @@ CREATE NEW, with evidence: (1) `check_budget.py` — nothing in the repo compare
 
 ## Wave: DESIGN / [REF] C4 — CI test-timing topology (Mermaid)
 
-Product System Context and Container: **unchanged** (test suites and CI scripts only).
+Product System Context and Container: **unchanged** (test suites and CI scripts only). The backend source tree is scanned only to tell whether a backend allowlist entry still names a class that exists.
 
 ```mermaid
 flowchart TD
@@ -486,14 +492,15 @@ flowchart TD
     fcsv -->|read by| guard{{"check_budget.py<br/>last step, after green tests"}}
     bcsv -->|read by| guard
     allow[("budget + allowlist JSON<br/>unit → reason, ceiling")] -->|read by| guard
-    guard -->|fails job naming unit, time, budget| dev
+    bsrc[("backend test source tree<br/>Lighthouse.Backend.Tests/**/*.cs")] -->|scanned by| guard
+    guard -->|fails job naming unit, time, budget<br/>(backend: warns until switched)| dev
     nunit -.->|LIGHTHOUSE_FIXTURE_TIMING=1, local| fst["FixtureSetupTimer CSV<br/>(set-up vs body per fixture)"]
 ```
 
 ## Wave: DESIGN / [REF] Open questions (deferred to DISTILL / DELIVER)
 
 - **The budget numbers** — derived in slice 06 from ≥5 post-fix `main` runs by the DS-Q1c rule; recorded here and in `ci-learnings.md`.
-- **When the backend flips from warn to fail** — after ≥5 post-fix `main` runs stay under its budget; recorded with the numbers.
+- **When the backend flips from warn to fail** — after ≥5 backend `main` runs after the budget commit show zero budget warnings; recorded with the numbers.
 - **Which harnesses are set-up-bound** — slice 04 measures first (DDD-7); a harness where the body dominates is recorded and left alone.
 - **The four outliers' causes** — slice 05; any accepted one becomes the first backend allowlist entries.
 - **Whether DS-Q3 C is earned** — only if slice 02 finds the same hotspot in both kits and slice 03 finds it outside them.
@@ -510,7 +517,7 @@ flowchart TD
 
 - **Pattern**: product architecture unchanged; a small functional-core CI script beside the existing converters, plus test-harness changes (OOP, NUnit; Vitest kits).
 - **Locked from DISCUSS / the code**: CSV input with the converters' column names (DDD-1); last step after green tests (DDD-2); no new `[NonParallelizable]` (DDD-6); measure before changing (DDD-7); D7 at query level (DDD-9); pure guard core (DDD-10).
-- **Locked under AFK by the recommended-option rule (maintainer may revisit)**: DS-Q1 — new `check_budget.py`; summed time per frontend file / backend class; fixed seconds per stack with the recorded headroom rule; JSON allowlist with reason + ceiling; frontend fails, backend warns until ≥5 runs show headroom, then fails; fail closed; self-tests in the step (ADR-237). DS-Q2 — option A, per measured harness. DS-Q3 — option B, inside the existing kits.
+- **Locked under AFK by the recommended-option rule (maintainer may revisit)**: DS-Q1 — new `check_budget.py`; summed time per frontend file / backend class; fixed seconds per stack, 2.1 × L ≤ B ≤ 0.55 × the smallest regression to catch; JSON allowlist with reason + ceiling; frontend fails, backend warns until ≥5 runs after the budget commit show zero warnings, then fails; fail closed; self-tests in the step (ADR-237). DS-Q2 — option A, per measured harness. DS-Q3 — option B, inside the existing kits.
 - **Reuse**: two CREATE NEW (script, data file), everything else EXTEND or REUSE AS-IS.
 - **Corrections to DISCUSS**: F1, F5, F6 back-propagated (see Changed assumptions, DESIGN); F3 is why the backend budget starts in warn mode.
 - **Handoff**: DEVOPS (usage-data event expected N/A) → DISTILL.
@@ -531,7 +538,7 @@ Prior-wave reading: ✓ this delta (DISCUSS KPIs, DESIGN DDD-1..10, DS-Q1..Q3), 
 | `local-dev` | linux (the maintainer's box; macOS/WSL work but are not the reference) | `python3` 3.14.8 (observed 2026-10-14) | a `test-timings-*.csv` downloaded with `gh run download <run> -n test-timings-frontend` (or `-backend`), or produced locally by the converters | Same command as CI: `python3 Scripts/test-timings/check_budget.py --stack <frontend\|backend> --csv <file>`; self-tests `python3 -m unittest discover -s Scripts/test-timings/tests` (33 tests, OK, 0.006 s today) |
 | `ci-runner` | GitHub Actions `ubuntu-latest` = ubuntu-24.04, image 20261004 | the image's system `python3` (3.12 line expected; the step prints `python3 --version` so the first run confirms it) | green test step; CSV written by the always-run extract step; repository checked out at the run's SHA | Gate: frontend fails the job, backend warns (DDD-4) |
 
-**DO-1 — stdlib floor is the runner's Python, not the developer's.** The script and its tests use nothing newer than Python 3.12 (local dev is 3.14, so a 3.13+ stdlib API would pass locally and break on CI). No `actions/setup-python`, no `pip install`: the check is `csv`, `json`, `argparse`, `pathlib`, `unittest` only (DESIGN technology choices).
+**DO-1 — stdlib floor is the runner's Python, not the developer's.** The script and its tests use nothing newer than Python 3.12 (local dev is 3.14, so a 3.13+ stdlib API would pass locally and break on CI). No `actions/setup-python`, no `pip install`: the check is `csv`, `json`, `argparse`, `pathlib`, `unittest` only (DESIGN technology choices). The script checks `sys.version_info < (3, 12)` before anything else and, on an older interpreter, exits non-zero with a message naming the version it needs and the one it found, rather than failing later on a syntax or library error that hides the cause.
 
 ## Wave: DEVOPS / [REF] CI/CD pipeline outline
 
@@ -566,9 +573,9 @@ No new workflow, job or stage; one appended step per verify job (DESIGN componen
 2. `python3 -m unittest discover -s Scripts/test-timings/tests` — the guard's own tests plus the existing converter and `summarise` tests, which no workflow runs today (F7). Any failure fails the step in **both** stacks; warn mode never softens it.
 3. `python3 Scripts/test-timings/check_budget.py --stack frontend --csv test-timings-frontend.csv` / `--stack backend --csv test-timings-backend.csv --source-root Lighthouse.Backend/Lighthouse.Backend.Tests --warn-only`.
 
-**DO-3 — frontend fails, backend warns, and what "warn" covers.** Frontend: a breach exits non-zero and fails the job. Backend: `--warn-only` turns a *budget breach* into a warning and exit 0; the one-line switch to failing (DDD-4) is deleting that flag in `ci_backend.yml` once ≥5 post-fix `main` runs stay under budget. Warn mode never softens a missing, empty or malformed CSV, an unparseable allowlist or a failing self-test: those fail closed in both stacks (ADR-237 §7).
+**DO-3 — frontend fails, backend warns, and what "warn" covers.** Frontend: a breach exits non-zero and fails the job. Backend: `--warn-only` turns a *budget breach* into a warning and exit 0; the one-line switch to failing (DDD-4) is deleting that flag in `ci_backend.yml` once ≥5 backend `main` runs after the budget commit show zero budget warnings. Warn mode never softens a missing, empty or malformed CSV, an unparseable allowlist, a stale allowlist entry or a failing self-test: those fail in both stacks (ADR-237 §6, §7; DI-7). A frontend budget breach has the same release reach as a red frontend test has today: the release job does not need the frontend job directly, and reaches it only through `sonar-gates` (via the standalone packages), so a breach holds a release exactly where a red frontend test already does, no further.
 
-**DO-4 — how the verdict reaches the reader: annotations, not a piped summary.** Each breach is printed as a GitHub workflow-command line, `::error::` for the frontend and `::warning::` for the backend, naming the unit, its seconds, the budget and the allowlist file to edit. GitHub lifts these onto the run's summary page, so the job summary shows the verdict with no `$GITHUB_STEP_SUMMARY` write and no `| tee`. Rejected: teeing the output into the step summary — a pipe on a gate's output is exactly what `ci-learnings.md` warns about, and under the default `bash -e` shell (no `pipefail`) `tee` would swallow the guard's exit code.
+**DO-4 — how the verdict reaches the reader: annotations, not a piped summary.** Each breach is printed as a GitHub workflow-command line, `::error::` for the frontend and `::warning::` for the backend, naming the unit, its seconds, the budget and the allowlist file to edit. GitHub lifts these onto the run's summary page, so the job summary shows the verdict with no `$GITHUB_STEP_SUMMARY` write and no `| tee`. The message is escaped as GitHub's workflow-command parser expects, so a unit name cannot break the line or forge a second command: `%` becomes `%25`, CR `%0D` and LF `%0A`. Rejected: teeing the output into the step summary — a pipe on a gate's output is exactly what `ci-learnings.md` warns about, and under the default `bash -e` shell (no `pipefail`) `tee` would swallow the guard's exit code.
 
 **DO-5 — commands run from the repository root,** with paths as the existing extract steps write them (`test-timings-*.csv` at the root; backend source root `Lighthouse.Backend/Lighthouse.Backend.Tests`). No `working-directory`, no new env var, no secret.
 
@@ -582,8 +589,9 @@ All are `vendor_repository` measurements, read with `gh` by the maintainer at na
 |---|---|---|
 | OUT-6302-fe-job (16.8 → ≤12 min) | GitHub Actions job timing for `Verify Frontend / frontend` | `gh run list -R LetPeopleWork/Lighthouse -w "Build And Deploy Lighthouse" -b main -e push --status completed --limit 30 --json databaseId,headSha`, then per run `gh api repos/LetPeopleWork/Lighthouse/actions/runs/<id>/jobs --paginate`, keep the job of that name with conclusion `success` or `failure` (skipped/cancelled out), minutes = `completed_at − started_at`; median over ≥5 runs after slice 03. Cross-check the run ids against `git log` SHAs (the run-list API has served stale pages). |
 | OUT-6302-be-job (15.3 → ≤13.5 min) | same, job `Verify Backend / backend` | as above, after slice 05. Also report the median over runs whose "Compute Test Backend filter" log shows `filter=Category!=Integration` alone, because runs that pull in connector categories are slower for reasons outside this story (F3). |
-| OUT-6302-fe-slow-files (~456 → ≤110 s) | `test-timings-frontend.csv` artifact | `gh run download <id> -n test-timings-frontend`; sum `duration_ms` grouped by `file` for the eight named files; median of the per-run sum over ≥5 runs. |
-| OUT-6302-coverage-kept (7,630 / 10,198, not lower) | CI log test counts | Frontend: the Vitest summary line (`Tests  N passed`) in the `pnpm run sonarreport` log; backend: the `dotnet test` summary (`Passed!  - Failed: 0, Passed: N`). Backend counts compared only between runs with the same filter (F3). The CSV row count of passed rows is the cross-check. The frontend baseline is re-read from the 14 Oct run at DELIVER start: the DISCUSS evidence quotes 7,204–7,540 tests while the KPI row says 7,630. |
+| OUT-6302-fe-slow-files (~456 → ≤110 s) | `test-timings-frontend.csv` artifact | `gh run download <id> -n test-timings-frontend`; sum `duration_ms` grouped by `file` for the eight named files; median of the per-run sum over ≥5 `main` runs. |
+| OUT-6302-be-new-integration (288 → ≤192 s) | `test-timings-backend.csv` artifact | `gh run download <id> -n test-timings-backend`; sum duration for rows under `API.Integration.Refinement.`, `.Reports.` and `.TeamFeatureSize.`; median of the per-run sum over ≥5 `main` runs after slice 04. |
+| OUT-6302-coverage-kept (passed + skipped + todo per stack, not lower than 7,630 / 10,198) | CI log test counts | Frontend: the Vitest summary line (`Tests  N passed \| M skipped \| K todo (T)`) in the `pnpm run sonarreport` log, compared against run 38553818860 (7,630); backend: the `dotnet test` summary, passed + skipped + todo, compared against run 38570239004 (10,198). Backend counts compared only between runs with the same filter (F3). The CSV row count is the cross-check. |
 | OUT-6302-guard (red on a planted file) | the guard step itself | Every run: the self-tests carry a planted over-budget unit (red), an allowlisted one (green) and a missing CSV (red), so the step proves itself whenever it runs. At slice 06: one local run of `check_budget.py` against a real downloaded CSV with a planted over-budget row, output recorded in this delta. `main` is never pushed red to show it (green-before-push). |
 
 ## Wave: DEVOPS / [REF] Deployment strategy
@@ -608,7 +616,7 @@ Reuse, nothing added: the `test-timings-{frontend,backend}` artifacts (#5020, `b
 
 ## Wave: DEVOPS / [REF] Branching strategy
 
-**Trunk-based on `main`** (project standard): each slice is a focused local commit set, pushed at the slice boundary, CI awaited green, then ADO transitioned. No feature branch, no PR. `ci.yml` also triggers on `features/**` pushes and PRs; the guard runs there unchanged, which keeps a contributor PR honest without extra config.
+**Trunk-based on `main`** (project standard): each slice is a focused local commit set, pushed at the slice boundary, CI awaited green, then ADO transitioned. No feature branch, no PR. `ci.yml` also triggers on `features/**` pushes and PRs. Once slice 06 adds `Scripts/test-timings/**` to the trigger paths (DO-7), the guard runs there unchanged, which keeps a contributor PR honest without extra config; until then a PR touching only the guard starts no verify job.
 
 ## Wave: DEVOPS / [REF] Coexistence matrix
 
@@ -633,7 +641,7 @@ Reuse, nothing added: the `test-timings-{frontend,backend}` artifacts (#5020, `b
 - Timing CSVs written and uploaded by both jobs (verified in `ci_frontend.yml` and `ci_backend.yml`).
 - `Scripts/test-timings/tests` green with plain `python3 -m unittest discover` today: 33 tests, OK (verified locally, Python 3.14.8). The modules put their parent folder on `sys.path` themselves, so no `__init__.py` or package install is needed.
 - `Scripts/**` excluded from the backend Sonar project (verified).
-- **DO-7 — the trigger paths must include `Scripts/test-timings/**`** (DELIVER slice 06, same commit as the guard steps). Today `ci.yml`'s `push` paths filter has no `Scripts/**` entry, and `ci_changes.yml` sets `frontend`/`backend` only for `Lighthouse.Frontend/`, `Lighthouse.Backend*/` or `ci*.yml` changes. A push that touches only the guard, its allowlist or a converter would therefore run neither verify job, and the change would first be checked by whichever unrelated push comes next. Recommended: add `Scripts/test-timings/**` to the `ci.yml` push paths and to both the frontend and backend patterns in `ci_changes.yml`. (Normally an allowlist entry rides with the slow test it excuses and so triggers anyway; the gap is a script-only or allowlist-only commit.)
+- **DO-7 — the trigger paths must include `Scripts/test-timings/**`** (DELIVER slice 06, same commit as the guard steps). Today `ci.yml`'s `push` paths filter has no `Scripts/**` entry, and `ci_changes.yml` sets `frontend`/`backend` only for `Lighthouse.Frontend/`, `Lighthouse.Backend*/` or `ci*.yml` changes. A push that touches only the guard, its allowlist or a converter would therefore run neither verify job, and the change would first be checked by whichever unrelated push comes next. Recommended: add `Scripts/test-timings/**` to the `ci.yml` push paths and to both the frontend and backend patterns in `ci_changes.yml`. (Normally an allowlist entry rides with the slow test it excuses and so triggers anyway; the gap is a script-only or allowlist-only commit.) Cost: a script-only or allowlist-only push then runs both full verify jobs, about 15 min each, because the path filter cannot tell a guard change from a test change.
 - The budget numbers need ≥5 post-fix `main` runs (slice 06 comes last for this reason).
 - `gh` authenticated against `LetPeopleWork/Lighthouse` for the monitoring reads.
 - In a worktree, copy `valid_not_expired_license.json` from the main checkout before judging backend results.
@@ -655,3 +663,278 @@ Reuse, nothing added: the `test-timings-{frontend,backend}` artifacts (#5020, `b
 - **Usage-data event**: N/A (section above).
 - **Upstream changes**: none to DISCUSS or DESIGN decisions; contradictions 1–3 are wiring and wording, carried forward.
 - **Handoff**: DISTILL. `environments.yaml` gives the local-vs-CI axis (Python version, presence of Stryker sandboxes, varying backend class set); the KPI contracts name the instruments.
+
+---
+---
+
+# DISTILL
+
+Density: `lean`, Tier-1 [REF] only. The maintainer was AFK; every engineering choice below took the recommended option and is recorded as a DI-* decision (none changes what a Lighthouse user sees; the maintainer may revisit). Stack for the authored tests: Python 3.12 stdlib `unittest`, the convention `Scripts/test-timings/tests/` already uses, not pytest-bdd. The project policy (`docs/architecture/atdd-infrastructure-policy.md`) records that the Python-pilot machinery (`tests/common/state_delta`, Hypothesis, pytest-bdd step modules, `domain_types.py`) does not apply to this repository, so none of it is bootstrapped.
+
+Prior-wave reading:
++ `docs/feature/story-6302-ci-test-time/feature-delta.md` (DISCUSS US-01..06, ACs, KPIs, D1-D10; DESIGN F1-F8, DDD-1..10, DS-Q1..Q3, Changed assumptions; DEVOPS DO-1..7, Contradictions)
++ `docs/feature/story-6302-ci-test-time/environments.yaml`
++ `docs/feature/story-6302-ci-test-time/slices/slice-01..06-*.md`
++ `docs/product/architecture/adr-237-test-time-budget-guard.md`
++ `docs/product/journeys/story-6302-ci-test-time.yaml`
++ `docs/product/kpi-contracts.yaml` (OUT-6302-fe-job, -be-job, -fe-slow-files, -be-new-integration, -coverage-kept, -guard)
++ `docs/feature/backend-test-speed/feature-delta.md` (DISTILL: acceptance shape, scenario list, red-classification)
++ `Scripts/test-timings/` (`vitest_to_csv.py`, `trx_to_csv.py`, `summarise.py`, tests and fixtures)
++ `docs/ci-learnings.md` (timing CSVs entry 2026-05-17; Python under the backend Sonar scanner 2026-08-31; `python3 -c` blocked in the agent sandbox)
++ `docs/architecture/atdd-infrastructure-policy.md`
++ `.github/workflows/ci_frontend.yml`, `ci_backend.yml` (extract steps; no step runs the Python tests)
+- `docs/feature/story-6302-ci-test-time/{discuss,design,devops}/wave-decisions.md` (not present: lean single-file model, decisions read inline)
+- `docs/product/architecture/brief.md` `## For Acceptance Designer` (not needed: DESIGN names the driving ports in this delta)
+- `.nwave/des-config.json` (absent; deliverable type resolves to `application`)
+- `spike/` (no spike ran)
+
+## Wave: DISTILL / [REF] Reconciliation result
+
+**Reconciliation passed: 0 contradictions.** DISCUSS D1-D10 were checked against DESIGN and DEVOPS. The differences DESIGN and DEVOPS recorded are corrections of fact or wording, each with a resolution already written down, and none changes what the developer gets:
+
+| Item | DISCUSS said | Resolution (upstream) | DISTILL reading |
+|---|---|---|---|
+| Who produces the CSVs (D6) | `summarise.py` | DESIGN F1: the converters write them; `summarise.py` only prints a table | The check reads the CSVs and imports `CSV_COLUMNS` from the converters |
+| Slow backend harnesses (US-04) | `IntegrationTestBase` per test | DESIGN F5/F6: three harness bases build a host per test; the timer must be added first | Evidence check E-04 measures set-up first |
+| Allowlist file count | "one JSON per stack" (DS-Q1 wording) | DEVOPS contradiction 2: ADR-237 §4 stands, one file with a section per stack | Tests write one file with `frontend` and `backend` sections |
+| CI trigger paths | not addressed | DEVOPS DO-7: add `Scripts/test-timings/**` to `ci.yml` and `ci_changes.yml` in slice 06 | Evidence check E-06d |
+| Python version | not addressed | DEVOPS DO-1: Python 3.12 stdlib floor; the script refuses an older interpreter with a clear message | Script and tests verified on 3.12.13 and 3.14.8; the refusal is DI-13 |
+| Backend gate strength (D6 "both stacks") | frontend fails; backend warns until calibrated, then fails | DESIGN DDD-4 / DEVOPS DO-3: backend warns until ≥5 runs after the budget commit show zero warnings | Warn-only is pinned by tests; the flip is evidence check E-06b |
+
+**Existing CI does not run `Scripts/test-timings/tests`** (verified: no `unittest` or `discover` anywhere under `.github/`). DELIVER slice 06 wires `python3 -m unittest discover -s Scripts/test-timings/tests` into both verify jobs (DO-2), which brings the existing converter tests and the new guard tests into CI together.
+
+## Wave: DISTILL / [REF] Acceptance shape (why this feature is non-standard)
+
+Following `backend-test-speed`: this is a test-infrastructure feature, and most of it changes how fast existing tests run rather than what anything does. Acceptance therefore has two kinds of oracle.
+
+1. **One new behaviour, the budget guard (US-06), gets executable acceptance tests.** Its driving port is the command CI runs, so the tests invoke `Scripts/test-timings/check_budget.py` as a **subprocess** against real CSV, JSON and C# files in a temporary folder, and assert the exit code and the `::error::` / `::warning::` lines on stdout. That covers argument parsing, file reading and the exit code, which is where a gate fails open; calling the core function directly would not. Two seam tests run the real converters first. All are layer-3 tests, so they are example-based (sad paths named one by one); the one property that fits, "the verdict does not depend on how a file's time is split across its tests", is example-pinned with `subTest`. Hypothesis is not a dependency and is not added.
+2. **The speed slices (US-01..05) are measurement and refactoring.** Their acceptance is evidence that DELIVER runs and records: an A/B protocol for US-01; for US-02..05, the sorted list of test names before and after (no name lost, no new skip), plus timing thresholds read from local runs and the CI CSVs. Writing new behavioural tests for them would duplicate the tests they speed up, which are themselves the oracle for behaviour (D7). They are specified as commands in **Acceptance checks (evidence-based)** below, with no Gherkin.
+3. **Job durations (KPIs)** are measured with `gh`, not asserted in a test; a duration assertion would be flaky under the 0.55-1.13 runner spread.
+
+No `.feature` file is written: there is no Gherkin runner for Python in this repository, and the project policy row for CI scripts (appended this wave) names `unittest` test names as the scenario statements, as the `node:test` precedent does for `.github/scripts`.
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+File: `Scripts/test-timings/tests/test_check_budget.py`. The tags below live in this table, keyed by class and test name; the test file carries none, because a tag comment would only cite a story id. Every test is `@US-06 @real-io @driving_adapter` (subprocess against real files) and pending (`@unittest.skip("pending — DELIVER slice 06")`). `@contract-shape:pure-function` unless stated: the verdict is a function of the files read, and the check writes nothing. Rows 37-41 were added after the acceptance review; row 42 after the DEVOPS final-wave review.
+
+| # | Test (class → test) | Extra tags | Path |
+|---|---|---|---|
+| 1 | AFrontendFileOverTheBudgetFailsTheBuild → a run with every file under the budget passes without annotations | `@kpi:OUT-6302-guard` | happy |
+| 2 | … → a file exactly at the budget passes | `@boundary` | happy |
+| 3 | … → a file over the budget fails naming the file, its time, the budget and the allowlist | `@kpi:OUT-6302-guard @kpi:OUT-6302-fe-slow-files` | verdict |
+| 4 | … → a file a millisecond over the budget fails | `@boundary @error` | edge |
+| 5 | … → a file is judged on the sum of its tests, not on its slowest test | | verdict |
+| 6 | … → the verdict does not depend on how a file's time is split across its tests (8 subtests) | `@property` (example-pinned) | invariant |
+| 7 | … → only the file over the budget is named when others are under it | | verdict |
+| 8 | … → judging a run leaves every file in the folder as it was | `@contract-shape:unbounded-preservation` | invariant |
+| 9 | AnAllowlistedUnitIsHeldToItsOwnCeiling → an allowlisted file under its own ceiling passes although it is over the budget | `@kpi:OUT-6302-guard` | happy |
+| 10 | … → an allowlisted file exactly at its ceiling passes | `@boundary` | happy |
+| 11 | … → an allowlisted file over its own ceiling fails naming the file, its time and its ceiling | | verdict |
+| 12 | … → a frontend allowlist entry for a file no longer in the run fails | `@error` | edge |
+| 13 | … → a backend allowlist entry for a class still in the test source passes when the class did not run | | happy |
+| 14 | … → a backend allowlist entry for a class no longer in the test source fails | `@error` | edge |
+| 15 | … → a class left only in build or mutation output does not count as still in the source (`bin`, `obj`, `.stryker-tmp*`, `StrykerOutput`) | `@error @env:local-dev` | edge |
+| 16 | AnAllowlistThatCannotBeTrustedIsRefused → a backend test source folder that does not exist fails closed | `@error @fail-closed` | error |
+| 17 | … → an allowlist entry without a reason is rejected (missing, empty, blank) | `@error @fail-closed` | error |
+| 18 | … → an allowlist entry without a usable ceiling is rejected (missing, text, negative) | `@error @fail-closed` | error |
+| 19 | … → an allowlist that is not valid JSON fails closed | `@error @fail-closed` | error |
+| 20 | … → an allowlist without a section for the stack fails closed | `@error @fail-closed` | error |
+| 21 | … → an allowlist section without a budget fails closed | `@error @fail-closed` | error |
+| 22 | … → a missing allowlist file fails closed | `@error @fail-closed` | error |
+| 23 | ATimingFileThatCannotBeReadFailsClosed → a missing timing file fails closed naming the file | `@error @fail-closed @kpi:OUT-6302-guard` | error |
+| 24 | … → an empty timing file fails closed | `@error @fail-closed` | error |
+| 25 | … → a timing file with a header and no tests fails closed | `@error @fail-closed` | error |
+| 26 | … → a timing file with the other stack's columns fails closed | `@error @fail-closed` | error |
+| 27 | … → a timing file with an unreadable duration fails closed | `@error @fail-closed` | error |
+| 28 | WarnOnlySoftensABreachButNothingElse → warn-only reports a class over the budget as a warning and passes | `@warn-only @kpi:OUT-6302-be-job` | happy |
+| 29 | … → warn-only reports an allowlisted class over its ceiling as a warning and passes | `@warn-only` | happy |
+| 30 | … → warn-only still fails on a missing timing file | `@warn-only @error @fail-closed` | error |
+| 31 | … → warn-only still fails on a malformed timing file | `@warn-only @error @fail-closed` | error |
+| 32 | … → warn-only still fails on a malformed allowlist | `@warn-only @error @fail-closed` | error |
+| 33 | ABackendClassIsJudgedOnTheSumOfItsTests → backend tests are summed per class | | verdict |
+| 34 | … → a class is named without its method or arguments, even when the arguments contain dots | `@boundary` | verdict |
+| 35 | TheCheckJudgesWhatTheConvertersWrite → a frontend timing file written by the Vitest converter is judged end to end | `@walking_skeleton` | seam |
+| 36 | … → a backend timing file written by the TRX converter is judged per class | `@walking_skeleton` | seam |
+| 37 | AFrontendFileOverTheBudgetFailsTheBuild → each stack is held to the budget its own section sets (budget 30 s; 40 s fails, 25 s passes; both stacks) | `@boundary` | verdict |
+| 38 | AnAllowlistedUnitIsHeldToItsOwnCeiling → an allowlisted backend class is held to its own ceiling (at it passes, over it fails, no warn-only) | `@boundary` | verdict |
+| 39 | … → a backend class counts as in the source whatever the file it is declared in is called | | happy |
+| 40 | … → a class of the same name in another namespace does not keep an entry alive | `@error` | edge |
+| 41 | WarnOnlySoftensABreachButNothingElse → warn-only still fails on an allowlist entry for a class no longer in the source | `@warn-only @error` | error |
+| 42 | AFrontendFileOverTheBudgetFailsTheBuild → a file name containing a percent sign and a line break is reported on one escaped annotation line | `@boundary @error` | edge |
+
+**Error and edge paths: 22 of 42 (52 %)** — 16 failures and refusals (16-27, 30-32, 41) plus 6 edges (4, 12, 14, 15, 40, 42). Test 18 also refuses a ceiling of 0 and of `true`; test 30 runs for both stacks; test 34 includes arguments containing `(` and `)`. Every refusal and every verdict also asserts that no traceback escapes (a closed error set: exit 0, 1 or 2, each with an annotation).
+
+Contract pinned by these tests (DI-1..DI-9 below): exit **0** pass (or warn-only), **1** a unit over its limit or a stale allowlist entry, **2** an input that cannot be read or trusted; one annotation per finding on stdout, naming the unit, its seconds to one decimal, the limit, and the allowlist file name, with `%`, CR and LF in the message percent-encoded.
+
+## Wave: DISTILL / [REF] Acceptance checks (evidence-based)
+
+DELIVER runs these at the slice boundary and records the result under that slice's `## Wave: DELIVER` heading in this delta. Behaviour preservation is the invariant across all of them: **no test is deleted, skipped or weakened.** Commands are bash, run from the repository root; `$D` is a scratch folder outside the repository (`D=$(mktemp -d)`).
+
+| ID | Story / AC | What is checked | Threshold | Recorded in |
+|---|---|---|---|---|
+| E-01 | US-01 / AC-01.1, AC-01.2 | Vite 8.3.2 vs 8.3.4 A/B on an unchanged test set, same machine | ≥3 runs per arm, alternated A B A B A B. Each arm's spread is the min–max of its runs; an arm is slower only if its fastest run is slower than the other arm's slowest run, as AC-01.2 words it. If so, fix and show the fix on the A/B; if not, record "disproved". If vite is clean, repeat once each for the MUI bump (641ac9c6f) and pnpm 12.10 (1bbde5105) | DELIVER slice 01: arm, version, commit, each `Duration`, median, spread, machine |
+| E-names | all D7 checks | Sorted list of test names before and after a slice (command below) | `comm -23 before after` prints nothing (no name lost); no non-`Passed` name that was `Passed` before; per-file / per-class counts not lower | DELIVER slice table: before/after counts per file or class, and "0 names lost" |
+| E-weaken | all D7 checks | The slice's diff adds no skip and drops no assertion without a same-meaning replacement (command below) | Skip grep prints nothing; every removed `expect(` / `Assert.` line is paired with its replacement in the review note; a `*ByRole` that *is* the assertion stays a role query (DDD-9) | DELIVER slice review note |
+| E-02a | US-02 / AC-02.1 | E-names + E-weaken for `RefinementView.paging.test.tsx`, `WorkItemsDialog.contexts.test.tsx` | as above | slice 02 |
+| E-02b | US-02 / AC-02.2, pitch | Summed time of the two files | Local: ≤40 s summed from the run's JSON. CI: median over ≥5 `main` runs of the per-run sum from `test-timings-frontend.csv` ≤40 s | slice 02, plus OUT-6302-fe-slow-files |
+| E-02c | US-02 / AC-02.3 | Why each file was slow | One line each, naming the measured cost (DESIGN F8 candidates) | slice 02; `ci-learnings.md` if a rule falls out |
+| E-03a | US-03 / AC-03.1 | E-names + E-weaken for the six files | as above | slice 03 |
+| E-03b | US-03 / AC-03.2 | Summed CI time of the six files | Median over ≥5 `main` runs ≤70 s; all eight named files together ≤110 s (OUT-6302-fe-slow-files) | slice 03 |
+| E-04a | US-04 / AC-04.3 (D7) | E-names + E-weaken for `API.Integration.{Refinement,Reports,TeamFeatureSize}` | as above | slice 04 |
+| E-04b | US-04 / AC-04.1 | Set-up vs body time per in-scope class, **before** any change | `FixtureSetupTimer` output exists for all three harness bases; set-up share recorded per harness; in `git log --oneline` the commit adding the timer calls precedes the first harness change | slice 04 |
+| E-04c | US-04 / AC-04.2 | Parallel safety | 3 consecutive green full-assembly runs with the standard filter; `BackendTestParallelizationGuardTest` green; no `[NonParallelizable]` added | slice 04 |
+| E-04d | US-04 / AC-04.3 | Summed CI time of the in-scope classes | Median over ≥5 `main` runs drops by ≥⅓ against the 14 Oct baseline (288 s in run 38570239004 → ≤192 s, OUT-6302-be-new-integration), or the slice records why set-up is not the cost | slice 04 |
+| E-05a | US-05 / AC-05.2 (D7) | E-names + E-weaken for the classes holding the four outlier tests | as above | slice 05 |
+| E-05b | US-05 / AC-05.1 | Cause of each of the four outliers | One line each, measured locally (`dotnet test --filter "FullyQualifiedName~<Class>"`) and confirmed on ≥3 CI CSVs | slice 05 |
+| E-05c | US-05 / AC-05.2 | Fixed outliers finish in seconds; accepted ones are allowlisted | A fixed test under 10 s locally (the US-05 threshold), its CI CSV time over ≥3 runs recorded beside it; an accepted one has a proposed entry (class, reason, ceiling) that slice 06 seeds into `test-time-budget.json` | slice 05 → slice 06 |
+| E-06a | US-06 / AC-06.3 | The 42 guard tests, unskipped one at a time, plus the DI-13 interpreter check | All green; `python3 -m unittest discover -s Scripts/test-timings/tests` reports 0 skipped, on Python 3.12 and 3.14 | slice 06 |
+| E-06b | US-06 / AC-06.2 | Budget derivation per stack | From ≥5 post-fix `main` runs: largest non-allowlisted unit L; budget B with 2.1·L ≤ B ≤ 0.55 × the smallest regression to catch (frontend: 0.55 × 115 s ≈ 63 s, so L ≤ ~30 s). Units that break the lower bound go on the allowlist with a reason and their own ceiling, and L is recomputed. Pass: zero over-budget non-allowlisted units across the ≥5 `main` runs after the budget commit (the derivation runs are input, not evidence). Backend: same rule, with its regression anchor named next to the number; it flips from warn to fail only when the ≥5 backend runs after the budget commit show zero budget warnings (largest backend unit ≤ B on each) | slice 06, `test-time-budget.json` neighbourhood, `ci-learnings.md` |
+| E-06c | US-06 / AC-06.3 | Planted file on real data | One local run against a downloaded CSV with a planted 120 s row: exit 1 and an `::error::` naming it; output pasted | slice 06 (`main` never pushed red) |
+| E-06d | US-06 / DO-7, AC-06.1 | A guard-only commit starts both verify jobs; the guard step starts no second test run | `Scripts/test-timings/**` present in `ci.yml` push paths and in both the frontend and backend patterns of `ci_changes.yml`; the guard step's `run:` block contains no `dotnet test`, `vitest` or `pnpm` | slice 06 |
+| E-06e | US-06 / AC-06.4 | The rule in `docs/ci-learnings.md` | Entry present: a new test file over the budget fails CI; speed it up or allowlist it with a reason and a ceiling | slice 06 |
+| E-KPI | OUT-6302-fe-job, -be-job, -coverage-kept | Job medians and test counts | Frontend ≤12 min, backend ≤13.5 min (median ≥5 `main` runs, query in `kpi-contracts.yaml`); passed + skipped + todo per stack not below 7,630 (run 38553818860) / 10,198 (run 38570239004) | DoD check point |
+
+**E-names** (frontend; run once on the slice's base commit as `before`, once on its last commit as `after`):
+
+```bash
+( cd Lighthouse.Frontend && pnpm vitest run <files…> --reporter=json --outputFile="$D/fe-$WHEN.json" )
+python3 Scripts/test-timings/vitest_to_csv.py --input "$D/fe-$WHEN.json" --source-root "$PWD/Lighthouse.Frontend" --output "$D/fe-$WHEN.csv"
+export LC_ALL=C
+tail -n +2 "$D/fe-$WHEN.csv" | sed -E 's/,[0-9.]+,[A-Za-z]+$//' | sort > "$D/fe-$WHEN.names"
+tail -n +2 "$D/fe-$WHEN.csv" | grep -v ',Passed$' | sed -E 's/,[0-9.]+,[A-Za-z]+$//' | sort > "$D/fe-$WHEN.notpassed"
+comm -23 "$D/fe-before.names" "$D/fe-after.names"          # must print nothing: no name lost
+comm -13 "$D/fe-before.notpassed" "$D/fe-after.notpassed"  # must print nothing: no newly skipped or failing test
+cut -d, -f1 "$D/fe-before.names" | uniq -c > "$D/fe-before.counts"   # same for after; after >= before per file
+```
+
+**E-names** (backend; same shape, the converter that CI uses):
+
+```bash
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter "<scope>" --logger "trx;LogFileName=be-$WHEN.trx" --results-directory "$D"
+python3 Scripts/test-timings/trx_to_csv.py --trx "$D/be-$WHEN.trx" --output "$D/be-$WHEN.csv"
+export LC_ALL=C
+tail -n +2 "$D/be-$WHEN.csv" | sed -E 's/,[A-Za-z]+,[0-9.]+,[A-Za-z]+$//' | sort > "$D/be-$WHEN.names"
+comm -23 "$D/be-before.names" "$D/be-after.names"          # must print nothing
+```
+
+The `sed` drops the trailing duration and outcome columns (never quoted), so a name containing commas or quotes compares as the converter wrote it.
+
+**E-weaken**:
+
+```bash
+git diff <base>..HEAD -- <files…> | grep -E '^\+.*\b(it|test|describe)\.(skip|todo|only)\b|^\+.*\bx(it|describe)\(|^\+.*\[(Ignore|Explicit)\b|^\+.*Assert\.Ignore\('   # must print nothing
+git diff <base>..HEAD -- <files…> | grep -cE '^-.*\b(expect\(|Assert\.)'   # every removed line paired with its replacement in the review note
+```
+
+**Per-file / per-class sums from a CI CSV** (E-02b, E-03b, E-04d; duration is the second-to-last column in both CSVs):
+
+```bash
+gh run download <runId> -R LetPeopleWork/Lighthouse -n test-timings-frontend -D "$D/<runId>"
+awk -F, 'NR>1 && $1 ~ /(RefinementView\.paging|WorkItemsDialog\.contexts)\.test\.tsx$/ {s+=$(NF-1)} END {printf "%.1f\n", s/1000}' "$D/<runId>/test-timings-frontend.csv"
+grep -E '^"?Lighthouse\.Backend\.Tests\.API\.Integration\.(Refinement|Reports|TeamFeatureSize)\.' "$D/<runId>/test-timings-backend.csv" | awk -F, '{s+=$(NF-1)} END {printf "%.1f\n", s/1000}'
+```
+
+**E-01 A/B** (in `Lighthouse.Frontend`; the version change is never committed):
+
+```bash
+pnpm vitest run 2>&1 | grep -E '^ *Duration'                 # arm B, vite 8.3.4 as committed
+pnpm add -D vite@8.3.2 --save-exact && pnpm vitest run 2>&1 | grep -E '^ *Duration'   # arm A
+git checkout -- package.json pnpm-lock.yaml && pnpm install      # back to arm B; alternate until 3 runs each
+```
+
+## Wave: DISTILL / [REF] WS strategy
+
+The feature has no walking skeleton (D2), but the guard's entry point gets two **seam tests tagged `@walking_skeleton`** (35, 36): the real converter writes the CSV, the real check judges it. They prove the column contract between the two scripts, the thing a converter change would silently break. They cannot be green at hand-off, because the check is a scaffold, so they are pending like the rest (an exception to "one green walking skeleton", recorded as DI-10). Per the Architecture of Reference: the driving port (the command line) is real, the driven ports (CSV, JSON, C# source tree) are real files, and there is no external or non-deterministic port to fake.
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+| Driven adapter | `@real-io` | Covered by |
+|---|---|---|
+| Timing CSV reader (`test-timings-{frontend,backend}.csv`) | YES | every test (CSV written with the converters' `CSV_COLUMNS`); 35-36 read CSVs the converters themselves wrote; 23-27, 30-31 the failure modes |
+| Budget + allowlist reader (`test-time-budget.json`) | YES | every test (JSON in the temp folder); 16-22, 32 the failure modes |
+| Backend test source scan (`--source-root`) | YES | 13-16 (real `.cs` files, including `bin`/`obj`/Stryker leftovers) |
+| Verdict output (stdout annotations + exit code) | YES | every test asserts both; GitHub reads `::error::` / `::warning::` lines from stdout (DO-4) |
+
+No in-memory doubles, so there is nothing they cannot model.
+
+## Wave: DISTILL / [REF] Driving adapter coverage
+
+| Entry point (DESIGN / DEVOPS) | Covered by |
+|---|---|
+| `python3 Scripts/test-timings/check_budget.py --stack frontend --csv …` | 1-27, 35 (subprocess with `sys.executable`) |
+| `… --stack backend --csv … --source-root … --warn-only` (the CI backend command) | 28-32, 41 |
+| `… --stack backend --csv … --source-root …` (after the backend flips to failing) | 13-16, 33-34, 36-40 |
+| `python3 -m unittest discover -s Scripts/test-timings/tests` (the step's self-proof) | the suite itself; E-06a |
+
+Zero uncovered entry points. Every test passes `--allowlist` explicitly; the default (the file beside the script) is exercised by E-06c.
+
+## Wave: DISTILL / [REF] Scaffolds
+
+| Scaffold | Path | Marker | State |
+|---|---|---|---|
+| Budget check | `Scripts/test-timings/check_budget.py` | `__SCAFFOLD__ = True`; `main` parses the final argument surface (`--stack`, `--csv`, `--allowlist`, `--source-root`, `--warn-only`) then raises `AssertionError("Not yet implemented -- RED scaffold")` | Imports clean on 3.12 and 3.14; RED when unskipped |
+| Budget + allowlist data | `Scripts/test-timings/test-time-budget.json` | not created | DELIVER slice 06 creates it with the calibrated numbers (E-06b); a placeholder budget would be a number nobody derived |
+
+## Wave: DISTILL / [REF] Red-classification
+
+Run with the pending marker temporarily turned off (then restored, verified by diff), on Python 3.14.8 and 3.12.13:
+
+| Tests | Classification | Evidence |
+|---|---|---|
+| All 42 (63 failures counting subtests) | **RED, MISSING_FUNCTIONALITY** | 0 `ERROR`, 63 `FAIL`; every subprocess run ends in `AssertionError: Not yet implemented -- RED scaffold` on stderr. 48 fail first on the missing annotation (checked before the exit code, because the scaffold's uncaught error also exits 1), 15 passing-run tests on exit 1 instead of 0; none on set-up, import or fixture |
+
+No test passes against the scaffold: tests that expect exit 1 also require an annotation on stdout and no traceback, which the scaffold cannot produce. Satisfiability was checked too: a throwaway reference implementation (scratch only, not committed, not handed over) turned the first 41 green on both Python versions, so no assertion is unsatisfiable or self-contradictory. Test 42 was added later and confirmed RED (not BROKEN) against the scaffold on Python 3.14.8.
+
+## Wave: DISTILL / [REF] Test placement
+
+`Scripts/test-timings/tests/test_check_budget.py`, beside `test_vitest_to_csv.py`, `test_trx_to_csv.py` and `test_summarise.py`: same folder, same `sys.path` insert of the parent folder, same `unittest` idiom, discovered by the same command. One helper class (`CheckWorkspace`) is the single vocabulary for "a timing file with these files and seconds", "an allowlist with these entries", "a class declared in the test source" and "run the check", so test bodies stay three to five lines.
+
+## Wave: DISTILL / [REF] Outcome registration
+
+**Registered `OUT-5`** (`kind: operation`, artifact `Scripts/test-timings/check_budget.py`) in `docs/product/outcomes/registry.yaml` with `nwave-ai outcomes register`. The CLI reflowed the four existing entries' text; that churn was reverted so the diff is the new entry alone.
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- DESIGN driving port: the `check_budget.py` command line (DESIGN Driving ports, DEVOPS step body).
+- DEVOPS environments: `local-dev` (Python 3.14.8) and `ci-runner` (system Python, 3.12 line). Locally, 3.12 is reachable with `uv run --no-project --python 3.12 python -m unittest discover -s Scripts/test-timings/tests`.
+- Converters unchanged: the fixtures take their headers from the converters' `CSV_COLUMNS`, so a renamed column moves fixtures and check together; only the seam tests 35-36 catch a converter and the check drifting apart.
+- DELIVER order unchanged: slices 01-05 (evidence checks) before slice 06 (unskip the 42 tests, write the script, create `test-time-budget.json`, wire the step, DO-7 paths, `ci-learnings.md`).
+- Project policy: one Driving row appended to `docs/architecture/atdd-infrastructure-policy.md` (CI timing scripts → `unittest` + subprocess against temp files).
+
+## Wave: DISTILL / [REF] Self-completeness audit
+
+15-item checklist: **14/15, COMPLETE.** C1a empty input (24, 25) ✓; C1b boundaries 59 / 60 / 60.001 s and ceiling at/over (2, 4, 7, 10, 11) ✓; C2a/C2b N/A, the check is stateless ✓; C3 0 / 1 / many units and allowlist entries ✓; C4a/C4b N/A, the check mutates nothing (8 pins it) ✓; C5a `--warn-only` × {breach, ceiling breach, missing CSV, malformed CSV, malformed allowlist} and both stacks ✓; C5b warn-only changes only the annotation kind and the exit code (28-29 assert both) ✓; C6a malformed value for every input (CSV, allowlist, source root) ✓; C6b every declared failure triggered ✓; C6c closed error set (exit 0/1/2, no traceback) ✓; C7b/C7c N/A, read-only and single invocation ✓. **Gap, documented, in DELIVER scope if wanted:** C7a, an unreadable (permission-denied) CSV; expected to fall under "cannot be read" (exit 2). No specification ambiguity routed upstream.
+
+## Wave: DISTILL / [REF] Wave-decisions summary (DISTILL)
+
+Locked under the AFK recommended-option rule (maintainer may revisit); none changes what a Lighthouse user sees.
+
+| ID | Decision | Why |
+|---|---|---|
+| DI-1 | CLI = the DEVOPS command plus `--allowlist <file>` (default `Scripts/test-timings/test-time-budget.json`) and a default `--source-root` of the repository's `Lighthouse.Backend/Lighthouse.Backend.Tests` | Tests must point at a temp file; CI and the local command stay exactly as DEVOPS wrote them |
+| DI-2 | One JSON file, a section per stack: `{"frontend": {"budget_seconds": N, "allowlist": [{"unit", "reason", "ceiling_seconds"}]}, "backend": {…}}` | ADR-237 §4; the budget lives with the allowlist so one reviewed file holds every limit |
+| DI-3 | Exit 0 pass, 1 verdict (over a limit, stale entry), 2 cannot judge (missing/malformed input) | A reader of the log can tell "your test is slow" from "the check had nothing to read" |
+| DI-4 | Limits are inclusive: at the budget or ceiling passes, a millisecond over fails | Pins the boundary a mutant would flip, standing in for the mutation run DEVOPS ruled out |
+| DI-5 | One annotation per finding on stdout, naming unit, seconds to one decimal, the limit and the allowlist file name; passing runs print no annotation. In the message, `%` is written `%25`, CR `%0D` and LF `%0A` (test 42) | DO-4; the message is the fix instruction, and GitHub's parser would otherwise end the annotation at a line break and read the rest as plain log or as another command |
+| DI-6 | A header with no rows counts as empty and fails closed | A green run always has tests; zero rows means the CSV is wrong |
+| DI-7 | A stale allowlist entry is a verdict (exit 1, `::error::`), not an input error, and `--warn-only` does **not** soften it (test 41) | DO-3 and ADR-237 §6 soften budget breaches only, and §4 says a stale entry fails the check; the allowlist is the reviewed file, so it must stay true while the backend still warns |
+| DI-8 | Reason must be non-blank text; ceiling a positive number; the stack section must have a budget | "With a reason" means a reason a reviewer can read |
+| DI-9 | A backend class counts as in source when a `.cs` file outside `bin`, `obj`, `.stryker-tmp*` and `StrykerOutput` declares that class name under that namespace, whatever the file is called (tests 39-40); a missing source folder fails closed | DO-6; a missing folder would otherwise make every entry look stale |
+| DI-10 | The two seam tests are pending, not green, at hand-off | Their subject is the check, which is a scaffold; green would need a second implementation |
+| DI-11 | Example-based only; the split-invariance property is example-pinned | Subprocess layer; Hypothesis is not a dependency and DO-1 forbids adding one |
+| DI-12 | No `.feature` file, no state-delta port, no `domain_types.py`, no step-reuse ratio | Project policy: the Python-pilot machinery does not apply here; `CheckWorkspace` is the single vocabulary |
+| DI-13 | The script refuses to run on Python older than 3.12: it checks `sys.version_info < (3, 12)` first and exits non-zero with a message naming the version needed and the one found | DO-1. Not an acceptance test, because a subprocess test runs under whatever interpreter runs the suite and cannot get an older one without faking `sys.version_info`; DELIVER covers it with a unit-level check of the guard function |
+
+**Handoff to DELIVER:** slices 01-05 run and record the evidence checks; slice 06 unskips the 42 tests one at a time (suggested order: 1, 3, 2, 4, 37, 5, 7, 42, 6, 8, 33-34, 9-15, 38-40, 23-27, 16-22, 28-32, 41, 35-36), adds the DI-13 interpreter check, replaces the scaffold, creates `test-time-budget.json` from E-06b, adds the guard step to both verify jobs and the DO-7 trigger paths, and writes the `ci-learnings.md` rule.
+
+## Wave: DISTILL / [REF] Acceptance review verdict + action items
+
+Sentinel (`nw-acceptance-designer-reviewer`, 2026-10-14) on the DISTILL sections, the tests and the scaffold: **conditionally approved, 0 blockers, 2 high, 4 medium, 9 low.** All mandates passed (driving port only, plain-language names, full journey per test). Applied the same day:
+
+- **High, budget value never varied** → test 37 sets a 30 s budget per stack.
+- **High, warn-only vs a stale entry contradicted DO-3 / ADR-237** → DI-7 corrected to the upstream rule (warn-only softens breaches only); test 41 pins it.
+- **Medium**: backend ceiling in fail mode (test 38); warn-only fail-closed on both stacks (test 30); tag mapping stated as living in the table; E-01 restated in AC-01.2's words.
+- **Low**: namespace and file-name cases (39, 40); ceiling 0 and `true` refused (18); arguments containing parentheses (34); annotation asserted before the exit code so the first failure names the missing verdict; red-classification and converter-seam wording; E-names compares not-passed names before vs after under `LC_ALL=C`; E-04b checks the timer commit comes first; E-06d covers AC-06.1 (no second test run); E-05a names the classes holding the four outlier tests.
+
+The three other final-gate reviewers (DISCUSS, DESIGN, DEVOPS) were not dispatched in this run.
+

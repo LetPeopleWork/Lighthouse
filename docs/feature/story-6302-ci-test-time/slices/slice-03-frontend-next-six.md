@@ -24,4 +24,4 @@ AC-03.1..AC-03.3 in `feature-delta.md`. If AC-03.3 misses, name the remaining ca
 Slice 02.
 
 ## Taste tests
-Six files but one pattern; not identical to slice 02 in scale only, because it tests whether the pattern generalises.
+Six files, one pattern carried over from slice 02. It is not just slice 02 at a larger scale: what it tests is whether that pattern generalises beyond the two files it was found in.

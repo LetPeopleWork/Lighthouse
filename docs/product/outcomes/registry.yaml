@@ -103,3 +103,33 @@ outcomes:
   artifact: Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/RealityCheckVerdictPolicy.cs
   related: []
   superseded_by: null
+- id: OUT-5
+  kind: operation
+  summary: 'Judges a CI test-timings file against a fixed per-stack time budget: frontend
+    tests are summed per file, backend tests per class (the full name before the last
+    dot once the argument list is removed). A unit on the allowlist is held to its
+    own ceiling instead, and every allowlist entry must carry a reason and a ceiling.
+    A unit over its limit, or an allowlist entry whose file is gone from the run (frontend)
+    or whose class is gone from the test source (backend), fails the check; with warn-only
+    a unit over its limit becomes a warning and the check passes, a stale entry still fails. A missing, empty or malformed
+    timing file or allowlist fails closed in every mode.'
+  feature: story-6302-ci-test-time
+  inputs:
+  - shape: the stack (frontend or backend), a test-timings CSV with the converters'
+      columns, a budget-and-allowlist JSON with one section per stack (budget seconds;
+      entries of unit, reason, ceiling seconds), for the backend the test source tree,
+      and whether breaches only warn
+  output:
+    shape: 'exit 0 when every unit is within its limit (or warn-only), 1 when a unit
+      is over its budget or ceiling or an allowlist entry is stale, 2 when an input
+      cannot be read or trusted; one GitHub annotation line per finding (::error::
+      or ::warning::) naming the unit, its seconds, the limit and the allowlist file'
+  keywords:
+  - test-time-budget
+  - ci-gate
+  - allowlist
+  - timing-csv
+  - fail-closed
+  artifact: Scripts/test-timings/check_budget.py
+  related: []
+  superseded_by: null

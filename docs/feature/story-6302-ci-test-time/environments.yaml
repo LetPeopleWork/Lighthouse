@@ -27,7 +27,7 @@ target_environments:
       - "runs only after a green test step (default success()); never on the partial JSON a bail:1 failure leaves"
       - "test-timings-*.csv at the repository root, written by the always-run extract steps"
       - "backend: coverage always on (ci.yml passes run_sonar: true); class set varies with the connector filter"
-      - "frontend breaches fail the job; backend breaches warn (--warn-only) until >= 5 post-fix main runs show headroom"
+      - "frontend breaches fail the job; backend breaches warn (--warn-only) until >= 5 backend main runs after the budget commit show zero budget warnings"
 
 coexistence_matrix:
   - tool: "timing extract + upload steps (always()) in ci_frontend.yml / ci_backend.yml"
