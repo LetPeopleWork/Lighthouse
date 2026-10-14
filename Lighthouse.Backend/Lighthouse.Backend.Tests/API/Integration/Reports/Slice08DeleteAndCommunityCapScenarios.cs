@@ -4,9 +4,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 {
     /// <summary>
     /// An admin deletes a report, and it is gone for everybody. Without a Premium licence each Team or Portfolio
-    /// holds at most two reports, of any type; the list says when the cap is reached so the page does not have
-    /// to restate the rule, and the server refuses a third. A licence that lapses takes nothing away: every
-    /// report stays readable and deletable, and creating waits until the count is below two again. A report
+    /// holds one report of each type; the list says when the cap is reached so the page does not have to restate
+    /// the rule, and the server refuses a second of the same type. A licence that lapses takes nothing away:
+    /// every report stays readable and deletable, and creating waits until none of that type is left. A report
     /// whose Then starts before the oldest finished Work Item the owner still keeps says that it can no longer
     /// be rebuilt, so deleting it can warn first.
     ///
@@ -27,6 +27,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         [Ignore(PendingSlice08)]
         public async Task An_admin_deletes_a_report_and_it_is_gone_for_everybody()
         {
+            TheInstanceHasAPremiumLicence();
             var lightspeed = ATeam(Lightspeed);
             var engagementStart = await GivenTheAdminCreated(lightspeed, new NewReport());
             await GivenTheAdminCreated(lightspeed, new NewReport { Name = HandOver });
@@ -96,16 +97,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-08 @slice-08 @kpi-OUT-5878-K4-community-cap-reached @contract-shape:unbounded-preservation
         [Test]
         [Ignore(PendingSlice08)]
-        public async Task Community_stops_at_two_reports_per_Team()
+        public async Task Community_keeps_one_Then_and_Now_report_per_Team()
         {
             TheInstanceHasNoPremiumLicence();
             var lightspeed = ATeam(Lightspeed);
-            await GivenTheAdminCreated(lightspeed, new NewReport());
+            TheCallerAdministers(lightspeed);
             var belowTheCap = CreationBlockedByCapIn(await TheReportsListOf(lightspeed));
-            await GivenTheAdminCreated(lightspeed, new NewReport { Name = HandOver });
+            await GivenTheAdminCreated(lightspeed, new NewReport());
 
             var atTheCap = await TheReportsListOf(lightspeed);
-            using var refused = await CreateAReport(lightspeed, new NewReport { Name = SecondExperiment });
+            using var refused = await CreateAReport(lightspeed, new NewReport { Name = HandOver });
             var body = await refused.Content.ReadAsStringAsync();
             var stillListed = ReportNamesIn(await TheReportsListOf(lightspeed));
 
@@ -113,25 +114,33 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             {
                 Assert.That(belowTheCap, Is.False);
                 Assert.That(CreationBlockedByCapIn(atTheCap), Is.True);
-                Assert.That(atTheCap.GetProperty("communityCap").GetInt32(), Is.EqualTo(2));
+                Assert.That(atTheCap.GetProperty("communityCap").GetInt32(), Is.EqualTo(1));
                 Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), body);
                 Assert.That(body, Does.Contain(Reason.ReportCapReached));
-                Assert.That(stillListed, Has.Count.EqualTo(2));
+                Assert.That(stillListed, Is.EqualTo(TheEngagementStartAlone));
             }
         }
 
-        // @driving_port @real-io @us-08 @slice-08 @boundary @contract-shape:pure-function
+        // @driving_port @real-io @us-08 @slice-08 @boundary @contract-shape:bounded-change
+        // Each type has its own place, so a Team holding a report of a type a later version added can still
+        // create its one Then & Now report.
         [Test]
         [Ignore(PendingSlice08)]
-        public async Task The_cap_counts_reports_of_every_type()
+        public async Task A_report_of_another_type_does_not_take_the_Then_and_Now_place()
         {
             TheInstanceHasNoPremiumLicence();
             var lightspeed = ATeam(Lightspeed);
             var later = await GivenTheAdminCreated(lightspeed, new NewReport());
             TheStoredReportBecomesOfType(later, "signal");
-            await GivenTheAdminCreated(lightspeed, new NewReport { Name = HandOver });
 
-            Assert.That(CreationBlockedByCapIn(await TheReportsListOf(lightspeed)), Is.True);
+            var blocked = CreationBlockedByCapIn(await TheReportsListOf(lightspeed));
+            using var created = await CreateAReport(lightspeed, new NewReport { Name = HandOver });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(blocked, Is.False);
+                Assert.That(created.StatusCode, Is.EqualTo(HttpStatusCode.Created), await created.Content.ReadAsStringAsync());
+            }
         }
 
         // @driving_port @real-io @us-08 @slice-08 @boundary @contract-shape:bounded-change
@@ -143,7 +152,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             var lightspeed = ATeam(Lightspeed);
             var zenith = ATeam(Zenith);
             await GivenTheAdminCreated(lightspeed, new NewReport());
-            await GivenTheAdminCreated(lightspeed, new NewReport { Name = HandOver });
 
             TheCallerAdministers(zenith);
             using var created = await CreateAReport(zenith, new NewReport());
@@ -204,23 +212,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
                 Assert.That(refusal, Does.Contain(Reason.ReportCapReached));
                 Assert.That(deleted.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
                 Assert.That(ReportsIn(afterOneDelete), Has.Count.EqualTo(3));
-                Assert.That(CreationBlockedByCapIn(afterOneDelete), Is.True, "three reports are still above Community's two");
+                Assert.That(CreationBlockedByCapIn(afterOneDelete), Is.True, "three reports are still above Community's one");
             }
         }
 
         // @driving_port @real-io @us-08 @slice-08 @boundary @contract-shape:bounded-change
         [Test]
         [Ignore(PendingSlice08)]
-        public async Task Deleting_below_the_cap_frees_a_place_for_a_new_report()
+        public async Task Deleting_the_report_frees_its_place_for_a_new_one()
         {
             TheInstanceHasNoPremiumLicence();
             var lightspeed = ATeam(Lightspeed);
             var first = await GivenTheAdminCreated(lightspeed, new NewReport());
-            await GivenTheAdminCreated(lightspeed, new NewReport { Name = HandOver });
 
             using var deleted = await DeleteTheReport(lightspeed, first);
             var afterDelete = CreationBlockedByCapIn(await TheReportsListOf(lightspeed));
-            using var created = await CreateAReport(lightspeed, new NewReport { Name = SecondExperiment });
+            using var created = await CreateAReport(lightspeed, new NewReport { Name = HandOver });
 
             using (Assert.EnterMultipleScope())
             {

@@ -67,7 +67,7 @@ export const defaultTerms: Record<string, string> = {
 };
 
 export const CAP_SENTENCE =
-	"Community includes 2 reports per Team. Delete one, or use Premium for unlimited reports.";
+	"Community includes 1 Then & Now report per Team. Delete it, or use Premium for unlimited reports.";
 export const CUTOFF_REFUSAL =
 	"The Then window must start on or after 2 Oct 2025 — older finished Work Items are no longer kept.";
 export const thenNeedsAtLeast = (days: number) =>
@@ -140,7 +140,7 @@ export const aListedReportOfALaterType = (): IReportListItem => ({
 export const aReportList = (
 	reports: IReportListItem[],
 	creationBlockedByCap = false,
-): IReportList => ({ reports, creationBlockedByCap, communityCap: 2 });
+): IReportList => ({ reports, creationBlockedByCap, communityCap: 1 });
 
 export const shown = (
 	value: number,

@@ -940,14 +940,15 @@ describe("OverviewDashboard", () => {
 	describe("deleting a Team or Portfolio that has reports", () => {
 		const withReports = (count: number) =>
 			aReportService({
-				getReports: vi.fn().mockResolvedValue(
-					aReportList(
-						Array.from({ length: count }, (_, index) =>
-							aListedReport({ id: index + 1, name: `Report ${index + 1}` }),
+				getReports: vi
+					.fn()
+					.mockResolvedValue(
+						aReportList(
+							Array.from({ length: count }, (_, index) =>
+								aListedReport({ id: index + 1, name: `Report ${index + 1}` }),
+							),
 						),
-						count >= 2,
 					),
-				),
 			});
 
 		const askToDeleteTheFirstRowOf = async (
@@ -979,17 +980,19 @@ describe("OverviewDashboard", () => {
 		};
 
 		// @us-08 @slice-08 @driving_port @contract-shape:pure-function
+		// One report is all Community keeps; more than one is a Premium instance, or one whose licence lapsed.
 		it.skip.each([
-			["teams", "Test Team 1"],
-			["portfolios", "Test Project 1"],
+			["teams", "Test Team 1", 1, "and its report"],
+			["portfolios", "Test Project 1", 1, "and its report"],
+			["teams", "Test Team 1", 3, "and its 3 reports"],
 		] as const)(
-			"names how many reports go with it when one of the %s is deleted",
-			async (section, name) => {
-				const { dialog } = await askToDeleteTheFirstRowOf(section, 2);
+			"names the reports that go with it when one of the %s is deleted (%i)",
+			async (section, name, reports, clause) => {
+				const { dialog } = await askToDeleteTheFirstRowOf(section, reports);
 
 				await waitFor(() =>
 					expect(dialog).toHaveTextContent(
-						`Do you really want to delete ${name} and its 2 reports?`,
+						`Do you really want to delete ${name} ${clause}?`,
 					),
 				);
 			},
@@ -1018,10 +1021,8 @@ describe("OverviewDashboard", () => {
 		// Reports going with their Team are not somebody deleting a report.
 		it.skip("reports the Team deleted and never a report deleted", async () => {
 			reportUsage.mockClear();
-			const { dialog } = await askToDeleteTheFirstRowOf("teams", 2);
-			await waitFor(() =>
-				expect(dialog).toHaveTextContent("and its 2 reports"),
-			);
+			const { dialog } = await askToDeleteTheFirstRowOf("teams", 1);
+			await waitFor(() => expect(dialog).toHaveTextContent("and its report?"));
 
 			fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
 

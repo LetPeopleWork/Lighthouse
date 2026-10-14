@@ -136,6 +136,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         [Ignore(PendingSlice10)]
         public async Task An_edit_changes_the_name_the_shown_metrics_and_how_long_Now_is_and_nothing_else()
         {
+            TheInstanceHasAPremiumLicence();
             var lightspeed = ATeam(Lightspeed);
             TheTeamFinishedPerDay(lightspeed, ThenStarts, [.. Enumerable.Repeat(1, 90)]);
             var reportId = await GivenTheAdminCreated(lightspeed, new NewReport { Shown = [CycleTime] });

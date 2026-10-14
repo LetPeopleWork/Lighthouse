@@ -51,7 +51,6 @@ vi.mock("../../../services/TerminologyContext", () => ({
 	}),
 }));
 
-const SECOND_REPORT = "Then & Now — 30 days to 2 Oct 2026";
 const EMPTY = "No reports yet.";
 
 const theCreateButton = () =>
@@ -233,20 +232,18 @@ describe("The Community cap on the Reports tab", () => {
 		terms.current = { ...defaultTerms };
 	});
 
+	const atTheCap = () =>
+		aReportService({
+			getReports: vi
+				.fn()
+				.mockResolvedValue(aReportList([aListedReport()], true)),
+		});
+
 	// @us-08 @slice-08 @error @kpi-OUT-5878-K4-community-cap-reached @contract-shape:pure-function
 	it.skip("disables Create Report at the cap and says why, in the instance's word for a Team", async () => {
 		terms.current = { ...defaultTerms, [TERMINOLOGY_KEYS.TEAM]: "Squad" };
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
-			reportService: aReportService({
-				getReports: vi
-					.fn()
-					.mockResolvedValue(
-						aReportList(
-							[aListedReport(), aListedReport({ id: 43, name: SECOND_REPORT })],
-							true,
-						),
-					),
-			}),
+			reportService: atTheCap(),
 		});
 
 		expect(await theCreateButton()).toBeDisabled();
@@ -255,10 +252,31 @@ describe("The Community cap on the Reports tab", () => {
 		).toBeVisible();
 	});
 
+	// @us-08 @slice-08 @error @contract-shape:pure-function
+	// The same tooltip every other Premium-limited control carries, so the way to Premium looks the same.
+	it.skip("explains the disabled Create Report with the Premium licence tooltip", async () => {
+		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
+			reportService: atTheCap(),
+		});
+		const create = await theCreateButton();
+		expect(create).toBeDisabled();
+
+		await userEvent.hover(create.parentElement as HTMLElement);
+
+		expect(
+			await screen.findByRole("link", { name: "premium license." }),
+		).toHaveAttribute(
+			"href",
+			"https://letpeople.work/lighthouse#lighthouse-license",
+		);
+	});
+
 	// @us-08 @slice-08 @boundary @contract-shape:pure-function
 	it.skip("says nothing about the cap below it", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
-			reportService: aReportService(),
+			reportService: aReportService({
+				getReports: vi.fn().mockResolvedValue(aReportList([])),
+			}),
 		});
 
 		expect(await theCreateButton()).toBeEnabled();
@@ -266,22 +284,17 @@ describe("The Community cap on the Reports tab", () => {
 	});
 
 	// @us-08 @slice-08 @contract-shape:bounded-change
-	it.skip("enables Create Report again once a report deleted brings the count below the cap", async () => {
+	it.skip("enables Create Report again once the report is deleted", async () => {
 		const getReports = vi
 			.fn()
-			.mockResolvedValueOnce(
-				aReportList(
-					[aListedReport(), aListedReport({ id: 43, name: SECOND_REPORT })],
-					true,
-				),
-			)
-			.mockResolvedValue(aReportList([aListedReport()]));
+			.mockResolvedValueOnce(aReportList([aListedReport()], true))
+			.mockResolvedValue(aReportList([]));
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService({ getReports }),
 		});
 		expect(await theCreateButton()).toBeDisabled();
 
-		await userEvent.click(await theDeleteButtonOf(SECOND_REPORT));
+		await userEvent.click(await theDeleteButtonOf(ENGAGEMENT_START));
 		await userEvent.click(
 			within(await screen.findByRole("dialog")).getByRole("button", {
 				name: "Delete",
