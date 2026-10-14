@@ -232,7 +232,7 @@ describe("The report's summary header", () => {
 	beforeEach(beforeEachReportTest);
 
 	// @us-01 @slice-03 @driving_port @contract-shape:pure-function
-	it.skip("opens with a summary of each side's window and how many Work Items closed in it", async () => {
+	it("opens with a summary of each side's window and how many Work Items closed in it", async () => {
 		openTheReport();
 
 		await theReportIsReady();
@@ -246,7 +246,7 @@ describe("The report's summary header", () => {
 	});
 
 	// @us-01 @slice-03 @boundary @contract-shape:pure-function
-	it.skip.each([
+	it.each([
 		[
 			"a Then and a Now within one year",
 			aWindow("2026-07-16", "2026-10-13", 90),
@@ -285,7 +285,7 @@ describe("The report's summary header", () => {
 	);
 
 	// @us-01 @slice-03 @boundary @contract-shape:pure-function
-	it.skip("says one day and one Work Item in the singular", async () => {
+	it("says one day and one Work Item in the singular", async () => {
 		const report = withCycleTime({
 			atThen: { p85: shown(21, 38), p70: shown(10, 38), p50: shown(5, 38) },
 			atNow: { p85: shown(3, 1), p70: shown(3, 1), p50: shown(3, 1) },
@@ -301,7 +301,7 @@ describe("The report's summary header", () => {
 	});
 
 	// @us-01 @slice-03 @error @contract-shape:pure-function
-	it.skip.each([
+	it.each([
 		[
 			"the Work Items behind the first percentile that has any",
 			{ p85: aDash("too-few-points"), p70: shown(10, 4), p50: shown(5, 4) },
@@ -338,7 +338,7 @@ describe("The report's summary header", () => {
 	});
 
 	// @us-01 @slice-03 @error @contract-shape:pure-function
-	it.skip.each<[string, IReportMetric | null | undefined]>([
+	it.each<[string, IReportMetric | null | undefined]>([
 		["missing from the report", undefined],
 		["recorded as never captured", null],
 	])(
@@ -364,7 +364,7 @@ describe("The report's summary header", () => {
 
 	// @us-01 @slice-03 @boundary @contract-shape:pure-function
 	// Every report keeps its Cycle Time, so the count is there even when its panel is not.
-	it.skip("counts the closed Work Items even when the report does not show its Cycle Time panel", async () => {
+	it("counts the closed Work Items even when the report does not show its Cycle Time panel", async () => {
 		openTheReport(
 			theEngagementStartReport({ shownMetricKeys: ["throughput"] }),
 		);
@@ -376,7 +376,7 @@ describe("The report's summary header", () => {
 	});
 
 	// @us-01 @slice-03 @contract-shape:pure-function
-	it.skip("names the closed Work Items in the instance's words", async () => {
+	it("names the closed Work Items in the instance's words", async () => {
 		terms.current = {
 			...defaultTerms,
 			[TERMINOLOGY_KEYS.WORK_ITEM]: "Ticket",
@@ -398,7 +398,7 @@ describe("The report's summary header", () => {
 	});
 
 	// @us-01 @slice-03 @contract-shape:pure-function
-	it.skip("says nothing of Then being frozen or of Now always being the last days", async () => {
+	it("says nothing of Then being frozen or of Now always being the last days", async () => {
 		openTheReport();
 
 		await theReportIsReady();
@@ -407,7 +407,7 @@ describe("The report's summary header", () => {
 	});
 
 	// @us-01 @slice-03 @contract-shape:pure-function
-	it.skip("sits between the line naming the report and the first panel, inside the report's loading look", async () => {
+	it("sits between the line naming the report and the first panel, inside the report's loading look", async () => {
 		openTheReport();
 
 		const firstPanel = await thePanel(CYCLE_TIME_PANEL);
@@ -429,7 +429,7 @@ describe("The report's summary header", () => {
 	});
 
 	// @us-01 @slice-03 @boundary @ac-1.8 @contract-shape:pure-function
-	it.skip("shows no summary while the report is on its way, and shows it once the report is here", async () => {
+	it("shows no summary while the report is on its way, and shows it once the report is here", async () => {
 		const held = deferred<IReport>();
 		renderWithReports(
 			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
@@ -456,7 +456,7 @@ describe("The report's summary header", () => {
 	});
 
 	// @us-01 @slice-03 @error @ac-1.8 @contract-shape:pure-function
-	it.skip.each([
+	it.each([
 		["could not be loaded", new Error("the network dropped"), COULD_NOT_LOAD],
 		[
 			"was made by a newer version",
@@ -484,7 +484,7 @@ describe("The panels of a report", () => {
 
 	// @us-01 @slice-01 @driving_port @contract-shape:pure-function
 	// The closed Work Items are counted once, in the summary above, not again on each panel.
-	it.skip("shows the Cycle Time panel as Then, Now and Change, each side headed by its name alone", async () => {
+	it("shows the Cycle Time panel as Then, Now and Change, each side headed by its name alone", async () => {
 		openTheReport();
 
 		const panel = await thePanel(CYCLE_TIME_PANEL);
@@ -621,7 +621,7 @@ describe("The panels of a report", () => {
 	});
 
 	// @us-01 @slice-01 @contract-shape:pure-function
-	it.skip("names every metric and the Work Items in the instance's words", async () => {
+	it("names every metric and the Work Items in the instance's words", async () => {
 		terms.current = {
 			...defaultTerms,
 			[TERMINOLOGY_KEYS.CYCLE_TIME]: "Lead Time",
@@ -758,7 +758,7 @@ describe("Values a report cannot show", () => {
 
 	// @us-01 @slice-01 @boundary @contract-shape:pure-function
 	// Thin data is shown, not hidden: the number of Work Items behind it, in the summary above, lets the reader judge.
-	it.skip("shows a value backed by very few Work Items, with that number in the summary above", async () => {
+	it("shows a value backed by very few Work Items, with that number in the summary above", async () => {
 		openTheReport(
 			withCycleTime({
 				atThen: { p85: shown(9, 2), p70: shown(9, 2), p50: shown(4, 2) },

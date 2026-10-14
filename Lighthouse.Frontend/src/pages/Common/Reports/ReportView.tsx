@@ -13,6 +13,7 @@ import { queryStatusOf } from "../MetricsView/widgetStatus";
 import { panelFor } from "./panels/reportPanelRegistry";
 import { reportsPathOf } from "./reportOwner";
 import ThenAndNowHeader from "./ThenAndNowHeader";
+import ThenAndNowSummary from "./ThenAndNowSummary";
 import { useReportOpenedReporter } from "./useReportOpenedReporter";
 
 const LOADING = "Loading report…";
@@ -112,6 +113,7 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 				>
 					{report !== undefined && (
 						<Stack spacing={2}>
+							<ThenAndNowSummary thenAndNow={report.thenAndNow} />
 							<ReportPanels report={report} />
 						</Stack>
 					)}

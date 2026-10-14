@@ -42,7 +42,7 @@ const headingOf = (name: "then" | "now") =>
 	segment(name).firstElementChild?.textContent;
 
 describe("the Cycle Time panel", () => {
-	it.skip("says a percentile a report never kept was not captured, and shows no change for it", () => {
+	it("says a percentile a report never kept was not captured, and shows no change for it", () => {
 		renderPanel({ atThen: { p85: shown(21, 38) }, atNow: NOW_IN_FULL });
 
 		expect(segment("then")).toHaveTextContent("Not captured for this report");
@@ -53,7 +53,7 @@ describe("the Cycle Time panel", () => {
 	});
 
 	// The report's summary counts the closed Work Items once; the panel does not repeat it.
-	it.skip.each([
+	it.each([
 		["every percentile has a value", NOW_IN_FULL],
 		[
 			"its first percentile is a dash",

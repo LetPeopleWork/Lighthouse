@@ -15,7 +15,6 @@ import {
 	type DirectionOfGood,
 	type ReportSide,
 	roundForDisplay,
-	sideHeading,
 } from "./thenNowComparison";
 
 const NOT_CAPTURED = "Not captured for this report";
@@ -42,11 +41,6 @@ const shownValue = (value: IReportValue | null | undefined): number | null =>
 	value?.value === null || value?.value === undefined
 		? null
 		: roundForDisplay(value.value, DECIMALS);
-
-const sampleSizeOf = (side: ReportMetricSide): number | null =>
-	PERCENTILES.map(({ key }) => side[key]?.sampleSize).find(
-		(size) => size !== null && size !== undefined,
-	) ?? null;
 
 /** Each distinct reason once, below the lines, so three dashes for the same cause do not say it three times. */
 const reasonsOf = (
@@ -130,41 +124,35 @@ const CycleTimePanel: React.FC<Readonly<ReportPanelProps>> = ({
 	metric,
 	workItems,
 	directionOfGood,
-}) => {
-	const restsOn = (side: ReportMetricSide) => {
-		const size = sampleSizeOf(side);
-		return size === null ? null : `${size} ${workItems}`;
-	};
-	return (
-		<ThenNowPanelFrame
-			title={title}
-			thenHeading={sideHeading("Then", restsOn(metric.atThen))}
-			then={
-				<PercentileLines
-					side={metric.atThen}
-					sideName="Then"
-					workItems={workItems}
+}) => (
+	<ThenNowPanelFrame
+		title={title}
+		thenHeading="Then"
+		then={
+			<PercentileLines
+				side={metric.atThen}
+				sideName="Then"
+				workItems={workItems}
+			/>
+		}
+		nowHeading="Now"
+		now={
+			<PercentileLines
+				side={metric.atNow}
+				sideName="Now"
+				workItems={workItems}
+			/>
+		}
+		change={PERCENTILES.map(({ key }) => (
+			<PanelLine key={key}>
+				<Change
+					then={shownValue(metric.atThen[key])}
+					now={shownValue(metric.atNow[key])}
+					directionOfGood={directionOfGood}
 				/>
-			}
-			nowHeading={sideHeading("Now", restsOn(metric.atNow))}
-			now={
-				<PercentileLines
-					side={metric.atNow}
-					sideName="Now"
-					workItems={workItems}
-				/>
-			}
-			change={PERCENTILES.map(({ key }) => (
-				<PanelLine key={key}>
-					<Change
-						then={shownValue(metric.atThen[key])}
-						now={shownValue(metric.atNow[key])}
-						directionOfGood={directionOfGood}
-					/>
-				</PanelLine>
-			))}
-		/>
-	);
-};
+			</PanelLine>
+		))}
+	/>
+);
 
 export default CycleTimePanel;
