@@ -1,11 +1,14 @@
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { IReportOwner } from "../../../models/Reports/Report";
+import type {
+	IReportOwner,
+	ReportMetricKey,
+} from "../../../models/Reports/Report";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { deferred } from "../../../tests/HeldMetricsService";
 import {
-	ALL_FOUR_METRICS,
+	A_LATER_METRIC,
 	APOLLO,
 	aRefusal,
 	aReportList,
@@ -492,12 +495,42 @@ describe("Step four: metrics and name", () => {
 		await openTheWizard();
 		await onToTheLastStep();
 
-		for (const name of ["Cycle Time", "Throughput", "WIP", "Work Item Age"]) {
+		for (const name of ["Cycle Time", "Throughput"]) {
 			await userEvent.click(await theMetricBox(name));
 		}
 
 		expect(await theCreateButton()).toBeDisabled();
 		expect(await theWizard()).toHaveTextContent(NO_METRIC);
+	});
+
+	// @us-04 @slice-04 @contract-shape:pure-function
+	// The server names every metric it can capture; a metric this version has no panel for would be created unseeable.
+	it("offers only the metrics this version can show, whatever else the server offers", async () => {
+		const offeredByTheServer: ReportMetricKey[] = [
+			"cycle-time",
+			"throughput",
+			"wip",
+			A_LATER_METRIC,
+		];
+		await openTheWizard(
+			aReportService({
+				getReports: vi.fn().mockResolvedValue(aReportList([])),
+				getTemplates: vi.fn().mockResolvedValue({
+					...aTemplateList(),
+					templates: [
+						{
+							templateKey: "then-and-now",
+							metrics: offeredByTheServer.map((key) => ({ key })),
+						},
+					],
+				}),
+			}),
+		);
+		await onToTheLastStep();
+
+		expect(await theMetricBox("Cycle Time")).toBeChecked();
+		expect(await theMetricBox("Throughput")).toBeChecked();
+		expect(within(await theWizard()).getAllByRole("checkbox")).toHaveLength(2);
 	});
 
 	// @us-02 @slice-02 @contract-shape:pure-function
@@ -570,7 +603,7 @@ describe("Creating the report", () => {
 		expect(reportService.createReport).toHaveBeenCalledWith(LIGHTSPEED, {
 			templateKey: "then-and-now",
 			name: "Then & Now — 90 days to 31 Jul 2026",
-			shownMetricKeys: ALL_FOUR_METRICS,
+			shownMetricKeys: ["cycle-time", "throughput"],
 			thenAndNow: {
 				thenEndDate: "2026-07-31",
 				thenLengthDays: 90,

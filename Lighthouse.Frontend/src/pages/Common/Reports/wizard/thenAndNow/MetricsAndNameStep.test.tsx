@@ -59,21 +59,22 @@ describe("the Metrics & name step", () => {
 		expect(screen.queryByText(NO_METRIC)).not.toBeInTheDocument();
 	});
 
-	it("names a metric this version has no panel for by its key", () => {
+	it("does not offer a metric this version has no panel for", () => {
 		renderStep(offering("cycle-time", "a-later-metric"), null);
 
+		expect(screen.getAllByRole("checkbox")).toHaveLength(1);
 		expect(
-			screen.getByRole("checkbox", { name: "a-later-metric" }),
-		).toBeChecked();
+			screen.queryByRole("checkbox", { name: "a-later-metric" }),
+		).toBeNull();
 	});
 
 	it("drops an unticked metric and keeps the others", async () => {
-		const onChange = renderStep(offering("cycle-time", "a-later-metric"), null);
+		const onChange = renderStep(offering("cycle-time", "throughput"), null);
 
 		await userEvent.click(screen.getByRole("checkbox", { name: "Lead Time" }));
 
 		expect(onChange).toHaveBeenCalledWith(
-			expect.objectContaining({ shownMetricKeys: ["a-later-metric"] }),
+			expect.objectContaining({ shownMetricKeys: ["throughput"] }),
 		);
 	});
 

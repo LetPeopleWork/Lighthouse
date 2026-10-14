@@ -5,6 +5,7 @@ import type {
 	ReportMetricKey,
 } from "../../../../../models/Reports/Report";
 import { parseLocalDate } from "../../../../../utils/date/localDate";
+import { panelFor } from "../../panels/reportPanelRegistry";
 import {
 	type ReportWindowRefusal,
 	reportWindowCheck,
@@ -108,7 +109,7 @@ export const nameOf = (
 	templates: IReportTemplates,
 ): string => draft.name ?? defaultNameOf(draft, templates);
 
-/** The metrics the server offers for Then & Now. */
+/** The metrics the server offers for Then & Now that this version has a panel to show. */
 export const offeredMetricsOf = (
 	templates: IReportTemplates,
 ): ReportMetricKey[] =>
@@ -116,7 +117,9 @@ export const offeredMetricsOf = (
 		templates.templates.find(
 			(template) => template.templateKey === "then-and-now",
 		)?.metrics ?? []
-	).map((metric) => metric.key);
+	)
+		.map((metric) => metric.key)
+		.filter((key) => panelFor(key) !== undefined);
 
 export const shownMetricsOf = (
 	draft: ThenAndNowDraft,
