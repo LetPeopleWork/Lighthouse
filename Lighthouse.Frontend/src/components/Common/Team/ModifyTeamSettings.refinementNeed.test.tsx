@@ -168,7 +168,7 @@ const theRefinementLastSaved = () => {
 	return saved?.refinement;
 };
 
-// Opening the form is not an edit, so nothing may be saved even once the autosave would have fired.
+// Twice the form's 300 ms autosave debounce, so any save the last change would cause has surely fired.
 const AUTOSAVE_DELAY_AND_MARGIN_MS = 600;
 
 // The clock is moved on rather than waited out, so the autosave's timer has surely run by the

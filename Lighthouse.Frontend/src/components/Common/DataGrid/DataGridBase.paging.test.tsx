@@ -69,7 +69,6 @@ const showTheList = (rows: ListedItem[], loading = false) => {
 	return { user, reload };
 };
 
-/** The names on the rows the grid shows right now, top to bottom. */
 const theRows = () => {
 	const rows = [...document.querySelectorAll('[role="row"]')];
 	if (rows.length === 0)
@@ -77,6 +76,7 @@ const theRows = () => {
 	return rows;
 };
 
+/** The names on the rows the grid shows right now, top to bottom. */
 const namesShown = () =>
 	theRows().flatMap((row) => {
 		const cell = row.querySelector('[role="gridcell"][data-field="name"]');
@@ -85,8 +85,12 @@ const namesShown = () =>
 
 const ROW_RANGE = /^\d+–\d+ of \d+$/;
 
-const nextPage = () => screen.getByLabelText("Go to next page");
-const previousPage = () => screen.getByLabelText("Go to previous page");
+const nextPage = () =>
+	screen.getByLabelText("Go to next page", { selector: "button" });
+const previousPage = () =>
+	screen.getByLabelText("Go to previous page", {
+		selector: "button",
+	});
 
 const goToNextPage = async (user: UserEvent, rangeThere: string) => {
 	await user.click(nextPage());
