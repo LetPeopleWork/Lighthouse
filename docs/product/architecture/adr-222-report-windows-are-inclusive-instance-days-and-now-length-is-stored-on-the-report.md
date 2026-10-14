@@ -89,6 +89,6 @@ What exists:
   start, no refusal).
 - Vitest: with bounds whose `minimumLengthDays` and `earliestStart` differ from the shared table's, the refusal copy
   names those values — a literal 14 or a fixed date in the copy fails.
-- ArchUnitNET: `ReportWindowPolicy` depends on neither `ILighthouseClock` nor any repository or port (part of E15, which holds the cap policy and the beyond-limits rule to the same).
+- ArchUnitNET: `ReportWindowPolicy` depends on neither `ILighthouseClock` nor any repository or port (part of E15, which holds the cap policy ~~and the beyond-limits rule~~ to the same; *the beyond-limits rule was dropped by D49, 2026-10-14*).
 
 Cross-refs: ADR-219, ADR-221; Bug #5567 conventions in the brief's `fix-backend-utc-today-anchor` section.

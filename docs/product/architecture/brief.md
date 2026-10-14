@@ -9343,8 +9343,11 @@ all.
 
 Feature: epic-5878-baseline — a **Reports** tab on Teams and Portfolios; the first template, **Then & Now**, freezes a
 past window (Then) at creation and sets a rolling, saved-length Now beside it, one panel per metric ({Cycle Time},
-{Throughput}, {WIP}, {Work Item Age}) with Then, Now, change, % change and Now's points beyond Then's frozen limits.
-No verdicts. DESIGN 2026-10-03, PROPOSE; revised 2026-10-13 after the final review (read / write persistence ports,
+{Throughput}, {WIP}, {Work Item Age}) with Then, Now, change, % change ~~and Now's points beyond Then's frozen limits~~.
+No verdicts. *Amended 2026-10-14 (D49–D52): no limits are frozen and nothing is counted beyond them; {WIP} and Total
+{Work Item Age} show Average, Median, Min and Max of the window's daily values (median = `PercentileCalculator`'s
+50th, as the Metrics tab); a summary header carries each side's window and closed count; the read drops
+`beyondThenLimits`. Detail: the feature delta's DD9–DD12, DD15, DD35–DD37 and ADR-221's amendment.* DESIGN 2026-10-03, PROPOSE; revised 2026-10-13 after the final review (read / write persistence ports,
 the report wizard, wire names, refusal statuses, owner scoping, loading and failure looks, observability). Full
 design: `docs/feature/epic-5878-baseline/feature-delta.md` → "Wave: DESIGN / …" (DD1–DD34, reuse table, storage,
 seams); summary in `design/wave-decisions.md`.
@@ -9363,13 +9366,15 @@ external integration or technology. **This is the first stored Report**: ADR-209
   only added; an absent member reads "Not captured". (ADR-219)
 - **I2 — exactly one owner, deleted with it.** `TeamId?` / `PortfolioId?` cascading FKs; cross-owner routes 404. (ADR-219)
 - **I3 — delivery and schedule are not part of a template.** 5882 attaches its own table to `Reports.Id`. (ADR-219)
-- **I4 — the server never knows good from bad.** Values, sample sizes, limits and counts on the wire; direction of
+- **I4 — the server never knows good from bad.** Values and sample sizes ~~, limits and counts~~ on the wire; direction of
   good, change, % change and colour live in one frontend panel per metric. (ADR-220)
 - **I5 — one capture code for both sides.** `IReportMetric` captures a window through `IReportMetricSeries`; Then at
   creation, Now on every read. (ADR-220)
-- **I6 — Then's yardstick is its own.** Limits come from Then's raw series via `XmRCalculator.Limits` (unrounded),
-  never from the PBC builders or the owner's PBC Baseline; captured for every applicable metric; the series is not
-  stored; Then is never recomputed. (ADR-221)
+- **I6 — Then's yardstick is its own.** ~~Limits come from Then's raw series via `XmRCalculator.Limits` (unrounded),
+  never from the PBC builders or the owner's PBC Baseline~~; captured for every applicable metric; the series is not
+  stored; Then is never recomputed. (ADR-221) *Amended 2026-10-14 (D49): Then is its captured values only, read from
+  raw series, never the PBC builders or the owner's PBC Baseline; no limits; the Reports module does not use
+  `XmRCalculator` (E2).*
 - **I7 — windows are server days.** Inclusive calendar days in the instance zone from `ILighthouseClock.Today`,
   `DateOnly` on the wire; Now's length is stored on the report and changed only by an edit under Write. (ADR-222)
 - **I8 — panels are pure functions of props**, so 5882 can render them server-side (Spike 6052).
@@ -9393,7 +9398,7 @@ external integration or technology. **This is the first stored Report**: ADR-209
 - **I14 — an edit changes only what it names.** Name, shown keys, Now length and the token of the addressed row;
   every other column and payload member — including members a later version wrote — stays byte-identical; Then
   members in an edit body are ignored. (ADR-219)
-- **I15 — the policies read nothing.** `ReportWindowPolicy`, `ReportCapPolicy` and `BeyondLimits` take `today`, the
+- **I15 — the policies read nothing.** `ReportWindowPolicy`, `ReportCapPolicy` ~~and `BeyondLimits`~~ *(not built, D49)* take `today`, the
   cutoff, the licence result and the owner's count as arguments; `ReportQueries` / `ReportCommands` read them (from
   `ILighthouseClock`, `IReportOwnerLookup`, `ILicenseService`, `IReportReader`). Template create is read-only I/O
   returning a payload; only the command persists. (ADR-219, ADR-222)
@@ -9402,10 +9407,11 @@ external integration or technology. **This is the first stored Report**: ADR-209
 
 Backend NEW: `Report` + Then & Now payload records; `IReportQueries` (write-free) / `IReportCommands`; `IReportTemplate`
 + `ThenAndNowTemplate`; `IReportMetric` × 4 + `ReportMetricCatalog`; `IReportMetricSeries` + Team / Portfolio adapters;
-pure `ReportWindowPolicy`, `BeyondLimits`, `ReportCapPolicy`; `IReportReader` / `IReportWriter` + `ReportOwner`;
+pure `ReportWindowPolicy`, ~~`BeyondLimits`,~~ `ReportCapPolicy` and a daily-series summary (Average, Median, Min,
+Max; *2026-10-14*); `IReportReader` / `IReportWriter` + `ReportOwner`;
 read-only `IReportOwnerLookup` (owner exists, cutoff days);
-`ReportRepository` (implements both ports); two controllers. EXTEND: `XmRCalculator` (`Limits`), `BaseMetricsService` (shared cycle-time
-selection), `ITeamMetricsService` / `IPortfolioMetricsService` (finished cycle-time and daily total WIA series),
+`ReportRepository` (implements both ports); two controllers. EXTEND: ~~`XmRCalculator` (`Limits`), `BaseMetricsService` (shared cycle-time
+selection),~~ *(withdrawn 2026-10-14, D49: both untouched)* `ITeamMetricsService` / `IPortfolioMetricsService` (~~finished cycle-time and~~ daily total WIA series),
 `LighthouseAppContext`, usage-data enums (DEVOPS). Frontend NEW: shared `Reports/*` tab with a `DataGridBase` list;
 one `ReportWizard` (mode create | edit; step ① Type, then the type's own steps from an exhaustive `reportTypeSteps`;
 for Then & Now ② Then, ③ Now, ④ Metrics & name; edit starts at ③) with the pure `reportWindowCheck`; report view,
@@ -9428,7 +9434,8 @@ edit / delete; no new requirement):
   `thenAndNow.nowLengthDays`; 409 on a stale token), `DELETE {id}` (204).
 
 Template-specific members sit in one object named after the template (`thenAndNow`) in requests and reads alike. The
-read carries per metric `atThen`, `atNow` and `beyondThenLimits`; every value is `{ value, sampleSize, absentReason }`.
+read carries per metric `atThen` and `atNow` ~~and `beyondThenLimits`~~ *(dropped 2026-10-14, D49)*; every value is `{ value, sampleSize, absentReason }`;
+the `wip` and `work-item-age` sides are `{ average, median, min, max }`; the only absence code is `no-finished-items`.
 Refusals are a closed set of codes in a ProblemDetails `code` extension: validation 400 (the two cutoff codes add
 `earliestStart`); cap 403 `report-cap-reached`, like every premium refusal; RBAC 403 with no code; a missing or
 another owner's report 404; a stored report of a type this version cannot read 422 `template-not-supported`.
@@ -9478,9 +9485,9 @@ table in the feature delta.
 ### Architectural Enforcement (this feature)
 
 ArchUnitNET + NUnit + TypeScript: E1 module isolation; E2 no dependency on `ProcessBehaviourChart`, `XmRResult` or the
-owner PBC Baseline; E3 metrics only via the series port; E4 `ReportQueries` depends on `IReportReader` and on none of
+owner PBC Baseline (*and, since 2026-10-14, `XmRCalculator`*); E3 metrics only via the series port; E4 `ReportQueries` depends on `IReportReader` and on none of
 `IReportWriter`, `IRepository<>`, `LighthouseAppContext`, plus a reflection test that `IReportReader` declares no
-write member; E5 `Calculate` = `Limits` rounded; E6 Then parity with the Metrics endpoints; E7 payload round-trip; E8
+write member; ~~E5 `Calculate` = `Limits` rounded~~ (*withdrawn 2026-10-14, D49*); E6 Then parity with the Metrics endpoints; E7 payload round-trip; E8
 cross-owner 404 + cascade on both providers; E9 exhaustive panel registry, pure panels; E10 no user-facing "Baseline";
 E11 no `then` / `now` member in the read DTO (Biome's `noThenProperty` on the frontend); E12 one window boundary
 table run against `ReportWindowPolicy` (NUnit) and `reportWindowCheck` (Vitest), including a cutoff-0 row, plus a
@@ -9496,7 +9503,8 @@ licence, lookup, reader, writer, repository or series port.
 - [ADR-220](./adr-220-a-metric-catalog-captures-values-and-the-frontend-panel-owns-the-direction-of-good.md) — catalog
   and panel registry; unknown type and metric looks. **Accepted** (2026-10-13); not built.
 - [ADR-221](./adr-221-then-is-frozen-as-captured-values-and-unrounded-limits-from-its-own-series.md) — what Then
-  freezes ({Cycle Time} 85th only); wire names `atThen` / `atNow`. **Accepted** (2026-10-13); not built.
+  freezes ({Cycle Time} 85th only); wire names `atThen` / `atNow`. **Accepted** (2026-10-13); not built. **Amended
+  2026-10-14**: no limits, one absence code, {WIP} / Total {Work Item Age} as Average, Median, Min, Max.
 - [ADR-222](./adr-222-report-windows-are-inclusive-instance-days-and-now-length-is-stored-on-the-report.md) — windows,
   the stored Now length, the wizard's pre-check from server bounds. **Accepted** (2026-10-13); not built.
 - Cross-refs: ADR-209 (status note added), ADR-160 (pin precedent), ADR-211 (client reads facts), ADR-214 / ADR-064

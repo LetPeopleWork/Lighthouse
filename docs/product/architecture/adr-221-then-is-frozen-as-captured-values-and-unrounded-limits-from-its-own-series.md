@@ -1,6 +1,10 @@
-# ADR-221: Then is frozen as captured values and unrounded XmR limits computed from its own series
+# ADR-221: Then is frozen as captured values computed from its own series
 
-- **Status**: Accepted (2026-10-13, after the Final Wave Review; proposed in DESIGN 2026-10-03)
+*Title amended 2026-10-14. Was: "Then is frozen as captured values and unrounded XmR limits computed from its own
+series" — the limits went with D49; see "Amended 2026-10-14" below. The file name keeps the old words so links resolve.*
+
+- **Status**: Accepted (2026-10-13, after the Final Wave Review; proposed in DESIGN 2026-10-03). **Amended 2026-10-14**
+  (maintainer decisions D49–D51) — still Accepted.
 - **Date**: 2026-10-03
 - **Feature**: epic-5878-baseline (slices 01, 02, 03, 04, 05)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)
@@ -34,15 +38,16 @@ average (D47); average {Work Item Age} as window average and last day (D48).
 1. **Read Then's series through `IReportMetricSeries`** (ADR-220): the same raw series the Metrics page builds its
    charts from — finished items' cycle times (cycle time > 0, ordered by close date then id), daily {Throughput},
    daily {WIP}, daily total {Work Item Age} — never through a `Get*ProcessBehaviourChart` method.
-2. **Extract `XmRCalculator.Limits(values)`** returning average, upper and lower limit as doubles, whether the lower
+2. ~~**Extract `XmRCalculator.Limits(values)`** returning average, upper and lower limit as doubles, whether the lower
    limit was clamped, and the point count. `Calculate` calls it and rounds at its own boundary, so every existing
-   chart is byte-identical (the existing `XmRCalculatorTest` suite plus one property test pin this).
-3. **Count beyond limits with one pure rule** that mirrors `XmRCalculator`'s large-change rule: above = value >
+   chart is byte-identical (the existing `XmRCalculatorTest` suite plus one property test pin this).~~ *(superseded by
+   D49, 2026-10-14)*
+3. ~~**Count beyond limits with one pure rule** that mirrors `XmRCalculator`'s large-change rule: above = value >
    upper; below = value < lower, counted **only when lower > 0**; otherwise the below count is "—" with "Then's lower
-   limit is 0" (Q8).
+   limit is 0" (Q8).~~ *(superseded by D49, 2026-10-14)*
 4. **What the payload freezes per metric**: each shown value as `{ value (double or null), sampleSize, absentReason }`
-   and, for the beyond-limits count, `{ average, upper, lower, lowerClamped, pointCount }` unrounded — or an absent
-   reason. Captures are taken for **every applicable metric**, ticked or not.
+   ~~and, for the beyond-limits count, `{ average, upper, lower, lowerClamped, pointCount }` unrounded — or an absent
+   reason~~ *(limits superseded by D49, 2026-10-14)*. Captures are taken for **every applicable metric**, ticked or not.
 5. **The full Then series is not stored.** No panel or chart needs it (D39), D27 already says later values read "Not
    captured for this report", and the payload can gain a series member additively if a later slice ever needs one.
 6. **Every value carries its sample size and the panel always shows it** (D45). A value is absent only when there is
@@ -53,6 +58,8 @@ average (D47); average {Work Item Age} as window average and last day (D48).
    - `no-wip` — no {Work Item} in progress, so no average {Work Item Age} (D48);
    - `lower-limit-zero` — below count only (Q8);
    - `then-was-zero` — % change only, computed by the panel (Q9).
+   *(Amended 2026-10-14: only `no-finished-items` remains on the wire, and `then-was-zero` in the panel; the other
+   four went with D49 and D51.)*
 7. **Value definitions** (window `[start, end]`, L inclusive days; the same code for Then at creation and Now on read):
    - **{Cycle Time}**: the 50th / 70th / 85th percentile from the Metrics tab's percentile read (Then freezes the 85th);
      sample size = finished {Work Items} with a cycle time in the window; limits over those cycle times by close date.
@@ -60,10 +67,13 @@ average (D47); average {Work Item Age} as window average and last day (D48).
      size = L days. Change and % change are on `perDay`, so a Now of another length compares correctly. Limits and the
      beyond-limits count over the daily counts.
    - **{WIP}**: average of the daily {WIP} (unrounded), its minimum and maximum; limits over the daily values.
+     *(Amended 2026-10-14 by D50: Average, Median, Min, Max of the daily {WIP}; no limits.)*
    - **{Work Item Age}** (Q10, D48), from the daily total age `T[d]` and the daily {WIP} `W[d]` of the same
      population: total window average = mean of `T[d]` over all L days; total last day = `T[end]`; average window
      average = mean of `T[d] ÷ W[d]` over the days with `W[d] > 0`; average last day = `T[end] ÷ W[end]` (sample size
-     `W[end]` {Work Items}). Limits and count over `T[d]`.
+     `W[end]` {Work Items}). Limits and count over `T[d]`. *(Amended 2026-10-14 by D51: Average, Median, Min, Max of
+     `T[d]` only; no per-item average, no last day, no limits.)*
+   - *(Amended 2026-10-14: the {Cycle Time} limits and the {Throughput} limits and count above are gone too, D49.)*
 8. **Nothing about the owner's settings is stored** (D46). Now uses today's settings; Then stays as frozen; the
    report does not compare them.
 9. **Then freezes the {Cycle Time} 85th percentile only** (2026-10-13). The panel's Then column shows the 85th alone,
@@ -73,7 +83,8 @@ average (D47); average {Work Item Age} as window average and last day (D48).
    alike. A member named `then` is a Biome error (`noThenProperty`) and turns the object into a thenable for anything
    that awaits it. Member names inside a side: `p85`, `p70`, `p50`; `total`, `perDay`; `average`, `min`, `max`;
    `totalWindowAverage`, `totalLastDay`, `averageWindowAverage`, `averageLastDay`; each `{ value, sampleSize,
-   absentReason }`. `beyondThenLimits` is `{ above, below }` of the same shape, the count in `value`.
+   absentReason }`. `beyondThenLimits` is `{ above, below }` of the same shape, the count in `value`. *(Amended
+   2026-10-14: `wip` and `work-item-age` are both `average`, `median`, `min`, `max`; `beyondThenLimits` is dropped.)*
 
 ## Alternatives considered
 
@@ -91,21 +102,23 @@ average (D47); average {Work Item Age} as window average and last day (D48).
 
 ## Consequences
 
-- **Positive**: the frozen yardstick is independent of every PBC setting; the Metrics page is untouched; one rule
-  counts beyond limits for all four metrics.
+- **Positive**: the frozen yardstick is independent of every PBC setting; the Metrics page is untouched; ~~one rule
+  counts beyond limits for all four metrics~~ *(D49: there is no count)*.
 - **Positive**: thin data is shown honestly rather than hidden: "34 days · 3 Features" tells the reader exactly how
   much the number rests on (D45).
-- **Negative**: a per-item lower limit is usually 0 for {Cycle Time}, so "below" will often read "—" (Q8, accepted;
-  slice 03 tests whether the count says anything on real Teams).
+- ~~**Negative**: a per-item lower limit is usually 0 for {Cycle Time}, so "below" will often read "—" (Q8, accepted;
+  slice 03 tests whether the count says anything on real Teams).~~ *(moot since D49)*
 
 ## Enforcement
 
 - ArchUnitNET: the Reports module does not depend on `ProcessBehaviourChart`, `XmRResult` or
   `WorkTrackingSystemOptionsOwner.ProcessBehaviourChartBaseline*`.
-- NUnit: `Calculate` equals `Limits` rounded, for generated series; the beyond-limits rule equals the large-change
-  rule's classification on the same data.
+- ~~NUnit: `Calculate` equals `Limits` rounded, for generated series; the beyond-limits rule equals the large-change
+  rule's classification on the same data.~~ *(withdrawn 2026-10-14, D49; instead ArchUnitNET: the Reports module
+  does not depend on `XmRCalculator` either)*
 - NUnit (AC-2.3): Then captured for a window equals the Metrics endpoints' values for the same window and settings.
-- NUnit: changing the owner's PBC Baseline after creation changes no frozen value and no count (AC-3.2).
+- NUnit: changing the owner's PBC Baseline after creation changes no frozen value ~~and no count~~ (AC-3.2). *(count
+  gone since D49, 2026-10-14)*
 - NUnit: the read DTO has no member named `then` or `now`; Biome's `noThenProperty` holds the frontend.
 
 ## Alternatives considered for the wire names (2026-10-13)
@@ -115,6 +128,53 @@ average (D47); average {Work Item Age} as window average and last day (D48).
   **Rejected.**
 - **`thenValues` / `nowValues`.** Equally safe; `atThen` / `atNow` was preferred because the frontend model and its
   tests already use it. **Rejected.**
+
+## Amended 2026-10-14
+
+**Context.** At the DISTILL sketch review for slices 03–05 the maintainer decided D49–D52: "start simple" — no panel
+counts Now's points beyond Then's XmR limits, and Then no longer freezes an XmR average or limits (D49); {WIP} reads
+Average, Median, Min and Max of the window's daily values, each with its own change (D50); the {Work Item Age} panel
+becomes "Total {Work Item Age}", the same four lines over the daily total age, with no per-item average and no
+last-day value (D51); a summary header carries each side's window and closed count (D52, frontend only). Slices 01–02
+are shipped; their stored reports hold `cycle-time` values only.
+
+**Decision.**
+
+1. **Then freezes captured values only.** No limits member in any capture; no beyond-limits count on the wire
+   (`beyondThenLimits` dropped — no released backend ever sent it). `XmRCalculator` is not extended and the Reports
+   module must not depend on it (ArchUnitNET, added to the existing rule that keeps it off `ProcessBehaviourChart`
+   and `XmRResult`). The extraction made in c206d65bd was reverted in 058b4ba48.
+2. **Value shapes**: `cycle-time` `{ p85, p70, p50 }` (unchanged); `throughput` `{ total, perDay }` (unchanged but
+   for the limits); `wip` and `work-item-age` both `{ average, median, min, max }` over the window's L daily values
+   (daily {WIP}; daily total age). Each value `{ value, sampleSize, absentReason }`; for a daily-series value
+   `sampleSize` = L days.
+3. **Median** = `PercentileCalculator.CalculatePercentile(values, 50)`, the Metrics tab's 50th: the value at 1-based
+   position max(1, ⌊n ÷ 2⌋) of the sorted values — the lower of the two middle values for an even count, the value
+   just below the middle for an odd one. Chosen so a report's Median and its 50th are never computed two ways. The
+   function sorts its input in place, so it is given a copy.
+4. **Absence**: one code on the wire, `no-finished-items` ({Cycle Time}); {Throughput}, {WIP} and Total {Work Item
+   Age} are never absent — a window has ≥ 14 days and a 0 is a real 0. `then-was-zero` stays the panel's (Q9).
+5. **Display**: the panel rounds with `roundForDisplay` — 0 decimals for {WIP} and Total {Work Item Age} (as {Cycle
+   Time}), 2 for {Throughput} per day — and computes change and % change from the displayed values.
+
+**Alternatives considered.**
+
+- **Keep the frozen limits but hide the count** (store now, show later). Costs a payload member and an extraction
+  nobody reads, and invites a second meaning of "Then" before anyone asked for it. **Rejected**: the payload is
+  additive, so limits can be frozen by a later version for reports created from then on.
+- **Textbook median** (mean of the two middle values for an even count). Gives a half-day the reader never saw on
+  any day and disagrees with the report's own {Cycle Time} 50th for the same data. **Rejected**; changing the
+  convention is a Metrics-wide decision.
+- **Separate shapes for {WIP} and Total {Work Item Age}** (keeping `totalWindowAverage` etc.). Two panel layouts for
+  one idea. **Rejected** (D50 and D51 define the same four lines).
+
+**Consequences.**
+
+- **Positive**: less to build and test (no extraction, no rule, four absence codes gone); the Metrics page is not
+  touched at all; two panels share one summary and one layout.
+- **Negative**: a report says nothing about whether a change is beyond routine variation; Signals (Epic 5935) owns
+  that question, and a process-behaviour entry may join the report later (D49).
+- **Neutral**: reports already stored are unaffected (they hold `cycle-time` values only).
 
 Cross-refs: [ADR-208](./adr-208-a-past-day-is-computed-by-the-recorders-own-code.md) (one computation, two callers), ADR-219,
 ADR-220.

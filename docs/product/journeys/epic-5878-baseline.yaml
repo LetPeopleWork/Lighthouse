@@ -1,12 +1,13 @@
 schema_version: 1
 feature_id: epic-5878-baseline
-updated: 2026-10-13
+updated: 2026-10-14
 ado: "#5878 Baseline (ValueFlow, Community)"
 note: >
   Seeded in DISCOVER (2026-10-02) as two hypothesis journeys; refined in DISCUSS (2026-10-02) to the converged
   DIVERGE direction; revised 2026-10-03 after the maintainer's answers (D37-D44): a Reports tab on Teams and
   Portfolios, the "Then & Now" report type, a frozen Then window and a saved-length rolling Now, one panel per metric
-  showing Then, Now, the change, % change and Now's points beyond Then's frozen limits. No verdicts, no generated
+  showing Then, Now, the change and % change (Now's points beyond Then's frozen limits were dropped on 2026-10-14,
+  D49; a summary header names each side's window and closed count, D52). No verdicts, no generated
   text, no charts - people interpret. No Lighthouse user has walked these journeys yet. Terms in braces ({team},
   {portfolio}, {feature}, {work items}, {cycle time}, {throughput}, {wip}, {work item age}) render as the instance's
   configured words. No user-facing "Baseline" (it names the PBC setting). Decisions D17-D48 and slices 01-11 (09 and 11
@@ -31,7 +32,7 @@ journeys:
         name: Freeze Then
         action: "{team} or {portfolio} -> Reports -> Create Report -> Then & Now -> Then end date and length -> Now length -> metrics (all four ticked) -> name -> Create"
         emotional_state: {entry: Exposed, exit: Anchored}
-        shared_artifacts: [then_window, then_values, then_limits, now_length, report_count]
+        shared_artifacts: [then_window, then_values, now_length, report_count]
         failure_modes:
           - Then reaches past DoneItemsCutoffDays - refused, naming the earliest allowed start, never silently partial
           - Then shorter than 14 days - refused with the minimum
@@ -46,18 +47,18 @@ journeys:
             Then the report shows "Then: 90 days to 31 Jul 2026 - frozen"
       - id: 2
         name: Read Then and Now
-        action: "Open the report; read each metric's panel - Then left, Now right, change, % change, points beyond Then's limits"
+        action: "Open the report; read the summary header (each side's window and closed count), then each metric's panel - Then left, Now right, change, % change"
         emotional_state: {entry: Hopeful, exit: Informed}
-        shared_artifacts: [then_window, then_values, then_limits, now_window, now_values, direction_of_good]
+        shared_artifacts: [then_window, then_values, now_window, now_values, direction_of_good]
         failure_modes:
           - Now overlaps Then - shown as is; the header shows both windows
           - Thin data - every value shows its sample size; "—" with a reason only when truly empty, never a zero (D45)
-          - Then's lower limit at zero - the below count shows "—" with the reason (Q8, confirmed 2026-10-03)
+          - Nothing in progress in a window - {wip} and total {work item age} read 0, a real 0, never a dash (D50, D51)
           - Settings changed since creation - no notice (D46); Now uses today's settings, Then stays frozen
-          - Owner's PBC Baseline changed later - the counts do not move; limits come from Then
+          - Owner's PBC Baseline changed later - Then's values do not move; nothing comes from the PBC Baseline
           - Report cannot be loaded - "This report couldn't be loaded. Reload to try again." with Retry, no stale numbers (DT6)
           - Report no longer exists - "This report no longer exists." with Back to Reports (DT6)
-        integration_checkpoint: The Now window in the header is the window the Now side and the beyond-limits counts use
+        integration_checkpoint: The Now window in the summary header is the window every panel's Now side uses
         gherkin: |
           Scenario: A fall in Cycle Time shows as a change for the better
             Given Elena's report froze a Then 85th percentile of 21 days
@@ -112,7 +113,7 @@ journeys:
         name: Freeze Then at hand-over
         action: "Create Report -> Then & Now -> Then ends today -> Now length (e.g. 30 days)"
         emotional_state: {entry: Rushed, exit: Grounded}
-        shared_artifacts: [then_window, then_values, then_limits, now_length]
+        shared_artifacts: [then_window, then_values, now_length]
         failure_modes:
           - Report frozen today - Now covers the same days as Then (or part of them) and shows little or no change; the header shows both windows
         integration_checkpoint: The header shows both windows, so a same-day report plainly compares Then with itself
@@ -128,11 +129,10 @@ journeys:
 shared_artifacts:
   then_window: {source: "the stored report (end date + length, picked at creation, never editable)", consumers: [header, default name, days since Then ended, delete warning]}
   then_values: {source: "frozen at creation for every applicable metric - the values its panel shows", consumers: [Then side of every panel, change, "% change"]}
-  then_limits: {source: "frozen at creation - Then's XmR average and limits, unrounded, for metrics with a process-behaviour chart", consumers: [points beyond Then's limits]}
   now_length: {source: "the stored report (set at creation, changed only through Edit report)", consumers: [header, now_window, scheduled sending later (Epic 5882)]}
-  now_window: {source: "derived - now_length days ending today, never clipped", consumers: [header, Now side of every panel, points beyond Then's limits]}
-  now_values: {source: "existing metrics services over now_window, today's settings", consumers: [Now side of every panel, change, "% change", points beyond Then's limits]}
-  direction_of_good: {source: "fixed per metric in its frontend panel; stored nowhere", consumers: [colour of change, colour of each side of the beyond-limits count]}
+  now_window: {source: "derived - now_length days ending today, never clipped", consumers: [header, Now side of every panel]}
+  now_values: {source: "existing metrics services over now_window, today's settings", consumers: [Now side of every panel, change, "% change", "closed count in the summary header"]}
+  direction_of_good: {source: "fixed per metric in its frontend panel; stored nowhere", consumers: [colour of change]}
   report_count: {source: "stored reports of the owner, all templates", consumers: [Create Report enablement, Community cap message, owner delete confirmation]}
 
 changelog:
@@ -164,3 +164,11 @@ changelog:
       Aligned with the maintainer's UI-sketch decisions DT1-DT7 - users read "Type", never "Template"; Edit report is
       the Create wizard in edit mode; could-not-load and no-longer-exists looks on the report; a stale edit is refused
       with a reload message.
+  - date: 2026-10-14
+    feature: epic-5878-baseline
+    change: >
+      D49-D52 (maintainer, after the DISTILL sketch review) - no points beyond Then's limits on any panel and no
+      frozen limits: shared artifact then_limits removed, the lower-limit-zero and PBC-Baseline-moves-the-counts
+      failure modes replaced; {wip} and total {work item age} read Average, Median, Min and Max of the daily values
+      (a window with nothing in progress reads 0, never a dash); a summary header names each side's window and how
+      many {work items} closed.

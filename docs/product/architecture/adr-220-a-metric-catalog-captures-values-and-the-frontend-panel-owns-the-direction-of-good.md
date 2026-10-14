@@ -21,13 +21,14 @@ info widgets compute a previous-period comparison in the backend with neutral ar
 
 1. **Backend: one `IReportMetric` class per metric** (stable string key: `cycle-time`, `throughput`, `wip`,
    `work-item-age`), registered in DI and listed by a `ReportMetricCatalog`. Each declares which owner kinds it applies
-   to and offers one operation: **capture this metric for a window** — the values its panel shows, the sample sizes,
-   and (for the beyond-limits count) the series it needs. The same capture runs for Then (at creation) and Now (on
+   to and offers one operation: **capture this metric for a window** — the values its panel shows, the sample sizes~~,
+   and (for the beyond-limits count) the series it needs~~ *(beyond-limits count dropped by D49, 2026-10-14; see
+   ADR-221's amendment)*. The same capture runs for Then (at creation) and Now (on
    read), so the two sides cannot be computed differently.
 2. **Metrics are owner-agnostic.** They read through one driven port, `IReportMetricSeries`, with a Team adapter and
    a Portfolio adapter over the existing metrics services. Owner-kind differences live in the two adapters, the way
    `PercentileFamilies` keeps them in one place today.
-3. **No direction, verdict or colour on the server.** The wire carries values, sample sizes, limits and counts. Change
+3. **No direction, verdict or colour on the server.** The wire carries values, sample sizes~~, limits and counts~~ *(no limits or counts since D49, 2026-10-14)*. Change
    and % change are plain arithmetic done **in the panel**, from the values as displayed, so Then + change = Now on
    screen (precedent: ADR-211, a grade is read in the client from facts the server sends).
 4. **Frontend: a panel registry** — `Record<ReportMetricKey, PanelDefinition>` checked with `satisfies`, so a key

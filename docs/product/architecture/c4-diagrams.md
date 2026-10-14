@@ -1709,7 +1709,7 @@ flowchart TB
         CAT["ReportMetricCatalog<br/>IReportMetric × 4"]
         SER["IReportMetricSeries<br/><i>Team / Portfolio adapters</i>"]
         WIN["ReportWindowPolicy<br/><i>pure: (window, today, cutoff days)</i>"]
-        BL["BeyondLimits<br/><i>pure</i>"]
+        SUM["Daily-series summary<br/><i>pure: average, median, min, max</i>"]
         CAP["ReportCapPolicy<br/><i>pure: (premium, count for owner)</i>"]
         OWN["IReportOwnerLookup<br/><i>owner exists? cutoff days; read-only</i>"]
         RDR["IReportReader<br/><i>get · list · count for owner; no write member</i>"]
@@ -1718,7 +1718,7 @@ flowchart TB
     end
 
     subgraph EXIST["Existing (reused / extended)"]
-        XMR["XmRCalculator.Limits<br/><i>unrounded, extracted</i>"]
+        PCT["PercentileCalculator<br/><i>median = the 50th</i>"]
         TMS["ITeamMetricsService"]
         PMS["IPortfolioMetricsService"]
         CLK["ILighthouseClock"]
@@ -1753,8 +1753,8 @@ flowchart TB
     CAT -->|"reads series from"| SER
     SER --> TMS
     SER --> PMS
-    CAT -->|"computes Then's limits with"| XMR
-    TPL -->|"counts Now against frozen limits with"| BL
+    CAT -->|"summarises daily WIP and total age with"| SUM
+    SUM -->|"takes the median from"| PCT
     Q -->|"reads from"| RDR
     C -->|"counts the owner's reports with"| RDR
     C -->|"adds, updates, removes through"| WTR
@@ -1765,14 +1765,17 @@ flowchart TB
 
 Read the graph for the three things that make it safe:
 
-1. **No arrow reaches a PBC builder or the owner's PBC Baseline.** Then's limits come only from `CAT → XMR` over the
-   series `SER` returns (ADR-221, E2).
+1. **No arrow reaches a PBC builder, the owner's PBC Baseline or `XmRCalculator`.** ~~Then's limits come only from
+   `CAT → XMR` over the series `SER` returns (ADR-221, E2).~~ *Amended 2026-10-14 (D49): a report computes no limits;
+   the `BeyondLimits` node and the `XmRCalculator.Limits` node are gone, replaced by the pure daily-series summary
+   (`SUM`) that takes its median from `PercentileCalculator` (ADR-221's amendment, E2).*
 2. **No backend component decides good or bad.** Direction of good exists only in `REG`; `PAN` computes change, % and
    colour from the facts in the read (ADR-220).
 3. **Only `C` writes, and that holds by type.** `Q`'s persistence arrows reach only `RDR` and `OWN`, ports with no
    write member; `WTR` is reached from `C` alone. Both are implemented by `REPO`, which only the composition root
    names (E14) and nothing sees as `IRepository<Report>`. The read computes Now without touching a row (ADR-219, E4).
-4. **The policies read nothing.** `WIN`, `CAP` and `BL` have no outgoing arrow: `today`, the licence result, the
+4. **The policies read nothing.** `WIN` and `CAP` (~~and `BL`~~, *dropped 2026-10-14*) have no outgoing arrow, and
+   `SUM` reaches only the pure `PCT`: `today`, the licence result, the
    owner's cutoff and the count are read by `Q` / `C` and passed in as arguments (E15).
 
 The SPA side (`TRC` stands for either controller): `LST` is a `DataGridBase` list whose delete icon opens the shared

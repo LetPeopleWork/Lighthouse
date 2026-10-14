@@ -22,6 +22,13 @@ shortcuts, `earliestStart` null = no lower bound, values from one source and com
 NL1 templates query refetches on wizard open; NL2 E14; NL3 list failure copy is the working copy; NL4 collision check
 recorded. **No wire-contract change.**
 
+**Revision 2026-10-14 (maintainer decisions D49–D52, after the DISTILL sketch review).** No limits are frozen and
+nothing is counted beyond them (D49): DD9, DD10 withdrawn, DD11 values only, `BeyondLimits` not built, E5 withdrawn,
+E15 repointed, E2 extended to `XmRCalculator`; one absence code left (`no-finished-items`); {WIP} and Total {Work
+Item Age} as Average, Median, Min, Max of daily values (D50, D51); DD35–DD37 added; ADR-221 amended. **Wire change**:
+`beyondThenLimits` dropped (never sent), `wip` / `work-item-age` sides become `{ average, median, min, max }`.
+Superseded text below is kept and marked.
+
 Full text of everything below: `../feature-delta.md` → "Wave: DESIGN / …" sections. ADRs: ADR-219..ADR-222.
 
 ## Config
@@ -36,8 +43,9 @@ technology · no external integration (contract testing N/A).
    delivery and schedule will live outside it (ADR-219, superseding ADR-209's deferral).
 2. A metric catalog captures each metric for a window on the server through one owner-agnostic series port; one
    frontend panel per metric owns the direction of good, the change and the colour (ADR-220).
-3. Then is frozen at creation as captured values and unrounded XmR limits from its own series; Now is captured by the
-   same code on every read over a server-computed window whose length is stored on the report (ADR-221, ADR-222).
+3. Then is frozen at creation as captured values ~~and unrounded XmR limits from its own series~~; Now is captured by
+   the same code on every read over a server-computed window whose length is stored on the report (ADR-221, ADR-222).
+   *(superseded by D49 (2026-10-14): no XmR average or limits are frozen; Then is its captured values only.)*
 
 ## Decisions taken in this wave
 
@@ -49,16 +57,22 @@ technology · no external integration (contract testing N/A).
 - **DD6** No direction, verdict or colour on the server; change and % in the panel from displayed values.
 - **DD7** Exhaustive frontend panel registry; panels pure; shared frame with an author-note slot.
 - **DD8** Then read as raw series, never through the PBC builders.
-- **DD9** `XmRCalculator.Limits` extracted, unrounded; `Calculate` byte-identical.
-- **DD10** Beyond limits: > upper; < lower only when lower > 0, else "—".
-- **DD11** Freeze values (+ sample size, absent reason) and unrounded limits for every applicable metric; no series.
+- ~~**DD9** `XmRCalculator.Limits` extracted, unrounded; `Calculate` byte-identical.~~ *(superseded by D49
+  (2026-10-14): nothing extracted; c206d65bd reverted in 058b4ba48.)*
+- ~~**DD10** Beyond limits: > upper; < lower only when lower > 0, else "—".~~ *(superseded by D49 (2026-10-14).)*
+- **DD11** Freeze values (+ sample size, absent reason) ~~and unrounded limits~~ for every applicable metric; no series.
+  *(limits superseded by D49 (2026-10-14).)*
 - **DD12** Every value carries its sample size; "—" only when truly empty, as closed codes; no threshold (D45).
+  *Revised 2026-10-14*: one code left on the wire, `no-finished-items` ({Cycle Time}); {Throughput}, {WIP} and Total
+  {Work Item Age} are never absent (a 0 is real); the sample size shows once, in the summary header (D52).
 - **DD13** Inclusive instance-zone day windows on the server; `ReportWindowPolicy`, not `BaselineValidationService`;
   `today` and the cutoff are arguments, read by the query / command (rev. 2026-10-13 round 2).
 - **DD14** Now length in the payload; edit only, under Write.
-- **DD15** Value definitions: M1 percentiles + per-item limits; M2 total and per-day average over the whole window,
-  change on per-day, daily limits (D47); M3 average/min/max; M4 total and average, each as window average and last
-  day, limits on daily totals (Q10, D48).
+- **DD15** Value definitions: M1 percentiles ~~+ per-item limits~~; M2 total and per-day average over the whole window,
+  change on per-day~~, daily limits~~ (D47); ~~M3 average/min/max; M4 total and average, each as window average and last
+  day, limits on daily totals (Q10, D48)~~. *Revised 2026-10-14 (D49–D51)*: M3 = Average, Median, Min, Max of the
+  daily {WIP}; M4 = Average, Median, Min, Max of the daily **total** {Work Item Age}; each with sample size L days,
+  never absent; no limits anywhere.
 - **DD16** *Withdrawn by D46* — no settings record, no notice.
 - **DD17** Cap policy in the create command, a pure function of (licence result, count for owner) which the command
   and list query read and pass in; list envelope says `creationBlockedByCap`; race accepted.
@@ -91,6 +105,14 @@ technology · no external integration (contract testing N/A).
 - **DD32** Unknown type: listed, opens to a not-found-family look; unknown metric: neutral frame.
 - **DD33** Then freezes the 85th only; no "Not captured" for Then's 70th / 50th.
 - **DD34** Create ≤ 10 s is a hypothesis; slice 01 measures; fallback cheaper captures; reopen DESIGN if it misses.
+- **DD35** *(2026-10-14)* One pure daily-series summary (Average, Median, Min, Max) shared by {WIP} and Total {Work
+  Item Age}. Median = `PercentileCalculator.CalculatePercentile(values, 50)`, the Metrics tab's 50th: position
+  max(1, ⌊n ÷ 2⌋) of the sorted values — the lower middle for an even count, just below the middle for an odd one;
+  called on a copy (it sorts in place). Sample size of a daily-series value = L days.
+- **DD36** *(2026-10-14)* Display rounding through `roundForDisplay` / `compareThenNow`: {WIP} and Total {Work Item
+  Age} 0 decimals (as {Cycle Time}); {Throughput} total 0, per day 2; change and % from displayed values (DD6).
+- **DD37** *(2026-10-14)* `beyondThenLimits`, the old `work-item-age` keys and four absence codes removed from the
+  frontend model in slice 04 (the backend never sent them); `median` added to `ReportMetricSide`.
 
 ## Storage
 
@@ -101,13 +123,15 @@ One expand-only migration in slice 01 (`CreateMigration`, SQLite + PostgreSQL): 
 
 ## Reuse summary
 
-23 overlaps examined: 12 reused (as code or pattern), 5 extended (`XmRCalculator`, the cycle-time selection in
-`BaseMetricsService`, the two metrics interfaces' WIA series, owner tabs and delete dialogs, usage-data enums), 6
+23 overlaps examined: 12 reused (as code or pattern), 5 extended (~~`XmRCalculator`, the cycle-time selection in
+`BaseMetricsService`,~~ *not used since D49, 2026-10-14*; the two metrics interfaces' WIA series, owner tabs and delete dialogs, usage-data enums), 6
 rejected with evidence (PBC builders, `BaselineValidationService`, the day-keyed PBC/percentile tables, info-widget
 comparison, `CycleTimePercentiles` widget, `TeamDeleted` cleanup). Added 2026-10-13: `CreateWizardShell` (extend by
 extracting its stepper frame), `DataGridBase` (reuse), `DeleteConfirmationDialog` (extend: optional warning),
 `WidgetShell` body look (extend: export), keyed TanStack queries (reuse), `LoadingAnimation` (rejected for the view). CREATE NEW: the report entity / table / repository,
-templates, catalog, window policy, beyond-limits policy, panels and tab. (`FetchFingerprint` was an extension only for
+templates, catalog, window policy, ~~beyond-limits policy~~ *(not built, D49)*, panels and tab. Added 2026-10-14:
+`PercentileCalculator` reused for the median; DD35's daily-series summary created (nothing gives the four statistics
+together). (`FetchFingerprint` was an extension only for
 the settings notice and left the list with D46.)
 
 ## Decisions for the maintainer to confirm — resolved 2026-10-03
@@ -118,7 +142,9 @@ the settings notice and left the list with D46.)
 4. Thin data — **changed (D45)**: every value with its sample size; "—" only when truly empty; no threshold.
 5. What the settings record covers — **moot (D46)**: no settings record and no notice at all; slice 09 dropped.
 6. {Throughput} statistic — **changed (D47)**: total and per-day average over the whole window; change on per-day.
-7. Average {Work Item Age} — **changed (D48)**: window average and last day, both per side.
+7. Average {Work Item Age} — **changed (D48)**: window average and last day, both per side. *(Superseded by D51,
+   2026-10-14: no per-item average age; the panel is "Total {Work Item Age}", Average, Median, Min, Max of the daily
+   totals.)*
 8. Change and % change computed in the panel from displayed values — **accepted**.
 
 No open decision remains for the maintainer from DESIGN.
@@ -127,7 +153,9 @@ No open decision remains for the maintainer from DESIGN.
 
 See `upstream-changes.md`: the missing percentile guard (resolved by D45), `BaselineValidationService` not reusable
 (S6, handled in DESIGN), the settings notice (dropped by D46), the {Throughput} statistic (D47), average {Work Item
-Age} (D48). DISCUSS was updated in place for D45–D48. ADR-209 gains a status note (superseded deferral).
+Age} (D48, *superseded by D51*). DISCUSS was updated in place for D45–D48. ADR-209 gains a status note (superseded
+deferral). *2026-10-14*: D49–D52 (no limits or counts; {WIP} and total age as four lines; the summary header) were
+recorded in DISCUSS by the maintainer's decision and applied here and in ADR-221 — see `upstream-changes.md` §8.
 
 SSOT updated: `brief.md` (`## Application Architecture — epic-5878-baseline`), `c4-diagrams.md` (L1–L3),
 `ARCHITECTURE.md` (ADR index row 219–222 and the 209 row; §4/§6 concepts follow the Refinement precedent and land when slice 01 ships), ADR-219..222, ADR-209 status note.

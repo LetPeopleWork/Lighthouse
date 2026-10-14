@@ -1606,6 +1606,18 @@ ADR-219..222 corrected and **Accepted**. Additional reads this round: DISTILL se
 `WidgetShell.tsx` / `widgetStatus.ts`, and the premium refusals in `TeamsController`, `DeliveriesController`,
 `OptionalFeaturesController`.
 
+**Revision 2026-10-14 (maintainer decisions D49–D52, after the DISTILL sketch review).** Updated in place, superseded
+text kept and marked: no XmR average or limits are frozen and nothing is counted beyond them (D49) — DD9, DD10 and
+`BeyondLimits` withdrawn, DD11 freezes values only, E5 withdrawn, E15 repointed, E2 extended to `XmRCalculator`;
+DD12's absence codes shrink to `no-finished-items`; DD15's M3 and M4 become Average, Median, Min and Max of the
+window's daily {WIP} and daily total age (D50, D51); new **DD35** (daily-series summaries, the median convention,
+sample size), **DD36** (display rounding) and **DD37** (wire members removed); storage, slice plan, contract shapes and
+ADR-221 amended. The summary header (D52) was delivered frontend-only (`ThenAndNowSummary.tsx`, from the {Cycle Time}
+sample size) and needs no backend change. Additional reads this round: `ThenAndNowPayload.cs`, `ReportReadModels.cs`,
+`CycleTimeReportMetric.cs`, `IReportMetricSeries.cs`, `PercentileCalculator.cs`, `BaseMetricsService.CumulativeMedian`,
+`TeamMetricsService.GetTotalWorkItemAgeOverTimeForTeam`, `models/Reports/Report.ts`, `panels/thenNowComparison.ts`,
+`CycleTimePanel.tsx`, `ReportsModuleArchUnitTest.cs`.
+
 | Read | Status |
 |---|---|
 | `docs/product/architecture/brief.md` (tail: story-6053, epic-5510 sections; style of `## Application Architecture — …`) | ✓ (paged; 9 256 lines) |
@@ -1636,9 +1648,10 @@ Three lines:
    JSON text; delivery and schedule will live outside it (ADR-219, superseding ADR-209's deferral).
 2. A **metric catalog** captures each metric's values for a window on the server through one owner-agnostic series
    port; one **frontend panel per metric** owns the direction of good, the change and the colour (ADR-220).
-3. **Then** is frozen at creation as captured values and **unrounded** XmR limits from its own series; **Now** is
+3. **Then** is frozen at creation as captured values ~~and **unrounded** XmR limits from its own series~~; **Now** is
    captured by the same code on every read over a server-computed window whose length is stored on the report
-   (ADR-221, ADR-222).
+   (ADR-221, ADR-222). *(superseded by D49 (2026-10-14): no XmR average or limits are frozen and nothing is counted
+   beyond them; Then is its captured values only.)*
 
 ---
 
@@ -1661,18 +1674,30 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
   the later author note (5882 SSR seam; D39 author-note seam).
 - **DD8** Then's series are read as raw series, never through `Get*ProcessBehaviourChart` (owner PBC Baseline,
   rounding, and empty charts when that setting is invalid) (ADR-221; S4).
-- **DD9** Extract `XmRCalculator.Limits(values)` (doubles, clamped flag, point count); `Calculate` rounds at its own
-  boundary and stays byte-identical (ADR-221; S3).
-- **DD10** Beyond-limits rule mirrors the large-change rule: above = value > upper; below = value < lower, only when
-  lower > 0, else "—" with `lower-limit-zero` (Q8, D40).
-- **DD11** Frozen per metric: each shown value as `{value, sampleSize, absentReason}` and, where counted, the limits
-  `{average, upper, lower, lowerClamped, pointCount}` unrounded — for **every applicable metric**, ticked or not. The
-  full Then series is **not** stored (ADR-221; D26; maintainer-accepted).
+- ~~**DD9** Extract `XmRCalculator.Limits(values)` (doubles, clamped flag, point count); `Calculate` rounds at its own
+  boundary and stays byte-identical (ADR-221; S3).~~ *(superseded by D49 (2026-10-14): a report computes no limits,
+  so nothing is extracted. The extraction made in c206d65bd was reverted in 058b4ba48; `XmRCalculator` and
+  `BaseMetricsService` are their original code, and the Reports module does not use `XmRCalculator` at all — E2.)*
+- ~~**DD10** Beyond-limits rule mirrors the large-change rule: above = value > upper; below = value < lower, only when
+  lower > 0, else "—" with `lower-limit-zero` (Q8, D40).~~ *(superseded by D49 (2026-10-14): no beyond-limits count on
+  any panel; there is no `BeyondLimits` rule.)*
+- **DD11** Frozen per metric: each shown value as `{value, sampleSize, absentReason}` ~~and, where counted, the limits
+  `{average, upper, lower, lowerClamped, pointCount}` unrounded~~ — for **every applicable metric**, ticked or not. The
+  full Then series is **not** stored (ADR-221; D26; maintainer-accepted). *(limits superseded by D49 (2026-10-14):
+  Then freezes its values only.)*
 - **DD12** Thin data (D45): every value travels with its sample size and the panel always shows it ("· 3 {Work
   Items}"). A value is absent only when there is nothing to compute, as closed codes: `no-finished-items`,
   `too-few-points` (< 2 points for limits), `no-process` (Then's average and upper limit both 0), `no-wip` (average
   {Work Item Age} with no {WIP}), `lower-limit-zero` (below-count, Q8), `then-was-zero` (% change, panel, Q9). No
   threshold.
+  *Revised 2026-10-14 (D49, D50, D51, D52)*: **one absence code remains on the wire, `no-finished-items`** — {Cycle
+  Time} only, no finished {Work Item} with a cycle time in the window. `too-few-points`, `no-process` and
+  `lower-limit-zero` went with the beyond-limits count (D49); `no-wip` went with the per-item average age (D51).
+  {Throughput}, {WIP} and Total {Work Item Age} are **never absent** and need no code: a window has at least 14 days
+  (DD13), every day yields a value, and nothing finished, nothing in progress or no age is a real 0 (D47, D50, D51).
+  `then-was-zero` stays the panel's own (Q9) and never travels. The sample size still travels with every value;
+  *where* it shows is reshaped by D52 — once, in the summary header (each side's "N {Work Items} closed", read from
+  the {Cycle Time} sample size, and each side's length in days), not on every panel line (DD35).
 - **DD13** Windows: inclusive calendar days in the instance zone, computed on the server from `ILighthouseClock.Today`;
   `DateOnly` on the wire in and out; a pure `ReportWindowPolicy` (≥ 14 inclusive days, end ≤ today, start ≥ today −
   cutoff, refusal = code + earliest start). *Revised 2026-10-13 (NB2)*: the policy reads nothing — `today` and the
@@ -1682,20 +1707,30 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
   edit endpoint under Write; no read parameter changes it (ADR-222; D43).
 - **DD15** Value definitions per metric (window `[start, end]` inclusive):
   - **M1 {Cycle Time}**: percentiles from `GetCycleTimePercentilesFor*` (the Metrics tab's values). Then freezes the
-    85th; Now captures 85th / 70th / 50th. Limits over finished items' cycle times (cycle time > 0, by close date then
-    id — the PBC's own selection); count = Now's items beyond. Sample size = the finished items with a cycle time in
-    that window (D45); `no-finished-items` when there are none.
+    85th *(85th, 70th and 50th since DT9)*; Now captures 85th / 70th / 50th. ~~Limits over finished items' cycle times
+    (cycle time > 0, by close date then id — the PBC's own selection); count = Now's items beyond.~~ *(superseded by
+    D49 (2026-10-14): no limits, no count.)* Sample size = the finished items with a cycle time in that window (D45);
+    `no-finished-items` when there are none.
   - **M2 {Throughput}** (D47): daily series = the Metrics tab's throughput run chart. `total` = sum of the daily
     counts over the window; `perDay` = total ÷ L (unrounded); sample size = L days. Change and % change on `perDay`.
-    Limits and count over the **daily** series ("days beyond", D40).
-  - **M3 {WIP}**: daily WIP series; average (unrounded), min and max for the range; limits and count over daily values.
-  - **M4 {Work Item Age}** (Q10, D48): daily total-age series `T[d]` and daily {WIP} series `W[d]` over the same
-    population (Doing ∪ Done items, the Metrics tab's own generators).
-    - total, window average = mean of `T[d]` over all L days; total, last day = `T[end]`;
-    - average, window average = mean of `T[d] ÷ W[d]` over the days with `W[d] > 0` (a day without {WIP} has no
-      average age; sample size = those days; `no-wip` when there are none);
-    - average, last day = `T[end] ÷ W[end]` (sample size = `W[end]` {Work Items}; `no-wip` when 0);
-    - limits and count over the daily totals `T[d]`.
+    ~~Limits and count over the **daily** series ("days beyond", D40).~~ *(superseded by D49 (2026-10-14).)* A window
+    where nothing finished is `total` 0 and `perDay` 0, real zeros, never absent.
+  - **M3 {WIP}** — *revised 2026-10-14 (D50)*: the daily {WIP} series `W[d]` over the window's L days (whole numbers;
+    a day with nothing in progress is 0). `average` = mean of `W[d]` (unrounded), `median` = DD35's median, `min`,
+    `max`; each with sample size L days; never absent. *(Was: "average (unrounded), min and max for the range; limits
+    and count over daily values" — superseded by D50 and D49.)*
+  - **M4 {Work Item Age}**, panel "Total {Work Item Age}" — *revised 2026-10-14 (D51)*: the daily total-age series
+    `T[d]` over the window's L days — that day's sum of the ages of every {Work Item} in progress, from the Metrics
+    tab's own generator (`GenerateTotalWorkItemAgeByDay`, Doing ∪ Done population). `average` = mean of `T[d]`
+    (unrounded), `median` = DD35's median, `min`, `max`; each with sample size L days; never absent — a window with
+    nothing in progress is 0 on every line, a real 0. The daily {WIP} series is no longer read for M4.
+    *(Superseded by D51 and D49, kept for history:)*
+    - ~~daily total-age series `T[d]` and daily {WIP} series `W[d]` over the same population (Q10, D48);~~
+    - ~~total, window average = mean of `T[d]` over all L days; total, last day = `T[end]`;~~
+    - ~~average, window average = mean of `T[d] ÷ W[d]` over the days with `W[d] > 0` (a day without {WIP} has no
+      average age; sample size = those days; `no-wip` when there are none);~~
+    - ~~average, last day = `T[end] ÷ W[end]` (sample size = `W[end]` {Work Items}; `no-wip` when 0);~~
+    - ~~limits and count over the daily totals `T[d]`.~~
 - **DD16** *Withdrawn by D46.* No settings snapshot is stored and nothing is compared on read. (Was: one digest per
   settings category and a header notice.)
 - **DD17** Cap: `ReportCapPolicy(premium, countForOwner)` = `premium || countForOwner < 2`, a pure function of its two
@@ -1808,6 +1843,41 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
   starts; the result is recorded in the slice's evolution notes. If it misses, the fallback (DD20) is cheaper
   captures — one item load per owner per request, shared by the four metrics — never the update queue; if that still
   misses, DESIGN is reopened before slice 04 adds the second metric.
+- **DD35** *(2026-10-14, D50, D51)* **A daily series is summarised as Average, Median, Min and Max by one pure
+  function shared by the {WIP} and Total {Work Item Age} captures** — the same four statistics over the same kind of
+  input is one piece of knowledge (D50 and D51 define it identically), so it lives once in the Reports module; the
+  crafter names it. Input: the window's L daily values (whole numbers). Output: four values, each with sample size L.
+  - **Median** = the codebase's existing convention, `PercentileCalculator.CalculatePercentile(values, 50)`
+    (`Services/Implementation/PercentileCalculator.cs`) — the function behind the Metrics tab's and this report's
+    {Cycle Time} 50th percentile (`GetCycleTimePercentilesFor*`) and `BaseMetricsService.CumulativeMedian`. Its rule:
+    sort ascending and take the value at 1-based position max(1, ⌊n ÷ 2⌋). For an **even** count that is the **lower
+    of the two middle values**, never their mean (90 days → the 45th smallest), so a median is always one of the
+    window's own daily values and a whole number. For an **odd** count it is the value just below the middle (91 days
+    → the 45th, not the 46th) — a quirk of the shared function, accepted so that a report's "Median" and its "50th"
+    are never computed two ways; changing it is a Metrics-wide decision, not this feature's.
+  - `CalculatePercentile` **sorts its argument in place**. The summary hands it a copy, never the series it also takes
+    the average, min and max from, so it stays a pure function of its input (a unit test with an unsorted series whose
+    order matters pins it).
+  - **Average** = arithmetic mean of the L values, unrounded double; **Min** / **Max** = the smallest / largest value.
+  - **Sample size of a daily-series value = L, the number of days in the window** (every day counts, a 0 day
+    included) — the same as {Throughput}'s. It travels on every value (DD12) for later consumers (5882, the clients),
+    and is not rendered per line: the summary header shows each side's length (D52).
+- **DD36** *(2026-10-14)* **Display rounding.** The panel computes change and % change from the values **as
+  displayed** (DD6), through the existing `roundForDisplay` / `compareThenNow` in `panels/thenNowComparison.ts`
+  (halves round away from zero). {WIP} and Total {Work Item Age}: **0 decimals on every line**, as the {Cycle Time}
+  panel (`DECIMALS = 0` in `CycleTimePanel.tsx`) — an Average of 8.5 shows 9; Median, Min and Max are whole numbers
+  already. {Throughput}: `total` 0 decimals, `perDay` 2 decimals (D47's "0.58 per day"). Change = displayed Now −
+  displayed Then; % change = change ÷ displayed Then, 0 decimals; a displayed Then of 0 gives "—" with "Then was 0"
+  (Q9). The server sends unrounded values; no rounding on the wire.
+- **DD37** *(2026-10-14, D49, D51)* **Wire members removed, not deprecated.** `beyondThenLimits` is dropped from the
+  read: the backend never sent it (`MetricRead` carries `AtThen` / `AtNow` only; slices 01–02 shipped without it), so
+  no client depends on it and no stored report holds limits. The frontend's optional `IReportMetric.beyondThenLimits?`
+  and its Zod member, the side keys `totalWindowAverage`, `totalLastDay`, `averageWindowAverage`, `averageLastDay`,
+  and the absent reasons `too-few-points`, `no-process`, `no-wip`, `lower-limit-zero` (type, Zod enum and the panel's
+  `reasonTexts`) are **removed in slice 04**, the first slice to touch the model after this decision; `median` joins
+  `ReportMetricSide` in slice 05 (or 04, if the crafter does both at once). Older reports keep reading: slices 01–02
+  stored `cycle-time` values only, which are unchanged; their missing `throughput`, `wip` and `work-item-age` Then
+  captures read "Not captured for this report" (D27) as before.
 
 ---
 
@@ -1818,21 +1888,21 @@ Backend (`Lighthouse.Backend/Lighthouse.Backend/…`):
 | Path | Change | Responsibility |
 |---|---|---|
 | `Models/Reports/Report.cs` | NEW | Aggregate root: owner, template key, name, created instant, shown keys, payload, token; factory enforces exactly one owner |
-| `Models/Reports/ThenAndNowPayload.cs` (+ `ReportWindow`, `MetricCapture` records per metric, `CapturedValue`, `FrozenLimits`) | NEW | Typed payload; additive members only |
+| `Models/Reports/ThenAndNowPayload.cs` (+ `ReportWindow`, `MetricCapture` records per metric, `CapturedValue`, ~~`FrozenLimits`~~) | NEW | Typed payload; additive members only. *(`FrozenLimits` superseded by D49 (2026-10-14): no limits are stored; as built, captures are `JsonObject`s of `CapturedValue`s per metric.)* |
 | `Models/Reports/ReportReadModels.cs` | NEW | Read DTOs the services return (summary, report, Then & Now read) |
 | `Services/Interfaces/Reports/IReportQueries.cs`, `IReportCommands.cs` | NEW | Driving application ports (DD19) |
 | `Services/Interfaces/Reports/IReportTemplate.cs`, `IReportMetric.cs`, `IReportMetricSeries.cs`, `IReportReader.cs`, `IReportWriter.cs`, `ReportOwner.cs` | NEW | Template strategy, catalog entry, driven series port, read and write persistence ports (DD19), owner identity (DD29) |
 | `Services/Implementation/Reports/ReportQueries.cs`, `ReportCommands.cs` | NEW | Compose templates, catalog, policies, repository |
-| `Services/Implementation/Reports/ThenAndNowTemplate.cs` | NEW | Create (freeze Then), edit (Now length), read (capture Now, count) |
-| `Services/Implementation/Reports/Metrics/{CycleTime,Throughput,Wip,WorkItemAge}ReportMetric.cs`, `ReportMetricCatalog.cs` | NEW | DD5, DD15 |
+| `Services/Implementation/Reports/ThenAndNowTemplate.cs` | NEW | Create (freeze Then), edit (Now length), read (capture Now~~, count~~) *(count superseded by D49 (2026-10-14))* |
+| `Services/Implementation/Reports/Metrics/{CycleTime,Throughput,Wip,WorkItemAge}ReportMetric.cs`, `ReportMetricCatalog.cs` | NEW | DD5, DD15; *(2026-10-14)* `Wip` and `WorkItemAge` share DD35's pure daily-series summary (Average, Median, Min, Max) |
 | `Services/Implementation/Reports/TeamReportMetricSeries.cs`, `PortfolioReportMetricSeries.cs` | NEW | Adapters over the metrics services |
-| `Services/Implementation/Reports/ReportWindowPolicy.cs`, `BeyondLimits.cs`, `ReportCapPolicy.cs` | NEW | Pure policies (DD10, DD13, DD17); every input an argument (NB2) |
+| `Services/Implementation/Reports/ReportWindowPolicy.cs`, ~~`BeyondLimits.cs`~~, `ReportCapPolicy.cs` | NEW | Pure policies (~~DD10~~, DD13, DD17); every input an argument (NB2). *(`BeyondLimits` superseded by D49 (2026-10-14): not built.)* |
 | `Services/Interfaces/Reports/IReportOwnerLookup.cs` + adapter over `IRepository<Team>` / `IRepository<Portfolio>` | NEW (*2026-10-13, NB2*) | Read-only: does the owner exist, and its `DoneItemsCutoffDays`. Lets `ReportQueries` gather the window policy's cutoff without naming `IRepository<>` (E4) |
 | `Services/Implementation/Repositories/ReportRepository.cs` | NEW | Implements `IReportReader` and `IReportWriter` (may derive from `RepositoryBase<Report>`; nothing outside the composition root sees it as `IRepository<Report>`) |
 | `API/TeamReportsController.cs`, `API/PortfolioReportsController.cs` (+ request DTOs in `API/DTO/Reports`) | NEW | Driving adapters (DD18) |
-| `Services/Implementation/XmRCalculator.cs` | EXTEND | Extract `Limits` (DD9) |
-| `Services/Implementation/BaseMetricsService.cs` | EXTEND | Extract the cycle-time series selection shared by the PBC builder and the new read |
-| `Services/Interfaces/ITeamMetricsService.cs`, `IPortfolioMetricsService.cs` (+ implementations) | EXTEND | Two public reads each: finished cycle-time series; daily total {Work Item Age} series (today private) |
+| ~~`Services/Implementation/XmRCalculator.cs`~~ | ~~EXTEND~~ **unchanged** | ~~Extract `Limits` (DD9)~~ *(superseded by D49 (2026-10-14): extracted in c206d65bd, reverted in 058b4ba48; not touched by this feature)* |
+| ~~`Services/Implementation/BaseMetricsService.cs`~~ | ~~EXTEND~~ **unchanged** | ~~Extract the cycle-time series selection shared by the PBC builder and the new read~~ *(superseded by D49 (2026-10-14): the selection only fed the per-item limits; reverted with them)* |
+| `Services/Interfaces/ITeamMetricsService.cs`, `IPortfolioMetricsService.cs` (+ implementations) | EXTEND | ~~Two public reads each: finished cycle-time series;~~ **One public read each:** daily total {Work Item Age} series (today private). *(Finished cycle-time series superseded by D49 (2026-10-14): it only fed the limits.)* |
 | `Data/LighthouseAppContext.cs` + one migration per provider | EXTEND | `DbSet<Report>`, FKs, JSON converters (cached options) |
 | Composition root (`Program.cs` / `Startup`) | EXTEND | Register module (note: `Program.cs` edits trigger the full Integration suite) |
 | `Models/UsageData/*` | EXTEND (DEVOPS designs) | Route keys + event names |
@@ -1876,15 +1946,22 @@ twin the metrics controllers carry). Days are `yyyy-MM-dd`.
   thenAndNow: {
     thenWindow { start, end, lengthDays }, nowWindow { start, end, lengthDays },   -- yyyy-MM-dd, inclusive
     daysSinceThenEnded, thenRebuildable,
-    metrics: { [metricKey]: { atThen: Side, atNow: Side, beyondThenLimits: { above, below } | null } }
+    metrics: { [metricKey]: { atThen: Side, atNow: Side } }
   } }
 Side per metric (each member a value = { value: number | null, sampleSize: int | null, absentReason: code | null }):
-  cycle-time      atThen { p85, p70, p50 }    atNow { p85, p70, p50 }          -- DT9
-  throughput      { total, perDay }
-  wip             { average, min, max }
-  work-item-age   { totalWindowAverage, totalLastDay, averageWindowAverage, averageLastDay }
-beyondThenLimits.above / .below: a value whose `value` is the count (no sample size), or an absent reason
+  cycle-time      atThen { p85, p70, p50 }    atNow { p85, p70, p50 }          -- DT9; sampleSize = finished items
+  throughput      { total, perDay }                                         -- sampleSize = L days
+  wip             { average, median, min, max }                             -- D50; sampleSize = L days
+  work-item-age   { average, median, min, max }                             -- D51; daily TOTAL age; sampleSize = L days
 ```
+
+*Revised 2026-10-14 (D49, D50, D51; DD37).* Was: `metrics[key]` also carried `beyondThenLimits: { above, below } |
+null` (a value whose `value` is the count); `wip` was `{ average, min, max }`; `work-item-age` was
+`{ totalWindowAverage, totalLastDay, averageWindowAverage, averageLastDay }`. `beyondThenLimits` is dropped — the
+backend never sent it; the {WIP} and Total {Work Item Age} sides use the same four keys, so one panel layout serves
+both. Example, a {WIP} side: `{ "average": { "value": 8.62, "sampleSize": 90, "absentReason": null }, "median": {
+"value": 9, … }, "min": { "value": 6, … }, "max": { "value": 12, … } }`; nothing in progress: every `value` 0,
+`absentReason` null.
 
 A metric the report never captured is missing from `metrics`; a member it never captured is missing or null — both
 read "Not captured for this report" (D27), except Then's 70th and 50th, which Then never holds (DD33).
@@ -1894,8 +1971,9 @@ read "Not captured for this report" (D27), except Then's 70th and 50th, which Th
 `then-before-cutoff` (+ `earliestStart`), `now-too-short`, `now-before-cutoff` (+ `earliestStart`). Request:
 `name-missing`, `no-metric-shown`, `unknown-metric`, `metric-not-captured` (edit only). Type:
 `template-not-supported` (400 on create; 422 when opening a stored report). Licence: `report-cap-reached` (403).
-**Absence codes** (DD12; values, not refusals): `no-finished-items`, `too-few-points`, `no-process`, `no-wip`,
-`lower-limit-zero` on the wire; `then-was-zero` is the panel's own and never travels.
+**Absence codes** (DD12; values, not refusals): `no-finished-items` on the wire ({Cycle Time} only); `then-was-zero`
+is the panel's own and never travels. *(Was also `too-few-points`, `no-process`, `no-wip`, `lower-limit-zero` —
+superseded by D49 and D51 (2026-10-14); none was ever sent by a released backend.)*
 
 Template-specific members sit in one object named after the template (`thenAndNow`), in requests and in the read
 alike, and are validated by the template named in `templateKey`; a second template adds its own sibling object, so
@@ -1910,7 +1988,7 @@ nullable (S6964); no `[JsonRequired]` on anything a stored client might omit.
 |---|---|---|
 | `IReportReader` (NEW) | `ReportRepository` (EF) | Get-for-owner, list-for-owner, count-for-owner. No write member; the only persistence port `ReportQueries` may reach (DD19, E4) |
 | `IReportWriter` (NEW) | `ReportRepository` (EF, the same class) | Add, update, remove, save. Used by `ReportCommands` only |
-| `IReportMetricSeries` (NEW) | `TeamReportMetricSeries`, `PortfolioReportMetricSeries` | Delegate to `ITeamMetricsService` / `IPortfolioMetricsService`: cycle-time percentiles, finished cycle-time series, daily {Throughput}, daily {WIP}, daily total {Work Item Age} |
+| `IReportMetricSeries` (NEW) | `TeamReportMetricSeries`, `PortfolioReportMetricSeries` | Delegate to `ITeamMetricsService` / `IPortfolioMetricsService`: cycle-time percentiles (with the finished-item count, as built), ~~finished cycle-time series,~~ daily {Throughput} (slice 04), daily {WIP} and daily total {Work Item Age} (slice 05). *(Finished cycle-time series superseded by D49 (2026-10-14).)* |
 | `ILighthouseClock` (reused) | existing | `Today`, `Zone` |
 | `ILicenseService` (reused) | existing | `CanUsePremiumFeatures()` |
 | `IReportOwnerLookup` (NEW, *NB2*) | adapter over `IRepository<Team>` / `IRepository<Portfolio>` (reused) | Owner exists?, cutoff days. Read-only; the only way the Reports module reaches an owner, so E4 holds for `ReportQueries` |
@@ -1934,12 +2012,13 @@ No licensing change. Contract testing (Pact): **N/A**, no external integration.
 
 | Existing component | File | Overlap | Verdict | Justification |
 |---|---|---|---|---|
-| `XmRCalculator` / `XmRResult` | `Services/Implementation/XmRCalculator.cs` | Average and limits from values | **EXTEND** | Extract unrounded `Limits`; `Calculate` unchanged (DD9) |
+| `XmRCalculator` / `XmRResult` | `Services/Implementation/XmRCalculator.cs` | Average and limits from values | ~~**EXTEND**~~ **NOT USED** | ~~Extract unrounded `Limits`; `Calculate` unchanged (DD9)~~ *(superseded by D49 (2026-10-14): no limits in a report; untouched, and E2 keeps the Reports module off it)* |
+| `PercentileCalculator` (*2026-10-14*) | `Services/Implementation/PercentileCalculator.cs` | Median of a list of whole numbers | **REUSE** | The median of the daily {WIP} and daily total age (DD35): the same function as the Metrics tab's 50th percentile and `CumulativeMedian`, so "Median" and "50th" never disagree. It sorts its argument in place — called with a copy |
 | PBC builders `Build*ProcessBehaviourChart` | `BaseMetricsService.cs:574-775` | Limits from a baseline window | **REJECT** | Use owner PBC Baseline, round, return no points when it is invalid (DD8) |
 | Cycle-time percentiles `GetCycleTimePercentilesFor*` | `TeamMetricsService.cs:310`, `PortfolioMetricsService.cs:285` | M1 values | **REUSE** | Same values as the Metrics tab (AC-2.3) |
 | Throughput / WIP series `GetThroughputFor*`, `GetWorkInProgressOverTimeForTeam`, `GetFeaturesInProgressOverTimeForPortfolio` | metrics services | M2, M3 series | **REUSE** | The series the PBCs use |
 | Total WIA daily series | `TeamMetricsService.cs:271` (private), `PortfolioMetricsService.cs:171` (private) | M4 series | **EXTEND** | Expose one public read per interface |
-| Cycle-time selection inside `BuildCycleTimeProcessBehaviourChart` | `BaseMetricsService.cs:735-748` | M1 limits series | **EXTEND** | Extract so the PBC and the report share one selection |
+| Cycle-time selection inside `BuildCycleTimeProcessBehaviourChart` | `BaseMetricsService.cs:735-748` | M1 limits series | ~~**EXTEND**~~ **NOT USED** | ~~Extract so the PBC and the report share one selection~~ *(superseded by D49 (2026-10-14): no per-item limits, so no selection is needed; the extraction was reverted)* |
 | `PercentileFamilies` | `Services/Implementation/PercentileFamilies.cs` | Per-owner reader list | **REUSE pattern** | Owner differences in one place → the two series adapters |
 | `BaselineValidationService` | `BaselineValidationService.cs` | Window rules | **REJECT → CREATE `ReportWindowPolicy`** | `end − start` refuses an inclusive 14-day window; "Baseline" copy (C3); PBC's contract (DD13) |
 | `dateWindow.ts` | `pages/Common/MetricsView/dateWindow.ts` | Presets, window maths | **REUSE shape only** | Viewer-zone, URL-driven; report windows are server-side (ADR-222). Presets differ (Team 30/90) |
@@ -1967,7 +2046,7 @@ No licensing change. Contract testing (Pact): **N/A**, no external integration.
 **CREATE NEW, with evidence**: `Report` entity/table/repository (nothing persists an owner-scoped, user-named,
 editable frozen comparison; ADR-209 confirmed no Report concept exists); the template strategy and metric catalog
 (no catalog of comparable metrics exists — the Metrics page wires widgets one by one); `ReportWindowPolicy` (the
-existing validator is off by one under D37's counting); `BeyondLimits` (no limits-in counting exists — `XmRCalculator` classifies against limits it computes itself); the frontend panels and
+existing validator is off by one under D37's counting); ~~`BeyondLimits` (no limits-in counting exists — `XmRCalculator` classifies against limits it computes itself)~~ *(superseded by D49 (2026-10-14): not created)*; the daily-series summary of DD35 (*2026-10-14*: nothing in the codebase gives average, median, min and max of a daily series together; it reuses `PercentileCalculator` for the median); the frontend panels and
 tab (no Then/Now layout exists); `ReportWizard` and its type-contributed steps (no wizard composes steps per type;
 the stepper chrome itself is reused by extraction, not rebuilt).
 
@@ -2021,6 +2100,8 @@ C4Container
 `ILighthouseClock` and `IReportOwnerLookup` and hands the cap policy (licence result, count) and the template (today,
 cutoff) their arguments; `ReportQueries` reads `ILighthouseClock`, `ILicenseService` (for `creationBlockedByCap`) and
 `IReportOwnerLookup` the same way and asks the window policy for the templates read's bounds.
+*Revised 2026-10-14 (D49)*: the `BeyondLimits` node, its "counts Now against frozen limits" arrow and the
+`CAT → XmRCalculator.Limits` arrow are removed; `XmRCalculator` leaves the "Existing" subgraph (E2 now forbids it).
 
 ---
 
@@ -2047,26 +2128,31 @@ cutoff) their arguments; `ReportQueries` reads `ILighthouseClock`, `ILicenseServ
 thenWindow    { start, end, lengthDays }                       -- DateOnly days, inclusive
 nowLengthDays                                                  -- edited only through PUT
 captures {
-  "cycle-time":    { p85,                                       [01]
-                     limits }                                   [03]
-  "throughput":    { total, perDay, limits }                    [04]
-  "wip":           { average, min, max, limits }                [05]
-  "work-item-age": { totalWindowAverage, totalLastDay,
-                     averageWindowAverage, averageLastDay,
-                     limits }                                   [05]
+  "cycle-time":    { p85, p70, p50 }                            [01; p70 / p50 since DT9]
+  "throughput":    { total, perDay }                            [04]
+  "wip":           { average, median, min, max }                [05]
+  "work-item-age": { average, median, min, max }                [05]   -- daily TOTAL age
 }
-value  = { value: double | null, sampleSize: int, absentReason: code | null }
-limits = { average, upper, lower: double, lowerClamped: bool, pointCount: int } | { absentReason: code }
+value  = { value: double | null, sampleSize: int | null, absentReason: code | null }
 ```
 
-Sample sizes: percentiles = finished {Work Items} with a cycle time; `total` / `perDay` / `average` / window averages =
-days counted; `averageLastDay` = {Work Items} in progress on the last day. Nothing about the owner's settings is stored
-(D46). The Now side is computed on read into the same value shapes and is never stored.
+*Revised 2026-10-14 (D49, D50, D51).* Was: a `limits` member on every capture (`{ average, upper, lower: double,
+lowerClamped: bool, pointCount: int } | { absentReason: code }`, first written in slice 03), `wip` without `median`,
+and `work-item-age` as `{ totalWindowAverage, totalLastDay, averageWindowAverage, averageLastDay }`. No stored report
+ever held any of these (slices 01–02 wrote `cycle-time` values only), so nothing needs migrating and no reader needs
+to tolerate them; a payload member a later version adds is still kept by an edit (DD25).
+
+Sample sizes: percentiles = finished {Work Items} with a cycle time; every {Throughput}, {WIP} and Total {Work Item
+Age} value = L, the days in the window (DD35). ~~`averageLastDay` = {Work Items} in progress on the last day.~~
+*(superseded by D51)* Nothing about the owner's settings is stored (D46). The Now side is computed on read into the
+same value shapes and is never stored.
 
 **Per slice**: 01 table + Team adapter + `cycle-time` p85 + Now length (= Then); 02 window policy with end date and
-custom length; 03 `Limits` extraction + `BeyondLimits` + cycle-time limits; 04 shown-key picker + throughput; 05 wip +
-work-item-age (+ the two new series reads); 06 Portfolio adapter + controller; 07 Now length at creation; 08 delete +
-cap + owner-delete count (cascade already from 01); 09 dropped (D46); 10 PUT.
+custom length; 03 ~~`Limits` extraction + `BeyondLimits` + cycle-time limits~~ the summary header, frontend only, no
+backend or payload change (*re-cut 2026-10-14, D49, D52*); 04 shown-key picker + throughput + the frontend model
+cleanup of DD37; 05 wip + work-item-age (+ the daily {WIP} read and the one new public daily total-age read; DD35's
+summary); 06 Portfolio adapter + controller; 07 Now length at creation; 08 delete + cap + owner-delete count (cascade
+already from 01); 09 dropped (D46); 10 PUT.
 **No further migration** after slice 01. DELIVER checks whether any test fixture patches a historical schema and needs
 the new table.
 
@@ -2076,12 +2162,13 @@ the new table.
 
 | Component | Shape | Universe / assertion |
 |---|---|---|
-| `ReportWindowPolicy`, `ReportCapPolicy`, `BeyondLimits`, `XmRCalculator.Limits`, `thenRebuildable` (*revised NB2*) | pure function (return only); every input is an argument | universe = the arguments, nothing else: window policy (entered window, `today`, cutoff days); cap (`premium` — the licence result — and `countForOwner`); beyond-limits (frozen limits, Now series); `Limits` (values); `thenRebuildable` (Then start, `today`, cutoff days). `ReportQueries` / `ReportCommands` read `ILighthouseClock`, `ILicenseService`, `IReportOwnerLookup` and `IReportReader` and pass the results in. Assertion: table / property tests with no fakes; ArchUnit E15 — none depends on `ILighthouseClock`, `ILicenseService` or any reader, writer, lookup, repository or series port |
+| `ReportWindowPolicy`, `ReportCapPolicy`, ~~`BeyondLimits`, `XmRCalculator.Limits`,~~ `thenRebuildable` (*revised NB2*; *2026-10-14*: `BeyondLimits` and `Limits` superseded by D49) | pure function (return only); every input is an argument | universe = the arguments, nothing else: window policy (entered window, `today`, cutoff days); cap (`premium` — the licence result — and `countForOwner`); ~~beyond-limits (frozen limits, Now series); `Limits` (values);~~ `thenRebuildable` (Then start, `today`, cutoff days). `ReportQueries` / `ReportCommands` read `ILighthouseClock`, `ILicenseService`, `IReportOwnerLookup` and `IReportReader` and pass the results in. Assertion: table / property tests with no fakes; ArchUnit E15 — none depends on `ILighthouseClock`, `ILicenseService` or any reader, writer, lookup, repository or series port |
+| Daily-series summary (DD35, *2026-10-14*) | pure function (return only): L daily values → Average, Median, Min, Max, each with sample size L | universe = its one argument, which it must not mutate (the median's `PercentileCalculator` sorts in place, so it is handed a copy). Assertion: table tests with no fakes — an even and an odd count, all zeros, an unsorted input left unsorted afterwards |
 | `IReportMetric` capture (*reclassified 2026-10-13, M4*) | **read-only I/O**: reads through `IReportMetricSeries`, returns a capture value, writes nothing | depends on `IReportMetricSeries` only (E3); that port has no write member. Its arithmetic over a series is pure and unit-tested with a faked series port |
 | `TeamReportMetricSeries`, `PortfolioReportMetricSeries` (*M5*) | read-only I/O (driven adapters) | delegate to the metrics services' read methods only; parity tests against the Metrics endpoints (E6) are their probe — a series that differs from the Metrics tab fails there, not in a report |
 | `IReportQueries` templates / list / get | pure read (with read-only I/O; reads `ILighthouseClock`, `ILicenseService`, `IReportOwnerLookup` to gather the pure policies' arguments — NB2) | `ReportQueries` depends on `IReportReader`, never `IReportWriter`, `IRepository<>`, `LighthouseAppContext` or `SaveChanges` (ArchUnit E4); integration test: row counts and the `Reports` row's columns unchanged across a get |
 | Owner-delete count (*M5, DD23*) | pure read | it **is** `IReportQueries` list (the length of `reports`); no new member, no count endpoint |
-| `IReportTemplate` read (Then & Now: capture Now, count beyond limits) | read-only I/O, returns a read value | reached only from `ReportQueries`; same assertion as the row above |
+| `IReportTemplate` read (Then & Now: capture Now~~, count beyond limits~~ — *count superseded by D49, 2026-10-14*) | read-only I/O, returns a read value | reached only from `ReportQueries`; same assertion as the row above |
 | `IReportTemplate` create (freeze Then) (*reclassified NB2*) | **read-only I/O**: captures Then through the catalog (`IReportMetric` → `IReportMetricSeries`) and returns a payload value or a refusal | delta = **none** — no row, no table; the only write is `IReportCommands.Create` persisting the returned payload. Universe = its arguments (owner, request, `today`, cutoff days) + the series port's reads. Assertion: no `IReportWriter`, `IReportReader`, `IRepository<>` or `LighthouseAppContext` in its graph (ArchUnit, E4 extended to the template); unit tests with a faked series port assert the payload from fixed series |
 | `IReportTemplate` edit (*M5*) | pure function: (stored payload, edit request, window bounds) → payload or refusal | returns the stored payload with `nowLengthDays` replaced and every other member — including members this version does not know — kept; unit test with an unknown member present |
 | `IReportCommands.Create` | bounded change | one `Reports` row added, nothing else; row counts of every other table before/after in an integration test |
@@ -2089,8 +2176,8 @@ the new table.
 | `IReportCommands.Delete` | bounded change | the addressed row removed; every other row and table unchanged |
 | Frontend `reportWindowCheck` (*B3*) | pure function: (entered window, server bounds) → refusal code or none | boundary table shared with the backend's `ReportWindowPolicy` test (E12) |
 | Frontend panels, `ThenNowPanelFrame`, `UnsupportedMetricPanel` | pure function of props | identical props → identical output, no network (E9) |
-| `BaseMetricsService` cycle-time selection (EXTEND by extraction, *NB1*) | behaviour-preserving refactor; the extracted selection is a pure function (finished items → cycle-time series by close date then id, cycle time > 0) | universe = the PBC builder's output, unchanged. Assertion: the existing `BaseMetricsService` / PBC tests stay unchanged and green in the refactor commit; E6 parity for the report's use |
-| `ITeamMetricsService` / `IPortfolioMetricsService` new public reads — finished cycle-time series, daily total {Work Item Age} series (EXTEND, *NB1*) | read-only I/O | expose computations that exist privately today; write nothing; reached by the Reports module only through `IReportMetricSeries` (E3). Assertion: E6 parity with the Metrics endpoints; existing metrics-service tests unchanged |
+| ~~`BaseMetricsService` cycle-time selection (EXTEND by extraction, *NB1*)~~ *(superseded by D49 (2026-10-14): not extracted; reverted in 058b4ba48)* | ~~behaviour-preserving refactor; the extracted selection is a pure function (finished items → cycle-time series by close date then id, cycle time > 0)~~ | ~~universe = the PBC builder's output, unchanged. Assertion: the existing `BaseMetricsService` / PBC tests stay unchanged and green in the refactor commit; E6 parity for the report's use~~ |
+| `ITeamMetricsService` / `IPortfolioMetricsService` new public reads — ~~finished cycle-time series,~~ daily total {Work Item Age} series (EXTEND, *NB1*; *finished cycle-time series superseded by D49, 2026-10-14*) | read-only I/O | expose computations that exist privately today; write nothing; reached by the Reports module only through `IReportMetricSeries` (E3). Assertion: E6 parity with the Metrics endpoints; existing metrics-service tests unchanged |
 | `RepositoryBase<T>` behind `ReportRepository` (REUSE, *NB1*) | unchanged; read I/O through `IReportReader`, bounded change through `IReportWriter` | writes reach the `Reports` table only, and only from `IReportCommands` (see Create / Edit / Delete rows). `RepositoryBase<T>` itself is not changed and its tests are untouched. Assertion: E4 + E14 (only the composition root names `ReportRepository`) |
 | `CreateWizardShell` → `WizardStepperFrame` (NEW, extracted, *NB1*) | behaviour-preserving refactor; the frame is a pure function of props | `CreateWizardShell`'s existing tests stay unchanged and green in the refactor commit (the assertion that its behaviour did not move); frame: identical props → identical output, no network |
 | `DeleteConfirmationDialog` optional `warning` (EXTEND, *NB1*) | pure function of props | identical props → identical output; without `warning` the output is today's — existing tests unchanged as the assertion |
@@ -2149,13 +2236,18 @@ ArchUnitNET + NUnit + TypeScript:
 - **E2** the Reports module does not depend on `ProcessBehaviourChart`, `XmRResult`, the owner's
   `ProcessBehaviourChartBaseline*` (S4) or `BaselineValidationService` (the PBC Baseline's rule stays its own; the two
   validators answer different questions and are deliberately not shared — DRY is about knowledge, ADR-222).
+  *Extended 2026-10-14 (D49)*: **and not on `XmRCalculator`** — a report computes no limits, and the rule makes
+  "nothing in Reports counts beyond limits" hold by type. One `typeof(XmRCalculator)` added to the existing
+  `NotDependOnAny` list in `ReportsModuleArchUnitTest.The_Reports_module_does_not_use_the_process_behaviour_chart_or_its_baseline`.
 - **E3** the Reports metric captures (`IReportMetric`) depend on `IReportMetricSeries`, never on the metrics services
   directly; only the two series adapters reach those.
 - **E4** `ReportQueries` (and the template read it calls) depends on `IReportReader` and on none of `IReportWriter`,
   `IRepository<>`, `LighthouseAppContext`; `IReportReader` declares no member that adds, updates, removes or saves
   (a reflection test over the interface, so a write added to the read port fails the build, not a review). The same
   reflection test covers `IReportOwnerLookup`, the other read-only port the query side reaches.
-- **E5** `XmRCalculator.Calculate` = `Limits` rounded (property test); existing `XmRCalculatorTest` untouched.
+- ~~**E5** `XmRCalculator.Calculate` = `Limits` rounded (property test); existing `XmRCalculatorTest` untouched.~~
+  *(withdrawn by D49 (2026-10-14): there is no `Limits`; `XmRCalculator` is its original code and its existing tests
+  are the only ones. No property test exists to remove.)*
 - **E6** parity: Then captured for a window equals the Metrics endpoints for that window (AC-2.3).
 - **E7** payload round-trip: a slice-01-shaped document reads into the current type, later members null.
 - **E8** owner-mismatch route → 404; cascade on both providers.
@@ -2177,9 +2269,12 @@ ArchUnitNET + NUnit + TypeScript:
 - **E14** *(2026-10-13, NL2)* only the composition root references the concrete `ReportRepository` (ArchUnitNET);
   everything else names `IReportReader` / `IReportWriter`. Chosen over forbidding `RepositoryBase<Report>`: the
   repository may reuse the base class; what must not happen is a caller reaching its write members past the ports.
-- **E15** *(2026-10-13, NB2)* the pure policies (`ReportWindowPolicy`, `ReportCapPolicy`, `BeyondLimits`) depend on
+- **E15** *(2026-10-13, NB2)* the pure policies (`ReportWindowPolicy`, `ReportCapPolicy`, ~~`BeyondLimits`~~) depend on
   none of `ILighthouseClock`, `ILicenseService`, `IReportOwnerLookup`, `IReportReader`, `IReportWriter`,
-  `IReportMetricSeries`, `IRepository<>` (ArchUnitNET).
+  `IReportMetricSeries`, `IRepository<>` (ArchUnitNET). *(Repointed 2026-10-14 by D49: `BeyondLimits` is not built.
+  `ReportsModuleArchUnitTest.A_report_policy_is_handed_every_input` carries `[TestCase(typeof(ReportWindowPolicy))]`
+  today; slice 08 adds `ReportCapPolicy`; no `BeyondLimits` case is ever added. DD35's daily-series summary is held to
+  the same rule — a third `[TestCase]` in slice 05.)*
 
 ---
 
@@ -2221,7 +2316,9 @@ ArchUnitNET + NUnit + TypeScript:
 | "`BaselineValidationService` … Reused as the Then-window rule" (S6) | Not reused: it measures `end − start`, so D37's inclusive 14 days measures 13 and is refused. Own `ReportWindowPolicy`. | DD13, ADR-222 |
 | Settings-changed notice and settings snapshot (D31, US-09) | **Resolved by D46**: dropped entirely; slice 09 dropped; nothing about settings stored. | D46 |
 | {Throughput} weekly median and week count (D39 M2, US-04, mockup) | **Resolved by D47**: total and per-day average over the whole window; change on the per-day average. | D47 |
-| "{Work Item Age} — total and average … Then and Now" (D39) with only the total defined (Q10) | **Resolved by D48**: the average also has a window average and a last-day value. | D48 |
+| "{Work Item Age} — total and average … Then and Now" (D39) with only the total defined (Q10) | **Resolved by D48**: the average also has a window average and a last-day value. *(Superseded by D51, 2026-10-14: the total only, as Average, Median, Min and Max of the daily totals.)* | D48, D51 |
+| Then freezes unrounded XmR average and limits; Now's points are counted beyond them, by side (D26, D40; DD9–DD11) | **Resolved by D49 (2026-10-14)**: no limits frozen, no beyond-limits count on any panel; `XmRCalculator` and `BaseMetricsService` untouched (the extraction was reverted); `BeyondLimits` not built; four absence codes gone. | D49 |
+| {WIP} as average with its range, one change on the average (D39 M3) | **Resolved by D50 (2026-10-14)**: Average, Median, Min and Max of the daily values, each with its own change; median per DD35. | D50 |
 | ADR-209 "a report is a response, not a record" | Superseded in its deferral by ADR-219; the Reality Check stays a response. | ADR-219 |
 
 ---
@@ -2234,17 +2331,25 @@ ArchUnitNET + NUnit + TypeScript:
 4. Thin data — **changed** to D45: the value with its sample size, "—" only when truly empty; no threshold.
 5. Blackout out of the settings snapshot — **moot**: no snapshot at all (D46).
 6. Weekly median — **changed** to D47: total and per-day average over the whole window.
-7. Average {Work Item Age} — **changed** to D48: window average and last day, both per side.
+7. Average {Work Item Age} — **changed** to D48: window average and last day, both per side. *(Superseded by D51,
+   2026-10-14: no per-item average age at all; the panel is "Total {Work Item Age}", Average, Median, Min and Max of
+   the daily totals.)*
 8. Change and % change computed in the panel from displayed values — **accepted**.
 
 No open decision remains for the maintainer from DESIGN.
+
+*Added 2026-10-14, for the maintainer to know rather than decide:* the median follows the codebase's
+`PercentileCalculator` (DD35), which for an odd number of days takes the value just below the middle (15 days → the
+7th smallest). Kept so a report's Median and its 50th never disagree; say so if the textbook middle is wanted, and it
+becomes a Metrics-wide change.
 
 ---
 
 ## Wave: DESIGN / [REF] Open questions for DISTILL / DELIVER
 
-- DELIVER: confirm `GetCycleTimeDataForPortfolio` and the Portfolio PBC's `GetFeaturesClosedInDateRange` select the
-  same Features; if not, the new series read uses the PBC's.
+- ~~DELIVER: confirm `GetCycleTimeDataForPortfolio` and the Portfolio PBC's `GetFeaturesClosedInDateRange` select the
+  same Features; if not, the new series read uses the PBC's.~~ *(moot since D49, 2026-10-14: no finished cycle-time
+  series is read; the Portfolio side uses `GetCycleTimePercentilesForPortfolio` like the Metrics tab.)*
 - ~~DELIVER: the exact HTTP status for `report-cap-reached`~~ — decided 2026-10-13: 403, as every premium refusal (DD17,
   DD28).
 - DELIVER: the copy marked *to confirm* in DD32 and "Loading and failure looks" goes into DELIVER's sketch with the
@@ -2254,13 +2359,20 @@ No open decision remains for the maintainer from DESIGN.
   one owner" and a test pins it.
 - DISTILL: sample size visible on every value (D45) and the five "—" cases as boundary scenarios — no finished items,
   < 2 Then points, collapsed band, lower limit 0 (Q8), Then was 0 (Q9), plus no {WIP} for average {Work Item Age};
-  {Throughput} with a Now length different from Then (D47); the edit refusal for an uncaptured key.
+  {Throughput} with a Now length different from Then (D47); the edit refusal for an uncaptured key. *(Revised
+  2026-10-14, D49–D52: two "—" cases remain — no finished items ({Cycle Time}) and Then was 0 (% change); the
+  limit cases and no-{WIP} go. New boundaries: a window with nothing in progress reads 0 on every {WIP} and Total
+  {Work Item Age} line (never a dash); the median of an even and of an odd number of days (DD35); the sample size
+  shows once, in the summary header (D52).)*
 - DISTILL: RBAC boundaries on every write — a reader's create, edit (including the Now length, D43/DD14) and delete are
   refused server-side (403), and a report fetched through another owner's route is 404.
-- DELIVER: `XmRCalculator.Limits` is extracted in slice 03 (the first slice that counts beyond limits); slice 01 freezes
-  the {Cycle Time} 85th percentile only.
+- ~~DELIVER: `XmRCalculator.Limits` is extracted in slice 03 (the first slice that counts beyond limits); slice 01 freezes
+  the {Cycle Time} 85th percentile only.~~ *(superseded by D49 (2026-10-14): nothing is extracted — the extraction
+  made in c206d65bd was reverted in 058b4ba48; and by DT9: Then freezes the 85th, 70th and 50th.)*
 - DISTILL: parity scenario (AC-2.3) compares against the Metrics endpoints called with the same inclusive start/end days.
-- Demo data (slice 03): confirm one demo Team yields a non-zero beyond-limits count.
+- ~~Demo data (slice 03): confirm one demo Team yields a non-zero beyond-limits count.~~ *(superseded by D49
+  (2026-10-14): no count to check. Instead, at slice 05: confirm a demo Team's daily {WIP} varies over the demo
+  report's window, so Average, Median, Min and Max are not four equal numbers in the screenshot.)*
 
 ---
 
@@ -2274,7 +2386,9 @@ No open decision remains for the maintainer from DESIGN.
   (2026-10-13).
 - [ADR-221](../../product/architecture/adr-221-then-is-frozen-as-captured-values-and-unrounded-limits-from-its-own-series.md)
   — what Then freezes (85th only for {Cycle Time}); unrounded limits; sufficiency codes; wire names `atThen` /
-  `atNow`. **Accepted** (2026-10-13).
+  `atNow`. **Accepted** (2026-10-13). **Amended 2026-10-14** (D49–D51): no limits frozen and no beyond-limits count;
+  one absence code; {WIP} and Total {Work Item Age} as Average, Median, Min, Max of daily values; median convention.
+  The file name keeps "unrounded limits" so links resolve.
 - [ADR-222](../../product/architecture/adr-222-report-windows-are-inclusive-instance-days-and-now-length-is-stored-on-the-report.md)
   — windows, the stored Now length, the wizard's pre-check from server bounds. **Accepted** (2026-10-13).
 
@@ -2499,7 +2613,7 @@ shared tab.
 | **K5** consultants show a report to client management (≥ 2 in 90 days) | maintainer conversation log (DISCOVER R1, R2) | — | Qualitative, unchanged; no telemetry |
 | **G1** reports deleted within 1 day of creation ≤ 20% of created | `ReportDeleted` + `ReportCreated` | per browser: `ReportDeleted` within 24 h after a `ReportCreated` from the same browser ÷ `ReportCreated` | **Proxy — accepted by the maintainer 2026-10-03.** Without a report id, a delete cannot be paired with *its* create; a same-day delete of an older report counts too, so the proxy reads high — safe for a ceiling guardrail. Readable from slice 08 |
 | **G2** open ≤ 2 s, create ≤ 10 s | slice 01 timing on the dev instance's busiest Team (manual, DELIVER); DISTILL timing check; the `ElapsedMs` field of the *report created* log line, Warning above 10 s; **a Warning `report-read-slow` when a single report read exceeds 2 s** — logged only when exceeded (Observability) | per instance, in the log and *Recent problems* | Not telemetry. In the field it is the operator's signal, not ours |
-| **G3** no report shows 0 where data is absent; Metrics tab PBCs unchanged | DISTILL boundary scenarios (the five "—" codes, DD12) + E5 byte-identical `Calculate` + E6 parity | CI | Not telemetry |
+| **G3** no report shows 0 where data is absent; Metrics tab PBCs unchanged | DISTILL boundary scenarios (the five "—" codes, DD12) + E5 byte-identical `Calculate` + E6 parity *(revised 2026-10-14, D49–D51: the one remaining "—" code `no-finished-items` and real-zero scenarios for {WIP} / Total {Work Item Age}; E5 withdrawn — `XmRCalculator` is untouched, and E2 keeps Reports off it)* | CI | Not telemetry |
 
 **Smuggling refused, explicitly**: no report name, report id, owner id, metric value, window length, shown-metric
 list, sample size or count travels. The template is the only property, carried by `ReportCreated` and `ReportOpened`, and it is a closed enum.
@@ -2620,8 +2734,9 @@ mutate JSX text, so copy is pinned by literal assertions, not counted in the sco
 
 - **Backend (Stryker.NET)**, whole files only (.NET Stryker ignores line spans): `Models/Reports/*`,
   `Services/Implementation/Reports/**` (templates, the four `*ReportMetric`, `ReportMetricCatalog`,
-  `ReportWindowPolicy`, `BeyondLimits`, `ReportCapPolicy`, the two series adapters, `ReportQueries`, `ReportCommands`),
-  `XmRCalculator.cs` (extended, small). **Not** `BaseMetricsService.cs` / the metrics services whole-file (large,
+  `ReportWindowPolicy`, ~~`BeyondLimits`,~~ `ReportCapPolicy`, the two series adapters, `ReportQueries`, `ReportCommands`,
+  and DD35's daily-series summary), ~~`XmRCalculator.cs` (extended, small)~~. *(Revised 2026-10-14 by D49:
+  `BeyondLimits` is not built and `XmRCalculator.cs` is not changed by this feature, so neither is mutated.)* **Not** `BaseMetricsService.cs` / the metrics services whole-file (large,
   shared; the extracted reads are pinned by parity E6 instead — stated in `results.md`, not hidden in the number),
   not the controllers (thin; covered by acceptance tests), not `Program.cs`.
 - **Exclude the acceptance suite** (WebApplicationFactory hosts: 80 min vs 3) — unit tests only.
@@ -2646,7 +2761,7 @@ Full table in `environments.yaml`. What must keep working while this ships:
 
 | Must not break | Why it is at risk |
 |---|---|
-| Metrics tab values and PBCs | `XmRCalculator.Limits` extracted (E5: `Calculate` byte-identical); cycle-time selection extracted from `BaseMetricsService`; two private series made public (parity E6) |
+| Metrics tab values and PBCs | ~~`XmRCalculator.Limits` extracted (E5: `Calculate` byte-identical); cycle-time selection extracted from `BaseMetricsService`;~~ *(reverted 2026-10-14, D49: extracted in c206d65bd, reverted in 058b4ba48 — `XmRCalculator` and `BaseMetricsService` are their original code, so this risk is gone)*; ~~two private series~~ one private series (daily total {Work Item Age}) made public (parity E6) |
 | Team / Portfolio delete | Gains "and its N reports"; the DB cascade must remove reports on both providers |
 | Existing usage-data events, route keys, the disclosure test | Appended to, never renumbered; the matcher's existing tabs unchanged; `/teams/new` still maps to nothing |
 | Team / Portfolio tab order | Reports inserted after Metrics |
