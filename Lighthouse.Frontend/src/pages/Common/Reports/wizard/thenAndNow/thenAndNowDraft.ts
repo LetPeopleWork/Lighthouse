@@ -7,6 +7,7 @@ import type {
 import { parseLocalDate } from "../../../../../utils/date/localDate";
 import { panelFor } from "../../panels/reportPanelRegistry";
 import {
+	type EnteredReportWindow,
 	type ReportWindowRefusal,
 	reportWindowCheck,
 } from "../reportWindowCheck";
@@ -45,19 +46,31 @@ export const lengthOf = (text: string): number | null => {
 	return days !== null && days > 0 ? days : null;
 };
 
+const refusalOnceWhole = (
+	lengthText: string,
+	windowOf: (lengthDays: number) => EnteredReportWindow,
+	templates: IReportTemplates,
+): ReportWindowRefusal | null => {
+	const lengthDays = wholeDaysOf(lengthText);
+	return lengthDays === null
+		? null
+		: reportWindowCheck(windowOf(lengthDays), templates);
+};
+
 /** Why the server would refuse the Then entered, or null while it has no whole number of days yet or would be accepted. */
 export const thenRefusalOf = (
 	draft: ThenAndNowDraft,
 	templates: IReportTemplates,
-): ReportWindowRefusal | null => {
-	const lengthDays = wholeDaysOf(draft.thenLength);
-	return lengthDays === null
-		? null
-		: reportWindowCheck(
-				{ side: "then", end: thenEndOf(draft, templates), lengthDays },
-				templates,
-			);
-};
+): ReportWindowRefusal | null =>
+	refusalOnceWhole(
+		draft.thenLength,
+		(lengthDays) => ({
+			side: "then",
+			end: thenEndOf(draft, templates),
+			lengthDays,
+		}),
+		templates,
+	);
 
 /** Now is as long as Then until somebody changes it. */
 export const nowLengthOf = (draft: ThenAndNowDraft): string =>
@@ -67,12 +80,12 @@ export const nowLengthOf = (draft: ThenAndNowDraft): string =>
 export const nowRefusalOf = (
 	draft: ThenAndNowDraft,
 	templates: IReportTemplates,
-): ReportWindowRefusal | null => {
-	const lengthDays = wholeDaysOf(nowLengthOf(draft));
-	return lengthDays === null
-		? null
-		: reportWindowCheck({ side: "now", lengthDays }, templates);
-};
+): ReportWindowRefusal | null =>
+	refusalOnceWhole(
+		nowLengthOf(draft),
+		(lengthDays) => ({ side: "now", lengthDays }),
+		templates,
+	);
 
 const LONG_DAY = "d MMM yyyy";
 
