@@ -8,7 +8,7 @@ import {
 	type ThenNowSideProps,
 } from "./ThenNowLineParts";
 import ThenNowPanelFrame, { PanelLine } from "./ThenNowPanelFrame";
-import { absenceTextOf, DASH, shownValue } from "./thenNowComparison";
+import { absenceTextOf, DASH, daysText, shownValue } from "./thenNowComparison";
 
 const DECIMALS = 0;
 
@@ -17,10 +17,6 @@ const PERCENTILES = [
 	{ key: "p70", label: "70th", percentile: 70 },
 	{ key: "p50", label: "50th", percentile: 50 },
 ] as const;
-
-const dayWord = (value: number) => (Math.abs(value) === 1 ? "day" : "days");
-
-const daysText = (value: number) => `${value} ${dayWord(value)}`;
 
 /** Each distinct reason once, so three dashes for the same cause do not say it three times. */
 const absenceNotesOf = ({

@@ -7,6 +7,8 @@ import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import CycleTimePanel from "./CycleTimePanel";
 import ThroughputPanel from "./ThroughputPanel";
 import type { DirectionOfGood } from "./thenNowComparison";
+import WipPanel from "./WipPanel";
+import WorkItemAgePanel from "./WorkItemAgePanel";
 
 /** Everything a panel draws comes in through its props, so the same props always draw the same panel. */
 export interface ReportPanelProps {
@@ -19,7 +21,7 @@ export interface ReportPanelProps {
 
 export interface ReportPanelDefinition {
 	component: React.FC<Readonly<ReportPanelProps>>;
-	titleTermKey: string;
+	titleOf: (getTerm: (key: string) => string) => string;
 	directionOfGood: DirectionOfGood;
 }
 
@@ -34,19 +36,29 @@ const METRIC_CATALOG: readonly {
 	{ key: "work-item-age", nameTermKey: TERMINOLOGY_KEYS.WORK_ITEM_AGE },
 ];
 
-/** One entry per metric this version can show. */
+/** One entry per metric this version can show; a report from a later version may still name a key with none. */
 export const reportPanelRegistry = {
 	"cycle-time": {
 		component: CycleTimePanel,
-		titleTermKey: TERMINOLOGY_KEYS.CYCLE_TIME,
+		titleOf: (getTerm) => getTerm(TERMINOLOGY_KEYS.CYCLE_TIME),
 		directionOfGood: "lower",
 	},
 	throughput: {
 		component: ThroughputPanel,
-		titleTermKey: TERMINOLOGY_KEYS.THROUGHPUT,
+		titleOf: (getTerm) => getTerm(TERMINOLOGY_KEYS.THROUGHPUT),
 		directionOfGood: "higher",
 	},
-} satisfies Partial<Record<ReportMetricKey, ReportPanelDefinition>>;
+	wip: {
+		component: WipPanel,
+		titleOf: (getTerm) => getTerm(TERMINOLOGY_KEYS.WIP),
+		directionOfGood: "lower",
+	},
+	"work-item-age": {
+		component: WorkItemAgePanel,
+		titleOf: (getTerm) => `Total ${getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE)}`,
+		directionOfGood: "lower",
+	},
+} satisfies Record<ReportMetricKey, ReportPanelDefinition>;
 
 export const panelFor = (
 	key: ReportMetricKey,

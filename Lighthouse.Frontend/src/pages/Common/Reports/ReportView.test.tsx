@@ -5,7 +5,6 @@ import type {
 	IReport,
 	IReportMetric,
 	IReportWindow,
-	ReportMetricKey,
 	ReportMetricSide,
 } from "../../../models/Reports/Report";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -648,7 +647,7 @@ describe("The panels of a report", () => {
 
 	// @us-05 @slice-05 @contract-shape:pure-function
 	// The average 8.62 shows as 9 and 7.38 as 7, and the change is worked out from what is shown.
-	it.skip("shows WIP as its average, median, min and max, each with its own change, lower reading as better", async () => {
+	it("shows WIP as its average, median, min and max, each with its own change, lower reading as better", async () => {
 		openTheReport();
 
 		const panel = await thePanel(WIP_PANEL);
@@ -676,7 +675,7 @@ describe("The panels of a report", () => {
 
 	// @us-05 @slice-05 @contract-shape:pure-function
 	// Colour alone tells nobody who cannot see it; the sign and the arrow say the same.
-	it.skip("tells a growing Total Work Item Age as worse on every line by sign and arrow as well as colour", async () => {
+	it("tells a growing Total Work Item Age as worse on every line by sign and arrow as well as colour", async () => {
 		openTheReport();
 
 		const panel = await thePanel(AGE_PANEL);
@@ -796,7 +795,7 @@ describe("Values a report cannot show", () => {
 
 	// @us-05 @slice-05 @error @contract-shape:pure-function
 	// A day with nothing in progress is a real 0 for both metrics; only the percentage from a Then of 0 is missing.
-	it.skip("shows every WIP and Total Work Item Age line as a real 0 when Then had nothing in progress", async () => {
+	it("shows every WIP and Total Work Item Age line as a real 0 when Then had nothing in progress", async () => {
 		const zero = shown(0, 90);
 		const report = theEngagementStartReport();
 		report.thenAndNow.metrics.wip = {
@@ -840,7 +839,7 @@ describe("Values a report cannot show", () => {
 
 	// @us-05 @slice-05 @boundary @contract-shape:unbounded-preservation
 	// A report made before WIP and Work Item Age were captured has nothing frozen for them.
-	it.skip("says WIP and Total Work Item Age were not captured for a report made before they existed", async () => {
+	it("says WIP and Total Work Item Age were not captured for a report made before they existed", async () => {
 		const report = theEngagementStartReport();
 		report.thenAndNow.metrics.wip = undefined;
 		report.thenAndNow.metrics["work-item-age"] = undefined;
@@ -895,24 +894,22 @@ describe("Values a report cannot show", () => {
 	});
 
 	// @us-04 @slice-04 @error @contract-shape:pure-function
-	// The note stands where the panel would, so it is headed as the panel would be; a metric from a later version has no word here and goes by its key.
-	it.each<[ReportMetricKey, string]>([
-		["wip", WIP_PANEL],
-		[A_LATER_METRIC, A_LATER_METRIC],
-	])(
-		"heads the note in place of %j with %j, the metric's name where this version has one",
-		async (key, title) => {
-			openTheReport(
-				theEngagementStartReport({ shownMetricKeys: ["cycle-time", key] }),
-			);
-			await theReportIsReady();
+	// The note stands where the panel would; a metric from a later version has no word here, so it goes by its key.
+	it("heads the note in place of a later version's metric with that metric's key", async () => {
+		openTheReport(
+			theEngagementStartReport({
+				shownMetricKeys: ["cycle-time", A_LATER_METRIC],
+			}),
+		);
+		await theReportIsReady();
 
-			expect(thePanelTitles()).toEqual([CYCLE_TIME_PANEL, title]);
-			expect(
-				within(await thePanel(title)).getByText(METRIC_FROM_A_NEWER_VERSION),
-			).toBeVisible();
-		},
-	);
+		expect(thePanelTitles()).toEqual([CYCLE_TIME_PANEL, A_LATER_METRIC]);
+		expect(
+			within(await thePanel(A_LATER_METRIC)).getByText(
+				METRIC_FROM_A_NEWER_VERSION,
+			),
+		).toBeVisible();
+	});
 });
 
 describe("A report on a slow or failing connection", () => {

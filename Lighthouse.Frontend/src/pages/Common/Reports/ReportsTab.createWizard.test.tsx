@@ -495,7 +495,7 @@ describe("Step four: metrics and name", () => {
 		await openTheWizard();
 		await onToTheLastStep();
 
-		for (const name of ["Cycle Time", "Throughput"]) {
+		for (const name of ["Cycle Time", "Throughput", "WIP", "Work Item Age"]) {
 			await userEvent.click(await theMetricBox(name));
 		}
 
@@ -510,6 +510,7 @@ describe("Step four: metrics and name", () => {
 			"cycle-time",
 			"throughput",
 			"wip",
+			"work-item-age",
 			A_LATER_METRIC,
 		];
 		await openTheWizard(
@@ -528,9 +529,15 @@ describe("Step four: metrics and name", () => {
 		);
 		await onToTheLastStep();
 
-		expect(await theMetricBox("Cycle Time")).toBeChecked();
-		expect(await theMetricBox("Throughput")).toBeChecked();
-		expect(within(await theWizard()).getAllByRole("checkbox")).toHaveLength(2);
+		for (const name of ["Cycle Time", "Throughput", "WIP", "Work Item Age"]) {
+			expect(await theMetricBox(name)).toBeChecked();
+		}
+		expect(within(await theWizard()).getAllByRole("checkbox")).toHaveLength(4);
+		expect(
+			within(await theWizard()).queryByRole("checkbox", {
+				name: A_LATER_METRIC,
+			}),
+		).toBeNull();
 	});
 
 	// @us-02 @slice-02 @contract-shape:pure-function
@@ -603,7 +610,7 @@ describe("Creating the report", () => {
 		expect(reportService.createReport).toHaveBeenCalledWith(LIGHTSPEED, {
 			templateKey: "then-and-now",
 			name: "Then & Now — 90 days to 31 Jul 2026",
-			shownMetricKeys: ["cycle-time", "throughput"],
+			shownMetricKeys: ["cycle-time", "throughput", "wip", "work-item-age"],
 			thenAndNow: {
 				thenEndDate: "2026-07-31",
 				thenLengthDays: 90,

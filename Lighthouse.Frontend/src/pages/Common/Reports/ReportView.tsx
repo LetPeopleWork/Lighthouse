@@ -3,7 +3,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useContext } from "react";
 import { Link as RouterLink } from "react-router";
-import type { IReport, IReportOwner } from "../../../models/Reports/Report";
+import type {
+	IReport,
+	IReportMetric,
+	IReportOwner,
+} from "../../../models/Reports/Report";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -26,6 +30,9 @@ const COULD_NOT_LOAD = "This report couldn't be loaded. Reload to try again.";
 const MADE_BY_A_NEWER_VERSION =
 	"This report was made by a newer version of Lighthouse and can't be shown here.";
 const BODY_MIN_HEIGHT = 120;
+
+/** A metric shown on a report made before it was captured reads as not captured on both sides. */
+const NOTHING_CAPTURED: IReportMetric = { atThen: {}, atNow: {} };
 
 interface ReportViewProps {
 	owner: IReportOwner;
@@ -64,13 +71,12 @@ const ReportPanels: React.FC<{ readonly report: IReport }> = ({ report }) => {
 					name={getTerm(metricNameTermKeyOf(key))}
 				/>
 			);
-		const metric = report.thenAndNow.metrics[key];
-		if (!metric) return null;
+		const metric = report.thenAndNow.metrics[key] ?? NOTHING_CAPTURED;
 		const Panel = panel.component;
 		return (
 			<Panel
 				key={key}
-				title={getTerm(panel.titleTermKey)}
+				title={panel.titleOf(getTerm)}
 				metric={metric}
 				workItem={workItem}
 				workItems={workItems}

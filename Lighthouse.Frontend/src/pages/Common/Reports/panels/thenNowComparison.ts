@@ -41,6 +41,10 @@ export const shownValue = (
 		? null
 		: roundForDisplay(value.value, decimals);
 
+const dayWord = (value: number) => (Math.abs(value) === 1 ? "day" : "days");
+
+export const daysText = (value: number) => `${value} ${dayWord(value)}`;
+
 export const signed = (value: number): string => {
 	if (value > 0) return `+${value}`;
 	if (value < 0) return `${MINUS}${Math.abs(value)}`;
