@@ -65,13 +65,25 @@ const thenRefusal = (
 		: null;
 };
 
+// Now always ends on the server's today, so only its length is checked.
+const nowRefusal = (
+	lengthDays: number,
+	bounds: ReportWindowBounds,
+): ReportWindowRefusal | null => {
+	if (lengthDays < bounds.minimumLengthDays) {
+		return "now-too-short";
+	}
+
+	return startsBefore(bounds.earliestStart, bounds.today, lengthDays)
+		? "now-before-cutoff"
+		: null;
+};
+
 export const reportWindowCheck = (
 	entered: EnteredReportWindow,
 	bounds: ReportWindowBounds,
 ): ReportWindowRefusal | null => {
-	if (entered.side === "then") {
-		return thenRefusal(entered.end, entered.lengthDays, bounds);
-	}
-
-	throw new Error("A Now window is not checked in the wizard yet");
+	return entered.side === "then"
+		? thenRefusal(entered.end, entered.lengthDays, bounds)
+		: nowRefusal(entered.lengthDays, bounds);
 };

@@ -70,7 +70,7 @@ describe("the edges of a report window, checked as the server checks them", () =
 	);
 
 	// @us-07 @slice-07 @boundary @contract-shape:pure-function
-	it.skip.each(rows.filter((row) => row.side === "now"))(
+	it.each(rows.filter((row) => row.side === "now"))(
 		"answers $case as the server does",
 		(row) => {
 			expect(answer(reportWindowCheck(entered(row), boundsFor(row)))).toBe(
