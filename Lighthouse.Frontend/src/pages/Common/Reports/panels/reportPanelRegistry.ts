@@ -12,6 +12,7 @@ import type { DirectionOfGood } from "./thenNowComparison";
 export interface ReportPanelProps {
 	title: string;
 	metric: IReportMetric;
+	workItem: string;
 	workItems: string;
 	directionOfGood: DirectionOfGood;
 }

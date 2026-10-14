@@ -30,6 +30,7 @@ const renderPanel = (metric: IReportMetric) =>
 		<CycleTimePanel
 			title="Cycle Time"
 			metric={metric}
+			workItem="Work Item"
 			workItems="Work Items"
 			directionOfGood="lower"
 		/>,

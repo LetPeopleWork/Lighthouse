@@ -776,6 +776,23 @@ describe("Values a report cannot show", () => {
 		expect(panel).not.toMatch(/%|Infinity|NaN|—/);
 	});
 
+	// @us-04 @slice-04 @contract-shape:pure-function
+	it("names a single finished Work Item in the singular", async () => {
+		const report = theEngagementStartReport();
+		report.thenAndNow.metrics.throughput = {
+			atThen: { total: shown(1, 90), perDay: shown(0.01, 90) },
+			atNow: { total: shown(2, 90), perDay: shown(0.02, 90) },
+		};
+		openTheReport(report);
+
+		const panel = await thePanel(THROUGHPUT_PANEL);
+
+		expect(readingOfSegment(panel, "then")).toMatch(
+			/^THEN Total 1 Work Item /i,
+		);
+		expect(readingOfSegment(panel, "now")).toMatch(/^NOW Total 2 Work Items /i);
+	});
+
 	// @us-05 @slice-05 @error @contract-shape:pure-function
 	// A day with nothing in progress is a real 0 for both metrics; only the percentage from a Then of 0 is missing.
 	it.skip("shows every WIP and Total Work Item Age line as a real 0 when Then had nothing in progress", async () => {

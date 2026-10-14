@@ -1,4 +1,7 @@
-import type { ReportAbsentReason } from "../../../../models/Reports/Report";
+import type {
+	IReportValue,
+	ReportAbsentReason,
+} from "../../../../models/Reports/Report";
 
 export type DirectionOfGood = "lower" | "higher";
 
@@ -15,11 +18,25 @@ export type ReportSide = "Then" | "Now";
 
 const MINUS = "−";
 
+/** What a value that cannot be shown reads as. */
+export const DASH = "—";
+
+const NOT_CAPTURED = "Not captured for this report";
+
 /** Halves round away from zero, so a fall and a rise of the same size read the same. */
 export const roundForDisplay = (value: number, decimals: number): number => {
 	const scale = 10 ** decimals;
 	return (Math.sign(value) * Math.round(Math.abs(value) * scale)) / scale;
 };
+
+/** The value as a panel shows it, or null for one that reads as a dash. */
+export const shownValue = (
+	value: IReportValue | null | undefined,
+	decimals: number,
+): number | null =>
+	value?.value === null || value?.value === undefined
+		? null
+		: roundForDisplay(value.value, decimals);
 
 export const signed = (value: number): string => {
 	if (value > 0) return `+${value}`;
@@ -83,3 +100,13 @@ export const absentReasonText = (
 	side: ReportSide,
 	workItems: string,
 ): string => reasonTexts[reason](side, workItems);
+
+/** Why a value reads as a dash; one the server gave no reason for was never captured by the report. */
+export const absenceTextOf = (
+	value: IReportValue | null | undefined,
+	side: ReportSide,
+	workItems: string,
+): string =>
+	value?.absentReason
+		? absentReasonText(value.absentReason, side, workItems)
+		: NOT_CAPTURED;

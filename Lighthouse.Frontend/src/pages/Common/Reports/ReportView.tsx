@@ -48,6 +48,7 @@ const retriesUnlessFinal =
 
 const ReportPanels: React.FC<{ readonly report: IReport }> = ({ report }) => {
 	const { getTerm } = useTerminology();
+	const workItem = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
 	const workItems = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 
 	return inCatalogOrder(report.shownMetricKeys).map((key) => {
@@ -61,6 +62,7 @@ const ReportPanels: React.FC<{ readonly report: IReport }> = ({ report }) => {
 				key={key}
 				title={getTerm(panel.titleTermKey)}
 				metric={metric}
+				workItem={workItem}
 				workItems={workItems}
 				directionOfGood={panel.directionOfGood}
 			/>
