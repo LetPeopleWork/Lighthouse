@@ -202,3 +202,71 @@ Commits `581628212`, `cb9eadeb8`, `d04272cff`, `41c0a13fd`:
 `reportWindowCheck.ts` counts days with `Date.UTC(year, …)`, which maps years 0–99 to 1900–1999. A Then
 ending in the year 1–99 is therefore checked against the wrong calendar day in the wizard (the server is
 right and still refuses). Not changed here — production behaviour is out of scope for a mutation pass.
+
+---
+
+# Mutation testing — 6161 / 6162 / 6163 (Then & Now, slices 03, 04, 05 and 05b)
+
+Run 2026-10-14 on `main` @ `9ae277961`, once, on frozen code after the final refactor and adversarial review.
+Gate is 80 % kill rate on both stacks.
+
+| stack | score | tested | killed | survived | no coverage | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 5.0.0) | **86.79 %** | 53 | 46 | 4 | 3 | 9 m |
+| Frontend (StrykerJS) | **88.21 %** | 619 | 546 | 73 | 0 | 14 m |
+
+Configs: `stryker.6161-6163.backend.json` (run from `Lighthouse.Backend.Tests/` with `--config-file`),
+`stryker.6161-6163.frontend.json` + `vitest.stryker.6161-6163.config.ts` (copy the vitest config into
+`Lighthouse.Frontend/`; `perTest` coverage and incremental mode, so a re-run only tests what changed).
+
+Both runs are above the gate, so no further iteration; the survivors are recorded below.
+
+## Backend
+
+| file | tested | killed | survived | no coverage |
+| --- | --- | --- | --- | --- |
+| Reports/ThenAndNowTemplate.cs | 33 | 29 | 2 | 2 |
+| Reports/TeamReportMetricSeries.cs | 7 | 4 | 2 | 1 |
+| Reports/Metrics/CycleTimeReportMetric.cs | 5 | 5 | 0 | 0 |
+| Reports/Metrics/DailySeriesSummary.cs | 3 | 3 | 0 | 0 |
+| Reports/Metrics/WindowedReportMetric.cs | 3 | 3 | 0 | 0 |
+| Reports/Metrics/ThroughputReportMetric.cs | 2 | 2 | 0 | 0 |
+
+`WipReportMetric.cs`, `WorkItemAgeReportMetric.cs` and `ReportRefusalCodes.cs` produced no mutants. The small
+`TeamMetricsService` / `BaseMetricsService` hunks (the cached daily total age) were left out: whole-file
+mutation would score those services' older code, not this change; their caching is covered by unit tests.
+
+Survivors, all accepted:
+- Exception and log message strings (`ThenAndNowTemplate` L73, L76, L139; `TeamReportMetricSeries` L46, L49).
+- `?? []` on the stored captures' keys, inside the unknown-key log call only (`ThenAndNowTemplate` L80).
+- `CycleTime > 0` → `>= 0` when counting finished items (`TeamReportMetricSeries` L17): a finished item's cycle
+  time is at least one day, so the two are equivalent.
+
+## Frontend
+
+| file | tested | killed | survived | score |
+| --- | --- | --- | --- | --- |
+| panels/thenNowComparison.ts | 116 | 115 | 1 | 99.1 % |
+| ThenAndNowSummary.tsx | 111 | 98 | 13 | 88.3 % |
+| wizard/thenAndNow/thenAndNowDraft.ts | 90 | 84 | 6 | 93.3 % |
+| ReportView.tsx | 73 | 64 | 9 | 87.7 % |
+| panels/changeSummary.ts | 45 | 45 | 0 | 100 % |
+| panels/reportPanelRegistry.ts | 45 | 42 | 3 | 93.3 % |
+| panels/ThenNowLineParts.tsx | 35 | 25 | 10 | 71.4 % |
+| panels/ThroughputPanel.tsx | 29 | 18 | 11 | 62.1 % |
+| panels/ThenNowPanelFrame.tsx | 23 | 6 | 17 | 26.1 % |
+| wizard/thenAndNow/MetricsAndNameStep.tsx | 21 | 21 | 0 | 100 % |
+| models/Reports/Report.ts (174–191) | 12 | 12 | 0 | 100 % |
+| others (CycleTime, DailySpread, Wip, WorkItemAge, Unsupported panels, presets) | 19 | 16 | 3 | — |
+
+Survivor kinds: 23 string literals and 18 object literals (MUI `sx` props and layout copy — the known
+equivalent class here, `ThenNowPanelFrame` is almost all of them), 15 conditional expressions, the rest
+optional chaining / boolean / array literals.
+
+Worth a test later (not chased, the gate was met):
+- `ThenAndNowSummary` L51/L65–66: the closed count's fallback to the Cycle Time sample size when Throughput was
+  never captured, and the all-`no-finished-items` branch.
+- `ThroughputPanel` L37–54: which absence reason the panel shows when only one side is absent.
+- `thenAndNowDraft` L92: a window with neither day entered.
+- `ReportView` L55/L57/L127/L145: retry/loading branches already covered by E2E-shaped tests elsewhere;
+  hand-check before chasing (StrykerJS reports false survivors on this repo).

@@ -1,0 +1,29 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": { "configFile": "vitest.stryker.6161-6163.config.ts" },
+  "reporters": ["clear-text", "progress", "json"],
+  "coverageAnalysis": "perTest",
+  "incremental": true,
+  "incrementalFile": "reports/stryker-incremental-6161-6163.json",
+  "concurrency": 3,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": ["/dist", "/coverage", "/playwright-report", "/reports"],
+  "mutate": [
+    "src/pages/Common/Reports/panels/*.ts",
+    "src/pages/Common/Reports/panels/*.tsx",
+    "!src/pages/Common/Reports/panels/*.test.ts",
+    "!src/pages/Common/Reports/panels/*.test.tsx",
+    "src/pages/Common/Reports/ReportView.tsx",
+    "src/pages/Common/Reports/ThenAndNowSummary.tsx",
+    "src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts",
+    "src/pages/Common/Reports/wizard/thenAndNow/MetricsAndNameStep.tsx",
+    "src/models/Reports/Report.ts:174-191"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": 0 },
+  "jsonReporter": { "fileName": "/tmp/claude-1000/stryker-6161-6163-frontend.json" },
+  "tempDirName": ".stryker-tmp-6161-6163"
+}
