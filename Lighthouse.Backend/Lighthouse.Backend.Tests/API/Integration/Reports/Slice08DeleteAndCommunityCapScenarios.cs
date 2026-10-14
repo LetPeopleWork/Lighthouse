@@ -230,7 +230,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-08 @slice-08 @boundary @contract-shape:pure-function
         // Then starts on 2 Oct 2025, the oldest day kept on 2 Oct 2026; a day later it is one day too old.
         [Test]
-        [Ignore(PendingSlice08)]
         public async Task A_Then_older_than_what_the_Team_keeps_says_it_can_no_longer_be_rebuilt()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -252,7 +251,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-08 @slice-08 @error @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice08)]
         public async Task A_report_of_a_type_this_version_does_not_know_can_still_be_deleted()
         {
             var lightspeed = ATeam(Lightspeed);
