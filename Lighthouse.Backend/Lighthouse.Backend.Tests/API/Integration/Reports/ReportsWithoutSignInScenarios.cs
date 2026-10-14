@@ -30,7 +30,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-08 @slice-08 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice08)]
         public async Task Without_sign_in_anybody_deletes_a_report()
         {
             var lightspeed = ATeam(Lightspeed);

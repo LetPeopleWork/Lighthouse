@@ -18,6 +18,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
         private static readonly string[] LoggedRefusalFields = ["Reason", "OwnerKind", "OwnerId", "TemplateKey"];
 
+        private static readonly string[] LoggedDeletionFields = ["ReportId", "OwnerKind", "OwnerId", "TemplateKey"];
+
         private const string NotInTheCatalog = "velocity";
 
         private static readonly string[] OnlyCycleTime = [CycleTimeReportMetric.MetricKey];
@@ -191,6 +193,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             }
         }
 
+        [Test]
+        public async Task A_report_deleted_logs_its_id_and_never_the_name()
+        {
+            await CreateTakingSeconds(0);
+            logger.Lines.Clear();
+
+            var outcome = await Subject(seconds: 0).Delete(Lightspeed, 17);
+
+            var line = logger.Lines.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome, Is.EqualTo(ReportOutcomeStatus.Done));
+                Assert.That(line.Level, Is.EqualTo(LogLevel.Information));
+                Assert.That(line.Fields.Keys.Where(key => key != "{OriginalFormat}"), Is.EquivalentTo(LoggedDeletionFields));
+                Assert.That(line.Fields["ReportId"], Is.EqualTo(17));
+                Assert.That(line.Fields["OwnerKind"], Is.EqualTo(ReportOwnerKind.Team));
+                Assert.That(line.Fields["OwnerId"], Is.EqualTo(42));
+                Assert.That(line.Fields["TemplateKey"], Is.EqualTo(ThenAndNowTemplate.TemplateKey));
+                Assert.That(line.Message, Does.Not.Contain(SecretName));
+            }
+        }
+
         private async Task ReadTakingMilliseconds(int milliseconds)
         {
             await CreateTakingSeconds(0);
@@ -225,6 +249,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
                 report.Id = 17;
                 stored = report;
             });
+            writer.Setup(w => w.Remove(Lightspeed, 17)).Returns(() => stored);
             writer.Setup(w => w.Save()).Callback(() => timeProvider.Advance(TimeSpan.FromSeconds(seconds))).Returns(Task.CompletedTask);
 
             return new ReportCommands(writer.Object, Owners(), [Template(clock)], clock, timeProvider, logger);

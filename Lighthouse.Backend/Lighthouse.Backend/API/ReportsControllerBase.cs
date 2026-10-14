@@ -37,6 +37,9 @@ namespace Lighthouse.Backend.API
             return Refusal(created, owner);
         }
 
+        protected async Task<IActionResult> Delete(ReportOwner owner, int reportId)
+            => await commands.Delete(owner, reportId) == ReportOutcomeStatus.Done ? NoContent() : NotFound();
+
         private ActionResult<T> Answer<T>(ReportOutcome<T> outcome)
             => outcome is { Status: ReportOutcomeStatus.Done, Value: T value } ? Ok(value) : Refusal(outcome);
 

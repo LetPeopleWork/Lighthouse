@@ -53,6 +53,20 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             return ReportOutcome<ReportRead>.Done(template.Read(report, calendar));
         }
 
+        public async Task<ReportOutcomeStatus> Delete(ReportOwner owner, int reportId)
+        {
+            if (writer.Remove(owner, reportId) is not Report removed)
+            {
+                return ReportOutcomeStatus.NotFound;
+            }
+
+            await writer.Save();
+
+            logger.LogInformation("Report {ReportId} of {OwnerKind} {OwnerId} with template {TemplateKey} was deleted",
+                removed.Id, owner.Kind, owner.Id, removed.TemplateKey);
+            return ReportOutcomeStatus.Done;
+        }
+
         private IReportTemplate? TemplateFor(NewReport request) => templates.Find(candidate => candidate.Key == request.TemplateKey);
 
         // An unknown template key is what the caller typed, so only a key this version offers is ever logged.

@@ -25,5 +25,9 @@ namespace Lighthouse.Backend.API
         [HttpPost]
         [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
         public Task<ActionResult<ReportRead>> CreateReport(int teamId, [FromBody] NewReportRequest request) => Create(ReportOwner.Team(teamId), request);
+
+        [HttpDelete("{reportId:int}")]
+        [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
+        public Task<IActionResult> DeleteReport(int teamId, int reportId) => Delete(ReportOwner.Team(teamId), reportId);
     }
 }

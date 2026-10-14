@@ -24,7 +24,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-08 @slice-08 @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice08)]
         public async Task An_admin_deletes_a_report_and_it_is_gone_for_everybody()
         {
             TheInstanceHasAPremiumLicence();
@@ -47,7 +46,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-08 @slice-08 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice08)]
         public async Task A_reader_cannot_delete_a_report()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -62,7 +60,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-08 @slice-08 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice08)]
         public async Task Deleting_through_another_Teams_address_deletes_nothing()
         {
             var lightspeed = ATeam(Lightspeed);
@@ -78,7 +75,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-08 @slice-08 @error @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice08)]
         public async Task Deleting_a_report_twice_finds_nothing_the_second_time()
         {
             var lightspeed = ATeam(Lightspeed);
