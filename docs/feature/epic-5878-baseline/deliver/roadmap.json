@@ -1287,6 +1287,45 @@
       ]
     },
     {
+      "id": "05b",
+      "name": "Slice 05b - change summary in the header and the 95th percentile (US-05b, tracked under ADO #6163)",
+      "description": "D53: the summary header gets a CHANGE column judged per metric (Improved / Got worse / Mixed / Unchanged). D54: Cycle Time adds the 95th percentile. D56 icons already in place.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "05-05",
+          "name": "The {Cycle Time} report carries the 95th beside the 85th, 70th and 50th: Then freezes it, Now computes it, and a report frozen before it has no Then 95th",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice05bCycleTime95thScenarios.cs",
+          "scenario_name": "The_Cycle_Time_panel_shows_the_95th_for_Then_and_Now",
+          "unskips": [
+            "Slice05bCycleTime95thScenarios.cs :: all six scenarios",
+            "CycleTimeReportMetricTest.cs :: the three tests parked with PendingSlice05b"
+          ],
+          "criteria": [
+            "CycleTimePercentiles carries P95, filled from the Metrics tab's 95th (BuildPercentiles)",
+            "CycleTimeReportMetric writes 'p95' on both sides with the same sample size as the others; no finished items gives a dash with no-finished-items",
+            "A report stored before the 95th existed opens with no Then p95 and Now's p95 shown; no migration",
+            "Then's 95th equals the Metrics tab's 95th for the same days"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Reports/IReportMetricSeries.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/TeamReportMetricSeries.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/Metrics/CycleTimeReportMetric.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice05bCycleTime95thScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/CycleTimeReportMetricTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/TeamReportMetricSeriesTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests (ReportLoggingTest, ReportQueriesTest, ThenAndNowTemplateTest constructors)"
+          ],
+          "dependencies": [
+            "05-04"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: acceptance. DISCUSS D54, DESIGN DD38/DD39. Tests by the acceptance designer in ce07bd111. Commit: feat(reports): the 95th percentile on Then & Now (story 6163)."
+        }
+      ]
+    },
+    {
       "id": "06",
       "name": "Slice 06 - Reports on Portfolios (US-06, ADO #6164)",
       "description": "Backend: the Portfolio series adapter over IPortfolioMetricsService (with its two new public reads), the Portfolio owner lookup and PortfolioReportsController, cross-owner 404s, the Portfolio cascade, and the PortfolioDetail_Reports route key with its disclosure rows. Frontend: the Portfolio tab and route, the Portfolio empty state, links and presets, and the route key mirror.",
