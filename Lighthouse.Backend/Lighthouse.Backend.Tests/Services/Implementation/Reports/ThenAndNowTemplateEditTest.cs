@@ -97,6 +97,58 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             Assert.That(edited.Status, Is.EqualTo(ReportOutcomeStatus.Done));
         }
 
+        [Test]
+        public void A_report_whose_payload_holds_no_captures_cannot_show_any_metric()
+        {
+            var report = AReportWithALaterVersionsMember();
+            var payload = JsonNode.Parse(report.TemplatePayloadJson)!.AsObject();
+            payload.Remove("captures");
+            report.TemplatePayloadJson = payload.ToJsonString();
+            var stored = report.TemplatePayloadJson;
+
+            var edited = Subject().Edit(report, new ReportEdit(Name, CycleTimeShown, report.ConcurrencyToken, 30), Calendar);
+
+            ThenItIsRefused(edited, ReportRefusalCodes.MetricNotCaptured, report, stored);
+        }
+
+        [Test]
+        public void An_edit_of_a_payload_that_never_stored_a_Now_length_adds_one()
+        {
+            var report = AReportWithALaterVersionsMember();
+            var payload = JsonNode.Parse(report.TemplatePayloadJson)!.AsObject();
+            payload.Remove("nowLengthDays");
+            report.TemplatePayloadJson = payload.ToJsonString();
+
+            var edited = Subject().Edit(report, new ReportEdit(Name, CycleTimeShown, report.ConcurrencyToken, 30), Calendar);
+
+            var after = JsonNode.Parse(edited.Value ?? "{}")!.AsObject();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(edited.Status, Is.EqualTo(ReportOutcomeStatus.Done));
+                Assert.That(after["nowLengthDays"]?.GetValue<int>(), Is.EqualTo(30));
+                Assert.That(JsonNode.DeepEquals(WithoutNowLength(after), payload), Is.True, edited.Value);
+            }
+        }
+
+        [Test]
+        public void An_edit_overwrites_a_Now_length_stored_under_another_casing_rather_than_adding_a_second_one()
+        {
+            var report = AReportWithALaterVersionsMember();
+            var payload = JsonNode.Parse(report.TemplatePayloadJson)!.AsObject();
+            payload.Remove("nowLengthDays");
+            payload["NowLengthDays"] = 90;
+            report.TemplatePayloadJson = payload.ToJsonString();
+
+            var edited = Subject().Edit(report, new ReportEdit(Name, CycleTimeShown, report.ConcurrencyToken, 30), Calendar);
+
+            var after = JsonNode.Parse(edited.Value ?? "{}")!.AsObject();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(after["NowLengthDays"]?.GetValue<int>(), Is.EqualTo(30));
+                Assert.That(after.ContainsKey("nowLengthDays"), Is.False, edited.Value);
+            }
+        }
+
         private static IEnumerable<TestCaseData> ShownListsANewReportCouldNotHave()
         {
             yield return new TestCaseData(NoMetric, ReportRefusalCodes.NoMetricShown);

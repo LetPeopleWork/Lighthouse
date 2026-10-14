@@ -91,6 +91,41 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(problem.Extensions["earliestStart"], Is.EqualTo(EarliestStart));
         }
 
+        [TestCase(ReportRefusalCodes.ReportCapReached, StatusCodes.Status403Forbidden)]
+        [TestCase(ReportRefusalCodes.NameMissing, StatusCodes.Status400BadRequest)]
+        public async Task A_refusal_is_answered_with_the_status_its_problem_names(string code, int expectedStatus)
+        {
+            AnswerCreateWith(ReportOutcome<ReportRead>.Refused(code));
+
+            var answer = (ObjectResult)(await Subject().CreateReport(TeamId, AThenAndNowRequest("Engagement start", ["cycle-time"]))).Result!;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answer.StatusCode, Is.EqualTo(expectedStatus));
+                Assert.That(((ProblemDetails)answer.Value!).Status, Is.EqualTo(expectedStatus));
+            }
+        }
+
+        [Test]
+        public async Task An_edit_naming_neither_a_name_nor_shown_metrics_asks_for_an_empty_name_and_no_metrics()
+        {
+            ReportEdit? edit = null;
+            var concurrencyToken = Guid.NewGuid();
+            commands.Setup(c => c.Edit(Lightspeed, 17, It.IsAny<ReportEdit>()))
+                .Callback<ReportOwner, int, ReportEdit>((_, _, sent) => edit = sent)
+                .ReturnsAsync(ReportOutcome<ReportRead>.Refused(ReportRefusalCodes.NameMissing));
+
+            await Subject().EditReport(TeamId, 17, new ReportEditRequest { ConcurrencyToken = concurrencyToken });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(edit!.Name, Is.Empty);
+                Assert.That(edit.ShownMetricKeys, Is.Empty);
+                Assert.That(edit.ConcurrencyToken, Is.EqualTo(concurrencyToken));
+                Assert.That(edit.NowLengthDays, Is.Null);
+            }
+        }
+
         private void AnswerCreateWith(ReportOutcome<ReportRead> outcome)
         {
             commands.Setup(c => c.Create(Lightspeed, It.IsAny<NewReport>()))

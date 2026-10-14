@@ -23,6 +23,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
         private static readonly string[] LoggedEditFields = ["ReportId", "OwnerKind", "OwnerId"];
 
+        private static readonly string[] LoggedRefusedEditFields = ["ReportId", "OwnerKind", "OwnerId", "Reason"];
+
         private const string NotInTheCatalog = "velocity";
 
         private static readonly string[] OnlyCycleTime = [CycleTimeReportMetric.MetricKey];
@@ -237,6 +239,49 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
                 Assert.That(line.Fields["OwnerId"], Is.EqualTo(42));
                 Assert.That(line.Message, Does.Not.Contain(SecretName));
                 Assert.That(line.Message, Does.Not.Contain(CycleTimeReportMetric.MetricKey));
+            }
+        }
+
+        [Test]
+        public async Task A_captured_metric_this_version_does_not_know_is_warned_about_even_when_it_is_not_shown()
+        {
+            await CreateTakingSeconds(0);
+            var payload = JsonNode.Parse(stored!.TemplatePayloadJson)!.AsObject();
+            payload["captures"]!.AsObject()[NotInTheCatalog] = new JsonObject();
+            stored.TemplatePayloadJson = payload.ToJsonString();
+            logger.Lines.Clear();
+
+            var reader = new Mock<IReportReader>();
+            reader.Setup(r => r.GetForOwner(Lightspeed, 17)).Returns(stored);
+            Queries(reader.Object).Get(Lightspeed, 17);
+
+            var line = logger.Lines.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(line.Level, Is.EqualTo(LogLevel.Warning));
+                Assert.That(line.Fields["MetricKey"], Is.EqualTo(NotInTheCatalog));
+            }
+        }
+
+        [Test]
+        public async Task A_refused_edit_logs_its_reason_and_the_report_and_never_the_name()
+        {
+            var created = await CreateTakingSeconds(0);
+            logger.Lines.Clear();
+
+            var outcome = await Subject(seconds: 0).Edit(Lightspeed, 17, new ReportEdit(SecretName, OnlyCycleTime, created.ConcurrencyToken, ReportWindowPolicy.MinimumLengthDays - 1));
+
+            var line = logger.Lines.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Status, Is.EqualTo(ReportOutcomeStatus.Refused));
+                Assert.That(line.Level, Is.EqualTo(LogLevel.Information));
+                Assert.That(line.Fields.Keys.Where(key => key != "{OriginalFormat}"), Is.EquivalentTo(LoggedRefusedEditFields));
+                Assert.That(line.Fields["Reason"], Is.EqualTo(ReportRefusalCodes.NowTooShort));
+                Assert.That(line.Fields["ReportId"], Is.EqualTo(17));
+                Assert.That(line.Fields["OwnerKind"], Is.EqualTo(ReportOwnerKind.Team));
+                Assert.That(line.Fields["OwnerId"], Is.EqualTo(42));
+                Assert.That(line.Message, Does.Not.Contain(SecretName));
             }
         }
 
