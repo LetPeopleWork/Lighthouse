@@ -57,11 +57,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         internal static readonly BoundaryTableFile TheTable = ReadTheTable();
 
         private static IEnumerable<TestCaseData> TheRowsOfTheBoundaryTable()
-            => TheTable.Rows.Select(row =>
-            {
-                var testCase = new TestCaseData(row).SetName($"A_window_at_an_edge_is_answered_as_the_table_says({row.Case})");
-                return row.IsThen ? testCase : testCase.Ignore(PendingSlice07);
-            });
+            => TheTable.Rows.Select(row => new TestCaseData(row).SetName($"A_window_at_an_edge_is_answered_as_the_table_says({row.Case})"));
 
         private static BoundaryTableFile ReadTheTable()
         {

@@ -71,6 +71,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
                 .Where(row => row.IsThen)
                 .Select(row => new TestCaseData(row).SetName($"ThenRefusal_answers_every_Then_row_of_the_boundary_table_as_it_says({row.Case})"));
 
+        // The same Now rows the browser's wizard and the server's acceptance suite are checked against.
+        [TestCaseSource(nameof(TheNowRowsOfTheBoundaryTable))]
+        public void NowRefusal_answers_every_Now_row_of_the_boundary_table_as_it_says(ReportWindowBoundaryScenarios.BoundaryRow row)
+        {
+            var bounds = ReportWindowBoundaryScenarios.TheTable.Bounds;
+            var today = Day(bounds.Today);
+            var doneItemsCutoffDays = row.KeepsEveryFinishedItem ? KeepsEverything : today.DayNumber - Day(bounds.EarliestStart!).DayNumber;
+
+            var refusal = ReportWindowPolicy.NowRefusal(row.LengthDays, today, doneItemsCutoffDays);
+
+            Assert.That(refusal, Is.EqualTo(row.Refusal));
+        }
+
+        private static IEnumerable<TestCaseData> TheNowRowsOfTheBoundaryTable()
+            => ReportWindowBoundaryScenarios.TheTable.Rows
+                .Where(row => !row.IsThen)
+                .Select(row => new TestCaseData(row).SetName($"NowRefusal_answers_every_Now_row_of_the_boundary_table_as_it_says({row.Case})"));
+
         private static DateOnly Day(string yearMonthDay) => DateOnly.ParseExact(yearMonthDay, "yyyy-MM-dd", CultureInfo.InvariantCulture);
 
         [TestCase(365, "2025-10-02")]
