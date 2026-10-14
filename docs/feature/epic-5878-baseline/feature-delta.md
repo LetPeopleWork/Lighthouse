@@ -618,6 +618,11 @@ sketch review (2026-10-14); D53–D54 the maintainer's decisions after the slice
   step shows Now's first and last day the way the Then step shows Then's ("= 5 Jul – 2 Oct 2026", counted back from
   the server's today), and under it the note "Sliding window, always ending today". The line "= the last N days,
   always ending today" is gone. Supersedes that part of D59.
+- [D63] **The report list offers Edit beside Delete** (maintainer 2026-10-14, manual review of slices 07–10: "would
+  expect the edit option also in the grid, not only when I have one open, same as delete"). The list's Actions
+  column holds a pencil ("Edit report", accessible name "Edit <name>") before the existing bin, for editors only.
+  It opens the same Edit report wizard over the list (starting on Now), reading the report first since the list row
+  does not carry Then; Save refreshes the list. A report of a type this version cannot show offers only Delete.
 
 ---
 
