@@ -11,7 +11,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
     /// Then is frozen at creation: every metric that applies to the owner is captured over Then's window and kept on
     /// the row. Now is never stored; each read computes it over a window of its own length ending today.
     /// </summary>
-    public class ThenAndNowTemplate(ReportMetricCatalog catalog, ILighthouseClock clock) : IReportTemplate
+    public class ThenAndNowTemplate(ReportMetricCatalog catalog, ILighthouseClock clock, ILogger<ThenAndNowTemplate> logger) : IReportTemplate
     {
         public const string TemplateKey = "then-and-now";
 
@@ -19,8 +19,20 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
 
         public IReadOnlyList<string> MetricKeysFor(ReportOwnerKind ownerKind) => [.. catalog.For(ownerKind).Select(metric => metric.Key)];
 
+        private HashSet<string> KnownMetricKeys(ReportOwnerKind ownerKind) => [.. MetricKeysFor(ownerKind)];
+
         public ReportOutcome<string> Freeze(ReportOwner owner, NewReport request, ReportCalendar calendar)
         {
+            if (request.ShownMetricKeys is not { Count: > 0 } shown)
+            {
+                return ReportOutcome<string>.Refused(ReportRefusalCodes.NoMetricShown);
+            }
+
+            if (!shown.All(KnownMetricKeys(owner.Kind).Contains))
+            {
+                return ReportOutcome<string>.Refused(ReportRefusalCodes.UnknownMetric);
+            }
+
             if (request.ThenAndNow is not NewThenAndNow settings)
             {
                 return ReportOutcome<string>.Refused(ReportRefusalCodes.ThenTooShort);
@@ -68,16 +80,23 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             var nowWindow = ReportWindowPolicy.NowWindow(calendar.Today, nowLengthDays)
                 ?? throw new JsonException($"Report {report.Id} holds a Now of {nowLengthDays} days, longer than the calendar reaches");
 
+            var known = KnownMetricKeys(owner.Kind);
+            var storedShown = ShownMetricKeysOf(report);
+            LogKeysNotInTheCatalog(report, owner, known, [.. storedShown, .. payload.Captures?.Keys.ToList() ?? []]);
+
             var metrics = new Dictionary<string, MetricRead>();
             foreach (var metric in catalog.For(owner.Kind))
             {
-                metrics[metric.Key] = metric.Read(CaptureOf(payload, metric.Key), owner, nowWindow);
+                if (CaptureOf(payload, metric.Key) is JsonObject capture)
+                {
+                    metrics[metric.Key] = metric.Read(capture, owner, nowWindow);
+                }
             }
 
             return new ReportRead(report.Id, report.Name, report.TemplateKey, owner.Kind, owner.Id, clock.ToInstanceDay(report.CreatedAt))
             {
                 ConcurrencyToken = report.ConcurrencyToken,
-                ShownMetricKeys = ShownMetricKeysOf(report),
+                ShownMetricKeys = [.. storedShown.Where(known.Contains)],
                 ThenAndNow = new ThenAndNowRead(thenWindow, nowWindow, IsRebuildable(thenWindow, calendar), metrics),
             };
         }
@@ -91,6 +110,16 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             {
                 ThenAndNow = thenWindow is null ? null : new ThenAndNowSummary(IsRebuildable(thenWindow, calendar)),
             };
+        }
+
+        // A newer version may have stored a metric this one has never heard of; the report still opens without it.
+        private void LogKeysNotInTheCatalog(Report report, ReportOwner owner, HashSet<string> known, List<string> stored)
+        {
+            foreach (var key in stored.Distinct().Where(key => !known.Contains(key)))
+            {
+                logger.LogWarning("Stored report {ReportId} of {OwnerKind} {OwnerId} holds metric {MetricKey}, which this version does not know; it is skipped",
+                    report.Id, owner.Kind, owner.Id, key);
+            }
         }
 
         private static bool IsRebuildable(ReportWindow thenWindow, ReportCalendar calendar)

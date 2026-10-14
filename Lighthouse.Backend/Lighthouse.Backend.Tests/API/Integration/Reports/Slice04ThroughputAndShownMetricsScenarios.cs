@@ -79,7 +79,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-04 @slice-04 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice04)]
         public async Task A_report_that_shows_no_metric_is_refused()
         {
             var gravity = ATeam("Team Gravity");
@@ -93,7 +92,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-04 @slice-04 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice04)]
         public async Task A_metric_that_is_not_in_the_catalog_is_refused()
         {
             var gravity = ATeam("Team Gravity");
@@ -107,7 +105,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice04)]
         public async Task An_older_report_did_not_capture_Throughput()
         {
             var gravity = GivenGravityFinishedOneAndTwoWorkItemsOnAlternateDaysInAugust();
@@ -126,7 +123,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:pure-function
         // Nothing finished on any day of Then: a real zero, shown like any other count.
         [Test]
-        [Ignore(PendingSlice04)]
         public async Task A_Then_where_nothing_finished_shows_a_real_zero()
         {
             var nova = ATeam("Team Nova");

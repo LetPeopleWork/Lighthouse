@@ -258,6 +258,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
 
             workItems.Save().GetAwaiter().GetResult();
+            scope.ServiceProvider.GetRequiredService<ITeamMetricsService>().InvalidateTeamMetrics(owner);
         }
 
         /// <summary>

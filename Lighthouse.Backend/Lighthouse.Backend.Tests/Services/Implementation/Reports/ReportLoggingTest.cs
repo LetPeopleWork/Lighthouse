@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Services.Implementation.Reports;
 using Lighthouse.Backend.Services.Implementation.Reports.Metrics;
@@ -16,6 +17,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         private static readonly ReportOwner Lightspeed = ReportOwner.Team(42);
 
         private static readonly string[] LoggedRefusalFields = ["Reason", "OwnerKind", "OwnerId", "TemplateKey"];
+
+        private const string NotInTheCatalog = "velocity";
+
+        private static readonly string[] OnlyCycleTime = [CycleTimeReportMetric.MetricKey];
 
         private static readonly TimeZoneInfo InstanceZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Zurich");
 
@@ -158,6 +163,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             Assert.That(logger.Lines, Is.Empty);
         }
 
+        [Test]
+        public async Task A_stored_metric_this_version_does_not_know_is_skipped_with_one_warning_naming_it()
+        {
+            await CreateTakingSeconds(0);
+            stored!.ShownMetricKeysJson = $"[\"{CycleTimeReportMetric.MetricKey}\",\"{NotInTheCatalog}\"]";
+            var payload = JsonNode.Parse(stored.TemplatePayloadJson)!.AsObject();
+            payload["captures"]!.AsObject()[NotInTheCatalog] = new JsonObject();
+            stored.TemplatePayloadJson = payload.ToJsonString();
+            logger.Lines.Clear();
+
+            var reader = new Mock<IReportReader>();
+            reader.Setup(r => r.GetForOwner(Lightspeed, 17)).Returns(stored);
+            var read = Queries(reader.Object).Get(Lightspeed, 17).Value!;
+
+            var line = logger.Lines.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(read.ShownMetricKeys, Is.EqualTo(OnlyCycleTime));
+                Assert.That(read.ThenAndNow!.Metrics.Keys, Is.EqualTo(OnlyCycleTime));
+                Assert.That(line.Level, Is.EqualTo(LogLevel.Warning));
+                Assert.That(line.Fields["MetricKey"], Is.EqualTo(NotInTheCatalog));
+                Assert.That(line.Fields["ReportId"], Is.EqualTo(17));
+                Assert.That(line.Fields["OwnerKind"], Is.EqualTo(ReportOwnerKind.Team));
+                Assert.That(line.Fields["OwnerId"], Is.EqualTo(42));
+                Assert.That(line.Message, Does.Not.Contain(SecretName));
+            }
+        }
+
         private async Task ReadTakingMilliseconds(int milliseconds)
         {
             await CreateTakingSeconds(0);
@@ -210,16 +243,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             return owners.Object;
         }
 
-        private static ThenAndNowTemplate Template(FakeLighthouseClock clock)
+        private ThenAndNowTemplate Template(FakeLighthouseClock clock)
         {
             var series = new Mock<IReportMetricSeries>();
             series.Setup(s => s.CycleTimePercentiles(Lightspeed, It.IsAny<ReportWindow>())).Returns(new CycleTimePercentiles(6, 11, 21, 20));
-            return new ThenAndNowTemplate(new ReportMetricCatalog([new CycleTimeReportMetric(series.Object)]), clock);
+            return new ThenAndNowTemplate(new ReportMetricCatalog([new CycleTimeReportMetric(series.Object)]), clock, logger);
         }
 
         private sealed record LogLine(LogLevel Level, string Message, Dictionary<string, object?> Fields);
 
-        private sealed class RecordingLogger : ILogger<ReportCommands>, ILogger<ReportQueries>
+        private sealed class RecordingLogger : ILogger<ReportCommands>, ILogger<ReportQueries>, ILogger<ThenAndNowTemplate>
         {
             public List<LogLine> Lines { get; } = [];
 

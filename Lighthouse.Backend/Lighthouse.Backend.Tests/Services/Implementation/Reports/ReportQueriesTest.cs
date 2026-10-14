@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Implementation.Reports.Metrics;
 using Lighthouse.Backend.Services.Interfaces.Reports;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
 
@@ -131,7 +132,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
             var series = new Mock<IReportMetricSeries>();
             series.Setup(s => s.CycleTimePercentiles(Lightspeed, It.IsAny<ReportWindow>())).Returns(new CycleTimePercentiles(6, 11, 21, 20));
-            var template = new ThenAndNowTemplate(new ReportMetricCatalog([new CycleTimeReportMetric(series.Object)]), clock);
+            var template = new ThenAndNowTemplate(new ReportMetricCatalog([new CycleTimeReportMetric(series.Object)]), clock, NullLogger<ThenAndNowTemplate>.Instance);
 
             return new ReportQueries(reader.Object, owners.Object, [template], clock, new FakeTimeProvider(Now), logger.Object);
         }

@@ -20,5 +20,9 @@ namespace Lighthouse.Backend.Models.Reports
         public const string NowTooShort = "now-too-short";
 
         public const string NowBeforeCutoff = "now-before-cutoff";
+
+        public const string NoMetricShown = "no-metric-shown";
+
+        public const string UnknownMetric = "unknown-metric";
     }
 }
