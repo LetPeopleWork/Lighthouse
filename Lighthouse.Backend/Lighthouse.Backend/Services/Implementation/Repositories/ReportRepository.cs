@@ -18,14 +18,13 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         public void Add(Report report) => context.Reports.Add(report);
 
-        public Report? FindForEdit(ReportOwner owner, int reportId)
-            => OwnedBy(owner).SingleOrDefault(report => report.Id == reportId);
+        public Report? FindForEdit(ReportOwner owner, int reportId) => Tracked(owner, reportId);
 
         public void ExpectUnchangedSince(Report report, Guid concurrencyToken) => context.ApplyConcurrencyTokenForEdit(report, concurrencyToken);
 
         public Report? Remove(ReportOwner owner, int reportId)
         {
-            var report = OwnedBy(owner).SingleOrDefault(candidate => candidate.Id == reportId);
+            var report = Tracked(owner, reportId);
             if (report is not null)
             {
                 context.Reports.Remove(report);
@@ -35,6 +34,9 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         }
 
         public Task Save() => context.SaveChangesAsync();
+
+        private Report? Tracked(ReportOwner owner, int reportId)
+            => OwnedBy(owner).SingleOrDefault(report => report.Id == reportId);
 
         private IQueryable<Report> OwnedBy(ReportOwner owner)
             => owner.Kind == ReportOwnerKind.Team

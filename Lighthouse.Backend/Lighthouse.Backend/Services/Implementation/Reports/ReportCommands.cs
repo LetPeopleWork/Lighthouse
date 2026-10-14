@@ -21,12 +21,13 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return ReportOutcome<ReportRead>.NotFound();
             }
 
+            var template = TemplateKeyed(request.TemplateKey);
             if (NameRefusal(request.Name) is string nameRefusal)
             {
-                return Refuse(owner, TemplateFor(request)?.Key, nameRefusal);
+                return Refuse(owner, template?.Key, nameRefusal);
             }
 
-            if (TemplateFor(request) is not IReportTemplate template)
+            if (template is null)
             {
                 return Refuse(owner, null, ReportRefusalCodes.TemplateNotSupported);
             }
@@ -61,7 +62,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return ReportOutcome<ReportRead>.NotFound();
             }
 
-            if (templates.Find(candidate => candidate.Key == report.TemplateKey) is not IReportTemplate template)
+            if (TemplateKeyed(report.TemplateKey) is not IReportTemplate template)
             {
                 return ReportOutcome<ReportRead>.Unsupported(ReportRefusalCodes.TemplateNotSupported);
             }
@@ -102,7 +103,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             return ReportOutcomeStatus.Done;
         }
 
-        private IReportTemplate? TemplateFor(NewReport request) => templates.Find(candidate => candidate.Key == request.TemplateKey);
+        private IReportTemplate? TemplateKeyed(string templateKey) => templates.Find(candidate => candidate.Key == templateKey);
 
         // An unknown template key is what the caller typed, so only a key this version offers is ever logged.
         private ReportOutcome<ReportRead> Refuse(ReportOwner owner, string? templateKey, string reason)

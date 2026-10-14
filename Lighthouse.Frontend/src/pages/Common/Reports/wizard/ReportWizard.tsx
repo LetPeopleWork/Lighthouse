@@ -25,6 +25,7 @@ import {
 } from "../reportOwner";
 import {
 	COULD_NOT_SAVE,
+	type RefusalWords,
 	refusalCopyFor,
 	useRefusalWords,
 } from "./reportRefusalCopy";
@@ -36,9 +37,20 @@ const STALE_SAVE =
 	"This report was changed by someone else. Reload to see their changes.";
 const TYPE_STEP = 0;
 
+const CREATING = { title: "Create Report", action: "Create" };
+const EDITING = { title: "Edit report", action: "Save" };
+
 /** Somebody else saved the report after this edit read it, so the edit would overwrite theirs. */
 const isStaleSave = (error: unknown): boolean =>
 	error instanceof ApiError && error.code === 409;
+
+const isThenBeforeCutoff = (error: unknown): boolean =>
+	error instanceof ApiError && error.problemCode === "then-before-cutoff";
+
+const saveFailureCopyFor = (error: unknown, words: RefusalWords): string =>
+	isStaleSave(error)
+		? STALE_SAVE
+		: refusalCopyFor(error, words, COULD_NOT_SAVE);
 
 interface ReportWizardProps {
 	owner: IReportOwner;
@@ -61,6 +73,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 	const chosen: ReportTemplateKey = "then-and-now";
 	const type = reportTypes[chosen];
 	const isEditing = editing !== undefined;
+	const words = isEditing ? EDITING : CREATING;
 	const [draft, setDraft] = useState(() =>
 		editing === undefined ? type.newDraft() : type.draftOf(editing),
 	);
@@ -88,14 +101,18 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 
 	const refusalWordsFor = useRefusalWords(owner);
 
+	const startSubmitting = () => {
+		setIsSubmitting(true);
+		setRefusal(null);
+	};
+
 	const refuse = (copy: string) => {
 		setRefusal(copy);
 		setIsSubmitting(false);
 	};
 
 	const create = async (bounds: IReportTemplates) => {
-		setIsSubmitting(true);
-		setRefusal(null);
+		startSubmitting();
 		let reportId: number;
 		try {
 			reportId = await reportService.createReport(
@@ -105,10 +122,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 		} catch (error) {
 			refuse(refusalCopyFor(error, refusalWordsFor(bounds)));
 			// The oldest kept day has moved on since the wizard opened; ask again so Then's own check agrees.
-			if (
-				error instanceof ApiError &&
-				error.problemCode === "then-before-cutoff"
-			) {
+			if (isThenBeforeCutoff(error)) {
 				refetch().catch(() => undefined);
 			}
 			return;
@@ -126,19 +140,14 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 	};
 
 	const save = async (report: IReport, bounds: IReportTemplates) => {
-		setIsSubmitting(true);
-		setRefusal(null);
+		startSubmitting();
 		try {
 			await reportService.editReport(owner, report.id, {
 				...type.toChange(draft, bounds),
 				concurrencyToken: report.concurrencyToken,
 			});
 		} catch (error) {
-			refuse(
-				isStaleSave(error)
-					? STALE_SAVE
-					: refusalCopyFor(error, refusalWordsFor(bounds), COULD_NOT_SAVE),
-			);
+			refuse(saveFailureCopyFor(error, refusalWordsFor(bounds)));
 			return;
 		}
 
@@ -165,9 +174,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 			maxWidth="md"
 			fullWidth
 		>
-			<DialogTitle id={TITLE_ID}>
-				{isEditing ? "Edit report" : "Create Report"}
-			</DialogTitle>
+			<DialogTitle id={TITLE_ID}>{words.title}</DialogTitle>
 			<WizardStepperFrame
 				steps={["Type", ...type.steps.map((step) => step.label)]}
 				activeStep={activeStep}
@@ -191,7 +198,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 				primaryAction={
 					isLastStep && templates !== undefined
 						? {
-								label: isEditing ? "Save" : "Create",
+								label: words.action,
 								onClick: () => submit(templates),
 								disabled: !isComplete || isSubmitting,
 							}
