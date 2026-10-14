@@ -24,13 +24,6 @@ export class ReportPage {
 			.last();
 	}
 
-	/** The line naming the frozen Then window, such as "Then: 90 days to 31 Jul 2026 — frozen". */
-	get thenWindow(): Locator {
-		return this.page.getByText(
-			/^Then: \d+ days to \d{1,2} \w{3} \d{4} — frozen/,
-		);
-	}
-
 	panel(title: string): Locator {
 		return this.page.getByRole("region", { name: title });
 	}

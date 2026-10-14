@@ -9,11 +9,21 @@ import type {
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { ThenNowColumn, ThenNowColumns } from "./panels/ThenNowPanelFrame";
-import { resolvedThenDays } from "./wizard/thenAndNow/thenAndNowDraft";
+import { windowDaysOf } from "./wizard/thenAndNow/thenAndNowDraft";
 
 const CYCLE_TIME_PERCENTILES = ["p85", "p70", "p50"] as const;
 
-/** Every Work Item that closed in a window has a Cycle Time, so the percentiles' sample size is the count closed. */
+/** Off screen but read aloud: it names the summary for anyone moving through the page by headings. */
+const VISUALLY_HIDDEN = {
+	position: "absolute",
+	width: "1px",
+	height: "1px",
+	overflow: "hidden",
+	clip: "rect(0 0 0 0)",
+	whiteSpace: "nowrap",
+} as const;
+
+/** The Work Items behind the Cycle Time percentiles: those that closed in the window with a Cycle Time. */
 const closedCountOf = (side: ReportMetricSide): number | null => {
 	const values = CYCLE_TIME_PERCENTILES.map((key) => side[key]);
 	const size = values
@@ -25,9 +35,9 @@ const closedCountOf = (side: ReportMetricSide): number | null => {
 		: null;
 };
 
-const windowLineOf = (window: IReportWindow): string => {
-	const length = `${window.lengthDays} ${window.lengthDays === 1 ? "day" : "days"}`;
-	const days = resolvedThenDays(window.end, window.lengthDays);
+const windowLineOf = (reportWindow: IReportWindow): string => {
+	const length = `${reportWindow.lengthDays} ${reportWindow.lengthDays === 1 ? "day" : "days"}`;
+	const days = windowDaysOf(reportWindow.start, reportWindow.end);
 	return days === null ? length : `${days} · ${length}`;
 };
 
@@ -57,7 +67,14 @@ const ThenAndNowSummary: React.FC<{ readonly thenAndNow: IThenAndNow }> = ({
 	};
 
 	return (
-		<Paper variant="outlined" data-report-summary sx={{ p: 2, width: "100%" }}>
+		<Paper
+			variant="outlined"
+			data-report-summary
+			sx={{ p: 2, width: "100%", position: "relative" }}
+		>
+			<Typography component="h2" sx={VISUALLY_HIDDEN}>
+				Summary
+			</Typography>
 			<ThenNowColumns count={2}>
 				<ThenNowColumn data-summary-side="then" heading="Then" first>
 					<SummaryLine text={windowLineOf(thenAndNow.thenWindow)} />

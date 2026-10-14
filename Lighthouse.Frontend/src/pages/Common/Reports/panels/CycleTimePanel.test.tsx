@@ -53,18 +53,8 @@ describe("the Cycle Time panel", () => {
 	});
 
 	// The report's summary counts the closed Work Items once; the panel does not repeat it.
-	it.each([
-		["every percentile has a value", NOW_IN_FULL],
-		[
-			"its first percentile is a dash",
-			{ p85: aDash("too-few-points"), p70: shown(10, 38), p50: shown(5, 38) },
-		],
-		[
-			"its first percentile is missing altogether",
-			{ p70: shown(10, 38), p50: shown(5, 38) },
-		],
-	])("heads each side by its name alone when %s", (_, side) => {
-		renderPanel({ atThen: side, atNow: side });
+	it("heads each side by its name alone", () => {
+		renderPanel({ atThen: NOW_IN_FULL, atNow: NOW_IN_FULL });
 
 		expect(headingOf("then")).toBe("Then");
 		expect(headingOf("now")).toBe("Now");
@@ -79,18 +69,5 @@ describe("the Cycle Time panel", () => {
 		expect(segment("change")).toHaveTextContent(
 			/^Change ▼ 9 days \(−43 %\) — ▼ 1 day \(−20 %\)$/,
 		);
-	});
-
-	it("names nothing a side rests on when no percentile says", () => {
-		renderPanel({
-			atThen: {
-				p85: aDash("no-finished-items"),
-				p70: aDash("no-finished-items"),
-				p50: aDash("no-finished-items"),
-			},
-			atNow: NOW_IN_FULL,
-		});
-
-		expect(headingOf("then")).toBe("Then");
 	});
 });

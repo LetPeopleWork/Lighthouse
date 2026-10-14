@@ -268,6 +268,13 @@ describe("The report's summary header", () => {
 			"2 Oct – 30 Dec 2025 · 90 days",
 			"31 Dec 2025 – 13 Jan 2026 · 14 days",
 		],
+		[
+			"a Then whose first day the server names apart from its length",
+			aWindow("2026-06-01", "2026-07-31", 90),
+			aWindow("2026-07-05", "2026-10-02", 90),
+			"1 Jun – 31 Jul 2026 · 90 days",
+			"5 Jul – 2 Oct 2026 · 90 days",
+		],
 	])(
 		"names both windows and their lengths for %s, a year written once where both ends share it",
 		async (_, thenWindow, nowWindow, thenLine, nowLine) => {

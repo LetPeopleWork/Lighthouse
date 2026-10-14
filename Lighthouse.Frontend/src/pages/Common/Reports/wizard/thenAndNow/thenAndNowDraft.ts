@@ -64,6 +64,12 @@ export const nowLengthOf = (draft: ThenAndNowDraft): string =>
 
 const LONG_DAY = "d MMM yyyy";
 
+const daysFromTo = (startDay: Date, endDay: Date): string => {
+	const startFormat =
+		startDay.getFullYear() === endDay.getFullYear() ? "d MMM" : LONG_DAY;
+	return `${format(startDay, startFormat)} – ${format(endDay, LONG_DAY)}`;
+};
+
 /** "5 Jul – 2 Oct 2026", or with both years when the days fall in different years; null when no date can name the first day. */
 export const resolvedThenDays = (
 	end: string,
@@ -75,9 +81,16 @@ export const resolvedThenDays = (
 	const startDay = subDays(endDay, lengthDays - 1);
 	if (!isValid(startDay)) return null;
 
-	const startFormat =
-		startDay.getFullYear() === endDay.getFullYear() ? "d MMM" : LONG_DAY;
-	return `${format(startDay, startFormat)} – ${format(endDay, LONG_DAY)}`;
+	return daysFromTo(startDay, endDay);
+};
+
+/** A window's days as resolvedThenDays writes them, from its first and last day; null when either is not a day. */
+export const windowDaysOf = (start: string, end: string): string | null => {
+	const startDay = parseLocalDate(start);
+	const endDay = parseLocalDate(end);
+	return startDay === null || endDay === null
+		? null
+		: daysFromTo(startDay, endDay);
 };
 
 export const defaultNameOf = (
