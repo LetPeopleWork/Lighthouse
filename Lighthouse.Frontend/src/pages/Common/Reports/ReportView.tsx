@@ -10,7 +10,11 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { WidgetBody } from "../MetricsView/WidgetShell";
 import { queryStatusOf } from "../MetricsView/widgetStatus";
-import { inCatalogOrder, panelFor } from "./panels/reportPanelRegistry";
+import {
+	inCatalogOrder,
+	metricNameTermKeyOf,
+	panelFor,
+} from "./panels/reportPanelRegistry";
 import UnsupportedMetricPanel from "./panels/UnsupportedMetricPanel";
 import { reportsPathOf } from "./reportOwner";
 import ThenAndNowHeader from "./ThenAndNowHeader";
@@ -53,7 +57,13 @@ const ReportPanels: React.FC<{ readonly report: IReport }> = ({ report }) => {
 
 	return inCatalogOrder(report.shownMetricKeys).map((key) => {
 		const panel = panelFor(key);
-		if (panel === undefined) return <UnsupportedMetricPanel key={key} />;
+		if (panel === undefined)
+			return (
+				<UnsupportedMetricPanel
+					key={key}
+					name={getTerm(metricNameTermKeyOf(key))}
+				/>
+			);
 		const metric = report.thenAndNow.metrics[key];
 		if (!metric) return null;
 		const Panel = panel.component;

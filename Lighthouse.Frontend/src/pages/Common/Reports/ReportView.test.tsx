@@ -5,6 +5,7 @@ import type {
 	IReport,
 	IReportMetric,
 	IReportWindow,
+	ReportMetricKey,
 	ReportMetricSide,
 } from "../../../models/Reports/Report";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -892,6 +893,26 @@ describe("Values a report cannot show", () => {
 		expect(screen.getByText(METRIC_FROM_A_NEWER_VERSION)).toBeVisible();
 		expect(screen.queryByText(COULD_NOT_LOAD)).toBeNull();
 	});
+
+	// @us-04 @slice-04 @error @contract-shape:pure-function
+	// The note stands where the panel would, so it is headed as the panel would be; a metric from a later version has no word here and goes by its key.
+	it.each<[ReportMetricKey, string]>([
+		["wip", WIP_PANEL],
+		[A_LATER_METRIC, A_LATER_METRIC],
+	])(
+		"heads the note in place of %j with %j, the metric's name where this version has one",
+		async (key, title) => {
+			openTheReport(
+				theEngagementStartReport({ shownMetricKeys: ["cycle-time", key] }),
+			);
+			await theReportIsReady();
+
+			expect(thePanelTitles()).toEqual([CYCLE_TIME_PANEL, title]);
+			expect(
+				within(await thePanel(title)).getByText(METRIC_FROM_A_NEWER_VERSION),
+			).toBeVisible();
+		},
+	);
 });
 
 describe("A report on a slow or failing connection", () => {
