@@ -51,3 +51,12 @@ The failure message names the file or class, its time, the budget, and the allow
 - **Negative**: until the backend switches to failing, a slow backend class only warns, and a warning can be ignored.
 - **Negative**: a legitimately slow new test now needs an allowlist entry in the same change, one more file to touch.
 - **Neutral**: product behaviour, API contracts and authorization are unchanged; this governs the CI test jobs only. `docs/ci-learnings.md` gains the rule: a new test file over the budget fails CI; speed it up or allowlist it with a reason.
+
+## Amendment 2026-10-14 (provisional, pending maintainer ratification)
+
+**Change to decision 6.** Until at least five `main` runs after the fixes are pushed exist to calibrate on, **both** stacks run the check with `--warn-only`. The first budget is a provisional one: the same formula as decision 3, with L taken from timings measured on a developer machine and from the most recent CI timings for the tests the fixes did not touch.
+
+- **Frontend:** once those five runs exist, the budget is worked out again on them and the frontend switches to failing by deleting `--warn-only` from its step.
+- **Backend:** unchanged, it follows decision 6 and switches to failing once at least five backend `main` runs after the budget commit show no budget warning.
+
+**Why.** The fixes this budget depends on were made while the maintainer was away and nothing could be pushed, so no CI run of the fixed suites exists yet. Decision 3 asks for the budget to be set from such runs, and a developer machine runs at a different speed from the CI runners. A failing check on a number nobody has checked against CI could turn the first push red because the number is wrong, not because a test got slow. That would teach people to distrust the check before it ever caught anything. Warn mode still fails on a missing or broken timing file, a broken allowlist, a stale allowlist entry or a failing self-test, so the check is live from the first push. Only the budget comparison is softened, and only until it can be calibrated.

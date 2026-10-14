@@ -12,7 +12,7 @@
 1. Read the `test-timings-*.csv` the jobs already produce (extend `Scripts/test-timings/`).
 2. Budget per stack: B ≥ 2.1 × L (L = largest non-allowlisted unit over ≥5 post-fix `main` runs; the 0.55–1.13 runner spread is a ratio of about 2.05) and B ≤ 0.55 × the smallest regression to catch (frontend ≈ 63 s). Units breaking the lower bound go on the allowlist with a reason and their own ceiling. Derivation recorded.
 3. Frontend fails from the start; backend warns, and flips to failing once ≥5 backend `main` runs after the budget commit show zero budget warnings.
-4. Create `Scripts/test-time-budget.json`: the budget per stack and the allowlist, each entry with a reason and its own ceiling (seeded from slice 05).
+4. Create `Scripts/test-timings/test-time-budget.json`: the budget per stack and the allowlist, each entry with a reason and its own ceiling (seeded from slice 05).
 5. Implement `check_budget.py` so the pending acceptance tests in `Scripts/test-timings/tests/test_check_budget.py` pass.
 6. Add the check as the last step of both verify jobs (`ci_frontend.yml`, `ci_backend.yml`), running the timing-script self-tests in the same step.
 7. Add `Scripts/test-timings/**` and the budget file to the trigger paths in `ci.yml` and `ci_changes.yml`, so a change to the guard alone starts both verify jobs.

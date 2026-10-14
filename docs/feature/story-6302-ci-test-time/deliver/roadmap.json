@@ -1,0 +1,542 @@
+{
+  "roadmap": {
+    "project_id": "story-6302-ci-test-time",
+    "created_at": "2026-10-14",
+    "total_steps": 14,
+    "total_phases": 6,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "goal": "Story #6302: bring the Verify Frontend and Verify Backend jobs back near their early-October times and keep them there. Slice 01 settles the vite 8.3.4 suspicion by A/B; slices 02-03 speed up the eight slow new frontend test files; slice 04 measures, then cuts, the per-test host build in the Refinement, Reports and TeamFeatureSize harness bases; slice 05 explains the four 40-60 s backend outliers and fixes the ones waiting on nothing; slice 06 adds the test-time budget guard (check_budget.py, test-time-budget.json, the last step of both verify jobs, the DO-7 trigger paths, the ci-learnings rule). Done for this run when every evidence check E-01..E-05c that can be run locally is recorded under its slice's `## Wave: DELIVER` heading in feature-delta.md; the 42 tests in Scripts/test-timings/tests/test_check_budget.py are unskipped and green and `python3 -m unittest discover -s Scripts/test-timings/tests` reports 0 skipped on Python 3.12 and 3.14; `pnpm test` and `pnpm build` are green with zero warnings; `dotnet build` has zero warnings and the backend suite is green with `--filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"`. Nothing is pushed in this run: the CI medians (E-02b CI half, E-03b, E-04d, E-KPI), the budget recalibration on post-push `main` runs and both stacks' switch from warn to fail are owed after the maintainer pushes.",
+    "paradigm_note": "The Hypothesis + state-delta unit mandate from nw-roadmap does not apply, deliberately. Slices 01-05 change how fast existing tests run, not what anything does; the tests being sped up are their own behaviour oracle (D7), and acceptance is the evidence checks E-xx that DISTILL wrote as commands. Slice 06 is a Python 3.12-stdlib script whose acceptance tests are subprocess tests in stdlib unittest, example-based (DI-11; Hypothesis is not a dependency and DO-1 forbids adding one). RED for slice 06 is removing `@unittest.skip(\"pending — DELIVER slice 06\")` from the tests a step owns and watching them fail against the scaffold, as DISTILL's red-classification records; GREEN is check_budget.py.",
+    "exit_gates": [
+      "End of every slice 02-05: E-names (0 names lost, no newly not-passed name, per-file / per-class counts not lower) and E-weaken (skip grep prints nothing; every removed `expect(` / `Assert.` line paired with its replacement in the review note) recorded in feature-delta.md for that slice's files.",
+      "End of slice 04: E-04c, 3 consecutive green full-assembly backend runs with the standard filter, BackendTestParallelizationGuardTest green, no `[NonParallelizable]` added.",
+      "End of slice 06: E-06a `python3 -m unittest discover -s Scripts/test-timings/tests` 0 skipped on 3.12 (`uv run --no-project --python 3.12 python -m unittest discover -s Scripts/test-timings/tests`) and on 3.14; E-06c planted 120 s row on real data exits 1 with an `::error::` naming it (run without --warn-only), output pasted in feature-delta.md.",
+      "Owed after the maintainer pushes (not steps here, recorded as follow-ups in feature-delta.md): CI medians over >=5 `main` runs for E-02b, E-03b, E-04d and E-KPI; re-derive both budgets from >=5 post-push `main` runs (E-06b); remove --warn-only from the frontend step after >=5 post-push `main` runs; remove it from the backend step once >=5 backend `main` runs after the budget commit show zero budget warnings."
+    ]
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer (conditionally approved; 3 high fixed)",
+    "date": "2026-10-14",
+    "notes": "Written by nw-solution-architect from feature-delta.md (DISCUSS, DESIGN, DEVOPS, DISTILL), slices 01-06 and test_check_budget.py. Not yet reviewed."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-6302-ci-test-time/feature-delta.md",
+    "slices": "docs/feature/story-6302-ci-test-time/slices/slice-01-vite-ab.md, slice-02-frontend-two-worst.md, slice-03-frontend-next-six.md, slice-04-backend-new-integration.md, slice-05-backend-outliers.md, slice-06-budget-guard.md",
+    "environments": "docs/feature/story-6302-ci-test-time/environments.yaml",
+    "adr": "docs/product/architecture/adr-237-test-time-budget-guard.md",
+    "acceptance_tests": "Scripts/test-timings/tests/test_check_budget.py",
+    "kpi_contracts": "docs/product/kpi-contracts.yaml (OUT-6302-*)",
+    "ado_story": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6302"
+  },
+  "user_decisions": [
+    "D5 - fix both stacks.",
+    "D6 / DS-Q1 / ADR-237 - per-file (frontend) and per-class (backend) time budget read from the existing timing CSVs; B >= 2.1 x L and B <= 0.55 x the smallest regression to catch; JSON allowlist with reason and ceiling per entry; fail closed on unreadable input; self-tests run in the step.",
+    "D7 / DDD-9 - behaviour preserved: no test deleted, skipped or weakened; per-file / per-class names and counts unchanged or higher; a role query that is the assertion stays a role query.",
+    "D8 - the vite question is settled by a local A/B, >=3 runs per arm, alternated.",
+    "DS-Q2 / DDD-5 - host once per fixture, per measured harness, only where set-up dominates; per-test inputs reset in [SetUp] through fixture-owned objects; no new [NonParallelizable] (DDD-6).",
+    "DS-Q3 / DDD-8 - frontend fixes inside the existing kits (RefinementTabTestKit, WorkItemsDialogTestKit) where the cost sits in a kit helper, per file otherwise.",
+    "DO-1 - Python 3.12 stdlib floor; DI-13 refusal on older interpreters.",
+    "DO-3 / DI-7 - --warn-only softens budget breaches only, never a fail-closed input error, a stale allowlist entry or a failing self-test.",
+    "DO-4 / DI-5 - one `::error::` / `::warning::` annotation per finding, `%`, CR and LF percent-encoded; no tee into the step summary.",
+    "DO-7 - Scripts/test-timings/** added to ci.yml push paths and both ci_changes.yml patterns in the same commit as the guard steps.",
+    "DELIVER deviation (this run, see the ADR-237 amendment of 2026-10-14 and feature-delta.md `## Wave: DELIVER / [WHY] Upstream Issues`) - both stacks wired with --warn-only and a provisional budget calibrated on local post-fix timings, because nothing is pushed and no post-fix `main` runs exist."
+  ],
+  "out_of_scope": [
+    "Runner type, sharding, Vitest pool / worker / coverage config, the live-connector categories, E2E jobs, older files that did not grow (DISCUSS out-of-scope).",
+    "A reusable host as the default integration base (DS-Q2 option B) and a shared DataGrid helper across kits (DS-Q3 option C) unless slices 02-03 earn it.",
+    "Finalize, push, ADO transitions, mutation testing and separate refactor passes: run separately, not steps here."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Settle the 13 Oct dependency-bump suspicion",
+      "description": "Slice 01 / US-01. A local A/B of vite 8.3.2 vs 8.3.4 (then MUI and pnpm 12.10 if vite is clean) records a verdict; a fix ships only if a bump is guilty. Runs first: its result is the baseline the frontend slices measure against.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "An A/B on one machine says whether vite 8.3.4 slowed every frontend test",
+          "description": "Pin the test set to one commit. Run `pnpm vitest run` at least three times per arm, alternated A B A B A B (arm A vite 8.3.2 via `pnpm add -D vite@8.3.2 --save-exact`, arm B 8.3.4 as committed, restoring package.json and the lockfile between runs). Apply AC-01.2's non-overlap rule. If vite is clean, the same protocol once each for the MUI bump (641ac9c6f) and pnpm 12.10 (1bbde5105). Record everything under `## Wave: DELIVER / slice 01` in feature-delta.md; if a bump is guilty, pin or configure it and show the fix on the A/B.",
+          "agent": "nw-software-crafter",
+          "commit_type": "docs",
+          "test_file": "docs/feature/story-6302-ci-test-time/feature-delta.md",
+          "scenario_name": "E-01",
+          "estimated_hours": 7,
+          "files_to_modify": [
+            "docs/feature/story-6302-ci-test-time/feature-delta.md (edit - A/B record: arm, version, commit, each Duration, median, min-max spread, machine, verdict)",
+            "Lighthouse.Frontend/package.json and pnpm-lock.yaml (edit - ONLY if the verdict finds a guilty bump and the fix is a pin; otherwise untouched, the arm-A change is never committed)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "feature-delta.md shows, per arm, at least three Vitest `Duration` values from the same machine and the same commit, with their median and min-max spread.",
+            "The verdict follows AC-01.2: an arm counts as slower only when its fastest run is slower than the other arm's slowest run; otherwise the hypothesis is recorded as disproved.",
+            "If vite is clean, the MUI and pnpm 12.10 bumps each have the same record and verdict.",
+            "If a bump is guilty, the fix is committed and a fresh A/B run shows the fixed arm inside the faster arm's spread; if none is guilty, no file outside feature-delta.md changes.",
+            "No test file changes in this step."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: a measurement, not a contract; the oracle is the A/B record (E-01). CI runner variance (0.55-1.13) is why CI runs do not count here (D8). Close other heavy processes during the runs and note the machine. The test count in each run's summary must match across arms, or the run does not count. ESTIMATE: about 6 full Vitest runs x ~12 min per bump, up to three bumps (vite, MUI, pnpm 12.10), so up to ~3.6 h of runs; the 7 h is mostly wall-clock time with the machine running unattended, not hands-on effort."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "The two slowest new frontend files",
+      "description": "Slice 02 / US-02. Profile, then change how RefinementView.paging and WorkItemsDialog.contexts set up and wait, not what they assert. The cause found for each sets the pattern slice 03 reuses.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "RefinementView.paging runs in a fraction of its 115 s with every test kept",
+          "description": "Profile the file locally (Vitest per-test durations, `--reporter=verbose`) against DESIGN F8's candidates: 143 rows through the real DataGrid per test, `getAllByRole(\"row\")` then `within(row)` per row in the kit's page reader, a `waitFor` running to its timeout, `user.type` delays. Fix where the cost sits: inside RefinementTabTestKit if it is a kit helper (DS-Q3 B), in the file otherwise. Record E-names, E-weaken and the one-line cause.",
+          "agent": "nw-software-crafter",
+          "commit_type": "test",
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx",
+          "scenario_name": "E-02a, E-02b (local), E-02c",
+          "estimated_hours": 4,
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx (edit - set-up and waiting only)",
+            "Lighthouse.Frontend/src/tests/RefinementTabTestKit.tsx (edit - if profiling puts the cost in a kit helper)",
+            "docs/feature/story-6302-ci-test-time/feature-delta.md (edit - slice 02 record: before/after names and counts, local times, one-line cause)"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "criteria": [
+            "E-names on the file: `comm -23 before after` prints nothing, no test that passed before is now skipped or failing, and the test count is unchanged or higher.",
+            "E-weaken on the slice diff: the skip grep prints nothing, and every removed `expect(` line is paired with its same-meaning replacement in the review note; a role query that is the assertion stays a role query.",
+            "The file's local summed time after the change is recorded beside its before time, measured from the run's JSON.",
+            "feature-delta.md names, in one line, the measured reason the file was slow.",
+            "Every other file importing RefinementTabTestKit still passes with its names unchanged (`pnpm test`).",
+            "Any removed or shortened wait (a waitFor/findBy replaced by a one-shot query, or a lowered timeout) is listed in this step's DELIVER note in feature-delta.md, together with the assertion that still proves the behaviour."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: test-performance refactor; the file's own tests are the oracle (D7), held by E-names and E-weaken. Run E-names `before` on the slice's base commit before editing. A kit change reaches RefinementView.comments and .votes too: run them with the file. Production code stays untouched; if a test exposes slowness a user would feel, raise it, do not fold it in. The CI half of E-02b (median of >=5 `main` runs) is owed after push."
+        },
+        {
+          "id": "02-02",
+          "name": "WorkItemsDialog.contexts runs in a fraction of its 105 s with every test kept",
+          "description": "Profile the file locally (108 tests, each mounting the full dialog + DataGrid; every kit helper starting from `screen.getByRole(\"dialog\")`, DESIGN F8). Fix inside WorkItemsDialogTestKit where the cost sits in a kit helper, in the file otherwise. Record E-names, E-weaken, the one-line cause, and the two files' summed local time. Add a ci-learnings rule if one falls out of 02-01 and 02-02.",
+          "agent": "nw-software-crafter",
+          "commit_type": "test",
+          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx",
+          "scenario_name": "E-02a, E-02b (local), E-02c",
+          "estimated_hours": 5,
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx (edit - set-up and waiting only)",
+            "Lighthouse.Frontend/src/tests/WorkItemsDialogTestKit.tsx (edit - if profiling puts the cost in a kit helper)",
+            "docs/feature/story-6302-ci-test-time/feature-delta.md (edit - slice 02 record)",
+            "docs/ci-learnings.md (edit - only if a rule falls out of the two causes)"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "criteria": [
+            "E-names on the file: no name lost, no newly not-passed test, count unchanged or higher.",
+            "E-weaken on the slice diff passes as in 02-01.",
+            "RefinementView.paging and WorkItemsDialog.contexts together run in 40 s or less locally, summed from one run's JSON.",
+            "feature-delta.md names, in one line, the measured reason this file was slow, and says whether 02-01's cause and this one are the same pattern (input to slice 03 and DS-Q3 C).",
+            "Every other file importing WorkItemsDialogTestKit still passes with its names unchanged (`pnpm test`).",
+            "Any removed or shortened wait (a waitFor/findBy replaced by a one-shot query, or a lowered timeout) is listed in this step's DELIVER note in feature-delta.md, together with the assertion that still proves the behaviour."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: test-performance refactor held by D7 checks. A shared helper across the two kits ships here only if both files show the same hotspot and it is used by both (slice-02 taste test); otherwise keep each fix in its own kit. CI median owed after push."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "The next six slow frontend files",
+      "description": "Slice 03 / US-03. Carry slice 02's pattern to the six remaining files; profile only where it does not fit. Grouped by shared test kit: the two RefinementTabTestKit siblings, then the four files outside the kits.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "RefinementView.comments and RefinementView.votes take slice 02's kit fix",
+          "description": "Both files read the Refinement tab through RefinementTabTestKit. Apply 02-01's finding (already in the kit, or the same change in the file), profile where it does not carry over, and record D7 checks and local times for both.",
+          "agent": "nw-software-crafter",
+          "commit_type": "test",
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.comments.test.tsx",
+          "scenario_name": "E-03a, E-03b (local)",
+          "estimated_hours": 3,
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.comments.test.tsx (edit - set-up and waiting only)",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.votes.test.tsx (edit - set-up and waiting only)",
+            "Lighthouse.Frontend/src/tests/RefinementTabTestKit.tsx (edit - only if a further kit helper carries the cost)",
+            "docs/feature/story-6302-ci-test-time/feature-delta.md (edit - slice 03 record)"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "criteria": [
+            "E-names on both files: no name lost, no newly not-passed test, per-file counts unchanged or higher.",
+            "E-weaken on the step diff passes (no added skip; removed assertions paired with same-meaning replacements).",
+            "Each file's local before and after time is recorded in feature-delta.md.",
+            "feature-delta.md says whether slice 02's pattern carried over to these files or which other cause was measured.",
+            "Any removed or shortened wait (a waitFor/findBy replaced by a one-shot query, or a lowered timeout) is listed in this step's DELIVER note in feature-delta.md, together with the assertion that still proves the behaviour."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: test-performance refactor held by D7 checks. Run E-names `before` for all six slice-03 files on the slice's base commit before editing any of them."
+        },
+        {
+          "id": "03-02",
+          "name": "BaseMetricsView.loading, both ModifyTeamSettings files and DataGridBase.paging run fast with every test kept",
+          "description": "The four slow files that use neither kit: BaseMetricsView.loading, ModifyTeamSettings.refinementNeed, ModifyTeamSettings.readiness, DataGridBase.paging. Profile each, apply slice 02's pattern where it fits, fix per file otherwise, and record the six files' local sum.",
+          "agent": "nw-software-crafter",
+          "commit_type": "test",
+          "test_file": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.paging.test.tsx",
+          "scenario_name": "E-03a, E-03b (local)",
+          "estimated_hours": 6,
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx (edit - set-up and waiting only)",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx (edit - set-up and waiting only)",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx (edit - set-up and waiting only)",
+            "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.paging.test.tsx (edit - set-up and waiting only)",
+            "docs/feature/story-6302-ci-test-time/feature-delta.md (edit - slice 03 record and verdict)"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "criteria": [
+            "E-names on all four files: no name lost, no newly not-passed test, per-file counts unchanged or higher.",
+            "E-weaken on the step diff passes.",
+            "The six slice-03 files together run in 70 s or less locally, and all eight named files in 110 s or less, summed from one run's JSON.",
+            "feature-delta.md states whether one pattern explains the slow new files (slice 03 hypothesis) and whether DS-Q3 C is earned.",
+            "`pnpm test` and `pnpm build` are green with zero warnings.",
+            "Any removed or shortened wait (a waitFor/findBy replaced by a one-shot query, or a lowered timeout) is listed in this step's DELIVER note in feature-delta.md, together with the assertion that still proves the behaviour."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: test-performance refactor held by D7 checks. BaseMetricsView.loading pins the loading and could-not-load looks: keep every status assertion (`data-widget-status`, spinner, message) as it is; only how the test reaches that state may change. If a remaining cause is not fixed here, note it for a follow-up ADO item (AC-03.3); CI medians (E-03b, OUT-6302-fe-job) are owed after push."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "New backend integration classes stop repeating set-up",
+      "description": "Slice 04 / US-04. Measure set-up vs body per harness with FixtureSetupTimer first (its own commit), then build the host once per fixture in the harnesses where set-up dominates (DS-Q2 A).",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Set-up and body time are known per harness before anything changes",
+          "description": "Add FixtureSetupTimer measurement around [SetUp] and [TearDown] in the three harness bases (RefinementAcceptanceTest, ReportsAcceptanceTest, TeamFeatureSizeAcceptanceTest), as IntegrationTestBase already does. Run the in-scope filter with LIGHTHOUSE_FIXTURE_TIMING=1 and a TRX logger, and record set-up share per harness (and per derived Refinement base: SizingVotesAcceptanceTest, RefinementNeedAcceptanceTest).",
+          "agent": "nw-software-crafter",
+          "commit_type": "test",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementAcceptanceTest.cs",
+          "scenario_name": "E-04b",
+          "estimated_hours": 3,
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementAcceptanceTest.cs (edit - timer around SetUp and TearDown)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAcceptanceTest.cs (edit - timer around SetUp and TearDown)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/TeamFeatureSizeAcceptanceTest.cs (edit - timer around SetUp and TearDown)",
+            "docs/feature/story-6302-ci-test-time/feature-delta.md (edit - slice 04 measurement table)"
+          ],
+          "dependencies": [
+            "03-02"
+          ],
+          "criteria": [
+            "A run of `FullyQualifiedName~API.Integration.Refinement|FullyQualifiedName~API.Integration.Reports|FullyQualifiedName~API.Integration.TeamFeatureSize` with LIGHTHOUSE_FIXTURE_TIMING=1 writes FixtureSetupTimer rows for every in-scope class under all three harness bases.",
+            "feature-delta.md records, per harness, summed set-up, summed tear-down, summed body (TRX duration minus measured set-up and tear-down) and the set-up share, plus the local summed time of the in-scope classes as the slice's local baseline.",
+            "E-names before/after on the in-scope filter: no name lost, counts unchanged.",
+            "This commit lands before any harness-lifetime change (`git log --oneline` order checked in E-04b)."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: measurement instrument, test-only. Copy valid_not_expired_license.json from the main checkout first (worktree). The timer is a no-op unless LIGHTHOUSE_FIXTURE_TIMING=1, so CI timings are unaffected. Classes deriving from SizingVotesAcceptanceTest / RefinementNeedAcceptanceTest add their own [SetUp]/[TearDown] and services (ConfigureAdditionalServices, scripted forecasts, voter connections): report them separately so 04-02 sees where the cost is."
+        },
+        {
+          "id": "04-02",
+          "name": "Harnesses where set-up dominates build their host once per fixture",
+          "description": "Per DS-Q2 A, in each harness base the 04-01 numbers show set-up-bound: build the TestWebApplicationFactory host in [OneTimeSetUp] and dispose it in [OneTimeTearDown]; reset per-test inputs (licence answer, clock position, command counter, scripted forecasts, voter connections) and the database in [SetUp] through objects the fixture owns, never through a DI registration capturing a per-test field. A body-bound harness is recorded and left alone.",
+          "agent": "nw-software-crafter",
+          "commit_type": "test",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementAcceptanceTest.cs",
+          "scenario_name": "E-04a, E-04c; E-04d CI-only (owed after push)",
+          "estimated_hours": 7,
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementAcceptanceTest.cs (edit - host lifetime, if set-up-bound)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/SizingVotesAcceptanceTest.cs (edit - per-test reset of what it adds, if its base changes)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementNeedAcceptanceTest.cs (edit - per-test reset of what it adds, if its base changes)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAcceptanceTest.cs (edit - host lifetime, if set-up-bound)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/TeamFeatureSizeAcceptanceTest.cs (edit - host lifetime, if set-up-bound)",
+            "docs/feature/story-6302-ci-test-time/feature-delta.md (edit - slice 04 result)",
+            "docs/ci-learnings.md (edit - the DS-Q2 rule: reuse a harness host only with per-test state reset through fixture-owned objects)"
+          ],
+          "dependencies": [
+            "04-01"
+          ],
+          "criteria": [
+            "E-names on the in-scope filter: no name lost, no newly not-passed test, per-class counts unchanged or higher; E-weaken on the slice diff passes.",
+            "E-04c: three consecutive green full-assembly runs with the standard filter; BackendTestParallelizationGuardTest green; no `[NonParallelizable]` added.",
+            "Each scenario still starts from an empty, freshly seeded database and from the clock on Today, so no test can observe another test's data or clock move.",
+            "Local indicator, not E-04d: the in-scope classes' local summed time drops by at least a third against 04-01's local baseline, or feature-delta.md records per harness why set-up is not the cost. E-04d itself (median of >=5 `main` runs, <=192 s) is CI-only and owed after push.",
+            "A FixtureSetupTimer re-run is recorded beside 04-01's numbers for every harness changed."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: test-harness refactor held by D7 checks and E-04c. Precedent: backend-test-speed slice 06 (11 read-API fixtures, [OneTimeSetUp] host + per-test DB reset). Today RefinementAcceptanceTest.Init captures `licenseService` and `clock` as locals in ConfigureServices; with a fixture-lifetime host those must become fixture-owned objects reset in [SetUp] (e.g. the FakeLighthouseClock set back to Today). Subclass [SetUp] methods run after the base's, so per-test resets in derived bases keep working. CI median (E-04d, OUT-6302-be-new-integration) owed after push."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Explain the 40-60 s single backend tests",
+      "description": "Slice 05 / US-05. One triage: a measured cause per outlier, a fix for each one waiting on nothing, and a proposed allowlist entry for each accepted one (seeded into the budget file in 06-06).",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "Each of the four outliers has a measured cause, and the ones waiting on nothing finish in seconds",
+          "description": "Run each class alone (`dotnet test --filter \"FullyQualifiedName~<Class>\"`): S8_EmbedEntryPointTests (62 s case), CacheTest.ConcurrentReadersAndWriters (61 s), BlockedCountSnapshotMigrationTests on Postgres (51 s), DataProtectionKeyRingTest on Redis (43 s). Compare with >=3 existing CI timing CSVs. Fix a wait, retry or timeout that does not test the behaviour; record container start-up or deliberate load as accepted, with a proposed allowlist entry.",
+          "agent": "nw-software-crafter",
+          "commit_type": "test",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/S8_EmbedEntryPointTests.cs",
+          "scenario_name": "E-05a, E-05b, E-05c",
+          "estimated_hours": 5,
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/S8_EmbedEntryPointTests.cs (edit - only if wait-bound)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Cache/CacheTest.cs (edit - only if wait-bound)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/BlockedCountSnapshotMigrationTests.cs (edit - only if wait-bound)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Health/DataProtectionKeyRingTest.cs (edit - only if wait-bound)",
+            "docs/feature/story-6302-ci-test-time/feature-delta.md (edit - slice 05 cause table and proposed allowlist entries)"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "criteria": [
+            "feature-delta.md gives each of the four tests a one-line cause, measured locally and confirmed against at least three CI timing CSVs (stable or contention).",
+            "Every test fixed as wait-bound runs in under 10 s locally, with its CI CSV times over those runs recorded beside it.",
+            "Every accepted test has a proposed entry (class name as the guard derives it, reason, ceiling >= 2.1 x its largest observed CI time) ready for 06-06.",
+            "E-names on the four classes: no name lost, no newly not-passed test; E-weaken on the slice diff passes.",
+            "Any removed or shortened wait (a delay, poll or retry replaced by a one-shot check, or a lowered timeout) is listed in this step's DELIVER note in feature-delta.md, together with the assertion that still proves the behaviour."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: triage with fixes held by D7 checks. Container-backed classes need Docker locally; Testcontainers is not replaced (out of scope). The S8 case's argument contains dots (`https://evil.example/steal`): the class name for its allowlist entry is the part before the last `.` once the `(...)` tail is removed (F4). Cause first, fix second: a fix with no measured cause does not count."
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "name": "A slow test file is caught the day it lands",
+      "description": "Slice 06 / US-06. check_budget.py replaces the scaffold so the 42 pending tests pass (five steps, by behaviour), then the budget file, the CI steps, the trigger paths and the ci-learnings rule. Deviation for this run: both stacks wired with --warn-only and a provisional budget, because nothing may be pushed (see 06-06, the ADR-237 amendment of 2026-10-14 and feature-delta.md `## Wave: DELIVER / [WHY] Upstream Issues`).",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "06-01",
+          "name": "The check reads a timing file and sums each frontend file and each backend class",
+          "description": "Replace the scaffold's `main` with the real read: the CSV read with the converters' CSV_COLUMNS, summed per frontend file and per backend class (the full name before the last `.` once the `(...)` tail is removed), judged against the stack's budget from the JSON, with a minimal verdict (exit 0 / exit 1 plus one `::error::` line). Pure core: rows + budget + allowlist -> findings; the shell only reads, prints and sets the exit code (DDD-10).",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Scripts/test-timings/tests/test_check_budget.py",
+          "scenario_name": "test_a_run_with_every_file_under_the_budget_passes_without_annotations; test_a_file_is_judged_on_the_sum_of_its_tests_not_on_its_slowest_test; test_the_verdict_does_not_depend_on_how_a_files_time_is_split_across_its_tests; test_judging_a_run_leaves_every_file_in_the_folder_as_it_was; test_backend_tests_are_summed_per_class; test_a_class_is_named_without_its_method_or_arguments_even_when_the_arguments_contain_dots; test_a_frontend_timing_file_written_by_the_vitest_converter_is_judged_end_to_end; test_a_backend_timing_file_written_by_the_trx_converter_is_judged_per_class",
+          "unskips": [
+            "1 :: AFrontendFileOverTheBudgetFailsTheBuild :: test_a_run_with_every_file_under_the_budget_passes_without_annotations",
+            "5 :: AFrontendFileOverTheBudgetFailsTheBuild :: test_a_file_is_judged_on_the_sum_of_its_tests_not_on_its_slowest_test",
+            "6 :: AFrontendFileOverTheBudgetFailsTheBuild :: test_the_verdict_does_not_depend_on_how_a_files_time_is_split_across_its_tests",
+            "8 :: AFrontendFileOverTheBudgetFailsTheBuild :: test_judging_a_run_leaves_every_file_in_the_folder_as_it_was",
+            "33 :: ABackendClassIsJudgedOnTheSumOfItsTests :: test_backend_tests_are_summed_per_class",
+            "34 :: ABackendClassIsJudgedOnTheSumOfItsTests :: test_a_class_is_named_without_its_method_or_arguments_even_when_the_arguments_contain_dots",
+            "35 :: TheCheckJudgesWhatTheConvertersWrite :: test_a_frontend_timing_file_written_by_the_vitest_converter_is_judged_end_to_end",
+            "36 :: TheCheckJudgesWhatTheConvertersWrite :: test_a_backend_timing_file_written_by_the_trx_converter_is_judged_per_class"
+          ],
+          "estimated_hours": 4,
+          "files_to_modify": [
+            "Scripts/test-timings/check_budget.py (edit - scaffold replaced: CSV read, per-unit sums, budget verdict; __SCAFFOLD__ marker removed)",
+            "Scripts/test-timings/tests/test_check_budget.py (edit - remove the pending skip from the eight tests listed)"
+          ],
+          "dependencies": [
+            "05-01"
+          ],
+          "criteria": [
+            "A run with every file under the budget exits 0 and prints no annotation.",
+            "A frontend file is judged on the sum of its tests, and the verdict is the same however that sum is split across tests.",
+            "A backend class is judged on the sum of its tests and named without method or arguments, also when the arguments contain dots or parentheses.",
+            "A timing file written by the real Vitest converter, and one written by the real TRX converter, are judged end to end.",
+            "Judging a run leaves every file in its folder byte-identical.",
+            "No traceback escapes on any of these runs; the eight tests are green on Python 3.12 and 3.14.",
+            "The git diff of test_check_budget.py in this step changes only the pending-skip lines of the 8 tests listed; test bodies stay byte-identical."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: subprocess acceptance tests, example-based by DI-11; the split-invariance property is example-pinned with subTest. Python 3.12 stdlib only (csv, json, argparse, pathlib): check on 3.12 with `uv run --no-project --python 3.12 python -m unittest discover -s Scripts/test-timings/tests`. Import CSV_COLUMNS from vitest_to_csv / trx_to_csv, never restate the column names. Suggested unskip order (DISTILL handoff) is respected across 06-01..06-05; tests outside this step stay skipped."
+        },
+        {
+          "id": "06-02",
+          "name": "A unit over the budget fails with one escaped annotation naming it",
+          "description": "The verdict's full contract: inclusive limits (at the budget passes, a millisecond over fails), a budget per stack from its own JSON section, one `::error::` per finding naming the unit, its seconds to one decimal, the budget and the allowlist file name, only over-budget units named, and `%`, CR and LF percent-encoded so a unit name cannot break the line or forge a second command (DI-4, DI-5, DO-4).",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Scripts/test-timings/tests/test_check_budget.py",
+          "scenario_name": "test_a_file_exactly_at_the_budget_passes; test_a_file_over_the_budget_fails_naming_the_file_its_time_the_budget_and_the_allowlist; test_a_file_a_millisecond_over_the_budget_fails; test_only_the_file_over_the_budget_is_named_when_others_are_under_it; test_each_stack_is_held_to_the_budget_its_own_section_sets; test_a_file_name_containing_a_percent_sign_and_a_line_break_is_reported_on_one_escaped_line",
+          "unskips": [
+            "2 :: AFrontendFileOverTheBudgetFailsTheBuild :: test_a_file_exactly_at_the_budget_passes",
+            "3 :: AFrontendFileOverTheBudgetFailsTheBuild :: test_a_file_over_the_budget_fails_naming_the_file_its_time_the_budget_and_the_allowlist",
+            "4 :: AFrontendFileOverTheBudgetFailsTheBuild :: test_a_file_a_millisecond_over_the_budget_fails",
+            "7 :: AFrontendFileOverTheBudgetFailsTheBuild :: test_only_the_file_over_the_budget_is_named_when_others_are_under_it",
+            "37 :: AFrontendFileOverTheBudgetFailsTheBuild :: test_each_stack_is_held_to_the_budget_its_own_section_sets",
+            "42 :: AFrontendFileOverTheBudgetFailsTheBuild :: test_a_file_name_containing_a_percent_sign_and_a_line_break_is_reported_on_one_escaped_line"
+          ],
+          "estimated_hours": 3,
+          "files_to_modify": [
+            "Scripts/test-timings/check_budget.py (edit - inclusive limits, per-stack budget, annotation format and escaping)",
+            "Scripts/test-timings/tests/test_check_budget.py (edit - remove the pending skip from the six tests listed)"
+          ],
+          "dependencies": [
+            "06-01"
+          ],
+          "criteria": [
+            "A unit exactly at the budget passes; one a millisecond over exits 1.",
+            "Each breach prints exactly one `::error::` line naming the unit, its seconds to one decimal, the budget and the allowlist file; units under the budget are not named.",
+            "Each stack is held to the budget its own JSON section sets (30 s budget: 40 s fails, 25 s passes, both stacks).",
+            "A unit name containing `%`, CR or LF is reported on one annotation line with `%25`, `%0D`, `%0A`.",
+            "The 14 tests unskipped so far are green on Python 3.12 and 3.14.",
+            "The git diff of test_check_budget.py in this step changes only the pending-skip lines of the 6 tests listed; test bodies stay byte-identical."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: subprocess acceptance tests (DI-11). The boundary tests stand in for the Python mutation run DEVOPS ruled out: keep the comparison inclusive in one place in the pure core."
+        },
+        {
+          "id": "06-03",
+          "name": "An allowlisted unit is held to its own ceiling, and a stale entry fails",
+          "description": "Allowlist entries (unit, reason, ceiling_seconds) replace the budget for their unit, inclusive. A frontend entry whose file is absent from the run fails; a backend entry is alive while a `.cs` file outside bin, obj, .stryker-tmp* and StrykerOutput declares that class under that namespace, whatever the file is called (DI-9, DO-6), and fails once none does.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Scripts/test-timings/tests/test_check_budget.py",
+          "scenario_name": "test_an_allowlisted_file_under_its_own_ceiling_passes_although_it_is_over_the_budget; test_an_allowlisted_file_exactly_at_its_ceiling_passes; test_an_allowlisted_file_over_its_own_ceiling_fails_naming_the_file_its_time_and_its_ceiling; test_a_frontend_allowlist_entry_for_a_file_no_longer_in_the_run_fails; test_a_backend_allowlist_entry_for_a_class_still_in_the_test_source_passes_when_the_class_did_not_run; test_a_backend_allowlist_entry_for_a_class_no_longer_in_the_test_source_fails; test_a_class_left_only_in_build_or_mutation_output_does_not_count_as_still_in_the_source; test_an_allowlisted_backend_class_is_held_to_its_own_ceiling; test_a_backend_class_counts_as_in_the_source_whatever_the_file_it_is_declared_in_is_called; test_a_class_of_the_same_name_in_another_namespace_does_not_keep_an_entry_alive",
+          "unskips": [
+            "9 :: AnAllowlistedUnitIsHeldToItsOwnCeiling :: test_an_allowlisted_file_under_its_own_ceiling_passes_although_it_is_over_the_budget",
+            "10 :: AnAllowlistedUnitIsHeldToItsOwnCeiling :: test_an_allowlisted_file_exactly_at_its_ceiling_passes",
+            "11 :: AnAllowlistedUnitIsHeldToItsOwnCeiling :: test_an_allowlisted_file_over_its_own_ceiling_fails_naming_the_file_its_time_and_its_ceiling",
+            "12 :: AnAllowlistedUnitIsHeldToItsOwnCeiling :: test_a_frontend_allowlist_entry_for_a_file_no_longer_in_the_run_fails",
+            "13 :: AnAllowlistedUnitIsHeldToItsOwnCeiling :: test_a_backend_allowlist_entry_for_a_class_still_in_the_test_source_passes_when_the_class_did_not_run",
+            "14 :: AnAllowlistedUnitIsHeldToItsOwnCeiling :: test_a_backend_allowlist_entry_for_a_class_no_longer_in_the_test_source_fails",
+            "15 :: AnAllowlistedUnitIsHeldToItsOwnCeiling :: test_a_class_left_only_in_build_or_mutation_output_does_not_count_as_still_in_the_source",
+            "38 :: AnAllowlistedUnitIsHeldToItsOwnCeiling :: test_an_allowlisted_backend_class_is_held_to_its_own_ceiling",
+            "39 :: AnAllowlistedUnitIsHeldToItsOwnCeiling :: test_a_backend_class_counts_as_in_the_source_whatever_the_file_it_is_declared_in_is_called",
+            "40 :: AnAllowlistedUnitIsHeldToItsOwnCeiling :: test_a_class_of_the_same_name_in_another_namespace_does_not_keep_an_entry_alive"
+          ],
+          "estimated_hours": 4,
+          "files_to_modify": [
+            "Scripts/test-timings/check_budget.py (edit - allowlist ceilings, frontend staleness against the run, backend staleness against the source tree)",
+            "Scripts/test-timings/tests/test_check_budget.py (edit - remove the pending skip from the ten tests listed)"
+          ],
+          "dependencies": [
+            "06-02"
+          ],
+          "criteria": [
+            "An allowlisted unit over the budget passes up to and including its own ceiling and fails above it, with an `::error::` naming the unit, its time and its ceiling, for a frontend file and a backend class.",
+            "A frontend entry for a file absent from the run fails with an annotation naming it.",
+            "A backend entry passes while its class is declared under its namespace in the test source, even if the class did not run and whatever the declaring file is called.",
+            "A backend entry fails when the class exists only in bin, obj, .stryker-tmp* or StrykerOutput, or only under another namespace.",
+            "The 24 tests unskipped so far are green on Python 3.12 and 3.14.",
+            "The git diff of test_check_budget.py in this step changes only the pending-skip lines of the 10 tests listed; test bodies stay byte-identical."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: subprocess acceptance tests (DI-11). A stale entry is a verdict (exit 1, `::error::`), not an input error (DI-7). The source scan is read-only and is the only place the check touches the C# tree."
+        },
+        {
+          "id": "06-04",
+          "name": "Input the check cannot trust is refused",
+          "description": "Fail closed (exit 2, one `::error::` naming the file) on a missing, empty, header-only, wrong-header or unreadable-duration CSV, and on a missing, non-JSON, section-less or budget-less allowlist, an entry without a non-blank reason or a positive numeric ceiling (0 and `true` refused), or a missing backend source folder (DI-3, DI-6, DI-8, DI-9).",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Scripts/test-timings/tests/test_check_budget.py",
+          "scenario_name": "test_a_backend_test_source_folder_that_does_not_exist_fails_closed; test_an_allowlist_entry_without_a_reason_is_rejected; test_an_allowlist_entry_without_a_usable_ceiling_is_rejected; test_an_allowlist_that_is_not_valid_json_fails_closed; test_an_allowlist_without_a_section_for_the_stack_fails_closed; test_an_allowlist_section_without_a_budget_fails_closed; test_a_missing_allowlist_file_fails_closed; test_a_missing_timing_file_fails_closed_naming_the_file; test_an_empty_timing_file_fails_closed; test_a_timing_file_with_a_header_and_no_tests_fails_closed; test_a_timing_file_with_the_other_stacks_columns_fails_closed; test_a_timing_file_with_an_unreadable_duration_fails_closed",
+          "unskips": [
+            "16 :: AnAllowlistThatCannotBeTrustedIsRefused :: test_a_backend_test_source_folder_that_does_not_exist_fails_closed",
+            "17 :: AnAllowlistThatCannotBeTrustedIsRefused :: test_an_allowlist_entry_without_a_reason_is_rejected",
+            "18 :: AnAllowlistThatCannotBeTrustedIsRefused :: test_an_allowlist_entry_without_a_usable_ceiling_is_rejected",
+            "19 :: AnAllowlistThatCannotBeTrustedIsRefused :: test_an_allowlist_that_is_not_valid_json_fails_closed",
+            "20 :: AnAllowlistThatCannotBeTrustedIsRefused :: test_an_allowlist_without_a_section_for_the_stack_fails_closed",
+            "21 :: AnAllowlistThatCannotBeTrustedIsRefused :: test_an_allowlist_section_without_a_budget_fails_closed",
+            "22 :: AnAllowlistThatCannotBeTrustedIsRefused :: test_a_missing_allowlist_file_fails_closed",
+            "23 :: ATimingFileThatCannotBeReadFailsClosed :: test_a_missing_timing_file_fails_closed_naming_the_file",
+            "24 :: ATimingFileThatCannotBeReadFailsClosed :: test_an_empty_timing_file_fails_closed",
+            "25 :: ATimingFileThatCannotBeReadFailsClosed :: test_a_timing_file_with_a_header_and_no_tests_fails_closed",
+            "26 :: ATimingFileThatCannotBeReadFailsClosed :: test_a_timing_file_with_the_other_stacks_columns_fails_closed",
+            "27 :: ATimingFileThatCannotBeReadFailsClosed :: test_a_timing_file_with_an_unreadable_duration_fails_closed"
+          ],
+          "estimated_hours": 3,
+          "files_to_modify": [
+            "Scripts/test-timings/check_budget.py (edit - fail-closed input errors)",
+            "Scripts/test-timings/tests/test_check_budget.py (edit - remove the pending skip from the 12 tests listed)"
+          ],
+          "dependencies": [
+            "06-03"
+          ],
+          "criteria": [
+            "Every unreadable or untrusted timing file listed (missing, empty, header only, the other stack's columns, unreadable duration) exits 2 with one `::error::` naming the file.",
+            "Every untrusted allowlist listed (missing file, not JSON, no section for the stack, no budget, an entry without a non-blank reason, an entry whose ceiling is missing, text, negative, 0 or `true`) exits 2 with one `::error::` naming the file.",
+            "A backend run whose test source folder does not exist exits 2 rather than treating every entry as stale.",
+            "No traceback escapes on any of these runs; the 36 tests unskipped so far are green on Python 3.12 and 3.14.",
+            "The git diff of test_check_budget.py in this step changes only the pending-skip lines of the 12 tests listed; test bodies stay byte-identical."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: subprocess acceptance tests (DI-11). Exit 2 means 'cannot judge' and exit 1 'over a limit or stale entry' (DI-3): keep the two apart so a reader of the log can tell them apart. Optional C7a gap (permission-denied CSV) falls under 'cannot be read' (exit 2) without a new test."
+        },
+        {
+          "id": "06-05",
+          "name": "Warn-only softens a budget breach and nothing else, and an old Python is refused",
+          "description": "`--warn-only` turns a budget or ceiling breach into `::warning::` and exit 0, and softens nothing else: unreadable input, a malformed allowlist and a stale entry still fail (DO-3, DI-7). Add the DI-13 interpreter refusal and its new in-process unit test.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Scripts/test-timings/tests/test_check_budget.py",
+          "scenario_name": "test_warn_only_reports_a_class_over_the_budget_as_a_warning_and_passes; test_warn_only_reports_an_allowlisted_class_over_its_ceiling_as_a_warning_and_passes; test_warn_only_still_fails_on_a_missing_timing_file; test_warn_only_still_fails_on_a_malformed_timing_file; test_warn_only_still_fails_on_a_malformed_allowlist; test_warn_only_still_fails_on_an_allowlist_entry_for_a_class_no_longer_in_the_source; DI-13 interpreter-version refusal (new in-process test)",
+          "unskips": [
+            "28 :: WarnOnlySoftensABreachButNothingElse :: test_warn_only_reports_a_class_over_the_budget_as_a_warning_and_passes",
+            "29 :: WarnOnlySoftensABreachButNothingElse :: test_warn_only_reports_an_allowlisted_class_over_its_ceiling_as_a_warning_and_passes",
+            "30 :: WarnOnlySoftensABreachButNothingElse :: test_warn_only_still_fails_on_a_missing_timing_file",
+            "31 :: WarnOnlySoftensABreachButNothingElse :: test_warn_only_still_fails_on_a_malformed_timing_file",
+            "32 :: WarnOnlySoftensABreachButNothingElse :: test_warn_only_still_fails_on_a_malformed_allowlist",
+            "41 :: WarnOnlySoftensABreachButNothingElse :: test_warn_only_still_fails_on_an_allowlist_entry_for_a_class_no_longer_in_the_source"
+          ],
+          "estimated_hours": 3,
+          "files_to_modify": [
+            "Scripts/test-timings/check_budget.py (edit - --warn-only, Python version refusal; scaffold marker removed)",
+            "Scripts/test-timings/tests/test_check_budget.py (edit - remove the pending skip from the 6 tests listed; add the DI-13 in-process interpreter-version test)"
+          ],
+          "dependencies": [
+            "06-04"
+          ],
+          "criteria": [
+            "With --warn-only, a class over the budget and an allowlisted class over its ceiling each print one `::warning::` and exit 0.",
+            "With --warn-only, a missing or malformed timing file and a malformed allowlist still exit 2, in both stacks, and a stale backend allowlist entry still exits 1 with an `::error::`.",
+            "On an interpreter reporting a version below 3.12 the check exits non-zero with a message naming the version it needs and the one it found.",
+            "All 42 tests are unskipped and `python3 -m unittest discover -s Scripts/test-timings/tests` reports 0 skipped and OK on Python 3.12 and 3.14 (E-06a); no traceback escapes on any run.",
+            "check_budget.py carries no `__SCAFFOLD__` marker and no `Not yet implemented` path.",
+            "The git diff of test_check_budget.py in this step changes only the pending-skip lines of the 6 tests listed plus the new DI-13 test; existing test bodies stay byte-identical."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: subprocess acceptance tests (DI-11). DI-13 cannot be reached by a subprocess test on a newer interpreter: cover it in-process by calling the version guard with a faked version tuple (DISTILL handoff). The version check runs before any other import that could fail on an old interpreter."
+        },
+        {
+          "id": "06-06",
+          "name": "Both verify jobs run the guard as their last step, on a provisional budget in warn mode",
+          "description": "Create Scripts/test-timings/test-time-budget.json with a provisional budget per stack and the slice-05 allowlist entries; append the 'Check test-time budget' step to ci_frontend.yml and ci_backend.yml (python3 --version, the self-tests, the check, both with --warn-only); add Scripts/test-timings/** to ci.yml push paths and both ci_changes.yml patterns (DO-7); write the ci-learnings rule; record the derivation and the owed follow-ups in feature-delta.md.",
+          "agent": "nw-software-crafter",
+          "commit_type": "ci",
+          "test_file": "Scripts/test-timings/tests/test_check_budget.py",
+          "scenario_name": "E-06b (provisional, local), E-06c, E-06d, E-06e, E-KPI (owed after push); full suite discovered with 0 skipped (E-06a)",
+          "unskips": [],
+          "estimated_hours": 6,
+          "files_to_modify": [
+            "Scripts/test-timings/test-time-budget.json (create - frontend and backend sections: budget_seconds and allowlist entries with reason and ceiling_seconds)",
+            ".github/workflows/ci_frontend.yml (edit - last step, default success() condition, --warn-only)",
+            ".github/workflows/ci_backend.yml (edit - last step, default success() condition, --source-root Lighthouse.Backend/Lighthouse.Backend.Tests --warn-only)",
+            ".github/workflows/ci.yml (edit - Scripts/test-timings/** in the push paths)",
+            ".github/workflows/ci_changes.yml (edit - Scripts/test-timings/** in the frontend and backend patterns)",
+            "docs/ci-learnings.md (edit - the budget rule and its derivation)",
+            "docs/feature/story-6302-ci-test-time/feature-delta.md (edit - slice 06 record: provisional derivation, E-06c output, owed follow-ups)"
+          ],
+          "dependencies": [
+            "06-05"
+          ],
+          "criteria": [
+            "test-time-budget.json holds a budget per stack satisfying B >= 2.1 x L and B <= 0.55 x the smallest regression to catch, with L, the anchor regression, the input CSVs and every allowlisted unit (reason, ceiling >= 2.1 x its largest observed time) recorded in feature-delta.md and ci-learnings.md.",
+            "Run against the post-fix local timing CSVs it was derived from, the check exits 0 for both stacks without --warn-only and prints no annotation.",
+            "E-06c: against a real CSV with a planted 120 s row, the check run without --warn-only exits 1 with one `::error::` naming the planted unit; output pasted in feature-delta.md.",
+            "Both verify jobs end with a step that prints the Python version, runs `python3 -m unittest discover -s Scripts/test-timings/tests`, then runs the check with --warn-only, after the Sonar and upload steps, with no `dotnet test`, `vitest` or `pnpm` in its run block (E-06d).",
+            "`Scripts/test-timings/**` appears in ci.yml's push paths and in both the frontend and backend patterns of ci_changes.yml (E-06d).",
+            "docs/ci-learnings.md states: a new test file over the budget fails CI; speed it up or allowlist it with a reason and a ceiling; and, until the switch, that both stacks only warn (E-06e).",
+            "feature-delta.md lists the owed guard follow-ups: re-derive both budgets on >=5 post-push `main` runs; remove --warn-only from the frontend step after those >=5 runs; remove it from the backend step once >=5 backend `main` runs after the budget commit show zero budget warnings (ADR-237 amendment 2026-10-14).",
+            "feature-delta.md lists the owed CI medians as follow-ups, each with its run count: E-02b CI (median of >=5 `main` runs, the two slice-02 files summed <=40 s); E-03b (median of >=5 `main` runs, the six files <=70 s and the eight <=110 s); E-04d (median of >=5 `main` runs, in-scope classes <=192 s); E-KPI (median of >=5 `main` runs, frontend job <=12 min, backend job <=13.5 min, test totals not below 7,630 / 10,198)."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: CI wiring and data; the guard's own tests run in the step on every CI run. DEVIATION (maintainer away, NOTHING may be pushed in this run, so no post-fix `main` CI runs exist to calibrate against; ADR-237 amendment 2026-10-14): (1) Calibrate a PROVISIONAL budget per stack with the DS-Q1 formula (B >= 2.1 x L, B <= 0.55 x the smallest regression to catch; frontend anchor the 115 s file, so B <= ~63 s), where L is the largest non-allowlisted unit in the post-fix LOCAL timing CSVs of the full suites. Produce them with the existing converters: frontend `cd Lighthouse.Frontend && pnpm vitest run --coverage --reporter=json --outputFile=<scratch>/fe.json` then `vitest_to_csv.py`; backend `dotnet test` with the standard filter, coverage as CI collects it, and a TRX logger, then `trx_to_csv.py`. For units the fixes did not touch, also take the most recent CI CSVs (`gh run download <id> -n test-timings-frontend|backend`) and use the larger of local and CI time per unit, because the local box is not the CI runner; record which source set L. Units breaking the lower bound go on the allowlist with reason and ceiling, and L is recomputed. (2) Wire BOTH stacks with --warn-only until real post-fix `main` runs exist, so the first push can never redden CI on an uncalibrated budget; warn mode still fails on unreadable input, stale entries and failing self-tests (DO-3). (3) The frontend's switch to failing (deleting --warn-only from ci_frontend.yml) is a recorded follow-up the maintainer does after >=5 post-push `main` runs, after re-deriving the budget on them; the backend flip follows ADR-237 decision 6. The deviation from DS-Q1 / DO-3 ('frontend fails from the start') is recorded in feature-delta.md `## Wave: DELIVER / [WHY] Upstream Issues` and in the ADR-237 amendment (both written at roadmap time). The JSON lives beside the script per DI-1 (Scripts/test-timings/), not at Scripts/ as slice-06 item 4 says, so the DO-7 path glob covers it. Use `python3` with no setup-python and no pip (DO-1); no pipe or tee on the check's output (DO-4). Do not push."
+        }
+      ]
+    }
+  ]
+}

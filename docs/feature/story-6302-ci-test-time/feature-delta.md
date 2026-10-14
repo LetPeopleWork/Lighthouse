@@ -938,3 +938,23 @@ Sentinel (`nw-acceptance-designer-reviewer`, 2026-10-14) on the DISTILL sections
 
 The three other final-gate reviewers (DISCUSS, DESIGN, DEVOPS) were not dispatched in this run.
 
+---
+---
+
+# DELIVER
+
+## Wave: DELIVER / [WHY] Upstream Issues
+
+**Deviation from DS-Q1 / DDD-4 / DO-3 ("frontend fails from the start"), 2026-10-14.** The maintainer is away and nothing may be pushed in this DELIVER run, so no post-fix `main` CI runs will exist to calibrate the budget against, and DS-Q1 derives L from ≥5 of them. Shipping a failing frontend gate on a number nobody could check against CI would let the first push go red on calibration error rather than on a slow file. Recorded as the [ADR-237 amendment of 2026-10-14](../../product/architecture/adr-237-test-time-budget-guard.md#amendment-2026-10-14-provisional-pending-maintainer-ratification) (provisional, pending maintainer ratification). So, in roadmap step 06-06:
+
+- **Provisional budget per stack**, same formula (B ≥ 2.1 × L, B ≤ 0.55 × the smallest regression to catch), with L taken from the post-fix **local** timing CSVs of the full suites (produced by the existing converters from a local `pnpm vitest run --coverage --reporter=json` and a `dotnet test` TRX), plus the most recent CI CSVs for units the fixes did not touch, taking the larger time per unit because the local machine is not the CI runner. The derivation records which source set L.
+- **Both stacks wired with `--warn-only`** until real post-fix `main` runs exist. Warn mode still fails on unreadable input, a stale allowlist entry or a failing self-test (DO-3, DI-7), so the guard is live; only a budget breach is softened.
+- **Recorded follow-up for the maintainer:** after ≥5 post-push `main` runs, re-derive both budgets on them (E-06b) and delete `--warn-only` from the frontend step; the backend flips by its own DDD-4 rule (≥5 backend `main` runs after the budget commit with zero budget warnings).
+- **Owed CI medians (follow-ups, each needing runs on `main` after the push):**
+  - E-02b CI: median of ≥5 `main` runs, the two slice-02 files summed ≤40 s.
+  - E-03b: median of ≥5 `main` runs, the six slice-03 files ≤70 s and all eight named files ≤110 s.
+  - E-04d: median of ≥5 `main` runs, the in-scope Refinement / Reports / TeamFeatureSize classes ≤192 s.
+  - E-KPI: median of ≥5 `main` runs, `Verify Frontend` ≤12 min and `Verify Backend` ≤13.5 min; test totals not below 7,630 / 10,198.
+
+Also carried: the slice-06 brief and the journey named the budget file `Scripts/test-time-budget.json`, while DI-1 and the DO-7 trigger glob put it at `Scripts/test-timings/test-time-budget.json`. DELIVER follows DI-1; the brief and journey were corrected to match.
+

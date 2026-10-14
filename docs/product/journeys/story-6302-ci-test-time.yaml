@@ -48,5 +48,5 @@ journeys:
     shared_artifacts:
       - name: test-timings-frontend.csv / test-timings-backend.csv
         source: Scripts/test-timings/ run in ci_frontend.yml and ci_backend.yml
-      - name: Scripts/test-time-budget.json
+      - name: Scripts/test-timings/test-time-budget.json
         source: checked in by hand (budget per stack, allowlist entries with reason and ceiling); read by check_budget.py in both verify jobs
