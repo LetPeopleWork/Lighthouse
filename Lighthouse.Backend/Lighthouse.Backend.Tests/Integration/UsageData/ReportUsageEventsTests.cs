@@ -19,8 +19,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     [Category("epic-5878-baseline")]
     public class ReportUsageEventsTests : UsageDataCollectorObservationTest
     {
-        private const string PendingSlice08 = "Epic #5878 slice 08 (#6166) - pending DELIVER";
-
         private const string ReportCreated = "ReportCreated";
 
         private const string ReportOpened = "ReportOpened";
@@ -133,7 +131,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @driving_port @real-io @us-08 @slice-08 @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice08)]
         public async Task A_report_deleted_travels_as_its_name_alone()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -156,7 +153,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @driving_port @real-io @us-08 @slice-08 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice08)]
         public async Task A_report_deleted_carrying_its_type_is_refused()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -174,7 +170,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // @us-01 @us-08 @slice-01 @slice-08 @contract-shape:bounded-change
         [TestCase(ReportCreated, TheLastEventNamedBeforeReports)]
         [TestCase(ReportOpened, ReportCreated)]
-        [TestCase(ReportDeleted, ReportOpened, Ignore = PendingSlice08)]
+        [TestCase(ReportDeleted, ReportOpened)]
         public void The_report_events_are_appended_to_the_list_of_names_never_inserted(string name, string namedBefore)
             => ThenIsAppendedAfter("UsageDataEventName", name, namedBefore);
 
@@ -198,7 +194,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [TestCase("Which type of report", "`ThenAndNow`")]
         [TestCase("A Team tab was opened", "seven Team tabs")]
         [TestCase("A Portfolio tab was opened", "six Portfolio tabs")]
-        [TestCase("A report was deleted", "| Nothing", Ignore = PendingSlice08)]
+        [TestCase("A report was deleted", "| Nothing")]
         public void The_usage_data_page_has_a_row_for_what_Reports_send(string rowSays, string rowNames)
         {
             var rows = TheUsageDataPage().Split('\n')

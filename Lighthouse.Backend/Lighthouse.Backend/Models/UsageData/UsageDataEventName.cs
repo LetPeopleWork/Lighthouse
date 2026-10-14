@@ -44,5 +44,7 @@ namespace Lighthouse.Backend.Models.UsageData
         ReportCreated = 16,
 
         ReportOpened = 17,
+
+        ReportDeleted = 18,
     }
 }
