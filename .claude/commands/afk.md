@@ -141,10 +141,13 @@ been posted**. On entry, schedule the heartbeat with `CronCreate` (`*/15 * * * *
 The update is only this, nothing more:
 
 ```
-🌙 AFK MODE · <feature-id>
+🌙 AFK MODE · <feature-id> · <HH:MM>
 Now:  <slice / Story> · <step id> — <what it does, in a few words> (<agent running | gate running | …>)
 Next: <the next step>, then <what follows it>
 ```
+
+`<HH:MM>` is the local time the update is sent — run `date +%H:%M` for it, never estimate it. A stop
+message and the hold summary carry the same time stamp in their first line.
 
 Add one `Done:` line only when a step just finished (its commit and key numbers). A stop or the hold
 replaces the update with its own message.
