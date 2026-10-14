@@ -15,6 +15,7 @@ import {
 	usageDataReportTemplateFor,
 	useUsageDataReporter,
 } from "../../../../services/UsageData/usageDataReporter";
+import { reportFailedNavigation } from "../../../../utils/navigation";
 import { queryStatusOf } from "../../MetricsView/widgetStatus";
 import { reportPathOf } from "../reportOwner";
 import { refusalCopyFor, useRefusalWords } from "./reportRefusalCopy";
@@ -95,7 +96,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 			queryKey: ["reports", owner.kind, owner.id],
 		});
 		onClose();
-		navigate(reportPathOf(owner, reportId));
+		reportFailedNavigation(navigate(reportPathOf(owner, reportId)));
 	};
 
 	const StepContent = current?.component;
