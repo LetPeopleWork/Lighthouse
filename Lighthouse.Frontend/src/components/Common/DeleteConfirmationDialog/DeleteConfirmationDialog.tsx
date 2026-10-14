@@ -12,12 +12,14 @@ import { useId } from "react";
 
 interface DeleteConfirmationDialogProps {
 	open: boolean;
-	itemName: string;
+	itemName: React.ReactNode;
 	onConfirm: () => void;
 	onCancel: () => void;
 	errorMessage?: string;
 	/** Something the deletion takes away for good, said before anybody confirms. */
 	warning?: string;
+	/** Holds Delete back while the question itself is still being worked out. */
+	confirmDisabled?: boolean;
 }
 
 const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
@@ -27,6 +29,7 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
 	onCancel,
 	errorMessage,
 	warning,
+	confirmDisabled = false,
 }) => {
 	const alertDialogTitleId = useId();
 	const alertDialogDescriptionId = useId();
@@ -62,7 +65,12 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
 				<Button onClick={onCancel} color="primary">
 					Cancel
 				</Button>
-				<Button onClick={onConfirm} color="error" autoFocus>
+				<Button
+					onClick={onConfirm}
+					color="error"
+					autoFocus
+					disabled={confirmDisabled}
+				>
 					Delete
 				</Button>
 			</DialogActions>

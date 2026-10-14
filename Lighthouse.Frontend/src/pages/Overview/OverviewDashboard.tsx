@@ -4,6 +4,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import {
 	Alert,
 	Box,
+	CircularProgress,
 	Container,
 	Fade,
 	IconButton,
@@ -13,6 +14,7 @@ import {
 	useTheme,
 } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
+import { useQuery } from "@tanstack/react-query";
 import type React from "react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
@@ -30,6 +32,7 @@ import { useLicenseRestrictions } from "../../hooks/useLicenseRestrictions";
 import { useRbac } from "../../hooks/useRbac";
 import type { IFeatureOwner } from "../../models/IFeatureOwner";
 import type { Portfolio } from "../../models/Portfolio/Portfolio";
+import type { IReportOwner } from "../../models/Reports/Report";
 import type { Team } from "../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -39,6 +42,61 @@ import { UsageDataEventName } from "../../services/Api/UsageDataService";
 import { useTerminology } from "../../services/TerminologyContext";
 import { useUsageDataReporter } from "../../services/UsageData/usageDataReporter";
 import { reportFailedNavigation } from "../../utils/navigation";
+
+/** What goes with a Team or Portfolio besides itself, said once its reports have been counted. */
+const reportsClauseOf = (
+	isCounting: boolean,
+	couldNotCount: boolean,
+	count: number,
+): React.ReactNode => {
+	if (isCounting) {
+		return (
+			<>
+				{" "}
+				<CircularProgress size={14} sx={{ verticalAlign: "middle" }} />
+			</>
+		);
+	}
+	if (couldNotCount) return " and any reports it has";
+	if (count === 0) return null;
+	if (count === 1) return " and its report";
+	return ` and its ${count} reports`;
+};
+
+/** The question before a Team or Portfolio goes, naming the reports that go with it. */
+const OwnerDeleteDialog: React.FC<{
+	readonly owner: IReportOwner;
+	readonly name: string;
+	readonly open: boolean;
+	readonly onConfirm: () => void;
+	readonly onCancel: () => void;
+}> = ({ owner, name, open, onConfirm, onCancel }) => {
+	const { reportService } = useContext(ApiServiceContext);
+	const { data, isFetching, isError } = useQuery({
+		queryKey: ["reports", owner.kind, owner.id],
+		queryFn: () => reportService.getReports(owner),
+	});
+	const clause = reportsClauseOf(
+		isFetching,
+		isError,
+		data?.reports.length ?? 0,
+	);
+
+	return (
+		<DeleteConfirmationDialog
+			open={open}
+			itemName={
+				<>
+					{name}
+					{clause}
+				</>
+			}
+			confirmDisabled={isFetching}
+			onConfirm={onConfirm}
+			onCancel={onCancel}
+		/>
+	);
+};
 
 const OverviewDashboard: React.FC = () => {
 	const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
@@ -604,10 +662,11 @@ const OverviewDashboard: React.FC = () => {
 					)}
 				</Box>
 
-				{selectedItem && (
-					<DeleteConfirmationDialog
+				{selectedItem && deleteType && (
+					<OwnerDeleteDialog
+						owner={{ kind: deleteType, id: selectedItem.id }}
+						name={selectedItem.name}
 						open={deleteDialogOpen}
-						itemName={selectedItem.name}
 						onConfirm={handleConfirmDelete}
 						onCancel={closeDeleteDialog}
 					/>

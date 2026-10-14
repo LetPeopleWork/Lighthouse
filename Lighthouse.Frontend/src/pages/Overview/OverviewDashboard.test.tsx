@@ -910,7 +910,10 @@ describe("OverviewDashboard", () => {
 				grid.querySelectorAll('[data-testid="delete-item-button"]')[0],
 			);
 
-			fireEvent.click(await screen.findByRole("button", { name: "Delete" }));
+			// Delete is held until the reports going with it are counted.
+			const confirm = await screen.findByRole("button", { name: "Delete" });
+			await waitFor(() => expect(confirm).toBeEnabled());
+			fireEvent.click(confirm);
 		};
 
 		it("reports a deleted Portfolio as a Portfolio", async () => {
@@ -981,7 +984,7 @@ describe("OverviewDashboard", () => {
 
 		// @us-08 @slice-08 @driving_port @contract-shape:pure-function
 		// One report is all Community keeps; more than one is a Premium instance, or one whose licence lapsed.
-		it.skip.each([
+		it.each([
 			["teams", "Test Team 1", 1, "and its report"],
 			["portfolios", "Test Project 1", 1, "and its report"],
 			["teams", "Test Team 1", 3, "and its 3 reports"],
@@ -999,7 +1002,7 @@ describe("OverviewDashboard", () => {
 		);
 
 		// @us-08 @slice-08 @boundary @contract-shape:pure-function
-		it.skip("says nothing about reports when there are none", async () => {
+		it("says nothing about reports when there are none", async () => {
 			const { dialog, reportService } = await askToDeleteTheFirstRowOf(
 				"teams",
 				0,
@@ -1019,7 +1022,7 @@ describe("OverviewDashboard", () => {
 
 		// @us-08 @slice-08 @error @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:unbounded-preservation
 		// Reports going with their Team are not somebody deleting a report.
-		it.skip("reports the Team deleted and never a report deleted", async () => {
+		it("reports the Team deleted and never a report deleted", async () => {
 			reportUsage.mockClear();
 			const { dialog } = await askToDeleteTheFirstRowOf("teams", 1);
 			await waitFor(() => expect(dialog).toHaveTextContent("and its report?"));
@@ -1034,7 +1037,7 @@ describe("OverviewDashboard", () => {
 
 		// @us-08 @slice-08 @boundary @contract-shape:pure-function
 		// Deleting before the count arrives would take reports along that the dialog never named.
-		it.skip("holds Delete until it knows how many reports go with it", async () => {
+		it("holds Delete until it knows how many reports go with it", async () => {
 			const { dialog } = await askToDeleteTheFirstRowOf(
 				"teams",
 				0,
@@ -1050,7 +1053,7 @@ describe("OverviewDashboard", () => {
 		});
 
 		// @us-08 @slice-08 @error @contract-shape:pure-function
-		it.skip("says any reports it has go with it when their number cannot be read", async () => {
+		it("says any reports it has go with it when their number cannot be read", async () => {
 			const { dialog } = await askToDeleteTheFirstRowOf(
 				"teams",
 				0,
