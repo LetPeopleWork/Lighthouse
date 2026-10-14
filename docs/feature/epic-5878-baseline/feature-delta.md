@@ -582,6 +582,13 @@ sketch review (2026-10-14); D53–D54 the maintainer's decisions after the slice
   types to come; amends D36's cap). The cap was 2 per owner across every type, Signals included; it is now 2 per owner
   for each type, so a Community {Team} can hold 2 Then & Now reports and, later, 2 signals and 2 custom reports.
   Premium stays unlimited. Built in slice 08 (US-08), which counts by owner and type.
+- [D56] **Value lines carry neutral icons; an unchanged line gets a dash mark** (maintainer 2026-10-14, after the
+  slice-05 live check: "quite text heavy … Cycle Time stands out as we have icons"). Average, Median, Min and Max carry
+  grey icons (an equals-like handle, then the vertical-align middle, bottom and top marks), Throughput's Total and per
+  day carry a sum sign and a calendar, all in the slot where {Cycle Time} shows its certainty icon. Colour stays reserved
+  for better and worse. "No change" is led by a grey "–" mark, matching the ▲ ▼ marks of a change. Each change line
+  also names its line for screen readers. Also settles the wording for a Then of 0: the change reads
+  "▲ 7 (Then was 0)", no % and no dash, as built since slice 01; the earlier "—" wording is corrected to match.
 
 ---
 
@@ -1124,7 +1131,7 @@ finished more Work Items than Then's upper limit" and its assertion "and 2 days 
 change on the per-day average; good = up. ~~AC-4.3 Days
 beyond Then's frozen limits, by side (D40); above green, below red.~~ *(AC-4.3 dropped 2026-10-14 by D49.)* AC-4.4 Every applicable metric frozen whatever is
 ticked (D26). AC-4.5 Reports created before this slice: "Not captured for this report" (D27). AC-4.6 A Then of 0 shows
-the absolute change and "—" for the % with "Then was 0" (Q9, confirmed 2026-10-03).
+the absolute change and "Then was 0" in place of the % (Q9, confirmed 2026-10-03).
 **KPI**: K2. **Tech**: one panel registration per metric; total and per-day average from the daily series (D47).
 
 ### US-05 — See {WIP} and {Work Item Age} Then & Now (slice 05)
@@ -1154,7 +1161,7 @@ days, Median 600, Min 420, Max 760; in Now: 880, 870, 640, 1,050 → each line r
 (3) On 31 Jul 2026 Team Lightspeed had 10 {Work Items} in progress whose ages add up to 640 days: that day's total
 age is 640 days — one of the daily values behind Then's four lines. (4) Team Nova had nothing in progress on any day
 of Then: {WIP} reads "Average 0", "Median 0", "Min 0", "Max 0" and Total {Work Item Age} "Average 0 days" … "Max 0
-days" — real zeros, never a dash; each % change from a Then of 0 shows "—" with "Then was 0" (Q9). (5) A new report
+days" — real zeros, never a dash; each % change from a Then of 0 shows "Then was 0" in place of the % (Q9). (5) A new report
 has all four metrics ticked.
 
 ```gherkin
@@ -1176,7 +1183,7 @@ Scenario: A window with nothing in progress shows real zeros
   When Priya opens Team Nova's report
   Then every Then line of the WIP panel reads 0 and every Then line of the Total Work Item Age panel reads 0 days
   And no Then line shows a dash
-  And each % change reads "—" with "Then was 0"
+  And each % change reads "Then was 0" in place of the %
 
 Scenario: All four metrics are ticked by default
   When Priya creates a report for Team Gravity
@@ -1190,7 +1197,7 @@ Scenario: All four metrics are ticked by default
 N days", "Min N days", "Max N days"; each line with its own change and % change; good = down (a growing age reads as
 worse) (D51). No per-item average age and no last-day values. AC-5.3 A day with nothing in progress counts as {WIP}
 0 and total age 0; a window with nothing in progress shows 0 and 0 days, never a dash; a % change from a Then of 0
-shows "—" with "Then was 0" (Q9). AC-5.4 All four metrics ticked by default. AC-5.5 Reports created before this
+shows "Then was 0" in place of the % (Q9). AC-5.4 All four metrics ticked by default. AC-5.5 Reports created before this
 slice: "Not captured for this report" (D27).
 **KPI**: K2. **Tech**: two panel registrations; the daily {WIP} and total-age series already exist (S5).
 
@@ -1354,7 +1361,7 @@ panel. AC-5b.3 Groups appear in the order Improved, Got worse, Mixed, Unchanged;
 the metrics of one group share one line ("✔ Improved: {Throughput}, {WIP}"), named as the panel titles read them in
 the instance's Terminology ("Total {Work Item Age}"). AC-5b.4 A line that cannot be compared — a "—" on either side,
 including "Not captured for this report" — is ignored, and so is a line without a change mark (the {Throughput}
-total); a metric with no comparable line is not listed. A line whose % change reads "—" because Then was 0 (Q9) still
+total); a metric with no comparable line is not listed. A line whose % change reads "Then was 0" (Q9) still
 has an absolute change and counts. AC-5b.5 Only metrics the report shows count; nothing is weighted; no threshold — a
 1-day or 0.01-per-day move counts. AC-5b.6 Colour backs the marks — Improved green, Got worse red, Mixed and Unchanged
 neutral — and the mark and the word carry the meaning without colour. AC-5b.7 The CHANGE segment follows the report's
@@ -1746,7 +1753,7 @@ choice → D43 · Q7 renaming → D44.
    "—" with "Then's lower limit is 0" — the same fact `XmRCalculator` already uses to switch off the rules that need
    that limit, not a new threshold. The same applies to {WIP} and {Work Item Age} when their lower limit is 0.
 9. **Q9 — % change from a Then of 0.** A Then value of 0 (e.g. a {Throughput} of 0 per day on a slow Team) has
-   no % change. *Confirmed (AC-4.6)*: show the absolute change and "—" for the % with "Then was 0".
+   no % change. *Confirmed (AC-4.6)*: show the absolute change and "Then was 0" in place of the %.
 10. *(Superseded by D51, 2026-10-14: Average, Median, Min and Max of the daily totals, no last-day value; and by D49:
     no breaches counted.)* **Q10 — What "total {Work Item Age}" means for a window.** Lighthouse's total {Work Item Age} is a daily series;
     the panel needs one number per window. *Decided (AC-5.2)*: show **both** — the average of the daily totals over
@@ -2117,7 +2124,7 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
   (halves round away from zero). {WIP} and Total {Work Item Age}: **0 decimals on every line**, as the {Cycle Time}
   panel (`DECIMALS = 0` in `CycleTimePanel.tsx`) — an Average of 8.5 shows 9; Median, Min and Max are whole numbers
   already. {Throughput}: `total` 0 decimals, `perDay` 2 decimals (D47's "0.58 per day"). Change = displayed Now −
-  displayed Then; % change = change ÷ displayed Then, 0 decimals; a displayed Then of 0 gives "—" with "Then was 0"
+  displayed Then; % change = change ÷ displayed Then, 0 decimals; a displayed Then of 0 gives "Then was 0" in place of the %
   (Q9). The server sends unrounded values; no rounding on the wire. *Binary doubles (peer review 2026-10-14,
   accepted):* `roundForDisplay` rounds the double it is given, so a decimal that has no exact binary form can round
   down: `roundForDisplay(1.005, 2)` is `1` (1.005 × 100 is just below 100.5), not 1.01. Accepted, not fixed; one
@@ -2178,7 +2185,7 @@ Numbered DD to stay clear of DISCUSS's D-numbers.
     returns `change: null` when either side reads as a dash: an absent reason, a null value, or a missing member
     ("Not captured for this report"). The panel's change column renders these comparisons (`LineChange` takes the
     computed `ThenNowChange | null` instead of recomputing it), so the mark a reader sees and the verdict the header
-    tallies are one computed value. A line whose % change is "—" because Then was 0 (Q9) still has a `change` and
+    tallies are one computed value. A line whose % change reads "Then was 0" (Q9) still has a `change` and
     counts (AC-5b.4).
   - **The tally** — `summariseChange(shown: readonly ShownMetricLines[]): readonly ChangeGroup[]`, in a new pure
     module `panels/changeSummary.ts` next to `thenNowComparison.ts` and `reportPanelRegistry.ts`:
@@ -2729,7 +2736,7 @@ drawn no objection yet, so DD35 stands.
 - DISTILL: ~~sample size visible on every value (D45) and the five "—" cases as boundary scenarios — no finished items,
   < 2 Then points, collapsed band, lower limit 0 (Q8), Then was 0 (Q9), plus no {WIP} for average {Work Item Age};~~
   {Throughput} with a Now length different from Then (D47); the edit refusal for an uncaptured key. *(Revised
-  2026-10-14, D49–D52: two "—" cases remain — no finished items ({Cycle Time}) and Then was 0 (% change); the
+  2026-10-14, D49–D52: one "—" case remains, no finished items ({Cycle Time}); Then was 0 reads "Then was 0" in place of the % (D56); the
   limit cases and no-{WIP} go. New boundaries: a window with nothing in progress reads 0 on every {WIP} and Total
   {Work Item Age} line (never a dash); the median of an even and of an odd number of days (DD35); the sample size
   shows once, in the summary header (D52).)*

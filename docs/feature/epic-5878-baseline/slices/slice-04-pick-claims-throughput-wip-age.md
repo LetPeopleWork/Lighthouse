@@ -26,7 +26,7 @@ The coach chooses which metrics the report shows before looking at Now, and gets
 - {Throughput} panel (D47): total {Work Items} finished in the window and the average per day, Then and Now; change
   and % change on the per-day average (correct also when Now's length differs from Then's); good = up. ~~Days of Now
   beyond Then's frozen limits, by side (D40): above green, below red.~~ *(dropped 2026-10-14, D49)*
-- A Then of 0 shows no % change: "—" with "Then was 0" (Q9, confirmed 2026-10-03).
+- A Then of 0 shows no % change: "Then was 0" in place of the % (Q9, confirmed 2026-10-03).
 - Every value with its sample size; "—" with a reason only when truly empty (D45).
 - One panel registration per metric. Every applicable metric frozen at creation (D26). Reports created before this
   slice show {Throughput} as "Not captured for this report" (D27).

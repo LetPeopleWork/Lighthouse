@@ -30,7 +30,7 @@ The last two v1 panels, so a report shows all four metrics by default: "{WIP}" a
   days", "Median N days", "Min N days", "Max N days"; each line with its own change and % change; good = down (a
   growing age reads as worse).
 - A day with nothing in progress is {WIP} 0 and total age 0; a window with nothing in progress shows 0 and 0 days,
-  real zeros, never a dash. A % change from a Then of 0 shows "—" with "Then was 0" (Q9).
+  real zeros, never a dash. A % change from a Then of 0 shows "Then was 0" in place of the % (Q9).
 - Panel side headings read just THEN / NOW (D52).
 - All four metrics ticked by default.
 - Reports created before this slice show both as "Not captured for this report" (D27).

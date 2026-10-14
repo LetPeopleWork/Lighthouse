@@ -207,7 +207,7 @@ SSOT updates:
 **Resolved 2026-10-03**: Q1 → D37 · Q2 → D38 · Q3 → D39, D40 · Q4 → D41 · Q5 → D42 · Q6 → D43 · Q7 → D44.
 
 **Resolved 2026-10-03**: Q8 a lower limit at 0 shows "—" below with "Then's lower limit is 0", not 0 · Q9 % change
-from a Then of 0 shows "—" with "Then was 0" · Q10 total {Work Item Age} shows both the window average of the daily
+from a Then of 0 shows "Then was 0" in place of the % · Q10 total {Work Item Age} shows both the window average of the daily
 totals and the actual total on the window's last day.
 
 **Resolved 2026-10-03 (DESIGN's decisions to confirm)**: thin data → D45 · settings notice → D46 (dropped) ·
