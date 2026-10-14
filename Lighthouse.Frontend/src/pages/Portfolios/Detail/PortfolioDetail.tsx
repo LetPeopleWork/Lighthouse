@@ -73,7 +73,7 @@ const PortfolioDetail: React.FC = () => {
 		useState<boolean>(false);
 
 	const [activeView, setActiveView] = useState<PortfolioViewType>(
-		initialViewFor(reportId ? "reports" : tab),
+		initialViewFor(tab),
 	);
 	const [pendingPortfolioRefresh, setPendingPortfolioRefresh] = useState(false);
 	const [portfolioMembers, setPortfolioMembers] = useState<

@@ -21,6 +21,10 @@ vi.mock("./PortfolioFeatureList", () => ({
 	default: () => <div data-testid="portfolio-feature-list" />,
 }));
 
+vi.mock("./PortfolioMetricsView", () => ({
+	default: () => <div data-testid="portfolio-metrics-view" />,
+}));
+
 vi.mock("../../Common/Reports/ReportsTab", () => ({
 	default: ({ owner }: { owner: { kind: string; id: number } }) => (
 		<div data-testid="reports-tab">
@@ -92,7 +96,7 @@ const renderThePortfolioPage = (
 				<Routes>
 					<Route path="/portfolios/:id/:tab?" element={<PortfolioDetail />} />
 					<Route
-						path="/portfolios/:id/reports/:reportId"
+						path="/portfolios/:id/:tab/:reportId"
 						element={<PortfolioDetail />}
 					/>
 				</Routes>
@@ -144,5 +148,19 @@ describe("The Reports tab on a Portfolio page", () => {
 			`portfolio ${APOLLO_ID} report 42`,
 		);
 		expect(await theReportsTab()).toHaveAttribute("aria-selected", "true");
+	});
+
+	// @us-06 @slice-06 @contract-shape:pure-function
+	it("opens the tab the address names, not a report, when that tab is not Reports", async () => {
+		renderThePortfolioPage(`/portfolios/${APOLLO_ID}/metrics/42`, "reader");
+
+		expect(
+			await screen.findByTestId("portfolio-metrics-view"),
+		).toBeInTheDocument();
+		expect(screen.getByRole("tab", { name: "Metrics" })).toHaveAttribute(
+			"aria-selected",
+			"true",
+		);
+		expect(screen.queryByTestId("report-view")).not.toBeInTheDocument();
 	});
 });
