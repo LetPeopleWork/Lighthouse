@@ -830,7 +830,7 @@ describe("Creating the report", () => {
 
 	// @us-08 @slice-08 @error @kpi-OUT-5878-K4-community-cap-reached @contract-shape:unbounded-preservation
 	// Somebody else may have created the one report Community allows while this wizard was open.
-	it.skip("says the cap was reached when the server refuses for it", async () => {
+	it("says the cap was reached when the server refuses for it", async () => {
 		await openTheWizard(
 			aReportService({
 				getReports: vi.fn().mockResolvedValue(aReportList([])),

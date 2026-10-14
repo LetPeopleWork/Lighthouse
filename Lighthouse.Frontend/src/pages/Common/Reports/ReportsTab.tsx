@@ -3,6 +3,7 @@ import { Box, Button, Stack, Typography } from "@mui/material";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useContext, useState } from "react";
+import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
 import DeleteConfirmationDialog from "../../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog";
 import { useRbac } from "../../../hooks/useRbac";
 import type {
@@ -19,6 +20,7 @@ import ReportList from "./ReportList";
 import { rebuildWarningOf } from "./rebuildWarning";
 import { ownerTermKeyOf } from "./reportOwner";
 import ReportWizard from "./wizard/ReportWizard";
+import { capSentenceFor } from "./wizard/reportRefusalCopy";
 
 const LIST_COULD_NOT_LOAD = "Reports couldn't be loaded. Reload to try again.";
 const NO_REPORTS = "No reports yet.";
@@ -64,6 +66,7 @@ const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({ owner }) => {
 			: rbac.isPortfolioAdmin(owner.id));
 
 	const status = queryStatusOf(isFetching, isError);
+	const isAtTheCap = data?.creationBlockedByCap === true;
 	const ownerTerm = getTerm(ownerTermKeyOf(owner));
 	const emptyMessage =
 		isEditor || rbac.isLoading
@@ -98,15 +101,34 @@ const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({ owner }) => {
 	return (
 		<Stack spacing={2}>
 			{isEditor && (
-				<Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-					<Button
-						variant="contained"
-						startIcon={<AddIcon />}
-						disabled={data === undefined}
-						onClick={() => setIsCreating(true)}
+				<Box
+					sx={{
+						display: "flex",
+						flexDirection: "column",
+						alignItems: "flex-end",
+						gap: 1,
+					}}
+				>
+					<LicenseTooltip
+						canUseFeature={!isAtTheCap}
+						defaultTooltip="Create a report"
 					>
-						Create Report
-					</Button>
+						<span>
+							<Button
+								variant="contained"
+								startIcon={<AddIcon />}
+								disabled={data === undefined || isAtTheCap}
+								onClick={() => setIsCreating(true)}
+							>
+								Create Report
+							</Button>
+						</span>
+					</LicenseTooltip>
+					{isAtTheCap && (
+						<Typography variant="body2" color="text.secondary">
+							{capSentenceFor(ownerTerm)}
+						</Typography>
+					)}
 				</Box>
 			)}
 			{isCreating && (

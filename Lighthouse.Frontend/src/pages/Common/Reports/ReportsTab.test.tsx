@@ -123,7 +123,7 @@ describe("The Reports tab lists a Team's reports", () => {
 
 	// @us-01 @slice-01 @boundary @contract-shape:pure-function
 	// Every Community instance runs without sign-in, where everybody may do everything.
-	it.skip("lets everybody create and delete when roles are not enforced", async () => {
+	it("lets everybody create and delete when roles are not enforced", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService(),
 			viewer: "rbacOff",
@@ -205,7 +205,7 @@ describe("The Reports tab lists a Team's reports", () => {
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// An instance rolled back from a later version still holds that version's reports.
-	it.skip("lists a report of a type this version cannot show as not supported, and still lets an admin delete it", async () => {
+	it("lists a report of a type this version cannot show as not supported, and still lets an admin delete it", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService({
 				getReports: vi
@@ -240,7 +240,7 @@ describe("The Community cap on the Reports tab", () => {
 		});
 
 	// @us-08 @slice-08 @error @kpi-OUT-5878-K4-community-cap-reached @contract-shape:pure-function
-	it.skip("disables Create Report at the cap and says why, in the instance's word for a Team", async () => {
+	it("disables Create Report at the cap and says why, in the instance's word for a Team", async () => {
 		terms.current = { ...defaultTerms, [TERMINOLOGY_KEYS.TEAM]: "Squad" };
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: atTheCap(),
@@ -254,7 +254,7 @@ describe("The Community cap on the Reports tab", () => {
 
 	// @us-08 @slice-08 @error @contract-shape:pure-function
 	// The same tooltip every other Premium-limited control carries, so the way to Premium looks the same.
-	it.skip("explains the disabled Create Report with the Premium licence tooltip", async () => {
+	it("explains the disabled Create Report with the Premium licence tooltip", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: atTheCap(),
 		});
@@ -272,7 +272,7 @@ describe("The Community cap on the Reports tab", () => {
 	});
 
 	// @us-08 @slice-08 @boundary @contract-shape:pure-function
-	it.skip("says nothing about the cap below it", async () => {
+	it("says nothing about the cap below it", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService({
 				getReports: vi.fn().mockResolvedValue(aReportList([])),
@@ -284,7 +284,7 @@ describe("The Community cap on the Reports tab", () => {
 	});
 
 	// @us-08 @slice-08 @contract-shape:bounded-change
-	it.skip("enables Create Report again once the report is deleted", async () => {
+	it("enables Create Report again once the report is deleted", async () => {
 		const getReports = vi
 			.fn()
 			.mockResolvedValueOnce(aReportList([aListedReport()], true))

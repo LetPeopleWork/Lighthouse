@@ -44,6 +44,10 @@ export const useRefusalWords = (
 
 const COULD_NOT_CREATE = "The report couldn't be created. Try again.";
 
+/** Why a Community instance creates no further report for this Team or Portfolio. */
+export const capSentenceFor = (ownerTerm: string): string =>
+	`Community includes 1 Then & Now report per ${ownerTerm}. Delete it, or use Premium for unlimited reports.`;
+
 const oldestKeptDay = (earliestStart: string | null): string => {
 	const day = earliestStart === null ? null : parseLocalDate(earliestStart);
 	return day === null ? "the oldest kept day" : format(day, "d MMM yyyy");
@@ -72,8 +76,7 @@ const REFUSAL_COPY: Record<ReportRefusalCode, (words: RefusalWords) => string> =
 			"One of the chosen metrics was not captured for this report.",
 		"template-not-supported": () =>
 			"This Type of report can't be created by this version of Lighthouse.",
-		"report-cap-reached": (words) =>
-			`Community includes 2 reports per ${words.ownerTerm}. Delete one, or use Premium for unlimited reports.`,
+		"report-cap-reached": (words) => capSentenceFor(words.ownerTerm),
 	};
 
 /** The sentence for a window the wizard itself refuses, worded as the server's refusal would be. */

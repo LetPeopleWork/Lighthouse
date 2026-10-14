@@ -57,7 +57,7 @@ describe("refusalCopyFor", () => {
 		],
 		[
 			"report-cap-reached",
-			"Community includes 2 reports per Team. Delete one, or use Premium for unlimited reports.",
+			"Community includes 1 Then & Now report per Team. Delete it, or use Premium for unlimited reports.",
 		],
 	])("words %s as %j", (code, expected) => {
 		expect(refusalCopyFor(refusal(code), words)).toBe(expected);
