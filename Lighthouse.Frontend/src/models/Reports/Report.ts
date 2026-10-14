@@ -64,6 +64,7 @@ export interface IReportValue {
 /** One side of a metric: only the members that metric has are present, and one never captured is missing or null. */
 export type ReportMetricSide = Partial<
 	Record<
+		| "p95"
 		| "p85"
 		| "p70"
 		| "p50"

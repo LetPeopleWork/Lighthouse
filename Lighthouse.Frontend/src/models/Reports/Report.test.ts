@@ -145,3 +145,33 @@ describe("the report schemas", () => {
 		).toBe(false);
 	});
 });
+
+describe("the report schema and the Cycle Time 95th", () => {
+	// @us-05b @slice-05b @contract-shape:unbounded-preservation
+	// A report frozen before the 95th was captured sends none for Then; one frozen after sends it on both sides.
+	it("reads a 95th on either side, and none where Then never captured it", () => {
+		const base = aReportWhoseThenIsADash("no-finished-items");
+		const value = (days: number) => ({
+			value: days,
+			sampleSize: 41,
+			absentReason: null,
+		});
+		const sent = {
+			...base,
+			thenAndNow: {
+				...base.thenAndNow,
+				metrics: {
+					"cycle-time": {
+						atThen: { p85: value(21) },
+						atNow: { p85: value(12), p95: value(19) },
+					},
+				},
+			},
+		};
+
+		const cycleTime = ReportSchema.parse(sent).thenAndNow.metrics["cycle-time"];
+
+		expect(cycleTime?.atNow.p95).toEqual(value(19));
+		expect(cycleTime?.atThen).not.toHaveProperty("p95");
+	});
+});

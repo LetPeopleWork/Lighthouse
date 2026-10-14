@@ -154,7 +154,7 @@ export const aDash = (absentReason: ReportAbsentReason): IReportValue => ({
 });
 
 /**
- * The engagement-start report: {Cycle Time} 85th 21 → 12, 70th 10 → 7, 50th 5 → 4 days over 38 → 41 finished
+ * The engagement-start report: {Cycle Time} 95th 34 → 19, 85th 21 → 12, 70th 10 → 7, 50th 5 → 4 days over 38 → 41 finished
  * Work Items; {Throughput} 52 → 65 finished, 0.58 → 0.72 per day; {WIP} Average 8.62 → 7.38 (shown 9 → 7), Median
  * 9 → 7, Min 6 → 5, Max 12 → 9; Total {Work Item Age} Average 610.4 → 880 days (shown 610 → 880), Median 600 → 870,
  * Min 420 → 640, Max 760 → 990. Throughput's totals differ from Cycle Time's counts on purpose: Cycle Time counts
@@ -178,8 +178,18 @@ export const theEngagementStartReport = (
 		thenRebuildable: true,
 		metrics: {
 			"cycle-time": {
-				atThen: { p85: shown(21, 38), p70: shown(10, 38), p50: shown(5, 38) },
-				atNow: { p85: shown(12, 41), p70: shown(7, 41), p50: shown(4, 41) },
+				atThen: {
+					p95: shown(34, 38),
+					p85: shown(21, 38),
+					p70: shown(10, 38),
+					p50: shown(5, 38),
+				},
+				atNow: {
+					p95: shown(19, 41),
+					p85: shown(12, 41),
+					p70: shown(7, 41),
+					p50: shown(4, 41),
+				},
 			},
 			throughput: {
 				atThen: { total: shown(52, 90), perDay: shown(0.58, 90) },

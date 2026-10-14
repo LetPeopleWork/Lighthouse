@@ -81,8 +81,9 @@ const WIP_PANEL = "WIP";
 const AGE_PANEL = "Total Work Item Age";
 const READY = "ready";
 
-/** The icons the Metrics tab's Cycle Time percentiles carry for the 85th, 70th and 50th. */
-const CERTAINTY_OF_85TH_70TH_50TH = [
+/** The icons the Metrics tab's Cycle Time percentiles carry for the 95th, 85th, 70th and 50th. */
+const CERTAINTY_OF_EVERY_PERCENTILE = [
+	"CheckCircleIcon",
 	"CheckCircleOutlineOutlinedIcon",
 	"QueryBuilderIcon",
 	"ErrorOutlineOutlinedIcon",
@@ -148,6 +149,8 @@ type Side = "then" | "now";
 
 const SIDES: Side[] = ["then", "now"];
 
+type SummarySide = Side | "change";
+
 const theSummary = (): HTMLElement | null =>
 	document.querySelector<HTMLElement>("[data-report-summary]");
 
@@ -158,7 +161,7 @@ const readingOfTheSummary = (): string => {
 };
 
 /** One side of the summary as read aloud; its lines end in a space, as a panel's do, so they read apart. */
-const readingOfSummary = (side: Side): string => {
+const readingOfSummary = (side: SummarySide): string => {
 	const found = theSummary()?.querySelector<HTMLElement>(
 		`[data-summary-side="${side}"]`,
 	);
@@ -463,6 +466,7 @@ describe("The report's summary header", () => {
 			...defaultTerms,
 			[TERMINOLOGY_KEYS.WORK_ITEM]: "Ticket",
 			[TERMINOLOGY_KEYS.WORK_ITEMS]: "Tickets",
+			[TERMINOLOGY_KEYS.WORK_ITEM_AGE]: "Ticket Age",
 		};
 		const report = theEngagementStartReport();
 		report.thenAndNow.metrics["cycle-time"] = {
@@ -560,6 +564,407 @@ describe("The report's summary header", () => {
 	});
 });
 
+const theChangeGroups = (): HTMLElement[] =>
+	Array.from(
+		theSummary()?.querySelectorAll<HTMLElement>(
+			'[data-summary-side="change"] [data-change-kind]',
+		) ?? [],
+	);
+
+/** The kind of each group on the CHANGE side and how it reads, in the order they are shown. */
+const kindsAndReadingsOfTheChange = () =>
+	theChangeGroups().map((group) => [
+		group.dataset.changeKind,
+		readingOf(group),
+	]);
+
+/** The colour the mark of a group is drawn in: the innermost element whose own text holds the mark. */
+const colourOfTheMark = (group: HTMLElement, mark: string): string => {
+	const holders = [group, ...group.querySelectorAll<HTMLElement>("*")].filter(
+		(element) =>
+			Array.from(element.childNodes).some(
+				(node) =>
+					node.nodeType === Node.TEXT_NODE && node.textContent?.includes(mark),
+			),
+	);
+	expect(holders, `no element draws the mark ${mark}`).not.toHaveLength(0);
+	const [innermost] = holders.slice(-1);
+	return getComputedStyle(innermost).color;
+};
+
+/** Then's and Now's 95th, 85th, 70th and 50th, in days, over the same number of finished Work Items. */
+const percentiles = (
+	[p95, p85, p70, p50]: readonly [number, number, number, number],
+	sampleSize: number,
+): ReportMetricSide => ({
+	p95: shown(p95, sampleSize),
+	p85: shown(p85, sampleSize),
+	p70: shown(p70, sampleSize),
+	p50: shown(p50, sampleSize),
+});
+
+const nothingFinishedOnAnyPercentile: ReportMetricSide = {
+	p95: aDash("no-finished-items"),
+	p85: aDash("no-finished-items"),
+	p70: aDash("no-finished-items"),
+	p50: aDash("no-finished-items"),
+};
+
+const showing = (
+	report: IReport,
+	shownMetricKeys: IReport["shownMetricKeys"],
+): IReport => ({ ...report, shownMetricKeys });
+
+const withThroughput = (
+	report: IReport,
+	[thenTotal, thenPerDay]: readonly [number, number],
+	[nowTotal, nowPerDay]: readonly [number, number],
+): IReport => {
+	report.thenAndNow.metrics.throughput = {
+		atThen: { total: shown(thenTotal, 90), perDay: shown(thenPerDay, 90) },
+		atNow: { total: shown(nowTotal, 90), perDay: shown(nowPerDay, 90) },
+	};
+	return report;
+};
+
+/** Every WIP line in Now as it was in Then. */
+const withWipUnmoved = (report: IReport): IReport => {
+	const wip = report.thenAndNow.metrics.wip as IReportMetric;
+	report.thenAndNow.metrics.wip = { atThen: wip.atThen, atNow: wip.atThen };
+	return report;
+};
+
+const SUCCESS_COLOUR = "rgb(46, 125, 50)";
+const ERROR_COLOUR = "rgb(211, 47, 47)";
+const SECONDARY_TEXT_COLOUR = "rgba(0, 0, 0, 0.6)";
+
+// The header names, per shown metric, which way it moved by the marks its own panel shows, so a reader knows what
+// changed before reaching the first panel, and a metric whose slow end worsened while its fast end improved is not
+// passed off as an improvement.
+describe("The summary's CHANGE side", () => {
+	beforeEach(beforeEachReportTest);
+
+	// @us-05b @slice-05b @driving_port @contract-shape:pure-function
+	it.skip("reads Then, Now and Change side by side, like the panels", async () => {
+		openTheReport();
+
+		await theReportIsReady();
+
+		const sides = Array.from(
+			theSummary()?.querySelectorAll<HTMLElement>("[data-summary-side]") ?? [],
+		).map((side) => side.dataset.summarySide);
+		expect(sides).toEqual(["then", "now", "change"]);
+		expect(readingOfSummary("change")).toMatch(/^CHANGE /i);
+	});
+
+	// @us-05b @slice-05b @walking_skeleton @driving_port @contract-shape:pure-function
+	// Every Cycle Time line, Throughput per day and every WIP line are better in Now; every Total Work Item Age
+	// line is worse. Throughput's total carries no change mark and does not count.
+	it.skip("names the metrics that improved and the one that got worse", async () => {
+		openTheReport();
+
+		await theReportIsReady();
+
+		expect(readingOfSummary("change")).toMatch(
+			/^CHANGE ✔ Improved: Cycle Time, Throughput, WIP ✘ Got worse: Total Work Item Age$/i,
+		);
+		expect(kindsAndReadingsOfTheChange()).toEqual([
+			["improved", "✔ Improved: Cycle Time, Throughput, WIP"],
+			["worse", "✘ Got worse: Total Work Item Age"],
+		]);
+	});
+
+	// @us-05b @slice-05b @contract-shape:pure-function
+	// The spread widened: a majority rule would hide either that the typical Work Item got faster or the slow tail.
+	it.skip("reads Mixed for a metric whose slow end got worse while its fast end improved", async () => {
+		openTheReport(
+			withCycleTime({
+				atThen: percentiles([25, 14, 9, 5], 30),
+				atNow: percentiles([31, 17, 9, 4], 33),
+			}),
+		);
+
+		await theReportIsReady();
+
+		expect(readingOfSummary("change")).toMatch(
+			/^CHANGE ✔ Improved: Throughput, WIP ✘ Got worse: Total Work Item Age ± Mixed: Cycle Time$/i,
+		);
+	});
+
+	// @us-05b @slice-05b @boundary @contract-shape:pure-function
+	// No threshold: a one-day move counts, and a metric none of whose lines moved is said to be unchanged.
+	it.skip("counts a one-day move, and reads Unchanged for a metric that did not move", async () => {
+		const report = withCycleTime({
+			atThen: percentiles([12, 10, 7, 5], 30),
+			atNow: percentiles([12, 10, 8, 5], 30),
+		});
+		openTheReport(showing(withWipUnmoved(report), ["cycle-time", "wip"]));
+
+		await theReportIsReady();
+
+		expect(readingOfSummary("change")).toMatch(
+			/^CHANGE ✘ Got worse: Cycle Time – Unchanged: WIP$/i,
+		);
+	});
+
+	// @us-05b @slice-05b @boundary @contract-shape:pure-function
+	// The header judges a line as its panel shows it: a move the panel cannot show is no move, the smallest it can is one.
+	it.skip.each<[string, number, number, string]>([
+		[
+			"a hundredth of a Work Item more per day",
+			0.58,
+			0.59,
+			"✔ Improved: Throughput",
+		],
+		[
+			"a move too small for the panel to show",
+			0.584,
+			0.576,
+			"– Unchanged: Throughput",
+		],
+	])(
+		"judges %s as the panel shows it",
+		async (_, thenPerDay, nowPerDay, group) => {
+			openTheReport(
+				showing(
+					withThroughput(
+						theEngagementStartReport(),
+						[52, thenPerDay],
+						[53, nowPerDay],
+					),
+					["throughput"],
+				),
+			);
+
+			await theReportIsReady();
+
+			expect(readingOfSummary("change")).toMatch(
+				new RegExp(`^CHANGE ${group}$`, "i"),
+			);
+		},
+	);
+
+	// @us-05b @slice-05b @error @contract-shape:pure-function
+	// Team Pulsar finished nothing in its Now, so every Cycle Time line reads "—" there and cannot be compared.
+	it.skip("leaves out a metric none of whose lines can be compared", async () => {
+		const report = withCycleTime({
+			atThen: percentiles([20, 14, 9, 5], 3),
+			atNow: nothingFinishedOnAnyPercentile,
+		});
+		openTheReport(
+			showing(withThroughput(report, [3, 0.1], [0, 0]), [
+				"cycle-time",
+				"throughput",
+			]),
+		);
+
+		await theReportIsReady();
+
+		expect(readingOfSummary("change")).toMatch(
+			/^CHANGE ✘ Got worse: Throughput$/i,
+		);
+	});
+
+	// @us-05b @slice-05b @error @contract-shape:pure-function
+	// "—" is the report's sign for "cannot be compared"; an empty side would read like "nothing changed".
+	it.skip("reads a dash when no shown metric can be compared at all", async () => {
+		openTheReport(
+			showing(
+				withCycleTime({
+					atThen: percentiles([20, 14, 9, 5], 3),
+					atNow: nothingFinishedOnAnyPercentile,
+				}),
+				["cycle-time"],
+			),
+		);
+
+		await theReportIsReady();
+
+		expect(readingOfSummary("change")).toMatch(/^CHANGE —$/i);
+		expect(theChangeGroups()).toHaveLength(0);
+	});
+
+	// @us-05b @slice-05b @error @contract-shape:pure-function
+	// WIP rose since Then, but the report does not show it, so the summary does not judge it either.
+	it.skip("summarises only the metrics the report shows", async () => {
+		const report = theEngagementStartReport();
+		const wip = report.thenAndNow.metrics.wip as IReportMetric;
+		report.thenAndNow.metrics.wip = { atThen: wip.atNow, atNow: wip.atThen };
+		openTheReport(showing(report, ["cycle-time", "throughput"]));
+
+		await theReportIsReady();
+
+		expect(readingOfSummary("change")).toMatch(
+			/^CHANGE ✔ Improved: Cycle Time, Throughput$/i,
+		);
+	});
+
+	// @us-05b @slice-05b @error @contract-shape:pure-function
+	it.skip.each<[string, (report: IReport) => IReport, string]>([
+		[
+			"a metric this version has no panel for",
+			(report) => {
+				report.thenAndNow.metrics[A_LATER_METRIC] = {
+					atThen: { p85: shown(30, 12) },
+					atNow: { p85: shown(20, 12) },
+				};
+				return showing(report, ["cycle-time", A_LATER_METRIC]);
+			},
+			"✔ Improved: Cycle Time",
+		],
+		[
+			"a shown metric the report never captured",
+			(report) => {
+				report.thenAndNow.metrics.wip = undefined;
+				report.thenAndNow.metrics["work-item-age"] = null;
+				return report;
+			},
+			"✔ Improved: Cycle Time, Throughput",
+		],
+	])("lists %s in no group", async (_, shape, group) => {
+		openTheReport(shape(theEngagementStartReport()));
+
+		await theReportIsReady();
+
+		expect(readingOfSummary("change")).toMatch(
+			new RegExp(`^CHANGE ${group}$`, "i"),
+		);
+	});
+
+	// @us-05b @slice-05b @error @contract-shape:unbounded-preservation
+	// The report "Then & Now — 30 days to 1 Sep 2026" was frozen before the 95th was captured. Its other lines did not
+	// move: the 95th, which cannot be compared, neither makes Cycle Time a change nor leaves it out.
+	it.skip("judges a report frozen before the 95th was captured on its other percentiles alone", async () => {
+		const report = withCycleTime({
+			atThen: { p85: shown(21, 38), p70: shown(10, 38), p50: shown(5, 38) },
+			atNow: percentiles([19, 21, 10, 5], 41),
+		});
+		openTheReport(
+			showing({ ...report, name: "Then & Now — 30 days to 1 Sep 2026" }, [
+				"cycle-time",
+			]),
+		);
+
+		const panel = await thePanel(CYCLE_TIME_PANEL);
+
+		expect(readingOfSegment(panel, "then")).toMatch(
+			new RegExp(`^THEN 95th — 85th 21 days .*${NOT_CAPTURED}$`, "i"),
+		);
+		expect(readingOfSegment(panel, "change")).toMatch(
+			/^CHANGE 95th: — 85th: /i,
+		);
+		expect(readingOfSummary("change")).toMatch(
+			/^CHANGE – Unchanged: Cycle Time$/i,
+		);
+	});
+
+	// @us-05b @slice-05b @boundary @contract-shape:pure-function
+	// A rise from nothing has no percentage, but it is a rise all the same.
+	it.skip("counts a change from a Then of zero", async () => {
+		openTheReport(
+			showing(withThroughput(theEngagementStartReport(), [0, 0], [24, 0.27]), [
+				"throughput",
+			]),
+		);
+
+		await theReportIsReady();
+
+		expect(readingOfSummary("change")).toMatch(
+			/^CHANGE ✔ Improved: Throughput$/i,
+		);
+	});
+
+	// @us-05b @slice-05b @boundary @contract-shape:pure-function
+	// A 30-day Now finishes fewer Work Items than a 90-day Then at a higher rate; only the rate carries a change mark.
+	it.skip("judges Throughput by its rate per day, never by its total", async () => {
+		const report = withThroughput(
+			theEngagementStartReport(),
+			[52, 0.58],
+			[22, 0.73],
+		);
+		report.thenAndNow.nowWindow = {
+			start: "2026-09-03",
+			end: "2026-10-02",
+			lengthDays: 30,
+		};
+		openTheReport(showing(report, ["throughput"]));
+
+		await theReportIsReady();
+
+		expect(readingOfSummary("change")).toMatch(
+			/^CHANGE ✔ Improved: Throughput$/i,
+		);
+	});
+
+	// @us-05b @slice-05b @contract-shape:pure-function
+	it.skip("names the metrics in the instance's words, as their panels are titled", async () => {
+		terms.current = {
+			...defaultTerms,
+			[TERMINOLOGY_KEYS.CYCLE_TIME]: "Lead Time",
+			[TERMINOLOGY_KEYS.THROUGHPUT]: "Delivery Rate",
+			[TERMINOLOGY_KEYS.WIP]: "Work in Progress",
+			[TERMINOLOGY_KEYS.WORK_ITEM_AGE]: "Ticket Age",
+		};
+		openTheReport();
+
+		await theReportIsReady();
+
+		expect(readingOfSummary("change")).toMatch(
+			/^CHANGE ✔ Improved: Lead Time, Delivery Rate, Work in Progress ✘ Got worse: Total Ticket Age$/i,
+		);
+	});
+
+	// @us-05b @slice-05b @contract-shape:pure-function
+	// Colour backs the marks; the mark and the word carry the meaning for anyone who cannot see it.
+	it.skip("shows every kind in its order, each led by its mark and word, improved in green and got worse in red", async () => {
+		openTheReport(
+			withWipUnmoved(
+				withCycleTime({
+					atThen: percentiles([25, 14, 9, 5], 30),
+					atNow: percentiles([31, 17, 9, 4], 33),
+				}),
+			),
+		);
+
+		await theReportIsReady();
+
+		expect(kindsAndReadingsOfTheChange()).toEqual([
+			["improved", "✔ Improved: Throughput"],
+			["worse", "✘ Got worse: Total Work Item Age"],
+			["mixed", "± Mixed: Cycle Time"],
+			["unchanged", "– Unchanged: WIP"],
+		]);
+		const [improved, worse, mixed, unchanged] = theChangeGroups();
+		expect(colourOfTheMark(improved, "✔")).toBe(SUCCESS_COLOUR);
+		expect(colourOfTheMark(worse, "✘")).toBe(ERROR_COLOUR);
+		expect(colourOfTheMark(mixed, "±")).toBe(SECONDARY_TEXT_COLOUR);
+		expect(colourOfTheMark(unchanged, "–")).toBe(SECONDARY_TEXT_COLOUR);
+	});
+
+	// @us-05b @slice-05b @error @ac-1.8 @contract-shape:pure-function
+	// The CHANGE side lives inside the summary, so it shares its loading and failure looks; after Retry it is fresh.
+	it.skip("shows the CHANGE of the report read after Retry, never one from before", async () => {
+		const getReport = vi
+			.fn()
+			.mockRejectedValueOnce(new Error("the network dropped"))
+			.mockResolvedValue(theEngagementStartReport());
+		renderWithReports(
+			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
+			{ reportService: aReportService({ getReport }) },
+		);
+
+		expect(await screen.findByText(COULD_NOT_LOAD)).toBeVisible();
+		expect(theSummary()).toBeNull();
+
+		await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+		await theReportIsReady();
+
+		expect(readingOfSummary("change")).toMatch(
+			/^CHANGE ✔ Improved: Cycle Time, Throughput, WIP ✘ Got worse: Total Work Item Age$/i,
+		);
+	});
+});
+
 describe("The panels of a report", () => {
 	beforeEach(beforeEachReportTest);
 
@@ -572,43 +977,62 @@ describe("The panels of a report", () => {
 		const then = readingOfSegment(panel, "then");
 		const now = readingOfSegment(panel, "now");
 
-		expect(then).toMatch(/^THEN 85th /i);
-		expect(then).toMatch(/85th 21 days.*70th 10 days.*50th 5 days$/);
-		expect(now).toMatch(/^NOW 85th /i);
-		expect(now).toMatch(/85th 12 days.*70th 7 days.*50th 4 days$/);
+		expect(then).toMatch(/^THEN /i);
+		expect(then).toMatch(/ 85th 21 days.*70th 10 days.*50th 5 days$/);
+		expect(now).toMatch(/^NOW /i);
+		expect(now).toMatch(/ 85th 12 days.*70th 7 days.*50th 4 days$/);
 		expect(readingOf(panel)).not.toContain("Work Items");
 		expect(readingOfSegment(panel, "change")).toMatch(/^CHANGE /i);
 	});
 
-	// @us-01 @slice-01 @contract-shape:pure-function
+	// @us-01 @us-05b @slice-01 @slice-05b @contract-shape:pure-function
 	// The same icons as the Metrics tab's Cycle Time percentiles, so a reader knows the 50th is a coin toss.
-	it("marks every percentile on both sides with the certainty icon the Metrics tab shows for it", async () => {
+	it.skip("marks every percentile on both sides with the certainty icon the Metrics tab shows for it", async () => {
 		openTheReport();
 
 		const panel = await thePanel(CYCLE_TIME_PANEL);
 
 		expect(iconsIn(theSegment(panel, "then"))).toEqual(
-			CERTAINTY_OF_85TH_70TH_50TH,
+			CERTAINTY_OF_EVERY_PERCENTILE,
 		);
 		expect(iconsIn(theSegment(panel, "now"))).toEqual(
-			CERTAINTY_OF_85TH_70TH_50TH,
+			CERTAINTY_OF_EVERY_PERCENTILE,
 		);
 	});
 
-	// @us-01 @slice-01 @contract-shape:pure-function
+	// @us-05b @slice-05b @driving_port @contract-shape:pure-function
+	// Forecasts at the highest certainty lean on the 95th, so it opens the panel, above the 85th.
+	it.skip("opens the Cycle Time panel with the 95th for Then and for Now, and its change", async () => {
+		openTheReport();
+
+		const panel = await thePanel(CYCLE_TIME_PANEL);
+		const [first] = changesIn(theSegment(panel, "change"));
+
+		expect(readingOfSegment(panel, "then")).toMatch(
+			/^THEN 95th 34 days 85th /i,
+		);
+		expect(readingOfSegment(panel, "now")).toMatch(/^NOW 95th 19 days 85th /i);
+		expect(readingOf(first)).toBe("▼ 15 days (−44 %)");
+		expect(first.dataset.change).toBe("better");
+		expect(iconsIn(theSegment(panel, "now"))[0]).toBe("CheckCircleIcon");
+	});
+
+	// @us-01 @us-05b @slice-01 @slice-05b @contract-shape:pure-function
 	// Colour alone tells nobody who cannot see it; the sign and the arrow say the same.
-	it("tells a shorter Cycle Time as better on every percentile by arrow and sign as well as colour", async () => {
+	it.skip("tells a shorter Cycle Time as better on every percentile by arrow and sign as well as colour", async () => {
 		openTheReport();
 
 		const panel = await thePanel(CYCLE_TIME_PANEL);
 		const changes = changesIn(theSegment(panel, "change"));
 
 		expect(changes.map(readingOf)).toEqual([
+			"▼ 15 days (−44 %)",
 			"▼ 9 days (−43 %)",
 			"▼ 3 days (−30 %)",
 			"▼ 1 day (−20 %)",
 		]);
 		expect(changes.map((change) => change.dataset.change)).toEqual([
+			"better",
 			"better",
 			"better",
 			"better",
@@ -630,7 +1054,7 @@ describe("The panels of a report", () => {
 		);
 
 		expect(readingOfSegment(panel, "change")).toMatch(
-			/^CHANGE 85th: ▼ 3 days \(−20 %\) 70th: – No change 50th: ▲ 1 day \(\+20 %\)$/i,
+			/ 85th: ▼ 3 days \(−20 %\) 70th: – No change 50th: ▲ 1 day \(\+20 %\)$/,
 		);
 		expect(worse.map(readingOf)).toEqual(["▲ 1 day (+20 %)"]);
 	});
@@ -771,10 +1195,6 @@ describe("The panels of a report", () => {
 			/^CHANGE Average: ▲ 270 days \(\+44 %\) Median: ▲ 270 days \(\+45 %\) Min: ▲ 220 days \(\+52 %\) Max: ▲ 230 days \(\+30 %\)$/i,
 		],
 		[THROUGHPUT_PANEL, /^CHANGE per day: ▲ 0\.14 per day \(\+24 %\)$/i],
-		[
-			CYCLE_TIME_PANEL,
-			/^CHANGE 85th: ▼ 9 days \(−43 %\) 70th: ▼ 3 days \(−30 %\) 50th: ▼ 1 day \(−20 %\)$/i,
-		],
 	])(
 		"names the line of every change on the %s panel",
 		async (title, reading) => {
@@ -785,6 +1205,17 @@ describe("The panels of a report", () => {
 			expect(readingOfSegment(panel, "change")).toMatch(reading);
 		},
 	);
+
+	// @us-01 @us-05b @slice-01 @slice-05b @contract-shape:pure-function
+	it.skip("names the line of every change on the Cycle Time panel, the 95th first", async () => {
+		openTheReport();
+
+		const panel = await thePanel(CYCLE_TIME_PANEL);
+
+		expect(readingOfSegment(panel, "change")).toMatch(
+			/^CHANGE 95th: ▼ 15 days \(−44 %\) 85th: ▼ 9 days \(−43 %\) 70th: ▼ 3 days \(−30 %\) 50th: ▼ 1 day \(−20 %\)$/i,
+		);
+	});
 
 	// @us-04 @slice-04 @contract-shape:pure-function
 	it("stacks only the shown metrics, in the catalog's order whatever order they were ticked in", async () => {
@@ -936,7 +1367,7 @@ describe("Values a report cannot show", () => {
 			expect(readingOf(panel)).not.toMatch(/Average \d/);
 		}
 		expect(readingOfSegment(await thePanel(CYCLE_TIME_PANEL), "then")).toMatch(
-			/^THEN 85th 21 days/i,
+			/ 85th 21 days /,
 		);
 	});
 
@@ -954,8 +1385,8 @@ describe("Values a report cannot show", () => {
 
 		const panel = await thePanel(CYCLE_TIME_PANEL);
 
-		expect(readingOfSegment(panel, "then")).toMatch(/^THEN 85th 9 days/i);
-		expect(readingOfSegment(panel, "now")).toMatch(/^NOW 85th 5 days/i);
+		expect(readingOfSegment(panel, "then")).toMatch(/ 85th 9 days /);
+		expect(readingOfSegment(panel, "now")).toMatch(/ 85th 5 days /);
 		expect(readingOfSummary("then")).toMatch(/ 2 Work Items closed$/);
 		expect(readingOfSummary("now")).toMatch(/ 3 Work Items closed$/);
 	});
