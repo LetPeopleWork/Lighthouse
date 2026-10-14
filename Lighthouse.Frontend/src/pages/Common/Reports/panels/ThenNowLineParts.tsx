@@ -25,13 +25,15 @@ export interface ThenNowSideProps {
 	workItems: string;
 }
 
-const verdictColours: Record<ChangeVerdict, string> = {
+/** Only a change's mark and words are coloured, green for better and red for worse. */
+export const verdictColours: Record<ChangeVerdict, string> = {
 	better: "success.main",
 	worse: "error.main",
 	neutral: "text.secondary",
 };
 
-const visuallyHidden = {
+/** Off screen but read aloud. */
+export const visuallyHidden = {
 	position: "absolute",
 	width: 1,
 	height: 1,

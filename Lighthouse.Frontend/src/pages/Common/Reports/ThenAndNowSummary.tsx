@@ -16,31 +16,30 @@ import {
 	summariseChange,
 } from "./panels/changeSummary";
 import { inCatalogOrder, panelFor } from "./panels/reportPanelRegistry";
+import { verdictColours, visuallyHidden } from "./panels/ThenNowLineParts";
 import { ThenNowColumn, ThenNowColumns } from "./panels/ThenNowPanelFrame";
-import { DASH, lineComparisonsOf } from "./panels/thenNowComparison";
+import {
+	DASH,
+	lineComparisonsOf,
+	NO_CHANGE_MARK,
+} from "./panels/thenNowComparison";
 import { windowDaysOf } from "./wizard/thenAndNow/thenAndNowDraft";
 
 const CYCLE_TIME_PERCENTILES = ["p85", "p70", "p50"] as const;
-
-/** Off screen but read aloud: it names the summary for anyone moving through the page by headings. */
-const VISUALLY_HIDDEN = {
-	position: "absolute",
-	width: "1px",
-	height: "1px",
-	overflow: "hidden",
-	clip: "rect(0 0 0 0)",
-	whiteSpace: "nowrap",
-} as const;
 
 /** How each kind of change is marked and named. Only the mark is coloured; the word carries the meaning. */
 const CHANGE_KIND_LOOK: Record<
 	ChangeKind,
 	{ readonly mark: string; readonly word: string; readonly colour: string }
 > = {
-	improved: { mark: "✔", word: "Improved", colour: "success.main" },
-	worse: { mark: "✘", word: "Got worse", colour: "error.main" },
-	mixed: { mark: "±", word: "Mixed", colour: "text.secondary" },
-	unchanged: { mark: "–", word: "Unchanged", colour: "text.secondary" },
+	improved: { mark: "✔", word: "Improved", colour: verdictColours.better },
+	worse: { mark: "✘", word: "Got worse", colour: verdictColours.worse },
+	mixed: { mark: "±", word: "Mixed", colour: verdictColours.neutral },
+	unchanged: {
+		mark: NO_CHANGE_MARK,
+		word: "Unchanged",
+		colour: verdictColours.neutral,
+	},
 };
 
 const cycleTimeSampleSizeOf = (side: ReportMetricSide): number | null => {
@@ -156,7 +155,8 @@ const ThenAndNowSummary: React.FC<{
 			data-report-summary
 			sx={{ p: 2, width: "100%", position: "relative" }}
 		>
-			<Typography component="h2" sx={VISUALLY_HIDDEN}>
+			{/* Names the summary for anyone moving through the page by headings. */}
+			<Typography component="h2" sx={visuallyHidden}>
 				Summary
 			</Typography>
 			<ThenNowColumns count={3}>
