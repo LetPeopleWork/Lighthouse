@@ -23,14 +23,9 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
 
         public ReportOutcome<string> Freeze(ReportOwner owner, NewReport request, ReportCalendar calendar)
         {
-            if (request.ShownMetricKeys is not { Count: > 0 } shown)
+            if (ShownMetricsRefusal(request.ShownMetricKeys, owner.Kind) is string shownRefusal)
             {
-                return ReportOutcome<string>.Refused(ReportRefusalCodes.NoMetricShown);
-            }
-
-            if (!shown.All(KnownMetricKeys(owner.Kind).Contains))
-            {
-                return ReportOutcome<string>.Refused(ReportRefusalCodes.UnknownMetric);
+                return ReportOutcome<string>.Refused(shownRefusal);
             }
 
             if (request.ThenAndNow is not NewThenAndNow settings)
@@ -112,6 +107,16 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             };
         }
 
+        private string? ShownMetricsRefusal(IReadOnlyList<string>? shown, ReportOwnerKind ownerKind)
+        {
+            if (shown is not { Count: > 0 })
+            {
+                return ReportRefusalCodes.NoMetricShown;
+            }
+
+            return shown.All(KnownMetricKeys(ownerKind).Contains) ? null : ReportRefusalCodes.UnknownMetric;
+        }
+
         // A newer version may have stored a metric this one has never heard of; the report still opens without it.
         private void LogKeysNotInTheCatalog(Report report, ReportOwner owner, HashSet<string> known, List<string> stored)
         {
@@ -129,7 +134,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             => ThenAndNowPayload.FromJson(report.TemplatePayloadJson) ?? throw new JsonException($"Report {report.Id} holds no Then & Now payload");
 
         private static JsonObject? CaptureOf(ThenAndNowPayload payload, string metricKey)
-            => payload.Captures is not null && payload.Captures.TryGetValue(metricKey, out var capture) ? capture : null;
+            => payload.Captures?.GetValueOrDefault(metricKey);
 
         private static List<string> ShownMetricKeysOf(Report report)
             => JsonSerializer.Deserialize<List<string>>(report.ShownMetricKeysJson, ThenAndNowPayload.JsonOptions) ?? [];
