@@ -1322,6 +1322,88 @@
             "05-04"
           ],
           "implementation_notes": "EXEMPT FROM PARADIGM: acceptance. DISCUSS D54, DESIGN DD38/DD39. Tests by the acceptance designer in ce07bd111. Commit: feat(reports): the 95th percentile on Then & Now (story 6163)."
+        },
+        {
+          "id": "05-06",
+          "name": "The {Cycle Time} panel opens with the 95th above the 85th, with its certainty icon and its own change; a report frozen before it says the 95th was not captured",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/panels/CycleTimePanel.test.tsx",
+          "scenario_name": "shows the 95th row above the 85th, with icons",
+          "unskips": [
+            "CycleTimePanel.test.tsx :: the three 95th cases",
+            "ReportView.test.tsx :: the four parked Cycle Time panel cases (four certainty icons; opens with the 95th; shorter reads better on all four; change column names every line, 95th first)"
+          ],
+          "criteria": [
+            "A 95th row above the 85th with ForecastLevel(95) (CheckCircleIcon) on Then and Now",
+            "Its own change line first, labelled '95th' for screen readers",
+            "A Then without p95 reads '95th —' with 'Not captured for this report'; Now's 95th still shown",
+            "pnpm test, pnpm build and Biome clean"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/panels/CycleTimePanel.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/panels/CycleTimePanel.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.test.tsx"
+          ],
+          "dependencies": [
+            "05-05"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: pure panel via RTL. D54, D56. Tests in d60c4ad6b. Frontend works from fixtures, independent of 05-05 in practice. Commit: feat(reports): the 95th on the Cycle Time panel (story 6163)."
+        },
+        {
+          "id": "05-07",
+          "name": "Each panel's change lines are compared the way the panel shows them, and the comparisons sum up per metric as Improved, Got worse, Mixed or Unchanged",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/panels/changeSummary.test.ts",
+          "scenario_name": "the four kinds",
+          "unskips": [
+            "thenNowComparison.test.ts :: lineComparisonsOf (16)",
+            "changeSummary.test.ts :: all parked (16)",
+            "reportPanelRegistry.parity.test.tsx :: all parked (4)"
+          ],
+          "criteria": [
+            "lineComparisonsOf(metric, panel) compares each changeLine at its displayed decimals by the panel's direction of good; a line that cannot be compared gives null",
+            "summariseChange groups shown metrics as improved / worse / mixed / unchanged in that fixed order, metrics in input order, empty groups dropped, dash-only metrics left out",
+            "registry entries carry changeLines (Cycle Time p95,p85,p70,p50; Throughput perDay; WIP and age average,median,min,max) and the marks each panel draws equal lineComparisonsOf",
+            "changeSummary.ts and thenNowComparison.ts stay free of React, MUI and Terminology; scaffolds removed"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/panels/changeSummary.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/panels/reportPanelRegistry.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.test.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/panels/changeSummary.test.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/panels/reportPanelRegistry.parity.test.tsx"
+          ],
+          "dependencies": [
+            "05-06"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: pure functions. D53, DESIGN DD38/DD39/E16. Panels should draw their change marks from lineComparisonsOf so the header and the panels cannot disagree. Commit: feat(reports): sum up each metric's change (story 6163)."
+        },
+        {
+          "id": "05-08",
+          "name": "The summary header gains a Change column naming the metrics that improved, got worse, were mixed or stayed unchanged, in the instance's words",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.test.tsx",
+          "scenario_name": "names the metrics that improved and the one that got worse",
+          "unskips": [
+            "ReportView.test.tsx :: describe 'The summary's CHANGE side' (17)"
+          ],
+          "criteria": [
+            "A third column data-summary-side='change' headed 'Change', one element per group with data-change-kind, reading e.g. '✔ Improved: Cycle Time, Throughput, WIP'",
+            "Order ✔ Improved, ✘ Got worse, ± Mixed, – Unchanged; empty groups hidden; '—' when nothing is comparable",
+            "Only shown, captured metrics with a panel count; names through Terminology",
+            "Only the mark is coloured (green improved, red worse, grey mixed/unchanged); the marks are aria-hidden since the word carries the meaning; long groups wrap",
+            "pnpm test, pnpm build and Biome clean"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/ThenAndNowSummary.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.test.tsx"
+          ],
+          "dependencies": [
+            "05-07"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: RTL. D53 (maintainer-confirmed incl. Q11 details). Orchestrator choices 2026-10-14: colour only on the mark; data-change-kind is the test marker; marks hidden from screen readers. Commit: feat(reports): the summary says what changed (story 6163)."
         }
       ]
     },
