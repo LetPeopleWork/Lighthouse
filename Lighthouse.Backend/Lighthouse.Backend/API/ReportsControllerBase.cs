@@ -50,7 +50,7 @@ namespace Lighthouse.Backend.API
                 return NotFound();
             }
 
-            var status = outcome.Status == ReportOutcomeStatus.Unsupported ? StatusCodes.Status422UnprocessableEntity : StatusCodes.Status400BadRequest;
+            var status = StatusOf(outcome);
             var problem = new ProblemDetails { Status = status, Title = "The report request was refused." };
             problem.Extensions["code"] = outcome.Code;
             if (owner is not null && outcome.Code is ReportRefusalCodes.ThenBeforeCutoff or ReportRefusalCodes.NowBeforeCutoff)
@@ -59,6 +59,16 @@ namespace Lighthouse.Backend.API
             }
 
             return new ObjectResult(problem) { StatusCode = status };
+        }
+
+        private static int StatusOf<T>(ReportOutcome<T> outcome)
+        {
+            if (outcome.Code == ReportRefusalCodes.ReportCapReached)
+            {
+                return StatusCodes.Status403Forbidden;
+            }
+
+            return outcome.Status == ReportOutcomeStatus.Unsupported ? StatusCodes.Status422UnprocessableEntity : StatusCodes.Status400BadRequest;
         }
     }
 }

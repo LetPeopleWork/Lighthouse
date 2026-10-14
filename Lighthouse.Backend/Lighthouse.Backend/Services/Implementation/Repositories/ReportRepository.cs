@@ -13,6 +13,9 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         public IReadOnlyList<Report> ListForOwner(ReportOwner owner)
             => [.. OwnedBy(owner).AsNoTracking().OrderBy(report => report.Id)];
 
+        public int CountOfTemplate(ReportOwner owner, string templateKey)
+            => OwnedBy(owner).Count(report => report.TemplateKey == templateKey);
+
         public void Add(Report report) => context.Reports.Add(report);
 
         public Report? Remove(ReportOwner owner, int reportId)

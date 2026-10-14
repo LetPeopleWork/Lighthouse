@@ -92,7 +92,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-08 @slice-08 @kpi-OUT-5878-K4-community-cap-reached @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice08)]
         public async Task Community_keeps_one_Then_and_Now_report_per_Team()
         {
             TheInstanceHasNoPremiumLicence();
@@ -121,7 +120,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // Each type has its own place, so a Team holding a report of a type a later version added can still
         // create its one Then & Now report.
         [Test]
-        [Ignore(PendingSlice08)]
         public async Task A_report_of_another_type_does_not_take_the_Then_and_Now_place()
         {
             TheInstanceHasNoPremiumLicence();
@@ -141,7 +139,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-08 @slice-08 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice08)]
         public async Task The_cap_is_per_Team()
         {
             TheInstanceHasNoPremiumLicence();
@@ -157,7 +154,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-08 @slice-08 @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice08)]
         public async Task Premium_creates_as_many_reports_as_it_needs()
         {
             TheInstanceHasAPremiumLicence();
@@ -179,7 +175,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-08 @slice-08 @error @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice08)]
         public async Task A_lapsed_licence_keeps_every_report_readable_and_deletable_but_stops_creating()
         {
             TheInstanceHasAPremiumLicence();
@@ -214,7 +209,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-08 @slice-08 @boundary @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice08)]
         public async Task Deleting_the_report_frees_its_place_for_a_new_one()
         {
             TheInstanceHasNoPremiumLicence();

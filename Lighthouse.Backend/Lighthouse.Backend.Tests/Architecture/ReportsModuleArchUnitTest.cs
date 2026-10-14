@@ -188,6 +188,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         [TestCase(typeof(ReportWindowPolicy))]
         [TestCase(typeof(DailySeriesSummary))]
+        [TestCase(typeof(ReportCapPolicy))]
         public void A_report_policy_is_handed_every_input(Type policy)
         {
             Types().That().HaveFullNameMatching(NameAndNestedTypesOf(policy))

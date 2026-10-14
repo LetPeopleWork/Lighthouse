@@ -2,6 +2,7 @@ using System.Text.Json;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Services.Implementation.Reports;
 using Lighthouse.Backend.Services.Implementation.Reports.Metrics;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Reports;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
@@ -134,7 +135,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             series.Setup(s => s.CycleTimePercentiles(Lightspeed, It.IsAny<ReportWindow>())).Returns(new CycleTimePercentiles(6, 11, 21, 30, 20));
             var template = new ThenAndNowTemplate(new ReportMetricCatalog([new CycleTimeReportMetric(series.Object)]), clock, NullLogger<ThenAndNowTemplate>.Instance);
 
-            return new ReportQueries(reader.Object, owners.Object, [template], clock, new FakeTimeProvider(Now), logger.Object);
+            return new ReportQueries(reader.Object, owners.Object, [template], Mock.Of<ILicenseService>(), clock, new FakeTimeProvider(Now), logger.Object);
         }
     }
 }

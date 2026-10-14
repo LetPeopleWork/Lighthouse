@@ -28,5 +28,7 @@ namespace Lighthouse.Backend.Models.Reports
         public const string UnknownMetric = "unknown-metric";
 
         public const string DuplicateMetric = "duplicate-metric";
+
+        public const string ReportCapReached = "report-cap-reached";
     }
 }

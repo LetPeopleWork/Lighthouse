@@ -1,11 +1,12 @@
 using System.Text.Json;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Reports;
 
 namespace Lighthouse.Backend.Services.Implementation.Reports
 {
-    public class ReportCommands(IReportWriter writer, IReportOwnerLookup owners, IEnumerable<IReportTemplate> templates, ILighthouseClock clock, TimeProvider timeProvider, ILogger<ReportCommands> logger) : IReportCommands
+    public class ReportCommands(IReportWriter writer, IReportOwnerLookup owners, IEnumerable<IReportTemplate> templates, ILicenseService licenseService, ILighthouseClock clock, TimeProvider timeProvider, ILogger<ReportCommands> logger) : IReportCommands
     {
         public const double SlowCreationMilliseconds = 10_000;
 
@@ -33,6 +34,11 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             if (TemplateFor(request) is not IReportTemplate template)
             {
                 return Refuse(owner, null, ReportRefusalCodes.TemplateNotSupported);
+            }
+
+            if (!ReportCapPolicy.MayCreate(licenseService.CanUsePremiumFeatures(), writer.CountOfTemplate(owner, template.Key)))
+            {
+                return Refuse(owner, template.Key, ReportRefusalCodes.ReportCapReached);
             }
 
             var calendar = new ReportCalendar(clock.Today, facts.DoneItemsCutoffDays);

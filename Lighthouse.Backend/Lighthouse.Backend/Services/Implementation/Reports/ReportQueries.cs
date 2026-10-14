@@ -1,14 +1,13 @@
 using System.Text.Json;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Reports;
 
 namespace Lighthouse.Backend.Services.Implementation.Reports
 {
-    public class ReportQueries(IReportReader reader, IReportOwnerLookup owners, IEnumerable<IReportTemplate> templates, ILighthouseClock clock, TimeProvider timeProvider, ILogger<ReportQueries> logger) : IReportQueries
+    public class ReportQueries(IReportReader reader, IReportOwnerLookup owners, IEnumerable<IReportTemplate> templates, ILicenseService licenseService, ILighthouseClock clock, TimeProvider timeProvider, ILogger<ReportQueries> logger) : IReportQueries
     {
-        public const int CommunityCap = 2;
-
         public const double SlowReadMilliseconds = 2_000;
 
         private readonly List<IReportTemplate> templates = [.. templates];
@@ -38,8 +37,13 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return ReportOutcome<ReportList>.NotFound();
             }
 
-            var summaries = reader.ListForOwner(owner).Select(report => Summarise(report, owner, calendar)).ToList();
-            return ReportOutcome<ReportList>.Done(new ReportList(summaries, false, CommunityCap));
+            var reports = reader.ListForOwner(owner);
+            var summaries = reports.Select(report => Summarise(report, owner, calendar)).ToList();
+            var premium = licenseService.CanUsePremiumFeatures();
+            var creationBlocked = templates.TrueForAll(template =>
+                !ReportCapPolicy.MayCreate(premium, reports.Count(report => report.TemplateKey == template.Key)));
+
+            return ReportOutcome<ReportList>.Done(new ReportList(summaries, creationBlocked, ReportCapPolicy.CommunityCap));
         }
 
         public ReportOutcome<ReportRead> Get(ReportOwner owner, int reportId)

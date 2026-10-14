@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Services.Implementation.Reports;
 using Lighthouse.Backend.Services.Implementation.Reports.Metrics;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Reports;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
@@ -252,13 +253,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             writer.Setup(w => w.Remove(Lightspeed, 17)).Returns(() => stored);
             writer.Setup(w => w.Save()).Callback(() => timeProvider.Advance(TimeSpan.FromSeconds(seconds))).Returns(Task.CompletedTask);
 
-            return new ReportCommands(writer.Object, Owners(), [Template(clock)], clock, timeProvider, logger);
+            return new ReportCommands(writer.Object, Owners(), [Template(clock)], Mock.Of<ILicenseService>(), clock, timeProvider, logger);
         }
 
         private ReportQueries Queries(IReportReader reader)
         {
             var clock = new FakeLighthouseClock(timeProvider.GetUtcNow(), InstanceZone);
-            return new ReportQueries(reader, Owners(), [Template(clock)], clock, timeProvider, logger);
+            return new ReportQueries(reader, Owners(), [Template(clock)], Mock.Of<ILicenseService>(), clock, timeProvider, logger);
         }
 
         private static IReportOwnerLookup Owners()
