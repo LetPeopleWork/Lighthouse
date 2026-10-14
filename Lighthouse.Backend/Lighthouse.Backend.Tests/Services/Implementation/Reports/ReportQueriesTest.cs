@@ -131,7 +131,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             owners.Setup(o => o.Find(Lightspeed)).Returns(new ReportOwnerFacts(KeepsAYear));
 
             var series = new Mock<IReportMetricSeries>();
-            series.Setup(s => s.CycleTimePercentiles(Lightspeed, It.IsAny<ReportWindow>())).Returns(new CycleTimePercentiles(6, 11, 21, 20));
+            series.Setup(s => s.CycleTimePercentiles(Lightspeed, It.IsAny<ReportWindow>())).Returns(new CycleTimePercentiles(6, 11, 21, 30, 20));
             var template = new ThenAndNowTemplate(new ReportMetricCatalog([new CycleTimeReportMetric(series.Object)]), clock, NullLogger<ThenAndNowTemplate>.Instance);
 
             return new ReportQueries(reader.Object, owners.Object, [template], clock, new FakeTimeProvider(Now), logger.Object);

@@ -33,7 +33,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-05b @slice-05b @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice05b)]
         public async Task The_Cycle_Time_panel_shows_the_95th_for_Then_and_Now()
         {
             var lightspeed = GivenLightspeedFinishedSlowerInMayThanInAugust();
@@ -53,7 +52,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-05b @slice-05b @kpi-OUT-5878-G3 @contract-shape:pure-function
         // The report and the Metrics tab are read for the same inclusive days and must agree.
         [Test]
-        [Ignore(PendingSlice05b)]
         public async Task Thens_95th_is_the_95th_the_Metrics_tab_shows_for_the_same_days()
         {
             var lightspeed = GivenLightspeedFinishedSlowerInMayThanInAugust();
@@ -71,7 +69,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // Reports created before this slice froze the 85th, 70th and 50th only. Nothing is added to them on
         // reading: Then's 95th stays missing, and the page reads it as never captured, not as a dash.
         [Test]
-        [Ignore(PendingSlice05b)]
         public async Task A_report_frozen_before_the_95th_was_captured_has_no_Then_95th_and_still_shows_Nows()
         {
             var lightspeed = GivenLightspeedFinishedSlowerInMayThanInAugust();
@@ -92,7 +89,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-05b @slice-05b @boundary @contract-shape:unbounded-preservation
         // The first reports froze the 85th alone, so their Then lacks the 95th as well as the 70th and 50th.
         [Test]
-        [Ignore(PendingSlice05b)]
         public async Task A_report_that_froze_only_the_85th_has_no_Then_95th_either()
         {
             var lightspeed = GivenLightspeedFinishedSlowerInMayThanInAugust();
@@ -117,7 +113,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-05b @slice-05b @boundary @contract-shape:pure-function
         // One finished Work Item of 12 days: every percentile, the 95th included, is that item.
         [Test]
-        [Ignore(PendingSlice05b)]
         public async Task With_a_single_finished_Work_Item_the_95th_is_that_item_with_its_sample_size()
         {
             var pulsar = ATeam("Team Pulsar");
@@ -135,7 +130,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-05b @slice-05b @error @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice05b)]
         public async Task With_no_finished_Work_Items_the_95th_is_a_dash_with_the_reason_never_a_zero()
         {
             var nova = ATeam("Team Nova");

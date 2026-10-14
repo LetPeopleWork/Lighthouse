@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
         private static readonly ReportWindow Window = new(new DateOnly(2026, 7, 5), new DateOnly(2026, 10, 2), 90);
 
-        private static readonly PercentileValue[] Percentiles = [new(50, 6), new(70, 11), new(85, 21)];
+        private static readonly PercentileValue[] Percentiles = [new(50, 6), new(70, 11), new(85, 21), new(95, 30)];
 
         private Mock<IRepository<Team>> teams = null!;
         private TeamReportMetricSeries subject = null!;
@@ -40,7 +40,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         {
             var percentiles = subject.CycleTimePercentiles(ReportOwner.Team(SharedId), Window);
 
-            Assert.That(percentiles, Is.EqualTo(new CycleTimePercentiles(6, 11, 21, 0)));
+            Assert.That(percentiles, Is.EqualTo(new CycleTimePercentiles(6, 11, 21, 30, 0)));
+        }
+
+        [Test]
+        public void The_95th_is_the_one_the_Metrics_tab_gives_for_the_95th_percentile()
+        {
+            var percentiles = subject.CycleTimePercentiles(ReportOwner.Team(SharedId), Window);
+
+            Assert.That(percentiles.P95, Is.EqualTo(30));
         }
 
         [Test]

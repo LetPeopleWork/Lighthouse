@@ -18,5 +18,5 @@ namespace Lighthouse.Backend.Services.Interfaces.Reports
     }
 
     /// <summary>The Metrics tab's cycle-time percentiles, and how many finished items with a cycle time they rest on.</summary>
-    public sealed record CycleTimePercentiles(int P50, int P70, int P85, int FinishedItems);
+    public sealed record CycleTimePercentiles(int P50, int P70, int P85, int P95, int FinishedItems);
 }

@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 var percentiles = metrics.GetCycleTimePercentilesForTeam(team, start, end).ToDictionary(percentile => percentile.Percentile, percentile => percentile.Value);
                 var finishedItems = metrics.GetClosedItemsForTeam(team, start, end).Count(item => item.CycleTime(clock.Zone) > 0);
 
-                return new CycleTimePercentiles(percentiles[50], percentiles[70], percentiles[85], finishedItems);
+                return new CycleTimePercentiles(percentiles[50], percentiles[70], percentiles[85], percentiles[95], finishedItems);
             });
 
         public IReadOnlyList<int> DailyThroughput(ReportOwner owner, ReportWindow window)

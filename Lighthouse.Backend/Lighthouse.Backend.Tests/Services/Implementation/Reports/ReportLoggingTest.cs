@@ -246,7 +246,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         private ThenAndNowTemplate Template(FakeLighthouseClock clock)
         {
             var series = new Mock<IReportMetricSeries>();
-            series.Setup(s => s.CycleTimePercentiles(Lightspeed, It.IsAny<ReportWindow>())).Returns(new CycleTimePercentiles(6, 11, 21, 20));
+            series.Setup(s => s.CycleTimePercentiles(Lightspeed, It.IsAny<ReportWindow>())).Returns(new CycleTimePercentiles(6, 11, 21, 30, 20));
             return new ThenAndNowTemplate(new ReportMetricCatalog([new CycleTimeReportMetric(series.Object)]), clock, logger);
         }
 

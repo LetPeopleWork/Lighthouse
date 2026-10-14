@@ -7,15 +7,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 {
     public class CycleTimeReportMetricTest
     {
-        private const string PendingSlice05b = "Epic #5878 slice 05b (#6163) - pending DELIVER";
-
         private static readonly ReportOwner Owner = ReportOwner.Team(7);
 
         private static readonly ReportWindow ThenWindow = new(new DateOnly(2026, 7, 5), new DateOnly(2026, 10, 2), 90);
 
         private static readonly ReportWindow NowWindow = new(new DateOnly(2026, 8, 2), new DateOnly(2026, 10, 30), 90);
 
-        private static readonly string[] Percentiles = ["p85", "p70", "p50"];
+        private static readonly string[] ThePercentilesFrozenBeforeThe95th = ["p85", "p70", "p50"];
 
         private static readonly string[] AllFourPercentiles = ["p95", "p85", "p70", "p50"];
 
@@ -40,11 +38,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(read.AtThen.Keys, Is.EquivalentTo(Percentiles));
+                Assert.That(read.AtThen.Keys, Is.EquivalentTo(AllFourPercentiles));
                 Assert.That(read.AtThen["p85"], Is.EqualTo(CapturedValue.Shown(p85, finishedItems)));
                 Assert.That(read.AtThen["p70"], Is.EqualTo(CapturedValue.Shown(p70, finishedItems)));
                 Assert.That(read.AtThen["p50"], Is.EqualTo(CapturedValue.Shown(p50, finishedItems)));
-                Assert.That(read.AtNow.Keys, Is.EquivalentTo(Percentiles));
+                Assert.That(read.AtNow.Keys, Is.EquivalentTo(AllFourPercentiles));
                 Assert.That(read.AtNow["p85"], Is.EqualTo(CapturedValue.Shown(p85 + 3, finishedItems + 4)));
                 Assert.That(read.AtNow["p70"], Is.EqualTo(CapturedValue.Shown(p70 + 2, finishedItems + 4)));
                 Assert.That(read.AtNow["p50"], Is.EqualTo(CapturedValue.Shown(p50 + 1, finishedItems + 4)));
@@ -54,7 +52,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         [TestCase(20, 30, 21, 11, 6)]
         [TestCase(3, 25, 18, 18, 9)]
         [TestCase(1, 4, 4, 4, 4)]
-        [Ignore(PendingSlice05b)]
         public void Then_freezes_and_Now_shows_the_95th_beside_the_others_on_the_same_sample_size(int finishedItems, int p95, int p85, int p70, int p50)
         {
             var then = new Answer(p95, p85, p70, p50, finishedItems);
@@ -86,14 +83,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             var nothingToComputeFrom = CapturedValue.Absent(CycleTimeReportMetric.NoFinishedItems);
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(read.AtThen.Keys, Is.EquivalentTo(Percentiles));
+                Assert.That(read.AtThen.Keys, Is.EquivalentTo(AllFourPercentiles));
                 Assert.That(read.AtThen.Values, Is.All.EqualTo(nothingToComputeFrom));
                 Assert.That(read.AtNow.Values, Is.All.EqualTo(nothingToComputeFrom));
             }
         }
 
         [Test]
-        [Ignore(PendingSlice05b)]
         public void A_window_without_finished_items_shows_the_95th_as_a_dash_with_its_reason_too()
         {
             var subject = new CycleTimeReportMetric(SeriesAnswering(
@@ -136,12 +132,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             {
                 Assert.That(read.AtThen.Keys, Is.EquivalentTo(OnlyThe85th));
                 Assert.That(read.AtThen["p85"], Is.EqualTo(CapturedValue.Shown(21, 20)));
-                Assert.That(read.AtNow.Keys, Is.EquivalentTo(Percentiles));
+                Assert.That(read.AtNow.Keys, Is.EquivalentTo(AllFourPercentiles));
             }
         }
 
         [Test]
-        [Ignore(PendingSlice05b)]
         public void A_report_stored_before_Then_kept_the_95th_opens_with_Thens_95th_not_captured_and_Nows_shown()
         {
             var now = new Answer(14, 12, 9, 6, 10);
@@ -152,7 +147,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(read.AtThen.Keys, Is.EquivalentTo(Percentiles), "nothing is added to what Then froze, not even a dash");
+                Assert.That(read.AtThen.Keys, Is.EquivalentTo(ThePercentilesFrozenBeforeThe95th), "nothing is added to what Then froze, not even a dash");
                 Assert.That(read.AtThen["p85"], Is.EqualTo(CapturedValue.Shown(21, 20)));
                 Assert.That(read.AtNow.Keys, Is.EquivalentTo(AllFourPercentiles));
                 Assert.That(read.AtNow["p95"], Is.EqualTo(CapturedValue.Shown(now.P95, now.FinishedItems)));
@@ -173,8 +168,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         /// <summary>What the series answers for one window, from the 95th down, and how many finished items it rests on.</summary>
         private sealed record Answer(int P95, int P85, int P70, int P50, int FinishedItems)
         {
-            // The series does not carry the 95th yet; once it does, it is handed on here like the other three.
-            public CycleTimePercentiles AsTheSeriesGivesIt() => new(P50, P70, P85, FinishedItems);
+            public CycleTimePercentiles AsTheSeriesGivesIt() => new(P50, P70, P85, P95, FinishedItems);
         }
     }
 }
