@@ -1,14 +1,23 @@
-import { Paper, Typography } from "@mui/material";
+import { Box, Paper, Typography } from "@mui/material";
 import type React from "react";
+import { Fragment } from "react";
 import type {
 	IReportMetric,
 	IReportWindow,
 	IThenAndNow,
+	ReportMetricKey,
 	ReportMetricSide,
 } from "../../../models/Reports/Report";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
+import {
+	type ChangeKind,
+	type ShownMetricLines,
+	summariseChange,
+} from "./panels/changeSummary";
+import { inCatalogOrder, panelFor } from "./panels/reportPanelRegistry";
 import { ThenNowColumn, ThenNowColumns } from "./panels/ThenNowPanelFrame";
+import { DASH, lineComparisonsOf } from "./panels/thenNowComparison";
 import { windowDaysOf } from "./wizard/thenAndNow/thenAndNowDraft";
 
 const CYCLE_TIME_PERCENTILES = ["p85", "p70", "p50"] as const;
@@ -22,6 +31,17 @@ const VISUALLY_HIDDEN = {
 	clip: "rect(0 0 0 0)",
 	whiteSpace: "nowrap",
 } as const;
+
+/** How each kind of change is marked and named. Only the mark is coloured; the word carries the meaning. */
+const CHANGE_KIND_LOOK: Record<
+	ChangeKind,
+	{ readonly mark: string; readonly word: string; readonly colour: string }
+> = {
+	improved: { mark: "✔", word: "Improved", colour: "success.main" },
+	worse: { mark: "✘", word: "Got worse", colour: "error.main" },
+	mixed: { mark: "±", word: "Mixed", colour: "text.secondary" },
+	unchanged: { mark: "–", word: "Unchanged", colour: "text.secondary" },
+};
 
 const cycleTimeSampleSizeOf = (side: ReportMetricSide): number | null => {
 	const values = CYCLE_TIME_PERCENTILES.map((key) => side[key]);
@@ -56,6 +76,19 @@ const windowLineOf = (reportWindow: IReportWindow): string => {
 	return days === null ? length : `${days} · ${length}`;
 };
 
+/** Each shown metric that has a panel and was captured, its lines judged as its panel shows them. */
+const shownMetricLinesOf = (
+	thenAndNow: IThenAndNow,
+	shownMetricKeys: readonly ReportMetricKey[],
+): ShownMetricLines[] =>
+	inCatalogOrder(shownMetricKeys).flatMap((key) => {
+		const panel = panelFor(key);
+		const metric = thenAndNow.metrics[key];
+		if (panel === undefined || metric === null || metric === undefined)
+			return [];
+		return [{ key, lines: lineComparisonsOf(metric, panel) }];
+	});
+
 /** Ends in a space so the summary reads as separate lines to a screen reader or anything else taking its text. */
 const SummaryLine: React.FC<{ readonly text: string | null }> = ({ text }) =>
 	text === null ? null : (
@@ -64,10 +97,41 @@ const SummaryLine: React.FC<{ readonly text: string | null }> = ({ text }) =>
 		</>
 	);
 
-/** Each side's window, its length and how many Work Items closed in it, so two windows of different lengths are not misread. */
-const ThenAndNowSummary: React.FC<{ readonly thenAndNow: IThenAndNow }> = ({
-	thenAndNow,
-}) => {
+/** The shown metrics grouped by which way they moved, named as their panels are titled; a dash when none compares. */
+const SummaryChange: React.FC<{
+	readonly thenAndNow: IThenAndNow;
+	readonly shownMetricKeys: readonly ReportMetricKey[];
+}> = ({ thenAndNow, shownMetricKeys }) => {
+	const { getTerm } = useTerminology();
+	const groups = summariseChange(
+		shownMetricLinesOf(thenAndNow, shownMetricKeys),
+	);
+	if (groups.length === 0) return <SummaryLine text={DASH} />;
+	const nameOf = (key: ReportMetricKey) =>
+		panelFor(key)?.titleOf(getTerm) ?? key;
+	return groups.map(({ kind, keys }) => {
+		const { mark, word, colour } = CHANGE_KIND_LOOK[kind];
+		return (
+			<Fragment key={kind}>
+				<Typography component="div" data-change-kind={kind}>
+					<Box component="span" aria-hidden sx={{ color: colour }}>
+						{mark}
+					</Box>{" "}
+					{`${word}: ${keys.map(nameOf).join(", ")}`}
+				</Typography>{" "}
+			</Fragment>
+		);
+	});
+};
+
+/**
+ * Each side's window, its length and how many Work Items closed in it, so two windows of different lengths are not
+ * misread, and which of the shown metrics changed, so a reader knows before the first panel.
+ */
+const ThenAndNowSummary: React.FC<{
+	readonly thenAndNow: IThenAndNow;
+	readonly shownMetricKeys: readonly ReportMetricKey[];
+}> = ({ thenAndNow, shownMetricKeys }) => {
 	const { getTerm } = useTerminology();
 	const throughput: IReportMetric | null | undefined =
 		thenAndNow.metrics.throughput;
@@ -95,7 +159,7 @@ const ThenAndNowSummary: React.FC<{ readonly thenAndNow: IThenAndNow }> = ({
 			<Typography component="h2" sx={VISUALLY_HIDDEN}>
 				Summary
 			</Typography>
-			<ThenNowColumns count={2}>
+			<ThenNowColumns count={3}>
 				<ThenNowColumn data-summary-side="then" heading="Then" first>
 					<SummaryLine text={windowLineOf(thenAndNow.thenWindow)} />
 					<SummaryLine
@@ -106,6 +170,16 @@ const ThenAndNowSummary: React.FC<{ readonly thenAndNow: IThenAndNow }> = ({
 					<SummaryLine text={windowLineOf(thenAndNow.nowWindow)} />
 					<SummaryLine
 						text={closedLineOf(throughput?.atNow, cycleTime?.atNow)}
+					/>
+				</ThenNowColumn>
+				<ThenNowColumn
+					data-summary-side="change"
+					heading="Change"
+					first={false}
+				>
+					<SummaryChange
+						thenAndNow={thenAndNow}
+						shownMetricKeys={shownMetricKeys}
 					/>
 				</ThenNowColumn>
 			</ThenNowColumns>

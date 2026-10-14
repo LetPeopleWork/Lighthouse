@@ -645,7 +645,7 @@ describe("The summary's CHANGE side", () => {
 	beforeEach(beforeEachReportTest);
 
 	// @us-05b @slice-05b @driving_port @contract-shape:pure-function
-	it.skip("reads Then, Now and Change side by side, like the panels", async () => {
+	it("reads Then, Now and Change side by side, like the panels", async () => {
 		openTheReport();
 
 		await theReportIsReady();
@@ -660,7 +660,7 @@ describe("The summary's CHANGE side", () => {
 	// @us-05b @slice-05b @walking_skeleton @driving_port @contract-shape:pure-function
 	// Every Cycle Time line, Throughput per day and every WIP line are better in Now; every Total Work Item Age
 	// line is worse. Throughput's total carries no change mark and does not count.
-	it.skip("names the metrics that improved and the one that got worse", async () => {
+	it("names the metrics that improved and the one that got worse", async () => {
 		openTheReport();
 
 		await theReportIsReady();
@@ -676,7 +676,7 @@ describe("The summary's CHANGE side", () => {
 
 	// @us-05b @slice-05b @contract-shape:pure-function
 	// The spread widened: a majority rule would hide either that the typical Work Item got faster or the slow tail.
-	it.skip("reads Mixed for a metric whose slow end got worse while its fast end improved", async () => {
+	it("reads Mixed for a metric whose slow end got worse while its fast end improved", async () => {
 		openTheReport(
 			withCycleTime({
 				atThen: percentiles([25, 14, 9, 5], 30),
@@ -693,7 +693,7 @@ describe("The summary's CHANGE side", () => {
 
 	// @us-05b @slice-05b @boundary @contract-shape:pure-function
 	// No threshold: a one-day move counts, and a metric none of whose lines moved is said to be unchanged.
-	it.skip("counts a one-day move, and reads Unchanged for a metric that did not move", async () => {
+	it("counts a one-day move, and reads Unchanged for a metric that did not move", async () => {
 		const report = withCycleTime({
 			atThen: percentiles([12, 10, 7, 5], 30),
 			atNow: percentiles([12, 10, 8, 5], 30),
@@ -709,7 +709,7 @@ describe("The summary's CHANGE side", () => {
 
 	// @us-05b @slice-05b @boundary @contract-shape:pure-function
 	// The header judges a line as its panel shows it: a move the panel cannot show is no move, the smallest it can is one.
-	it.skip.each<[string, number, number, string]>([
+	it.each<[string, number, number, string]>([
 		[
 			"a hundredth of a Work Item more per day",
 			0.58,
@@ -746,7 +746,7 @@ describe("The summary's CHANGE side", () => {
 
 	// @us-05b @slice-05b @error @contract-shape:pure-function
 	// Team Pulsar finished nothing in its Now, so every Cycle Time line reads "—" there and cannot be compared.
-	it.skip("leaves out a metric none of whose lines can be compared", async () => {
+	it("leaves out a metric none of whose lines can be compared", async () => {
 		const report = withCycleTime({
 			atThen: percentiles([20, 14, 9, 5], 3),
 			atNow: nothingFinishedOnAnyPercentile,
@@ -767,7 +767,7 @@ describe("The summary's CHANGE side", () => {
 
 	// @us-05b @slice-05b @error @contract-shape:pure-function
 	// "—" is the report's sign for "cannot be compared"; an empty side would read like "nothing changed".
-	it.skip("reads a dash when no shown metric can be compared at all", async () => {
+	it("reads a dash when no shown metric can be compared at all", async () => {
 		openTheReport(
 			showing(
 				withCycleTime({
@@ -786,7 +786,7 @@ describe("The summary's CHANGE side", () => {
 
 	// @us-05b @slice-05b @error @contract-shape:pure-function
 	// WIP rose since Then, but the report does not show it, so the summary does not judge it either.
-	it.skip("summarises only the metrics the report shows", async () => {
+	it("summarises only the metrics the report shows", async () => {
 		const report = theEngagementStartReport();
 		const wip = report.thenAndNow.metrics.wip as IReportMetric;
 		report.thenAndNow.metrics.wip = { atThen: wip.atNow, atNow: wip.atThen };
@@ -800,7 +800,7 @@ describe("The summary's CHANGE side", () => {
 	});
 
 	// @us-05b @slice-05b @error @contract-shape:pure-function
-	it.skip.each<[string, (report: IReport) => IReport, string]>([
+	it.each<[string, (report: IReport) => IReport, string]>([
 		[
 			"a metric this version has no panel for",
 			(report) => {
@@ -834,7 +834,7 @@ describe("The summary's CHANGE side", () => {
 	// @us-05b @slice-05b @error @contract-shape:unbounded-preservation
 	// The report "Then & Now — 30 days to 1 Sep 2026" was frozen before the 95th was captured. Its other lines did not
 	// move: the 95th, which cannot be compared, neither makes Cycle Time a change nor leaves it out.
-	it.skip("judges a report frozen before the 95th was captured on its other percentiles alone", async () => {
+	it("judges a report frozen before the 95th was captured on its other percentiles alone", async () => {
 		const report = withCycleTime({
 			atThen: { p85: shown(21, 38), p70: shown(10, 38), p50: shown(5, 38) },
 			atNow: percentiles([19, 21, 10, 5], 41),
@@ -860,7 +860,7 @@ describe("The summary's CHANGE side", () => {
 
 	// @us-05b @slice-05b @boundary @contract-shape:pure-function
 	// A rise from nothing has no percentage, but it is a rise all the same.
-	it.skip("counts a change from a Then of zero", async () => {
+	it("counts a change from a Then of zero", async () => {
 		openTheReport(
 			showing(withThroughput(theEngagementStartReport(), [0, 0], [24, 0.27]), [
 				"throughput",
@@ -876,7 +876,7 @@ describe("The summary's CHANGE side", () => {
 
 	// @us-05b @slice-05b @boundary @contract-shape:pure-function
 	// A 30-day Now finishes fewer Work Items than a 90-day Then at a higher rate; only the rate carries a change mark.
-	it.skip("judges Throughput by its rate per day, never by its total", async () => {
+	it("judges Throughput by its rate per day, never by its total", async () => {
 		const report = withThroughput(
 			theEngagementStartReport(),
 			[52, 0.58],
@@ -897,7 +897,7 @@ describe("The summary's CHANGE side", () => {
 	});
 
 	// @us-05b @slice-05b @contract-shape:pure-function
-	it.skip("names the metrics in the instance's words, as their panels are titled", async () => {
+	it("names the metrics in the instance's words, as their panels are titled", async () => {
 		terms.current = {
 			...defaultTerms,
 			[TERMINOLOGY_KEYS.CYCLE_TIME]: "Lead Time",
@@ -916,7 +916,7 @@ describe("The summary's CHANGE side", () => {
 
 	// @us-05b @slice-05b @contract-shape:pure-function
 	// Colour backs the marks; the mark and the word carry the meaning for anyone who cannot see it.
-	it.skip("shows every kind in its order, each led by its mark and word, improved in green and got worse in red", async () => {
+	it("shows every kind in its order, each led by its mark and word, improved in green and got worse in red", async () => {
 		openTheReport(
 			withWipUnmoved(
 				withCycleTime({
@@ -943,7 +943,7 @@ describe("The summary's CHANGE side", () => {
 
 	// @us-05b @slice-05b @error @ac-1.8 @contract-shape:pure-function
 	// The CHANGE side lives inside the summary, so it shares its loading and failure looks; after Retry it is fresh.
-	it.skip("shows the CHANGE of the report read after Retry, never one from before", async () => {
+	it("shows the CHANGE of the report read after Retry, never one from before", async () => {
 		const getReport = vi
 			.fn()
 			.mockRejectedValueOnce(new Error("the network dropped"))

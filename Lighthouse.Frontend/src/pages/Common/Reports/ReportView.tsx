@@ -133,7 +133,10 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 				>
 					{report !== undefined && (
 						<Stack spacing={2}>
-							<ThenAndNowSummary thenAndNow={report.thenAndNow} />
+							<ThenAndNowSummary
+								thenAndNow={report.thenAndNow}
+								shownMetricKeys={report.shownMetricKeys}
+							/>
 							<ReportPanels report={report} />
 						</Stack>
 					)}
