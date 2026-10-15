@@ -601,7 +601,7 @@ describe("Reports on the Overview", () => {
 
 describe("Deliveries on the Overview", () => {
 	// @us-12 @slice-12 @ac-12.4 @driving_port @contract-shape:pure-function
-	it.skip("shows the first two Deliveries in the order the server answers, then +N more to the Portfolio's Deliveries", async () => {
+	it("shows the first two Deliveries in the order the server answers, then +N more to the Portfolio's Deliveries", async () => {
 		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
 			deliveryService: deliveriesAnswering(
 				vi
@@ -633,7 +633,7 @@ describe("Deliveries on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.4 @boundary @contract-shape:pure-function
-	it.skip("shows two Deliveries without any +N more", async () => {
+	it("shows two Deliveries without any +N more", async () => {
 		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
 			deliveryService: deliveriesAnswering(
 				vi
@@ -654,7 +654,7 @@ describe("Deliveries on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.4 @boundary @contract-shape:pure-function
-	it.skip("says No Deliveries for a Portfolio without any", async () => {
+	it("says No Deliveries for a Portfolio without any", async () => {
 		renderTheTable("portfolios", [PORTFOLIO_APOLLO]);
 
 		const cell = await whenReady("Apollo", "deliveries");
@@ -663,7 +663,7 @@ describe("Deliveries on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.5 @boundary @contract-shape:pure-function
-	it.skip("shows a small spinner, not No Deliveries, while the Deliveries are on their way", async () => {
+	it("shows a small spinner, not No Deliveries, while the Deliveries are on their way", async () => {
 		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
 			deliveryService: deliveriesAnswering(
 				vi.fn().mockReturnValue(new Promise(() => undefined)),
@@ -711,7 +711,7 @@ describe("Deliveries on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.6 @error @contract-shape:pure-function
-	it.skip("says Couldn't load Deliveries when they could not be read, never No Deliveries", async () => {
+	it("says Couldn't load Deliveries when they could not be read, never No Deliveries", async () => {
 		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
 			deliveryService: deliveriesAnswering(
 				vi.fn().mockRejectedValue(new Error("unreachable")),
@@ -730,7 +730,7 @@ describe("Deliveries on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.8 @boundary @contract-shape:pure-function
-	it.skip("names the Deliveries in the instance's own word, empty and failed alike", async () => {
+	it("names the Deliveries in the instance's own word, empty and failed alike", async () => {
 		terms.current = {
 			...seededTerms,
 			[TERMINOLOGY_KEYS.DELIVERIES]: "Releases",
