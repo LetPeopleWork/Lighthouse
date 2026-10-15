@@ -1697,32 +1697,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var parentReference = ParentSourceSelector.TheParentOf(workItemQueryOwner, workItem, source, fromTheMatchingLinks);
 
-            if (!string.IsNullOrEmpty(parentReference))
+            if (source == ParentSource.ALinkTypeTheOverrideNames)
+            {
+                ParentSourceSelector.HangUnder(workItemQueryOwner, workItem, parentReference);
+            }
+            else if (!string.IsNullOrEmpty(parentReference))
             {
                 workItem.ParentReferenceId = parentReference;
             }
 
-            ShowBackWhatTheLinksSaid(workItemQueryOwner, workItem, source, parentReference);
-
             return fromTheMatchingLinks;
-        }
-
-        /// <summary>
-        /// A link type carries no value of its own to show in the Additional Field that named it, so the key
-        /// it resolved to goes there instead. Somebody who has just pointed that box at a link type can then
-        /// see what it found on the records themselves, rather than having to open the tracker and compare.
-        /// An item whose links produced nothing shows nothing, because a key that was not acted on would send
-        /// them looking for a parent that was never stored.
-        /// </summary>
-        private static void ShowBackWhatTheLinksSaid(
-            IWorkItemQueryOwner workItemQueryOwner, WorkItemBase workItem, ParentSource source, string parentReference)
-        {
-            var theFieldThatNamedIt = workItemQueryOwner.ParentOverrideAdditionalFieldDefinitionId;
-
-            if (source == ParentSource.ALinkTypeTheOverrideNames && theFieldThatNamedIt.HasValue)
-            {
-                workItem.AdditionalFieldValues[theFieldThatNamedIt.Value] = parentReference;
-            }
         }
 
         /// <summary>

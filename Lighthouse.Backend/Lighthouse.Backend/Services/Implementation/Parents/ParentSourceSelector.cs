@@ -56,6 +56,28 @@ namespace Lighthouse.Backend.Services.Implementation.Parents
 
             return workItem.GetAdditionalFieldValue(owner.ParentOverrideAdditionalFieldDefinitionId) ?? string.Empty;
         }
+
+        /// <summary>
+        /// Hangs a record under the key its links resolved to, and shows that key in the Additional Field that
+        /// named the link type. A link type carries no value of its own to show there, so the key goes in its
+        /// place, and somebody who has just pointed that box at a link type can see what it found on the
+        /// records themselves. A record whose links produced nothing keeps the parent the tracker reported and
+        /// shows nothing, because a key that was not acted on would send them looking for a parent that was
+        /// never stored. The two writes always travel together, so the stored parent and what the field shows
+        /// cannot disagree.
+        /// </summary>
+        public static void HangUnder(IWorkItemQueryOwner owner, WorkItemBase record, string key)
+        {
+            if (!string.IsNullOrEmpty(key))
+            {
+                record.ParentReferenceId = key;
+            }
+
+            if (owner.ParentOverrideAdditionalFieldDefinitionId is { } theFieldThatNamedIt)
+            {
+                record.AdditionalFieldValues[theFieldThatNamedIt] = key;
+            }
+        }
     }
 
     /// <summary>
