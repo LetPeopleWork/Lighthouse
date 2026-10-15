@@ -36,7 +36,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// When the link to each counterpart key that still stands was made, read from the issue's history.
         /// A key with no entry is a link the history never recorded.
         /// </summary>
-        // SCAFFOLD: nothing fills this in yet, so every link reads as undated.
         public IReadOnlyDictionary<string, DateTime> LinkAddedAt { get; init; } = new Dictionary<string, DateTime>();
     }
 }

@@ -4,10 +4,11 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using System.Globalization;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace Lighthouse.Backend.Factories
 {
-    public class IssueFactory(ILogger<IssueFactory> logger) : IIssueFactory
+    public partial class IssueFactory(ILogger<IssueFactory> logger) : IIssueFactory
     {
         private const string DefaultRank = "00000|";
 
@@ -49,6 +50,7 @@ namespace Lighthouse.Backend.Factories
                 Labels = labels,
                 Fields = fields,
                 StateTransitions = GetAllStateTransitions(json),
+                LinkAddedAt = StandingLinksIn(json),
             };
         }
 
@@ -69,6 +71,94 @@ namespace Lighthouse.Backend.Factories
             return histories.EnumerateArray()
                 .SelectMany(ExtractStatusTransitionsFromHistory)
                 .ToList();
+        }
+
+        private sealed record LinkChange(DateTime At, string? Removed, string? Added);
+
+        private const string LinkFieldName = "Link";
+
+        private const string FromPropertyName = "from";
+
+        private const string ToPropertyName = "to";
+
+        [GeneratedRegex(@"^[A-Z][A-Z0-9_]+-[0-9]+$", RegexOptions.CultureInvariant)]
+        private static partial Regex AnIssueKey();
+
+        [GeneratedRegex(@"\b[A-Z][A-Z0-9_]+-[0-9]+\b", RegexOptions.CultureInvariant)]
+        private static partial Regex AnIssueKeyInASentence();
+
+        // Neither Cloud nor Data Center promises an order for the histories, so they are replayed by when
+        // they happened. What stands at the end is each link that still exists, dated by its latest adding.
+        private static Dictionary<string, DateTime> StandingLinksIn(JsonElement json)
+        {
+            if (!json.TryGetProperty(JiraFieldNames.ChangelogFieldName, out var changelog))
+            {
+                return [];
+            }
+
+            return changelog.GetProperty(JiraFieldNames.HistoriesFieldName).EnumerateArray()
+                .SelectMany(LinkChangesIn)
+                .OrderBy(change => change.At)
+                .Aggregate(new Dictionary<string, DateTime>(StringComparer.Ordinal), Replay);
+        }
+
+        private static Dictionary<string, DateTime> Replay(Dictionary<string, DateTime> standing, LinkChange change)
+        {
+            if (change.Removed != null)
+            {
+                standing.Remove(change.Removed);
+            }
+
+            if (change.Added != null)
+            {
+                standing[change.Added] = change.At;
+            }
+
+            return standing;
+        }
+
+        private static IEnumerable<LinkChange> LinkChangesIn(JsonElement history)
+        {
+            var created = StringOrNull(history, JiraFieldNames.CreatedDateFieldName);
+
+            if (!DateTimeOffset.TryParse(created, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var at))
+            {
+                return [];
+            }
+
+            return history.GetProperty(JiraFieldNames.ItemsFieldName).EnumerateArray()
+                .Where(item => StringOrNull(item, JiraFieldNames.FieldFieldName) == LinkFieldName)
+                .Select(item => new LinkChange(
+                    at.UtcDateTime,
+                    CounterpartKeyOn(item, FromPropertyName, JiraFieldNames.FromStringPropertyName),
+                    CounterpartKeyOn(item, ToPropertyName, JiraFieldNames.ToStringPropertyName)));
+        }
+
+        // Some Jira versions put a link id where the key would be; then the sentence is the only place the
+        // counterpart is named. Its wording is renamable, so only an issue-key-shaped token in it is trusted.
+        private static string? CounterpartKeyOn(JsonElement item, string keyProperty, string sentenceProperty)
+        {
+            var named = StringOrNull(item, keyProperty);
+            if (named != null && AnIssueKey().IsMatch(named))
+            {
+                return named;
+            }
+
+            var sentence = StringOrNull(item, sentenceProperty);
+            if (sentence == null)
+            {
+                return null;
+            }
+
+            var keysInSentence = AnIssueKeyInASentence().Matches(sentence);
+            return keysInSentence.Count == 1 ? keysInSentence[0].Value : null;
+        }
+
+        private static string? StringOrNull(JsonElement element, string propertyName)
+        {
+            return element.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.String
+                ? value.GetString()
+                : null;
         }
 
         private static IEnumerable<WorkItemStateTransition> ExtractStatusTransitionsFromHistory(JsonElement history)
