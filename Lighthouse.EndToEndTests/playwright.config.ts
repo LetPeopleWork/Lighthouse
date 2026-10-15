@@ -144,21 +144,11 @@ export default defineConfig({
 			],
 		},
 
-		/* Pinned off UTC on purpose. CI runners are UTC, which is the one offset at
-		   which a UTC/local date-encoding mismatch cancels out — that is how the
-		   shared-link day shift of Bug #5566 stayed invisible in CI while every
-		   non-UTC user hit it. Keeping a positive offset here means the date-range
-		   specs exercise the encoding a real viewer sees.
-
-		   This pin covers the BROWSER only. The Node process that builds the CSV
-		   fixtures has to agree with it, or date-boundary assertions flake for the
-		   ~2h nightly window in which they disagree, so TZ is set on the
-		   package.json scripts (Node caches the zone before a config is read).
-
-		   The backend under test is deliberately left on UTC. A real viewer's day
-		   and the instance's day do not always agree, and running the browser in
-		   Zurich against a UTC instance makes those day-boundary mismatches show
-		   up here instead of in front of a user. */
+		/* Pinned off UTC on purpose: UTC is the one offset at which a UTC/local day
+		   mismatch cancels out, so day-boundary bugs would never surface here.
+		   This sets the browser only; the Node process building the fixtures gets
+		   the same zone from TZ on the package.json scripts. The backend is left on
+		   UTC deliberately, so viewer/instance day mismatches show up here first. */
 		timezoneId: "Europe/Zurich",
 
 		/* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */

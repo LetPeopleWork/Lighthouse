@@ -15,7 +15,6 @@ import {
 } from "../../../models/WorkItemRules";
 import { createMockProjectSettings } from "../../../tests/TestDataProvider";
 import { testTheme } from "../../../tests/testTheme";
-import { formatLocalDate } from "../../../utils/date/localDate";
 import FlowMetricsConfigurationComponent from "./FlowMetricsConfigurationComponent";
 
 const testRuleSchema: IWorkItemRuleSchema = {
@@ -1051,8 +1050,8 @@ describe("FlowMetricsConfigurationComponent", () => {
 			vi.setSystemTime(justAfterLocalMidnight);
 
 			try {
-				expect(formatLocalDate(justAfterLocalMidnight)).not.toBe(
-					justAfterLocalMidnight.toISOString().slice(0, 10),
+				expect(justAfterLocalMidnight.toISOString().slice(0, 10)).not.toBe(
+					"2026-10-15",
 				);
 
 				const settings = {
@@ -1071,7 +1070,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 
 				expect(screen.getByLabelText("PBC Baseline End")).toHaveAttribute(
 					"max",
-					formatLocalDate(justAfterLocalMidnight),
+					"2026-10-15",
 				);
 			} finally {
 				vi.useRealTimers();
