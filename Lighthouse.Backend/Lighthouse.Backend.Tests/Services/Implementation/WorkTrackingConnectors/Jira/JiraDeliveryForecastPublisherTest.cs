@@ -127,22 +127,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        /// <summary>
+        /// An answer that is not a Release says nothing about the words the team wrote on it. Writing the
+        /// forecast as the whole description would replace those words, so the Release is left alone and
+        /// the next round asks again.
+        /// </summary>
         [Test]
-        public async Task A_Release_that_reads_back_as_something_other_than_a_Release_is_published_to_rather_than_failing()
+        public async Task A_Data_Center_Release_that_reads_back_as_something_other_than_a_Release_is_left_alone()
         {
             var jira = new FakeJiraDataCenter { VersionReadAnswer = "[]" }
                 .WithProject("REL", "Release coordination")
                 .WithReleaseIn("REL", TheRelease, "2026 Q4", "2026-10-01");
 
             var connector = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
-            var result = await connector.PublishAsync(
-                FakeJiraDataCenter.AConnection(), new DeliveryForecastPublication(JiraReleaseSourceKey, TheRelease, TheBlock));
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result, Is.TypeOf<DeliveryForecastPublishResult.Published>(),
-                    "an answer with no description in it has no words to keep, which is the same answer as a Release nobody described.");
-                Assert.That(jira.DescriptionOf(TheRelease), Is.EqualTo(TheBlock));
+                await Assert.ThrowsAsync<HttpRequestException>(() => connector.PublishAsync(
+                    FakeJiraDataCenter.AConnection(), new DeliveryForecastPublication(JiraReleaseSourceKey, TheRelease, TheBlock)),
+                    "an answer that could not be read is the same as Jira not being asked, which the publishing round retries.");
+                Assert.That(jira.VersionWrites, Is.Empty);
+                Assert.That(jira.DescriptionOf(TheRelease), Is.Null);
+            }
+        }
+
+        [Test]
+        public async Task A_Cloud_Release_that_reads_back_as_something_other_than_a_Release_keeps_the_words_the_team_wrote()
+        {
+            var jira = AJiraHoldingAReleaseDescribedAs("Notes the team wrote.");
+            jira.AnswerReadsWith("[]");
+
+            using (Assert.EnterMultipleScope())
+            {
+                await Assert.ThrowsAsync<HttpRequestException>(() => Publish(jira, TheBlock));
+                Assert.That(jira.Writes, Is.Empty);
+                Assert.That(jira.Description, Is.EqualTo("Notes the team wrote."));
             }
         }
 

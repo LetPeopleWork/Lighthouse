@@ -3368,7 +3368,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return refusedRead;
             }
 
-            var described = JiraReleaseVersionReader.ReadVersionDescription(await read.Content.ReadAsStringAsync());
+            var (described, isReadable) = JiraReleaseVersionReader.ReadVersionDescription(await read.Content.ReadAsStringAsync());
+
+            if (!isReadable)
+            {
+                throw new HttpRequestException(
+                    $"Jira answered the read of Release {publication.SourceReference} with something that is not a Release; it is left alone until the next round");
+            }
+
             var merged = forecastBlockRenderer.MergeInto(described, publication.BlockText);
 
             // A forecast that has not moved since the last round is already on the Release, so writing it

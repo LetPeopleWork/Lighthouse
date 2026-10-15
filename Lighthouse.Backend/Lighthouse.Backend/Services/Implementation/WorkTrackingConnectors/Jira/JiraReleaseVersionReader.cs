@@ -47,25 +47,29 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// The text a Release already carries, or nothing when it carries none. A Release with no
         /// description at all is the ordinary case - every Release on the demo instance was like that - so
         /// the key simply not being there is an answer rather than a payload that could not be read.
+        ///
+        /// A body that parses but is not an object - a bare array, a quoted string - is not a Release at
+        /// all and says it could not be read. Taken as "no description", it would have the forecast written
+        /// over whatever the team wrote on the Release.
         /// </summary>
-        public static string? ReadVersionDescription(string versionPayload)
+        public static (string? Description, bool IsReadable) ReadVersionDescription(string versionPayload)
         {
             using var payload = JsonDocument.Parse(versionPayload);
 
-            // A body that parses but is not an object - a bare array, a quoted string - has no properties
-            // to ask about, and asking anyway throws rather than answering.
             if (payload.RootElement.ValueKind != JsonValueKind.Object)
             {
-                return null;
+                return (null, false);
             }
 
             // Read as text only when it is text. A description that came back as anything else is not a
             // description Lighthouse can merge into, and asking for the string would throw where the
             // honest answer is that there is nothing here to keep.
-            return payload.RootElement.TryGetProperty("description", out var description)
-                && description.ValueKind == JsonValueKind.String
-                ? description.GetString()
+            var description = payload.RootElement.TryGetProperty("description", out var text)
+                && text.ValueKind == JsonValueKind.String
+                ? text.GetString()
                 : null;
+
+            return (description, true);
         }
 
         /// <summary>
