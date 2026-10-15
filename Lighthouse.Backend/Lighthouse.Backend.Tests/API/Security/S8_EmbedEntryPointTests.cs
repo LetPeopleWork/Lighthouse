@@ -1,5 +1,8 @@
 using System.Net;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Lighthouse.Backend.Tests.API.Security
 {
@@ -132,10 +135,16 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task S8_Enter_ExpiredToken_RefusedLegibly()
         {
-            var shortLivedHost = host.WithTokenLifetime(ShortTokenLifetimeSeconds);
+            var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
+            var shortLivedHost = host.WithTokenLifetime(ShortTokenLifetimeSeconds)
+                .WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+                {
+                    services.RemoveAll<TimeProvider>();
+                    services.AddSingleton<TimeProvider>(clock);
+                }));
             var token = await host.MintTokenAsync(shortLivedHost, ViewerEmbedTestHost.ExplicitViewerSubject);
 
-            await Task.Delay(TimeSpan.FromSeconds(ShortTokenLifetimeSeconds + 1));
+            clock.Advance(TimeSpan.FromSeconds(ShortTokenLifetimeSeconds + 1));
 
             using var response = await ViewerEmbedTestHost.EnterAsync(shortLivedHost, token);
             var body = await response.Content.ReadAsStringAsync();
