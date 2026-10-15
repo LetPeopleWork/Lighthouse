@@ -56,15 +56,28 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             StoreTheFillAs(context, lastRelease);
         }
 
-        private async Task<WhatTheInstanceHeld> GivenWhatTheInstanceHeldBeforeTheUpgrade()
+        private async Task<WhatTheInstanceHeld> GivenWhatTheInstanceHeldBeforeTheUpgrade(HowTheLastReleaseLeftTheFill lastRelease)
         {
             var offered = await WhenTheAdminOpensBehaviourSettings();
 
             Assert.That(offered.Select(setting => setting.Key), Does.Contain(TheHistoryFillKey),
                 "The last release was meant to have left the history fill in Behaviour Settings, so the upgrade has nothing to take away.");
 
+            if (TheReleaseKeptTheRecordOfTheSwitchOn(lastRelease))
+            {
+                GivenTheRecordOfTheSwitchOnIsStored();
+            }
+
             return new WhatTheInstanceHeld(offered, ReadEveryStoredValue());
         }
+
+        /// <summary>
+        /// Checked rather than assumed: that the upgrade clears the record away says nothing if the record was
+        /// never there to clear.
+        /// </summary>
+        private void GivenTheRecordOfTheSwitchOnIsStored()
+            => Assert.That(ReadStoredAppSetting(TheRecordOfTheOneTimeSwitchOn), Is.Not.Null,
+                "The last release was meant to have kept the record of the one-time switch-on, so the upgrade has no record to clear away.");
 
         /// <summary>
         /// Checked rather than assumed: the restarts that follow are about keeping the setting away, and they
@@ -247,15 +260,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
                 context.OptionalFeatures.Add(TheFillAsTheLastReleaseStoredIt(state == HowTheLastReleaseLeftTheFill.SwitchedOnByDefault));
             }
 
-            if (state is HowTheLastReleaseLeftTheFill.SwitchedOnByDefault
-                or HowTheLastReleaseLeftTheFill.SwitchedOffByTheAdmin
-                or HowTheLastReleaseLeftTheFill.SettingRemovedButTheRecordKept)
+            if (TheReleaseKeptTheRecordOfTheSwitchOn(state))
             {
                 context.AppSettings.Add(TheRecordOfTheOneTimeSwitchOnAsStored());
             }
 
             context.SaveChanges();
         }
+
+        private static bool TheReleaseKeptTheRecordOfTheSwitchOn(HowTheLastReleaseLeftTheFill state)
+            => state is HowTheLastReleaseLeftTheFill.SwitchedOnByDefault
+                or HowTheLastReleaseLeftTheFill.SwitchedOffByTheAdmin
+                or HowTheLastReleaseLeftTheFill.SettingRemovedButTheRecordKept;
 
         /// <summary>Every stored app setting as key and value, in key order, so two readings compare line by line.</summary>
         private List<string> ReadEveryStoredValue()

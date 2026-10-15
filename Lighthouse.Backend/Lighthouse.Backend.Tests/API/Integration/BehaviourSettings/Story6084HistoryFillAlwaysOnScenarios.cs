@@ -41,7 +41,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         {
             GivenTheCallerAdministersTheInstance();
             GivenTheInstanceAsTheLastReleaseLeftIt(lastRelease);
-            var before = await GivenWhatTheInstanceHeldBeforeTheUpgrade();
+            var before = await GivenWhatTheInstanceHeldBeforeTheUpgrade(lastRelease);
 
             WhenTheInstanceIsUpgraded();
             var after = await WhenTheAdminOpensBehaviourSettings();
@@ -62,6 +62,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         {
             GivenTheCallerAdministersTheInstance();
             GivenTheInstanceAsTheLastReleaseLeftIt(HowTheLastReleaseLeftTheFill.SettingRemovedButTheRecordKept);
+            GivenTheRecordOfTheSwitchOnIsStored();
 
             WhenTheInstanceIsUpgraded();
             var offered = await WhenTheAdminOpensBehaviourSettings();

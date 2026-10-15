@@ -32,8 +32,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
         [TestCase(OptionalFeatureKeys.McpServerKey, false)]
         [TestCase(OptionalFeatureKeys.DeltaSyncKey, true)]
         [TestCase(OptionalFeatureKeys.DeltaSyncKey, false)]
-        [TestCase(OptionalFeatureKeys.OverTimeHistoryFillKey, true)]
-        [TestCase(OptionalFeatureKeys.OverTimeHistoryFillKey, false)]
+        [TestCase(OverTimeHistoryFillKey, true)]
+        [TestCase(OverTimeHistoryFillKey, false)]
         public async Task SeedAsync_RemovesDeprecatedFeatures(string deprecatedKey, bool leftEnabled)
         {
             // Arrange
