@@ -29,6 +29,7 @@ import {
 } from "../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { formatLocalDate } from "../../../utils/date/localDate";
 import { DeliveryRuleBuilder } from "../DeliveryRuleBuilder/DeliveryRuleBuilder";
 import {
 	type DeliveryRuleGroupMode,
@@ -721,7 +722,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 											.toISOString()
 											.slice(0, 10)
 									: undefined,
-								max: new Date().toISOString().slice(0, 10),
+								max: formatLocalDate(new Date()),
 							},
 						}}
 						defaultValue={

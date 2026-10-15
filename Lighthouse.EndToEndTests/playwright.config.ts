@@ -150,12 +150,15 @@ export default defineConfig({
 		   non-UTC user hit it. Keeping a positive offset here means the date-range
 		   specs exercise the encoding a real viewer sees.
 
-		   This pin covers the BROWSER only. Two more zones have to agree with it or
-		   every date-boundary assertion flakes for the ~2h nightly window in which
-		   they disagree: the Node process that builds the CSV fixtures (TZ, set on
-		   the package.json scripts — Node caches the zone before a config is read)
-		   and the backend under test (Lighthouse__TimeZone, set where the instance
-		   is started — Lighthouse deliberately ships no default). */
+		   This pin covers the BROWSER only. The Node process that builds the CSV
+		   fixtures has to agree with it, or date-boundary assertions flake for the
+		   ~2h nightly window in which they disagree, so TZ is set on the
+		   package.json scripts (Node caches the zone before a config is read).
+
+		   The backend under test is deliberately left on UTC. A real viewer's day
+		   and the instance's day do not always agree, and running the browser in
+		   Zurich against a UTC instance makes those day-boundary mismatches show
+		   up here instead of in front of a user. */
 		timezoneId: "Europe/Zurich",
 
 		/* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */

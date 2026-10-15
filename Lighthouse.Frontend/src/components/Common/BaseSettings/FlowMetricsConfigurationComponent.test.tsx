@@ -15,6 +15,7 @@ import {
 } from "../../../models/WorkItemRules";
 import { createMockProjectSettings } from "../../../tests/TestDataProvider";
 import { testTheme } from "../../../tests/testTheme";
+import { formatLocalDate } from "../../../utils/date/localDate";
 import FlowMetricsConfigurationComponent from "./FlowMetricsConfigurationComponent";
 
 const testRuleSchema: IWorkItemRuleSchema = {
@@ -1041,6 +1042,40 @@ describe("FlowMetricsConfigurationComponent", () => {
 
 			expect(screen.getByLabelText("PBC Baseline Start")).toBeInTheDocument();
 			expect(screen.getByLabelText("PBC Baseline End")).toBeInTheDocument();
+		});
+
+		it("offers the viewer's own today as the latest baseline end, even where the UTC day is a different one", () => {
+			// Half past midnight in a zone ahead of UTC is still yesterday in UTC.
+			const justAfterLocalMidnight = new Date(2026, 9, 15, 0, 30, 0);
+			vi.useFakeTimers({ toFake: ["Date"] });
+			vi.setSystemTime(justAfterLocalMidnight);
+
+			try {
+				expect(formatLocalDate(justAfterLocalMidnight)).not.toBe(
+					justAfterLocalMidnight.toISOString().slice(0, 10),
+				);
+
+				const settings = {
+					...mockSettings,
+					processBehaviourChartBaselineStartDate: new Date("2026-09-01"),
+					processBehaviourChartBaselineEndDate: new Date("2026-09-20"),
+				};
+
+				render(
+					<FlowMetricsConfigurationComponent
+						settings={settings}
+						onSettingsChange={mockOnSettingsChange}
+						stalenessSeedDefault={5}
+					/>,
+				);
+
+				expect(screen.getByLabelText("PBC Baseline End")).toHaveAttribute(
+					"max",
+					formatLocalDate(justAfterLocalMidnight),
+				);
+			} finally {
+				vi.useRealTimers();
+			}
 		});
 
 		it("does not show date pickers when baseline is disabled", () => {
