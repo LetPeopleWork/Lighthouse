@@ -51,3 +51,10 @@ jobs:
         with:
           name: sonar-report-frontend
           path: ./Lighthouse.Frontend/.scannerwork/report-task.txt
+
+      # Warn only until the provisional budget is re-derived on post-push main runs.
+      - name: Check test-time budget
+        run: |
+          python3 --version
+          python3 -m unittest discover -s Scripts/test-timings/tests
+          python3 Scripts/test-timings/check_budget.py --stack frontend --csv test-timings-frontend.csv --warn-only

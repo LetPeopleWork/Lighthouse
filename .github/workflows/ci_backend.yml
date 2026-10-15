@@ -195,3 +195,10 @@ jobs:
       with:
         name: sonar-report-backend
         path: .sonarqube/out/.sonar/report-task.txt
+
+    # Warn only until the backend budget has held on post-push main runs without a warning.
+    - name: Check test-time budget
+      run: |
+        python3 --version
+        python3 -m unittest discover -s Scripts/test-timings/tests
+        python3 Scripts/test-timings/check_budget.py --stack backend --csv test-timings-backend.csv --source-root Lighthouse.Backend/Lighthouse.Backend.Tests --warn-only

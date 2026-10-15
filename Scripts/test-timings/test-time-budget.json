@@ -1,0 +1,387 @@
+{
+  "frontend": {
+    "budget_seconds": 63,
+    "allowlist": [
+      {
+        "unit": "src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx",
+        "reason": "production render of the MUI DataGrid in jsdom, and about 70 openings of its Manage columns panel, each paying Popper's style lookups",
+        "ceiling_seconds": 182
+      },
+      {
+        "unit": "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx",
+        "reason": "renders 100 to 143 rows through the real DataGrid and renders them again on every page change",
+        "ceiling_seconds": 100
+      },
+      {
+        "unit": "src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx",
+        "reason": "production render of the settings form, and every save check waits out the real 300 ms autosave debounce",
+        "ceiling_seconds": 97
+      },
+      {
+        "unit": "src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx",
+        "reason": "production render of the settings form, and every save check waits out the real 300 ms autosave debounce",
+        "ceiling_seconds": 78
+      },
+      {
+        "unit": "src/pages/Overview/OverviewDashboard.test.tsx",
+        "reason": "renders the whole overview dashboard in jsdom for each of its 43 tests; the cost has not been profiled yet",
+        "ceiling_seconds": 77
+      },
+      {
+        "unit": "src/pages/Teams/Detail/Refinement/RefinementView.comments.test.tsx",
+        "reason": "production render of the refinement tab, its DataGrid and MUI dialogs, driven through user-event clicks and typing",
+        "ceiling_seconds": 77
+      },
+      {
+        "unit": "src/pages/Common/Reports/ReportsTab.createWizard.test.tsx",
+        "reason": "drives the create-report wizard through user-event clicks in jsdom, 54 tests; the cost has not been profiled yet",
+        "ceiling_seconds": 74
+      },
+      {
+        "unit": "src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
+        "reason": "production render of the whole metrics dashboard for each of its 129 tests",
+        "ceiling_seconds": 68
+      },
+      {
+        "unit": "src/pages/Teams/Detail/Refinement/RefinementView.votes.test.tsx",
+        "reason": "production render of the refinement tab, its DataGrid and MUI dialogs, driven through user-event clicks and typing",
+        "ceiling_seconds": 67
+      }
+    ]
+  },
+  "backend": {
+    "budget_seconds": 34,
+    "allowlist": [
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice05ReconstructCycleTimeHistoryTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 462
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice07WhereTheLimitsActuallyMovedTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 386
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice06EveryPercentileTabSpansTheSamePeriodTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 255
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.FasterUpdates.Slice05FetchFingerprintTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 239
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Services.Implementation.Encryption.SecretCustodyServiceTests",
+        "reason": "works against a real SQLite database for every test, because what it checks lives in the stored values",
+        "ceiling_seconds": 211
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 173
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice09TheFillShipsOptInTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 165
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Security.S8_EmbedEntryPointTests",
+        "reason": "spins up fresh WebApplicationFactory hosts and a SQLite schema for every test",
+        "ceiling_seconds": 163
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Services.Implementation.Encryption.PublishedKeySecretCountTests",
+        "reason": "works against a real SQLite database for every test, because what it checks lives in the stored values",
+        "ceiling_seconds": 150
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Services.Implementation.Encryption.ReferencedKeyIdsTests",
+        "reason": "works against a real SQLite database for every test, because what it checks lives in the stored values",
+        "ceiling_seconds": 131
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira.JiraWorkTrackingConnectorTest",
+        "reason": "calls the live work tracking system over the network; runs only when that connector's code changes",
+        "ceiling_seconds": 127
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice13ReadinessTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 124
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Integration.Containers.BlockedCountSnapshotMigrationTests",
+        "reason": "starts a fresh Postgres container and applies every migration to prove the table on a real provider",
+        "ceiling_seconds": 117
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Services.Implementation.Encryption.ReadableSecretsNotOnTheActiveKeyTests",
+        "reason": "works against a real SQLite database for every test, because what it checks lives in the stored values",
+        "ceiling_seconds": 103
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize.Slice01TeamFeatureSizeTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 101
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.AzureDevOps.AzureDevOpsWorkTrackingConnectorTest",
+        "reason": "calls the live work tracking system over the network; runs only when that connector's code changes",
+        "ceiling_seconds": 98
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.TaskManager.Slice04StopARefreshTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 95
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.FasterUpdates.Slice03JiraCloudPortfolioDeltaTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 88
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.SleRisk.Slice01SleRiskReadTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 86
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.ServiceNow.ServiceNowWorkTrackingConnectorIntegrationTest",
+        "reason": "calls the live work tracking system over the network; runs only when that connector's code changes",
+        "ceiling_seconds": 79
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice11CastAVoteTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 74
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.Dependencies.Slice02DependencyDetailTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 71
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.MetricsEndpointIntegrationTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 69
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.Reports.Slice01TeamReportScenarios",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 68
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.BehaviourSettings.Story6083HistoryFillOnByDefaultTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 68
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira.JiraWriteBackTest",
+        "reason": "calls the live work tracking system over the network; runs only when that connector's code changes",
+        "ceiling_seconds": 67
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Architecture.OptionalFeatureApplierSeamArchUnitTest",
+        "reason": "boots the whole app in a test host to inspect what it registers",
+        "ceiling_seconds": 67
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice03StageRulesTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 62
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice12CommentsTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 62
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice10OnlyWhatTheTeamStillKeepsTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 61
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Integration.Containers.ProcessBehaviorSnapshotMigrationTests",
+        "reason": "starts a fresh Postgres container and applies every migration to prove the schema on a real provider",
+        "ceiling_seconds": 61
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Integration.Containers.BlockedRuleSetMigrationTests",
+        "reason": "starts a fresh Postgres container and applies every migration to prove the schema on a real provider",
+        "ceiling_seconds": 61
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.DeliverySources.Slice04ForecastPublishingTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 60
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.RunChartPayloadContractIntegrationTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 59
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting.Slice00OneForecastPerBatchScenarios",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 59
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice04RefinementCadenceTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 58
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Integration.UsageData.Slice04ProductEventsTests",
+        "reason": "boots the app in a test host and observes the usage-data events it sends",
+        "ceiling_seconds": 57
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.TaskManager.Slice08HealthThatChecksItselfTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 56
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.ManualSorting.Slice03RelativeMovesTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 55
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Integration.Containers.DeliveryMetricSnapshotDayKeyMigrationTests",
+        "reason": "starts a fresh Postgres container and applies every migration to prove the schema on a real provider",
+        "ceiling_seconds": 53
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Integration.Containers.ConcurrentStartupMigrationTests",
+        "reason": "starts a fresh Postgres container and applies every migration to prove the schema on a real provider",
+        "ceiling_seconds": 53
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Integration.Containers.BlockedDurationMigrationTests",
+        "reason": "starts a fresh Postgres container and applies every migration to prove the schema on a real provider",
+        "ceiling_seconds": 52
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice03bDateRangeTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 52
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.Refinement.NeedOverOneCycleTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 52
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize.Slice02TeamFeatureSizePercentilesTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 47
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.ShutdownIntegrationTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 46
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.ManualSorting.Slice02ManualRankTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 45
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Integration.Containers.ViewerEmbedStorageGuaranteeTests",
+        "reason": "starts a fresh Postgres container and applies every migration to prove the schema on a real provider",
+        "ceiling_seconds": 45
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice08NothingToShowTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 45
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.DeliverySources.Slice03BrokenSourceTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 45
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.QuietWriteBack.Slice01WriteBackCollectionTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 44
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.Reports.Slice02ThenInThePastScenarios",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 44
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.NamedCycleTimeTrendInfoApiIntegrationTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 41
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice07BandPercentilesTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 40
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.Dependencies.Slice04DependencySettingsTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 40
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.WorkItemEstimateApiIntegrationTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 40
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice05NeedAndVerdictTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 39
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.HealthCheckIntegrationTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 37
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Integration.UsageData.OptionalFeatureToggledEventTests",
+        "reason": "boots the app in a test host and observes the usage-data events it sends",
+        "ceiling_seconds": 37
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.TaskManager.Slice06TheWarningsWithoutTheLogTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 37
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Services.Implementation.Forecast.ForecastServiceTest",
+        "reason": "runs real Monte Carlo forecasts over recorded throughput",
+        "ceiling_seconds": 36
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.BehaviourSettings.Slice02OneListOfSwitchesTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 36
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Integration.Containers.PercentilesOverTimeSnapshotMigrationTests",
+        "reason": "starts a fresh Postgres container and applies every migration to prove the schema on a real provider",
+        "ceiling_seconds": 35
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Integration.Containers.BlockedStalenessThresholdMigrationTests",
+        "reason": "starts a fresh Postgres container and applies every migration to prove the schema on a real provider",
+        "ceiling_seconds": 35
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.BlockedItems.Slice05PredefinedFieldTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 35
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.Health.ClusterSubstrateProbeRegistrationTest",
+        "reason": "boots the whole app, which tries to reach a Redis address where nothing listens",
+        "ceiling_seconds": 35
+      }
+    ]
+  }
+}

@@ -11,6 +11,7 @@ on:
       - ".github/workflows/ci*.yml"
       - ".github/actions/**"
       - ".github/scripts/**"
+      - "Scripts/test-timings/**"
       - "examples/postgres/**"
       # The image build reads all five. Without them a Dockerfile or
       # .dockerignore change reaches main without ever being built, which is how
