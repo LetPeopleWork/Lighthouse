@@ -6,7 +6,7 @@ import {
 	waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IDelivery } from "../../../../../models/Delivery";
 import type {
 	IDeliverySource,
@@ -93,6 +93,14 @@ beforeEach(() => {
 	vi.clearAllMocks();
 	licence.isPremium = true;
 	clearDeliverySourceOptionsCache();
+	// The Launches below are dated 15 October 2026 and the modal refuses a date that is not in the
+	// future, so the clock is held before that day or every save is refused once it arrives.
+	vi.useFakeTimers({ toFake: ["Date"] });
+	vi.setSystemTime(new Date("2026-10-01T12:00:00Z"));
+});
+
+afterEach(() => {
+	vi.useRealTimers();
 });
 
 describe("DeliveryCreateModal editing a Launch that follows a Release", () => {
