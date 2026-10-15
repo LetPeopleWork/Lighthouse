@@ -1,5 +1,7 @@
 import { useTheme } from "@mui/material";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
@@ -33,6 +35,8 @@ const mostInOneRefresh = (
 const RefreshHistorySection: React.FC = () => {
 	const theme = useTheme();
 	const [logs, setLogs] = useState<RefreshLog[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [loadFailed, setLoadFailed] = useState(false);
 	const [selectedKey, setSelectedKey] = useState<string>(ALL_KEY);
 	const { systemInfoService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
@@ -42,9 +46,14 @@ const RefreshHistorySection: React.FC = () => {
 			const data = await systemInfoService.getRefreshLogs();
 			setLogs(data);
 		};
-		fetchLogs().catch((error) => {
-			console.error("Error fetching refresh history:", error);
-		});
+		fetchLogs()
+			.catch((error_) => {
+				console.error("Error fetching refresh history:", error_);
+				setLoadFailed(true);
+			})
+			.finally(() => {
+				setLoading(false);
+			});
 	}, [systemInfoService]);
 
 	const entityOptions: EntityOption[] = [];
@@ -266,6 +275,18 @@ const RefreshHistorySection: React.FC = () => {
 			</>
 		);
 	};
+
+	if (loading) {
+		return (
+			<Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+				<CircularProgress />
+			</Box>
+		);
+	}
+
+	if (loadFailed) {
+		return <Alert severity="error">Could not load refresh history.</Alert>;
+	}
 
 	return (
 		<Box>

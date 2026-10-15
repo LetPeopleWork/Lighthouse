@@ -98,10 +98,6 @@ const selectEntity = async (entityLabel: string) => {
 const theFigureCaptioned = (caption: string) =>
 	screen.getByText(caption).parentElement as HTMLElement;
 
-// Greppable marker: the pending cases are un-skipped when the history shows its loading and failure looks.
-const pendingStory6301 =
-	"pending: story 6301 slice 01, placed and not placed figures";
-
 const fetchedCaption = (records: string) =>
 	`Max ${records} Fetched With Links Naming More Than One Parent`;
 
@@ -439,7 +435,7 @@ describe("RefreshHistorySection: placed and not placed", () => {
 		expectNoParentFigureFor("Tickets");
 	});
 
-	it.skip(`shows a spinner while the history is on its way, and neither the empty message nor the entity picker (${pendingStory6301})`, () => {
+	it("shows a spinner while the history is on its way, and neither the empty message nor the entity picker", () => {
 		mockGetRefreshLogs.mockReturnValue(new Promise<RefreshLog[]>(() => {}));
 
 		render(
@@ -457,7 +453,7 @@ describe("RefreshHistorySection: placed and not placed", () => {
 		expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
 	});
 
-	it.skip(`says it could not load the history when the request fails, not that there is none (${pendingStory6301})`, async () => {
+	it("says it could not load the history when the request fails, not that there is none", async () => {
 		const quietConsole = vi
 			.spyOn(console, "error")
 			.mockImplementation(() => {});
