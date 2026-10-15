@@ -684,3 +684,27 @@ For **DELIVER**:
   the feature commit).
 - Comments in the new code explain the why in plain words (for example, why Teams go before Portfolios) and never
   cite D-, DDD- or ADR numbers.
+
+## Wave: DEVOPS / [REF] Platform and delivery
+
+Kept deliberately short, by maintainer request (2026-10-15): this Story adds no infrastructure.
+
+| Item | Answer |
+|---|---|
+| CI/CD | No new or changed workflow. Slice 01 edits `Program.cs` (one handler registration), which makes CI run the full backend Integration suite; expect the longer run, not a regression. |
+| Database / migrations | N/A, because nothing is stored: the fan-out queues existing updates and the save result is response-only. No `CreateMigration` run, no `HistoricalSchemaPatch` change. |
+| Deployment / rollout | N/A, because there is no flag or staged rollout. The first save after upgrade behaves the new way; the fingerprint digest stays byte-identical (DESIGN's pinned-digest test), so the upgrade itself starts no downloads. |
+| Observability | One Information log line per fan-out with the connection id and the two counts, never field names (DESIGN). The Task Manager rows are the user-visible trace. No new metric or dashboard. |
+| Licensing / RBAC | N/A, because nothing new is gated (DESIGN). |
+| Lighthouse-Clients | N/A for a release: the clients type the connection PUT response as `unknown`, so the additive `queuedUpdates` field breaks nothing. Revisit only if `?startUpdates=false` is to be offered in `lh`/MCP. |
+
+## Wave: DEVOPS / [REF] Usage-data event
+
+**`WorkTrackingSystemFieldsChanged = 19`**, name-only, appended to `UsageDataEventName` (next integer after `ReportDeleted = 18`).
+
+- **Sent when:** the browser saves an existing connection whose additional field definitions differ from the ones the page loaded. Not on a new connection (that is `WorkTrackingSystemConnected`), and not on a credential- or name-only save — the same reasoning the existing `WorkTrackingSystemConnected` comment gives for not counting a password change.
+- **Answers:** how often admins change what a connection fetches, i.e. whether the save-then-update path is exercised at all.
+- **Carries:** nothing beyond the standard instance facts. Never a field name, reference or count.
+- **Property, only if slice 03 ships:** a closed enum `Updates: Now | Later`, because `OUT-6307-opt-out-rate` cannot be counted without it. Decided at the DISTILL sketch session together with UI-1; if the notice form wins, the event stays name-only.
+- **Emitted by:** the browser only, in `EditConnection.tsx` next to the existing `WorkTrackingSystemConnected` call. `lh`/MCP saves are not counted; acceptable for a usage signal.
+- **DELIVER step:** emitted in slice 02 (the slice whose save result the browser reads), and listed in `docs/settings/usagedata.md`, including bumping the "other N events" counts in its field table.

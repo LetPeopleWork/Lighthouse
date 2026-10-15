@@ -168,3 +168,10 @@ each justified; everything else EXTEND or REUSE AS-IS.
 - DEVOPS: usage-data event (DISCUSS candidate stands); Lighthouse-Clients grep + optional `queuedUpdates` type and
   changelog line; `Program.cs` edit ⇒ full backend Integration suite in CI.
 - DISTILL: UI-1…UI-5 sketches (DDD-13 and DDD-9 are proposals); accept UC-1 before writing AC-1.5's scenario.
+
+# DEVOPS Decisions — story-6307-refresh-on-additional-fields-change
+
+## Key Decisions
+- [DO-1] No infrastructure, CI, migration or rollout change; `Program.cs` edit triggers the full backend Integration suite in CI (see: feature-delta.md, DEVOPS / Platform and delivery).
+- [DO-2] Usage-data event `WorkTrackingSystemFieldsChanged = 19`, name-only, browser-emitted on an existing connection's field-definition change; closed-enum `Updates: Now | Later` added only if slice 03 ships (see: feature-delta.md, DEVOPS / Usage-data event).
+- [DO-3] No Lighthouse-Clients release: PUT response is typed `unknown` there.
