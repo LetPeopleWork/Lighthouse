@@ -31,6 +31,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         private const string TheRecordWithNoLink = "ITEM-4";
         private const string TheRecordThatSatStill = "ITEM-5";
         private const int TheFieldThatNamesTheLinkType = 7;
+        private const string TheFeatureUnderAFeatureAndAnIncident = "FTR-1";
+        private const string TheFeatureUnderTwoIncidents = "FTR-2";
+        private const string TheFeatureWithOneLink = "FTR-3";
+        private const string TheFeatureWithNoLink = "FTR-4";
+        private const string TheFeatureThatSatStill = "FTR-5";
 
         private static readonly DateTime TheFirstReadingDay = new(2026, 9, 1, 9, 0, 0, DateTimeKind.Utc);
 
@@ -41,6 +46,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
         private static readonly string[] EveryKindOfRecord =
             [TheRecordUnderAFeatureAndAnIncident, TheRecordUnderTwoIncidents, TheRecordWithOneLink, TheRecordWithNoLink];
+
+        private static readonly string[] EveryKindOfFeature =
+            [TheFeatureUnderAFeatureAndAnIncident, TheFeatureUnderTwoIncidents, TheFeatureWithOneLink, TheFeatureWithNoLink];
 
         private Mock<IFeatureRepository> featureRepositoryMock;
         private Mock<IWorkItemRepository> workItemRepositoryMock;
@@ -1260,35 +1268,72 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             };
 
         /// <summary>
-        /// The portfolio half of the same thing, through its own door. Its refresh history is a page of its
-        /// own, read by people who never open a Team, so a count that reaches only the Team row reaches
-        /// nobody for them.
+        /// The portfolio half of the same thing, through its own door. Nothing is set aside at this level,
+        /// because the issues above a Feature are not Features the Portfolio holds, so the pick always ends
+        /// somewhere: two incidents nobody stores fall to the lowest key. Its refresh history is a page of its
+        /// own, read by people who never open a Team, so the placement is counted on its row.
         /// </summary>
         [Test]
-        public async Task UpdateFeaturesForPortfolio_CheaperRefresh_CountsWhatItDownloadedAndCouldNotPlace()
+        public async Task UpdateFeaturesForPortfolio_FullRefresh_PlacesAndCountsOnlyTheFeaturesWhoseLinksNameSeveralIssues()
         {
-            const string theRecordThatMoved = "FTR-1";
-            const string theRecordThatSatStill = "FTR-2";
-            var whenEveryStoredRecordLastChanged = new DateTime(2026, 8, 1, 9, 0, 0, DateTimeKind.Utc);
-            var whenTheRecordThatMovedChanged = whenEveryStoredRecordLastChanged.AddDays(30);
+            var portfolio = CreatePortfolio();
+            portfolio.ParentOverrideAdditionalFieldDefinitionId = TheFieldThatNamesTheLinkType;
+            var stored = TheFeaturesTheRefreshStores();
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ADownloadOfEveryKindOfFeature(TheFirstReadingDay));
+            TheStoredFeaturesAre(TheStoredFeature);
+
+            NothingAboveTheFeaturesIsDownloaded();
+
+            var subject = CreateSubject();
+
+            var outcome = await subject.UpdateFeaturesForPortfolio(portfolio);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Mode, Is.EqualTo(SyncMode.Full),
+                    "positive control: this fixture is about the whole-query path, so it has to have taken it.");
+                ThePortfolioPlacedEveryFeatureWhoseLinksNameSeveralIssues(outcome, stored);
+            }
+
+            featureRepositoryMock.Verify(repository => repository.GetStoredFeatureCreatedDates(), Times.Once,
+                "One read of the stored Features answers every Feature of the fetch; one per Feature would be a query per record.");
+        }
+
+        /// <summary>
+        /// The cheap refresh places what it downloaded in exactly the same way, and counts nothing it did not
+        /// download. It is the refresh an instance runs by default, so a count taken anywhere else would tell
+        /// every operator on the cheap path nothing at all.
+        /// </summary>
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_CheaperRefresh_PlacesAndCountsOnlyTheFeaturesItDownloaded()
+        {
+            var whenEveryStoredRecordLastChanged = TheFirstReadingDay.AddDays(-30);
 
             var portfolio = CreatePortfolio();
+            portfolio.ParentOverrideAdditionalFieldDefinitionId = TheFieldThatNamesTheLinkType;
             portfolio.FetchFingerprint = FetchFingerprint.For(portfolio);
             portfolio.UpdateFeatures([
-                AStampedFeature(theRecordThatMoved, whenEveryStoredRecordLastChanged),
-                AStampedFeature(theRecordThatSatStill, whenEveryStoredRecordLastChanged)]);
+                .. EveryKindOfFeature.Select(referenceId => AStampedFeature(referenceId, whenEveryStoredRecordLastChanged)),
+                AStampedFeature(TheFeatureThatSatStill, whenEveryStoredRecordLastChanged)]);
+            var stored = TheFeaturesTheRefreshStores();
 
             TheTrackerCanBeScanned();
 
             workTrackingConnectorMock
                 .Setup(connector => connector.SweepFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([
-                    new RemoteRecordStamp(theRecordThatMoved, whenTheRecordThatMovedChanged),
-                    new RemoteRecordStamp(theRecordThatSatStill, whenEveryStoredRecordLastChanged)]);
+                    .. EveryKindOfFeature.Select(referenceId => new RemoteRecordStamp(referenceId, TheFirstReadingDay)),
+                    new RemoteRecordStamp(TheFeatureThatSatStill, whenEveryStoredRecordLastChanged)]);
 
             workTrackingConnectorMock
                 .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync([ADownloadedFeatureNobodyCouldPlace(theRecordThatMoved, whenTheRecordThatMovedChanged)]);
+                .ReturnsAsync(ADownloadOfEveryKindOfFeature(TheFirstReadingDay));
+            TheStoredFeaturesAre(TheStoredFeature);
+
+            NothingAboveTheFeaturesIsDownloaded();
 
             var subject = CreateSubject();
 
@@ -1297,13 +1342,112 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(outcome.Mode, Is.EqualTo(SyncMode.Delta),
-                    "positive control: the whole-query path answers with no records at all here, so without this the count "
-                    + "below would read as a tracker in good order rather than as a fetch that never happened.");
-                Assert.That(outcome.RecordsWhoseLinksNamedMoreThanOneParent, Is.EqualTo(1),
-                    "The one Feature this refresh downloaded came back with links naming two parents, and an administrator "
-                    + "who only ever opens Portfolios reads this row and no other.");
+                    "positive control: three stored Features moved and one did not, so this refresh has to be the cheap one.");
+                ThePortfolioPlacedEveryFeatureWhoseLinksNameSeveralIssues(outcome, stored);
+                Assert.That(stored.Select(feature => feature.ReferenceId), Does.Not.Contain(TheFeatureThatSatStill),
+                    "A Feature the refresh did not download is not read, so nothing about it can have changed.");
+            }
+
+            featureRepositoryMock.Verify(repository => repository.GetStoredFeatureCreatedDates(), Times.Once,
+                "One read of the stored Features answers every Feature the cheap refresh downloaded.");
+        }
+
+        /// <summary>
+        /// A Portfolio refresh where every link named one issue has no question to answer, so it does not ask
+        /// the database which Features it holds.
+        /// </summary>
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_NoFeatureWhoseLinksNameSeveralIssues_NeverReadsTheStoredFeatures()
+        {
+            var portfolio = CreatePortfolio();
+            portfolio.ParentOverrideAdditionalFieldDefinitionId = TheFieldThatNamesTheLinkType;
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([
+                    ADownloadedFeature(TheFeatureWithOneLink, TheLoneLink, OneIncident, TheLoneLink, TheFirstReadingDay),
+                    ADownloadedFeature(TheFeatureWithNoLink, TheTrackersOwnParent, [], string.Empty, TheFirstReadingDay)]);
+
+            NothingAboveTheFeaturesIsDownloaded();
+
+            var subject = CreateSubject();
+
+            var outcome = await subject.UpdateFeaturesForPortfolio(portfolio);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.RecordsPlacedFromLinksNamingMoreThanOneParent, Is.Zero);
+                Assert.That(outcome.RecordsWhoseLinksNamedMoreThanOneParent, Is.Zero);
+            }
+
+            featureRepositoryMock.Verify(repository => repository.GetStoredFeatureCreatedDates(), Times.Never,
+                "Nothing needed placing, so a read of every stored Feature would be a query spent on no question.");
+        }
+
+        private static void ThePortfolioPlacedEveryFeatureWhoseLinksNameSeveralIssues(SyncOutcome outcome, List<Feature> stored)
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.RecordsPlacedFromLinksNamingMoreThanOneParent, Is.EqualTo(2),
+                    "Two downloaded Features named several issues, and at this level the pick always ends somewhere, so both were placed.");
+                Assert.That(outcome.RecordsWhoseLinksNamedMoreThanOneParent, Is.Zero,
+                    "Nothing is set aside first at this level, so no Feature is left not placed.");
+                Assert.That(WhatTheStoredFeatureShows(stored, TheFeatureUnderAFeatureAndAnIncident), Is.EqualTo((TheStoredFeature, (string?)TheStoredFeature)),
+                    "The stored Feature has a created date and the incident does not, so the stored one wins, and the Additional Field shows the key that was used.");
+                Assert.That(WhatTheStoredFeatureShows(stored, TheFeatureUnderTwoIncidents), Is.EqualTo(("INC-5602", (string?)"INC-5602")),
+                    "Two incidents nobody stores fall to the lowest key, rather than being refused as a Team refuses them.");
+                Assert.That(WhatTheStoredFeatureShows(stored, TheFeatureWithOneLink), Is.EqualTo((TheLoneLink, (string?)TheLoneLink)),
+                    "A lone link is not a question: the Feature keeps exactly what the tracker gave it.");
+                Assert.That(WhatTheStoredFeatureShows(stored, TheFeatureWithNoLink), Is.EqualTo((TheTrackersOwnParent, (string?)string.Empty)),
+                    "A Feature with no link is not a question: it keeps exactly what the tracker gave it.");
             }
         }
+
+        private static (string Parent, string? Shown) WhatTheStoredFeatureShows(List<Feature> stored, string referenceId)
+        {
+            var feature = stored.Single(candidate => candidate.ReferenceId == referenceId);
+
+            return (feature.ParentReferenceId, feature.AdditionalFieldValues.GetValueOrDefault(TheFieldThatNamesTheLinkType));
+        }
+
+        private void NothingAboveTheFeaturesIsDownloaded()
+        {
+            workTrackingConnectorMock
+                .Setup(connector => connector.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([]);
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([]);
+        }
+
+        private List<Feature> TheFeaturesTheRefreshStores()
+        {
+            var stored = new List<Feature>();
+            featureRepositoryMock
+                .Setup(repository => repository.Add(It.IsAny<Feature>()))
+                .Callback((Feature feature) => stored.Add(feature));
+
+            return stored;
+        }
+
+        private static List<Feature> ADownloadOfEveryKindOfFeature(DateTime lastChangedRemote)
+            =>
+            [
+                ADownloadedFeature(TheFeatureUnderAFeatureAndAnIncident, TheTrackersOwnParent, AStoredFeatureAndAnIncident, string.Empty, lastChangedRemote),
+                ADownloadedFeature(TheFeatureUnderTwoIncidents, TheTrackersOwnParent, TwoIssuesNobodyHoldsAsAFeature, string.Empty, lastChangedRemote),
+                ADownloadedFeature(TheFeatureWithOneLink, TheLoneLink, OneIncident, TheLoneLink, lastChangedRemote),
+                ADownloadedFeature(TheFeatureWithNoLink, TheTrackersOwnParent, [], string.Empty, lastChangedRemote),
+            ];
+
+        private static Feature ADownloadedFeature(string referenceId, string trackersOwnParent, ParentCandidate[] candidates, string shown, DateTime lastChangedRemote)
+            => new()
+            {
+                ReferenceId = referenceId,
+                LastChangedRemote = lastChangedRemote,
+                ParentReferenceId = trackersOwnParent,
+                ParentCandidatesFromLinks = candidates,
+                AdditionalFieldValues = { [TheFieldThatNamesTheLinkType] = shown },
+            };
 
         [Test]
         public void UpdateFeaturesForPortfolio_TrackerCouldNotBeAsked_KeepsTheFeaturesThePortfolioHolds()
@@ -1761,14 +1905,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 ReferenceId = referenceId,
                 State = "To Do",
                 StateCategory = StateCategories.ToDo,
-                LastChangedRemote = lastChangedRemote,
-                ParentCandidatesFromLinks = TwoIssuesNobodyHoldsAsAFeature,
-            };
-
-        private static Feature ADownloadedFeatureNobodyCouldPlace(string referenceId, DateTime lastChangedRemote)
-            => new()
-            {
-                ReferenceId = referenceId,
                 LastChangedRemote = lastChangedRemote,
                 ParentCandidatesFromLinks = TwoIssuesNobodyHoldsAsAFeature,
             };

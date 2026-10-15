@@ -179,7 +179,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 ? await FetchOnlyWhatMoved(connector, team, storedWorkItems, scan.Stamps)
                 : await FetchEverything(connector, team);
 
-            var (placed, notPlaced) = PlaceWhatTheLinksLeftOpen(team, fetch.WorkItems);
+            var (placed, notPlaced) = PlaceWhatTheLinksLeftOpen(team, ParentPlacementReport.Team(team.Name), ParentNarrowing.Narrow, fetch.WorkItems);
 
             return fetch with
             {
@@ -193,16 +193,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         /// <summary>
         /// Hangs each downloaded record whose links named several issues under one of them, before anything
-        /// is saved. Candidates Lighthouse does not hold as Features are set aside, and among the Features left
-        /// the oldest link wins, then the Feature created first, then the lowest key. The connector cannot
-        /// make that choice, because only the stored Features say which candidate is one, so it hands every
-        /// candidate on and the choice is made here. The stored Features are read once for the whole fetch,
-        /// and not at all when no record needs them. Records with one link or none are not touched: the
-        /// connector already gave them their parent. What was decided is written as a warning, because a
-        /// parent picked on the administrator's behalf, or not picked at all, is something they are asked to
-        /// check.
+        /// is saved. A Team first sets aside the candidates Lighthouse does not hold as Features; a Portfolio
+        /// sets nothing aside, because the issues above its Features are not Features it holds. Among what is
+        /// left the oldest link wins, then the issue created first, then the lowest key. The connector cannot
+        /// make that choice, because only the stored Features say which candidate is one and when it was
+        /// created, so it hands every candidate on and the choice is made here. The stored Features are read
+        /// once for the whole fetch, and not at all when no record needs them. Records with one link or none
+        /// are not touched: the connector already gave them their parent. What was decided is written as a
+        /// warning, because a parent picked on the administrator's behalf, or not picked at all, is something
+        /// they are asked to check.
         /// </summary>
-        private (int Placed, int NotPlaced) PlaceWhatTheLinksLeftOpen(Team team, List<WorkItem> downloaded)
+        private (int Placed, int NotPlaced) PlaceWhatTheLinksLeftOpen<TRecord>(IWorkItemQueryOwner owner, string ownerInTheLog, ParentNarrowing narrowing, List<TRecord> downloaded)
+            where TRecord : WorkItemBase
         {
             var undecided = downloaded.FindAll(LinksNameMoreThanOneParent);
 
@@ -211,9 +213,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 return (0, 0);
             }
 
-            var placements = PlaceUnderTheirFeatures(team, undecided);
+            var placements = PlaceAmongTheirCandidates(owner, narrowing, undecided);
 
-            foreach (var line in ParentPlacementReport.Lines(ParentPlacementReport.Team(team.Name), placements))
+            foreach (var line in ParentPlacementReport.Lines(ownerInTheLog, placements))
             {
                 logger.LogWarning("{ParentPlacementLine}", line);
             }
@@ -223,7 +225,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return (placed, undecided.Count - placed);
         }
 
-        private List<RecordPlacement> PlaceUnderTheirFeatures(Team team, List<WorkItem> undecided)
+        private List<RecordPlacement> PlaceAmongTheirCandidates<TRecord>(IWorkItemQueryOwner owner, ParentNarrowing narrowing, List<TRecord> undecided)
+            where TRecord : WorkItemBase
         {
             var storedFeatures = featureRepository.GetStoredFeatureCreatedDates();
             var placements = new List<RecordPlacement>();
@@ -231,11 +234,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             foreach (var record in undecided)
             {
                 var links = ParentResolution.From(record.ParentCandidatesFromLinks);
-                var placement = links.Place(storedFeatures, ParentNarrowing.Narrow);
+                var placement = links.Place(storedFeatures, narrowing);
 
                 if (placement.Outcome == ParentPlacementOutcome.Placed)
                 {
-                    ParentSourceSelector.HangUnder(team, record, placement.Key);
+                    ParentSourceSelector.HangUnder(owner, record, placement.Key);
                 }
 
                 placements.Add(new RecordPlacement(record.ReferenceId, links, placement));
@@ -353,13 +356,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 [.. sweptOnce.Select(record => record.ReferenceId)],
                 SyncOutcome.DeltaSync(sweptRecords.Count, downloaded.Count));
         }
-
-        /// <summary>
-        /// A Portfolio does not choose among the issues a Feature's links name, so every Feature whose links
-        /// name more than one is a Feature it could not place.
-        /// </summary>
-        private static int CountTheFeaturesAPortfolioCouldNotPlace(List<Feature> features)
-            => features.Count(LinksNameMoreThanOneParent);
 
         /// <summary>
         /// Read from the candidates themselves, merged by key, so two links to the same issue are one
@@ -904,10 +900,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return new RemoteFeatureFetch(
                 recordsFromTracker,
                 recordsFromTracker.ConvertAll(feature => feature.ReferenceId),
-                SyncOutcome.FullSync(recordsFromTracker.Count) with
-                {
-                    RecordsWhoseLinksNamedMoreThanOneParent = CountTheFeaturesAPortfolioCouldNotPlace(recordsFromTracker),
-                });
+                SyncOutcome.FullSync(recordsFromTracker.Count));
         }
 
         /// <summary>
@@ -926,9 +919,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 scan.Succeeded,
                 fetchShapeChanged);
 
-            return mode == SyncMode.Delta
+            var fetch = mode == SyncMode.Delta
                 ? await FetchOnlyTheFeaturesThatMoved(connector, portfolio, storedFeatures, scan.Stamps)
                 : await FetchEveryFeature(connector, portfolio, Stopping);
+
+            var (placed, notPlaced) = PlaceWhatTheLinksLeftOpen(portfolio, ParentPlacementReport.Portfolio(portfolio.Name), ParentNarrowing.DoNotNarrow, fetch.Features);
+
+            return fetch with
+            {
+                Outcome = fetch.Outcome with
+                {
+                    RecordsPlacedFromLinksNamingMoreThanOneParent = placed,
+                    RecordsWhoseLinksNamedMoreThanOneParent = notPlaced,
+                },
+            };
         }
 
         /// <summary>The scan for the portfolio: the same Feature query, asking only for identity plus the remote change stamp.</summary>
@@ -986,10 +990,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return new RemoteFeatureFetch(
                 downloaded,
                 sweptOnce.ConvertAll(record => record.ReferenceId),
-                SyncOutcome.DeltaSync(sweptOnce.Count, downloaded.Count) with
-                {
-                    RecordsWhoseLinksNamedMoreThanOneParent = CountTheFeaturesAPortfolioCouldNotPlace(downloaded),
-                });
+                SyncOutcome.DeltaSync(sweptOnce.Count, downloaded.Count));
         }
 
         /// <summary>

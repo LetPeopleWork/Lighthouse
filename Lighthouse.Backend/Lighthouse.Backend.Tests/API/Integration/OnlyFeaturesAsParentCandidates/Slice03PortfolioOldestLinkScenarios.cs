@@ -47,7 +47,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         private static readonly DateTime February11 = On(2026, 2, 11);
 
         [Test]
-        [Ignore(PendingStory6301.Slice03)]
         [Category("kpi")]
         public async Task A_Feature_linked_to_two_issues_above_it_rolls_up_to_the_one_it_was_linked_to_first()
         {
@@ -83,7 +82,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// The line names it plainly, so the administrator can see a link that also carries causes.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice03)]
         [Category("edge")]
         public async Task At_Portfolio_level_nothing_is_set_aside_before_the_oldest_link_is_picked()
         {
@@ -109,7 +107,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         }
 
         [Test]
-        [Ignore(PendingStory6301.Slice03)]
         [Category("edge")]
         public async Task Undated_parents_that_are_not_stored_fall_back_to_the_lowest_key()
         {
@@ -138,7 +135,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// by its created date. After that the answer holds.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice03)]
         [Category("edge")]
         public async Task An_undated_Feature_moves_once_to_the_older_parent_after_the_parents_are_stored_and_then_holds()
         {
@@ -178,7 +174,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// is how the administrator recognises the configuration.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice03)]
         [Category("error")]
         public async Task A_Portfolio_pointed_at_a_link_that_also_reads_downward_names_every_candidate()
         {
@@ -205,7 +200,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
 
         /// <summary>A cheap Portfolio refresh places what it downloaded by the same rule, and counts it.</summary>
         [Test]
-        [Ignore(PendingStory6301.Slice03)]
         [Category("edge")]
         public async Task A_cheap_Portfolio_refresh_places_and_counts_what_it_downloaded()
         {

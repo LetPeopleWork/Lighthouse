@@ -149,11 +149,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         }
 
         /// <summary>
-        /// Portfolio refresh history is a page of its own, read by people who never open a Team. The
-        /// count reaching only one of the two rows is the same as it reaching neither, for them.
+        /// Portfolio refresh history is a page of its own, read by people who never open a Team. A Portfolio
+        /// sets nothing aside before it picks, so every Feature whose links name more than one issue is
+        /// placed, and the row has to say so rather than leave the count on the Team's page alone.
         /// </summary>
         [Test]
-        [Category("retired-by-story-6301-slice-03")]
         public async Task A_portfolio_refresh_records_the_count_on_its_own_row()
         {
             TheParentOverrideNames(TheLinkTypeTheOverrideNames.Name);
@@ -163,14 +163,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
             var portfolioId = await ThePortfolioIsRefreshedByTheRunningApplication();
 
+            var recorded = TheRowTheRefreshRecorded(RefreshType.Portfolio, portfolioId);
+
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(TheRowTheRefreshRecorded(RefreshType.Portfolio, portfolioId).RecordsWhoseLinksNamedMoreThanOneParent, Is.EqualTo(3),
-                    "The same three records are unplaceable whichever door the refresh came through, and an administrator who only runs Portfolios reads only this row.");
-                Assert.That(
-                    TheOneWarningNaming(TheAmbiguousItem),
-                    Does.Contain(TheOtherAmbiguousItem).And.Contain(AThirdAmbiguousItem),
-                    "Three records nobody could place still cost one line, and that line still has to name all three or the count above sends somebody hunting for records it does not identify.");
+                Assert.That(recorded.RecordsPlacedFromLinksNamingMoreThanOneParent, Is.EqualTo(3),
+                    "Three Features each named two issues above them, and at this level the pick always ends somewhere, so an administrator who only runs Portfolios reads three placed on this row.");
+                Assert.That(recorded.RecordsWhoseLinksNamedMoreThanOneParent, Is.Zero,
+                    "Nothing is set aside before a Portfolio picks, so no Feature is left not placed.");
             }
         }
     }
