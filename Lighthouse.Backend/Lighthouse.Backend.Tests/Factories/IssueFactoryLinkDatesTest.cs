@@ -88,6 +88,24 @@ namespace Lighthouse.Backend.Tests.Factories
                 "Cloud and Data Center do not promise an order for a history. Read in the order given, this link would date from February and a removal would seem to end it.");
         }
 
+        /// <summary>
+        /// Removing a link and adding it back within one second stamps both entries at the same instant, and
+        /// Cloud lists the newer first. The history id Cloud gives each entry only grows, so it tells which came
+        /// first; read in the order listed, the re-added link would seem removed.
+        /// </summary>
+        [Test]
+        [Category("edge")]
+        public void Entries_at_the_same_instant_are_read_in_the_order_of_their_history_ids()
+        {
+            var issue = AnIssueWithTheHistory(
+                JiraWireFormat.ALinkAddedAt(May1, AFeature, Sentence(AFeature), 30002),
+                JiraWireFormat.ALinkRemovedAt(May1, AFeature, Sentence(AFeature), 30001),
+                JiraWireFormat.ALinkAddedAt(February1, AFeature, Sentence(AFeature)));
+
+            Assert.That(issue.StandingLinks, Is.EqualTo(new[] { ACausedByLink(AFeature, May1) }),
+                "The link was removed and added back, so it stands, dated from when it was added back.");
+        }
+
         [Test]
         [Category("edge")]
         public void A_key_named_only_in_the_sentence_is_read_from_the_sentence()

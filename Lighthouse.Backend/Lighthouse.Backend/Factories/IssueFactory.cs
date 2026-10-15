@@ -74,13 +74,15 @@ namespace Lighthouse.Backend.Factories
 
         private sealed record LinkEnd(string CounterpartKey, string Sentence);
 
-        private sealed record LinkChange(DateTime At, LinkEnd? Removed, LinkEnd? Added);
+        private sealed record LinkChange(DateTime At, long? HistoryId, LinkEnd? Removed, LinkEnd? Added);
 
         private const string LinkFieldName = "Link";
 
         private const string FromPropertyName = "from";
 
         private const string ToPropertyName = "to";
+
+        private const string HistoryIdPropertyName = "id";
 
         private const string IssueKeyPattern = "[A-Z][A-Z0-9_]+-[0-9]+";
 
@@ -91,9 +93,11 @@ namespace Lighthouse.Backend.Factories
         private static partial Regex AnIssueKeyInASentence();
 
         // Neither Cloud nor Data Center promises an order for the histories, so they are replayed by when
-        // they happened. What stands at the end is each link that still exists, dated by its latest adding.
-        // A link is its counterpart together with its sentence, because the sentence is the only place the
-        // history names the link's type: a "relates to" to the same issue is another link with its own dates.
+        // they happened, and two entries stamped at one instant by their history ids, which only grow. An
+        // entry with no numeric id goes after those that have one, in the order listed. What stands at the
+        // end is each link that still exists, dated by its latest adding. A link is its counterpart together
+        // with its sentence, because the sentence is the only place the history names the link's type: a
+        // "relates to" to the same issue is another link with its own dates.
         private static List<StandingLink> StandingLinksIn(JsonElement json)
         {
             if (!json.TryGetProperty(JiraFieldNames.ChangelogFieldName, out var changelog))
@@ -104,6 +108,8 @@ namespace Lighthouse.Backend.Factories
             return [.. changelog.GetProperty(JiraFieldNames.HistoriesFieldName).EnumerateArray()
                 .SelectMany(LinkChangesIn)
                 .OrderBy(change => change.At)
+                .ThenBy(change => change.HistoryId is null)
+                .ThenBy(change => change.HistoryId)
                 .Aggregate(new Dictionary<LinkEnd, DateTime>(), Replay)
                 .Select(standing => new StandingLink(standing.Key.CounterpartKey, standing.Key.Sentence, standing.Value))];
         }
@@ -132,10 +138,15 @@ namespace Lighthouse.Backend.Factories
                 return [];
             }
 
+            long? historyId = long.TryParse(StringOrNull(history, HistoryIdPropertyName), NumberStyles.None, CultureInfo.InvariantCulture, out var id)
+                ? id
+                : null;
+
             return history.GetProperty(JiraFieldNames.ItemsFieldName).EnumerateArray()
                 .Where(item => StringOrNull(item, JiraFieldNames.FieldFieldName) == LinkFieldName)
                 .Select(item => new LinkChange(
                     at.UtcDateTime,
+                    historyId,
                     LinkEndOn(item, FromPropertyName, JiraFieldNames.FromStringPropertyName),
                     LinkEndOn(item, ToPropertyName, JiraFieldNames.ToStringPropertyName)));
         }

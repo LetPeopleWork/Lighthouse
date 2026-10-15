@@ -192,12 +192,20 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public static string ALinkAddedAt(DateTime at, string counterpartKey, string sentence)
             => AHistoryEntry(at, ALinkItem(null, null, counterpartKey, sentence));
 
+        /// <summary>The same addition under a history id of the caller's choosing, for entries stamped at one instant.</summary>
+        public static string ALinkAddedAt(DateTime at, string counterpartKey, string sentence, long historyId)
+            => AHistoryEntry(at, historyId, ALinkItem(null, null, counterpartKey, sentence));
+
         /// <summary>
         /// One history entry in which this issue lost its link to <paramref name="counterpartKey"/>, as Jira Cloud
         /// writes it: the mirror of an addition, the key and sentence on the from side and nothing on the to side.
         /// </summary>
         public static string ALinkRemovedAt(DateTime at, string counterpartKey, string sentence)
             => AHistoryEntry(at, ALinkItem(counterpartKey, sentence, null, null));
+
+        /// <summary>The same removal under a history id of the caller's choosing, for entries stamped at one instant.</summary>
+        public static string ALinkRemovedAt(DateTime at, string counterpartKey, string sentence, long historyId)
+            => AHistoryEntry(at, historyId, ALinkItem(counterpartKey, sentence, null, null));
 
         /// <summary>
         /// An addition carrying a link id where the key would be, so only the sentence names the counterpart.
@@ -225,8 +233,10 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         /// Jira Cloud stamps a history entry in the zone of the account that reads it, not in UTC, so the
         /// entries here carry an offset too and a reader that drops it gets the wrong instant.
         /// </summary>
-        private static string AHistoryEntry(DateTime at, string item)
-            => "{\"id\": \"" + at.Ticks.ToString(CultureInfo.InvariantCulture) + "\", \"created\": \"" + AnInstantAsTheAccountSeesIt(at)
+        private static string AHistoryEntry(DateTime at, string item) => AHistoryEntry(at, at.Ticks, item);
+
+        private static string AHistoryEntry(DateTime at, long historyId, string item)
+            => "{\"id\": \"" + historyId.ToString(CultureInfo.InvariantCulture) + "\", \"created\": \"" + AnInstantAsTheAccountSeesIt(at)
                 + "\", \"items\": [" + item + "]}";
 
         private static readonly TimeSpan TheReadingAccountsOffset = TimeSpan.FromHours(2);
