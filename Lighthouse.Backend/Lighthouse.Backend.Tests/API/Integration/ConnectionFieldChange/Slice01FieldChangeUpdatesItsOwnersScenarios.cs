@@ -24,7 +24,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
         [Category("driving_port")]
         [Category("kpi")]
         [Category("contract-shape:bounded-change")]
-        [Ignore(Pending)]
         public async Task Adding_a_field_lists_an_update_for_every_Team_and_Portfolio_on_the_connection_in_the_Task_Manager()
         {
             await GivenNordwindsConnectionsTeamsAndPortfolios();
@@ -43,7 +42,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
         [Category("driving_port")]
         [Category("kpi")]
         [Category("contract-shape:bounded-change")]
-        [Ignore(Pending)]
         public async Task Every_Team_and_Portfolio_on_the_connection_downloads_everything_once_after_a_field_is_added()
         {
             await GivenNordwindsConnectionsTeamsAndPortfolios();
@@ -60,7 +58,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
         [Category("us-01")]
         [Category("driving_port")]
         [Category("contract-shape:bounded-change")]
-        [Ignore(Pending)]
         public async Task The_Teams_are_updated_before_any_Portfolio()
         {
             await GivenNordwindsConnectionsTeamsAndPortfolios();
@@ -164,7 +161,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
         [Category("us-01")]
         [Category("driving_port")]
         [Category("contract-shape:bounded-change")]
-        [Ignore(Pending)]
         public async Task Adding_a_field_to_a_connection_only_Portfolios_read_from_lists_their_updates_in_the_Task_Manager()
         {
             await GivenNordwindsConnectionsTeamsAndPortfolios();
@@ -199,7 +195,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
         [Category("us-03")]
         [Category("driving_port")]
         [Category("contract-shape:bounded-change")]
-        [Ignore(Pending)]
         public async Task A_save_that_asks_to_update_now_updates_every_Team_and_Portfolio_on_the_connection()
         {
             await GivenNordwindsConnectionsTeamsAndPortfolios();
@@ -218,7 +213,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
         [Category("driving_port")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]
-        [Ignore(Pending)]
         public async Task A_save_that_asks_for_neither_now_nor_later_is_refused_and_stores_nothing(string choice)
         {
             await GivenNordwindsConnectionsTeamsAndPortfolios();

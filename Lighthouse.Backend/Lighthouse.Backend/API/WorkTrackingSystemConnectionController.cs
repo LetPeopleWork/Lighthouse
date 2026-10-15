@@ -2,8 +2,11 @@
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Authorization;
+using Lighthouse.Backend.Services.Implementation.WorkItems;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -18,7 +21,8 @@ namespace Lighthouse.Backend.API
         IRepository<Team> teamRepository,
         IRepository<Portfolio> portfolioRepository,
         ILicenseService licenseService,
-        IWorkTrackingConnectorFactory workTrackingConnectorFactory)
+        IWorkTrackingConnectorFactory workTrackingConnectorFactory,
+        IDomainEventDispatcher domainEventDispatcher)
         : ControllerBase
     {
         [HttpGet]
@@ -75,13 +79,17 @@ namespace Lighthouse.Backend.API
         [HttpPut]
         [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public async Task<ActionResult<WorkTrackingSystemConnectionDto>> UpdateWorkTrackingSystemConnectionAsync(
-            int workTrackingSystemConnectionId, [FromBody] WorkTrackingSystemConnectionDto updatedConnection)
+            int workTrackingSystemConnectionId,
+            [FromBody] WorkTrackingSystemConnectionDto updatedConnection,
+            [FromQuery] bool startUpdates = true)
         {
             var isForbiddenAction = false;
             List<string>? validationErrors = null;
 
             var result = await this.GetEntityByIdAnExecuteAction(repository, workTrackingSystemConnectionId, async existingConnection =>
             {
+                var fetchShapeBeforeSave = FetchFingerprint.ForConnection(existingConnection);
+
                 existingConnection.Name = updatedConnection.Name;
                 existingConnection.AuthenticationMethodKey = updatedConnection.AuthenticationMethodKey;
 
@@ -108,6 +116,7 @@ namespace Lighthouse.Backend.API
                     }
 
                     await repository.Save();
+                    await StartUpdatesIfFetchShapeMoved(existingConnection, fetchShapeBeforeSave, startUpdates);
                 }
 
                 return new WorkTrackingSystemConnectionDto(existingConnection);
@@ -142,6 +151,19 @@ namespace Lighthouse.Backend.API
             await repository.Save();
 
             return Ok();
+        }
+
+        private async Task StartUpdatesIfFetchShapeMoved(WorkTrackingSystemConnection connection, string fetchShapeBeforeSave, bool startUpdates)
+        {
+            if (!startUpdates || FetchFingerprint.ForConnection(connection) == fetchShapeBeforeSave)
+            {
+                return;
+            }
+
+            var teamIds = teamRepository.GetAllByPredicate(t => t.WorkTrackingSystemConnectionId == connection.Id).Select(t => t.Id).ToList();
+            var portfolioIds = portfolioRepository.GetAllByPredicate(p => p.WorkTrackingSystemConnectionId == connection.Id).Select(p => p.Id).ToList();
+
+            await domainEventDispatcher.PublishAsync(new ConnectionFetchShapeChanged(connection.Id, teamIds, portfolioIds));
         }
 
         private void MergeOptions(
