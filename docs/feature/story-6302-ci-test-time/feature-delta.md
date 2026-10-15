@@ -963,6 +963,8 @@ The three other final-gate reviewers (DISCUSS, DESIGN, DEVOPS) were not dispatch
 
 Also carried: the slice-06 brief and the journey named the budget file `Scripts/test-time-budget.json`, while DI-1 and the DO-7 trigger glob put it at `Scripts/test-timings/test-time-budget.json`. DELIVER follows DI-1; the brief and journey were corrected to match.
 
+**DES execution log: known gap, accepted by the maintainer on 2026-10-15.** The log for steps 01-01, 02-01, 02-02, 03-01, 03-02 and 06-01..06-05 lived in a worktree that has since been removed (the file is gitignored), so `des-verify-integrity` reports those ten steps as having no entries. Their commits are on `main` with `Step-Id` / `Task-Id` trailers. The maintainer chose to record the gap rather than re-run work already pushed, and to verify integrity from 04-01 on: 04-01, 04-02, 05-01 and 06-06 each carry RED, GREEN and COMMIT in the log.
+
 
 ## Wave: DELIVER / [REF] Slice 02 record — step 02-01 `RefinementView.paging.test.tsx`
 
