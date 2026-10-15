@@ -92,7 +92,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// under, why that one, and what was set aside on the way.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice01)]
         public async Task The_refresh_names_the_Feature_it_chose_why_and_what_it_set_aside()
         {
             TheTeamReadsItsParentsFromTheCausedByLink();
@@ -114,7 +113,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// like an item nobody ever linked: it is counted, named with every candidate, and given the reason.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice01)]
         [Category("error")]
         public async Task A_Work_Item_linked_only_to_non_Features_is_reported_not_silently_dropped()
         {
@@ -215,7 +213,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// for it now, which is nothing here. Keeping yesterday's incident would show an old answer as current.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice01)]
         [Category("error")]
         public async Task A_Work_Item_kept_under_its_lone_link_is_not_placed_once_a_second_non_Feature_is_linked()
         {
@@ -252,7 +249,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// this scenario when it ships.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice01)]
         [Category("error")]
         public async Task Two_Features_left_after_narrowing_are_not_guessed_before_the_oldest_link_rule_exists()
         {

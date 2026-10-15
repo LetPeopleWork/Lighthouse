@@ -197,33 +197,49 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// the stored Features say which candidate is one, so it hands every candidate on and the choice is
         /// made here. The stored Features are read once for the whole fetch, and not at all when no record
         /// needs them. Records with one link or none are not touched: the connector already gave them
-        /// their parent.
+        /// their parent. What was decided is written as a warning, because a parent picked on the
+        /// administrator's behalf, or not picked at all, is something they are asked to check.
         /// </summary>
         private (int Placed, int NotPlaced) PlaceWhatTheLinksLeftOpen(Team team, List<WorkItem> downloaded)
         {
             var undecided = downloaded.FindAll(LinksNameMoreThanOneParent);
-            var placed = undecided.Count == 0 ? [] : PlaceUnderTheirFeatures(team, undecided);
 
-            return (placed.Count, undecided.Count - placed.Count);
+            if (undecided.Count == 0)
+            {
+                return (0, 0);
+            }
+
+            var placements = PlaceUnderTheirFeatures(team, undecided);
+
+            foreach (var line in ParentPlacementReport.Lines(ParentPlacementReport.Team(team.Name), placements))
+            {
+                logger.LogWarning("{ParentPlacementLine}", line);
+            }
+
+            var placed = placements.Count(record => record.Placement.Outcome == ParentPlacementOutcome.Placed);
+
+            return (placed, undecided.Count - placed);
         }
 
-        private List<WorkItem> PlaceUnderTheirFeatures(Team team, List<WorkItem> undecided)
+        private List<RecordPlacement> PlaceUnderTheirFeatures(Team team, List<WorkItem> undecided)
         {
             var storedFeatures = featureRepository.GetStoredFeatureCreatedDates();
-            var placed = new List<WorkItem>();
+            var placements = new List<RecordPlacement>();
 
             foreach (var record in undecided)
             {
-                var placement = ParentResolution.From(record.ParentCandidatesFromLinks).Place(storedFeatures, ParentNarrowing.Narrow);
+                var links = ParentResolution.From(record.ParentCandidatesFromLinks);
+                var placement = links.Place(storedFeatures, ParentNarrowing.Narrow);
 
                 if (placement.Outcome == ParentPlacementOutcome.Placed)
                 {
                     ParentSourceSelector.HangUnder(team, record, placement.Key);
-                    placed.Add(record);
                 }
+
+                placements.Add(new RecordPlacement(record.ReferenceId, links, placement));
             }
 
-            return placed;
+            return placements;
         }
 
         /// <summary>
