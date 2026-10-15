@@ -8,11 +8,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
     /// one parent. Driving port: a Team refresh, which is what actually writes the parent every forecast
     /// is drawn from.
     ///
-    /// An item hangs under one thing, so several candidates cannot be narrowed by keeping one of them.
-    /// There is no tie-break here and none is wanted: the first one seen, the one linked most recently and
-    /// the one whose key sorts first are all guesses, and a guessed parent moves work under something it
-    /// does not belong to while looking exactly like correct data. Refusing takes no parent from the links,
-    /// which is visibly unfinished rather than invisibly wrong.
+    /// A Team's item hangs under a Feature, and none of the issues on this instance is a Feature Lighthouse
+    /// holds. So an item whose links name several of them has nothing to be placed under, and takes no
+    /// parent from its links: visibly unfinished rather than filed under something it does not belong to.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
@@ -77,31 +75,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                     "The item beside it says exactly one thing about its parent, and there is no reason a neighbour nobody could place should cost it the parent it names.");
                 Assert.That(WhichItemsCameBack(refreshed), Is.EquivalentTo(new[] { TheAmbiguousItem, TheItemWithOneCandidate }),
                     "A refresh that gave up part way leaves a hierarchy that simply stops moving, and the item that could not be placed still has to come back so that what is already stored for it is not lost.");
-            }
-        }
-
-        /// <summary>
-        /// A Portfolio reads its own records and hangs them under their own parents, so the same links can
-        /// leave it with the same unanswerable question. An administrator who runs Portfolios and not Teams
-        /// would otherwise be shown nothing at all.
-        /// </summary>
-        [Test]
-        [Category("retired-by-story-6301-slice-03")]
-        public async Task A_portfolio_refresh_reports_it_the_same_way()
-        {
-            TheParentOverrideNames(TheLinkTypeTheOverrideNames.Name);
-            TheIssueHasLinksOfTheNamedTypeTo(TheAmbiguousItem, OneCandidate, TheOtherCandidate);
-
-            var refreshed = await ThePortfolioIsRefreshed();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(TheParentOf(refreshed, TheAmbiguousItem), Is.Empty,
-                    "Whichever door the refresh came through, the links say two things and the item hangs under one, so there is still nothing to choose between them.");
-                Assert.That(
-                    TheOneWarningNaming(TheAmbiguousItem),
-                    Does.Contain(OneCandidate).And.Contain(TheOtherCandidate),
-                    "An administrator who reaches this through a Portfolio has the same links to go and fix, and needs to be told which they are in the same words.");
             }
         }
 

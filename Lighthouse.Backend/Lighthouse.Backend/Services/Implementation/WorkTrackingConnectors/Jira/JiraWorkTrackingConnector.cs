@@ -298,7 +298,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             foreach (var issue in issues)
             {
-                var workItem = CreateWorkItemFromJiraIssue(issue, team, customFieldReferences).Item;
+                var workItem = CreateWorkItemFromJiraIssue(issue, team, customFieldReferences);
 
                 TrySetParentFromTheFieldTheInstanceHangsItOn(workItem, issue, epicLinkFieldName);
 
@@ -1218,15 +1218,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private async Task<List<Feature>> CreateFeaturesFromIssues(Portfolio portfolio, IEnumerable<Issue> issues)
         {
             var features = new List<Feature>();
-            var itemsAndTheirLinks = new List<AnItemAndWhatItsLinksOffered>();
 
             var customFieldReferences = await GetCustomFieldReferences(portfolio.WorkTrackingSystemConnection);
             var portfolioLinkFieldName = TheFieldTheInstanceHangsParentsOn(portfolio, JiraFieldNames.ParentLinkFieldName);
 
             foreach (var issue in issues)
             {
-                var itemAndItsLinks = CreateWorkItemFromJiraIssue(issue, portfolio, customFieldReferences);
-                var workItem = itemAndItsLinks.Item;
+                var workItem = CreateWorkItemFromJiraIssue(issue, portfolio, customFieldReferences);
                 TrySetParentFromTheFieldTheInstanceHangsItOn(workItem, issue, portfolioLinkFieldName);
 
                 var estimatedSize = GetEstimatedSize(portfolio, workItem);
@@ -1238,11 +1236,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     OwningTeam = owningTeam,
                 };
 
-                itemsAndTheirLinks.Add(itemAndItsLinks);
                 features.Add(feature);
             }
-
-            ReportTheRecordsWhoseLinksNamedMoreThanOneParent(portfolio, itemsAndTheirLinks);
 
             return features;
         }
@@ -1311,38 +1306,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 portfolio.Name,
                 IssueExtensions.BlockedByLinkName,
                 string.Join(", ", namesSeen));
-        }
-
-        /// <summary>
-        /// The records whose links named more than one issue to hang them under. None of them takes a parent
-        /// from its links here: each is stored under whatever Jira itself reports for it, replacing the parent
-        /// it had before, which on screen is indistinguishable from a record nobody ever linked - so
-        /// unless the refresh says which records those were and which issues they named, whoever has to go
-        /// and remove the surplus links has nothing to go on.
-        ///
-        /// One line for the whole refresh, never one per record, and nothing at all when every record's
-        /// links agreed. A bulk edit that went wrong produces these by the hundred, and a hundred repeated
-        /// lines bury the rest of the refresh under them.
-        /// </summary>
-        private void ReportTheRecordsWhoseLinksNamedMoreThanOneParent(
-            Portfolio owner, List<AnItemAndWhatItsLinksOffered> itemsAndTheirLinks)
-        {
-            var recordsAndWhatTheyAreLinkedTo = itemsAndTheirLinks
-                .Where(itemAndItsLinks => itemAndItsLinks.FromTheMatchingLinks.IsAmbiguous)
-                .Select(itemAndItsLinks => $"{itemAndItsLinks.Item.ReferenceId} (linked to {string.Join(", ", itemAndItsLinks.FromTheMatchingLinks.Candidates)})")
-                .ToList();
-
-            if (recordsAndWhatTheyAreLinkedTo.Count == 0)
-            {
-                return;
-            }
-
-            logger.LogWarning(
-                "{OwnerName} has records whose links name more than one issue to hang them under. A record hangs under one "
-                + "thing, so none of them takes a parent from its links; each hangs under whatever Jira itself reports "
-                + "for it, if anything. Each needs its links narrowed down to one: {RecordsAndWhatTheyAreLinkedTo}",
-                owner.Name,
-                string.Join("; ", recordsAndWhatTheyAreLinkedTo));
         }
 
         private static int GetEstimatedSize(Portfolio portfolio, WorkItemBase workItem)
@@ -1630,7 +1593,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return string.Empty;
         }
 
-        private static AnItemAndWhatItsLinksOffered CreateWorkItemFromJiraIssue(Issue issue, IWorkItemQueryOwner workItemQueryOwner, Dictionary<string, ResolvedReference> customFieldReferences)
+        private static WorkItemBase CreateWorkItemFromJiraIssue(Issue issue, IWorkItemQueryOwner workItemQueryOwner, Dictionary<string, ResolvedReference> customFieldReferences)
         {
             var baseAddress = workItemQueryOwner.WorkTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url);
             var url = $"{baseAddress.TrimEnd('/')}/browse/{issue.Key}";
@@ -1660,14 +1623,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var fromTheMatchingLinks = SetTheParentTheOverrideNames(issue, workItemQueryOwner, workItem, customFieldReferences);
             workItem.ParentCandidatesFromLinks = fromTheMatchingLinks.CandidatesWithTheirLinkDates;
 
-            return new AnItemAndWhatItsLinksOffered(workItem, fromTheMatchingLinks);
+            return workItem;
         }
-
-        /// <summary>
-        /// One record as Lighthouse read it, together with the issues its links named as a parent, which the
-        /// Portfolio warning names so that whoever has to remove the surplus links knows where to look.
-        /// </summary>
-        private readonly record struct AnItemAndWhatItsLinksOffered(WorkItemBase Item, ParentResolution FromTheMatchingLinks);
 
         /// <summary>
         /// The parent whatever is named in Parent Override Field points at, when it points at anything.

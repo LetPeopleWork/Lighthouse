@@ -164,22 +164,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         }
 
         /// <summary>
-        /// The other door onto the same instance. A Portfolio fetches its own records and hangs them under
-        /// their own parents, so whatever a Team refresh says about an item nobody could place has to be said
-        /// here too - an administrator who only runs Portfolios would otherwise never be told at all.
-        /// </summary>
-        private async Task<List<Feature>> ThePortfolioIsRefreshed()
-        {
-            var portfolio = JiraConnectorTestSetup.APortfolioOnJiraCloud();
-            WhatTheAdministratorTypedIntoTheOverrideIsSetOn(portfolio);
-
-            var connector = JiraConnectorTestSetup.AConnectorOver(
-                AJiraAnsweringForThatInstance(), whatTheRefreshWroteToTheLog.Object);
-
-            return await connector.GetFeaturesForProject(portfolio, CancellationToken.None);
-        }
-
-        /// <summary>
         /// The same instance, read by the whole running application rather than by a connector a fixture
         /// holds: the scheduled refresh, the work item service, the updater and the refresh log, all
         /// production code over a real database. Only the transport to Jira is faked, exactly as above -
@@ -352,32 +336,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Never,
                 "A warning an administrator cannot act on is one they learn to scroll past, and the next one - about an item that really does have two parents to choose between - goes past with it.");
-
-        /// <summary>
-        /// The warnings a refresh wrote, in the words it wrote them. Moq keeps the arguments of every call it
-        /// saw, and the third of them is the state the formatter turns into the line an administrator reads -
-        /// so this is that line, rather than a description of it that could agree with a message saying
-        /// nothing useful.
-        /// </summary>
-        private List<string> WhatTheRefreshWarnedAbout()
-            => [.. whatTheRefreshWroteToTheLog.Invocations
-                .Where(call => call.Arguments.Count > 2 && Equals(call.Arguments[0], LogLevel.Warning))
-                .Select(call => call.Arguments[2]?.ToString() ?? string.Empty)];
-
-        /// <summary>
-        /// The one warning that names a given item. A Portfolio refresh has other things it may warn about -
-        /// link names that matched nothing, for one - and those are not this scenario's business; what is,
-        /// is that the item nobody could place is spoken of once and not once per link.
-        /// </summary>
-        private string TheOneWarningNaming(string key)
-        {
-            var warnings = WhatTheRefreshWarnedAbout().FindAll(warning => warning.Contains(key, StringComparison.Ordinal));
-
-            Assert.That(warnings, Has.Count.EqualTo(1),
-                $"{key} could not be placed, so the refresh owes exactly one line naming it. The warnings it wrote were: {string.Join(" | ", WhatTheRefreshWarnedAbout())}");
-
-            return warnings[0];
-        }
 
         private static string AnIssue(string key, params string[] links)
             => JiraWireFormat.AnIssueCarrying(key, TheTypeThisInstanceCallsItsWorkItems, string.Empty, links);
