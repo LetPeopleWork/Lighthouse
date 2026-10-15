@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { ReportsListPage } from "./ReportsListPage";
 
 /**
  * One report as a reader sees it. It is ready once the page marks the report itself as read; waiting for
@@ -26,6 +27,16 @@ export class ReportPage {
 
 	async readName(): Promise<string> {
 		return ((await this.title.textContent()) ?? "").trim();
+	}
+
+	/** The breadcrumb's "Reports" leads back to the list; the Reports tab is already selected here. */
+	async backToReports(): Promise<ReportsListPage> {
+		await this.page
+			.getByRole("navigation", { name: "breadcrumb" })
+			.getByRole("link", { name: "Reports", exact: true })
+			.click();
+		await this.page.waitForURL(/\/(teams|portfolios)\/\d+\/reports$/);
+		return new ReportsListPage(this.page).waitUntilReady();
 	}
 
 	panel(title: string): Locator {

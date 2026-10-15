@@ -291,15 +291,27 @@ testWithDemo(
 	},
 );
 
-// The populated overview, illustrating docs/teams/teams.md and docs/portfolios/portfolios.md. It had
-// been a hand-committed PNG with no test behind it, so it could not be regenerated when the top
-// navigation changed. "installation/landingpage.png" is the same page before any data exists.
+// The populated overview, illustrating docs/teams/teams.md and docs/portfolios/portfolios.md.
+// "installation/landingpage.png" is the same page before any data exists. The Team gets three reports
+// so its Reports cell shows what the docs describe: two chips, then "+1 more".
 testWithDemo(
 	"Take @screenshot of the populated overview page",
 	async ({ testData, overviewPage }) => {
 		expect(testData.teams.length).toBeGreaterThan(0);
+		const teamName = testData.teams[0].name;
 
 		await overviewPage.lightHousePage.goToOverview();
+		const team = await overviewPage.goToTeam(teamName);
+		let reports = await team.goToReports();
+		for (const thenDays of [90, 30, 60]) {
+			const report = await reports.createReport({ thenDays });
+			reports = await report.backToReports();
+		}
+
+		await overviewPage.lightHousePage.goToOverview();
+		await expect(overviewPage.teamReportsCell(teamName)).toContainText(
+			"+1 more",
+		);
 
 		await takePageScreenshot(overviewPage.page, "features/overview.png", 3);
 	},
@@ -648,6 +660,53 @@ testWithOldItems(
 			teamEdit.refinementSection,
 			"features/refinement_settings.png",
 		);
+	},
+);
+
+// Lightspeed's history is long enough for a Then that ended weeks ago, so Then and Now cover different
+// days and the report shows real changes rather than "No change" on every line.
+const REPORTING_TEAM = "Team Lightspeed";
+const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
+
+testWithOldItems(
+	"Take @screenshot of the Reports tab and a Then & Now report",
+	async ({ testData, overviewPage }) => {
+		expect(testData.teams.map((team) => team.name)).toContain(REPORTING_TEAM);
+
+		await overviewPage.lightHousePage.goToOverview();
+		const teamDetail = await overviewPage.goToTeam(REPORTING_TEAM);
+		const reports = await teamDetail.goToReports();
+		const report = await reports.createReport({
+			thenEndsOn: new Date(Date.now() - 45 * DAY_IN_MILLISECONDS),
+			thenDays: 30,
+		});
+
+		await expect(report.panel("Cycle Time")).toBeVisible();
+		await takePageScreenshot(
+			teamDetail.page,
+			"features/report_thenandnow.png",
+			3,
+		);
+
+		const name = await report.readName();
+		const list = await report.backToReports();
+		await expect(list.reportLink(name)).toBeVisible();
+		await takePageScreenshot(teamDetail.page, "features/reports.png", 3);
+	},
+);
+
+testWithOldItems(
+	"Take @screenshot of the Create Report wizard",
+	async ({ testData, overviewPage }) => {
+		expect(testData.teams.map((team) => team.name)).toContain(REPORTING_TEAM);
+
+		await overviewPage.lightHousePage.goToOverview();
+		const teamDetail = await overviewPage.goToTeam(REPORTING_TEAM);
+		const reports = await teamDetail.goToReports();
+		await reports.openCreateReport();
+		const wizard = await reports.goToThenStep();
+
+		await takeDialogScreenshot(wizard, "features/report_wizard.png");
 	},
 );
 
