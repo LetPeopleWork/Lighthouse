@@ -623,6 +623,21 @@ sketch review (2026-10-14); D53–D54 the maintainer's decisions after the slice
   column holds a pencil ("Edit report", accessible name "Edit <name>") before the existing bin, for editors only.
   It opens the same Edit report wizard over the list (starting on Now), reading the report first since the list row
   does not carry Then; Save refreshes the list. A report of a type this version cannot show offers only Delete.
+- [D64] **The Overview shows each owner's reports, two at most** (maintainer 2026-10-15, Story #6305 sketch). A
+  "Reports" column on both the Teams and the Portfolios table, after Tags on Teams and after {Deliveries} on
+  Portfolios, before Last Updated; hideable through the column menu like {Deliveries}, shown by default on every
+  width. Each report is an outlined, neutral chip with its name that opens the report. The chips stack vertically.
+- [D65] **Two chips, then "+N more"** (maintainer 2026-10-15). At most two chips per cell; when an owner has more, a
+  small text link "+N more" under them opens the owner's Reports tab. The two shown are the first two by name, A→Z,
+  the Reports tab's own order, so "+N more" carries on where the cell stopped. No reports reads "No Reports".
+- [D66] **The {Deliveries} column follows the same rule** (maintainer 2026-10-15). Its chips stay as they are today;
+  at most two, in the order the server answers, then "+N more" to the {Portfolio}'s {Deliveries} tab.
+- [D67] **Both cells have a loading look and a could-not-load look** (maintainer 2026-10-15). Loading: a small lone
+  spinner in the cell; on a re-read the chips stay, dimmed under the spinner, never shown as current. Could not load:
+  "Couldn't load Reports" / "Couldn't load {Deliveries}" in secondary text, never "No Reports" / "No {Deliveries}".
+  Today's {Deliveries} cell said "No {Deliveries}" for both, and showed it while loading; this fixes that.
+- [D68] **No new usage-data event** (DEVOPS for #6305). `ReportOpened` already counts every opened report wherever the
+  reader came from; where they came from is not an outcome this Epic measures, so no origin property is added.
 
 ---
 
@@ -3835,3 +3850,55 @@ edit carrying Then answered 200 with Then unchanged (DD28, DD25); the edit unive
 "Reports couldn't be loaded. Reload to try again.", "Report types couldn't be loaded.", "Not supported in this
 version", "This report was made by a newer version of Lighthouse and can't be shown here.", "This metric can't be shown
 in this version of Lighthouse.", "and any reports it has".
+
+---
+
+## Story #6305 — Reports and {Deliveries} on the Overview (slice 12)
+
+*Added 2026-10-15. Follows slices 07, 08 and 10; it is part of v1 and the release follows it.*
+
+### Wave: DISCUSS / [REF] US-12
+
+**As** a reader of the Overview page, **I want** to see each {Team}'s and {Portfolio}'s reports beside it, **so that**
+I can jump straight to one without opening the owner first. The same rule tidies the {Deliveries} column, which today
+lists every active {Delivery} and cannot tell "none" from "could not be read".
+
+- AC-12.1 Both tables show a Reports column (D64); each report is a chip with its name that opens that report.
+- AC-12.2 At most two report chips, the first two by name; with more, "+N more" opens the owner's Reports tab (D65).
+- AC-12.3 An owner without reports reads "No Reports".
+- AC-12.4 The {Deliveries} column shows at most two {Deliveries}, then "+N more" opening the {Portfolio}'s
+  {Deliveries} tab (D66); none reads "No {Deliveries}".
+- AC-12.5 While a cell's data is on its way it shows a small spinner; on a re-read the chips stay dimmed under it (D67).
+- AC-12.6 A cell whose data could not be read says "Couldn't load Reports" / "Couldn't load {Deliveries}", never
+  "No …" (D67).
+- AC-12.7 A report created, edited or deleted elsewhere shows on the Overview at the next visit; a late answer for
+  another owner never lands in a row.
+- AC-12.8 {Deliveries}, {Team} and {Portfolio} render as the configured terms; "Reports" is not configurable.
+
+Out: a summary endpoint (one request per row, as {Deliveries} does today; only if it proves slow); sorting or filtering
+by the Reports column; report chips anywhere but the Overview.
+
+RBAC: N/A, because reading reports and {Deliveries} is open to every reader of the Overview and the chips only link to
+pages that keep their own guards. Clients (CLI/MCP): N/A, no API change. Website: N/A, no new marketing surface.
+
+### Wave: DESIGN / [REF] Overview cells
+
+Frontend only; no backend, contract or migration change.
+
+| Surface | Query key | First load | Re-read | Failure | Empty |
+|---|---|---|---|---|---|
+| Reports cell (Teams, Portfolios) | `['reports', ownerKind, ownerId]` — the owner's list key, shared with the Reports tab and the owner delete dialog, so create / edit / delete there already invalidate it | small lone spinner, `aria-busy` | chips dimmed (WidgetShell's 0.4) under the spinner | "Couldn't load Reports" | "No Reports" |
+| {Deliveries} cell (Portfolios) | `['deliveries', 'portfolio', portfolioId]` — new; `DeliveriesChips` moves from `useEffect` + `useState` to TanStack Query | same | same | "Couldn't load {Deliveries}" | "No {Deliveries}" |
+
+- One presentational piece renders "up to two items, then '+N more' to a link" plus the three looks, used by both cells;
+  each cell keeps its own data hook and its own chip. Each cell carries `data-cell-status` (`loading` / `error` /
+  `ready`) for page objects to wait on.
+- The report chips sort by name with `localeCompare`, the way `ReportList` sorts. A report of a type this version cannot
+  show still gets its chip; its page shows its own look.
+- The owner kind comes from the table's `api` ("teams" → team, "portfolios" → portfolio); paths from `reportPathOf`
+  and `reportsPathOf`.
+
+### Wave: DEVOPS / [REF] Story #6305
+
+No pipeline, environment or infrastructure change. Usage data: N/A (D68). Mutation: StrykerJS scoped to the files this
+story changes, after DELIVER, ≥ 80 %.
