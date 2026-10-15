@@ -173,11 +173,6 @@
         "ceiling_seconds": 68
       },
       {
-        "unit": "Lighthouse.Backend.Tests.API.Integration.BehaviourSettings.Story6083HistoryFillOnByDefaultTest",
-        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
-        "ceiling_seconds": 68
-      },
-      {
         "unit": "Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira.JiraWriteBackTest",
         "reason": "calls the live work tracking system over the network; runs only when that connector's code changes",
         "ceiling_seconds": 67
