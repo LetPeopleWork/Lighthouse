@@ -635,6 +635,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        [Test(Description = "ResolveMany on a Data Center Jira resolves a bound Release (date and carried work) instead of reporting it unreadable")]
+        public async Task ResolveMany_on_a_Data_Center_Jira_resolves_a_bound_Release_with_its_date_and_the_work_that_carries_it()
+        {
+            var jira = new FakeJiraDataCenter()
+                .WithProject(TheReleaseProject, "Release coordination")
+                .WithReleaseIn(TheReleaseProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira)
+                .WithWorkOn("LGH-1", TheDatedRelease)
+                .WithWorkOn("LGH-2", TheDatedRelease)
+                .WithWorkOn("LGH-3", "99999");
+
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var resolutions = await subject.ResolveMany(FakeJiraDataCenter.AConnection(), JiraReleaseSourceKey, TheDatedReleaseOnItsOwn);
+
+            var snapshot = SnapshotOf(resolutions[TheDatedRelease]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(snapshot.Name, Is.EqualTo(TheDatedReleaseName));
+                Assert.That(snapshot.Date, Is.EqualTo(TheDayTheDatedReleaseShips));
+                Assert.That(snapshot.MemberReferenceIds, Is.EquivalentTo(TheWorkOnTheDatedRelease),
+                    "a refresh on an on-premise Jira has to find the bound Release through the same routes the picker uses, or every bound Delivery stops syncing.");
+            }
+        }
+
         [Test]
         public async Task Two_requests_in_quick_succession_ask_Jira_once()
         {

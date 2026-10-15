@@ -23,9 +23,11 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     {
         private const string ProjectListPath = "/rest/api/2/project";
         private const string VersionPathPrefix = "/rest/api/2/version/";
+        private const string SearchPath = "/rest/api/latest/search";
 
         private readonly List<FakeProject> projects = [];
         private readonly ConcurrentDictionary<string, FakeVersion> versionsById = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, List<string>> releaseIdsByIssueKey = new(StringComparer.Ordinal);
         private int nextProjectId = 10000;
 
         public FakeJiraDataCenter()
@@ -80,6 +82,20 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public FakeJiraDataCenter WithArchivedReleaseIn(string projectKey, string id, string name, string releaseDate)
             => WithVersionIn(projectKey, id, name, releaseDate, archived: true, released: true);
 
+        /// <summary>Work that carries a Release, as the issue search reports it through the issue's fix versions.</summary>
+        public FakeJiraDataCenter WithWorkOn(string issueKey, string releaseId)
+        {
+            if (!releaseIdsByIssueKey.TryGetValue(issueKey, out var releaseIds))
+            {
+                releaseIds = [];
+                releaseIdsByIssueKey[issueKey] = releaseIds;
+            }
+
+            releaseIds.Add(releaseId);
+
+            return this;
+        }
+
         /// <summary>The description a version carries now, after any write the connector made to it.</summary>
         public string? DescriptionOf(string versionId)
             => versionsById.TryGetValue(versionId, out var version) ? version.Description : null;
@@ -118,6 +134,11 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 return RespondWithVersionsOf(projectKey, uri);
             }
 
+            if (path.EndsWith(SearchPath, StringComparison.Ordinal) && request.Method == HttpMethod.Post)
+            {
+                return RespondToSearch(JiraConnectorTestSetup.BodyOf(request));
+            }
+
             var versionAt = path.IndexOf(VersionPathPrefix, StringComparison.Ordinal);
             if (versionAt >= 0)
             {
@@ -152,6 +173,39 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             return Ok(
                 $"{{\"self\":\"{uri}\",\"maxResults\":{VersionsPerPage},\"startAt\":{startAt},\"total\":{all.Count}," +
                 $"\"isLast\":{Flag(isLast)},\"values\":[{string.Join(",", page.Select(version => VersionJson(version, uri)))}]}}");
+        }
+
+        /// <summary>
+        /// Data Center's issue search: the query arrives in a JSON body and the answer is offset paged. Only
+        /// a "fixVersion in (...)" query is understood, which is the one a Release refresh asks.
+        /// </summary>
+        private HttpResponseMessage RespondToSearch(string body)
+        {
+            using var payload = JsonDocument.Parse(body);
+            var jql = payload.RootElement.GetProperty("jql").GetString() ?? string.Empty;
+            var startAt = payload.RootElement.TryGetProperty("startAt", out var start) ? start.GetInt32() : 0;
+
+            var opening = jql.IndexOf('(', StringComparison.Ordinal);
+            var closing = jql.IndexOf(')', StringComparison.Ordinal);
+            HashSet<string> askedAbout = opening < 0 || closing < opening
+                ? []
+                : [.. jql[(opening + 1)..closing].Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)];
+
+            var matching = releaseIdsByIssueKey
+                .Where(work => work.Value.Exists(askedAbout.Contains))
+                .OrderBy(work => work.Key, StringComparer.Ordinal)
+                .ToList();
+
+            var issues = matching.Skip(startAt).Select(work => IssueJson(work.Key, work.Value));
+
+            return Ok($"{{\"startAt\":{startAt},\"maxResults\":50,\"total\":{matching.Count},\"issues\":[{string.Join(",", issues)}]}}");
+        }
+
+        private static string IssueJson(string issueKey, IEnumerable<string> releaseIds)
+        {
+            var fixVersions = string.Join(",", releaseIds.Select(id => $"{{\"id\":\"{id}\"}}"));
+
+            return $"{{\"key\":\"{issueKey}\",\"fields\":{{\"fixVersions\":[{fixVersions}]}}}}";
         }
 
         private HttpResponseMessage RespondToVersion(HttpRequestMessage request, string versionId)

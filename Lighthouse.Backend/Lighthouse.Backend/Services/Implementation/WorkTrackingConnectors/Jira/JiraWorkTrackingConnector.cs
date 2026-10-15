@@ -2758,6 +2758,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return DeploymentCache.TryGetValue(baseUrl, out deployment);
         }
 
+        /// <summary>
+        /// Only an answer is remembered. A check that failed has said nothing about the instance, so the next
+        /// call asks again rather than routing as if the instance could never be identified.
+        /// </summary>
         private async Task<JiraDeployment> GetDeploymentType(HttpClient client, WorkTrackingSystemConnection connection)
         {
             if (TryResolveKnownDeployment(connection, out var known))
@@ -2776,7 +2780,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 if (!response.IsSuccessStatusCode)
                 {
                     logger.LogDebug("Could not determine deployment type");
-                    DeploymentCache[baseUrl] = JiraDeployment.Unknown;
                     return JiraDeployment.Unknown;
                 }
 
@@ -2796,7 +2799,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
             catch
             {
-                DeploymentCache[baseUrl] = JiraDeployment.Unknown;
                 return JiraDeployment.Unknown;
             }
         }
@@ -3336,7 +3338,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             RejectSourceTheConnectionDoesNotOffer(publication.SourceKey);
 
             var client = await GetJiraRestClientAsync(connection);
-            var versionUrl = $"rest/api/3/version/{Uri.EscapeDataString(publication.SourceReference)}";
+            var deployment = await GetDeploymentType(client, connection);
+            var apiVersion = deployment == JiraDeployment.Cloud ? 3 : 2;
+            var versionUrl = $"rest/api/{apiVersion}/version/{Uri.EscapeDataString(publication.SourceReference)}";
 
             var read = await client.GetAsync(versionUrl);
 

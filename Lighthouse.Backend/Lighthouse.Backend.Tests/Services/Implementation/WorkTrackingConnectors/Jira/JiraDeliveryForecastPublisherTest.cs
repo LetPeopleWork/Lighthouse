@@ -96,7 +96,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        [Test]
+        [Test(Description = "PublishAsync on Cloud still writes rest/api/3/version/{id}")]
         public async Task The_forecast_is_written_to_the_Release_named_and_to_nothing_else()
         {
             var jira = AJiraHoldingAReleaseWithNoDescription();
@@ -104,6 +104,45 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             await Publish(jira, TheBlock);
 
             Assert.That(jira.Writes, Is.EqualTo(new[] { $"rest/api/3/version/{TheRelease}" }));
+        }
+
+        [Test(Description = "PublishAsync on a Data Center Jira reads and writes rest/api/2/version/{id}")]
+        public async Task On_a_Data_Center_Jira_the_forecast_is_read_from_and_written_to_the_Release()
+        {
+            var jira = new FakeJiraDataCenter()
+                .WithProject("REL", "Release coordination")
+                .WithReleaseIn("REL", TheRelease, "2026 Q4", "2026-10-01");
+
+            var connector = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var result = await connector.PublishAsync(
+                FakeJiraDataCenter.AConnection(), new DeliveryForecastPublication(JiraReleaseSourceKey, TheRelease, TheBlock));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.TypeOf<DeliveryForecastPublishResult.Published>(),
+                    "Data Center has no rest/api/3, so a publish that only knows Cloud's route reports every on-premise Release as gone.");
+                Assert.That(jira.DescriptionOf(TheRelease), Is.EqualTo(TheBlock));
+                Assert.That(jira.VersionWrites.Select(write => write.VersionId), Is.EqualTo(new[] { TheRelease }));
+                Assert.That(jira.Requests.Select(uri => uri.AbsolutePath), Does.Contain($"/rest/api/2/version/{TheRelease}"));
+            }
+        }
+
+        /// <summary>
+        /// A deployment check that failed has said nothing about what the instance is. Remembering it as
+        /// unknown would route every later call as if the instance could never be identified, so the next
+        /// call asks again and goes where the answer sends it.
+        /// </summary>
+        [Test(Description = "When serverInfo fails once and then answers, the next call routes by the deployment it answered")]
+        public async Task A_deployment_check_that_failed_is_asked_again_on_the_next_publish()
+        {
+            var jira = AJiraHoldingAReleaseWithNoDescription();
+            jira.FailDeploymentChecks(1);
+
+            await Publish(jira, TheBlock);
+            await Publish(jira, ASecondBlock);
+
+            Assert.That(jira.Writes, Is.EqualTo(new[] { $"rest/api/2/version/{TheRelease}", $"rest/api/3/version/{TheRelease}" }),
+                "the first publish could not tell what the instance is and takes the route every deployment serves; the second is told Cloud and takes Cloud's.");
         }
 
         /// <summary>
@@ -391,6 +430,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             private string readBody = string.Empty;
             private HttpStatusCode writeStatus = HttpStatusCode.OK;
             private string writeBody = "{}";
+            private int deploymentChecksToFail;
 
             public FakeJira(string? description)
             {
@@ -422,6 +462,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             public void ForgetWhatWasWritten() => Writes.Clear();
 
+            /// <summary>The next few questions about which kind of Jira this is go unanswered, after which it says Cloud.</summary>
+            public void FailDeploymentChecks(int count) => deploymentChecksToFail = count;
+
             /// <summary>A version body of the fixture's choosing, for shapes the happy path never makes.</summary>
             public void AnswerReadsWith(string versionBody) => versionBodyToAnswerWith = versionBody;
 
@@ -434,6 +477,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             private HttpResponseMessage Answer(HttpRequestMessage request)
             {
                 var path = request.RequestUri!.AbsolutePath.TrimStart('/');
+
+                if (path.EndsWith("rest/api/2/serverInfo", StringComparison.Ordinal))
+                {
+                    return deploymentChecksToFail-- > 0
+                        ? Respond(HttpStatusCode.ServiceUnavailable, "{}")
+                        : Respond(HttpStatusCode.OK, "{\"deploymentType\":\"Cloud\"}");
+                }
 
                 if (request.Method == HttpMethod.Put)
                 {
