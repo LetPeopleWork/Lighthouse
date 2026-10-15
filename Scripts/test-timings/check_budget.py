@@ -36,51 +36,12 @@ DEFAULT_ALLOWLIST = HERE / "test-time-budget.json"
 DEFAULT_BACKEND_SOURCE_ROOT = REPOSITORY_ROOT / "Lighthouse.Backend" / "Lighthouse.Backend.Tests"
 
 
-def _build_arg_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="Check a test-timings CSV against the per-file / per-class time budget."
-    )
-    parser.add_argument(
-        "--stack",
-        choices=("frontend", "backend"),
-        required=True,
-        help="Which suite the CSV came from: frontend sums per file, backend per class.",
-    )
-    parser.add_argument(
-        "--csv",
-        type=Path,
-        required=True,
-        help="test-timings-frontend.csv or test-timings-backend.csv.",
-    )
-    parser.add_argument(
-        "--allowlist",
-        type=Path,
-        default=DEFAULT_ALLOWLIST,
-        help="Budget and allowlist file (default: test-time-budget.json beside this script).",
-    )
-    parser.add_argument(
-        "--source-root",
-        type=Path,
-        default=DEFAULT_BACKEND_SOURCE_ROOT,
-        help="Backend test source tree an allowlisted class must still be declared in.",
-    )
-    parser.add_argument(
-        "--warn-only",
-        action="store_true",
-        help="Report a unit over its budget or ceiling as a warning and pass. "
-        "A missing or malformed input still fails.",
-    )
-    return parser
-
-
-UNIT_COLUMN = {
-    "frontend": vitest_to_csv.CSV_COLUMNS[0],
-    "backend": trx_to_csv.CSV_COLUMNS[0],
+COLUMNS = {
+    "frontend": vitest_to_csv.CSV_COLUMNS,
+    "backend": trx_to_csv.CSV_COLUMNS,
 }
-DURATION_COLUMN = {
-    "frontend": vitest_to_csv.CSV_COLUMNS[2],
-    "backend": trx_to_csv.CSV_COLUMNS[2],
-}
+UNIT_COLUMN = {stack: columns[0] for stack, columns in COLUMNS.items()}
+DURATION_COLUMN = {stack: columns[2] for stack, columns in COLUMNS.items()}
 
 
 @dataclass(frozen=True)
@@ -174,7 +135,7 @@ def escaped(text: str) -> str:
     return text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
 
 
-def annotation(finding: Finding, allowlist_name: str, kind: str = "error") -> str:
+def breach_annotation(finding: Finding, allowlist_name: str, kind: str) -> str:
     return (
         f"::{kind}::{escaped(finding.unit)} took {finding.seconds:.1f}s, "
         f"over the {finding.limit}s {finding.limit_kind} set in {allowlist_name}"
@@ -198,7 +159,7 @@ def load_timings(stack: str, path: Path) -> list[dict[str, str]]:
             rows = list(reader)
     except (OSError, UnicodeDecodeError, csv.Error) as error:
         raise CannotJudge(f"{name} cannot be read: {_reason(error)}") from error
-    expected_columns = vitest_to_csv.CSV_COLUMNS if stack == "frontend" else trx_to_csv.CSV_COLUMNS
+    expected_columns = COLUMNS[stack]
     if columns is None:
         raise CannotJudge(f"{name} is empty")
     if tuple(columns) != expected_columns:
@@ -270,6 +231,43 @@ def _reason(error: Exception) -> str:
     return escaped(error.strerror if isinstance(error, OSError) and error.strerror else str(error))
 
 
+def _build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Check a test-timings CSV against the per-file / per-class time budget."
+    )
+    parser.add_argument(
+        "--stack",
+        choices=tuple(COLUMNS),
+        required=True,
+        help="Which suite the CSV came from: frontend sums per file, backend per class.",
+    )
+    parser.add_argument(
+        "--csv",
+        type=Path,
+        required=True,
+        help="test-timings-frontend.csv or test-timings-backend.csv.",
+    )
+    parser.add_argument(
+        "--allowlist",
+        type=Path,
+        default=DEFAULT_ALLOWLIST,
+        help="Budget and allowlist file (default: test-time-budget.json beside this script).",
+    )
+    parser.add_argument(
+        "--source-root",
+        type=Path,
+        default=DEFAULT_BACKEND_SOURCE_ROOT,
+        help="Backend test source tree an allowlisted class must still be declared in.",
+    )
+    parser.add_argument(
+        "--warn-only",
+        action="store_true",
+        help="Report a unit over its budget or ceiling as a warning and pass. "
+        "A missing or malformed input still fails.",
+    )
+    return parser
+
+
 def main(argv: list[str] | None = None) -> int:
     arguments = _build_arg_parser().parse_args(argv)
     try:
@@ -280,31 +278,33 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _check(arguments: argparse.Namespace) -> int:
-    rows = load_timings(arguments.stack, arguments.csv)
-    budget_seconds, ceilings = load_allowlist(arguments.stack, arguments.allowlist)
-    if arguments.stack == "backend" and not arguments.source_root.is_dir():
+    stack, allowlist_name = arguments.stack, arguments.allowlist.name
+    rows = load_timings(stack, arguments.csv)
+    budget_seconds, ceilings = load_allowlist(stack, arguments.allowlist)
+    if stack == "backend" and not arguments.source_root.is_dir():
         raise CannotJudge(
             f"the backend test source folder {escaped(str(arguments.source_root))} does not exist"
         )
 
-    findings = judge(arguments.stack, rows, budget_seconds, ceilings)
-    stale = stale_entries(list(ceilings), _still_present(arguments, rows, ceilings))
+    findings = judge(stack, rows, budget_seconds, ceilings)
+    still_present = _still_present(stack, rows, arguments.source_root, ceilings)
+    stale = stale_entries(list(ceilings), still_present)
     kind = "warning" if arguments.warn_only else "error"
     for finding in findings:
-        print(annotation(finding, arguments.allowlist.name, kind))
+        print(breach_annotation(finding, allowlist_name, kind))
     for unit in stale:
-        print(stale_annotation(arguments.stack, unit, arguments.allowlist.name))
+        print(stale_annotation(stack, unit, allowlist_name))
     breached = bool(findings) and not arguments.warn_only
     return 1 if breached or stale else 0
 
 
 def _still_present(
-    arguments: argparse.Namespace, rows: list[dict[str, str]], ceilings: dict[str, Decimal]
+    stack: str, rows: list[dict[str, str]], source_root: Path, ceilings: dict[str, Decimal]
 ) -> set[str]:
-    if arguments.stack == "frontend":
-        return set(seconds_per_unit("frontend", rows))
+    if stack == "frontend":
+        return set(seconds_per_unit(stack, rows))
     # Only the test source decides: a backend class may be filtered out of a run and still be alive.
-    return declared_classes(arguments.source_root) if ceilings else set()
+    return declared_classes(source_root) if ceilings else set()
 
 
 if __name__ == "__main__":

@@ -35,6 +35,7 @@ class CheckWorkspace:
         self.allowlist = root / ALLOWLIST_NAME
         self.source_root = root / "Lighthouse.Backend.Tests"
         self.source_root.mkdir()
+        self.frontend_root = root / "Lighthouse.Frontend"
 
     def frontend_timings(self, seconds_per_test_by_file):
         rows = [
@@ -108,23 +109,17 @@ class CheckWorkspace:
         )
 
     def convert_vitest_report(self, report):
-        frontend_root = self.root / "Lighthouse.Frontend"
         report_path = self.root / "test-results.json"
         report_path.write_text(json.dumps(report), encoding="utf-8")
         output = self.root / "test-timings-frontend.csv"
-        subprocess.run(
-            [
-                sys.executable,
-                str(VITEST_TO_CSV),
-                "--input",
-                str(report_path),
-                "--source-root",
-                str(frontend_root),
-                "--output",
-                str(output),
-            ],
-            check=True,
-            timeout=60,
+        self._convert(
+            VITEST_TO_CSV,
+            "--input",
+            str(report_path),
+            "--source-root",
+            str(self.frontend_root),
+            "--output",
+            str(output),
         )
         return output
 
@@ -132,19 +127,12 @@ class CheckWorkspace:
         trx_path = self.root / "backend.trx"
         trx_path.write_text(trx_content, encoding="utf-8")
         output = self.root / "test-timings-backend.csv"
-        subprocess.run(
-            [
-                sys.executable,
-                str(TRX_TO_CSV),
-                "--trx",
-                str(trx_path),
-                "--output",
-                str(output),
-            ],
-            check=True,
-            timeout=60,
-        )
+        self._convert(TRX_TO_CSV, "--trx", str(trx_path), "--output", str(output))
         return output
+
+    @staticmethod
+    def _convert(converter, *arguments):
+        subprocess.run([sys.executable, str(converter), *arguments], check=True, timeout=60)
 
     def snapshot(self):
         return {
@@ -164,9 +152,7 @@ class CheckWorkspace:
 
 class BudgetCheckTestCase(unittest.TestCase):
     def setUp(self):
-        folder = tempfile.TemporaryDirectory()
-        self.addCleanup(folder.cleanup)
-        self.workspace = CheckWorkspace(Path(folder.name))
+        self.workspace = self.fresh_workspace()
 
     def fresh_workspace(self):
         folder = tempfile.TemporaryDirectory()
@@ -681,7 +667,7 @@ class ABackendClassIsJudgedOnTheSumOfItsTests(BudgetCheckTestCase):
 
 class TheCheckJudgesWhatTheConvertersWrite(BudgetCheckTestCase):
     def test_a_frontend_timing_file_written_by_the_vitest_converter_is_judged_end_to_end(self):
-        frontend_root = self.workspace.root / "Lighthouse.Frontend"
+        frontend_root = self.workspace.frontend_root
         report = {
             "testResults": [
                 {
