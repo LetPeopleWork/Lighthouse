@@ -3953,7 +3953,10 @@ Pinned for the crafter: the grid fields `reports` and `deliveries`; `[data-cell-
 `ready`, with `aria-busy="true"` and a `progressbar` while loading; on a re-read the nearest box between a chip and its
 cell is drawn at opacity 0.4, WidgetShell's value; the Deliveries key `['deliveries', 'portfolio', id]` and the owner
 list key `reportsQueryKeyOf`. Hideability (#3) relies on DataGridBase's `hideable` flag and the existing Manage columns
-menu; only the Reports column is pinned, the Deliveries column keeps its existing behaviour.
+menu; only the Reports column is pinned, the Deliveries column keeps its existing behaviour. "Shown by default on
+every width" is DataGridBase's default for any column not hidden in its initial state and is not pinned per column.
+Review gate: conditionally approved on the second round (2026-10-15); DELIVER confirms the dimming and hide-column
+cases fail for the right reason when it un-skips them.
 
 Revised, not pending, in `DeliveriesChips.test.tsx`: "should handle API errors silently and show no deliveries" is
 removed because D67 contradicts it (#27 covers the failure at the table), and the colour case now shows two Deliveries

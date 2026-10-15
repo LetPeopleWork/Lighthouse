@@ -2161,7 +2161,8 @@
           "files_to_modify": [
             "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DeliveriesChips.tsx",
             "Lighthouse.Frontend/src/components/Common/DataOverviewTable/OverviewCellChips.tsx",
-            "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.reportsAndDeliveries.test.tsx"
+            "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.reportsAndDeliveries.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DeliveriesChips.test.tsx"
           ],
           "dependencies": [
             "10-05"
