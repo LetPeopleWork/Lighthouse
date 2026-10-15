@@ -144,6 +144,7 @@ export class WorkTrackingSystemService
 			),
 			requiresReconnect: workTrackingSystemConnection.requiresReconnect,
 			concurrencyToken: workTrackingSystemConnection.concurrencyToken,
+			usedBy: workTrackingSystemConnection.usedBy,
 		});
 	}
 

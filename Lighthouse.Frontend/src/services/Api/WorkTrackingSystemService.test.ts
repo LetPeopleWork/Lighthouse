@@ -697,7 +697,7 @@ describe("WorkTrackingSystemService", () => {
 		};
 
 		// @us-02 @driving_port @contract-shape:pure-function
-		it.skip("keeps how many Teams and Portfolios use each connection from the list of connections", async () => {
+		it("keeps how many Teams and Portfolios use each connection from the list of connections", async () => {
 			mockedAxios.get.mockResolvedValueOnce({
 				data: [{ ...nordwindJiraDc, usedBy: { teams: 4, portfolios: 2 } }],
 			});

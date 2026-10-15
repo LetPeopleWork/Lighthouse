@@ -1398,6 +1398,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
             builder.Services.AddScoped<IEmbedSessionTokenService, EmbedSessionTokenService>();
             builder.Services.AddScoped<IFileSystemService, FileSystemService>();
+            builder.Services.AddScoped<IWorkTrackingSystemConnectionUsage, WorkTrackingSystemConnectionUsage>();
             builder.Services.AddScoped<IAppSettingService, AppSettingService>();
             builder.Services.AddScoped<ILighthouseReleaseService, LighthouseReleaseService>();
             builder.Services.AddScoped<IAssemblyService, AssemblyService>();

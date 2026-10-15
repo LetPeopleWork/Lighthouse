@@ -27,9 +27,10 @@ namespace Lighthouse.Backend.API
         private readonly ICryptoService cryptoService;
         private readonly ILicenseService licenseService;
         private readonly IRepository<OAuthCredential> oAuthCredentialRepository;
+        private readonly IWorkTrackingSystemConnectionUsage connectionUsage;
 
         public WorkTrackingSystemConnectionsController(
-            IWorkTrackingSystemFactory workTrackingSystemFactory, IRepository<WorkTrackingSystemConnection> repository, IWorkTrackingConnectorFactory workTrackingConnectorFactory, ICryptoService cryptoService, ILicenseService licenseService, IRepository<OAuthCredential> oAuthCredentialRepository)
+            IWorkTrackingSystemFactory workTrackingSystemFactory, IRepository<WorkTrackingSystemConnection> repository, IWorkTrackingConnectorFactory workTrackingConnectorFactory, ICryptoService cryptoService, ILicenseService licenseService, IRepository<OAuthCredential> oAuthCredentialRepository, IWorkTrackingSystemConnectionUsage connectionUsage)
         {
             this.workTrackingSystemFactory = workTrackingSystemFactory;
             this.repository = repository;
@@ -37,6 +38,7 @@ namespace Lighthouse.Backend.API
             this.cryptoService = cryptoService;
             this.licenseService = licenseService;
             this.oAuthCredentialRepository = oAuthCredentialRepository;
+            this.connectionUsage = connectionUsage;
         }
 
         [HttpGet("supported")]
@@ -60,11 +62,13 @@ namespace Lighthouse.Backend.API
             var credentialsByConnectionId = oAuthCredentialRepository
                 .GetAll()
                 .ToDictionary(c => c.WorkTrackingSystemConnectionId);
+            var usageByConnectionId = connectionUsage.ByConnection();
 
             var connectionDtos = existingConnections.Select(c =>
             {
                 credentialsByConnectionId.TryGetValue(c.Id, out var credential);
-                return new WorkTrackingSystemConnectionDto(c, credential, cryptoService);
+                return new WorkTrackingSystemConnectionDto(c, credential, cryptoService)
+                    .UsedByAsListed(usageByConnectionId.GetValueOrDefault(c.Id, ConnectionUsage.Unused));
             });
             return Ok(connectionDtos);
         }

@@ -195,7 +195,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(PropertyNames(connection), Is.EquivalentTo(ConnectionPropertiesToday));
+                Assert.That(PropertyNames(connection), Is.EquivalentTo(ConnectionPropertiesToday.Append("usedBy")));
                 Assert.That(PropertyNames(option), Is.EquivalentTo(OptionPropertiesToday.Append("secretState")));
             }
         }

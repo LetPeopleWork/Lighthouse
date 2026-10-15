@@ -348,7 +348,7 @@ describe("Story #6307 - changing a connection's Additional Fields asks whether t
 
 	describe("slice 02 - the question before the save", () => {
 		// @walking_skeleton @driving_port @us-02 @contract-shape:bounded-change
-		it.skip(`${Pending}: adding a field and pressing Save asks whether to update the 4 Teams and 2 Portfolios on the connection`, async () => {
+		it("adding a field and pressing Save asks whether to update the 4 Teams and 2 Portfolios on the connection", async () => {
 			const server = await givenPriyaOpensNordwindJiraDc();
 
 			await whenPriyaAddsFixVersions();

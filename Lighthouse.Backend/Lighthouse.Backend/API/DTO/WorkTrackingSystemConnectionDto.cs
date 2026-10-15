@@ -79,5 +79,16 @@ namespace Lighthouse.Backend.API.DTO
         public bool? RequiresReconnect { get; set; }
 
         public Guid? ConcurrencyToken { get; set; }
+
+        // Only the list of connections says who uses each one. The setter is private so a saved body that
+        // still carries the counts it was read with cannot bind them back.
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public ConnectionUsage? UsedBy { get; private set; }
+
+        public WorkTrackingSystemConnectionDto UsedByAsListed(ConnectionUsage usage)
+        {
+            UsedBy = usage;
+            return this;
+        }
     }
 }

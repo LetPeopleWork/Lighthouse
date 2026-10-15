@@ -8,8 +8,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
     /// </summary>
     public partial class Slice02ConnectionsSayWhoUsesThemTest : ConnectionFieldChangeAcceptanceTest
     {
-        private const string Pending = "Story #6307 - pending DELIVER: the connection list says how many Teams and Portfolios use each connection.";
-
         private Task<JsonObject> WhenPriyaOpensTheConnectionPage(string connection) => TheConnectionAsThePageReadsIt(connection);
 
         private static void ThenTheConnectionIsUsedBy(JsonObject read, int teams, int portfolios)

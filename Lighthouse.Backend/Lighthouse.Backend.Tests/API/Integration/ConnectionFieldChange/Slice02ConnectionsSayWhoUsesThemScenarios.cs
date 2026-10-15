@@ -19,7 +19,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
         [Category("us-02")]
         [Category("driving_port")]
         [Category("contract-shape:pure-function")]
-        [Ignore(Pending)]
         public async Task The_connection_list_says_how_many_Teams_and_Portfolios_use_each_connection(string connection, int teams, int portfolios)
         {
             await GivenNordwindsConnectionsTeamsAndPortfolios();

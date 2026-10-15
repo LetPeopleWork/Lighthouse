@@ -36,6 +36,12 @@ export interface IAuthenticationMethod {
 	isPremium?: boolean;
 }
 
+/** How many Teams and Portfolios read through a connection. Absent means nobody does. */
+export interface IConnectionUsage {
+	teams: number;
+	portfolios: number;
+}
+
 export interface IWorkTrackingSystemConnection {
 	workTrackingSystemGetDataRetrievalDisplayName(): string;
 	id: number | null;
@@ -49,6 +55,7 @@ export interface IWorkTrackingSystemConnection {
 	writeBackMappingDefinitions: IWriteBackMappingDefinition[];
 	requiresReconnect?: boolean;
 	concurrencyToken?: string;
+	usedBy?: IConnectionUsage;
 }
 
 export class WorkTrackingSystemConnection
@@ -65,6 +72,7 @@ export class WorkTrackingSystemConnection
 	writeBackMappingDefinitions: IWriteBackMappingDefinition[];
 	requiresReconnect?: boolean;
 	concurrencyToken?: string;
+	usedBy?: IConnectionUsage;
 
 	constructor(data: {
 		name: string;
@@ -78,6 +86,7 @@ export class WorkTrackingSystemConnection
 		writeBackMappingDefinitions?: IWriteBackMappingDefinition[];
 		requiresReconnect?: boolean;
 		concurrencyToken?: string;
+		usedBy?: IConnectionUsage;
 	}) {
 		this.id = data.id ?? null;
 		this.name = data.name;
@@ -90,6 +99,7 @@ export class WorkTrackingSystemConnection
 		this.writeBackMappingDefinitions = data.writeBackMappingDefinitions ?? [];
 		this.requiresReconnect = data.requiresReconnect;
 		this.concurrencyToken = data.concurrencyToken;
+		this.usedBy = data.usedBy;
 	}
 
 	workTrackingSystemGetDataRetrievalDisplayName(): string {

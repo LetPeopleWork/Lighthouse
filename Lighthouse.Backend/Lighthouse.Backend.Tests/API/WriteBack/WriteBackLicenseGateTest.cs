@@ -118,7 +118,10 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
         private WorkTrackingSystemConnectionsController CreateSubject()
         {
             return new WorkTrackingSystemConnectionsController(
-                workTrackingSystemsFactoryMock.Object, repositoryMock.Object, workTrackingConnectorFactoryMock.Object, cryptoServiceMock.Object, licenseServiceMock.Object, oAuthCredentialRepositoryMock.Object);
+                workTrackingSystemsFactoryMock.Object, repositoryMock.Object, workTrackingConnectorFactoryMock.Object, cryptoServiceMock.Object, licenseServiceMock.Object, oAuthCredentialRepositoryMock.Object, NobodyUsesAnyConnection());
         }
+
+        private static IWorkTrackingSystemConnectionUsage NobodyUsesAnyConnection()
+            => Mock.Of<IWorkTrackingSystemConnectionUsage>(usage => usage.ByConnection() == new Dictionary<int, ConnectionUsage>());
     }
 }

@@ -1,6 +1,12 @@
 import {
 	Alert,
+	Button,
 	Container,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogContentText,
+	DialogTitle,
 	FormControl,
 	InputLabel,
 	Link,
@@ -12,7 +18,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { Link as RouterLink } from "react-router";
 import { useBaseUrl } from "../../../hooks/useBaseUrl";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
@@ -21,6 +27,7 @@ import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/Ad
 import type { IConnectionValidationResult } from "../../../models/WorkTracking/ConnectionValidationResult";
 import type {
 	IAuthenticationMethod,
+	IConnectionUsage,
 	IWorkTrackingSystemConnection,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import {
@@ -101,6 +108,73 @@ function resolveValidationErrorMessage(
 	};
 }
 
+// A field is what it is called and where it is read from; its id and its place in the list say nothing
+// about what the Teams and Portfolios will load.
+const whatTheFieldsLoad = (fields: IAdditionalFieldDefinition[]): string =>
+	fields
+		.map((field) => JSON.stringify([field.displayName, field.reference]))
+		.sort((a, b) => a.localeCompare(b))
+		.join("\n");
+
+const fieldsChangedSince = (
+	loaded: IAdditionalFieldDefinition[],
+	current: IAdditionalFieldDefinition[],
+): boolean => whatTheFieldsLoad(loaded) !== whatTheFieldsLoad(current);
+
+const NOBODY: IConnectionUsage = { teams: 0, portfolios: 0 };
+
+const isUsed = (usage: IConnectionUsage): boolean =>
+	usage.teams + usage.portfolios > 0;
+
+interface UpdateQuestionProps {
+	open: boolean;
+	usage: IConnectionUsage;
+	onUpdate: () => void;
+	onCancel: () => void;
+}
+
+const UpdateQuestion: React.FC<UpdateQuestionProps> = ({
+	open,
+	usage,
+	onUpdate,
+	onCancel,
+}) => {
+	const titleId = useId();
+	const descriptionId = useId();
+	const { getTerm } = useTerminology();
+	const team = getTerm(TERMINOLOGY_KEYS.TEAM);
+	const portfolio = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
+	const teams = usage.teams === 1 ? team : getTerm(TERMINOLOGY_KEYS.TEAMS);
+	const portfolios =
+		usage.portfolios === 1 ? portfolio : getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
+
+	return (
+		<Dialog
+			open={open}
+			onClose={onCancel}
+			aria-labelledby={titleId}
+			aria-describedby={descriptionId}
+		>
+			<DialogTitle id={titleId}>
+				{`Update ${usage.teams} ${teams} and ${usage.portfolios} ${portfolios}?`}
+			</DialogTitle>
+			<DialogContent>
+				<DialogContentText id={descriptionId}>
+					{`You changed the Additional Fields. Their values only fill in once each ${team} and ${portfolio} on this connection has been updated.`}
+				</DialogContentText>
+			</DialogContent>
+			<DialogActions>
+				<Button onClick={onCancel} color="primary">
+					Cancel
+				</Button>
+				<Button onClick={onUpdate} color="primary" autoFocus>
+					Save and update
+				</Button>
+			</DialogActions>
+		</Dialog>
+	);
+};
+
 interface ModifyConnectionSettingsProps {
 	title: string;
 	getSupportedSystems: () => Promise<IWorkTrackingSystemConnection[]>;
@@ -151,6 +225,12 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	const [isEditMode, setIsEditMode] = useState(false);
 	const [inputsValid, setInputsValid] = useState(false);
 	const [fieldsModified, setFieldsModified] = useState(false);
+	const [loadedFields, setLoadedFields] = useState<
+		IAdditionalFieldDefinition[]
+	>([]);
+	const [usage, setUsage] = useState<IConnectionUsage>(NOBODY);
+	const [connectionAwaitingAnswer, setConnectionAwaitingAnswer] =
+		useState<IWorkTrackingSystemConnection | null>(null);
 	const [validationErrorMessage, setValidationErrorMessage] = useState<
 		string | null
 	>(null);
@@ -261,6 +341,8 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 					setAdditionalFields(
 						existingConnection.additionalFieldDefinitions ?? [],
 					);
+					setLoadedFields(existingConnection.additionalFieldDefinitions ?? []);
+					setUsage(existingConnection.usedBy ?? NOBODY);
 					setWriteBackMappings(
 						existingConnection.writeBackMappingDefinitions ?? [],
 					);
@@ -461,19 +543,40 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 				return;
 			}
 
-			try {
-				await saveConnectionSettings(connection);
-			} catch (error_) {
-				if (
-					error_ instanceof ApiError &&
-					error_.code === CONCURRENCY_CONFLICT_STATUS
-				) {
-					setValidationErrorMessage(CONCURRENCY_CONFLICT_COPY);
-					setValidationTechnicalDetails(null);
-					return;
-				}
-				throw error_;
+			if (
+				isEditMode &&
+				isUsed(usage) &&
+				fieldsChangedSince(loadedFields, additionalFields)
+			) {
+				setConnectionAwaitingAnswer(connection);
+				return;
 			}
+
+			await save(connection);
+		}
+	};
+
+	const save = async (connection: IWorkTrackingSystemConnection) => {
+		try {
+			await saveConnectionSettings(connection);
+		} catch (error_) {
+			if (
+				error_ instanceof ApiError &&
+				error_.code === CONCURRENCY_CONFLICT_STATUS
+			) {
+				setValidationErrorMessage(CONCURRENCY_CONFLICT_COPY);
+				setValidationTechnicalDetails(null);
+				return;
+			}
+			throw error_;
+		}
+	};
+
+	const saveAndUpdate = async () => {
+		const connection = connectionAwaitingAnswer;
+		setConnectionAwaitingAnswer(null);
+		if (connection) {
+			await save(connection);
 		}
 	};
 
@@ -757,6 +860,12 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 						/>
 					</Grid>
 				</Grid>
+				<UpdateQuestion
+					open={connectionAwaitingAnswer !== null}
+					usage={usage}
+					onUpdate={saveAndUpdate}
+					onCancel={() => setConnectionAwaitingAnswer(null)}
+				/>
 			</Container>
 		</LoadingAnimation>
 	);
