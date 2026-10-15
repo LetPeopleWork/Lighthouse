@@ -1,8 +1,12 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { BrowserRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
+import { aReportList, aReportService } from "../../../tests/ReportsTestKit";
 import DataOverviewTable from "./DataOverviewTable";
 
 const mockNavigate = vi.fn();
@@ -44,8 +48,24 @@ beforeEach(() => {
 	});
 });
 
+// Every row reads its owner's reports, and a Portfolio row its Deliveries, so the table needs the
+// query cache and the services even where a test looks at neither.
 const renderWithRouter = (ui: React.ReactNode) => {
-	return render(<BrowserRouter>{ui}</BrowserRouter>);
+	const queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+	const services = createMockApiServiceContext({
+		reportService: aReportService({
+			getReports: vi.fn().mockResolvedValue(aReportList([])),
+		}),
+	});
+	return render(
+		<QueryClientProvider client={queryClient}>
+			<ApiServiceContext.Provider value={services}>
+				<BrowserRouter>{ui}</BrowserRouter>
+			</ApiServiceContext.Provider>
+		</QueryClientProvider>,
+	);
 };
 
 // Sample team data (no project-specific fields)

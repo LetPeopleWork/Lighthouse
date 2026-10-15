@@ -2,8 +2,8 @@
   "roadmap": {
     "project_id": "epic-5878-baseline",
     "created_at": "2026-10-13",
-    "total_steps": 64,
-    "total_phases": 9,
+    "total_steps": 71,
+    "total_phases": 11,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
     "deliverable_type": "application",
@@ -2124,6 +2124,122 @@
             "10-04"
           ],
           "implementation_notes": "EXEMPT FROM PARADIGM: RTL. DESIGN 'Loading and failure looks' (report view re-read; wizard submit 409), DT4, DT6, D27; DEVOPS ReportOpened at most once per mount. Last step of the feature: the orchestrator then runs review, Stryker on frozen code (both stacks) and finalize. Commit: feat(reports): edit guards and re-read look (story 6168)."
+        }
+      ]
+    },
+    {
+      "id": "12",
+      "name": "Slice 12 - Reports and Deliveries on the Overview, two and more (US-12, ADO #6305)",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "description": "Frontend only. One presentational piece renders up to two chips, then '+N more' to a link, plus the loading, re-read (dimmed under a spinner) and could-not-load looks, carrying data-cell-status and aria-busy. The Deliveries cell moves to a keyed query and uses it; a new Reports cell on both Overview tables reads the owner's report list key and uses it too. One thin E2E leg opens a report from the Overview.",
+      "steps": [
+        {
+          "id": "12-01",
+          "name": "The Deliveries cell shows two Deliveries in the server's order then +N more, and says when it is still reading or could not read, never 'No Deliveries' for either",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.reportsAndDeliveries.test.tsx",
+          "scenario_name": "says Couldn't load Deliveries when they could not be read, never No Deliveries",
+          "unskips": [
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Deliveries on the Overview :: shows the first two Deliveries in the order the server answers, then +N more to the Portfolio's Deliveries",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Deliveries on the Overview :: shows two Deliveries without any +N more",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Deliveries on the Overview :: says No Deliveries for a Portfolio without any",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Deliveries on the Overview :: shows a small spinner, not No Deliveries, while the Deliveries are on their way",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Deliveries on the Overview :: keeps the Delivery chips on screen, dimmed under a spinner, while they are read again",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Deliveries on the Overview :: says Couldn't load Deliveries when they could not be read, never No Deliveries",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Deliveries on the Overview :: names the Deliveries in the instance's own word, empty and failed alike",
+            "DeliveriesChips.test.tsx :: says the Deliveries couldn't be loaded, never that there are none",
+            "DeliveriesChips.test.tsx :: shows a spinner, not No Deliveries, while the Deliveries are on their way",
+            "DeliveriesChips.test.tsx :: shows the first two Deliveries in the order the server answers, then +N more to the Portfolio's Deliveries"
+          ],
+          "criteria": [
+            "DeliveriesChips reads through TanStack Query under ['deliveries', 'portfolio', portfolioId]; no useEffect + useState fetch remains",
+            "At most two Delivery chips, in the order the server answers, each unchanged from today (label, colour, tooltip, link to /portfolios/:id/deliveries); with more, a small text link '+N more' under them to /portfolios/:id/deliveries",
+            "Empty reads 'No {Deliveries}'; while loading a small lone spinner with aria-busy=\"true\"; on a re-read the chips stay, dimmed (WidgetShell's 0.4) under the spinner; a failed read says 'Couldn't load {Deliveries}' in secondary text and never 'No {Deliveries}'",
+            "The cell's outer element carries data-cell-status = loading | error | ready (read through dataset in tests, never getAttribute)",
+            "The two-and-more piece and its three looks live in one presentational component the Reports cell reuses in 12-02; it knows nothing of reports or Deliveries",
+            "{Deliveries} renders as the configured term in the column title, the empty text and the failure text",
+            "pnpm test, pnpm build and Biome clean"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DeliveriesChips.tsx",
+            "Lighthouse.Frontend/src/components/Common/DataOverviewTable/OverviewCellChips.tsx",
+            "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DeliveriesChips.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.reportsAndDeliveries.test.tsx"
+          ],
+          "dependencies": [
+            "10-05"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: RTL at the table (driving port), services mocked through ApiServiceContext. D66, D67; DESIGN 'Overview cells'. OverviewCellChips.tsx is a suggested name, not pinned by any test. Tests find the cell by the grid's data-field ('deliveries') and the look by [data-cell-status]. DeliveriesChips.likelihoodCopy.test.tsx and DataOverviewTable.test.tsx already render under a QueryClientProvider, so the move to a query needs no harness change there. Reuse WidgetShell's dimmed look (opacity 0.4, pointer refused) rather than a new one. Commit: feat(deliveries): two Deliveries on the Overview, then the rest, with loading and failure looks (story 6305)."
+        },
+        {
+          "id": "12-02",
+          "name": "Both Overview tables show each owner's reports as chips, the first two by name then +N more to the Reports tab, with the same loading, re-read and failure looks",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.reportsAndDeliveries.test.tsx",
+          "scenario_name": "shows a Team's report as a chip with its name that opens the report",
+          "unskips": [
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Reports on the Overview :: shows a Reports column on the Teams table, after Tags and before Last Updated",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Reports on the Overview :: shows a Reports column on the Portfolios table, after Deliveries and before Last Updated",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Reports on the Overview :: shows a Team's report as a chip with its name that opens the report",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Reports on the Overview :: shows a Portfolio's report as a chip that opens the report under that Portfolio",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Reports on the Overview :: shows the first two reports by name, A to Z, whatever order they arrive in",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Reports on the Overview :: with $count reports shows $expected - 4 cases (1, 2, 3, 7)",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Reports on the Overview :: opens the Team's Reports tab from +N more",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Reports on the Overview :: opens the Portfolio's Reports tab from +N more",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Reports on the Overview :: says No Reports for an owner without any",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Reports on the Overview :: still shows a chip for a report of a type this version cannot show",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Reports on the Overview :: shows a small spinner, not No Reports, while the reports are on their way",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Reports on the Overview :: keeps the chips on screen, dimmed under a spinner, while the reports are read again",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Reports on the Overview :: shows a report created elsewhere once the owner's reports are read again",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Reports on the Overview :: says Couldn't load Reports when they could not be read, never No Reports",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Reports on the Overview :: keeps one owner's failure to its own row",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Reports on the Overview :: never lets a late answer for one Team land in another Team's row",
+            "DataOverviewTable.reportsAndDeliveries.test.tsx :: Reports on the Overview :: keeps the word Reports whatever the instance calls its Teams and Portfolios"
+          ],
+          "criteria": [
+            "A 'Reports' column (field 'reports') on both tables: after Tags on Teams, after {Deliveries} on Portfolios, before Last Updated; hideable through the column menu like {Deliveries}, shown by default on every width; not sortable",
+            "The cell reads useOwnerReports({ kind, id }) with the kind from the table's api ('teams' -> team, 'portfolios' -> portfolio), so it shares reportsQueryKeyOf with the Reports tab and the owner delete dialog and every create, edit or delete there refreshes it",
+            "Each report is an outlined, neutral chip with its name linking to reportPathOf(owner, id); chips stack vertically; the first two by name with localeCompare, as ReportList sorts; with more, '+N more' links to reportsPathOf(owner)",
+            "A report of a type this version cannot show still gets its chip",
+            "Empty reads 'No Reports'; loading, re-read and failure ('Couldn't load Reports') through the piece from 12-01, with data-cell-status and aria-busy",
+            "'Reports' is a literal, never a configured term",
+            "pnpm test, pnpm build and Biome clean"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.tsx",
+            "Lighthouse.Frontend/src/components/Common/DataOverviewTable/ReportsChips.tsx",
+            "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.reportsAndDeliveries.test.tsx",
+            "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx"
+          ],
+          "dependencies": [
+            "12-01"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: RTL at the table (driving port). D64, D65, D67; DESIGN 'Overview cells'. ReportsChips.tsx is a suggested name. createMockApiServiceContext leaves reportService null, so OverviewDashboard tests that do not pass one will now see every Reports cell fail its read; give renderWithProviders there a default aReportService answering an empty list if any assertion trips on it. The delete-dialog tests there already read the same key, so the cell's read may answer the dialog from cache; their toHaveBeenCalledWith(owner) still holds. Commit: feat(reports): each Team's and Portfolio's reports on the Overview (story 6305)."
+        },
+        {
+          "id": "12-03",
+          "name": "A report a coach created shows beside its Team on the Overview and opens from there, in a real browser",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/teams/Reports.spec.ts",
+          "scenario_name": "a report a coach created shows beside its Team on the Overview and opens from there",
+          "unskips": [
+            "Reports.spec.ts :: a report a coach created shows beside its Team on the Overview and opens from there (testWithDemo.fixme -> testWithDemo)"
+          ],
+          "criteria": [
+            "Run locally against demo scenario 11 and green before commit; the POM waits for the cell's data-cell-status=\"ready\", never for visibility",
+            "No inline page.locator in the spec; OverviewPage.teamReportsCell / openTeamReport and ReportPage.readName carry the locators",
+            "Thin: one leg on the existing walking skeleton's flow, nothing about counts or looks (the frontend suite pins those)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/teams/Reports.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/overview/OverviewPage.ts",
+            "Lighthouse.EndToEndTests/tests/models/reports/ReportPage.ts"
+          ],
+          "dependencies": [
+            "12-02"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: Playwright, example-only. Needs a premium licence on the instance (scenario 11 has no cap). Last step of the story: the orchestrator then runs review, StrykerJS on the changed files (>= 80 %, frozen code) and finalize (docs for the Overview's Reports column, screenshot of the Overview). Commit: test(reports): open a report from the Overview in a real browser (story 6305)."
         }
       ]
     }

@@ -1,7 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Delivery } from "../../../models/Delivery";
+import { renderWithQueryClient } from "../../../tests/renderWithQueryClient";
 import { DeliveriesChips } from "./DeliveriesChips";
 
 /**
@@ -61,7 +62,7 @@ function deliveryWith(likelihood: number | null): Delivery {
 }
 
 async function renderChips(): Promise<void> {
-	render(
+	renderWithQueryClient(
 		<MemoryRouter>
 			<DeliveriesChips portfolioId={PortfolioId} />
 		</MemoryRouter>,

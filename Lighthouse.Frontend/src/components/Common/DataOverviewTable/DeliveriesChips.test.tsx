@@ -115,16 +115,52 @@ describe("DeliveriesChips", () => {
 		expect(mockDeliveryService.getByPortfolio).toHaveBeenCalledWith(100);
 	});
 
-	it("should handle API errors silently and show no deliveries", async () => {
+	// @us-12 @slice-12 @ac-12.6 @error @contract-shape:pure-function
+	it.skip("says the Deliveries couldn't be loaded, never that there are none", async () => {
 		mockDeliveryService.getByPortfolio.mockRejectedValue(
 			new Error("API Error"),
 		);
 
 		renderWithProviders(<DeliveriesChips portfolioId={1} />);
 
-		await waitFor(() => {
-			expect(screen.getByText("No Deliveries")).toBeInTheDocument();
+		expect(
+			await screen.findByText("Couldn't load Deliveries"),
+		).toBeInTheDocument();
+		expect(screen.queryByText("No Deliveries")).toBeNull();
+	});
+
+	// @us-12 @slice-12 @ac-12.5 @boundary @contract-shape:pure-function
+	it.skip("shows a spinner, not No Deliveries, while the Deliveries are on their way", () => {
+		mockDeliveryService.getByPortfolio.mockReturnValue(
+			new Promise(() => undefined),
+		);
+
+		renderWithProviders(<DeliveriesChips portfolioId={1} />);
+
+		expect(screen.getByRole("progressbar")).toBeInTheDocument();
+		expect(screen.queryByText("No Deliveries")).toBeNull();
+	});
+
+	// @us-12 @slice-12 @ac-12.4 @boundary @contract-shape:pure-function
+	it.skip("shows the first two Deliveries in the order the server answers, then +N more to the Portfolio's Deliveries", async () => {
+		mockDeliveryService.getByPortfolio.mockResolvedValue({
+			active: [
+				getMockDelivery({ id: 1, name: "Winter Release", portfolioId: 100 }),
+				getMockDelivery({ id: 2, name: "Autumn Release", portfolioId: 100 }),
+				getMockDelivery({ id: 3, name: "Summer Release", portfolioId: 100 }),
+			],
+			archived: [],
 		});
+
+		renderWithProviders(<DeliveriesChips portfolioId={100} />);
+
+		const more = await screen.findByRole("link", { name: "+1 more" });
+		const links = screen.getAllByRole("link");
+		expect(links).toHaveLength(3);
+		expect(links[0]).toHaveTextContent(/^Winter Release/);
+		expect(links[1]).toHaveTextContent(/^Autumn Release/);
+		expect(more).toHaveAttribute("href", "/portfolios/100/deliveries");
+		expect(screen.queryByText(/Summer Release/)).toBeNull();
 	});
 
 	it("should navigate to portfolio deliveries page when chip is clicked", async () => {
@@ -162,18 +198,6 @@ describe("DeliveriesChips", () => {
 				portfolioId: 100,
 			}),
 			getMockDelivery({
-				id: 2,
-				name: "Realistic Delivery",
-				likelihoodPercentage: 65,
-				portfolioId: 100,
-			}),
-			getMockDelivery({
-				id: 3,
-				name: "Likely Delivery",
-				likelihoodPercentage: 80,
-				portfolioId: 100,
-			}),
-			getMockDelivery({
 				id: 4,
 				name: "Certain Delivery",
 				likelihoodPercentage: 95,
@@ -189,18 +213,8 @@ describe("DeliveriesChips", () => {
 		renderWithProviders(<DeliveriesChips portfolioId={100} />);
 
 		await waitFor(() => {
-			const riskyChip = screen.getByText(/Risky Delivery/);
-			const realisticChip = screen.getByText(/Realistic Delivery/);
-			const likelyChip = screen.getByText(/Likely Delivery/);
-			const certainChip = screen.getByText(/Certain Delivery/);
-
-			expect(riskyChip).toBeInTheDocument();
-			expect(realisticChip).toBeInTheDocument();
-			expect(likelyChip).toBeInTheDocument();
-			expect(certainChip).toBeInTheDocument();
-
-			// Check that chips have different colors based on forecast level
-			// This would require checking computed styles or data-testid attributes
+			expect(screen.getByText(/Risky Delivery/)).toBeInTheDocument();
+			expect(screen.getByText(/Certain Delivery/)).toBeInTheDocument();
 		});
 	});
 

@@ -3902,3 +3902,56 @@ Frontend only; no backend, contract or migration change.
 
 No pipeline, environment or infrastructure change. Usage data: N/A (D68). Mutation: StrykerJS scoped to the files this
 story changes, after DELIVER, ≥ 80 %.
+
+### Wave: DISTILL / [REF] Story #6305 scenarios
+
+*Added 2026-10-15.* Reconciliation passed — 0 contradictions (D64–D68, US-12, DESIGN "Overview cells", DEVOPS #6305).
+All frontend cases are `it.skip` with `@us-12 @slice-12` tag comments; the E2E leg is `testWithDemo.fixme`. Each was
+run once un-skipped: every one fails because the Reports cell, the `data-cell-status` look, the cap or the failure copy
+is missing — none on a harness error. Owned by roadmap steps 12-01 (Deliveries), 12-02 (Reports), 12-03 (E2E).
+
+File key: **T** = `Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.reportsAndDeliveries.test.tsx`
+(renders `DataOverviewTable` with services mocked through `ApiServiceContext`); **D** = `…/DataOverviewTable/DeliveriesChips.test.tsx`;
+**E** = `Lighthouse.EndToEndTests/tests/specs/teams/Reports.spec.ts`.
+
+| # | Scenario | AC | File | Kind |
+|---|---|---|---|---|
+| 1 | shows a Reports column on the Teams table, after Tags and before Last Updated | 12.1 | T | happy |
+| 2 | shows a Reports column on the Portfolios table, after Deliveries and before Last Updated | 12.1 | T | happy |
+| 3 | shows a Team's report as a chip with its name that opens the report | 12.1 | T | happy |
+| 4 | shows a Portfolio's report as a chip that opens the report under that Portfolio | 12.1 | T | happy |
+| 5 | shows the first two reports by name, A to Z, whatever order they arrive in | 12.2 | T | boundary |
+| 6–9 | with 1 / 2 / 3 / 7 reports shows the chips and "+N more" (`it.skip.each`, 4 rows) | 12.2, 12.3 | T | boundary |
+| 10 | opens the Team's Reports tab from +N more | 12.2 | T | happy |
+| 11 | opens the Portfolio's Reports tab from +N more | 12.2 | T | happy |
+| 12 | says No Reports for an owner without any | 12.3 | T | boundary |
+| 13 | still shows a chip for a report of a type this version cannot show | 12.1 | T | boundary |
+| 14 | shows a small spinner, not No Reports, while the reports are on their way | 12.5 | T | boundary |
+| 15 | keeps the chips on screen, dimmed under a spinner, while the reports are read again | 12.5, 12.7 | T | boundary |
+| 16 | shows a report created elsewhere once the owner's reports are read again | 12.7 | T | happy |
+| 17 | says Couldn't load Reports when they could not be read, never No Reports | 12.6 | T | error |
+| 18 | keeps one owner's failure to its own row | 12.6 | T | error |
+| 19 | never lets a late answer for one Team land in another Team's row | 12.7 | T | error |
+| 20 | keeps the word Reports whatever the instance calls its Teams and Portfolios | 12.8 | T | boundary |
+| 21 | shows the first two Deliveries in the order the server answers, then +N more to the Portfolio's Deliveries | 12.4 | T | happy |
+| 22 | shows two Deliveries without any +N more | 12.4 | T | boundary |
+| 23 | says No Deliveries for a Portfolio without any | 12.4 | T | boundary |
+| 24 | shows a small spinner, not No Deliveries, while the Deliveries are on their way | 12.5 | T | boundary |
+| 25 | keeps the Delivery chips on screen, dimmed under a spinner, while they are read again | 12.5 | T | boundary |
+| 26 | says Couldn't load Deliveries when they could not be read, never No Deliveries | 12.6 | T | error |
+| 27 | names the Deliveries in the instance's own word, empty and failed alike | 12.8, 12.6 | T | error |
+| 28 | says the Deliveries couldn't be loaded, never that there are none | 12.6 | D | error |
+| 29 | shows a spinner, not No Deliveries, while the Deliveries are on their way | 12.5 | D | boundary |
+| 30 | shows the first two Deliveries in the order the server answers, then +N more to the Portfolio's Deliveries | 12.4 | D | boundary |
+| 31 | a report a coach created shows beside its Team on the Overview and opens from there | 12.1, 12.7 | E | happy (thin E2E leg) |
+
+31 cases: 9 happy, 16 boundary, 6 error (71 % non-happy). Pinned for the crafter: the grid fields `reports` and
+`deliveries`, `[data-cell-status]` = `loading` / `error` / `ready` with `aria-busy="true"` while loading, a `progressbar`
+while loading, the Deliveries key `['deliveries', 'portfolio', id]` and the owner list key `reportsQueryKeyOf`.
+
+Revised, not pending: in `DeliveriesChips.test.tsx` "should handle API errors silently and show no deliveries" is
+removed (D67 contradicts it; #28 replaces it) and the four-chip colour case now shows two Deliveries (D66). Test
+harnesses that will need a query cache once the cells read through TanStack Query already have one:
+`DataOverviewTable.test.tsx` (plus a report service answering an empty list) and
+`DeliveriesChips.likelihoodCopy.test.tsx`. POMs added for #31: `OverviewPage.teamReportsCell` / `openTeamReport`
+(wait for `data-cell-status="ready"`), `ReportPage.readName`.

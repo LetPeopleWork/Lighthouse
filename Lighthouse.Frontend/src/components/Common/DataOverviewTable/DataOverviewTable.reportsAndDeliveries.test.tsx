@@ -1,0 +1,717 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Delivery } from "../../../models/Delivery";
+import type { IFeatureOwner } from "../../../models/IFeatureOwner";
+import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
+import type {
+	IReportList,
+	IReportListItem,
+	IReportOwner,
+} from "../../../models/Reports/Report";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { reportsQueryKeyOf } from "../../../pages/Common/Reports/reportOwner";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import type { IDeliveryService } from "../../../services/Api/DeliveryService";
+import type { IReportService } from "../../../services/Api/ReportService";
+import { deferred } from "../../../tests/HeldMetricsService";
+import {
+	createMockApiServiceContext,
+	createMockDeliveryService,
+} from "../../../tests/MockApiServiceProvider";
+import {
+	aListedReport,
+	aListedReportOfALaterType,
+	aReportList,
+	aReportService,
+} from "../../../tests/ReportsTestKit";
+import DataOverviewTable from "./DataOverviewTable";
+
+/**
+ * The Overview's Teams and Portfolios tables, each row carrying its owner's reports and, for a Portfolio, its
+ * active Deliveries: two chips at most, then a link to the rest, and a cell that says when it is still reading
+ * or could not read rather than claiming there is nothing.
+ */
+
+const { terms } = vi.hoisted(() => ({
+	terms: { current: {} as Record<string, string> },
+}));
+
+vi.mock("../../../services/TerminologyContext", () => ({
+	useTerminology: () => ({
+		getTerm: (key: string) => terms.current[key] ?? key,
+	}),
+}));
+
+const seededTerms: Record<string, string> = {
+	[TERMINOLOGY_KEYS.FEATURE]: "Feature",
+	[TERMINOLOGY_KEYS.FEATURES]: "Features",
+	[TERMINOLOGY_KEYS.TEAM]: "Team",
+	[TERMINOLOGY_KEYS.PORTFOLIO]: "Portfolio",
+	[TERMINOLOGY_KEYS.DELIVERY]: "Delivery",
+	[TERMINOLOGY_KEYS.DELIVERIES]: "Deliveries",
+};
+
+const LIGHTSPEED: IReportOwner = { kind: "team", id: 1 };
+const ROCKET: IReportOwner = { kind: "team", id: 2 };
+const APOLLO: IReportOwner = { kind: "portfolio", id: 3 };
+
+const aTeam = (id: number, name: string): IFeatureOwner => ({
+	id,
+	name,
+	remainingFeatures: 4,
+	features: [],
+	tags: [],
+	lastUpdated: new Date("2026-10-14T08:00:00Z"),
+	serviceLevelExpectationProbability: 0,
+	serviceLevelExpectationRange: 0,
+	systemWIPLimit: 0,
+});
+
+const aPortfolio = (id: number, name: string): IPortfolio => ({
+	...aTeam(id, name),
+	involvedTeams: [],
+	featureSizeTargetProbability: 0,
+	featureSizeTargetRange: 0,
+});
+
+const TEAM_LIGHTSPEED = aTeam(LIGHTSPEED.id, "Lightspeed");
+const TEAM_ROCKET = aTeam(ROCKET.id, "Rocket");
+const PORTFOLIO_APOLLO = aPortfolio(APOLLO.id, "Apollo");
+
+const reportsNamed = (
+	owner: IReportOwner,
+	...names: string[]
+): IReportListItem[] =>
+	names.map((name, index) =>
+		aListedReport({
+			id: owner.id * 100 + index + 1,
+			name,
+			ownerKind: owner.kind,
+			ownerId: owner.id,
+		}),
+	);
+
+const aDelivery = (id: number, name: string): Delivery => {
+	const delivery = new Delivery();
+	delivery.id = id;
+	delivery.portfolioId = APOLLO.id;
+	delivery.name = name;
+	delivery.likelihoodPercentage = 80;
+	delivery.remainingWork = 10;
+	delivery.hasSufficientData = true;
+	delivery.teamsWithoutForecast = [];
+	delivery.features = [1, 2];
+	return delivery;
+};
+
+const activeDeliveries = (...deliveries: Delivery[]) => ({
+	active: deliveries,
+	archived: [],
+});
+
+const reportsAnswering = (list: IReportList): IReportService =>
+	aReportService({ getReports: vi.fn().mockResolvedValue(list) });
+
+const noReports = () => reportsAnswering(aReportList([]));
+
+const deliveriesAnswering = (
+	getByPortfolio: IDeliveryService["getByPortfolio"],
+): IDeliveryService => ({ ...createMockDeliveryService(), getByPortfolio });
+
+/** Where a followed link took the reader, so a chip is proven to open its page rather than merely to point at it. */
+const WhereTheReaderLanded = () => (
+	<span data-testid="landed-on">{useLocation().pathname}</span>
+);
+
+const renderTheTable = (
+	api: "teams" | "portfolios",
+	data: IFeatureOwner[],
+	{
+		reportService = noReports(),
+		deliveryService = createMockDeliveryService(),
+	}: {
+		reportService?: IReportService;
+		deliveryService?: IDeliveryService;
+	} = {},
+) => {
+	const queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+	});
+	render(
+		<QueryClientProvider client={queryClient}>
+			<MemoryRouter initialEntries={["/"]}>
+				<ApiServiceContext.Provider
+					value={createMockApiServiceContext({
+						reportService,
+						deliveryService,
+					})}
+				>
+					<Routes>
+						<Route
+							path="/"
+							element={
+								<DataOverviewTable
+									data={data}
+									api={api}
+									title={api}
+									onDelete={vi.fn()}
+									filterText=""
+								/>
+							}
+						/>
+						<Route path="*" element={<WhereTheReaderLanded />} />
+					</Routes>
+				</ApiServiceContext.Provider>
+			</MemoryRouter>
+		</QueryClientProvider>,
+	);
+	return { queryClient, reportService, deliveryService };
+};
+
+const theRowOf = (ownerName: string): HTMLElement => {
+	const row = screen
+		.getByRole("link", { name: ownerName })
+		.closest<HTMLElement>('[role="row"]');
+	if (!row) throw new Error(`No row for ${ownerName}`);
+	return row;
+};
+
+const theCellOf = (
+	ownerName: string,
+	column: "reports" | "deliveries",
+): HTMLElement => {
+	const cell = theRowOf(ownerName).querySelector<HTMLElement>(
+		`[data-field="${column}"]`,
+	);
+	if (!cell) throw new Error(`No ${column} cell for ${ownerName}`);
+	return cell;
+};
+
+/** The part of the cell that says whether what it shows is current: loading, error or ready. */
+const theLookOf = (cell: HTMLElement): HTMLElement => {
+	const look = cell.querySelector<HTMLElement>("[data-cell-status]");
+	if (!look) throw new Error("The cell does not say how current it is");
+	return look;
+};
+
+const whenReady = async (
+	ownerName: string,
+	column: "reports" | "deliveries",
+): Promise<HTMLElement> => {
+	await waitFor(() =>
+		expect(theLookOf(theCellOf(ownerName, column)).dataset.cellStatus).toBe(
+			"ready",
+		),
+	);
+	return theCellOf(ownerName, column);
+};
+
+const linkNamesIn = (cell: HTMLElement): string[] =>
+	within(cell)
+		.queryAllByRole("link")
+		.map((link) => (link.textContent ?? "").trim());
+
+const theColumnTitles = (): string[] =>
+	screen
+		.getAllByRole("columnheader")
+		.map((header) => (header.textContent ?? "").trim());
+
+beforeEach(() => {
+	terms.current = { ...seededTerms };
+	globalThis.localStorage.clear();
+	Object.defineProperty(globalThis, "matchMedia", {
+		writable: true,
+		value: vi.fn().mockImplementation((query: string) => ({
+			matches: false,
+			media: query,
+			onchange: null,
+			addListener: vi.fn(),
+			removeListener: vi.fn(),
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+			dispatchEvent: vi.fn(),
+		})),
+	});
+});
+
+describe("Reports on the Overview", () => {
+	// @us-12 @slice-12 @ac-12.1 @driving_port @contract-shape:pure-function
+	it.skip("shows a Reports column on the Teams table, after Tags and before Last Updated", async () => {
+		renderTheTable("teams", [TEAM_LIGHTSPEED]);
+
+		await whenReady("Lightspeed", "reports");
+
+		const titles = theColumnTitles();
+		expect(titles.indexOf("Reports")).toBe(titles.indexOf("Tags") + 1);
+		expect(titles.indexOf("Last Updated")).toBe(titles.indexOf("Reports") + 1);
+	});
+
+	// @us-12 @slice-12 @ac-12.1 @driving_port @contract-shape:pure-function
+	it.skip("shows a Reports column on the Portfolios table, after Deliveries and before Last Updated", async () => {
+		renderTheTable("portfolios", [PORTFOLIO_APOLLO]);
+
+		await whenReady("Apollo", "reports");
+
+		const titles = theColumnTitles();
+		expect(titles.indexOf("Reports")).toBe(titles.indexOf("Deliveries") + 1);
+		expect(titles.indexOf("Last Updated")).toBe(titles.indexOf("Reports") + 1);
+	});
+
+	// @us-12 @slice-12 @ac-12.1 @walking_skeleton @driving_port @contract-shape:pure-function
+	it.skip("shows a Team's report as a chip with its name that opens the report", async () => {
+		const reportService = reportsAnswering(
+			aReportList(reportsNamed(LIGHTSPEED, "Engagement start")),
+		);
+		renderTheTable("teams", [TEAM_LIGHTSPEED], { reportService });
+
+		const cell = await whenReady("Lightspeed", "reports");
+		await userEvent.click(
+			within(cell).getByRole("link", { name: "Engagement start" }),
+		);
+
+		expect(screen.getByTestId("landed-on")).toHaveTextContent(
+			"/teams/1/reports/101",
+		);
+		expect(reportService.getReports).toHaveBeenCalledWith(LIGHTSPEED);
+	});
+
+	// @us-12 @slice-12 @ac-12.1 @driving_port @contract-shape:pure-function
+	it.skip("shows a Portfolio's report as a chip that opens the report under that Portfolio", async () => {
+		const reportService = reportsAnswering(
+			aReportList(reportsNamed(APOLLO, "Quarter review")),
+		);
+		renderTheTable("portfolios", [PORTFOLIO_APOLLO], { reportService });
+
+		const cell = await whenReady("Apollo", "reports");
+		await userEvent.click(
+			within(cell).getByRole("link", { name: "Quarter review" }),
+		);
+
+		expect(screen.getByTestId("landed-on")).toHaveTextContent(
+			"/portfolios/3/reports/301",
+		);
+		expect(reportService.getReports).toHaveBeenCalledWith(APOLLO);
+	});
+
+	// @us-12 @slice-12 @ac-12.2 @boundary @contract-shape:pure-function
+	it.skip("shows the first two reports by name, A to Z, whatever order they arrive in", async () => {
+		renderTheTable("teams", [TEAM_LIGHTSPEED], {
+			reportService: reportsAnswering(
+				aReportList(
+					reportsNamed(LIGHTSPEED, "Zeta sprint", "alpha kickoff", "Mid-year"),
+				),
+			),
+		});
+
+		const cell = await whenReady("Lightspeed", "reports");
+
+		expect(linkNamesIn(cell)).toEqual(["alpha kickoff", "Mid-year", "+1 more"]);
+	});
+
+	// @us-12 @slice-12 @ac-12.2 @ac-12.3 @boundary @contract-shape:pure-function
+	it.skip.each([
+		{ count: 1, expected: ["Report A"] },
+		{ count: 2, expected: ["Report A", "Report B"] },
+		{ count: 3, expected: ["Report A", "Report B", "+1 more"] },
+		{ count: 7, expected: ["Report A", "Report B", "+5 more"] },
+	])("with $count reports shows $expected", async ({ count, expected }) => {
+		const names = Array.from(
+			{ length: count },
+			(_, index) => `Report ${String.fromCodePoint(65 + index)}`,
+		);
+		renderTheTable("teams", [TEAM_LIGHTSPEED], {
+			reportService: reportsAnswering(
+				aReportList(reportsNamed(LIGHTSPEED, ...names)),
+			),
+		});
+
+		const cell = await whenReady("Lightspeed", "reports");
+
+		expect(linkNamesIn(cell)).toEqual(expected);
+		expect(within(cell).queryByText("No Reports")).toBeNull();
+	});
+
+	// @us-12 @slice-12 @ac-12.2 @driving_port @contract-shape:pure-function
+	it.skip("opens the Team's Reports tab from +N more", async () => {
+		renderTheTable("teams", [TEAM_LIGHTSPEED], {
+			reportService: reportsAnswering(
+				aReportList(reportsNamed(LIGHTSPEED, "One", "Two", "Three")),
+			),
+		});
+
+		const cell = await whenReady("Lightspeed", "reports");
+		await userEvent.click(within(cell).getByRole("link", { name: "+1 more" }));
+
+		expect(screen.getByTestId("landed-on")).toHaveTextContent(
+			"/teams/1/reports",
+		);
+	});
+
+	// @us-12 @slice-12 @ac-12.2 @driving_port @contract-shape:pure-function
+	it.skip("opens the Portfolio's Reports tab from +N more", async () => {
+		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
+			reportService: reportsAnswering(
+				aReportList(reportsNamed(APOLLO, "One", "Two", "Three", "Four")),
+			),
+		});
+
+		const cell = await whenReady("Apollo", "reports");
+		await userEvent.click(within(cell).getByRole("link", { name: "+2 more" }));
+
+		expect(screen.getByTestId("landed-on")).toHaveTextContent(
+			"/portfolios/3/reports",
+		);
+	});
+
+	// @us-12 @slice-12 @ac-12.3 @boundary @contract-shape:pure-function
+	it.skip("says No Reports for an owner without any", async () => {
+		renderTheTable("teams", [TEAM_LIGHTSPEED]);
+
+		const cell = await whenReady("Lightspeed", "reports");
+
+		expect(cell).toHaveTextContent("No Reports");
+		expect(within(cell).queryAllByRole("link")).toHaveLength(0);
+	});
+
+	// @us-12 @slice-12 @ac-12.1 @boundary @contract-shape:pure-function
+	// Its own page explains it cannot be shown; the Overview still lists it so it can be reached and deleted.
+	it.skip("still shows a chip for a report of a type this version cannot show", async () => {
+		renderTheTable("teams", [TEAM_LIGHTSPEED], {
+			reportService: reportsAnswering(
+				aReportList([aListedReportOfALaterType()]),
+			),
+		});
+
+		const cell = await whenReady("Lightspeed", "reports");
+
+		expect(linkNamesIn(cell)).toEqual(["Signals — flow alerts"]);
+	});
+
+	// @us-12 @slice-12 @ac-12.5 @boundary @contract-shape:pure-function
+	it.skip("shows a small spinner, not No Reports, while the reports are on their way", async () => {
+		renderTheTable("teams", [TEAM_LIGHTSPEED], {
+			reportService: aReportService({
+				getReports: vi.fn().mockReturnValue(deferred<IReportList>().promise),
+			}),
+		});
+
+		await waitFor(() => theCellOf("Lightspeed", "reports"));
+		const cell = theCellOf("Lightspeed", "reports");
+		const look = theLookOf(cell);
+
+		expect(look.dataset.cellStatus).toBe("loading");
+		expect(look).toHaveAttribute("aria-busy", "true");
+		expect(within(cell).getByRole("progressbar")).toBeInTheDocument();
+		expect(cell).not.toHaveTextContent("No Reports");
+	});
+
+	// @us-12 @slice-12 @ac-12.5 @ac-12.7 @boundary @contract-shape:bounded-change
+	// Creating, editing or deleting a report drops the owner's list, which is what this re-read stands for.
+	it.skip("keeps the chips on screen, dimmed under a spinner, while the reports are read again", async () => {
+		const reread = deferred<IReportList>();
+		const { queryClient } = renderTheTable("teams", [TEAM_LIGHTSPEED], {
+			reportService: aReportService({
+				getReports: vi
+					.fn()
+					.mockResolvedValueOnce(
+						aReportList(reportsNamed(LIGHTSPEED, "Engagement start")),
+					)
+					.mockReturnValue(reread.promise),
+			}),
+		});
+		await whenReady("Lightspeed", "reports");
+
+		await act(() =>
+			queryClient.invalidateQueries({
+				queryKey: reportsQueryKeyOf(LIGHTSPEED),
+			}),
+		);
+
+		const cell = theCellOf("Lightspeed", "reports");
+		await waitFor(() =>
+			expect(theLookOf(cell).dataset.cellStatus).toBe("loading"),
+		);
+		expect(theLookOf(cell)).toHaveAttribute("aria-busy", "true");
+		expect(within(cell).getByRole("progressbar")).toBeInTheDocument();
+		expect(within(cell).getByText("Engagement start")).toBeInTheDocument();
+	});
+
+	// @us-12 @slice-12 @ac-12.7 @contract-shape:bounded-change
+	it.skip("shows a report created elsewhere once the owner's reports are read again", async () => {
+		const { queryClient } = renderTheTable("teams", [TEAM_LIGHTSPEED], {
+			reportService: aReportService({
+				getReports: vi
+					.fn()
+					.mockResolvedValueOnce(aReportList([]))
+					.mockResolvedValue(
+						aReportList(reportsNamed(LIGHTSPEED, "Engagement start")),
+					),
+			}),
+		});
+		expect(await whenReady("Lightspeed", "reports")).toHaveTextContent(
+			"No Reports",
+		);
+
+		await act(() =>
+			queryClient.invalidateQueries({
+				queryKey: reportsQueryKeyOf(LIGHTSPEED),
+			}),
+		);
+
+		await waitFor(() =>
+			expect(linkNamesIn(theCellOf("Lightspeed", "reports"))).toEqual([
+				"Engagement start",
+			]),
+		);
+	});
+
+	// @us-12 @slice-12 @ac-12.6 @error @contract-shape:pure-function
+	it.skip("says Couldn't load Reports when they could not be read, never No Reports", async () => {
+		renderTheTable("teams", [TEAM_LIGHTSPEED], {
+			reportService: aReportService({
+				getReports: vi.fn().mockRejectedValue(new Error("unreachable")),
+			}),
+		});
+
+		await waitFor(() =>
+			expect(
+				theLookOf(theCellOf("Lightspeed", "reports")).dataset.cellStatus,
+			).toBe("error"),
+		);
+		const cell = theCellOf("Lightspeed", "reports");
+
+		expect(cell).toHaveTextContent("Couldn't load Reports");
+		expect(cell).not.toHaveTextContent("No Reports");
+		expect(within(cell).queryByRole("progressbar")).toBeNull();
+	});
+
+	// @us-12 @slice-12 @ac-12.6 @error @contract-shape:bounded-change
+	it.skip("keeps one owner's failure to its own row", async () => {
+		renderTheTable("teams", [TEAM_LIGHTSPEED, TEAM_ROCKET], {
+			reportService: aReportService({
+				getReports: vi.fn((owner: IReportOwner) =>
+					owner.id === LIGHTSPEED.id
+						? Promise.reject(new Error("unreachable"))
+						: Promise.resolve(
+								aReportList(reportsNamed(ROCKET, "Launch review")),
+							),
+				),
+			}),
+		});
+
+		const rocket = await whenReady("Rocket", "reports");
+		await waitFor(() =>
+			expect(theCellOf("Lightspeed", "reports")).toHaveTextContent(
+				"Couldn't load Reports",
+			),
+		);
+
+		expect(linkNamesIn(rocket)).toEqual(["Launch review"]);
+	});
+
+	// @us-12 @slice-12 @ac-12.7 @error @contract-shape:unbounded-preservation
+	it.skip("never lets a late answer for one Team land in another Team's row", async () => {
+		const lightspeedAnswer = deferred<IReportList>();
+		renderTheTable("teams", [TEAM_LIGHTSPEED, TEAM_ROCKET], {
+			reportService: aReportService({
+				getReports: vi.fn((owner: IReportOwner) =>
+					owner.id === LIGHTSPEED.id
+						? lightspeedAnswer.promise
+						: Promise.resolve(
+								aReportList(reportsNamed(ROCKET, "Launch review")),
+							),
+				),
+			}),
+		});
+		await whenReady("Rocket", "reports");
+
+		await act(async () => {
+			lightspeedAnswer.resolve(
+				aReportList(reportsNamed(LIGHTSPEED, "Engagement start")),
+			);
+		});
+
+		expect(linkNamesIn(await whenReady("Lightspeed", "reports"))).toEqual([
+			"Engagement start",
+		]);
+		expect(linkNamesIn(theCellOf("Rocket", "reports"))).toEqual([
+			"Launch review",
+		]);
+	});
+
+	// @us-12 @slice-12 @ac-12.8 @boundary @contract-shape:pure-function
+	it.skip("keeps the word Reports whatever the instance calls its Teams and Portfolios", async () => {
+		terms.current = {
+			...seededTerms,
+			[TERMINOLOGY_KEYS.TEAM]: "Squad",
+			[TERMINOLOGY_KEYS.PORTFOLIO]: "Programme",
+			[TERMINOLOGY_KEYS.DELIVERIES]: "Releases",
+		};
+		renderTheTable("portfolios", [PORTFOLIO_APOLLO]);
+
+		const cell = await whenReady("Apollo", "reports");
+
+		expect(theColumnTitles()).toContain("Reports");
+		expect(cell).toHaveTextContent("No Reports");
+	});
+});
+
+describe("Deliveries on the Overview", () => {
+	// @us-12 @slice-12 @ac-12.4 @driving_port @contract-shape:pure-function
+	it.skip("shows the first two Deliveries in the order the server answers, then +N more to the Portfolio's Deliveries", async () => {
+		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
+			deliveryService: deliveriesAnswering(
+				vi
+					.fn()
+					.mockResolvedValue(
+						activeDeliveries(
+							aDelivery(1, "Winter Release"),
+							aDelivery(2, "Autumn Release"),
+							aDelivery(3, "Summer Release"),
+							aDelivery(4, "Spring Release"),
+						),
+					),
+			),
+		});
+
+		const cell = await whenReady("Apollo", "deliveries");
+		const links = linkNamesIn(cell);
+
+		expect(links).toHaveLength(3);
+		expect(links[0]).toMatch(/^Winter Release/);
+		expect(links[1]).toMatch(/^Autumn Release/);
+		expect(links[2]).toBe("+2 more");
+		expect(cell).not.toHaveTextContent("Summer Release");
+
+		await userEvent.click(within(cell).getByRole("link", { name: "+2 more" }));
+		expect(screen.getByTestId("landed-on")).toHaveTextContent(
+			"/portfolios/3/deliveries",
+		);
+	});
+
+	// @us-12 @slice-12 @ac-12.4 @boundary @contract-shape:pure-function
+	it.skip("shows two Deliveries without any +N more", async () => {
+		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
+			deliveryService: deliveriesAnswering(
+				vi
+					.fn()
+					.mockResolvedValue(
+						activeDeliveries(
+							aDelivery(1, "Winter Release"),
+							aDelivery(2, "Autumn Release"),
+						),
+					),
+			),
+		});
+
+		const cell = await whenReady("Apollo", "deliveries");
+
+		expect(linkNamesIn(cell)).toHaveLength(2);
+		expect(within(cell).queryByText(/more$/)).toBeNull();
+	});
+
+	// @us-12 @slice-12 @ac-12.4 @boundary @contract-shape:pure-function
+	it.skip("says No Deliveries for a Portfolio without any", async () => {
+		renderTheTable("portfolios", [PORTFOLIO_APOLLO]);
+
+		const cell = await whenReady("Apollo", "deliveries");
+
+		expect(cell).toHaveTextContent("No Deliveries");
+	});
+
+	// @us-12 @slice-12 @ac-12.5 @boundary @contract-shape:pure-function
+	it.skip("shows a small spinner, not No Deliveries, while the Deliveries are on their way", async () => {
+		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
+			deliveryService: deliveriesAnswering(
+				vi.fn().mockReturnValue(new Promise(() => undefined)),
+			),
+		});
+
+		await waitFor(() => theCellOf("Apollo", "deliveries"));
+		const cell = theCellOf("Apollo", "deliveries");
+
+		expect(theLookOf(cell).dataset.cellStatus).toBe("loading");
+		expect(theLookOf(cell)).toHaveAttribute("aria-busy", "true");
+		expect(within(cell).getByRole("progressbar")).toBeInTheDocument();
+		expect(cell).not.toHaveTextContent("No Deliveries");
+	});
+
+	// @us-12 @slice-12 @ac-12.5 @boundary @contract-shape:bounded-change
+	it.skip("keeps the Delivery chips on screen, dimmed under a spinner, while they are read again", async () => {
+		const reread = deferred<ReturnType<typeof activeDeliveries>>();
+		const { queryClient } = renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
+			deliveryService: deliveriesAnswering(
+				vi
+					.fn()
+					.mockResolvedValueOnce(
+						activeDeliveries(aDelivery(1, "Winter Release")),
+					)
+					.mockReturnValue(reread.promise),
+			),
+		});
+		await whenReady("Apollo", "deliveries");
+
+		await act(() =>
+			queryClient.invalidateQueries({
+				queryKey: ["deliveries", "portfolio", APOLLO.id],
+			}),
+		);
+
+		const cell = theCellOf("Apollo", "deliveries");
+		await waitFor(() =>
+			expect(theLookOf(cell).dataset.cellStatus).toBe("loading"),
+		);
+		expect(theLookOf(cell)).toHaveAttribute("aria-busy", "true");
+		expect(within(cell).getByText(/^Winter Release/)).toBeInTheDocument();
+	});
+
+	// @us-12 @slice-12 @ac-12.6 @error @contract-shape:pure-function
+	it.skip("says Couldn't load Deliveries when they could not be read, never No Deliveries", async () => {
+		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
+			deliveryService: deliveriesAnswering(
+				vi.fn().mockRejectedValue(new Error("unreachable")),
+			),
+		});
+
+		await waitFor(() =>
+			expect(
+				theLookOf(theCellOf("Apollo", "deliveries")).dataset.cellStatus,
+			).toBe("error"),
+		);
+		const cell = theCellOf("Apollo", "deliveries");
+
+		expect(cell).toHaveTextContent("Couldn't load Deliveries");
+		expect(cell).not.toHaveTextContent("No Deliveries");
+	});
+
+	// @us-12 @slice-12 @ac-12.8 @boundary @contract-shape:pure-function
+	it.skip("names the Deliveries in the instance's own word, empty and failed alike", async () => {
+		terms.current = {
+			...seededTerms,
+			[TERMINOLOGY_KEYS.DELIVERIES]: "Releases",
+		};
+		renderTheTable("portfolios", [PORTFOLIO_APOLLO, aPortfolio(4, "Gemini")], {
+			deliveryService: deliveriesAnswering(
+				vi.fn((portfolioId: number) =>
+					portfolioId === APOLLO.id
+						? Promise.resolve(activeDeliveries())
+						: Promise.reject(new Error("unreachable")),
+				),
+			),
+		});
+
+		expect(await whenReady("Apollo", "deliveries")).toHaveTextContent(
+			"No Releases",
+		);
+		await waitFor(() =>
+			expect(theCellOf("Gemini", "deliveries")).toHaveTextContent(
+				"Couldn't load Releases",
+			),
+		);
+		expect(theColumnTitles()).toContain("Releases");
+		expect(theColumnTitles()).not.toContain("Deliveries");
+	});
+});

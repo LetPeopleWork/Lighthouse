@@ -4,6 +4,7 @@ import { AddPortfolioWizard } from "../portfolios/AddPortfolioWizard";
 import { PortfolioDeletionDialog } from "../portfolios/PortfolioDeletionDialog";
 import { PortfolioDetailPage } from "../portfolios/PortfolioDetailPage";
 import { PortfolioEditPage } from "../portfolios/PortfolioEditPage";
+import { ReportPage } from "../reports/ReportPage";
 import { WorkTrackingSystemCreateWizard } from "../settings/WorkTrackingSystems/WorkTrackingSystemCreateWizard";
 import { WorkTrackingSystemEditPage } from "../settings/WorkTrackingSystems/WorkTrackingSystemEditPage";
 import { AddTeamWizard } from "../teams/AddTeamWizard";
@@ -121,6 +122,32 @@ export class OverviewPage {
 		await teamLink.click();
 
 		return new TeamDetailPage(this.page);
+	}
+
+	/**
+	 * A Team's Reports cell once it has read the reports. Waiting for mere visibility would accept the
+	 * spinner the cell shows while the reports are on their way.
+	 */
+	teamReportsCell(teamName: string): Locator {
+		return this.page
+			.getByRole("row")
+			.filter({
+				has: this.page.getByRole("link", { name: teamName, exact: true }),
+			})
+			.locator('[data-field="reports"]')
+			.filter({ has: this.page.locator('[data-cell-status="ready"]') });
+	}
+
+	async openTeamReport(
+		teamName: string,
+		reportName: string,
+	): Promise<ReportPage> {
+		await this.search(teamName);
+		const cell = this.teamReportsCell(teamName);
+		await cell.waitFor();
+		await cell.getByRole("link", { name: reportName, exact: true }).click();
+		await this.page.waitForURL(/\/teams\/\d+\/reports\/\d+$/);
+		return new ReportPage(this.page).waitUntilReady();
 	}
 
 	async editTeam(teamName: string): Promise<TeamEditPage> {

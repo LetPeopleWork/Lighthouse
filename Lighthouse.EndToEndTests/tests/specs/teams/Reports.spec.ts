@@ -23,3 +23,20 @@ testWithDemo(
 		await expect(report.panel("Cycle Time")).toBeVisible();
 	},
 );
+
+// @driving_port @us-12 @slice-12 @ac-12.1 @ac-12.7 @contract-shape:bounded-change
+// Pending until the Overview shows each Team's reports.
+testWithDemo.fixme(
+	"a report a coach created shows beside its Team on the Overview and opens from there",
+	async ({ overviewPage }) => {
+		const lightspeed = await overviewPage.goToTeam(LIGHTSPEED);
+		const reports = await lightspeed.goToReports();
+		const created = await reports.createTheDefaultReport();
+		const name = await created.readName();
+
+		const overview = await overviewPage.lighthousePage.goToOverview();
+		const report = await overview.openTeamReport(LIGHTSPEED, name);
+
+		await expect(report.title).toHaveText(name);
+	},
+);

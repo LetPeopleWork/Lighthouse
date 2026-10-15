@@ -24,6 +24,10 @@ export class ReportPage {
 			.last();
 	}
 
+	async readName(): Promise<string> {
+		return ((await this.title.textContent()) ?? "").trim();
+	}
+
 	panel(title: string): Locator {
 		return this.page.getByRole("region", { name: title });
 	}
