@@ -43,6 +43,7 @@ export const ReportsChips: React.FC<ReportsChipsProps> = ({ owner }) => {
 			moreTo={reportsPathOf(owner)}
 			emptyText="No Reports"
 			failureText="Couldn't load Reports"
+			loadingLabel="Loading Reports"
 		/>
 	);
 };

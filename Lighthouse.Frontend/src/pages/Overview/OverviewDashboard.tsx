@@ -232,7 +232,6 @@ const OverviewDashboard: React.FC = () => {
 		if (!selectedItem || !deleteType) return;
 
 		const owner: IReportOwner = { kind: deleteType, id: selectedItem.id };
-		let deleted = false;
 		try {
 			setIsLoading(true);
 			if (deleteType === "portfolio") {
@@ -242,7 +241,7 @@ const OverviewDashboard: React.FC = () => {
 				await teamService.deleteTeam(selectedItem.id);
 				reportUsage({ name: UsageDataEventName.TeamDeleted });
 			}
-			deleted = true;
+			forgetReportsOf(owner);
 			await fetchData();
 		} catch (error) {
 			console.error(`Error deleting ${deleteType}:`, error);
@@ -250,8 +249,6 @@ const OverviewDashboard: React.FC = () => {
 		} finally {
 			closeDeleteDialog();
 		}
-		// Only once the dialog counting its reports has closed, or it would ask the server for them again.
-		if (deleted) forgetReportsOf(owner);
 	};
 
 	// Connection handlers

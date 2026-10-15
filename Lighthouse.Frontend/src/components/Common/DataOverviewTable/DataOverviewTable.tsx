@@ -170,6 +170,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 					width: 300,
 					hideable: !isMobile,
 					sortable: false,
+					filterable: false,
 					renderCell: ({ row }) => {
 						if (!isPortfolio(row)) return null;
 						return <DeliveriesChips portfolioId={row.id} />;
@@ -184,6 +185,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 					width: 250,
 					hideable: !isMobile,
 					sortable: false,
+					filterable: false,
 					renderCell: ({ row }) => (
 						<ReportsChips
 							owner={{

@@ -131,6 +131,7 @@ export const DeliveriesChips: React.FC<DeliveriesChipsProps> = ({
 			moreTo={deliveriesPathOf(portfolioId)}
 			emptyText={`No ${deliveriesTerm}`}
 			failureText={`Couldn't load ${deliveriesTerm}`}
+			loadingLabel={`Loading ${deliveriesTerm}`}
 		/>
 	);
 };

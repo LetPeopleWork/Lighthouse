@@ -456,7 +456,9 @@ describe("Reports on the Overview", () => {
 
 		expect(look.dataset.cellStatus).toBe("loading");
 		expect(look).toHaveAttribute("aria-busy", "true");
-		expect(within(cell).getByRole("progressbar")).toBeInTheDocument();
+		expect(
+			within(cell).getByRole("progressbar", { name: "Loading Reports" }),
+		).toBeInTheDocument();
 		expect(cell).not.toHaveTextContent("No Reports");
 	});
 
@@ -487,7 +489,9 @@ describe("Reports on the Overview", () => {
 			expect(theLookOf(cell).dataset.cellStatus).toBe("loading"),
 		);
 		expect(theLookOf(cell)).toHaveAttribute("aria-busy", "true");
-		expect(within(cell).getByRole("progressbar")).toBeInTheDocument();
+		expect(
+			within(cell).getByRole("progressbar", { name: "Loading Reports" }),
+		).toBeInTheDocument();
 		const chip = within(cell).getByText("Engagement start");
 		expect(theBoxDimmingTheChip(cell, chip)).toHaveStyle(DIMMED);
 	});
@@ -721,7 +725,9 @@ describe("Deliveries on the Overview", () => {
 
 		expect(theLookOf(cell).dataset.cellStatus).toBe("loading");
 		expect(theLookOf(cell)).toHaveAttribute("aria-busy", "true");
-		expect(within(cell).getByRole("progressbar")).toBeInTheDocument();
+		expect(
+			within(cell).getByRole("progressbar", { name: "Loading Deliveries" }),
+		).toBeInTheDocument();
 		expect(cell).not.toHaveTextContent("No Deliveries");
 	});
 
@@ -751,7 +757,9 @@ describe("Deliveries on the Overview", () => {
 			expect(theLookOf(cell).dataset.cellStatus).toBe("loading"),
 		);
 		expect(theLookOf(cell)).toHaveAttribute("aria-busy", "true");
-		expect(within(cell).getByRole("progressbar")).toBeInTheDocument();
+		expect(
+			within(cell).getByRole("progressbar", { name: "Loading Deliveries" }),
+		).toBeInTheDocument();
 		const chip = within(cell).getByText(/^Winter Release/);
 		expect(theBoxDimmingTheChip(cell, chip)).toHaveStyle(DIMMED);
 	});
@@ -787,6 +795,30 @@ describe("Deliveries on the Overview", () => {
 		expect(
 			theLookOf(theCellOf("Apollo", "deliveries")).dataset.cellStatus,
 		).toBe("ready");
+	});
+
+	// @us-12 @slice-12 @ac-12.4 @error @contract-shape:unbounded-preservation
+	it("shows each Portfolio its own Deliveries", async () => {
+		const GEMINI = aPortfolio(4, "Gemini");
+		renderTheTable("portfolios", [PORTFOLIO_APOLLO, GEMINI], {
+			deliveryService: deliveriesAnswering(
+				vi.fn((portfolioId: number) =>
+					Promise.resolve(
+						portfolioId === APOLLO.id
+							? activeDeliveries(aDelivery(1, "Winter Release"))
+							: activeDeliveries(aDelivery(2, "Moon Landing", GEMINI.id)),
+					),
+				),
+			),
+		});
+
+		const apollo = linkNamesIn(await whenReady("Apollo", "deliveries"));
+		const gemini = linkNamesIn(await whenReady("Gemini", "deliveries"));
+
+		expect(apollo).toHaveLength(1);
+		expect(apollo[0]).toMatch(/^Winter Release/);
+		expect(gemini).toHaveLength(1);
+		expect(gemini[0]).toMatch(/^Moon Landing/);
 	});
 
 	// @us-12 @slice-12 @ac-12.6 @error @contract-shape:pure-function

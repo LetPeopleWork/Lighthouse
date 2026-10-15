@@ -29,15 +29,23 @@ const renderWithProviders = (component: React.ReactElement) => {
 		},
 	});
 
-	return render(
+	const withProviders = (child: React.ReactElement) => (
 		<MemoryRouter>
 			<QueryClientProvider client={queryClient}>
 				<ApiServiceContext.Provider value={mockApiServiceContext}>
-					<TerminologyProvider>{component}</TerminologyProvider>
+					<TerminologyProvider>{child}</TerminologyProvider>
 				</ApiServiceContext.Provider>
 			</QueryClientProvider>
-		</MemoryRouter>,
+		</MemoryRouter>
 	);
+
+	const rendered = render(withProviders(component));
+	return {
+		...rendered,
+		/** Renders again under the same cache, so a query key that lost its id would answer from the old entry. */
+		rerender: (next: React.ReactElement) =>
+			rendered.rerender(withProviders(next)),
+	};
 };
 
 const getMockDelivery = (overrides?: Partial<Delivery>): Delivery => {
@@ -376,27 +384,7 @@ describe("DeliveriesChips", () => {
 
 		expect(mockDeliveryService.getByPortfolio).toHaveBeenCalledWith(1);
 
-		// Change portfolioId
-		rerender(
-			<MemoryRouter>
-				<QueryClientProvider
-					client={
-						new QueryClient({
-							defaultOptions: {
-								queries: { retry: false },
-								mutations: { retry: false },
-							},
-						})
-					}
-				>
-					<ApiServiceContext.Provider value={mockApiServiceContext}>
-						<TerminologyProvider>
-							<DeliveriesChips portfolioId={2} />
-						</TerminologyProvider>
-					</ApiServiceContext.Provider>
-				</QueryClientProvider>
-			</MemoryRouter>,
-		);
+		rerender(<DeliveriesChips portfolioId={2} />);
 
 		expect(mockDeliveryService.getByPortfolio).toHaveBeenCalledWith(2);
 		expect(mockDeliveryService.getByPortfolio).toHaveBeenCalledTimes(2);

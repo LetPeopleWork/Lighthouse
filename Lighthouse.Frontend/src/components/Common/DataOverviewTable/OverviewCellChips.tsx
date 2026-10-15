@@ -30,6 +30,8 @@ export interface OverviewCellChipsProps<T> {
 	readonly moreTo: string;
 	readonly emptyText: string;
 	readonly failureText: string;
+	/** What a screen reader hears for the spinner, naming what is on its way. */
+	readonly loadingLabel: string;
 }
 
 const SecondaryText: React.FC<{ readonly text: string }> = ({ text }) => (
@@ -38,9 +40,10 @@ const SecondaryText: React.FC<{ readonly text: string }> = ({ text }) => (
 	</Typography>
 );
 
-const centredSpinner = (
+const CentredSpinner: React.FC<{ readonly label: string }> = ({ label }) => (
 	<CircularProgress
 		size={SPINNER_SIZE}
+		aria-label={label}
 		sx={{
 			position: "absolute",
 			top: "50%",
@@ -58,6 +61,7 @@ export const OverviewCellChips = <T,>({
 	moreTo,
 	emptyText,
 	failureText,
+	loadingLabel,
 }: Readonly<OverviewCellChipsProps<T>>): React.ReactElement => {
 	const isLoading = status === "loading";
 	const hasItems = items !== undefined && items.length > 0;
@@ -95,7 +99,7 @@ export const OverviewCellChips = <T,>({
 			sx={{ position: "relative", minHeight: SPINNER_SIZE, py: 0.5 }}
 		>
 			{content()}
-			{isLoading && centredSpinner}
+			{isLoading && <CentredSpinner label={loadingLabel} />}
 		</Box>
 	);
 };
