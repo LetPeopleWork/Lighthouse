@@ -102,7 +102,7 @@ How the fill proceeds:
 A filled day looks exactly like a recorded one, but it is worked out afterwards, against **today's** configuration — state mappings, Cycle Time definitions, blocked rules, blackout configuration and the current set of Work Items. Where any of those changed since, or a Work Item was deleted or moved to a different parent, a filled day may differ from what would have been recorded on that day. If the past looks different from what you remember, let us know.
 
 {: .important}
-**Filled days stay.** They cannot be told apart from recorded ones, so there is no way to single them out afterwards. If you might want your unfilled history back, [take a backup](../settings/databasemanagement.html#backup) before you upgrade. Restoring a backup brings back the history it held, and the charts then fill in whatever is still missing, like on any other instance.
+**Filled days stay.** They cannot be told apart from recorded ones, so there is no way to single them out afterwards. If you might want your unfilled history back, [take a backup](../settings/databasemanagement.html#backup) before you upgrade. Restoring a backup brings back the history it held, and the charts then fill in whatever is still missing. Days the running instance already worked out for a Team or Portfolio before the restore are asked for again only after that Team or Portfolio next refreshes, or after a restart.
 
 The demo data ships with a backdated history, so its charts are populated as soon as it is loaded. The fill leaves the demo's backdated days as they are and works out only the days that are still missing.
 
