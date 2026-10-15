@@ -1686,7 +1686,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 : ParentSource.AFieldTheOverrideNames;
 
             var fromTheMatchingLinks = theOverride.NamesALinkType
-                ? issue.Fields.ResolveParentFromLinks(theOverride.LinkTypeName, theOverride.Direction, issue.LinkAddedAt)
+                ? issue.Fields.ResolveParentFromLinks(theOverride.LinkTypeName, theOverride.Direction, issue.StandingLinks)
                 : default;
 
             var parentReference = ParentSourceSelector.TheParentOf(workItemQueryOwner, workItem, source, fromTheMatchingLinks);

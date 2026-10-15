@@ -71,6 +71,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
 
         protected static readonly JiraLinkType CausedBy = new("Causes", TheUpwardPhrase, "causes");
 
+        private static readonly JiraLinkType Relates = new("Relates", "relates to", "relates to");
+
         /// <summary>A Feature whose created date the scenario does not care about.</summary>
         protected static readonly DateTime SomeLongAgoDay = new(2025, 6, 1, 8, 0, 0, DateTimeKind.Utc);
 
@@ -156,11 +158,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         }
 
         /// <summary>A link made at a known moment, or removed at one, as the issue's history records it.</summary>
-        protected sealed record LinkEvent(string Counterpart, DateTime At, bool Added)
+        protected sealed record LinkEvent(string Counterpart, DateTime At, bool Added, string Phrase)
         {
-            public static LinkEvent Linked(string counterpart, DateTime at) => new(counterpart, at, true);
+            public static LinkEvent Linked(string counterpart, DateTime at) => new(counterpart, at, true, TheUpwardPhrase);
 
-            public static LinkEvent Unlinked(string counterpart, DateTime at) => new(counterpart, at, false);
+            public static LinkEvent Unlinked(string counterpart, DateTime at) => new(counterpart, at, false, TheUpwardPhrase);
+
+            /// <summary>A link of a type no parent is read from, which an issue can hold to its Feature as well.</summary>
+            public static LinkEvent RelatedTo(string counterpart, DateTime at) => new(counterpart, at, true, Relates.Inward);
         }
 
         /// <summary>The two figures one refresh recorded, as Refresh History hands them to the screen.</summary>
@@ -628,8 +633,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
             public List<string> TheHistory()
             {
                 var history = LinkHistory.ConvertAll(linkEvent => linkEvent.Added
-                    ? JiraWireFormat.ALinkAddedAt(linkEvent.At, linkEvent.Counterpart, $"This issue {TheUpwardPhrase} {linkEvent.Counterpart}")
-                    : JiraWireFormat.ALinkRemovedAt(linkEvent.At, linkEvent.Counterpart, $"This issue {TheUpwardPhrase} {linkEvent.Counterpart}"));
+                    ? JiraWireFormat.ALinkAddedAt(linkEvent.At, linkEvent.Counterpart, $"This issue {linkEvent.Phrase} {linkEvent.Counterpart}")
+                    : JiraWireFormat.ALinkRemovedAt(linkEvent.At, linkEvent.Counterpart, $"This issue {linkEvent.Phrase} {linkEvent.Counterpart}"));
 
                 if (ListedInReverse)
                 {
@@ -643,7 +648,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
             {
                 var upward = orderTheLinksWereDescribedIn.Where(StillStands).Select(CausedBy.LinkWhoseInwardIssueIs);
                 var downward = DownwardLinks.Select(CausedBy.LinkWhoseOutwardIssueIs);
-                var links = upward.Concat(downward).ToList();
+                var related = LinkHistory.Where(linkEvent => linkEvent.Phrase == Relates.Inward).Select(linkEvent => Relates.LinkWhoseOutwardIssueIs(linkEvent.Counterpart));
+                var links = upward.Concat(downward).Concat(related).ToList();
 
                 if (ListedInReverse)
                 {
@@ -671,7 +677,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
                     return true;
                 }
 
-                var latest = LinkHistory.Where(linkEvent => linkEvent.Counterpart == counterpart).MaxBy(linkEvent => linkEvent.At);
+                var latest = LinkHistory
+                    .Where(linkEvent => linkEvent.Counterpart == counterpart && linkEvent.Phrase == TheUpwardPhrase)
+                    .MaxBy(linkEvent => linkEvent.At);
 
                 return latest is not null && latest.Added;
             }

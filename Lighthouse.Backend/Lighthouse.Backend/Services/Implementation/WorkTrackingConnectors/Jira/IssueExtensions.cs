@@ -107,17 +107,40 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             this JsonElement fields,
             string linkTypeReference,
             LinkDirection direction,
-            IReadOnlyDictionary<string, DateTime> linkAddedAt)
+            IReadOnlyList<StandingLink> standingLinks)
         {
             var counterparts = IssueLinksOf(fields)
                 .Where(link => LinkTypeAnswersTo(link, linkTypeReference))
-                .Select(link => CounterpartKeyOf(link, direction))
-                .Where(key => key.Length > 0)
-                .Distinct(StringComparer.Ordinal)
-                .Select(key => new ParentCandidate(key, linkAddedAt.TryGetValue(key, out var addedAt) ? addedAt : null))
+                .Select(link => CounterpartOf(link, direction))
+                .Where(counterpart => counterpart.Key.Length > 0)
+                .Select(counterpart => new ParentCandidate(counterpart.Key, WhenTheLinkWasMade(counterpart, standingLinks)))
                 .ToList();
 
             return ParentResolution.From(counterparts);
+        }
+
+        /// <summary>
+        /// The history names a link's type only in its sentence, "This work item is caused by PAY-88", so a
+        /// link is dated by the standing entry whose sentence reads this end's phrase before the key. Any
+        /// other link to the same issue, of another type or from the other end, has dates of its own. When no
+        /// entry fits, or several fit and disagree, the link stays undated rather than borrow a date that may
+        /// not be its own.
+        /// </summary>
+        private static DateTime? WhenTheLinkWasMade(LinkCounterpart counterpart, IReadOnlyList<StandingLink> standingLinks)
+        {
+            if (counterpart.Phrase.Length == 0)
+            {
+                return null;
+            }
+
+            var phraseAndKey = $"{counterpart.Phrase} {counterpart.Key}";
+            var dates = standingLinks
+                .Where(link => link.CounterpartKey == counterpart.Key && link.Sentence.Contains(phraseAndKey, StringComparison.OrdinalIgnoreCase))
+                .Select(link => link.AddedAt)
+                .Distinct()
+                .ToList();
+
+            return dates.Count == 1 ? dates[0] : null;
         }
 
         /// <summary>
@@ -172,16 +195,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private static bool Reads(string label, string reference)
             => label.Length > 0 && label.Equals(reference, StringComparison.OrdinalIgnoreCase);
 
-        private static string CounterpartKeyOf(JsonElement link, LinkDirection direction)
+        /// <summary>The issue at the other end of a link, and the phrase the link reads as from this end.</summary>
+        private readonly record struct LinkCounterpart(string Key, string Phrase);
+
+        private static LinkCounterpart CounterpartOf(JsonElement link, LinkDirection direction)
         {
-            var inwardEnd = KeyOf(link, IssueLinkInwardIssue);
-            var outwardEnd = KeyOf(link, IssueLinkOutwardIssue);
+            var inwardEnd = new LinkCounterpart(KeyOf(link, IssueLinkInwardIssue), LabelOf(link, IssueLinkInwardName));
+            var outwardEnd = new LinkCounterpart(KeyOf(link, IssueLinkOutwardIssue), LabelOf(link, IssueLinkOutwardName));
 
             return direction switch
             {
                 LinkDirection.Inward => inwardEnd,
                 LinkDirection.Outward => outwardEnd,
-                _ => outwardEnd.Length > 0 ? outwardEnd : inwardEnd,
+                _ => outwardEnd.Key.Length > 0 ? outwardEnd : inwardEnd,
             };
         }
 

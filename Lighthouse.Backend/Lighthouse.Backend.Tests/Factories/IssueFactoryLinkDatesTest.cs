@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Lighthouse.Backend.Factories;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
@@ -41,9 +42,9 @@ namespace Lighthouse.Backend.Tests.Factories
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(issue.LinkAddedAt, Is.EqualTo(new Dictionary<string, DateTime> { [AFeature] = February1 }),
+                Assert.That(issue.StandingLinks, Is.EqualTo(new[] { ACausedByLink(AFeature, February1) }),
                     "The moment the link was made is the one fact the oldest-link rule needs, and the history is where Jira keeps it.");
-                Assert.That(issue.LinkAddedAt[AFeature].Kind, Is.EqualTo(DateTimeKind.Utc),
+                Assert.That(issue.StandingLinks[0].AddedAt.Kind, Is.EqualTo(DateTimeKind.Utc),
                     "The history is stamped in the reading account's zone, and a date that is not kept as UTC turns into a different calendar day wherever the server runs.");
             }
         }
@@ -57,7 +58,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 JiraWireFormat.ALinkAddedAt(April10, AnotherFeature, Sentence(AnotherFeature)),
                 JiraWireFormat.ALinkRemovedAt(May1, AFeature, Sentence(AFeature)));
 
-            Assert.That(issue.LinkAddedAt.Keys, Is.EquivalentTo(OnlyTheOtherFeature),
+            Assert.That(issue.StandingLinks.Select(link => link.CounterpartKey), Is.EquivalentTo(OnlyTheOtherFeature),
                 "A removed link no longer exists, so the date it was made says nothing about any link that stands.");
         }
 
@@ -70,7 +71,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 JiraWireFormat.ALinkRemovedAt(May1, AFeature, Sentence(AFeature)),
                 JiraWireFormat.ALinkAddedAt(July1, AFeature, Sentence(AFeature)));
 
-            Assert.That(issue.LinkAddedAt, Does.ContainKey(AFeature).WithValue(July1),
+            Assert.That(issue.StandingLinks, Is.EqualTo(new[] { ACausedByLink(AFeature, July1) }),
                 "A re-added link counts from when it was re-added, because the earlier date belongs to a link that no longer exists.");
         }
 
@@ -83,7 +84,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 JiraWireFormat.ALinkRemovedAt(May1, AFeature, Sentence(AFeature)),
                 JiraWireFormat.ALinkAddedAt(February1, AFeature, Sentence(AFeature)));
 
-            Assert.That(issue.LinkAddedAt, Does.ContainKey(AFeature).WithValue(July1),
+            Assert.That(issue.StandingLinks, Is.EqualTo(new[] { ACausedByLink(AFeature, July1) }),
                 "Cloud and Data Center do not promise an order for a history. Read in the order given, this link would date from February and a removal would seem to end it.");
         }
 
@@ -91,11 +92,17 @@ namespace Lighthouse.Backend.Tests.Factories
         [Category("edge")]
         public void A_key_named_only_in_the_sentence_is_read_from_the_sentence()
         {
-            var issue = AnIssueWithTheHistory(
+            var issue = AnIssueWithTheLinksAndHistory(
+                [Causes.LinkWhoseInwardIssueIs(AnotherFeature)],
                 JiraWireFormat.ALinkAddedNamingTheCounterpartOnlyInItsSentence(April10, "10443", Sentence(AnotherFeature)));
 
-            Assert.That(issue.LinkAddedAt, Is.EqualTo(new Dictionary<string, DateTime> { [AnotherFeature] = April10 }),
-                "Where the entry carries a link id instead of a key, the sentence is the only place the counterpart is named. The key is read out of it, never the renamable phrase around it.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(issue.StandingLinks, Is.EqualTo(new[] { ACausedByLink(AnotherFeature, April10) }),
+                    "Where the entry carries a link id instead of a key, the sentence is the only place the counterpart is named. The key is read out of it, never the renamable phrase around it.");
+                Assert.That(TheParentCandidatesOf(issue, LinkDirection.Both), Is.EqualTo(new[] { new ParentCandidate(AnotherFeature, April10) }),
+                    "The parent link is dated from that entry too.");
+            }
         }
 
         [Test]
@@ -106,7 +113,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 JiraWireFormat.ALinkRemovedAt(February1, AnotherFeature, Sentence(AnotherFeature)),
                 JiraWireFormat.ALinkAddedAt(April10, AFeature, Sentence(AFeature)));
 
-            Assert.That(issue.LinkAddedAt, Is.EqualTo(new Dictionary<string, DateTime> { [AFeature] = April10 }),
+            Assert.That(issue.StandingLinks, Is.EqualTo(new[] { ACausedByLink(AFeature, April10) }),
                 "A history that starts part way through is ordinary for an imported issue, and it must not cost the links it does date.");
         }
 
@@ -123,11 +130,71 @@ namespace Lighthouse.Backend.Tests.Factories
                 "Reading links out of the history must not disturb the status changes every cycle-time figure is built from.");
         }
 
+        /// <summary>
+        /// An issue can be linked to the same Feature in more than one way. Only the history of the link the
+        /// parent is read through dates that parent: a later "relates to" says nothing about when the item
+        /// was hung under the Feature, and dating it from that would hand the pick to the wrong Feature.
+        /// </summary>
+        [Test]
+        [Category("edge")]
+        public void Another_kind_of_link_to_the_same_issue_added_later_does_not_re_date_the_parent_link()
+        {
+            var issue = AnIssueWithTheLinksAndHistory(
+                [Causes.LinkWhoseInwardIssueIs(AFeature), Relates.LinkWhoseOutwardIssueIs(AFeature)],
+                JiraWireFormat.ALinkAddedAt(February1, AFeature, Sentence(AFeature)),
+                JiraWireFormat.ALinkAddedAt(July1, AFeature, RelatesSentence(AFeature)));
+
+            Assert.That(TheParentCandidatesOf(issue, LinkDirection.Both), Is.EqualTo(new[] { new ParentCandidate(AFeature, February1) }),
+                "The parent link was made in February. The July entry belongs to a link of another type.");
+        }
+
+        [Test]
+        [Category("edge")]
+        public void Another_kind_of_link_to_the_same_issue_added_and_removed_does_not_undate_the_parent_link()
+        {
+            var issue = AnIssueWithTheLinksAndHistory(
+                [Causes.LinkWhoseInwardIssueIs(AFeature)],
+                JiraWireFormat.ALinkAddedAt(February1, AFeature, Sentence(AFeature)),
+                JiraWireFormat.ALinkAddedAt(April10, AFeature, RelatesSentence(AFeature)),
+                JiraWireFormat.ALinkRemovedAt(May1, AFeature, RelatesSentence(AFeature)));
+
+            Assert.That(TheParentCandidatesOf(issue, LinkDirection.Both), Is.EqualTo(new[] { new ParentCandidate(AFeature, February1) }),
+                "Removing a link of another type leaves the parent link standing, and it keeps the date it was made on.");
+        }
+
+        [Test]
+        [Category("edge")]
+        public void The_other_end_of_the_same_link_type_to_the_same_issue_does_not_re_date_the_parent_link()
+        {
+            var issue = AnIssueWithTheLinksAndHistory(
+                [Causes.LinkWhoseInwardIssueIs(AFeature), Causes.LinkWhoseOutwardIssueIs(AFeature)],
+                JiraWireFormat.ALinkAddedAt(February1, AFeature, Sentence(AFeature)),
+                JiraWireFormat.ALinkAddedAt(July1, AFeature, $"This issue causes {AFeature}"));
+
+            Assert.That(TheParentCandidatesOf(issue, LinkDirection.Inward), Is.EqualTo(new[] { new ParentCandidate(AFeature, February1) }),
+                "'causes' and 'is caused by' are two different links, so the one this item reads its parent through keeps its own date.");
+        }
+
+        private const string TheUpwardPhrase = "is caused by";
+
+        private static readonly JiraLinkType Causes = new("Causes", TheUpwardPhrase, "causes");
+
+        private static readonly JiraLinkType Relates = new("Relates", "relates to", "relates to");
+
         private static readonly string[] OnlyTheOtherFeature = [AnotherFeature];
 
-        private static string Sentence(string counterpart) => $"This issue is caused by {counterpart}";
+        private static string Sentence(string counterpart) => $"This issue {TheUpwardPhrase} {counterpart}";
 
-        private static Issue AnIssueWithTheHistory(params string[] histories)
+        private static StandingLink ACausedByLink(string counterpart, DateTime addedAt) => new(counterpart, Sentence(counterpart), addedAt);
+
+        private static string RelatesSentence(string counterpart) => $"This issue relates to {counterpart}";
+
+        private static IReadOnlyList<ParentCandidate> TheParentCandidatesOf(Issue issue, LinkDirection direction)
+            => issue.Fields.ResolveParentFromLinks(TheUpwardPhrase, direction, issue.StandingLinks).CandidatesWithTheirLinkDates;
+
+        private static Issue AnIssueWithTheHistory(params string[] histories) => AnIssueWithTheLinksAndHistory([], histories);
+
+        private static Issue AnIssueWithTheLinksAndHistory(string[] links, params string[] histories)
         {
             var json = JiraWireFormat.AnIssueWithItsHistory(
                 TheItem,
@@ -135,7 +202,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 JiraWireFormat.AnInstant(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
                 JiraWireFormat.AnInstant(new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc)),
                 string.Empty,
-                Array.Empty<string>(),
+                links,
                 histories);
 
             using var document = JsonDocument.Parse(json);

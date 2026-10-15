@@ -33,6 +33,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
 
         private const string TheItemWithAnOlderIncidentLink = "PAY-431";
 
+        private const string TheItemAlsoRelatedToItsFeature = "PAY-432";
+
         private const string AnIncident = "INC-5531";
 
         private const string TheMigratedFeature = "OPS-12";
@@ -326,6 +328,38 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
                     .And.Contain($"{AnIncident}, 2026-01-01")
                     .And.Contain($"{TheFeatureItWasSplitInto}, {Day(June17)}"),
                     "Everything set aside is named, the incident included, so the administrator sees the whole of what the links said.");
+            }
+        }
+
+        /// <summary>
+        /// An item can hold more than one kind of link to the same Feature. Only the link the Team reads its
+        /// parents through says when the item was hung under that Feature; a "relates to" added months later
+        /// is a different link and does not make the parent link any younger.
+        /// </summary>
+        [Test]
+        [Category("edge")]
+        public async Task A_link_of_another_type_to_the_same_Feature_changes_nothing()
+        {
+            TheTeamReadsItsParentsFromTheCausedByLink();
+            ThePortfolioHoldsTheFeature(TheFirstFeature);
+            ThePortfolioHoldsTheFeature(TheFeatureItWasSplitInto);
+            TheTeamHoldsTheWorkItem(TheItemAlsoRelatedToItsFeature);
+            TheIssueHasTheLinkHistory(
+                TheItemAlsoRelatedToItsFeature,
+                LinkEvent.Linked(TheFirstFeature, March4),
+                LinkEvent.Linked(TheFeatureItWasSplitInto, June17),
+                LinkEvent.RelatedTo(TheFirstFeature, On(2026, 8, 1)));
+            await ThePortfolioRefreshes();
+
+            await TheTeamRefreshes();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TheStoredParentOfTheWorkItem(TheItemAlsoRelatedToItsFeature), Is.EqualTo(TheFirstFeature),
+                    "The item was hung under its first Feature in March. Dated by the August 'relates to', it would move to the Feature it was split into.");
+                Assert.That(TheOneLineThatPlacedFor(TheTeam), Does.Contain(
+                    $"{TheItemAlsoRelatedToItsFeature} under {TheFirstFeature} (oldest link, {Day(March4)}; set aside {TheFeatureItWasSplitInto}, {Day(June17)})"),
+                    "The date the line shows is the one the parent link was made on, so the administrator finds it in Jira's history.");
             }
         }
 

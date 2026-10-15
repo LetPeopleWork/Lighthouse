@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static readonly string[] TheParentAndBothChildren = [TheParent, AChild, AnotherChild];
 
-        private static readonly Dictionary<string, DateTime> NoLinkDates = [];
+        private static readonly StandingLink[] NoLinkDates = [];
 
         private static readonly DateTime TheDayTheParentWasLinked = new(2026, 3, 4, 9, 15, 0, DateTimeKind.Utc);
 
@@ -248,13 +248,40 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var fields = FieldsOfAnIssueWith(
                 Cloners.LinkWhoseOutwardIssueIs(TheParent),
                 Cloners.LinkWhoseInwardIssueIs(AnotherParent));
-            var linkAddedAt = new Dictionary<string, DateTime> { [TheParent] = TheDayTheParentWasLinked, [AChild] = DateTime.UnixEpoch };
+            StandingLink[] linkAddedAt = [new(TheParent, $"This issue {OutwardLabel} {TheParent}", TheDayTheParentWasLinked), new(AChild, $"This issue {OutwardLabel} {AChild}", DateTime.UnixEpoch)];
 
             var resolution = fields.ResolveParentFromLinks(LinkTypeName, LinkDirection.Both, linkAddedAt);
 
             Assert.That(resolution.CandidatesWithTheirLinkDates, Is.EqualTo(new[]
             {
                 new ParentCandidate(TheParent, TheDayTheParentWasLinked),
+                new ParentCandidate(AnotherParent, null),
+            }));
+        }
+
+        /// <summary>
+        /// A link is dated only by an entry that reads as this link: this end's phrase before the key. When no
+        /// entry does, or two do and disagree, the date is not known, and an undated link loses to a dated one
+        /// rather than winning on a date that belongs to some other link.
+        /// </summary>
+        [Test]
+        public void LeavesALinkUndatedWhenNoEntryReadsAsItOrTheEntriesThatDoDisagree()
+        {
+            var fields = FieldsOfAnIssueWith(
+                Cloners.LinkWhoseOutwardIssueIs(TheParent),
+                Cloners.LinkWhoseOutwardIssueIs(AnotherParent));
+            StandingLink[] standingLinks =
+            [
+                new(TheParent, $"This issue {OutwardLabel} {TheParent}", TheDayTheParentWasLinked),
+                new(TheParent, $"This work item {OutwardLabel} {TheParent}", DateTime.UnixEpoch),
+                new(AnotherParent, $"This issue {InwardLabel} {AnotherParent}", TheDayTheParentWasLinked),
+            ];
+
+            var resolution = fields.ResolveParentFromLinks(LinkTypeName, LinkDirection.Both, standingLinks);
+
+            Assert.That(resolution.CandidatesWithTheirLinkDates, Is.EqualTo(new[]
+            {
+                new ParentCandidate(TheParent, null),
                 new ParentCandidate(AnotherParent, null),
             }));
         }

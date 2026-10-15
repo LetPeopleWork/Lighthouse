@@ -33,9 +33,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         public IReadOnlyList<WorkItemStateTransition> StateTransitions { get; set; } = [];
 
         /// <summary>
-        /// When the link to each counterpart key that still stands was made, read from the issue's history.
-        /// A key with no entry is a link the history never recorded.
+        /// Every link the issue's history says still stands, each with when it was made. A link with no entry
+        /// here is one the history never recorded.
         /// </summary>
-        public IReadOnlyDictionary<string, DateTime> LinkAddedAt { get; init; } = new Dictionary<string, DateTime>();
+        public IReadOnlyList<StandingLink> StandingLinks { get; init; } = [];
     }
 }

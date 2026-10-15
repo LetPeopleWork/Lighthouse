@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Factories
                 Labels = labels,
                 Fields = fields,
                 StateTransitions = GetAllStateTransitions(json),
-                LinkAddedAt = StandingLinksIn(json),
+                StandingLinks = StandingLinksIn(json),
             };
         }
 
@@ -72,7 +72,9 @@ namespace Lighthouse.Backend.Factories
                 .ToList();
         }
 
-        private sealed record LinkChange(DateTime At, string? Removed, string? Added);
+        private sealed record LinkEnd(string CounterpartKey, string Sentence);
+
+        private sealed record LinkChange(DateTime At, LinkEnd? Removed, LinkEnd? Added);
 
         private const string LinkFieldName = "Link";
 
@@ -90,20 +92,23 @@ namespace Lighthouse.Backend.Factories
 
         // Neither Cloud nor Data Center promises an order for the histories, so they are replayed by when
         // they happened. What stands at the end is each link that still exists, dated by its latest adding.
-        private static Dictionary<string, DateTime> StandingLinksIn(JsonElement json)
+        // A link is its counterpart together with its sentence, because the sentence is the only place the
+        // history names the link's type: a "relates to" to the same issue is another link with its own dates.
+        private static List<StandingLink> StandingLinksIn(JsonElement json)
         {
             if (!json.TryGetProperty(JiraFieldNames.ChangelogFieldName, out var changelog))
             {
                 return [];
             }
 
-            return changelog.GetProperty(JiraFieldNames.HistoriesFieldName).EnumerateArray()
+            return [.. changelog.GetProperty(JiraFieldNames.HistoriesFieldName).EnumerateArray()
                 .SelectMany(LinkChangesIn)
                 .OrderBy(change => change.At)
-                .Aggregate(new Dictionary<string, DateTime>(StringComparer.Ordinal), Replay);
+                .Aggregate(new Dictionary<LinkEnd, DateTime>(), Replay)
+                .Select(standing => new StandingLink(standing.Key.CounterpartKey, standing.Key.Sentence, standing.Value))];
         }
 
-        private static Dictionary<string, DateTime> Replay(Dictionary<string, DateTime> standing, LinkChange change)
+        private static Dictionary<LinkEnd, DateTime> Replay(Dictionary<LinkEnd, DateTime> standing, LinkChange change)
         {
             if (change.Removed != null)
             {
@@ -131,8 +136,19 @@ namespace Lighthouse.Backend.Factories
                 .Where(item => StringOrNull(item, JiraFieldNames.FieldFieldName) == LinkFieldName)
                 .Select(item => new LinkChange(
                     at.UtcDateTime,
-                    CounterpartKeyOn(item, FromPropertyName, JiraFieldNames.FromStringPropertyName),
-                    CounterpartKeyOn(item, ToPropertyName, JiraFieldNames.ToStringPropertyName)));
+                    LinkEndOn(item, FromPropertyName, JiraFieldNames.FromStringPropertyName),
+                    LinkEndOn(item, ToPropertyName, JiraFieldNames.ToStringPropertyName)));
+        }
+
+        // A removal writes on its from side the same sentence the adding wrote on its to side, which is what
+        // lets a removal end exactly the link it names.
+        private static LinkEnd? LinkEndOn(JsonElement item, string keyProperty, string sentenceProperty)
+        {
+            var counterpartKey = CounterpartKeyOn(item, keyProperty, sentenceProperty);
+
+            return counterpartKey is null
+                ? null
+                : new LinkEnd(counterpartKey, StringOrNull(item, sentenceProperty) ?? string.Empty);
         }
 
         // Some Jira versions put a link id where the key would be; then the sentence is the only place the
