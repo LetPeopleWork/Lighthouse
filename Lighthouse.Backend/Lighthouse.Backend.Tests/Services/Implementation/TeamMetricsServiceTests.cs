@@ -1135,6 +1135,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             }
         }
 
+        [TestCase(true, false)]
+        [TestCase(false, true)]
+        public void GetThroughputProcessBehaviourChart_OnlyOneBaselineBoundConfigured_IsInvalidRatherThanFallingBackToTheDisplayWindow(bool startSet, bool endSet)
+        {
+            testTeam.ProcessBehaviourChartBaselineStartDate = startSet ? TestToday.AmbientAsUtcMidnight.AddDays(-30) : null;
+            testTeam.ProcessBehaviourChartBaselineEndDate = endSet ? TestToday.AmbientAsUtcMidnight.AddDays(-1) : null;
+
+            var result = subject.GetThroughputProcessBehaviourChart(testTeam, TestToday.AmbientAsUtcMidnight.AddDays(-30), TestToday.AmbientAsUtcMidnight);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineInvalid));
+                Assert.That(result.StatusReason, Does.Contain("both"));
+                Assert.That(result.BaselineConfigured, Is.True);
+            }
+        }
+
         private ProcessBehaviourChart GetTeamProcessBehaviourChart(string chart, DateTime displayStart, DateTime displayEnd)
         {
             return chart switch
