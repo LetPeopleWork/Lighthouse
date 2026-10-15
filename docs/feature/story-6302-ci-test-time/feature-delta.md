@@ -1170,6 +1170,90 @@ All three are green with no failures at all, so none of the known environmental 
 
 **Owed.** E-04d after push, CI-only: the median of at least five `main` runs of the backend test job at or under 192 s.
 
+## Wave: DELIVER / [REF] Slice 05 record — step 05-01 four slow backend tests
+
+**Where the headline times came from.** All four (S8 62 s, `CacheTest` 61 s, Postgres 51 s, Redis 43 s) are from one CI run, `38570239004`. A reference class ran at its usual time in that run, so the runner was not slow. CI per-test times over seven `main` runs (A `38552396129`, B `38553818860`, C `38570239004`, D `38612045131`, E `38612517187`, F `38619963238`, G `38623201098`), seconds:
+
+| Test | A | B | C | D | E | F | G |
+|---|---|---|---|---|---|---|---|
+| `CacheTest.ConcurrentReadersAndWriters_DoNotObserveCorruptedEntries` | 11.6 | 0.2 | 60.9 | 0.3 | 29.2 | 0.2 | 1.0 |
+| `CacheTest.ConcurrentInsertsOnUniqueKeys_…` | 0.0 | 4.6 | 0.0 | 0.0 | 0.0 | 0.0 | 2.6 |
+| Slowest S8 case in that run | 12.9 | 5.5 | 62.2 | 3.6 | 30.7 | 6.5 | 4.1 |
+| `S8_Enter_ExpiredToken_RefusedLegibly` | 2.7 | 3.2 | 2.7 | 3.6 | 3.0 | 2.7 | 2.9 |
+| `BlockedCountSnapshotMigrationTests.Migration_OnPostgres_…` | 15.3 | 15.5 | 50.5 | 15.2 | 19.2 | 15.9 | 15.8 |
+| `DataProtectionKeyRingTest.WhenRedisConfigured_…` | 6.2 | 4.2 | 42.8 | 0.2 | 15.9 | 5.4 | 1.6 |
+| Class sum `S8_EmbedEntryPointTests` | 28.2 | 20.5 | 77.2 | 19.0 | 49.5 | 24.6 | 21.3 |
+| Class sum `CacheTest` | 12.8 | 5.4 | 62.0 | 1.0 | 30.3 | 6.0 | 4.8 |
+| Class sum `BlockedCountSnapshotMigrationTests` | 18.4 | 20.0 | 55.5 | 20.3 | 26.4 | 19.6 | 19.3 |
+| Class sum `DataProtectionKeyRingTest` | 7.3 | 4.4 | 43.7 | 0.4 | 16.9 | 5.6 | 2.6 |
+
+The S8 case that spikes is a different one each time (an off-host return path in A and C, the local return path in E), and its spike matches the `CacheTest` spike in length (12.9 / 11.6, 62.2 / 60.9, 30.7 / 29.2 s). The Postgres and Redis spikes fall in the same runs. That points at one stall the others wait out, not at four slow tests.
+
+**Cause table.**
+
+| Test | Cause (one line) | Measured locally (load, 1 min) | CI confirmation | Verdict |
+|---|---|---|---|---|
+| `CacheTest.ConcurrentReadersAndWriters` (and the class's other barrier tests) | Its 16 participants run as thread-pool work items and block in `Barrier.SignalAndWait`; on a 4-core runner that parks every worker until the pool grows, so it and everything else in flight in the assembly stall. The 200 ms window also started before the participants were queued, so in a slow run they raced nothing. | Reproduced: `CacheTest` + `S8_EmbedEntryPointTests` with `DOTNET_PROCESSOR_COUNT=4` took 58.2 s wall, `ConcurrentReadersAndWriters` 34.0 s and S8 `ExpiredToken` 37.8 s; the same pair on all 12 cores took 21.2 s (load 5.1 → 10.4) | Spikes in A, C, E (11.6, 60.9, 29.2 s) against 0.2–1.0 s otherwise | **Wait-bound, fixed** |
+| `S8_EmbedEntryPointTests` (the 62 s case) | A victim of the stall above: whichever case was in flight waited for a pool thread. The class's steady cost is a fresh `WebApplicationFactory` plus derived hosts and a fresh SQLite schema for every test (0.5–0.7 s a case, 3 s for the first). Separately, `ExpiredToken` slept a real 2 s for the token to expire. | Alone 13 s total, `ExpiredToken` 2.58 s (load 8.0) | Class 19.0–28.2 s outside the stall runs; `ExpiredToken` 2.7–3.6 s in every run | `ExpiredToken` **wait-bound, fixed**; class **accepted** |
+| `BlockedCountSnapshotMigrationTests.Migration_OnPostgres` | Starts a fresh `postgres:18-alpine` container and applies every migration; Testcontainers waits on readiness, there is no fixed sleep. The 50.5 s was the stall above. | Alone 10.8 s (load 4.6) | 15.2–15.9 s in the four runs without a stall | **Accepted** |
+| `DataProtectionKeyRingTest.WhenRedisConfigured` | Booted the whole app to read one option, and a full boot wires StackExchange.Redis three times (scaling backplane, health check, key ring) at `localhost:6399`, where nothing listens, so it spent seconds failing to connect. | Alone 2.62 s against 0.16 s for its twin (load 7.7) | 0.2–6.2 s outside the stall runs (median 5.4 s), twin 0.2–1.1 s | **Wait-bound, fixed** |
+
+**Thread-pool hypothesis: reproduced.** Before the fix, four cores (`DOTNET_PROCESSOR_COUNT=4`) stretch the pair from 21.2 s to 58.2 s wall. After it, the same pair takes 13.4 s at four cores and 14.7 s at twelve.
+
+**What changed.**
+
+- `CacheTest`: every participant that blocks in a barrier runs on a thread of its own (`Task.Factory.StartNew` with `TaskCreationOptions.LongRunning`, one helper `OnDedicatedThreads`). In `ConcurrentReadersAndWriters` (200 ms) and `InvalidateMetricsStylePrefixRemoval` (500 ms) the window now starts when the barrier opens (the barrier's post-phase action calls `CancelAfter`), on a token source created without a timer. Applied to all four barrier tests, since all four stretched at four cores (`ConcurrentInsertsOnUniqueKeys` 7.0 s, `ConcurrentGetOnExpiredKey` 5.6 s). `KeysEnumerationDuringMutation` has no barrier and was left alone.
+- `DataProtectionKeyRingTest`: builds only the data protection set-up, on an empty `WebApplicationBuilder`, through the same `Program.ConfigureDataProtection` the app calls (as `KeyStoreDirectoryResolutionTests` already does), with the Redis connection string set in configuration or not. The Redis case never connects: the repository holds a lazy multiplexer.
+- `S8_EmbedEntryPointTests.S8_Enter_ExpiredToken_RefusedLegibly`: the short-lived host gets a `FakeTimeProvider`, and the test advances it past the token lifetime instead of sleeping 2 s. Expiry is read from the injected `TimeProvider`.
+- `BlockedCountSnapshotMigrationTests`: unchanged.
+
+No production code changed. No `[NonParallelizable]` was added.
+
+**Local before / after** (each class alone, `dotnet test --filter "FullyQualifiedName~<Class>"`, 2026-10-15 10:20–10:40):
+
+| Test | Before | After | Load before → after (1 min) |
+|---|---|---|---|
+| `CacheTest.ConcurrentReadersAndWriters` | 0.99 s | 0.20 s | 4.3 → 7.5 |
+| `CacheTest.ConcurrentInsertsOnUniqueKeys` | 4.37 s | 0.01 s | 4.3 → 7.5 |
+| `CacheTest` class | 6.5 s | 0.8 s | 4.3 → 7.5 |
+| `DataProtectionKeyRingTest.WhenRedisConfigured` (class) | 2.62 s (2.78 s) | 0.03 s (0.04 s) | 7.7 → 7.0 |
+| `S8_Enter_ExpiredToken_RefusedLegibly` | 2.58 s | 0.48 s (0.46 s in the 4-core pair) | 8.0 → 5.8 |
+| `S8_EmbedEntryPointTests` class | 13.0 s | 11.4 s | 8.0 → 7.0 |
+| `BlockedCountSnapshotMigrationTests` class | 14.4 s | 14.8 s | 4.6 → 5.8 |
+| Pair `CacheTest` + S8, 4 cores | 58.2 s wall | 13.4 s wall | 5.1 → 5.0 |
+| Pair `CacheTest` + S8, 12 cores | 21.2 s wall | 14.7 s wall | 4.1 → 5.1 |
+
+Every fixed test is under 10 s alone and alongside S8.
+
+**Removed or shortened waits, and what still proves the behaviour.**
+
+| Wait | Replaced by | Assertion that still proves it |
+|---|---|---|
+| `CacheTest.ConcurrentReadersAndWriters`: 200 ms timer started at construction | the same 200 ms, started when all 16 participants are at the barrier | `exceptions` is empty and `torn` is empty, unchanged |
+| `CacheTest.InvalidateMetricsStylePrefixRemoval`: 500 ms timer started at construction | the same 500 ms, started when all 17 participants are at the barrier | `exceptions` empty and no `42_` key left, unchanged |
+| `S8_Enter_ExpiredToken`: `Task.Delay(2 s)` of real time | `FakeTimeProvider.Advance(lifetime + 1 s)` on the host's clock | `401`, a non-empty body, no embed cookie, unchanged. Advancing by `lifetime − 1 s` instead makes the test fail (`Found` where `Unauthorized` is expected), so the fake clock is what decides expiry. |
+| `DataProtectionKeyRingTest`: full app boot with three Redis connect attempts | the data protection set-up alone, no connect | the repository type is exactly `RedisXmlRepository` / `FileSystemXmlRepository`, unchanged. The test no longer proves that the app's boot calls `ConfigureDataProtection`; it proves what that method registers for each configuration. |
+
+**Proposed allowlist entries for 06-06** (class name as the guard derives it: the full name before the last `.`, once any `(...)` argument tail is removed; ceiling = 2.1 × the class's largest CI sum, rounded up):
+
+| Class | Reason | Ceiling |
+|---|---|---|
+| `Lighthouse.Backend.Tests.API.Security.S8_EmbedEntryPointTests` | spins up fresh WebApplicationFactory hosts and a SQLite schema for every test | 163 s (2.1 × 77.194 s) |
+| `Lighthouse.Backend.Tests.Integration.Containers.BlockedCountSnapshotMigrationTests` | starts a fresh Postgres container and applies every migration to prove the table on a real provider | 117 s (2.1 × 55.469 s) |
+
+Both largest sums include the stall now removed; without it the S8 class has not exceeded 28.2 s and the Postgres class 26.4 s, so 06-06 may set lower ceilings once CI has run on the fix. `CacheTest` and `DataProtectionKeyRingTest` need no entry.
+
+**E-names** (the four classes, before vs after, from the TRX of each class run alone): 29 names before, 29 after; `comm -23` and `comm -13` print nothing; per-class counts unchanged (`CacheTest` 7, `DataProtectionKeyRingTest` 2, `S8_EmbedEntryPointTests` 17, `BlockedCountSnapshotMigrationTests` 3); all passed in both. **E-weaken** on the step's diff: no `Ignore`, `Explicit`, skip or `NonParallelizable` added. One `Assert.` line removed in `DataProtectionKeyRingTest` (`XmlRepository` is not null), re-added verbatim in the rewritten helper.
+
+**Full suite** (standard filter, `nice -n 19`, with `--blame-hang-timeout 5m`): 10027 passed, 0 failed, 1 skipped, 5 m 43 s, load 1.8 → 7.5. A first run (load 7.1 at start) was still in the test host 17 minutes in, with nothing logged for the last 12 minutes and no result line, so it was stopped. The re-run above had the hang detector armed, finished in under 6 minutes, and named nothing. Which test the first run was waiting on is not known.
+
+**Owed.** A re-time of the fixed tests on a quiet machine; every timing above was taken at load 4–11 with other sessions active.
+
+**Follow-up candidates (not this step).**
+
+- `ClusterSubstrateProbeRegistrationTest` boots the whole app against the same dead `localhost:6399` (CI 0.8–16.4 s); the same narrowing should apply.
+- 18 test files start a fresh Postgres container each; a container shared across them would remove most of that start-up.
+
 ## Wave: DELIVER / slice 01
 
 ### 01-01 — E-01: vite 8.3.2 vs 8.3.4 A/B (US-01, AC-01.1, AC-01.2)
