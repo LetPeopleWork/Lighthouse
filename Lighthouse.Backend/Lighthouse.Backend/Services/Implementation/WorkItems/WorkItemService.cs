@@ -1156,9 +1156,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// The parent half of the same decision, over the keys the portfolio STORES. The download is the
         /// existing keyed <c>GetParentFeaturesDetails</c> asked for a shorter key list, and the mode goes
         /// through the same resolver - over the stored PARENTS, which are not members of
-        /// <c>portfolio.Features</c> and so are resolved from storage by reference id. The parent sweep
-        /// stays out of <see cref="SyncOutcome"/>: the summary line's counts are the Feature half's. The
-        /// fetch shape is the PORTFOLIO's own answer, passed down rather than compared a second time.
+        /// <c>portfolio.Features</c> and so are resolved from storage by reference id. A parent whose links
+        /// name several issues is placed among them the way a Portfolio's Features are, and named on a line
+        /// of its own, but the parent sweep stays out of <see cref="SyncOutcome"/>: the Portfolio's row
+        /// counts the Portfolio's own Features. A parent the tracker sends twice is placed and stored once.
+        /// The fetch shape is the PORTFOLIO's own answer, passed down rather than compared a second time.
         /// </summary>
         private async Task<List<Feature>> ResolveRemoteParentFeatureFetch(IWorkTrackingConnector connector, Portfolio portfolio, List<string> parentFeatureIds, bool fetchShapeChanged)
         {
@@ -1171,9 +1173,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 scan.Succeeded,
                 fetchShapeChanged);
 
-            return mode == SyncMode.Delta
+            var parentFeatures = mode == SyncMode.Delta
                 ? await FetchOnlyTheParentFeaturesThatMoved(connector, portfolio, parentFeatureIds, storedParentFeatures, scan.Stamps)
-                : await connector.GetParentFeaturesDetails(portfolio, parentFeatureIds, Stopping);
+                : DeduplicateByReferenceId(await connector.GetParentFeaturesDetails(portfolio, parentFeatureIds, Stopping), portfolio.Name, feature => feature.ReferenceId);
+
+            _ = PlaceWhatTheLinksLeftOpen(portfolio, ParentPlacementReport.ParentsOfThePortfoliosFeatures(portfolio.Name), ParentNarrowing.DoNotNarrow, parentFeatures);
+
+            return parentFeatures;
         }
 
         private List<Feature> TheStoredParentFeatures(List<string> parentFeatureIds)

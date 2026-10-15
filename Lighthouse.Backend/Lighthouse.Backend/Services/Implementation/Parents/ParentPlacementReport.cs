@@ -19,6 +19,8 @@ namespace Lighthouse.Backend.Services.Implementation.Parents
 
         public static string Portfolio(string name) => $"Portfolio \"{name}\"";
 
+        public static string ParentsOfThePortfoliosFeatures(string name) => $"the parents of Portfolio \"{name}\"'s Features";
+
         public static List<string> Lines(string owner, IReadOnlyList<RecordPlacement> placements)
         {
             var placed = placements.Where(record => record.Placement.Outcome == ParentPlacementOutcome.Placed).ToList();

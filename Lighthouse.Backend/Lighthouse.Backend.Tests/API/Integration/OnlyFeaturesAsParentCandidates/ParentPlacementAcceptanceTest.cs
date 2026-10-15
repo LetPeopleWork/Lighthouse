@@ -26,14 +26,6 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidates
 {
     /// <summary>
-    /// The skip reasons, in one place, so a slice's cases are found and un-skipped together.
-    /// </summary>
-    public static class PendingStory6301
-    {
-        public const string Slice03 = "Story #6301 slice 03 (oldest link wins, Portfolio) - pending DELIVER";
-    }
-
-    /// <summary>
     /// Acceptance harness for what a refresh does with a record whose links name more than one issue to
     /// hang it under. A scenario describes a Jira instance - its Features, its Work Items, the links between
     /// them and when each link was made - and then refreshes a Team or a Portfolio through the running

@@ -36,6 +36,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         private const string TheFeatureWithOneLink = "FTR-3";
         private const string TheFeatureWithNoLink = "FTR-4";
         private const string TheFeatureThatSatStill = "FTR-5";
+        private const string TheIssueAbove = "INIT-1";
 
         private static readonly DateTime TheFirstReadingDay = new(2026, 9, 1, 9, 0, 0, DateTimeKind.Utc);
 
@@ -1448,6 +1449,113 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 ParentCandidatesFromLinks = candidates,
                 AdditionalFieldValues = { [TheFieldThatNamesTheLinkType] = shown },
             };
+
+        /// <summary>
+        /// The issues above a Portfolio's Features are downloaded in a sweep of their own, and their links can
+        /// name several issues too, so they are placed by the same rule as the Features. They are not counted:
+        /// the Portfolio's row counts its own Features. A tracker that sends the same issue twice in one
+        /// download gets it placed and stored once.
+        /// </summary>
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_FullRefresh_PlacesTheIssuesAboveOnceAndCountsNoneOfThem()
+        {
+            var portfolio = CreatePortfolio();
+            portfolio.ParentOverrideAdditionalFieldDefinitionId = TheFieldThatNamesTheLinkType;
+            var stored = TheFeaturesTheRefreshStores();
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([AFeatureUnderTheIssueAbove(TheFirstReadingDay)]);
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetParentFeaturesDetails(portfolio, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([TheIssueAboveAsDownloaded(), TheIssueAboveAsDownloaded()]);
+            TheStoredFeaturesAre(TheStoredFeature);
+
+            var subject = CreateSubject();
+
+            var outcome = await subject.UpdateFeaturesForPortfolio(portfolio);
+
+            var storedIssuesAbove = stored.FindAll(feature => feature.ReferenceId == TheIssueAbove);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Mode, Is.EqualTo(SyncMode.Full),
+                    "positive control: this fixture is about the whole-query path, so it has to have taken it.");
+                Assert.That(storedIssuesAbove, Has.Count.EqualTo(1),
+                    "The tracker sent the issue above twice; it is one issue, so it is stored once.");
+                TheIssueAboveWasPlacedAndNotCounted(outcome, storedIssuesAbove[0]);
+            }
+
+            featureRepositoryMock.Verify(repository => repository.GetStoredFeatureCreatedDates(), Times.Once,
+                "Only the issue above needed placing, so the stored Features are read once, for it.");
+        }
+
+        /// <summary>
+        /// The cheap refresh downloads only the issues above that moved, and places them in the same way.
+        /// </summary>
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_CheaperRefresh_PlacesTheIssuesAboveItDownloadedAndCountsNoneOfThem()
+        {
+            var whenEveryStoredRecordLastChanged = TheFirstReadingDay.AddDays(-30);
+
+            var portfolio = CreatePortfolio();
+            portfolio.ParentOverrideAdditionalFieldDefinitionId = TheFieldThatNamesTheLinkType;
+            portfolio.FetchFingerprint = FetchFingerprint.For(portfolio);
+            var theStoredFeature = AFeatureUnderTheIssueAbove(whenEveryStoredRecordLastChanged);
+            portfolio.UpdateFeatures([theStoredFeature]);
+            var theStoredIssueAbove = AStampedFeature(TheIssueAbove, whenEveryStoredRecordLastChanged);
+            theStoredIssueAbove.IsParentFeature = true;
+            List<Feature> everythingStored = [theStoredFeature, theStoredIssueAbove];
+            featureRepositoryMock
+                .Setup(repository => repository.GetByPredicate(It.IsAny<Func<Feature, bool>>()))
+                .Returns((Func<Feature, bool> predicate) => everythingStored.SingleOrDefault(predicate));
+
+            TheTrackerCanBeScanned();
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.SweepFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new RemoteRecordStamp(TheFeatureWithOneLink, whenEveryStoredRecordLastChanged)]);
+            workTrackingConnectorMock
+                .Setup(connector => connector.SweepParentFeatures(portfolio, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new RemoteRecordStamp(TheIssueAbove, TheFirstReadingDay)]);
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetParentFeaturesDetails(portfolio, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([TheIssueAboveAsDownloaded()]);
+            TheStoredFeaturesAre(TheStoredFeature);
+
+            var subject = CreateSubject();
+
+            var outcome = await subject.UpdateFeaturesForPortfolio(portfolio);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Mode, Is.EqualTo(SyncMode.Delta),
+                    "positive control: nothing about the fetch changed and the tracker could be scanned, so this has to be the cheap refresh.");
+                Assert.That(theStoredIssueAbove.LastChangedRemote, Is.EqualTo(TheFirstReadingDay),
+                    "positive control: the issue above moved, so the cheap refresh downloaded it and updated the stored one.");
+                TheIssueAboveWasPlacedAndNotCounted(outcome, theStoredIssueAbove);
+            }
+        }
+
+        private static void TheIssueAboveWasPlacedAndNotCounted(SyncOutcome outcome, Feature storedIssueAbove)
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(storedIssueAbove.ParentReferenceId, Is.EqualTo("INC-5602"),
+                    "Nothing is set aside above a Portfolio's Features, so two incidents nobody stores fall to the lowest key.");
+                Assert.That(storedIssueAbove.AdditionalFieldValues.GetValueOrDefault(TheFieldThatNamesTheLinkType), Is.EqualTo("INC-5602"),
+                    "The Additional Field shows the key that was used.");
+                Assert.That(outcome.RecordsPlacedFromLinksNamingMoreThanOneParent, Is.Zero,
+                    "The Portfolio's row counts its own Features, and none of them had more than one candidate.");
+                Assert.That(outcome.RecordsWhoseLinksNamedMoreThanOneParent, Is.Zero,
+                    "The issues above are not the Portfolio's own Features, so they are not counted as not placed either.");
+            }
+        }
+
+        private static Feature AFeatureUnderTheIssueAbove(DateTime lastChangedRemote)
+            => ADownloadedFeature(TheFeatureWithOneLink, TheIssueAbove, [new ParentCandidate(TheIssueAbove, null)], TheIssueAbove, lastChangedRemote);
+
+        private static Feature TheIssueAboveAsDownloaded()
+            => ADownloadedFeature(TheIssueAbove, TheTrackersOwnParent, TwoIssuesNobodyHoldsAsAFeature, string.Empty, TheFirstReadingDay);
 
         [Test]
         public void UpdateFeaturesForPortfolio_TrackerCouldNotBeAsked_KeepsTheFeaturesThePortfolioHolds()

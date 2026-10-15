@@ -232,7 +232,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// not counted on the Portfolio's row, which counts only the Portfolio's own Features.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice03)]
         [Category("edge")]
         public async Task The_issues_above_are_placed_too_named_on_their_own_line_and_not_counted()
         {
