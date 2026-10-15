@@ -314,8 +314,8 @@ testWithDemo(
 	},
 );
 
-// Epic 5375 — the whole backlog in one place. Illustrates docs/features/features.md, which shipped
-// without an image. The nav label is the instance's own word for its Features (D16); the demo data
+// The whole backlog in one place. Illustrates docs/features/features.md, which shipped
+// without an image. The nav label is the instance's own word for its Features; the demo data
 // leaves Terminology at its seeded default, so "Features" is what the link reads here.
 testWithDemo(
 	"Take @screenshot of the Features page",
@@ -811,7 +811,7 @@ testWithDemo(
 			.toBeGreaterThan(0);
 		expect(await agingSelector.isCycleTimeSelected()).toBe(true);
 
-		// Story 5508 D9: both sources label their lines `<n>%`, so the active source is read
+		// Both sources label their lines `<n>%`, so the active source is read
 		// from the toggle. The previous assertions matched a "Work Item Age <n>%" label that no
 		// longer exists and a cycle-time count that can no longer go to zero.
 		await agingSelector.selectWorkItemAge();
@@ -1286,7 +1286,7 @@ testWithDemo(
 	},
 );
 
-// Epic 6033 slice 04 — the Delivery as a plan. This is also the only automated look at the
+// The Delivery as a plan. This is also the only automated look at the
 // timeline that a browser takes: the chart's colours come from a stylesheet the unit tests mock
 // away, and its axis needs a measured width it never gets there, so three defects in this feature
 // passed their unit tests and were caught by eye. This shot is what would catch the fourth.

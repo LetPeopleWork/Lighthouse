@@ -46,7 +46,7 @@ const PERCENTILES_ENDPOINT = "/metrics/percentiles-over-time?";
 // A family the PBC recorder persists that is NOT the default selection.
 const OTHER_PBC_FAMILY = "WorkItemAge" as const;
 
-// Slice 03b (US-06): the dashboard date pickers apply to both over-time widgets. The
+// The dashboard date pickers apply to both over-time widgets. The
 // demo backfill covers [today-14, today-1], so a ~7-day window inside it plots
 // strictly fewer days than the default 30-day window.
 test("@real-io @driving_adapter @US-06 narrowing the dashboard range re-plots fewer recorded days on both over-time widgets", async ({

@@ -9,7 +9,7 @@ using Serilog.Events;
 namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
 {
     /// <summary>
-    /// DISTILL step definitions (Specifications) for Story 5876 slice 02 - one list of switches.
+    /// Step definitions for the Feature ordering choice moving into the one list of Behaviour Settings switches.
     /// Backend-observable contract: the ordering choice lives in the behaviour-settings table, an instance
     /// that already owned its order still owns it after the upgrade with every place intact, turning it on
     /// moves nobody, both transitions re-queue the forecasts, and the deprecated door writes the same store.
@@ -146,7 +146,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(stored.Found, Is.True, "The ordering setting has to be one of the rows in the behaviour-settings table.");
-                Assert.That(stored.IsPremium, Is.True, "It is a premium setting, and the refusal slice 01 shipped is what makes that safe to say.");
+                Assert.That(stored.IsPremium, Is.True, "It is a premium setting, and the licence refusal for premium settings is what makes that safe to say.");
                 Assert.That(stored.Enabled, Is.EqualTo(expectedToBeOn));
             }
         }

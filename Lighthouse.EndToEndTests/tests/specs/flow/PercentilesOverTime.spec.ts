@@ -164,7 +164,7 @@ test("@real-io @driving_adapter @US-03 flow coach reads a dated work item age pe
 });
 
 // Moved to PredictabilityOverTime.spec.ts: the fresh-team empty state and the two
-// US-06 date-range specs. PBC Over Time sits on this same Predictability category
+// date-range specs. PBC Over Time sits on this same Predictability category
 // and had byte-for-byte twins of all three — same demo seed, same never-refreshed
 // team, same navigation, same window — so both widgets are now read from one setup
 // there. What stays here is what only this widget does: the CT-30/60/90 horizon

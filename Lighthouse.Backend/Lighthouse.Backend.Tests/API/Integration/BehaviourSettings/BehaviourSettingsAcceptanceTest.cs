@@ -28,11 +28,11 @@ using Serilog.Extensions.Logging;
 namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
 {
     /// <summary>
-    /// DISTILL acceptance harness (Story 5876 - Behaviour Settings). Single source of truth for HOW the
-    /// scenarios of both slices reach the system: through the real ASP.NET host on real SQLite over real
+    /// Acceptance harness for Behaviour Settings. Single source of truth for HOW the
+    /// scenarios reach the system: through the real ASP.NET host on real SQLite over real
     /// EF, per docs/architecture/atdd-infrastructure-policy.md. Only the licence port and the forecast
-    /// runner are faked - the licence because it is the external, non-deterministic verdict the whole of
-    /// slice 01 is about, and the forecast runner because it is a background queue, so a scenario that
+    /// runner are faked - the licence because it is the external, non-deterministic verdict the refusal
+    /// of premium settings turns on, and the forecast runner because it is a background queue, so a scenario that
     /// waited on it would be timing against a thread rather than asserting a promise.
     /// <para>
     /// The ordering seam, the rank seeder, the optional-feature seeder and both write paths stay
@@ -46,9 +46,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         protected const string OrderOwnedByTheTracker = "SourceOrder";
 
         /// <summary>
-        /// The premium fixture slice 01 runs on. No live premium optional feature exists until slice 02
-        /// seeds the ordering row, so the refusal is exercised against a row a scenario adds itself -
-        /// asserting it against the ordering row would make slice 01 depend on slice 02.
+        /// A premium setting a scenario adds itself, to exercise the licence refusal. It is kept apart from
+        /// the ordering row, the one premium setting the product seeds, so the refusal scenarios do not
+        /// depend on how that row is seeded.
         /// </summary>
         protected const string PremiumFixtureKey = "PremiumFixture";
 

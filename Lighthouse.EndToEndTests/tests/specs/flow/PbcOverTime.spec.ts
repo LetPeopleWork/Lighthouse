@@ -46,8 +46,9 @@ test("@real-io @driving_adapter @US-04 delivery lead reads dated Throughput proc
 	// Throughput is the family the recorder persists, and the toggle opens on it.
 	await expect.poll(() => widget.isMetricSelected("Throughput")).toBe(true);
 
-	// The demo owners are backdated over the last two weeks and past days are filled
-	// in, so the chart is populated and the empty sentence must NOT show.
+	// The demo owners come with two weeks of backdated history, so the chart is
+	// populated on the first open and the empty sentence must NOT show. Days the
+	// history fill adds only appear on a later open.
 	await expect(widget.emptyState).toHaveCount(0);
 
 	// Three dated limit lines are plotted across the recorded date range.
@@ -79,7 +80,7 @@ test("@real-io @driving_adapter @US-04 delivery lead reads dated Throughput proc
 // The fresh-team empty state moved to PredictabilityOverTime.spec.ts: the
 // Percentiles Over Time widget needed the identical never-refreshed team on the
 // identical page, so the two specs were building the same fixture twice.
-// Scenario 14 (US-05 / D8): the toggle row is the one place Feature Size is
+// The toggle row is the one place Feature Size is
 // withheld — the wire deliberately answers a team's `?type=FeatureSize` with an
 // empty series (pinned at the read port in Slice04ProcessBehaviorMetricTypesScenarios.cs),
 // so the scope rule is only visible to a user here. Absence is asserted from the
@@ -122,7 +123,7 @@ test("@real-io @driving_adapter @US-05 the family toggle offers every recorded f
 	await expect(portfolioWidget.metricToggle("FeatureSize")).toBeAttached();
 });
 
-// Scenario 13 (US-05): the toggle actually switches families rather than only
+// The toggle actually switches families rather than only
 // rendering six buttons that all draw Throughput.
 test("@real-io @driving_adapter @US-05 selecting another family moves the selection and keeps the chart intact", async ({
 	page,
@@ -177,7 +178,7 @@ test("@real-io @driving_adapter @US-05 selecting another family moves the select
 		.toMatch(/^(plotted|honestly empty)$/);
 });
 
-// The two US-06 date-range specs moved to PredictabilityOverTime.spec.ts. They
+// The two date-range specs moved to PredictabilityOverTime.spec.ts. They
 // were byte-for-byte the Percentiles Over Time pair with one widget swapped: same
 // demo seed, same team, same navigation, same window. Both widgets now get read
 // from a single range change there.
