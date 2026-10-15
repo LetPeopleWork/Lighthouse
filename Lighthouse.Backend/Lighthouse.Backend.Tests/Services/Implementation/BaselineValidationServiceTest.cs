@@ -183,5 +183,104 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             Assert.That(result.IsValid, Is.True);
         }
+
+        /// <summary>
+        /// At 22:40 UTC the instance (running in UTC) is still on the 14th while a viewer east of UTC
+        /// is already on the 15th. A baseline that viewer picks ending on their today is not future.
+        /// </summary>
+        [Test]
+        public void Validate_PickedBaselineEndingOneDayAfterTheInstanceDay_ReturnsValid()
+        {
+            var today = LateEveningInUtcInstance().Today;
+            var start = new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc);
+            var end = new DateTime(2026, 10, 15, 0, 0, 0, DateTimeKind.Utc);
+
+            var result = BaselineValidationService.Validate(start, end, 180, today);
+
+            Assert.That(result.IsValid, Is.True);
+        }
+
+        [Test]
+        public void Validate_PickedBaselineEndingTwoDaysAfterTheInstanceDay_ReturnsInvalid()
+        {
+            var today = LateEveningInUtcInstance().Today;
+            var start = new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc);
+            var end = new DateTime(2026, 10, 16, 0, 0, 0, DateTimeKind.Utc);
+
+            var result = BaselineValidationService.Validate(start, end, 180, today);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorMessage, Does.Contain("future"));
+            }
+        }
+
+        [Test]
+        public void ValidateDisplayWindowAsBaseline_WindowEndingOneDayAfterTheInstanceDay_ReturnsValid()
+        {
+            var today = LateEveningInUtcInstance().Today;
+            var start = new DateTime(2026, 9, 15, 0, 0, 0, DateTimeKind.Utc);
+            var end = new DateTime(2026, 10, 15, 0, 0, 0, DateTimeKind.Utc);
+
+            var result = BaselineValidationService.ValidateDisplayWindowAsBaseline(start, end, 180, today);
+
+            Assert.That(result.IsValid, Is.True);
+        }
+
+        [Test]
+        public void ValidateDisplayWindowAsBaseline_EndNotAfterStart_ReturnsInvalid()
+        {
+            var today = LateEveningInUtcInstance().Today;
+            var start = new DateTime(2026, 10, 15, 0, 0, 0, DateTimeKind.Utc);
+            var end = new DateTime(2026, 10, 15, 0, 0, 0, DateTimeKind.Utc);
+
+            var result = BaselineValidationService.ValidateDisplayWindowAsBaseline(start, end, 180, today);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorMessage, Does.Contain("after"));
+            }
+        }
+
+        [Test]
+        public void ValidateDisplayWindowAsBaseline_ShorterThan14Days_ReturnsInvalid()
+        {
+            var today = LateEveningInUtcInstance().Today;
+            var start = new DateTime(2026, 10, 5, 0, 0, 0, DateTimeKind.Utc);
+            var end = new DateTime(2026, 10, 15, 0, 0, 0, DateTimeKind.Utc);
+
+            var result = BaselineValidationService.ValidateDisplayWindowAsBaseline(start, end, 180, today);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorMessage, Does.Contain("14"));
+            }
+        }
+
+        [Test]
+        public void ValidateDisplayWindowAsBaseline_StartOutsideTheCutoffWindow_ReturnsInvalid()
+        {
+            var today = LateEveningInUtcInstance().Today;
+            var start = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc);
+            var end = new DateTime(2026, 10, 15, 0, 0, 0, DateTimeKind.Utc);
+
+            var result = BaselineValidationService.ValidateDisplayWindowAsBaseline(start, end, 180, today);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorMessage, Does.Contain("cutoff"));
+            }
+        }
+
+        private static FakeLighthouseClock LateEveningInUtcInstance()
+        {
+            return new FakeLighthouseClock(
+                new DateTimeOffset(2026, 10, 14, 22, 40, 0, TimeSpan.Zero),
+                TimeZoneInfo.Utc);
+        }
     }
 }
