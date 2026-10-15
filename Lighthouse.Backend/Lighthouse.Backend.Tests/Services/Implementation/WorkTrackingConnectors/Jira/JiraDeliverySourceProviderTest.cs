@@ -918,6 +918,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task A_Cloud_Jira_that_lost_its_project_search_offers_nothing_and_does_not_fall_back_to_the_project_list()
+        {
+            var jira = AJira().WithTheReleaseProject()
+                .WithReleaseIn(TheReleaseProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira);
+            jira.LostItsProjectSearch = true;
+
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var options = await subject.GetOptions(AJiraCloudConnection(), JiraReleaseSourceKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(options, Is.Empty);
+                Assert.That(jira.Requests.Select(uri => uri.AbsolutePath.TrimEnd('/')), Has.None.EndsWith("/rest/api/2/project"),
+                    "Cloud always has the paged project search, so a 404 from it is a fault to report; only an on-premise Jira that predates the search is sent to the plain list.");
+            }
+        }
+
+        [Test]
         public async Task A_credential_that_cannot_list_the_projects_leaves_a_binding_unavailable_and_never_missing()
         {
             var jira = AJira().WithTheReleaseProject();
@@ -1196,6 +1214,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             public bool RefusesTheProjectList { get; set; }
 
+            /// <summary>The paged project search answers 404, as if this Jira had never had it.</summary>
+            public bool LostItsProjectSearch { get; set; }
+
             public IReadOnlyList<Uri> SearchRequests =>
                 [.. Requests.Where(uri => uri.AbsolutePath.Contains("/search", StringComparison.Ordinal)
                     && !uri.AbsolutePath.EndsWith("/project/search", StringComparison.Ordinal))];
@@ -1324,6 +1345,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 if (path.EndsWith("/project/search", StringComparison.Ordinal))
                 {
+                    if (LostItsProjectSearch)
+                    {
+                        return Refuse(HttpStatusCode.NotFound);
+                    }
+
                     return RefusesTheProjectList
                         ? Refuse(HttpStatusCode.Forbidden)
                         : Ok($"{{\"isLast\":true,\"values\":[{string.Join(",", projects.Select(ProjectJson))}]}}");
