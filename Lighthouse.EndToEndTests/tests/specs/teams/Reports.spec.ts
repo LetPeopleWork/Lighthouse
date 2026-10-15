@@ -25,10 +25,11 @@ testWithDemo(
 );
 
 // @driving_port @us-12 @slice-12 @ac-12.1 @ac-12.7 @contract-shape:bounded-change
-// Pending until the Overview shows each Team's reports.
-testWithDemo.fixme(
+testWithDemo(
 	"a report a coach created shows beside its Team on the Overview and opens from there",
-	async ({ overviewPage }) => {
+	async ({ testData, overviewPage }) => {
+		expect(testData.teams.map((team) => team.name)).toContain(LIGHTSPEED);
+
 		const lightspeed = await overviewPage.goToTeam(LIGHTSPEED);
 		const reports = await lightspeed.goToReports();
 		const created = await reports.createTheDefaultReport();
