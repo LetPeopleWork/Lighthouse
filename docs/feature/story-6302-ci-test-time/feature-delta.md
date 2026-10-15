@@ -1120,6 +1120,54 @@ Mean set-up per test: Refinement about 1.4 s (1.53 s via `RefinementNeedAcceptan
 
 **E-names** (base `b01cebc33` vs this step): 488 names before and 488 after; `comm -23` prints nothing (**0 names lost**) and `comm -13` prints nothing, so counts are unchanged. All 488 passed in both runs.
 
+## Wave: DELIVER / [REF] Slice 04 record — step 04-02 host once per fixture
+
+**Change.** `RefinementAcceptanceTest` and `ReportsAcceptanceTest` now build their `TestWebApplicationFactory` host in `[OneTimeSetUp]` (`StartTheHost`) and dispose it in `[OneTimeTearDown]` (`StopTheHost`). Each scenario still starts from its own empty, freshly seeded database and from the clock on today: `[SetUp]` puts the fixture-owned clock back (zone and instant), puts the licence answer back to its default (Reports: no premium licence, on a fixture-owned `Mock<ILicenseService>`; Refinement's licence is always premium and never changes), takes a database path no earlier scenario used (`UseFreshDatabase`, the same route `IntegrationTestBase` takes), clears the host's metrics cache, then creates and seeds the database. The derived Refinement bases reset what they add, on objects the fixture owns: `RefinementNeedAcceptanceTest` already forgot its scripted forecasts in `[SetUp]` and now also chains `ConfigureAdditionalServices` to its base; `SizingVotesAcceptanceTest` closes every voter connection in `[TearDown]` as before and, in `[SetUp]`, makes the scenario's callers new to the host (below). No `[NonParallelizable]` was added; fixtures still run in parallel, one host each.
+
+**State the shared host remembers, and how each is handled.** Three of these leak across scenarios once the host is shared (rate limiter, metrics cache, recent-problems buffer); each is reset or scoped per scenario as below.
+
+| Kept by the host across scenarios | Why it matters | Reset |
+|---|---|---|
+| Rate limiter (per voter key / presented handle, per address, one-minute windows) | **Leak found.** With the host shared, 17 `Slice11CastAVoteTest` scenarios went red with `429` on their votes, green on a per-test host. This failing run is the RED for the fix. | The limiter cannot be told to forget. Every scenario gets its own caller address (a startup filter reading a fixture-owned `ScenarioCallers`), and a voter key the harness minted is presented with a per-scenario suffix, so no scenario's callers are ones an earlier scenario was. A key a scenario wrote out itself is sent exactly as written. |
+| Metrics cache (`Cache<string, object>`, keyed by owner id) | A fresh database numbers Teams from one again, so a figure cached for one scenario's Team 1 would answer the next. | Cleared in `[SetUp]` in both harnesses. |
+| Recent-problems buffer (`/logs/problems`) | Holds every problem any scenario raised; report ids restart at one. | Reports reads only the problems recorded since its scenario started. |
+| Over-time history filler and reconstruction memo (keyed by owner id) | Only fed by the history-fill pass, a hosted service the test factory removes. | Proven harmless: no pass ever runs in these hosts, and no in-scope scenario drains the filler or reads either object. |
+| Clock, licence, scripted forecasts, voter connections | Per-scenario inputs. | Fixture-owned objects reset in `[SetUp]` / `[TearDown]`, never a DI registration closing over a per-test field. |
+
+**Timer re-run — PROVISIONAL** (`LIGHTHOUSE_FIXTURE_TIMING=1`, in-scope filter, one run, taken before other sessions loaded the machine; load average 1.2 at start, 11.9 at end; 04-01's run was at about 15, so the two runs were not at comparable load). Set-up = per-test `[SetUp]` plus the new `[OneTimeSetUp]`; body = TRX duration minus per-test set-up and tear-down; total = TRX sum plus one-time set-up and tear-down.
+
+| Harness | Tests | Set-up before → after | Body before → after | Total before → after |
+|---|---|---|---|---|
+| `RefinementAcceptanceTest` (all) | 300 | 424.6 s → 181.8 s (156.6 + 25.2 one-time) | 221.4 s → 100.0 s | 648.6 s → 282.7 s (−56 %) |
+| — direct | 33 | 49.0 s → 22.4 s | 16.7 s → 6.8 s | 66.0 s → 29.2 s |
+| — via `SizingVotesAcceptanceTest` | 144 | 187.1 s → 78.1 s | 111.2 s → 49.6 s | 299.4 s → 128.0 s |
+| — via `RefinementNeedAcceptanceTest` | 123 | 188.5 s → 81.3 s | 93.5 s → 43.7 s | 283.3 s → 125.4 s |
+| `ReportsAcceptanceTest` | 136 | 142.2 s → 56.9 s (55.1 + 1.8 one-time) | 80.5 s → 34.9 s | 223.7 s → 92.2 s (−59 %) |
+| `TeamFeatureSizeAcceptanceTest` (unchanged) | 52 | 30.8 s → 20.6 s | 45.2 s → 30.3 s | 76.1 s → 51.0 s |
+| **All in scope** | 488 | 597.6 s → 259.3 s | 347.1 s → 165.3 s | 948.4 s → 425.9 s (−55 %) |
+
+Per-test set-up is now about 0.5 s in Refinement and 0.4 s in Reports (database creation and seeding), down from 1.4 s and 1.05 s. Body times fell too, and so did TeamFeatureSize, which was not touched: the machine was far less loaded than in 04-01, so part of every drop is load. The set-up sums isolate the change best: they fell by 57 % in Refinement and 60 % in Reports against 33 % in the untouched TeamFeatureSize.
+
+**Local indicator (⅓ drop): provisionally met, to be confirmed.** The in-scope summed time fell from 948.4 s to 425.9 s including the one-time host start (−55 %); taking TeamFeatureSize's 33 % as the load effect alone, the two changed harnesses still fell well beyond it. Because the load differed between the two runs, this needs a re-run on a quiet machine before it counts.
+
+**TeamFeatureSize left alone.** Body-bound in 04-01 (set-up 40 %, 0.59 s a test, the cheapest of the three), and it counts the SQL commands each request sends through a per-test interceptor; sharing its host would save at most about 30 s summed and would need that counter made fixture-owned for little return.
+
+**E-names** (04-01's before-list vs this run): 488 before, 488 after, 0 lost, 0 gained; per-class counts unchanged; all 488 passed. **E-weaken** on the slice diff: no `Ignore`, `Explicit`, skip or `NonParallelizable` added, no `Assert.` line removed.
+
+**E-04c — three consecutive full-assembly runs** (standard filter):
+
+Run one after another under `nice -n 19` while two other sessions were running backend tests on the same machine. An earlier unniced run under heavier load (9992 passed, 1 skipped, 14 m 40 s) is not counted.
+
+| Run | Passed | Failed | Skipped | Wall time | Load average start → end (1 min) | `BackendTestParallelizationGuardTest` |
+|---|---|---|---|---|---|---|
+| 1 | 9992 | 0 | 1 | 8 m 4 s | 18.4 → 15.3 | both tests passed |
+| 2 | 9992 | 0 | 1 | 7 m 22 s | 15.3 → 7.8 | both tests passed |
+| 3 | 9992 | 0 | 1 | 7 m 34 s | 7.8 → 19.4 | both tests passed |
+
+All three are green with no failures at all, so none of the known environmental signatures appeared. The wall times reflect a shared, loaded machine and say nothing about CI.
+
+**Owed.** (1) A `FixtureSetupTimer` re-run on a quiet machine, beside 04-01's numbers, to confirm the at-least-a-third drop. (2) E-04d after push, CI-only: the median of at least five `main` runs of the backend test job at or under 192 s.
+
 ## Wave: DELIVER / slice 01
 
 ### 01-01 — E-01: vite 8.3.2 vs 8.3.4 A/B (US-01, AC-01.1, AC-01.2)

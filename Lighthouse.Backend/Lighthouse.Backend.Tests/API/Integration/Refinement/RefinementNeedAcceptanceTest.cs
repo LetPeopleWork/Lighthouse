@@ -101,6 +101,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         protected override void ConfigureAdditionalServices(IServiceCollection services)
         {
+            base.ConfigureAdditionalServices(services);
+
             var script = forecasts;
 
             services.RemoveAll<IForecastService>();

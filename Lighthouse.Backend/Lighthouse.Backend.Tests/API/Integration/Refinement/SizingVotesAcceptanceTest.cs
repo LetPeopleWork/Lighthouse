@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -9,6 +10,8 @@ using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -73,6 +76,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         private readonly Dictionary<Voter, HttpClient> connections = [];
 
+        private static readonly ConcurrentDictionary<string, byte> MintedVoterKeys = new(StringComparer.Ordinal);
+
+        private readonly ScenarioCallers scenarioCallers = new();
+
         /// <summary>The instance the fixture's scenarios run on. Most sizing votes happen without sign-in.</summary>
         protected virtual InstanceUnderTest Instance => InstanceUnderTest.WithoutSignIn;
 
@@ -84,6 +91,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 InstanceUnderTest.WithSignInWithoutRoles => WithSignInButNoRoles(root),
                 _ => throw new ArgumentOutOfRangeException(nameof(root), Instance, "No such instance."),
             };
+
+        // The host remembers how much each voter and each network address handed in during the last minute,
+        // across every scenario of the fixture, and nothing can make it forget. So every scenario's callers
+        // reach it as callers no earlier scenario was: from an address of their own, and with a key the
+        // harness minted presented as a key no earlier scenario presented. A key a scenario wrote out itself
+        // travels exactly as written, because what such a scenario checks is how that very key is treated.
+        [SetUp]
+        public void CallAsNoEarlierScenarioDid() => scenarioCallers.MoveOn();
+
+        protected override void ConfigureAdditionalServices(IServiceCollection services)
+        {
+            base.ConfigureAdditionalServices(services);
+
+            var callers = scenarioCallers;
+            services.AddSingleton<IStartupFilter>(new CallersComeFrom(callers));
+        }
 
         [TearDown]
         public void CloseEveryVotersConnection()
@@ -117,7 +140,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             => new(displayName, null, subject, null);
 
         /// <summary>A voter key long enough to be accepted: sixty-four characters nobody else holds.</summary>
-        protected static string NewVoterKey() => $"{Guid.NewGuid():N}{Guid.NewGuid():N}";
+        protected static string NewVoterKey()
+        {
+            var key = $"{Guid.NewGuid():N}{Guid.NewGuid():N}";
+            MintedVoterKeys[key] = 0;
+            return key;
+        }
 
         /// <summary>
         /// An API key nobody owns: it authenticates, but no person stands behind it. Created through the
@@ -498,7 +526,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
             if (voter.Key is not null)
             {
-                connection.DefaultRequestHeaders.Add(VoterKeyHeader, voter.Key);
+                connection.DefaultRequestHeaders.Add(VoterKeyHeader, scenarioCallers.AsPresented(voter.Key));
             }
 
             if (voter.ApiKey is not null)
@@ -563,6 +591,35 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                     .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(SmartAuthSchemeSelector.ApiKeyScheme, _ => { });
                 });
             });
+
+        private sealed class ScenarioCallers
+        {
+            private int scenario;
+
+            public IPAddress Address { get; private set; } = IPAddress.Loopback;
+
+            public void MoveOn()
+            {
+                scenario++;
+                Address = new IPAddress([10, (byte)(scenario >> 16), (byte)(scenario >> 8), (byte)scenario]);
+            }
+
+            public string AsPresented(string key)
+                => MintedVoterKeys.ContainsKey(key) ? $"{key}{scenario:x8}" : key;
+        }
+
+        private sealed class CallersComeFrom(ScenarioCallers callers) : IStartupFilter
+        {
+            public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
+            {
+                app.Use((context, proceed) =>
+                {
+                    context.Connection.RemoteIpAddress = callers.Address;
+                    return proceed(context);
+                });
+                next(app);
+            };
+        }
 
         // --- Domain types ---
 

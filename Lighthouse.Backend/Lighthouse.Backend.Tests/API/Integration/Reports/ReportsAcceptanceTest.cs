@@ -95,23 +95,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         /// <summary>Friday 2 Oct 2026, a morning in the instance's zone: today, unless a scenario moves the clock.</summary>
         protected static readonly DateOnly TodayOnTheInstance = new(2026, 10, 2);
 
-        private bool premiumLicence;
+        private readonly Mock<ILicenseService> licence = new();
+
+        private DateTimeOffset scenarioStartedAt;
 
         protected TestWebApplicationFactory<Program> RootFactory = null!;
         protected WebApplicationFactory<Program> Factory = null!;
         protected HttpClient Client = null!;
         protected FakeLighthouseClock Clock = null!;
 
-        [SetUp]
-        public void Init()
+        // Starting a host costs about a second, more than most scenarios take, so a fixture starts one and
+        // every scenario gets its own database, clock, licence answer and connection inside it instead.
+        [OneTimeSetUp]
+        public void StartTheHost()
         {
-            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
-            premiumLicence = false;
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
             Clock = new FakeLighthouseClock(MorningOf(TodayOnTheInstance), InstanceZone);
+            var clock = Clock;
+            var licenseService = licence.Object;
             RootFactory = new TestWebApplicationFactory<Program>();
-
-            var licenseService = new Mock<ILicenseService>();
-            licenseService.Setup(s => s.CanUsePremiumFeatures()).Returns(() => premiumLicence);
 
             Factory = WithAuthentication(RootFactory)
                 .WithWebHostBuilder(builder =>
@@ -119,22 +121,46 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
                     builder.ConfigureServices(services =>
                     {
                         services.RemoveAll<ILicenseService>();
-                        services.AddScoped(_ => licenseService.Object);
+                        services.AddScoped(_ => licenseService);
                         services.RemoveAll<ILighthouseClock>();
-                        services.AddSingleton<ILighthouseClock>(Clock);
+                        services.AddSingleton<ILighthouseClock>(clock);
                     });
                 });
+
+            Factory.StartServer();
+        }
+
+        [SetUp]
+        public void Init()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+            scenarioStartedAt = DateTimeOffset.UtcNow;
+            TheLicenceAllowsPremium(false);
+            Clock.SetZone(InstanceZone);
+            Clock.SetInstant(MorningOf(TodayOnTheInstance));
+            RootFactory.UseFreshDatabase();
+            ForgetTheCachedMetrics();
 
             Client = Factory.CreateClient();
 
             using var setupScope = Factory.Services.CreateScope();
             var context = setupScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            context.Database.EnsureDeleted();
             context.Database.EnsureCreated();
 
             foreach (var seeder in setupScope.ServiceProvider.GetServices<ISeeder>())
             {
                 seeder.Seed().GetAwaiter().GetResult();
+            }
+        }
+
+        // Every fresh database numbers its owners from one again, so a figure the host cached for one
+        // scenario's Team would otherwise be served to the next scenario's Team with the same id.
+        private void ForgetTheCachedMetrics()
+        {
+            var metrics = Factory.Services.GetRequiredService<Lighthouse.Backend.Cache.Cache<string, object>>();
+            foreach (var key in metrics.Keys.ToList())
+            {
+                metrics.Remove(key);
             }
         }
 
@@ -149,6 +175,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
 
             Client.Dispose();
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
             Factory.Dispose();
             RootFactory.Dispose();
         }
@@ -167,11 +199,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // --- The instance ---
 
-        protected void TheInstanceHasNoPremiumLicence() => premiumLicence = false;
+        protected void TheInstanceHasNoPremiumLicence() => TheLicenceAllowsPremium(false);
 
-        protected void TheInstanceHasAPremiumLicence() => premiumLicence = true;
+        protected void TheInstanceHasAPremiumLicence() => TheLicenceAllowsPremium(true);
 
-        protected void ThePremiumLicenceLapses() => premiumLicence = false;
+        protected void ThePremiumLicenceLapses() => TheLicenceAllowsPremium(false);
+
+        private void TheLicenceAllowsPremium(bool premium) => licence.Setup(s => s.CanUsePremiumFeatures()).Returns(premium);
 
         protected void TodayIs(DateOnly day) => Clock.SetInstant(MorningOf(day));
 
@@ -556,7 +590,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         protected async Task<JsonElement> TheMetricsTabTotalWorkItemAge(OwnerUnderTest team, DateOnly asOf)
             => await ReadOk($"/api/latest/teams/{team.Id}/metrics/totalWorkItemAge?asOfDate={Day(asOf)}");
 
-        protected async Task<JsonElement> ThePlaceOperatorsReadAboutProblems() => await ReadOk("/api/latest/logs/problems");
+        /// <summary>
+        /// The problems the operator reads, as far as this scenario raised them. The host keeps every problem
+        /// any scenario of the fixture raised, and numbers its reports from one again in every scenario, so an
+        /// earlier scenario's warning about "report 1" would otherwise count as this scenario's.
+        /// </summary>
+        protected async Task<JsonElement> ThePlaceOperatorsReadAboutProblems()
+        {
+            var problems = await ReadOk("/api/latest/logs/problems");
+            var raisedHere = problems.EnumerateArray()
+                .Where(problem => problem.GetProperty("recordedAt").GetDateTimeOffset() >= scenarioStartedAt)
+                .Select(problem => JsonNode.Parse(problem.GetRawText()));
+
+            using var document = JsonDocument.Parse(new JsonArray([.. raisedHere]).ToJsonString());
+            return document.RootElement.Clone();
+        }
 
         private async Task<HttpResponseMessage> Send(HttpMethod method, string address, JsonObject body)
         {

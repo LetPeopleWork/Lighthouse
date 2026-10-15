@@ -61,13 +61,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         protected WebApplicationFactory<Program> Factory = null!;
         protected HttpClient Client = null!;
 
-        /// <summary>The instance's clock. Scenarios about which day it is move it; it starts on <see cref="Today"/>.</summary>
+        /// <summary>The instance's clock. Scenarios about which day it is move it; every scenario starts on <see cref="Today"/>.</summary>
         protected FakeLighthouseClock InstanceClock = null!;
 
-        [SetUp]
-        public void Init()
+        // Starting a host costs about a second, more than most scenarios take, so a fixture starts one and
+        // every scenario gets its own database, clock and connection inside it instead.
+        [OneTimeSetUp]
+        public void StartTheHost()
         {
-            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
             RootFactory = new TestWebApplicationFactory<Program>();
 
             var licenseService = new Mock<ILicenseService>();
@@ -88,16 +90,39 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                     });
                 });
 
+            Factory.StartServer();
+        }
+
+        [SetUp]
+        public void Init()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
+            InstanceClock.SetZone(TimeZoneInfo.Utc);
+            InstanceClock.SetInstant(Today);
+            RootFactory.UseFreshDatabase();
+            ForgetTheCachedMetrics();
+
             Client = Factory.CreateClient();
 
             using var setupScope = Factory.Services.CreateScope();
             var context = setupScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            context.Database.EnsureDeleted();
             context.Database.EnsureCreated();
 
             foreach (var seeder in setupScope.ServiceProvider.GetServices<ISeeder>())
             {
                 seeder.Seed().GetAwaiter().GetResult();
+            }
+        }
+
+        // Every fresh database numbers its Teams from one again, so a figure the host cached for one
+        // scenario's Team would otherwise be served to the next scenario's Team with the same id.
+        private void ForgetTheCachedMetrics()
+        {
+            var metrics = Factory.Services.GetRequiredService<Lighthouse.Backend.Cache.Cache<string, object>>();
+            foreach (var key in metrics.Keys.ToList())
+            {
+                metrics.Remove(key);
             }
         }
 
@@ -108,7 +133,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         protected virtual WebApplicationFactory<Program> WithAuthentication(TestWebApplicationFactory<Program> root)
             => TestWebApplicationFactory<Program>.WithTestAuthentication(root);
 
-        /// <summary>Anything else a fixture replaces in the host, after the licence and the clock.</summary>
+        /// <summary>
+        /// Anything else a fixture replaces in the host, after the licence and the clock. The host outlives
+        /// each scenario, so whatever is registered here must be an object the fixture resets per scenario.
+        /// </summary>
         protected virtual void ConfigureAdditionalServices(IServiceCollection services)
         {
             // Most fixtures run the host exactly as shipped apart from the licence and the clock.
@@ -125,6 +153,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
 
             Client.Dispose();
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
             Factory.Dispose();
             RootFactory.Dispose();
         }

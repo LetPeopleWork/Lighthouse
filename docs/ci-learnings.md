@@ -923,6 +923,12 @@ get re-applied.
 - **Fix**: the owner's last-update moment is part of every `["metrics", …]` query key — commit `72e9b1dbc`.
 - **Rule going forward**: when an effect that depended on an entity object becomes a keyed query, the key must carry whatever made that object change (for owners: `lastUpdated`), not just its id — otherwise a server-side refresh never reaches an open view. A spec green on SQLite and red on Postgres is a timing hint, not a flake: look for a race against a background update before re-running.
 
+### 2026-10-15 — a harness host shared by a fixture remembers what every earlier scenario did (story 6302)
+- **Symptom**: moving the Refinement acceptance harness to one host per fixture turned 17 `Slice11CastAVoteTest` scenarios red with `429 Too Many Requests` on their first votes, all of them green on a per-test host. Nothing in the database was shared; every scenario still had its own.
+- **Root cause**: the host keeps state outside the database. The rate limiter counts every voter key and every caller address for a minute and cannot be told to forget; the metrics cache, the recent-problems buffer and the in-memory update bookkeeping are keyed by ids that a fresh database hands out again from one. A per-test host threw all of that away for free.
+- **Fix**: host built in `[OneTimeSetUp]`, disposed in `[OneTimeTearDown]`; `[SetUp]` resets clock and licence answer on fixture-owned objects, takes a fresh database path (`UseFreshDatabase`), clears the metrics cache, and the sizing-votes base makes each scenario's callers new to the limiter (own address, minted keys presented per scenario). Reports reads only the problems raised since its scenario started.
+- **Rule going forward**: a test host may outlive a test only when every piece of per-test state lives in an object the fixture owns and resets in `[SetUp]` — never a DI registration closing over a per-test field. Before sharing a host, list its singletons and say for each one how it is reset or why no scenario can observe it. A test that passes alone and fails in the shared host is such a leak: reset the state, never skip or serialise the test.
+
 ## SonarCloud — Frontend (LetPeopleWork_Lighthouse_Frontend)
 
 ### 2026-09-26 — typescript:S4624: a template literal nested inside another fails the gate
