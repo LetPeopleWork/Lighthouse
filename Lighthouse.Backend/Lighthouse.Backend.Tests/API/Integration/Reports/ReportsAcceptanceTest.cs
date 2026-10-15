@@ -139,7 +139,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Clock.SetZone(InstanceZone);
             Clock.SetInstant(MorningOf(TodayOnTheInstance));
             RootFactory.UseFreshDatabase();
-            ForgetTheCachedMetrics();
+            Factory.ForgetTheCachedMetrics();
 
             Client = Factory.CreateClient();
 
@@ -150,17 +150,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             foreach (var seeder in setupScope.ServiceProvider.GetServices<ISeeder>())
             {
                 seeder.Seed().GetAwaiter().GetResult();
-            }
-        }
-
-        // Every fresh database numbers its owners from one again, so a figure the host cached for one
-        // scenario's Team would otherwise be served to the next scenario's Team with the same id.
-        private void ForgetTheCachedMetrics()
-        {
-            var metrics = Factory.Services.GetRequiredService<Lighthouse.Backend.Cache.Cache<string, object>>();
-            foreach (var key in metrics.Keys.ToList())
-            {
-                metrics.Remove(key);
             }
         }
 

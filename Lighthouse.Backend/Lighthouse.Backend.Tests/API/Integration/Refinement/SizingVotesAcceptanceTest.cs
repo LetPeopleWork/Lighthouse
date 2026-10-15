@@ -104,8 +104,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         {
             base.ConfigureAdditionalServices(services);
 
-            var callers = scenarioCallers;
-            services.AddSingleton<IStartupFilter>(new CallersComeFrom(callers));
+            services.AddSingleton<IStartupFilter>(new CallersComeFrom(scenarioCallers));
         }
 
         [TearDown]
