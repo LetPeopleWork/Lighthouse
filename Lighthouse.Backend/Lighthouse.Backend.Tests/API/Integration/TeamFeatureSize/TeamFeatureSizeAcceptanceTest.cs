@@ -87,6 +87,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [SetUp]
         public void Init()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
             // NUnit keeps one fixture instance for every test in the class, and each test starts
             // from an empty database, so names remembered by the previous test point at nothing.
             teamIds.Clear();
@@ -123,6 +125,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         [TearDown]
         public void Cleanup()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
+
             using (var scope = Factory.Services.CreateScope())
             {
                 scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();

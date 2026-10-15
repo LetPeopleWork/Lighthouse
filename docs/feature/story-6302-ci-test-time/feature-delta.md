@@ -1092,6 +1092,34 @@ Medians, before → after: `BaseMetricsView.loading` 14.1 → 9.2 s (0.65), `ref
 
 **E-names** (base `7bb0cd0ad`; the 256 names for these four files in `s03-before-all.names`, all passing): `comm -23` prints nothing against the saved list, before1 or before4 for after1, after3 and the final series' after3. `comm -13` on not-passed prints nothing. Counts are unchanged: `BaseMetricsView.loading` 129, `refinementNeed` 52, `readiness` 47, `DataGridBase.paging` 28. **E-weaken:** no skip, `only` or `todo` was added, and the removed-`expect(` count is 0. `pnpm test`: 480 files passed, 1 skipped; 7594 tests passed, 37 skipped, 1 todo. An earlier full run, with `advanceTimeDelta: 1` at load 13, failed one `refinementNeed` test on the 5 s timeout and two untouched `RefinementView.comments` tests. That variant is gone, and the run above is green. `pnpm build` is clean, and `git status` after the build shows only this step's files.
 
+## Wave: DELIVER / [REF] Slice 04 record — step 04-01 set-up vs body per harness
+
+**Instrument.** The three harness bases (`RefinementAcceptanceTest`, `ReportsAcceptanceTest`, `TeamFeatureSizeAcceptanceTest`) now wrap their `[SetUp]` and `[TearDown]` in `FixtureSetupTimer.Measure`, exactly as `IntegrationTestBase` does. Rows are keyed by the concrete test class. The timer is a no-op unless `LIGHTHOUSE_FIXTURE_TIMING=1`, so CI timings are unaffected. Host lifetime is unchanged: every test still builds its own `TestWebApplicationFactory` and `WithWebHostBuilder` host. The derived bases were not edited. Their own steps (`SizingVotesAcceptanceTest.CloseEveryVotersConnection`, `RefinementNeedAcceptanceTest.ForgetTheScriptedForecasts`) are not timed and fall into "body"; their extra services (`ConfigureAdditionalServices`) are registered inside the base `[SetUp]` and so fall into "set-up". The split by derived base below groups the concrete classes by their direct parent.
+
+**RED.** On base `b01cebc33`, the in-scope filter `FullyQualifiedName~API.Integration.Refinement|FullyQualifiedName~API.Integration.Reports|FullyQualifiedName~API.Integration.TeamFeatureSize` with `LIGHTHOUSE_FIXTURE_TIMING=1` wrote a timing CSV with a header and no rows (488 passed, wall clock 1 m 39 s).
+
+**GREEN.** The same run after the edit wrote a row for all 33 in-scope classes, and every row's set-up count equals that class's test count in the TRX (488 passed, wall clock 1 m 45 s). `ReportCreationTimingProbe` derives from `ReportsAcceptanceTest` but is `[Explicit]`, so it does not run under the filter and has no row.
+
+**Set-up vs body per harness** (one run, summed over tests; body = TRX duration minus measured set-up and tear-down; NUnit's per-test duration includes set-up and tear-down):
+
+| Harness | Classes | Tests | Set-up | Tear-down | Body | TRX sum | Set-up share |
+|---|---|---|---|---|---|---|---|
+| `RefinementAcceptanceTest` (all) | 19 | 300 | 424.6 s | 2.7 s | 221.4 s | 648.6 s | 65 % |
+| — directly (`Slice01RefinementStates`, `Slice02RefinementList`) | 2 | 33 | 49.0 s | 0.3 s | 16.7 s | 66.0 s | 74 % |
+| — via `SizingVotesAcceptanceTest` | 10 | 144 | 187.1 s | 1.1 s | 111.2 s | 299.4 s | 62 % |
+| — via `RefinementNeedAcceptanceTest` | 7 | 123 | 188.5 s | 1.2 s | 93.5 s | 283.3 s | 67 % |
+| `ReportsAcceptanceTest` | 11 | 136 | 142.2 s | 0.9 s | 80.5 s | 223.7 s | 64 % |
+| `TeamFeatureSizeAcceptanceTest` | 3 | 52 | 30.8 s | 0.1 s | 45.2 s | 76.1 s | 40 % |
+| **All in scope** | 33 | 488 | 597.6 s | 3.7 s | 347.1 s | 948.4 s | 63 % |
+
+Mean set-up per test: Refinement about 1.4 s (1.53 s via `RefinementNeedAcceptanceTest`, 1.30 s via `SizingVotesAcceptanceTest`, 1.48 s direct), Reports 1.05 s, TeamFeatureSize 0.59 s. Tear-down is under 10 ms a test everywhere and does not matter.
+
+**Local baseline for slice 04:** summed TRX duration of the in-scope classes **948.4 s** with the timer on (917.7 s in the RED run on the base commit, timer off). The machine was busy (1-minute load average about 15 when read during the step), so treat the sums as this machine's figure under load, not a lower bound.
+
+**What it means for 04-02.** Refinement and Reports are set-up-bound: about two thirds of their time is building a fresh host, creating the database and running the seeders, and that holds for both derived Refinement bases, not only the direct classes. TeamFeatureSize is body-bound (40 % set-up, its set-up is already the cheapest at 0.6 s a test), so sharing its host would save at most about 31 s of summed time.
+
+**E-names** (base `b01cebc33` vs this step): 488 names before and 488 after; `comm -23` prints nothing (**0 names lost**) and `comm -13` prints nothing, so counts are unchanged. All 488 passed in both runs.
+
 ## Wave: DELIVER / slice 01
 
 ### 01-01 — E-01: vite 8.3.2 vs 8.3.4 A/B (US-01, AC-01.1, AC-01.2)

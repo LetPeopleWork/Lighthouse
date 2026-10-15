@@ -105,6 +105,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         [SetUp]
         public void Init()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
             premiumLicence = false;
             Clock = new FakeLighthouseClock(MorningOf(TodayOnTheInstance), InstanceZone);
             RootFactory = new TestWebApplicationFactory<Program>();
@@ -140,6 +141,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         [TearDown]
         public void Cleanup()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
+
             using (var teardownScope = Factory.Services.CreateScope())
             {
                 teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();

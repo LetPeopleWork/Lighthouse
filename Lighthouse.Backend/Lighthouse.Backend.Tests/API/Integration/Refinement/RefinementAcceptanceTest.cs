@@ -67,6 +67,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [SetUp]
         public void Init()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
             RootFactory = new TestWebApplicationFactory<Program>();
 
             var licenseService = new Mock<ILicenseService>();
@@ -116,6 +117,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TearDown]
         public void Cleanup()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
+
             using (var teardownScope = Factory.Services.CreateScope())
             {
                 teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
