@@ -133,6 +133,14 @@ consistent with ADR-138's rule that ambiguity always resolves to the expensive a
   N-entity write at connection-save time. Deliberate at this product's scale: an instance has tens of
   entities per connection, not thousands, and the passive form keeps the connection-save path free of a
   fan-out write and of the partial-failure question that comes with one.
+  **Amended 2026-10-15 (story 6307, proposed, pending maintainer approval):** a save through the connection PUT
+  that moves the connection's share of the fingerprint now starts an update of every Team and Portfolio on the
+  connection at once, through a domain event and the update queue
+  ([ADR-238](./adr-238-a-connection-save-that-moves-the-fetch-fingerprint-starts-the-affected-updates.md)). It is
+  still not a fan-out *write*: the save enqueues, and each owner fetches, fails and recovers on its own, because its
+  fingerprint is written only after its own fetch. Connection changes made outside the PUT (predefined fields
+  registered on read or during a Jira sync) stay passive. The connection-scoped rows are also no longer invisible to
+  every save-time consumer: the connection PUT is one, and reads them through `FetchFingerprint.ForConnection`.
 - **Re-pointing a connection at a different instance is an accepted residual.** `WorkTrackingSystemConnection.Options`
   is excluded, because it is mostly credentials and hashing them would make every token rotation cost a
   full re-download for every entity on the connection. It also carries the instance URL, so changing

@@ -64,6 +64,7 @@ feature_context:
   - story-6193-usage-data-from-clients
   - story-6251-team-feature-size
   - story-6301-only-features-as-parent-candidates
+  - story-6307-refresh-on-additional-fields-change
 
 jobs:
   - id: job-rbac-bootstrap
@@ -8196,3 +8197,40 @@ jobs:
       anxiety: A fix that changes some single-owner number by accident
       habit: Reloading or opening the other page to see whether the number moves
     opportunity_score: {importance: 4, current_satisfaction: 2, gap: 2}
+  - id: job-config-admin-see-a-connection-field-change-take-effect
+    title: Build on a new connection field without waiting hours or guessing whether it has loaded
+    persona: config-admin
+    feature_context: story-6307-refresh-on-additional-fields-change
+    ado: "Story #6307 (split out of Bug #6306)"
+    created: 2026-10-15
+    complements: job-config-admin-know-which-settings-cost-a-refetch
+    note: >
+      The complementary half of job-config-admin-know-which-settings-cost-a-refetch, which decides the MODE of
+      the next cycle and explicitly leaves out an immediate refresh. A connection's additional field definitions
+      are in the fetch fingerprint, so every Team and Portfolio on it already owes one full fetch after a field
+      edit; with default settings that fetch can be up to about four hours away, and nothing shows it is pending.
+      Team and Portfolio settings saves refresh their owner straight away; the connection save does not. DISCOVER
+      was skipped; grounded in Bug #6306, where the maintainer added fixVersions and a rule on it matched nothing.
+    job_story: >
+      When I add or change a field on a work tracking connection,
+      I want every Team and Portfolio that reads through it to hold that field's values before I build on it,
+      or to be told plainly that they do not yet,
+      so I can put a rule on the field and trust what it matches.
+    dimensions:
+      functional: Values of a newly added field are on every already-synced Work Item and Feature on the connection, or it is plain that they are not yet
+      emotional: From "why is my Delivery empty, did I type the field wrong?" to saving the connection and moving on
+      social: Never be the admin whose rule-based Delivery shows zero Features in the review; never ship a product whose correct use depends on a step only the maintainer knows
+    forces:
+      push: A rule on a never-fetched field reads every value as empty and silently matches nothing; the only hint is "Additional Fields will be loaded with the next refresh of data", which the maintainer himself did not act on (Bug #6306)
+      pull: The update queue, the per-owner update and the fetch fingerprint already exist; Team and Portfolio saves already refresh their owner
+      anxiety: Saving one field sets off a full fetch of every Team and Portfolio on a large on-premise Jira in business hours
+      habit: Pressing Update on each Team and Portfolio by hand, or waiting for the schedule and hoping
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance 4 - the failure is silent and lands on rule-based Deliveries, forecast filters and blocked
+        rules, the decisions built on configuration. Current satisfaction 1 - the effect does arrive eventually,
+        but late and invisibly, and the bridge is a sentence. Gap 3. Estimated from evidence, not surveyed;
+        mapped from the 1-10 outcome estimates in the feature's diverge/job-analysis.md.

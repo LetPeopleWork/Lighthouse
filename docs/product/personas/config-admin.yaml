@@ -32,6 +32,7 @@ primary_jobs:
   - job-config-admin-quiet-deliberate-state-omission  # quiet-deliberate-choices (2026-08-03): leave Canceled unmapped without a warning every sync
   - job-snow-admin-connect-servicenow  # epic-5513-servicenow-integration (2026-07-27, #5513): connect a ServiceNow instance with the rights the platform team will actually grant
   - job-config-admin-know-which-settings-cost-a-refetch  # epic-5687-faster-updates (2026-08-08, #5687): let Lighthouse decide whether an edit changes what has to be pulled
+  - job-config-admin-see-a-connection-field-change-take-effect  # story-6307-refresh-on-additional-fields-change (2026-10-15, #6307): a new connection field is loaded, or plainly not yet, before a rule is built on it
   - job-operator-rotate-key-without-recredentialing  # epic-5775-secret-encryption-key-custody (2026-08-14, #5775): move every stored secret onto a new key without re-entering a credential
   - job-config-admin-paste-a-credential-with-confidence  # epic-5775-secret-encryption-key-custody (2026-08-14, #5775): know what happens to a token before pasting it, in plain words, at the form
   - job-config-admin-point-at-the-field-that-carries-dependencies  # epic-4365-dependencies (2026-08-14, #4365): name the Portfolio's dependency field, like the parent override
@@ -63,6 +64,9 @@ frustrations:
   - >-
     A Connection can be silently under-permissioned: Lighthouse reports a successful
     write-back while Jira quietly ignores the suppression request and mails everyone anyway
+  - >-
+    Adding a field to a Connection changes nothing visible for hours: the Teams and Portfolios on it keep the old
+    field set until each one updates, so a rule on the new field silently matches nothing (story-6307, Bug #6306)
 
 mental_model:
   - A config aggregate (this Team, this Connection) is a single shared document; editing it is

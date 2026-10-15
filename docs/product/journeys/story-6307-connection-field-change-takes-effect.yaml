@@ -1,0 +1,57 @@
+schema_version: 1
+feature_id: story-6307-refresh-on-additional-fields-change
+updated: 2026-10-15
+note: >
+  ADO User Story #6307, split out of Bug #6306, no parent Epic. DISCOVER skipped; DIVERGE recommended updating the
+  connection's Teams and Portfolios on save, and the maintainer accepted it on 2026-10-15 (feature-delta D1-D7).
+  Complements epic-5687-faster-updates.yaml, which decides the MODE of the next update; this journey decides WHEN.
+
+journeys:
+
+  - name: add-a-connection-field-and-build-on-it
+    goal: >
+      A System Admin adds or changes an additional field on a work tracking connection and builds a rule on it
+      minutes later, trusting what the rule matches, without remembering to update each Team and Portfolio.
+    persona: "config-admin (as System Admin)"
+    job_id: job-config-admin-see-a-connection-field-change-take-effect
+
+    emotional_arc:
+      start: Unsure - "the field is saved, but is it there? Last time the Delivery showed zero Features."
+      middle: Reassured - "it says 4 Teams and 2 Portfolios are updating; I can watch them in the Task Manager."
+      end: Confident - "the rows are done, the rule matches what I expected."
+
+    steps:
+      - step: Edit the connection's additional fields (/connections/:connectionId/edit)
+        sees: the field editor, and a hint that saving updates the Teams and Portfolios on this connection (slice 01; replaces "loaded with the next refresh of data")
+      - step: Save
+        sees: >
+          the save is stored; every Team and Portfolio whose fetch fingerprint the save moved is queued at once
+          (slice 01); a message says how many of each are updating, with the way to the Task Manager (slice 02).
+          If the DISTILL sketch picks a dialog, it offers "save without updating" (slice 03).
+      - step: Watch the updates
+        sees: one Task Manager row per queued Team and Portfolio, run one after another (existing)
+      - step: Build the rule on the field
+        sees: once an owner's row finishes, a rule on the field matches its Work Items and Features (existing)
+
+    error_paths:
+      - when: one owner's update fails (for example its tracker project refuses the account)
+        sees: that owner's Task Manager row says it failed; the field stays saved; the others finish; its next scheduled update downloads everything again
+      - when: the save is refused (licence 403, someone else saved first 409, validation 400)
+        sees: the refusal as today; nothing is queued
+      - when: the save changes nothing an owner fetches (token rotation, connection name)
+        sees: no update queued and no update message
+      - when: the admin chose "save without updating" (slice 03, conditional)
+        sees: copy saying each Team and Portfolio loads the field on its next scheduled update; nothing queued
+
+    shared_artifacts:
+      - name: queued owners (count of Teams, count of Portfolios)
+        source: what the connection save actually queued (server); consumed by the save message and visible as Task Manager rows
+      - name: Team / Portfolio nouns
+        source: Terminology (TerminologySeeder defaults, user-renamable)
+      - name: whether a save moves an owner's fetch
+        source: FetchFingerprint.For (ADR-140), compared across the save
+
+changelog:
+  - date: 2026-10-15
+    feature: story-6307-refresh-on-additional-fields-change
+    change: Journey created at DISCUSS.

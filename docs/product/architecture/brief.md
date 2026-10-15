@@ -10098,3 +10098,45 @@ carries L1/L2 with the changed responsibilities named, and an L3 for the parent-
   §6 the warning placement and the one-warning-per-refresh log budget (now per fetch). Accepted 2026-10-15 for the product rule. The engineering choices are provisional, pending the maintainer's
   ratification (they were taken while the maintainer was AFK, as with ADR-237).
 - Cross-refs: ADR-193 §1-§3, §5 (unchanged).
+
+## Application Architecture — story-6307-refresh-on-additional-fields-change
+
+Feature: story-6307-refresh-on-additional-fields-change (ADO User Story #6307, split out of Bug #6306). Saving a
+connection whose additional fields changed starts an update of every Team and Portfolio on it at once, and tells the
+admin how many it started. DESIGN 2026-10-15, PROPOSE; all decisions **proposed, pending maintainer approval**. Full
+design: `docs/feature/story-6307-refresh-on-additional-fields-change/feature-delta.md` → "Wave: DESIGN / …"
+(DDD-1…DDD-15).
+
+The pattern is unchanged: the controller stores the save and publishes a domain event after commit; a handler
+reacts by enqueuing through the existing updaters.
+
+### Key invariants introduced
+
+- **6307-I1 (DDD-1/2): "moved by this save" is the connection's share of the fetch fingerprint, before vs after.**
+  One pure `FetchFingerprint.ForConnection`, used by `FetchFingerprint.For` itself, so the two cannot drift; `For`'s
+  digest is byte-identical to before.
+- **6307-I2 (DDD-3/5): only the connection PUT fans out**, after a successful `Save()`, by publishing
+  `ConnectionFetchShapeChanged(ConnectionId, TeamIds, PortfolioIds)`. A refused save, the connection GET and the Jira
+  sync path publish nothing.
+- **6307-I3 (DDD-10/11): the queue is reused unchanged**; Teams are triggered before Portfolios; one full download per
+  owner per save.
+- **6307-I4 (DDD-6/7): the PUT answers with `queuedUpdates { teams, portfolios }`** on a response-only DTO; the
+  notice fetches nothing of its own, so it needs no loading or could-not-load look.
+
+### Component decomposition (headline)
+
+- **Backend:** EXTEND `FetchFingerprint` (`ForConnection`), `FetchShapingPropertyGuardTest` (connection-scoped subset),
+  `WorkTrackingSystemConnectionController` PUT (+`IDomainEventDispatcher`, sixth ctor parameter). CREATE
+  `ConnectionFetchShapeChanged` (`Models/Events`), its handler (beside `TeamDeletedForecastRetriggerHandler`), and
+  `WorkTrackingSystemConnectionSaveResultDto` (`API/DTO`). REUSE `TriggerUpdate`, `UpdateQueueService`, the dispatcher.
+- **Frontend:** EXTEND `WorkTrackingSystemService.updateWorkTrackingSystemConnection` (stop dropping the new field),
+  `EditConnection` (counts to the notice; stay on the page proposed), `ModifyConnectionSettings` (hint copy, notice,
+  conditional dialog).
+- Conditional (US-03): `?startUpdates=false` on the PUT.
+- No migration, dependency, RBAC rule or licence gate. Lighthouse-Clients: additive response field, changelog line.
+
+### ADR References (this feature)
+
+- [ADR-238](./adr-238-a-connection-save-that-moves-the-fetch-fingerprint-starts-the-affected-updates.md): a connection
+  save that moves the fetch fingerprint starts the affected updates. **Proposed, pending maintainer approval.**
+- Amended: ADR-030 (not applied to connection saves), ADR-140 (the passive connection fan-out, for saves through the PUT).

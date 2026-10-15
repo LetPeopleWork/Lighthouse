@@ -1,0 +1,101 @@
+feature_id: story-6307-refresh-on-additional-fields-change
+wave: DIVERGE
+reviewer: nw-diverger-reviewer (Prism), dispatched by Flux as a subagent; read-only
+review_date: 2026-10-15
+iterations: 2  # the maximum
+final_status: conditionally_approved
+handoff_ready: true
+handoff_note: >
+  Round 2 found no failed dimension. It left 2 major and 6 minor issues, all fixable by editing text, and said
+  none of them changes the ranking. All 8 were fixed after round 2 (listed below). Because round 2 was the last
+  allowed iteration, the reviewer has NOT re-read these post-round-2 edits. Approval is conditional and stays
+  that way; it is not upgraded to "approved".
+
+rounds:
+  - round: 1
+    status: rejected_pending_revisions
+    dimensions:
+      jtbd_rigor: PASSED
+      research_quality: PASSED
+      option_diversity: FAILED
+      taste_application: PASSED  # with two major issues
+      recommendation_coherence: FAILED
+    blocking:
+      - severity: critical
+        issue: Recommendation of "update on save" did not engage ADR-140's passive invalidation or its partial-failure concern.
+        resolution: >
+          taste-evaluation.md §0 adds a constraint screen and a partial-failure paragraph. A failed owner records
+          its own failure and stays fingerprint-mismatched (UpdateServiceBase.cs:25-49, WorkItemService.cs:61-62
+          and :91-92). Open question 2 asks DISCUSS to amend ADR-140.
+      - severity: critical
+        issue: ADR-030 was narrowed to fit the recommendation.
+        resolution: >
+          ADR-030 is now quoted accurately. The counter-precedent is cited: Team/Portfolio saves already auto-update
+          (useModifySettings.ts:252-254). The recommendation is now conditional on the maintainer ruling on it,
+          recorded as an ADR-030 amendment, with the waiting marker (Option 2) as the named fallback.
+      - severity: major
+        issue: Options 1, 2 and 5 differed only in degree, and the pairwise table covered 6 of 15 pairs.
+        resolution: >
+          The three are merged into one option with timing variants. Two new structurally distinct options were
+          generated (consumer-triggered refresh; re-derive from stored payloads). A mechanism-family table was
+          added, and the diversity table now covers all 15 pairs.
+      - severity: major
+        issue: Provenance of the weight preset.
+        resolution: Quoted from the nw-taste-evaluation skill's "Developer Tool" column; the reviewer verified it in round 2.
+      - severity: major
+        issue: Viability scored differently across options against the ADRs.
+        resolution: Every option is now screened against ADR-030, ADR-140 and the "no partial mode" rule.
+    minor_fixed:
+      - O3/O4 relabelled under-served
+      - 1-10 vs 1-5 scale mapping stated
+      - persona config-admin links the new job
+      - evaluative phrasing removed from the generation sections
+      - Airbyte billing claim labelled as a summary
+      - absence claim scoped to the surveyed tools
+      - mis-citation of :133-134 reworded
+      - job_story includes "or told plainly not yet"
+  - round: 2
+    status: conditionally_approved
+    dimensions:
+      jtbd_rigor: PASSED
+      research_quality: PASSED
+      option_diversity: PASSED
+      taste_application: PASSED
+      recommendation_coherence: PASSED
+    verified: >
+      Arithmetic, the weight preset against the skill table, option numbering across the three files, and the
+      citations in UpdateServiceBase, WorkItemService, useModifySettings, ForecastSettingsComponent,
+      ModifyTeamSettings, ModifyConnectionSettings, FetchFingerprint, ARCHITECTURE.md:61, AppSettingSeeder and
+      TeamsController.
+    issues_and_fixes_after_round_2:
+      - severity: major
+        issue: ADR-030's rejected Option B ("Always auto-refresh") was not engaged.
+        fix: >
+          Added to taste-evaluation.md §0 and to the recommendation. The repetition reason does not transfer; "no
+          surprise long operation" does. ADR-030's Decision "Split by recompute cost" is named as the rule an
+          amendment would touch.
+      - severity: major
+        issue: Option 3 had a V4 score with no rationale, and its change to rule semantics was not assessed against ADR-013.
+        fix: V3 with a rationale, and an ADR-013 gate added. Total 3.32 to 3.23; still fourth.
+      - severity: minor
+        issue: Option 1's T4 was scored on a different reading of wait time than Option 4's.
+        fix: >
+          T4 4 to 3. Option 1 total 4.50 to 4.25; margin 0.77 to 0.52; still first. Sensitivity line added.
+      - severity: minor
+        issue: Arithmetic slip in the runner-up sensitivity.
+        fix: D4 gives 3.82; D4 and V4 gives 3.90.
+      - severity: minor
+        issue: The leader-downgrade wording left out Desirability.
+        fix: Now reads "Desirability, Feasibility and Viability all downgraded (4.00)".
+      - severity: minor
+        issue: Pair 1-4 marked the mechanism as fully different.
+        fix: Marked "partly"; the pair passes on assumption and cost.
+      - severity: minor
+        issue: The ≤ 2 per-lens failure bar was not attributed.
+        fix: Labelled as a convention of this evaluation.
+      - severity: minor
+        issue: Rounding rule for the scale mapping was not stated.
+        fix: Stated (halve, round down).
+    not_verified_by_reviewer:
+      - External vendor claims (ActionableAgile, Screenful, Airbyte, Fivetran, Atlassian KB); the reviewer had no web tools. Flux read them through WebSearch/WebFetch summaries.
+      - EditPortfolio.tsx:77 (Portfolio save refreshes the Portfolio).
