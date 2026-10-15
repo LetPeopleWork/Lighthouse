@@ -356,6 +356,7 @@ Paths under `Lighthouse.Backend/Lighthouse.Backend.Tests/` unless stated.
 | `Lighthouse.EndToEndTests/tests/helpers/api/optionalFeatures.ts` | `switchHistoryFill`, `OVER_TIME_HISTORY_FILL_KEY` | **Delete** | 02 |
 | `…/tests/specs/flow/PercentilesOverTime.spec.ts`, `PbcOverTime.spec.ts`, `PredictabilityOverTime.spec.ts` | `beforeEach`/`afterEach` calling `switchHistoryFill`, and the import | **Delete** | 02 |
 | `…/tests/specs/screenshots/Screenshots.spec.ts` | `switchHistoryFill(request, true)` in "Take @screenshot of the system configuration page"; the `testWithDemoHistoryFill` fixture | **Delete** the call; the over-time shot uses `testWithDemo` directly and its comment loses the switch. Keep both over-time widgets in the dashboard loop's `coveredElsewhere` | 02 |
+| `Lighthouse.Frontend/src/pages/Common/MetricsView/overTimeEmptyState.ts` and `overTimeEmptyState.test.ts` | doc comments describing the switch ("switched on or off", "until an administrator opts in") | **Reword** the comments only; the empty-state sentence itself is unchanged | 02 |
 
 No other test names the key, the record, the switch port or `"Fill in past days"`: checked by grepping
 `IOverTimeHistoryFillSwitch|OverTimeHistoryFillSwitch|IsSwitchedOn|HistoryFillSwitchedOnByDefault|OverTimeHistoryFillKey|"OverTimeHistoryFill"`
