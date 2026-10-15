@@ -1193,12 +1193,12 @@ The S8 case that spikes is a different one each time (an off-host return path in
 
 | Test | Cause (one line) | Measured locally (load, 1 min) | CI confirmation | Verdict |
 |---|---|---|---|---|
-| `CacheTest.ConcurrentReadersAndWriters` (and the class's other barrier tests) | Its 16 participants run as thread-pool work items and block in `Barrier.SignalAndWait`; on a 4-core runner that parks every worker until the pool grows, so it and everything else in flight in the assembly stall. The 200 ms window also started before the participants were queued, so in a slow run they raced nothing. | Reproduced: `CacheTest` + `S8_EmbedEntryPointTests` with `DOTNET_PROCESSOR_COUNT=4` took 58.2 s wall, `ConcurrentReadersAndWriters` 34.0 s and S8 `ExpiredToken` 37.8 s; the same pair on all 12 cores took 21.2 s (load 5.1 → 10.4) | Spikes in A, C, E (11.6, 60.9, 29.2 s) against 0.2–1.0 s otherwise | **Wait-bound, fixed** |
+| `CacheTest.ConcurrentReadersAndWriters` (and the class's other barrier tests) | Its 16 participants run as thread-pool work items and block in `Barrier.SignalAndWait`; on a 4-core runner that parks every worker until the pool grows, so it and everything else in flight in the assembly stall. The 200 ms window also started before the participants were queued, so in a slow run they raced nothing. | Reproduced: `CacheTest` + `S8_EmbedEntryPointTests` with `DOTNET_PROCESSOR_COUNT=4` took 58.2 s wall, `ConcurrentReadersAndWriters` 34.0 s and S8 `ExpiredToken` 37.8 s; the same pair on all 12 cores took 21.2 s (loads in the before / after table below) | Spikes in A, C, E (11.6, 60.9, 29.2 s) against 0.2–1.0 s otherwise | **Wait-bound, fixed** |
 | `S8_EmbedEntryPointTests` (the 62 s case) | A victim of the stall above: whichever case was in flight waited for a pool thread. The class's steady cost is a fresh `WebApplicationFactory` plus derived hosts and a fresh SQLite schema for every test (0.5–0.7 s a case, 3 s for the first). Separately, `ExpiredToken` slept a real 2 s for the token to expire. | Alone 13 s total, `ExpiredToken` 2.58 s (load 8.0) | Class 19.0–28.2 s outside the stall runs; `ExpiredToken` 2.7–3.6 s in every run | `ExpiredToken` **wait-bound, fixed**; class **accepted** |
 | `BlockedCountSnapshotMigrationTests.Migration_OnPostgres` | Starts a fresh `postgres:18-alpine` container and applies every migration; Testcontainers waits on readiness, there is no fixed sleep. The 50.5 s was the stall above. | Alone 10.8 s (load 4.6) | 15.2–15.9 s in the four runs without a stall | **Accepted** |
 | `DataProtectionKeyRingTest.WhenRedisConfigured` | Booted the whole app to read one option, and a full boot wires StackExchange.Redis three times (scaling backplane, health check, key ring) at `localhost:6399`, where nothing listens, so it spent seconds failing to connect. | Alone 2.62 s against 0.16 s for its twin (load 7.7) | 0.2–6.2 s outside the stall runs (median 5.4 s), twin 0.2–1.1 s | **Wait-bound, fixed** |
 
-**Thread-pool hypothesis: reproduced.** Before the fix, four cores (`DOTNET_PROCESSOR_COUNT=4`) stretch the pair from 21.2 s to 58.2 s wall. After it, the same pair takes 13.4 s at four cores and 14.7 s at twelve.
+**Thread-pool hypothesis: reproduced.** Before the fix, four cores (`DOTNET_PROCESSOR_COUNT=4`) stretch the pair from 21.2 s to 58.2 s wall. After it, the same pair takes 13.4 s at four cores and 14.7 s at twelve (the load each pair ran at is in the before / after table below).
 
 **What changed.**
 
@@ -1211,7 +1211,7 @@ No production code changed. No `[NonParallelizable]` was added.
 
 **Local before / after** (each class alone, `dotnet test --filter "FullyQualifiedName~<Class>"`, 2026-10-15 10:20–10:40):
 
-| Test | Before | After | Load before → after (1 min) |
+| Test | Before | After | Load at the before run → at the after run (1 min) |
 |---|---|---|---|
 | `CacheTest.ConcurrentReadersAndWriters` | 0.99 s | 0.20 s | 4.3 → 7.5 |
 | `CacheTest.ConcurrentInsertsOnUniqueKeys` | 4.37 s | 0.01 s | 4.3 → 7.5 |
@@ -1232,7 +1232,8 @@ Every fixed test is under 10 s alone and alongside S8.
 | `CacheTest.ConcurrentReadersAndWriters`: 200 ms timer started at construction | the same 200 ms, started when all 16 participants are at the barrier | `exceptions` is empty and `torn` is empty, unchanged |
 | `CacheTest.InvalidateMetricsStylePrefixRemoval`: 500 ms timer started at construction | the same 500 ms, started when all 17 participants are at the barrier | `exceptions` empty and no `42_` key left, unchanged |
 | `S8_Enter_ExpiredToken`: `Task.Delay(2 s)` of real time | `FakeTimeProvider.Advance(lifetime + 1 s)` on the host's clock | `401`, a non-empty body, no embed cookie, unchanged. Advancing by `lifetime − 1 s` instead makes the test fail (`Found` where `Unauthorized` is expected), so the fake clock is what decides expiry. |
-| `DataProtectionKeyRingTest`: full app boot with three Redis connect attempts | the data protection set-up alone, no connect | the repository type is exactly `RedisXmlRepository` / `FileSystemXmlRepository`, unchanged. The test no longer proves that the app's boot calls `ConfigureDataProtection`; it proves what that method registers for each configuration. |
+| `DataProtectionKeyRingTest`, Redis case: full app boot with three Redis connect attempts | the data protection set-up alone, no connect | the repository type is exactly `RedisXmlRepository`, unchanged |
+| `DataProtectionKeyRingTest`, no-Redis case | still a full app boot (restored after review) | the booted app's key ring is a `FileSystemXmlRepository` in exactly the key store the test configured. This is what proves the app's own start-up calls `ConfigureDataProtection`: with that call replaced by a no-op the test fails (`Expected: "/tmp/lighthouse-dp-ring-…" But was: null`). |
 
 **Proposed allowlist entries for 06-06** (class name as the guard derives it: the full name before the last `.`, once any `(...)` argument tail is removed; ceiling = 2.1 × the class's largest CI sum, rounded up):
 
@@ -1246,6 +1247,8 @@ Both largest sums include the stall now removed; without it the S8 class has not
 **E-names** (the four classes, before vs after, from the TRX of each class run alone): 29 names before, 29 after; `comm -23` and `comm -13` print nothing; per-class counts unchanged (`CacheTest` 7, `DataProtectionKeyRingTest` 2, `S8_EmbedEntryPointTests` 17, `BlockedCountSnapshotMigrationTests` 3); all passed in both. **E-weaken** on the step's diff: no `Ignore`, `Explicit`, skip or `NonParallelizable` added. One `Assert.` line removed in `DataProtectionKeyRingTest` (`XmlRepository` is not null), re-added verbatim in the rewritten helper.
 
 **Full suite** (standard filter, `nice -n 19`, with `--blame-hang-timeout 5m`): 10027 passed, 0 failed, 1 skipped, 5 m 43 s, load 1.8 → 7.5. A first run (load 7.1 at start) was still in the test host 17 minutes in, with nothing logged for the last 12 minutes and no result line, so it was stopped. The re-run above had the hang detector armed, finished in under 6 minutes, and named nothing. Which test the first run was waiting on is not known.
+
+**After review** (`a9eddb93b`, `6e18aa2b3`). The first version moved both `DataProtectionKeyRingTest` cases off the full boot, which left the app's start-up call to `ConfigureDataProtection` with no test: deleting it would quietly put the key ring back on per-machine storage and nothing would go red. The no-Redis case boots the whole app again and checks the key ring lands in the configured key store; it costs about 1–2 s at load 8–13. The Redis case stays on the direct call. `CacheTest` now bounds every wait on its participants at 30 s, so a stuck participant fails the test instead of hanging the run, and the two `[CancelAfter]` attributes that cancelled nothing are gone. The S8 class comment says what it guards instead of citing references. Three classes 26/26, full suite 10027 passed, 0 failed, 1 skipped, under `--blame-hang-timeout 5m`.
 
 **Owed.** A re-time of the fixed tests on a quiet machine; every timing above was taken at load 4–11 with other sessions active.
 
