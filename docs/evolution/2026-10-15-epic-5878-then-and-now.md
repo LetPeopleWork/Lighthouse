@@ -190,12 +190,12 @@ DD1–DD39), the wave decisions, the slice briefs, `deliver/roadmap.json`, `deli
 | Lighthouse-Clients (CLI + MCP) | **N/A, because the maintainer kept CLI and MCP out of scope (D15).** Every endpoint is new and additive, and no existing response changed, so no client release is needed. |
 | Website | **Owed, not done in this finalize.** DISCUSS planned a features-list entry (Community, Premium = unlimited reports) and a "show what changed since the engagement started" line for the consulting audience. The website repo does not mention Then & Now yet. Confirm the copy with the maintainer before editing. |
 | Premium | **The count cap only.** Community holds one report per Team or Portfolio for each report Type, Premium is unlimited (D57); the server refuses too, and the disabled Create Report carries the licence tooltip. A lapsed licence keeps every report readable and deletable. Metrics, windows and editing are never gated. |
-| Docs | Done — see commits <TBD> |
-| Screenshots | Done — see commits <TBD> |
+| Docs | **Done** in `5c3b2b3e9`: a first-level Reports section (`docs/reports/reports.md`, with `thenandnow.md` as its first type), links from the Team and Portfolio pages and the Overview docs, the two-and-more rule for the Overview columns, a Reports row in `rbac.md`, the report cap in `licensing.md`. |
+| Screenshots | **Done** in `296ad2b78`: `features/overview.png` regenerated with report chips and "+1 more"; new `features/reports.png`, `features/report_thenandnow.png` and `features/report_wizard.png`, all run against a fresh backend with demo data and the premium licence. |
 | E2E | **Two walking skeletons, green**: create-and-open on Team Lightspeed (slice 01) and open-from-the-Overview (slice 12), in `teams/Reports.spec.ts`. They run in CI through the SQLite and Postgres verify workflows. The rest is pinned below E2E on purpose. |
 | Usage data | **Done.** `ReportCreated` (16) and `ReportOpened` (17) carry only the closed enum report Type (`ThenAndNow`); `ReportDeleted` (18) is name-only; the Reports tabs travel as `TeamTabOpened` / `PortfolioTabOpened` addresses. All are listed in `docs/settings/usagedata.md`. No cap-refusal event (maintainer, DEVOPS) and no event for the Overview chips, because `ReportOpened` already counts every opening wherever it starts (D68). |
 | Demo data | **Checked, no change.** Team Lightspeed's demo history gives better and worse lines for the screenshots and the E2E; the Portfolios stay thin on purpose. No report is seeded, because a seeded report would freeze on load day. |
-| Release note | Done — see commits <TBD> |
+| Release note | **Done** in `5c3b2b3e9`: `## Reporting: Then & Now` under `# Lighthouse vNext`, plus a bugfix line for the {Deliveries} column. Website: "Reporting" feature section, comparison rows and a "Next release" card in the website repo (`6ba363a`), pushed after this. |
 
 ## Release note (draft)
 
