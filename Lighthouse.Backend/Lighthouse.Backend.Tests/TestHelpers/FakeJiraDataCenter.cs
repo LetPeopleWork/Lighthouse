@@ -23,6 +23,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     {
         private const string ServerInfoPath = "/rest/api/2/serverInfo";
         private const string ProjectListPath = "/rest/api/2/project";
+        private const string ProjectSearchPath = "/rest/api/2/project/search";
         private const string VersionListSuffix = "/version";
         private const string VersionPathPrefix = "/rest/api/2/version/";
         private const string SearchPath = "/rest/api/latest/search";
@@ -50,6 +51,15 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
         /// <summary>A server that will not say what it is, which leaves the connector not knowing its deployment.</summary>
         public bool HidesItsDeployment { get; set; }
+
+        /// <summary>A body the project list answers 200 with in place of the projects, so an answer that is not a list can be provoked.</summary>
+        public string? ProjectListAnswer { get; set; }
+
+        /// <summary>A status the paged project search answers with in place of the 404 Data Center gives it.</summary>
+        public HttpStatusCode? ProjectSearchAnswer { get; set; }
+
+        /// <summary>A body reading a version answers 200 with in place of the version, so an answer that is not one can be provoked.</summary>
+        public string? VersionReadAnswer { get; set; }
 
         public IReadOnlyList<Uri> VersionListRequests =>
             [.. Requests.Where(uri => VersionListProjectKeyIn(uri.AbsolutePath) is not null)];
@@ -125,7 +135,15 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
             if (path.EndsWith(ProjectListPath, StringComparison.Ordinal) && request.Method == HttpMethod.Get)
             {
-                return Ok($"[{string.Join(",", projects.Select(ProjectJson))}]");
+                return Ok(ProjectListAnswer ?? $"[{string.Join(",", projects.Select(ProjectJson))}]");
+            }
+
+            if (path.EndsWith(ProjectSearchPath, StringComparison.Ordinal) && ProjectSearchAnswer is { } searchAnswer)
+            {
+                return new HttpResponseMessage(searchAnswer)
+                {
+                    Content = new StringContent("{\"errorMessages\":[\"Forbidden\"],\"errors\":{}}", Encoding.UTF8, "application/json"),
+                };
             }
 
             if (VersionListProjectKeyIn(path) is { } projectKey && request.Method == HttpMethod.Get)
@@ -238,6 +256,10 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             else if (request.Method != HttpMethod.Get)
             {
                 return new HttpResponseMessage(HttpStatusCode.MethodNotAllowed);
+            }
+            else if (VersionReadAnswer is { } answer)
+            {
+                return Ok(answer);
             }
 
             return Ok(VersionJson(version, request.RequestUri!));

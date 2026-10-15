@@ -2727,7 +2727,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// <summary>
         /// Which of the two search endpoints this instance answers on, as far as that is known without calling
         /// Jira. Unknown covers both an instance Lighthouse has never reached and one it reached and could not
-        /// identify; neither can be swept, so both get the same answer here.
+        /// identify; the work-item sweep cannot page the search of either, so both get the same answer here.
         /// </summary>
         private static JiraDeployment SearchTransportOf(WorkTrackingSystemConnection connection)
             => TryResolveKnownDeployment(connection, out var deployment) ? deployment : JiraDeployment.Unknown;
@@ -2794,8 +2794,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return JiraDeployment.Unknown;
             }
         }
-        // --- Delivery sources (Epic 5565) ---
-        // Implemented on the connector rather than beside it: the authenticated HTTP path and the JQL
+
+        // Delivery sources live on the connector rather than beside it: the authenticated HTTP path and the JQL
         // encoding that guards it are private to this class, so a sibling could never reach them.
 
         private const string FixVersionsFieldName = "fixVersions";
@@ -2928,7 +2928,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return await ReadProjectList(client, routes.Deployment);
             }
 
-            var (projects, refusal) = await ReadProjectSearchPages(client, searchRoute);
+            var (projects, refusal, isReadable) = await ReadProjectSearchPages(client, searchRoute);
 
             // Only Cloud serves the paged search. Data Center reads "search" as a project key and answers that no
             // such project exists, so a Jira that would not say which kind it is gets the plain list instead.
@@ -2944,10 +2944,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return (projects, false);
             }
 
-            return (projects, true);
+            if (!isReadable)
+            {
+                LogTheProjectListWasUnreadable(searchRoute, routes.Deployment);
+            }
+
+            return (projects, isReadable);
         }
 
-        private static async Task<(List<DeliverySourceProject> Projects, HttpStatusCode? Refusal)> ReadProjectSearchPages(
+        private static async Task<(List<DeliverySourceProject> Projects, HttpStatusCode? Refusal, bool IsReadable)> ReadProjectSearchPages(
             HttpClient client, string route)
         {
             var projects = new List<DeliverySourceProject>();
@@ -2958,15 +2963,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    return (projects, response.StatusCode);
+                    return (projects, response.StatusCode, true);
                 }
 
-                var (page, isLastPage) = JiraReleaseVersionReader.ReadProjectPage(await response.Content.ReadAsStringAsync());
+                var (page, isLastPage, isReadable) = JiraReleaseVersionReader.ReadProjectPage(await response.Content.ReadAsStringAsync());
                 projects.AddRange(page);
 
-                if (isLastPage || page.Count == 0)
+                if (!isReadable || isLastPage || page.Count == 0)
                 {
-                    return (projects, null);
+                    return (projects, null, isReadable);
                 }
             }
         }
@@ -2987,7 +2992,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return ([], false);
             }
 
-            return (JiraReleaseVersionReader.ReadProjectList(await response.Content.ReadAsStringAsync()), true);
+            var (projects, isReadable) = JiraReleaseVersionReader.ReadProjectList(await response.Content.ReadAsStringAsync());
+
+            if (!isReadable)
+            {
+                LogTheProjectListWasUnreadable(JiraRestRoutes.ProjectList, deployment);
+            }
+
+            return (projects, isReadable);
         }
 
         /// <summary>
@@ -3000,15 +3012,41 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 "Jira answered {StatusCode} when asked for the projects at {Route} on this {Deployment} connection - no Releases can be offered",
                 status, route, deployment);
 
+        private void LogTheProjectListWasUnreadable(string route, JiraDeployment deployment)
+            => logger.LogWarning(
+                "Jira answered the request for the projects at {Route} on this {Deployment} connection with something that is not a project list - no Releases can be offered",
+                route, deployment);
+
         /// <summary>
         /// A project the credential can list but whose versions it may not read contributes nothing rather
         /// than failing the whole list. On a large instance a single such project would otherwise take the
-        /// entire picker away from a reader who has perfectly good projects to choose from.
+        /// entire picker away from a reader who has perfectly good projects to choose from. The same goes for
+        /// a project whose answer never arrived or could not be read.
         /// </summary>
         private async Task<(IReadOnlyList<DeliverySourceOption> Releases, bool SawEverything)> ReadReleasesOf(
             HttpClient client, JiraRestRoutes routes, DeliverySourceProject project, string statuses)
         {
             var releases = new List<DeliverySourceOption>();
+
+            try
+            {
+                return (releases, await WalkReleasePages(client, routes, project, statuses, releases));
+            }
+            catch (Exception exception) when (JiraCouldNotBeAsked(exception))
+            {
+                logger.LogInformation(
+                    exception,
+                    "Could not read the Releases of project {ProjectKey} - offering the other projects without it",
+                    project.Key);
+
+                return (releases, false);
+            }
+        }
+
+        /// <summary>Every page of one project's Releases into <paramref name="releases"/>, and whether all of them were read.</summary>
+        private async Task<bool> WalkReleasePages(
+            HttpClient client, JiraRestRoutes routes, DeliverySourceProject project, string statuses, List<DeliverySourceOption> releases)
+        {
             var startAt = 0;
             var wantedStatuses = statuses.Split(',');
 
@@ -3022,10 +3060,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                         "Jira did not let us read the Releases of project {ProjectKey} ({StatusCode}) - offering the other projects without it",
                         project.Key, response.StatusCode);
 
-                    return (releases, false);
+                    return false;
                 }
 
-                var (page, isLastPage) = JiraReleaseVersionReader.ReadOptionPage(await response.Content.ReadAsStringAsync(), project);
+                var (page, isLastPage, isReadable) = JiraReleaseVersionReader.ReadOptionPage(await response.Content.ReadAsStringAsync(), project);
+
+                if (!isReadable)
+                {
+                    logger.LogInformation(
+                        "Jira answered for the Releases of project {ProjectKey} with something that is not a page of them - offering the other projects without it",
+                        project.Key);
+
+                    return false;
+                }
+
                 startAt += page.Count;
                 releases.AddRange(routes.CanFilterVersionsByStatus
                     ? page
@@ -3033,7 +3081,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 if (isLastPage || page.Count == 0)
                 {
-                    return (releases, true);
+                    return true;
                 }
             }
         }

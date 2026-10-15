@@ -77,7 +77,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         /// <summary>
-        /// The criterion the slice rests on, proved end to end rather than at the merge alone: a Release
+        /// The promise publishing makes, proved end to end rather than at the merge alone: a Release
         /// published to on every refresh must not accumulate a forecast per refresh.
         /// </summary>
         [Test]
@@ -124,6 +124,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(jira.DescriptionOf(TheRelease), Is.EqualTo(TheBlock));
                 Assert.That(jira.VersionWrites.Select(write => write.VersionId), Is.EqualTo(new[] { TheRelease }));
                 Assert.That(jira.Requests.Select(uri => uri.AbsolutePath), Does.Contain($"/rest/api/2/version/{TheRelease}"));
+            }
+        }
+
+        [Test]
+        public async Task A_Release_that_reads_back_as_something_other_than_a_Release_is_published_to_rather_than_failing()
+        {
+            var jira = new FakeJiraDataCenter { VersionReadAnswer = "[]" }
+                .WithProject("REL", "Release coordination")
+                .WithReleaseIn("REL", TheRelease, "2026 Q4", "2026-10-01");
+
+            var connector = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var result = await connector.PublishAsync(
+                FakeJiraDataCenter.AConnection(), new DeliveryForecastPublication(JiraReleaseSourceKey, TheRelease, TheBlock));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.TypeOf<DeliveryForecastPublishResult.Published>(),
+                    "an answer with no description in it has no words to keep, which is the same answer as a Release nobody described.");
+                Assert.That(jira.DescriptionOf(TheRelease), Is.EqualTo(TheBlock));
             }
         }
 

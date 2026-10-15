@@ -206,6 +206,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static readonly string[] TheProjectKeysInTheDataCenterProjectList = ["LGH", "REL"];
 
+        /// <summary>
+        /// A paged envelope where Data Center documents a bare array - what a proxy in front of Jira, or a
+        /// route answered by something other than Jira, can hand back with a 200.
+        /// </summary>
+        private const string APageOfProjectsWhereDataCenterSendsABareList = """
+            {
+              "isLast": true,
+              "values": []
+            }
+            """;
+
         private static readonly string[] TheReleasesOfTwoDataCenterProjects = [TheDatedRelease, "10101"];
 
         private static readonly string[] TheUnreleasedReleasesOfTheReleaseProject = [TheDatedRelease, TheUndatedRelease];
@@ -244,7 +255,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void A_Release_with_no_release_date_is_offered_but_cannot_be_selected()
         {
-            var (options, _) = JiraReleaseVersionReader.ReadOptionPage(CapturedVersionsPayload, TheDemoProject);
+            var (options, _, _) = JiraReleaseVersionReader.ReadOptionPage(CapturedVersionsPayload, TheDemoProject);
 
             var undated = options.Single(option => option.Id == TheUndatedRelease);
 
@@ -263,7 +274,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void A_Release_that_was_archived_in_Jira_cannot_be_selected()
         {
-            var (options, _) = JiraReleaseVersionReader.ReadOptionPage(CapturedVersionsPayload, TheDemoProject);
+            var (options, _, _) = JiraReleaseVersionReader.ReadOptionPage(CapturedVersionsPayload, TheDemoProject);
 
             var archived = options.Single(option => option.Id == TheDeletedRelease);
 
@@ -279,7 +290,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void The_projects_a_credential_can_see_are_read_by_key_and_by_name()
         {
-            var (projects, isLastPage) = JiraReleaseVersionReader.ReadProjectPage(CapturedProjectsPayload);
+            var (projects, isLastPage, isReadable) = JiraReleaseVersionReader.ReadProjectPage(CapturedProjectsPayload);
 
             using (Assert.EnterMultipleScope())
             {
@@ -292,19 +303,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(projects[2].Name, Is.Empty,
                     "a name that never arrived reads the same way - never a stand-in the picker would then show to a reader.");
                 Assert.That(isLastPage, Is.True);
+                Assert.That(isReadable, Is.True);
             }
         }
 
         [Test]
         public void A_Data_Center_project_list_arrives_as_a_bare_array_and_is_read_by_key_and_by_name()
         {
-            var projects = JiraReleaseVersionReader.ReadProjectList(CapturedDataCenterProjectList);
+            var (projects, isReadable) = JiraReleaseVersionReader.ReadProjectList(CapturedDataCenterProjectList);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(projects.Select(project => project.Key), Is.EqualTo(TheProjectKeysInTheDataCenterProjectList),
                     "Data Center lists every project in one answer with no page around it, so the array itself is the list.");
                 Assert.That(projects[0].Name, Is.EqualTo("Lighthouse Demo"));
+                Assert.That(isReadable, Is.True);
+            }
+        }
+
+        [TestCase(APageOfProjectsWhereDataCenterSendsABareList)]
+        [TestCase("\"Not Found\"")]
+        [TestCase("42")]
+        public void A_Data_Center_project_list_that_is_not_an_array_lists_nothing_and_says_it_could_not_be_read(string payload)
+        {
+            var (projects, isReadable) = JiraReleaseVersionReader.ReadProjectList(payload);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(projects, Is.Empty);
+                Assert.That(isReadable, Is.False,
+                    "an answer that lists no projects because it could not be read must not pass for a Jira that has no projects - a refresh would read every bound Release as deleted.");
             }
         }
 
@@ -314,7 +342,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("42")]
         public void A_page_whose_root_is_not_an_object_reads_as_empty_and_last_rather_than_throwing(string payload)
         {
-            var (projects, isLastPage) = JiraReleaseVersionReader.ReadProjectPage(payload);
+            var (projects, isLastPage, isReadable) = JiraReleaseVersionReader.ReadProjectPage(payload);
 
             using (Assert.EnterMultipleScope())
             {
@@ -322,13 +350,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     "a page with no envelope has no values to read, and asking it for one throws an exception nothing upstream expects - which turns an empty picker into a failed request.");
                 Assert.That(isLastPage, Is.True,
                     "nothing on it says more is coming, and a caller told otherwise would ask for the same page forever.");
+                Assert.That(isReadable, Is.False,
+                    "ending the walk here is not the same as having seen every project, and a caller that cannot tell the two apart retires bindings on the strength of an answer it could not read.");
             }
         }
 
         [Test]
         public void A_release_date_is_read_as_the_day_Jira_named_in_UTC_rather_than_in_whatever_zone_the_server_sits_in()
         {
-            var (options, _) = JiraReleaseVersionReader.ReadOptionPage(CapturedVersionsPayload, TheDemoProject);
+            var (options, _, _) = JiraReleaseVersionReader.ReadOptionPage(CapturedVersionsPayload, TheDemoProject);
 
             var dated = options.Single(option => option.Id == TheDatedRelease).Date;
 
@@ -351,7 +381,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public void A_bare_Jira_release_date_is_read_as_that_day_at_UTC_midnight(
             string dateJiraSent, int year, int month, int day)
         {
-            var (options, _) = JiraReleaseVersionReader.ReadOptionPage(AVersionDated(dateJiraSent), TheDemoProject);
+            var (options, _, _) = JiraReleaseVersionReader.ReadOptionPage(AVersionDated(dateJiraSent), TheDemoProject);
 
             Assert.That(options.Single().Date, Is.EqualTo(new DateTime(year, month, day, 0, 0, 0, DateTimeKind.Utc)));
         }
@@ -359,7 +389,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void A_version_carrying_no_release_date_key_at_all_is_read_as_dateless_rather_than_as_a_payload_that_failed()
         {
-            var (options, isLastPage) = JiraReleaseVersionReader.ReadOptionPage(CapturedVersionsPayload, TheDemoProject);
+            var (options, isLastPage, isReadable) = JiraReleaseVersionReader.ReadOptionPage(CapturedVersionsPayload, TheDemoProject);
 
             using (Assert.EnterMultipleScope())
             {
@@ -367,6 +397,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(options, Has.Count.EqualTo(3),
                     "the entry without the key is still carried - a missing date must not cost the reader the Release, nor the two around it.");
                 Assert.That(isLastPage, Is.True);
+                Assert.That(isReadable, Is.True);
             }
         }
 
@@ -391,7 +422,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void A_Release_Jira_says_has_shipped_is_read_as_shipped()
         {
-            var (options, _) = JiraReleaseVersionReader.ReadOptionPage(CapturedVersionsPayload, TheDemoProject);
+            var (options, _, _) = JiraReleaseVersionReader.ReadOptionPage(CapturedVersionsPayload, TheDemoProject);
 
             using (Assert.EnterMultipleScope())
             {
@@ -405,7 +436,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void A_release_date_that_cannot_be_read_leaves_the_Release_dateless_rather_than_dated_at_the_start_of_time()
         {
-            var (options, _) = JiraReleaseVersionReader.ReadOptionPage(AVersionDatedInWordsRatherThanADate, TheDemoProject);
+            var (options, _, _) = JiraReleaseVersionReader.ReadOptionPage(AVersionDatedInWordsRatherThanADate, TheDemoProject);
 
             var unreadable = options.Single();
 
@@ -421,26 +452,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void A_page_whose_values_are_not_a_list_is_read_as_holding_nothing_rather_than_failing()
         {
-            var (options, isLastPage) = JiraReleaseVersionReader.ReadOptionPage(APageWhoseValuesAreNotAList, TheDemoProject);
+            var (options, isLastPage, isReadable) = JiraReleaseVersionReader.ReadOptionPage(APageWhoseValuesAreNotAList, TheDemoProject);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(options, Is.Empty,
                     "a shape the reader cannot walk costs the picker that one project, the way an unreadable one does - it must not take the whole request down with it.");
                 Assert.That(isLastPage, Is.True);
+                Assert.That(isReadable, Is.False,
+                    "a page with nothing walkable on it has said nothing about which Releases the project holds.");
             }
         }
 
         [Test]
         public void A_page_that_announces_more_and_carries_no_list_ends_the_sweep_rather_than_inviting_another_ask()
         {
-            var (options, isLastPage) = JiraReleaseVersionReader.ReadOptionPage(APageAnnouncingMoreAndCarryingNoList, TheDemoProject);
+            var (options, isLastPage, isReadable) = JiraReleaseVersionReader.ReadOptionPage(APageAnnouncingMoreAndCarryingNoList, TheDemoProject);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(options, Is.Empty);
                 Assert.That(isLastPage, Is.True,
                     "the page said more was coming and then did not say what, and a sweep that takes it at its word asks Jira the same question for as long as it is answered that way.");
+                Assert.That(isReadable, Is.False,
+                    "a page that promised more and delivered nothing is one the sweep stopped on, not one it finished.");
             }
         }
 
@@ -915,6 +950,108 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task A_Data_Center_project_list_that_answers_with_something_other_than_a_list_leaves_a_bound_Release_unavailable_and_never_missing()
+        {
+            var jira = new FakeJiraDataCenter
+            {
+                ProjectListAnswer = APageOfProjectsWhereDataCenterSendsABareList,
+            }
+                .WithProject(TheReleaseProject, "Release coordination")
+                .WithReleaseIn(TheReleaseProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira);
+
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var resolutions = await subject.ResolveMany(FakeJiraDataCenter.AConnection(), JiraReleaseSourceKey, TheDatedReleaseOnItsOwn);
+
+            Assert.That(resolutions[TheDatedRelease], Is.InstanceOf<DeliverySourceResolution.Unavailable>(),
+                "a project list that could not be read lists no projects, and a sweep of no projects finds no Releases - read as the whole truth, that retires every binding on the connection.");
+        }
+
+        [Test]
+        public async Task A_version_page_whose_values_are_not_a_list_leaves_a_Release_it_never_saw_unavailable_and_never_missing()
+        {
+            var jira = AJira()
+                .WithTheReleaseProject()
+                .WithReleaseIn(TheReleaseProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira)
+                .WithVersionsAnsweredAs(TheReleaseProject, APageWhoseValuesAreNotAList);
+
+            var resolution = await Resolve(jira, TheDatedRelease);
+
+            Assert.That(resolution, Is.InstanceOf<DeliverySourceResolution.Unavailable>(),
+                "a page nobody could read has said nothing about which Releases the project holds, so a Release missing from it is not a Release somebody deleted.");
+        }
+
+        [Test]
+        public async Task A_project_whose_version_page_cannot_be_read_costs_the_picker_only_that_project()
+        {
+            var jira = AJira()
+                .WithTheWorkProject()
+                .WithTheReleaseProject()
+                .WithReleaseIn(TheWorkProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira)
+                .WithReleaseIn(TheReleaseProject, TheUndatedRelease, TheUndatedReleaseName, null)
+                .WithVersionsAnsweredAs(TheReleaseProject, APageWhoseValuesAreNotAList);
+
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var options = await subject.GetOptions(AJiraCloudConnection(), JiraReleaseSourceKey);
+
+            Assert.That(options.Select(option => option.Id), Is.EquivalentTo(TheDatedReleaseOnItsOwn),
+                "an answer the reader cannot walk contributes nothing, and the projects that answered properly are still offered.");
+        }
+
+        [Test]
+        public async Task A_project_whose_versions_cannot_be_reached_costs_the_picker_only_that_project()
+        {
+            var jira = AJira()
+                .WithTheWorkProject()
+                .WithTheReleaseProject()
+                .WithReleaseIn(TheWorkProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira)
+                .WithReleaseIn(TheReleaseProject, TheUndatedRelease, TheUndatedReleaseName, null)
+                .WithVersionsUnreachableIn(TheReleaseProject);
+
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var options = await subject.GetOptions(AJiraCloudConnection(), JiraReleaseSourceKey);
+
+            Assert.That(options.Select(option => option.Id), Is.EquivalentTo(TheDatedReleaseOnItsOwn),
+                "a connection that dropped while one project was being read costs the picker that project, the way a project that refused does - not every project on the instance.");
+        }
+
+        [Test]
+        public async Task A_project_whose_versions_cannot_be_reached_leaves_a_Release_unavailable_and_never_missing()
+        {
+            var jira = AJira()
+                .WithTheWorkProject()
+                .WithTheReleaseProject()
+                .WithReleaseIn(TheWorkProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira)
+                .WithReleaseIn(TheReleaseProject, TheUndatedRelease, TheUndatedReleaseName, null)
+                .WithVersionsUnreachableIn(TheReleaseProject);
+
+            var resolution = await Resolve(jira, TheUndatedRelease);
+
+            Assert.That(resolution, Is.InstanceOf<DeliverySourceResolution.Unavailable>(),
+                "the project holding the Release never answered, which says nothing about whether the Release still exists.");
+        }
+
+        [Test]
+        public async Task A_Jira_that_will_not_say_which_kind_it_is_and_refuses_the_project_search_offers_nothing_and_does_not_fall_back_to_the_project_list()
+        {
+            var jira = new FakeJiraDataCenter { HidesItsDeployment = true, ProjectSearchAnswer = HttpStatusCode.Forbidden }
+                .WithProject(TheReleaseProject, "Release coordination")
+                .WithReleaseIn(TheReleaseProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira);
+            var logger = new Mock<ILogger<JiraWorkTrackingConnector>>();
+
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler, logger.Object);
+            var options = await subject.GetOptions(FakeJiraDataCenter.AConnection(), JiraReleaseSourceKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(options, Is.Empty);
+                Assert.That(jira.Requests.Select(uri => uri.AbsolutePath.TrimEnd('/')), Has.None.EndsWith("/rest/api/2/project"),
+                    "only a 404 says the paged search does not exist on this Jira; a 403 is somebody saying no, and asking a second route the same question goes around that answer.");
+                Assert.That(logger.Invocations.Where(invocation => invocation.Arguments[0] is LogLevel.Warning), Is.Not.Empty,
+                    "without the project list no Release can be offered at all, which is worth an operator's attention.");
+            }
+        }
+
+        [Test]
         public async Task ResolveMany_refuses_a_source_key_the_connection_never_offered_before_Jira_is_asked()
         {
             var subject = CreateSubject();
@@ -1030,6 +1167,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             private readonly Dictionary<string, List<StubVersion>> versionsByProjectKey = new(StringComparer.Ordinal);
             private readonly HashSet<string> projectsRefusingTheirVersions = new(StringComparer.Ordinal);
             private readonly HashSet<string> projectsRefusingTheirLaterPages = new(StringComparer.Ordinal);
+            private readonly HashSet<string> projectsThatCannotBeReached = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, string> versionAnswersByProjectKey = new(StringComparer.Ordinal);
 
             public JiraStub()
             {
@@ -1106,6 +1245,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             public JiraStub WithVersionsFailingAfterTheFirstPageIn(string projectKey)
             {
                 projectsRefusingTheirLaterPages.Add(projectKey);
+
+                return this;
+            }
+
+            /// <summary>A project whose version list never answers at all: the request fails on the wire.</summary>
+            public JiraStub WithVersionsUnreachableIn(string projectKey)
+            {
+                projectsThatCannotBeReached.Add(projectKey);
+
+                return this;
+            }
+
+            /// <summary>A project whose version list answers 200 with this body in place of a page of its versions.</summary>
+            public JiraStub WithVersionsAnsweredAs(string projectKey, string body)
+            {
+                versionAnswersByProjectKey[projectKey] = body;
 
                 return this;
             }
@@ -1201,6 +1356,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 if (projectsRefusingTheirVersions.Contains(projectKey))
                 {
                     return Refuse(HttpStatusCode.Forbidden);
+                }
+
+                if (projectsThatCannotBeReached.Contains(projectKey))
+                {
+                    throw new HttpRequestException($"The connection dropped while reading the versions of {projectKey}.");
+                }
+
+                if (versionAnswersByProjectKey.TryGetValue(projectKey, out var answer))
+                {
+                    return Ok(answer);
                 }
 
                 var startAt = int.TryParse(QueryValue(uri, "startAt"), out var parsed) ? parsed : 0;

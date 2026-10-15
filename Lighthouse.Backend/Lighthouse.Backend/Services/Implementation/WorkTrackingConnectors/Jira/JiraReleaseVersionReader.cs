@@ -14,31 +14,33 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// <summary>
         /// The projects the credential can see, as key and name.
         /// </summary>
-        public static (IReadOnlyList<DeliverySourceProject> Projects, bool IsLastPage) ReadProjectPage(string projectPagePayload)
+        public static (IReadOnlyList<DeliverySourceProject> Projects, bool IsLastPage, bool IsReadable) ReadProjectPage(string projectPagePayload)
             => ReadPage(projectPagePayload, ToProject);
 
         /// <summary>
         /// The projects the credential can see, from Data Center's project list. It answers with every project at
         /// once as a bare array rather than a page, so there is no envelope to take off and no next page to ask for.
+        /// Anything other than an array lists no projects and says it could not be read, because an empty list
+        /// taken as complete would tell a refresh that every Release on the connection is gone.
         /// </summary>
-        public static IReadOnlyList<DeliverySourceProject> ReadProjectList(string projectListPayload)
+        public static (IReadOnlyList<DeliverySourceProject> Projects, bool IsReadable) ReadProjectList(string projectListPayload)
         {
             using var payload = JsonDocument.Parse(projectListPayload);
             var root = payload.RootElement;
 
             if (root.ValueKind != JsonValueKind.Array)
             {
-                return [];
+                return ([], false);
             }
 
-            return [.. root.EnumerateArray().Select(ToProject)];
+            return ([.. root.EnumerateArray().Select(ToProject)], true);
         }
 
         /// <summary>
         /// One page of a project's versions. The paginated endpoint wraps the same version objects the bare
         /// list returns, so this is the wrapper coming off rather than a second way of reading a version.
         /// </summary>
-        public static (IReadOnlyList<DeliverySourceOption> Options, bool IsLastPage) ReadOptionPage(string versionPagePayload, DeliverySourceProject project)
+        public static (IReadOnlyList<DeliverySourceOption> Options, bool IsLastPage, bool IsReadable) ReadOptionPage(string versionPagePayload, DeliverySourceProject project)
             => ReadPage(versionPagePayload, version => ToOption(version, project));
 
         /// <summary>
@@ -49,6 +51,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         public static string? ReadVersionDescription(string versionPayload)
         {
             using var payload = JsonDocument.Parse(versionPayload);
+
+            // A body that parses but is not an object - a bare array, a quoted string - has no properties
+            // to ask about, and asking anyway throws rather than answering.
+            if (payload.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                return null;
+            }
 
             // Read as text only when it is text. A description that came back as anything else is not a
             // description Lighthouse can merge into, and asking for the string would throw where the
@@ -140,8 +149,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// <summary>
         /// Jira answers these one page at a time and says on every page whether it was the last, so a caller
         /// following that flag is handed the whole set rather than a first page that quietly looks complete.
+        ///
+        /// A page with no list on it ends the walk, since nothing on it says where the next one starts, and is
+        /// reported as unreadable rather than as empty: ending the walk is not the same as having seen it all.
         /// </summary>
-        private static (IReadOnlyList<T> Values, bool IsLastPage) ReadPage<T>(string pagePayload, Func<JsonElement, T> readOne)
+        private static (IReadOnlyList<T> Values, bool IsLastPage, bool IsReadable) ReadPage<T>(string pagePayload, Func<JsonElement, T> readOne)
         {
             using var payload = JsonDocument.Parse(pagePayload);
             var root = payload.RootElement;
@@ -149,19 +161,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             // A root that is not an object has no envelope to ask about, and asking anyway throws.
             if (root.ValueKind != JsonValueKind.Object)
             {
-                return ([], true);
+                return ([], true, false);
             }
 
             var isLastPage = !root.TryGetProperty("isLast", out var isLast) || isLast.ValueKind != JsonValueKind.False;
 
             if (!root.TryGetProperty("values", out var values) || values.ValueKind != JsonValueKind.Array)
             {
-                return ([], true);
+                return ([], true, false);
             }
 
             IReadOnlyList<T> parsed = [.. values.EnumerateArray().Select(readOne)];
 
-            return (parsed, isLastPage);
+            return (parsed, isLastPage, true);
         }
 
         private static DeliverySourceProject ToProject(JsonElement project)
