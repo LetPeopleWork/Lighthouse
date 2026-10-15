@@ -1285,3 +1285,158 @@ Both largest sums include the stall now removed; without it the S8 class has not
 **MUI bump (`641ac9c6f`) and pnpm 12.10 (`1bbde5105`):** not measured today (time-box); vite verdict above. E-01 asks for one repeat of each once vite is clean; they remain owed. With vite cleared, the about 9 % CI step from 13 Oct (630 s at `fc633d9dd`, 832 s at `3377a2015`) is not explained by vite.
 
 **Tree after the A/B:** vite 8.3.4 installed (`node_modules/vite/package.json` reads `8.3.4`), `git status` clean before this record was written.
+
+## Wave: DELIVER / [REF] Slice 06 record — step 06-06 guard wired, provisional budget
+
+**Maintainer decision, 2026-10-15.** No quiet machine is available, so the budget is derived from CI timing CSVs only, with no local full-suite run. CI runners are slower than the maintainer's box, which puts the CI numbers on the safe side. The local cross-check is owed (below). The budget is **provisional**, and both stacks run with `--warn-only` until it is re-derived.
+
+**How the numbers were computed.** Every per-unit time comes from `check_budget.py` itself: a scratch helper imported the script and called its `load_timings` and `seconds_per_unit`, so a frontend unit is the summed time of a file and a backend unit the summed time of a class, exactly as the guard sums them. Per unit, the largest time across the runs. The rule (ADR-237): B ≥ 2.1 × L and B ≤ 0.55 × the smallest regression to catch; units above B / 2.1 go on the allowlist with a ceiling of at least 2.1 × their largest time; L is then the largest unit left; budget and ceilings are whole seconds, rounded up.
+
+**Runs used.**
+
+| Stack | Runs (`main`, ci.yml) | Use |
+|---|---|---|
+| Frontend | 38626029274, 38628788490, 38690912054, 38692498547, 38692718623, 38692921453, 38699220550, 38703604501, 38704848993 (14 Oct 19:43 → 15 Oct 08:19) | L and the ceilings. Each head commit contains `582101009`, the slice 02/03 fixes (checked with `git merge-base --is-ancestor`). |
+| Frontend | 38553818860, 38570239004 (14 Oct, before the fixes) | Anchor evidence only, never L. |
+| Backend | 38552396129 (A), 38553818860 (B), 38570239004 (C), 38612045131 (D), 38612517187 (E), 38619963238 (F), 38623201098 (G), 38704848993 | L and the ceilings. |
+
+The newest run, 38705748956, had no frontend timing artifact yet and is not used.
+
+**Stall runs.** The slice 05 record traced the backend spikes to one thread-pool stall started by `CacheTest`'s barrier tests, seen in runs A, C and E. Slice 05 fixed `CacheTest` and `DataProtectionKeyRingTest` (not pushed yet), so their times from A, C and E were left out: on C they read 62.0 s and 43.7 s and would otherwise set L. Their largest remaining times are 6.0 s and 5.6 s. Every other class keeps its stalled times, which makes the ceilings safe but leaves 24 backend entries whose only time above B / 2.1 comes from a stall run (marked "stall runs only" below); run E alone sets the largest time of 56 of the 66 backend entries. These are the first entries the post-push re-derivation should drop.
+
+**Frontend: B = 63 s.**
+- Anchor: the 115 s `RefinementView.paging.test.tsx` that started this story. 0.55 × 115 = 63.25, so B ≤ 63.
+- Units above 63 / 2.1 = 30.0 s: nine files, allowlisted below. L without them = **27.471 s**, `src/pages/Common/Reports/ReportsTab.test.tsx` in run 38626029274. 2.1 × L = 57.69 ≤ 63. Both bounds hold.
+- Pre-fix runs, checked without `--warn-only` against the final JSON: 38553818860 exits 0 (`RefinementView.paging` 83.3 s is under its 100 s ceiling); 38570239004 exits 1 with `::error::src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx took 127.7s, over the 100s ceiling set in test-time-budget.json`. A non-allowlisted file at the anchor's 115 s would be over the 63 s budget on any runner up to 1.8× faster than the one that measured it.
+
+**Backend: B = 34 s.**
+- Anchor (named here): the thread-pool stall that took `Cache.CacheTest` from 1–6 s to **62.0 s** in run C. It is the backend regression this story found, it is visible as one class's summed time (the unit the guard judges), and it is the one that stretched every class in flight. 0.55 × 62.0 = 34.1, so B ≤ 34.
+- Units above 34 / 2.1 = 16.19 s: 66 classes, allowlisted below. L without them = **16.002 s**, `API.Integration.TaskManager.Slice05AnyBrokenCredentialSaysSoTest` in run E. 2.1 × L = 33.60 ≤ 34. Both bounds hold.
+- The alternative considered: anchoring the backend on the frontend's 115 s gives B = 63 and 27 entries, but a guard at 63 s could not catch the 62 s stall, which is the regression the backend half of this story was about. The longer list was the price of catching it. The connector classes (Jira, ADO, ServiceNow) run only when their connector's code changes, so they are absent from the last three runs and still need entries.
+- The two seeded slice-05 entries keep the ceilings the slice 05 record proposed: `S8_EmbedEntryPointTests` 163 s (2.1 × 77.194 s) and `BlockedCountSnapshotMigrationTests` 117 s (2.1 × 55.469 s). Both are set by stall run C; without the stall they have not exceeded 28.2 s and 26.4 s.
+
+**Allowlist, frontend** (largest time over the nine post-fix runs; reasons from the slice 02/03 records; the two "not profiled yet" files were outside those slices):
+
+| File | Largest s | Run | Ceiling s | Reason |
+|---|---|---|---|---|
+| `src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx` | 86.2 | 38703604501 | 182 | production render of the MUI DataGrid in jsdom, and about 70 openings of its Manage columns panel, each paying Popper's style lookups |
+| `src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx` | 47.3 | 38703604501 | 100 | renders 100 to 143 rows through the real DataGrid and renders them again on every page change |
+| `src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx` | 46.1 | 38704848993 | 97 | production render of the settings form, and every save check waits out the real 300 ms autosave debounce |
+| `src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx` | 37.1 | 38703604501 | 78 | production render of the settings form, and every save check waits out the real 300 ms autosave debounce |
+| `src/pages/Overview/OverviewDashboard.test.tsx` | 36.5 | 38703604501 | 77 | renders the whole overview dashboard in jsdom for each of its 43 tests; the cost has not been profiled yet |
+| `src/pages/Teams/Detail/Refinement/RefinementView.comments.test.tsx` | 36.4 | 38704848993 | 77 | production render of the refinement tab, its DataGrid and MUI dialogs, driven through user-event clicks and typing |
+| `src/pages/Common/Reports/ReportsTab.createWizard.test.tsx` | 35.0 | 38704848993 | 74 | drives the create-report wizard through user-event clicks in jsdom, 54 tests; the cost has not been profiled yet |
+| `src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx` | 32.0 | 38704848993 | 68 | production render of the whole metrics dashboard for each of its 129 tests |
+| `src/pages/Teams/Detail/Refinement/RefinementView.votes.test.tsx` | 31.7 | 38704848993 | 67 | production render of the refinement tab, its DataGrid and MUI dialogs, driven through user-event clicks and typing |
+
+**Allowlist, backend** (class names shown without `Lighthouse.Backend.Tests.`; the JSON holds the full name; "outside stall runs" is the largest time in B, D, F, G and 38704848993):
+
+| Class | Largest s | Run | Largest outside stall runs, s | Ceiling s | Reason |
+|---|---|---|---|---|---|
+| `API.Integration.PercentilesOverTime.Slice05ReconstructCycleTimeHistoryTest` | 219.7 | 38612517187 | 116.2 | 462 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.PercentilesOverTime.Slice07WhereTheLimitsActuallyMovedTest` | 183.6 | 38612517187 | 123.9 | 386 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.PercentilesOverTime.Slice06EveryPercentileTabSpansTheSamePeriodTest` | 121.1 | 38612517187 | 67.3 | 255 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.FasterUpdates.Slice05FetchFingerprintTest` | 113.5 | 38612517187 | 67.0 | 239 | boots the app in a test host and creates and seeds a database for every scenario |
+| `Services.Implementation.Encryption.SecretCustodyServiceTests` | 100.0 | 38612517187 | 62.8 | 211 | works against a real SQLite database for every test, because what it checks lives in the stored values |
+| `API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest` | 82.0 | 38612517187 | 59.7 | 173 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.PercentilesOverTime.Slice09TheFillShipsOptInTest` | 78.2 | 38612517187 | 41.8 | 165 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Security.S8_EmbedEntryPointTests` | 77.2 | 38570239004 | 24.6 | 163 | spins up fresh WebApplicationFactory hosts and a SQLite schema for every test |
+| `Services.Implementation.Encryption.PublishedKeySecretCountTests` | 71.2 | 38612517187 | 41.1 | 150 | works against a real SQLite database for every test, because what it checks lives in the stored values |
+| `Services.Implementation.Encryption.ReferencedKeyIdsTests` | 62.3 | 38612517187 | 33.9 | 131 | works against a real SQLite database for every test, because what it checks lives in the stored values |
+| `Services.Implementation.WorkTrackingConnectors.Jira.JiraWorkTrackingConnectorTest` | 60.3 | 38570239004 | 54.1 | 127 | calls the live work tracking system over the network; runs only when that connector's code changes |
+| `API.Integration.Refinement.Slice13ReadinessTest` | 58.9 | 38612517187 | 37.9 | 124 | boots the app in a test host and creates and seeds a database for every scenario |
+| `Integration.Containers.BlockedCountSnapshotMigrationTests` | 55.5 | 38570239004 | 20.3 | 117 | starts a fresh Postgres container and applies every migration to prove the table on a real provider |
+| `Services.Implementation.Encryption.ReadableSecretsNotOnTheActiveKeyTests` | 48.6 | 38612517187 | 27.6 | 103 | works against a real SQLite database for every test, because what it checks lives in the stored values |
+| `API.Integration.TeamFeatureSize.Slice01TeamFeatureSizeTest` | 47.7 | 38612517187 | 28.0 | 101 | boots the app in a test host and creates and seeds a database for every scenario |
+| `Services.Implementation.WorkTrackingConnectors.AzureDevOps.AzureDevOpsWorkTrackingConnectorTest` | 46.4 | 38570239004 | 32.3 | 98 | calls the live work tracking system over the network; runs only when that connector's code changes |
+| `API.Integration.TaskManager.Slice04StopARefreshTest` | 44.9 | 38612517187 | 41.3 | 95 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.FasterUpdates.Slice03JiraCloudPortfolioDeltaTest` | 41.8 | 38612517187 | 25.0 | 88 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.SleRisk.Slice01SleRiskReadTest` | 40.9 | 38612517187 | 29.6 | 86 | boots the app in a test host and creates and seeds a database for every scenario |
+| `Services.Implementation.WorkTrackingConnectors.ServiceNow.ServiceNowWorkTrackingConnectorIntegrationTest` | 37.4 | 38612517187 | 23.4 | 79 | calls the live work tracking system over the network; runs only when that connector's code changes |
+| `API.Integration.Refinement.Slice11CastAVoteTest` | 35.1 | 38612517187 | 25.0 | 74 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.Dependencies.Slice02DependencyDetailTest` | 33.6 | 38552396129 | 30.1 | 71 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.MetricsEndpointIntegrationTest` | 32.5 | 38612517187 | 14.3 (stall runs only) | 69 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.Reports.Slice01TeamReportScenarios` | 32.0 | 38612517187 | 20.3 | 68 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.BehaviourSettings.Story6083HistoryFillOnByDefaultTest` | 31.9 | 38612517187 | 24.0 | 68 | boots the app in a test host and creates and seeds a database for every scenario |
+| `Services.Implementation.WorkTrackingConnectors.Jira.JiraWriteBackTest` | 31.9 | 38570239004 | 30.3 | 67 | calls the live work tracking system over the network; runs only when that connector's code changes |
+| `Architecture.OptionalFeatureApplierSeamArchUnitTest` | 31.8 | 38612517187 | 6.9 (stall runs only) | 67 | boots the whole app in a test host to inspect what it registers |
+| `API.Integration.Refinement.Slice03StageRulesTest` | 29.5 | 38612517187 | 21.3 | 62 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.Refinement.Slice12CommentsTest` | 29.1 | 38612517187 | 22.7 | 62 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.PercentilesOverTime.Slice10OnlyWhatTheTeamStillKeepsTest` | 29.0 | 38612517187 | 17.3 | 61 | boots the app in a test host and creates and seeds a database for every scenario |
+| `Integration.Containers.ProcessBehaviorSnapshotMigrationTests` | 28.8 | 38612517187 | 21.7 | 61 | starts a fresh Postgres container and applies every migration to prove the schema on a real provider |
+| `Integration.Containers.BlockedRuleSetMigrationTests` | 28.7 | 38612517187 | 25.2 | 61 | starts a fresh Postgres container and applies every migration to prove the schema on a real provider |
+| `API.Integration.DeliverySources.Slice04ForecastPublishingTest` | 28.1 | 38612517187 | 20.8 | 60 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.RunChartPayloadContractIntegrationTest` | 28.0 | 38612517187 | 16.2 (stall runs only) | 59 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.DependencyAwareForecasting.Slice00OneForecastPerBatchScenarios` | 28.0 | 38552396129 | 22.7 | 59 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.Refinement.Slice04RefinementCadenceTest` | 27.5 | 38612517187 | 21.6 | 58 | boots the app in a test host and creates and seeds a database for every scenario |
+| `Integration.UsageData.Slice04ProductEventsTests` | 26.7 | 38612517187 | 26.5 | 57 | boots the app in a test host and observes the usage-data events it sends |
+| `API.Integration.TaskManager.Slice08HealthThatChecksItselfTest` | 26.6 | 38612517187 | 17.7 | 56 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.ManualSorting.Slice03RelativeMovesTest` | 25.8 | 38612517187 | 16.8 | 55 | boots the app in a test host and creates and seeds a database for every scenario |
+| `Integration.Containers.DeliveryMetricSnapshotDayKeyMigrationTests` | 24.9 | 38612517187 | 21.8 | 53 | starts a fresh Postgres container and applies every migration to prove the schema on a real provider |
+| `Integration.Containers.ConcurrentStartupMigrationTests` | 24.8 | 38612517187 | 23.4 | 53 | starts a fresh Postgres container and applies every migration to prove the schema on a real provider |
+| `Integration.Containers.BlockedDurationMigrationTests` | 24.7 | 38612517187 | 18.2 | 52 | starts a fresh Postgres container and applies every migration to prove the schema on a real provider |
+| `API.Integration.PercentilesOverTime.Slice03bDateRangeTest` | 24.5 | 38612517187 | 13.4 (stall runs only) | 52 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.Refinement.NeedOverOneCycleTest` | 24.4 | 38612517187 | 16.8 | 52 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.TeamFeatureSize.Slice02TeamFeatureSizePercentilesTest` | 22.1 | 38612517187 | 9.5 (stall runs only) | 47 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.ShutdownIntegrationTest` | 21.7 | 38612517187 | 12.8 (stall runs only) | 46 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.ManualSorting.Slice02ManualRankTest` | 21.1 | 38612517187 | 14.7 (stall runs only) | 45 | boots the app in a test host and creates and seeds a database for every scenario |
+| `Integration.Containers.ViewerEmbedStorageGuaranteeTests` | 21.0 | 38612517187 | 13.1 (stall runs only) | 45 | starts a fresh Postgres container and applies every migration to prove the schema on a real provider |
+| `API.Integration.PercentilesOverTime.Slice08NothingToShowTest` | 21.0 | 38612517187 | 11.5 (stall runs only) | 45 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.DeliverySources.Slice03BrokenSourceTest` | 21.0 | 38612517187 | 15.6 (stall runs only) | 45 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.QuietWriteBack.Slice01WriteBackCollectionTest` | 20.9 | 38612517187 | 9.7 (stall runs only) | 44 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.Reports.Slice02ThenInThePastScenarios` | 20.6 | 38612517187 | 13.5 (stall runs only) | 44 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.NamedCycleTimeTrendInfoApiIntegrationTest` | 19.4 | 38612517187 | 5.6 (stall runs only) | 41 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.Refinement.Slice07BandPercentilesTest` | 19.0 | 38612517187 | 11.4 (stall runs only) | 40 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.Dependencies.Slice04DependencySettingsTest` | 18.9 | 38552396129 | 14.2 (stall runs only) | 40 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.WorkItemEstimateApiIntegrationTest` | 18.9 | 38612517187 | 16.3 | 40 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.Refinement.Slice05NeedAndVerdictTest` | 18.5 | 38612517187 | 13.6 (stall runs only) | 39 | boots the app in a test host and creates and seeds a database for every scenario |
+| `API.Integration.HealthCheckIntegrationTest` | 17.6 | 38612517187 | 16.9 | 37 | boots the app in a test host and creates and seeds a database for every scenario |
+| `Integration.UsageData.OptionalFeatureToggledEventTests` | 17.6 | 38612517187 | 13.4 (stall runs only) | 37 | boots the app in a test host and observes the usage-data events it sends |
+| `API.Integration.TaskManager.Slice06TheWarningsWithoutTheLogTest` | 17.2 | 38612517187 | 12.3 (stall runs only) | 37 | boots the app in a test host and creates and seeds a database for every scenario |
+| `Services.Implementation.Forecast.ForecastServiceTest` | 16.8 | 38552396129 | 8.6 (stall runs only) | 36 | runs real Monte Carlo forecasts over recorded throughput |
+| `API.Integration.BehaviourSettings.Slice02OneListOfSwitchesTest` | 16.8 | 38612517187 | 14.5 (stall runs only) | 36 | boots the app in a test host and creates and seeds a database for every scenario |
+| `Integration.Containers.PercentilesOverTimeSnapshotMigrationTests` | 16.6 | 38612517187 | 14.7 (stall runs only) | 35 | starts a fresh Postgres container and applies every migration to prove the schema on a real provider |
+| `Integration.Containers.BlockedStalenessThresholdMigrationTests` | 16.5 | 38612517187 | 15.1 (stall runs only) | 35 | starts a fresh Postgres container and applies every migration to prove the schema on a real provider |
+| `API.Integration.BlockedItems.Slice05PredefinedFieldTest` | 16.5 | 38612517187 | 12.0 (stall runs only) | 35 | boots the app in a test host and creates and seeds a database for every scenario |
+| `Health.ClusterSubstrateProbeRegistrationTest` | 16.4 | 38570239004 | 5.5 (stall runs only) | 35 | boots the whole app, which tries to reach a Redis address where nothing listens |
+
+**Check against the derivation CSVs, without `--warn-only`.** Frontend, all nine post-fix runs: exit 0, no annotation. Backend, A B D E F G and 38704848993: exit 0, no annotation. Backend run C: exit 1, two annotations, exactly the two times left out above:
+
+```
+::error::Lighthouse.Backend.Tests.Cache.CacheTest took 62.0s, over the 34s budget set in test-time-budget.json
+::error::Lighthouse.Backend.Tests.Health.DataProtectionKeyRingTest took 43.7s, over the 34s budget set in test-time-budget.json
+```
+
+That is the anchor regression tripping the guard, as intended; the values were excluded from the derivation, not from the check. Every allowlisted backend class is still declared in `Lighthouse.Backend/Lighthouse.Backend.Tests` (no stale-entry annotation on any run).
+
+**E-06c** (run 38704848993's real `test-timings-frontend.csv`, plus one planted row `src/pages/Planted/Planted.slow.test.tsx,a planted test that takes two minutes,120000,Passed`):
+
+```
+$ python3 Scripts/test-timings/check_budget.py --stack frontend --csv test-timings-frontend.csv
+::error::src/pages/Planted/Planted.slow.test.tsx took 120.0s, over the 63s budget set in test-time-budget.json
+exit=1
+$ python3 Scripts/test-timings/check_budget.py --stack frontend --csv test-timings-frontend.csv --warn-only
+::warning::src/pages/Planted/Planted.slow.test.tsx took 120.0s, over the 63s budget set in test-time-budget.json
+exit=0
+```
+
+**E-06d.** Before the step's edits, `grep -n "check_budget\|Check test-time budget"` on both verify workflows and `grep -n "test-timings"` on `ci.yml` and `ci_changes.yml` printed nothing (exit 1), and `test-time-budget.json` did not exist. After them, PyYAML parses all four files, and the parsed workflows show:
+
+- `ci_frontend.yml`, job `frontend`, last four steps: `Extract frontend per-test timings`, `Upload frontend per-test timings`, `Upload Sonar report metadata`, `Check test-time budget`.
+- `ci_backend.yml`, job `backend`, last four steps: `Upload backend per-test timings`, `End SonarCloud analysis`, `Upload Sonar report metadata`, `Check test-time budget`.
+- Both budget steps: no `if:`, so the default `success()`. Run block: `python3 --version`, `python3 -m unittest discover -s Scripts/test-timings/tests`, then `check_budget.py` with `--warn-only` (backend also `--source-root Lighthouse.Backend/Lighthouse.Backend.Tests`). No `dotnet test`, `vitest`, `pnpm`, pipe or `tee` in either.
+- `ci.yml` push paths include `Scripts/test-timings/**`; `ci_changes.yml` matches `Scripts/test-timings/` in both the `backend` and the `frontend` pattern. The `.nvmrc` alternative stays in the frontend pattern, and `node --test .github/scripts/*.test.mjs` (188 tests) and `toolchain-pins.mjs` on the real tree pass.
+
+**Guard self-tests.** `python3 -m unittest discover -s Scripts/test-timings/tests`: 76 tests, OK, none skipped, on Python 3.14.8; the same on Python 3.12 through `uv run --no-project --python 3.12`. `check_budget.py` and its tests are unchanged.
+
+**Owed: guard follow-ups.**
+- Re-derive both budgets, L and every ceiling on ≥5 `main` runs after this is pushed (and after slice 05's stall fix is on `main`), by the same rule. Drop the entries that fall under B / 2.1, starting with the 24 "stall runs only" backend classes, and lower the S8 and Postgres ceilings.
+- Remove `--warn-only` from the frontend step after those ≥5 runs.
+- Remove `--warn-only` from the backend step once ≥5 backend `main` runs after the budget commit show zero budget warnings.
+- Cross-check the budget against a local full suite on a quiet machine, when the maintainer can guarantee one.
+
+**Owed: CI medians** (none can be measured before the push; each needs the run count stated):
+- E-02b CI: median of ≥5 `main` runs, `RefinementView.paging` + `WorkItemsDialog.contexts` summed ≤ 40 s.
+- E-03b: median of ≥5 `main` runs, the six slice-03 files ≤ 70 s and all eight ≤ 110 s.
+- E-04d: median of ≥5 `main` runs, the in-scope `API.Integration.Refinement.` / `.Reports.` / `.TeamFeatureSize.` classes ≤ 192 s. First data point: run 38704848993 = 212.6 s.
+- E-KPI: median of ≥5 `main` runs, frontend job ≤ 12 min and backend job ≤ 13.5 min, and test totals not below 7,630 (frontend) / 10,198 (backend).
