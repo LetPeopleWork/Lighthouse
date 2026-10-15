@@ -60,7 +60,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         private static readonly DateTime TheSameDay = On(2025, 11, 2);
 
         [Test]
-        [Ignore(PendingStory6301.Slice02)]
         [Category("kpi")]
         public async Task A_Work_Item_linked_to_two_Features_counts_toward_the_one_it_was_linked_to_first()
         {
@@ -91,7 +90,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// move the item.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice02)]
         [Category("edge")]
         [Category("kpi")]
         public async Task The_same_Work_Item_stays_under_the_same_Feature_however_the_tracker_orders_its_links()
@@ -117,7 +115,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         }
 
         [Test]
-        [Ignore(PendingStory6301.Slice02)]
         [Category("edge")]
         public async Task A_dated_link_wins_over_a_link_with_no_recorded_date()
         {
@@ -224,7 +221,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// new one, and the older one stopped existing when it was removed.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice02)]
         [Category("edge")]
         public async Task A_link_removed_and_added_again_counts_from_when_it_was_added_again()
         {
@@ -257,7 +253,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// order given here, the re-added link would seem to date from its first adding and win.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice02)]
         [Category("edge")]
         public async Task A_history_that_arrives_out_of_order_is_read_by_when_each_entry_happened()
         {
@@ -284,7 +279,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// status changes, and the link dates come from the full copy.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice02)]
         [Category("edge")]
         public async Task A_long_history_is_read_in_full_before_a_link_is_dated()
         {
@@ -308,7 +302,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// not somewhere a Work Item can be hung.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice02)]
         [Category("edge")]
         public async Task An_older_link_to_an_incident_never_wins()
         {

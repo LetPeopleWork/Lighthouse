@@ -98,17 +98,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// reading to the entries handed to that end - Inward keeps those naming an inwardIssue, Outward
         /// those naming an outwardIssue.
         ///
-        /// Two links to the same issue are one parent. Links to different issues are all handed back, and
-        /// the choice among them is left to the refresh, because only it knows which of them are Features
-        /// Lighthouse holds.
+        /// Two links to the same issue are one parent. Links to different issues are all handed back, each
+        /// with the day its standing link was added when the issue's history records one, and the choice
+        /// among them is left to the refresh, because only it knows which of them are Features Lighthouse
+        /// holds.
         /// </summary>
-        public static ParentResolution ResolveParentFromLinks(this JsonElement fields, string linkTypeReference, LinkDirection direction)
+        public static ParentResolution ResolveParentFromLinks(
+            this JsonElement fields,
+            string linkTypeReference,
+            LinkDirection direction,
+            IReadOnlyDictionary<string, DateTime> linkAddedAt)
         {
             var counterparts = IssueLinksOf(fields)
                 .Where(link => LinkTypeAnswersTo(link, linkTypeReference))
                 .Select(link => CounterpartKeyOf(link, direction))
                 .Where(key => key.Length > 0)
                 .Distinct(StringComparer.Ordinal)
+                .Select(key => new ParentCandidate(key, linkAddedAt.TryGetValue(key, out var addedAt) ? addedAt : null))
                 .ToList();
 
             return ParentResolution.From(counterparts);

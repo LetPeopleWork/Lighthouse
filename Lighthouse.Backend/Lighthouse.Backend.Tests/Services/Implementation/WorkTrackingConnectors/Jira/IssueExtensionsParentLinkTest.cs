@@ -37,12 +37,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static readonly string[] TheParentAndBothChildren = [TheParent, AChild, AnotherChild];
 
+        private static readonly Dictionary<string, DateTime> NoLinkDates = [];
+
+        private static readonly DateTime TheDayTheParentWasLinked = new(2026, 3, 4, 9, 15, 0, DateTimeKind.Utc);
+
         [Test]
         public void YieldsTheOutwardCounterpartOfALinkWhoseInwardEndThisIssueHolds()
         {
             var fields = FieldsOfAnIssueWith(Cloners.LinkWhoseOutwardIssueIs(TheParent));
 
-            var resolution = fields.ResolveParentFromLinks(LinkTypeName, LinkDirection.Both);
+            var resolution = fields.ResolveParentFromLinks(LinkTypeName, LinkDirection.Both, NoLinkDates);
 
             using (Assert.EnterMultipleScope())
             {
@@ -56,7 +60,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var fields = FieldsOfAnIssueWith(Cloners.LinkWhoseInwardIssueIs(TheParent));
 
-            var resolution = fields.ResolveParentFromLinks(LinkTypeName, LinkDirection.Both);
+            var resolution = fields.ResolveParentFromLinks(LinkTypeName, LinkDirection.Both, NoLinkDates);
 
             using (Assert.EnterMultipleScope())
             {
@@ -72,7 +76,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var fields = FieldsOfAnIssueWith(Cloners.LinkWhoseOutwardIssueIs(TheParent));
 
-            var resolution = fields.ResolveParentFromLinks(reference, LinkDirection.Both);
+            var resolution = fields.ResolveParentFromLinks(reference, LinkDirection.Both, NoLinkDates);
 
             Assert.That(resolution.Key, Is.EqualTo(TheParent));
         }
@@ -82,7 +86,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var fields = FieldsOfAnIssueWith(JiraLinkType.Blocks("is blocked by").LinkWhoseInwardIssueIs(TheParent));
 
-            var resolution = fields.ResolveParentFromLinks(LinkTypeName, LinkDirection.Both);
+            var resolution = fields.ResolveParentFromLinks(LinkTypeName, LinkDirection.Both, NoLinkDates);
 
             using (Assert.EnterMultipleScope())
             {
@@ -100,7 +104,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var fields = FieldsOfAnIssueWith(link);
 
-            var resolution = fields.ResolveParentFromLinks(LinkTypeName, LinkDirection.Both);
+            var resolution = fields.ResolveParentFromLinks(LinkTypeName, LinkDirection.Both, NoLinkDates);
 
             Assert.That(resolution.Candidates, Is.Empty);
         }
@@ -116,7 +120,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var fields = FieldsOfAnIssueWith(
                 """{"type": {"name": "Cloners"}, "outwardIssue": {"key": "PROJ-1716"}}""");
 
-            var resolution = fields.ResolveParentFromLinks(string.Empty, LinkDirection.Both);
+            var resolution = fields.ResolveParentFromLinks(string.Empty, LinkDirection.Both, NoLinkDates);
 
             Assert.That(resolution.Candidates, Is.Empty);
         }
@@ -128,7 +132,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Cloners.LinkWhoseOutwardIssueIs(TheParent),
                 Cloners.LinkWhoseInwardIssueIs(AnotherParent));
 
-            var resolution = fields.ResolveParentFromLinks(LinkTypeName, LinkDirection.Both);
+            var resolution = fields.ResolveParentFromLinks(LinkTypeName, LinkDirection.Both, NoLinkDates);
 
             using (Assert.EnterMultipleScope())
             {
@@ -150,7 +154,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Cloners.LinkWhoseOutwardIssueIs(TheParent),
                 Cloners.LinkWhoseInwardIssueIs(TheParent));
 
-            var resolution = fields.ResolveParentFromLinks(LinkTypeName, LinkDirection.Both);
+            var resolution = fields.ResolveParentFromLinks(LinkTypeName, LinkDirection.Both, NoLinkDates);
 
             using (Assert.EnterMultipleScope())
             {
@@ -169,7 +173,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var relates = new JiraLinkType("Relates", RelatesLabel, RelatesLabel);
             var fields = FieldsOfAnIssueWith(relates.LinkWhoseOutwardIssueIs(TheParent));
 
-            var resolution = fields.ResolveParentFromLinks(RelatesLabel, LinkDirection.Both);
+            var resolution = fields.ResolveParentFromLinks(RelatesLabel, LinkDirection.Both, NoLinkDates);
 
             using (Assert.EnterMultipleScope())
             {
@@ -186,7 +190,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void ReadsOnlyTheInwardEndsWhenTheInwardPhraseWasTyped()
         {
-            var resolution = FieldsOfAMiddleItem().ResolveParentFromLinks(LinkTypeName, LinkDirection.Inward);
+            var resolution = FieldsOfAMiddleItem().ResolveParentFromLinks(LinkTypeName, LinkDirection.Inward, NoLinkDates);
 
             using (Assert.EnterMultipleScope())
             {
@@ -198,7 +202,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void ReadsOnlyTheOutwardEndsWhenTheOutwardPhraseWasTyped()
         {
-            var resolution = FieldsOfAMiddleItem().ResolveParentFromLinks(LinkTypeName, LinkDirection.Outward);
+            var resolution = FieldsOfAMiddleItem().ResolveParentFromLinks(LinkTypeName, LinkDirection.Outward, NoLinkDates);
 
             using (Assert.EnterMultipleScope())
             {
@@ -210,7 +214,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void ReadsBothEndsWhenNoDirectionWasTyped()
         {
-            var resolution = FieldsOfAMiddleItem().ResolveParentFromLinks(LinkTypeName, LinkDirection.Both);
+            var resolution = FieldsOfAMiddleItem().ResolveParentFromLinks(LinkTypeName, LinkDirection.Both, NoLinkDates);
 
             using (Assert.EnterMultipleScope())
             {
@@ -231,6 +235,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(resolution.GetHashCode(), Is.EqualTo(anotherReadingOfTheSameIssue.GetHashCode()));
                 Assert.That(ParentResolution.From([AnotherParent]), Is.Not.EqualTo(resolution));
             }
+        }
+
+        /// <summary>
+        /// The refresh decides among several parents by when each standing link was added, so every
+        /// candidate carries the date the issue's history gives it, and one the history never mentions
+        /// stays undated rather than borrowing another's.
+        /// </summary>
+        [Test]
+        public void CarriesTheDayEachCandidatesLinkWasAddedAndLeavesTheOthersUndated()
+        {
+            var fields = FieldsOfAnIssueWith(
+                Cloners.LinkWhoseOutwardIssueIs(TheParent),
+                Cloners.LinkWhoseInwardIssueIs(AnotherParent));
+            var linkAddedAt = new Dictionary<string, DateTime> { [TheParent] = TheDayTheParentWasLinked, [AChild] = DateTime.UnixEpoch };
+
+            var resolution = fields.ResolveParentFromLinks(LinkTypeName, LinkDirection.Both, linkAddedAt);
+
+            Assert.That(resolution.CandidatesWithTheirLinkDates, Is.EqualTo(new[]
+            {
+                new ParentCandidate(TheParent, TheDayTheParentWasLinked),
+                new ParentCandidate(AnotherParent, null),
+            }));
         }
 
         private static JsonElement FieldsOfAMiddleItem()
