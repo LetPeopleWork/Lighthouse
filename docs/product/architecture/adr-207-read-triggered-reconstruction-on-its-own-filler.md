@@ -2,7 +2,7 @@
 
 **Status**: Accepted (DESIGN, 2026-09-22; interaction mode PROPOSE)
 **Date**: 2026-09-22
-**Amended**: 2026-09-22 (DEVOPS: the maintenance gate); 2026-09-24 (the fill ships behind an opt-in switch; the walk order corrected to what was built) — both at the end
+**Amended**: 2026-09-22 (DEVOPS: the maintenance gate); 2026-09-24 (the fill ships behind an opt-in switch; the walk order corrected to what was built); 2026-10-15 (the switch is removed, the fill always runs) — all at the end
 **Feature**: story-6053-reconstruct-over-time-history (ADO User Story #6053)
 **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)
 
@@ -495,3 +495,25 @@ offs included.
 | The read path makes exactly the queries it should | Count database commands for a gap-free read and for a gap-finding read: equal to before for the first, exactly one more for the second, in either switch position. This replaces the "no query it did not issue before" probe above, which the suite does not yet contain. |
 | The budget stops the walk | As above, restated: a pass works out at most 90 days, not writes at most 90. |
 | Only one place starts a fill | The structural test described under "Where it gates". |
+
+## Amendment (2026-10-15) — the switch is removed; the fill always runs
+
+**Status**: Accepted (story #6084, maintainer decision; DESIGN skipped by the maintainer). The Decision
+above is unchanged: a series read that finds missing days still asks the filler, off the update queue,
+bounded per pass, writing only absent rows. What goes is the 2026-09-24 amendment's switch. It was on by
+default from #6083 onwards and stayed on without issue, so it is removed rather than kept as an off
+nobody needs.
+
+- **No port, no check.** `IOverTimeHistoryFillSwitch` and its implementation are deleted. The reconciler
+  asks the filler whenever days are missing, and the filler starts every waiting pass; only the
+  maintenance gate, the per-pass budget and the stored-history bounds stop or defer one. A waiting pass is
+  never dropped because of a stored setting.
+- **The row is retired by the seeder, not by a migration.** `OverTimeHistoryFill` joins the optional-feature
+  seeder's deprecated keys, so every start-up removes it, and its by-name endpoint answers 404. The
+  one-time "switched on" record #6083 wrote to app settings is removed by key, because its number was
+  assigned at runtime. The restore rule that brought an old backup back with the fill off is gone: a
+  restored backup fills like any other instance.
+- **Rolling deploys.** An old replica that restarts during a deploy may re-add the row; new code never
+  reads it, and the next new-version start-up removes it again. Accepted, untested.
+- **The read path.** A chart open reads no behaviour setting at all; the "exactly one more query for a
+  gap-finding read" probe in the table above is superseded by "no query naming the optional features".

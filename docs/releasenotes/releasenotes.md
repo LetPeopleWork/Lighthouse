@@ -30,6 +30,7 @@ Reports are listed on the Overview next to each Team and Portfolio, so the evide
 - **Every row of a long list can now be reached.** A list used to stop at its first 100 rows without saying there were more, so a Team with 143 Work Items in refinement could not vote on the last 43. A list of more than 100 rows now says how many it holds, for example `1–100 of 143`, and its arrows page to the rest. Sorting, filtering, the search in Third-party packages, and Export and Copy all cover the whole list. Lists of 100 rows or fewer look as before.
 - **The Overview's Deliveries column stays readable.** It shows at most two Deliveries per Portfolio, then a *+N more* link to the rest. While loading it shows a spinner, and if the Deliveries cannot be loaded it says so, instead of claiming there are none.
 - **Deliveries can follow a Jira Release on Jira Server and Data Center too.** On a self-hosted Jira the list of Releases to pick from came up empty, so a Delivery could not be bound to one, and nothing said why. Lighthouse now reads Releases the way Jira Server and Data Center (version 8 or later) serve them: the picker lists them, a bound Release's date and Work Items refresh, and the forecast is written back to the Release. Jira Cloud works as before.
+- **Over-time charts always fill in the days Lighthouse missed.** *Fill in past days on over-time charts* left a Team added last week, or an instance that does not run every day, with a short or gappy trend wherever someone had switched it off. It is no longer a Preview and no longer a setting: Percentiles Over Time and PBC Over Time fill in past days on every instance, including ones where it had been switched off. Filled days cannot be told apart from recorded ones afterwards, so take a backup before you upgrade if you might want your unfilled history back. Full detail: [Filling in past days](https://docs.lighthouse.letpeople.work/metrics/predictability.html#filling-in-past-days).
 
 ## Contributions ❤️
 
@@ -94,7 +95,7 @@ The method follows Nick Brown's article [The Full Monte](https://medium.com/asos
 
 The **Fill in past days on over-time charts** behaviour setting from the last release is now switched on by default, so Percentiles Over Time and PBC Over Time show a full line rather than only the days Lighthouse happened to record.
 
-Upgrading switches it on **once** — also on instances where it had been turned off. If you want it off, switch it off again under Behaviour Settings and it stays off from then on. Restoring a backup brings the setting back as the backup held it. It is still a Preview. Full detail: [Fill in past days](https://docs.lighthouse.letpeople.work/settings/configuration.html#fill-in-past-days-on-over-time-charts-preview).
+Upgrading switches it on **once** — also on instances where it had been turned off. If you want it off, switch it off again under Behaviour Settings and it stays off from then on. Restoring a backup brings the setting back as the backup held it. It is still a Preview. Full detail: [Fill in past days](https://docs.lighthouse.letpeople.work/settings/configuration.html#fill-in-past-days-on-over-time-charts).
 
 ## Bugfixes and Improvements
 
@@ -150,7 +151,7 @@ Switch on the new **Fill in past days on over-time charts** behaviour setting, a
 
 It is a **Preview and off by default** — a System Admin switches it on, no restart needed. A filled day is worked out against *today's* configuration, and days already filled stay when you switch it off, so take a backup first if you might want to undo it.
 
-Full detail: [Fill in past days](https://docs.lighthouse.letpeople.work/settings/configuration.html#fill-in-past-days-on-over-time-charts-preview).
+Full detail: [Fill in past days](https://docs.lighthouse.letpeople.work/settings/configuration.html#fill-in-past-days-on-over-time-charts).
 
 ## Bugfixes and Improvements
 
