@@ -8,7 +8,7 @@
 
 > **Amended 2026-10-15 (story 6307, proposed, pending maintainer approval):** the "expensive ⇒ intentional" rule
 > does not apply to a work tracking connection save. A connection save that changes what its Teams and Portfolios
-> fetch starts their updates at once, server-side, without a click; see
+> fetch starts their updates server-side, by default; the browser asks first, with a Save-only choice; see
 > [ADR-238](./adr-238-a-connection-save-that-moves-the-fetch-fingerprint-starts-the-affected-updates.md). The
 > maintainer set the rule aside for this case on 2026-10-15. The Forecast Filter decision below is unchanged.
 

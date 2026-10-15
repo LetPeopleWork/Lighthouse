@@ -25,7 +25,8 @@ Two earlier decisions stand in the way of starting those updates at save time:
 
 At the same time the Team and Portfolio settings saves already start an update of their owner (`refreshOnSave`,
 browser-driven). The maintainer ruled on 2026-10-15 that a connection save follows that precedent (story 6307 D1),
-immediately (D2), on every licence (D4), with no size threshold (D5).
+immediately by default (D2), on every licence (D4), with no size threshold (D5). The browser asks first, with a
+`Save only` choice (sketch decision S1).
 
 Facts that shape the mechanism, read from the code at `17428144f`:
 
@@ -42,20 +43,34 @@ Facts that shape the mechanism, read from the code at `17428144f`:
 1. **The connection PUT compares the connection's share of the fetch fingerprint before and after the save.** The
    share is rendered by one pure function, `FetchFingerprint.ForConnection(connection)`, which `FetchFingerprint.For`
    itself uses, with `For`'s output byte-identical to today's. "Before" is the connection as stored when the PUT
-   runs; "after" is taken once `Save()` has returned. If the share moved, every Team and Portfolio on that connection
+   runs, rendered before any mutation of the tracked connection; "after" is taken once `Save()` has returned. If the share moved, every Team and Portfolio on that connection
    moved; if it did not, none did.
 2. **When it moved, the PUT publishes `ConnectionFetchShapeChanged(ConnectionId, TeamIds, PortfolioIds)`** on the
    existing domain-event bus. A handler triggers each Team, then each Portfolio, through the existing updaters.
-3. **The PUT response reports what it asked for**: the connection as today plus `queuedUpdates { teams, portfolios }`,
-   on a response-only DTO derived from the connection DTO.
+3. ~~**The PUT response reports what it asked for**: the connection as today plus `queuedUpdates { teams, portfolios }`,
+   on a response-only DTO derived from the connection DTO.~~ **Superseded by sketch decision S3 (2026-10-15):** after
+   Save the page navigates to `/` with no notice, so nothing reads the counts. The PUT response is unchanged.
 4. **A save the server refuses publishes nothing** (400 validation, 403 licence, 409 concurrency, 404), because
    publishing happens only after a successful `Save()`.
 5. **Reading a connection never publishes.** Predefined-field registration on the connection GET and on the Jira sync
    path are left to each owner's next scheduled cycle, as today.
-6. **If the admin is offered a choice** (conditional, story 6307 US-03), "save without updating" travels as the query
-   parameter `startUpdates=false`. Its default is `true`, so the CLI and MCP clients update now.
+6. **"Save without updating" travels as the query parameter `startUpdates=false`** (sketch decision S1: it ships).
+   Its default is `true`, so the CLI and MCP clients update now; the browser sends `false` when the admin chooses
+   `Save only`.
 7. **The queue is reused unchanged.** An owner already running gets one follow-up; an owner already waiting keeps its
    one row and runs once more after its waiting run. Only one of those runs is a full download caused by the save.
+8. **The connection list read carries `usedBy { teams, portfolios }`** for each connection (sketch decision S4), so the
+   browser can ask before Save, in the configured Terminology, with counts. The edit page reads its connection from
+   the list and never calls the read by id, which is also the read that registers predefined fields. The counts
+   come from one read-only port, because the list controller cannot take two more repositories without exceeding
+   the constructor-parameter limit the build enforces. No extra fetch, so no new loading or could-not-load look.
+9. **A stored save answers 200, whatever happens after it.** A throwing handler is caught and logged by the
+   dispatcher; the controller's own owner lookup and publish after `Save()` are caught and logged the same way.
+   Recovery is each owner's next scheduled cycle.
+
+*2026-10-15: the maintainer's UI sketch decisions (S1–S7, story 6307 feature-delta) override DESIGN's DDD-6, DDD-7 and
+DDD-13: no `queuedUpdates` response, no after-save notice, navigation to `/` as today; the question is asked before
+Save instead.*
 
 ## Alternatives considered
 
@@ -88,9 +103,10 @@ Facts that shape the mechanism, read from the code at `17428144f`:
   by the maintainer.
 - On a large instance one field save can hold the queue for a while. The Task Manager's per-row stop is the relief
   valve; no threshold.
-- The counts in the response are what the PUT asked for. A save during a database-maintenance window, or a handler
-  that throws, reports updates that were not queued; each such owner still downloads everything at its next
-  scheduled cycle, because its stored fingerprint was never rewritten.
+- The browser's question counts the Teams and Portfolios *on* the connection, before anything is queued. A save during
+  a database-maintenance window, or a handler that throws, queues fewer updates than that; each such owner still
+  downloads everything at its next scheduled cycle, because its stored fingerprint was never rewritten. (Revised
+  2026-10-15: the earlier consequence about counts in the PUT response is dropped with decision 3.)
 - In a multi-replica deployment a follow-up parked on one pod for a key running on another can be lost (the gap
   recorded under ADR-076). Recovery is the same next scheduled cycle.
 - `FetchFingerprint.For` is refactored around `ForConnection`; a pinned-digest test guards that no stored fingerprint

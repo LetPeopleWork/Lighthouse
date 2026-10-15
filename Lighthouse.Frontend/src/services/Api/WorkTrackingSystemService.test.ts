@@ -657,4 +657,74 @@ describe("WorkTrackingSystemService", () => {
 			expect(mapping.targetValueType).toBe(WriteBackTargetValueType.Date);
 		});
 	});
+
+	// Story #6307: the connection page asks whether to update the Teams and Portfolios on a connection
+	// whose Additional Fields changed, so it needs to know how many there are, and to be able to save
+	// while leaving their updates to the next scheduled run.
+	describe("Story #6307 - pending DELIVER", () => {
+		const nordwindJiraDc: IWorkTrackingSystemConnection = {
+			id: 7,
+			name: "Nordwind Jira DC",
+			workTrackingSystem: "Jira",
+			authenticationMethodKey: "jira.cloud",
+			options: [],
+			additionalFieldDefinitions: [
+				{ id: 11, displayName: "Fix Versions", reference: "fixVersions" },
+			],
+			writeBackMappingDefinitions: [],
+			workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
+		};
+
+		type SavesWithAChoice = (
+			connection: IWorkTrackingSystemConnection,
+			choice: { startUpdates: boolean },
+		) => Promise<IWorkTrackingSystemConnection>;
+
+		const theStartUpdatesTheSaveAskedFor = () => {
+			const [url, , config] = mockedAxios.put.mock.calls[0] as [
+				string,
+				unknown,
+				{ params?: Record<string, unknown> } | undefined,
+			];
+			const query = new URLSearchParams(url.split("?")[1] ?? "");
+			for (const [key, value] of Object.entries(config?.params ?? {})) {
+				query.set(key, String(value));
+			}
+			return {
+				path: url.split("?")[0],
+				startUpdates: query.get("startUpdates"),
+			};
+		};
+
+		// @us-02 @driving_port @contract-shape:pure-function
+		it.skip("keeps how many Teams and Portfolios use each connection from the list of connections", async () => {
+			mockedAxios.get.mockResolvedValueOnce({
+				data: [{ ...nordwindJiraDc, usedBy: { teams: 4, portfolios: 2 } }],
+			});
+
+			const [connection] =
+				await workTrackingSystemService.getConfiguredWorkTrackingSystems();
+
+			expect((connection as { usedBy?: unknown }).usedBy).toEqual({
+				teams: 4,
+				portfolios: 2,
+			});
+		});
+
+		// @us-03 @driving_port @contract-shape:bounded-change
+		it.skip("saving only asks the server to leave the updates to their next scheduled run", async () => {
+			mockedAxios.put.mockResolvedValueOnce({ data: nordwindJiraDc });
+
+			await (
+				workTrackingSystemService.updateWorkTrackingSystemConnection as SavesWithAChoice
+			).call(workTrackingSystemService, nordwindJiraDc, {
+				startUpdates: false,
+			});
+
+			expect(theStartUpdatesTheSaveAskedFor()).toEqual({
+				path: "/worktrackingsystemconnections/7",
+				startUpdates: "false",
+			});
+		});
+	});
 });

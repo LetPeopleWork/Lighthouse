@@ -124,29 +124,33 @@ pending maintainer approval.** Full detail: `feature-delta.md` (`## Wave: DESIGN
   PortfolioIds)`; a handler triggers each owner through the existing updaters (Q1).
 - [DDD-4] The connection controller publishes (sixth ctor parameter, under S107).
 - [DDD-5] D11 confirmed: GET and Jira sync-path registration never publish (Q2).
-- [DDD-6] PUT response = connection + `queuedUpdates { teams, portfolios }` on a response-only DTO (Q4).
-- [DDD-7] No new fetch ⇒ no new loading or could-not-load look; a previous notice is cleared on the next save or edit.
-- [DDD-8] Opt-out = `?startUpdates=false` (default true; slice 03 only).
-- [DDD-9] US-03 dialog shows when the page's field definitions differ from those loaded; `usedBy` counts on the
-  existing read if the sketch wants counts before Save.
+- [DDD-6] SUPERSEDED by S3/S4 (2026-10-15): the PUT response is unchanged, no `queuedUpdates`.
+- [DDD-7] SUPERSEDED by S3/S4 (2026-10-15): no after-save notice; counts are asked before Save, no new fetch.
+- [DDD-8] Opt-out = `?startUpdates=false` (default true). Confirmed by S1: ships.
+- [DDD-9] The question shows when the page's field definitions differ from those loaded and `usedBy` > 0; counts
+  from `usedBy` on the connection **list** read (amended 2026-10-15).
 - [DDD-10] Queue coalescing reused unchanged ⇒ AC-1.5 reworded (upstream change UC-1).
 - [DDD-11] Teams enqueued before Portfolios.
 - [DDD-12] No licence gate or RBAC change; the "Update All" premium gate is an endpoint attribute the fan-out never hits.
-- [DDD-13] Q5 proposal: stay on the edit page after Save; fallback router state + Overview notice (UI-5 decides).
+- [DDD-13] SUPERSEDED by S3/S4 (2026-10-15): navigate to `/` as today, no notice.
 - [DDD-14] New ADR-238; ADR-030 and ADR-140 carry dated amendment notes (Q3).
 - [DDD-15] One Information log line per fan-out (ids and counts, no field names).
+- [DDD-16] A stored save answers 200 even if the owner lookup or a handler fails after `Save()` (added 2026-10-15).
+- [DDD-17] `usedBy { teams, portfolios }` on the connection list read, through one read-only usage port (S107)
+  (added 2026-10-15).
 
 ## Architecture Summary
 
 - Pattern: modular monolith, ports-and-adapters, in-process domain events (ADR-027) — unchanged.
 - Paradigm: OOP.
 - Key components: `FetchFingerprint` (EXTEND), connection PUT (EXTEND), `ConnectionFetchShapeChanged` + handler
-  (CREATE), save-result DTO (CREATE), frontend connection service / `EditConnection` / `ModifyConnectionSettings` (EXTEND).
+  (CREATE), connection-usage read port (CREATE), list GET + connection DTO `usedBy` (EXTEND), frontend connection
+  service / `EditConnection` / `ModifyConnectionSettings` + update question dialog (EXTEND).
 
 ## Reuse Analysis
 
-See `feature-delta.md` → "Wave: DESIGN / [REF] Reuse Analysis". 3 CREATE NEW (event record, handler, response DTO),
-each justified; everything else EXTEND or REUSE AS-IS.
+See `feature-delta.md` → "Wave: DESIGN / [REF] Reuse Analysis". 3 CREATE NEW (event record, handler, connection-usage
+read port; the response DTO was dropped after S3), each justified; everything else EXTEND or REUSE AS-IS.
 
 ## Technology Stack
 
@@ -156,7 +160,7 @@ each justified; everything else EXTEND or REUSE AS-IS.
 
 - Publish only after a successful `Save()`; only from the PUT.
 - `FetchFingerprint.For` output must not change (stored fingerprints survive the upgrade).
-- The notice reads only the PUT response.
+- The question before Save reads only `usedBy` from the list read the page already makes.
 
 ## Upstream Changes
 
@@ -165,13 +169,13 @@ each justified; everything else EXTEND or REUSE AS-IS.
 
 ## Hand-offs
 
-- DEVOPS: usage-data event (DISCUSS candidate stands); Lighthouse-Clients grep + optional `queuedUpdates` type and
-  changelog line; `Program.cs` edit ⇒ full backend Integration suite in CI.
-- DISTILL: UI-1…UI-5 sketches (DDD-13 and DDD-9 are proposals); accept UC-1 before writing AC-1.5's scenario.
+- DEVOPS: usage-data event (settled by S7); no Lighthouse-Clients change (PUT shapes unchanged); `Program.cs` edit ⇒
+  full backend Integration suite in CI.
+- DISTILL: UI-1…UI-5 settled by S1–S7; UC-1 accepted.
 
 # DEVOPS Decisions — story-6307-refresh-on-additional-fields-change
 
 ## Key Decisions
 - [DO-1] No infrastructure, CI, migration or rollout change; `Program.cs` edit triggers the full backend Integration suite in CI (see: feature-delta.md, DEVOPS / Platform and delivery).
-- [DO-2] Usage-data event `WorkTrackingSystemFieldsChanged = 19`, name-only, browser-emitted on an existing connection's field-definition change; closed-enum `Updates: Now | Later` added only if slice 03 ships (see: feature-delta.md, DEVOPS / Usage-data event).
+- [DO-2] Usage-data event `WorkTrackingSystemFieldsChanged = 19` with closed enum `Updates: Now | Later`, browser-emitted when the admin answers the update question after a successful save; emitted in slice 03 (see: feature-delta.md, DEVOPS / Usage-data event; revised after the final review gate).
 - [DO-3] No Lighthouse-Clients release: PUT response is typed `unknown` there.

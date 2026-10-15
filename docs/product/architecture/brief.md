@@ -10102,10 +10102,11 @@ carries L1/L2 with the changed responsibilities named, and an L3 for the parent-
 ## Application Architecture — story-6307-refresh-on-additional-fields-change
 
 Feature: story-6307-refresh-on-additional-fields-change (ADO User Story #6307, split out of Bug #6306). Saving a
-connection whose additional fields changed starts an update of every Team and Portfolio on it at once, and tells the
-admin how many it started. DESIGN 2026-10-15, PROPOSE; all decisions **proposed, pending maintainer approval**. Full
-design: `docs/feature/story-6307-refresh-on-additional-fields-change/feature-delta.md` → "Wave: DESIGN / …"
-(DDD-1…DDD-15).
+connection whose additional fields changed starts an update of every Team and Portfolio on it by default; before
+Save, the page asks, with counts and a Save-only choice. DESIGN 2026-10-15, PROPOSE; all decisions **proposed,
+pending maintainer approval**, revised the same day after the maintainer's UI sketch decisions S1–S7. Full design:
+`docs/feature/story-6307-refresh-on-additional-fields-change/feature-delta.md` → "Wave: DESIGN / …"
+(DDD-1…DDD-17; DDD-6, DDD-7 and DDD-13 superseded).
 
 The pattern is unchanged: the controller stores the save and publishes a domain event after commit; a handler
 reacts by enqueuing through the existing updaters.
@@ -10120,20 +10121,25 @@ reacts by enqueuing through the existing updaters.
   sync path publish nothing.
 - **6307-I3 (DDD-10/11): the queue is reused unchanged**; Teams are triggered before Portfolios; one full download per
   owner per save.
-- **6307-I4 (DDD-6/7): the PUT answers with `queuedUpdates { teams, portfolios }`** on a response-only DTO; the
-  notice fetches nothing of its own, so it needs no loading or could-not-load look.
+- **6307-I4 (DDD-9/17, S4): the connection list read carries `usedBy { teams, portfolios }`**, which the edit page
+  already loads, so the question before Save fetches nothing new and needs no new loading or could-not-load look. The
+  PUT's request body and response are unchanged; `startUpdates=false` is its only addition. (Revised 2026-10-15 after
+  the sketch session: was a `queuedUpdates` response.)
+- **6307-I5 (DDD-16): a stored save answers 200**, even if the owner lookup or a handler fails after `Save()`.
 
 ### Component decomposition (headline)
 
 - **Backend:** EXTEND `FetchFingerprint` (`ForConnection`), `FetchShapingPropertyGuardTest` (connection-scoped subset),
-  `WorkTrackingSystemConnectionController` PUT (+`IDomainEventDispatcher`, sixth ctor parameter). CREATE
-  `ConnectionFetchShapeChanged` (`Models/Events`), its handler (beside `TeamDeletedForecastRetriggerHandler`), and
-  `WorkTrackingSystemConnectionSaveResultDto` (`API/DTO`). REUSE `TriggerUpdate`, `UpdateQueueService`, the dispatcher.
-- **Frontend:** EXTEND `WorkTrackingSystemService.updateWorkTrackingSystemConnection` (stop dropping the new field),
-  `EditConnection` (counts to the notice; stay on the page proposed), `ModifyConnectionSettings` (hint copy, notice,
-  conditional dialog).
-- Conditional (US-03): `?startUpdates=false` on the PUT.
-- No migration, dependency, RBAC rule or licence gate. Lighthouse-Clients: additive response field, changelog line.
+  `WorkTrackingSystemConnectionController` PUT (+`IDomainEventDispatcher`, sixth ctor parameter; `startUpdates`),
+  `WorkTrackingSystemConnectionsController` list GET and `WorkTrackingSystemConnectionDto` (additive `usedBy`). CREATE
+  `ConnectionFetchShapeChanged` (`Models/Events`), its handler (beside `TeamDeletedForecastRetriggerHandler`), and a
+  read-only connection-usage port (keeps the list controller at seven ctor parameters, the S107 limit). REUSE
+  `TriggerUpdate`, `UpdateQueueService`, the dispatcher.
+- **Frontend:** on Save, when the field definitions differ from those loaded and `usedBy` is above 0, a dialog asks
+  first: Cancel / Save only / Save and update (default), counts in the configured Terminology. The "next refresh of
+  data" alert is removed. After Save the page navigates to `/` as today, with no notice. `Save only` sends
+  `startUpdates=false`. `WorkTrackingSystemService` carries `usedBy` through its deserializer.
+- No migration, dependency, RBAC rule or licence gate.
 
 ### ADR References (this feature)
 

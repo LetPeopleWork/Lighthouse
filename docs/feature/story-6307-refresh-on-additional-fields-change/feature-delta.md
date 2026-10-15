@@ -61,7 +61,7 @@ next update. This story decides *when* it runs.
 | D8 | **Which owners are queued: those whose fetch fingerprint this save moved.** Every Team and Portfolio on the connection whose next update would ask for, or read, something different because of this save. A credential, URL-option, authentication-method, connection-name or write-back-only save moves no fingerprint and queues nothing (O6). Teams and Portfolios on other connections are never queued. An owner that already owed a full fetch for another reason (never updated since the upgrade, say) is **not** swept up by a save that did not change its fingerprint; DESIGN settles how "moved by this save" is computed (before vs after the save, rather than stored vs current). | Locked by DISCUSS (trigger scope set by the orchestrator, 2026-10-15) |
 | D9 | **One update per owner per save, never two.** An owner already waiting in the queue is not queued twice; an owner updating at the moment of Save gets exactly one follow-up after it finishes (existing coalescing). One full fetch per owner per edit (O5) is a guardrail. | Locked by DISCUSS |
 | D10 | **The save stands on its own.** The connection is saved first; each owner's update is then its own queue item and its own Task Manager row. If one update fails, the field stays saved, the other owners still update, and the failed owner's next scheduled update downloads everything again (its fingerprint is written only after its own fetch, `WorkItemService.cs:61-62`, per DIVERGE). A save the server refuses (licence 403, someone else saved first 409, validation 400) queues nothing. | Locked by DISCUSS |
-| D11 | **Predefined fields registered when the connection is read do not start updates (proposed).** Opening a connection can register or correct a predefined field and save (`WorkTrackingSystemConnectionController.cs:34-73`). No admin pressed Save, so there is nobody to tell and no moment the admin chose; reading a page must not start fetches. Those owners pick the field up on their next scheduled update, as today. **DESIGN confirms** (open question Q2). | Proposed by DISCUSS → DESIGN |
+| D11 | **Predefined fields registered when the connection is read do not start updates (confirmed by DESIGN, DDD-5).** Opening a connection can register or correct a predefined field and save (`WorkTrackingSystemConnectionController.cs:34-73`). No admin pressed Save, so there is nobody to tell and no moment the admin chose; reading a page must not start fetches. Those owners pick the field up on their next scheduled update, as today. **DESIGN confirms** (open question Q2). | Proposed by DISCUSS → DESIGN |
 | D12 | **Terminology.** All copy uses the configurable terms with their seeded defaults (*Team*, *Portfolio*, *Feature*, *Work Item*, *Connection*); never Epic or Story for a Lighthouse concept. | Locked |
 
 ## Wave: DISCUSS / [REF] User Stories
@@ -132,6 +132,7 @@ Scenario: A Team already updating is updated once more, not twice
   When Priya adds a field to "Nordwind Jira DC" and saves
   Then Atlas is updated exactly once more after its running update finishes
   And Cobalt is updated exactly once
+  # Superseded at DISTILL by UC-1: Cobalt may run twice, downloading everything only once.
 
 Scenario: One failed update leaves the field saved and the others updating
   Given Borealis's Jira project refuses the connection's account
@@ -153,10 +154,10 @@ Scenario: A save the server refuses starts no update
 - [ ] **AC-1.2** A save that moves no fingerprint (credential, URL option, authentication method, name, write-back mapping only) queues nothing (D8, O6).
 - [ ] **AC-1.3** A label-only rename of an additional field queues every owner on the connection (D3).
 - [ ] **AC-1.4** No Team or Portfolio on another connection is queued (D8).
-- [ ] **AC-1.5** An owner already queued is not queued twice; an owner updating at the moment of Save gets exactly one follow-up (D9).
+- [ ] **AC-1.5** An owner already queued is not queued twice; an owner updating at the moment of Save gets exactly one follow-up (D9). *(Superseded at DISTILL by UC-1: an owner waiting or running when Save is pressed may run twice, but downloads everything only once per save and shows one Task Manager row.)*
 - [ ] **AC-1.6** A failed update of one owner neither undoes the save nor stops the other owners' updates, and that owner's next scheduled update still downloads everything (D10).
 - [ ] **AC-1.7** A refused save (403 licence, 409 concurrency, 400 validation) queues nothing (D10).
-- [ ] **AC-1.8** The connection page no longer says the fields load "with the next refresh of data"; before Save, it says that saving updates the Teams and Portfolios that use the connection (copy and placement at DISTILL, D6).
+- [ ] **AC-1.8** *(Replaced at DISTILL by S2: the alert is removed and nothing replaces it while editing; moved to slice 02.)* The connection page no longer says the fields load "with the next refresh of data"; before Save, it says that saving updates the Teams and Portfolios that use the connection (copy and placement at DISTILL, D6).
 - [ ] **AC-1.9** It works the same on every licence; no premium gate (D4).
 
 #### Outcome KPIs
@@ -174,6 +175,8 @@ Scenario: A save the server refuses starts no update
   AC-1.2 they queue nothing; DISTILL confirms.
 
 ### US-02: The admin is told what the save started
+
+> **Reshaped at DISTILL (S1, S3, S4):** there is no after-save notice. The admin is asked before the save, in a dialog that names how many {Teams} and {Portfolios} will be updated. See the DISTILL reconciliation and the rewritten slice-02 brief.
 
 As a **System Admin**, I want the save to tell me which updates it started and where to watch them, so I know
 when the field is safe to build on.
@@ -231,7 +234,7 @@ Scenario: A connection nobody uses says nothing about updates
 - [ ] **AC-2.2** The message offers a way to the Task Manager, where each update is its own row.
 - [ ] **AC-2.3** Counts and nouns use the configured Terminology, singular and plural (D12).
 - [ ] **AC-2.4** A save that queued nothing shows no update message.
-- [ ] **AC-2.5** The message is shown where the admin can read it: if the page still navigates away after Save, the message survives the navigation; DISTILL's sketch settles which.
+- [ ] **AC-2.5** *(Superseded by S3: no notice; the page navigates to `/` as today.)* The message is shown where the admin can read it: if the page still navigates away after Save, the message survives the navigation; DISTILL's sketch settles which.
 
 #### Outcome KPIs
 
@@ -339,14 +342,14 @@ Scenario: Updating straight away is the default
   repository is outside this session's reach, so **DESIGN greps `packages/client`, `packages/cli` and
   `packages/mcp-core` for the connection PUT** and confirms; if a client saves connections, it gets the
   fan-out too (a server-side behaviour), which is the intended result and needs a line in its changelog only.
-- **Website**: **N/A, because** no marketing page is known to describe when additional fields load; the website
+- **Website**: **N/A, because** no marketing page describes when additional fields load (grep of the website repo for "additional field" at DISTILL finds only the feature-list tooltip at `src/pages/Lighthouse.tsx:847`, which says nothing about when they load; the Clients repo types the PUT response `unknown` and needs no change); the website
   repository is outside this session's reach, so DELIVER greps it for "additional field" before finalizing.
 - **Docs** (at finalization): `docs/settings/configuration.md:81` (say that saving a connection's additional fields
   starts the updates at once, instead of "the next update"), the Additional Fields sections of
   `docs/concepts/worktrackingsystems/jira.md:162-185` and `azuredevops.md:101-124` (what happens on Save, the Task
   Manager rows, and the opt-out if US-03 ships). `servicenow.md:282` offers no editor: **N/A**. Linear and CSV
   docs have no Additional Fields section: **N/A**. Retire the 2024 release-note advice where re-published.
-- **Screenshots**: the connection page's notice/dialog if the docs gain an image; DISTILL decides with the sketch.
+- **Screenshots**: **N/A, because** (decided at DISTILL) the only demo connection is CSV, which cannot add Additional Fields, so a `@screenshot` run cannot open the question; the docs describe it in prose.
 - **Usage data**: **DEVOPS answers.** Candidate: `ConnectionFieldChangeSaved` with one closed-enum property
   `updates: now | later` (later only if US-03 ships); emitted by the browser after a save that queued, or would
   have queued, updates. Name-only if US-03 is dropped. Never a connection name, field name, count or id.
@@ -377,7 +380,7 @@ Backbone (System Admin, goal: build a rule on a new field and trust it):
 | Edit the connection's fields | Save | Learn what the save started | Watch the updates | Build on the field |
 |---|---|---|---|---|
 | add / rename / remove a field (existing) | owners whose fingerprint moved are queued (US-01) | told N Teams and M Portfolios are updating (US-02) | Task Manager rows (existing) | rule matches once rows finish (existing) |
-| hint says saving updates them (US-01, AC-1.8) | save without updating (US-03, conditional) | told when they will load instead (US-03) | | |
+| alert removed, question before Save (S2, S4; slice 02) | save without updating (US-03, conditional) | told when they will load instead (US-03) | | |
 
 | Order | Slice | Story | Hypothesis (disproves … if it fails) | Why this order |
 |---|---|---|---|---|
@@ -401,15 +404,15 @@ permission. US-01 holds 7 scenarios, US-02 4, US-03 3. No oversized signal. **PA
 |---|---|---|---|---|
 | `OUT-6307-time-to-populated` | Every Team and Portfolio on a connection holds a newly added field's values | Each owner's update is queued within 5 s of Save; the field is present once its own update finishes | Up to ~4 h (60 min interval + 180 min "refresh after") | Acceptance tests; by hand on the dev instance with the Task Manager open |
 | `OUT-6307-no-silent-empty-rule` | Admins report a rule on a newly added field matching nothing | 0 such reports in the 60 days after release | Bug #6306 (the maintainer himself) | The maintainer reviews ADO Bugs and the community channel at release + 60 days |
-| `OUT-6307-one-fetch-per-owner` (guardrail, O5) | A field save causes full fetches | Exactly one per affected owner per save, never two | One per owner (deferred) | Acceptance tests (AC-1.5) |
+| `OUT-6307-one-fetch-per-owner` (guardrail, O5) | A field save causes full fetches | At most one full fetch per affected owner per save (an owner waiting or running at Save may run once more, incrementally — UC-1) | One per owner (deferred) | Acceptance tests (AC-1.5) |
 | `OUT-6307-no-fetch-for-non-shaping-save` (guardrail, O6) | A credential or name save causes fetches | 0 | 0 | Acceptance tests (AC-1.2) |
 | `OUT-6307-opt-out-rate` (only if US-03 ships) | Share of field saves that choose "later" | Informational; under 10 % suggests removing the choice | none | Usage-data event, if DEVOPS adds it |
 
 ## Wave: DISCUSS / [REF] Definition of Done
 
 1. A field save on a connection queues an update of exactly the Teams and Portfolios whose fingerprint it moved, at once, on every licence (US-01).
-2. A credential- or name-only save queues nothing; no owner is ever queued twice for one save.
-3. The "next refresh of data" sentence is gone; the admin is told what the save started, in copy the maintainer approved at DISTILL (US-02).
+2. A credential- or name-only save queues nothing; no owner downloads everything twice for one save (UC-1).
+3. The "next refresh of data" alert is gone, and the question before the save says how many {Teams} and {Portfolios} will be updated, in the copy the maintainer approved at DISTILL (S2, S4).
 4. If DISTILL picked the dialog: saving without updating works and says when the field will load (US-03); otherwise US-03 is recorded as dropped.
 5. Any new view that fetches has the loading and could-not-load looks DESIGN pins.
 6. ADR-030 amended (or overruled) and ADR-140's fan-out consequence amended, by DESIGN.
@@ -424,7 +427,7 @@ permission. US-01 holds 7 scenarios, US-02 4, US-03 3. No oversized signal. **PA
 | 1 | Problem statement clear, in domain language | ✅ | Each story's Problem; Bug #6306 as the real case |
 | 2 | User/persona with specific characteristics | ✅ | `config-admin` as System Admin; Priya Raman, Nordwind Logistics, on-prem Jira DC with 4 Teams and 2 Portfolios |
 | 3 | 3+ domain examples with real data | ✅ | US-01 4, US-02 4, US-03 3, each with a happy path, an edge and an error or default |
-| 4 | UAT in Given/When/Then (3–7) | ✅ | US-01 7, US-02 4, US-03 3 |
+| 4 | UAT in Given/When/Then (3–7) | ✅ | US-01 7, US-02 4, US-03 3 (US-02 counted in its pre-DISTILL form; DISTILL's scenario list is authoritative) |
 | 5 | AC derived from UAT | ✅ | AC-1.x, AC-2.x, AC-3.x map onto the scenarios; AC-1.8/1.9 and AC-2.5 pin D6/D4 |
 | 6 | Right-sized | ✅ | Three slices ≤ 1 day each |
 | 7 | Technical notes | ✅ | Per story; Pre-requisites cite file:line |
@@ -499,44 +502,56 @@ All **proposed, pending maintainer approval**.
 |----|----|----|
 | DDD-1 | **"Moved by this save" = the connection's share of the fingerprint, before vs after.** The PUT renders the connection-owned fingerprint inputs (`AdditionalFieldDefinitions`, `WorkTrackingSystem`) once on the stored connection before merging the request, and again after `Save()`. Different ⇒ every Team and Portfolio on the connection moved; equal ⇒ none did. A connection PUT changes no owner-owned input, so this is exactly "each owner's `For()` before vs after", without loading every owner before the merge. (Q1) | (a) Per-owner `FetchFingerprint.For` before/after: same answer, but loads every owner with its state mappings before the merge and must snapshot the shared tracked connection. (b) Stored vs current fingerprint: sweeps owners that owed a fetch for another reason, which D8 forbids. |
 | DDD-2 | **The connection share is one function that `For` itself uses**, `FetchFingerprint.ForConnection(connection)`, so the two cannot drift. `For`'s rendered input stays **byte-identical**, so no stored fingerprint moves on upgrade; a pinned-digest test (literal hex for a fixed owner) is written *before* the refactor commit. `FetchShapingPropertyGuardTest` gains a connection-scoped subset: every registered property declared on `WorkTrackingSystemConnection` must be rendered by `ForConnection`. | (a) A second, hand-kept list of connection properties in the controller: the drift ADR-140 exists to prevent. (b) Change `For`'s rendering freely: every owner on every instance downloads everything after the upgrade. |
-| DDD-3 | **Fan-out through the domain-event bus.** After a stored save whose connection share moved, the PUT publishes `ConnectionFetchShapeChanged(ConnectionId, TeamIds, PortfolioIds)` (record in `Models/Events`); a handler enqueues each id through `ITeamUpdater.TriggerUpdate` / `IPortfolioUpdater.TriggerUpdate`. The publisher computes the owner ids, as `TeamDeleted` carries `AffectedPortfolioIds`, so the PUT can report what it asked for (US-02). (Q1, maintainer's event-bus preference) | (a) Call `TriggerUpdate` inline in the controller: couples the API to the updaters, against the maintainer's stated preference. (b) Handler looks up the owners itself: the PUT could not report counts without asking a second time. (c) Frontend triggers the updates (as `refreshOnSave` does for Team saves): the CLI and MCP clients save connections too and would not get the behaviour. |
+| DDD-3 | **Fan-out through the domain-event bus.** After a stored save whose connection share moved, the PUT publishes `ConnectionFetchShapeChanged(ConnectionId, TeamIds, PortfolioIds)` (record in `Models/Events`); a handler enqueues each id through `ITeamUpdater.TriggerUpdate` / `IPortfolioUpdater.TriggerUpdate`. The publisher computes the owner ids, as `TeamDeleted` carries `AffectedPortfolioIds`. (Q1, maintainer's event-bus preference) | (a) Call `TriggerUpdate` inline in the controller: couples the API to the updaters, against the maintainer's stated preference. (b) Handler looks up the owners itself: viable since S3 dropped the response counts; kept with the publisher to follow the `TeamDeleted` precedent. (c) Frontend triggers the updates (as `refreshOnSave` does for Team saves): the CLI and MCP clients save connections too and would not get the behaviour. |
 | DDD-4 | **The connection controller is the publisher (EXTEND)** and takes `IDomainEventDispatcher` as a sixth constructor parameter (S107 limit is 7). It already holds the merge, the repositories for Teams and Portfolios, and the save. | Extract an application service for the connection PUT now: right direction, larger change than this story needs; revisit when the controller next grows. |
 | DDD-5 | **D11 confirmed.** Only the PUT publishes. The GET's predefined-field registration (`WorkTrackingSystemConnectionController.cs:34-73`) and the Jira sync-path registration (`JiraWorkTrackingConnector.cs:218,291`) publish nothing. Because the "before" is the connection as stored when the PUT runs, a predefined field registered by an earlier GET never counts as moved by a later PUT. (Q2) | Fan out from the GET too: reading a page would start downloads nobody chose and nobody is told about. |
-| DDD-6 | **The PUT answers with what it queued.** New response type `WorkTrackingSystemConnectionSaveResultDto` (in `API/DTO`, controller-only) = the existing connection DTO plus `queuedUpdates: { teams, portfolios }`, always present, both 0 when nothing was queued. The request body, GET and POST shapes are unchanged. Additive for clients: an older client ignores the field. (Q4) | (a) Add the property to `WorkTrackingSystemConnectionDto`: it would appear on GET/list and as a silently ignored input on PUT. (b) A response header: invisible to typed clients. (c) Wrap the connection in an envelope: breaks the CLI and MCP `updateWorkTrackingConnection` callers. |
-| DDD-7 | **No new fetch, so no new loading or could-not-load look.** The notice is drawn from the PUT response only. While the PUT is in flight the page shows the save state it shows today; a refused save shows today's error and no notice; the notice from a previous save is cleared when the next save starts or the form is edited, so an old count is never read as current. | A separate "affected owners" fetch: needs both looks and can disagree with what the save queued. |
-| DDD-8 | **Opt-out travels as a query parameter**, `PUT …/worktrackingsystemconnections/{id}?startUpdates=false`, default `true`. With `false` the save is stored exactly as usual, no event is published, `queuedUpdates` is 0/0. CLI and MCP send nothing and therefore update now (D2). Built only in slice 03, only if the DISTILL sketch picks the dialog. (US-03) | (a) A body flag on the DTO: pollutes the resource and echoes on GET. (b) A separate "save without updating" endpoint: duplicates the merge. |
-| DDD-9 | **US-03 dialog appears when the field definitions on the page differ from the ones it loaded** (a comparison, not the sticky `fieldsModified` flag at `ModifyConnectionSettings.tsx:669`). It may appear for a connection nobody uses; choosing "update now" there queues nothing and says nothing. If the sketch wants counts *before* Save, add `usedBy: { teams, portfolios }` to the connection read the page already makes (additive, no new fetch). | A server "preview" endpoint: a new fetch needing loading and could-not-load looks, for a conditional slice. |
+| DDD-6 | **SUPERSEDED by S3/S4 (2026-10-15): the PUT response is unchanged; no `queuedUpdates`, no `WorkTrackingSystemConnectionSaveResultDto`.** Original: a response-only DTO adding `queuedUpdates { teams, portfolios }`. | (a) A property on the shared DTO. (b) A response header. (c) An envelope (breaks CLI and MCP callers). |
+| DDD-7 | **SUPERSEDED by S3/S4 (2026-10-15): there is no after-save notice.** The counts are shown before Save, from the list read (DDD-9, DDD-17); no new fetch, so no new loading or could-not-load look. Original: the notice drawn from the PUT response, cleared on the next save or edit. | A separate "affected owners" fetch: needs both looks. |
+| DDD-8 | **Opt-out travels as a query parameter**, `PUT …/worktrackingsystemconnections/{id}?startUpdates=false`, default `true`. With `false` the save is stored exactly as usual and no event is published. CLI and MCP send nothing and therefore update now (D2). **Confirmed by S1 (2026-10-15): ships, unconditionally; `Save only` sends it.** | (a) A body flag on the DTO: pollutes the resource and echoes on GET. (b) A separate "save without updating" endpoint: duplicates the merge. |
+| DDD-9 | **The question shows when the field definitions on the page differ from the ones it loaded** (a comparison, not the sticky `fieldsModified` flag at `ModifyConnectionSettings.tsx:669`) **and the connection has at least one Team or Portfolio** (S5). Amended 2026-10-15 (S4, upstream issue 1): the counts are `usedBy { teams, portfolios }` on the connection **list** read the page already makes (DDD-17), not the read by id. No extra fetch, so no new loading or could-not-load look. | A server "preview" endpoint: a new fetch needing loading and could-not-load looks. |
 | DDD-10 | **Reuse the queue's coalescing unchanged.** An owner updating at Save gets exactly one follow-up; an owner waiting at Save keeps its single Task Manager row and runs once more after its waiting run (that follow-up is incremental where the connector supports it). Only one run per owner is made a full download by the save. AC-1.5 and its scenario are reworded accordingly (upstream change). | Make the queue absorb a trigger on a key that is still waiting: correct in principle, but it changes behaviour for every trigger source, reverses a `docs/ci-learnings.md` rule ("never treat `TryAdmit` false as already covered"), and needs a cross-pod read of "waiting"; all to save one cheap run. |
 | DDD-11 | **Teams are enqueued before Portfolios**, so a Portfolio's forecast in the same round runs over Team data that already carries the field. | Arbitrary order: harmless but can forecast a Portfolio once over stale Team data. |
 | DDD-12 | **No licence gate, no new RBAC rule.** `TriggerUpdate` is ungated; the premium gate on "Update All" is an endpoint attribute (`[LicenseGuard(RequirePremium = true)]`, `TeamsController.cs:72`, `PortfoliosController.cs`) and the fan-out never passes through it. The PUT stays `[RbacGuard(SystemAdmin)]`; the existing `CheckLicensePermissions` refusal returns before `Save()`, so a refused save publishes nothing. (D4, D10) | — |
-| DDD-13 | **Q5 (proposal, final at the DISTILL sketch, UI-5): stay on the edit page after Save** and show the notice beside the Save button. There is no app-wide notice mechanism (no snackbar provider; `SnackbarErrorHandler` is page-local), so surviving a navigation needs something new. Fallback if the sketch keeps the navigation: pass the counts in router navigation state and render the notice on the Overview. "A way to the Task Manager" is copy pointing at the header icon unless the sketch asks for a button; opening the popover from elsewhere has no hook today (`useTaskManagerPopover.ts`). | Keep navigating to `/` and drop the notice: fails AC-2.5. |
+| DDD-13 | **SUPERSEDED by S3/S4 (2026-10-15): navigate to `/` as today, no after-save notice.** Original proposal: stay on the edit page after Save and show the notice beside the Save button; fallback, pass the counts in router navigation state. | Keep navigating to `/` and drop the notice (this is what S3 chose, since the question before Save carries the message). |
 | DDD-14 | **ADR text: a new ADR-238** records the connection-save fan-out and narrows ADR-030's "expensive ⇒ intentional" rule for connection saves; ADR-030 and ADR-140 get dated amendment notes pointing at it (ADR-140's "passive fan-out" consequence is superseded for saves through the PUT). (Q3, D1) | Rewrite ADR-030 or ADR-140 in place: loses the record of why the earlier rule held. |
 | DDD-15 | **One Information log line per fan-out** from the handler: connection id and the two counts, never field names. The per-owner rows and outcomes stay where they are (Task Manager, `RefreshLog`). | — |
+| DDD-16 | **A stored save answers 200, whatever happens after it.** (Added 2026-10-15, review F-7/F-8.) A handler that throws is caught and logged by `DomainEventDispatcher.InvokeHandlerSafely`, so the PUT answers 200. The controller's own owner-id lookup and publish, which run after `Save()`, are wrapped the same way: catch, log one Error line naming the connection, answer 200. The save is committed, and every owner recovers at its next scheduled update because its stored fingerprint was never rewritten. The catch needs a narrow `#pragma warning disable CA1031` with a plain-language reason inline. | Let the exception surface as 500: tells the admin the save failed when it was stored, inviting a second save that changes nothing. |
+| DDD-17 | **`usedBy { teams, portfolios }` on the connection list read** (added 2026-10-15, after S4 and upstream issue 1). The edit page reads `GET …/worktrackingsystemconnections` and picks its connection by id; it never calls the read by id. The counts come from one read-only port injected into the list controller (seventh parameter, at the S107 limit). | (a) The read by id: the page does not call it, and it registers predefined fields. (b) Two repositories on the list controller: eight parameters, fails S107. (c) A new controller: cannot share the list route. |
 
 ## Wave: DESIGN / [REF] Component decomposition
 
 | Component | Path | Change | Contract shape |
 |---|---|---|---|
 | `FetchFingerprint` | `Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs` | EXTEND: `ForConnection(WorkTrackingSystemConnection)` (connection-owned inputs only), composed into `For` with byte-identical output; a connection-scoped property subset beside `RegisteredProperties` | Pure function (return-only) |
-| `WorkTrackingSystemConnectionController` PUT | `Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs` | EXTEND: render the connection share before merging and after `Save()`; when it moved and `startUpdates` is not `false`, look up the owner ids and publish the event; answer with the save-result DTO | Bounded change: the connection row, plus one published event |
+| `WorkTrackingSystemConnectionController` PUT | `Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs` | EXTEND: render the connection share **before any mutation of the tracked connection** (before options, fields or mappings are merged) and again after `Save()`; when it moved and `startUpdates` is not `false`, look up the owner ids and publish the event (DDD-16 for failures) | Bounded change: the connection row, plus at most one published event |
 | `ConnectionFetchShapeChanged` | `Lighthouse.Backend/Models/Events/` | CREATE NEW: `record (int ConnectionId, IReadOnlyList<int> TeamIds, IReadOnlyList<int> PortfolioIds) : IDomainEvent`. No existing event says "a connection's fetch shape changed" | Data |
 | Fan-out handler | `Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/` (beside `TeamDeletedForecastRetriggerHandler`) | CREATE NEW: `IDomainEventHandler<ConnectionFetchShapeChanged>` that triggers Teams then Portfolios and logs one line. A handler per event type is the bus's extension point; there is nothing to extend | Bounded change: enqueues exactly the event's ids, writes nothing to the database |
-| Composition root | `Program.cs` (handler registrations `~:1625-1648`) | EXTEND: one `AddScoped<IDomainEventHandler<…>, …>` line | — |
-| `WorkTrackingSystemConnectionSaveResultDto` | `Lighthouse.Backend/API/DTO/` | CREATE NEW (slice 02): derives from `WorkTrackingSystemConnectionDto`, adds `QueuedUpdates { Teams, Portfolios }`. A response-only type keeps the shared resource DTO unchanged | Data |
+| Composition root | `Program.cs` (handler registrations `~:1625-1648`) | EXTEND: one `AddScoped<IDomainEventHandler<…>, …>` line, and one registration for the connection-usage read | — |
+| `WorkTrackingSystemConnectionsController` list GET | `Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs:55-70` | EXTEND: fill `usedBy { teams, portfolios }` on each listed connection (S4). Takes one more constructor parameter, the usage read below (7, the S107 limit) | Read-only |
+| Connection-usage read | `Lighthouse.Backend/Services/Interfaces/…` + implementation over the Team and Portfolio repositories | CREATE NEW: one read-only port answering "how many Teams and Portfolios use each connection". The list controller is at six parameters; injecting both repositories would make eight and fail S107 (`docs/ci-learnings.md`) | Read-only, no write members |
+| `WorkTrackingSystemConnectionDto` | `Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs` | EXTEND: additive `UsedBy { Teams, Portfolios }`, set on the list read only | Data |
 | `UpdateServiceBase.TriggerUpdate`, `UpdateQueueService`, `IDomainEventDispatcher` | existing | REUSE AS-IS | — |
-| `WorkTrackingSystemService.updateWorkTrackingSystemConnection` | `Lighthouse.Frontend/src/services/Api/WorkTrackingSystemService.ts:98` | EXTEND (slice 02): surface `queuedUpdates` to the caller. Today's `deserializeWorkTrackingSystemConnection` copies named fields only and would drop it. Extend `MockApiServiceProvider` and the service test builders first (shared contract) | Pure mapping |
-| `EditConnection` save flow | `Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx:79` | EXTEND (slice 02): keep the counts from the save and hand them to the notice; stay or navigate per UI-5 | — |
-| `ModifyConnectionSettings` hint and notice | `Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:674-680` | EXTEND: slice 01 replaces the "next refresh of data" Alert (copy from UI-2); slice 02 adds the after-save notice in configured Terminology; slice 03 the dialog | Pure render from props |
-| US-03 dialog | reuse the existing MUI confirmation-dialog pattern (`DeleteConfirmationDialog` is the nearest control; the sketch decides reuse vs a sibling) | EXTEND/REUSE (slice 03 only) | — |
+| `WorkTrackingSystemService` | `Lighthouse.Frontend/src/services/Api/WorkTrackingSystemService.ts` | EXTEND: carry `usedBy` through `deserializeWorkTrackingSystemConnection` (it copies named fields only); the PUT method takes a "save only" option that sends `startUpdates=false`. Extend `MockApiServiceProvider` and the service test builders first (shared contract) | Pure mapping |
+| `ModifyConnectionSettings` | `Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:674-680` | EXTEND: remove the "next refresh of data" Alert (S2); on Save, when the field definitions differ from those loaded and `usedBy` is above 0, ask first (S1, S4, S5) | Pure render from props |
+| Update question dialog | modelled on `DeleteConfirmationDialog` (S1) | CREATE as a sibling or REUSE, DELIVER decides; buttons Cancel / Save only / Save and update (default), title and body in configured Terminology (S4) | Pure render from props |
+| `EditConnection` save flow | `Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx:79` | EXTEND: pass the "save only" choice to the PUT; navigate to `/` as today (S3) | — |
+
+(Revised 2026-10-15 after the sketch session: `WorkTrackingSystemConnectionSaveResultDto` and the after-save
+notice are dropped (S3); the counts come from the list read (S4).)
 
 ## Wave: DESIGN / [REF] Driving ports
 
-- `PUT /api/{v1|latest}/worktrackingsystemconnections/{id}` — SystemAdmin, unchanged request body. **Response**
-  (slice 02): the connection as today plus `queuedUpdates: { teams: number, portfolios: number }`. **Query**
-  (slice 03, conditional): `startUpdates` (boolean, default `true`). Refusals unchanged: 400 validation, 403 licence,
-  409 concurrency, 404; none publishes an event.
-- UI `/connections/:connectionId/edit`: the Save action, the pre-save hint, the after-save notice, the US-03 dialog.
-- Not driving ports here: the connection GET and the list GET (D11/DDD-5), the Task Manager (unchanged consumer).
+- `GET /api/{v1|latest}/worktrackingsystemconnections` (list, SystemAdmin) — the read the edit page already makes
+  (`getConfiguredWorkTrackingSystems`, then picks its connection by id). Each connection gains
+  `usedBy: { teams: number, portfolios: number }` (S4). The page never calls the read by id (upstream issue 1).
+- `PUT /api/{v1|latest}/worktrackingsystemconnections/{id}` — SystemAdmin, request body and response shape unchanged.
+  **Query**: `startUpdates` (boolean, default `true`; S1 ships it). Refusals unchanged: 400 validation, 403 licence,
+  409 concurrency, 404; none publishes an event. A stored save answers 200 even if the owner lookup or a handler
+  fails (DDD-16).
+- UI `/connections/:connectionId/edit`: Save, and the question before it (Cancel / Save only / Save and update)
+  when the field definitions differ from those loaded and `usedBy` is above 0 (S1, S5). The alert is removed (S2);
+  after Save the page navigates to `/` as today (S3).
+- Not driving ports here: the read by id (it registers predefined fields; D11/DDD-5), the Task Manager (unchanged consumer).
 
 ## Wave: DESIGN / [REF] Driven ports and adapters
 
@@ -549,12 +564,14 @@ All **proposed, pending maintainer approval**.
 
 **Earned trust: where the environment can lie, and what catches it.**
 
-- *A handler that throws* is logged and skipped by the dispatcher; the save stands and each owner's next scheduled
-  update still downloads everything, because its stored fingerprint was never rewritten (D10). The PUT's counts
-  come from the event's ids, so they report what was asked for.
+- *A handler that throws* is caught and logged by `DomainEventDispatcher.InvokeHandlerSafely`
+  (`catch (Exception ex)` under `#pragma warning disable CA1031 // one failing handler must not abort the others or
+  lose the committed fact; recovery is the next re-sync`), so `PublishAsync` completes and the PUT answers **200** with
+  the save stored. Each owner's next scheduled update still downloads everything, because its stored fingerprint
+  was never rewritten (D10). See DDD-16 for the controller's own lookup.
 - *The database-maintenance gate* refuses enqueues silently (`UpdateQueueService.cs:147`). A save during a
-  backup/restore window would report counts that were not queued. Accepted residual; recovery is the scheduled
-  update for the same reason.
+  backup/restore window queues fewer updates than the dialog's counts announced. Accepted residual; recovery is the
+  scheduled update for the same reason.
 - *Multi-replica*: a follow-up parked on one pod for a key running on another is lost (ADR-076 Gap 1, not urgent
   while deployments are single-pod). Same recovery: the owner that ran on the old connection stored the old
   fingerprint, so its next cycle is full.
@@ -577,17 +594,20 @@ existing, all OSS (MIT/Apache-2.0).
 | `FetchFingerprint` | `Services/Implementation/WorkItems/FetchFingerprint.cs` | Decides what is fetch-shaping | EXTEND | `ForConnection` lifted out of `For`, byte-identical; no second list (DDD-2) |
 | `FetchShapingPropertyGuardTest` | `Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs` | Registry completeness | EXTEND | Connection-scoped subset must equal what `ForConnection` renders |
 | Domain-event bus | `IDomainEventDispatcher`, `DomainEventDispatcher`, `IDomainEventHandler<T>` | Decouple "it happened" from reactions; per-handler isolation | REUSE AS-IS + new event and handler | Adding an event and a handler is how the bus is extended; `TeamDeleted` → `TeamDeletedForecastRetriggerHandler` is the precedent (publisher computes ids, handler triggers) |
-| `WorkTrackingSystemConnectionController` PUT | `API/WorkTrackingSystemConnectionController.cs:75-122` | The save | EXTEND | Before/after render, publish, result DTO; sixth ctor parameter, under S107 |
-| `WorkTrackingSystemConnectionDto` | `API/DTO/WorkTrackingSystemConnectionDto.cs` | Response shape | EXTEND by derivation | `WorkTrackingSystemConnectionSaveResultDto` derives from it; the shared DTO itself is untouched |
+| `WorkTrackingSystemConnectionController` PUT | `API/WorkTrackingSystemConnectionController.cs:75-122` | The save | EXTEND | Before/after render, `startUpdates`, publish; sixth ctor parameter, under S107 |
+| `WorkTrackingSystemConnectionDto` | `API/DTO/WorkTrackingSystemConnectionDto.cs` | Resource shape | EXTEND (additive `usedBy`, filled on the list read only) | The PUT request body is unchanged; the save-result DTO was dropped after S3 |
 | Team/Portfolio refresh-on-save | `Lighthouse.Frontend/src/hooks/useModifySettings.ts` (`refreshOnSave`) | Save-then-update precedent | NOT REUSED (precedent only) | It is browser-driven; the connection fan-out must also serve CLI/MCP saves, so it lives on the server. Moving Team/Portfolio server-side stays out of scope |
 | Update All (premium) | `TeamsController.cs:71-84`, `PortfoliosController.cs:61-74` | Triggers many owners | NOT REUSED | Premium-gated and per kind; this story is per connection and every licence (D4) |
-| "Next refresh of data" Alert | `ModifyConnectionSettings.tsx:674-680` | Pre-save hint | EXTEND (replace copy) | Same slot, same `fieldsModified` condition, new copy from UI-2 |
-| `EditConnection` save flow | `pages/Connections/Edit/EditConnection.tsx:52-82` | Save and navigate | EXTEND | Carries `queuedUpdates` to the notice; navigation per UI-5 |
-| `WorkTrackingSystemService.updateWorkTrackingSystemConnection` | `services/Api/WorkTrackingSystemService.ts:98-109` | PUT client | EXTEND | Must stop dropping the new field |
-| `DeleteConfirmationDialog` | `components/Common/DeleteConfirmationDialog/` | Confirmation dialog | REUSE or sibling (slice 03, sketch decides) | Nearest existing two-choice dialog |
+| "Next refresh of data" Alert | `ModifyConnectionSettings.tsx:674-680` | Pre-save hint | REMOVE (S2) | No replacement while editing; the question on Save carries the message |
+| `EditConnection` save flow | `pages/Connections/Edit/EditConnection.tsx:52-82` | Save and navigate | EXTEND | Passes `startUpdates=false` on `Save only`; navigates to `/` as today (S3) |
+| `WorkTrackingSystemService` | `services/Api/WorkTrackingSystemService.ts` | List read and PUT client | EXTEND | The list read must carry `usedBy` through `deserializeWorkTrackingSystemConnection` (it copies named fields only); the PUT gains the `startUpdates=false` option |
+| `WorkTrackingSystemConnectionsController` list GET + `WorkTrackingSystemConnectionDto` | `API/WorkTrackingSystemConnectionsController.cs:55-70`, `API/DTO/WorkTrackingSystemConnectionDto.cs` | Already returns every connection to the edit page | EXTEND | Additive `usedBy { teams, portfolios }` on the list read (S4); no extra fetch |
+| `DeleteConfirmationDialog` | `components/Common/DeleteConfirmationDialog/` | Confirmation dialog | REUSE as the model (S1) | Cancel / Save only / Save and update, modelled on it |
 | `TaskManager` popover | `components/App/Header/TaskManager/` | Shows the queued rows | REUSE AS-IS | Unchanged; the notice points to it |
 
-CREATE NEW count: 3 (`ConnectionFetchShapeChanged` record, its handler, the save-result DTO), each justified above.
+CREATE NEW count: 3 (`ConnectionFetchShapeChanged` record, its handler, the connection-usage read port), each
+justified above. (Revised 2026-10-15: the save-result DTO is dropped after S3; the usage read port is added because
+the list controller is at six constructor parameters and two more repositories would break S107.)
 
 ## Wave: DESIGN / [REF] C4 — System Context
 
@@ -610,7 +630,7 @@ C4Container
   title Container — connection save fan-out
   Person(admin, "System Admin")
   System_Ext(clients, "Lighthouse CLI / MCP")
-  Container(spa, "Lighthouse SPA", "React 18 + TypeScript", "Connection page, save notice, Task Manager")
+  Container(spa, "Lighthouse SPA", "React 18 + TypeScript", "Connection page, the update question before Save, Task Manager")
   Container(api, "Connection API", "ASP.NET Core controller", "Stores the save, compares the connection's fetch share, publishes the event")
   Container(bus, "Domain-event dispatcher", "In-process", "Runs each handler isolated, after commit")
   Container(queue, "Update queue + Team/Portfolio updaters", "Background services", "One update per owner, coalesced by key")
@@ -625,7 +645,7 @@ C4Container
   Rel(queue, wts, "Downloads everything for each owner from")
   Rel(queue, db, "Writes items and the new fingerprint to")
   Rel(queue, spa, "Pushes Task Manager row status to")
-  Rel(api, spa, "Answers with queuedUpdates counts to")
+  Rel(api, spa, "Lists connections with usedBy counts to")
 ```
 
 ## Wave: DESIGN / [REF] Save sequence
@@ -637,7 +657,8 @@ sequenceDiagram
   participant D as Dispatcher
   participant H as Fan-out handler
   participant Q as Update queue
-  C->>P: PUT connection (startUpdates defaults to true)
+  Note over C: the SPA already holds usedBy from the list read and asks first (S1, S4, S5)
+  C->>P: PUT connection (startUpdates absent = true; Save only sends false)
   P->>P: render connection share (before)
   P->>P: merge, validate, licence check
   alt refused (400/403/409/404)
@@ -650,7 +671,7 @@ sequenceDiagram
       D->>H: HandleAsync (isolated)
       H->>Q: TriggerUpdate each Team, then each Portfolio
     end
-    P-->>C: connection + queuedUpdates {teams, portfolios}
+    P-->>C: 200 with the connection as today (also when the lookup or a handler failed, DDD-16)
   end
 ```
 
@@ -661,23 +682,25 @@ sequenceDiagram
 - Unit: pinned digest for a fixed owner, committed before the refactor.
 - Architecture: `FetchShapingPropertyGuardTest` connection-scoped subset; the existing ArchUnit rule that handlers
   never call `GetRequiredService` covers the new handler.
-- Acceptance (WebApplicationFactory, DISTILL owns): PUT → queue observations for AC-1.1…1.7 and AC-2.1/2.4, read
-  through the queue's status store rather than mocks, so coalescing is exercised for real.
+- Acceptance (WebApplicationFactory, DISTILL owns): PUT → queue observations for AC-1.1…1.7, `startUpdates=false`
+  (S6) and `usedBy` on the list read (S4), read through the queue's status store rather than mocks, so coalescing
+  is exercised for real.
+- Unit (DELIVER): the PUT answers 200 with the save stored when the owner lookup or the publish throws (DDD-16).
 - `Program.cs` changes, so the full backend Integration suite runs in CI for this change (expected, not a regression).
 
 ## Wave: DESIGN / [REF] Open questions
 
 For **DEVOPS**:
-- Usage-data event: DISCUSS's candidate `ConnectionFieldChangeSaved` (`updates: now | later`, or name-only if US-03
-  drops). DESIGN adds nothing that constrains it; the browser knows from `queuedUpdates` whether a save queued.
-- Lighthouse-Clients: confirm by grep that `updateWorkTrackingConnection` (`packages/client/src/index.ts`) only
-  passes the response through; add an optional `queuedUpdates` to its type and a changelog line. Not checked here
-  (repository outside this session's root).
+- Usage-data event: settled by the sketch session (S7, `WorkTrackingSystemFieldsChanged` with `Updates: Now | Later`,
+  sent on the dialog's answer). DESIGN adds nothing that constrains it.
+- Lighthouse-Clients: the PUT's request and response shapes are unchanged, and the list read only gains an additive
+  `usedBy` field, so no client change is needed. Clients that save connections get the fan-out by default
+  (`startUpdates` absent means `true`). (Revised 2026-10-15 after S3: the `queuedUpdates` field and its changelog
+  line are gone.)
 
-For **DISTILL** (sketch session, before scenarios):
-- UI-1…UI-5 as listed by DISCUSS; DDD-13 is the proposal for UI-5, DDD-9 for the dialog trigger.
-- Whether the US-03 "later" copy wants counts; if so, the `usedBy` addition in DDD-9.
-- AC-1.5 / its scenario wording per `design/upstream-changes.md`.
+For **DISTILL** (settled by the sketch session S1–S7, 2026-10-15):
+- UI-1…UI-5: answered by S1–S6. DDD-6, DDD-7 and DDD-13 are superseded; DDD-9 is amended to the list read.
+- AC-1.5 / its scenario wording per `design/upstream-changes.md` (UC-1, accepted).
 
 For **DELIVER**:
 - The pinned-digest test lands in its own commit before `ForConnection` is lifted (refactor commit separate from
@@ -692,22 +715,22 @@ Kept deliberately short, by maintainer request (2026-10-15): this Story adds no 
 | Item | Answer |
 |---|---|
 | CI/CD | No new or changed workflow. Slice 01 edits `Program.cs` (one handler registration), which makes CI run the full backend Integration suite; expect the longer run, not a regression. |
-| Database / migrations | N/A, because nothing is stored: the fan-out queues existing updates and the save result is response-only. No `CreateMigration` run, no `HistoricalSchemaPatch` change. |
+| Database / migrations | N/A, because nothing is stored: the fan-out queues existing updates. No `CreateMigration` run, no `HistoricalSchemaPatch` change. |
 | Deployment / rollout | N/A, because there is no flag or staged rollout. The first save after upgrade behaves the new way; the fingerprint digest stays byte-identical (DESIGN's pinned-digest test), so the upgrade itself starts no downloads. |
 | Observability | One Information log line per fan-out with the connection id and the two counts, never field names (DESIGN). The Task Manager rows are the user-visible trace. No new metric or dashboard. |
 | Licensing / RBAC | N/A, because nothing new is gated (DESIGN). |
-| Lighthouse-Clients | N/A for a release: the clients type the connection PUT response as `unknown`, so the additive `queuedUpdates` field breaks nothing. Revisit only if `?startUpdates=false` is to be offered in `lh`/MCP. |
+| Lighthouse-Clients | N/A for a release: the clients type the connection PUT response as `unknown`, so any additive response field would break nothing. Revisit only if `?startUpdates=false` is to be offered in `lh`/MCP. |
 
 ## Wave: DEVOPS / [REF] Usage-data event
 
-**`WorkTrackingSystemFieldsChanged = 19`**, name-only, appended to `UsageDataEventName` (next integer after `ReportDeleted = 18`).
+**`WorkTrackingSystemFieldsChanged = 19`**, with one closed-enum property, appended to `UsageDataEventName` (next integer after `ReportDeleted = 18`).
 
-- **Sent when:** the browser saves an existing connection whose additional field definitions differ from the ones the page loaded. Not on a new connection (that is `WorkTrackingSystemConnected`), and not on a credential- or name-only save — the same reasoning the existing `WorkTrackingSystemConnected` comment gives for not counting a password change.
+- **Sent when:** the admin answers the update question (S1, S7): `Save and update` → `Now`, `Save only` → `Later`, after the save succeeds. Not on `Cancel`, not when no question showed (S5), not when the save is refused afterwards. Not on a new connection (that is `WorkTrackingSystemConnected`), and not on a credential- or name-only save — the same reasoning the existing `WorkTrackingSystemConnected` comment gives for not counting a password change.
 - **Answers:** how often admins change what a connection fetches, i.e. whether the save-then-update path is exercised at all.
-- **Carries:** nothing beyond the standard instance facts. Never a field name, reference or count.
-- **Property, only if slice 03 ships:** a closed enum `Updates: Now | Later`, because `OUT-6307-opt-out-rate` cannot be counted without it. Decided at the DISTILL sketch session together with UI-1; if the notice form wins, the event stays name-only.
-- **Emitted by:** the browser only, in `EditConnection.tsx` next to the existing `WorkTrackingSystemConnected` call. `lh`/MCP saves are not counted; acceptable for a usage signal.
-- **DELIVER step:** emitted in slice 02 (the slice whose save result the browser reads), and listed in `docs/settings/usagedata.md`, including bumping the "other N events" counts in its field table.
+- **Carries:** the standard instance facts and `Updates`. Never a field name, reference, id or count.
+- **Property:** a closed enum `Updates: Now | Later` (decided by S1 and S7), because `OUT-6307-opt-out-rate` cannot be counted without it.
+- **Emitted by:** the browser only, in the question's answer handler in `EditConnection.tsx`, after the save succeeds. `lh`/MCP saves are not counted; acceptable for a usage signal.
+- **DELIVER step (slice 03, the slice that gives the question its second answer):** add an `Updates` field to `UsageDataEventReported`, a declaration for it in `UsageDataEventShapes` and the matching clause in `Fits` (otherwise the event is refused for carrying a part it may not carry), the frontend mirror, and a row in `docs/settings/usagedata.md`'s field table (a fixed word, `Now` or `Later`, only on this event), bumping the "other N events" counts in the existing rows.
 
 ## Wave: DISTILL / [REF] Maintainer decisions — UI sketch session (2026-10-15)
 
@@ -722,3 +745,308 @@ Settles UI-1 to UI-5 and overrides DESIGN's DDD-6, DDD-7 and DDD-13 where they d
 | S5 | **With 0 {Teams} and 0 {Portfolios} on the connection, there is no dialog.** Save goes straight through and nothing is queued. | |
 | S6 | `Cancel` saves nothing and stays on the page with the edits intact. `Save only` saves with `startUpdates=false`, queues nothing and navigates to `/`. | |
 | S7 | Usage-data event `WorkTrackingSystemFieldsChanged` carries the closed enum `Updates: Now \| Later`. It is sent only when the dialog's choice is made (`Save and update` → `Now`, `Save only` → `Later`), not on `Cancel` and not when no dialog showed. | Updates DO-2. |
+
+## Wave: DISTILL / [REF] Reconciliation
+
+`[lang-mode] csharp + typescript` (NUnit partial-class `…Scenarios.cs` + `…Specifications.cs` on the backend, Vitest
++ RTL on the frontend). `[policy-mode] inherit`: every port in scope already has a row in
+`docs/architecture/atdd-infrastructure-policy.md` (HTTP through `TestWebApplicationFactory` with
+`WithTestAuthentication`, real EF over SQLite, the usage-data collector capture, the React component tree with
+`createMockApiServiceContext`), so nothing was appended. `[port-mode]` n/a: the project asserts through the wire,
+the Task Manager, the refresh history and the rendered page, not through a `state_delta` port.
+
+Prior waves read: this file (DISCUSS, DESIGN, DEVOPS and the sketch decisions S1 to S7), `wave-decisions.md` (the
+only wave-decisions file; there are no per-wave subfolders), `design/upstream-changes.md` (UC-1, accepted), the three
+slice briefs, ADR-238, `docs/product/architecture/brief.md`'s 6307 section, `.nwave/des-config.json` (no
+`deliverable_type`, so `application`), `docs/ci-learnings.md`. `kpi-contracts.yaml` has no 6307 entry; the outcome
+KPIs above are the contract.
+
+**Reconciliation passed — 0 contradictions.** Each tension between waves was already settled by the maintainer and is
+read as a change, not a contradiction:
+- D9 / AC-1.5 against DDD-10: UC-1, accepted. The scenario follows UC-1's wording.
+- D2 "no confirmation by default" against S1's dialog: D6 allowed a dialog, and S1 keeps `Save and update` as the
+  default answer.
+- US-02's after-save notice, DDD-6, DDD-7 and DDD-13: replaced by S3 (no notice, navigate as today) and S4 (counts in
+  the question).
+- DDD-9's dialog for an unused connection: replaced by S5 (no question with 0 and 0).
+- DO-2 (name-only, sent from slice 02 on any field save): replaced by S7.
+
+What this left behind in earlier documents is listed in `distill/upstream-issues.md`. DESIGN has since resolved the
+two largest items (DDD-17 puts `usedBy` on the list read; the save-result DTO is gone) and added DDD-16 (a stored
+save answers 200 even when the fan-out or the owner lookup fails).
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+Pending tests carry `[Ignore(Pending)]` or `it.skip`; rows marked **guard** run now and must stay green. Backend tags
+are NUnit `[Category]` attributes on every scenario method (`us-0N`, `walking_skeleton`, `driving_port`, `error`,
+`kpi`, `contract-shape:…`), with `acceptance`, `story-6307-refresh-on-additional-fields-change` and `slice-0N` on the
+fixture. Frontend tags are a comment line above each test. Backend files are under
+`Lighthouse.Backend/Lighthouse.Backend.Tests/`, frontend under `Lighthouse.Frontend/src/`.
+
+### Slice 01: a field change on a connection updates its Teams and Portfolios (backend)
+
+`API/Integration/ConnectionFieldChange/Slice01FieldChangeUpdatesItsOwnersScenarios.cs`
+
+| # | Scenario (cases) | Tags | AC |
+|---|---|---|---|
+| 1.1 | `Adding_a_field_lists_an_update_for_every_Team_and_Portfolio_on_the_connection_in_the_Task_Manager` | us-01, **walking_skeleton**, driving_port, kpi, bounded-change | AC-1.1, OUT-6307-time-to-populated (within 5 s) |
+| 1.2 | `Every_Team_and_Portfolio_on_the_connection_downloads_everything_once_after_a_field_is_added` | us-01, driving_port, kpi, bounded-change | AC-1.1, O5 |
+| 1.3 | `The_Teams_are_updated_before_any_Portfolio` | us-01, driving_port, bounded-change | DDD-11 |
+| 1.4 | `Any_other_field_edit_also_makes_every_Team_and_Portfolio_on_the_connection_download_everything` (3: rename, new reference, removal) | us-01, driving_port, bounded-change | AC-1.3 |
+| 1.5 | `A_Team_already_updating_or_waiting_is_not_downloaded_in_full_twice` | us-01, driving_port, **error**, kpi, bounded-change | AC-1.5 (UC-1), O5 |
+| 1.6 | `An_update_that_fails_leaves_the_field_saved_and_the_others_updating` | us-01, driving_port, **error**, bounded-change | AC-1.6 |
+| 1.7 | `The_Team_whose_update_failed_downloads_everything_at_its_next_update` (chained from 1.6 through `GivenPriyaAddedFixVersionsAndSaved` and `GivenTheUpdateOfHasFailed`; one When) | us-01, driving_port, **error**, bounded-change | AC-1.6 |
+| 1.8 | `Adding_a_field_on_the_community_licence_updates_every_Team_and_Portfolio_on_the_connection` | us-01, driving_port, bounded-change | AC-1.9 |
+| 1.9 | `A_save_that_asks_to_update_now_updates_every_Team_and_Portfolio_on_the_connection` | us-03, driving_port, bounded-change | ADR-238 point 6 |
+| 1.21 | `Adding_a_field_to_a_connection_only_Portfolios_read_from_lists_their_updates_in_the_Task_Manager` | us-01, driving_port, bounded-change | AC-1.1 at the Portfolio-only boundary |
+| 1.10 | `A_save_that_asks_for_neither_now_nor_later_is_refused_and_stores_nothing` (2: `maybe`, `later`); Then `ThenTheSaveIsRefusedBecauseItAsksForNeitherNowNorLater` | us-03, driving_port, **error**, unbounded-preservation | DDD-8 |
+
+`API/Integration/ConnectionFieldChange/Slice01SavesThatStartNothingScenarios.cs`, all **guards**:
+
+| # | Scenario (cases) | Tags | AC |
+|---|---|---|---|
+| 1.11 | `A_save_that_changes_nothing_the_Teams_and_Portfolios_ask_for_starts_no_update` (5: API token, name, Jira address, sign-in method, write-back mapping) | us-01, driving_port, **error**, kpi, unbounded-preservation | AC-1.2, O6 |
+| 1.22 | `Saving_the_same_fields_in_another_order_starts_no_update`: a second field is stored first, and the step checks the order it sends really differs from the one it read | us-01, driving_port, **error**, kpi, unbounded-preservation | AC-1.2, O6 |
+| 1.12 | `A_Team_on_another_connection_is_left_alone` | us-01, driving_port, **error**, unbounded-preservation | AC-1.4 |
+| 1.13 | `A_field_added_to_a_connection_nobody_uses_is_saved_and_starts_no_update` | us-01, driving_port, **error**, bounded-change | S5 at the port |
+| 1.14 | `A_save_that_is_refused_stores_nothing_and_starts_no_update` (3: someone else saved first, too many fields for the licence, an unfinished write-back mapping; `ThenTheSaveIsRefusedBecause(refusal)` maps them to 409, 403 and 400 inside the harness) | us-01, driving_port, **error**, unbounded-preservation | AC-1.7 |
+| 1.15 | `Saving_only_stores_the_field_and_starts_no_update` | us-03, driving_port, **error**, bounded-change | AC-3.1 |
+| 1.16 | `After_saving_only_the_next_scheduled_update_downloads_everything` (chained from 1.15: its When and Then become `GivenPriyaAddedFixVersionsAndSaved` and `GivenNoTeamOrPortfolioHasBeenUpdatedSince`) | us-03, driving_port, bounded-change | AC-3.3 |
+| 1.17 | `Looking_up_a_connection_that_registers_the_trackers_own_field_starts_no_update` | us-01, driving_port, **error**, unbounded-preservation | D11, ADR-238 point 5 |
+| 1.18 | `A_field_registered_by_a_lookup_does_not_make_the_next_save_start_updates` (chained from 1.17 through `GivenSomeoneHasLookedUpTheConnection`) | us-01, driving_port, **error**, unbounded-preservation | D11 |
+
+`Services/Implementation/WorkItems/FetchFingerprintPinnedDigestTest.cs`, **guard**: 1.19 a Team and 1.20 a
+Portfolio keep the fingerprint they already stored (contract-shape:pure-function; 6307-I1, DEVOPS rollout row).
+
+### Slice 02: the page asks before it updates the Teams and Portfolios
+
+`API/Integration/ConnectionFieldChange/Slice02ConnectionsSayWhoUsesThemScenarios.cs`
+
+| # | Scenario (cases) | Tags | AC |
+|---|---|---|---|
+| 2.1 | `The_connection_list_says_how_many_Teams_and_Portfolios_use_each_connection` (4: 4 and 2, 1 and 0, 0 and 0, and 0 and 2 for "Nordwind Jira Roadmaps", which only Portfolios read from) | us-02, driving_port, pure-function | DDD-17, S4 |
+
+`pages/Connections/Edit/EditConnection.fieldChange.test.tsx`, describe "slice 02":
+
+| # | Test (cases) | Tags | AC |
+|---|---|---|---|
+| 2.2 | adding a field and pressing Save asks whether to update the 4 Teams and 2 Portfolios on the connection | us-02, **walking_skeleton**, driving_port, bounded-change | S1, S4 |
+| 2.3 | Save and update saves the new field without holding the updates back (`startUpdates` absent or `true`) and returns to the overview, with no notice about the updates | us-02, driving_port, bounded-change | S1, S3 |
+| 2.4 | the question is asked whenever Priya %s (3: adds, renames, removes a field) | us-02, bounded-change | S1, AC-1.3 |
+| 2.5 | Cancel saves nothing and leaves Priya on the page with her new field still listed | us-02, **error**, unbounded-preservation | S6 |
+| 2.6 | with %s the question reads as such (5: one of each; Squads and Programs; one Squad and one Program; no Portfolio, `Update 3 Teams and 0 Portfolios?`; no Team, `Update 0 Teams and 2 Portfolios?`) | us-02, pure-function | S4, AC-2.3, ratified in AFK |
+| 2.7 | the explanation names the Teams and Portfolios in the words this instance uses | us-02, pure-function | S4, AC-2.3 |
+| 2.8 | changing a field no longer promises it will load with the next refresh | us-02, unbounded-preservation | S2 (replaces AC-1.8) |
+| 2.9 | when someone else saved the connection first, Save and update says so and stays on the page | us-02, **error**, unbounded-preservation | AC-1.7 at the page |
+| 2.10 | **guard**: a field change on a connection no Team or Portfolio uses is saved straight away without a question | us-02, **error**, unbounded-preservation | S5 |
+| 2.11 | **guard**: a save with only %s is saved straight away without a question (2: a new name, a new API token) | us-02, **error**, unbounded-preservation | AC-1.2 at the page |
+| 2.12 | **guard**: a field Priya started to add and then cancelled asks no question | us-02, **error**, unbounded-preservation | S1 ("differ from the ones loaded") |
+| 2.13 | **guard**: a field Priya added and removed again before saving asks no question | us-02, **error**, unbounded-preservation | S1 |
+| 2.14 | **guard**: a field change the tracker refuses asks no question and saves nothing | us-02, **error**, unbounded-preservation | S1 ("after validation passed") |
+| 2.16 | **guard**: setting up a new connection saves it without a question | us-02, **error**, unbounded-preservation | S1 ("an existing connection") |
+
+`services/Api/WorkTrackingSystemService.test.ts`: 2.15 keeps how many Teams and Portfolios use each connection from
+the list of connections (pending; us-02, driving_port, pure-function).
+
+The body sentences are matched on the dialog's whole text, so DELIVER may put them in one paragraph or two.
+
+### Slice 03: save now, update later
+
+`pages/Connections/Edit/EditConnection.fieldChange.test.tsx`, describe "slice 03":
+
+| # | Test (cases) | Tags | AC |
+|---|---|---|---|
+| 3.1 | the question offers to save only and says when the field fills in then | us-03, pure-function | AC-3.2, S4 |
+| 3.2 | Save only saves the new field, holds the updates back and returns to the overview, with no notice about the updates | us-03, driving_port, bounded-change | AC-3.1, S6 |
+| 3.3 | answering %s tells usage data the updates run %s and nothing else (2: Save and update → Now, Save only → Later) | us-03, kpi, bounded-change | S7, OUT-6307-opt-out-rate |
+| 3.4 | Cancel tells usage data nothing | us-03, **error**, unbounded-preservation | S7 |
+| 3.5 | a save refused because someone else saved first tells usage data nothing | us-03, **error**, unbounded-preservation | S7, ratified in AFK |
+| 3.6 | **guard**: a field change saved without a question tells usage data nothing | us-03, **error**, unbounded-preservation | S7 |
+
+`services/Api/WorkTrackingSystemService.test.ts`: 3.7 saving only asks the server to leave the updates to their next
+scheduled run (pending; us-03, driving_port, bounded-change; accepts the choice as a query string or as axios
+`params`).
+
+`Integration/UsageData/WorkTrackingSystemFieldsChangedUsageEventTests.cs` (fixture categories
+`epic-5733-opt-in-usage-data`, the story, `slice-03`):
+
+| # | Scenario (cases) | Tags | AC |
+|---|---|---|---|
+| 3.8 | `A_change_to_a_connections_fields_travels_with_when_the_updates_run_and_nothing_else` (2: Now, Later) | us-03, driving_port, kpi, bounded-change | S7 |
+| 3.9 | `…without_a_choice_from_the_list_or_carrying_anything_more_is_refused` (6) | us-03, driving_port, **error**, unbounded-preservation | S7, never personal |
+| 3.10 | `Any_other_event_carrying_the_choice_is_refused` (2) | us-03, driving_port, **error**, unbounded-preservation | S7 |
+| 3.11 | `The_event_is_named_and_every_event_named_before_it_keeps_its_number` (the 19 existing names and numbers as a golden list) | us-03, bounded-change | DO-2 (append, never renumber) |
+| 3.12 | `The_usage_data_page_has_a_row_for_a_change_to_a_connections_fields_naming_both_choices` | us-03, bounded-change | DO-2 docs step |
+
+**Counts.** Backend 47 cases: 30 pending, 17 guards. Frontend 30: 22 pending, 8 guards. Error or edge cases: 27 of 47
+on the backend, 12 of 30 on the frontend, 39 of 77 overall (51 %).
+
+## Wave: DISTILL / [REF] WS strategy
+
+Strategy B (extend existing), as DISCUSS decided. One `@walking_skeleton` per slice that has a demo: 1.1 is "Priya
+adds Fix Versions and the Task Manager lists the 4 Teams and 2 Portfolios", 2.2 is "the page asks `Update 4 Teams and
+2 Portfolios?`". Slice 03 adds a button to slice 02's skeleton and has none of its own. Both skeletons are pending like
+every other new scenario, as in story 6251, so the hand-off suite is green.
+
+## Wave: DISTILL / [REF] Environment coverage
+
+DEVOPS named no environment matrix (no infrastructure change). The backend host is a fresh SQLite instance with
+seeded terminology (`clean`).
+
+| Environment | Covered by | How |
+|---|---|---|
+| clean, premium licence | every backend scenario but 1.8 | fresh SQLite per test, premium licence stand-in |
+| community licence | 1.8, 1.14 (403 case) | a small instance (3 Teams, 1 Portfolio) inside the community update limits; one field allowed, a second refused |
+| renamed Terminology | 2.6, 2.7 | Squad/Squads and Program/Programs through the real `TerminologyProvider` |
+| Postgres | **waived** | the acceptance host runs SQLite only; the change adds no query a provider could disagree on beyond a count per connection, which DELIVER checks once on the dev instance |
+| demo data / E2E | **waived** | see E2E impact |
+
+## Wave: DISTILL / [REF] Test placement
+
+- Backend acceptance: `Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/`, a story folder with its own
+  harness `ConnectionFieldChangeAcceptanceTest` (real host, fresh SQLite, System Admin client, a stand-in tracker
+  that holds one stamped item per Team and Portfolio, can hold every answer and can refuse one Team; Nordwind's three
+  connections, five Teams and two Portfolios seeded by name, plus Nordwind Jira Roadmaps with Roadmap North and South where a scenario asks for it). One partial-class pair per behaviour group:
+  `Slice01FieldChangeUpdatesItsOwners…`, `Slice01SavesThatStartNothing…`, `Slice02ConnectionsSayWhoUsesThem…`.
+- Backend usage data: `Integration/UsageData/WorkTrackingSystemFieldsChangedUsageEventTests.cs`, on
+  `UsageDataCollectorObservationTest` like `ReportUsageEventsTests`.
+- Backend unit guard: `Services/Implementation/WorkItems/FetchFingerprintPinnedDigestTest.cs`.
+- Frontend: `pages/Connections/Edit/EditConnection.fieldChange.test.tsx` (the real page down to the Additional
+  Fields editor; the server, router, RBAC gate, licence hook and usage reporter are stand-ins) and two tests appended
+  to `services/Api/WorkTrackingSystemService.test.ts`.
+- Test-time budget: the backend guards run in 25 s for the three classes together, inside the 34 s per class warning.
+  The pending slice 01 scenarios each wait for at most six updates of one stamped item, a few seconds once green.
+  Frontend: the new file's 8 guards take about 3 s of test time.
+
+## Wave: DISTILL / [REF] Driving-port coverage
+
+| Driving port | How the scenario reaches it | Scenarios |
+|---|---|---|
+| `PUT /api/latest/worktrackingsystemconnections/{id}` with and without `?startUpdates=` | HTTP, System Admin, body = the list read with the edit applied | 1.1–1.18, 1.21, 1.22 |
+| `GET /api/latest/worktrackingsystemconnections` (list) | HTTP; also the source of every PUT body | 2.1, every save |
+| UI `/connections/new`, Create | the rendered wizard | 2.16 |
+| `GET /api/latest/worktrackingsystemconnections/{id}` | HTTP, the read that registers a tracker's own fields | 1.17, 1.18 |
+| `GET /api/latest/update/tasks` (Task Manager) | HTTP, polled up to 5 s | 1.1, 1.5, the "starts no update" guards |
+| Refresh history | `IRefreshLogService`, the store the refresh history page reads | 1.2–1.10, 1.16 |
+| `POST /api/latest/usagedata/events` | HTTP with a consent token, collector capture | 3.8–3.12 |
+| UI `/connections/:id/edit`, Save | the rendered page | 2.2–2.14, 3.1–3.6 |
+| Frontend `WorkTrackingSystemService` | the service against mocked axios | 2.15, 3.7 |
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+No new driven adapter.
+
+| Adapter | Treatment | Covered by |
+|---|---|---|
+| EF `LighthouseAppContext` (connections, fields, Teams, Portfolios, work items, features, refresh log) | real, SQLite | every backend acceptance scenario |
+| `UpdateQueueService`, the update status store, `TeamUpdater`, `PortfolioUpdater` | real, through the host (hosted services removed, queue still runs) | 1.1–1.22 |
+| `IDomainEventDispatcher` | real, through the host | the fan-out DELIVER adds; 1.1–1.10 |
+| `IWorkTrackingConnector` (the tracker) | Moq stand-in from the connector factory: one stamped item per owner, incremental sync supported, held answers, per-Team 403 | 1.1–1.22 |
+| Licence service | Moq, premium by default, community in 1.8 and 1.14 | 1.8, 1.14 |
+| `IForecastService` | Moq, so a Portfolio's update does not run a forecast | every backend scenario |
+| Usage-data collector | the observation harness's outbound capture | 3.8–3.10 |
+| Frontend API services, terminology service | `createMockApiServiceContext` and `createMockWorkTrackingSystemService` | 2.2–2.14, 3.1–3.6 |
+| Frontend usage reporter | `vi.mock`, the `ReportsTab.createWizard` precedent | 3.3–3.6 |
+
+## Wave: DISTILL / [REF] Scaffolds
+
+None. Every scenario goes through HTTP or the rendered page, and the frontend tests that call a new signature do so
+through a cast (`SavesWithAChoice`) or read a new field off an `Object.assign`ed connection, so they compile against
+today's types. Nothing in production code was touched.
+
+## Wave: DISTILL / [REF] Existing-test disposition
+
+- No existing test pins the "Additional Fields will be loaded with the next refresh of data." alert, so removing it
+  breaks nothing.
+- **The service signature is a DISTILL decision:** `updateWorkTrackingSystemConnection(connection, { startUpdates })`,
+  the second argument optional. 3.7 calls it that way; 2.3 accepts `startUpdates` absent or `true` for Save and
+  update, and 3.2 requires exactly `{ startUpdates: false }` for Save only.
+- `WorkTrackingSystemService.test.ts` "should update a work tracking system connection" pins
+  `put(url, connection)` with exactly two arguments. That stays true for `Save and update` if DELIVER passes the
+  choice only when it is `false`; if DELIVER adds a third argument always, that test changes with it.
+- `EditConnection.test.tsx` mocks `AdditionalFieldsEditor` and is unaffected.
+- No existing backend test asserts that a connection save starts nothing; the full Integration suite runs in CI
+  because slice 01 edits `Program.cs` (DO-1).
+
+## Wave: DISTILL / [REF] E2E impact
+
+**No Playwright spec.** The thin walking skeleton would edit a connection's Additional Fields on demo data, and the
+demo data's only connection is CSV, for which the Additional Fields editor disables "Add Field". A Jira or Azure
+DevOps connection would need live credentials, which walking skeletons do not use and which spend a quota CI shares.
+No existing spec edits connection fields through the UI (the E2E helpers create connections by POST only), so none
+needs changing. The two halves are covered without it: the HTTP walking skeleton 1.1 (save to Task Manager rows) and
+the page walking skeleton 2.2 (field edit to question).
+
+## Wave: DISTILL / [REF] Slice reshape proposal
+
+For the maintainer, who has not seen it yet. The slice briefs under `slices/` are rewritten to match; their file
+names are kept.
+
+| Slice | Was (DISCUSS) | Now | Ships alone because |
+|---|---|---|---|
+| 01 | fan-out + the pre-save hint copy | **backend only**: fan-out through an event and handler, `?startUpdates=true\|false`, pinned digest; the page untouched | every field save, from the page, `lh` or MCP, starts the updates; the old alert stays and is merely pessimistic |
+| 02 | after-save notice with counts | **the question**: `usedBy` on the list, the dialog with `Cancel` and `Save and update`, Terminology plurals, alert removed | the admin learns before saving how many updates the save starts, and can back out |
+| 03 | conditional "save without updating" | **`Save only`** and its sentence, plus the usage-data event `WorkTrackingSystemFieldsChanged { updates: Now \| Later }` | the choice of moment; the event's one property only exists once there are two answers |
+
+**02 and 03 stay separate.** Each tests its own hypothesis (that the count is enough to trust the field; that the
+moment matters), and slice 02 is useful without slice 03. The cost of keeping them apart is one more frontend pass
+over the same dialog, about an hour. The event moving from slice 02 to slice 03 is on the ratification list in
+`distill/upstream-issues.md`.
+
+## Wave: DISTILL / [REF] Upstream findings
+
+Recorded in `distill/upstream-issues.md`. Resolved by DESIGN since: the counts on the list read (DDD-17) and the
+save-result DTO (gone). Still open for the earlier waves' text: US-02, AC-1.5, AC-1.8, AC-3.4 and DO-2 as reshaped.
+The Jira sync-path registration and a stored save whose fan-out or owner lookup fails (200 per DDD-16) are DELIVER
+unit tests, as DESIGN assigns them.
+
+**Decided in AFK, revisit** (maintainer proxy, 2026-10-15):
+- A count of zero keeps its place in the title: `Update 3 Teams and 0 Portfolios?`, `Update 0 Teams and 2 Portfolios?`.
+- A save refused after the question sends no usage event.
+- The usage event lives in slice 03.
+
+**The usage event's one property** is `updates`, a closed enum `Now | Later`, never free text, an id or a count. It is
+the only capability-use property the event adds.
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- The premium licence fixture is not needed: the backend stubs the licence service.
+- No migration and no demo-data change.
+- The usage-data page row and the `UsageDataEventName` append are DELIVER's slice 03 work; 3.11 and 3.12 pin them.
+
+## Wave: DISTILL / [REF] Completeness audit
+
+`nw-at-completeness-check`, 15 items, no domain extension opted in. **13 of 15: COMPLETE.**
+
+| Item | Verdict | Evidence |
+|---|---|---|
+| C1a empty / zero | pass | 1.13, 2.1 (0 and 0), 2.10 |
+| C1b partition boundary | pass | community licence: one field accepted (1.8), the second refused (1.14); a connection only Portfolios read from (1.21, 2.1, 2.6) |
+| C2a state machine documented | pass | the harness summary: waiting or running is a Task Manager row, finished is a refresh-history entry, full or partial |
+| C2b illegal event per state | pass | running and waiting at the save (1.5), failed (1.6, 1.7), question open then Cancel (2.5) |
+| C3 0 / 1 / many | pass | 2.1 and 2.6 (0, 1, many owners of each kind); 1.4 removal leaves no field; 1.22 two fields |
+| C4a apply twice | pass | the same fields saved again in another order (1.22); a lookup's registration then a save (1.18) |
+| C4b inverse without prerequisite | pass (n/a) | there is no undo of a save; `Cancel` before anything is saved is 2.5 |
+| C5a mode flag combinations | pass | `startUpdates` absent (1.2), `true` (1.9), `false` (1.15), invalid (1.10); with and without a question (2.2, 2.10) |
+| C5b flag orthogonality | pass | `false` stores exactly what a normal save stores (1.15, 1.16) |
+| C6a malformed input | pass | `maybe`, `later` (1.10); `Soon`, `now`, empty (3.9) |
+| C6b each declared error | pass | 409, 403, 400 (1.14, 2.9), 400 on the choice (1.10), refused events (3.9, 3.10) |
+| C6c closed error set | **gap** | no test asserts that nothing but 400, 403, 404 and 409 can come back; documented, not in scope |
+| C7a degraded resource | pass | the tracker refuses one Team (1.6, 1.7) |
+| C7b interruption | **gap at this level** | a fan-out or owner lookup failing after the save cannot be forced through the host; DESIGN (DDD-16) assigns it to a DELIVER unit test of the controller (200, save stored) |
+| C7c concurrency | pass | someone else saved first (1.14, 2.9); updates already running or waiting (1.5) |
+
+Audit log: `(story-6307, C6, 1, low)`, `(story-6307, C7, 1, medium)`. No SPECIFICATION_AMBIGUITY blocks: DDD-16
+answers the C7b question, and DELIVER pins it with a unit test.
+
+## Wave: DISTILL / [REF] Mandates that do not apply here
+
+- Mandate 8 (`assert_state_delta`) and Mandate 12's `domain_types.py`: the project's Infrastructure Policy asserts
+  through the wire and the page in C# and TypeScript. The universe is spelled out in the observations instead: the
+  Task Manager list and the refresh history are compared as whole sets ("exactly these owners, nothing else"), and
+  the usage event as its whole property set.
+- Mandate 9 / PBT: no property-based tests. The inputs are a handful of named edits and answers, enumerated with
+  `TestCase` and `it.each`; everything is layer 3 or above (HTTP host, rendered page), where the mandate asks for
+  examples.
+- Step reuse, informational: the backend scenarios call 37 distinct steps 116 times (about 3.1 each); the page tests
+  share 18 helpers.

@@ -135,7 +135,8 @@ consistent with ADR-138's rule that ambiguity always resolves to the expensive a
   fan-out write and of the partial-failure question that comes with one.
   **Amended 2026-10-15 (story 6307, proposed, pending maintainer approval):** a save through the connection PUT
   that moves the connection's share of the fingerprint now starts an update of every Team and Portfolio on the
-  connection at once, through a domain event and the update queue
+  connection by default; the browser asks first, with a Save-only choice (`startUpdates=false`). The updates go
+  through a domain event and the update queue
   ([ADR-238](./adr-238-a-connection-save-that-moves-the-fetch-fingerprint-starts-the-affected-updates.md)). It is
   still not a fan-out *write*: the save enqueues, and each owner fetches, fails and recovers on its own, because its
   fingerprint is written only after its own fetch. Connection changes made outside the PUT (predefined fields
