@@ -445,3 +445,49 @@ in step names that read what no port shows. The SUT is the production compositio
 - **Architect** (solution architect reviewer): N/A, because the maintainer skipped DESIGN.
 - **Forge** (platform architect reviewer): N/A, because the maintainer skipped DEVOPS.
 - **Eclipse re-review** (revision cycle 1): approved, 0 blockers / 0 high / 3 lows. The examples block now cites #9 for the fill after a restore, names Project Apollo as a Portfolio, and DoD 5 lists the regenerated `configuration.png`.
+
+---
+
+## Wave: DELIVER / [REF] Implementation summary
+
+The over-time history fill always runs. The switch port is gone, and the reconciler and the filler check
+nothing. The `OverTimeHistoryFill` row is retired through the optional-feature seeder's deprecated keys. The
+one-time switch-on record is removed by key in `AppSettingSeeder`, and #6083's restore rule is deleted.
+
+**Commits** (rebased onto origin/main):
+- `34132c4f2`: step 01-01
+- `a11f7de49`: step 01-02
+- `18e70b108`, `c5e5d4608`, `dfd560f41`: refactor
+- `2469fef4c`, `f4970c4be`: docs
+- `27148d051`, `f4d6105e3`, `10982b3b0`: review fixes
+
+## Wave: DELIVER / [REF] Scenarios green count
+
+All 16 DISTILL cases are green: #1–#7 (12 cases), #8, #9, #10 and #11. No `PendingDeliver` marker remains.
+
+## Wave: DELIVER / [REF] DoD check
+
+| # | Item | Result |
+|---|------|--------|
+| 1 | No production reference to the switch; the key is named only in the key list and the seeder | PASS (enforced by the ArchUnit seam test) |
+| 2 | Fresh, upgraded-on, upgraded-off and restored instances: no row, no record, and the chart fills | PASS (#1–#9) |
+| 3 | ArchUnit confinement updated | PASS |
+| 4 | #6083's suite and #6053's opt-in tests retired or rewritten | PASS |
+| 5 | Docs, `ARCHITECTURE.md`, ADR-207, `configuration.png` | Docs PASS. `configuration.png` **owed**: regenerate at hold |
+| 6 | Lighthouse-Clients copy and patch release | **Owed.** This session is limited to the Lighthouse worktree, so the clients repo could not be edited |
+| 7 | Release-notes line | vNext line written. The ADO `Release Notes` tag is **owed** and needs maintainer confirmation |
+| 8 | Build and test gates | Backend PASS (filtered 10044/0; Integration 10/0). Frontend: `pnpm build` PASS. Full `pnpm test`: PASS before the refactor; after it, red only on timeouts from machine load, with the affected files 583/583 when run alone. E2E: touched specs 10/10 locally. **The full E2E run was skipped by the maintainer** and runs in CI |
+| 9 | SonarCloud, Stryker | Stryker **skipped by the maintainer**: the story is deletion-shaped, and its new logic is pinned by tests that were run red first. Sonar runs in CI |
+
+## Wave: DELIVER / [REF] Quality gates
+
+- **Refactor (L1–L6):** 3 commits; production needed nothing.
+- **Adversarial review:** 0 blockers, 1 high fixed and proven, 6 lows fixed.
+- **Mutation:** skipped by the maintainer.
+- **DES integrity:** exit 0.
+
+## Wave: DELIVER / [REF] Demo evidence
+
+The elevator pitch's "After" is a UI and HTTP observation. Its HTTP half, `GET /api/latest/optionalfeatures`
+holding no `OverTimeHistoryFill`, is the walking-skeleton scenario #1, run against the real host. Its chart
+half is scenario #8: the charts fill on an instance whose admin had switched the fill off.
