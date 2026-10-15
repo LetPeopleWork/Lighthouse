@@ -224,7 +224,6 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	>([]);
 	const [isEditMode, setIsEditMode] = useState(false);
 	const [inputsValid, setInputsValid] = useState(false);
-	const [fieldsModified, setFieldsModified] = useState(false);
 	const [loadedFields, setLoadedFields] = useState<
 		IAdditionalFieldDefinition[]
 	>([]);
@@ -768,19 +767,9 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 							}
 							fields={additionalFields}
 							onChange={setAdditionalFields}
-							onFieldsChanged={() => {
-								setFieldsModified(true);
-							}}
+							onFieldsChanged={() => undefined}
 						/>
 					</Grid>
-
-					{fieldsModified && (
-						<Grid size={{ xs: 12 }}>
-							<Alert severity="info">
-								Additional Fields will be loaded with the next refresh of data.
-							</Alert>
-						</Grid>
-					)}
 
 					{/* Sync with Source (Write-Back Mappings) */}
 					<Grid size={{ xs: 12 }}>

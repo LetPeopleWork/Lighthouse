@@ -368,7 +368,7 @@ describe("Story #6307 - changing a connection's Additional Fields asks whether t
 		});
 
 		// @driving_port @us-02 @contract-shape:bounded-change
-		it.skip(`${Pending}: Save and update saves the new field without holding the updates back and returns to the overview`, async () => {
+		it(`${Pending}: Save and update saves the new field without holding the updates back and returns to the overview`, async () => {
 			const server = await givenPriyaOpensNordwindJiraDc();
 			await whenPriyaAddsFixVersions();
 			whenPriyaPressesSave();
@@ -387,7 +387,7 @@ describe("Story #6307 - changing a connection's Additional Fields asks whether t
 		});
 
 		// @us-02 @contract-shape:bounded-change
-		it.skip.each(FieldEdits)(
+		it.each(FieldEdits)(
 			`${Pending}: the question is asked whenever Priya %s`,
 			async (_, edit) => {
 				await givenPriyaOpensNordwindJiraDc();
@@ -402,7 +402,7 @@ describe("Story #6307 - changing a connection's Additional Fields asks whether t
 		);
 
 		// @error @us-02 @contract-shape:unbounded-preservation
-		it.skip(`${Pending}: Cancel saves nothing and leaves Priya on the page with her new field still listed`, async () => {
+		it(`${Pending}: Cancel saves nothing and leaves Priya on the page with her new field still listed`, async () => {
 			const server = await givenPriyaOpensNordwindJiraDc();
 			await whenPriyaAddsFixVersions();
 			whenPriyaPressesSave();
@@ -476,7 +476,7 @@ describe("Story #6307 - changing a connection's Additional Fields asks whether t
 		});
 
 		// @us-02 @contract-shape:unbounded-preservation
-		it.skip(`${Pending}: changing a field no longer promises it will load with the next refresh`, async () => {
+		it(`${Pending}: changing a field no longer promises it will load with the next refresh`, async () => {
 			await givenPriyaOpensNordwindJiraDc();
 
 			await whenPriyaAddsFixVersions();
@@ -485,7 +485,7 @@ describe("Story #6307 - changing a connection's Additional Fields asks whether t
 		});
 
 		// @error @us-02 @contract-shape:unbounded-preservation
-		it.skip(`${Pending}: when someone else saved the connection first, Save and update says so and stays on the page`, async () => {
+		it(`${Pending}: when someone else saved the connection first, Save and update says so and stays on the page`, async () => {
 			const server = await givenPriyaOpensNordwindJiraDc({
 				save: () => Promise.reject(new ApiError(409, "Conflict")),
 			});
