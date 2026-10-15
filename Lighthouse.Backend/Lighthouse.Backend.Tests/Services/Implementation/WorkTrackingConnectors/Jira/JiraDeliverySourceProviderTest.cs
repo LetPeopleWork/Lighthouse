@@ -182,6 +182,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static readonly string[] TheProjectKeysInTheCapturedPayload = ["LGH", "NULLNAME", "NONAME"];
 
+        /// <summary>
+        /// The project list as Data Center's rest/api/2/project documents it: a bare array, not a page.
+        /// </summary>
+        private const string CapturedDataCenterProjectList = """
+            [
+              {
+                "self": "https://jira.example.invalid/rest/api/2/project/10000",
+                "id": "10000",
+                "key": "LGH",
+                "name": "Lighthouse Demo",
+                "projectTypeKey": "software"
+              },
+              {
+                "self": "https://jira.example.invalid/rest/api/2/project/10001",
+                "id": "10001",
+                "key": "REL",
+                "name": "Release coordination",
+                "projectTypeKey": "software"
+              }
+            ]
+            """;
+
+        private static readonly string[] TheProjectKeysInTheDataCenterProjectList = ["LGH", "REL"];
+
+        private static readonly string[] TheReleasesOfTwoDataCenterProjects = [TheDatedRelease, "10101"];
+
+        private static readonly string[] TheUnreleasedReleasesOfTheReleaseProject = [TheDatedRelease, TheUndatedRelease];
+
+        private static readonly string[] TheUnreleasedReleasesAcrossThreePages = [TheDatedRelease, "10007"];
+
         [Test]
         public void A_Jira_connection_offers_its_Releases_as_a_delivery_source()
         {
@@ -262,6 +292,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(projects[2].Name, Is.Empty,
                     "a name that never arrived reads the same way - never a stand-in the picker would then show to a reader.");
                 Assert.That(isLastPage, Is.True);
+            }
+        }
+
+        [Test]
+        public void A_Data_Center_project_list_arrives_as_a_bare_array_and_is_read_by_key_and_by_name()
+        {
+            var projects = JiraReleaseVersionReader.ReadProjectList(CapturedDataCenterProjectList);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(projects.Select(project => project.Key), Is.EqualTo(TheProjectKeysInTheDataCenterProjectList),
+                    "Data Center lists every project in one answer with no page around it, so the array itself is the list.");
+                Assert.That(projects[0].Name, Is.EqualTo("Lighthouse Demo"));
+            }
+        }
+
+        [TestCase("[]")]
+        [TestCase("[{\"key\":\"LGH\",\"name\":\"Lighthouse Demo\"}]")]
+        [TestCase("\"Not Found\"")]
+        [TestCase("42")]
+        public void A_page_whose_root_is_not_an_object_reads_as_empty_and_last_rather_than_throwing(string payload)
+        {
+            var (projects, isLastPage) = JiraReleaseVersionReader.ReadProjectPage(payload);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(projects, Is.Empty,
+                    "a page with no envelope has no values to read, and asking it for one throws an exception nothing upstream expects - which turns an empty picker into a failed request.");
+                Assert.That(isLastPage, Is.True,
+                    "nothing on it says more is coming, and a caller told otherwise would ask for the same page forever.");
             }
         }
 
@@ -518,6 +578,61 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             Assert.That(options.Select(option => option.Id), Is.EquivalentTo(TheDatedReleaseOnItsOwn),
                 "one project the credential may list but not read must not take the whole picker away from a reader with perfectly good projects to choose from.");
+        }
+
+        [TestCase(false, TestName = "GetOptions on a Data Center Jira offers the unreleased Releases of every project")]
+        [TestCase(true, TestName = "GetOptions on a Jira that will not say which kind it is still offers the unreleased Releases of every project")]
+        public async Task GetOptions_on_a_Data_Center_Jira_offers_the_unreleased_Releases_of_every_project(bool hidesItsDeployment)
+        {
+            var jira = new FakeJiraDataCenter { HidesItsDeployment = hidesItsDeployment }
+                .WithProject(TheWorkProject, "The work")
+                .WithProject(TheReleaseProject, "Release coordination")
+                .WithReleaseIn(TheWorkProject, "10101", "Release 44", "2026-09-01")
+                .WithReleaseIn(TheReleaseProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira);
+
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var options = await subject.GetOptions(FakeJiraDataCenter.AConnection(), JiraReleaseSourceKey);
+
+            Assert.That(options.Select(option => option.Id), Is.EquivalentTo(TheReleasesOfTwoDataCenterProjects),
+                "Data Center has no rest/api/3 and no project search, so a picker that only knows Cloud's routes comes up empty on every on-premise instance.");
+        }
+
+        [Test]
+        public async Task GetOptions_on_a_Data_Center_Jira_leaves_out_released_and_archived_Releases_even_though_the_route_cannot_filter_by_status()
+        {
+            var jira = new FakeJiraDataCenter()
+                .WithProject(TheReleaseProject, "Release coordination")
+                .WithReleaseIn(TheReleaseProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira)
+                .WithShippedReleaseIn(TheReleaseProject, TheShippedRelease, "Release 0.8", "2026-07-01")
+                .WithArchivedReleaseIn(TheReleaseProject, TheDeletedRelease, "Release 0.9", "2025-01-15")
+                .WithReleaseIn(TheReleaseProject, TheUndatedRelease, TheUndatedReleaseName, releaseDate: null);
+
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var options = await subject.GetOptions(FakeJiraDataCenter.AConnection(), JiraReleaseSourceKey);
+
+            Assert.That(options.Select(option => option.Id), Is.EquivalentTo(TheUnreleasedReleasesOfTheReleaseProject),
+                "Data Center hands back every version whatever status is asked for, so the picker offers the same set Cloud's filter gives it only if the finished ones are dropped here.");
+        }
+
+        [Test]
+        public async Task GetOptions_on_a_Data_Center_Jira_pages_through_a_projects_versions()
+        {
+            var jira = new FakeJiraDataCenter { VersionsPerPage = 1 }
+                .WithProject(TheReleaseProject, "Release coordination")
+                .WithReleaseIn(TheReleaseProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira)
+                .WithShippedReleaseIn(TheReleaseProject, TheShippedRelease, "Release 0.8", "2026-07-01")
+                .WithReleaseIn(TheReleaseProject, "10007", "Release 2.0", "2026-09-01");
+
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var options = await subject.GetOptions(FakeJiraDataCenter.AConnection(), JiraReleaseSourceKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(options.Select(option => option.Id), Is.EquivalentTo(TheUnreleasedReleasesAcrossThreePages),
+                    "the Release on the last page is as much a Release as the one on the first, and the one dropped in between must not move where the next page starts.");
+                Assert.That(jira.VersionListRequests, Has.Count.EqualTo(3),
+                    "one page per version, because Jira is asked to start each page where the previous one ended, not where the kept Releases ended.");
+            }
         }
 
         [Test]

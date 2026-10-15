@@ -15,7 +15,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// The projects the credential can see, as key and name.
         /// </summary>
         public static (IReadOnlyList<DeliverySourceProject> Projects, bool IsLastPage) ReadProjectPage(string projectPagePayload)
-            => ReadPage(projectPagePayload, project => new DeliverySourceProject(ReadText(project, "key"), ReadText(project, "name")));
+            => ReadPage(projectPagePayload, ToProject);
+
+        /// <summary>
+        /// The projects the credential can see, from Data Center's project list. It answers with every project at
+        /// once as a bare array rather than a page, so there is no envelope to take off and no next page to ask for.
+        /// </summary>
+        public static IReadOnlyList<DeliverySourceProject> ReadProjectList(string projectListPayload)
+        {
+            using var payload = JsonDocument.Parse(projectListPayload);
+            var root = payload.RootElement;
+
+            if (root.ValueKind != JsonValueKind.Array)
+            {
+                return [];
+            }
+
+            return [.. root.EnumerateArray().Select(ToProject)];
+        }
 
         /// <summary>
         /// One page of a project's versions. The paginated endpoint wraps the same version objects the bare
@@ -129,6 +146,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             using var payload = JsonDocument.Parse(pagePayload);
             var root = payload.RootElement;
 
+            // A root that is not an object has no envelope to ask about, and asking anyway throws.
+            if (root.ValueKind != JsonValueKind.Object)
+            {
+                return ([], true);
+            }
+
             var isLastPage = !root.TryGetProperty("isLast", out var isLast) || isLast.ValueKind != JsonValueKind.False;
 
             if (!root.TryGetProperty("values", out var values) || values.ValueKind != JsonValueKind.Array)
@@ -140,6 +163,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             return (parsed, isLastPage);
         }
+
+        private static DeliverySourceProject ToProject(JsonElement project)
+            => new(ReadText(project, "key"), ReadText(project, "name"));
 
         private static DeliverySourceOption ToOption(JsonElement version, DeliverySourceProject project)
         {

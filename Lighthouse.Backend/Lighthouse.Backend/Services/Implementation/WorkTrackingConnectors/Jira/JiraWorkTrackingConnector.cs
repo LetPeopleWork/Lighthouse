@@ -2815,9 +2815,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private const int ProjectPageSize = 100;
 
+        private const string CloudProjectSearchRoute = "rest/api/3/project/search";
+
+        private const string ProjectSearchRoute = "rest/api/2/project/search";
+
+        private const string ProjectListRoute = "rest/api/2/project";
+
         private const int VersionPageSize = 50;
 
-        // The picker is asked for unreleased Releases only, so a finished one never crosses the wire. A
+        // The picker is asked for unreleased Releases only, so a finished one is never offered (Cloud leaves it
+        // out of the answer, and on Data Center, which cannot, it is dropped once it arrives). A
         // Release nobody dated is still listed and refused, because the reader can go and date it and come
         // straight back; archived and released both say the Release is finished with, and there is nothing
         // a reader could do about a row like that except wonder why it was offered.
@@ -2899,9 +2906,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// deletion may retire a binding.
         /// </summary>
         private async Task<(IReadOnlyList<DeliverySourceOption> Releases, bool SawEverything)> SweepReleases(
-            HttpClient client, string statuses)
+            HttpClient client, JiraDeployment deployment, string statuses)
         {
-            var (projects, listedEveryProject) = await ReadVisibleProjects(client);
+            var (projects, listedEveryProject) = await ReadVisibleProjects(client, deployment);
 
             logger.LogDebug("Getting Releases of {ProjectCount} Jira projects", projects.Count);
 
@@ -2911,7 +2918,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 0,
                 projects.Count,
                 new ParallelOptions { MaxDegreeOfParallelism = MaxParallelProjectReads },
-                async (index, _) => readsByProject[index] = await ReadReleasesOf(client, projects[index], statuses));
+                async (index, _) => readsByProject[index] = await ReadReleasesOf(client, deployment, projects[index], statuses));
 
             IReadOnlyList<DeliverySourceOption> releases = [.. readsByProject.SelectMany(read => read.Releases)];
             var sawEverything = listedEveryProject && Array.TrueForAll(readsByProject, read => read.SawEverything);
@@ -2925,22 +2932,46 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// list: a picker that comes up empty tells the reader something, and one that fails mid-request
         /// tells them nothing.
         /// </summary>
-        private async Task<(IReadOnlyList<DeliverySourceProject> Projects, bool SawEverything)> ReadVisibleProjects(HttpClient client)
+        private async Task<(IReadOnlyList<DeliverySourceProject> Projects, bool SawEverything)> ReadVisibleProjects(
+            HttpClient client, JiraDeployment deployment)
+        {
+            if (deployment == JiraDeployment.DataCenter)
+            {
+                return await ReadProjectList(client, deployment);
+            }
+
+            var searchRoute = deployment == JiraDeployment.Cloud ? CloudProjectSearchRoute : ProjectSearchRoute;
+            var (projects, refusal) = await ReadProjectSearchPages(client, searchRoute);
+
+            // Only Cloud serves the paged search. Data Center reads "search" as a project key and answers that no
+            // such project exists, so a Jira that would not say which kind it is gets the plain list instead.
+            if (deployment == JiraDeployment.Unknown && refusal == HttpStatusCode.NotFound)
+            {
+                return await ReadProjectList(client, deployment);
+            }
+
+            if (refusal is { } status)
+            {
+                LogTheProjectListWasRefused(searchRoute, deployment, status);
+
+                return (projects, false);
+            }
+
+            return (projects, true);
+        }
+
+        private static async Task<(List<DeliverySourceProject> Projects, HttpStatusCode? Refusal)> ReadProjectSearchPages(
+            HttpClient client, string route)
         {
             var projects = new List<DeliverySourceProject>();
 
             while (true)
             {
-                var response = await client.GetAsync(
-                    $"rest/api/3/project/search?startAt={projects.Count}&maxResults={ProjectPageSize}");
+                var response = await client.GetAsync($"{route}?startAt={projects.Count}&maxResults={ProjectPageSize}");
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    logger.LogInformation(
-                        "Jira did not let us list the projects on this connection ({StatusCode}) - no Releases can be offered",
-                        response.StatusCode);
-
-                    return (projects, false);
+                    return (projects, response.StatusCode);
                 }
 
                 var (page, isLastPage) = JiraReleaseVersionReader.ReadProjectPage(await response.Content.ReadAsStringAsync());
@@ -2948,10 +2979,38 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 if (isLastPage || page.Count == 0)
                 {
-                    return (projects, true);
+                    return (projects, null);
                 }
             }
         }
+
+        /// <summary>
+        /// Data Center's project list: every project in one answer, with no paging and no envelope.
+        /// </summary>
+        private async Task<(IReadOnlyList<DeliverySourceProject> Projects, bool SawEverything)> ReadProjectList(
+            HttpClient client, JiraDeployment deployment)
+        {
+            var response = await client.GetAsync(ProjectListRoute);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                LogTheProjectListWasRefused(ProjectListRoute, deployment, response.StatusCode);
+
+                return ([], false);
+            }
+
+            return (JiraReleaseVersionReader.ReadProjectList(await response.Content.ReadAsStringAsync()), true);
+        }
+
+        /// <summary>
+        /// A Warning rather than the Information a single unreadable project gets: without the project list no
+        /// Release at all can be offered, and a 404 here means the route does not exist on this Jira, which is a
+        /// fault to fix rather than a permission somebody chose.
+        /// </summary>
+        private void LogTheProjectListWasRefused(string route, JiraDeployment deployment, HttpStatusCode status)
+            => logger.LogWarning(
+                "Jira answered {StatusCode} when asked for the projects at {Route} on this {Deployment} connection - no Releases can be offered",
+                status, route, deployment);
 
         /// <summary>
         /// A project the credential can list but whose versions it may not read contributes nothing rather
@@ -2959,15 +3018,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// entire picker away from a reader who has perfectly good projects to choose from.
         /// </summary>
         private async Task<(IReadOnlyList<DeliverySourceOption> Releases, bool SawEverything)> ReadReleasesOf(
-            HttpClient client, DeliverySourceProject project, string statuses)
+            HttpClient client, JiraDeployment deployment, DeliverySourceProject project, string statuses)
         {
             var releases = new List<DeliverySourceOption>();
+            var startAt = 0;
+            var routeFiltersByStatus = deployment == JiraDeployment.Cloud;
+            var wantedStatuses = statuses.Split(',');
 
             while (true)
             {
-                var response = await client.GetAsync(
-                    $"rest/api/3/project/{Uri.EscapeDataString(project.Key)}/version" +
-                    $"?startAt={releases.Count}&maxResults={VersionPageSize}&status={statuses}");
+                var response = await client.GetAsync(VersionsRoute(deployment, project, startAt, statuses));
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -2979,13 +3039,40 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 }
 
                 var (page, isLastPage) = JiraReleaseVersionReader.ReadOptionPage(await response.Content.ReadAsStringAsync(), project);
-                releases.AddRange(page);
+                startAt += page.Count;
+                releases.AddRange(routeFiltersByStatus
+                    ? page
+                    : page.Where(release => wantedStatuses.Contains(StatusOf(release))));
 
                 if (isLastPage || page.Count == 0)
                 {
                     return (releases, true);
                 }
             }
+        }
+
+        /// <summary>
+        /// Only Cloud's version list takes a status. Data Center's has no such parameter and hands back every
+        /// version, so there the statuses are applied to what comes back instead.
+        /// </summary>
+        private static string VersionsRoute(JiraDeployment deployment, DeliverySourceProject project, int startAt, string statuses)
+        {
+            var projectKey = Uri.EscapeDataString(project.Key);
+
+            return deployment == JiraDeployment.Cloud
+                ? $"rest/api/3/project/{projectKey}/version?startAt={startAt}&maxResults={VersionPageSize}&status={statuses}"
+                : $"rest/api/2/project/{projectKey}/version?startAt={startAt}&maxResults={VersionPageSize}";
+        }
+
+        /// <summary>The one status Jira grades a version as, in the words its status filter takes. Archiving outranks releasing.</summary>
+        private static string StatusOf(DeliverySourceOption release)
+        {
+            if (release.IsRetiredAtSource)
+            {
+                return "archived";
+            }
+
+            return release.IsReleasedAtSource ? "released" : "unreleased";
         }
 
         /// <summary>
@@ -3075,7 +3162,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             try
             {
                 var client = await GetJiraRestClientAsync(connection);
-                var (releases, sawEverything) = await SweepReleases(client, statuses);
+                var deployment = await GetDeploymentType(client, connection);
+                var (releases, sawEverything) = await SweepReleases(client, deployment, statuses);
 
                 return (client, releases, sawEverything);
             }
