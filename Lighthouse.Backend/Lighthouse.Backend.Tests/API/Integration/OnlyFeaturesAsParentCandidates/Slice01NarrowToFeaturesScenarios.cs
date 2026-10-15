@@ -150,7 +150,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// placement would show an old answer as if it were current.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice01)]
         [Category("error")]
         public async Task A_Work_Item_that_can_no_longer_be_placed_takes_the_trackers_own_parent_not_the_Feature_it_had()
         {
@@ -184,7 +183,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// "Parent Reference ID equals INC-5620" keeps matching, and it counts in neither figure.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice01)]
         [Category("edge")]
         [Category("kpi")]
         public async Task A_Work_Item_with_a_single_link_keeps_it_Feature_or_not()
@@ -308,7 +306,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// it moved, so it keeps the reading it had, and the refresh counts nothing it did not download.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice01)]
         [Category("edge")]
         public async Task A_Work_Item_that_did_not_move_keeps_its_reading_until_it_is_next_read()
         {
@@ -337,7 +334,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
 
         /// <summary>The same item, once it moves: it is read again, and the Feature stored since is found.</summary>
         [Test]
-        [Ignore(PendingStory6301.Slice01)]
         [Category("edge")]
         public async Task A_Feature_stored_after_the_Work_Item_was_read_is_picked_up_when_the_Work_Item_is_next_read()
         {
@@ -408,7 +404,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// exactly as they were read.
         /// </summary>
         [TestCaseSource(nameof(MixesOfRecords))]
-        [Ignore(PendingStory6301.Slice01)]
         [Category("property")]
         [Category("kpi")]
         public async Task Placed_and_not_placed_add_up_to_every_Work_Item_whose_links_name_two_or_more_issues(
