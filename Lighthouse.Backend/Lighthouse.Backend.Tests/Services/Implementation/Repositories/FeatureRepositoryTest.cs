@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.Repositories;
+using Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidates;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -22,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             Assert.That(orders, Is.EqualTo(LadderOrder));
         }
 
-        // ADR-135's position map numbers rows by this sequence, so a tie has to resolve the same way twice.
+        // Ties must resolve the same way on every read, or rows swap between reads.
         [Test]
         public async Task GetAll_FeaturesTiedOnOrder_ComeBackInAscendingId()
         {
@@ -90,6 +91,69 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
             Assert.That(subject.GetById(42), Is.Null);
         }
+
+        /// <summary>
+        /// The one read a refresh makes to learn which candidates are Features this instance holds. It covers
+        /// every Portfolio and the level above their Features alike, because any stored Feature counts.
+        /// </summary>
+        [Test]
+        [Ignore(PendingStory6301.Slice01)]
+        [Category("story-6301-only-features-as-parent-candidates")]
+        [Category("slice-01")]
+        public async Task The_stored_Feature_snapshot_holds_every_Feature_with_its_created_date_the_level_above_included()
+        {
+            var subject = CreateSubject();
+            subject.Add(AFeatureCreatedOn("PAY-88", TheFirstOfNovember));
+            subject.Add(AFeatureCreatedOn("PAY-7", TheFifteenthOfJanuary, isTheLevelAbove: true));
+            await subject.Save();
+
+            var snapshot = subject.GetStoredFeatureCreatedDates();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(snapshot.CreatedDateOf("PAY-88"), Is.EqualTo(TheFirstOfNovember), "A Portfolio's own Feature, with the date the pick falls back on.");
+                Assert.That(snapshot.CreatedDateOf("PAY-7"), Is.EqualTo(TheFifteenthOfJanuary), "The level above is stored as a Feature too, and counts as one.");
+                Assert.That(snapshot.Holds("INC-5531"), Is.False, "An issue Lighthouse never stored is not a Feature it holds.");
+            }
+        }
+
+        /// <summary>
+        /// One reference id can be stored more than once. The earliest date that is actually known wins, and
+        /// the empty date Jira sends for some migrated issues is not a known one.
+        /// </summary>
+        [Test]
+        [Ignore(PendingStory6301.Slice01)]
+        [Category("story-6301-only-features-as-parent-candidates")]
+        [Category("slice-01")]
+        [Category("edge")]
+        public async Task A_reference_id_stored_twice_keeps_its_earliest_known_created_date()
+        {
+            var subject = CreateSubject();
+            subject.Add(AFeatureCreatedOn("PAY-88", TheFifteenthOfJanuary));
+            subject.Add(AFeatureCreatedOn("PAY-88", DateTime.MinValue));
+            subject.Add(AFeatureCreatedOn("PAY-88", TheFirstOfNovember, isTheLevelAbove: true));
+            await subject.Save();
+
+            var snapshot = subject.GetStoredFeatureCreatedDates();
+
+            Assert.That(snapshot.CreatedDateOf("PAY-88"), Is.EqualTo(TheFirstOfNovember),
+                "Read at face value, the empty date would make this Feature the oldest of all and hand it every tie.");
+        }
+
+        private static readonly DateTime TheFirstOfNovember = new(2025, 11, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        private static readonly DateTime TheFifteenthOfJanuary = new(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc);
+
+        private static Feature AFeatureCreatedOn(string referenceId, DateTime createdDate, bool isTheLevelAbove = false)
+            => new()
+            {
+                ReferenceId = referenceId,
+                Name = referenceId,
+                Order = "1",
+                Type = "Epic",
+                CreatedDate = createdDate,
+                IsParentFeature = isTheLevelAbove,
+            };
 
         private async Task<FeatureRepository> GivenTheLadderFixture()
         {

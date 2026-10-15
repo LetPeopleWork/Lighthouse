@@ -5,18 +5,41 @@ DESIGN wave, interaction mode PROPOSE). The product rule (narrow, then oldest li
 the maintainer's own decision of 2026-10-15. The maintainer was AFK for this wave, so the engineering choices
 below are the recommended options. They stand provisional until the maintainer ratifies them, at the latest
 at the start of DISTILL, as ADR-237 did. Two of them are flagged for that ratification: the placed line at
-Warning level, and the one-time Portfolio-grain move described under Consequences.
+Warning level, and the one-time Portfolio-grain move described under Consequences. *Update (DISTILL,
+2026-10-15):* the maintainer confirmed Warning level at the DISTILL sketch review
+(`docs/feature/story-6301-only-features-as-parent-candidates/feature-delta.md`, "Wave: DISTILL / [REF]
+Maintainer decisions: UI sketch review (2026-10-15)"). The one-time move stays open for the maintainer at
+the hold, recorded under the maintainer's Q5 answer (an item corrects itself the next time it is re-read).
 
 **Feature**: `story-6301-only-features-as-parent-candidates`, ADO User Story #6301, under Epic #6028.
 
-**Supersedes in part**: ADR-193 §4 ("Two candidates is a refusal, not a partial answer") and the sentence in
-§6 that puts the ambiguity warning in the connector. ADR-193 §1-§3 and §5 stand unchanged.
+**Supersedes in part**: from ADR-193:
+- §4 ("Two candidates is a refusal, not a partial answer").
+- §6, the sentence that puts the ambiguity warning in the connector.
+- §6's log budget: "**one aggregated warning per refresh**", and the reasoning built on Epic #5687's budget
+  of two Information lines per entity. The new budget is per fetch: at most one placed and one not-placed
+  line, both aggregated. A Team refresh is one fetch, so at most two lines. A Portfolio refresh is two
+  fetches (its Features and the parent sweep), so at most four. Lines are written only when something was
+  ambiguous, so the ordinary refresh still writes none.
+- §6's enforcement row "Log budget respected" (one warning per refresh, regardless of how many items were
+  ambiguous), replaced by this ADR's per-fetch log-budget row.
+- The level of the outcome line: ADR-193 had only a warning, for refusals. A placement is a success, which
+  the update path would normally write at Information. This ADR writes the placed line at **Warning**, as
+  the maintainer decided at the DISTILL sketch review, because a placement is a choice the admin is asked to
+  check and the Task Manager, where the admin checks refresh warnings, lists warnings only.
+
+ADR-193 §1-§3 and §5, and §6's count on the page, stand unchanged.
 
 ## Context
 
 ADR-193 refused any item whose links of the configured type named two or more issues, on the reasoning that
 a wrongly chosen parent looks exactly like correct data. It pre-registered the consequence of that
 assumption failing: if ambiguity was common, DESIGN would come back for a narrowing rule.
+
+ADR-193's gate was a measured share: 5% of fetched items ambiguous. It fired on evidence that is
+qualitative and second-hand. Steve, relaying the customer, reported that "most items appear to ignore their
+parentage". No measured ratio exists yet. The ratio is collected from the first full refresh after the
+upgrade (the customer's refresh row or log), and it is what confirms or refutes the narrowing's value.
 
 It failed on a customer's Jira Data Center instance, where one link type ("is caused by") carries both the
 hierarchy and the cause relations to incidents. Most Work Items named a Feature *and* an incident, were
@@ -38,8 +61,17 @@ The maintainer fixed the rule (2026-10-15):
 Two facts about the code decide *where* the rule can run:
 
 1. **The connector cannot see stored Features.** It is a leaf input adapter that may not reach the
-   WorkItems/Sync module. The architecture test `WorkTrackingIntegration_IsALeafInputAdapter` enforces this.
-   Reading an issue is static, and it receives only the owner and field references.
+   WorkItems/Sync module, which the architecture test `WorkTrackingIntegration_IsALeafInputAdapter`
+   enforces. That test allows Platform/Persistence, though, so on its own it would not stop a connector
+   from reading `IFeatureRepository`. A second ArchUnitNET rule in `ModuleBoundariesArchUnitTest.cs`,
+   `WorkTrackingConnectors_DoNotDependOnAnyRepository`,
+   added with this story, forbids WorkTracking-Integration types from depending on the repository
+   interfaces or the persistence module: `Data` (the database context), `Services.Interfaces.Repositories`
+   (every repository interface, `IFeatureRepository` included) and `Services.Implementation.Repositories`.
+   Other platform services, such as the OAuth token service, stay allowed. `NamedModules_AreNonEmpty`
+   checks that the connector module it applies to is not empty, so it cannot pass by matching nothing. Together the two rules
+   enforce the boundary. Reading an
+   issue is static, and it receives only the owner and field references.
 2. **`WorkItemService` is the only caller of the three record reads**, in six places (full and delta for
    Team, Portfolio and the parent sweep). It already holds the Feature repository, and it already counts the
    ambiguous records right after deduplication, before anything is synced.
@@ -133,7 +165,7 @@ where, so naming the pick needs a second read. A tracked entity can later overwr
 wrote.
 
 **Inject a new placing collaborator instead of a private step.** Cleaner separation on paper. Rejected:
-the pure parts (the pick and the line formatter) are already outside `WorkItemService`. A collaborator would
+the pure parts (the pick and the line formatter) will be outside `WorkItemService`. A collaborator would
 add a type and a DI registration whose only content is the thin shell: a repository read, a loop and two log
 calls. A lesser, practical reason is that a `Program.cs` edit forces the full live-connector integration
 suite onto the change.
@@ -158,8 +190,10 @@ meant to prevent, and its own pre-registered gate sent the decision back.
   candidates, in every fetch) is what keeps a future call site from skipping it.
 - The timing gap is accepted. A Feature stored after a Team read the item is picked up only when the item is
   next read. At Portfolio grain, undated candidates above that are not stored yet fall to lowest key, and can
-  move once to the earliest-created one after the sweep has stored them. That happens on the Feature's next
-  re-read, never through re-resolution after the sweep.
+  move once to the earliest-created one after the sweep has stored them. That happens when the Feature is
+  re-read after its stored candidates change (in practice the cheap refresh after the Feature changes),
+  never through re-resolution after the sweep. Refreshes run Full, Delta, Delta and the parent reads lowest key, then earliest
+  created, then holds. A Portfolio's second refresh is already the cheap one, unlike a Team's.
 - A placed Work Item counts toward its Feature in whichever Portfolio holds that Feature. That is the existing
   by-key child match, unchanged.
 - The link date is per counterpart key: the changelog's `Link` item names no link type in a structured
@@ -175,18 +209,20 @@ meant to prevent, and its own pre-registered gate sent the decision back.
 | Rule | Mechanism |
 |---|---|
 | Connector stays a leaf adapter | Existing ArchUnitNET `WorkTrackingIntegration_IsALeafInputAdapter`, unchanged |
-| The pick stays pure | ArchUnitNET: `ParentResolution`, `ParentCandidate`, `ParentPlacement` depend on no `Services` or `Data` namespace |
+| Connector cannot read stored Features | New ArchUnitNET rule `WorkTrackingConnectors_DoNotDependOnAnyRepository` in `ModuleBoundariesArchUnitTest.cs`: WorkTracking-Integration types depend on neither the repository interfaces nor the persistence module (`Data`, `Services.Interfaces.Repositories`, `Services.Implementation.Repositories`); guarded by `NamedModules_AreNonEmpty` |
+| The pick stays pure | ArchUnitNET, **added in DELIVER slice 01** (not written yet): `ParentResolution`, `ParentCandidate`, `ParentPlacement` depend on no `Services` or `Data` namespace, with a `NamedModules`-style guard that the named kernel types exist |
 | No fetch skips placement | One call per resolver, a unit test per fetch path (six), and the placed + not-placed invariant |
 | Link order never matters | Property test: any permutation of candidates gives the same placement |
 | Lone candidates untouched | Acceptance test: zero changed parents for one-candidate items |
-| No extra Jira request | Request-count test against the pre-change baseline |
+| No extra Jira request | Request-count test: two cheap (Delta) refreshes of the same Team, first with one link per Work Item, then with a second link added; the second costs no more requests |
 | One projection query per fetch, none when nothing is ambiguous | Query-count test |
 | Log budget | At most one placed and one not-placed line per fetch (a Portfolio refresh has two fetches, its Features and the sweep) |
 | The changelog actually dates links | Spike 00 before the slice; then a live, read-only `JiraIntegration` dogfood assertion on the demo instance's *Causes* links |
 
 ## Cross-feature impact
 
-- **ADR-193**: §4 and the warning placement in §6 are superseded as above. §1-§3 and §5 are unchanged.
+- **ADR-193**: §4, and in §6 the warning placement, the one-warning-per-refresh log budget and its
+  enforcement row, are superseded as above. §1-§3 and §5 are unchanged.
 - **Bug #6203** (`docs/evolution/2026-10-09-fix-link-parent-direction.md`): direction reading is
   unchanged. Its open follow-up (a different link type whose phrase equals the resolved type's name) stays
   out of scope. With narrowing in place it matters only if it names a stored Feature.

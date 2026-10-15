@@ -86,6 +86,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         /// those links cannot find either the item or the links.
         /// </summary>
         [Test]
+        [Category("retired-by-story-6301-slice-01")]
         public async Task The_warning_names_the_item_and_every_candidate()
         {
             TheParentOverrideNames(TheLinkTypeTheOverrideNames.Name);
@@ -104,6 +105,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         /// the refresh under them. One line that grows is readable; a hundred lines that repeat are not.
         /// </summary>
         [Test]
+        [Category("retired-by-story-6301-slice-01")]
         public async Task Several_items_nobody_could_place_share_one_warning()
         {
             TheParentOverrideNames(TheLinkTypeTheOverrideNames.Name);
@@ -127,6 +129,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         /// would otherwise be shown nothing at all.
         /// </summary>
         [Test]
+        [Category("retired-by-story-6301-slice-03")]
         public async Task A_portfolio_refresh_reports_it_the_same_way()
         {
             TheParentOverrideNames(TheLinkTypeTheOverrideNames.Name);
@@ -151,6 +154,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         /// recorded on the row, not only said once into the log and lost.
         /// </summary>
         [Test]
+        [Category("retired-by-story-6301-slice-01")]
         public async Task The_refresh_records_how_many_records_it_could_not_place()
         {
             TheParentOverrideNames(TheLinkTypeTheOverrideNames.Name);
@@ -198,6 +202,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         /// count reaching only one of the two rows is the same as it reaching neither, for them.
         /// </summary>
         [Test]
+        [Category("retired-by-story-6301-slice-03")]
         public async Task A_portfolio_refresh_records_the_count_on_its_own_row()
         {
             TheParentOverrideNames(TheLinkTypeTheOverrideNames.Name);

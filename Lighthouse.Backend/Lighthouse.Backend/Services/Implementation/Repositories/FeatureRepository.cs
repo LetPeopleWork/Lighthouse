@@ -41,6 +41,10 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return Context.Features.Select(feature => feature.ReferenceId).ToList();
         }
 
+        // SCAFFOLD: the projection over reference id and created date is not built yet.
+        public StoredFeatures GetStoredFeatureCreatedDates()
+            => throw new NotImplementedException($"SCAFFOLD: the stored-Feature snapshot is not built yet ({Context.GetType().Name})");
+
         private IQueryable<Feature> GetFeatures()
         {
             // Split queries are configured globally for every relational provider (DatabaseConfigurator), so S8733's Cartesian explosion cannot occur.

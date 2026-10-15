@@ -290,6 +290,10 @@ ideally, until Steve's log shows how many items still have 2+ Feature candidates
    wanted now (UI, needs a sketch) or later?
 8. **Q8 — If only non-Feature candidates remain** (all incidents): no parent and silent, like zero links,
    or still warned?
+
+   *Later note (DISTILL review, round 1):* Q7 and Q8 are answered by DISCUSS D7 and D10 (one "placed"
+   figure, one "not placed" figure, all-non-Feature items reported as not placed, no per-Work-Item marker)
+   and ratified in "Wave: DISTILL / [REF] Maintainer decisions: UI sketch review (2026-10-15)".
 9. **Q9 — Fix the untrue wording in this story?** The log line and the property doc say an ambiguous item
    kept its previous parent; it does not (I2). Also, should an item that was placed keep its stored parent
    when its links become unresolvable, or is "no parent" right?
@@ -852,6 +856,10 @@ hierarchy lives in also carries other cause relations, I want Lighthouse to read
 out of those links without my teams deleting real links, so the hierarchy we maintain is the hierarchy
 Lighthouse counts, the same way every refresh, and I can see where it had to choose.*
 
+The job's top-level text in `docs/product/jobs.yaml` (`note`, `job_story`, `forces.anxiety`) is still
+#6028's, which refused every item with two candidates. Where the two differ, the job's `revisions` entry for
+this story supersedes the top-level text, and that entry carries the revised job story above.
+
 Consequence job: `job-lead-size-features-from-real-children-not-a-default`.
 
 ---
@@ -1034,7 +1042,9 @@ links down to one, which means deleting true cause links.
 - **After**: Team "Payments" refresh → Settings → System Info → Refresh History → Team: Payments → sees
   `Max Work Items Placed From Links Naming More Than One Parent  41` and
   `Max Work Items Not Placed: Links Name More Than One Parent  2`; the log line reads
-  `PAY-311 under PAY-88 (the only Feature among its links; set aside INC-5531)`.
+  `PAY-311 under PAY-88 (the only Feature among its links; set aside INC-5531)`. *(Bracket superseded:
+  the maintainer approved `(only Feature; set aside INC-5531)` at the DISTILL sketch review; see "Wave:
+  DISTILL / [REF] Maintainer decisions: UI sketch review (2026-10-15)".)*
 - **Decision enabled**: whether the two not-placed items need fixing in Jira (they name no Feature
   Lighthouse holds, or several Features), instead of deleting cause links on all 43.
 
@@ -1110,8 +1120,11 @@ Scenario: A Feature stored after the Work Item was read is picked up when the Wo
   delta counts cover only what it downloaded, as today.
 - [ ] **AC-1.6** Refresh History shows each figure as the max across the window, only when above zero,
   using the configured Work Items term; rows recorded before this story read as "not placed".
-- [ ] **AC-1.7** One placed line and one not-placed line per refresh (aggregated, not one per item), each
-  naming item, pick (placed), candidates and reason; no line says the item "was left where it was".
+- [ ] **AC-1.7** Per fetch, at most one placed line and one not-placed line (aggregated, not one per item),
+  each naming item, pick (placed), candidates and reason; no line says the item "was left where it was". A
+  Team refresh is one fetch, so it writes at most two lines; a Portfolio refresh (its Features plus the
+  parent sweep) writes at most four. *(Amended at DISTILL review, round 1: it said "per refresh", which
+  contradicted DDD-11.)*
 - [ ] **AC-1.8** A late-stored Feature is picked up on the next reading of the item (D6), without any
   re-resolution after a Portfolio refresh.
 - [ ] **AC-1.9** No additional Jira request per refresh.
@@ -1160,7 +1173,8 @@ Lighthouse refuses it, so neither Feature counts it. She wants the Feature it wa
   PAY-88, PAY-91)`.
 - **After**: Team "Payments" refresh → Refresh History → sees `Max Work Items Placed From Links Naming More
   Than One Parent  43` and no not-placed figure; the log line reads
-  `PAY-420 under PAY-88 (oldest link, 2026-03-04; also linked to PAY-91, 2026-06-17)`.
+  `PAY-420 under PAY-88 (oldest link, 2026-03-04; also linked to PAY-91, 2026-06-17)`. *(Approved wording
+  is `set aside` in place of `also linked to`; see the DISTILL maintainer block.)*
 - **Decision enabled**: whether the oldest link is the right Feature for `PAY-420`; if not, she removes the
   one stale link in Jira — one link, not every cause link.
 
@@ -1261,7 +1275,9 @@ against; the maintainer chose the oldest-link pick alone here.
   Work Items term today for both grains; see Sketch, open point S-3.)*
 - **After**: Portfolio "Payments Q4" refresh → Refresh History → Portfolio: Payments Q4 → sees
   `Max … Placed From Links Naming More Than One Parent  6`; the log line reads
-  `PAY-88 under PAY-7 (oldest link, 2025-12-01; also linked to PRB-120, 2026-02-11)`.
+  `PAY-88 under PAY-7 (oldest link, 2025-12-01; also linked to PRB-120, 2026-02-11)`. *(Approved wording
+  is `set aside` in place of `also linked to`, and the caption reads `Max Features Placed From Links Naming
+  More Than One Parent`; see the DISTILL maintainer block.)*
 - **Decision enabled**: whether a pick under a non-hierarchy issue means the Portfolio is pointed at a
   link that also reads downward (#6028's D7 misconfiguration) and should use the upward phrase instead.
 
@@ -1311,14 +1327,17 @@ Scenario: A Portfolio pointed at a link that also reads downward is still visibl
 - [ ] **AC-3.3** The Portfolio refresh row records placed separately, full and delta alike.
 - [ ] **AC-3.4** The placed line names item, pick, rule and every candidate, so a downward-reading
   configuration stays diagnosable from the log.
-- [ ] **AC-3.5** Whether the parent sweep goes through the same step is DESIGN's call (default yes); either
-  way its line says what it did, and its count behaviour (warns, does not count) is unchanged or stated.
+- [ ] **AC-3.5** The parent sweep (the issues above a Portfolio's Features) is placed through the same step,
+  with no narrowing. It writes its own placed and not-placed lines, naming the owner as the parents of that
+  Portfolio's Features, and it is not counted on the Portfolio row. *(Resolved by DESIGN DDD-10; it was
+  left to DESIGN with "default yes".)*
 
 #### Outcome KPIs
 
 - **Who**: config-admin · **Does what**: sees Features with 2+ links above get one parent · **By how much**:
-  0 not-placed Features at Portfolio grain (by construction) and 0 parent flips between unchanged
-  refreshes · **Measured by**: Portfolio refresh row and the property test · **Baseline**: all refused.
+  0 not-placed Features at Portfolio grain (by construction) and 0 parent flips across refreshes with
+  unchanged links and unchanged stored Features, with one permitted correction when the stored Features
+  change (see the decision note under Outcome KPIs) · **Measured by**: Portfolio refresh row and the property test · **Baseline**: all refused.
 
 #### Technical notes
 
@@ -1390,6 +1409,22 @@ Team "Payments" could not place 1 Work Item whose links name more than one issue
 INC-5602, INC-5610; none is a Feature Lighthouse holds). It takes no parent from its links.
 ```
 
+*Superseded in part:* the bracket `(the only Feature among its links; …)` above became `(only Feature; set
+aside …)`, and the copy options, S-1..S-3 and the log lines were decided at the start of DISTILL. The binding
+record is "Wave: DISTILL / [REF] Maintainer decisions: UI sketch review (2026-10-15)": copy B, "Fetched"
+dropped, the Feature term on Portfolio rows, both lines at Warning level, and the four fallback brackets.
+
+The lead-ins sketched above (`placed 2 Work Items`, `could not place 1 Work Item`) are superseded too: the
+lead-in says "record(s)", never a Work Item or Feature term, e.g. `Team "Payments" placed 2 records whose
+links name more than one issue: …`. See the House checklist's Terminology item.
+
+**The Portfolio row during slices 01-02** (added at DISTILL review, round 1). Slice 01 replaces the old
+`Fetched` caption for every entity at once, so a Portfolio row already shows the new two-figure layout,
+with the Feature term, from slice 01. Its placed figure stays 0, and is therefore hidden, until slice 03
+places Features: everything ambiguous at Portfolio grain still counts as not placed and shows as `Max
+Features Not Placed: Links Name More Than One Parent`. That is a true reading of what happened, so no
+Portfolio row ever shows the old caption after slice 01.
+
 ---
 
 ## Wave: DISCUSS / [REF] Outcome KPIs
@@ -1403,8 +1438,8 @@ Feature, the same one every refresh, and every choice is visible.
 | # | KPI | Who | Does what | Target | Baseline | Measured by | Scope | Type |
 |---|---|---|---|---|---|---|---|---|
 | 1 | `OUT-6301-ambiguous-items-placed` (**north star**) | config-admin, Steve's customer | sees Work Items whose links name 2+ issues counted toward a Feature | **≥ 80%** placed of all 2+-candidate items on a full Team refresh, within 30 days of the customer upgrading | **0%** (all refused) | placed / (placed + not placed) on the refresh row, or replayed from the customer's warning line | per_instance (n = 1, directional) | Leading |
-| 2 | `OUT-PFIL-never-a-guessed-parent` (**rewritten**, see below) | any instance | gets a parent from 2+ candidates only by the stated rule, reproducibly, and named | **0** parent flips across 2 refreshes with unchanged links and stored Features; placed + not placed **=** items with 2+ candidates in every refresh; **100%** of placed items named with pick, rule and candidates | n/a (nothing was picked) | property-based acceptance tests (link order permuted, refresh repeated) + log/row equality check | per_instance | Guardrail |
-| 3 | `OUT-6301-no-extra-requests` (carries `OUT-PFIL-no-extra-requests`) | — | — | Jira requests per refresh **unchanged** | pre-change count | request count in the acceptance suite, against the pre-change baseline | vendor_demo_only | Guardrail |
+| 2 | `OUT-PFIL-never-a-guessed-parent` (**rewritten**, see below) | any instance | gets a parent from 2+ candidates only by the stated rule, reproducibly, and named | **0** parent flips across refreshes with unchanged links and unchanged stored Features; one permitted correction when the stored Features change (the one-time Portfolio move, see the note below); placed + not placed **=** items with 2+ candidates in every refresh; **100%** of placed items named with pick, rule and candidates | n/a (nothing was picked) | property-based acceptance tests (link order permuted, refresh repeated) + log/row equality check | per_instance | Guardrail |
+| 3 | `OUT-6301-no-extra-requests` (carries `OUT-PFIL-no-extra-requests`) | — | — | **0** additional Jira requests per refresh when records carry several links, compared with the same refresh when they carry one each | the same refresh with one link per record | request count in the acceptance suite, against the pre-change baseline | vendor_demo_only | Guardrail |
 | 4 | `OUT-6301-lone-candidates-unchanged` | instances with single-link items | keep their Parent Reference ID rule results | **0** changed `ParentReferenceId` values for items with exactly one candidate | today's values | acceptance test over a mixed fixture | vendor_demo_only | Guardrail |
 | 5 | `OUT-6301-features-off-the-default` (feeds `OUT-PFIL-hierarchy-recovered`) | delivery-lead-rte, Steve's customer | sees Features sized from real children | share of Features with `IsUsingDefaultFeatureSize` falls by **≥ 50%** relative to the pre-upgrade refresh | ~100% (Steve: "most items ignore their parentage") | Feature list before/after one full Portfolio refresh | per_instance (n = 1) | Lagging |
 
@@ -1415,6 +1450,17 @@ grain, then oldest current link, then oldest Feature, then lowest key) or report
 links and stored Features give the same parent on every refresh; and every placement is named in the
 refresh log with its pick, the rule that decided, and the candidates set aside." The id is kept so
 #6028's history stays traceable; #6028's delta should point here when it is next touched.
+
+**Decision note (orchestrator, AFK mode, under the maintainer's Q5 answer; added at DISTILL review, round
+1). For the maintainer to revisit at the hold.** The one-time Portfolio move is covered by the maintainer's
+Q5 decision: *"accept the timing gap; an item corrects itself the next time it is re-read"* (D6). An undated
+Feature whose candidates above are not stored yet is placed by lowest key; once the parent sweep has stored
+them, it can move once to the earliest-created candidate when the Feature is re-read after its stored
+candidates change (in practice the cheap refresh after the Feature changes) (DDD-17). That
+move is the correction Q5 describes, not a flip. KPI 2 therefore reads the same in all three places (this
+table, the DISTILL maintainer block and `OUT-PFIL-never-a-guessed-parent` in `kpi-contracts.yaml`):
+**0 parent flips across refreshes with unchanged links and unchanged stored Features; one permitted
+correction when the stored Features change.**
 
 **Metric hierarchy**: north star KPI 1; leading KPI 2 (trust); guardrails 3 and 4; lagging KPI 5.
 **Hypothesis**: we believe narrowing to stored Features, then picking the oldest link, will place ≥ 80% of
@@ -1497,10 +1543,29 @@ step. No greenfield skeleton, no `@infrastructure` slice.
   parentage is known. The `docs/assets/settings/RefreshHistory.png` screenshot is hot-linked from `@main`;
   the figures only appear when above zero, so the demo-data screenshot is expected to stay as it is.
   Finalize greps the website repo for "issue link" / "parent" and re-shoots only if a figure shows.
+  **Checked at DISTILL review, round 1: N/A.** `grep -rniE "issue link|parent|refresh history"
+  /storage/repos/website --include='*.md' --include='*.html' --include='*.astro' --include='*.tsx'
+  --exclude-dir=node_modules` lists 20 files. 21 of the hits are "transparent" (UI component styles and
+  copy), and the 15 hits on "parent" are the website's own sizing-poker feature docs ("the parent feature")
+  plus one code comment in `src/components/BlogSection.tsx` ("the data-less parent"). No hit for "issue
+  link" or "refresh history", and nothing in the website references `RefreshHistory`. No
+  marketing page talks about link-based parentage or Refresh History, so no page changes. Finalize re-runs
+  the grep only if the screenshot is re-shot.
 - **Usage data (DEVOPS)** — recommend N/A (see Outcome KPIs).
 - **Terminology** — Feature, Work Item, Team, Portfolio written as the seeded defaults; UI copy uses
   `getTerm`. Literal Jira values stay literal: "is caused by", "Blocks", Jira issue types.
-- **UI sketch** — given above; to be approved at the start of DISTILL.
+  **Backend log copy (decided at DISTILL review, round 2, replacing round 1's "seeded terms literally";
+  for the maintainer at the hold, because the lead-in wording was not in the approved sketch):** the
+  aggregated lead-in of the placed and not-placed lines names only the Team or Portfolio by its name and
+  says "record(s)": `Team "Payments" placed 1 record whose links name more than one issue: …`. It never
+  says Work Item(s) or Feature(s). This honours journey D10 ("the instance's own configurable terms, …
+  as everywhere else") for text that cannot reach Terminology, following the house precedent: the
+  connector's existing line `{OwnerName} has records whose links name more than one issue …`, and the
+  Jira publish refusal, which deliberately names no term. The per-item parts the maintainer approved are
+  unchanged. Only the Refresh History captions in the UI go through Terminology (S-3: the Work Item term
+  on Team rows, the Feature term on Portfolio rows).
+- **UI sketch** — given above; approved at the start of DISTILL. See "Wave: DISTILL / [REF] Maintainer
+  decisions: UI sketch review (2026-10-15)".
 - **Docs at finalize** — `docs/teams/edit.md:403`, `docs/portfolios/edit.md:275`,
   `docs/settings/systeminfo.md` (Refresh History figures, the timing gap), release notes vNext.
 
@@ -1534,7 +1599,7 @@ step. No greenfield skeleton, no `@infrastructure` slice.
 | 2 | Persona with specific characteristics | PASS | `config-admin`: Jira DC administrator, one "caused by" link for hierarchy and causes, reads System Info. |
 | 3 | 3+ domain examples with real data | PASS | US-01: 5, US-02: 5, US-03: 4; dated keys and Features; dogfood keys `LGHTHSDMO-7/-9`. |
 | 4 | UAT in Given/When/Then, 3-7 per story | PASS | US-01: 6, US-02: 5, US-03: 4. Titles are outcomes. |
-| 5 | AC derived from UAT | PASS | AC-1.1-1.9, AC-2.1-2.6, AC-3.1-3.5 map to the scenarios; AC-1.9/2.6 carry the no-extra-request guardrail. |
+| 5 | AC derived from UAT | PASS (corrected at DISTILL review, round 1) | The UAT scenarios above cover AC-1.1-1.4, 1.6, 1.8, AC-2.1-2.3, 2.5 and AC-3.1, 3.2, 3.4. Seven ACs are guardrails with no UAT scenario of their own; each is verified by an acceptance or property test listed in "Wave: DISTILL / [REF] Scenarios" (round 2 moved AC-2.6 here and pointed AC-2.4 at the bracket assertions): **AC-2.6** by `Reading_the_links_costs_the_tracker_no_extra_request` (no extra request) and `A_long_history_is_read_in_full_before_a_link_is_dated` (a history too long for the search's copy is read through the existing full re-read before any link is dated); a history with no entry for a link is covered by `IssueFactoryLinkDatesTest.A_removal_whose_adding_was_never_recorded_changes_nothing` and the undated fallbacks; **AC-1.5** by `Placed_and_not_placed_add_up_to_every_Work_Item_whose_links_name_two_or_more_issues` plus DELIVER's six fetch-path unit tests; **AC-1.7** by `Several_records_share_one_placed_line_and_one_not_placed_line` and `The_refresh_names_the_Feature_it_chose_why_and_what_it_set_aside`; **AC-1.9** by `Reading_the_links_costs_the_tracker_no_extra_request`; **AC-2.4** by the slice-02 scenarios in `Slice02OldestLinkWinsScenarios.cs` that assert the placed line's bracket text: `(oldest link, …)` in `A_Work_Item_linked_to_two_Features_counts_toward_the_one_it_was_linked_to_first`, `A_dated_link_wins_over_a_link_with_no_recorded_date`, `A_link_removed_and_added_again_counts_from_when_it_was_added_again`, `A_long_history_is_read_in_full_before_a_link_is_dated` and `An_older_link_to_an_incident_never_wins`; `(earliest created, …)` in `With_no_link_dates_the_older_Feature_wins` and `A_Feature_with_no_recorded_created_date_counts_as_unknown_not_as_the_oldest`; `(lowest key; …)` in `With_no_link_dates_and_Features_of_the_same_age_the_lower_key_wins`; **AC-3.3** by `A_cheap_Portfolio_refresh_places_and_counts_what_it_downloaded`; **AC-3.5** by `The_issues_above_are_placed_too_named_on_their_own_line_and_not_counted`. AC-1.9/2.6 carry the no-extra-request guardrail. |
 | 6 | Right-sized | PASS | ~1 day, ~6h, ~5h; one brief per slice ≤ 100 lines. |
 | 7 | Technical notes | PASS | Option A placement, expand-only column, module rule W1, changelog parse W2, docs to touch. |
 | 8 | Dependencies resolved or tracked | PASS | P1-P5 with state; Spike 00 gates slice 02's wording; R2 accepted. |
@@ -1596,7 +1661,8 @@ surfaced no ambiguity that the defaults do not cover.
 - **Q-M2: accepted, and documented.** A Portfolio misconfigured to read links in both directions will place a Feature under one of its own children rather than refuse it. The log names every candidate, which is the diagnosis, and the Portfolio docs explain the misconfiguration.
 - **Q-M3: yes.** Stored parent Features (`IsParentFeature`, the level above) count as "a Feature Lighthouse knows" at Team grain. Q4 ("any stored Feature") is read literally.
 - **Lighthouse-Clients CLI/MCP: N/A, verified.** A grep of `/storage/repos/lighthouse-clients` (excluding node_modules, dist and .git) finds no `refreshlog` / `refresh-log` / `MoreThanOneParent` reference. No client reads the Refresh History payload, so no client change or version bump is owed.
-- The Refresh History copy (Q-M1, S-1..S-3) is decided at the start of DISTILL.
+- The Refresh History copy (Q-M1, S-1..S-3) is decided at the start of DISTILL. *Since decided: see "Wave:
+  DISTILL / [REF] Maintainer decisions: UI sketch review (2026-10-15)".*
 
 ---
 
@@ -1608,10 +1674,12 @@ engineering fork below takes the recommended option and records it. Only a produ
 default would come back as a question, and none did.
 
 - ✓ This file, in full: DISCOVER, DIVERGE and DISCUSS, all four "Maintainer decisions (2026-10-15)" blocks
-  (binding). The maintainer decided the Refresh History labels and the two sketched log lines after DISCUSS
-  (relayed by the orchestrator, 2026-10-15). They are used below as decided, and DISTILL records them in a
-  maintainer-decision block. Everything else written here as copy or sketch is proposed, not approved:
-  the fallback brackets and the loading and failure looks.
+  (binding). The Refresh History labels and the two sketched log lines are used below as the maintainer
+  decided them. The record of that decision is "Wave: DISTILL / [REF] Maintainer decisions: UI sketch review
+  (2026-10-15)": the maintainer chose copy B over A on 2026-10-15, before DISTILL wrote any scenario. When
+  DESIGN ran, the fallback brackets and the loading and failure looks were still proposals; the same DISTILL
+  block has since approved them too (the `only Feature` bracket, the three fallback brackets, the spinner and
+  the could-not-load alert).
 - ✓ `docs/product/architecture/brief.md`: `## Application Architecture — parent-from-issue-links` (7580-7682).
   ADR-193 in full. Bug #6203 added no ADR. Its decisions live in
   `docs/evolution/2026-10-09-fix-link-parent-direction.md` (read in full).
@@ -1723,6 +1791,8 @@ Four facts from the code that the decisions below depend on:
     `ParentSourceSelector.HangUnder` (DDD-8).
   - It writes at most one placed line and one not-placed line (DDD-11).
   - It returns the two counts.
+  `WorkItemService` keeps its full repository access for the writes it already makes (syncing and saving
+  records). The pick itself has none: `Place` receives only the read-only snapshot.
   The snapshot covers every stored Feature (all Portfolios and the stored parents, per Q-M3), so building
   it is O(stored Features), once per fetch. The pick is O(candidates). That is acceptable at today's scale,
   and nothing is cached across fetches, so no snapshot can go stale between refreshes.
@@ -1732,8 +1802,22 @@ Four facts from the code that the decisions below depend on:
   `ParentReferenceId` write become calls to it, so the connector (one candidate) and the placing step (two
   or more) write the pair the same way. The selector stays in `Services.Implementation.Parents`, which
   both modules may reach.
-- **DDD-9: A record that is not placed keeps what the connector gave it** (D11): Jira's own `parent` field
-  or nothing, plus an empty Additional Field value. The placing step does not touch it.
+- **DDD-9: A record that is not placed takes what the tracker reports for it now, and its stored parent
+  is overwritten with that.** The connector gives such a record Jira's own `parent` field, or nothing, plus
+  an empty Additional Field value, and the placing step does not touch it. When the record is saved,
+  `WorkItemBase.Update` overwrites the stored parent with that value. A parent placed on an earlier refresh
+  is therefore **not** kept. This is today's behaviour and the DISCUSS D11 default.
+  **Open question for the maintainer at the hold** (an autonomous default, flagged at DISTILL review, round
+  1): a Work Item with a lone link is stored under that link's issue, Feature or not. If the lone link is
+  to a Feature and a second link to a non-Feature appears, narrowing places it under the same Feature, so
+  nothing changes. But if the lone link is to a non-Feature (say an incident) and a second non-Feature link
+  appears, the item becomes not placed and loses the parent it had. The same happens when the second link
+  names a second stored Feature (slice 01 only), or when no candidate is a stored Feature any more. The
+  default is to accept that (D11: never show a stale answer as current). The alternative is to keep the
+  earlier parent while the links stop resolving. The DISTILL review round adds a test for the
+  lone-candidate-then-second-link transition
+  (`A_Work_Item_kept_under_its_lone_link_is_not_placed_once_a_second_non_Feature_is_linked`, slice 01), so the behaviour is pinned whichever way the maintainer
+  decides.
 - **DDD-10: The parent sweep goes through the same step, and it is logged but not counted.** Its records
   (the level above) can have ambiguous parents of their own, so consistency says yes (DIVERGE
   recommendation 6, AC-3.5). Today's rule that the sweep stays out of `SyncOutcome`
@@ -1747,21 +1831,30 @@ Four facts from the code that the decisions below depend on:
   PAY-420 under PAY-88", and the Task Manager, where the admin checks a pick (ODI-3), lists warnings. Placed
   is a decision the admin is asked to check, not a silent success. Moving the placed line to Information
   would take it out of the place DISCUSS sends the admin to.
+  The maintainer has since confirmed Warning for the placed line at the DISTILL sketch review.
   Each line is aggregated: at most one per outcome **per fetch**, never one per item. A Portfolio refresh
   has two fetches (its Features and the parent sweep), so it can write up to four lines. The two log lines
-  and their shape are the maintainer's decision (relayed 2026-10-15):
-  - placed: `{Owner} placed {n} {records} whose links name more than one issue: PAY-420 under PAY-88 (oldest
+  and their shape are the maintainer's decision, recorded in "Wave: DISTILL / [REF] Maintainer decisions:
+  UI sketch review (2026-10-15)":
+  - placed: `{Owner} placed {n} record(s) whose links name more than one issue: PAY-420 under PAY-88 (oldest
     link, 2026-03-04; set aside PAY-91, 2026-06-17); …`
-  - not placed: `{Owner} could not place {n} {records} whose links name more than one issue: PAY-402 (linked
+  - not placed: `{Owner} could not place {n} record(s) whose links name more than one issue: PAY-402 (linked
     to INC-5602, INC-5610; none is a Feature Lighthouse holds). It takes no parent from its links.`
-  - The bracket names the rule that decided: `the only Feature among its links`, `oldest link, {date}`,
-    `earliest created, {date}`, or `lowest key`. The first two are the maintainer's sketched copy. The last
-    two are DESIGN's **proposed** wording for the fallbacks the sketch did not show, for the maintainer to
-    confirm at the start of DISTILL. The slice-01-only not-placed
-    reason reads `more than one is a Feature Lighthouse holds`.
-  - `{Owner}` is `Team "X"`, `Portfolio "X"`, or `the parents of Portfolio "X"'s Features`. `{records}` is
-    Work Item(s) or Feature(s), the seeded default terms. Backend log lines do not read Terminology today,
-    and this story does not start.
+  - Pinned example: `Team "Payments" placed 1 record whose links name more than one issue: …`.
+  - The bracket names the rule that decided: `only Feature`, `oldest link, {date}`, `earliest created,
+    {date}`, or `lowest key`. DESIGN proposed the last two, and `the only Feature among its links` for the
+    first. The maintainer approved all four at the DISTILL sketch review, the first shortened to `(only
+    Feature; set aside …)`. The slice-01-only not-placed reason reads `more than one is a Feature Lighthouse
+    holds`, also approved there.
+  - `{Owner}` is `Team "X"`, `Portfolio "X"`, or `the parents of Portfolio "X"'s Features`. **Terminology
+    (decided at DISTILL review, round 2, replacing round 1's decision; for the maintainer at the hold,
+    because the lead-in wording was not in the approved sketch):** the lead-in names only the owner and
+    says "record(s)", never Work Item(s) or Feature(s). This honours journey D10 for text that cannot
+    reach Terminology, following the connector's existing `{OwnerName} has records whose links name more
+    than one issue …` and the Jira publish refusal, which names no term. The approved per-item parts are
+    unchanged. Only the Refresh History captions go through Terminology (S-3). *Still open:* two approved
+    or pinned fragments keep the default word Feature: the sweep's owner `the parents of Portfolio "X"'s
+    Features`, and the not-placed reason `none is a Feature Lighthouse holds`.
   - Dates are the UTC calendar date of the instant, `yyyy-MM-dd`, formatted invariant. The date only helps
     the admin find the link in Jira's history. The ordering uses the full instant.
 - **DDD-12: `RefreshLog` gains one column. The existing one keeps its name and now means "not placed".**
@@ -1776,7 +1869,8 @@ Four facts from the code that the decisions below depend on:
   `[Column]` attribute was rejected: it moves the model snapshot, which forces a migration anyway, and it
   breaks the payload name for nothing.
 - **DDD-13: Refresh History shows two figures, each the window's maximum, each only above zero.** The
-  labels and the per-grain term are the maintainer's decision (relayed 2026-10-15; DISTILL records them): `Max {Records} Placed From Links Naming More Than One Parent` (the new field) and
+  labels and the per-grain term are the maintainer's decision: copy B, chosen over A on 2026-10-15 and
+  recorded in "Wave: DISTILL / [REF] Maintainer decisions: UI sketch review (2026-10-15)". `Max {Records} Placed From Links Naming More Than One Parent` (the new field) and
   `Max {Records} Not Placed: Links Name More Than One Parent` (the existing field). `{Records}` is
   `getTerm(WORK_ITEMS)` on a Team entity and `getTerm(FEATURES)` on a Portfolio entity. "Fetched" is
   dropped. The new model field is optional, like its sibling, so a payload from an older backend still
@@ -1787,23 +1881,31 @@ Four facts from the code that the decisions below depend on:
   `Could not load refresh history.` when it fails. Both are reused from `ThirdPartyPackagesSection`.
   "No refresh history available yet." is kept only for a successful, empty answer. There is one request on
   mount, with no parameter, so no late answer for an old request can land, and no keyed query is needed.
-  This is UI, so the sketch in "Loading and failure look" is **proposed** and goes to the maintainer at the
-  start of DISTILL, before any test pins it.
+  This is UI, so the sketch in "Loading and failure look" was proposed here and went to the maintainer at
+  the start of DISTILL, before any test pinned it. The maintainer approved both looks there.
 - **DDD-15: No migration other than DDD-12. No new Jira request. No new dependency. No `Program.cs` edit.**
   `WorkItemService` asks for `IFeatureRepository` in place of `IRepository<Feature>`. The parameter count is
-  unchanged.
+  unchanged. The wider interface gives the service no new write: it already had full repository access
+  for its existing writes, and the pick (`Place`) still sees only the read-only snapshot.
 - **DDD-16: Usage data: N/A, confirmed for DEVOPS to record.** Placement happens inside a refresh, with no
   user action, and its outcome is a ratio of counts, which a usage-data property may never carry. The
   refresh row already measures it per instance.
 - **DDD-17: The timing gap is the documented behaviour, at both grains.** At Team grain, a Feature stored
   after the item was read is picked up on the item's next reading (D6). At Portfolio grain, there is a
   matching one-time change: undated candidates above that are not stored yet fall to lowest key. Once
-  the sweep has stored them, the next reading of that Feature can move it to the earliest-created one
-  (AC-3.2 as decided). It moves once, then holds. Docs say so (`docs/portfolios/edit.md`).
+  the sweep has stored them, the Feature can move to the earliest-created one when it is re-read after
+  its stored candidates change (in practice the cheap refresh after the Feature changes) (AC-3.2 as
+  decided). It moves once, then holds. Docs say so (`docs/portfolios/edit.md`).
   This is D6 read literally, not a re-resolution after a Portfolio refresh. Within one Portfolio refresh
   the Feature half runs before the sweep (`WorkItemService.cs:52-53`), so the Feature keeps what that
   reading gave it. Nothing goes back to it after the sweep. It changes only when the Feature itself is next
   re-read, because it changed or a full refresh ran. That is exactly how D6 says an item corrects itself.
+  As DISTILL pins it (`An_undated_Feature_moves_once_to_the_older_parent_after_the_parents_are_stored_and_then_holds`),
+  the Feature is re-read after its stored candidates change, which in practice is the cheap (Delta)
+  refresh after the Feature changes in Jira, not a full one.
+  Three Portfolio refreshes run Full, Delta, Delta, and the Feature's parent reads `PAY-7`, `PAY-9`,
+  `PAY-9`: lowest key first, earliest created once the sweep has stored both, then it holds. A Portfolio's
+  second refresh is already the cheap one, unlike a Team's, whose second refresh is still Full.
   It is listed for the maintainer's ratification, together with the other AFK choices. The alternative, no
   created-date fallback at Portfolio grain, would contradict AC-3.2.
 - **DDD-18: A Work Item placed under another Portfolio's Feature counts there, as any child does today.**
@@ -1840,7 +1942,7 @@ Root: `/storage/repos/Lighthouse/.claude/worktrees/resilient-wobbling-russell`.
 | `IssueExtensions.ResolveParentFromLinks` | `…/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/IssueExtensions.cs` | EXTEND | 01 (keys), 02 (dates) | Builds candidates with dates. The direction and type matching from Bug #6203 are unchanged. |
 | `JiraWorkTrackingConnector` | `…/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs` | EXTEND (and delete) | 01 | Sets `ParentCandidatesFromLinks`. Writes the parent through `ParentSourceSelector.HangUnder`. Deletes `ReportTheRecordsWhoseLinksNamedMoreThanOneParent`, its two calls and `AnItemAndWhatItsLinksOffered`. |
 | `ParentSourceSelector` | `…/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Parents/ParentSourceSelector.cs` | EXTEND | 01 | `HangUnder(owner, record, key)`. Header corrected (the tracker's own parent *is* what remains when links do not place). |
-| Parent placement report | `…/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Parents/ParentPlacementReport.cs` | CREATE NEW | 01 | Pure static formatter: placements → the two line bodies (DDD-11). Kept out of `WorkItemService`, which is 1198 lines, so the copy can be pinned without a logger. |
+| Parent placement report | `…/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Parents/ParentPlacementReport.cs` | CREATE NEW (in DELIVER; DISTILL scaffolds nothing for it) | 01 | Pure static formatter: placements → the two line bodies (DDD-11). Kept out of `WorkItemService`, which is 1198 lines, so the copy can be pinned without a logger. |
 | `IFeatureRepository` / `FeatureRepository` | `…/Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IFeatureRepository.cs`, `…/Services/Implementation/Repositories/FeatureRepository.cs` | EXTEND | 01 | `GetStoredFeatureCreatedDates()` → `StoredFeatures`: one projection over `(ReferenceId, CreatedDate)`. A duplicated reference id keeps its earliest known date. Sibling of `GetAllReferenceIds`. |
 | `WorkItemService` | `…/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs` | EXTEND | 01 (Team), 03 (Portfolio, sweep) | Asks for `IFeatureRepository`. The private placing step (DDD-7) replaces `CountTheRecordsNobodyCouldPlace`, called once in each of the three resolvers, after their full/delta branch. Both counts go onto `SyncOutcome`. |
 | `SyncOutcome` | `…/Lighthouse.Backend/Lighthouse.Backend/Models/SyncOutcome.cs` | EXTEND | 01 | `RecordsPlacedFromLinksNamingMoreThanOneParent` `init`. The existing member's doc now says "not placed". |
@@ -1884,24 +1986,36 @@ licence to record.
 | Existing component | Overlap | Decision | Contract shape / universe / assertion |
 |---|---|---|---|
 | `ParentResolution` (`Models/ParentResolution.cs`) | Holds the candidates already | **EXTEND** | Pure function (`Place`). Universe: the candidates plus the snapshot. Assertion: return value only, plus a property test permuting candidate order and checking that the result does not change |
-| `WorkItemBase.LinksNamedMoreThanOneParent` | Transient per-reading fact on the record | **EXTEND (replace)** | Transient value, `[NotMapped]`. Assertion: the copy constructor carries it, and an EF model test shows no new column |
-| `IssueFactory.StatusTransitionsIn` | Walks the same changelog histories | **EXTEND (sibling)** | Pure over JSON. Assertion: dates per key for add / remove / re-add / unsorted histories / no entries |
-| `IssueExtensions.ResolveParentFromLinks` | Builds the candidates | **EXTEND** | Pure. Assertion: the existing direction tests unchanged, plus dates attached |
+| `WorkItemBase.LinksNamedMoreThanOneParent` | Transient per-reading fact on the record | **EXTEND (replace)** | Bounded change. Universe: the members of `WorkItemBase` and its EF model. Declared delta: the bool is replaced by the `[NotMapped]` transient `ParentCandidatesFromLinks`, which the copy constructor carries. Assertion: the copy constructor carries it, every other member is copied as before, and an EF model test shows no new column |
+| `IssueFactory.StatusTransitionsIn` | Walks the same changelog histories | **EXTEND (sibling)** | Pure function over the issue's JSON. Universe: the one issue's changelog histories. Assertion: dates per key for add / remove / re-add / unsorted histories / no entries |
+| `IssueExtensions.ResolveParentFromLinks` | Builds the candidates | **EXTEND** | Pure function. Universe: the one issue's links plus its link dates. Assertion: the existing direction tests unchanged, plus dates attached |
 | `ParentSourceSelector` + connector's `ShowBackWhatTheLinksSaid` | Writes the parent and the show-back value | **EXTEND (move the write in)** | Bounded change. Mutation set: `{record.ParentReferenceId, record.AdditionalFieldValues[override id]}`. Universe: the one record passed. Assertion: every other field on the record unchanged |
 | `WorkItemService.CountTheRecordsNobodyCouldPlace` | The per-fetch count site | **EXTEND (becomes the placing step)** | Bounded change. Mutation set: the two fields above, on the downloaded records with 2+ candidates only. Universe: that fetch's downloaded list. Assertion: records with fewer than two candidates are byte-equal before and after, and placed + not placed = records with 2+ candidates |
-| `IFeatureRepository.GetAllReferenceIds` | One-column projection over Features | **EXTEND (sibling member)** | Pure read. Assertion: one query per fetch (query-count test), none when no record is ambiguous |
-| `ReportTheRecordsWhoseLinksNamedMoreThanOneParent` (connector) | The aggregated warning | **REPLACE** by `ParentPlacementReport` + the step | The connector cannot know the outcome (it cannot see stored Features). Pure formatter; the shell logs. Assertion: one line per outcome per refresh |
-| `RefreshLog`, `SyncOutcome` | Per-refresh scalars | **EXTEND** | Precedent: the existing column, added by #6028 |
-| `ThirdPartyPackagesSection` loading/error look | System Info section states | **REUSE** | — |
-| `DependencySourceSelector` | Similar selector shape | **No reuse** | Different knowledge (0..n skip vs 0..1 place), as ADR-193 §2 argued |
+| `IFeatureRepository.GetAllReferenceIds` | One-column projection over Features | **EXTEND (sibling member `GetStoredFeatureCreatedDates`)** | Read-only projection (a database query, so not a pure function; it writes nothing). Universe: every stored Feature row. Declared delta: none to stored state; one new read member on the interface. Assertion: one entry per reference id with its earliest known created date, one query per fetch (query-count test), none when no record is ambiguous |
+| `ReportTheRecordsWhoseLinksNamedMoreThanOneParent` (connector) | The aggregated warning | **REPLACE** by `ParentPlacementReport` + the step | The connector cannot know the outcome (it cannot see stored Features). Pure function (the formatter); the shell logs. Universe: the placements passed in. Assertion: at most one line per outcome per fetch |
+| `Issue` (`Jira/Issue.cs`) | The parsed issue the connector reads | **EXTEND** | Bounded change. Universe: one parsed issue. Declared delta: `LinkAddedAt` (counterpart key → instant of the standing addition), empty by default; every other member parsed as before |
+| `JiraWorkTrackingConnector` | Builds the records and writes a lone candidate | **EXTEND (and delete)** | Bounded change. Universe: the records one fetch builds. Declared delta: each record carries its candidates with their link dates (`ParentCandidatesFromLinks`); the lone-candidate write goes through `HangUnder`; the ambiguity warning `ReportTheRecordsWhoseLinksNamedMoreThanOneParent` and `AnItemAndWhatItsLinksOffered` are deleted. Requests and every other record field unchanged |
+| `TeamUpdater` | Writes the Team refresh row | **EXTEND** | Bounded change. Universe: the one Team refresh row. Declared delta: copies the two counts (placed, not placed) from `SyncOutcome` onto the row; every other assignment unchanged |
+| `PortfolioUpdater` | Writes the Portfolio refresh row | **EXTEND** | Bounded change. Universe: the one Portfolio refresh row. Declared delta: copies the two counts from `SyncOutcome` onto the row (the Feature half only; the sweep is not counted); every other assignment unchanged |
+| `RefreshLog`, `SyncOutcome` | Per-refresh scalars | **EXTEND** | Bounded change. Universe: the one refresh row (and the one `SyncOutcome` that feeds it). Declared delta: the two counts, placed (new member) and not placed (existing member, meaning corrected). Assertion: every other field of the row is written as before. Precedent: the existing column, added by #6028 |
+| `ThirdPartyPackagesSection` loading/error look | System Info section states | **REUSE** | Bounded change to `RefreshHistorySection`. Universe: the section's render states. Declared delta: a loading state and a failure state are added, and the empty text is limited to an empty, successful answer; the loaded state is unchanged apart from the two captions |
+| `DependencySourceSelector` | Similar selector shape | **No reuse** | Unbounded preservation: not touched, so all its behaviour stays as it is. Different knowledge (0..n skip vs 0..1 place), as ADR-193 §2 argued |
 
 **CREATE NEW, justified:**
 - `ParentCandidate`: a key with no date cannot express D3. No existing type pairs an issue key with an
-  instant.
-- `ParentPlacement` and its two enums: the pure pick has to return a plan (what to write, and why) rather
-  than write it. No existing result type carries "placed / not placed + rule + set aside".
-- `ParentPlacementReport`: the line copy is approved text that tests pin. Keeping it pure and out of
-  `WorkItemService` is what makes that possible without capturing logs.
+  instant. **Contract shape:** pure value (a `readonly record struct`); universe: one candidate.
+  *Rejected alternative:* a `(string, DateTime?)` tuple. A tuple compares by position, and its members read
+  as `Item1` / `Item2` at every call site. The record struct gives the named members `Key` and `LinkedAt`,
+  and value equality on both, which is what `ParentResolution`'s duplicate-collapsing and `Equals` rely on.
+- `ParentPlacement` and its enums (`ParentPlacementOutcome`, `ParentNarrowing`, `ParentPlacementRule`,
+  `ParentNotPlacedReason`) plus `StoredFeatures`: the pure pick has to return a plan (what to write, and
+  why) rather than write it. No existing result type carries "placed / not placed + rule + set aside".
+  **Contract shape:** pure values, the output of the pure function `Place`; universe: one record's
+  candidates plus the snapshot. `StoredFeatures` is a read-only snapshot with no write member.
+- `ParentPlacementReport` (created in DELIVER, slice 01): the line copy is approved text that tests pin.
+  Keeping it pure and out of `WorkItemService` is what makes that possible without capturing logs.
+  **Contract shape:** pure function; universe: the placements passed in. Assertion: the two line bodies,
+  or none when the list for an outcome is empty.
 
 ## Wave: DESIGN / [REF] C4 System Context (L1)
 
@@ -1983,7 +2097,8 @@ Loading (request in flight)                 Failed                              
 └──────────────────────────────────┘        └──────────────────────────────────────────┘    └───────────────────────────────────┘
 ```
 
-Reused as-is from `ThirdPartyPackagesSection` (spinner in a centred `Box`; MUI `Alert severity="error"`).
+Reuses the spinner and alert pattern of `ThirdPartyPackagesSection` (spinner in a centred `Box`; MUI
+`Alert severity="error"`); the copy `Could not load refresh history.` is new.
 The entity selector and chart are not shown until the data has arrived, so no stale or partial figure is
 ever on screen. The loaded state is the DISCUSS sketch with the approved labels. Check by hand with a
 throttled connection. DISTILL pins all three states. It is a section, not a dashboard widget, so
@@ -1995,8 +2110,10 @@ throttled connection. DISTILL pins all three states. It is a section, not a dash
   permutation of links gives one answer. A property test pins it (AC-2.2, KPI 2).
 - **Performance** (ODI-4, ODI-5): no extra Jira request. At most one projection query per fetch, and none
   when nothing is ambiguous. Building the snapshot is O(stored Features), and the pick is O(candidates). Placement lands in the same refresh.
-- **Observability**: at most two aggregated lines per fetch, and two figures on the row. The log budget
-  holds: at most two lines, only when something happened.
+- **Observability**: per fetch, at most one placed and one not-placed line, both aggregated, and two
+  figures on the row. A Team refresh is one fetch, so at most two lines; a Portfolio refresh (its Features
+  plus the parent sweep) is two fetches, so at most four. Lines are written only when something was
+  ambiguous. This replaces ADR-193 §6's budget of one aggregated warning per refresh (see ADR-238).
 - **Maintainability / testability**: the rule is a pure kernel method. The I/O is a thin shell in the
   service. Copy is pinned on a pure formatter.
 - **Reliability (Earned Trust)**: the one dependency that can lie is Jira's changelog. The design survives
@@ -2014,11 +2131,11 @@ throttled connection. DISTILL pins all three states. It is a section, not a dash
 
 | Rule | Mechanism |
 |---|---|
-| Connector stays a leaf adapter | Existing ArchUnitNET `WorkTrackingIntegration_IsALeafInputAdapter`, unchanged; the new `HangUnder` lives in `Parents`, outside the forbidden set |
-| The pick stays pure | New ArchUnitNET rule: `ParentResolution`, `ParentCandidate`, `ParentPlacement` do not depend on any `Lighthouse.Backend.Services` or `Lighthouse.Backend.Data` namespace |
+| Connector stays a leaf adapter, and cannot see stored Features | Existing ArchUnitNET `WorkTrackingIntegration_IsALeafInputAdapter`, unchanged; the new `HangUnder` lives in `Parents`, outside the forbidden set. That rule forbids Forecasting, Portfolio/Delivery and WorkItems/Sync, but allows Platform/Persistence, so on its own it does not stop a connector from reading `IFeatureRepository`. A new ArchUnitNET rule, `WorkTrackingConnectors_DoNotDependOnAnyRepository` in `Architecture/ModuleBoundariesArchUnitTest.cs`, added at DISTILL review round 1, enforces that half: WorkTracking-Integration types may not depend on the repository interfaces or the persistence module, that is `Data` (the database context), `Services.Interfaces.Repositories` (every repository interface, `IFeatureRepository` included) and `Services.Implementation.Repositories`. Other platform services, such as the OAuth token service, stay allowed. `NamedModules_AreNonEmpty` checks that the connector module the rule applies to is not empty, so the rule cannot pass by matching nothing |
+| The pick stays pure | **Not written yet; DELIVER slice 01 adds it.** A new ArchUnitNET rule: `ParentResolution`, `ParentCandidate`, `ParentPlacement` do not depend on any `Lighthouse.Backend.Services` or `Lighthouse.Backend.Data` namespace, with a `NamedModules_AreNonEmpty`-style guard that the kernel types it names exist |
 | Placement cannot be skipped | One call per resolver (three), a unit test per fetch path (six), plus the invariant test: placed + not placed = records with 2+ candidates, in every fetch |
 | Lone candidates untouched | Acceptance test over a mixed fixture: 0 changed `ParentReferenceId` for one-candidate items (KPI 4) |
-| No extra request | Request-count test against the pre-change baseline (KPI 3) |
+| No extra request | Request-count test (KPI 3): two cheap (Delta) refreshes of the same Team, first with one link per Work Item, then with a second link added; the second costs no more requests |
 | One query per fetch | Query-count test in the pattern of `RealityCheckQueryCountTest` |
 | Log budget | Logger-capturing test: at most one placed and one not-placed line per fetch (a Portfolio refresh's sweep is its own fetch) |
 
@@ -2062,26 +2179,32 @@ None blocks DISTILL. All have defaults taken under the AFK rule:
 
 - **OQ-1 (copy, DISTILL):** the two fallback brackets, `earliest created, {date}` and `lowest key`, plus the
   slice-01-only reason `more than one is a Feature Lighthouse holds`. Default: as written in DDD-11.
+  *Closed: approved in "Wave: DISTILL / [REF] Maintainer decisions: UI sketch review (2026-10-15)".*
 - **OQ-2 (UI sketch, DISTILL):** the loading and failure looks for Refresh History (DDD-14). Default: reuse
-  the sibling section's look.
+  the sibling section's look. *Closed: approved in the same DISTILL block.*
 - **OQ-3 (evidence, entry gate for slice 02):** Spike 00 is slice 02's entry gate, and its named output is
   the captured Cloud changelog payload for a link added, removed and re-added. That payload settles which
   field carries the key (DDD-3), and DISTILL consumes it as the fixture. Steve's log (P1) stays a
   pre-release check. Neither changes structure.
 - **OQ-4 (ratification, AFK):** the placed line at Warning level (DDD-11) and the one-time Portfolio move
-  (DDD-17). Both are the defaults taken, and the maintainer ratifies them with ADR-238.
+  (DDD-17). Both are the defaults taken, and the maintainer ratifies them with ADR-238. *Warning level:
+  confirmed by the maintainer in the DISTILL block. The one-time move: still open for the maintainer at the
+  hold, under the Q5 decision note in DISCUSS Outcome KPIs.*
 
 ## Wave: DESIGN / [REF] Changed assumptions
 
 - **CA-D1: the parent sweep is placed, not left out.** DISCUSS US-03 technical notes: *"`GetParentFeaturesDetails`
   per DESIGN."* DIVERGE: *"consistency says yes."* Now: placed with narrowing off, logged and not counted
   (DDD-10).
-- **CA-D2: Portfolio grain has a one-time move, not zero moves.** DISCUSS KPI 2 (US-03): *"0 parent flips
-  between unchanged refreshes."* That holds while the stored parents are unchanged. But AC-3.2 (*"Created-date
-  fallback uses stored parent Features where they exist; otherwise lowest key"*) means that once the sweep
-  first stores the candidates above, an undated Feature can move once from lowest key to earliest created
-  (DDD-17). The stored Features changed, so it is within KPI 2's "same links and stored Features" wording.
-  It is documented, not hidden.
+- **CA-D2: Portfolio grain has a one-time move, not zero moves.** DISCUSS US-02's KPI line reads *"0
+  Feature flips between unchanged refreshes"*. That holds while the stored parents are unchanged. But AC-3.2
+  (*"Created-date fallback uses stored parent Features where they exist; otherwise lowest key"*) means that
+  once the sweep first stores the candidates above, an undated Feature can move once from lowest key to
+  earliest created, when it is re-read after its stored candidates change (in practice the cheap refresh
+  after the Feature changes) (DDD-17). The stored Features changed, so the move falls
+  outside "unchanged stored Features". KPI 2 now reads, in all three places it appears: **0 parent flips
+  across refreshes with unchanged links and unchanged stored Features; one permitted correction when the
+  stored Features change** (see the decision note under DISCUSS Outcome KPIs). It is documented, not hidden.
 - **CA-D3: "No new control" in the Refresh History sketch gains two states.** DISCUSS sketch: *"No new
   control, no new column."* Still true for the loaded state. DESIGN adds the loading and failure looks the
   house rule requires, both reused (DDD-14).
@@ -2116,7 +2239,7 @@ Neither can be produced inside DESIGN.
 | Finding | Resolution |
 |---|---|
 | H1: the field that carries the key in a `Link` item is assumed | DDD-3 now states that the shape is not pinned in this repository. It reads the key from `to` / `from` when key-shaped, otherwise the key-shaped token in `toString` / `fromString`. Spike 00 is slice 02's entry gate, and its captured payload is the fixture (OQ-3). ADR-238 Decision 1 says the same. |
-| H2: copy labelled "approved" without provenance | The labels and the two sketched log lines are the maintainer's decision, relayed by the orchestrator on 2026-10-15. They are labelled as such, for DISTILL to record. The fallback brackets and the loading/failure sketch are labelled **proposed** (DDD-11, DDD-13, DDD-14, Inputs read). |
+| H2: copy labelled "approved" without provenance | The labels and the two sketched log lines are the maintainer's decision: the maintainer chose copy B over A on 2026-10-15, recorded in "Wave: DISTILL / [REF] Maintainer decisions: UI sketch review (2026-10-15)". The fallback brackets and the loading/failure sketch were labelled **proposed** here, and the same DISTILL block has since approved them (DDD-11, DDD-13, DDD-14, Inputs read). |
 | H3: the Portfolio one-time move against D6 | Explained as D6 read literally: the Feature half runs before the sweep, and the move happens only on the Feature's next re-read (DDD-17). Listed for ratification (OQ-4, ADR-238 status). |
 | ADR status self-contradictory | Status split into: product rule accepted, engineering choices provisional, the ratifier and when, following the ADR-237 precedent. |
 | Placed line at Warning | Kept at Warning, with the reason (UAT wording; the Task Manager is where the admin checks a pick). Listed for ratification (OQ-4). |
@@ -2181,7 +2304,7 @@ No new workflow, no new job, no new step. What the existing `ci.yml` pipeline do
 | `ci_changes` → `path-classifier.sh` | every push | `JIRA_REGEX` matches `…/WorkTrackingConnectors/Jira/` (connector, `Issue.cs`, `IssueExtensions.cs`, their tests) → `jira_connector=true`. `SHARED_REGEX` does **not** match: `Program.cs`, csproj, `.sln` and `Services/Interfaces/WorkTrackingConnectors/I*.cs` are untouched; `IFeatureRepository` lives in `Services/Interfaces/Repositories/`; `IssueFactory` in `Factories/`; migrations projects add `.cs` files only. So **no force-full integration suite** |
 | `ci_backend` | backend paths | Build with `TreatWarningsAsErrors`; unit + acceptance (`Category!=Integration`) plus `Category=JiraIntegration` (live dogfood Cloud). ADO/Linear/ServiceNow/GitHub stay off, so the Linear quota and GitHub rate limit are not exposed |
 | `ci_frontend` | `RefreshHistorySection.tsx`, `RefreshLog.ts` | Vitest, `tsc -b`, `vite build`, Biome (prebuild runs `biome check --write`) |
-| `ci_sonar_gates` | after backend + frontend | No new issue. Rules pre-applied in DESIGN; analyzer-promoted rules (CA1861, CA1859, NUnit2045/2046) fail the build earlier. A red backend job **skips** Sonar, so a red `JiraIntegration` run must be fixed or proven environmental before calling the push judged |
+| `ci_sonar_gates` | after backend + frontend | Fails on any new issue. The rule families this story is exposed to, and what proves each locally, are listed under "Sonar rule families" below. A red backend job **skips** Sonar, so a red `JiraIntegration` run must be fixed or proven environmental before calling the push judged |
 | `ci_verifysqlite`, `ci_verifypostgres` | every push to main | Real provider start against the new migration; E2E. No spec drives Refresh History today; DISTILL's DDD-14 states are pinned in Vitest, and `grep -r` of `Lighthouse.EndToEndTests/` for the changed label is required (ci-learnings 227) |
 | `ci_verifywindows`, `ci_verifymacos`, `ci_docker`, packaging, `ci_chart` | as today | Unchanged. No chart change, so the Helm upgrade-path row-count check is not involved |
 
@@ -2196,10 +2319,36 @@ No new workflow, no new job, no new step. What the existing `ci.yml` pipeline do
   sqlite start grepping for `PendingModelChanges`. Generated migration files are advisory for CA1861.
 - **Label change (227)**: the Refresh History label moves; grep the E2E project for the old label text.
 
-**Local gates (mirror CI)**: `dotnet build` zero warnings; `dotnet test --filter "TestCategory!=Integration&
-TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=
-ServiceNowIntegration"`; the dogfood test run deliberately once in slice 02 (it is a Jira change);
-`pnpm test`; `pnpm build`. Existing pre-push hooks unchanged.
+**Local gates (mirror CI)**, every one green before a step is committed:
+1. `dotnet build` in `Lighthouse.Backend/`, zero warnings.
+2. **Analyzer sweep** (mandatory; amended at DISTILL review, round 1). In `Lighthouse.Backend/`:
+   `dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore`, with its output
+   saved to a log. Exit code 2 means findings; the repository carries about 35 old ones, mostly CA1861 in
+   generated migrations, so filter the log to this change's files: the `.cs` names listed by
+   `{ git diff --name-only <base>; git status --porcelain -uall | awk '{print $2}'; }`, where `<base>` is
+   the commit the slice started from (the second half picks up staged, unstaged and untracked files). Any
+   finding on one of those files fails the gate. SonarAnalyzer.CSharp is referenced from
+   `Directory.Build.props`, so the sweep reports the `S…` rules as well as the `CA…` and `NUnit…` ones
+   that sit below build-warning severity. The pre-commit ledger hook does not run in a git worktree, so in
+   a worktree this manual sweep is the only local check.
+3. `dotnet test --filter "TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration"`.
+4. The dogfood test, run deliberately once in slice 02 (it is a Jira change).
+5. `pnpm test`, then `pnpm build` (zero errors, zero warnings; its prebuild runs Biome).
+
+Existing pre-push hooks unchanged.
+
+**Sonar rule families** this story is exposed to, and the check that proves each before a push:
+
+| Rule | Where it bites here | Proved by |
+|---|---|---|
+| S3776 cognitive complexity | `WorkItemService`'s placing step and its three call points (`ResolveRemoteFetch`, `ResolveRemoteFeatureFetch`, `ResolveRemoteParentFeatureFetch`); `ParentResolution.Place`; the `IssueFactory` changelog walk | Analyzer sweep (gate 2) |
+| NUnit1028 | New test fixtures: non-test methods must not be public | Analyzer sweep (gate 2) |
+| CA1869 | A `JsonSerializerOptions` created per call in the new tests or wire-format builders; cache it | Analyzer sweep (gate 2) |
+| NUnit4002 | Constraint choice in the new assertions (for example `Is.EqualTo(0)` where `Is.Zero` is meant) | Analyzer sweep (gate 2) |
+| CA1861 | Constant arrays passed as arguments in the new tests; hoist to `static readonly` | Analyzer sweep (gate 2); generated migrations are advisory |
+| S6754 / S7761 (frontend) | `RefreshHistorySection.tsx` and its test: every `useState` destructured as `[thing, setThing]` (S6754); `data-*` read through `dataset`, never `getAttribute("data-…")` (S7761) | Biome does not check either. S7761 is a pattern in the pre-commit ledger, which does not run in a worktree, so: `git diff <base> -- Lighthouse.Frontend/src \| grep -n "Attribute(.data-"` must print nothing, and a read of each new `useState` line covers S6754 |
+
+The analyzer sweep is the single local check for the C# rules above.
 
 ## Wave: DEVOPS / [REF] Monitoring contracts (KPI → instrument)
 
@@ -2211,8 +2360,8 @@ System Info → Logs), and the test suite. Full contracts in `docs/product/kpi-c
 | KPI | Instrument | Fields / signal | Method | Threshold |
 |---|---|---|---|---|
 | `OUT-6301-ambiguous-items-placed` (north star) | Team `RefreshLog` row | `RecordsPlacedFromLinksNamingMoreThanOneParent` (new), `RecordsWhoseLinksNamedMoreThanOneParent` (now "not placed"); fallback: `n` in the placed / not-placed Warning lines | placed / (placed + not placed) on the first full Team refresh after the upgrade, read from the customer's shared row or log | ≥ 80% (hypothesis: placed ≥ 4× not placed). Below → R1/A3 review before release notes claim it |
-| `OUT-PFIL-never-a-guessed-parent` (redefined) | Test suite; row ↔ log | Property test (link order permuted, refresh repeated); invariant test placed + not placed = records with 2+ candidates per fetch; every placed line names pick, rule, set-aside | CI on every push; per instance, the row's figures equal the line counts | 0 flips, equality holds, 100% named. Any failure = build red |
-| `OUT-6301-no-extra-requests` | Request-count test | Jira requests per refresh vs pre-change baseline | CI | Unchanged; any increase = red |
+| `OUT-PFIL-never-a-guessed-parent` (redefined) | Test suite; row ↔ log | Property test (link order permuted, refresh repeated); invariant test placed + not placed = records with 2+ candidates per fetch; every placed line names pick, rule, set-aside | CI on every push. Per instance: the row's placed figure equals the sum of the `n` values of all placed Warning lines that refresh wrote for its counted fetches, and the not-placed figure equals the same sum over the not-placed lines. The parent sweep's lines are excluded, because the sweep is not counted | 0 flips across refreshes with unchanged links and unchanged stored Features (one permitted correction when the stored Features change), equality holds, 100% named. Any failure = build red |
+| `OUT-6301-no-extra-requests` | Request-count test | Jira requests per refresh vs pre-change baseline | CI | 0 additional Jira requests per refresh when records carry several links, compared with the same refresh when they carry one each; any increase = red |
 | `OUT-6301-lone-candidates-unchanged` | Mixed-fixture acceptance test | `ParentReferenceId` of one-candidate items | CI | 0 changed; any = red |
 | `OUT-6301-features-off-the-default` (lagging) | Feature list | `IsUsingDefaultFeatureSize` share | Before/after one full Portfolio refresh on the customer's instance (shared out of band) | ≥ 50% relative drop. Advisory, no alert |
 
@@ -2253,8 +2402,13 @@ process changes. No feature flag: the rule is the behaviour, and its guardrails 
   Check in slice 01 that the generated migration carries `defaultValue: 0` on **both** providers (that is
   what makes an old binary's insert succeed).
 - No other persisted state changes. Parents written by the new rule are ordinary `ParentReferenceId` and
-  Additional Field values. The previous binary keeps each one until that item is next re-read, then refuses
-  it again: the pre-story behaviour, not corruption. A full refresh after the rollback makes it immediate.
+  Additional Field values. The previous binary leaves them alone until the item is next re-read. Then its
+  connector sees two or more candidates and leaves `ParentReferenceId` at Jira's own `parent` field, or
+  empty, and `WorkItemBase.Update` overwrites the stored value with that. So on its next re-read the item
+  loses the parent this story placed it under, exactly as it would have before the story: the pre-story
+  behaviour, not corruption. A full refresh after the rollback makes that happen at once.
+- The migration's name, `AddPlacedParentCountToRefreshLog`, is a short form: the column it adds is
+  `RecordsPlacedFromLinksNamingMoreThanOneParent`.
 - The column is not dropped on rollback, and must not be (expand-only, house rule).
 
 **Production validation** (per instance, advisory): after the first full Team refresh, Refresh History shows
@@ -2264,13 +2418,21 @@ The demo-data instance shows neither, as expected.
 ## Wave: DEVOPS / [REF] Mutation testing strategy
 
 `per-feature` (CLAUDE.md, unchanged), ≥ 80% kill rate, run **last on frozen code**, one survivor-kill round
-plus one cheap re-run. One config per stack under `Lighthouse.Backend/Lighthouse.Backend.Tests/` following
-`stryker.6094.backend.json` (whole-file `mutate` entries only: Stryker.NET silently ignores line spans; a
-`test-case-filter` excluding `API.Integration` containers and live categories).
+plus one cheap re-run. The backend config is
+`Lighthouse.Backend/Lighthouse.Backend.Tests/stryker.6301.backend.json`, created at mutation time (it does
+not exist yet), following `stryker.6094.backend.json`: whole-file `mutate` entries only, because
+Stryker.NET silently ignores line spans, and a `test-case-filter` excluding the `API.Integration`
+containers and the live categories. The frontend runs StrykerJS in place.
+
+The acceptance suite (`API.Integration`) is excluded because it takes about 80 minutes under Stryker
+against about 3 without it. So it scores no mutant, including in `WorkItemService`'s placing step, which
+the acceptance scenarios exercise most. Those mutants are scored by the unit tests DELIVER adds to
+`WorkItemServiceTest` (the six fetch-path tests, the placed + not-placed invariant, the log-budget test),
+so those tests have to exist before the run.
 
 | Scope | Files (whole file) | Note |
 |---|---|---|
-| Backend, in | `Models/ParentResolution.cs`, `Models/ParentPlacement.cs`, `Models/ParentCandidate.cs`, `Services/Implementation/Parents/ParentPlacementReport.cs`, `Services/Implementation/Parents/ParentSourceSelector.cs`, `Factories/IssueFactory.cs`, `Services/Implementation/WorkTrackingConnectors/Jira/IssueExtensions.cs`, `Services/Implementation/Repositories/FeatureRepository.cs` | The rule, the copy, the writer pair and the changelog parse |
+| Backend, in | `Models/ParentResolution.cs`, `Models/ParentPlacement.cs`, `Models/ParentCandidate.cs`, `Services/Implementation/Parents/ParentPlacementReport.cs` (created in DELIVER, slice 01), `Services/Implementation/Parents/ParentSourceSelector.cs`, `Factories/IssueFactory.cs`, `Services/Implementation/WorkTrackingConnectors/Jira/IssueExtensions.cs`, `Services/Implementation/Repositories/FeatureRepository.cs` | The rule, the copy, the writer pair and the changelog parse |
 | Backend, in with triage | `Services/Implementation/WorkItems/WorkItemService.cs` | Whole file is mutated (1198 lines); score and triage only survivors in the placing step and the three resolver call points, read per line from `mutation-report.json` |
 | Backend, out | `JiraWorkTrackingConnector.cs` (3343 lines; this story only deletes code and delegates to `HangUnder`), migrations, `RefreshLog.cs` / `SyncOutcome.cs` / `WorkItemBase.cs` (properties), updaters (one assignment each) | Covered by unit and acceptance tests; mutating them costs hours for no signal |
 | Frontend | `src/pages/Settings/SystemInfo/RefreshHistorySection.tsx` | StrykerJS in place, `disableTypeChecks: false`, commit first; run after the backend, never concurrently |
@@ -2352,6 +2514,357 @@ Total Runs  Success Rate  Max Work Items Placed From         Max Work Items Not 
 Avg Items  Avg Duration  Min Duration  Max Duration  Last Run   (unchanged)
 ```
 - **Refresh History loading and failure looks: add both.** A centred spinner while loading and `Could not load refresh history.` on a failed load, reusing the `ThirdPartyPackagesSection` pattern. `No refresh history available yet.` now means only an empty, successful answer.
+  These approved words are the spec for the two looks (recorded at DISTILL review, round 2):
+```
+Loading                                   Failed
+Refresh History                           Refresh History
+              ◌  (centred spinner)        (!) Could not load refresh history.
+```
 - **Fallback brackets approved:** `(oldest link, {date}; set aside …)`, `(earliest created, {date}; set aside …)`, `(lowest key; set aside …)`, `(only Feature; set aside …)`. The slice-01-only refusal reason is `more than one is a Feature Lighthouse holds`.
 - **The placed log line is a Warning**, not Information, so it shows where admins check refresh warnings (e.g. Task Manager).
-- Taken autonomously in AFK mode (engineering, default from DESIGN): accept the one-time move at Portfolio grain. An undated Feature first placed by lowest key may move once to the earliest-created candidate when the candidates above get stored and the Feature is re-read. KPI 2's "0 flips" is scoped to unchanged stored parents.
+- *Added at DISTILL review, round 2, not part of the approved sketch:* the aggregated lead-in in front of the approved per-item text names only the owner and says "record(s)", e.g. `Team "Payments" placed 1 record whose links name more than one issue: …`. For the maintainer at the hold (see the House checklist's Terminology item).
+- *Added at DISTILL review, round 2:* **Spike 00 is not done.** The `(oldest link, {date}; …)` copy and the tests that pin it are pinned at risk. If Jira Cloud's changelog has no dated `Link` entry, slice 02 ships the fallback-only wording (earliest created, then lowest key). This needs the maintainer's acknowledgement at the hold.
+- Taken autonomously in AFK mode (engineering, default from DESIGN): accept the one-time move at Portfolio grain. An undated Feature first placed by lowest key may move once to the earliest-created candidate when the Feature is re-read after its stored candidates change (in practice the cheap refresh after the Feature changes), so Full, Delta, Delta reads PAY-7, PAY-9, PAY-9. KPI 2 reads: 0 parent flips across refreshes with unchanged links and unchanged stored Features; one permitted correction when the stored Features change. This falls under the maintainer's Q5 answer (an item corrects itself the next time it is re-read) and is for the maintainer to revisit at the hold; see the decision note under "Wave: DISCUSS / [REF] Outcome KPIs".
+
+## Wave: DISTILL / [REF] Scope and reconciliation
+
+- Scope is the three slices of "Wave: DISCUSS / [REF] User stories" in this file (US-01..US-03): 01 narrow to Features (Team), 02 oldest link wins (Team), 03 the same at Portfolio grain, plus the Refresh History split and its loading and failure looks.
+- Read: DISCUSS, DESIGN and DEVOPS wave decisions in this delta, `docs/product/architecture/brief.md`, `docs/product/kpi-contracts.yaml`, `docs/architecture/atdd-infrastructure-policy.md`.
+- **Reconciliation passed: 0 contradictions.** The departures DESIGN made itself are treated as resolved: the loading and failure looks (DDD-14 plus the maintainer decision above supersede the slice-01 brief's "looks unchanged"); KPI 2 scoped for the one-time Portfolio move; link dates kept per counterpart key; the sweep of the issues above placed but not counted.
+- Language: C# (NUnit 4, real host through `TestWebApplicationFactory`) and TypeScript (Vitest + RTL). The state-delta port, `@contract-shape` tags and the Python domain-types module do not apply to this repository, by the policy file and corpus precedent: there are no `.feature` files, and the "and nothing else changed" half of each scenario is asserted explicitly (the other Team's item, the trackers' own parent, no extra request).
+
+## Wave: DISTILL / [REF] Scenarios
+
+All backend tests carry `[Category("story-6301-only-features-as-parent-candidates")]` and a `slice-0N` category. Pending ones carry `[Ignore(PendingStory6301.SliceNN)]`. Two greps together list what DELIVER still has to un-skip: `grep -rn PendingStory6301 Lighthouse.Backend` for the backend, and `grep -rn pendingStory6301 Lighthouse.Frontend/src` for the frontend spec, whose pending cases name the constant `pendingStory6301` (added at DISTILL review, round 1).
+
+**Slice 01: narrow to Features (Team).** `API/Integration/OnlyFeaturesAsParentCandidates/Slice01NarrowToFeaturesScenarios.cs`
+
+| Scenario | Categories |
+|---|---|
+| A_Work_Item_linked_to_one_Feature_and_an_incident_counts_toward_the_Feature | walking-skeleton, kpi |
+| The_refresh_names_the_Feature_it_chose_why_and_what_it_set_aside | |
+| A_Work_Item_linked_only_to_non_Features_is_reported_not_silently_dropped | error |
+| A_Work_Item_that_can_no_longer_be_placed_takes_the_trackers_own_parent_not_the_Feature_it_had | error |
+| A_Work_Item_with_a_single_link_keeps_it_Feature_or_not | edge, kpi |
+| A_Work_Item_kept_under_its_lone_link_is_not_placed_once_a_second_non_Feature_is_linked (PAY-416; added at DISTILL review, round 1) | error |
+| Two_Features_left_after_narrowing_are_not_guessed_before_the_oldest_link_rule_exists | error (true only until slice 02; slice 02 deletes it) |
+| A_Feature_stored_only_as_the_level_above_a_Portfolio_counts_as_a_Feature_Lighthouse_holds | edge |
+| A_Work_Item_that_did_not_move_keeps_its_reading_until_it_is_next_read | edge |
+| A_Feature_stored_after_the_Work_Item_was_read_is_picked_up_when_the_Work_Item_is_next_read | edge |
+| Several_records_share_one_placed_line_and_one_not_placed_line | edge |
+| Placed_and_not_placed_add_up_to_every_Work_Item_whose_links_name_two_or_more_issues (4 mixes) | property, kpi |
+| Reading_the_links_costs_the_tracker_no_extra_request (**active guard**, passes today). It compares two cheap (Delta) refreshes of the **same** Team: first with one link on each Work Item, then with a second link added. The second must cost the tracker no more requests than the first | kpi |
+
+Kernel, `Models/ParentResolutionPlacementTest.cs`:
+- One_candidate_is_not_a_question_for_the_pick (edge)
+- Narrowing_to_the_one_stored_Feature_places_the_record_under_it
+- No_stored_Feature_among_the_candidates_places_nothing_and_says_why (error)
+- Two_stored_Features_are_not_placed_until_there_is_a_rule_to_choose_between_them (error; deleted at slice 02)
+- Two_readings_of_the_same_links_in_another_order_are_the_same_answer (property)
+- Every_order_of_the_same_candidates_gives_the_same_placement_when_narrowing_decides (property; every permutation)
+
+Repository, `Services/Implementation/Repositories/FeatureRepositoryTest.cs`:
+- The_stored_Feature_snapshot_holds_every_Feature_with_its_created_date_the_level_above_included
+- the duplicate-id case, which keeps the earliest known created date and ignores `DateTime.MinValue`
+
+**Slice 02: oldest link wins (Team).** `Slice02OldestLinkWinsScenarios.cs`
+
+| Scenario | Categories |
+|---|---|
+| A_Work_Item_linked_to_two_Features_counts_toward_the_one_it_was_linked_to_first | kpi |
+| The_same_Work_Item_stays_under_the_same_Feature_however_the_tracker_orders_its_links | edge, kpi (one reordering; the every-permutation property lives in the kernel) |
+| A_dated_link_wins_over_a_link_with_no_recorded_date | edge |
+| With_no_link_dates_the_older_Feature_wins | edge |
+| With_no_link_dates_and_Features_of_the_same_age_the_lower_key_wins (ordinal: OPS-12 before OPS-9) | edge |
+| A_Feature_with_no_recorded_created_date_counts_as_unknown_not_as_the_oldest | edge |
+| A_link_removed_and_added_again_counts_from_when_it_was_added_again | edge |
+| A_history_that_arrives_out_of_order_is_read_by_when_each_entry_happened | edge |
+| A_long_history_is_read_in_full_before_a_link_is_dated | edge |
+| An_older_link_to_an_incident_never_wins | edge |
+
+Kernel:
+- The_oldest_dated_link_wins
+- A_dated_link_beats_an_undated_one (edge)
+- Among_undated_links_the_earliest_known_created_date_wins (edge; 6 rows incl. null and MinValue)
+- When_everything_else_ties_the_lowest_key_wins_compared_character_by_character (edge)
+- Without_narrowing_nothing_is_set_aside_first_and_the_pick_always_ends_somewhere
+- Every_order_of_the_same_candidates_gives_the_same_placement (property, kpi; every permutation, both narrowings)
+- Every_record_with_two_or_more_candidates_is_either_placed_among_them_or_refused_for_holding_no_Feature (property, kpi; 400 samples from a seeded `Random(6301)`)
+
+Changelog reading, `Factories/IssueFactoryLinkDatesTest.cs`, on the **provisional** fixture:
+- An_added_link_dates_its_counterpart_by_when_it_was_added
+- A_removed_link_leaves_its_counterpart_undated (edge)
+- A_link_added_again_dates_from_when_it_was_added_again (edge)
+- Entries_out_of_order_are_read_by_when_they_happened (edge)
+- A_key_named_only_in_the_sentence_is_read_from_the_sentence (edge)
+- A_removal_whose_adding_was_never_recorded_changes_nothing (edge)
+- Status_changes_beside_link_entries_are_read_as_before (edge; **active guard**)
+
+**Slice 03: the same at Portfolio grain.** `Slice03PortfolioOldestLinkScenarios.cs`
+
+| Scenario | Categories |
+|---|---|
+| A_Feature_linked_to_two_issues_above_it_rolls_up_to_the_one_it_was_linked_to_first | kpi |
+| At_Portfolio_level_nothing_is_set_aside_before_the_oldest_link_is_picked | edge |
+| Undated_parents_that_are_not_stored_fall_back_to_the_lowest_key | edge |
+| An_undated_Feature_moves_once_to_the_older_parent_after_the_parents_are_stored_and_then_holds. Three refreshes run Full, Delta, Delta, and the parent reads PAY-7, PAY-9, PAY-9: the move happens when the Feature is re-read after its stored candidates change (in practice the cheap refresh after the Feature changes), then holds. A Portfolio's second refresh is already the cheap one, unlike a Team's | edge |
+| A_Portfolio_pointed_at_a_link_that_also_reads_downward_names_every_candidate | error |
+| A_cheap_Portfolio_refresh_places_and_counts_what_it_downloaded | edge |
+| The_issues_above_are_placed_too_named_on_their_own_line_and_not_counted | edge |
+
+**Refresh History (slice 01 UI).** `Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.test.tsx`, describe `RefreshHistorySection: placed and not placed`:
+- `it.skip`, two figures, worst single refresh each, in the instance's Work Item term
+- `it.skip`, only the figure above zero shown (edge)
+- `it.skip`, a row recorded before the split reads as not placed (edge)
+- `it.skip`, the instance's Feature term on a Portfolio, whose records are Features
+- `it.skip`, spinner while loading, with no empty text and no entity picker (edge)
+- `it.skip`, `Could not load refresh history.` on failure (error)
+- active guard: the empty message only on an empty, successful answer (edge)
+
+The six skipped cases carry the marker `pendingStory6301`. One more test, outside that describe, carries
+`retiredByStory6301Slice01`: it is active and pins today's `Fetched` caption, and slice 01 deletes it when it
+changes the caption.
+
+**Counts** (test methods; parameterised rows count once):
+
+| Slice | Methods | Error + edge | Share |
+|---|---|---|---|
+| 01 backend (acceptance 13, kernel 6, repository 2) | 21 | 13 | 62% |
+| 01 frontend | 7 | 5 | 71% |
+| 02 (acceptance 10, kernel 7, changelog 7) | 24 | 18 | 75% |
+| 03 | 7 | 6 | 86% |
+| **All** | **59** | **42** | **71%** |
+
+*(Recounted at DISTILL review, round 1, from the `[Category]` attributes on disk: slice 01 gained the PAY-416
+error scenario, and slice 02's reorder scenario is tagged edge, not property.)*
+
+Backend test cases with rows expanded: 64, of which 62 are pending and 2 active. Pending methods per file
+(`[Ignore(PendingStory6301` grep): slice-01 acceptance 12, slice-02 acceptance 10, slice-03 acceptance 7,
+kernel 13, changelog 6, repository 2.
+
+## Wave: DISTILL / [REF] Walking-skeleton strategy
+
+Strategy B, one skeleton: `A_Work_Item_linked_to_one_Feature_and_an_incident_counts_toward_the_Feature`.
+- It runs the real host, the real Jira connector over a faked transport, the real `WorkItemService` and real EF.
+- It triggers the refresh through `ITeamUpdater.TriggerUpdate` / `IPortfolioUpdater.TriggerUpdate`, the same entry the refresh API and the scheduler use. That follows #6028's precedent: `ParentFromIssueLinks/Slice03AmbiguityRefusalSpecifications.cs` triggers its refresh-row scenarios the same way.
+- It reads the Refresh History figures over HTTP (`GET /api/latest/systeminfo/refreshlog`) and the placed and not-placed lines from the recording logger.
+- It reads the stored parent and the override's Additional Field value from the persisted record (`IWorkItemRepository` / `IRepository<Feature>` in a fresh scope), on purpose: no API returns a Work Item's parent reference for a Team. This departs from #6028, whose scenarios read the parent from the records the connector returned. That is no longer enough, because the placing step now runs in `WorkItemService` after the connector, so only the saved record shows its outcome.
+- It is pending at hand-off, as in epic 5878's precedent, and un-skipping it is slice 01's first DELIVER step.
+- Slices 02 and 03 have no skeleton of their own. Their first `kpi` scenario plays that role.
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+Driven adapters:
+
+| Adapter | How the tests meet it | Real I/O? |
+|---|---|---|
+| Jira REST (search, keyed re-read, changelog re-read) | Real `JiraWorkTrackingConnector` over `Mock<HttpMessageHandler>` answering `JiraWireFormat` bodies, routed by JQL; every request recorded | Transport faked (policy row appended) |
+| Jira changelog link entries | `IssueFactoryLinkDatesTest` plus the slice-02 acceptance scenarios, on **provisional** builders | Provisional until Spike 00's captured payload |
+| `FeatureRepository` / EF (stored Features, created dates) | Real EF through the test host; `FeatureRepositoryTest` for the snapshot | Real (SQLite) |
+| `RefreshLog` row | Read through `GET /api/latest/systeminfo/refreshlog` | Real |
+| Refresh warning lines | `RecordingLogger<WorkItemService>` closed-generic singleton; `RecordingLogger<JiraWorkTrackingConnector>` handed to the connector | Real formatting |
+
+Driving adapters:
+
+| Driving adapter | Covered by |
+|---|---|
+| Team refresh trigger | Slices 01 and 02 acceptance |
+| Portfolio refresh trigger | Slice 03 acceptance, plus slice 01's level-above case |
+| `GET /api/latest/systeminfo/refreshlog` | Every acceptance scenario asserting a figure |
+| Refresh History UI (`RefreshHistorySection`) | Frontend spec |
+
+E2E: no Playwright spec references the old caption (searched `Lighthouse.EndToEndTests` for `Fetched With Links` and `More Than One Parent`, 0 hits), so no page object needs changing. No E2E scenario is added, because the story's subject is refresh reading, which the demo data cannot express.
+
+## Wave: DISTILL / [REF] Production scaffolds
+
+Each one carries a `SCAFFOLD:` marker and throws, or is never filled. `grep -rn "SCAFFOLD" Lighthouse.Backend/Lighthouse.Backend Lighthouse.Frontend/src` lists them.
+
+- `Models/ParentCandidate.cs` (new): `readonly record struct ParentCandidate(string Key, DateTime? LinkedAt)`.
+- `Models/ParentPlacement.cs` (new):
+  - `ParentPlacement` record and the enums `ParentPlacementOutcome`, `ParentNarrowing`, `ParentPlacementRule` and `ParentNotPlacedReason`
+  - `StoredFeatures`, whose `Holds` and `CreatedDateOf` throw
+- `Models/ParentResolution.cs`: `From(IReadOnlyList<ParentCandidate>)` and `Place(StoredFeatures, ParentNarrowing)`, both throwing.
+- `IFeatureRepository.GetStoredFeatureCreatedDates()`, whose implementation in `FeatureRepository` throws.
+- `Jira/Issue.cs`: `LinkAddedAt`, always empty.
+- `RefreshLog.ts`: optional `recordsPlacedFromLinksNamingMoreThanOneParent`.
+
+Not scaffolded:
+- The `RefreshLog` column, because it would change the model snapshot without a migration. Slice 01 adds it through `Create-Migration.ps1`, and the tests read the payload member, which is absent (null) today.
+- `WorkItemBase` / `SyncOutcome` / `HangUnder` / a placement report type. The acceptance tests read lines and figures, not those types, so DELIVER is free to shape them.
+
+## Wave: DISTILL / [REF] Test placement
+
+- `Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/` holds the harness (`ParentPlacementAcceptanceTest.cs`, with `PendingStory6301`) and one partial file per slice.
+- The kernel is in `Models/`, changelog reading in `Factories/` and the snapshot in `Services/Implementation/Repositories/`. Wire-format builders are in `TestHelpers/TrackerWireFormats.cs` (`JiraWireFormat`).
+- Frontend tests are beside the component.
+- Left to DELIVER as unit tests, named there:
+  - the six fetch paths each counting placed and not placed
+  - an ArchUnit rule that `ParentResolution.Place` reads nothing but its arguments
+  - `HangUnder`
+  - the `WorkItemServiceTest` builder migration
+
+## Wave: DISTILL / [REF] Red classification
+
+Every pending backend case was un-skipped at once, run, then re-skipped. The result was 62 failed and 2 passed (the two active guards), with **every failure MISSING_FUNCTIONALITY and 0 BROKEN**. In the filtered run with them skipped, 62 backend cases are skipped. The count includes `A_Work_Item_kept_under_its_lone_link_is_not_placed_once_a_second_non_Feature_is_linked` (PAY-416, added at DISTILL review, round 1), which fails with `Expected: property Count equal to 1, But was: 0`: no not-placed line is written yet.
+- Acceptance cases fail on assertions about missing behaviour:
+  - the placed figure is null
+  - the parent is empty
+  - the placed or not-placed line is missing while the old line `…Lighthouse left each of these where it was…` is still written
+- Kernel and repository cases reach the `SCAFFOLD` NotImplementedException.
+- Changelog cases fail on an empty `LinkAddedAt`, e.g. `Expected: dictionary containing entry ["PAY-88", 2026-07-01 09:00:00] But was: <empty>`.
+
+All six pending frontend cases fail the same way: the caption is missing, there is no `progressbar` while loading, or there is no `alert` on failure.
+
+Delta refresh in the harness: the first refresh on a connection registers Jira's predefined fields, which changes the fetch fingerprint. The second refresh is therefore still Full, and only the third is Delta. That is why `TheTeamIsInSteadyUse()` / `ThePortfolioIsInSteadyUse()` refresh twice.
+
+## Wave: DISTILL / [REF] Pre-requisites for DELIVER
+
+1. **Before slice 02:** Spike 00 captures a real Jira changelog with link entries. Its payload replaces `JiraWireFormat.ALinkAddedAt`, `ALinkRemovedAt` and `ALinkAddedNamingTheCounterpartOnlyInItsSentence`, which are marked provisional. Check the field name, which side holds the key, and the sentence form. Any of the seven changelog tests and the four slice-02 history scenarios may need rewording with it.
+2. **Slice 01:** the `RefreshLog` column via `Create-Migration.ps1`, across every provider; never `dotnet ef` directly.
+3. Worktrees: copy `valid_not_expired_license.json` from the main checkout (two Licensing tests).
+
+## Wave: DISTILL / [REF] Wave decisions
+
+- **The connector's Portfolio-half warning stays until slice 03.**
+  - Slice 01 deletes only the Team-side call of `ReportTheRecordsWhoseLinksNamedMoreThanOneParent` in `JiraWorkTrackingConnector`.
+  - The Portfolio call and the Portfolio resolvers' count stay until slice 03.
+  - This follows the slice-01 brief ("Portfolio still refuses and counts as not placed") against DDD-11's earlier deletion. It is a sequencing detail, not a product change.
+- **Existing refusal tests the story contradicts are left running and tagged.**
+  - They still pass until their slice lands, which then rewrites or deletes them, with the replacing scenarios listed above.
+  - Tagged `retired-by-story-6301-slice-01` in `ParentFromIssueLinks/Slice03AmbiguityRefusalScenarios.cs`: `The_warning_names_the_item_and_every_candidate`, `Several_items_nobody_could_place_share_one_warning`, `The_refresh_records_how_many_records_it_could_not_place`.
+  - Tagged `retired-by-story-6301-slice-03`: `A_portfolio_refresh_reports_it_the_same_way`, `A_portfolio_refresh_records_the_count_on_its_own_row`.
+  - The frontend test of the old `Fetched` caption carries a comment saying the split supersedes it; slice 01 deletes it. The old caption goes for every entity at slice 01, Portfolio rows included: a Portfolio row shows the new layout with the Feature term, its placed figure hidden at 0 until slice 03 (see "The Portfolio row during slices 01-02" under the DISCUSS sketch).
+- **Pinned copy.**
+  - The narrowing bracket is pinned as the maintainer approved it at the DISTILL sketch review (it replaces the earlier DISCUSS sketch wording "the only Feature among its links"): `(only Feature; set aside INC-5531)`, in const `TheOnlyFeatureAmongItsLinks`.
+  - The maintainer block above lists exactly this bracket, `(only Feature; set aside …)`, so the pinned copy matches the decision. *Closed at DISTILL review, round 1; nothing is open on it.*
+  - The sweep's owner wording (`the parents of Portfolio "Payments Q4"'s Features placed …`) is DESIGN's proposed copy, pinned as written.
+- **No new test dependency.** Property tests use exhaustive permutations and a seeded `Random(6301)` corpus instead of FsCheck.
+- **The skeleton is pending at hand-off** (see the walking-skeleton strategy).
+- **Step reuse (informational).**
+  - The harness has about 30 step methods, shared across 24 acceptance scenarios in three slices.
+  - The Givens about the tracker's issues and links, and the Thens reading the stored parent, the figures and the lines, recur in almost every scenario.
+  - It is not gated, and no reuse ratio is chased at the cost of readable scenario names.
+- **Usage data:** N/A, as DEVOPS decided. No new event.
+
+## Wave: DISTILL / [REF] Review gate (round 1)
+
+Four reviewers read the waves before DELIVER. Verdicts:
+
+| Reviewer | Scope | Verdict |
+|---|---|---|
+| Eclipse | DISCUSS | needs revision (1 blocker, 2 high, 5 medium, 6 low) |
+| Atlas | DESIGN | needs revision (2 blockers, 3 high, 2 medium, 5 low) |
+| Forge | DEVOPS | conditionally approved (2 high, 2 medium, 3 low) |
+| Sentinel | DISTILL | doc corrections (alongside its test findings, fixed in the test files) |
+
+Several findings came from not seeing the binding block "Maintainer decisions: UI sketch review
+(2026-10-15)" at the top of DISTILL. Those are fixed by pointing to it, not by re-deciding anything.
+
+What was fixed in the documents:
+- **DISCUSS.** DoR item 5 now names the six ACs that are guardrails (1.5, 1.7, 1.9, 2.4, 3.3, 3.5) and the
+  test that verifies each. AC-1.7 is restated per fetch (at most four lines on a Portfolio refresh), AC-3.5
+  as resolved. KPI 2 reads the same in all three places, with the one-time Portfolio move recorded under the
+  maintainer's Q5 answer. KPI 3 read "0 additional Jira requests per refresh against the pre-change
+  count" (restated in round 2). The website check is answered N/A from a grep. The Portfolio row during slices 01-02 is stated.
+  Superseded copy (`the only Feature among its links`, `also linked to`) points to the approved wording.
+  The slice briefs match: slice 01's UI paragraph, slice 02's pre-registered threshold and denominator,
+  slice 03's sweep and Portfolio row.
+- **DESIGN.** Every Reuse Analysis row and every new type has a contract shape. Copy provenance points to
+  the DISTILL block, not to a relay. DDD-9 says plainly that a not-placed record's stored parent is
+  overwritten. The log budget is per fetch everywhere, and ADR-238 now supersedes ADR-193 §6's budget and
+  records the placed line's move from Information to Warning. The leaf-adapter boundary is enforced by a
+  new ArchUnitNET rule, `WorkTrackingConnectors_DoNotDependOnAnyRepository` (the repository
+  interfaces and the persistence module, widened in round 2; guarded by `NamedModules_AreNonEmpty`), next to the existing
+  `WorkTrackingIntegration_IsALeafInputAdapter`, which allows them. ADR-238 records that the 5% gate fired
+  on qualitative evidence.
+- **DEVOPS.** The analyzer sweep is a numbered local gate, with its file filter and the worktree caveat.
+  "No new issue" is replaced by a rule-by-rule checklist. Mutation names the Stryker config and says which
+  tests score the placing step's mutants. The rollback states the exact old behaviour. The per-instance KPI
+  check is defined line by line.
+- **DISTILL.** The harness description, the two pending-test greps, the slice-01 count (recounted after
+  the test agent's round; see Counts) and the closed `only Feature` note.
+
+**Two autonomous decisions, flagged for the maintainer at the hold:**
+1. **Log-line terms** (*replaced in round 2*; see below). Round 1 had the lines write the seeded default
+   terms literally. Round 2 changed it: the lead-in names only the owner and says "record(s)".
+2. **A not-placed record's stored parent is overwritten** with what the tracker reports now (Jira's own
+   `parent` field, or empty), never kept from an earlier refresh. This is today's behaviour and the D11
+   default; the lone-candidate-then-second-link transition is the case to look at (DDD-9).
+
+Also for the hold, already recorded before this round: the one-time Portfolio move under Q5 (decision
+note under DISCUSS Outcome KPIs).
+
+**Gate results after the round** (test files as revised by the test agent):
+- Backend, filtered run (live-connector categories excluded): Passed 220, Skipped 62, Failed 0. The 62
+  skipped are this story's pending cases.
+- Vitest: 11 passed, 6 skipped (the six `pendingStory6301` cases).
+- Biome: clean.
+- Analyzer sweep: zero diagnostics in this story's files. The hits elsewhere were there before this story
+  (CA1861 / CA1825 in old EF migrations, S6561 at `AzureDevOpsWorkTrackingConnectorTest.cs:782`).
+
+What the test agent changed this round, and the docs above now reflect:
+- New slice-01 error scenario `A_Work_Item_kept_under_its_lone_link_is_not_placed_once_a_second_non_Feature_is_linked`
+  (PAY-416), so slice 01 has 12 pending acceptance cases.
+- The request-cost guard compares two cheap (Delta) refreshes of the same Team, with one link each and then
+  with a second link added.
+- The slice-03 one-move scenario runs Full, Delta, Delta (PAY-7, PAY-9, PAY-9).
+- Slice 02's reorder scenario is tagged edge.
+- New ArchUnitNET rule `ModuleBoundariesArchUnitTest.WorkTrackingConnectors_DoNotDependOnAnyRepository`, over
+  the repository interfaces and, since round 2, the persistence module (`Data`,
+  `Services.Interfaces.Repositories`, `Services.Implementation.Repositories`), guarded by
+  `NamedModules_AreNonEmpty`.
+- Frontend markers: `pendingStory6301` (6 skipped) and `retiredByStory6301Slice01` (1 active, deleted when
+  slice 01 changes the caption).
+
+## Wave: DISTILL / [REF] Review gate (round 2)
+
+This is the final revision cycle. Verdicts:
+
+| Reviewer | Scope | Verdict |
+|---|---|---|
+| Eclipse | DISCUSS | conditionally approved |
+| Atlas | DESIGN | 1 blocker (N1), fixed |
+| Sentinel | DISTILL | conditionally approved |
+
+**Changed decision: log-line terms.** Round 1's "the lines write the seeded default terms literally" is
+replaced. The aggregated lead-in names only the Team or Portfolio and says "record(s)", never Work Item(s)
+or Feature(s): `{owner} placed N record(s) whose links name more than one issue: …` and `{owner} could not
+place N record(s) whose links name more than one issue: …`, rendered for example `Team "Payments" placed 1
+record whose links name more than one issue: …`. This honours journey D10 (a note under D10 in the journey
+now says how). It follows the connector's existing `{OwnerName} has records whose links name more than one
+issue …` line and the Jira publish refusal, which names no term. The approved per-item parts are
+unchanged. **For the maintainer at the hold:** the lead-in wording was not in the approved sketch. Two
+pinned fragments still carry the default word Feature: the sweep's owner `the parents of Portfolio "X"'s
+Features`, and the not-placed reason `none is a Feature Lighthouse holds`.
+
+Fixes:
+- **DISCUSS.**
+  - The DISTILL maintainer block now records that Spike 00 is not done. The `(oldest link, {date}; …)` copy
+    and its tests are pinned at risk, and slice 02 ships fallback-only wording if Cloud has no dated
+    `Link` entry. The maintainer acknowledges this at the hold (N-2).
+  - DoR item 5: AC-2.6 is now a guardrail. Its truncated-changelog clause maps to
+    `A_long_history_is_read_in_full_before_a_link_is_dated` (N-3). AC-2.4 maps to the slice-02 scenarios
+    that assert each bracket (N-7).
+  - KPI 3 now reads "0 additional Jira requests per refresh when records carry several links, compared with
+    the same refresh when they carry one each", in the KPI table, the monitoring table and
+    `OUT-6301-no-extra-requests` (N-4).
+  - One trigger for the one-time Portfolio move everywhere: "when the Feature is re-read after its stored
+    candidates change (in practice the cheap refresh after the Feature changes)" (N-5).
+  - The approved words are recorded as the spec for the loading and failure looks, with a sketch of each
+    (N-6).
+- **DESIGN.**
+  - The Reuse Analysis gains rows, each with contract shape, universe and delta, for `Issue`,
+    `JiraWorkTrackingConnector`, `TeamUpdater` and `PortfolioUpdater` (N1, the blocker).
+  - The pure-kernel ArchUnit rule is marked as not written yet; DELIVER slice 01 adds it with a
+    `NamedModules`-style guard (N2).
+  - `WorkTrackingConnectors_DoNotDependOnAnyRepository` is described with its widened scope: the database
+    context and every repository, interface or implementation (`Data`, `Services.Interfaces.Repositories`,
+    `Services.Implementation.Repositories`). Other platform services, such as the OAuth token service
+    `OAuthBearerAuthStrategy` needs, stay allowed, so it does not forbid all of Platform/Persistence.
+  - CA-D2 quotes US-02's KPI line exactly ("0 Feature flips between unchanged refreshes") (N4).
+  - ADR-193's supersede note covers §6's page count, which is now two figures, and the column names. The
+    older parent-from-issue-links section of `brief.md` opens with a superseded-in-part note (N5).
+  - The `IFeatureRepository` reuse row names `GetStoredFeatureCreatedDates` and classes it as a read-only
+    projection (N6).
+- **DISTILL.** The frontend test titles now use the instance's Work Item and Feature terms, and the lead-in
+  examples are updated wherever they are pinned.

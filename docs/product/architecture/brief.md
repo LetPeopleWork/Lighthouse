@@ -7587,6 +7587,10 @@ Feature delta: `docs/feature/story-5914-metrics-time-horizon-presets/feature-del
 
 ## Application Architecture — parent-from-issue-links (DESIGN delta)
 
+*Superseded in part by story 6301 / ADR-238 (2026-10-15): several link candidates are now narrowed and
+placed by the oldest link in `WorkItemService` instead of refused; see "Application Architecture —
+story-6301-only-features-as-parent-candidates" below.*
+
 Feature: `parent-from-issue-links` — ADO Epic #6028, "Parentage from Jira Issue Links"
 Wave: DESIGN
 Date: 2026-09-18
@@ -10032,8 +10036,9 @@ service. There is no new container, no new bounded context and no new dependency
   and the override's show-back value, for one candidate (connector) and several (service) alike.
 - **6301-I4 (DDD-1, D1): a lone candidate is stored as-is.** Narrowing applies only with two or more
   candidates, and only at Team grain. Native-parent and field sources are untouched.
-- **6301-I5 (DDD-12): placed + not placed = records with two or more candidates,** per fetch, on the
-  `RefreshLog` row. The parent sweep is placed and logged, not counted.
+- **6301-I5 (DDD-12): placed + not placed = records with two or more candidates, per fetch.** The counted
+  fetch's two figures go onto the `RefreshLog` row. On a Team row that is the Team's one fetch. On a
+  Portfolio row it covers the Feature half only: the parent sweep is placed and logged, but not counted.
 
 ### Component decomposition (headline)
 
@@ -10064,7 +10069,8 @@ service. There is no new container, no new bounded context and no new dependency
 
 - Timing gap (accepted): a Feature stored after the Team read an item is picked up on the item's next
   reading. At Portfolio grain, an undated Feature whose candidates above were not stored yet takes the
-  lowest key, and can move once to the earliest-created candidate after the sweep stores them.
+  lowest key, and can move once to the earliest-created candidate when the Feature is re-read after its
+  stored candidates change (in practice the cheap refresh after the Feature changes).
 - Link dates are keyed by counterpart key, not link type (the changelog names no type in a structured
   field). The Data Center changelog shape is unverified. Both degrade to the deterministic fallback.
 
@@ -10075,8 +10081,12 @@ carries L1/L2 with the changed responsibilities named, and an L3 for the parent-
 
 ### Architectural Enforcement (this feature)
 
-- Existing ArchUnitNET leaf-adapter rule, unchanged. New ArchUnitNET rule: the placement kernel types depend
-  on no `Services` or `Data` namespace.
+- Existing ArchUnitNET leaf-adapter rule, unchanged. A new ArchUnitNET rule, `WorkTrackingConnectors_DoNotDependOnAnyRepository`, forbids WorkTracking-Integration
+  types from depending on the repository interfaces or the persistence module (`Data`,
+  `Services.Interfaces.Repositories` with `IFeatureRepository`, `Services.Implementation.Repositories`),
+  which the leaf rule allows, so the connector cannot read stored Features. `NamedModules_AreNonEmpty`
+  guards it. DELIVER slice 01 adds another rule, not written yet: the placement kernel types depend on no
+  `Services` or `Data` namespace, with a `NamedModules`-style guard.
 - Per-fetch-site unit tests and the placed + not-placed invariant; a property test over link permutations.
 - Request-count, query-count (one projection per fetch, none when nothing is ambiguous) and log-budget
   (at most one placed and one not-placed line per fetch) tests.
@@ -10084,7 +10094,7 @@ carries L1/L2 with the changed responsibilities named, and an L3 for the parent-
 ### ADR References (this feature)
 
 - [ADR-238](./adr-238-several-link-candidates-are-placed-by-the-oldest-link-in-the-work-item-service.md):
-  several link candidates are placed by the oldest link, in `WorkItemService`. Supersedes ADR-193 §4 and
-  the warning placement in §6. Accepted 2026-10-15 for the product rule. The engineering choices are provisional, pending the maintainer's
+  several link candidates are placed by the oldest link, in `WorkItemService`. Supersedes ADR-193 §4, and in
+  §6 the warning placement and the one-warning-per-refresh log budget (now per fetch). Accepted 2026-10-15 for the product rule. The engineering choices are provisional, pending the maintainer's
   ratification (they were taken while the maintainer was AFK, as with ADR-237).
 - Cross-refs: ADR-193 §1-§3, §5 (unchanged).

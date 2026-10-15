@@ -11,9 +11,15 @@ vi.mock("@mui/x-charts", async () => {
 	};
 });
 
+// Words no tracker seeds, so a caption can only show them by reading Terminology.
+const termsThisInstanceUses: Record<string, string> = {
+	workItems: "Tickets",
+	features: "Epics",
+};
+
 vi.mock("../../../services/TerminologyContext", () => ({
 	useTerminology: () => ({
-		getTerm: (key: string) => (key === "workItems" ? "Tickets" : key),
+		getTerm: (key: string) => termsThisInstanceUses[key] ?? key,
 	}),
 }));
 
@@ -75,6 +81,49 @@ const mockLogs: RefreshLog[] = [
 		cancelled: false,
 	},
 ];
+
+const selectEntity = async (entityLabel: string) => {
+	await waitFor(() => {
+		expect(screen.getByText("All (Aggregate)")).toBeInTheDocument();
+	});
+
+	await userEvent.click(screen.getByRole("combobox"));
+	await userEvent.click(await screen.findByText(entityLabel));
+
+	await waitFor(() => {
+		expect(screen.getByText("Total Runs")).toBeInTheDocument();
+	});
+};
+
+const theFigureCaptioned = (caption: string) =>
+	screen.getByText(caption).parentElement as HTMLElement;
+
+// Greppable markers: the pending cases are un-skipped, and the retired one deleted, when the one figure
+// splits into placed and not placed.
+const pendingStory6301 =
+	"pending: story 6301 slice 01, placed and not placed figures";
+
+const retiredByStory6301Slice01 =
+	"retired by story 6301 slice 01, its caption goes";
+
+const fetchedCaption = (records: string) =>
+	`Max ${records} Fetched With Links Naming More Than One Parent`;
+
+const placedCaption = (records: string) =>
+	`Max ${records} Placed From Links Naming More Than One Parent`;
+
+const notPlacedCaption = (records: string) =>
+	`Max ${records} Not Placed: Links Name More Than One Parent`;
+
+const expectNoParentFigureFor = (records: string) => {
+	for (const caption of [
+		fetchedCaption(records),
+		placedCaption(records),
+		notPlacedCaption(records),
+	]) {
+		expect(screen.queryByText(caption)).not.toBeInTheDocument();
+	}
+};
 
 const selectTeamAlpha = async () => {
 	await waitFor(() => {
@@ -248,7 +297,7 @@ describe("RefreshHistorySection", () => {
 		expect(screen.getByText("0%")).toBeInTheDocument();
 	});
 
-	it("reports the worst single refresh, not the window total, using this instance's word for the records", async () => {
+	it(`reports the worst single refresh, not the window total, using this instance's word for the records (${retiredByStory6301Slice01})`, async () => {
 		mockGetRefreshLogs.mockResolvedValue([
 			{ ...mockLogs[0], recordsWhoseLinksNamedMoreThanOneParent: 5 },
 			{ ...mockLogs[1], recordsWhoseLinksNamedMoreThanOneParent: 3 },
@@ -262,9 +311,7 @@ describe("RefreshHistorySection", () => {
 
 		await selectTeamAlpha();
 
-		const label = screen.getByText(
-			"Max Tickets Fetched With Links Naming More Than One Parent",
-		);
+		const label = screen.getByText(fetchedCaption("Tickets"));
 		const statBox = label.parentElement as HTMLElement;
 
 		// Two refreshes of the same entity found 5 and 3. Almost certainly the same handful of untidy
@@ -274,7 +321,12 @@ describe("RefreshHistorySection", () => {
 		expect(within(statBox).getByText("5")).toBeInTheDocument();
 		expect(within(statBox).queryByText("8")).not.toBeInTheDocument();
 		expect(within(statBox).queryByText("4")).not.toBeInTheDocument();
-		expect(screen.queryByText(/work items/i)).not.toBeInTheDocument();
+		expect(
+			screen.queryByText(placedCaption("Tickets")),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByText(notPlacedCaption("Tickets")),
+		).not.toBeInTheDocument();
 	});
 
 	it("says nothing about parents when every refresh could place everything it fetched", async () => {
@@ -291,7 +343,7 @@ describe("RefreshHistorySection", () => {
 
 		await selectTeamAlpha();
 
-		expect(screen.queryByText(/more than one parent/i)).not.toBeInTheDocument();
+		expectNoParentFigureFor("Tickets");
 	});
 
 	it("renders a refresh from a backend too old to send the count at all", async () => {
@@ -306,6 +358,179 @@ describe("RefreshHistorySection", () => {
 		await selectTeamAlpha();
 
 		expect(screen.getByText("Total Runs")).toBeInTheDocument();
-		expect(screen.queryByText(/more than one parent/i)).not.toBeInTheDocument();
+		expectNoParentFigureFor("Tickets");
+	});
+});
+
+describe("RefreshHistorySection: placed and not placed", () => {
+	it.skip(`shows the worst single refresh for each figure, placed apart from not placed, in the instance's Work Item term (${pendingStory6301})`, async () => {
+		mockGetRefreshLogs.mockResolvedValue([
+			{
+				...mockLogs[0],
+				recordsPlacedFromLinksNamingMoreThanOneParent: 41,
+				recordsWhoseLinksNamedMoreThanOneParent: 1,
+			},
+			{
+				...mockLogs[1],
+				recordsPlacedFromLinksNamingMoreThanOneParent: 30,
+				recordsWhoseLinksNamedMoreThanOneParent: 2,
+			},
+		]);
+
+		render(
+			<MockProvider>
+				<RefreshHistorySection />
+			</MockProvider>,
+		);
+
+		await selectEntity("Team: Team Alpha");
+
+		// The two refreshes are almost certainly the same untidy records read twice, so 71 and 3 would be
+		// made-up totals. Each figure is the worst a single refresh saw.
+		expect(
+			within(theFigureCaptioned(placedCaption("Tickets"))).getByText("41"),
+		).toBeInTheDocument();
+		expect(
+			within(theFigureCaptioned(notPlacedCaption("Tickets"))).getByText("2"),
+		).toBeInTheDocument();
+		expectNoParentFigureFor("Epics");
+		expect(
+			screen.queryByText(fetchedCaption("Tickets")),
+		).not.toBeInTheDocument();
+	});
+
+	it.skip(`shows only the figure that is above zero across the window (${pendingStory6301})`, async () => {
+		mockGetRefreshLogs.mockResolvedValue([
+			{
+				...mockLogs[0],
+				recordsPlacedFromLinksNamingMoreThanOneParent: 3,
+				recordsWhoseLinksNamedMoreThanOneParent: 0,
+			},
+			{
+				...mockLogs[1],
+				recordsPlacedFromLinksNamingMoreThanOneParent: 0,
+				recordsWhoseLinksNamedMoreThanOneParent: 0,
+			},
+		]);
+
+		render(
+			<MockProvider>
+				<RefreshHistorySection />
+			</MockProvider>,
+		);
+
+		await selectEntity("Team: Team Alpha");
+
+		// A figure reading zero on every healthy entity teaches the reader to skip the panel.
+		expect(screen.getByText(placedCaption("Tickets"))).toBeInTheDocument();
+		expect(
+			screen.queryByText(notPlacedCaption("Tickets")),
+		).not.toBeInTheDocument();
+	});
+
+	it.skip(`reads a refresh recorded before the split as not placed, which is what happened to it (${pendingStory6301})`, async () => {
+		mockGetRefreshLogs.mockResolvedValue([
+			{ ...mockLogs[0], recordsWhoseLinksNamedMoreThanOneParent: 4 },
+		]);
+
+		render(
+			<MockProvider>
+				<RefreshHistorySection />
+			</MockProvider>,
+		);
+
+		await selectEntity("Team: Team Alpha");
+
+		expect(
+			within(theFigureCaptioned(notPlacedCaption("Tickets"))).getByText("4"),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByText(placedCaption("Tickets")),
+		).not.toBeInTheDocument();
+	});
+
+	it.skip(`uses the instance's Feature term on a Portfolio, whose records are Features (${pendingStory6301})`, async () => {
+		mockGetRefreshLogs.mockResolvedValue([
+			{
+				...mockLogs[2],
+				recordsPlacedFromLinksNamingMoreThanOneParent: 6,
+				recordsWhoseLinksNamedMoreThanOneParent: 1,
+			},
+		]);
+
+		render(
+			<MockProvider>
+				<RefreshHistorySection />
+			</MockProvider>,
+		);
+
+		await selectEntity("Portfolio: My Portfolio");
+
+		expect(
+			within(theFigureCaptioned(placedCaption("Epics"))).getByText("6"),
+		).toBeInTheDocument();
+		expect(
+			within(theFigureCaptioned(notPlacedCaption("Epics"))).getByText("1"),
+		).toBeInTheDocument();
+		expectNoParentFigureFor("Tickets");
+	});
+
+	it.skip(`shows a spinner while the history is on its way, and neither the empty message nor the entity picker (${pendingStory6301})`, () => {
+		mockGetRefreshLogs.mockReturnValue(new Promise<RefreshLog[]>(() => {}));
+
+		render(
+			<MockProvider>
+				<RefreshHistorySection />
+			</MockProvider>,
+		);
+
+		// An answer still on its way is not an empty history, and a picker over nothing invites a choice
+		// that cannot be made yet.
+		expect(screen.getByRole("progressbar")).toBeInTheDocument();
+		expect(
+			screen.queryByText("No refresh history available yet."),
+		).not.toBeInTheDocument();
+		expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+	});
+
+	it.skip(`says it could not load the history when the request fails, not that there is none (${pendingStory6301})`, async () => {
+		const quietConsole = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
+		mockGetRefreshLogs.mockRejectedValue(new Error("The connection dropped"));
+
+		try {
+			render(
+				<MockProvider>
+					<RefreshHistorySection />
+				</MockProvider>,
+			);
+
+			expect(await screen.findByRole("alert")).toHaveTextContent(
+				/^Could not load refresh history\.$/,
+			);
+			expect(
+				screen.queryByText("No refresh history available yet."),
+			).not.toBeInTheDocument();
+			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+		} finally {
+			quietConsole.mockRestore();
+		}
+	});
+
+	it("says there is no history yet only when the history came back empty", async () => {
+		mockGetRefreshLogs.mockResolvedValue([]);
+
+		render(
+			<MockProvider>
+				<RefreshHistorySection />
+			</MockProvider>,
+		);
+
+		expect(
+			await screen.findByText("No refresh history available yet."),
+		).toBeInTheDocument();
+		expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	});
 });

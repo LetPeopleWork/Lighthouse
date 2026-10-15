@@ -143,6 +143,96 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public static string AnIssueWithAChangelogOf(string key, int entries, params string[] links)
             => AnIssue(key, TheFieldsOf($"{key} summary", EpicIssueType, string.Empty, links), entries);
 
+        /// <summary>
+        /// An issue as a search returns it with its history attached: its own created and changed stamps,
+        /// anything else the instance puts on it, its links, and the history entries the search carried.
+        /// The connector does not trust a history the search reports as longer than thirty entries and
+        /// re-reads it on the issue's own changelog endpoint, so <paramref name="historyEntriesInAll"/> may
+        /// claim more entries than are handed over here.
+        /// </summary>
+        public static string AnIssueWithItsHistory(
+            string key,
+            string issueType,
+            string created,
+            string updated,
+            string furtherFields,
+            IEnumerable<string> links,
+            IEnumerable<string> histories,
+            int? historyEntriesInAll = null)
+        {
+            var entries = histories.ToList();
+            var claimed = (historyEntriesInAll ?? entries.Count).ToString(CultureInfo.InvariantCulture);
+            var carried = entries.Count.ToString(CultureInfo.InvariantCulture);
+
+            var fields = "{\"summary\": \"" + key + " summary\""
+                + ", \"issuetype\": {\"name\": \"" + issueType + "\"}"
+                + ", \"status\": {\"name\": \"In Progress\"}"
+                + ", \"created\": \"" + created + "\""
+                + ", \"updated\": \"" + updated + "\""
+                + ", \"labels\": []"
+                + ", \"issuelinks\": [" + string.Join(",", links) + "]"
+                + furtherFields + "}";
+
+            var changelog = "{\"startAt\": 0, \"maxResults\": " + carried + ", \"total\": " + claimed
+                + ", \"histories\": [" + string.Join(",", entries) + "]}";
+
+            return "{\"key\": \"" + key + "\", \"fields\": " + fields + ", \"changelog\": " + changelog + "}";
+        }
+
+        /// <summary>How Jira writes an instant in an issue and in its history. The instant is taken to be UTC already.</summary>
+        public static string AnInstant(DateTime at)
+            => at.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'+0000'", CultureInfo.InvariantCulture);
+
+        /// <summary>
+        /// One history entry in which this issue gained a link to <paramref name="counterpartKey"/>.
+        ///
+        /// PROVISIONAL. This is the shape commonly reported for Jira Cloud: field "Link", the counterpart's
+        /// key in "to", the link's sentence in "toString". It was not captured from a live instance. Once a
+        /// payload has been captured from a link that was added, removed and added again, it replaces this
+        /// builder and the two beside it, because every test that reads a link date is only as true as this
+        /// shape.
+        /// </summary>
+        public static string ALinkAddedAt(DateTime at, string counterpartKey, string sentence)
+            => AHistoryEntry(at, ALinkItem(null, null, counterpartKey, sentence));
+
+        /// <summary>One history entry in which this issue lost its link to <paramref name="counterpartKey"/>. PROVISIONAL, as above.</summary>
+        public static string ALinkRemovedAt(DateTime at, string counterpartKey, string sentence)
+            => AHistoryEntry(at, ALinkItem(counterpartKey, sentence, null, null));
+
+        /// <summary>
+        /// The other shape that has been reported: a link id where the key would be, so only the sentence
+        /// names the counterpart. PROVISIONAL, as above.
+        /// </summary>
+        public static string ALinkAddedNamingTheCounterpartOnlyInItsSentence(DateTime at, string linkId, string sentence)
+            => AHistoryEntry(at, ALinkItem(null, null, linkId, sentence));
+
+        /// <summary>One history entry that moved the issue between statuses, which most of a real history is.</summary>
+        public static string AStatusChangeAt(DateTime at, string fromStatus, string toStatus)
+            => AHistoryEntry(at, "{\"field\": \"status\", \"fieldtype\": \"jira\", \"from\": \"1\", \"fromString\": \""
+                + fromStatus + "\", \"to\": \"2\", \"toString\": \"" + toStatus + "\"}");
+
+        /// <summary>One page of the changelog re-read, holding the whole history at once.</summary>
+        public static string AChangelogPageHolding(IEnumerable<string> histories)
+        {
+            var entries = histories.ToList();
+
+            return "{\"values\": [" + string.Join(",", entries) + "], \"total\": "
+                + entries.Count.ToString(CultureInfo.InvariantCulture) + ", \"isLast\": true}";
+        }
+
+        private static string AHistoryEntry(DateTime at, string item)
+            => "{\"id\": \"" + at.Ticks.ToString(CultureInfo.InvariantCulture) + "\", \"created\": \"" + AnInstant(at)
+                + "\", \"items\": [" + item + "]}";
+
+        private static string ALinkItem(string? from, string? fromString, string? to, string? toString)
+            => "{\"field\": \"Link\", \"fieldtype\": \"jira\""
+                + ", \"from\": " + JsonOrNull(from)
+                + ", \"fromString\": " + JsonOrNull(fromString)
+                + ", \"to\": " + JsonOrNull(to)
+                + ", \"toString\": " + JsonOrNull(toString) + "}";
+
+        private static string JsonOrNull(string? value) => value is null ? "null" : "\"" + value + "\"";
+
         private static string AnIssue(string key, string fields, int? changelogEntries)
         {
             var changelog = changelogEntries is null

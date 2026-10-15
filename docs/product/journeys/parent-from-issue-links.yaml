@@ -195,6 +195,9 @@ journeys:
           customer's link type name is a literal value from their tracker and is quoted exactly as they
           typed it, capitalisation included.
 
+          Story 6301 (2026-10-15): its placed and not-placed log lines cannot reach getTerm, so their
+          lead-in names only the Team or Portfolio and says "record(s)", never a Work Item or Feature term.
+
     shared_artifacts:
       - name: the parent reference
         source_of_truth: >
@@ -230,6 +233,8 @@ journeys:
           reported as placed, or, when none of its candidates is a stored Feature, reported as not placed
           with every candidate named. The refresh still succeeds and every other item in the fetch parents
           normally. A Feature stored after the item was read is picked up the next time the item is read.
+          A not-placed item takes what the tracker reports for it now (Jira's own parent field, or
+          nothing); a parent placed on an earlier refresh is not kept, as D8 says of every refresh.
           Originally: no parent, and a warning naming the item and every candidate key.
       - trigger: An item carries no link of the named type
         recovery: >

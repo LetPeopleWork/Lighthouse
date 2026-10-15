@@ -2,7 +2,7 @@
 
 **Status**: Accepted (2026-09-18 — Morgan, DESIGN wave, interaction mode PROPOSE). No code implements it yet; `parent-from-issue-links` slice 01 (ADO Story #6029) is the first commit that will.
 
-**Superseded in part (2026-10-15)** by [ADR-238](./adr-238-several-link-candidates-are-placed-by-the-oldest-link-in-the-work-item-service.md): §4 (two candidates refused) and the connector placement of the warning in §6. Several candidates are now narrowed and placed by the oldest link in `WorkItemService`. §1-§3 and §5 stand.
+**Superseded in part (2026-10-15)** by [ADR-238](./adr-238-several-link-candidates-are-placed-by-the-oldest-link-in-the-work-item-service.md): §4 (two candidates refused), and in §6 the connector placement of the warning, the log budget of "one aggregated warning per refresh" and its "Log budget respected" enforcement row. Several candidates are now narrowed and placed by the oldest link in `WorkItemService`, which writes at most one placed and one not-placed Warning line per fetch (so up to four on a Portfolio refresh). §6's count on the page is superseded too: the one figure becomes two (placed, not placed) in Refresh History, and the column named here `AmbiguousParentCount` (still the name of its migration) shipped as `RecordsWhoseLinksNamedMoreThanOneParent`, which now means "not placed", beside the new `RecordsPlacedFromLinksNamingMoreThanOneParent`. §1-§3 and §5 stand.
 
 **Feature**: `parent-from-issue-links` — ADO Epic #6028, "Parentage from Jira Issue Links"
 

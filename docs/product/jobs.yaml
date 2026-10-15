@@ -6998,6 +6998,12 @@ jobs:
           the oldest link by changelog date (both grains), and report placed and not-placed items
           separately. Satisfaction not re-scored until Steve's refresh log confirms the narrowing places
           most items (A2).
+
+          This revision supersedes the top-level note, job_story and forces.anxiety where they differ.
+          Revised job story (DISCUSS, 2026-10-15): when the one link type our hierarchy lives in also
+          carries other cause relations, I want Lighthouse to read each Work Item's Feature out of those
+          links without my teams deleting real links, so the hierarchy we maintain is the hierarchy
+          Lighthouse counts, the same way every refresh, and I can see where it had to choose.
         outcome_statements:
           - Minimise the number of Work Items that count toward no Feature only because the same link type also links them to non-Feature issues.
           - Minimise the likelihood that a Work Item counts toward a different Feature on two refreshes when nothing on its links changed.

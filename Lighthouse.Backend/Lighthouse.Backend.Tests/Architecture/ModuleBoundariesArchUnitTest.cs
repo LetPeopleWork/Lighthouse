@@ -30,6 +30,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string PlatformPersistencePattern =
             @"^Lighthouse\.Backend\.(Data|Services\.(Implementation|Interfaces)\.(Repositories|DatabaseManagement|DomainEvents|Seeding|OAuth))($|\..*)";
 
+        private const string StoredRecordsPattern =
+            @"^Lighthouse\.Backend\.(Data|Services\.(Implementation|Interfaces)\.Repositories)($|\..*)";
+
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         private static readonly GivenTypesConjunctionWithDescription WorkTrackingIntegrationModule =
@@ -97,6 +100,19 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
+        public void WorkTrackingConnectors_DoNotDependOnAnyRepository()
+        {
+            Types().That().Are(WorkTrackingIntegrationModule)
+                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(StoredRecordsPattern))
+                .Because(
+                    "a connector only translates what the tracker sent, so it must not touch the database context " +
+                    "or any repository, interface or implementation. Whatever it needs to know about stored " +
+                    "records, such as which Features this instance holds, is handed to it by the caller. Other " +
+                    "platform services, such as the OAuth token service, stay allowed.")
+                .Check(Architecture);
+        }
+
+        [Test]
         public void NamedModules_AreNonEmpty()
         {
             using (Assert.EnterMultipleScope())
@@ -109,6 +125,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Assert.That(PlatformPersistenceModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(RefinementModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(ReportsModule.GetObjects(Architecture), Is.Not.Empty);
+                Assert.That(Types().That().ResideInNamespaceMatching(StoredRecordsPattern).GetObjects(Architecture), Is.Not.Empty);
             }
         }
     }

@@ -30,10 +30,15 @@ is the parent, on every refresh, whatever order Jira lists the links in.
 **Disproves, if it fails**: A3 — that the oldest link names the Feature the customer calls the item's parent
 ("birth parent").
 
-**The measurement**: ask Steve for one real Work Item linked to two Features and which one the customer calls
-its parent; compare with the placed line after the upgrade. One agreement is directional, one disagreement
-is enough to reopen Q1 with the maintainer. Also measured on our own data: a property test permuting link
-order and repeating the refresh — **0 flips** (`OUT-PFIL-never-a-guessed-parent`, rewritten).
+**The measurement**: ask Steve for real Work Items linked to two or more Features, ideally three or more,
+and which Feature the customer calls each one's parent; compare with the placed line after the upgrade.
+**Denominator**: the Work Items Steve names that the placed line shows as placed by the oldest link (not by
+narrowing alone, and not by a fallback). **Pre-registered threshold**: every one of them agrees confirms;
+**one disagreement in that denominator reopens Q1** with the maintainer, whatever the denominator is. With
+fewer than three items the result is recorded as directional only. Record the number of agreements and the
+denominator here. Also measured on our own data: a property test permuting link order and repeating the
+refresh, **0 flips** over every permutation of the test's candidates (`OUT-PFIL-never-a-guessed-parent`,
+rewritten).
 
 **Confirms, if it succeeds**: the rule matches the customer's mental model, and the not-placed figure at
 Team grain shrinks to items with no stored Feature among their links.
@@ -57,8 +62,9 @@ AC-2.1 through AC-2.6 in `feature-delta.md` (US-02).
 
 ## UI
 
-None new. Refresh History figures from slice 01 move: "not placed" falls, "placed" rises. Log line copy per
-`feature-delta.md`, "Refresh History sketch".
+None new. Refresh History figures from slice 01 move: "not placed" falls, "placed" rises. Log line copy and
+the fallback brackets per `feature-delta.md`, "Wave: DISTILL / [REF] Maintainer decisions: UI sketch review
+(2026-10-15)".
 
 ## Data
 

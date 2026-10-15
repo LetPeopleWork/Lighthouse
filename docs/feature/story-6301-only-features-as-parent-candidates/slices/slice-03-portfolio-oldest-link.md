@@ -12,11 +12,15 @@ rule, with nothing set aside first, and the Portfolio's refresh row reports it a
 
 - The placing step on both Portfolio fetches (full and delta), narrowing off (AC-3.1).
 - Created-date fallback uses stored parent Features where they exist; otherwise lowest key (AC-3.2).
+  The one-time move this allows: an undated Feature first takes the lowest key, then, once the sweep has
+  stored its candidates, moves to the earliest-created one when the Feature is re-read after its stored
+  candidates change (in practice the cheap refresh after the Feature changes), and holds. Three refreshes run Full, Delta, Delta and read `PAY-7`, `PAY-9`, `PAY-9`. A
+  Portfolio's second refresh is already the cheap one, unlike a Team's (DDD-17).
 - Placed figure on the Portfolio refresh row, full and delta (AC-3.3).
 - The placed line names item, pick, rule and every candidate, so a Portfolio reading links in both directions
   (#6028 D7) is still diagnosable from the log (AC-3.4).
-- The parent sweep (`GetParentFeaturesDetails`): through the same step if DESIGN keeps the default (yes); its
-  "warns but does not count" behaviour kept or restated (AC-3.5).
+- The parent sweep (`GetParentFeaturesDetails`) goes through the same step with no narrowing, writes its own
+  lines naming the parents of the Portfolio's Features, and is not counted on the row (AC-3.5, DDD-10).
 
 ## OUT of scope
 
@@ -42,8 +46,9 @@ AC-3.1 through AC-3.5 in `feature-delta.md` (US-03).
 
 ## UI
 
-None new. The Portfolio entity in Refresh History shows the placed figure; label term per open point S-3
-(Features term on Portfolio rows) in `feature-delta.md`.
+None new. The Portfolio row has shown the two-figure layout with the Features term since slice 01 (S-3,
+approved in `feature-delta.md`, "Wave: DISTILL / [REF] Maintainer decisions: UI sketch review
+(2026-10-15)"). From this slice its placed figure rises above 0 and shows; until now it was hidden at 0.
 
 ## Data
 

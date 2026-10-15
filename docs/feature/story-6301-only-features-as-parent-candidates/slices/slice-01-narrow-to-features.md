@@ -15,20 +15,23 @@ placed, reported. Refresh History shows placed and not placed as separate figure
 
 - Candidates travel on the record from the connector (keys only here; link dates arrive in slice 02).
 - One shared placing step in `WorkItemService`, called from both Team fetches (full and delta), before
-  `SyncWorkItem`; the stored-Feature key set is loaded once per fetch (AC-1.1, AC-1.9).
+  `SyncWorkItem`; the stored-Feature key set is loaded once per fetch (AC-1.1).
+- No additional Jira request per refresh (AC-1.9).
 - The result written in both places: `ParentReferenceId` and the override's Additional Field value.
 - Lone candidate stored as-is, counted in neither figure (AC-1.3).
 - Not placed: today's reading stands (Jira's own `parent` field or nothing), never a preserved old parent
   (AC-1.2, D11).
 - Split count on the Team `RefreshLog` row; one expand-only column via `CreateMigration` (AC-1.5).
-- Refresh History: two figures, max per window, shown only above zero, configured Work Items term (AC-1.6).
-- One placed line and one not-placed line per refresh, moved out of the connector; no line says "left where
-  it was" (AC-1.7, D12, D13).
+- Refresh History: two figures, max per window, shown only above zero, the configured Work Items term on
+  Team rows and Features term on Portfolio rows (AC-1.6, S-3), plus the loading and failure looks.
+- At most one placed line and one not-placed line per fetch, moved out of the connector; no line says "left
+  where it was" (AC-1.7, D12, D13).
 
 ## OUT of scope
 
 - Any pick between two or more Features (slice 02). They stay not placed here: a refusal, never a guess.
-- Portfolio grain (slice 03). A Portfolio's ambiguous Features still refuse and count as "not placed".
+- Portfolio grain (slice 03). A Portfolio's ambiguous Features still refuse and count as "not placed"; its
+  Refresh History row shows the new captions with the placed figure hidden at 0.
 - Re-resolving after a Portfolio refresh (D6). A late Feature is picked up when the item is next read (AC-1.8).
 - Native-parent and override-field sources (D4).
 
@@ -52,12 +55,22 @@ On our own data the number is directional only: the dogfood instance has 8 link-
 
 AC-1.1 through AC-1.9 in `feature-delta.md` (US-01).
 
-## UI (sketch to approve at the start of DISTILL)
+## UI (approved at the start of DISTILL)
 
 The existing per-entity stat row in `RefreshHistorySection` (caption over value), no new control. The one
-figure `Max Work Items Fetched With Links Naming More Than One Parent` becomes two; copy options A/B and
-open points S-1..S-3 in `feature-delta.md`, "Refresh History sketch". Loading/failure looks are unchanged:
-the section's existing states cover them, and no new fetch is added.
+figure `Max Work Items Fetched With Links Naming More Than One Parent` becomes two, as the maintainer
+approved (copy B): `Max Work Items Placed From Links Naming More Than One Parent` and `Max Work Items Not
+Placed: Links Name More Than One Parent`, with the Feature term in place of Work Items on a Portfolio row.
+
+The section also gains a loading look and a failure look, which it lacked: a centred spinner while the
+refresh history loads, and `Could not load refresh history.` when the load fails.
+`No refresh history available yet.` now shows only for a successful, empty answer. See `feature-delta.md`,
+"Wave: DESIGN / [REF] Loading and failure look" and "Wave: DISTILL / [REF] Maintainer decisions: UI sketch
+review (2026-10-15)".
+
+Slice 01 removes the old caption for every entity. A Portfolio row therefore shows the new layout from this
+slice: its placed figure stays 0 (hidden) until slice 03, and everything ambiguous at Portfolio grain shows
+under the not-placed figure.
 
 ## Data
 
