@@ -1494,7 +1494,7 @@ describe("charts that appear only once their data says to show them", () => {
 	);
 });
 
-// Story #6251. A Team's metrics page gets the Feature Size scatter and the Feature Size
+// A Team's metrics page gets the Feature Size scatter and the Feature Size
 // Percentiles widget, both counting that Team's part of each Feature. The scatter's frame
 // takes its place from the first render on both owners, so it shows a spinner while it loads,
 // the could-not-load note when it fails, and the chart's own empty look when there is nothing to
@@ -1819,7 +1819,7 @@ describe("Feature Size Percentiles on a Team's Flow Overview", () => {
 	});
 });
 
-// Story #6251: Feature Size Percentiles offers its data as a table on both owners, the same Features
+// Feature Size Percentiles offers its data as a table on both owners, the same Features
 // table the Feature Size scatter opens. It lists exactly the Features the percentiles count: the ones
 // finished in the window, with a size to count. A Portfolio's Feature sizes also carry the finished
 // Features its default Feature Size sizes, at 0, which its percentiles leave out, so the table leaves

@@ -1706,7 +1706,7 @@ describe("what each catalogue column says, and how it sorts", () => {
 	);
 });
 
-// Story #6251: on a Team, every size is the Team's own part of the Feature. That number comes from
+// On a Team, every size is the Team's own part of the Feature. That number comes from
 // the Team's answer, so the dialog only has to show the size it is handed, unchanged.
 describe("a Team's Features worked on", () => {
 	// @story-6251 @us-01 @contract-shape:unbounded-preservation

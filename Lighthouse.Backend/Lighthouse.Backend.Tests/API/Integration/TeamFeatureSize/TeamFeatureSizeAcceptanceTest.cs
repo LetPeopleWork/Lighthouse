@@ -18,7 +18,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
 {
     /// <summary>
-    /// Story #6251 harness: a real host over a fresh SQLite database, with Teams, Portfolios,
+    /// A real host over a fresh SQLite database, with Teams, Portfolios,
     /// Features and Work Items seeded the way a sync leaves them. Each Feature records how many of
     /// each Team's Work Items sit under it, which is what a Team's size of that Feature is read from.
     ///
