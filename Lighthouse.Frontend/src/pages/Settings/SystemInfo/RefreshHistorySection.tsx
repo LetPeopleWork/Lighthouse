@@ -25,6 +25,11 @@ interface EntityOption {
 
 const ALL_KEY = "__all__";
 
+const mostInOneRefresh = (
+	refreshes: RefreshLog[],
+	countOf: (refresh: RefreshLog) => number | null | undefined,
+) => Math.max(0, ...refreshes.map((refresh) => countOf(refresh) ?? 0));
+
 const RefreshHistorySection: React.FC = () => {
 	const theme = useTheme();
 	const [logs, setLogs] = useState<RefreshLog[]>([]);
@@ -206,18 +211,30 @@ const RefreshHistorySection: React.FC = () => {
 		// The worst single refresh in the window, not a total across it. Every refresh re-reads the same
 		// untidy records, so adding the counts up renders one messy ticket as fifty. Averaging is worse
 		// still: a cheap refresh only counts what it downloaded, so one refresh finding five among forty
-		// that downloaded nothing averages to nearly zero and the panel hides a real problem. Even the
-		// largest count covers only what that one refresh downloaded, which is why the label says
-		// "Fetched". Shown only when it happened: a line reading zero on every healthy entity teaches
-		// the reader to skip the panel.
-		const mostRecordsOneRefreshCouldNotPlace =
-			runs > 0
-				? Math.max(
-						...filtered.map(
-							(l) => l.recordsWhoseLinksNamedMoreThanOneParent ?? 0,
-						),
-					)
-				: 0;
+		// that downloaded nothing averages to nearly zero and the panel hides a real problem.
+		// Shown only when it happened: a line reading zero on every healthy entity teaches the reader to
+		// skip the panel.
+		const recordsTerm = getTerm(
+			type === "Portfolio"
+				? TERMINOLOGY_KEYS.FEATURES
+				: TERMINOLOGY_KEYS.WORK_ITEMS,
+		);
+		const parentFigures = [
+			{
+				label: `Max ${recordsTerm} Placed From Links Naming More Than One Parent`,
+				value: mostInOneRefresh(
+					filtered,
+					(l) => l.recordsPlacedFromLinksNamingMoreThanOneParent,
+				),
+			},
+			{
+				label: `Max ${recordsTerm} Not Placed: Links Name More Than One Parent`,
+				value: mostInOneRefresh(
+					filtered,
+					(l) => l.recordsWhoseLinksNamedMoreThanOneParent,
+				),
+			},
+		].filter((figure) => figure.value > 0);
 
 		const stats: { label: string; value: string | number }[] = [
 			{ label: "Total Runs", value: runs },
@@ -225,14 +242,7 @@ const RefreshHistorySection: React.FC = () => {
 			...(cancelledCount > 0
 				? [{ label: "Cancelled", value: cancelledCount }]
 				: []),
-			...(mostRecordsOneRefreshCouldNotPlace > 0
-				? [
-						{
-							label: `Max ${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)} Fetched With Links Naming More Than One Parent`,
-							value: mostRecordsOneRefreshCouldNotPlace,
-						},
-					]
-				: []),
+			...parentFigures,
 			{ label: "Avg Items", value: avgItems },
 			{ label: "Avg Duration", value: `${avgDuration.toFixed(2)} s` },
 			{ label: "Min Duration", value: `${minDuration.toFixed(2)} s` },

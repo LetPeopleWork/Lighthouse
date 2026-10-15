@@ -11,7 +11,6 @@ export interface RefreshLog {
 	// Optional because a backend older than this field sends a payload without it, and a newer UI
 	// still has to render that payload rather than fail on it.
 	recordsWhoseLinksNamedMoreThanOneParent?: number;
-	// SCAFFOLD: the backend does not send this yet, and nothing reads it yet. Optional for the same
-	// reason as the field above.
-	recordsPlacedFromLinksNamingMoreThanOneParent?: number;
+	// Optional for the same reason as the field above.
+	recordsPlacedFromLinksNamingMoreThanOneParent?: number | null;
 }

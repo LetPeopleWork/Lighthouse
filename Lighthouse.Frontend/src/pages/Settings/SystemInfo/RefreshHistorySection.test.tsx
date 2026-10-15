@@ -98,13 +98,9 @@ const selectEntity = async (entityLabel: string) => {
 const theFigureCaptioned = (caption: string) =>
 	screen.getByText(caption).parentElement as HTMLElement;
 
-// Greppable markers: the pending cases are un-skipped, and the retired one deleted, when the one figure
-// splits into placed and not placed.
+// Greppable marker: the pending cases are un-skipped when the history shows its loading and failure looks.
 const pendingStory6301 =
 	"pending: story 6301 slice 01, placed and not placed figures";
-
-const retiredByStory6301Slice01 =
-	"retired by story 6301 slice 01, its caption goes";
 
 const fetchedCaption = (records: string) =>
 	`Max ${records} Fetched With Links Naming More Than One Parent`;
@@ -297,38 +293,6 @@ describe("RefreshHistorySection", () => {
 		expect(screen.getByText("0%")).toBeInTheDocument();
 	});
 
-	it(`reports the worst single refresh, not the window total, using this instance's word for the records (${retiredByStory6301Slice01})`, async () => {
-		mockGetRefreshLogs.mockResolvedValue([
-			{ ...mockLogs[0], recordsWhoseLinksNamedMoreThanOneParent: 5 },
-			{ ...mockLogs[1], recordsWhoseLinksNamedMoreThanOneParent: 3 },
-		]);
-
-		render(
-			<MockProvider>
-				<RefreshHistorySection />
-			</MockProvider>,
-		);
-
-		await selectTeamAlpha();
-
-		const label = screen.getByText(fetchedCaption("Tickets"));
-		const statBox = label.parentElement as HTMLElement;
-
-		// Two refreshes of the same entity found 5 and 3. Almost certainly the same handful of untidy
-		// tickets read twice, so 8 would be a made-up number; an average of 4 is smaller than a refresh
-		// actually reported and shrinks further with every refresh that downloads nothing. 5 is the
-		// worst any single refresh saw, which is the number worth chasing.
-		expect(within(statBox).getByText("5")).toBeInTheDocument();
-		expect(within(statBox).queryByText("8")).not.toBeInTheDocument();
-		expect(within(statBox).queryByText("4")).not.toBeInTheDocument();
-		expect(
-			screen.queryByText(placedCaption("Tickets")),
-		).not.toBeInTheDocument();
-		expect(
-			screen.queryByText(notPlacedCaption("Tickets")),
-		).not.toBeInTheDocument();
-	});
-
 	it("says nothing about parents when every refresh could place everything it fetched", async () => {
 		mockGetRefreshLogs.mockResolvedValue([
 			{ ...mockLogs[0], recordsWhoseLinksNamedMoreThanOneParent: 0 },
@@ -363,7 +327,7 @@ describe("RefreshHistorySection", () => {
 });
 
 describe("RefreshHistorySection: placed and not placed", () => {
-	it.skip(`shows the worst single refresh for each figure, placed apart from not placed, in the instance's Work Item term (${pendingStory6301})`, async () => {
+	it("shows the worst single refresh for each figure, placed apart from not placed, in the instance's Work Item term", async () => {
 		mockGetRefreshLogs.mockResolvedValue([
 			{
 				...mockLogs[0],
@@ -399,7 +363,7 @@ describe("RefreshHistorySection: placed and not placed", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it.skip(`shows only the figure that is above zero across the window (${pendingStory6301})`, async () => {
+	it("shows only the figure that is above zero across the window", async () => {
 		mockGetRefreshLogs.mockResolvedValue([
 			{
 				...mockLogs[0],
@@ -428,7 +392,7 @@ describe("RefreshHistorySection: placed and not placed", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it.skip(`reads a refresh recorded before the split as not placed, which is what happened to it (${pendingStory6301})`, async () => {
+	it("reads a refresh recorded before the split as not placed, which is what happened to it", async () => {
 		mockGetRefreshLogs.mockResolvedValue([
 			{ ...mockLogs[0], recordsWhoseLinksNamedMoreThanOneParent: 4 },
 		]);
@@ -449,7 +413,7 @@ describe("RefreshHistorySection: placed and not placed", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it.skip(`uses the instance's Feature term on a Portfolio, whose records are Features (${pendingStory6301})`, async () => {
+	it("uses the instance's Feature term on a Portfolio, whose records are Features", async () => {
 		mockGetRefreshLogs.mockResolvedValue([
 			{
 				...mockLogs[2],
