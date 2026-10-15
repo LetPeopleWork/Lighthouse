@@ -462,11 +462,11 @@ describe("Reports on the Overview", () => {
 		});
 		await whenReady("Lightspeed", "reports");
 
-		await act(() =>
-			queryClient.invalidateQueries({
+		act(() => {
+			void queryClient.invalidateQueries({
 				queryKey: reportsQueryKeyOf(LIGHTSPEED),
-			}),
-		);
+			});
+		});
 
 		const cell = theCellOf("Lightspeed", "reports");
 		await waitFor(() =>
@@ -680,7 +680,7 @@ describe("Deliveries on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.5 @boundary @contract-shape:bounded-change
-	it.skip("keeps the Delivery chips on screen, dimmed under a spinner, while they are read again", async () => {
+	it("keeps the Delivery chips on screen, dimmed under a spinner, while they are read again", async () => {
 		const reread = deferred<ReturnType<typeof activeDeliveries>>();
 		const { queryClient } = renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
 			deliveryService: deliveriesAnswering(
@@ -694,11 +694,11 @@ describe("Deliveries on the Overview", () => {
 		});
 		await whenReady("Apollo", "deliveries");
 
-		await act(() =>
-			queryClient.invalidateQueries({
+		act(() => {
+			void queryClient.invalidateQueries({
 				queryKey: ["deliveries", "portfolio", APOLLO.id],
-			}),
-		);
+			});
+		});
 
 		const cell = theCellOf("Apollo", "deliveries");
 		await waitFor(() =>
