@@ -30,8 +30,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
     /// </summary>
     public static class PendingStory6301
     {
-        public const string Slice01 = "Story #6301 slice 01 (narrow to Features, Team) - pending DELIVER";
-
         public const string Slice02 = "Story #6301 slice 02 (oldest link wins, Team) - pending DELIVER, after the link-history spike";
 
         public const string Slice03 = "Story #6301 slice 03 (oldest link wins, Portfolio) - pending DELIVER";

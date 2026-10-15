@@ -1663,9 +1663,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// One record as Lighthouse read it, together with the issues its links named as a parent. The
-        /// keys travel beside the record because the warning has to name them, and whoever has to go and
-        /// remove the surplus links cannot find them from a number.
+        /// One record as Lighthouse read it, together with the issues its links named as a parent, which the
+        /// Portfolio warning names so that whoever has to remove the surplus links knows where to look.
         /// </summary>
         private readonly record struct AnItemAndWhatItsLinksOffered(WorkItemBase Item, ParentResolution FromTheMatchingLinks);
 

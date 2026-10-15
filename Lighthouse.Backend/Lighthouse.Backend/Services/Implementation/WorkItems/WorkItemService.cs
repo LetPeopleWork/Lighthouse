@@ -353,11 +353,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         }
 
         /// <summary>
-        /// How many of the records this fetch read had links naming more than one candidate. A Portfolio
-        /// places none of them yet, so for a Portfolio this is the number it could not place.
+        /// A Portfolio does not choose among the issues a Feature's links name, so every Feature whose links
+        /// name more than one is a Feature it could not place.
         /// </summary>
-        private static int CountTheRecordsWhoseLinksNamedMoreThanOneParent<TRecord>(List<TRecord> records) where TRecord : WorkItemBase
-            => records.Count(LinksNameMoreThanOneParent);
+        private static int CountTheFeaturesAPortfolioCouldNotPlace(List<Feature> features)
+            => features.Count(LinksNameMoreThanOneParent);
 
         /// <summary>
         /// Read from the candidates themselves, merged by key, so two links to the same issue are one
@@ -904,7 +904,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 recordsFromTracker.ConvertAll(feature => feature.ReferenceId),
                 SyncOutcome.FullSync(recordsFromTracker.Count) with
                 {
-                    RecordsWhoseLinksNamedMoreThanOneParent = CountTheRecordsWhoseLinksNamedMoreThanOneParent(recordsFromTracker),
+                    RecordsWhoseLinksNamedMoreThanOneParent = CountTheFeaturesAPortfolioCouldNotPlace(recordsFromTracker),
                 });
         }
 
@@ -986,7 +986,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 sweptOnce.ConvertAll(record => record.ReferenceId),
                 SyncOutcome.DeltaSync(sweptOnce.Count, downloaded.Count) with
                 {
-                    RecordsWhoseLinksNamedMoreThanOneParent = CountTheRecordsWhoseLinksNamedMoreThanOneParent(downloaded),
+                    RecordsWhoseLinksNamedMoreThanOneParent = CountTheFeaturesAPortfolioCouldNotPlace(downloaded),
                 });
         }
 

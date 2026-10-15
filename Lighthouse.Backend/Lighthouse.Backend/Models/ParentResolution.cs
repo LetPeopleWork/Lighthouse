@@ -35,11 +35,11 @@ namespace Lighthouse.Backend.Models
 
         public IReadOnlyList<string> Candidates => [.. CandidatesWithTheirLinkDates.Select(candidate => candidate.Key)];
 
-        public bool IsResolved => Candidates.Count == 1;
+        public bool IsResolved => CandidatesWithTheirLinkDates.Count == 1;
 
-        public bool IsAmbiguous => Candidates.Count > 1;
+        public bool IsAmbiguous => CandidatesWithTheirLinkDates.Count > 1;
 
-        public string Key => IsResolved ? Candidates[0] : string.Empty;
+        public string Key => IsResolved ? CandidatesWithTheirLinkDates[0].Key : string.Empty;
 
         /// <summary>
         /// Where an item whose links name several issues hangs. One link or none is not a question: the
