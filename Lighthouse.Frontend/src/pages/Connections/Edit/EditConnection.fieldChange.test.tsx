@@ -417,7 +417,7 @@ describe("Story #6307 - changing a connection's Additional Fields asks whether t
 		});
 
 		// @us-02 @contract-shape:pure-function
-		it.skip.each([
+		it.each([
 			[
 				"one of each",
 				{ teams: 1, portfolios: 1 },
@@ -463,7 +463,7 @@ describe("Story #6307 - changing a connection's Additional Fields asks whether t
 		);
 
 		// @us-02 @contract-shape:pure-function
-		it.skip(`${Pending}: the explanation names the Teams and Portfolios in the words this instance uses`, async () => {
+		it(`${Pending}: the explanation names the Teams and Portfolios in the words this instance uses`, async () => {
 			await givenPriyaOpensNordwindJiraDc({ words: SquadsAndPrograms });
 			await whenPriyaAddsFixVersions();
 
