@@ -12,14 +12,14 @@ excluded, so no mutant ever reached a real Jira. Each run took about 3 minutes.
 | Run | Score | `JiraReleaseVersionReader.cs` | `JiraRestRoutes.cs` |
 |---|---|---|---|
 | 1 | 93.07 % | 76 killed + 2 timeout / 82 = 95.1 % | 16 / 19 = 84.2 % |
-| 2 (after `d0c2d1521`) | **94.06 %** | 95.1 % (unchanged) | **17 / 19 = 89.5 %** |
+| 2 (after `6693c76a4`) | **94.06 %** | 95.1 % (unchanged) | **17 / 19 = 89.5 %** |
 
 Gate: ≥ 80 % per file. **Passed.**
 
 ## Survivors
 
 **Killed between runs.** `JiraRestRoutes.cs:88`: Cloud's `FallsBackToProjectListWhenSearchIsMissing`
-mutated `false → true`. Nothing made a Cloud Jira answer 404 to its project search. Commit `d0c2d1521` adds
+mutated `false → true`. Nothing made a Cloud Jira answer 404 to its project search. Commit `6693c76a4` adds
 `A_Cloud_Jira_that_lost_its_project_search_offers_nothing_and_does_not_fall_back_to_the_project_list`.
 Applying the mutant by hand fails that test, because a request to `/rest/api/2/project` appears.
 

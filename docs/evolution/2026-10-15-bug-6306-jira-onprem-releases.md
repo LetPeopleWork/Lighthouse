@@ -1,8 +1,8 @@
 # Bug #6306 — Jira Server / Data Center offered no Releases to bind a Delivery to
 
-**Local, not yet pushed (2026-10-15)** · ADO Bug #6306 Active · workspace
+**Pushed to main 2026-10-15, not yet released** · CI green · ADO Bug #6306 Closed · workspace
 `docs/feature/bug-6306-jira-onprem-releases/` (RCA, roadmap, execution log, mutation record) · commits
-`b75f103c7..d0c2d1521` · the additional-fields re-sync request from the same report is split out as Story #6307
+`ba41a63f5..8ab63ca7e` · the additional-fields re-sync request from the same report is split out as Story #6307
 
 ## What users get
 
@@ -64,7 +64,8 @@ worked. After the fix, on Jira Server and Data Center (8 or later):
 
 - Every behaviour fix had a regression test that failed on the old code for the bug's reason.
 - Full filtered backend suite: 10055 passed, 0 failed. Live `JiraIntegration` (Jira Cloud): 110/110 after
-  the routes refactor.
+  the routes refactor. After the rebase onto `main`, on the pushed tree: 10056 passed, 0 failed, and
+  `JiraIntegration` 110/110 again. CI green on `8ab63ca7e`.
 - L1–L6 refactor pass. Adversarial review returned NEEDS_REVISION: 2 major, 10 minor. One revision pass
   followed. The first major was real; the second did not reproduce as stated, but its test found a related
   defect.
