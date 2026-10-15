@@ -106,6 +106,37 @@ namespace Lighthouse.Backend.Tests.Factories
                 "The link was removed and added back, so it stands, dated from when it was added back.");
         }
 
+        /// <summary>
+        /// Data Center sends only part of a long history with a search, and says so in the changelog's total.
+        /// A link dated from part of its history may have been removed and added back in the part that is
+        /// missing, so a partial history dates nothing.
+        /// </summary>
+        [Test]
+        [Category("edge")]
+        public void A_history_that_holds_only_part_of_its_entries_dates_no_link()
+        {
+            var issue = AnIssueWithAPartOfItsHistory(
+                5,
+                JiraWireFormat.ALinkAddedAt(February1, AFeature, Sentence(AFeature)),
+                JiraWireFormat.ALinkAddedAt(April10, AnotherFeature, Sentence(AnotherFeature)));
+
+            Assert.That(issue.StandingLinks, Is.Empty,
+                "Three of the five entries are missing, and any of them could have removed or re-added one of these links.");
+        }
+
+        [Test]
+        [Category("edge")]
+        public void A_history_that_holds_every_one_of_its_entries_dates_its_links()
+        {
+            var issue = AnIssueWithAPartOfItsHistory(
+                2,
+                JiraWireFormat.ALinkAddedAt(February1, AFeature, Sentence(AFeature)),
+                JiraWireFormat.ALinkAddedAt(April10, AnotherFeature, Sentence(AnotherFeature)));
+
+            Assert.That(issue.StandingLinks, Is.EquivalentTo(new[] { ACausedByLink(AFeature, February1), ACausedByLink(AnotherFeature, April10) }),
+                "positive control: a history that says it is complete is read as it always was.");
+        }
+
         [Test]
         [Category("edge")]
         public void A_key_named_only_in_the_sentence_is_read_from_the_sentence()
@@ -213,6 +244,12 @@ namespace Lighthouse.Backend.Tests.Factories
         private static Issue AnIssueWithTheHistory(params string[] histories) => AnIssueWithTheLinksAndHistory([], histories);
 
         private static Issue AnIssueWithTheLinksAndHistory(string[] links, params string[] histories)
+            => AnIssueAsJiraSendsIt(links, histories, null);
+
+        private static Issue AnIssueWithAPartOfItsHistory(int entriesInAll, params string[] histories)
+            => AnIssueAsJiraSendsIt([], histories, entriesInAll);
+
+        private static Issue AnIssueAsJiraSendsIt(string[] links, string[] histories, int? entriesInAll)
         {
             var json = JiraWireFormat.AnIssueWithItsHistory(
                 TheItem,
@@ -221,7 +258,8 @@ namespace Lighthouse.Backend.Tests.Factories
                 JiraWireFormat.AnInstant(new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc)),
                 string.Empty,
                 links,
-                histories);
+                histories,
+                entriesInAll);
 
             using var document = JsonDocument.Parse(json);
 

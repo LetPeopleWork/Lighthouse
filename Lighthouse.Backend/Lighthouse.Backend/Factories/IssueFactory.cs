@@ -105,7 +105,13 @@ namespace Lighthouse.Backend.Factories
                 return [];
             }
 
-            return [.. changelog.GetProperty(JiraFieldNames.HistoriesFieldName).EnumerateArray()
+            var histories = changelog.GetProperty(JiraFieldNames.HistoriesFieldName);
+            if (HoldsOnlyPartOfItsHistory(changelog, histories))
+            {
+                return [];
+            }
+
+            return [.. histories.EnumerateArray()
                 .SelectMany(LinkChangesIn)
                 .OrderBy(change => change.At)
                 .ThenBy(change => change.HistoryId is null)
@@ -113,6 +119,14 @@ namespace Lighthouse.Backend.Factories
                 .Aggregate(new Dictionary<LinkEnd, DateTime>(), Replay)
                 .Select(standing => new StandingLink(standing.Key.CounterpartKey, standing.Key.Sentence, standing.Value))];
         }
+
+        // A search answer can carry fewer entries than the history holds, and says so in its total. Any of
+        // the missing entries may have removed or re-added a link, so a partial history dates no link at all.
+        private static bool HoldsOnlyPartOfItsHistory(JsonElement changelog, JsonElement histories)
+            => changelog.TryGetProperty(JiraFieldNames.TotalFieldName, out var total)
+                && total.ValueKind == JsonValueKind.Number
+                && total.TryGetInt32(out var entriesInAll)
+                && entriesInAll > histories.GetArrayLength();
 
         private static Dictionary<LinkEnd, DateTime> Replay(Dictionary<LinkEnd, DateTime> standing, LinkChange change)
         {
