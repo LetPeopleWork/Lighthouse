@@ -168,6 +168,24 @@ namespace Lighthouse.Backend.Tests.Models
                 "A missing created date, or the empty one Jira sends for some migrated issues, is unknown. Read as the earliest date there is, it would always win.");
         }
 
+        /// <summary>
+        /// Two links made at the same instant, as a bulk edit makes them, are tied on the link date, so the
+        /// line must name the rule that broke the tie rather than credit the oldest link with a choice it
+        /// did not make.
+        /// </summary>
+        [TestCaseSource(nameof(LinksMadeAtTheSameInstant))]
+        [Category("slice-02")]
+        [Category("edge")]
+        public void Links_made_at_the_same_instant_are_decided_by_the_next_rule(
+            DateTime? createdOfTheFirst, DateTime? createdOfTheSecond, string expectedKey, ParentPlacementRule expectedRule, DateTime? expectedDecidedOn)
+        {
+            var placement = ParentResolution.From([LinkedOn(AFeature, March4), LinkedOn(AnotherFeature, March4)])
+                .Place(Holding((AFeature, createdOfTheFirst), (AnotherFeature, createdOfTheSecond)), ParentNarrowing.Narrow);
+
+            Assert.That((placement.Key, placement.DecidedBy, placement.DecidedOn), Is.EqualTo((expectedKey, expectedRule, expectedDecidedOn)),
+                "The link dates tie, so the created dates decide when they differ and the key when they do not.");
+        }
+
         [Test]
         [Category("slice-02")]
         [Category("edge")]
@@ -250,6 +268,13 @@ namespace Lighthouse.Backend.Tests.Models
             new object?[] { DateTime.MinValue, January15, AnotherFeature, ParentPlacementRule.EarliestCreated },
             new object?[] { null, DateTime.MinValue, AFeature, ParentPlacementRule.LowestKey },
             new object?[] { November2, November2, AFeature, ParentPlacementRule.LowestKey },
+        ];
+
+        private static readonly object[] LinksMadeAtTheSameInstant =
+        [
+            new object?[] { January15, November2, AnotherFeature, ParentPlacementRule.EarliestCreated, November2 },
+            new object?[] { November2, November2, AFeature, ParentPlacementRule.LowestKey, null },
+            new object?[] { null, null, AFeature, ParentPlacementRule.LowestKey, null },
         ];
 
         private static readonly object[] SetsTheDatesAndKeysDecide =
