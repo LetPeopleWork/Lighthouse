@@ -514,6 +514,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             return document.RootElement.Clone();
         }
 
+        protected string PresentedKeyOf(Voter voter) => scenarioCallers.AsPresented(voter.Key!);
+
         private HttpClient ConnectionOf(Voter voter)
         {
             if (connections.TryGetValue(voter, out var existing))

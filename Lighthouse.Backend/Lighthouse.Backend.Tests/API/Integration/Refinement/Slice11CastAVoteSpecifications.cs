@@ -223,8 +223,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             return scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().SizingLogEntries.Count();
         }
 
-        private static void ThenNothingCarriesJonassKey(List<string> whatCameBack)
-            => Assert.That(whatCameBack, Has.None.Contains(Jonas.Key!).And.All.Not.Empty);
+        private void ThenNothingCarriesJonassKey(List<string> whatCameBack)
+            => Assert.That(whatCameBack, Has.None.Contains(Jonas.Key!).And.None.Contains(PresentedKeyOf(Jonas)).And.All.Not.Empty);
 
         private async Task ThenTheTeamIsAsItWas(TeamUnderTest team, TeamState before)
             => Assert.That(await TheTeamAsItStands(team), Is.EqualTo(before));

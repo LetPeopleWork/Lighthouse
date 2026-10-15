@@ -163,15 +163,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
                 teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
             }
 
-            Client.Dispose();
+            // When set-up failed before this scenario's client was made, there is none to dispose, and the
+            // previous scenario's client is already gone.
+            Client?.Dispose();
+            Client = null!;
         }
 
         [OneTimeTearDown]
         public void StopTheHost()
         {
             using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
-            Factory.Dispose();
-            RootFactory.Dispose();
+            Factory?.Dispose();
+            RootFactory?.Dispose();
         }
 
         /// <summary>Sign-in on and roles enforced, as on every instance that has switched authentication on.</summary>
