@@ -5,9 +5,9 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 {
     /// <summary>
-    /// Epic #5687 AC-5.1 / ADR-140. The fingerprint decides whether the next cycle downloads everything,
-    /// so the two failure modes it has to be tested against are opposites: too sensitive means every
-    /// cycle is full again and the epic bought nothing, too blunt means delta serves stale records with
+    /// The fingerprint decides whether the next cycle downloads everything, so the two failure modes it
+    /// has to be tested against are opposites: too sensitive means every cycle is full again and delta
+    /// updates buy nothing, too blunt means delta serves stale records with
     /// every other test still green.
     /// </summary>
     public class FetchFingerprintTest
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         /// <summary>
-        /// ADR-140: order carries no meaning in any of these collections, and EF hands them back in
+        /// Order carries no meaning in any of these collections, and EF hands them back in
         /// whatever order the query produced - so an order-sensitive hash would make cycles full at random.
         /// </summary>
         [Test]

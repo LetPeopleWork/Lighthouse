@@ -6,7 +6,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
-    /// Epic #5687. The invariant this file exists for is not "the fingerprint is correct" — it is
+    /// The invariant this file exists for is not "the fingerprint is correct" — it is
     /// "nobody can add a fetch-shaping property without deciding, in writing, what it costs".
     ///
     /// Delta skips the whole of an unchanged record: it is not re-downloaded, not re-mapped, not
@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     public class FetchShapingPropertyGuardTest
     {
         private const string Because =
-            "Epic #5687. A fetch-shaping property that is neither registered nor excluded makes the "
+            "A fetch-shaping property that is neither registered nor excluded makes the "
             + "fingerprint drift silently, and a stale fingerprint means delta serves a stale result set "
             + "with every test green - wrong numbers, no error. If you are reading this because the test "
             + "went red: decide what the new property costs, then either add it to the fingerprint or add "
