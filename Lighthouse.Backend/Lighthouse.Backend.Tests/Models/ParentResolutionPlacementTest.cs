@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Tests.Models
 
         private static readonly string[] ThreeLinkedKeys = [AnotherFeature, AnIncident, AFeature];
 
-        // ----- Slice 01: narrowing to the Features this instance holds ---------------------------------------
+        // ----- Narrowing to the Features this instance holds ---------------------------------------
 
         [Test]
         [Category("slice-01")]
@@ -96,19 +96,6 @@ namespace Lighthouse.Backend.Tests.Models
             }
         }
 
-        /// <summary>Holds only until the oldest-link rule exists. That rule's own scenarios replace it.</summary>
-        [Test]
-        [Category("slice-01")]
-        [Category("error")]
-        public void Two_stored_Features_are_not_placed_until_there_is_a_rule_to_choose_between_them()
-        {
-            var placement = ParentResolution.From([Undated(AFeature), Undated(AnotherFeature)])
-                .Place(Holding((AFeature, November2), (AnotherFeature, January15)), ParentNarrowing.Narrow);
-
-            Assert.That((placement.Outcome, placement.WhyNotPlaced), Is.EqualTo((ParentPlacementOutcome.NotPlaced, ParentNotPlacedReason.MoreThanOneStoredFeature)),
-                "Without a stated rule, either Feature would be a guess that reads as configuration.");
-        }
-
         /// <summary>
         /// Two readings of the same links are the same answer, whatever order Jira listed them in. Comparing
         /// in listing order would make an unchanged item look changed on every refresh that reorders.
@@ -144,10 +131,9 @@ namespace Lighthouse.Backend.Tests.Models
                 $"Every ordering of the same links has to give one answer. They gave: {string.Join(" | ", placements)}");
         }
 
-        // ----- Slice 02: the oldest link, then the oldest Feature, then the lowest key -------------------------
+        // ----- The oldest link, then the oldest Feature, then the lowest key -------------------------
 
         [Test]
-        [Ignore(PendingStory6301.Slice02)]
         [Category("slice-02")]
         public void The_oldest_dated_link_wins()
         {
@@ -159,7 +145,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(PendingStory6301.Slice02)]
         [Category("slice-02")]
         [Category("edge")]
         public void A_dated_link_beats_an_undated_one()
@@ -172,7 +157,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [TestCaseSource(nameof(UndatedLinksDecidedByCreatedDate))]
-        [Ignore(PendingStory6301.Slice02)]
         [Category("slice-02")]
         [Category("edge")]
         public void Among_undated_links_the_earliest_known_created_date_wins(DateTime? createdOfTheFirst, DateTime? createdOfTheSecond, string expectedKey, ParentPlacementRule expectedRule)
@@ -185,7 +169,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(PendingStory6301.Slice02)]
         [Category("slice-02")]
         [Category("edge")]
         public void When_everything_else_ties_the_lowest_key_wins_compared_character_by_character()
@@ -198,7 +181,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(PendingStory6301.Slice02)]
         [Category("slice-02")]
         public void Without_narrowing_nothing_is_set_aside_first_and_the_pick_always_ends_somewhere()
         {
@@ -210,7 +192,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [TestCaseSource(nameof(SetsTheDatesAndKeysDecide))]
-        [Ignore(PendingStory6301.Slice02)]
         [Category("slice-02")]
         [Category("property")]
         [Category("kpi")]
@@ -231,7 +212,6 @@ namespace Lighthouse.Backend.Tests.Models
         /// can refuse, and it refuses only when no candidate is a stored Feature.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice02)]
         [Category("slice-02")]
         [Category("property")]
         [Category("kpi")]

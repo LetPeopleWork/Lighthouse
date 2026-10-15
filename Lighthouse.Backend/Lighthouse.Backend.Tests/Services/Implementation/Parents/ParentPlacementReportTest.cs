@@ -42,8 +42,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Parents
             + "PAY-450 under PAY-88 (only Feature; set aside INC-5602, INC-5610)",
             "Team \"Payments\" could not place 2 records whose links name more than one issue: "
             + "PAY-402 (linked to INC-5602, INC-5610; none is a Feature Lighthouse holds); "
-            + "PAY-420 (linked to PAY-88, PAY-91; more than one is a Feature Lighthouse holds). It takes no parent from its links.",
+            + "PAY-405 (linked to INC-5531, INC-5602; none is a Feature Lighthouse holds). It takes no parent from its links.",
         ];
+
+        private static readonly string[] TheLineForTheOldestLink =
+        [
+            "Team \"Payments\" placed 1 record whose links name more than one issue: "
+            + "PAY-420 under PAY-88 (oldest link, 2026-03-04; set aside PAY-91, 2026-06-17)",
+        ];
+
+        private static readonly string[] TheLineForTheEarliestCreated =
+        [
+            "Team \"Payments\" placed 1 record whose links name more than one issue: "
+            + "PAY-421 under PAY-88 (earliest created, 2025-11-02; set aside PAY-91)",
+        ];
+
+        private static readonly string[] TheLineForTheLowestKey =
+        [
+            "Team \"Payments\" placed 1 record whose links name more than one issue: "
+            + "PAY-422 under PAY-88 (lowest key; set aside PAY-91)",
+        ];
+
+        private static readonly DateTime LateOnMarch4 = new(2026, 3, 4, 23, 30, 0, DateTimeKind.Utc);
+
+        private static readonly DateTime June17 = new(2026, 6, 17, 9, 0, 0, DateTimeKind.Utc);
+
+        private static readonly DateTime November2 = new(2025, 11, 2, 9, 0, 0, DateTimeKind.Utc);
+
+        private static readonly DateTime January15 = new(2026, 1, 15, 9, 0, 0, DateTimeKind.Utc);
 
         [Test]
         public void Team_NamesTheTeamInQuotes()
@@ -84,11 +110,49 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Parents
                 PlacedUnderTheFeature("PAY-311", AnIncident),
                 NotPlaced("PAY-402", ParentNotPlacedReason.NoneIsAStoredFeature, AnotherIncident, AThirdIncident),
                 PlacedUnderTheFeature("PAY-450", AnotherIncident, AThirdIncident),
-                NotPlaced("PAY-420", ParentNotPlacedReason.MoreThanOneStoredFeature, TheFeature, TheOtherFeature),
+                NotPlaced("PAY-405", ParentNotPlacedReason.NoneIsAStoredFeature, AnotherIncident, AnIncident),
             ]);
 
             Assert.That(lines, Is.EqualTo(TheLinesForTwoOfEach),
                 "One line per outcome for the whole fetch, never one per record, each naming every record it counts.");
+        }
+
+        [Test]
+        public void Lines_PlacedByTheOldestLink_NamesTheLinkDayInUtcAndDatesTheSetAsideLink()
+        {
+            var lines = ParentPlacementReport.Lines(TheOwner, [Placed("PAY-420",
+                [new ParentCandidate(TheOtherFeature, June17), new ParentCandidate(TheFeature, LateOnMarch4)],
+                (TheFeature, January15), (TheOtherFeature, November2))]);
+
+            Assert.That(lines, Is.EqualTo(TheLineForTheOldestLink), "The day is the UTC day of the link, so a link made late in the evening is not shown on the next day where the server runs.");
+        }
+
+        [Test]
+        public void Lines_PlacedByTheEarliestCreatedFeature_NamesItsCreatedDayAndAddsNoDateToAnUndatedLink()
+        {
+            var lines = ParentPlacementReport.Lines(TheOwner, [Placed("PAY-421",
+                [new ParentCandidate(TheOtherFeature, null), new ParentCandidate(TheFeature, null)],
+                (TheFeature, November2), (TheOtherFeature, January15))]);
+
+            Assert.That(lines, Is.EqualTo(TheLineForTheEarliestCreated), "A link with no recorded date is named without one, never with an invented date.");
+        }
+
+        [Test]
+        public void Lines_PlacedByTheLowestKey_NamesNoDate()
+        {
+            var lines = ParentPlacementReport.Lines(TheOwner, [Placed("PAY-422",
+                [new ParentCandidate(TheOtherFeature, null), new ParentCandidate(TheFeature, null)],
+                (TheFeature, null), (TheOtherFeature, null))]);
+
+            Assert.That(lines, Is.EqualTo(TheLineForTheLowestKey), "Nothing dated decided, so the line shows no date.");
+        }
+
+        private static RecordPlacement Placed(string referenceId, ParentCandidate[] candidates, params (string Key, DateTime? Created)[] storedFeatures)
+        {
+            var links = ParentResolution.From(candidates);
+            var stored = new StoredFeatures(storedFeatures.ToDictionary(feature => feature.Key, feature => feature.Created, StringComparer.Ordinal));
+
+            return new RecordPlacement(referenceId, links, links.Place(stored, ParentNarrowing.Narrow));
         }
 
         private static RecordPlacement PlacedUnderTheFeature(string referenceId, params string[] setAside)

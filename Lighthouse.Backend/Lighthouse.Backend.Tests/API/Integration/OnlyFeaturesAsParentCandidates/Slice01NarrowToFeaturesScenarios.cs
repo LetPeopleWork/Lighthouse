@@ -19,8 +19,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
     {
         private const string TheFeature = "PAY-88";
 
-        private const string TheOtherFeature = "PAY-91";
-
         private const string AFeatureStoredLater = "PAY-95";
 
         private const string TheInitiativeAbove = "PAY-7";
@@ -32,8 +30,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         private const string TheItemWithOneLink = "PAY-415";
 
         private const string TheItemThatGainsASecondLink = "PAY-416";
-
-        private const string TheItemLinkedToTwoFeatures = "PAY-420";
 
         private const string TheItemWhoseFeatureIsStoredLater = "PAY-430";
 
@@ -240,38 +236,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
                     "The refused item has to be counted, or the change in its links goes unnoticed.");
                 Assert.That(line, Does.Contain($"{TheItemThatGainsASecondLink} (linked to "),
                     "The administrator finds the item that lost its parent from the line alone.");
-            }
-        }
-
-        /// <summary>
-        /// Two Features are left after the incidents go, and until the oldest-link rule exists there is no
-        /// stated way to choose. The item is refused and named, never guessed. The oldest-link rule replaces
-        /// this scenario when it ships.
-        /// </summary>
-        [Test]
-        [Category("error")]
-        public async Task Two_Features_left_after_narrowing_are_not_guessed_before_the_oldest_link_rule_exists()
-        {
-            TheTeamReadsItsParentsFromTheCausedByLink();
-            ThePortfolioHoldsTheFeature(TheFeature);
-            ThePortfolioHoldsTheFeature(TheOtherFeature);
-            TheTeamHoldsTheWorkItem(TheItemLinkedToTwoFeatures);
-            TheIssueIsCausedBy(TheItemLinkedToTwoFeatures, TheFeature, TheOtherFeature);
-            await ThePortfolioRefreshes();
-
-            await TheTeamRefreshes();
-
-            var figures = await WhatRefreshHistoryShowsForTheTeam();
-            var line = TheOneLineThatCouldNotPlaceFor(TheTeam);
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(TheStoredParentOfTheWorkItem(TheItemLinkedToTwoFeatures), Is.Empty,
-                    "Whichever of two Features a refresh reached for, without a stated rule it is a guess that reads as configuration.");
-                Assert.That(figures.NotPlaced, Is.EqualTo(1),
-                    "The refusal has to be counted, or the administrator cannot see that items are waiting for a choice.");
-                Assert.That(line, Does.Contain(
-                    $"{TheItemLinkedToTwoFeatures} (linked to {TheFeature}, {TheOtherFeature}; more than one is a Feature Lighthouse holds)"),
-                    "The line has to say that both are Features, so the administrator knows this is not an untidy link but a real choice.");
             }
         }
 

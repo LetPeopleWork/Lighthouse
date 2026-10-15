@@ -18,6 +18,9 @@ namespace Lighthouse.Backend.Models
 
         public ParentPlacementRule DecidedBy { get; init; }
 
+        /// <summary>The link or created date that decided, when the deciding rule is a date.</summary>
+        public DateTime? DecidedOn { get; init; }
+
         public ParentNotPlacedReason WhyNotPlaced { get; init; }
 
         public IReadOnlyList<ParentCandidate> SetAside { get; init; } = [];
@@ -54,7 +57,6 @@ namespace Lighthouse.Backend.Models
     {
         None,
         NoneIsAStoredFeature,
-        MoreThanOneStoredFeature,
     }
 
     /// <summary>

@@ -17,7 +17,6 @@ namespace Lighthouse.Backend.Models
         public static ParentResolution From(IReadOnlyList<string> distinctCounterpartKeys)
             => From([.. distinctCounterpartKeys.Select(key => new ParentCandidate(key, null))]);
 
-        // SCAFFOLD: the pick does not use link dates yet.
         public static ParentResolution From(IReadOnlyList<ParentCandidate> candidatesWithTheirLinkDates)
             => candidatesWithTheirLinkDates.Count == 0 ? default : new([.. InKeyOrder(candidatesWithTheirLinkDates)]);
 
@@ -44,7 +43,9 @@ namespace Lighthouse.Backend.Models
         /// <summary>
         /// Where an item whose links name several issues hangs. One link or none is not a question: the
         /// caller stores it as it is. A Team's items hang under Features, so every candidate this instance
-        /// does not hold as a Feature is set aside first, and exactly one left over is the answer.
+        /// does not hold as a Feature is set aside first. Among what is left, the link made first wins,
+        /// then the Feature created first, then the lowest key, so the same links always give the same
+        /// answer and only an empty narrowing leaves the item unplaced.
         /// </summary>
         public ParentPlacement Place(StoredFeatures storedFeatures, ParentNarrowing narrowing)
         {
@@ -53,25 +54,52 @@ namespace Lighthouse.Backend.Models
                 return ParentPlacement.NotAsked;
             }
 
-            if (narrowing == ParentNarrowing.DoNotNarrow)
+            var ranked = CandidatesWithTheirLinkDates
+                .Where(candidate => narrowing == ParentNarrowing.DoNotNarrow || storedFeatures.Holds(candidate.Key))
+                .OrderBy(candidate => candidate.LinkedAt is null)
+                .ThenBy(candidate => candidate.LinkedAt)
+                .ThenBy(candidate => storedFeatures.CreatedDateOf(candidate.Key) is null)
+                .ThenBy(candidate => storedFeatures.CreatedDateOf(candidate.Key))
+                .ThenBy(candidate => candidate.Key, StringComparer.Ordinal)
+                .ToList();
+
+            if (ranked.Count == 0)
             {
-                throw new NotImplementedException($"Placing among {Candidates.Count} candidates without narrowing them is not built yet");
+                return ParentPlacement.NotPlacedBecause(ParentNotPlacedReason.NoneIsAStoredFeature);
             }
 
-            var features = CandidatesWithTheirLinkDates.Where(candidate => storedFeatures.Holds(candidate.Key)).ToList();
+            var winner = ranked[0];
+            var (rule, decidedOn) = ranked.Count == 1
+                ? (ParentPlacementRule.OnlyFeatureAmongLinks, null)
+                : WhatSetsTheWinnerApart(winner, ranked[1], storedFeatures);
 
-            return features.Count switch
+            return new ParentPlacement
             {
-                0 => ParentPlacement.NotPlacedBecause(ParentNotPlacedReason.NoneIsAStoredFeature),
-                1 => new ParentPlacement
-                {
-                    Outcome = ParentPlacementOutcome.Placed,
-                    Key = features[0].Key,
-                    DecidedBy = ParentPlacementRule.OnlyFeatureAmongLinks,
-                    SetAside = [.. CandidatesWithTheirLinkDates.Where(candidate => candidate != features[0])],
-                },
-                _ => ParentPlacement.NotPlacedBecause(ParentNotPlacedReason.MoreThanOneStoredFeature),
+                Outcome = ParentPlacementOutcome.Placed,
+                Key = winner.Key,
+                DecidedBy = rule,
+                DecidedOn = decidedOn,
+                SetAside = [.. CandidatesWithTheirLinkDates.Where(candidate => candidate != winner)],
             };
+        }
+
+        /// <summary>
+        /// The rule named is the first one on which the winner beats the runner-up, so the line never
+        /// credits a rule that did not actually decide.
+        /// </summary>
+        private static (ParentPlacementRule Rule, DateTime? DecidedOn) WhatSetsTheWinnerApart(
+            ParentCandidate winner, ParentCandidate runnerUp, StoredFeatures storedFeatures)
+        {
+            if (winner.LinkedAt != runnerUp.LinkedAt)
+            {
+                return (ParentPlacementRule.OldestLink, winner.LinkedAt);
+            }
+
+            var createdOfTheWinner = storedFeatures.CreatedDateOf(winner.Key);
+
+            return createdOfTheWinner != storedFeatures.CreatedDateOf(runnerUp.Key)
+                ? (ParentPlacementRule.EarliestCreated, createdOfTheWinner)
+                : (ParentPlacementRule.LowestKey, null);
         }
 
         /// <summary>

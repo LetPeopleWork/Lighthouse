@@ -7,10 +7,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
     /// whose link still standing was made first, on every refresh, however the tracker orders the links.
     /// Driving port: a Team refresh through the running application.
     ///
-    /// The link dates come from the history Jira already sends with every issue. The shape of a link entry
-    /// in that history has not been captured from a live instance yet. These scenarios are written against
-    /// the commonly reported shape, built in one place in the shared Jira fixtures, and that builder is
-    /// replaced by the captured payload before this slice is delivered.
+    /// The link dates come from the history Jira already sends with every issue, built in the shape Jira Cloud
+    /// was seen to write when a link is added, removed and added again.
     ///
     /// When the history dates nothing, the older Feature wins, then the lower key. Each rule is named in
     /// the line, so the administrator can tell which one decided.
@@ -144,7 +142,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         }
 
         [Test]
-        [Ignore(PendingStory6301.Slice02)]
         [Category("edge")]
         public async Task With_no_link_dates_the_older_Feature_wins()
         {
@@ -172,7 +169,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// the same everywhere. OPS-12 sorts before OPS-9 that way, whatever the numbers say.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice02)]
         [Category("edge")]
         public async Task With_no_link_dates_and_Features_of_the_same_age_the_lower_key_wins()
         {
@@ -201,7 +197,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// Feature with a known date comes first.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice02)]
         [Category("edge")]
         public async Task A_Feature_with_no_recorded_created_date_counts_as_unknown_not_as_the_oldest()
         {

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Lighthouse.Backend.Models;
 
 namespace Lighthouse.Backend.Services.Implementation.Parents
@@ -41,22 +42,40 @@ namespace Lighthouse.Backend.Services.Implementation.Parents
         private static string Records(int count) => count == 1 ? "1 record" : $"{count} records";
 
         private static string WhereItWent(RecordPlacement record)
-            => $"{record.ReferenceId} under {record.Placement.Key} ({TheRuleThatDecided(record.Placement.DecidedBy)}; "
-                + $"set aside {string.Join(", ", record.Placement.SetAside.Select(candidate => candidate.Key))})";
+            => $"{record.ReferenceId} under {record.Placement.Key} ({TheRuleThatDecided(record.Placement)}; "
+                + $"set aside {string.Join(", ", record.Placement.SetAside.Select(Named))})";
+
+        private static string Named(ParentCandidate candidate) => WithTheDay(candidate.Key, candidate.LinkedAt);
 
         private static string WhyItWentNowhere(RecordPlacement record)
             => $"{record.ReferenceId} (linked to {string.Join(", ", record.Links.Candidates)}; {TheReason(record.Placement.WhyNotPlaced)})";
 
-        private static string TheRuleThatDecided(ParentPlacementRule rule) => rule switch
+#pragma warning disable CS8524 // Every named rule has an arm; a value outside the enum is never stored, and a discard would hide a rule added later without words.
+        private static string TheRuleThatDecided(ParentPlacement placement) => placement.DecidedBy switch
         {
             ParentPlacementRule.OnlyFeatureAmongLinks => "only Feature",
-            _ => throw new NotSupportedException($"No placement is decided by {rule} yet, so there are no words for it."),
+            ParentPlacementRule.OldestLink => WithTheDay("oldest link", placement.DecidedOn),
+            ParentPlacementRule.EarliestCreated => WithTheDay("earliest created", placement.DecidedOn),
+            ParentPlacementRule.LowestKey => "lowest key",
+            ParentPlacementRule.None => throw new ArgumentOutOfRangeException(nameof(placement), placement.DecidedBy, "A placed record always names the rule that placed it."),
         };
+#pragma warning restore CS8524
+
+        /// <summary>
+        /// The day is the UTC calendar day, written the same on every machine: read in the server's own zone,
+        /// a link made late in the evening would show as made the next day.
+        /// </summary>
+        private static string WithTheDay(string words, DateTime? at)
+            => at is { } instant
+                ? string.Create(CultureInfo.InvariantCulture, $"{words}, {AsUtc(instant):yyyy-MM-dd}")
+                : words;
+
+        private static DateTime AsUtc(DateTime instant)
+            => instant.Kind == DateTimeKind.Local ? TimeZoneInfo.ConvertTimeToUtc(instant, TimeZoneInfo.Local) : instant;
 
         private static string TheReason(ParentNotPlacedReason reason) => reason switch
         {
             ParentNotPlacedReason.NoneIsAStoredFeature => "none is a Feature Lighthouse holds",
-            ParentNotPlacedReason.MoreThanOneStoredFeature => "more than one is a Feature Lighthouse holds",
             _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, "A record that was not placed always has a reason."),
         };
     }
