@@ -309,6 +309,7 @@ namespace Lighthouse.Backend.Tests.API
 
         [TestCase(FailingStep.LookingUpTheTeamsAndPortfolios)]
         [TestCase(FailingStep.PublishingTheChange)]
+        [Category("contract-shape:bounded-change")]
         public async Task UpdateWorkTrackingSystemConnection_StartingUpdatesFailsAfterAStoredSave_AnswersOkAndLogsOneError(FailingStep failingStep)
         {
             const int connectionId = 12;
@@ -356,6 +357,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        [Category("contract-shape:bounded-change")]
         public async Task UpdateWorkTrackingSystemConnection_FieldAddedToAConnectionNoTeamOrPortfolioUses_PublishesNothing()
         {
             const int connectionId = 12;

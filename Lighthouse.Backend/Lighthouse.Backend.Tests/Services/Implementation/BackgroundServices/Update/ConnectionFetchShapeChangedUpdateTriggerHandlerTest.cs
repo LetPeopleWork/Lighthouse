@@ -6,6 +6,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {
+    [Category("contract-shape:bounded-change")]
     public class ConnectionFetchShapeChangedUpdateTriggerHandlerTest
     {
         private static readonly string[] EveryTeamThenEveryPortfolio = ["Team 11", "Team 12", "Portfolio 21", "Portfolio 22"];

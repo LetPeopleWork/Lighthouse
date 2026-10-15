@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using ArchUnitNET.NUnit;
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models.Events;
@@ -13,37 +14,43 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         private const string Because =
-            "Telling every Team and Portfolio on a connection to update is something only an administrator's " +
-            "save of that connection may do. Opening the connection's settings page quietly registers the " +
-            "connector's own fields, and the Jira refresh does the same on every run; if either of those " +
-            "announced a changed fetch shape, every open settings page and every scheduled refresh would set " +
-            "off a full re-download of every Team and Portfolio on the connection. The event itself, its " +
-            "handler and the composition root that registers the handler are the only other types that may " +
-            "name it. Types are matched by name prefix so the compiler-generated helpers nested inside " +
-            "them (async state machines, lambda closures) count as the type they belong to.";
+            "Telling every Team and Portfolio on a connection to update sets off a full re-download of each " +
+            "of them, so no sync path or other service may start it. Only the connection controller, the " +
+            "event itself, its handler and the composition root that registers the handler may name the " +
+            "event. The rule cannot see inside the connection controller, so it does not hold the settings " +
+            "page's read of a connection, which quietly registers the connector's own fields; the acceptance " +
+            "scenarios on reading a connection hold that one. A publisher written inside an async method " +
+            "anywhere else is only caught in a Debug run: a Release build moves an async method's body into " +
+            "a helper type the architecture loader does not attribute to its owner.";
 
         [Test]
-        public void OnlyTheConnectionSave_PublishesThatAConnectionsFetchShapeChanged()
+        // @contract-shape:unbounded-preservation
+        public void NoTypeOutsideTheConnectionController_PublishesThatAConnectionsFetchShapeChanged()
         {
             Types().That()
-                .DoNotHaveFullNameContaining(typeof(WorkTrackingSystemConnectionController).FullName!).And()
-                .DoNotHaveFullNameContaining(typeof(ConnectionFetchShapeChanged).FullName!).And()
-                .DoNotHaveFullNameContaining(typeof(ConnectionFetchShapeChangedUpdateTriggerHandler).FullName!).And()
-                .DoNotHaveFullNameStartingWith(typeof(Program).FullName! + "+").And()
-                .AreNot(typeof(Program))
+                .DoNotHaveFullNameMatching(TheTypeOrOneNestedInIt(typeof(WorkTrackingSystemConnectionController))).And()
+                .DoNotHaveFullNameMatching(TheTypeOrOneNestedInIt(typeof(ConnectionFetchShapeChanged))).And()
+                .DoNotHaveFullNameMatching(TheTypeOrOneNestedInIt(typeof(ConnectionFetchShapeChangedUpdateTriggerHandler))).And()
+                .DoNotHaveFullNameMatching(TheTypeOrOneNestedInIt(typeof(Program)))
                 .Should().NotDependOnAny(Types().That().Are(typeof(ConnectionFetchShapeChanged)))
                 .Because(Because)
                 .Check(Architecture);
         }
 
         [Test]
+        // @contract-shape:unbounded-preservation
         public void TheConnectionSave_IsSeenToPublishThatAConnectionsFetchShapeChanged()
         {
             Types().That()
-                .HaveFullNameContaining(typeof(WorkTrackingSystemConnectionController).FullName!)
+                .HaveFullNameMatching(TheTypeOrOneNestedInIt(typeof(WorkTrackingSystemConnectionController)))
                 .Should().DependOnAny(Types().That().Are(typeof(ConnectionFetchShapeChanged)))
                 .Because("the rule above only means something while it can see the one save that does publish the event")
                 .Check(Architecture);
         }
+
+        // Matches exactly the given type, or a type nested inside it such as the compiler-generated helpers
+        // behind its lambdas and async methods, and nothing whose name merely begins the same way.
+        private static string TheTypeOrOneNestedInIt(Type type)
+            => "^" + Regex.Escape(type.FullName!) + @"($|\+)";
     }
 }

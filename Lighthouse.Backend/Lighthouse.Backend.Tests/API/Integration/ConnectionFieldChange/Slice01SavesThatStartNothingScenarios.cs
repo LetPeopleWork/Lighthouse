@@ -1,14 +1,14 @@
 namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
 {
     /// <summary>
-    /// Story #6307, slice 01, the other side of the same promise: a save starts updates only when it
+    /// The other side of the same promise: a save starts updates only when it
     /// changes what the Teams and Portfolios on the connection ask the tracker for, and only for those.
     /// A new API token, a new name, a refused save, a save the admin chose to keep from starting updates,
     /// or reading the connection, starts nothing; each of those Teams and Portfolios keeps its next
     /// scheduled update.
     ///
-    /// These hold today, when no save starts anything, and they have to keep holding once a field change
-    /// does. They run now rather than waiting for DELIVER.
+    /// These held before any save started anything, and they have to keep holding now that a field change
+    /// does.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]

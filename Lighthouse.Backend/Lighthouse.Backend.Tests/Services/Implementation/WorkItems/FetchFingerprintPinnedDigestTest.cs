@@ -5,11 +5,12 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 {
     /// <summary>
-    /// The fingerprint every Team and Portfolio has already stored, written out for one Team and one
-    /// Portfolio with every input spelled out. The fingerprint decides whether the next update downloads
-    /// everything, so if a change to how it is worked out moved these digests, every Team and Portfolio on
-    /// every instance would download everything on the first update after the upgrade. Taking the
-    /// connection's part of the fingerprint out into a function of its own must leave both unchanged.
+    /// The fingerprint every Team and Portfolio has already stored, written out for one Team, one
+    /// Portfolio, and that Portfolio read without its connection, with every input spelled out. The
+    /// fingerprint decides whether the next update downloads everything, so if a change to how it is
+    /// worked out moved these digests, every Team and Portfolio on every instance would download
+    /// everything on the first update after the upgrade. Taking the connection's part of the fingerprint
+    /// out into a function of its own must leave all three unchanged.
     /// </summary>
     [TestFixture]
     [Category("story-6307-refresh-on-additional-fields-change")]
@@ -20,6 +21,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
         private const string ThePortfoliosStoredFingerprint = "427b6dece3da51911144616de4cc404f";
 
+        private const string ThePortfolioWithoutItsConnectionsStoredFingerprint = "9a5ae7627477a3dbe4f80c4204789044";
+
         [Test]
         public void A_Team_keeps_the_fingerprint_it_has_already_stored()
             => Assert.That(FetchFingerprint.For(ATeam()), Is.EqualTo(TheTeamsStoredFingerprint));
@@ -27,6 +30,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         [Test]
         public void A_Portfolio_keeps_the_fingerprint_it_has_already_stored()
             => Assert.That(FetchFingerprint.For(APortfolio()), Is.EqualTo(ThePortfoliosStoredFingerprint));
+
+        [Test]
+        public void A_Portfolio_read_without_its_connection_keeps_the_fingerprint_it_has_already_stored()
+        {
+            var portfolio = APortfolio();
+            portfolio.WorkTrackingSystemConnection = null!;
+
+            Assert.That(FetchFingerprint.For(portfolio), Is.EqualTo(ThePortfolioWithoutItsConnectionsStoredFingerprint));
+        }
 
         private static WorkTrackingSystemConnection AConnection()
         {

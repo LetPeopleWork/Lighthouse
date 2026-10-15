@@ -1,7 +1,7 @@
 namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
 {
     /// <summary>
-    /// Story #6307, slice 01: a field change on a connection updates its Teams and Portfolios. Priya adds
+    /// A field change on a connection updates its Teams and Portfolios. Priya adds
     /// Fix Versions to "Nordwind Jira DC" and presses Save; the Task Manager lists an update for each of
     /// the 4 Teams and 2 Portfolios that read through it, and each of them downloads everything once, so
     /// the field is filled in on every Work Item and Feature without anybody remembering a step.
