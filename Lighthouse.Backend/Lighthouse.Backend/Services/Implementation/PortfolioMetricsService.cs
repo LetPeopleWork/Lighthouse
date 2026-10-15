@@ -74,33 +74,23 @@ namespace Lighthouse.Backend.Services.Implementation
 
             return GetFromCacheIfExists(portfolio, $"FeatureSizeProcessBehaviourChart_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{AsOfCacheKeyPart(asOf)}", () =>
              {
-                 var baselineStart = portfolio.ProcessBehaviourChartBaselineStartDate;
-                 var baselineEnd = portfolio.ProcessBehaviourChartBaselineEndDate;
-                 var baselineConfigured = baselineStart != null || baselineEnd != null;
-
-                 if (!baselineConfigured)
-                 {
-                     baselineStart = startDate;
-                     baselineEnd = endDate;
-                 }
-
-                 var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, portfolio.DoneItemsCutoffDays, asOf ?? Clock.Today);
-                 if (!validation.IsValid)
+                 var baseline = ResolveBaseline(portfolio, startDate, endDate, asOf);
+                 if (!baseline.Validation.IsValid)
                  {
                      return new ProcessBehaviourChart
                      {
                          Status = BaselineStatus.BaselineInvalid,
-                         StatusReason = validation.ErrorMessage,
+                         StatusReason = baseline.Validation.ErrorMessage,
                          XAxisKind = XAxisKind.DateTime,
                          Average = 0,
                          UpperNaturalProcessLimit = 0,
                          LowerNaturalProcessLimit = 0,
-                         BaselineConfigured = baselineConfigured,
+                         BaselineConfigured = baseline.Configured,
                          DataPoints = [],
                      };
                  }
 
-                 var baselineItems = GetFeaturesClosedInDateRange(portfolio, baselineStart!.Value, baselineEnd!.Value)
+                 var baselineItems = GetFeaturesClosedInDateRange(portfolio, baseline.Start!.Value, baseline.End!.Value)
                      .Where(f => f.Size > 0)
                      .OrderBy(f => f.ClosedDate)
                      .ThenBy(f => f.Id)
@@ -125,7 +115,7 @@ namespace Lighthouse.Backend.Services.Implementation
                          Average = 0,
                          UpperNaturalProcessLimit = 0,
                          LowerNaturalProcessLimit = 0,
-                         BaselineConfigured = baselineConfigured,
+                         BaselineConfigured = baseline.Configured,
                          DataPoints = [],
                      };
                  }
@@ -147,7 +137,7 @@ namespace Lighthouse.Backend.Services.Implementation
                      Average = xmrResult.Average,
                      UpperNaturalProcessLimit = xmrResult.UpperNaturalProcessLimit,
                      LowerNaturalProcessLimit = xmrResult.LowerNaturalProcessLimit,
-                     BaselineConfigured = baselineConfigured,
+                     BaselineConfigured = baseline.Configured,
                      DataPoints = dataPoints,
                  };
              }, logger);

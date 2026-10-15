@@ -581,6 +581,24 @@ namespace Lighthouse.Backend.Services.Implementation
             return BuildDailyRunChartProcessBehaviourChart(owner, displayStart, displayEnd, getThroughput, asOf);
         }
 
+        protected sealed record ResolvedBaseline(DateTime? Start, DateTime? End, bool Configured, BaselineValidationResult Validation);
+
+        protected ResolvedBaseline ResolveBaseline(WorkTrackingSystemOptionsOwner owner, DateTime displayStart, DateTime displayEnd, DateOnly? asOf)
+        {
+            var today = asOf ?? Clock.Today;
+            var configuredStart = owner.ProcessBehaviourChartBaselineStartDate;
+            var configuredEnd = owner.ProcessBehaviourChartBaselineEndDate;
+
+            if (configuredStart != null || configuredEnd != null)
+            {
+                var validation = BaselineValidationService.Validate(configuredStart, configuredEnd, owner.DoneItemsCutoffDays, today);
+                return new ResolvedBaseline(configuredStart, configuredEnd, true, validation);
+            }
+
+            var displayWindowValidation = BaselineValidationService.ValidateDisplayWindowAsBaseline(displayStart, displayEnd, owner.DoneItemsCutoffDays, today);
+            return new ResolvedBaseline(displayStart, displayEnd, false, displayWindowValidation);
+        }
+
         protected ProcessBehaviourChart BuildDailyRunChartProcessBehaviourChart(
             WorkTrackingSystemOptionsOwner owner,
             DateTime displayStart,
@@ -588,33 +606,23 @@ namespace Lighthouse.Backend.Services.Implementation
             Func<DateTime, DateTime, RunChartData> getRunChartData,
             DateOnly? asOf = null)
         {
-            var baselineStart = owner.ProcessBehaviourChartBaselineStartDate;
-            var baselineEnd = owner.ProcessBehaviourChartBaselineEndDate;
-            var baselineConfigured = baselineStart != null || baselineEnd != null;
-
-            if (!baselineConfigured)
-            {
-                baselineStart = displayStart;
-                baselineEnd = displayEnd;
-            }
-
-            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays, asOf ?? Clock.Today);
-            if (!validation.IsValid)
+            var baseline = ResolveBaseline(owner, displayStart, displayEnd, asOf);
+            if (!baseline.Validation.IsValid)
             {
                 return new ProcessBehaviourChart
                 {
                     Status = BaselineStatus.BaselineInvalid,
-                    StatusReason = validation.ErrorMessage,
+                    StatusReason = baseline.Validation.ErrorMessage,
                     XAxisKind = XAxisKind.Date,
                     Average = 0,
                     UpperNaturalProcessLimit = 0,
                     LowerNaturalProcessLimit = 0,
-                    BaselineConfigured = baselineConfigured,
+                    BaselineConfigured = baseline.Configured,
                     DataPoints = [],
                 };
             }
 
-            var baselineData = getRunChartData(baselineStart!.Value, baselineEnd!.Value);
+            var baselineData = getRunChartData(baseline.Start!.Value, baseline.End!.Value);
             var displayData = getRunChartData(displayStart, displayEnd);
 
             var baselineValues = ExtractDailyCounts(baselineData);
@@ -631,7 +639,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 Average = xmrResult.Average,
                 UpperNaturalProcessLimit = xmrResult.UpperNaturalProcessLimit,
                 LowerNaturalProcessLimit = xmrResult.LowerNaturalProcessLimit,
-                BaselineConfigured = baselineConfigured,
+                BaselineConfigured = baseline.Configured,
                 DataPoints = dataPoints,
             };
         }
@@ -643,33 +651,23 @@ namespace Lighthouse.Backend.Services.Implementation
             Func<DateTime, DateTime, (int[] Values, int[][] WorkItemIdsPerDay)> getDailyValues,
             DateOnly? asOf = null)
         {
-            var baselineStart = owner.ProcessBehaviourChartBaselineStartDate;
-            var baselineEnd = owner.ProcessBehaviourChartBaselineEndDate;
-            var baselineConfigured = baselineStart != null || baselineEnd != null;
-
-            if (!baselineConfigured)
-            {
-                baselineStart = displayStart;
-                baselineEnd = displayEnd;
-            }
-
-            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays, asOf ?? Clock.Today);
-            if (!validation.IsValid)
+            var baseline = ResolveBaseline(owner, displayStart, displayEnd, asOf);
+            if (!baseline.Validation.IsValid)
             {
                 return new ProcessBehaviourChart
                 {
                     Status = BaselineStatus.BaselineInvalid,
-                    StatusReason = validation.ErrorMessage,
+                    StatusReason = baseline.Validation.ErrorMessage,
                     XAxisKind = XAxisKind.Date,
                     Average = 0,
                     UpperNaturalProcessLimit = 0,
                     LowerNaturalProcessLimit = 0,
-                    BaselineConfigured = baselineConfigured,
+                    BaselineConfigured = baseline.Configured,
                     DataPoints = [],
                 };
             }
 
-            var baselineResult = getDailyValues(baselineStart!.Value, baselineEnd!.Value);
+            var baselineResult = getDailyValues(baseline.Start!.Value, baseline.End!.Value);
             var displayResult = getDailyValues(displayStart, displayEnd);
 
             var xmrResult = XmRCalculator.Calculate(baselineResult.Values, displayResult.Values);
@@ -694,7 +692,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 Average = xmrResult.Average,
                 UpperNaturalProcessLimit = xmrResult.UpperNaturalProcessLimit,
                 LowerNaturalProcessLimit = xmrResult.LowerNaturalProcessLimit,
-                BaselineConfigured = baselineConfigured,
+                BaselineConfigured = baseline.Configured,
                 DataPoints = dataPoints,
             };
         }
@@ -706,33 +704,23 @@ namespace Lighthouse.Backend.Services.Implementation
             Func<DateTime, DateTime, IEnumerable<WorkItemBase>> getClosedItems,
             DateOnly? asOf = null)
         {
-            var baselineStart = owner.ProcessBehaviourChartBaselineStartDate;
-            var baselineEnd = owner.ProcessBehaviourChartBaselineEndDate;
-            var baselineConfigured = baselineStart != null || baselineEnd != null;
-
-            if (!baselineConfigured)
-            {
-                baselineStart = displayStart;
-                baselineEnd = displayEnd;
-            }
-
-            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays, asOf ?? Clock.Today);
-            if (!validation.IsValid)
+            var baseline = ResolveBaseline(owner, displayStart, displayEnd, asOf);
+            if (!baseline.Validation.IsValid)
             {
                 return new ProcessBehaviourChart
                 {
                     Status = BaselineStatus.BaselineInvalid,
-                    StatusReason = validation.ErrorMessage,
+                    StatusReason = baseline.Validation.ErrorMessage,
                     XAxisKind = XAxisKind.DateTime,
                     Average = 0,
                     UpperNaturalProcessLimit = 0,
                     LowerNaturalProcessLimit = 0,
-                    BaselineConfigured = baselineConfigured,
+                    BaselineConfigured = baseline.Configured,
                     DataPoints = [],
                 };
             }
 
-            var baselineItems = getClosedItems(baselineStart!.Value, baselineEnd!.Value)
+            var baselineItems = getClosedItems(baseline.Start!.Value, baseline.End!.Value)
                 .Where(i => i.CycleTime(Clock.Zone) > 0)
                 .OrderBy(i => i.ClosedDate)
                 .ThenBy(i => i.Id)
@@ -769,7 +757,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 Average = xmrResult.Average,
                 UpperNaturalProcessLimit = xmrResult.UpperNaturalProcessLimit,
                 LowerNaturalProcessLimit = xmrResult.LowerNaturalProcessLimit,
-                BaselineConfigured = baselineConfigured,
+                BaselineConfigured = baseline.Configured,
                 DataPoints = dataPoints,
             };
         }

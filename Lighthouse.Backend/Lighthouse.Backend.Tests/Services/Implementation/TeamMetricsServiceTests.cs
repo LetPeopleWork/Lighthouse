@@ -22,6 +22,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private Team testTeam;
 
+        private const string CycleTimeChart = "CycleTime";
+
         private TeamMetricsService subject;
         private List<WorkItem> workItems;
 
@@ -1068,6 +1070,83 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineInvalid));
                 Assert.That(result.DataPoints, Is.Empty);
             }
+        }
+
+        /// <summary>
+        /// The browser sends the window ending on the viewer's today, which can be ahead of the
+        /// instance's day. With no baseline configured that window stands in for one, and a window
+        /// the viewer picked as "up to today" is never a baseline in the future.
+        /// </summary>
+        [Test]
+        [Combinatorial]
+        public void GetProcessBehaviourChart_NoBaselineAndDisplayWindowEndsAheadOfTheInstanceDay_IsReady(
+            [Values("Throughput", "FilteredThroughput", "Wip", "TotalWorkItemAge", CycleTimeChart, "Arrivals")] string chart,
+            [Values(1, 2)] int daysAheadOfTheInstance)
+        {
+            testTeam.ProcessBehaviourChartBaselineStartDate = null;
+            testTeam.ProcessBehaviourChartBaselineEndDate = null;
+
+            var displayStart = TestToday.AmbientAsUtcMidnight.AddDays(-30);
+            var displayEnd = TestToday.AmbientAsUtcMidnight.AddDays(daysAheadOfTheInstance);
+
+            var item = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item.StartedDate = displayStart;
+            item.ClosedDate = displayStart.AddDays(3);
+
+            var result = GetTeamProcessBehaviourChart(chart, displayStart, displayEnd);
+
+            var expectedDataPoints = chart == CycleTimeChart ? 1 : (displayEnd - displayStart).Days + 1;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.Ready), result.StatusReason);
+                Assert.That(result.BaselineConfigured, Is.False);
+                Assert.That(result.DataPoints, Has.Length.EqualTo(expectedDataPoints));
+            }
+        }
+
+        [Test]
+        public void GetThroughputProcessBehaviourChart_ConfiguredBaselineEndsOneDayAfterTheInstanceDay_IsReady()
+        {
+            testTeam.ProcessBehaviourChartBaselineStartDate = TestToday.AmbientAsUtcMidnight.AddDays(-30);
+            testTeam.ProcessBehaviourChartBaselineEndDate = TestToday.AmbientAsUtcMidnight.AddDays(1);
+
+            var result = subject.GetThroughputProcessBehaviourChart(testTeam, TestToday.AmbientAsUtcMidnight.AddDays(-7), TestToday.AmbientAsUtcMidnight);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.Ready), result.StatusReason);
+                Assert.That(result.BaselineConfigured, Is.True);
+            }
+        }
+
+        [Test]
+        public void GetThroughputProcessBehaviourChart_ConfiguredBaselineEndsTwoDaysAfterTheInstanceDay_IsInvalidAsFuture()
+        {
+            testTeam.ProcessBehaviourChartBaselineStartDate = TestToday.AmbientAsUtcMidnight.AddDays(-30);
+            testTeam.ProcessBehaviourChartBaselineEndDate = TestToday.AmbientAsUtcMidnight.AddDays(2);
+
+            var result = subject.GetThroughputProcessBehaviourChart(testTeam, TestToday.AmbientAsUtcMidnight.AddDays(-7), TestToday.AmbientAsUtcMidnight);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineInvalid));
+                Assert.That(result.StatusReason, Does.Contain("future"));
+                Assert.That(result.BaselineConfigured, Is.True);
+            }
+        }
+
+        private ProcessBehaviourChart GetTeamProcessBehaviourChart(string chart, DateTime displayStart, DateTime displayEnd)
+        {
+            return chart switch
+            {
+                "Throughput" => subject.GetThroughputProcessBehaviourChart(testTeam, displayStart, displayEnd),
+                "FilteredThroughput" => subject.GetThroughputProcessBehaviourChart(testTeam, displayStart, displayEnd, ThroughputFilterMode.ApplyFilter),
+                "Wip" => subject.GetWipProcessBehaviourChart(testTeam, displayStart, displayEnd),
+                "TotalWorkItemAge" => subject.GetTotalWorkItemAgeProcessBehaviourChart(testTeam, displayStart, displayEnd),
+                CycleTimeChart => subject.GetCycleTimeProcessBehaviourChart(testTeam, displayStart, displayEnd),
+                "Arrivals" => subject.GetArrivalsProcessBehaviourChart(testTeam, displayStart, displayEnd),
+                _ => throw new ArgumentOutOfRangeException(nameof(chart), chart, "Unknown process behaviour chart"),
+            };
         }
 
         /// <summary>

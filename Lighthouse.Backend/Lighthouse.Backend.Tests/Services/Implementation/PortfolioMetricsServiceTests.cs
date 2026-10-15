@@ -22,6 +22,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Mock<IForecastService> forecastServiceMock;
         private Mock<IFeatureStateTransitionRepository> featureStateTransitionRepository;
 
+        private const string CycleTimeChart = "CycleTime";
+        private const string FeatureSizeChart = "FeatureSize";
+
         private PortfolioMetricsService subject;
         private Portfolio portfolio;
         private List<Feature> features;
@@ -1031,6 +1034,62 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(result.DataPoints, Has.Length.EqualTo(1));
                 Assert.That(result.DataPoints[0].YValue, Is.EqualTo(10));
             }
+        }
+
+        /// <summary>
+        /// The browser sends the window ending on the viewer's today, which can be ahead of the
+        /// instance's day. With no baseline configured that window stands in for one, and a window
+        /// the viewer picked as "up to today" is never a baseline in the future.
+        /// </summary>
+        [Test]
+        [Combinatorial]
+        public void GetProcessBehaviourChart_NoBaselineAndDisplayWindowEndsAheadOfTheInstanceDay_IsReady(
+            [Values("Throughput", "Wip", "TotalWorkItemAge", CycleTimeChart, "Arrivals", FeatureSizeChart)] string chart,
+            [Values(1, 2)] int daysAheadOfTheInstance)
+        {
+            portfolio.ProcessBehaviourChartBaselineStartDate = null;
+            portfolio.ProcessBehaviourChartBaselineEndDate = null;
+
+            var displayStart = TestToday.AmbientAsUtcMidnight.AddDays(-30);
+            var displayEnd = TestToday.AmbientAsUtcMidnight.AddDays(daysAheadOfTheInstance);
+
+            var feature = new Feature
+            {
+                Id = 99,
+                Name = "Closed inside the window",
+                ReferenceId = "W1",
+                StartedDate = displayStart,
+                ClosedDate = displayStart.AddDays(5),
+                StateCategory = StateCategories.Done,
+            };
+            feature.AddOrUpdateWorkForTeam(new Team(), 2, 10);
+            feature.Portfolios.Add(portfolio);
+            features.Add(feature);
+
+            var result = GetPortfolioProcessBehaviourChart(chart, displayStart, displayEnd);
+
+            var onePointPerFeature = chart is CycleTimeChart or FeatureSizeChart;
+            var expectedDataPoints = onePointPerFeature ? 1 : (displayEnd - displayStart).Days + 1;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.Ready), result.StatusReason);
+                Assert.That(result.BaselineConfigured, Is.False);
+                Assert.That(result.DataPoints, Has.Length.EqualTo(expectedDataPoints));
+            }
+        }
+
+        private ProcessBehaviourChart GetPortfolioProcessBehaviourChart(string chart, DateTime displayStart, DateTime displayEnd)
+        {
+            return chart switch
+            {
+                "Throughput" => subject.GetThroughputProcessBehaviourChart(portfolio, displayStart, displayEnd),
+                "Wip" => subject.GetWipProcessBehaviourChart(portfolio, displayStart, displayEnd),
+                "TotalWorkItemAge" => subject.GetTotalWorkItemAgeProcessBehaviourChart(portfolio, displayStart, displayEnd),
+                CycleTimeChart => subject.GetCycleTimeProcessBehaviourChart(portfolio, displayStart, displayEnd),
+                "Arrivals" => subject.GetArrivalsProcessBehaviourChart(portfolio, displayStart, displayEnd),
+                FeatureSizeChart => subject.GetFeatureSizeProcessBehaviourChart(portfolio, displayStart, displayEnd),
+                _ => throw new ArgumentOutOfRangeException(nameof(chart), chart, "Unknown process behaviour chart"),
+            };
         }
 
         [Test]
