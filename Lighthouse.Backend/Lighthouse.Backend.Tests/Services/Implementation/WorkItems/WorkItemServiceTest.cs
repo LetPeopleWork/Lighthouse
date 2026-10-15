@@ -19,6 +19,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 {
     public class WorkItemServiceTest
     {
+        private static readonly ParentCandidate[] TwoIssuesNobodyHoldsAsAFeature =
+            [new ParentCandidate("INC-5602", null), new ParentCandidate("INC-5610", null)];
+
         private Mock<IFeatureRepository> featureRepositoryMock;
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IWorkTrackingConnector> workTrackingConnectorMock;
@@ -1049,6 +1052,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 .Setup(connector => connector.GetWorkItemsForTeam(team, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([ADownloadThatNobodyCouldPlace(theRecordThatMoved, whenTheRecordThatMovedChanged)]);
 
+            featureRepositoryMock
+                .Setup(repository => repository.GetStoredFeatureCreatedDates())
+                .Returns(new StoredFeatures(new Dictionary<string, DateTime?>()));
+
             var subject = CreateSubject();
 
             var outcome = await subject.UpdateWorkItemsForTeam(team);
@@ -1557,7 +1564,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
         /// <summary>
         /// What a connector hands back for a record whose links named more than one issue to hang it
-        /// under: the record itself, plus the connector saying it could not be placed.
+        /// under: the record itself, carrying every issue its links named. None of them is a Feature this
+        /// instance holds, so the refresh cannot place it.
         /// </summary>
         private static WorkItem ADownloadThatNobodyCouldPlace(string referenceId, DateTime lastChangedRemote)
             => new()
@@ -1566,7 +1574,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 State = "To Do",
                 StateCategory = StateCategories.ToDo,
                 LastChangedRemote = lastChangedRemote,
-                LinksNamedMoreThanOneParent = true,
+                ParentCandidatesFromLinks = TwoIssuesNobodyHoldsAsAFeature,
             };
 
         private static Feature ADownloadedFeatureNobodyCouldPlace(string referenceId, DateTime lastChangedRemote)
@@ -1574,7 +1582,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             {
                 ReferenceId = referenceId,
                 LastChangedRemote = lastChangedRemote,
-                LinksNamedMoreThanOneParent = true,
+                ParentCandidatesFromLinks = TwoIssuesNobodyHoldsAsAFeature,
             };
 
         private void TheTrackerCanBeScanned()

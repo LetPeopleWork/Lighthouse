@@ -191,7 +191,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// </summary>
         private RemoteFetch PlaceWhatTheLinksLeftOpen(Team team, RemoteFetch fetch)
         {
-            var undecided = fetch.WorkItems.FindAll(record => record.ParentCandidatesFromLinks.Count > 1);
+            var undecided = fetch.WorkItems.FindAll(LinksNameMoreThanOneParent);
             var placed = undecided.Count == 0 ? [] : PlaceUnderTheirFeatures(team, undecided);
 
             return fetch with
@@ -199,7 +199,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 Outcome = fetch.Outcome with
                 {
                     RecordsPlacedFromLinksNamingMoreThanOneParent = placed.Count,
-                    RecordsWhoseLinksNamedMoreThanOneParent = CountTheRecordsWhoseLinksNamedMoreThanOneParent(fetch.WorkItems) - placed.Count,
+                    RecordsWhoseLinksNamedMoreThanOneParent = undecided.Count - placed.Count,
                 },
             };
         }
@@ -334,13 +334,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         }
 
         /// <summary>
-        /// How many of the records this fetch read had links naming more than one candidate. The connector
-        /// is what reads the links and says so, which is why it needs to know nothing about the update
-        /// pipeline it is being run by. A Portfolio places none of them yet, so for a Portfolio this is the
-        /// number it could not place; a Team subtracts the ones it placed.
+        /// How many of the records this fetch read had links naming more than one candidate. A Portfolio
+        /// places none of them yet, so for a Portfolio this is the number it could not place.
         /// </summary>
         private static int CountTheRecordsWhoseLinksNamedMoreThanOneParent<TRecord>(List<TRecord> records) where TRecord : WorkItemBase
-            => records.Count(record => record.LinksNamedMoreThanOneParent);
+            => records.Count(LinksNameMoreThanOneParent);
+
+        /// <summary>
+        /// Read from the candidates themselves, merged by key, so two links to the same issue are one
+        /// candidate rather than a question.
+        /// </summary>
+        private static bool LinksNameMoreThanOneParent(WorkItemBase record)
+            => ParentResolution.From(record.ParentCandidatesFromLinks).IsAmbiguous;
 
         // Compared per item against the stored stamp. No global watermark, so clock skew and
         // server-time drift stay out of the design. A record nobody stored yet has always moved.

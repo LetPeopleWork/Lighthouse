@@ -1319,8 +1319,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// The records whose links named more than one issue to hang them under. Each of them kept whatever
-        /// parent it already had, which on screen is indistinguishable from a record nobody ever linked - so
+        /// The records whose links named more than one issue to hang them under. None of them takes a parent
+        /// from its links here, which on screen is indistinguishable from a record nobody ever linked - so
         /// unless the refresh says which records those were and which issues they named, whoever has to go
         /// and remove the surplus links has nothing to go on.
         ///
@@ -1662,7 +1662,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             PopulateAdditionalFieldValues(issue, workItem, additionalFieldDefs, customFieldReferences);
 
             var fromTheMatchingLinks = SetTheParentTheOverrideNames(issue, workItemQueryOwner, workItem, customFieldReferences);
-            workItem.LinksNamedMoreThanOneParent = fromTheMatchingLinks.IsAmbiguous;
             workItem.ParentCandidatesFromLinks = fromTheMatchingLinks.CandidatesWithTheirLinkDates;
 
             return new AnItemAndWhatItsLinksOffered(workItem, fromTheMatchingLinks);
