@@ -708,3 +708,17 @@ Kept deliberately short, by maintainer request (2026-10-15): this Story adds no 
 - **Property, only if slice 03 ships:** a closed enum `Updates: Now | Later`, because `OUT-6307-opt-out-rate` cannot be counted without it. Decided at the DISTILL sketch session together with UI-1; if the notice form wins, the event stays name-only.
 - **Emitted by:** the browser only, in `EditConnection.tsx` next to the existing `WorkTrackingSystemConnected` call. `lh`/MCP saves are not counted; acceptable for a usage signal.
 - **DELIVER step:** emitted in slice 02 (the slice whose save result the browser reads), and listed in `docs/settings/usagedata.md`, including bumping the "other N events" counts in its field table.
+
+## Wave: DISTILL / [REF] Maintainer decisions — UI sketch session (2026-10-15)
+
+Settles UI-1 to UI-5 and overrides DESIGN's DDD-6, DDD-7 and DDD-13 where they differ.
+
+| # | Decision | Effect |
+|---|---|---|
+| S1 (UI-1) | **A dialog, with an opt-out.** It shows when Save is clicked on an existing connection whose additional field definitions differ from the ones the page loaded, after validation passed. Buttons: `Cancel`, `Save only`, `Save and update` (default). Modelled on `DeleteConfirmationDialog`. | US-03 / slice 03 ships. `?startUpdates=false` (DDD-8) is needed. |
+| S2 (UI-2) | **Remove** the "Additional Fields will be loaded with the next refresh of data." alert under Additional Fields. | No replacement while editing. |
+| S3 (UI-3, UI-5) | **After Save: navigate to `/` as today, with no notice.** The dialog already said what will happen, and the Task Manager shows the rows. | No after-save notice. DDD-13's stay-on-page and DDD-7's notice are dropped. The response-only `WorkTrackingSystemConnectionSaveResultDto` (`queuedUpdates`) is **not needed by the UI**; DELIVER drops it unless a test needs the counts at the port. |
+| S4 (UI-4) | **The dialog gives counts, in the configured Terminology:** title `Update {n} {Teams} and {m} {Portfolios}?`. Body: "You changed the Additional Fields. Their values only fill in once each {Team} and {Portfolio} on this connection has been updated." plus "Save only: they fill in with the next scheduled update instead." Plural and singular forms come from Terminology; nothing literal. | The connection read the page already makes returns the two counts (DDD-9's `usedBy` addition). No extra fetch, so no new loading or failure look: the page already shows its own loading look until that read lands. |
+| S5 | **With 0 {Teams} and 0 {Portfolios} on the connection, there is no dialog.** Save goes straight through and nothing is queued. | |
+| S6 | `Cancel` saves nothing and stays on the page with the edits intact. `Save only` saves with `startUpdates=false`, queues nothing and navigates to `/`. | |
+| S7 | Usage-data event `WorkTrackingSystemFieldsChanged` carries the closed enum `Updates: Now \| Later`. It is sent only when the dialog's choice is made (`Save and update` → `Now`, `Save only` → `Later`), not on `Cancel` and not when no dialog showed. | Updates DO-2. |
