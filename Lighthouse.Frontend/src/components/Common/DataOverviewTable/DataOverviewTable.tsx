@@ -28,6 +28,7 @@ import DataGridBase from "../DataGrid/DataGridBase";
 import type { DataGridColumn } from "../DataGrid/types";
 import LocalDateTimeDisplay from "../LocalDateTimeDisplay/LocalDateTimeDisplay";
 import { DeliveriesChips } from "./DeliveriesChips";
+import { ReportsChips } from "./ReportsChips";
 
 interface DataOverviewTableProps<IFeatureOwner> {
 	data: IFeatureOwner[];
@@ -176,8 +177,22 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 				});
 			}
 
-			// Add common columns
 			baseColumns.push(
+				{
+					field: "reports",
+					headerName: "Reports",
+					width: 250,
+					hideable: !isMobile,
+					sortable: false,
+					renderCell: ({ row }) => (
+						<ReportsChips
+							owner={{
+								kind: api === "teams" ? "team" : "portfolio",
+								id: row.id,
+							}}
+						/>
+					),
+				},
 				{
 					field: "lastUpdated",
 					headerName: "Last Updated",

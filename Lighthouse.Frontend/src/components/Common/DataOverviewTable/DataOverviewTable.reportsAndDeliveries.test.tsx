@@ -259,7 +259,7 @@ beforeEach(() => {
 
 describe("Reports on the Overview", () => {
 	// @us-12 @slice-12 @ac-12.1 @driving_port @contract-shape:pure-function
-	it.skip("shows a Reports column on the Teams table, after Tags and before Last Updated", async () => {
+	it("shows a Reports column on the Teams table, after Tags and before Last Updated", async () => {
 		renderTheTable("teams", [TEAM_LIGHTSPEED]);
 
 		await whenReady("Lightspeed", "reports");
@@ -270,7 +270,7 @@ describe("Reports on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.1 @driving_port @contract-shape:pure-function
-	it.skip("shows a Reports column on the Portfolios table, after Deliveries and before Last Updated", async () => {
+	it("shows a Reports column on the Portfolios table, after Deliveries and before Last Updated", async () => {
 		renderTheTable("portfolios", [PORTFOLIO_APOLLO]);
 
 		await whenReady("Apollo", "reports");
@@ -281,7 +281,7 @@ describe("Reports on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.1 @boundary @contract-shape:bounded-change
-	it.skip("lets a reader hide the Reports column from the column menu", async () => {
+	it("lets a reader hide the Reports column from the column menu", async () => {
 		const user = userEvent.setup();
 		renderTheTable("teams", [TEAM_LIGHTSPEED]);
 		await whenReady("Lightspeed", "reports");
@@ -299,7 +299,7 @@ describe("Reports on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.1 @driving_port @contract-shape:pure-function
-	it.skip("shows a Team's report as a chip with its name that opens the report", async () => {
+	it("shows a Team's report as a chip with its name that opens the report", async () => {
 		renderTheTable("teams", [TEAM_LIGHTSPEED], {
 			reportService: reportsAnswering(
 				aReportList(reportsNamed(LIGHTSPEED, "Engagement start")),
@@ -317,7 +317,7 @@ describe("Reports on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.1 @driving_port @contract-shape:pure-function
-	it.skip("shows a Portfolio's report as a chip that opens the report under that Portfolio", async () => {
+	it("shows a Portfolio's report as a chip that opens the report under that Portfolio", async () => {
 		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
 			reportService: reportsAnswering(
 				aReportList(reportsNamed(APOLLO, "Quarter review")),
@@ -335,7 +335,7 @@ describe("Reports on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.2 @boundary @contract-shape:pure-function
-	it.skip("shows the first two reports by name, A to Z, whatever order they arrive in", async () => {
+	it("shows the first two reports by name, A to Z, whatever order they arrive in", async () => {
 		renderTheTable("teams", [TEAM_LIGHTSPEED], {
 			reportService: reportsAnswering(
 				aReportList(
@@ -350,7 +350,7 @@ describe("Reports on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.2 @ac-12.3 @boundary @contract-shape:pure-function
-	it.skip.each([
+	it.each([
 		{ count: 1, expected: ["Report A"] },
 		{ count: 2, expected: ["Report A", "Report B"] },
 		{ count: 3, expected: ["Report A", "Report B", "+1 more"] },
@@ -373,7 +373,7 @@ describe("Reports on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.2 @driving_port @contract-shape:pure-function
-	it.skip("opens the Team's Reports tab from +N more", async () => {
+	it("opens the Team's Reports tab from +N more", async () => {
 		renderTheTable("teams", [TEAM_LIGHTSPEED], {
 			reportService: reportsAnswering(
 				aReportList(reportsNamed(LIGHTSPEED, "One", "Two", "Three")),
@@ -389,7 +389,7 @@ describe("Reports on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.2 @driving_port @contract-shape:pure-function
-	it.skip("opens the Portfolio's Reports tab from +N more", async () => {
+	it("opens the Portfolio's Reports tab from +N more", async () => {
 		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
 			reportService: reportsAnswering(
 				aReportList(reportsNamed(APOLLO, "One", "Two", "Three", "Four")),
@@ -405,7 +405,7 @@ describe("Reports on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.3 @boundary @contract-shape:pure-function
-	it.skip("says No Reports for an owner without any", async () => {
+	it("says No Reports for an owner without any", async () => {
 		renderTheTable("teams", [TEAM_LIGHTSPEED]);
 
 		const cell = await whenReady("Lightspeed", "reports");
@@ -416,7 +416,7 @@ describe("Reports on the Overview", () => {
 
 	// @us-12 @slice-12 @ac-12.1 @boundary @contract-shape:pure-function
 	// Its own page explains it cannot be shown; the Overview still lists it so it can be reached and deleted.
-	it.skip("still shows a chip for a report of a type this version cannot show", async () => {
+	it("still shows a chip for a report of a type this version cannot show", async () => {
 		renderTheTable("teams", [TEAM_LIGHTSPEED], {
 			reportService: reportsAnswering(
 				aReportList([aListedReportOfALaterType()]),
@@ -429,7 +429,7 @@ describe("Reports on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.5 @boundary @contract-shape:pure-function
-	it.skip("shows a small spinner, not No Reports, while the reports are on their way", async () => {
+	it("shows a small spinner, not No Reports, while the reports are on their way", async () => {
 		renderTheTable("teams", [TEAM_LIGHTSPEED], {
 			reportService: aReportService({
 				getReports: vi.fn().mockReturnValue(deferred<IReportList>().promise),
@@ -448,7 +448,7 @@ describe("Reports on the Overview", () => {
 
 	// @us-12 @slice-12 @ac-12.5 @ac-12.7 @boundary @contract-shape:bounded-change
 	// Creating, editing or deleting a report drops the owner's list, which is what this re-read stands for.
-	it.skip("keeps the chips on screen, dimmed under a spinner, while the reports are read again", async () => {
+	it("keeps the chips on screen, dimmed under a spinner, while the reports are read again", async () => {
 		const reread = deferred<IReportList>();
 		const { queryClient } = renderTheTable("teams", [TEAM_LIGHTSPEED], {
 			reportService: aReportService({
@@ -479,7 +479,7 @@ describe("Reports on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.7 @contract-shape:bounded-change
-	it.skip("shows a report created elsewhere once the owner's reports are read again", async () => {
+	it("shows a report created elsewhere once the owner's reports are read again", async () => {
 		const { queryClient } = renderTheTable("teams", [TEAM_LIGHTSPEED], {
 			reportService: aReportService({
 				getReports: vi
@@ -508,7 +508,7 @@ describe("Reports on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.6 @error @contract-shape:pure-function
-	it.skip("says Couldn't load Reports when they could not be read, never No Reports", async () => {
+	it("says Couldn't load Reports when they could not be read, never No Reports", async () => {
 		renderTheTable("teams", [TEAM_LIGHTSPEED], {
 			reportService: aReportService({
 				getReports: vi.fn().mockRejectedValue(new Error("unreachable")),
@@ -528,7 +528,7 @@ describe("Reports on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.6 @error @contract-shape:bounded-change
-	it.skip("keeps one owner's failure to its own row", async () => {
+	it("keeps one owner's failure to its own row", async () => {
 		renderTheTable("teams", [TEAM_LIGHTSPEED, TEAM_ROCKET], {
 			reportService: aReportService({
 				getReports: vi.fn((owner: IReportOwner) =>
@@ -552,7 +552,7 @@ describe("Reports on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.7 @error @contract-shape:unbounded-preservation
-	it.skip("never lets a late answer for one Team land in another Team's row", async () => {
+	it("never lets a late answer for one Team land in another Team's row", async () => {
 		const lightspeedAnswer = deferred<IReportList>();
 		renderTheTable("teams", [TEAM_LIGHTSPEED, TEAM_ROCKET], {
 			reportService: aReportService({
@@ -583,7 +583,7 @@ describe("Reports on the Overview", () => {
 
 	// @us-12 @slice-12 @ac-12.8 @boundary @contract-shape:pure-function
 	// Renaming every configurable word around it shows the column's own word is not one of them.
-	it.skip("keeps the word Reports whatever the instance calls its Teams, Portfolios and Deliveries", async () => {
+	it("keeps the word Reports whatever the instance calls its Teams, Portfolios and Deliveries", async () => {
 		terms.current = {
 			...seededTerms,
 			[TERMINOLOGY_KEYS.TEAM]: "Squad",

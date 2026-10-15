@@ -1069,10 +1069,17 @@ describe("OverviewDashboard", () => {
 		// @us-08 @slice-08 @error @contract-shape:bounded-change
 		// A deleted Team's reports are gone with it, so nothing may still answer for them from memory.
 		it("forgets the deleted Team's reports", async () => {
-			const { dialog, queryClient } = await askToDeleteTheFirstRowOf(
-				"teams",
-				1,
-			);
+			const { dialog, queryClient, apiContext } =
+				await askToDeleteTheFirstRowOf("teams", 1);
+			// Once deleted, the server stops listing the Team, so its row and its Reports cell go away
+			// instead of reading the reports again straight after they were forgotten.
+			const { teamService } = apiContext;
+			vi.mocked(teamService.deleteTeam).mockImplementation(async (id) => {
+				const remaining = await teamService.getTeams();
+				vi.mocked(teamService.getTeams).mockResolvedValue(
+					remaining.filter((team) => team.id !== id),
+				);
+			});
 			queryClient.setQueryData(["report", "team", 1, 1], { name: "Report 1" });
 			queryClient.setQueryData(["report", "team", 2, 1], { name: "Kept" });
 			await waitFor(() => expect(dialog).toHaveTextContent("and its report?"));
