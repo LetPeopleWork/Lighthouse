@@ -12,5 +12,5 @@ export interface RefreshLog {
 	// still has to render that payload rather than fail on it.
 	recordsWhoseLinksNamedMoreThanOneParent?: number;
 	// Optional for the same reason as the field above.
-	recordsPlacedFromLinksNamingMoreThanOneParent?: number | null;
+	recordsPlacedFromLinksNamingMoreThanOneParent?: number;
 }

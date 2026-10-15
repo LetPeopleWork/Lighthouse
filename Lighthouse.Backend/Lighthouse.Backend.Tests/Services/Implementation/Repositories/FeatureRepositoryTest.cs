@@ -138,6 +138,29 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 "Read at face value, the empty date would make this Feature the oldest of all and hand it every tie.");
         }
 
+        /// <summary>
+        /// A Feature whose only stored date is the empty one Jira sends for some migrated issues is still a
+        /// Feature this instance holds. Dropping it would refuse it as a parent for want of a date.
+        /// </summary>
+        [Test]
+        [Category("story-6301-only-features-as-parent-candidates")]
+        [Category("slice-01")]
+        [Category("edge")]
+        public async Task A_Feature_with_only_an_empty_created_date_is_held_with_no_known_date()
+        {
+            var subject = CreateSubject();
+            subject.Add(AFeatureCreatedOn("PAY-88", DateTime.MinValue));
+            await subject.Save();
+
+            var snapshot = subject.GetStoredFeatureCreatedDates();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(snapshot.Holds("PAY-88"), Is.True, "A missing date says nothing about whether the Feature is stored.");
+                Assert.That(snapshot.CreatedDateOf("PAY-88"), Is.Null, "The empty date is not a known one.");
+            }
+        }
+
         private static readonly DateTime TheFirstOfNovember = new(2025, 11, 1, 0, 0, 0, DateTimeKind.Utc);
 
         private static readonly DateTime TheFifteenthOfJanuary = new(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc);
