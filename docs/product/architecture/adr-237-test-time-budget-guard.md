@@ -60,3 +60,14 @@ The failure message names the file or class, its time, the budget, and the allow
 - **Backend:** unchanged, it follows decision 6 and switches to failing once at least five backend `main` runs after the budget commit show no budget warning.
 
 **Why.** The fixes this budget depends on were made while the maintainer was away and nothing could be pushed, so no CI run of the fixed suites exists yet. Decision 3 asks for the budget to be set from such runs, and a developer machine runs at a different speed from the CI runners. A failing check on a number nobody has checked against CI could turn the first push red because the number is wrong, not because a test got slow. That would teach people to distrust the check before it ever caught anything. Warn mode still fails on a missing or broken timing file, a broken allowlist, a stale allowlist entry or a failing self-test, so the check is live from the first push. Only the budget comparison is softened, and only until it can be calibrated.
+
+## Amendment 2026-10-15 (maintainer decision)
+
+**Change to the 2026-10-14 amendment and to decision 3.** No quiet machine is available to time the fixed suites locally, so the provisional budget is derived from CI timing CSVs only. The frontend budget comes from nine `main` runs that carry the frontend fixes; the backend budget comes from eight `main` runs. Cross-checking the budget against a local full-suite run is owed, for when a quiet machine is available. The formula is unchanged.
+
+- **Frontend:** B = 63 s, anchored on the 115 s file that started this work (0.55 × 115). Nine files are on the allowlist.
+- **Backend:** B = 34 s, anchored on the 62 s that `CacheTest` took during a thread-pool stall: its barrier participants were parked on pool threads and held up every class running beside it. That stall is the regression the backend half of this work found, so the backend budget is set to catch it (0.55 × 62 = 34.1). This puts 66 classes on the allowlist. Anchoring on the frontend's 115 s instead would give B = 63 s with 27 entries, but a 63 s budget could never catch a 62 s stall.
+
+**Consequence.** The backend allowlist is long, and every entry is checked for still existing in source (decision 4). So renaming or deleting an allowlisted backend class fails the step as a stale entry, even in warn mode, until its entry in `test-time-budget.json` is edited in the same change. About 24 of the 66 entries are there only because their largest time came from a run with the stall in it. They will drop out when the budget is derived again on runs made after the stall fix is on `main`.
+
+**Why.** The alternative was a shorter list that could not see the one backend regression this work was about. The maintainer accepted the longer list, and the stale-entry edits it brings, on 2026-10-15.

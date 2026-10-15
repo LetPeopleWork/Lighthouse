@@ -948,13 +948,18 @@ The three other final-gate reviewers (DISCUSS, DESIGN, DEVOPS) were not dispatch
 **Deviation from DS-Q1 / DDD-4 / DO-3 ("frontend fails from the start"), 2026-10-14.** The maintainer is away and nothing may be pushed in this DELIVER run, so no post-fix `main` CI runs will exist to calibrate the budget against, and DS-Q1 derives L from ≥5 of them. Shipping a failing frontend gate on a number nobody could check against CI would let the first push go red on calibration error rather than on a slow file. Recorded as the [ADR-237 amendment of 2026-10-14](../../product/architecture/adr-237-test-time-budget-guard.md#amendment-2026-10-14-provisional-pending-maintainer-ratification) (provisional, pending maintainer ratification). So, in roadmap step 06-06:
 
 - **Provisional budget per stack**, same formula (B ≥ 2.1 × L, B ≤ 0.55 × the smallest regression to catch), with L taken from the post-fix **local** timing CSVs of the full suites (produced by the existing converters from a local `pnpm vitest run --coverage --reporter=json` and a `dotnet test` TRX), plus the most recent CI CSVs for units the fixes did not touch, taking the larger time per unit because the local machine is not the CI runner. The derivation records which source set L.
+  - *Superseded by the maintainer's decision of 2026-10-15:* L is taken from CI timing CSVs only, with no local run (see the slice 06 record below and the ADR-237 amendment of 2026-10-15).
 - **Both stacks wired with `--warn-only`** until real post-fix `main` runs exist. Warn mode still fails on unreadable input, a stale allowlist entry or a failing self-test (DO-3, DI-7), so the guard is live; only a budget breach is softened.
 - **Recorded follow-up for the maintainer:** after ≥5 post-push `main` runs, re-derive both budgets on them (E-06b) and delete `--warn-only` from the frontend step; the backend flips by its own DDD-4 rule (≥5 backend `main` runs after the budget commit with zero budget warnings).
 - **Owed CI medians (follow-ups, each needing runs on `main` after the push):**
   - E-02b CI: median of ≥5 `main` runs, the two slice-02 files summed ≤40 s.
   - E-03b: median of ≥5 `main` runs, the six slice-03 files ≤70 s and all eight named files ≤110 s.
-  - E-04d: median of ≥5 `main` runs, the in-scope Refinement / Reports / TeamFeatureSize classes ≤192 s.
+  - E-04d: median of ≥5 `main` runs, the in-scope Refinement / Reports / TeamFeatureSize classes ≤192 s. First data point: run 38704848993 = 212.6 s.
+  - E-05c: the CI time of the fixed slice-05 tests (`CacheTest`, `DataProtectionKeyRingTest`, `S8_Enter_ExpiredToken_RefusedLegibly`) over ≥3 `main` runs after the fix is pushed, recorded beside the local times.
   - E-KPI: median of ≥5 `main` runs, `Verify Frontend` ≤12 min and `Verify Backend` ≤13.5 min; test totals not below 7,630 / 10,198.
+- **Owed A/B (E-01):** the MUI bump (`641ac9c6f`) and pnpm 12.10 (`1bbde5105`) were not measured. Each needs ≥3 alternated runs per arm, the same protocol as the vite A/B in slice 01.
+- **DoD 1 status: open.** The ~9 % uniform frontend step from 13 Oct is not explained: vite was disproved, and MUI and pnpm 12.10 are unmeasured. DoD 1 stays open until that A/B runs, or until a follow-up ADO item records it.
+- **Follow-up ADO items, to be created on maintainer confirmation** (none created yet): see the list at the end of the slice 06 record.
 
 Also carried: the slice-06 brief and the journey named the budget file `Scripts/test-time-budget.json`, while DI-1 and the DO-7 trigger glob put it at `Scripts/test-timings/test-time-budget.json`. DELIVER follows DI-1; the brief and journey were corrected to match.
 
@@ -1168,7 +1173,7 @@ Run one after another under `nice -n 19` while two other sessions were running b
 
 All three are green with no failures at all, so none of the known environmental signatures appeared. The wall times reflect a shared, loaded machine and say nothing about CI.
 
-**Owed.** E-04d after push, CI-only: the median of at least five `main` runs of the backend test job at or under 192 s.
+**Owed.** E-04d after push, CI-only: the summed time of the in-scope `API.Integration.Refinement.` / `.Reports.` / `.TeamFeatureSize.` classes at or under 192 s, as the median of at least five `main` runs. It is not the backend job's time. First data point: run 38704848993 = 212.6 s.
 
 ## Wave: DELIVER / [REF] Slice 05 record — step 05-01 four slow backend tests
 
@@ -1202,7 +1207,7 @@ The S8 case that spikes is a different one each time (an off-host return path in
 
 **What changed.**
 
-- `CacheTest`: every participant that blocks in a barrier runs on a thread of its own (`Task.Factory.StartNew` with `TaskCreationOptions.LongRunning`, one helper `OnDedicatedThreads`). In `ConcurrentReadersAndWriters` (200 ms) and `InvalidateMetricsStylePrefixRemoval` (500 ms) the window now starts when the barrier opens (the barrier's post-phase action calls `CancelAfter`), on a token source created without a timer. Applied to all four barrier tests, since all four stretched at four cores (`ConcurrentInsertsOnUniqueKeys` 7.0 s, `ConcurrentGetOnExpiredKey` 5.6 s). `KeysEnumerationDuringMutation` has no barrier and was left alone.
+- `CacheTest`: every participant that blocks in a barrier runs on a thread of its own (`Task.Factory.StartNew` with `TaskCreationOptions.LongRunning`, one helper `OnDedicatedThreads`). In `ConcurrentReadersAndWriters` (200 ms) and `InvalidateMetricsStylePrefixRemoval` (500 ms) the window now starts when the barrier opens (the barrier's post-phase action calls `CancelAfter`), on a token source created without a timer. Applied to all four barrier tests, since all four stretched at four cores (`ConcurrentInsertsOnUniqueKeys` 7.0 s, `ConcurrentGetOnExpiredKey` 5.6 s). `KeysEnumerationDuringMutation` has no barrier, so its writer stays on `Task.Run`; after review its wait on that writer is bounded by `AllFinish` like every other wait in the class, and its `[CancelAfter]` was removed (see After review below).
 - `DataProtectionKeyRingTest`: builds only the data protection set-up, on an empty `WebApplicationBuilder`, through the same `Program.ConfigureDataProtection` the app calls (as `KeyStoreDirectoryResolutionTests` already does), with the Redis connection string set in configuration or not. The Redis case never connects: the repository holds a lazy multiplexer.
 - `S8_EmbedEntryPointTests.S8_Enter_ExpiredToken_RefusedLegibly`: the short-lived host gets a `FakeTimeProvider`, and the test advances it past the token lifetime instead of sleeping 2 s. Expiry is read from the injected `TimeProvider`.
 - `BlockedCountSnapshotMigrationTests`: unchanged.
@@ -1244,13 +1249,28 @@ Every fixed test is under 10 s alone and alongside S8.
 
 Both largest sums include the stall now removed; without it the S8 class has not exceeded 28.2 s and the Postgres class 26.4 s, so 06-06 may set lower ceilings once CI has run on the fix. `CacheTest` and `DataProtectionKeyRingTest` need no entry.
 
-**E-names** (the four classes, before vs after, from the TRX of each class run alone): 29 names before, 29 after; `comm -23` and `comm -13` print nothing; per-class counts unchanged (`CacheTest` 7, `DataProtectionKeyRingTest` 2, `S8_EmbedEntryPointTests` 17, `BlockedCountSnapshotMigrationTests` 3); all passed in both. **E-weaken** on the step's diff: no `Ignore`, `Explicit`, skip or `NonParallelizable` added. One `Assert.` line removed in `DataProtectionKeyRingTest` (`XmlRepository` is not null), re-added verbatim in the rewritten helper.
+**E-names** (the four classes, before vs after): 29 names before, 29 after; per-class counts unchanged (`CacheTest` 7, `DataProtectionKeyRingTest` 2, `S8_EmbedEntryPointTests` 17, `BlockedCountSnapshotMigrationTests` 3); all passed in both. The before-list is the one saved during this step from the TRX of each class run alone on the slice's base, before `0addf60e5`; the renamed test's old name matches `git show 0addf60e5~1`. The after-list was re-run on 2026-10-15 at `6ba44f725`, after review: the four classes in one `dotnet test --filter "FullyQualifiedName~CacheTest|FullyQualifiedName~DataProtectionKeyRingTest|FullyQualifiedName~S8_EmbedEntryPointTests|FullyQualifiedName~BlockedCountSnapshotMigrationTests"` under `nice -n 19` with a TRX logger (29 passed, 0 failed, 17 s), converted with `Scripts/test-timings/trx_to_csv.py`. `comm -23` and `comm -13` each print one line, the same test under two names: `DataProtectionKeyRingTest.WithoutRedis_KeyRingPersistsToFilesystem` was renamed after review to `WithoutRedis_TheBootedApp_KeepsItsKeyRingInTheConfiguredKeyStore`. That is a stronger replacement with the same purpose (below), not a lost test.
+
+**E-weaken** on the step's diff, including the review commits: no `Ignore`, `Explicit`, skip or `NonParallelizable` added. One `Assert.` line was removed, from the helper both `DataProtectionKeyRingTest` cases shared before:
+
+```
+Assert.That(options.XmlRepository, Is.Not.Null, "a key repository must be configured");
+```
+
+There is no shared helper now. In the no-Redis case, that line and the old type-name check are replaced by one assertion on the booted app's repository, read as `XmlRepository as FileSystemXmlRepository`:
+
+```
+Assert.That(repository?.Directory.FullName, Is.EqualTo(new DirectoryInfo(keyStoreDirectory).FullName),
+    "the key ring must persist to the filesystem, in the key store the app was configured with");
+```
+
+This is stronger. A null repository or one of any other type leaves `repository` null, so the test still fails in every case the removed line caught, and it now also fails when the key ring is on the filesystem but outside the configured key store. The Redis case covers null the same way: `Assert.That(repository?.GetType().Name, Is.EqualTo("RedisXmlRepository"))`.
 
 **Full suite** (standard filter, `nice -n 19`, with `--blame-hang-timeout 5m`): 10027 passed, 0 failed, 1 skipped, 5 m 43 s, load 1.8 → 7.5. A first run (load 7.1 at start) was still in the test host 17 minutes in, with nothing logged for the last 12 minutes and no result line, so it was stopped. The re-run above had the hang detector armed, finished in under 6 minutes, and named nothing. Which test the first run was waiting on is not known.
 
-**After review** (`a9eddb93b`, `6e18aa2b3`). The first version moved both `DataProtectionKeyRingTest` cases off the full boot, which left the app's start-up call to `ConfigureDataProtection` with no test: deleting it would quietly put the key ring back on per-machine storage and nothing would go red. The no-Redis case boots the whole app again and checks the key ring lands in the configured key store; it costs about 1–2 s at load 8–13. The Redis case stays on the direct call. `CacheTest` now bounds every wait on its participants at 30 s, so a stuck participant fails the test instead of hanging the run, and the two `[CancelAfter]` attributes that cancelled nothing are gone. The S8 class comment says what it guards instead of citing references. Three classes 26/26, full suite 10027 passed, 0 failed, 1 skipped, under `--blame-hang-timeout 5m`.
+**After review** (`a9eddb93b`, `6e18aa2b3`). The first version moved both `DataProtectionKeyRingTest` cases off the full boot, which left the app's start-up call to `ConfigureDataProtection` with no test: deleting it would quietly put the key ring back on per-machine storage and nothing would go red. The no-Redis case boots the whole app again and checks the key ring lands in the configured key store; it costs about 1–2 s at load 8–13. The Redis case stays on the direct call. `CacheTest` now bounds every wait on its participants at 30 s (`AllFinish`), so a stuck participant fails the test instead of hanging the run. The two `[CancelAfter(5000)]` attributes, on `KeysEnumerationDuringMutation` and `InvalidateMetricsStylePrefixRemoval`, are gone. They did more than cancel a token neither test reads: in NUnit 5.0.0, the version the test project uses, the attribute's own doc says only that "the test's cancellation token is cancelled if the timeout is exceeded" and that "the user has to monitor this cancellation token", but the command behind it "creates a timer in order to cancel a test if it exceeds a specified time and adjusts the test result if it did time out" (`nunit.framework.xml`, `CancelAfterCommand`), and the assembly carries the failure message "Test exceeded CancelAfter value of". So a run over 5 s failed. In plain terms, a 5 s limit on the whole test was replaced by a 30 s limit on the wait for its participants. That is acceptable because these tests guard thread safety (no exception escapes, no torn read), not timing: a 5 s wall-clock limit is what flakes on a slow or loaded runner, where the stall in this record stretched a test in this class to 30–60 s, and a participant that is really stuck still fails the test. The S8 class comment says what it guards instead of citing references. Three classes 26/26, full suite 10027 passed, 0 failed, 1 skipped, under `--blame-hang-timeout 5m`.
 
-**Owed.** A re-time of the fixed tests on a quiet machine; every timing above was taken at load 4–11 with other sessions active.
+**Owed.** A re-time of the fixed tests on a quiet machine; every timing above was taken at load 4–11 with other sessions active. E-05c: the CI time of the fixed tests (`CacheTest`, `DataProtectionKeyRingTest`, `S8_Enter_ExpiredToken_RefusedLegibly`) over ≥3 `main` runs after the fix is pushed, recorded beside the local times above.
 
 **Follow-up candidates (not this step).**
 
@@ -1436,6 +1456,8 @@ exit=0
 
 **After review.** Four holes in the guard were closed, each with a self-test written first and seen failing. A declaration now counts only at the start of a line, after any modifiers or attributes, in both the file-scoped and the block namespace form, so a comment that says "namespace" no longer files the classes below it under a made-up namespace (which reported a live entry as stale and turned CI red even in warn mode), and a class named only in a comment no longer keeps a deleted entry alive. A parameterised fixture is now one class: the class ends at the last dot outside every bracket and quote, and the fixture's own arguments are dropped, so `Slice03ConnectorParityScenarios(AzureDevOps)` and `(Jira)` sum into `…Dependencies.Slice03ConnectorParityScenarios` instead of into its namespace. It is the only parameterised fixture in the CI CSVs; its largest sum over the derivation runs is 11.396 s, under 34 / 2.1, so it needs no entry, and L and the 66 backend entries are unchanged. An interpreter older than 3.12 is now refused like any input the guard cannot judge: exit 2 and one `::error::` line naming the version needed and the version found, where it used to exit 1, the breach code. An allowlist naming the same unit twice in one stack is refused the same way, naming the file and the unit, where before the last ceiling silently won. Re-checked after the changes: run 38704848993's backend and frontend CSVs exit 0 with no annotation; every backend derivation run exits 0 except run C, which still shows exactly the two `CacheTest` and `DataProtectionKeyRingTest` breaches above.
 
+**A deadline signal in a class this story did not touch.** A full local backend run under heavy parallel load, with `pnpm test` running alongside, failed `Slice05ReconstructCycleTimeHistoryTest.A_day_another_copy_records_mid_pass_costs_that_day_and_not_the_rest_of_the_window` at 71 s. Run alone, it passed. The likely mechanism: the scenario's 60 s guard (`LongEnoughThatSomethingIsWrong`, `ReconstructOverTimeHistoryAcceptanceTest.cs:78`) fired, because the pass it holds runs on the thread pool (`Task.Run`) and waits on a synchronous `ManualResetEventSlim`. That is the same shape as the `CacheTest` stall: blocking waits on pool threads, which a busy pool cannot serve until it grows. A failure close to a 60 s guard is a deadline signal, not noise (ci-learnings: "a duration close to a poll deadline … is a test converging by luck"). It is listed as a follow-up candidate below.
+
 **Owed: guard follow-ups.**
 - Re-derive both budgets, L and every ceiling on ≥5 `main` runs after this is pushed (and after slice 05's stall fix is on `main`), by the same rule. Drop the entries that fall under B / 2.1, starting with the 24 "stall runs only" backend classes, and lower the S8 and Postgres ceilings.
 - Remove `--warn-only` from the frontend step after those ≥5 runs.
@@ -1446,4 +1468,17 @@ exit=0
 - E-02b CI: median of ≥5 `main` runs, `RefinementView.paging` + `WorkItemsDialog.contexts` summed ≤ 40 s.
 - E-03b: median of ≥5 `main` runs, the six slice-03 files ≤ 70 s and all eight ≤ 110 s.
 - E-04d: median of ≥5 `main` runs, the in-scope `API.Integration.Refinement.` / `.Reports.` / `.TeamFeatureSize.` classes ≤ 192 s. First data point: run 38704848993 = 212.6 s.
+- E-05c: the CI time of the fixed slice-05 tests (`CacheTest`, `DataProtectionKeyRingTest`, `S8_Enter_ExpiredToken_RefusedLegibly`) over ≥3 `main` runs after the fix is pushed, recorded beside the local times in the slice 05 record.
 - E-KPI: median of ≥5 `main` runs, frontend job ≤ 12 min and backend job ≤ 13.5 min, and test totals not below 7,630 (frontend) / 10,198 (backend).
+
+**Owed: the rest of E-01.** The MUI bump (`641ac9c6f`) and pnpm 12.10 (`1bbde5105`) A/B runs were not measured (slice 01 record). Each needs ≥3 alternated runs per arm, A B A B A B, the same protocol as the vite A/B.
+
+**DoD 1 status: open.** The ~9 % uniform frontend step from 13 Oct is not yet explained: vite was disproved, and MUI and pnpm 12.10 are unmeasured. DoD 1 stays open until that A/B runs, or until a follow-up ADO item records it.
+
+**Follow-up ADO items, to be created on maintainer confirmation** (none created yet):
+- Cheaper per-scenario database set-up for the shared-host backend harnesses. Since slice 04 shares the host, creating and seeding each scenario's database is the main cost.
+- The production render cost of MUI DataGrid and dialogs in jsdom, the cause left in every slow frontend file after slices 02 and 03.
+- `ModifyTeamSettings.refinement.test.tsx` still sleeps 600 ms of real time; move it to a fake clock like its siblings.
+- `ClusterSubstrateProbeRegistrationTest` boots the whole app against a Redis address where nothing listens (CI 0.8–16.4 s); build only the part it inspects, as `DataProtectionKeyRingTest`'s Redis case now does.
+- One shared Postgres container instead of a fresh one in each of the 18 test files that start their own.
+- The 60 s deadline in `ReconstructOverTimeHistoryAcceptanceTest` (above): the held pass blocks a thread-pool thread on a synchronous wait, so a busy run can reach the deadline; give that pass a thread of its own, as `CacheTest` now does.
