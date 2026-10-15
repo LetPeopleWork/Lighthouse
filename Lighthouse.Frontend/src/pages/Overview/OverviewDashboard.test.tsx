@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
+	act,
 	fireEvent,
 	render,
 	screen,
@@ -9,6 +10,7 @@ import {
 import type React from "react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
+import type { IReportList } from "../../models/Reports/Report";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { WorkTrackingSystemConnection } from "../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../../services/Api/ApiError";
@@ -17,6 +19,7 @@ import {
 	type IApiServiceContext,
 } from "../../services/Api/ApiServiceContext";
 import { TerminologyProvider } from "../../services/TerminologyContext";
+import { deferred } from "../../tests/HeldMetricsService";
 import {
 	createMockApiServiceContext,
 	createMockPortfolioService,
@@ -92,6 +95,9 @@ const makeReconnectingConnection = (
 	return connection;
 };
 
+/** How long the app trusts a cached answer before it reads it again, so a test can trust it exactly as long. */
+const THE_APPS_STALE_TIME = 5 * 60 * 1000;
+
 const renderWithProviders = (
 	component: React.ReactElement,
 	overrides: Partial<IApiServiceContext> = {},
@@ -99,10 +105,12 @@ const renderWithProviders = (
 		connections = mockConnections,
 		portfolios: portfolioOverrides,
 		teams: teamOverrides,
+		staleTime = 0,
 	}: {
 		connections?: WorkTrackingSystemConnection[];
 		portfolios?: { id: number; name: string }[];
 		teams?: { id: number; name: string }[];
+		staleTime?: number;
 	} = {},
 ) => {
 	const mockPortfolioService = createMockPortfolioService();
@@ -276,7 +284,7 @@ const renderWithProviders = (
 
 	const queryClient = new QueryClient({
 		defaultOptions: {
-			queries: { retry: false },
+			queries: { retry: false, staleTime },
 			mutations: { retry: false },
 		},
 	});
@@ -977,6 +985,13 @@ describe("OverviewDashboard", () => {
 			section: "portfolios" | "teams",
 			reports: number,
 			reportService = withReports(reports),
+			{
+				staleTime,
+				beforeAsking,
+			}: {
+				staleTime?: number;
+				beforeAsking?: (queryClient: QueryClient) => Promise<void>;
+			} = {},
 		) => {
 			const rbacService = createMockRbacService();
 			rbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
@@ -988,10 +1003,12 @@ describe("OverviewDashboard", () => {
 			const { queryClient, apiContext } = renderWithProviders(
 				<OverviewDashboard />,
 				{ rbacService, reportService },
+				{ staleTime },
 			);
 			await waitFor(() => {
 				expect(screen.getByText("Portfolios")).toBeInTheDocument();
 			});
+			await beforeAsking?.(queryClient);
 			const grids = screen.getAllByTestId("datagrid-container");
 			fireEvent.click(
 				(section === "portfolios" ? grids[0] : grids[1]).querySelectorAll(
@@ -1146,6 +1163,53 @@ describe("OverviewDashboard", () => {
 			expect(
 				within(dialog).getByRole("button", { name: "Delete" }),
 			).toBeDisabled();
+		});
+
+		// @us-08 @slice-08 @boundary @contract-shape:bounded-change
+		// The row's Reports cell counted them a moment ago, but someone may have made or deleted one since.
+		it("holds Delete until it has counted the reports itself, even when the row has just counted them", async () => {
+			const recount = deferred<IReportList>();
+			const getReports = vi
+				.fn()
+				.mockResolvedValue(
+					aReportList([aListedReport({ id: 1, name: "Report 1" })]),
+				);
+			const { dialog } = await askToDeleteTheFirstRowOf(
+				"teams",
+				1,
+				aReportService({ getReports }),
+				{
+					staleTime: THE_APPS_STALE_TIME,
+					beforeAsking: async (queryClient) => {
+						await waitFor(() =>
+							expect(
+								queryClient.getQueryState(["reports", "team", 1])?.status,
+							).toBe("success"),
+						);
+						getReports.mockReturnValue(recount.promise);
+					},
+				},
+			);
+
+			expect(
+				within(dialog).getByRole("button", { name: "Delete" }),
+			).toBeDisabled();
+
+			await act(async () => {
+				recount.resolve(
+					aReportList([
+						aListedReport({ id: 1, name: "Report 1" }),
+						aListedReport({ id: 2, name: "Report 2" }),
+					]),
+				);
+			});
+
+			await waitFor(() =>
+				expect(dialog).toHaveTextContent("and its 2 reports"),
+			);
+			expect(
+				within(dialog).getByRole("button", { name: "Delete" }),
+			).toBeEnabled();
 		});
 
 		// @us-08 @slice-08 @error @contract-shape:pure-function

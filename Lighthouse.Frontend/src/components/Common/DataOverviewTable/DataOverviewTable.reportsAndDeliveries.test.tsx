@@ -95,10 +95,14 @@ const reportsNamed = (
 		}),
 	);
 
-const aDelivery = (id: number, name: string): Delivery => {
+const aDelivery = (
+	id: number,
+	name: string,
+	portfolioId = APOLLO.id,
+): Delivery => {
 	const delivery = new Delivery();
 	delivery.id = id;
-	delivery.portfolioId = APOLLO.id;
+	delivery.portfolioId = portfolioId;
 	delivery.name = name;
 	delivery.likelihoodPercentage = 80;
 	delivery.remainingWork = 10;
@@ -127,21 +131,31 @@ const WhereTheReaderLanded = () => (
 	<span data-testid="landed-on">{useLocation().pathname}</span>
 );
 
+/** How long the app trusts an answer before it reads it again, so a return visit is tested as the app runs it. */
+const THE_APPS_STALE_TIME = 5 * 60 * 1000;
+
+const aQueryClient = (staleTime = 0) =>
+	new QueryClient({
+		defaultOptions: {
+			queries: { retry: false, staleTime },
+			mutations: { retry: false },
+		},
+	});
+
 const renderTheTable = (
 	api: "teams" | "portfolios",
 	data: IFeatureOwner[],
 	{
 		reportService = noReports(),
 		deliveryService = createMockDeliveryService(),
+		queryClient = aQueryClient(),
 	}: {
 		reportService?: IReportService;
 		deliveryService?: IDeliveryService;
+		queryClient?: QueryClient;
 	} = {},
 ) => {
-	const queryClient = new QueryClient({
-		defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-	});
-	render(
+	const { unmount } = render(
 		<QueryClientProvider client={queryClient}>
 			<MemoryRouter initialEntries={["/"]}>
 				<ApiServiceContext.Provider
@@ -169,7 +183,7 @@ const renderTheTable = (
 			</MemoryRouter>
 		</QueryClientProvider>,
 	);
-	return { queryClient, reportService, deliveryService };
+	return { queryClient, reportService, deliveryService, unmount };
 };
 
 const theRowOf = (ownerName: string): HTMLElement => {
@@ -507,6 +521,38 @@ describe("Reports on the Overview", () => {
 		);
 	});
 
+	// @us-12 @slice-12 @ac-12.7 @contract-shape:bounded-change
+	// A report made by someone else, or in another tab, drops nothing here, so only the next visit can bring it.
+	it("shows a report changed elsewhere when the Overview is opened again, however soon", async () => {
+		const getReports = vi
+			.fn()
+			.mockResolvedValue(
+				aReportList(reportsNamed(LIGHTSPEED, "Engagement start")),
+			);
+		const reportService = aReportService({ getReports });
+		const { queryClient, unmount } = renderTheTable(
+			"teams",
+			[TEAM_LIGHTSPEED],
+			{ reportService, queryClient: aQueryClient(THE_APPS_STALE_TIME) },
+		);
+		await whenReady("Lightspeed", "reports");
+		unmount();
+
+		getReports.mockResolvedValue(
+			aReportList(reportsNamed(LIGHTSPEED, "Engagement close")),
+		);
+		renderTheTable("teams", [TEAM_LIGHTSPEED], { reportService, queryClient });
+
+		await waitFor(() =>
+			expect(linkNamesIn(theCellOf("Lightspeed", "reports"))).toEqual([
+				"Engagement close",
+			]),
+		);
+		expect(
+			theLookOf(theCellOf("Lightspeed", "reports")).dataset.cellStatus,
+		).toBe("ready");
+	});
+
 	// @us-12 @slice-12 @ac-12.6 @error @contract-shape:pure-function
 	it("says Couldn't load Reports when they could not be read, never No Reports", async () => {
 		renderTheTable("teams", [TEAM_LIGHTSPEED], {
@@ -708,6 +754,39 @@ describe("Deliveries on the Overview", () => {
 		expect(within(cell).getByRole("progressbar")).toBeInTheDocument();
 		const chip = within(cell).getByText(/^Winter Release/);
 		expect(theBoxDimmingTheChip(cell, chip)).toHaveStyle(DIMMED);
+	});
+
+	// @us-12 @slice-12 @ac-12.7 @contract-shape:bounded-change
+	// The Deliveries tab reads them without going through this cell, so nothing else would tell it they changed.
+	it("shows Deliveries changed elsewhere when the Overview is opened again, however soon", async () => {
+		const getByPortfolio = vi
+			.fn()
+			.mockResolvedValue(activeDeliveries(aDelivery(1, "Winter Release")));
+		const deliveryService = deliveriesAnswering(getByPortfolio);
+		const { queryClient, unmount } = renderTheTable(
+			"portfolios",
+			[PORTFOLIO_APOLLO],
+			{ deliveryService, queryClient: aQueryClient(THE_APPS_STALE_TIME) },
+		);
+		await whenReady("Apollo", "deliveries");
+		unmount();
+
+		getByPortfolio.mockResolvedValue(
+			activeDeliveries(aDelivery(2, "Spring Release")),
+		);
+		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
+			deliveryService,
+			queryClient,
+		});
+
+		await waitFor(() => {
+			const links = linkNamesIn(theCellOf("Apollo", "deliveries"));
+			expect(links).toHaveLength(1);
+			expect(links[0]).toMatch(/^Spring Release/);
+		});
+		expect(
+			theLookOf(theCellOf("Apollo", "deliveries")).dataset.cellStatus,
+		).toBe("ready");
 	});
 
 	// @us-12 @slice-12 @ac-12.6 @error @contract-shape:pure-function

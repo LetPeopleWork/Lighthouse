@@ -9,5 +9,7 @@ export const useOwnerReports = (owner: IReportOwner) => {
 	return useQuery({
 		queryKey: reportsQueryKeyOf(owner),
 		queryFn: () => reportService.getReports(owner),
+		// Other users and other tabs change them unseen, and deleting an owner must count what is there now.
+		staleTime: 0,
 	});
 };

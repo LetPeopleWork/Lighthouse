@@ -113,6 +113,8 @@ export const DeliveriesChips: React.FC<DeliveriesChipsProps> = ({
 		queryFn: () => deliveryService.getByPortfolio(portfolioId),
 		select: (byPortfolio) => byPortfolio.active,
 		enabled: portfolioId > 0,
+		// The Deliveries tab changes them without passing through this cache, so every visit reads them again.
+		staleTime: 0,
 	});
 
 	return (
