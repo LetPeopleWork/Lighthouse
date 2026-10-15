@@ -1,0 +1,171 @@
+{
+  "roadmap": {
+    "project_id": "bug-6306-jira-onprem-releases",
+    "created_at": "2026-10-15",
+    "total_steps": 4,
+    "total_phases": 2,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "scope": "ADO Bug #6306, Jira on-prem (Data Center / Server) Releases only. The additional-fields re-sync is split to Story #6307 and is out of scope. All code is in /storage/repos/Lighthouse/Lighthouse.Backend (JiraWorkTrackingConnector, JiraReleaseVersionReader, tests). No UI change.",
+    "goal": "On Jira Data Center / Server the Release picker, the Release refresh and the forecast publish all call rest/api/3 routes (and rest/api/3/project/search) that DC does not serve, so the picker silently comes back empty. Make the release capabilities deployment-aware (Cloud keeps its exact routes; DataCenter and Unknown use the v2 routes DC serves, with DC's bare-array project list and no server-side status filter), make a missing route loud, stop pinning a transient Unknown deployment, and then guard structurally so no Jira capability can be added again without its DC answer: one routes object per deployment, a source-scan test that allows rest/api/ literals only there, and a shared fake DC Jira the release capabilities are tested against.",
+    "paradigm_note": "C# / NUnit 4 in Lighthouse.Backend.Tests. There is no DISTILL wave for a bugfix: RED is a crafter-authored regression test through the driving port (IDeliverySourceProvider.GetOptions / ResolveMany and IDeliveryForecastPublisher.PublishAsync on JiraWorkTrackingConnector, against an HTTP stub answering like Jira DC), which must fail on today's code for the bug's reason before production code changes."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator (inline, following the bug-6054 / bug-6254 precedent for a surgical bugfix)",
+    "reviewed_at": "2026-10-15",
+    "notes": "No architect dispatch: the Phase-1 RCA (nw-troubleshooter, 2026-10-15, docs/feature/bug-6306-jira-onprem-releases/rca.md, approved by the maintainer) prescribes every fix site. Orchestrator verified: the three rest/api/3 release literals (JiraWorkTrackingConnector.cs:2935, :2969, :3251); JiraDeployment enum + DeploymentCache + GetDeploymentType (:34, :90, :2761-2803, Unknown cached at :2779); JiraStub answers serverInfo as Cloud (JiraDeliverySourceProviderTest.cs:1028); publisher test pins v3 (JiraDeliveryForecastPublisherTest.cs:106); JiraConnectorTestSetup offers only ATeamOnJiraCloud (:119); rest/api literals outside the connector exist only in JiraReadException.cs message strings (:69, :79, :86)."
+  },
+  "user_decisions": [
+    "Maintainer approved the RCA and the fix direction (2026-10-15).",
+    "Maintainer approved the three-layer recurrence guard: routes object per deployment (separate refactor commit after the fix is green), source-scan test, shared fake DC Jira.",
+    "Start now, without waiting for the reporter's serverInfo / status codes (asked in parallel).",
+    "Document the minimum supported Jira Data Center / Server version as 8.x and later."
+  ],
+  "ssot_inputs": [
+    "docs/feature/bug-6306-jira-onprem-releases/rca.md",
+    "docs/ci-learnings.md",
+    "docs/concepts/worktrackingsystems/jira.md"
+  ],
+  "out_of_scope": [
+    "Re-syncing teams/portfolios when a connection's additional fields change (Story #6307).",
+    "Surfacing 'some Releases could not be read' in the UI (needs a sketch; possible follow-up).",
+    "Live verification against a real DC instance (none available; reporter asked for serverInfo + status codes)."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Release capabilities work on Jira Data Center",
+      "description": "Regression tests through the driving ports against a DC-shaped Jira fake, failing on today's code, then the minimal deployment-aware fix.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The Release picker lists a DC instance's unreleased Releases",
+          "description": "GetOptions for jira-release against a Jira that answers like Data Center returns that instance's unreleased, unarchived Releases instead of an empty list. A shared fake DC Jira is introduced as a test helper.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDeliverySourceProviderTest.cs",
+          "scenario_name": "On a Data Center Jira the Release picker offers each project's unreleased Releases",
+          "red_to_green_tests": [
+            "JiraDeliverySourceProviderTest :: GetOptions on a Data Center Jira offers the unreleased Releases of every project",
+            "JiraDeliverySourceProviderTest :: GetOptions on a Data Center Jira leaves out released and archived Releases even though the route cannot filter by status",
+            "JiraDeliverySourceProviderTest :: GetOptions on a Data Center Jira pages through a project's versions",
+            "JiraReleaseVersionReaderTest (or the existing reader test file) :: the DC project list (a bare JSON array) is read; a page whose root is not an object reads as empty-and-last instead of throwing"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseVersionReader.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDeliverySourceProviderTest.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/FakeJiraDataCenter.cs"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "A shared test helper FakeJiraDataCenter (an HttpMessageHandler, or whatever shape the existing JiraStub uses so the connector can be pointed at it the same way) answers rest/api/2/serverInfo with deploymentType \"Server\"; answers 404 to EVERY rest/api/3/* route and to rest/api/2/project/search; serves GET rest/api/2/project as a bare JSON array of {id,key,name}; serves GET rest/api/2/project/{key}/version as the paged envelope {startAt,maxResults,total,isLast,values:[...]} with version objects {id (string),name,archived,released,releaseDate?,projectId} and IGNORES any status query parameter; serves GET/PUT rest/api/2/version/{id} and records writes. It is built from the DC REST docs cited in rca.md, not from Cloud payloads.",
+            "RED: GetOptions on a DC connection returns an empty list on today's code (the rest/api/3/project/search call 404s) - captured before production code changes.",
+            "GREEN: the release sweep resolves the deployment once (GetDeploymentType) and passes it to ReadVisibleProjects / ReadReleasesOf. Cloud keeps byte-identical routes: rest/api/3/project/search?startAt&maxResults and rest/api/3/project/{key}/version?startAt&maxResults&status=. DataCenter uses rest/api/2/project (one call, bare array) and rest/api/2/project/{key}/version?startAt&maxResults (no status). Unknown tries rest/api/2/project/search (paged, Cloud v2) and on 404 falls back to rest/api/2/project; versions use the v2 route without status.",
+            "Where the route could not filter by status, the picker keeps a version only if it is neither released nor archived (the same set Cloud's status= filter returns for the picker). Refresh asks for every status and needs no filter.",
+            "JiraReleaseVersionReader gains a reader for the bare-array project list, and ReadPage answers an empty last page for a non-object root instead of throwing InvalidOperationException.",
+            "A non-success answer to the project list is logged at Warning, naming the route and the deployment; per-project version-read failures stay at Information (a 403 on one project is expected).",
+            "All existing Cloud tests in JiraDeliverySourceProviderTest stay green unchanged.",
+            "dotnet build zero warnings; dotnet test with the standard live-connector exclusion filter green."
+          ],
+          "implementation_notes": "Pre-apply docs/ci-learnings.md. No comments citing the bug number or internal ids; the commit body carries the why. Prefer [TestCase] over duplicated tests. Commit: fix(jira): the Release picker reads a Data Center Jira's projects and versions (bug 6306)"
+        },
+        {
+          "id": "01-02",
+          "name": "Release refresh and forecast publish work on DC; Unknown is not pinned",
+          "description": "ResolveMany (refresh) and PublishAsync use DC routes on a DC Jira; a failed serverInfo is no longer cached as Unknown for the life of the process.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDeliveryForecastPublisherTest.cs",
+          "scenario_name": "On a Data Center Jira a bound Release refreshes and the forecast publishes to it",
+          "red_to_green_tests": [
+            "JiraDeliverySourceProviderTest :: ResolveMany on a Data Center Jira resolves a bound Release (date and carried work) instead of reporting it unreadable",
+            "JiraDeliveryForecastPublisherTest :: PublishAsync on a Data Center Jira reads and writes rest/api/2/version/{id}",
+            "JiraDeliveryForecastPublisherTest :: PublishAsync on Cloud still writes rest/api/3/version/{id} (the existing :106 assertion, now explicitly the Cloud case)",
+            "a test (in the connector's deployment-detection tests, or the provider test) :: when serverInfo fails once and then answers, the second call routes by the answered deployment (Unknown is not cached)"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDeliveryForecastPublisherTest.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDeliverySourceProviderTest.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/FakeJiraDataCenter.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/JiraConnectorTestSetup.cs"
+          ],
+          "dependencies": ["01-01"],
+          "criteria": [
+            "RED: the DC refresh and DC publish tests fail on the 01-01 code for the bug's reason (rest/api/3/version 404 / no Release resolved), captured before the production change.",
+            "PublishAsync resolves the deployment and uses rest/api/3/version/{id} on Cloud, rest/api/2/version/{id} on DataCenter and Unknown, for both the GET and the PUT of its read-merge-write.",
+            "ResolveMany on DC finds the bound Release through the 01-01 sweep and its carried-work search (already DC-safe through rest/api/latest/search) still runs.",
+            "GetDeploymentType no longer stores Unknown in DeploymentCache; Cloud and DataCenter answers are still cached.",
+            "JiraConnectorTestSetup gains ATeamOnJiraDataCenter (or the equivalent DC connection builder) next to ATeamOnJiraCloud if the tests need it.",
+            "Existing Cloud tests stay green; dotnet build zero warnings; dotnet test (standard exclusion filter) green."
+          ],
+          "implementation_notes": "Commit: fix(jira): refresh and publish a Data Center Jira's Releases, and ask again after a failed deployment check (bug 6306)"
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "No Jira capability can forget Data Center again",
+      "description": "Structural recurrence guard, after the fix is green: routes per deployment, a literal-scan test, the docs.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "One routes object per Jira deployment owns every REST route",
+          "description": "Refactor: an abstract JiraRestRoutes with Cloud and DataCenter implementations, one abstract member per capability, chosen by JiraDeployment; every rest/api literal in the connector moves into it. Behaviour unchanged.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDeliverySourceProviderTest.cs",
+          "scenario_name": "Refactor only: every existing Jira connector test stays green against both Cloud and the DC fake",
+          "red_to_green_tests": [
+            "No new behaviour. The full Jira unit/acceptance test set (standard exclusion filter) is the safety net and must stay green at every micro-step."
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraRestRoutes.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraReadException.cs"
+          ],
+          "dependencies": ["01-02"],
+          "criteria": [
+            "JiraRestRoutes is an abstract class (or sealed hierarchy) with exactly two concrete deployments, Cloud and DataCenter, plus a way to get the routes for a JiraDeployment (Unknown maps to the DataCenter/v2 routes, with the Unknown project-list fallback from 01-01 preserved). Every capability is an abstract member, so adding a capability does not compile until both deployments answer it. Shape/parameter differences live beside the route (e.g. whether the project list is paged, whether versions can be filtered by status).",
+            "Every rest/api/... literal in JiraWorkTrackingConnector.cs (search incl. rest/api/3/search/jql and rest/api/latest/search, issue PUT, status, field, filter, changelog, issueLinkType, myself, serverInfo, project list, project versions, version) is replaced by a JiraRestRoutes member. Where a route is the same on both deployments it is defined once in the base class (still inside JiraRestRoutes.cs).",
+            "JiraReadException messages take the route text from JiraRestRoutes (or are reworded) so no rest/api literal remains there.",
+            "No behaviour change: Cloud requests are byte-identical to before (assert via the existing tests that pin URLs).",
+            "dotnet build zero warnings; dotnet test (standard exclusion filter) green. The orchestrator will run the JiraIntegration category deliberately after this step as the live Cloud check."
+          ],
+          "implementation_notes": "Pure refactor commit, separate from the fix commits. Commit: refactor(jira): one routes object per Jira deployment owns every REST route"
+        },
+        {
+          "id": "02-02",
+          "name": "A test refuses rest/api literals outside the routes object; the DC floor is documented",
+          "description": "An NUnit source-scan test under Architecture/ fails if any rest/api/ literal appears in backend production code outside JiraRestRoutes.cs. ci-learnings gains the rule; jira.md names the minimum supported DC/Server version.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/JiraRouteLiteralsTest.cs",
+          "scenario_name": "A Jira REST route written outside the routes object fails the build's tests",
+          "red_to_green_tests": [
+            "JiraRouteLiteralsTest :: no production .cs file other than JiraRestRoutes.cs contains a \"rest/api/\" literal",
+            "JiraRouteLiteralsTest :: the scan itself finds a planted literal (guards against a scan that reads no files, e.g. a wrong root path)"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/JiraRouteLiteralsTest.cs",
+            "/storage/repos/Lighthouse/docs/ci-learnings.md",
+            "/storage/repos/Lighthouse/docs/concepts/worktrackingsystems/jira.md"
+          ],
+          "dependencies": ["02-01"],
+          "criteria": [
+            "Follow the style of the existing source-scan tests in Lighthouse.Backend.Tests/Architecture (e.g. SecretReadPathSourceStructureTest.cs) for locating the production source root.",
+            "The scan asserts it read a non-trivial number of files and that JiraRestRoutes.cs itself contains literals, so a broken path cannot pass vacuously.",
+            "RED evidence: temporarily reintroduce a literal (or point the scan at the pre-02-01 connector text) and capture the failure; then GREEN on the real tree.",
+            "docs/ci-learnings.md gains one rule in the ledger's existing format: any new Jira REST call goes through JiraRestRoutes and names its Data Center route and response shape; rest/api/3 and rest/api/2/project/search are Cloud-only.",
+            "docs/concepts/worktrackingsystems/jira.md states Jira Data Center / Server 8.x or later is supported, in the doc's existing voice and using the configurable terminology defaults.",
+            "dotnet build zero warnings; dotnet test (standard exclusion filter) green."
+          ],
+          "implementation_notes": "Commit: test(jira): a REST route written outside the routes object fails the architecture tests (bug 6306). Docs may be a separate docs(jira) commit."
+        }
+      ]
+    }
+  ]
+}
