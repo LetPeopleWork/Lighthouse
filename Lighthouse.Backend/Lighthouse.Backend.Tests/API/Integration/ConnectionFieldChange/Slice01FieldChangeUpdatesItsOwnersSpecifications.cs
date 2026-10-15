@@ -7,8 +7,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
     /// </summary>
     public partial class Slice01FieldChangeUpdatesItsOwnersTest : ConnectionFieldChangeAcceptanceTest
     {
-        private const string Pending = "Story #6307 - pending DELIVER: a field change on a connection updates its Teams and Portfolios.";
-
         private const string UpdateNow = "true";
 
         /// <summary>

@@ -76,7 +76,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
         [Category("us-01")]
         [Category("driving_port")]
         [Category("contract-shape:bounded-change")]
-        [Ignore(Pending)]
         public async Task Any_other_field_edit_also_makes_every_Team_and_Portfolio_on_the_connection_download_everything(FieldEdit edit)
         {
             await GivenNordwindsConnectionsTeamsAndPortfolios();
@@ -98,7 +97,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
         [Category("error")]
         [Category("kpi")]
         [Category("contract-shape:bounded-change")]
-        [Ignore(Pending)]
         public async Task A_Team_already_updating_or_waiting_is_not_downloaded_in_full_twice()
         {
             await GivenNordwindsConnectionsTeamsAndPortfolios();
@@ -120,7 +118,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
         [Category("driving_port")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
-        [Ignore(Pending)]
         public async Task An_update_that_fails_leaves_the_field_saved_and_the_others_updating()
         {
             await GivenNordwindsConnectionsTeamsAndPortfolios();
@@ -141,7 +138,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
         [Category("driving_port")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
-        [Ignore(Pending)]
         public async Task The_Team_whose_update_failed_downloads_everything_at_its_next_update()
         {
             await GivenNordwindsConnectionsTeamsAndPortfolios();
@@ -178,7 +174,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
         [Category("us-01")]
         [Category("driving_port")]
         [Category("contract-shape:bounded-change")]
-        [Ignore(Pending)]
         public async Task Adding_a_field_on_the_community_licence_updates_every_Team_and_Portfolio_on_the_connection()
         {
             await GivenASmallInstanceOnTheCommunityLicence();
