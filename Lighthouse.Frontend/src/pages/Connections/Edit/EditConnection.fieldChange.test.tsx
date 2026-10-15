@@ -20,7 +20,7 @@ import {
 import EditConnectionPage from "./EditConnection";
 
 /**
- * Story #6307: Priya changes the Additional Fields on "Nordwind Jira DC" and presses Save. Before
+ * Priya changes the Additional Fields on "Nordwind Jira DC" and presses Save. Before
  * anything is saved the page asks whether to update every Team and Portfolio on the connection now,
  * because the values of a changed field only fill in once each of them has been updated. The page
  * already knows how many there are from the connection it loaded, in the words this instance uses for
@@ -506,7 +506,7 @@ describe("Story #6307 - changing a connection's Additional Fields asks whether t
 			expect(mockNavigate).not.toHaveBeenCalled();
 		});
 
-		// The guards below hold today and must keep holding once the question exists.
+		// These guards predate the question and must keep holding alongside it.
 
 		// A new connection has no Team or Portfolio yet, and setting one up offers no Additional Fields to add.
 		// @error @us-02 @contract-shape:unbounded-preservation

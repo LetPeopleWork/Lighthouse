@@ -767,7 +767,6 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 							}
 							fields={additionalFields}
 							onChange={setAdditionalFields}
-							onFieldsChanged={() => undefined}
 						/>
 					</Grid>
 

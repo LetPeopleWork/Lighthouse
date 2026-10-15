@@ -30,7 +30,6 @@ interface AdditionalFieldsEditorProps {
 	workTrackingSystemType: WorkTrackingSystemType | null;
 	fields: IAdditionalFieldDefinition[];
 	onChange: (fields: IAdditionalFieldDefinition[]) => void;
-	onFieldsChanged: () => void;
 }
 
 interface FieldEditDialogProps {
@@ -150,7 +149,6 @@ const AdditionalFieldsEditor: React.FC<AdditionalFieldsEditorProps> = ({
 	workTrackingSystemType,
 	fields,
 	onChange,
-	onFieldsChanged,
 }) => {
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [editingField, setEditingField] =
@@ -158,8 +156,8 @@ const AdditionalFieldsEditor: React.FC<AdditionalFieldsEditorProps> = ({
 	const [tempIdCounter, setTempIdCounter] = useState(-1);
 	const { licenseStatus } = useLicenseRestrictions();
 
-	// ServiceNow ships no predefined additional fields and cannot fill custom ones in slice 01
-	// (#5574) — this exclusion is expected to lift once the connector can.
+	// ServiceNow ships no predefined additional fields and its connector cannot fill
+	// custom ones yet, so offering to add one would promise a value that never arrives.
 	const isSupportedSystem =
 		workTrackingSystemType !== null &&
 		workTrackingSystemType !== "Linear" &&
@@ -185,7 +183,6 @@ const AdditionalFieldsEditor: React.FC<AdditionalFieldsEditorProps> = ({
 		setTempIdCounter(tempIdCounter - 1);
 		setEditingField(newField);
 		setEditDialogOpen(true);
-		onFieldsChanged();
 	};
 
 	const handleEditField = (field: IAdditionalFieldDefinition) => {
@@ -195,23 +192,19 @@ const AdditionalFieldsEditor: React.FC<AdditionalFieldsEditorProps> = ({
 
 	const handleDeleteField = (fieldToDelete: IAdditionalFieldDefinition) => {
 		onChange(fields.filter((f) => f.id !== fieldToDelete.id));
-		onFieldsChanged();
 	};
 
 	const handleSaveField = (savedField: IAdditionalFieldDefinition) => {
 		const existingIndex = fields.findIndex((f) => f.id === savedField.id);
 		if (existingIndex >= 0) {
-			// Update existing field
 			const updatedFields = [...fields];
 			updatedFields[existingIndex] = savedField;
 			onChange(updatedFields);
 		} else {
-			// Add new field
 			onChange([...fields, savedField]);
 		}
 		setEditDialogOpen(false);
 		setEditingField(null);
-		onFieldsChanged();
 	};
 
 	const handleCancelEdit = () => {

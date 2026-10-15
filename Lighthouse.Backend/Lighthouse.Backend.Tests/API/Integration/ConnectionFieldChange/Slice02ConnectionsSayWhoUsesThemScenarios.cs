@@ -1,7 +1,7 @@
 namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
 {
     /// <summary>
-    /// Story #6307, slice 02: before Priya saves a field change, the connection page asks her whether to
+    /// Before Priya saves a field change, the connection page asks her whether to
     /// update the Teams and Portfolios on the connection, and says how many there are. The page reads its
     /// connection from the list of connections, so that list says, for each connection, how many Teams
     /// and how many Portfolios read through it. The page fetches nothing more to ask the question.

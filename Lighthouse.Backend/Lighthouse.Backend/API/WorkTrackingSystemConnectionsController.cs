@@ -68,7 +68,7 @@ namespace Lighthouse.Backend.API
             {
                 credentialsByConnectionId.TryGetValue(c.Id, out var credential);
                 return new WorkTrackingSystemConnectionDto(c, credential, cryptoService)
-                    .UsedByAsListed(usageByConnectionId.GetValueOrDefault(c.Id, ConnectionUsage.Unused));
+                    .WithUsage(usageByConnectionId.GetValueOrDefault(c.Id, ConnectionUsage.Unused));
             });
             return Ok(connectionDtos);
         }

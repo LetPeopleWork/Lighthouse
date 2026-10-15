@@ -56,7 +56,6 @@ const renderEditor = (fields: PredefinedAdditionalField[]) =>
 			workTrackingSystemType="Jira"
 			fields={fields}
 			onChange={vi.fn()}
-			onFieldsChanged={vi.fn()}
 		/>,
 	);
 

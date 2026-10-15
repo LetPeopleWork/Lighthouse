@@ -658,7 +658,7 @@ describe("WorkTrackingSystemService", () => {
 		});
 	});
 
-	// Story #6307: the connection page asks whether to update the Teams and Portfolios on a connection
+	// The connection page asks whether to update the Teams and Portfolios on a connection
 	// whose Additional Fields changed, so it needs to know how many there are, and to be able to save
 	// while leaving their updates to the next scheduled run.
 	describe("Story #6307 - pending DELIVER", () => {

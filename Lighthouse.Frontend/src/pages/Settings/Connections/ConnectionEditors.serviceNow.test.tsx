@@ -41,7 +41,6 @@ describe("Connection settings a ServiceNow administrator should not be offered",
 				workTrackingSystemType="ServiceNow"
 				fields={[]}
 				onChange={vi.fn()}
-				onFieldsChanged={vi.fn()}
 			/>,
 		);
 

@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.API.DTO
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public ConnectionUsage? UsedBy { get; private set; }
 
-        public WorkTrackingSystemConnectionDto UsedByAsListed(ConnectionUsage usage)
+        public WorkTrackingSystemConnectionDto WithUsage(ConnectionUsage usage)
         {
             UsedBy = usage;
             return this;
