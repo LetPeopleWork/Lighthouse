@@ -56,8 +56,15 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                 33, 34, 35, 36, 38, 39, 40, 41, 42
             };
 
+            // These rows were written at runtime with a number that other rows, which must stay, share,
+            // so they can only be told apart by their key.
+            var obsoleteKeys = new[]
+            {
+                "OptionalFeatures:HistoryFillSwitchedOnByDefault",
+            };
+
             var toRemove = await context.AppSettings
-                .Where(s => obsoleteIds.Contains(s.Id))
+                .Where(s => obsoleteIds.Contains(s.Id) || obsoleteKeys.Contains(s.Key))
                 .ToListAsync();
 
             if (toRemove.Count > 0)

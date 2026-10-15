@@ -3,7 +3,6 @@ import {
 	loadDemoScenario,
 	waitForBackgroundUpdates,
 } from "../../helpers/api/demo";
-import { switchHistoryFill } from "../../helpers/api/optionalFeatures";
 import { MetricsCategories } from "../../models/metrics/MetricsPage";
 import { PercentilesOverTimeWidget } from "../../models/metrics/PercentilesOverTimeWidget";
 
@@ -18,14 +17,6 @@ const HISTORY_ENDPOINT = "/metrics/percentiles-over-time";
 // Work Item Age is horizon-less: the read asks for the metric family and lets the
 // backend resolve the horizon-less sentinel.
 const AGE_METRIC_TYPE = "WorkItemAge";
-
-test.beforeEach(async ({ request }) => {
-	await switchHistoryFill(request, true);
-});
-
-test.afterEach(async ({ request }) => {
-	await switchHistoryFill(request, false);
-});
 
 test("@walking_skeleton @US-01 flow coach opens the Percentiles Over Time widget and reads a dated CT-30 trend", async ({
 	page,

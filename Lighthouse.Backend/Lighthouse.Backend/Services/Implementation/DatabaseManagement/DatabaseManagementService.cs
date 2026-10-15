@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Data;
-using Lighthouse.Backend.Services.Implementation.Seeding;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using System.IO.Compression;
 using System.Security.Cryptography;
@@ -113,7 +112,7 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
 
                     await provider.RestoreBackup(extractDir);
 
-                    MigrateAndSeedDatabase(restoredFromBackup: true);
+                    MigrateAndSeedDatabase();
 
                     tracker.TransitionTo(operationId, DatabaseOperationState.Completed);
                     logger.LogInformation("Restore operation {OperationId} completed successfully", operationId);
@@ -171,7 +170,7 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
 
                 await provider.ClearDatabase();
 
-                MigrateAndSeedDatabase(restoredFromBackup: false);
+                MigrateAndSeedDatabase();
 
                 tracker.TransitionTo(operationId, DatabaseOperationState.Completed);
                 logger.LogInformation("Clear operation {OperationId} completed successfully", operationId);
@@ -200,7 +199,7 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             return File.OpenRead(path);
         }
 
-        private void MigrateAndSeedDatabase(bool restoredFromBackup)
+        private void MigrateAndSeedDatabase()
         {
             using var scope = serviceProvider.CreateScope();
             var scopedProvider = scope.ServiceProvider;
@@ -210,12 +209,6 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
                 provider.RecycleConnection();
 
                 DatabaseConfigurator.ApplyMigrations(scopedProvider);
-
-                if (restoredFromBackup)
-                {
-                    // A restore is how an admin undoes filled days, so seeding must not treat it as an upgrade.
-                    OptionalFeatureSeeder.SettleTheHistoryFillAfterARestore(scopedProvider.GetRequiredService<LighthouseAppContext>());
-                }
 
                 DatabaseConfigurator.SeedDatabase(scopedProvider);
             }

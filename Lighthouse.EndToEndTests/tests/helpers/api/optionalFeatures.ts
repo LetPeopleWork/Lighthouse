@@ -1,6 +1,5 @@
 import type { APIRequestContext } from "@playwright/test";
 
-const OVER_TIME_HISTORY_FILL_KEY = "OverTimeHistoryFill";
 const FEATURE_ORDERING_KEY = "FeatureOrdering";
 
 type OptionalFeature = {
@@ -31,18 +30,6 @@ async function switchOptionalFeature(
 			`Failed to switch optional feature ${key} to ${enabled}: ${response.status()}`,
 		);
 	}
-}
-
-/**
- * Filling in past over-time days is on by default. A spec that wants the fill switches it on
- * explicitly and switches it off afterwards; a spec that runs before the first of those can
- * still meet it on.
- */
-export async function switchHistoryFill(
-	request: APIRequestContext,
-	enabled: boolean,
-): Promise<void> {
-	await switchOptionalFeature(request, OVER_TIME_HISTORY_FILL_KEY, enabled);
 }
 
 /**

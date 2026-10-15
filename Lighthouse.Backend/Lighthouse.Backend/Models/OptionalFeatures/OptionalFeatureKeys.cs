@@ -32,8 +32,9 @@
         public const string UsageDataKey = "UsageData";
 
         /// <summary>
-        /// Whether opening an over-time chart fills in the past days it is missing, worked out from the
-        /// history already stored. Ships off and as a preview; while off, days already filled stay.
+        /// A setting that no longer exists: over-time charts now always fill in the past days they are
+        /// missing. The key is kept only so start-up can find the row an upgraded instance still carries
+        /// and remove it.
         /// </summary>
         public const string OverTimeHistoryFillKey = "OverTimeHistoryFill";
     }

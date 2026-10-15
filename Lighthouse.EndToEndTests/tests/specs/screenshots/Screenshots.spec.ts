@@ -3,7 +3,6 @@ import {
 	test,
 	testWithDemoData,
 } from "../../fixutres/LighthouseFixture";
-import { switchHistoryFill } from "../../helpers/api/optionalFeatures";
 import { formatLocalDate } from "../../helpers/dates";
 import {
 	takeDialogScreenshot,
@@ -88,9 +87,7 @@ test("Take @screenshot of the demo data settings page", async ({
 
 test("Take @screenshot of the system configuration page", async ({
 	overviewPage,
-	request,
 }) => {
-	await switchHistoryFill(request, true);
 	const settingsPage = await overviewPage.lightHousePage.goToSettings();
 	const systemSettings = await settingsPage.goToSystemConfiguration();
 
@@ -836,27 +833,11 @@ testWithDemo(
 	},
 );
 
-// The over-time widgets can only be shot reliably with filling in past days switched
-// on, whatever state the instance is in, so the fixture switches it on for the shot and
-// off afterwards, leaving later specs free of a background fill they did not ask for.
-const testWithDemoHistoryFill = testWithDemo.extend<{ historyFill: undefined }>(
-	{
-		historyFill: [
-			async ({ request }, use) => {
-				await switchHistoryFill(request, true);
-				await use(undefined);
-				await switchHistoryFill(request, false);
-			},
-			{ auto: true },
-		],
-	},
-);
-
 // The two over-time Predictability widgets share one theme — "how has this
 // metric been trending, day by day". Demo owners carry a backdated two-week
-// history and filling in past days is switched on, so both render a populated
-// chart rather than the empty sentence.
-testWithDemoHistoryFill(
+// history and past days are filled in, so both render a populated chart rather
+// than the empty sentence.
+testWithDemo(
 	"@screenshot a flow coach reads the Percentiles Over Time trend for cycle time and work item age, then the dated Throughput process behaviour limits",
 	async ({ page, testData, overviewPage }) => {
 		await overviewPage.lightHousePage.goToOverview();

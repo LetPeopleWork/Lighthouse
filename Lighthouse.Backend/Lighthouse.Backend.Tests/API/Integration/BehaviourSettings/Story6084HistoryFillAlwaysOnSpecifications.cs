@@ -32,8 +32,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             NotYetOffered,
         }
 
-        private const string PendingDeliver = "Story #6084 — pending DELIVER";
-
         /// <summary>
         /// The key the setting was addressed by, spelled out because the product's constant for it is on its
         /// way out, and because an instance upgrading into this release carries this exact string whatever

@@ -21,7 +21,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // @walking_skeleton @driving_port @real-io @contract-shape:pure-function
         // Nobody has anything to decide about the fill, so there is nothing to show them.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task A_new_instance_offers_no_history_fill_setting()
         {
             GivenTheCallerAdministersTheInstance();
@@ -35,7 +34,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // The setting goes whichever way the last release left it, an admin's deliberate off included, and so
         // does the record of the one-time switch-on. Every other setting and stored value stays as it was.
         [Test]
-        [Ignore(PendingDeliver)]
         [TestCase(HowTheLastReleaseLeftTheFill.SwitchedOnByDefault)]
         [TestCase(HowTheLastReleaseLeftTheFill.SwitchedOffByTheAdmin)]
         [TestCase(HowTheLastReleaseLeftTheFill.SwitchedOffBeforeItWasSwitchedOnByDefault)]
@@ -60,7 +58,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // The setting can already be gone, removed by hand or never stored, while the record of the switch-on
         // stays behind. The record goes on its own.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task An_instance_whose_fill_setting_was_already_removed_keeps_nothing_of_it_after_the_upgrade()
         {
             GivenTheCallerAdministersTheInstance();
@@ -81,7 +78,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // none of them changes anything else either: Behaviour Settings and every stored value read as they did
         // straight after the upgrade.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task Restarting_again_and_again_never_brings_the_history_fill_setting_back()
         {
             GivenTheCallerAdministersTheInstance();
@@ -102,7 +98,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // A script written while the fill was a setting, the way the end-to-end tests switch it, is told the
         // setting does not exist. It does not quietly put a setting back that nothing reads.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task A_script_that_still_switches_the_history_fill_is_told_there_is_no_such_setting()
         {
             GivenTheCallerAdministersTheInstance();
@@ -124,7 +119,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // nothing recorded, so its charts fill like everyone else's. It stays that way at the next restart. The
         // most common backup holds the fill switched on by default, with the record of that switch-on beside it.
         [Test]
-        [Ignore(PendingDeliver)]
         [TestCase(HowTheLastReleaseLeftTheFill.SwitchedOnByDefault)]
         [TestCase(HowTheLastReleaseLeftTheFill.SwitchedOffByTheAdmin)]
         [TestCase(HowTheLastReleaseLeftTheFill.SwitchedOffBeforeItWasSwitchedOnByDefault)]
@@ -150,7 +144,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // @driving_port @real-io @contract-shape:bounded-change
         // Clearing the database leaves a new instance behind, and a new instance has no fill setting.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task Clearing_the_database_leaves_no_history_fill_setting_like_a_new_instance()
         {
             GivenTheCallerAdministersTheInstance();

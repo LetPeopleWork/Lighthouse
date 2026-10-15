@@ -3,7 +3,6 @@ import {
 	loadDemoScenario,
 	waitForBackgroundUpdates,
 } from "../../helpers/api/demo";
-import { switchHistoryFill } from "../../helpers/api/optionalFeatures";
 import { MetricsCategories } from "../../models/metrics/MetricsPage";
 import {
 	PBC_LIMIT_LINES,
@@ -26,14 +25,6 @@ const OTHER_FAMILY = "WorkItemAge" as const;
 // dashes would leave three near-identical greys, unreadable in dark mode.
 const SOLID: number[] = [];
 const SOLID_BORDER = "solid";
-
-test.beforeEach(async ({ request }) => {
-	await switchHistoryFill(request, true);
-});
-
-test.afterEach(async ({ request }) => {
-	await switchHistoryFill(request, false);
-});
 
 test("@real-io @driving_adapter @US-04 delivery lead reads dated Throughput process behaviour limits", async ({
 	page,

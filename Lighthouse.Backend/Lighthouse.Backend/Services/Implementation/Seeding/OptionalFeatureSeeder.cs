@@ -34,6 +34,7 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                 OptionalFeatureKeys.LinearIntegrationKey,
                 OptionalFeatureKeys.McpServerKey,
                 OptionalFeatureKeys.DeltaSyncKey,
+                OptionalFeatureKeys.OverTimeHistoryFillKey,
             };
 
             var toRemove = await context.OptionalFeatures
@@ -80,28 +81,11 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                     IsPreview = false,
                     IsPremium = true,
                 },
-                new OptionalFeature
-                {
-                    Id = 0,
-                    Key = OptionalFeatureKeys.OverTimeHistoryFillKey,
-                    Name = "Fill in past days on over-time charts",
-                    Description =
-                        "A preview. While this is on, opening Percentiles Over Time or PBC Over Time fills in "
-                        + "the days the chart is missing, working them out in the background from the history "
-                        + "Lighthouse already stores. Turning it off stops any further filling; days already "
-                        + "filled stay.",
-                    Enabled = true,
-                    IsPreview = true,
-                    IsPremium = false,
-                },
             ];
         }
 
         private async Task AddOrUpdateCurrentFeatures(List<OptionalFeature> features)
         {
-            var historyFillAlreadySwitchedOn = await context.AppSettings
-                .AnyAsync(setting => setting.Key == AppSettingKeys.HistoryFillSwitchedOnByDefault);
-
             foreach (var feature in features)
             {
                 var existing = await context.OptionalFeatures
@@ -123,13 +107,6 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                 }
                 else
                 {
-                    // An old off for the history fill was mostly never chosen, so it is switched on once;
-                    // the record written below makes it once, after which an administrator's off holds.
-                    if (feature.Key == OptionalFeatureKeys.OverTimeHistoryFillKey && !historyFillAlreadySwitchedOn)
-                    {
-                        existing.Enabled = true;
-                    }
-
                     existing.Name = feature.Name;
                     existing.Description = feature.Description;
                     existing.IsPreview = feature.IsPreview;
@@ -137,42 +114,6 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                     logger.LogDebug("Updating OptionalFeature: {Key}", feature.Key);
                 }
             }
-
-            if (!historyFillAlreadySwitchedOn)
-            {
-                RecordThatTheHistoryFillWasSwitchedOn(context);
-            }
-        }
-
-        /// <summary>
-        /// A restore brings the history fill back as the backup held it. A backup without the setting never
-        /// filled a day, so the setting is added off, and the record keeps seeding from switching it on.
-        /// </summary>
-        internal static void SettleTheHistoryFillAfterARestore(LighthouseAppContext context)
-        {
-            if (!context.AppSettings.Any(setting => setting.Key == AppSettingKeys.HistoryFillSwitchedOnByDefault))
-            {
-                RecordThatTheHistoryFillWasSwitchedOn(context);
-            }
-
-            if (!context.OptionalFeatures.Any(feature => feature.Key == OptionalFeatureKeys.OverTimeHistoryFillKey))
-            {
-                var fill = GetOptionalFeatures().Single(feature => feature.Key == OptionalFeatureKeys.OverTimeHistoryFillKey);
-                fill.Enabled = false;
-                context.OptionalFeatures.Add(fill);
-            }
-
-            context.SaveChanges();
-        }
-
-        private static void RecordThatTheHistoryFillWasSwitchedOn(LighthouseAppContext context)
-        {
-            context.AppSettings.Add(new AppSetting
-            {
-                Id = 0,
-                Key = AppSettingKeys.HistoryFillSwitchedOnByDefault,
-                Value = "true",
-            });
         }
 
         /// <summary>
