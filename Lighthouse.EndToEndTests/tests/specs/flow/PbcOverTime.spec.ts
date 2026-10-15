@@ -46,8 +46,8 @@ test("@real-io @driving_adapter @US-04 delivery lead reads dated Throughput proc
 	// Throughput is the family the recorder persists, and the toggle opens on it.
 	await expect.poll(() => widget.isMetricSelected("Throughput")).toBe(true);
 
-	// The demo owners are backdated over the last two weeks and filling in past days
-	// is switched on, so the chart is populated and the empty sentence must NOT show.
+	// The demo owners are backdated over the last two weeks and past days are filled
+	// in, so the chart is populated and the empty sentence must NOT show.
 	await expect(widget.emptyState).toHaveCount(0);
 
 	// Three dated limit lines are plotted across the recorded date range.

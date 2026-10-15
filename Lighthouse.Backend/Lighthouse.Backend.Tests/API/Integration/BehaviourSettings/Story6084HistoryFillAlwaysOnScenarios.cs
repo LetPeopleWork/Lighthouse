@@ -95,8 +95,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         }
 
         // @driving_port @real-io @error @contract-shape:bounded-change
-        // A script written while the fill was a setting, the way the end-to-end tests switch it, is told the
-        // setting does not exist. It does not quietly put a setting back that nothing reads.
+        // A script written while the fill was a setting, the way the end-to-end tests once switched it, is told
+        // the setting does not exist. It does not quietly put a setting back that nothing reads.
         [Test]
         public async Task A_script_that_still_switches_the_history_fill_is_told_there_is_no_such_setting()
         {

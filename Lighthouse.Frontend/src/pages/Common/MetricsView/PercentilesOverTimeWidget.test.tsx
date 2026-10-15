@@ -84,8 +84,7 @@ const HONEST_EMPTY_COPY =
 // The chart no longer only builds forward, so this sentence would now be false.
 const RETIRED_FORWARD_ONLY_COPY = "builds forward from today";
 
-// False on an instance that leaves filling in past days switched off, which is every instance
-// until an administrator opts in.
+// False for a range the stored history does not reach: no later visit ever fills it in.
 const RETIRED_LATER_VISIT_COPY = "fill in on a later visit";
 
 function todayAtNoon(): Date {

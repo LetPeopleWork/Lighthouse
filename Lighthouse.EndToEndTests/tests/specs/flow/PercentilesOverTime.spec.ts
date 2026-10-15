@@ -44,7 +44,7 @@ test("@walking_skeleton @US-01 flow coach opens the Percentiles Over Time widget
 	const widget = new PercentilesOverTimeWidget(page);
 	await expect(widget.Widget).toBeVisible();
 
-	// The demo owners carry backdated history and the fill is switched on, so the
+	// The demo owners carry backdated history and past days are filled in, so the
 	// chart is populated — the empty-state sentence must NOT be showing.
 	await expect(widget.emptyState).toHaveCount(0);
 

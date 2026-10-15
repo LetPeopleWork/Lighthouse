@@ -48,8 +48,8 @@ export type PbcLimitLine = (typeof PBC_LIMIT_LINES)[number];
 
 /**
  * The one empty state an empty chart shows instead of a broken axis, whatever the
- * range, whatever the reason it is empty, and whether or not filling in past days is
- * switched on. Verbatim, so a copy change here fails loudly.
+ * range and whatever the reason it is empty. Verbatim, so a copy change here fails
+ * loudly.
  */
 export const PBC_OVER_TIME_EMPTY_COPY =
 	"Nothing to show for the selected range. Days appear here as Lighthouse records them.";

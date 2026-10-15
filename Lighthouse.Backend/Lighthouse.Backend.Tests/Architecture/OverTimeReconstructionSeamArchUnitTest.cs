@@ -103,16 +103,19 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string TheOptionalFeatureSeeder = "Services/Implementation/Seeding/OptionalFeatureSeeder.cs";
 
-        private static readonly string[] WhereTheFillSwitchKeyMayBeNamed = [TheKeyList, TheOptionalFeatureSeeder];
+        private static readonly string[] WhereTheRetiredFillKeyMayBeNamed = [TheKeyList, TheOptionalFeatureSeeder];
 
-        /// <summary>The switch's key, as the constant that names it and as the stored value itself.</summary>
-        private static readonly string[] TheFillSwitchKeySpellings = ["OverTimeHistoryFillKey", "\"OverTimeHistoryFill\""];
+        /// <summary>
+        /// The key of the setting that once switched the fill, as the constant that names it and as the stored
+        /// value itself.
+        /// </summary>
+        private static readonly string[] TheRetiredFillKeySpellings = ["OverTimeHistoryFillKey", "\"OverTimeHistoryFill\""];
 
         private const string FrontendSourceDirectory = "Lighthouse.Frontend/src";
 
         /// <summary>
-        /// A key the frontend genuinely names, because the settings page switches it. The scan for the fill
-        /// switch's key runs the same search for this one first, so a scan that can no longer read the
+        /// A key the frontend genuinely names, because the settings page switches it. The scan for the retired
+        /// fill key runs the same search for this one first, so a scan that can no longer read the
         /// frontend fails instead of reporting that nothing names anything.
         /// </summary>
         private const string AKeyTheFrontendDoesName = "\"FeatureOrdering\"";
@@ -327,29 +330,28 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         /// <summary>
         /// The fill no longer reads a setting, so the old setting's key is named only by the list of keys and
-        /// by the seeder that looks after the stored row. Anything else naming it is a reader bringing the
-        /// switch back.
+        /// by the seeder that removes the stored row. Anything else naming it is a reader bringing the
+        /// setting back.
         /// </summary>
         [Test]
-        public void TheFillSwitchKey_IsNamedOnlyByTheKeyList_AndTheSeeder()
+        public void TheRetiredFillKey_IsNamedOnlyByTheKeyList_AndTheSeeder()
         {
             var naming = ProductionSourceFiles()
-                .Where(file => TheFillSwitchKeySpellings.Any(spelling => file.Source.Contains(spelling, StringComparison.Ordinal)))
+                .Where(file => TheRetiredFillKeySpellings.Any(spelling => file.Source.Contains(spelling, StringComparison.Ordinal)))
                 .Select(file => file.RelativePath)
                 .ToList();
 
-            Assert.That(naming, Is.EquivalentTo(WhereTheFillSwitchKeyMayBeNamed),
-                "The old fill switch's key may be named only where it is declared and seeded. Named in: " + string.Join(", ", naming));
+            Assert.That(naming, Is.EquivalentTo(WhereTheRetiredFillKeyMayBeNamed),
+                "The retired fill setting's key may be named only where it is declared and where start-up removes it. Named in: " + string.Join(", ", naming));
         }
 
         /// <summary>
-        /// The widgets never learn whether the fill is on: one empty-chart sentence is true either way, so
-        /// the switch stays a backend matter and removing it later touches the backend alone. Read off the
-        /// source because a component that fetched the setting would pass every widget test that did not
-        /// happen to mock that fetch.
+        /// The fill always runs, so there is nothing for a widget to ask about it, and one empty-chart sentence
+        /// holds for every chart. Read off the source because a component that fetched the old setting would
+        /// pass every widget test that did not happen to mock that fetch.
         /// </summary>
         [Test]
-        public void TheFrontend_NeverNamesTheFillSwitch()
+        public void TheFrontend_NeverNamesTheRetiredFillKey()
         {
             var sources = FrontendSourceFiles();
 
@@ -357,8 +359,8 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Where(file => file.Source.Contains(AKeyTheFrontendDoesName, StringComparison.Ordinal))
                 .ToList();
 
-            var namingTheFillSwitch = sources
-                .Where(file => TheFillSwitchKeySpellings.Any(spelling => file.Source.Contains(spelling, StringComparison.Ordinal))
+            var namingTheRetiredFillKey = sources
+                .Where(file => TheRetiredFillKeySpellings.Any(spelling => file.Source.Contains(spelling, StringComparison.Ordinal))
                             || file.Source.Contains("'OverTimeHistoryFill'", StringComparison.Ordinal)
                             || file.Source.Contains("`OverTimeHistoryFill`", StringComparison.Ordinal))
                 .Select(file => file.RelativePath)
@@ -373,9 +375,9 @@ namespace Lighthouse.Backend.Tests.Architecture
                     $"The same search found no file naming {AKeyTheFrontendDoesName}, which the settings page does name - so it would " +
                     "find nothing whatever it looked for.");
 
-                Assert.That(namingTheFillSwitch, Is.Empty,
-                    "The frontend names the fill switch. The empty-chart sentence is true whether it is on or off, so no widget " +
-                    "needs to ask: " + string.Join(", ", namingTheFillSwitch));
+                Assert.That(namingTheRetiredFillKey, Is.Empty,
+                    "The frontend names the retired fill setting. The fill always runs, so there is nothing for a widget " +
+                    "to ask: " + string.Join(", ", namingTheRetiredFillKey));
             }
         }
 
