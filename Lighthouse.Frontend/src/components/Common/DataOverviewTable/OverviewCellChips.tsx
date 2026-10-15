@@ -58,7 +58,7 @@ export const OverviewCellChips = <T,>({
 	moreTo,
 	emptyText,
 	failureText,
-}: OverviewCellChipsProps<T>): React.ReactElement => {
+}: Readonly<OverviewCellChipsProps<T>>): React.ReactElement => {
 	const isLoading = status === "loading";
 	const hasItems = items !== undefined && items.length > 0;
 	const hiddenCount = (items?.length ?? 0) - SHOWN_AT_MOST;
@@ -78,7 +78,7 @@ export const OverviewCellChips = <T,>({
 					}),
 				}}
 			>
-				{items.slice(0, SHOWN_AT_MOST).map(renderItem)}
+				{items.slice(0, SHOWN_AT_MOST).map((item) => renderItem(item))}
 				{hiddenCount > 0 && (
 					<Link component={RouterLink} to={moreTo} variant="body2">
 						+{hiddenCount} more

@@ -23,6 +23,9 @@ export interface DeliveriesChipsProps {
 	portfolioId: number;
 }
 
+const deliveriesPathOf = (portfolioId: number): string =>
+	`/portfolios/${portfolioId}/deliveries`;
+
 const forecastSummaryOf = (
 	delivery: Delivery,
 	featuresTerm: string,
@@ -31,9 +34,10 @@ const forecastSummaryOf = (
 	if (isUnforecastable || delivery.likelihoodPercentage === null) {
 		return CANNOT_FORECAST_SHORT;
 	}
+	const hasRemainingWork = delivery.remainingWork > 0;
 	if (
 		isForecastDataInsufficient({
-			hasRemainingWork: delivery.remainingWork > 0,
+			hasRemainingWork,
 			hasSufficientData: delivery.hasSufficientData,
 		})
 	) {
@@ -44,7 +48,7 @@ const forecastSummaryOf = (
 	return jointLikelihoodLabel({
 		term: featuresTerm,
 		value: formatLikelihood(delivery.likelihoodPercentage, {
-			hasRemainingWork: delivery.remainingWork > 0,
+			hasRemainingWork,
 			precision: "round",
 		}),
 	});
@@ -81,7 +85,7 @@ const DeliveryChip: React.FC<{
 
 	return (
 		<Link
-			to={`/portfolios/${delivery.portfolioId}/deliveries`}
+			to={deliveriesPathOf(delivery.portfolioId)}
 			style={{ textDecoration: "none" }}
 		>
 			{isUnforecastable ? (
@@ -122,7 +126,7 @@ export const DeliveriesChips: React.FC<DeliveriesChipsProps> = ({
 					featuresTerm={featuresTerm}
 				/>
 			)}
-			moreTo={`/portfolios/${portfolioId}/deliveries`}
+			moreTo={deliveriesPathOf(portfolioId)}
 			emptyText={`No ${deliveriesTerm}`}
 			failureText={`Couldn't load ${deliveriesTerm}`}
 		/>
