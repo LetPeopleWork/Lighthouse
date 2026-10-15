@@ -66,7 +66,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// <summary>
         /// Jira would not hand over the list of fields on the instance, so no additional field can be
         /// checked against it. This is not a broken URL: the same connection had just answered on
-        /// rest/api/2/myself, so the address and the credential are both good enough to be talked to.
+        /// <see cref="JiraRestRoutes.Myself"/>, so the address and the credential are both good enough to be talked to.
         /// </summary>
         public static JiraReadException FieldListRefused(HttpStatusCode status, string whatJiraSaid)
             => new(ConnectionValidationResult.Failure(
@@ -76,14 +76,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 + "this connection signs in with needs to be able to browse at least one project for Jira "
                 + "to return the field list; a proxy in front of Jira can also refuse this response, which "
                 + "is much larger than the others Lighthouse asks for.",
-                $"GET rest/api/latest/field answered {(int)status} {status}. {whatJiraSaid}",
+                $"GET {JiraRestRoutes.Field} answered {(int)status} {status}. {whatJiraSaid}",
                 AdditionalFieldsFieldName));
 
         private static JiraReadException Unreadable(string filterId, HttpStatusCode status, string whatCameBack)
             => new(ConnectionValidationResult.Failure(
                 "board_filter_unreadable",
                 $"Lighthouse could not read the filter behind this board. {whatCameBack} The account this connection signs in with may not have permission to see that saved filter - a board stays visible even when the filter behind it is shared with a smaller group. Ask a Jira administrator to share filter {filterId} with that account, or configure the team with a JQL query instead of a board.",
-                $"GET rest/api/2/filter/{filterId} answered {(int)status} {status}.",
+                $"GET {JiraRestRoutes.Filter(filterId)} answered {(int)status} {status}.",
                 QueryFieldName));
     }
 }

@@ -31,17 +31,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
     {
         private readonly HttpMessageHandler? _httpMessageHandlerForTesting = httpMessageHandlerForTesting;
 
-        private enum JiraDeployment { Unknown, Cloud, DataCenter }
-
         private static readonly ConcurrentDictionary<int, ConcurrentDictionary<string, string>> FieldNames = new();
 
         private const string DefaultFlaggedFieldReference = "customfield_10001";
 
         private const string BoardsEndpoint = "rest/agile/latest/board";
-
-        private const string IssueLinkTypeEndpoint = "rest/api/latest/issueLinkType";
-
-        private const string CredentialCheckEndpoint = "rest/api/2/myself";
 
         private const string LinkTypesProperty = "issueLinkTypes";
 
@@ -63,7 +57,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// it is about to make is - a chunk bounds how many keys are asked for, never how many bytes they cost.
         /// The two differences from the query string: expand and fields are lists rather than comma-joined text.
         /// </summary>
-        private const string DataCenterSearchPath = "rest/api/latest/search";
+        private static readonly string DataCenterSearchPath = JiraRestRoutes.For(JiraDeployment.DataCenter).Search;
 
         private static readonly string[] TheChangelogAsWell = ["changelog"];
 
@@ -413,7 +407,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             try
             {
                 var client = await GetJiraRestClientAsync(connection);
-                var response = await client.GetAsync(CredentialCheckEndpoint);
+                var response = await client.GetAsync(JiraRestRoutes.Myself);
                 if (!response.IsSuccessStatusCode)
                 {
                     var responseBody = await response.Content.ReadAsStringAsync();
@@ -652,9 +646,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             // Mirrors what Azure DevOps has always done (`suppressNotifications: true`): a value Lighthouse
             // recalculated is not news anyone needs mailed. Needs Administer Jira, or Administer Projects
             // on that project — hence the caller's retry.
-            var url = silently
-                ? $"rest/api/latest/issue/{issueKey}?notifyUsers=false"
-                : $"rest/api/latest/issue/{issueKey}";
+            var url = JiraRestRoutes.Issue(issueKey, silently);
 
             var response = await client.PutAsync(url, content);
 
@@ -754,7 +746,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             Task<(IEnumerable<string> toDoStates, IEnumerable<string> doingStates, IEnumerable<string> doneStates)>
             MapStatusToCategory(HttpClient client, List<string> statusList)
         {
-            var response = await client.GetAsync("rest/api/latest/status");
+            var response = await client.GetAsync(JiraRestRoutes.Status);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -892,7 +884,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// </summary>
         private async Task<string> GetFilterQueryById(HttpClient client, string filterId)
         {
-            var response = await client.GetAsync($"rest/api/2/filter/{filterId}");
+            var response = await client.GetAsync(JiraRestRoutes.Filter(filterId));
 
             if (!response.IsSuccessStatusCode)
             {
@@ -1102,7 +1094,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 return ConnectionValidationResult.Failure(
                     "issue_link_types_unreadable",
-                    $"Jira refused {IssueLinkTypeEndpoint} with {(int)refusal} ({refusal}), so a reference naming an issue link type could not be checked at all. The references waiting on it are: {references}.",
+                    $"Jira refused {JiraRestRoutes.IssueLinkType} with {(int)refusal} ({refusal}), so a reference naming an issue link type could not be checked at all. The references waiting on it are: {references}.",
                     "Give the credential in use permission to read issue link types, or check whether a proxy in front of Jira is turning that endpoint down. Nothing about the additional field configuration is known to be wrong.",
                     JiraWorkTrackingOptionNames.ApiToken);
             }
@@ -1111,7 +1103,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 return ConnectionValidationResult.Failure(
                     "issue_link_types_not_understood",
-                    $"Jira answered {IssueLinkTypeEndpoint} without refusing, but the reply was not in a form Lighthouse could read, so a reference naming an issue link type could not be checked at all. The references waiting on it are: {references}.",
+                    $"Jira answered {JiraRestRoutes.IssueLinkType} without refusing, but the reply was not in a form Lighthouse could read, so a reference naming an issue link type could not be checked at all. The references waiting on it are: {references}.",
                     "Lighthouse reads that endpoint as an object carrying an issueLinkTypes array, and this instance answered something else. Nothing about the additional field configuration or the sign-in is known to be wrong. Reporting what this endpoint answers on this deployment is what gets it read.");
             }
 
@@ -1399,7 +1391,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var changelogUrl = $"rest/api/latest/issue/{issueId}/changelog?startAt={startAt}&maxResults={maxResults}";
+                var changelogUrl = JiraRestRoutes.Changelog(issueId, startAt, maxResults);
                 var changelogResponse = await jiraClient.GetAsync(changelogUrl, cancellationToken);
                 changelogResponse.EnsureSuccessStatusCode();
 
@@ -1551,7 +1543,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private async Task<Dictionary<string, string>> GetCustomFieldMappings(HttpClient jiraClient, string[] propertyIdentifiers,
             IEnumerable<string> customFields)
         {
-            const string url = "rest/api/latest/field";
+            const string url = JiraRestRoutes.Field;
 
             var response = await jiraClient.GetAsync(url);
             var responseBody = await response.Content.ReadAsStringAsync();
@@ -1889,7 +1881,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return;
             }
 
-            var response = await jiraClient.GetAsync(CredentialCheckEndpoint);
+            var response = await jiraClient.GetAsync(JiraRestRoutes.Myself);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -1898,7 +1890,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     + "This refresh was stopped, because an issue link type list read without being signed in comes back empty "
                     + "and would have cleared every parent it could not see.",
                     connection.Name,
-                    CredentialCheckEndpoint,
+                    JiraRestRoutes.Myself,
                     (int)response.StatusCode);
 
                 throw new JiraReadException(ConnectionValidationResult.Failure(
@@ -1907,7 +1899,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     + $"before it could read anything that depends on it. Jira answered {(int)response.StatusCode} "
                     + $"({response.StatusCode}). Nothing Lighthouse already holds was changed. Update the API token on "
                     + "this connection to start refreshing again.",
-                    $"GET {CredentialCheckEndpoint} answered {(int)response.StatusCode} {response.StatusCode}.",
+                    $"GET {JiraRestRoutes.Myself} answered {(int)response.StatusCode} {response.StatusCode}.",
                     JiraWorkTrackingOptionNames.ApiToken));
             }
 
@@ -1935,7 +1927,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private async Task<IssueLinkTypeListing> GetIssueLinkTypes(HttpClient jiraClient)
         {
-            var response = await jiraClient.GetAsync(IssueLinkTypeEndpoint);
+            var response = await jiraClient.GetAsync(JiraRestRoutes.IssueLinkType);
             var responseBody = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
@@ -2434,7 +2426,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 // in rather than after the whole result set, which on a large team is minutes away.
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var url = new StringBuilder("rest/api/3/search/jql?");
+                var url = new StringBuilder(JiraRestRoutes.For(JiraDeployment.Cloud).Search).Append('?');
                 url.Append("jql=").Append(Uri.EscapeDataString(request.Jql));
                 url.Append("&fields=").Append(Uri.EscapeDataString(request.Fields));
 
@@ -2776,7 +2768,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             try
             {
-                var response = await client.GetAsync("rest/api/2/serverInfo");
+                var response = await client.GetAsync(JiraRestRoutes.ServerInfo);
                 if (!response.IsSuccessStatusCode)
                 {
                     logger.LogDebug("Could not determine deployment type");
@@ -2816,12 +2808,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             [new DeliverySourceDescriptor("jira-release", "Jira Release")];
 
         private const int ProjectPageSize = 100;
-
-        private const string CloudProjectSearchRoute = "rest/api/3/project/search";
-
-        private const string ProjectSearchRoute = "rest/api/2/project/search";
-
-        private const string ProjectListRoute = "rest/api/2/project";
 
         private const int VersionPageSize = 50;
 
@@ -2937,17 +2923,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private async Task<(IReadOnlyList<DeliverySourceProject> Projects, bool SawEverything)> ReadVisibleProjects(
             HttpClient client, JiraDeployment deployment)
         {
-            if (deployment == JiraDeployment.DataCenter)
+            var routes = JiraRestRoutes.For(deployment);
+
+            if (routes.PagedProjectSearch is not { } searchRoute)
             {
                 return await ReadProjectList(client, deployment);
             }
 
-            var searchRoute = deployment == JiraDeployment.Cloud ? CloudProjectSearchRoute : ProjectSearchRoute;
             var (projects, refusal) = await ReadProjectSearchPages(client, searchRoute);
 
             // Only Cloud serves the paged search. Data Center reads "search" as a project key and answers that no
             // such project exists, so a Jira that would not say which kind it is gets the plain list instead.
-            if (deployment == JiraDeployment.Unknown && refusal == HttpStatusCode.NotFound)
+            if (routes.FallsBackToProjectListWhenSearchIsMissing && refusal == HttpStatusCode.NotFound)
             {
                 return await ReadProjectList(client, deployment);
             }
@@ -2992,11 +2979,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private async Task<(IReadOnlyList<DeliverySourceProject> Projects, bool SawEverything)> ReadProjectList(
             HttpClient client, JiraDeployment deployment)
         {
-            var response = await client.GetAsync(ProjectListRoute);
+            var response = await client.GetAsync(JiraRestRoutes.ProjectList);
 
             if (!response.IsSuccessStatusCode)
             {
-                LogTheProjectListWasRefused(ProjectListRoute, deployment, response.StatusCode);
+                LogTheProjectListWasRefused(JiraRestRoutes.ProjectList, deployment, response.StatusCode);
 
                 return ([], false);
             }
@@ -3024,12 +3011,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             var releases = new List<DeliverySourceOption>();
             var startAt = 0;
-            var routeFiltersByStatus = deployment == JiraDeployment.Cloud;
+            var routes = JiraRestRoutes.For(deployment);
+            var routeFiltersByStatus = routes.CanFilterVersionsByStatus;
             var wantedStatuses = statuses.Split(',');
 
             while (true)
             {
-                var response = await client.GetAsync(VersionsRoute(deployment, project, startAt, statuses));
+                var response = await client.GetAsync(routes.ProjectVersions(project.Key, startAt, VersionPageSize, statuses));
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -3051,19 +3039,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     return (releases, true);
                 }
             }
-        }
-
-        /// <summary>
-        /// Only Cloud's version list takes a status. Data Center's has no such parameter and hands back every
-        /// version, so there the statuses are applied to what comes back instead.
-        /// </summary>
-        private static string VersionsRoute(JiraDeployment deployment, DeliverySourceProject project, int startAt, string statuses)
-        {
-            var projectKey = Uri.EscapeDataString(project.Key);
-
-            return deployment == JiraDeployment.Cloud
-                ? $"rest/api/3/project/{projectKey}/version?startAt={startAt}&maxResults={VersionPageSize}&status={statuses}"
-                : $"rest/api/2/project/{projectKey}/version?startAt={startAt}&maxResults={VersionPageSize}";
         }
 
         /// <summary>The one status Jira grades a version as, in the words its status filter takes. Archiving outranks releasing.</summary>
@@ -3339,8 +3314,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var client = await GetJiraRestClientAsync(connection);
             var deployment = await GetDeploymentType(client, connection);
-            var apiVersion = deployment == JiraDeployment.Cloud ? 3 : 2;
-            var versionUrl = $"rest/api/{apiVersion}/version/{Uri.EscapeDataString(publication.SourceReference)}";
+            var versionUrl = JiraRestRoutes.For(deployment).Version(publication.SourceReference);
 
             var read = await client.GetAsync(versionUrl);
 
