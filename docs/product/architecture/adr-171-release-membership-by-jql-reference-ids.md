@@ -49,6 +49,11 @@ pass, not once per Delivery.**
    - one `fixVersion in (id1, id2, …)` search asking for `fields=fixVersions`, whose results are grouped
      back to versions in memory.
 
+   > **Amended 2026-10-15 (Bug #6306):** the version read above is the Jira Cloud route. Jira Server /
+   > Data Center has no `rest/api/3`, so it reads `rest/api/2/project/{key}/version` instead, filtering by
+   > status itself because that route takes no `status` parameter. The route is chosen per deployment
+   > by `JiraRestRoutes`. The decision itself (one version read and one search per pass) is unchanged.
+
    Create-time resolution ([ADR-170](./adr-170-broken-source-as-recorded-verdict.md), point 6) calls
    the same method with a single-element list, so there is no second signature to keep in step.
 

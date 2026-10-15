@@ -6400,6 +6400,14 @@ payloads are byte-identical.
 Slice 00 Q2 confirmed the response shape live on 2026-08-22 — `self`, `id`, `name`, `archived`,
 `released`, `projectId`, and `releaseDate` **only when a date is set**.
 
+> **Amended 2026-10-15 (Bug #6306): not Cloud-only any more.** Jira Server / Data Center serves no
+> `rest/api/3` and no paged project search, so this read returned nothing there and the Release picker
+> came up empty. Every Jira route now comes from `JiraRestRoutes`, chosen by deployment: Cloud keeps the
+> routes above; Data Center lists projects with `GET rest/api/2/project` (a bare array) and reads
+> `GET rest/api/2/project/{key}/version` (paged, no `status` filter, so Lighthouse filters by status
+> itself). `JiraRouteLiteralsTest` refuses a route written outside `JiraRestRoutes`. Supported from
+> Data Center / Server 8.
+
 **Contract tests recommended for the Jira Versions read** — consumer-driven contracts (e.g. Pact), so a
 shape change is caught before production. Two assumptions are worth pinning explicitly because a live
 API can withdraw either silently: that `releaseDate` may be **absent** rather than null (D11's whole

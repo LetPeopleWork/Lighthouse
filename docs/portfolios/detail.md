@@ -184,7 +184,7 @@ Each delivery uses one selection mode at a time — Manual, Rule-Based, or follo
 If your teams already plan against Releases in Jira, the date you would type into Lighthouse is a date somebody has already entered. Pointing a delivery at that Release stops you keeping the same number in two places.
 
 {: .note}
-Following a Jira Release is a **Premium feature** and requires a Premium license. It is offered only on portfolios whose connection is a Jira one.
+Following a Jira Release is a **Premium feature** and requires a Premium license. It is offered only on portfolios whose connection is a Jira one, and works on Jira Cloud and on Jira Server / Data Center from version 8.
 
 #### Creating one
 
