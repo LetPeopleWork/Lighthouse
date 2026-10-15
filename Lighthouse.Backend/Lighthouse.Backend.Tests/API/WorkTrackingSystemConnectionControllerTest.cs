@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
@@ -8,7 +9,9 @@ using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
+using System.Linq.Expressions;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -19,6 +22,8 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
         private Mock<ILicenseService> licenseServiceMock;
         private Mock<IWorkTrackingConnectorFactory> workTrackingConnectorFactoryMock;
+        private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
+        private Mock<ILogger<WorkTrackingSystemConnectionController>> loggerMock;
 
         [SetUp]
         public void Setup()
@@ -27,6 +32,8 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock = new Mock<IRepository<Team>>();
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             licenseServiceMock = new Mock<ILicenseService>();
+            domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
+            loggerMock = new Mock<ILogger<WorkTrackingSystemConnectionController>>();
 
             var connectorMock = new Mock<IWorkTrackingConnector>();
             connectorMock.Setup(c => c.GetPredefinedAdditionalFields(It.IsAny<WorkTrackingSystemConnection>()))
@@ -299,9 +306,63 @@ namespace Lighthouse.Backend.Tests.API
             repositoryMock.Verify(x => x.Save());
         }
 
+        [TestCase(FailingStep.LookingUpTheTeamsAndPortfolios)]
+        [TestCase(FailingStep.PublishingTheChange)]
+        public async Task UpdateWorkTrackingSystemConnection_StartingUpdatesFailsAfterAStoredSave_AnswersOkAndLogsOneError(FailingStep failingStep)
+        {
+            const int connectionId = 12;
+            var existingConnection = new WorkTrackingSystemConnection { Id = connectionId, Name = "Connection" };
+            repositoryMock.Setup(x => x.GetById(connectionId)).Returns(existingConnection);
+
+            var failure = new InvalidOperationException("the database went away");
+            if (failingStep == FailingStep.LookingUpTheTeamsAndPortfolios)
+            {
+                teamRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Team, bool>>>())).Throws(failure);
+            }
+            else
+            {
+                teamRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Team, bool>>>()))
+                    .Returns(new List<Team> { new() { Id = 2 } }.AsQueryable());
+                portfolioRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Portfolio, bool>>>()))
+                    .Returns(new List<Portfolio>().AsQueryable());
+                domainEventDispatcherMock.Setup(x => x.PublishAsync(It.IsAny<ConnectionFetchShapeChanged>(), It.IsAny<CancellationToken>()))
+                    .ThrowsAsync(failure);
+            }
+
+            var subject = CreateSubject();
+
+            var connectionDto = new WorkTrackingSystemConnectionDto { Id = connectionId, Name = "Connection" };
+            connectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { DisplayName = "Sprint", Reference = "System.Sprint" });
+
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(connectionId, connectionDto);
+
+            var okResult = result.Result as OkObjectResult;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(okResult?.StatusCode, Is.EqualTo(200));
+                Assert.That((okResult?.Value as WorkTrackingSystemConnectionDto)?.Id, Is.EqualTo(connectionId));
+            }
+
+            repositoryMock.Verify(x => x.Save(), Times.Once);
+            loggerMock.Verify(
+                x => x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((state, _) => state.ToString()!.Contains("12")),
+                    failure,
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        public enum FailingStep
+        {
+            LookingUpTheTeamsAndPortfolios,
+            PublishingTheChange,
+        }
+
         private WorkTrackingSystemConnectionController CreateSubject()
         {
-            return new WorkTrackingSystemConnectionController(repositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, licenseServiceMock.Object, workTrackingConnectorFactoryMock.Object, Mock.Of<IDomainEventDispatcher>());
+            return new WorkTrackingSystemConnectionController(repositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, licenseServiceMock.Object, workTrackingConnectorFactoryMock.Object, domainEventDispatcherMock.Object, loggerMock.Object);
         }
     }
 }

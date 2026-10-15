@@ -22,7 +22,8 @@ namespace Lighthouse.Backend.API
         IRepository<Portfolio> portfolioRepository,
         ILicenseService licenseService,
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
-        IDomainEventDispatcher domainEventDispatcher)
+        IDomainEventDispatcher domainEventDispatcher,
+        ILogger<WorkTrackingSystemConnectionController> logger)
         : ControllerBase
     {
         [HttpGet]
@@ -160,10 +161,19 @@ namespace Lighthouse.Backend.API
                 return;
             }
 
-            var teamIds = teamRepository.GetAllByPredicate(t => t.WorkTrackingSystemConnectionId == connection.Id).Select(t => t.Id).ToList();
-            var portfolioIds = portfolioRepository.GetAllByPredicate(p => p.WorkTrackingSystemConnectionId == connection.Id).Select(p => p.Id).ToList();
+            try
+            {
+                var teamIds = teamRepository.GetAllByPredicate(t => t.WorkTrackingSystemConnectionId == connection.Id).Select(t => t.Id).ToList();
+                var portfolioIds = portfolioRepository.GetAllByPredicate(p => p.WorkTrackingSystemConnectionId == connection.Id).Select(p => p.Id).ToList();
 
-            await domainEventDispatcher.PublishAsync(new ConnectionFetchShapeChanged(connection.Id, teamIds, portfolioIds));
+                await domainEventDispatcher.PublishAsync(new ConnectionFetchShapeChanged(connection.Id, teamIds, portfolioIds));
+            }
+#pragma warning disable CA1031 // The save is already stored: failing the request would tell the admin it was not and invite a second save that changes nothing, and every Team and Portfolio still downloads the new fields at its next scheduled update.
+            catch (Exception exception)
+#pragma warning restore CA1031
+            {
+                logger.LogError(exception, "Connection {ConnectionId} was saved, but its Teams and Portfolios could not be told to update now; they will pick up the change at their next scheduled update", connection.Id);
+            }
         }
 
         private void MergeOptions(
