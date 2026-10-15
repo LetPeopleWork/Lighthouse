@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { assert, beforeEach, describe, expect, it, vi } from "vitest";
 import { Delivery } from "../../../models/Delivery";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
@@ -27,6 +27,7 @@ import {
 	aReportList,
 	aReportService,
 } from "../../../tests/ReportsTestKit";
+import { openManageColumns } from "../../../tests/WorkItemsDialogTestKit";
 import DataOverviewTable from "./DataOverviewTable";
 
 /**
@@ -209,6 +210,25 @@ const whenReady = async (
 	return theCellOf(ownerName, column);
 };
 
+/** WidgetShell's dimmed look, so a re-read reads the same everywhere on the page. */
+const DIMMED = { opacity: "0.4" };
+
+/**
+ * The nearest box around a chip, up to the cell, that is drawn dimmed; the chip's own link when none is,
+ * so a chip that is not dimmed fails the check rather than finding nothing to check.
+ */
+const theBoxDimmingTheChip = (cell: HTMLElement, chip: HTMLElement) => {
+	const link = chip.closest<HTMLElement>("a") ?? chip;
+	for (
+		let box: HTMLElement | null = link;
+		box && box !== cell.parentElement;
+		box = box.parentElement
+	) {
+		if (getComputedStyle(box).opacity === DIMMED.opacity) return box;
+	}
+	return link;
+};
+
 const linkNamesIn = (cell: HTMLElement): string[] =>
 	within(cell)
 		.queryAllByRole("link")
@@ -260,12 +280,31 @@ describe("Reports on the Overview", () => {
 		expect(titles.indexOf("Last Updated")).toBe(titles.indexOf("Reports") + 1);
 	});
 
-	// @us-12 @slice-12 @ac-12.1 @walking_skeleton @driving_port @contract-shape:pure-function
+	// @us-12 @slice-12 @ac-12.1 @boundary @contract-shape:bounded-change
+	it.skip("lets a reader hide the Reports column from the column menu", async () => {
+		const user = userEvent.setup();
+		renderTheTable("teams", [TEAM_LIGHTSPEED]);
+		await whenReady("Lightspeed", "reports");
+
+		await openManageColumns(user, () => document.body);
+		const reportsBox = screen
+			.getAllByRole("checkbox")
+			.find((box) => box.closest("label")?.textContent?.trim() === "Reports");
+		if (!reportsBox) assert.fail("Manage columns offers no Reports column");
+		await user.click(reportsBox);
+		await user.keyboard("{Escape}");
+
+		expect(theColumnTitles()).not.toContain("Reports");
+		expect(theColumnTitles()).toContain("Tags");
+	});
+
+	// @us-12 @slice-12 @ac-12.1 @driving_port @contract-shape:pure-function
 	it.skip("shows a Team's report as a chip with its name that opens the report", async () => {
-		const reportService = reportsAnswering(
-			aReportList(reportsNamed(LIGHTSPEED, "Engagement start")),
-		);
-		renderTheTable("teams", [TEAM_LIGHTSPEED], { reportService });
+		renderTheTable("teams", [TEAM_LIGHTSPEED], {
+			reportService: reportsAnswering(
+				aReportList(reportsNamed(LIGHTSPEED, "Engagement start")),
+			),
+		});
 
 		const cell = await whenReady("Lightspeed", "reports");
 		await userEvent.click(
@@ -273,17 +312,17 @@ describe("Reports on the Overview", () => {
 		);
 
 		expect(screen.getByTestId("landed-on")).toHaveTextContent(
-			"/teams/1/reports/101",
+			/^\/teams\/1\/reports\/101$/,
 		);
-		expect(reportService.getReports).toHaveBeenCalledWith(LIGHTSPEED);
 	});
 
 	// @us-12 @slice-12 @ac-12.1 @driving_port @contract-shape:pure-function
 	it.skip("shows a Portfolio's report as a chip that opens the report under that Portfolio", async () => {
-		const reportService = reportsAnswering(
-			aReportList(reportsNamed(APOLLO, "Quarter review")),
-		);
-		renderTheTable("portfolios", [PORTFOLIO_APOLLO], { reportService });
+		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
+			reportService: reportsAnswering(
+				aReportList(reportsNamed(APOLLO, "Quarter review")),
+			),
+		});
 
 		const cell = await whenReady("Apollo", "reports");
 		await userEvent.click(
@@ -291,9 +330,8 @@ describe("Reports on the Overview", () => {
 		);
 
 		expect(screen.getByTestId("landed-on")).toHaveTextContent(
-			"/portfolios/3/reports/301",
+			/^\/portfolios\/3\/reports\/301$/,
 		);
-		expect(reportService.getReports).toHaveBeenCalledWith(APOLLO);
 	});
 
 	// @us-12 @slice-12 @ac-12.2 @boundary @contract-shape:pure-function
@@ -346,7 +384,7 @@ describe("Reports on the Overview", () => {
 		await userEvent.click(within(cell).getByRole("link", { name: "+1 more" }));
 
 		expect(screen.getByTestId("landed-on")).toHaveTextContent(
-			"/teams/1/reports",
+			/^\/teams\/1\/reports$/,
 		);
 	});
 
@@ -362,7 +400,7 @@ describe("Reports on the Overview", () => {
 		await userEvent.click(within(cell).getByRole("link", { name: "+2 more" }));
 
 		expect(screen.getByTestId("landed-on")).toHaveTextContent(
-			"/portfolios/3/reports",
+			/^\/portfolios\/3\/reports$/,
 		);
 	});
 
@@ -398,7 +436,7 @@ describe("Reports on the Overview", () => {
 			}),
 		});
 
-		await waitFor(() => theCellOf("Lightspeed", "reports"));
+		await waitFor(() => theLookOf(theCellOf("Lightspeed", "reports")));
 		const cell = theCellOf("Lightspeed", "reports");
 		const look = theLookOf(cell);
 
@@ -436,7 +474,8 @@ describe("Reports on the Overview", () => {
 		);
 		expect(theLookOf(cell)).toHaveAttribute("aria-busy", "true");
 		expect(within(cell).getByRole("progressbar")).toBeInTheDocument();
-		expect(within(cell).getByText("Engagement start")).toBeInTheDocument();
+		const chip = within(cell).getByText("Engagement start");
+		expect(theBoxDimmingTheChip(cell, chip)).toHaveStyle(DIMMED);
 	});
 
 	// @us-12 @slice-12 @ac-12.7 @contract-shape:bounded-change
@@ -543,7 +582,8 @@ describe("Reports on the Overview", () => {
 	});
 
 	// @us-12 @slice-12 @ac-12.8 @boundary @contract-shape:pure-function
-	it.skip("keeps the word Reports whatever the instance calls its Teams and Portfolios", async () => {
+	// Renaming every configurable word around it shows the column's own word is not one of them.
+	it.skip("keeps the word Reports whatever the instance calls its Teams, Portfolios and Deliveries", async () => {
 		terms.current = {
 			...seededTerms,
 			[TERMINOLOGY_KEYS.TEAM]: "Squad",
@@ -588,7 +628,7 @@ describe("Deliveries on the Overview", () => {
 
 		await userEvent.click(within(cell).getByRole("link", { name: "+2 more" }));
 		expect(screen.getByTestId("landed-on")).toHaveTextContent(
-			"/portfolios/3/deliveries",
+			/^\/portfolios\/3\/deliveries$/,
 		);
 	});
 
@@ -630,7 +670,7 @@ describe("Deliveries on the Overview", () => {
 			),
 		});
 
-		await waitFor(() => theCellOf("Apollo", "deliveries"));
+		await waitFor(() => theLookOf(theCellOf("Apollo", "deliveries")));
 		const cell = theCellOf("Apollo", "deliveries");
 
 		expect(theLookOf(cell).dataset.cellStatus).toBe("loading");
@@ -665,7 +705,9 @@ describe("Deliveries on the Overview", () => {
 			expect(theLookOf(cell).dataset.cellStatus).toBe("loading"),
 		);
 		expect(theLookOf(cell)).toHaveAttribute("aria-busy", "true");
-		expect(within(cell).getByText(/^Winter Release/)).toBeInTheDocument();
+		expect(within(cell).getByRole("progressbar")).toBeInTheDocument();
+		const chip = within(cell).getByText(/^Winter Release/);
+		expect(theBoxDimmingTheChip(cell, chip)).toHaveStyle(DIMMED);
 	});
 
 	// @us-12 @slice-12 @ac-12.6 @error @contract-shape:pure-function

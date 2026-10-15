@@ -3873,7 +3873,8 @@ lists every active {Delivery} and cannot tell "none" from "could not be read".
   "No …" (D67).
 - AC-12.7 A report created, edited or deleted elsewhere shows on the Overview at the next visit; a late answer for
   another owner never lands in a row.
-- AC-12.8 {Deliveries}, {Team} and {Portfolio} render as the configured terms; "Reports" is not configurable.
+- AC-12.8 {Deliveries} renders as the configured term in its column title, its empty text and its failure text;
+  "Reports" is not configurable.
 
 Out: a summary endpoint (one request per row, as {Deliveries} does today; only if it proves slow); sorting or filtering
 by the Reports column; report chips anywhere but the Overview.
@@ -3905,53 +3906,59 @@ story changes, after DELIVER, ≥ 80 %.
 
 ### Wave: DISTILL / [REF] Story #6305 scenarios
 
-*Added 2026-10-15.* Reconciliation passed — 0 contradictions (D64–D68, US-12, DESIGN "Overview cells", DEVOPS #6305).
-All frontend cases are `it.skip` with `@us-12 @slice-12` tag comments; the E2E leg is `testWithDemo.fixme`. Each was
-run once un-skipped: every one fails because the Reports cell, the `data-cell-status` look, the cap or the failure copy
-is missing — none on a harness error. Owned by roadmap steps 12-01 (Deliveries), 12-02 (Reports), 12-03 (E2E).
+*Added 2026-10-15; revised the same day after review.* Reconciliation passed — 0 contradictions (D64–D68, US-12,
+DESIGN "Overview cells", DEVOPS #6305). All frontend cases are `it.skip` with `@us-12 @slice-12` tag comments; the
+E2E leg is `testWithDemo.fixme`. Each frontend case was run once un-skipped: every one fails because the Reports cell
+or the `data-cell-status` look is missing, none on a harness error. The column-menu steps of #3 were proven on the
+existing Tags column. Owned by roadmap steps 12-01 (Deliveries), 12-02 (Reports), 12-03 (E2E).
 
 File key: **T** = `Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.reportsAndDeliveries.test.tsx`
-(renders `DataOverviewTable` with services mocked through `ApiServiceContext`); **D** = `…/DataOverviewTable/DeliveriesChips.test.tsx`;
-**E** = `Lighthouse.EndToEndTests/tests/specs/teams/Reports.spec.ts`.
+(renders `DataOverviewTable` with services mocked through `ApiServiceContext`); **E** =
+`Lighthouse.EndToEndTests/tests/specs/teams/Reports.spec.ts`.
 
 | # | Scenario | AC | File | Kind |
 |---|---|---|---|---|
 | 1 | shows a Reports column on the Teams table, after Tags and before Last Updated | 12.1 | T | happy |
 | 2 | shows a Reports column on the Portfolios table, after Deliveries and before Last Updated | 12.1 | T | happy |
-| 3 | shows a Team's report as a chip with its name that opens the report | 12.1 | T | happy |
-| 4 | shows a Portfolio's report as a chip that opens the report under that Portfolio | 12.1 | T | happy |
-| 5 | shows the first two reports by name, A to Z, whatever order they arrive in | 12.2 | T | boundary |
-| 6–9 | with 1 / 2 / 3 / 7 reports shows the chips and "+N more" (`it.skip.each`, 4 rows) | 12.2, 12.3 | T | boundary |
-| 10 | opens the Team's Reports tab from +N more | 12.2 | T | happy |
-| 11 | opens the Portfolio's Reports tab from +N more | 12.2 | T | happy |
-| 12 | says No Reports for an owner without any | 12.3 | T | boundary |
-| 13 | still shows a chip for a report of a type this version cannot show | 12.1 | T | boundary |
-| 14 | shows a small spinner, not No Reports, while the reports are on their way | 12.5 | T | boundary |
-| 15 | keeps the chips on screen, dimmed under a spinner, while the reports are read again | 12.5, 12.7 | T | boundary |
-| 16 | shows a report created elsewhere once the owner's reports are read again | 12.7 | T | happy |
-| 17 | says Couldn't load Reports when they could not be read, never No Reports | 12.6 | T | error |
-| 18 | keeps one owner's failure to its own row | 12.6 | T | error |
-| 19 | never lets a late answer for one Team land in another Team's row | 12.7 | T | error |
-| 20 | keeps the word Reports whatever the instance calls its Teams and Portfolios | 12.8 | T | boundary |
-| 21 | shows the first two Deliveries in the order the server answers, then +N more to the Portfolio's Deliveries | 12.4 | T | happy |
-| 22 | shows two Deliveries without any +N more | 12.4 | T | boundary |
-| 23 | says No Deliveries for a Portfolio without any | 12.4 | T | boundary |
-| 24 | shows a small spinner, not No Deliveries, while the Deliveries are on their way | 12.5 | T | boundary |
-| 25 | keeps the Delivery chips on screen, dimmed under a spinner, while they are read again | 12.5 | T | boundary |
-| 26 | says Couldn't load Deliveries when they could not be read, never No Deliveries | 12.6 | T | error |
-| 27 | names the Deliveries in the instance's own word, empty and failed alike | 12.8, 12.6 | T | error |
-| 28 | says the Deliveries couldn't be loaded, never that there are none | 12.6 | D | error |
-| 29 | shows a spinner, not No Deliveries, while the Deliveries are on their way | 12.5 | D | boundary |
-| 30 | shows the first two Deliveries in the order the server answers, then +N more to the Portfolio's Deliveries | 12.4 | D | boundary |
-| 31 | a report a coach created shows beside its Team on the Overview and opens from there | 12.1, 12.7 | E | happy (thin E2E leg) |
+| 3 | lets a reader hide the Reports column from the column menu | 12.1 | T | boundary |
+| 4 | shows a Team's report as a chip with its name that opens the report | 12.1 | T | happy |
+| 5 | shows a Portfolio's report as a chip that opens the report under that Portfolio | 12.1 | T | happy |
+| 6 | shows the first two reports by name, A to Z, whatever order they arrive in | 12.2 | T | boundary |
+| 7–10 | with 1 / 2 / 3 / 7 reports shows the chips and "+N more" (`it.skip.each`, 4 rows) | 12.2 | T | boundary |
+| 11 | opens the Team's Reports tab from +N more | 12.2 | T | happy |
+| 12 | opens the Portfolio's Reports tab from +N more | 12.2 | T | happy |
+| 13 | says No Reports for an owner without any | 12.3 | T | boundary |
+| 14 | still shows a chip for a report of a type this version cannot show | 12.1 | T | boundary |
+| 15 | shows a small spinner, not No Reports, while the reports are on their way | 12.5 | T | boundary |
+| 16 | keeps the chips on screen, dimmed under a spinner, while the reports are read again | 12.5, 12.7 | T | boundary |
+| 17 | shows a report created elsewhere once the owner's reports are read again | 12.7 | T | happy |
+| 18 | says Couldn't load Reports when they could not be read, never No Reports | 12.6 | T | error |
+| 19 | keeps one owner's failure to its own row | 12.6 | T | error |
+| 20 | never lets a late answer for one Team land in another Team's row | 12.7 | T | error |
+| 21 | keeps the word Reports whatever the instance calls its Teams, Portfolios and Deliveries | 12.8 | T | boundary |
+| 22 | shows the first two Deliveries in the order the server answers, then +N more to the Portfolio's Deliveries | 12.4 | T | happy |
+| 23 | shows two Deliveries without any +N more | 12.4 | T | boundary |
+| 24 | says No Deliveries for a Portfolio without any | 12.4 | T | boundary |
+| 25 | shows a small spinner, not No Deliveries, while the Deliveries are on their way | 12.5 | T | boundary |
+| 26 | keeps the Delivery chips on screen, dimmed under a spinner, while they are read again | 12.5 | T | boundary |
+| 27 | says Couldn't load Deliveries when they could not be read, never No Deliveries | 12.6 | T | error |
+| 28 | names the Deliveries in the instance's own word, empty and failed alike | 12.8, 12.6 | T | error |
+| 29 | a report a coach created shows beside its Team on the Overview and opens from there | 12.1, 12.7 | E | happy (thin E2E leg) |
 
-31 cases: 9 happy, 16 boundary, 6 error (71 % non-happy). Pinned for the crafter: the grid fields `reports` and
-`deliveries`, `[data-cell-status]` = `loading` / `error` / `ready` with `aria-busy="true"` while loading, a `progressbar`
-while loading, the Deliveries key `['deliveries', 'portfolio', id]` and the owner list key `reportsQueryKeyOf`.
+29 cases (28 frontend, 1 E2E): 9 happy, 15 boundary, 5 error. Error paths alone are 17 %: each cell has a single
+failure, so the error rows are the failure look per cell, a failure kept to its own row, a late answer kept to its own
+row, and the configured word in the failure text. Boundary and error together are 69 %.
 
-Revised, not pending: in `DeliveriesChips.test.tsx` "should handle API errors silently and show no deliveries" is
-removed (D67 contradicts it; #28 replaces it) and the four-chip colour case now shows two Deliveries (D66). Test
-harnesses that will need a query cache once the cells read through TanStack Query already have one:
-`DataOverviewTable.test.tsx` (plus a report service answering an empty list) and
-`DeliveriesChips.likelihoodCopy.test.tsx`. POMs added for #31: `OverviewPage.teamReportsCell` / `openTeamReport`
-(wait for `data-cell-status="ready"`), `ReportPage.readName`.
+Pinned for the crafter: the grid fields `reports` and `deliveries`; `[data-cell-status]` = `loading` / `error` /
+`ready`, with `aria-busy="true"` and a `progressbar` while loading; on a re-read the nearest box between a chip and its
+cell is drawn at opacity 0.4, WidgetShell's value; the Deliveries key `['deliveries', 'portfolio', id]` and the owner
+list key `reportsQueryKeyOf`. Hideability (#3) relies on DataGridBase's `hideable` flag and the existing Manage columns
+menu; only the Reports column is pinned, the Deliveries column keeps its existing behaviour.
+
+Revised, not pending, in `DeliveriesChips.test.tsx`: "should handle API errors silently and show no deliveries" is
+removed because D67 contradicts it (#27 covers the failure at the table), and the colour case now shows two Deliveries
+(D66) and checks each chip's background colour. Two harnesses now render under a query cache, so 12-01 and 12-02 need
+no harness change: `DataOverviewTable.test.tsx` (also given a report service answering an empty list) and
+`DeliveriesChips.likelihoodCopy.test.tsx` (now through `ApiServiceContext.Provider` and `createMockApiServiceContext`).
+POMs added for #29: `OverviewPage.teamReportsCell` / `openTeamReport` (wait for `data-cell-status="ready"`),
+`ReportPage.readName`.

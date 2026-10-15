@@ -2,26 +2,24 @@ import { screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Delivery } from "../../../models/Delivery";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import {
+	createMockApiServiceContext,
+	createMockDeliveryService,
+} from "../../../tests/MockApiServiceProvider";
 import { renderWithQueryClient } from "../../../tests/renderWithQueryClient";
 import { DeliveriesChips } from "./DeliveriesChips";
 
 /**
- * Story #5587 (ADR-113), slice-03 — the portfolio OVERVIEW chip, ruled in scope by the maintainer
- * 2026-07-29.
+ * The Overview's Delivery chip shows one number for all of a Delivery's Features together. A bare
+ * "Likelihood: NN%" reads as if it were any single Feature's chance, so the chip says whose chance it is.
  *
- * D1 scopes the relabel to the delivery detail header and the breakdown column. The overview chip
- * renders the same joint number as `Likelihood: NN%`, so a reader there has no cue that it means
- * "all of these together" — the exact misreading D1 exists to prevent, one surface over. The ruling
- * extends slice-03 to cover it.
+ * The Features word comes from the instance's terminology and is changed per test: a mock that always
+ * said "Features" could not catch a hard-coded word surviving a rename. The word is shown exactly as
+ * configured, never lower-cased, because lower-casing mangles acronyms ("PIs" would become "pis").
  *
- * Constraint A (terminology): the noun comes from `getTerm(TERMINOLOGY_KEYS.FEATURES)`, and the
- * mock below is parameterised per test — a mock that hardcodes "Features" cannot fail on the defect
- * it is meant to catch, which is a literal surviving a rename. Ruled 2026-07-29: the term renders
- * VERBATIM, never lower-cased, because lower-casing mangles acronym terms ("PIs" -> "pis").
- *
- * Constraint B (no false promise): the delivery number is <= every row but MAY EQUAL one (D5).
- *
- * The second block holds the states the relabel must leave alone.
+ * The joint number is never above any single Feature's, but it can equal one, so the chip must not
+ * promise it is lower. The second block holds the states the joint wording must leave alone.
  */
 
 const { terminology } = vi.hoisted(() => ({
@@ -34,17 +32,7 @@ vi.mock("../../../services/TerminologyContext", () => ({
 	}),
 }));
 
-const { getByPortfolio } = vi.hoisted(() => ({
-	getByPortfolio: vi.fn(),
-}));
-
-vi.mock("../../../services/Api/ApiServiceContext", () => ({
-	ApiServiceContext: {
-		_currentValue: {
-			deliveryService: { getByPortfolio },
-		},
-	},
-}));
+const getByPortfolio = vi.fn();
 
 const PortfolioId = 7;
 
@@ -64,7 +52,16 @@ function deliveryWith(likelihood: number | null): Delivery {
 async function renderChips(): Promise<void> {
 	renderWithQueryClient(
 		<MemoryRouter>
-			<DeliveriesChips portfolioId={PortfolioId} />
+			<ApiServiceContext.Provider
+				value={createMockApiServiceContext({
+					deliveryService: {
+						...createMockDeliveryService(),
+						getByPortfolio,
+					},
+				})}
+			>
+				<DeliveriesChips portfolioId={PortfolioId} />
+			</ApiServiceContext.Provider>
 		</MemoryRouter>,
 	);
 
@@ -79,7 +76,7 @@ beforeEach(() => {
 	});
 });
 
-describe("DeliveriesChips joint framing (#5587 slice-03)", () => {
+describe("DeliveriesChips says the number covers all Features together", () => {
 	it("says the number covers all of them, not a bare likelihood", async () => {
 		await renderChips();
 
@@ -101,10 +98,8 @@ describe("DeliveriesChips joint framing (#5587 slice-03)", () => {
 	});
 });
 
-describe("DeliveriesChips states the relabel must leave alone", () => {
-	// Green today and must STAY green: today's copy makes no such claim, and the new copy must not
-	// introduce one either. Constraint B - equality with a row is legitimate (D5). Kept out of the
-	// skipped block deliberately: it passes before the change, so as a RED it could never fail.
+describe("DeliveriesChips states the joint wording must leave alone", () => {
+	// The joint number can equal a single Feature's, so the chip must never claim it is lower.
 	it("never promises the number is below every feature", async () => {
 		await renderChips();
 
@@ -112,6 +107,7 @@ describe("DeliveriesChips states the relabel must leave alone", () => {
 
 		expect(chip.textContent).not.toMatch(/lower|below|worst|least likely/i);
 	});
+
 	it("still reports that an unforecastable delivery cannot be forecast", async () => {
 		const delivery = deliveryWith(null);
 		delivery.teamsWithoutForecast = ["Beta"];
@@ -131,6 +127,8 @@ describe("DeliveriesChips states the relabel must leave alone", () => {
 
 		await renderChips();
 
-		expect(screen.getByText(/Autumn Release/).textContent).not.toContain("81");
+		const chip = screen.getByText(/Autumn Release/);
+		expect(chip.textContent).toContain("Not enough data");
+		expect(chip.textContent).not.toContain("81");
 	});
 });

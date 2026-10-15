@@ -9,6 +9,7 @@ import {
 	createMockApiServiceContext,
 	createMockDeliveryService,
 } from "../../../tests/MockApiServiceProvider";
+import { certainColor, riskyColor } from "../../../utils/theme/colors";
 import { DeliveriesChips } from "./DeliveriesChips";
 
 const mockDeliveryService = {
@@ -115,54 +116,6 @@ describe("DeliveriesChips", () => {
 		expect(mockDeliveryService.getByPortfolio).toHaveBeenCalledWith(100);
 	});
 
-	// @us-12 @slice-12 @ac-12.6 @error @contract-shape:pure-function
-	it.skip("says the Deliveries couldn't be loaded, never that there are none", async () => {
-		mockDeliveryService.getByPortfolio.mockRejectedValue(
-			new Error("API Error"),
-		);
-
-		renderWithProviders(<DeliveriesChips portfolioId={1} />);
-
-		expect(
-			await screen.findByText("Couldn't load Deliveries"),
-		).toBeInTheDocument();
-		expect(screen.queryByText("No Deliveries")).toBeNull();
-	});
-
-	// @us-12 @slice-12 @ac-12.5 @boundary @contract-shape:pure-function
-	it.skip("shows a spinner, not No Deliveries, while the Deliveries are on their way", () => {
-		mockDeliveryService.getByPortfolio.mockReturnValue(
-			new Promise(() => undefined),
-		);
-
-		renderWithProviders(<DeliveriesChips portfolioId={1} />);
-
-		expect(screen.getByRole("progressbar")).toBeInTheDocument();
-		expect(screen.queryByText("No Deliveries")).toBeNull();
-	});
-
-	// @us-12 @slice-12 @ac-12.4 @boundary @contract-shape:pure-function
-	it.skip("shows the first two Deliveries in the order the server answers, then +N more to the Portfolio's Deliveries", async () => {
-		mockDeliveryService.getByPortfolio.mockResolvedValue({
-			active: [
-				getMockDelivery({ id: 1, name: "Winter Release", portfolioId: 100 }),
-				getMockDelivery({ id: 2, name: "Autumn Release", portfolioId: 100 }),
-				getMockDelivery({ id: 3, name: "Summer Release", portfolioId: 100 }),
-			],
-			archived: [],
-		});
-
-		renderWithProviders(<DeliveriesChips portfolioId={100} />);
-
-		const more = await screen.findByRole("link", { name: "+1 more" });
-		const links = screen.getAllByRole("link");
-		expect(links).toHaveLength(3);
-		expect(links[0]).toHaveTextContent(/^Winter Release/);
-		expect(links[1]).toHaveTextContent(/^Autumn Release/);
-		expect(more).toHaveAttribute("href", "/portfolios/100/deliveries");
-		expect(screen.queryByText(/Summer Release/)).toBeNull();
-	});
-
 	it("should navigate to portfolio deliveries page when chip is clicked", async () => {
 		const mockDeliveries = [
 			getMockDelivery({
@@ -189,7 +142,7 @@ describe("DeliveriesChips", () => {
 		expect(chipLink).toHaveAttribute("href", "/portfolios/100/deliveries");
 	});
 
-	it("should display chips with correct forecast level colors for different likelihood percentages", async () => {
+	it("colours each chip by how likely its Delivery is", async () => {
 		const mockDeliveries = [
 			getMockDelivery({
 				id: 1,
@@ -212,9 +165,14 @@ describe("DeliveriesChips", () => {
 
 		renderWithProviders(<DeliveriesChips portfolioId={100} />);
 
-		await waitFor(() => {
-			expect(screen.getByText(/Risky Delivery/)).toBeInTheDocument();
-			expect(screen.getByText(/Certain Delivery/)).toBeInTheDocument();
+		const risky = await screen.findByText(/Risky Delivery/);
+		const certain = screen.getByText(/Certain Delivery/);
+
+		expect(risky.closest(".MuiChip-root")).toHaveStyle({
+			backgroundColor: riskyColor,
+		});
+		expect(certain.closest(".MuiChip-root")).toHaveStyle({
+			backgroundColor: certainColor,
 		});
 	});
 
