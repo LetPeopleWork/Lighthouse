@@ -44,7 +44,12 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         public StoredFeatures GetStoredFeatureCreatedDates()
             => new(Context.Features
                 .Select(feature => new { feature.ReferenceId, feature.CreatedDate })
-                .ToDictionary(feature => feature.ReferenceId, feature => feature.CreatedDate, StringComparer.Ordinal));
+                .AsEnumerable()
+                .GroupBy(feature => feature.ReferenceId, StringComparer.Ordinal)
+                .ToDictionary(
+                    sameId => sameId.Key,
+                    sameId => sameId.Select(feature => feature.CreatedDate).Where(created => created != DateTime.MinValue).Min(),
+                    StringComparer.Ordinal));
 
         private IQueryable<Feature> GetFeatures()
         {

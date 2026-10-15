@@ -97,7 +97,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         /// every Portfolio and the level above their Features alike, because any stored Feature counts.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice01)]
         [Category("story-6301-only-features-as-parent-candidates")]
         [Category("slice-01")]
         public async Task The_stored_Feature_snapshot_holds_every_Feature_with_its_created_date_the_level_above_included()
@@ -122,7 +121,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         /// the empty date Jira sends for some migrated issues is not a known one.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice01)]
         [Category("story-6301-only-features-as-parent-candidates")]
         [Category("slice-01")]
         [Category("edge")]

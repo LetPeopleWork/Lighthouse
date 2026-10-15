@@ -286,7 +286,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// Lighthouse holds, so an item caused by one of them and by an incident is placed under it.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice01)]
         [Category("edge")]
         public async Task A_Feature_stored_only_as_the_level_above_a_Portfolio_counts_as_a_Feature_Lighthouse_holds()
         {

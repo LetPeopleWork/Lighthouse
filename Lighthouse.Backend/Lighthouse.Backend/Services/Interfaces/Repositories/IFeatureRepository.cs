@@ -13,7 +13,9 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
 
         /// <summary>
         /// The reference id and created date of every Feature held, including the ones stored only as the
-        /// level above a Portfolio's own. Read once per fetch, for the same reason as the member above.
+        /// level above a Portfolio's own. Read once per fetch, for the same reason as the member above. A
+        /// reference id stored more than once answers with its earliest known date; the empty date Jira sends
+        /// for some migrated issues is not a known one.
         /// </summary>
         StoredFeatures GetStoredFeatureCreatedDates();
     }
