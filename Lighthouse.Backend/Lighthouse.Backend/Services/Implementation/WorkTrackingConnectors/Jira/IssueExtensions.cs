@@ -99,7 +99,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// those naming an outwardIssue.
         ///
         /// Two links to the same issue are one parent. Links to different issues are all handed back, each
-        /// with the day its standing link was added when the issue's history records one, and the choice
+        /// with the moment its standing link was added when the issue's history records one, and the choice
         /// among them is left to the refresh, because only it knows which of them are Features Lighthouse
         /// holds.
         /// </summary>

@@ -42,8 +42,8 @@ namespace Lighthouse.Backend.Models
 
         /// <summary>
         /// Where an item whose links name several issues hangs. One link or none is not a question: the
-        /// caller stores it as it is. A Team's items hang under Features, so every candidate this instance
-        /// does not hold as a Feature is set aside first. Among what is left, the link made first wins,
+        /// caller stores it as it is. A Team's items hang under Features, so every candidate Lighthouse does
+        /// not hold as a Feature is set aside first. Among what is left, the link made first wins,
         /// then the Feature created first, then the lowest key, so the same links always give the same
         /// answer and only an empty narrowing leaves the item unplaced.
         /// </summary>

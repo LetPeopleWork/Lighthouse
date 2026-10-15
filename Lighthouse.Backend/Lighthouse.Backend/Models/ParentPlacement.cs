@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Models
     }
 
     /// <summary>
-    /// Every Feature this instance holds, by reference id, with the date it was created when that is known.
+    /// Every Feature Lighthouse holds, by reference id, with the date it was created when that is known.
     /// Read once per fetch and only ever asked questions, so whoever places a parent cannot write through it.
     /// </summary>
     public sealed class StoredFeatures

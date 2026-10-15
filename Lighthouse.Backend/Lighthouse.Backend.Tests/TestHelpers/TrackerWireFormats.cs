@@ -179,7 +179,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             return "{\"key\": \"" + key + "\", \"fields\": " + fields + ", \"changelog\": " + changelog + "}";
         }
 
-        /// <summary>How Jira writes an instant in an issue and in its history. The instant is taken to be UTC already.</summary>
+        /// <summary>How Jira writes an instant in an issue's own fields. The instant is taken to be UTC already.</summary>
         public static string AnInstant(DateTime at)
             => at.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'+0000'", CultureInfo.InvariantCulture);
 

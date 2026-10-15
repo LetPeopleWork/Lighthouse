@@ -80,10 +80,12 @@ namespace Lighthouse.Backend.Factories
 
         private const string ToPropertyName = "to";
 
-        [GeneratedRegex(@"^[A-Z][A-Z0-9_]+-[0-9]+$", RegexOptions.CultureInvariant)]
+        private const string IssueKeyPattern = "[A-Z][A-Z0-9_]+-[0-9]+";
+
+        [GeneratedRegex("^" + IssueKeyPattern + "$", RegexOptions.CultureInvariant)]
         private static partial Regex AnIssueKey();
 
-        [GeneratedRegex(@"\b[A-Z][A-Z0-9_]+-[0-9]+\b", RegexOptions.CultureInvariant)]
+        [GeneratedRegex(@"\b" + IssueKeyPattern + @"\b", RegexOptions.CultureInvariant)]
         private static partial Regex AnIssueKeyInASentence();
 
         // Neither Cloud nor Data Center promises an order for the histories, so they are replayed by when
