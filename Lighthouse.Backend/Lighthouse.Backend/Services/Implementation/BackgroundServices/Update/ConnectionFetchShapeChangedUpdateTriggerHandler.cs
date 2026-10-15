@@ -17,8 +17,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 domainEvent.TeamIds.Count,
                 domainEvent.PortfolioIds.Count);
 
-            // Teams are queued first so that a Portfolio updating in the same round forecasts over Team data
-            // that already carries the changed fields.
+            // Teams are queued first, so unless one is already running when the change arrives, a Portfolio
+            // updating in the same round forecasts over Team data that already carries the changed fields.
             foreach (var teamId in domainEvent.TeamIds)
             {
                 teamUpdater.TriggerUpdate(teamId);

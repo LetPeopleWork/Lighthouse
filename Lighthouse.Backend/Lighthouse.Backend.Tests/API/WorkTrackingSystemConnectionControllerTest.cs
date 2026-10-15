@@ -355,6 +355,31 @@ namespace Lighthouse.Backend.Tests.API
                 Times.Once);
         }
 
+        [Test]
+        public async Task UpdateWorkTrackingSystemConnection_FieldAddedToAConnectionNoTeamOrPortfolioUses_PublishesNothing()
+        {
+            const int connectionId = 12;
+            var existingConnection = new WorkTrackingSystemConnection { Id = connectionId, Name = "Connection" };
+            repositoryMock.Setup(x => x.GetById(connectionId)).Returns(existingConnection);
+            teamRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Team, bool>>>()))
+                .Returns(new List<Team>().AsQueryable());
+            portfolioRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Portfolio, bool>>>()))
+                .Returns(new List<Portfolio>().AsQueryable());
+
+            var subject = CreateSubject();
+
+            var connectionDto = new WorkTrackingSystemConnectionDto { Id = connectionId, Name = "Connection" };
+            connectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { DisplayName = "Sprint", Reference = "System.Sprint" });
+
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(connectionId, connectionDto);
+
+            Assert.That((result.Result as OkObjectResult)?.StatusCode, Is.EqualTo(200));
+            repositoryMock.Verify(x => x.Save(), Times.Once);
+            domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(It.IsAny<ConnectionFetchShapeChanged>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
         public enum FailingStep
         {
             LookingUpTheTeamsAndPortfolios,

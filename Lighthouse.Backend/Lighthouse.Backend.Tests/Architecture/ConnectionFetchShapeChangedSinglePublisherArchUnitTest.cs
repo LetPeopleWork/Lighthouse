@@ -29,10 +29,20 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .DoNotHaveFullNameContaining(typeof(WorkTrackingSystemConnectionController).FullName!).And()
                 .DoNotHaveFullNameContaining(typeof(ConnectionFetchShapeChanged).FullName!).And()
                 .DoNotHaveFullNameContaining(typeof(ConnectionFetchShapeChangedUpdateTriggerHandler).FullName!).And()
-                .DoNotHaveFullNameContaining(typeof(Program).FullName! + "+").And()
+                .DoNotHaveFullNameStartingWith(typeof(Program).FullName! + "+").And()
                 .AreNot(typeof(Program))
                 .Should().NotDependOnAny(Types().That().Are(typeof(ConnectionFetchShapeChanged)))
                 .Because(Because)
+                .Check(Architecture);
+        }
+
+        [Test]
+        public void TheConnectionSave_IsSeenToPublishThatAConnectionsFetchShapeChanged()
+        {
+            Types().That()
+                .HaveFullNameContaining(typeof(WorkTrackingSystemConnectionController).FullName!)
+                .Should().DependOnAny(Types().That().Are(typeof(ConnectionFetchShapeChanged)))
+                .Because("the rule above only means something while it can see the one save that does publish the event")
                 .Check(Architecture);
         }
     }

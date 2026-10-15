@@ -163,10 +163,11 @@ namespace Lighthouse.Backend.API
 
             try
             {
-                var teamIds = teamRepository.GetAllByPredicate(t => t.WorkTrackingSystemConnectionId == connection.Id).Select(t => t.Id).ToList();
-                var portfolioIds = portfolioRepository.GetAllByPredicate(p => p.WorkTrackingSystemConnectionId == connection.Id).Select(p => p.Id).ToList();
-
-                await domainEventDispatcher.PublishAsync(new ConnectionFetchShapeChanged(connection.Id, teamIds, portfolioIds));
+                var fetchShapeChange = FetchShapeChangeForUsersOf(connection);
+                if (fetchShapeChange != null)
+                {
+                    await domainEventDispatcher.PublishAsync(fetchShapeChange);
+                }
             }
 #pragma warning disable CA1031 // The save is already stored: failing the request would tell the admin it was not and invite a second save that changes nothing, and every Team and Portfolio still downloads the new fields at its next scheduled update.
             catch (Exception exception)
@@ -174,6 +175,21 @@ namespace Lighthouse.Backend.API
             {
                 logger.LogError(exception, "Connection {ConnectionId} was saved, but its Teams and Portfolios could not be told to update now; they will pick up the change at their next scheduled update", connection.Id);
             }
+        }
+
+        // Kept synchronous so the architecture test sees the controller build this event: in a Release
+        // build an async method's body moves into a struct that the test cannot attribute to its owner.
+        private ConnectionFetchShapeChanged? FetchShapeChangeForUsersOf(WorkTrackingSystemConnection connection)
+        {
+            var teamIds = teamRepository.GetAllByPredicate(t => t.WorkTrackingSystemConnectionId == connection.Id).Select(t => t.Id).ToList();
+            var portfolioIds = portfolioRepository.GetAllByPredicate(p => p.WorkTrackingSystemConnectionId == connection.Id).Select(p => p.Id).ToList();
+
+            if (teamIds.Count == 0 && portfolioIds.Count == 0)
+            {
+                return null;
+            }
+
+            return new ConnectionFetchShapeChanged(connection.Id, teamIds, portfolioIds);
         }
 
         private void MergeOptions(
