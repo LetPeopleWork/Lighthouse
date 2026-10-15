@@ -14,9 +14,8 @@ namespace Lighthouse.Backend.Factories
 
         private const string DefaultRankField = "customfield_10019";
 
-        // flaggedField is retained on the contract (callers still resolve the flagged custom-field key), but the
-        // synthetic "Flagged" label injection is gone (ADR-071 slice-05): the flag now flows only through the
-        // predefined additional field (generic id-keyed path), so the factory no longer consumes this value.
+        // flaggedField stays on the signature because callers still resolve the flagged custom-field key, but the
+        // flag now reaches a work item only through its additional field, so this factory no longer reads it.
         public Issue CreateIssueFromJson(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string? rankFieldName = null, string? flaggedField = null)
         {
             // If the rank field is not set, use the default one and try our luck
@@ -309,8 +308,8 @@ namespace Lighthouse.Backend.Factories
             return DateTime.SpecifyKind(createdDate, DateTimeKind.Utc);
         }
 
-        // Epic #5687 D6: an instant, kept as UTC. Missing or unreadable stays null - a sentinel would claim
-        // knowledge the tracker never gave, and a null resolves the next update to a full fetch (D8).
+        // Missing or unreadable stays null rather than a sentinel, which would claim knowledge the tracker never
+        // gave; a null makes the next update download everything again.
         private static DateTime? GetUpdatedDateFromFields(JsonElement fields)
         {
             var updatedAsString = fields.GetFieldValue(JiraFieldNames.UpdatedFieldName);
