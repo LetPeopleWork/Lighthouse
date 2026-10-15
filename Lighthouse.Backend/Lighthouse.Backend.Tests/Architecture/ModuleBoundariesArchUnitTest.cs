@@ -33,6 +33,16 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string StoredRecordsPattern =
             @"^Lighthouse\.Backend\.(Data|Services\.(Implementation|Interfaces)\.Repositories)($|\..*)";
 
+        private const string DataLayerPattern = @"^Lighthouse\.Backend\.Data($|\..*)";
+
+        private static readonly string[] ParentPlacementKernelTypes =
+        [
+            "Lighthouse.Backend.Models.ParentResolution",
+            "Lighthouse.Backend.Models.ParentCandidate",
+            "Lighthouse.Backend.Models.ParentPlacement",
+            "Lighthouse.Backend.Models.StoredFeatures",
+        ];
+
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         private static readonly GivenTypesConjunctionWithDescription WorkTrackingIntegrationModule =
@@ -113,6 +123,24 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
+        public void ParentPlacementKernel_DependsOnNoServiceOrData()
+        {
+            Types().That().HaveFullName(ParentPlacementKernelTypes[0])
+                .Or().HaveFullName(ParentPlacementKernelTypes[1])
+                .Or().HaveFullName(ParentPlacementKernelTypes[2])
+                .Or().HaveFullName(ParentPlacementKernelTypes[3])
+                .Should().NotDependOnAny(
+                    Types().That().ResideInNamespaceMatching(ServiceLayerPattern)
+                        .Or().ResideInNamespaceMatching(DataLayerPattern))
+                .Because(
+                    "deciding under which issue a record hangs must be checkable from what it is handed alone. " +
+                    "If the pick could reach a repository, the database context, a connector or a logging service, " +
+                    "its answer could change with what it happened to read, and a wrongly placed parent looks " +
+                    "exactly like correct data.")
+                .Check(Architecture);
+        }
+
+        [Test]
         public void NamedModules_AreNonEmpty()
         {
             using (Assert.EnterMultipleScope())
@@ -126,6 +154,10 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Assert.That(RefinementModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(ReportsModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(Types().That().ResideInNamespaceMatching(StoredRecordsPattern).GetObjects(Architecture), Is.Not.Empty);
+                foreach (var kernelType in ParentPlacementKernelTypes)
+                {
+                    Assert.That(Types().That().HaveFullName(kernelType).GetObjects(Architecture), Is.Not.Empty, kernelType);
+                }
             }
         }
     }
