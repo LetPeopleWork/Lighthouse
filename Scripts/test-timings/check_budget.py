@@ -8,18 +8,6 @@ MINIMUM_PYTHON = (3, 12)
 CANNOT_JUDGE = 2
 
 
-class ExitStatus(int):
-    """An exit status that also reads as the reason it was given."""
-
-    def __new__(cls, status: int, reason: str) -> "ExitStatus":
-        exit_status = super().__new__(cls, status)
-        exit_status.reason = reason
-        return exit_status
-
-    def __str__(self) -> str:
-        return self.reason
-
-
 def require_python(version_info: tuple) -> None:
     if tuple(version_info[:2]) < MINIMUM_PYTHON:
         found = ".".join(str(part) for part in version_info[:3])
@@ -29,7 +17,7 @@ def require_python(version_info: tuple) -> None:
         )
         print(f"::error::{reason}")
         # The interpreter exits with an integer status silently, so the reason is printed above.
-        raise SystemExit(ExitStatus(CANNOT_JUDGE, reason))
+        raise SystemExit(CANNOT_JUDGE)
 
 
 # Refuse before importing anything an older interpreter might not be able to load.

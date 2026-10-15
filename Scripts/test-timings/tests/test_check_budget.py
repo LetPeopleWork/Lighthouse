@@ -683,12 +683,13 @@ class AnOldPythonIsRefused(unittest.TestCase):
         import check_budget
 
         # The refusal prints a workflow annotation, which would surface on the CI job that runs these tests.
-        with contextlib.redirect_stdout(io.StringIO()), self.assertRaises(SystemExit) as refusal:
+        printed = io.StringIO()
+        with contextlib.redirect_stdout(printed), self.assertRaises(SystemExit) as refusal:
             check_budget.require_python((3, 11, 9, "final", 0))
 
         self.assertNotIn(refusal.exception.code, (0, None))
-        self.assertIn("3.12", str(refusal.exception.code))
-        self.assertIn("3.11.9", str(refusal.exception.code))
+        self.assertIn("3.12", printed.getvalue())
+        self.assertIn("3.11.9", printed.getvalue())
         self.assertEqual(refusal.exception.code, 2)
 
     def test_an_interpreter_older_than_3_12_is_refused_with_one_error_annotation_and_no_verdict(self):
