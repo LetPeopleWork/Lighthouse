@@ -8,30 +8,6 @@ type OptionalFeature = {
 	enabled: boolean;
 };
 
-async function switchOptionalFeature(
-	request: APIRequestContext,
-	key: string,
-	enabled: boolean,
-): Promise<void> {
-	const current = await request.get(`/api/latest/optionalfeatures/${key}`);
-	if (!current.ok()) {
-		throw new Error(
-			`Failed to read optional feature ${key}: ${current.status()}`,
-		);
-	}
-
-	// The update binds a whole feature, so the row goes back as it came with only the switch changed.
-	const feature = (await current.json()) as OptionalFeature;
-	const response = await request.post(`/api/latest/optionalfeatures/${key}`, {
-		data: { ...feature, enabled },
-	});
-	if (!response.ok()) {
-		throw new Error(
-			`Failed to switch optional feature ${key} to ${enabled}: ${response.status()}`,
-		);
-	}
-}
-
 /**
  * Letting this instance own the order of Features ships switched off, and the switch outlives the
  * spec that flips it. A spec that hands the order over should start from off, so it really clicks
@@ -41,5 +17,23 @@ export async function switchFeatureOrdering(
 	request: APIRequestContext,
 	enabled: boolean,
 ): Promise<void> {
-	await switchOptionalFeature(request, FEATURE_ORDERING_KEY, enabled);
+	const url = `/api/latest/optionalfeatures/${FEATURE_ORDERING_KEY}`;
+
+	const current = await request.get(url);
+	if (!current.ok()) {
+		throw new Error(
+			`Failed to read optional feature ${FEATURE_ORDERING_KEY}: ${current.status()}`,
+		);
+	}
+
+	// The update binds a whole feature, so the row goes back as it came with only the switch changed.
+	const feature = (await current.json()) as OptionalFeature;
+	const response = await request.post(url, {
+		data: { ...feature, enabled },
+	});
+	if (!response.ok()) {
+		throw new Error(
+			`Failed to switch optional feature ${FEATURE_ORDERING_KEY} to ${enabled}: ${response.status()}`,
+		);
+	}
 }
