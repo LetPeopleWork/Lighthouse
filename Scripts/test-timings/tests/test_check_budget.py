@@ -1,4 +1,6 @@
+import contextlib
 import csv
+import io
 import json
 import subprocess
 import sys
@@ -89,6 +91,9 @@ class CheckWorkspace:
             f"namespace {namespace};\n\npublic class {class_name}\n{{\n}}\n",
             encoding="utf-8",
         )
+
+    def write_test_source(self, file_name, source):
+        (self.source_root / file_name).write_text(source, encoding="utf-8")
 
     def check(self, stack, timings, *options):
         command = [
@@ -431,6 +436,45 @@ class AnAllowlistedUnitIsHeldToItsOwnCeiling(BudgetCheckTestCase):
                     workspace.check("backend", timings), f"{TESTS_NAMESPACE}.DeletedFixtureTest"
                 )
 
+    def test_a_comment_mentioning_a_namespace_does_not_move_the_classes_below_it(self):
+        comment = "// The fixture below sits in a namespace ending in this word on purpose."
+        layouts = {
+            "file-scoped": (
+                f"namespace {TESTS_NAMESPACE};\n\n{comment}\n"
+                "[TestFixture]\npublic sealed class CacheTest\n{\n}\n"
+            ),
+            "block": (
+                f"namespace {TESTS_NAMESPACE}\n{{\n    {comment}\n"
+                "    [TestFixture]\n    internal static partial class CacheTest\n    {\n    }\n}\n"
+            ),
+        }
+        for layout, source in layouts.items():
+            with self.subTest(layout=layout):
+                workspace = self.fresh_workspace()
+                workspace.write_test_source("CacheTest.cs", source)
+                timings = workspace.backend_timings({f"{TESTS_NAMESPACE}.OtherTest.Reads": 1.0})
+                workspace.budget(backend_entries=[allowed(f"{TESTS_NAMESPACE}.CacheTest", 120)])
+
+                self.assert_passes_quietly(workspace.check("backend", timings))
+
+    def test_a_class_named_only_in_a_comment_does_not_keep_an_entry_alive(self):
+        self.workspace.write_test_source(
+            "Leftovers.cs",
+            f"namespace {TESTS_NAMESPACE};\n\n"
+            "// class DeletedFixtureTest was folded into CacheTest.\n"
+            "public class CacheTest\n{\n}\n",
+        )
+        timings = self.workspace.backend_timings({f"{TESTS_NAMESPACE}.CacheTest.Reads": 1.0})
+        self.workspace.budget(
+            backend_entries=[allowed(f"{TESTS_NAMESPACE}.DeletedFixtureTest", 120)]
+        )
+
+        self.assert_fails_naming(
+            self.workspace.check("backend", timings),
+            f"{TESTS_NAMESPACE}.DeletedFixtureTest",
+            ALLOWLIST_NAME,
+        )
+
 
 class AnAllowlistThatCannotBeTrustedIsRefused(BudgetCheckTestCase):
     def test_a_backend_test_source_folder_that_does_not_exist_fails_closed(self):
@@ -493,6 +537,24 @@ class AnAllowlistThatCannotBeTrustedIsRefused(BudgetCheckTestCase):
         self.assert_refuses_to_judge(
             self.workspace.check("frontend", timings), ALLOWLIST_NAME, "budget"
         )
+
+    def test_an_allowlist_naming_the_same_unit_twice_in_one_stack_fails_closed(self):
+        for stack, unit in (
+            ("frontend", "src/pages/Heavy.test.tsx"),
+            ("backend", f"{TESTS_NAMESPACE}.CacheTest"),
+        ):
+            with self.subTest(stack=stack):
+                workspace = self.fresh_workspace()
+                workspace.declare_test_class("CacheTest")
+                timings = (
+                    workspace.frontend_timings({unit: [80.0]})
+                    if stack == "frontend"
+                    else workspace.backend_timings({f"{unit}.Reads": 80.0})
+                )
+                entries = [allowed(unit, 60), allowed(unit, 90)]
+                workspace.budget(**{f"{stack}_entries": entries})
+
+                self.assert_refuses_to_judge(workspace.check(stack, timings), ALLOWLIST_NAME, unit)
 
     def test_a_missing_allowlist_file_fails_closed(self):
         timings = self.workspace.frontend_timings({"src/pages/Overview.test.tsx": [1.0]})
@@ -620,12 +682,27 @@ class AnOldPythonIsRefused(unittest.TestCase):
     def test_an_interpreter_older_than_3_12_is_refused_naming_the_version_needed_and_found(self):
         import check_budget
 
-        with self.assertRaises(SystemExit) as refusal:
+        # The refusal prints a workflow annotation, which would surface on the CI job that runs these tests.
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaises(SystemExit) as refusal:
             check_budget.require_python((3, 11, 9, "final", 0))
 
         self.assertNotIn(refusal.exception.code, (0, None))
         self.assertIn("3.12", str(refusal.exception.code))
         self.assertIn("3.11.9", str(refusal.exception.code))
+        self.assertEqual(refusal.exception.code, 2)
+
+    def test_an_interpreter_older_than_3_12_is_refused_with_one_error_annotation_and_no_verdict(self):
+        import check_budget
+
+        printed = io.StringIO()
+        with contextlib.redirect_stdout(printed), self.assertRaises(SystemExit) as refusal:
+            check_budget.require_python((3, 11, 9, "final", 0))
+
+        self.assertEqual(int(refusal.exception.code), 2)
+        annotations = [line for line in printed.getvalue().splitlines() if line.startswith("::error::")]
+        self.assertEqual(len(annotations), 1, msg=printed.getvalue())
+        self.assertIn("3.12", annotations[0])
+        self.assertIn("3.11.9", annotations[0])
 
 
 class ABackendClassIsJudgedOnTheSumOfItsTests(BudgetCheckTestCase):
@@ -663,6 +740,33 @@ class ABackendClassIsJudgedOnTheSumOfItsTests(BudgetCheckTestCase):
         self.assert_fails_naming(result, embed_tests, "65.0")
         self.assertNotIn("evil.example", "\n".join(self.annotations(result, "error")))
         self.assertNotIn("ReturnPathPointsOffHost", "\n".join(self.annotations(result, "error")))
+
+    def test_a_parameterised_fixture_is_judged_as_one_class_whatever_its_arguments(self):
+        fixture = "Lighthouse.Backend.Tests.API.Integration.Dependencies.Slice03ConnectorParityScenarios"
+        shapes = {
+            "fixture argument and method": (
+                f"{fixture}(AzureDevOps).A_feature_waiting_on_itself_is_reported_as_a_circle",
+                f"{fixture}(Jira).A_feature_waiting_on_itself_is_reported_as_a_circle",
+            ),
+            "fixture argument and method arguments": (
+                f'{fixture}(Linear).Reports_the_cycle("a.b",3)',
+                f'{fixture}(Jira).Reports_the_cycle("x).y",4)',
+            ),
+            "fixture argument holding a dot": (
+                f'{fixture}("jira.example").Reports_the_cycle',
+                f'{fixture}("a(b.c").Reports_the_cycle(1)',
+            ),
+        }
+        for shape, (first, second) in shapes.items():
+            with self.subTest(shape=shape):
+                workspace = self.fresh_workspace()
+                timings = workspace.backend_timings({first: 40.0, second: 30.0})
+                workspace.budget()
+
+                result = workspace.check("backend", timings)
+
+                self.assert_fails_naming(result, f"{fixture} took 70.0s")
+                self.assertEqual(len(self.annotations(result, "error")), 1, msg=self._explain(result))
 
 
 class TheCheckJudgesWhatTheConvertersWrite(BudgetCheckTestCase):

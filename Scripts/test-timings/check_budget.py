@@ -5,15 +5,31 @@ from __future__ import annotations
 import sys
 
 MINIMUM_PYTHON = (3, 12)
+CANNOT_JUDGE = 2
+
+
+class ExitStatus(int):
+    """An exit status that also reads as the reason it was given."""
+
+    def __new__(cls, status: int, reason: str) -> "ExitStatus":
+        exit_status = super().__new__(cls, status)
+        exit_status.reason = reason
+        return exit_status
+
+    def __str__(self) -> str:
+        return self.reason
 
 
 def require_python(version_info: tuple) -> None:
     if tuple(version_info[:2]) < MINIMUM_PYTHON:
         found = ".".join(str(part) for part in version_info[:3])
-        raise SystemExit(
+        reason = (
             f"check_budget.py needs Python {'.'.join(map(str, MINIMUM_PYTHON))} or newer, "
             f"but runs on Python {found}"
         )
+        print(f"::error::{reason}")
+        # The interpreter exits with an integer status silently, so the reason is printed above.
+        raise SystemExit(ExitStatus(CANNOT_JUDGE, reason))
 
 
 # Refuse before importing anything an older interpreter might not be able to load.
@@ -57,13 +73,43 @@ class CannotJudge(Exception):
 
 
 SKIPPED_SOURCE_FOLDERS = ("bin", "obj", "StrykerOutput")
-DECLARATION = re.compile(r"\bnamespace\s+([\w.]+)|\bclass\s+(\w+)")
+# Anchored at line start so a comment that merely mentions a namespace or a class declares nothing.
+DECLARATION = re.compile(
+    r"^[ \t]*(?:namespace\s+([\w.]+)\s*[;{]"
+    r"|(?:\[[^\]\n]*\][ \t]*)*"
+    r"(?:(?:public|internal|private|protected|sealed|static|abstract|partial|file|unsafe|new)\s+)*"
+    r"class\s+(\w+))",
+    re.MULTILINE,
+)
 
 
 def class_of(fully_qualified_name: str) -> str:
-    # Test arguments may themselves hold dots and brackets, so drop them before looking for the method.
-    without_arguments = fully_qualified_name.split("(", 1)[0]
-    return without_arguments.rsplit(".", 1)[0]
+    # A fixture's and a method's arguments may hold dots, brackets and quotes, so only a dot
+    # outside every bracket and quote separates the class from the method.
+    dots = _top_level_dots(fully_qualified_name)
+    class_part = fully_qualified_name[: dots[-1]] if dots else fully_qualified_name
+    return class_part.split("(", 1)[0]
+
+
+def _top_level_dots(name: str) -> list[int]:
+    dots, depth, quote, escaping = [], 0, "", False
+    for position, character in enumerate(name):
+        if quote:
+            if escaping:
+                escaping = False
+            elif character == "\\":
+                escaping = True
+            elif character == quote:
+                quote = ""
+        elif character in "\"'":
+            quote = character
+        elif character == "(":
+            depth += 1
+        elif character == ")":
+            depth = max(depth - 1, 0)
+        elif character == "." and depth == 0:
+            dots.append(position)
+    return dots
 
 
 def unit_of(stack: str, name: str) -> str:
@@ -198,7 +244,15 @@ def load_allowlist(stack: str, path: Path) -> tuple[Decimal, dict[str, Decimal]]
     entries = section.get("allowlist", [])
     if not isinstance(entries, list):
         raise CannotJudge(f"{name} has a {stack} allowlist that is not a list")
-    return budget_seconds, dict(_allowlisted(entry, stack, name) for entry in entries)
+    ceilings: dict[str, Decimal] = {}
+    for entry in entries:
+        unit, ceiling_seconds = _allowlisted(entry, stack, name)
+        if unit in ceilings:
+            raise CannotJudge(
+                f"{name} allowlists {escaped(unit)} more than once in its {stack} section"
+            )
+        ceilings[unit] = ceiling_seconds
+    return budget_seconds, ceilings
 
 
 def _allowlisted(entry: object, stack: str, name: str) -> tuple[str, Decimal]:
@@ -274,7 +328,7 @@ def main(argv: list[str] | None = None) -> int:
         return _check(arguments)
     except CannotJudge as refusal:
         print(f"::error::{refusal}")
-        return 2
+        return CANNOT_JUDGE
 
 
 def _check(arguments: argparse.Namespace) -> int:
