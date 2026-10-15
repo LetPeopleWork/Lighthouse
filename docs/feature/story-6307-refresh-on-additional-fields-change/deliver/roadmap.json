@@ -1,0 +1,577 @@
+{
+  "roadmap": {
+    "project_id": "story-6307-refresh-on-additional-fields-change",
+    "created_at": "2026-10-15",
+    "total_steps": 10,
+    "total_phases": 3,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "goal": "Story #6307: a connection save that changes its Additional Fields starts, at once and on every licence, an update of every Team and Portfolio on that connection, through the existing queue, Teams first; the edit page asks before it does so, with counts in the configured Terminology, and offers Save only. Slice 01 (backend only) lifts the connection's share of the fetch fingerprint into one function behind the already-committed pinned-digest test, publishes ConnectionFetchShapeChanged from the connection PUT when that share moved, triggers each owner from a handler, honours ?startUpdates=true|false, and answers 200 for a stored save whatever happens after it. Slice 02 puts usedBy { teams, portfolios } on the connection list read through a read-only connection-usage port, and asks `Update {n} {Teams} and {m} {Portfolios}?` with Cancel and Save and update, removing the 'next refresh of data' alert. Slice 03 adds Save only (startUpdates=false) and the usage-data event WorkTrackingSystemFieldsChanged = 19 carrying Updates: Now | Later. Done when every DISTILL row (1.1-1.22, 2.1-2.16, 3.1-3.12) is un-ignored or un-skipped and green; no `[Ignore(Pending)]` remains under API/Integration/ConnectionFieldChange/ or in WorkTrackingSystemFieldsChangedUsageEventTests.cs and no `it.skip` remains in EditConnection.fieldChange.test.tsx or the story-6307 block of WorkTrackingSystemService.test.ts; `dotnet build` has zero warnings (the NU1903 advisory on Microsoft.AspNetCore.SignalR.Common predates this story and is out of scope); the backend suite is green with `--filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"`; `pnpm test` and `pnpm build` are green with zero warnings. Docs prose (configuration.md, jira.md, azuredevops.md), the release-notes line, screenshots (N/A per DISTILL), the evolution record and Stryker belong to finalize after the maintainer's hold and are NOT steps here; the one exception is the docs/settings/usagedata.md row, which CLAUDE.md requires in the DELIVER step that adds the event (03-02).",
+    "paradigm_note": "The Hypothesis + state-delta unit mandate from nw-roadmap does not apply, deliberately. The backend is C# + NUnit 4.6 + Moq + WebApplicationFactory, the frontend TypeScript + Vitest + RTL; the project references no property-testing library. DISTILL authored every acceptance test, example-based, with the finite axes as [TestCase] / it.each (feature-delta.md, DISTILL 'Mandates that do not apply here'). The crafter authors no new acceptance test: RED is removing [Ignore(Pending)] / it.skip and watching the test fail as distill/red-classification.md records (every pending test failed on an assertion, none on an error, all MISSING_FUNCTIONALITY); GREEN is production code. The only tests the crafter writes are the inner-loop unit and structural tests DESIGN and ADR-238 assign to DELIVER and name per step (ForConnection cases and the FetchShapingPropertyGuardTest connection subset in 01-01, the handler unit test in 01-02, the stored-save-answers-200 controller test and the only-the-PUT-publishes structural test in 01-04); the agreement between For and ForConnection that ADR-238 calls property-based is written as enumerated [TestCase] edits, for the same reason. Existing tests are edited only where DISTILL's Existing-test disposition says so, plus the mechanical constructor-arity and vocabulary edits each step lists by name (see the doubts recorded in implementation_notes of 01-02, 02-01 and 03-02), plus one deletion the orchestrator approved (the 3.9 case expecting a lowercase 'now' to be refused, 03-02), in the same commit as the change that makes them wrong. Steps that touch more than one test file list them all in test_files; test_file names the primary one.",
+    "exit_gates": [
+      "End of every phase: the backend suite is green with `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"` (exactly 2 Licensing failures in a git worktree are the gitignored licence fixture, not a regression); `dotnet build` zero warnings apart from the pre-existing NU1903. End of phases 02 and 03 additionally: `pnpm test` and `pnpm build` green with zero warnings (`pnpm build` runs `biome check --write` as prebuild, so run `pnpm exec biome check ./src` read-only first).",
+      "Before any push: `cd Lighthouse.Backend && dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore`, filtered to the union of `git diff --name-only <base>` and `git status --porcelain` (new files are invisible to git diff), with zero findings in a touched or new file.",
+      "Program.cs is edited in 01-02 (handler registration) and 02-01 (connection-usage registration): CI therefore runs the FULL backend Integration suite, including the live Jira, ADO, Linear, ServiceNow and GitHub categories. Expect the longer run; a GitHub rate-limit or connector-quota red there is not this change, and a red backend job skips sonar-gates, so re-run rather than assume the gate judged the push.",
+      "End of phase 01 (slice 01 dogfood and its hypotheses): on the dev instance (:5169, real history) add a field to a connection and watch the Task Manager rows clear within one scheduled round; rotate the token and check nothing starts. Record in the evolution record.",
+      "End of phase 02: start the backend once on the Postgres provider and read GET /api/latest/worktrackingsystemconnections, recording the usedBy counts per connection (DISTILL waived Postgres for the acceptance host and assigned this one check to DELIVER). No new fetch is added by the question, so there is no new loading or could-not-load look to check under a throttled connection (S4).",
+      "Ratification at the hold before any push: ADR-238 is still 'Proposed'; the three AFK decisions (a zero count keeps its place in the title, a refused save sends no usage event, the event lives in slice 03); whether the question stays inside ModifyConnectionSettings.tsx or becomes a sibling component; the existing-test edits outside DISTILL's disposition listed in 01-02, 02-01 and 03-02.",
+      "Phase 03 push: never push 03-02 without 03-03. 03-02 adds the server-side event and the usagedata.md row and 03-03 is where the browser first sends the event, so the two go out in one push: the page never describes an event nothing sends, and CLAUDE.md's emit-and-list-together rule holds.",
+      "Comments in new code: rare, plain-language why, never an internal reference (no D-, DDD-, S-, UC-, AC- or ADR- numbers). The one narrow suppression, `#pragma warning disable CA1031` in 01-04, carries its plain-language reason inline."
+    ]
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "verdict": "conditionally_approved; F1, F2, L1-L5 applied",
+    "date": "2026-10-15"
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-6307-refresh-on-additional-fields-change/feature-delta.md",
+    "red_classification": "docs/feature/story-6307-refresh-on-additional-fields-change/distill/red-classification.md",
+    "upstream_issues": "docs/feature/story-6307-refresh-on-additional-fields-change/distill/upstream-issues.md",
+    "slices": "docs/feature/story-6307-refresh-on-additional-fields-change/slices/slice-01-field-change-updates-its-owners.md, slice-02-save-says-what-it-started.md, slice-03-save-now-update-later.md",
+    "adr": "docs/product/architecture/adr-238-a-connection-save-that-moves-the-fetch-fingerprint-starts-the-affected-updates.md",
+    "harness": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs",
+    "ado_story": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6307"
+  },
+  "user_decisions": [
+    "D1 / D2 - a connection save follows the save-then-update precedent and starts the updates immediately, through the existing queue.",
+    "D3 - a label-only rename still costs a full fetch; the fingerprint is left as it is.",
+    "D4 / D5 - every licence, no large-instance threshold.",
+    "D8 / DDD-1 / DDD-2 - 'moved by this save' is the connection's share of the fingerprint before vs after the PUT, rendered by FetchFingerprint.ForConnection, which For itself uses with byte-identical output.",
+    "DDD-3 / DDD-4 / DDD-11 - the PUT publishes ConnectionFetchShapeChanged(ConnectionId, TeamIds, PortfolioIds); a handler triggers Teams, then Portfolios.",
+    "DDD-5 / D11 - only the PUT publishes; the read by id and the Jira sync path publish nothing.",
+    "DDD-8 / S1 / S6 - ?startUpdates=false stores the save and starts nothing; absent means true; any other value is refused with 400.",
+    "DDD-10 / UC-1 - the queue's coalescing is reused unchanged.",
+    "DDD-16 - a stored save answers 200 whatever happens after it; the controller's own lookup and publish are caught and logged.",
+    "DDD-17 / S4 - usedBy { teams, portfolios } on the connection list read through one read-only connection-usage port.",
+    "S1 / S2 / S3 / S5 - a question before Save (Cancel / Save only / Save and update, default), the 'next refresh of data' alert removed, navigate to / after Save as today, no question with 0 and 0.",
+    "S7 / DO-2 - WorkTrackingSystemFieldsChanged = 19 with Updates: Now | Later, sent by the browser only after an answered question's save succeeded."
+  ],
+  "out_of_scope": [
+    "Rules telling the truth about unfetched fields (D7), narrowing the fingerprint (D3), any threshold (D5).",
+    "Any change to the PUT response (DDD-6 superseded), any after-save notice (S3), the read by id as a source of counts.",
+    "Lighthouse-Clients changes (N/A: the request and response shapes are unchanged; usedBy is additive on the list read).",
+    "E2E: no Playwright spec (DISTILL: the demo data's only connection is CSV, which cannot add Additional Fields).",
+    "Finalize items: docs/settings/configuration.md, docs/concepts/worktrackingsystems/jira.md and azuredevops.md Additional Fields sections, the release-notes line on #6307, the evolution record, Stryker on frozen code (both stacks, 80 %), ADO state transitions, the website grep for 'additional field'."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "A field change on a connection updates its Teams and Portfolios",
+      "description": "Backend only, releasable alone: every field save from the page, lh or MCP starts the updates, and the page is untouched (its old alert is merely pessimistic until slice 02). Refactor first (the connection's share of the fingerprint as one function, digest unchanged), then the fan-out walking skeleton with the startUpdates parameter (the Save-only guards depend on it the moment the fan-out exists), then the edge rows, then the stored-save-answers-200 robustness and the only-the-PUT-publishes structure.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The connection's share of the fetch fingerprint is one function, and no stored fingerprint moves",
+          "description": "Separate refactor commit. Lift FetchFingerprint.ForConnection(connection): the connection-owned inputs only (AdditionalFieldDefinitions rendered as today, WorkTrackingSystem), and compose it into For so that For's digest input is byte-identical to today's, null connection included. Add the connection-scoped subset of registered properties beside RegisteredProperties. The pinned-digest test was committed by DISTILL in cd4693e69, before this refactor, as DESIGN requires; it is the guard and is not edited.",
+          "agent": "nw-software-crafter",
+          "commit_type": "refactor",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/FetchFingerprintPinnedDigestTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/FetchFingerprintPinnedDigestTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/FetchFingerprintTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs"
+          ],
+          "scenario_name": "1.19 A_Team_keeps_the_fingerprint_it_has_already_stored; 1.20 A_Portfolio_keeps_the_fingerprint_it_has_already_stored",
+          "ledger_rows": [
+            "1.19",
+            "1.20"
+          ],
+          "unskips": [],
+          "guards_kept_green": [
+            "1.19 :: FetchFingerprintPinnedDigestTest.cs :: A_Team_keeps_the_fingerprint_it_has_already_stored",
+            "1.20 :: FetchFingerprintPinnedDigestTest.cs :: A_Portfolio_keeps_the_fingerprint_it_has_already_stored",
+            "FetchFingerprintTest and FetchShapingPropertyGuardTest, existing cases unchanged"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs (edit - ForConnection extracted, For composes it byte-identically; connection-scoped property subset)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/FetchFingerprintTest.cs (edit - NEW cases only, per ADR-238 Enforcement: ForConnection changes for an added, removed, re-referenced or relabelled field and not for a re-ordered list; For changes exactly when ForConnection changes, over the same enumerated edits)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs (edit - NEW case only: every registered property declared on WorkTrackingSystemConnection is rendered by ForConnection)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "1.19 and 1.20 stay green unchanged: a Team and a Portfolio keep the fingerprint they already stored, so the upgrade itself starts no downloads.",
+            "ForConnection answers differently after a field is added, removed, re-referenced or relabelled, and the same after the fields are re-ordered; For moves exactly when ForConnection moves over those edits.",
+            "A connection-level fetch-shaping property that ForConnection does not render fails the architecture guard.",
+            "ForConnection is pure: it returns a value and touches nothing else.",
+            "`dotnet build` zero warnings (NU1903 pre-existing); FetchFingerprintPinnedDigestTest, FetchFingerprintTest and FetchShapingPropertyGuardTest green.",
+            "The commit is a `refactor(...)` commit; FetchFingerprintPinnedDigestTest.cs is not touched."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: pure refactor held by the pinned-digest guard; see paradigm_note. Do not digest the share inside For: For must keep joining the same rendered parts with the same separators, in the same positions (AdditionalFieldDefinitions then WorkTrackingSystem), or every stored fingerprint moves. The PUT will compare ForConnection before and after a save, so whatever it returns must be comparable by value. New test cases: CA1861 (hoist constant arrays), NUnit2045 (EnterMultipleScope), CA1859 (concrete helper types), NUnit1028 (TestCaseSource providers private static). Commit as `refactor(fingerprint): ...`, separate from the feature commits."
+        },
+        {
+          "id": "01-02",
+          "name": "Adding a field starts an update of every Team and Portfolio on the connection, Teams first, unless the save asks to wait",
+          "description": "Walking skeleton of the fan-out. Create the ConnectionFetchShapeChanged record (ConnectionId, TeamIds, PortfolioIds) : IDomainEvent and its handler beside TeamDeletedForecastRetriggerHandler, triggering each Team through ITeamUpdater, then each Portfolio through IPortfolioUpdater, logging one Information line (connection id and the two counts, never field names). The connection PUT renders the connection share before any mutation of the tracked connection and again after Save(); when it moved and startUpdates is true it looks up the ids of the Teams and Portfolios on the connection (the existing Team and Portfolio repositories, as the delete path does) and publishes through IDomainEventDispatcher (sixth constructor parameter). The PUT takes `startUpdates` from the query, default true; a value that is neither true nor false is refused with 400 before anything is stored. Register the handler in Program.cs beside the other handler registrations. Slice 01 ships the startUpdates query parameter, which nothing in the UI uses until 03-01 (until then only lh, MCP and direct API callers can send it).",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/Slice01FieldChangeUpdatesItsOwnersScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/Slice01FieldChangeUpdatesItsOwnersScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/Slice01SavesThatStartNothingScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ConnectionFetchShapeChangedUpdateTriggerHandlerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WriteBack/WorkTrackingSystemConnectionControllerWriteBackTest.cs"
+          ],
+          "scenario_name": "1.1 @walking_skeleton Adding_a_field_lists_an_update_for_every_Team_and_Portfolio_on_the_connection_in_the_Task_Manager; 1.2 Every_Team_and_Portfolio_on_the_connection_downloads_everything_once_after_a_field_is_added; 1.3 The_Teams_are_updated_before_any_Portfolio; 1.21 Adding_a_field_to_a_connection_only_Portfolios_read_from_lists_their_updates_in_the_Task_Manager; 1.9 A_save_that_asks_to_update_now_updates_every_Team_and_Portfolio_on_the_connection; 1.10 A_save_that_asks_for_neither_now_nor_later_is_refused_and_stores_nothing (maybe, later); guards (Slice01SavesThatStartNothingScenarios.cs) 1.11 A_save_that_changes_nothing_the_Teams_and_Portfolios_ask_for_starts_no_update (5), 1.22 Saving_the_same_fields_in_another_order_starts_no_update, 1.12 A_Team_on_another_connection_is_left_alone, 1.13 A_field_added_to_a_connection_nobody_uses_is_saved_and_starts_no_update, 1.14 A_save_that_is_refused_stores_nothing_and_starts_no_update (3), 1.15 Saving_only_stores_the_field_and_starts_no_update, 1.16 After_saving_only_the_next_scheduled_update_downloads_everything, 1.17 Looking_up_a_connection_that_registers_the_trackers_own_field_starts_no_update, 1.18 A_field_registered_by_a_lookup_does_not_make_the_next_save_start_updates",
+          "ledger_rows": [
+            "1.1",
+            "1.2",
+            "1.3",
+            "1.21",
+            "1.9",
+            "1.10",
+            "1.11",
+            "1.22",
+            "1.12",
+            "1.13",
+            "1.14",
+            "1.15",
+            "1.16",
+            "1.17",
+            "1.18"
+          ],
+          "unskips": [
+            "1.1 @walking_skeleton :: Slice01FieldChangeUpdatesItsOwnersScenarios.cs :: Adding_a_field_lists_an_update_for_every_Team_and_Portfolio_on_the_connection_in_the_Task_Manager",
+            "1.2 :: Slice01FieldChangeUpdatesItsOwnersScenarios.cs :: Every_Team_and_Portfolio_on_the_connection_downloads_everything_once_after_a_field_is_added",
+            "1.3 :: Slice01FieldChangeUpdatesItsOwnersScenarios.cs :: The_Teams_are_updated_before_any_Portfolio",
+            "1.21 :: Slice01FieldChangeUpdatesItsOwnersScenarios.cs :: Adding_a_field_to_a_connection_only_Portfolios_read_from_lists_their_updates_in_the_Task_Manager",
+            "1.9 :: Slice01FieldChangeUpdatesItsOwnersScenarios.cs :: A_save_that_asks_to_update_now_updates_every_Team_and_Portfolio_on_the_connection",
+            "1.10 :: Slice01FieldChangeUpdatesItsOwnersScenarios.cs :: A_save_that_asks_for_neither_now_nor_later_is_refused_and_stores_nothing (2 cases)"
+          ],
+          "guards_kept_green": [
+            "1.11 :: Slice01SavesThatStartNothingScenarios.cs :: A_save_that_changes_nothing_the_Teams_and_Portfolios_ask_for_starts_no_update (API token, name, Jira address, sign-in method, write-back mapping)",
+            "1.22 :: Slice01SavesThatStartNothingScenarios.cs :: Saving_the_same_fields_in_another_order_starts_no_update",
+            "1.12 :: Slice01SavesThatStartNothingScenarios.cs :: A_Team_on_another_connection_is_left_alone",
+            "1.13 :: Slice01SavesThatStartNothingScenarios.cs :: A_field_added_to_a_connection_nobody_uses_is_saved_and_starts_no_update",
+            "1.14 :: Slice01SavesThatStartNothingScenarios.cs :: A_save_that_is_refused_stores_nothing_and_starts_no_update (409, 403, 400)",
+            "1.15 :: Slice01SavesThatStartNothingScenarios.cs :: Saving_only_stores_the_field_and_starts_no_update",
+            "1.16 :: Slice01SavesThatStartNothingScenarios.cs :: After_saving_only_the_next_scheduled_update_downloads_everything",
+            "1.17 :: Slice01SavesThatStartNothingScenarios.cs :: Looking_up_a_connection_that_registers_the_trackers_own_field_starts_no_update",
+            "1.18 :: Slice01SavesThatStartNothingScenarios.cs :: A_field_registered_by_a_lookup_does_not_make_the_next_save_start_updates"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Events/ConnectionFetchShapeChanged.cs (CREATE NEW - the event record)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ConnectionFetchShapeChangedUpdateTriggerHandler.cs (CREATE NEW - the handler; name is the crafter's, beside TeamDeletedForecastRetriggerHandler)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs (edit - before/after render of the connection share, [FromQuery] startUpdates default true, owner-id lookup, publish; IDomainEventDispatcher as sixth constructor parameter)",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs (edit - one AddScoped<IDomainEventHandler<ConnectionFetchShapeChanged>, ...> line beside the other handler registrations)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/Slice01FieldChangeUpdatesItsOwnersScenarios.cs (edit - remove [Ignore(Pending)] on 1.1, 1.2, 1.3, 1.21, 1.9, 1.10 only)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ConnectionFetchShapeChangedUpdateTriggerHandlerTest.cs (new test file, crafter-authored inner loop per upstream issue 3: one trigger per id, every Team before any Portfolio, nothing written)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionControllerTest.cs and Lighthouse.Backend/Lighthouse.Backend.Tests/API/WriteBack/WorkTrackingSystemConnectionControllerWriteBackTest.cs (edit - CreateSubject passes a dispatcher double; no assertion changed)"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "criteria": [
+            "Priya adds Fix Versions to Nordwind Jira DC and saves: within 5 s the Task Manager lists one update for each of its 4 Teams and 2 Portfolios and nothing else (1.1, AC-1.1, OUT-6307-time-to-populated).",
+            "Each of them downloads everything exactly once after the save, and the connection reads Story Points and Fix Versions (1.2, O5).",
+            "Every Team's update runs before any Portfolio's (1.3).",
+            "A connection only Portfolios read from lists Roadmap North and Roadmap South (1.21).",
+            "`?startUpdates=true` behaves as an absent parameter (1.9); `maybe` and `later` are refused with 400, the connection is unchanged and nothing is queued (1.10).",
+            "`?startUpdates=false` stores the field and queues nothing, and the next scheduled update downloads everything (1.15, 1.16).",
+            "Nothing is queued for a save that changes nothing fetched, the same fields re-ordered, a Team on another connection, a connection nobody uses, a refused save (409, 403, 400), a read by id that registers the tracker's own field, or a save after that read (1.11-1.14, 1.17, 1.18, 1.22).",
+            "The PUT's request and response shapes are unchanged.",
+            "The handler unit test pins one trigger per id, Teams before Portfolios, and no write.",
+            "`dotnet build` zero warnings (NU1903 pre-existing); the ConnectionFieldChange classes, the handler test and the two edited controller test classes are green."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. RED per red-classification.md: 1.1 'It listed: (nothing)', 1.2/1.3/1.21/1.9 empty refresh history, 1.10 'The save answered 200'. Fifteen rows, six pending and nine guards: the guards sit here because this is the step that can break them (1.15/1.16 go red the moment the fan-out exists unless startUpdates=false is honoured in the same step, which is why the parameter lands here and not later). Pre-apply from docs/ci-learnings.md: (1) [FromQuery] parameters are required by default under nullable-enabled C# - give startUpdates a default of true so absent means true, and let binding refuse a non-boolean with 400 before the merge; (2) S3776 - the PUT action is near the cognitive-complexity limit, put the before/after compare, lookup and publish in a private helper rather than more branches in the action; (3) S107 - the controller goes from 5 to 6 parameters (01-04 takes it to 7, the limit); (4) render the 'before' share as the very first act in the callback, before Name, AuthenticationMethodKey, MergeOptions or the field merge touch the tracked entity, and publish only after Save() actually ran (the validation and licence refusals return before it, the 409 throws out of it); (5) the handler calls TriggerUpdate for every id unconditionally - never pre-check the queue or treat an already-admitted key as covered (the 2026-07-27 coalescing rule), never resolve services through GetRequiredService (DomainEventDispatcherSeamArchUnitTest), never catch and rethrow (S2139: the dispatcher already logs), writes nothing; (6) S6667 - any logger call in a catch passes the exception first; (7) handler test: build the Moq doubles per test in [SetUp] so a Times.Never can fail, CA1859/CA1861/NUnit2045/NUnit1028. Plain-language comment wanted on why Teams go first: a Portfolio updating in the same round then forecasts over Team data that already carries the field; no internal references. DOUBT (existing-test edits outside DISTILL's disposition): adding the dispatcher parameter breaks the construction in WorkTrackingSystemConnectionControllerTest.cs and WorkTrackingSystemConnectionControllerWriteBackTest.cs; the disposition says 'no existing backend test asserts that a connection save starts nothing' but does not name these arity edits - they are mechanical, change no assertion, and land in this commit. Program.cs edit: CI runs the full Integration suite."
+        },
+        {
+          "id": "01-03",
+          "name": "The fan-out holds at its edges: other field edits, busy owners, a failing owner, the community licence",
+          "description": "Un-ignore the remaining slice-01 rows. They exercise the fan-out built in 01-02 against the existing queue (coalescing reused unchanged), the per-owner failure path and the community licence; production changes only where a row shows a gap.",
+          "agent": "nw-software-crafter",
+          "commit_type": "test",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/Slice01FieldChangeUpdatesItsOwnersScenarios.cs",
+          "scenario_name": "1.4 Any_other_field_edit_also_makes_every_Team_and_Portfolio_on_the_connection_download_everything (rename, new reference, removal); 1.5 A_Team_already_updating_or_waiting_is_not_downloaded_in_full_twice; 1.6 An_update_that_fails_leaves_the_field_saved_and_the_others_updating; 1.7 The_Team_whose_update_failed_downloads_everything_at_its_next_update; 1.8 Adding_a_field_on_the_community_licence_updates_every_Team_and_Portfolio_on_the_connection",
+          "ledger_rows": [
+            "1.4",
+            "1.5",
+            "1.6",
+            "1.7",
+            "1.8"
+          ],
+          "unskips": [
+            "1.4 :: Slice01FieldChangeUpdatesItsOwnersScenarios.cs :: Any_other_field_edit_also_makes_every_Team_and_Portfolio_on_the_connection_download_everything (3 cases)",
+            "1.5 :: Slice01FieldChangeUpdatesItsOwnersScenarios.cs :: A_Team_already_updating_or_waiting_is_not_downloaded_in_full_twice",
+            "1.6 :: Slice01FieldChangeUpdatesItsOwnersScenarios.cs :: An_update_that_fails_leaves_the_field_saved_and_the_others_updating",
+            "1.7 :: Slice01FieldChangeUpdatesItsOwnersScenarios.cs :: The_Team_whose_update_failed_downloads_everything_at_its_next_update",
+            "1.8 :: Slice01FieldChangeUpdatesItsOwnersScenarios.cs :: Adding_a_field_on_the_community_licence_updates_every_Team_and_Portfolio_on_the_connection"
+          ],
+          "guards_kept_green": [
+            "every row made green or kept green in 01-01 and 01-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs (edit - only if a row shows a gap)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ConnectionFetchShapeChangedUpdateTriggerHandler.cs (edit - only if a row shows a gap)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/Slice01FieldChangeUpdatesItsOwnersScenarios.cs (edit - remove [Ignore(Pending)] on 1.4-1.8)"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "criteria": [
+            "Renaming a field's label, changing its reference or removing it makes every Team and Portfolio on the connection download everything exactly once (1.4, AC-1.3, D3).",
+            "With Atlas running and Cobalt waiting at the save, the Task Manager lists each owner once; Atlas and Cobalt each run twice and every owner downloads everything exactly once (1.5, AC-1.5 as reworded by UC-1).",
+            "When the tracker refuses Borealis, Borealis's update fails, the other five finish, and the field stays saved (1.6); once the tracker lets Borealis in again, its next scheduled update downloads everything (1.7, AC-1.6).",
+            "On the community licence, adding the one allowed field updates Atlas, Borealis, Cobalt and Fleet Platform, each downloading everything once (1.8, AC-1.9).",
+            "The whole of slice 01 (Slice01FieldChangeUpdatesItsOwnersTest, Slice01SavesThatStartNothingTest, FetchFingerprintPinnedDigestTest) is green with no [Ignore] left."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. These rows are expected to pass on 01-02's code: the queue, the failure path and the licence gate are reused unchanged. They did fail on unmodified code at DISTILL (red-classification.md: refresh history '(nothing)', Task Manager listing only 'Atlas, Cobalt'), so their RED is on record; un-ignore, confirm, and say in the commit body which went green with no production change. If none needed one, the commit is `test(connection): ...`; if a gap needed code, it is `feat(connection): ...`. Several of these wait on the refresh-history poll; check the class stays inside the per-class time-budget warning (docs/ci-learnings.md 2026-10-15)."
+        },
+        {
+          "id": "01-04",
+          "name": "A stored save answers 200 even when starting the updates fails, and only the connection save starts them",
+          "description": "The PUT wraps its own owner-id lookup and publish, which run after Save(), in a catch that logs one Error line naming the connection (exception passed first) and still answers 200 with the connection as today; the save is committed and each owner recovers at its next scheduled update because its stored fingerprint was never rewritten. A handler that throws is already caught by DomainEventDispatcher.InvokeHandlerSafely. The catch carries a narrow `#pragma warning disable CA1031` with its plain-language reason inline. ILogger<WorkTrackingSystemConnectionController> becomes the seventh constructor parameter. Add a structural test that nothing but the connection PUT publishes ConnectionFetchShapeChanged, which pins the read by id and the Jira sync-path registration as publishing nothing.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionControllerTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WriteBack/WorkTrackingSystemConnectionControllerWriteBackTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ (new structural test file, name the crafter's)"
+          ],
+          "scenario_name": "crafter-authored per DDD-16 (DESIGN assigns it to DELIVER; DISTILL completeness audit gap C7b): a stored field save answers 200 with the connection, is saved once, and logs one error naming the connection, when (a) looking up the Teams and Portfolios on the connection throws, (b) publishing the event throws - one [TestCase] per failure; plus the structural test 'only the connection save publishes that a connection's fetch shape changed'",
+          "ledger_rows": [],
+          "unskips": [],
+          "guards_kept_green": [
+            "every slice-01 row (1.1-1.22)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs (edit - catch around the post-save lookup and publish with a narrow CA1031 suppression and plain-language reason; ILogger as seventh constructor parameter)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionControllerTest.cs (edit - NEW tests for the stored-save-answers-200 cases; CreateSubject passes a logger)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WriteBack/WorkTrackingSystemConnectionControllerWriteBackTest.cs (edit - CreateSubject passes a logger; no assertion changed)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ (new structural test file, name the crafter's - only the connection PUT publishes ConnectionFetchShapeChanged)"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "criteria": [
+            "When the owner lookup throws after a stored save, the PUT answers 200 with the connection DTO, the connection was saved once, and one Error line naming the connection id was logged with the exception.",
+            "When publishing throws after a stored save, the same holds.",
+            "A refused save still publishes nothing and answers as before (1.14 stays green).",
+            "No production type other than the connection controller, the event itself, its handler and the handler's DI registration in Program.cs refers to ConnectionFetchShapeChanged (the rule covers the production assembly only; test assemblies are excluded, since the handler test and the acceptance harness may name it), so neither the read by id nor the Jira connector's own-field registration can start updates (D11, ADR-238 point 5).",
+            "The CA1031 suppression wraps only the catch and carries a plain-language reason, with no internal reference.",
+            "`dotnet build` zero warnings (NU1903 pre-existing). End of phase 01: the filtered backend suite is green."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-shot failure contract; see paradigm_note. The reason a suppression wants, in plain words: the save is already stored, so failing the request would tell the admin it was not and invite a second save that changes nothing, and every Team and Portfolio still downloads everything at its next scheduled update. Pre-apply: S6667 (exception as the logger's first argument); S2139 does not apply because nothing is rethrown; S107 - the constructor reaches 7, the limit, and any further collaborator needs grouping, not an eighth parameter; build the Moq doubles per test in [SetUp]; NUnit2045 for the paired asserts; CA1859 on the subject helper. Structural test: ArchUnit dependencies on a type used only inside an async method are seen in Debug and missed in Release (docs/ci-learnings.md 2026-08-22), so state the rule as the negative ('no type outside this set depends on it'), which cannot be satisfied vacuously by the Release build missing the controller's own reference, and run it under Release once. Comments: no internal references."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "The page asks before it updates the Teams and Portfolios",
+      "description": "Releasable alone on top of slice 01: the list read carries usedBy, and pressing Save on an existing connection whose Additional Fields differ from those loaded, after validation passed and with at least one Team or Portfolio on it, asks `Update {n} {Teams} and {m} {Portfolios}?` with Cancel and Save and update (focused). The 'next refresh of data' alert goes. No new fetch, so no new loading or could-not-load look. Walking skeleton 2.2 opens the phase and is end-to-end: the counts travel from the server through the service to the question.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "The connection list says who uses each connection, and the page asks how many it will update",
+          "description": "Backend: one read-only connection-usage port (counts of Teams and Portfolios per connection, no write members) with its implementation over the Team and Portfolio repositories, registered in Program.cs and injected into WorkTrackingSystemConnectionsController as its seventh parameter; the list GET fills an additive UsedBy { Teams, Portfolios } on each WorkTrackingSystemConnectionDto (absent on every other read and on the PUT). Frontend: extend the connection type and the shared mock first (shared contract), carry usedBy through deserializeWorkTrackingSystemConnection, and in ModifyConnectionSettings, on Save, once validation has passed, when the field definitions differ from those loaded (a comparison, not the sticky fieldsModified flag) and usedBy is above 0, show the question modelled on DeleteConfirmationDialog: title as its accessible name, the first body sentence, Cancel and Save and update (autofocus). The answers are wired in 02-02. If the step needs two commits, the backend part (the port and usedBy on the list read, row 2.1) may be committed first; the dependencies stay as they are.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.fieldChange.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.fieldChange.test.tsx",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/Slice02ConnectionsSayWhoUsesThemScenarios.cs",
+            "Lighthouse.Frontend/src/services/Api/WorkTrackingSystemService.test.ts",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WriteBack/WriteBackLicenseGateTest.cs"
+          ],
+          "scenario_name": "2.2 @walking_skeleton adding a field and pressing Save asks whether to update the 4 Teams and 2 Portfolios on the connection; 2.1 The_connection_list_says_how_many_Teams_and_Portfolios_use_each_connection (4 cases, Slice02ConnectionsSayWhoUsesThemScenarios.cs); 2.15 keeps how many Teams and Portfolios use each connection from the list of connections (WorkTrackingSystemService.test.ts); guards 2.16 setting up a new connection saves it without a question, 2.10 a field change on a connection no Team or Portfolio uses is saved straight away without a question, 2.11 a save with only %s is saved straight away without a question (a new name, a new API token), 2.12 a field Priya started to add and then cancelled asks no question, 2.13 a field Priya added and removed again before saving asks no question, 2.14 a field change the tracker refuses asks no question and saves nothing",
+          "ledger_rows": [
+            "2.2",
+            "2.1",
+            "2.15",
+            "2.16",
+            "2.10",
+            "2.11",
+            "2.12",
+            "2.13",
+            "2.14"
+          ],
+          "unskips": [
+            "2.2 @walking_skeleton :: EditConnection.fieldChange.test.tsx (describe 'slice 02') :: Story #6307 - pending DELIVER: adding a field and pressing Save asks whether to update the 4 Teams and 2 Portfolios on the connection",
+            "2.1 :: Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/Slice02ConnectionsSayWhoUsesThemScenarios.cs :: The_connection_list_says_how_many_Teams_and_Portfolios_use_each_connection (4 and 2, 1 and 0, 0 and 0, 0 and 2 for Nordwind Jira Roadmaps)",
+            "2.15 :: Lighthouse.Frontend/src/services/Api/WorkTrackingSystemService.test.ts (describe 'Story #6307 - pending DELIVER') :: keeps how many Teams and Portfolios use each connection from the list of connections"
+          ],
+          "guards_kept_green": [
+            "2.16 :: EditConnection.fieldChange.test.tsx :: setting up a new connection saves it without a question",
+            "2.10 :: EditConnection.fieldChange.test.tsx :: a field change on a connection no Team or Portfolio uses is saved straight away without a question",
+            "2.11 :: EditConnection.fieldChange.test.tsx :: a save with only %s is saved straight away without a question (2 cases)",
+            "2.12 :: EditConnection.fieldChange.test.tsx :: a field Priya started to add and then cancelled asks no question",
+            "2.13 :: EditConnection.fieldChange.test.tsx :: a field Priya added and removed again before saving asks no question",
+            "2.14 :: EditConnection.fieldChange.test.tsx :: a field change the tracker refuses asks no question and saves nothing",
+            "every slice-01 row",
+            "WorkTrackingSystemService.test.ts 'should update a work tracking system connection' and the rest of the existing service tests"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IWorkTrackingSystemConnectionUsage.cs (CREATE NEW - the read-only connection-usage port; name is the crafter's)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingSystemConnectionUsage.cs (CREATE NEW - its implementation over IRepository<Team> and IRepository<Portfolio>)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs (edit - list GET fills usedBy; the port as seventh constructor parameter)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs (edit - additive UsedBy { Teams, Portfolios }, set on the list read only)",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs (edit - register the connection-usage port)",
+            "Lighthouse.Frontend/src/models/WorkTracking/WorkTrackingSystemConnection.ts (edit - optional usedBy { teams, portfolios })",
+            "Lighthouse.Frontend/src/services/Api/WorkTrackingSystemService.ts (edit - deserializeWorkTrackingSystemConnection keeps usedBy)",
+            "Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts (edit - extended first if the widened type needs it, per DESIGN's shared-contract rule)",
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx (edit - loaded field definitions kept for comparison; the question shown after validation when they differ and usedBy is above 0)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/Slice02ConnectionsSayWhoUsesThemScenarios.cs (edit - remove [Ignore(Pending)])",
+            "Lighthouse.Frontend/src/services/Api/WorkTrackingSystemService.test.ts (edit - it.skip to it on 2.15 only)",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.fieldChange.test.tsx (edit - it.skip to it on 2.2 only)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs and Lighthouse.Backend/Lighthouse.Backend.Tests/API/WriteBack/WriteBackLicenseGateTest.cs (edit - CreateSubject passes a usage-port double; no assertion changed)"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "criteria": [
+            "The connection list answers usedBy 4 Teams and 2 Portfolios for Nordwind Jira DC, 1 and 0, 0 and 0, and 0 and 2 for Nordwind Jira Roadmaps (2.1, DDD-17, S4); counted in one read, not one query per connection.",
+            "The frontend service keeps usedBy from the list of connections (2.15).",
+            "Adding Fix Versions and pressing Save shows a dialog named `Update 4 Teams and 2 Portfolios?` that says 'You changed the Additional Fields. Their values only fill in once each Team and Portfolio on this connection has been updated.', offers Cancel and Save and update with Save and update focused, and has saved nothing yet (2.2, S1, S4).",
+            "No question for a new connection, a connection nobody uses, a name-only or token-only save, a field added then cancelled, a field added then removed, or a field change the tracker refuses (guards 2.10-2.14, 2.16).",
+            "The port exposes reads only; the PUT and the read by id are unchanged.",
+            "`dotnet build` zero warnings (NU1903 pre-existing); `pnpm exec biome check ./src` and `pnpm exec tsc -b` clean; the three named test files and the two edited controller test classes green."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. RED per red-classification.md: 2.1 'How many Teams read through it' (no usedBy), 2.15 'expected undefined to deeply equal { teams: 4, portfolios: 2 }', 2.2 'Unable to find role=\"dialog\" and name \"Update 4 Teams and 2 Portfolios?\"'. Nine rows, three pending and six guards: the guards are the question's 'never ask' boundaries and this is the step that introduces the question. Pre-apply: S107 - the list controller goes from 6 to 7, the limit, which is why the counts come through one port rather than two repositories; S6964 - WorkTrackingSystemConnectionDto is also the PUT's [FromBody], so give the counts a shape binding cannot write (get-only, set by the list read) and never [JsonRequired] (the 2026-08-21 entry: it 400s every payload written before it); EF: count per connection in one grouped query and mind S8733 if two collections are included; frontend: treat an absent usedBy as nobody uses it, compare the field list order-insensitively by what defines a field (the page cannot reorder fields), keep the comparison out of the render path's cognitive complexity (S3776), S7735 (no negated ternary), S6754 (state setter naming), S4624/S3358 (no nested template literal or ternary inside one). DOUBT (UI placement): DESIGN lets DELIVER choose between a sibling dialog component and reuse; the brief for this roadmap allows no new production file beyond the event, its handler and the port, so the question is rendered inside ModifyConnectionSettings.tsx with MUI's Dialog the way DeleteConfirmationDialog does it (DeleteConfirmationDialog itself is delete-specific: fixed title and Delete button). If that pushes ModifyConnectionSettings past Sonar's complexity or size limits, stop and ask before adding a sibling component (ArchiveConfirmationDialog is the precedent). DOUBT (existing-test edits outside the disposition): the port parameter breaks construction in WorkTrackingSystemConnectionsControllerTest.cs and WriteBackLicenseGateTest.cs; mechanical, no assertion changed. Program.cs edit: CI runs the full Integration suite."
+        },
+        {
+          "id": "02-02",
+          "name": "Save and update saves and returns to the overview; Cancel saves nothing; the old promise is gone",
+          "description": "Wire the question's answers in ModifyConnectionSettings: Save and update saves exactly as Save does today (no startUpdates sent, or true) and EditConnection navigates to / as today, with no notice; Cancel closes the question, saves nothing, keeps the page and its edits; a save refused after the question (someone else saved first) shows the existing concurrency message and stays on the page. Remove the 'Additional Fields will be loaded with the next refresh of data.' Alert and whatever only fed it.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.fieldChange.test.tsx",
+          "scenario_name": "2.3 Save and update saves the new field without holding the updates back and returns to the overview; 2.4 the question is asked whenever Priya %s (adds, renames, removes a field); 2.5 Cancel saves nothing and leaves Priya on the page with her new field still listed; 2.8 changing a field no longer promises it will load with the next refresh; 2.9 when someone else saved the connection first, Save and update says so and stays on the page",
+          "ledger_rows": [
+            "2.3",
+            "2.4",
+            "2.5",
+            "2.8",
+            "2.9"
+          ],
+          "unskips": [
+            "2.3 :: EditConnection.fieldChange.test.tsx :: Story #6307 - pending DELIVER: Save and update saves the new field without holding the updates back and returns to the overview",
+            "2.4 :: EditConnection.fieldChange.test.tsx :: Story #6307 - pending DELIVER: the question is asked whenever Priya %s (3 cases)",
+            "2.5 :: EditConnection.fieldChange.test.tsx :: Story #6307 - pending DELIVER: Cancel saves nothing and leaves Priya on the page with her new field still listed",
+            "2.8 :: EditConnection.fieldChange.test.tsx :: Story #6307 - pending DELIVER: changing a field no longer promises it will load with the next refresh",
+            "2.9 :: EditConnection.fieldChange.test.tsx :: Story #6307 - pending DELIVER: when someone else saved the connection first, Save and update says so and stays on the page"
+          ],
+          "guards_kept_green": [
+            "2.2 and the six guards from 02-01",
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.test.tsx and Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.test.tsx, unchanged (no test pins the alert; EditConnection.test.tsx mocks the fields editor)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx (edit - Cancel and Save and update wired; the 'next refresh of data' Alert removed)",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx (edit - only if the save-and-navigate path needs it; navigation to / unchanged)",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.fieldChange.test.tsx (edit - it.skip to it on 2.3, 2.4, 2.5, 2.8, 2.9)"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "criteria": [
+            "Save and update saves the connection with Fix Versions, without startUpdates or with it true, returns to the overview, and shows no alert or notice about updates (2.3, S1, S3).",
+            "The question is asked for an added, a renamed and a removed field (2.4, AC-1.3).",
+            "Cancel saves nothing, does not navigate, and leaves Fix Versions listed and the name as typed (2.5, S6).",
+            "The 'next refresh of data' alert never shows (2.8, S2).",
+            "A 409 after Save and update shows 'This connection was changed by someone else since you opened it. Reload to get the latest values, then re-apply your change.', saved once, and stays on the page (2.9, AC-1.7).",
+            "`pnpm exec biome check ./src` and `pnpm exec tsc -b` clean; EditConnection.fieldChange.test.tsx, ModifyConnectionSettings.test.tsx and EditConnection.test.tsx green."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: Vitest example tests by DISTILL; see paradigm_note. 2.3 asserts no role=alert anywhere after the save, so the alert removal and Save and update land together. DISTILL's disposition: the existing service test 'should update a work tracking system connection' pins put(url, connection) with exactly two arguments - Save and update must not add a third argument here. Grep Lighthouse.EndToEndTests/ for the alert text and any changed accessible name before committing (none expected: no spec edits connection fields). The dialog body may be one paragraph or two; the tests match the dialog's whole text."
+        },
+        {
+          "id": "02-03",
+          "name": "The question names the Teams and Portfolios in this instance's words, singular and plural",
+          "description": "The title and the first body sentence take every noun from Terminology (team/teams, portfolio/portfolios), singular for a count of one and plural otherwise, zero included; nothing literal.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.fieldChange.test.tsx",
+          "scenario_name": "2.6 with %s the question reads as such (one of each; Squads and Programs; one Squad and one Program; no Portfolio; no Team); 2.7 the explanation names the Teams and Portfolios in the words this instance uses",
+          "ledger_rows": [
+            "2.6",
+            "2.7"
+          ],
+          "unskips": [
+            "2.6 :: EditConnection.fieldChange.test.tsx :: Story #6307 - pending DELIVER: with %s the question reads as such (5 cases)",
+            "2.7 :: EditConnection.fieldChange.test.tsx :: Story #6307 - pending DELIVER: the explanation names the Teams and Portfolios in the words this instance uses"
+          ],
+          "guards_kept_green": [
+            "every slice-02 row"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx (edit - title and body nouns from Terminology, singular and plural)",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.fieldChange.test.tsx (edit - it.skip to it on 2.6, 2.7)"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "criteria": [
+            "Titles read `Update 1 Team and 1 Portfolio?`, `Update 4 Squads and 2 Programs?`, `Update 1 Squad and 1 Program?`, `Update 3 Teams and 0 Portfolios?` and `Update 0 Teams and 2 Portfolios?` (2.6, S4, AC-2.3; the zero-count form decided in AFK, to be ratified).",
+            "With Squad and Program configured the body says 'once each Squad and Program on this connection has been updated' (2.7).",
+            "End of phase 02: the filtered backend suite, `pnpm test` and `pnpm build` are green with zero warnings; no it.skip left in the slice-02 describe or on 2.15."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. These may already pass if 02-01 drew the nouns from Terminology; un-skip, confirm, and say so in the commit body (their RED is on record in red-classification.md). Pre-apply the ledger's S3358 and S4624: pick the noun in a small helper with an early return, never a ternary inside a template-literal slot."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Save now, update later",
+      "description": "Releasable on top of slices 01 and 02: the question also offers Save only, which saves with ?startUpdates=false (the server side is slice 01's) and returns to the overview; usage data learns which answer was given. Backend event shape before the browser sends it, so no build ever sends an event the server refuses.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Save only stores the field, holds the updates back and returns to the overview",
+          "description": "WorkTrackingSystemService.updateWorkTrackingSystemConnection(connection, { startUpdates }?) - the second argument optional (DISTILL's signature) - sends startUpdates=false (query string or axios params) only when the choice is false, so the two-argument call of every other save is unchanged. The question gains Save only and its sentence 'Save only: they fill in with the next scheduled update instead.'; ModifyConnectionSettings passes the answer to its save callback, and EditConnection passes { startUpdates: false } to the service for Save only and navigates to / as today.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.fieldChange.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.fieldChange.test.tsx",
+            "Lighthouse.Frontend/src/services/Api/WorkTrackingSystemService.test.ts"
+          ],
+          "scenario_name": "3.1 the question offers to save only and says when the field fills in then; 3.2 Save only saves the new field, holds the updates back and returns to the overview; 3.7 saving only asks the server to leave the updates to their next scheduled run (WorkTrackingSystemService.test.ts)",
+          "ledger_rows": [
+            "3.1",
+            "3.2",
+            "3.7"
+          ],
+          "unskips": [
+            "3.1 :: EditConnection.fieldChange.test.tsx (describe 'slice 03') :: Story #6307 - pending DELIVER: the question offers to save only and says when the field fills in then",
+            "3.2 :: EditConnection.fieldChange.test.tsx :: Story #6307 - pending DELIVER: Save only saves the new field, holds the updates back and returns to the overview",
+            "3.7 :: Lighthouse.Frontend/src/services/Api/WorkTrackingSystemService.test.ts :: saving only asks the server to leave the updates to their next scheduled run"
+          ],
+          "guards_kept_green": [
+            "every slice-02 row, 2.3 in particular (Save and update carries no startUpdates or true)",
+            "WorkTrackingSystemService.test.ts 'should update a work tracking system connection' (exactly two arguments)",
+            "Slice01SavesThatStartNothingScenarios.cs 1.15 and 1.16 (the server side of Save only)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/services/Api/WorkTrackingSystemService.ts (edit - optional { startUpdates } on updateWorkTrackingSystemConnection, sent only when false)",
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx (edit - Save only and its sentence; the answer passed to the save callback)",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx (edit - Save only passes { startUpdates: false } to the service)",
+            "Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts (edit - only if the widened signature needs it)",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.fieldChange.test.tsx and Lighthouse.Frontend/src/services/Api/WorkTrackingSystemService.test.ts (edit - it.skip to it on 3.1, 3.2, 3.7)"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "criteria": [
+            "The question says 'Save only: they fill in with the next scheduled update instead.' and offers Save only (3.1, AC-3.2, S4).",
+            "Save only saves the connection with Fix Versions, carrying exactly { startUpdates: false }, returns to the overview, and shows no notice about updates (3.2, AC-3.1, S6).",
+            "The service asks PUT /worktrackingsystemconnections/7 with startUpdates=false (3.7).",
+            "Save and update still sends no startUpdates or true, and the existing two-argument service test is unchanged.",
+            "Save and update stays the default (focused) answer (AC-3.4).",
+            "`pnpm exec biome check ./src` and `pnpm exec tsc -b` clean; the two test files green."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. RED per red-classification.md: 3.1/3.2 no question dialog at DISTILL (now: no Save only button), 3.7 'the PUT carries no startUpdates'. Pass the choice only when it is false, per DISTILL's Existing-test disposition; adding a third argument always would change the existing service test, which this roadmap does not plan. The save callback's widened signature is a component contract: grep its other callers (ModifyConnectionSettings is used by EditConnection only, confirm) before changing it."
+        },
+        {
+          "id": "03-02",
+          "name": "The server accepts a change to a connection's fields, saying only whether the updates run now or later",
+          "description": "Append WorkTrackingSystemFieldsChanged = 19 to UsageDataEventName (never renumber). Add the closed choice Now | Later as an Updates part: on UsageDataEventDto and UsageDataEventReported, defined-value check in UsageDataController.AsTakenIn, a declaration in UsageDataEventShapes with its IsCarriedExactlyWhenDeclared clause in Fits (carried by this event and no other, and always by this one), and written as `updates` by the PostHog publisher, left out on every other event. Add the row to docs/settings/usagedata.md ('| A connection's Additional Fields were changed | ...' naming `Now` and `Later`), the field-table entry (a fixed word, only on this event), and bump the 'other N events' counts in the existing rows.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/WorkTrackingSystemFieldsChangedUsageEventTests.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/WorkTrackingSystemFieldsChangedUsageEventTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/UsageData/UsageDataEventShapesTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/UsageDataEmitSeamArchUnitTest.cs"
+          ],
+          "scenario_name": "3.8 A_change_to_a_connections_fields_travels_with_when_the_updates_run_and_nothing_else (Now, Later); 3.9 A_change_to_a_connections_fields_without_a_choice_from_the_list_or_carrying_anything_more_is_refused (5; the lowercase 'now' case is deleted); 3.10 Any_other_event_carrying_the_choice_is_refused (TeamCreated, WorkTrackingSystemConnected); 3.11 The_event_is_named_and_every_event_named_before_it_keeps_its_number; 3.12 The_usage_data_page_has_a_row_for_a_change_to_a_connections_fields_naming_both_choices",
+          "ledger_rows": [
+            "3.8",
+            "3.9",
+            "3.10",
+            "3.11",
+            "3.12"
+          ],
+          "unskips": [
+            "3.8 :: WorkTrackingSystemFieldsChangedUsageEventTests.cs :: A_change_to_a_connections_fields_travels_with_when_the_updates_run_and_nothing_else (2 cases)",
+            "3.9 :: WorkTrackingSystemFieldsChangedUsageEventTests.cs :: A_change_to_a_connections_fields_without_a_choice_from_the_list_or_carrying_anything_more_is_refused (5 cases, after deleting the [TestCase] that expected a lowercase 'now' to be refused)",
+            "3.10 :: WorkTrackingSystemFieldsChangedUsageEventTests.cs :: Any_other_event_carrying_the_choice_is_refused (2 cases)",
+            "3.11 :: WorkTrackingSystemFieldsChangedUsageEventTests.cs :: The_event_is_named_and_every_event_named_before_it_keeps_its_number",
+            "3.12 :: WorkTrackingSystemFieldsChangedUsageEventTests.cs :: The_usage_data_page_has_a_row_for_a_change_to_a_connections_fields_naming_both_choices"
+          ],
+          "guards_kept_green": [
+            "every existing Integration/UsageData class (ReportUsageEventsTests, OptionalFeatureToggledEventTests, TeamRefinementNeedUsageEventsTests, Story6193EveryEventSaysItsSource..., TeamForecastRealityCheckRunEventTests)",
+            "Models/UsageData/UsageDataEventShapesTests and Architecture/UsageDataEmitSeamArchUnitTest, UsageDataDisclosureTest, UsageDataPayloadPurityTest"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs (edit - WorkTrackingSystemFieldsChanged = 19, appended)",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventReported.cs (edit - Updates part)",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventShapes.cs (edit - declaration and Fits clause)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/UsageDataEventBatchDto.cs (edit - Updates on UsageDataEventDto, nullable like its siblings)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/UsageDataController.cs (edit - AsTakenIn checks the value is defined and hands it on)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/UsageData/PostHogUsageDataPublisher.cs (edit - `updates` written when present, omitted otherwise)",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataUpdates.cs (CREATE NEW - the closed choice Now | Later, mirroring UsageDataReportTemplate.cs)",
+            "docs/settings/usagedata.md (edit - the event's row naming `Now` and `Later`, the field-table entry, the 'other N events' counts)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/WorkTrackingSystemFieldsChangedUsageEventTests.cs (edit - remove [Ignore(Pending)]; delete the one 3.9 [TestCase] at about line 109 whose JSON fragment carries updates as lowercase now, and no other line)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/UsageData/UsageDataEventShapesTests.cs (edit - InItsOwnShape gains this event's own shape; see DOUBT)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/UsageDataEmitSeamArchUnitTest.cs (edit - `updates` added to EveryFieldTheCollectorIsSent; see DOUBT)"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "criteria": [
+            "A consenting browser's WorkTrackingSystemFieldsChanged with updates Now, or Later, answers 204 and reaches the collector as one message carrying exactly the standard instance facts plus `updates` with that value (3.8, S7).",
+            "The event is refused with 400 and nothing is forwarded when it carries no choice, `Soon`, or a choice plus a report type, a work tracking system or a route (3.9, 5 cases).",
+            "TeamCreated or WorkTrackingSystemConnected carrying `updates` is refused (3.10).",
+            "UsageDataEventName names WorkTrackingSystemFieldsChanged and all 19 earlier names keep their numbers (3.11).",
+            "docs/settings/usagedata.md has exactly one row starting '| A connection's Additional Fields were changed |' naming `Now` and `Later` (3.12).",
+            "Never a connection name, field name, reference, id or count travels (the event's property set is compared whole in 3.8).",
+            "`dotnet build` zero warnings (NU1903 pre-existing); every UsageData test class green."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. Precedent: the report-template part (ReportUsageEventsTests, UsageDataReportTemplate) touched exactly these files. The usagedata.md row lands here rather than in 03-03 because 3.12 pins it in this step's test file; 03-03, the step that first emits the event from the browser, follows in the same slice and the two are pushed together (never 03-02 alone), which keeps CLAUDE.md's 'emit and list in the same DELIVER step' promise at slice level. DECIDED (orchestrator, AFK, the maintainer may revisit): 3.9 runs 5 cases, not 6. The case that expected a lowercase `now` to be refused is dropped, because the endpoint reads every closed usage-data choice whatever its case (the global JsonStringEnumConverter in Program.cs; Story6193EveryEventSaysItsSourceScenarios pins 'Names are read whatever their case, as every other closed choice on this endpoint is'), so `updates` follows the same rule. Delete that one [TestCase] line (around WorkTrackingSystemFieldsChangedUsageEventTests.cs:109, the case whose JSON fragment carries updates with the value now in lower case). This is the one edit to a DISTILL-authored test the crafter may make here; the other five refusal cases (no choice, Soon, a choice plus a report type, a work tracking system or a route) stay as written. Do not add a case-sensitive converter. DECIDED (orchestrator, AFK): Models/UsageData/UsageDataUpdates.cs is approved as a new production file holding the closed choice Now | Later, mirroring UsageDataReportTemplate.cs. DOUBT (existing-test edits outside DISTILL's disposition): UsageDataEventShapesTests.InItsOwnShape falls through to the name-only shape for every unknown event, so the new event would fail 'A_sizing_moment_is_carried_exactly_by_a_sizing_event' and 'A_refinement_verdict_...' until it gains its own arm; UsageDataEmitSeamArchUnitTest.EveryFieldTheCollectorIsSent is written by hand on purpose ('adding one is something somebody comes here and does') and must gain `updates`. Both are the edits those tests exist to force. Pre-apply: S6964 does not bite (the DTO part is nullable like its siblings); CA1861/NUnit2045 in any touched test; no personal data, never free text (memory: usage data never personal)."
+        },
+        {
+          "id": "03-03",
+          "name": "Answering the question tells usage data whether the updates run now or later, and nothing else",
+          "description": "Frontend mirror: WorkTrackingSystemFieldsChanged in UsageDataEventName, the Updates closed choice (Now | Later) beside the other closed choices, the optional `updates` on the reported event, the buffer and the reporter's capability-use type. EditConnection reports { name: WorkTrackingSystemFieldsChanged, updates } once, after the save the answer chose has succeeded: Save and update is Now, Save only is Later; never on Cancel, never when no question was asked, never when the save is refused.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.fieldChange.test.tsx",
+          "scenario_name": "3.3 answering %s tells usage data the updates run %s and nothing else (Save and update / Now, Save only / Later); 3.4 Cancel tells usage data nothing; 3.5 a save refused because someone else saved first tells usage data nothing; guard 3.6 a field change saved without a question tells usage data nothing",
+          "ledger_rows": [
+            "3.3",
+            "3.4",
+            "3.5",
+            "3.6"
+          ],
+          "unskips": [
+            "3.3 :: EditConnection.fieldChange.test.tsx (describe 'slice 03') :: Story #6307 - pending DELIVER: answering %s tells usage data the updates run %s and nothing else (2 cases)",
+            "3.4 :: EditConnection.fieldChange.test.tsx :: Story #6307 - pending DELIVER: Cancel tells usage data nothing",
+            "3.5 :: EditConnection.fieldChange.test.tsx :: Story #6307 - pending DELIVER: a save refused because someone else saved first tells usage data nothing"
+          ],
+          "guards_kept_green": [
+            "3.6 :: EditConnection.fieldChange.test.tsx :: a field change saved without a question tells usage data nothing",
+            "every slice-02 and slice-03 row; the WorkTrackingSystemConnected event on a new connection unchanged"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/services/Api/UsageDataService.ts (edit - WorkTrackingSystemFieldsChanged in UsageDataEventName; optional updates on IUsageDataEvent)",
+            "Lighthouse.Frontend/src/models/UsageData/UsageData.ts (edit - the Now | Later closed choice beside the other closed choices)",
+            "Lighthouse.Frontend/src/services/UsageData/usageDataBuffer.ts (edit - updates carried on a noticed event)",
+            "Lighthouse.Frontend/src/services/UsageData/usageDataReporter.ts (edit - updates on the capability-use type)",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx (edit - report after the answered save succeeds)",
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx (edit - only if the answer does not yet reach EditConnection's save)",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.fieldChange.test.tsx (edit - it.skip to it on 3.3, 3.4, 3.5)"
+          ],
+          "dependencies": [
+            "03-02"
+          ],
+          "criteria": [
+            "Save and update sends exactly [{ name: 'WorkTrackingSystemFieldsChanged', updates: 'Now' }] and Save only exactly [{ ..., updates: 'Later' }], after returning to the overview (3.3, S7, OUT-6307-opt-out-rate).",
+            "Cancel sends nothing (3.4); a save refused with 409 after the question sends nothing (3.5, decided in AFK, to be ratified); a field change saved with no question sends nothing (3.6).",
+            "The event carries nothing but its name and the choice.",
+            "End of phase 03: the filtered backend suite, `pnpm test` and `pnpm build` are green with zero warnings; no `[Ignore(Pending)]` or `it.skip` of this story remains."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. RED per red-classification.md: no question dialog at DISTILL (now: no event). Mirror the names exactly as the server reads them ('Now', 'Later', and the event name) - the backend sends enums as strings and the browser's closed choices are string constants, so a numeric mirror would compare false. Report after `await` of the save, in the answer handler in EditConnection, as DEVOPS placed it; the existing WorkTrackingSystemConnected report for a connection being set up stays where it is. Usage data never carries free text, a name, an id or a count."
+        }
+      ]
+    }
+  ]
+}
