@@ -22,6 +22,22 @@ namespace Lighthouse.Backend.Tests.Cache
                 .ToArray();
         }
 
+        // A participant that never reaches the barrier would leave the others waiting forever, so every
+        // wait is bounded and a hang becomes a failure that says so, not a stalled test run.
+        private static readonly TimeSpan ParticipantsMustFinishWithin = TimeSpan.FromSeconds(30);
+
+        private static async Task AllFinish(params IEnumerable<Task> participants)
+        {
+            try
+            {
+                await Task.WhenAll(participants).WaitAsync(ParticipantsMustFinishWithin);
+            }
+            catch (TimeoutException)
+            {
+                Assert.Fail($"The concurrent participants did not all finish within {ParticipantsMustFinishWithin.TotalSeconds} s; one is stuck.");
+            }
+        }
+
         [Test]
         public async Task ConcurrentInsertsOnUniqueKeys_DoNotThrow_AndAllValuesAreRetrievable()
         {
@@ -43,7 +59,7 @@ namespace Lighthouse.Backend.Tests.Cache
                 }
             });
 
-            await Task.WhenAll(tasks);
+            await AllFinish(tasks);
 
             using (Assert.EnterMultipleScope())
             {
@@ -120,7 +136,7 @@ namespace Lighthouse.Backend.Tests.Cache
                 }
             });
 
-            await Task.WhenAll(writers.Concat(readers));
+            await AllFinish(writers.Concat(readers));
 
             using (Assert.EnterMultipleScope())
             {
@@ -158,7 +174,7 @@ namespace Lighthouse.Backend.Tests.Cache
                 }
             });
 
-            await Task.WhenAll(tasks);
+            await AllFinish(tasks);
 
             using (Assert.EnterMultipleScope())
             {
@@ -169,7 +185,6 @@ namespace Lighthouse.Backend.Tests.Cache
         }
 
         [Test]
-        [CancelAfter(5000)]
         public async Task KeysEnumerationDuringMutation_DoesNotThrow_CollectionModified()
         {
             const int keyPoolSize = 100;
@@ -217,7 +232,7 @@ namespace Lighthouse.Backend.Tests.Cache
             finally
             {
                 stop.Cancel();
-                await writer;
+                await AllFinish(writer);
             }
 
             Assert.That(exceptions, Is.Empty,
@@ -225,7 +240,6 @@ namespace Lighthouse.Backend.Tests.Cache
         }
 
         [Test]
-        [CancelAfter(5000)]
         public async Task InvalidateMetricsStylePrefixRemoval_IsSafeUnderRacingMutations()
         {
             const string entityPrefix = "42_";
@@ -280,8 +294,7 @@ namespace Lighthouse.Backend.Tests.Cache
                 }
             })[0];
 
-            await Task.WhenAll(background);
-            await invalidator;
+            await AllFinish(background.Append(invalidator));
 
             var finalSweep = cache.Keys.Where(k => k.StartsWith(entityPrefix, StringComparison.Ordinal)).ToList();
             foreach (var key in finalSweep)

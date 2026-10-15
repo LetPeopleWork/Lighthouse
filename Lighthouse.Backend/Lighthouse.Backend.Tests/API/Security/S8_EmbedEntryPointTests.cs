@@ -6,7 +6,8 @@ using Microsoft.Extensions.Time.Testing;
 
 namespace Lighthouse.Backend.Tests.API.Security
 {
-    // Epic 5146 slice 02a (#5641) — ADR-131 / ADR-137; feature security checklist S3, S4, S8, S10.
+    // The embed entry point turns a one-time token into a session, so it must refuse a token that has
+    // expired, been redeemed already or been forged, and never send the browser off to another host.
     public class S8_EmbedEntryPointTests
     {
         private const int ShortTokenLifetimeSeconds = 1;
@@ -249,7 +250,7 @@ namespace Lighthouse.Backend.Tests.API.Security
                 Assert.That(enabledResponse.StatusCode, Is.EqualTo(HttpStatusCode.Redirect),
                     "differential control: the entry point exists and works on a licensed instance");
                 Assert.That(blockedResponse.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden),
-                    "D44: BlockedModeFilter refuses first, and widening its allow-list to reach a narrower guard would only change the number");
+                    "BlockedModeFilter refuses first, and widening its allow-list to reach a narrower guard would only change the number");
             }
         }
     }
