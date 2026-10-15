@@ -2868,3 +2868,22 @@ Fixes:
     projection (N6).
 - **DISTILL.** The frontend test titles now use the instance's Work Item and Feature terms, and the lead-in
   examples are updated wherever they are pinned.
+
+## Wave: DELIVER / [WHY] Upstream Issues
+
+- **DESIGN's CA-D4 rested on a wrong premise.** It said link dates are per counterpart key, not per link type,
+  because "the changelog's `Link` item names no type in a structured field". The field part is true, but the
+  item's sentence names the type: it reads the phrase of the end it is written for, "This work item is
+  caused by PAY-88" (older versions write "This issue ..."), and a removal's `fromString` is the same text
+  as the addition's `toString`. CA-D4 also expected the per-key collision to be rare and to "fall to the
+  deterministic fallback". It did not. Adding "relates to PAY-88" re-dated the parent link "is caused by
+  PAY-88", so the wrong Feature won with a confident "oldest link" line, and adding then removing it
+  erased the parent link's date.
+- **What DELIVER changed.** The history is replayed per link, identified by counterpart key and sentence.
+  `Issue.StandingLinks` carries one (key, sentence, added at) per link still standing, replacing the per-key
+  date map. `ResolveParentFromLinks` dates a candidate only from the standing entry whose sentence reads that
+  end's phrase immediately before the key. No such entry, or several that disagree, leaves it undated.
+  Two further gaps were closed at the same time: entries stamped at the same instant are ordered by their
+  history id, and a changelog whose `total` exceeds the entries it carries (Data Center's partial search
+  copy) dates no link at all. A Data Center entry that names its counterpart only in the sentence still
+  dates its link.
