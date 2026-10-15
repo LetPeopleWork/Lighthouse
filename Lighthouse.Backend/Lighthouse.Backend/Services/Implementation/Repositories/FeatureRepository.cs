@@ -41,9 +41,10 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return Context.Features.Select(feature => feature.ReferenceId).ToList();
         }
 
-        // SCAFFOLD: the projection over reference id and created date is not built yet.
         public StoredFeatures GetStoredFeatureCreatedDates()
-            => throw new NotImplementedException($"SCAFFOLD: the stored-Feature snapshot is not built yet ({Context.GetType().Name})");
+            => new(Context.Features
+                .Select(feature => new { feature.ReferenceId, feature.CreatedDate })
+                .ToDictionary(feature => feature.ReferenceId, feature => feature.CreatedDate, StringComparer.Ordinal));
 
         private IQueryable<Feature> GetFeatures()
         {

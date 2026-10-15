@@ -5,9 +5,11 @@ namespace Lighthouse.Backend.Models
     /// rule settled it, and which candidates were set aside - or that it could not be placed, and why. It
     /// is a plan rather than a write, so the rule can be read and checked without touching a record.
     /// </summary>
-    // SCAFFOLD: the result the placement tests read. Nothing produces one yet.
     public sealed record ParentPlacement
     {
+        public static ParentPlacement NotPlacedBecause(ParentNotPlacedReason reason)
+            => new() { Outcome = ParentPlacementOutcome.NotPlaced, WhyNotPlaced = reason };
+
         public ParentPlacementOutcome Outcome { get; init; }
 
         public string Key { get; init; } = string.Empty;
@@ -57,10 +59,10 @@ namespace Lighthouse.Backend.Models
     /// Every Feature this instance holds, by reference id, with the date it was created when that is known.
     /// Read once per fetch and only ever asked questions, so whoever places a parent cannot write through it.
     /// </summary>
-    // SCAFFOLD: holds what it was given. Answering from it is not built yet.
+    // SCAFFOLD: answers whether it holds a Feature. Answering a created date from it is not built yet.
     public sealed class StoredFeatures
     {
-        private const string NotBuiltYet = "SCAFFOLD: reading the stored Features is not built yet";
+        private const string NotBuiltYet = "SCAFFOLD: reading a stored Feature's created date is not built yet";
 
         private readonly Dictionary<string, DateTime?> createdDates;
 
@@ -69,8 +71,7 @@ namespace Lighthouse.Backend.Models
             createdDates = new Dictionary<string, DateTime?>(createdDatesByReferenceId, StringComparer.Ordinal);
         }
 
-        public bool Holds(string referenceId)
-            => throw new NotImplementedException($"{NotBuiltYet} ({createdDates.Count} held, asked about {referenceId})");
+        public bool Holds(string referenceId) => createdDates.ContainsKey(referenceId);
 
         public DateTime? CreatedDateOf(string referenceId)
             => throw new NotImplementedException($"{NotBuiltYet} ({createdDates.Count} held, asked about {referenceId})");

@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     public sealed class WorkItemServiceTestBuilder
     {
         private IWorkTrackingConnectorFactory workTrackingConnectorFactory = Mock.Of<IWorkTrackingConnectorFactory>();
-        private IRepository<Feature> featureRepository = Mock.Of<IRepository<Feature>>();
+        private IFeatureRepository featureRepository = Mock.Of<IFeatureRepository>();
         private IWorkItemRepository workItemRepository = Mock.Of<IWorkItemRepository>();
         private IPortfolioMetricsService portfolioMetricsService = Mock.Of<IPortfolioMetricsService>();
         private IRepository<Team> teamRepository = Mock.Of<IRepository<Team>>();
@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             return this;
         }
 
-        public WorkItemServiceTestBuilder WithFeatureRepository(IRepository<Feature> repository)
+        public WorkItemServiceTestBuilder WithFeatureRepository(IFeatureRepository repository)
         {
             featureRepository = repository;
             return this;

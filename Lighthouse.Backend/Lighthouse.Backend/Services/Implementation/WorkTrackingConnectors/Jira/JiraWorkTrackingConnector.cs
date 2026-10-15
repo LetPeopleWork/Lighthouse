@@ -1663,15 +1663,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var fromTheMatchingLinks = SetTheParentTheOverrideNames(issue, workItemQueryOwner, workItem, customFieldReferences);
             workItem.LinksNamedMoreThanOneParent = fromTheMatchingLinks.IsAmbiguous;
+            workItem.ParentCandidatesFromLinks = fromTheMatchingLinks.CandidatesWithTheirLinkDates;
 
             return new AnItemAndWhatItsLinksOffered(workItem, fromTheMatchingLinks);
         }
 
         /// <summary>
         /// One record as Lighthouse read it, together with the issues its links named as a parent. The
-        /// record itself remembers only that there was more than one of them, which is all the count in
-        /// refresh history needs; the keys stay here because the warning has to name them, and whoever has
-        /// to go and remove the surplus links cannot find them from a number.
+        /// keys travel beside the record because the warning has to name them, and whoever has to go and
+        /// remove the surplus links cannot find them from a number.
         /// </summary>
         private readonly record struct AnItemAndWhatItsLinksOffered(WorkItemBase Item, ParentResolution FromTheMatchingLinks);
 

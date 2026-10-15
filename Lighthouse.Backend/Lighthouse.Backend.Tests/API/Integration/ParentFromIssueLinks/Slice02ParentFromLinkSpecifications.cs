@@ -475,9 +475,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             return storage.Object;
         }
 
-        private IRepository<Feature> StorageForTheFeatures()
+        private IFeatureRepository StorageForTheFeatures()
         {
-            var storage = new Mock<IRepository<Feature>>();
+            var storage = new Mock<IFeatureRepository>();
 
             storage
                 .Setup(repository => repository.GetByPredicate(It.IsAny<Func<Feature, bool>>()))

@@ -1272,6 +1272,9 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int>("RecordsFetched")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("RecordsPlacedFromLinksNamingMoreThanOneParent")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("RecordsScanned")
                         .HasColumnType("INTEGER");
 

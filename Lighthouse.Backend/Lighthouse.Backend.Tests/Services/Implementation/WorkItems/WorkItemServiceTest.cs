@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 {
     public class WorkItemServiceTest
     {
-        private Mock<IRepository<Feature>> featureRepositoryMock;
+        private Mock<IFeatureRepository> featureRepositoryMock;
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IWorkTrackingConnector> workTrackingConnectorMock;
         private Mock<IPortfolioMetricsService> projectMetricsServiceMock;
@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public void SetUp()
         {
             workTrackingConnectorMock = new Mock<IWorkTrackingConnector>();
-            featureRepositoryMock = new Mock<IRepository<Feature>>();
+            featureRepositoryMock = new Mock<IFeatureRepository>();
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             projectMetricsServiceMock = new Mock<IPortfolioMetricsService>();
             teamRepositoryMock = new Mock<IRepository<Team>>();

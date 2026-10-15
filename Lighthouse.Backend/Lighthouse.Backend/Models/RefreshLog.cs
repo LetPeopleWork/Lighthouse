@@ -44,11 +44,18 @@ namespace Lighthouse.Backend.Models
         public bool Cancelled { get; set; }
 
         /// <summary>
-        /// How many records this refresh read whose links named more than one issue to hang them under.
-        /// Each of those kept whatever parent it already had, which on screen is indistinguishable from a
-        /// record nobody ever linked - so without a number here, refresh history shows a tracker that
-        /// needs tidying and one that does not as exactly the same thing.
+        /// How many records this refresh read whose links named more than one issue to hang them under, and
+        /// that it could not place under any of them. Each of those took no parent from its links, which on
+        /// screen is indistinguishable from a record nobody ever linked - so without a number here, refresh
+        /// history shows a tracker that needs tidying and one that does not as exactly the same thing.
         /// </summary>
         public int RecordsWhoseLinksNamedMoreThanOneParent { get; set; }
+
+        /// <summary>
+        /// How many records this refresh read whose links named more than one issue, and that it placed under
+        /// one of them all the same. Kept apart from the ones it could not place, so an administrator can see
+        /// how often a parent was decided on their behalf.
+        /// </summary>
+        public int RecordsPlacedFromLinksNamingMoreThanOneParent { get; set; }
     }
 }

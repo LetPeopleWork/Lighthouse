@@ -1334,6 +1334,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int>("RecordsFetched")
                         .HasColumnType("integer");
 
+                    b.Property<int>("RecordsPlacedFromLinksNamingMoreThanOneParent")
+                        .HasColumnType("integer");
+
                     b.Property<int>("RecordsScanned")
                         .HasColumnType("integer");
 

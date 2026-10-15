@@ -3,6 +3,7 @@ using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.Parents;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Dependencies;
@@ -17,7 +18,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
     public class WorkItemService(
         ILogger<WorkItemService> logger,
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
-        IRepository<Feature> featureRepository,
+        IFeatureRepository featureRepository,
         IWorkItemRepository workItemRepository,
         IPortfolioMetricsService portfolioMetricsService,
         IRepository<Team> teamRepository,
@@ -174,9 +175,52 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 scan.Succeeded,
                 fetchShapeChanged);
 
-            return mode == SyncMode.Delta
+            var fetch = mode == SyncMode.Delta
                 ? await FetchOnlyWhatMoved(connector, team, storedWorkItems, scan.Stamps)
                 : await FetchEverything(connector, team);
+
+            return PlaceWhatTheLinksLeftOpen(team, fetch);
+        }
+
+        /// <summary>
+        /// Hangs each downloaded record whose links named several issues under the one of them this instance
+        /// holds as a Feature, before anything is saved. The connector cannot make that choice, because only
+        /// the stored Features say which candidate is one, so it hands every candidate on and the choice is
+        /// made here. The stored Features are read once for the whole fetch, and not at all when no record
+        /// needs them.
+        /// </summary>
+        private RemoteFetch PlaceWhatTheLinksLeftOpen(Team team, RemoteFetch fetch)
+        {
+            var undecided = fetch.WorkItems.FindAll(record => record.ParentCandidatesFromLinks.Count > 1);
+            var placed = undecided.Count == 0 ? [] : PlaceUnderTheirFeatures(team, undecided);
+
+            return fetch with
+            {
+                Outcome = fetch.Outcome with
+                {
+                    RecordsPlacedFromLinksNamingMoreThanOneParent = placed.Count,
+                    RecordsWhoseLinksNamedMoreThanOneParent = CountTheRecordsWhoseLinksNamedMoreThanOneParent(fetch.WorkItems) - placed.Count,
+                },
+            };
+        }
+
+        private List<WorkItem> PlaceUnderTheirFeatures(Team team, List<WorkItem> undecided)
+        {
+            var storedFeatures = featureRepository.GetStoredFeatureCreatedDates();
+            var placed = new List<WorkItem>();
+
+            foreach (var record in undecided)
+            {
+                var placement = ParentResolution.From(record.ParentCandidatesFromLinks).Place(storedFeatures, ParentNarrowing.Narrow);
+
+                if (placement.Outcome == ParentPlacementOutcome.Placed)
+                {
+                    ParentSourceSelector.HangUnder(team, record, placement.Key);
+                    placed.Add(record);
+                }
+            }
+
+            return placed;
         }
 
         /// <summary>
@@ -268,10 +312,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return new RemoteFetch(
                 actualWorkItems,
                 [.. actualWorkItems.Select(workItem => workItem.ReferenceId)],
-                SyncOutcome.FullSync(recordsFromTracker.Count) with
-                {
-                    RecordsWhoseLinksNamedMoreThanOneParent = CountTheRecordsNobodyCouldPlace(actualWorkItems),
-                });
+                SyncOutcome.FullSync(recordsFromTracker.Count));
         }
 
         /// <summary>The download: full payloads for the records whose stamp moved, and for nothing else.</summary>
@@ -289,19 +330,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return new RemoteFetch(
                 downloaded,
                 [.. sweptOnce.Select(record => record.ReferenceId)],
-                SyncOutcome.DeltaSync(sweptRecords.Count, downloaded.Count) with
-                {
-                    RecordsWhoseLinksNamedMoreThanOneParent = CountTheRecordsNobodyCouldPlace(downloaded),
-                });
+                SyncOutcome.DeltaSync(sweptRecords.Count, downloaded.Count));
         }
 
         /// <summary>
-        /// How many of the records this fetch read could not be hung under anything, because their links
-        /// named more than one candidate. The connector is what reads the links and says so; counting is
-        /// all that happens here, which is why the connector needs to know nothing about the update
-        /// pipeline it is being run by.
+        /// How many of the records this fetch read had links naming more than one candidate. The connector
+        /// is what reads the links and says so, which is why it needs to know nothing about the update
+        /// pipeline it is being run by. A Portfolio places none of them yet, so for a Portfolio this is the
+        /// number it could not place; a Team subtracts the ones it placed.
         /// </summary>
-        private static int CountTheRecordsNobodyCouldPlace<TRecord>(List<TRecord> records) where TRecord : WorkItemBase
+        private static int CountTheRecordsWhoseLinksNamedMoreThanOneParent<TRecord>(List<TRecord> records) where TRecord : WorkItemBase
             => records.Count(record => record.LinksNamedMoreThanOneParent);
 
         // Compared per item against the stored stamp. No global watermark, so clock skew and
@@ -842,7 +880,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 recordsFromTracker.ConvertAll(feature => feature.ReferenceId),
                 SyncOutcome.FullSync(recordsFromTracker.Count) with
                 {
-                    RecordsWhoseLinksNamedMoreThanOneParent = CountTheRecordsNobodyCouldPlace(recordsFromTracker),
+                    RecordsWhoseLinksNamedMoreThanOneParent = CountTheRecordsWhoseLinksNamedMoreThanOneParent(recordsFromTracker),
                 });
         }
 
@@ -924,7 +962,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 sweptOnce.ConvertAll(record => record.ReferenceId),
                 SyncOutcome.DeltaSync(sweptOnce.Count, downloaded.Count) with
                 {
-                    RecordsWhoseLinksNamedMoreThanOneParent = CountTheRecordsNobodyCouldPlace(downloaded),
+                    RecordsWhoseLinksNamedMoreThanOneParent = CountTheRecordsWhoseLinksNamedMoreThanOneParent(downloaded),
                 });
         }
 

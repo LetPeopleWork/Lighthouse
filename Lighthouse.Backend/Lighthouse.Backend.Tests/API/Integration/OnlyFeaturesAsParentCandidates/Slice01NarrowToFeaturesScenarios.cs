@@ -61,7 +61,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// Feature it found, and Refresh History counts the placement apart from the refusals.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice01)]
         [Category("walking-skeleton")]
         [Category("kpi")]
         public async Task A_Work_Item_linked_to_one_Feature_and_an_incident_counts_toward_the_Feature()

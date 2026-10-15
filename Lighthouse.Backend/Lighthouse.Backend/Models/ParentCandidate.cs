@@ -5,6 +5,5 @@ namespace Lighthouse.Backend.Models
     /// was made. The moment is missing when the tracker never recorded one, which is the usual case for a
     /// link made by an import, a migration or an automation.
     /// </summary>
-    // SCAFFOLD: the shape the placement tests read. Nothing builds one yet.
     public readonly record struct ParentCandidate(string Key, DateTime? LinkedAt);
 }

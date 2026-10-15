@@ -8,8 +8,8 @@ namespace Lighthouse.Backend.Models
 
         /// <summary>
         /// How many of the records this update read carried links naming more than one issue to hang them
-        /// under, so no parent could be taken from them. An <c>init</c> member for the same reason
-        /// <see cref="Reason"/> is one.
+        /// under and could not be placed under any of them, so no parent was taken from those links. An
+        /// <c>init</c> member for the same reason <see cref="Reason"/> is one.
         ///
         /// A cheap update only reads the records that moved, so its count is how many of THOSE nobody
         /// could place - not how many the whole query holds. An untidy record that sat still is silent
@@ -20,6 +20,14 @@ namespace Lighthouse.Backend.Models
         /// the log and never counted here.
         /// </summary>
         public int RecordsWhoseLinksNamedMoreThanOneParent { get; init; }
+
+        /// <summary>
+        /// How many of the records this update read carried links naming more than one issue and were
+        /// placed under one of them all the same. Counted apart from the ones it could not place, because
+        /// each is a decision taken on the administrator's behalf, and they have to be able to see that one
+        /// was taken.
+        /// </summary>
+        public int RecordsPlacedFromLinksNamingMoreThanOneParent { get; init; }
 
         /// <summary>The one reason worth naming today: the operator changed something the query asks the tracker for.</summary>
         public const string ConfigurationChanged = "configuration-changed";
