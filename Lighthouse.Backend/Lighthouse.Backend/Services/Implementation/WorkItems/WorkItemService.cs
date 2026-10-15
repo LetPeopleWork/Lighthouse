@@ -179,7 +179,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 ? await FetchOnlyWhatMoved(connector, team, storedWorkItems, scan.Stamps)
                 : await FetchEverything(connector, team);
 
-            return PlaceWhatTheLinksLeftOpen(team, fetch);
+            var (placed, notPlaced) = PlaceWhatTheLinksLeftOpen(team, fetch.WorkItems);
+
+            return fetch with
+            {
+                Outcome = fetch.Outcome with
+                {
+                    RecordsPlacedFromLinksNamingMoreThanOneParent = placed,
+                    RecordsWhoseLinksNamedMoreThanOneParent = notPlaced,
+                },
+            };
         }
 
         /// <summary>
@@ -187,21 +196,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// holds as a Feature, before anything is saved. The connector cannot make that choice, because only
         /// the stored Features say which candidate is one, so it hands every candidate on and the choice is
         /// made here. The stored Features are read once for the whole fetch, and not at all when no record
-        /// needs them.
+        /// needs them. Records with one link or none are not touched: the connector already gave them
+        /// their parent.
         /// </summary>
-        private RemoteFetch PlaceWhatTheLinksLeftOpen(Team team, RemoteFetch fetch)
+        private (int Placed, int NotPlaced) PlaceWhatTheLinksLeftOpen(Team team, List<WorkItem> downloaded)
         {
-            var undecided = fetch.WorkItems.FindAll(LinksNameMoreThanOneParent);
+            var undecided = downloaded.FindAll(LinksNameMoreThanOneParent);
             var placed = undecided.Count == 0 ? [] : PlaceUnderTheirFeatures(team, undecided);
 
-            return fetch with
-            {
-                Outcome = fetch.Outcome with
-                {
-                    RecordsPlacedFromLinksNamingMoreThanOneParent = placed.Count,
-                    RecordsWhoseLinksNamedMoreThanOneParent = undecided.Count - placed.Count,
-                },
-            };
+            return (placed.Count, undecided.Count - placed.Count);
         }
 
         private List<WorkItem> PlaceUnderTheirFeatures(Team team, List<WorkItem> undecided)
