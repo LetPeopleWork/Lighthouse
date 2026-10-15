@@ -47,11 +47,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string TheChainWithItsTopLeftOut =
             $"key in ({TheMiddleOfTheChain}, {ALeaf}, {AnotherLeaf})";
 
+        private static readonly string[] TheLinksTheChainHangsBy =
+        [
+            $"{TheMiddleOfTheChain} -> {TheTopOfTheChain}",
+            $"{TheMiddleOfTheChain} -> {ALeaf}",
+            $"{TheMiddleOfTheChain} -> {AnotherLeaf}",
+            $"{ALeaf} -> {TheMiddleOfTheChain}",
+            $"{AnotherLeaf} -> {TheMiddleOfTheChain}",
+        ];
+
         private string? apiToken;
 
         private Dictionary<string, string> readByThePhrase = [];
 
         private Dictionary<string, string> readByTheName = [];
+
+        private List<WorkItem> theChainReadByTheName = [];
 
         [OneTimeSetUp]
         public async Task AskTheInstanceWhatTheChainHangsUnder()
@@ -63,8 +74,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.Ignore($"{TokenEnvironmentVariable} is not set - there is no instance to ask.");
             }
 
-            readByThePhrase = await TheParentOfEachItemWhenTheOverrideNames(ThePhraseAChildReadsTowardsItsParent);
-            readByTheName = await TheParentOfEachItemWhenTheOverrideNames(TheLinkTypesName);
+            readByThePhrase = TheParentOfEach(await TheChainAsReadWhenTheOverrideNames(ThePhraseAChildReadsTowardsItsParent));
+            theChainReadByTheName = await TheChainAsReadWhenTheOverrideNames(TheLinkTypesName);
+            readByTheName = TheParentOfEach(theChainReadByTheName);
         }
 
         [Test]
@@ -101,7 +113,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        private async Task<Dictionary<string, string>> TheParentOfEachItemWhenTheOverrideNames(string reference)
+        /// <summary>
+        /// A refresh orders the issues a record's links name by when each link was made, so every link the
+        /// chain still has must arrive with its date - in UTC, because the day a reader is shown is the UTC
+        /// day. Read by the type's name, each issue offers every Causes link it holds, in both directions.
+        /// The links are matched as a superset, so one added on the instance later leaves this green.
+        /// </summary>
+        [Test]
+        public void GetWorkItemsForTeam_TheLinkTypesName_DatesEveryLinkTheChainStillHas()
+        {
+            var everyLink = theChainReadByTheName
+                .SelectMany(item => item.ParentCandidatesFromLinks.Select(candidate =>
+                    (Link: $"{item.ReferenceId} -> {candidate.Key}", candidate.LinkedAt)))
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(everyLink.Select(link => link.Link), Is.SupersetOf(TheLinksTheChainHangsBy));
+                Assert.That(everyLink.Where(link => link.LinkedAt?.Kind != DateTimeKind.Utc).Select(link => link.Link), Is.Empty,
+                    "These links came back with no date, or with one that is not UTC.");
+            }
+        }
+
+        private static Dictionary<string, string> TheParentOfEach(List<WorkItem> workItems)
+        {
+            return workItems.ToDictionary(workItem => workItem.ReferenceId, workItem => workItem.ParentReferenceId);
+        }
+
+        private async Task<List<WorkItem>> TheChainAsReadWhenTheOverrideNames(string reference)
         {
             var team = ATeamReading(TheChainWithItsTopLeftOut);
 
@@ -116,7 +155,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var workItems = await CreateSubject().GetWorkItemsForTeam(team, CancellationToken.None);
 
-            return workItems.ToDictionary(workItem => workItem.ReferenceId, workItem => workItem.ParentReferenceId);
+            return [.. workItems];
         }
 
         private static JiraWorkTrackingConnector CreateSubject()
