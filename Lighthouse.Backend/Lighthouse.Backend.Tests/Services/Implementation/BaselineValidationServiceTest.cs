@@ -98,7 +98,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         /// <summary>
-        /// Bug #5567: 20:00 UTC is already the next day in Auckland. A baseline ending on the
+        /// 20:00 UTC is already the next day in Auckland. A baseline ending on the
         /// instance's own day is not in the future, however far behind UTC still is.
         /// </summary>
         [Test]
@@ -222,6 +222,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var today = LateEveningInUtcInstance().Today;
             var start = new DateTime(2026, 9, 15, 0, 0, 0, DateTimeKind.Utc);
             var end = new DateTime(2026, 10, 15, 0, 0, 0, DateTimeKind.Utc);
+
+            var result = BaselineValidationService.ValidateDisplayWindowAsBaseline(start, end, 180, today);
+
+            Assert.That(result.IsValid, Is.True);
+        }
+
+        [Test]
+        public void ValidateDisplayWindowAsBaseline_WindowEndingTwoDaysAfterTheInstanceDay_ReturnsValid()
+        {
+            var today = LateEveningInUtcInstance().Today;
+            var start = new DateTime(2026, 9, 15, 0, 0, 0, DateTimeKind.Utc);
+            var end = new DateTime(2026, 10, 16, 0, 0, 0, DateTimeKind.Utc);
 
             var result = BaselineValidationService.ValidateDisplayWindowAsBaseline(start, end, 180, today);
 

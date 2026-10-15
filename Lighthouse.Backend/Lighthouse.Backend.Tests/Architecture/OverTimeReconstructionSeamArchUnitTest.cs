@@ -76,14 +76,14 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string AChartBeingBuilt = "new ProcessBehaviourChart";
 
         /// <summary>
-        /// How many places build a chart carrying a status other than Ready: the NotReady factory, and
-        /// the five refusals the two metrics services hand back when a baseline cannot be used. Pinned
-        /// so that the scan going blind - the type renamed, the code moved out of this tree - reads as
-        /// a failure rather than as an empty list of offenders, which is what a rule of this shape
-        /// otherwise quietly degrades into. A seventh place is welcome; it just has to be argued for
-        /// here rather than appear.
+        /// How many places build a chart carrying a status other than Ready: the NotReady factory, the
+        /// one chart every builder hands back when its baseline cannot be used, and the feature-size
+        /// refusal when nothing sized closed in the range. Pinned so that the scan going blind - the
+        /// type renamed, the code moved out of this tree - reads as a failure rather than as an empty
+        /// list of offenders, which is what a rule of this shape otherwise quietly degrades into. A
+        /// fourth place is welcome; it just has to be argued for here rather than appear.
         /// </summary>
-        private const int PlacesThatBuildAChartWithoutAReadyStatus = 6;
+        private const int PlacesThatBuildAChartWithoutAReadyStatus = 3;
 
         private static readonly string[] DirectoriesThatAreNotSource = ["/obj/", "/bin/", "/StrykerOutput"];
 

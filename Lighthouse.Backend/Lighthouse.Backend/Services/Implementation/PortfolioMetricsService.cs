@@ -77,17 +77,7 @@ namespace Lighthouse.Backend.Services.Implementation
                  var baseline = ResolveBaseline(portfolio, startDate, endDate, asOf);
                  if (!baseline.Validation.IsValid)
                  {
-                     return new ProcessBehaviourChart
-                     {
-                         Status = BaselineStatus.BaselineInvalid,
-                         StatusReason = baseline.Validation.ErrorMessage,
-                         XAxisKind = XAxisKind.DateTime,
-                         Average = 0,
-                         UpperNaturalProcessLimit = 0,
-                         LowerNaturalProcessLimit = 0,
-                         BaselineConfigured = baseline.Configured,
-                         DataPoints = [],
-                     };
+                     return InvalidBaselineChart(baseline, XAxisKind.DateTime);
                  }
 
                  var baselineItems = GetFeaturesClosedInDateRange(portfolio, baseline.Start!.Value, baseline.End!.Value)

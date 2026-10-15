@@ -6,9 +6,9 @@ namespace Lighthouse.Backend.Services.Implementation
     {
         private const int MinimumBaselineDays = 14;
 
-        // The browser cannot know the instance's day, and a viewer's today is at most one day ahead
-        // of it, so a baseline picked to end on the viewer's today may end one day after the
-        // instance's day without being in the future.
+        // The browser cannot know the instance's day, so a picked end one day past it is accepted.
+        // That covers a viewer whose zone is up to a day ahead of the instance's; anything further
+        // is refused as future.
         private const int DaysAViewerCanBeAheadOfTheInstance = 1;
 
         // The baseline bounds are user-picked calendar days stored at UTC midnight, so
@@ -40,8 +40,9 @@ namespace Lighthouse.Backend.Services.Implementation
             return ValidateCutoff(startDate.Value, doneItemsCutoffDays, today);
         }
 
-        // With no baseline configured, the display window stands in for one. It ends on the viewer's
-        // today, which may be ahead of the instance's day, so it is never refused as future.
+        // With no baseline configured, the display window stands in for one. It ends on whatever day
+        // the viewer asked for, which may be ahead of the instance's day, so it is never refused as
+        // future.
         public static BaselineValidationResult ValidateDisplayWindowAsBaseline(DateTime startDate, DateTime endDate, int doneItemsCutoffDays, DateOnly today)
         {
             var lengthResult = ValidateLength(startDate, endDate);

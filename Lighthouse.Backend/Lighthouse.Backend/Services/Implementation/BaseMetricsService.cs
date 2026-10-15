@@ -599,6 +599,21 @@ namespace Lighthouse.Backend.Services.Implementation
             return new ResolvedBaseline(displayStart, displayEnd, false, displayWindowValidation);
         }
 
+        protected static ProcessBehaviourChart InvalidBaselineChart(ResolvedBaseline baseline, XAxisKind xAxisKind)
+        {
+            return new ProcessBehaviourChart
+            {
+                Status = BaselineStatus.BaselineInvalid,
+                StatusReason = baseline.Validation.ErrorMessage,
+                XAxisKind = xAxisKind,
+                Average = 0,
+                UpperNaturalProcessLimit = 0,
+                LowerNaturalProcessLimit = 0,
+                BaselineConfigured = baseline.Configured,
+                DataPoints = [],
+            };
+        }
+
         protected ProcessBehaviourChart BuildDailyRunChartProcessBehaviourChart(
             WorkTrackingSystemOptionsOwner owner,
             DateTime displayStart,
@@ -609,17 +624,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var baseline = ResolveBaseline(owner, displayStart, displayEnd, asOf);
             if (!baseline.Validation.IsValid)
             {
-                return new ProcessBehaviourChart
-                {
-                    Status = BaselineStatus.BaselineInvalid,
-                    StatusReason = baseline.Validation.ErrorMessage,
-                    XAxisKind = XAxisKind.Date,
-                    Average = 0,
-                    UpperNaturalProcessLimit = 0,
-                    LowerNaturalProcessLimit = 0,
-                    BaselineConfigured = baseline.Configured,
-                    DataPoints = [],
-                };
+                return InvalidBaselineChart(baseline, XAxisKind.Date);
             }
 
             var baselineData = getRunChartData(baseline.Start!.Value, baseline.End!.Value);
@@ -654,17 +659,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var baseline = ResolveBaseline(owner, displayStart, displayEnd, asOf);
             if (!baseline.Validation.IsValid)
             {
-                return new ProcessBehaviourChart
-                {
-                    Status = BaselineStatus.BaselineInvalid,
-                    StatusReason = baseline.Validation.ErrorMessage,
-                    XAxisKind = XAxisKind.Date,
-                    Average = 0,
-                    UpperNaturalProcessLimit = 0,
-                    LowerNaturalProcessLimit = 0,
-                    BaselineConfigured = baseline.Configured,
-                    DataPoints = [],
-                };
+                return InvalidBaselineChart(baseline, XAxisKind.Date);
             }
 
             var baselineResult = getDailyValues(baseline.Start!.Value, baseline.End!.Value);
@@ -707,17 +702,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var baseline = ResolveBaseline(owner, displayStart, displayEnd, asOf);
             if (!baseline.Validation.IsValid)
             {
-                return new ProcessBehaviourChart
-                {
-                    Status = BaselineStatus.BaselineInvalid,
-                    StatusReason = baseline.Validation.ErrorMessage,
-                    XAxisKind = XAxisKind.DateTime,
-                    Average = 0,
-                    UpperNaturalProcessLimit = 0,
-                    LowerNaturalProcessLimit = 0,
-                    BaselineConfigured = baseline.Configured,
-                    DataPoints = [],
-                };
+                return InvalidBaselineChart(baseline, XAxisKind.DateTime);
             }
 
             var baselineItems = getClosedItems(baseline.Start!.Value, baseline.End!.Value)
