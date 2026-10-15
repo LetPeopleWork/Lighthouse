@@ -217,8 +217,15 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
         /// <summary>One history entry that moved the issue between statuses, which most of a real history is.</summary>
         public static string AStatusChangeAt(DateTime at, string fromStatus, string toStatus)
-            => AHistoryEntry(at, "{\"field\": \"status\", \"fieldtype\": \"jira\", \"from\": \"1\", \"fromString\": \""
-                + fromStatus + "\", \"to\": \"2\", \"toString\": \"" + toStatus + "\"}");
+            => AHistoryEntry(at, AStatusItem(fromStatus, toStatus));
+
+        /// <summary>One history entry in which a single edit both gave the issue a link and moved it between statuses.</summary>
+        public static string ALinkAddedBesideAStatusChangeAt(DateTime at, string counterpartKey, string sentence, string fromStatus, string toStatus)
+            => AHistoryEntry(at, ALinkItem(null, null, counterpartKey, sentence) + ", " + AStatusItem(fromStatus, toStatus));
+
+        private static string AStatusItem(string fromStatus, string toStatus)
+            => "{\"field\": \"status\", \"fieldtype\": \"jira\", \"from\": \"1\", \"fromString\": \""
+                + fromStatus + "\", \"to\": \"2\", \"toString\": \"" + toStatus + "\"}";
 
         /// <summary>One page of the changelog re-read, holding the whole history at once.</summary>
         public static string AChangelogPageHolding(IEnumerable<string> histories)

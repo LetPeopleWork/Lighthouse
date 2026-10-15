@@ -104,8 +104,10 @@ namespace Lighthouse.Backend.Models
 
         /// <summary>
         /// Two answers naming the same keys, in any order, are the same answer: From sorts them, so they
-        /// compare in one order. Left to the compiler, the comparison would be between the arrays those keys
-        /// are held in, and two separately built answers would never match.
+        /// compare in one order. The link dates are left out on purpose. They rank the candidates but do not
+        /// change which issues the links name, and one reading of an issue can lack a date another reading
+        /// has, for instance when its history arrived only in part. Left to the compiler, the comparison would
+        /// be between the arrays the candidates are held in, and two separately built answers would never match.
         /// </summary>
         public bool Equals(ParentResolution other) => Candidates.SequenceEqual(other.Candidates);
 

@@ -166,17 +166,31 @@ namespace Lighthouse.Backend.Tests.Factories
                 "A history that starts part way through is ordinary for an imported issue, and it must not cost the links it does date.");
         }
 
-        /// <summary>Holds today and has to keep holding: link entries sit beside status changes in the same history.</summary>
+        /// <summary>
+        /// One edit can add a link and move the issue between statuses, and Jira writes both into a single
+        /// history entry. Each is read from it, and the status change comes out exactly as it does from an
+        /// entry that holds nothing else.
+        /// </summary>
         [Test]
         [Category("edge")]
-        public void Status_changes_beside_link_entries_are_read_as_before()
+        public void A_status_change_in_the_same_entry_as_a_link_is_read_as_if_it_stood_alone()
         {
             var issue = AnIssueWithTheHistory(
-                JiraWireFormat.ALinkAddedAt(February1, AFeature, Sentence(AFeature)),
-                JiraWireFormat.AStatusChangeAt(April10, "To Do", "In Progress"));
+                JiraWireFormat.ALinkAddedBesideAStatusChangeAt(April10, AFeature, Sentence(AFeature), "To Do", "In Progress"));
+            var theSameStatusChangeAlone = AnIssueWithTheHistory(JiraWireFormat.AStatusChangeAt(April10, "To Do", "In Progress"))
+                .StateTransitions.Single();
 
-            Assert.That(issue.StateTransitions, Has.Count.EqualTo(1),
-                "Reading links out of the history must not disturb the status changes every cycle-time figure is built from.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(issue.StateTransitions, Has.Count.EqualTo(1),
+                    "The link item in the entry is not a status change.");
+                Assert.That(issue.StateTransitions[0].FromState, Is.EqualTo("To Do"));
+                Assert.That(issue.StateTransitions[0].ToState, Is.EqualTo("In Progress"));
+                Assert.That(issue.StateTransitions[0].TransitionedAt, Is.EqualTo(theSameStatusChangeAlone.TransitionedAt),
+                    "Every cycle-time figure is built from these instants, so sharing an entry with a link must not move one.");
+                Assert.That(issue.StandingLinks, Is.EqualTo(new[] { ACausedByLink(AFeature, April10) }),
+                    "The link in the same entry is dated by it too.");
+            }
         }
 
         /// <summary>

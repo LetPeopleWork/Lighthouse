@@ -48,6 +48,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
     /// The instance is answered by query: a Team's query asks for Stories, a Portfolio's for Epics, and a
     /// refresh that only downloads what moved asks by key. A cheap refresh therefore re-reads exactly the
     /// records a scenario made move, which is what lets a scenario say what a cheap refresh did.
+    ///
+    /// An issue's history is listed in the order the scenario describes it, which is usually oldest first.
+    /// Jira Cloud writes newest first. No scenario depends on that order: the connector replays a history by
+    /// when each entry happened, and the scenarios that reverse or shuffle a history are there to prove it.
     /// </summary>
     public abstract class ParentPlacementAcceptanceTest
     {

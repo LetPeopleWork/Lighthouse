@@ -192,13 +192,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         }
 
         /// <summary>
-        /// Hangs each downloaded record whose links named several issues under the one of them this instance
-        /// holds as a Feature, before anything is saved. The connector cannot make that choice, because only
-        /// the stored Features say which candidate is one, so it hands every candidate on and the choice is
-        /// made here. The stored Features are read once for the whole fetch, and not at all when no record
-        /// needs them. Records with one link or none are not touched: the connector already gave them
-        /// their parent. What was decided is written as a warning, because a parent picked on the
-        /// administrator's behalf, or not picked at all, is something they are asked to check.
+        /// Hangs each downloaded record whose links named several issues under one of them, before anything
+        /// is saved. Candidates Lighthouse does not hold as Features are set aside, and among the Features left
+        /// the oldest link wins, then the Feature created first, then the lowest key. The connector cannot
+        /// make that choice, because only the stored Features say which candidate is one, so it hands every
+        /// candidate on and the choice is made here. The stored Features are read once for the whole fetch,
+        /// and not at all when no record needs them. Records with one link or none are not touched: the
+        /// connector already gave them their parent. What was decided is written as a warning, because a
+        /// parent picked on the administrator's behalf, or not picked at all, is something they are asked to
+        /// check.
         /// </summary>
         private (int Placed, int NotPlaced) PlaceWhatTheLinksLeftOpen(Team team, List<WorkItem> downloaded)
         {

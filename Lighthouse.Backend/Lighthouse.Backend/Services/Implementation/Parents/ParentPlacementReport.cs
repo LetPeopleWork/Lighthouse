@@ -71,7 +71,7 @@ namespace Lighthouse.Backend.Services.Implementation.Parents
                 : words;
 
         private static DateTime AsUtc(DateTime instant)
-            => instant.Kind == DateTimeKind.Local ? TimeZoneInfo.ConvertTimeToUtc(instant, TimeZoneInfo.Local) : instant;
+            => instant.Kind == DateTimeKind.Local ? instant.ToUniversalTime() : instant;
 
         private static string TheReason(ParentNotPlacedReason reason) => reason switch
         {
