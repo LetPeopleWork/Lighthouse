@@ -184,24 +184,25 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             => at.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'+0000'", CultureInfo.InvariantCulture);
 
         /// <summary>
-        /// One history entry in which this issue gained a link to <paramref name="counterpartKey"/>.
-        ///
-        /// PROVISIONAL. This is the shape commonly reported for Jira Cloud: field "Link", the counterpart's
-        /// key in "to", the link's sentence in "toString". It was not captured from a live instance. Once a
-        /// payload has been captured from a link that was added, removed and added again, it replaces this
-        /// builder and the two beside it, because every test that reads a link date is only as true as this
-        /// shape.
+        /// One history entry in which this issue gained a link to <paramref name="counterpartKey"/>, in the
+        /// shape Jira Cloud was seen to write when a link was added, removed and added again: field "Link",
+        /// fieldtype "jira", nothing on the from side, the counterpart's key in "to" and this issue's own
+        /// sentence for the link in "toString". Both ends of a link get such an entry, each naming the other.
         /// </summary>
         public static string ALinkAddedAt(DateTime at, string counterpartKey, string sentence)
             => AHistoryEntry(at, ALinkItem(null, null, counterpartKey, sentence));
 
-        /// <summary>One history entry in which this issue lost its link to <paramref name="counterpartKey"/>. PROVISIONAL, as above.</summary>
+        /// <summary>
+        /// One history entry in which this issue lost its link to <paramref name="counterpartKey"/>, as Jira Cloud
+        /// writes it: the mirror of an addition, the key and sentence on the from side and nothing on the to side.
+        /// </summary>
         public static string ALinkRemovedAt(DateTime at, string counterpartKey, string sentence)
             => AHistoryEntry(at, ALinkItem(counterpartKey, sentence, null, null));
 
         /// <summary>
-        /// The other shape that has been reported: a link id where the key would be, so only the sentence
-        /// names the counterpart. PROVISIONAL, as above.
+        /// An addition carrying a link id where the key would be, so only the sentence names the counterpart.
+        /// Jira Cloud did not write this when it was watched; it has been reported for other Jira versions,
+        /// and is kept so that a history in that shape still dates its links.
         /// </summary>
         public static string ALinkAddedNamingTheCounterpartOnlyInItsSentence(DateTime at, string linkId, string sentence)
             => AHistoryEntry(at, ALinkItem(null, null, linkId, sentence));
@@ -220,9 +221,23 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 + entries.Count.ToString(CultureInfo.InvariantCulture) + ", \"isLast\": true}";
         }
 
+        /// <summary>
+        /// Jira Cloud stamps a history entry in the zone of the account that reads it, not in UTC, so the
+        /// entries here carry an offset too and a reader that drops it gets the wrong instant.
+        /// </summary>
         private static string AHistoryEntry(DateTime at, string item)
-            => "{\"id\": \"" + at.Ticks.ToString(CultureInfo.InvariantCulture) + "\", \"created\": \"" + AnInstant(at)
+            => "{\"id\": \"" + at.Ticks.ToString(CultureInfo.InvariantCulture) + "\", \"created\": \"" + AnInstantAsTheAccountSeesIt(at)
                 + "\", \"items\": [" + item + "]}";
+
+        private static readonly TimeSpan TheReadingAccountsOffset = TimeSpan.FromHours(2);
+
+        private static string AnInstantAsTheAccountSeesIt(DateTime at)
+        {
+            var written = new DateTimeOffset(at, TimeSpan.Zero).ToOffset(TheReadingAccountsOffset)
+                .ToString("yyyy-MM-dd'T'HH:mm:ss.fffzzz", CultureInfo.InvariantCulture);
+
+            return written.Remove(written.Length - 3, 1);
+        }
 
         private static string ALinkItem(string? from, string? fromString, string? to, string? toString)
             => "{\"field\": \"Link\", \"fieldtype\": \"jira\""

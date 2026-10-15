@@ -54,7 +54,56 @@ entry, and the history's `created` timestamp.
 words "oldest link" leave every line and label, and the maintainer is told before DISTILL pins them. Data
 Center stays unverified (no instance; risk R2); the fallback still gives a deterministic answer there.
 
-Spike result: _to be recorded_.
+### Spike result (2026-10-15): POSITIVE — Cloud dates every link addition and removal
+
+**Run**: `letpeoplework.atlassian.net`, two Stories with no links before or after, `LGHTHSDMO-30` and
+`LGHTHSDMO-31` (no test or slice-01 data uses either). `POST rest/api/2/issueLink` (type `Blocks`), ~60 s,
+`DELETE rest/api/2/issueLink/10215`, ~60 s, `POST` again (link `10216`), then
+`GET rest/api/2/issue/{key}?expand=changelog` on both ends. The connector reads v2, so v2 was read rather
+than the v3 the plan above names. Finally `DELETE rest/api/2/issueLink/10216` and a re-read of
+`fields=issuelinks` on both: `[]` on each. Nothing else on the instance was touched.
+
+**Captured `Link` history entries** (newest first, as Cloud returned them; `author` left out):
+
+| Issue | history `id` | `created` | `field` | `fieldtype` | `from` | `fromString` | `to` | `toString` |
+|---|---|---|---|---|---|---|---|---|
+| LGHTHSDMO-30 | 95860 | `2026-10-15T18:52:24.496+0200` | `Link` | `jira` | `null` | `null` | `LGHTHSDMO-31` | `This work item is blocked by LGHTHSDMO-31` |
+| LGHTHSDMO-30 | 95858 | `2026-10-15T18:51:21.741+0200` | `Link` | `jira` | `LGHTHSDMO-31` | `This work item is blocked by LGHTHSDMO-31` | `null` | `null` |
+| LGHTHSDMO-30 | 95856 | `2026-10-15T18:50:18.595+0200` | `Link` | `jira` | `null` | `null` | `LGHTHSDMO-31` | `This work item is blocked by LGHTHSDMO-31` |
+| LGHTHSDMO-31 | 95859 | `2026-10-15T18:52:24.441+0200` | `Link` | `jira` | `null` | `null` | `LGHTHSDMO-30` | `This work item blocks LGHTHSDMO-30` |
+| LGHTHSDMO-31 | 95857 | `2026-10-15T18:51:21.679+0200` | `Link` | `jira` | `LGHTHSDMO-30` | `This work item blocks LGHTHSDMO-30` | `null` | `null` |
+| LGHTHSDMO-31 | 95855 | `2026-10-15T18:50:18.558+0200` | `Link` | `jira` | `null` | `null` | `LGHTHSDMO-30` | `This work item blocks LGHTHSDMO-30` |
+
+Each entry holds exactly one item. The items carry no `fieldId`.
+
+**Answers to DESIGN's open shape question**
+
+- **Field**: `field: "Link"`, `fieldtype: "jira"`.
+- **Where the key is**: the counterpart's key sits in `to` (on an addition) or `from` (on a removal), in the
+  shape `PROJECT-123`. It is not a link id. The sentence in `toString` / `fromString` names the key too.
+- **Addition and removal**: an addition has an empty from side, with `to` and `toString` set. A removal is
+  the mirror: `from` and `fromString` set, the to side `null`.
+- **Both ends**: yes. Each issue gets its own entry, naming the other issue, with its own side's phrase
+  (`is blocked by` on one end, `blocks` on the other). The two ends' timestamps differ by a few tens of ms.
+- **`created`**: a timestamp with an offset, with millisecond precision. The offset is the **reading
+  account's zone** (`+0200`), **not UTC**. So whoever reads the link date must convert it to UTC
+  (`AdjustToUniversal`). `IssueFactory` reads status-change dates today with `AssumeUniversal` alone, which
+  turns an offset into *local* time. The link-date reader must not copy that.
+- **Order**: Cloud returned the histories newest first, so a reader that walks them in the order given
+  gets the removal and re-adding backwards. `Entries_out_of_order_are_read_by_when_they_happened` covers
+  this.
+- **Sentence wording**: Cloud now says "This work item …", not "This issue …". Nothing should match the
+  phrase. Only the key, which the item carries anyway, is read.
+
+**Builders**: `JiraWireFormat.ALinkAddedAt` and `ALinkRemovedAt` already built this item shape. They are
+no longer marked provisional. Every history entry the fixtures build now stamps `created` at a `+0200`
+offset, as Cloud does. The signatures are unchanged, so no caller changed.
+`ALinkAddedNamingTheCounterpartOnlyInItsSentence` (a link id in `to`) is **not** what Cloud wrote. It is
+kept, and described as a shape reported for other Jira versions, so that a history in that shape still
+dates its links. Data Center stays unverified (risk R2).
+
+**Gate**: positive. 02-02, 02-03, 02-04, 02-05, 03-01 and 03-02 keep their main branch, and "oldest link"
+stays in the copy.
 
 ## Acceptance criteria
 
