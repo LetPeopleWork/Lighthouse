@@ -21,7 +21,9 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     /// </summary>
     public sealed class FakeJiraDataCenter
     {
+        private const string ServerInfoPath = "/rest/api/2/serverInfo";
         private const string ProjectListPath = "/rest/api/2/project";
+        private const string VersionListSuffix = "/version";
         private const string VersionPathPrefix = "/rest/api/2/version/";
         private const string SearchPath = "/rest/api/latest/search";
 
@@ -50,8 +52,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public bool HidesItsDeployment { get; set; }
 
         public IReadOnlyList<Uri> VersionListRequests =>
-            [.. Requests.Where(uri => uri.AbsolutePath.StartsWith(ProjectListPath + "/", StringComparison.Ordinal)
-                && uri.AbsolutePath.EndsWith("/version", StringComparison.Ordinal))];
+            [.. Requests.Where(uri => VersionListProjectKeyIn(uri.AbsolutePath) is not null)];
 
         /// <summary>
         /// A connection to this instance. Its url is one nobody else uses, because the connector remembers each
@@ -115,7 +116,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
             var path = uri.AbsolutePath.TrimEnd('/');
 
-            if (path.EndsWith("/rest/api/2/serverInfo", StringComparison.Ordinal))
+            if (path.EndsWith(ServerInfoPath, StringComparison.Ordinal))
             {
                 return HidesItsDeployment
                     ? NotFound()
@@ -127,10 +128,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 return Ok($"[{string.Join(",", projects.Select(ProjectJson))}]");
             }
 
-            var projectsAt = path.IndexOf(ProjectListPath + "/", StringComparison.Ordinal);
-            if (projectsAt >= 0 && path.EndsWith("/version", StringComparison.Ordinal) && request.Method == HttpMethod.Get)
+            if (VersionListProjectKeyIn(path) is { } projectKey && request.Method == HttpMethod.Get)
             {
-                var projectKey = Uri.UnescapeDataString(path[(projectsAt + ProjectListPath.Length + 1)..^"/version".Length]);
                 return RespondWithVersionsOf(projectKey, uri);
             }
 
@@ -146,6 +145,19 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             }
 
             return NotFound();
+        }
+
+        /// <summary>The project key in a path to a project's version list, or null when the path is not one.</summary>
+        private static string? VersionListProjectKeyIn(string path)
+        {
+            var trimmed = path.TrimEnd('/');
+            var projectsAt = trimmed.IndexOf(ProjectListPath + "/", StringComparison.Ordinal);
+            if (projectsAt < 0 || !trimmed.EndsWith(VersionListSuffix, StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            return Uri.UnescapeDataString(trimmed[(projectsAt + ProjectListPath.Length + 1)..^VersionListSuffix.Length]);
         }
 
         /// <summary>

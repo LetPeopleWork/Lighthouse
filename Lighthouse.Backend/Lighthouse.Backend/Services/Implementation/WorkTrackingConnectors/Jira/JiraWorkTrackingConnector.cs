@@ -2894,9 +2894,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// deletion may retire a binding.
         /// </summary>
         private async Task<(IReadOnlyList<DeliverySourceOption> Releases, bool SawEverything)> SweepReleases(
-            HttpClient client, JiraDeployment deployment, string statuses)
+            HttpClient client, JiraRestRoutes routes, string statuses)
         {
-            var (projects, listedEveryProject) = await ReadVisibleProjects(client, deployment);
+            var (projects, listedEveryProject) = await ReadVisibleProjects(client, routes);
 
             logger.LogDebug("Getting Releases of {ProjectCount} Jira projects", projects.Count);
 
@@ -2906,7 +2906,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 0,
                 projects.Count,
                 new ParallelOptions { MaxDegreeOfParallelism = MaxParallelProjectReads },
-                async (index, _) => readsByProject[index] = await ReadReleasesOf(client, deployment, projects[index], statuses));
+                async (index, _) => readsByProject[index] = await ReadReleasesOf(client, routes, projects[index], statuses));
 
             IReadOnlyList<DeliverySourceOption> releases = [.. readsByProject.SelectMany(read => read.Releases)];
             var sawEverything = listedEveryProject && Array.TrueForAll(readsByProject, read => read.SawEverything);
@@ -2921,13 +2921,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// tells them nothing.
         /// </summary>
         private async Task<(IReadOnlyList<DeliverySourceProject> Projects, bool SawEverything)> ReadVisibleProjects(
-            HttpClient client, JiraDeployment deployment)
+            HttpClient client, JiraRestRoutes routes)
         {
-            var routes = JiraRestRoutes.For(deployment);
-
             if (routes.PagedProjectSearch is not { } searchRoute)
             {
-                return await ReadProjectList(client, deployment);
+                return await ReadProjectList(client, routes.Deployment);
             }
 
             var (projects, refusal) = await ReadProjectSearchPages(client, searchRoute);
@@ -2936,12 +2934,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             // such project exists, so a Jira that would not say which kind it is gets the plain list instead.
             if (routes.FallsBackToProjectListWhenSearchIsMissing && refusal == HttpStatusCode.NotFound)
             {
-                return await ReadProjectList(client, deployment);
+                return await ReadProjectList(client, routes.Deployment);
             }
 
             if (refusal is { } status)
             {
-                LogTheProjectListWasRefused(searchRoute, deployment, status);
+                LogTheProjectListWasRefused(searchRoute, routes.Deployment, status);
 
                 return (projects, false);
             }
@@ -2974,7 +2972,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// Data Center's project list: every project in one answer, with no paging and no envelope.
+        /// The plain project list: every project in one answer, with no paging and no envelope. It is the only
+        /// project list Data Center serves.
         /// </summary>
         private async Task<(IReadOnlyList<DeliverySourceProject> Projects, bool SawEverything)> ReadProjectList(
             HttpClient client, JiraDeployment deployment)
@@ -3007,12 +3006,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// entire picker away from a reader who has perfectly good projects to choose from.
         /// </summary>
         private async Task<(IReadOnlyList<DeliverySourceOption> Releases, bool SawEverything)> ReadReleasesOf(
-            HttpClient client, JiraDeployment deployment, DeliverySourceProject project, string statuses)
+            HttpClient client, JiraRestRoutes routes, DeliverySourceProject project, string statuses)
         {
             var releases = new List<DeliverySourceOption>();
             var startAt = 0;
-            var routes = JiraRestRoutes.For(deployment);
-            var routeFiltersByStatus = routes.CanFilterVersionsByStatus;
             var wantedStatuses = statuses.Split(',');
 
             while (true)
@@ -3030,7 +3027,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 var (page, isLastPage) = JiraReleaseVersionReader.ReadOptionPage(await response.Content.ReadAsStringAsync(), project);
                 startAt += page.Count;
-                releases.AddRange(routeFiltersByStatus
+                releases.AddRange(routes.CanFilterVersionsByStatus
                     ? page
                     : page.Where(release => wantedStatuses.Contains(StatusOf(release))));
 
@@ -3139,8 +3136,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             try
             {
                 var client = await GetJiraRestClientAsync(connection);
-                var deployment = await GetDeploymentType(client, connection);
-                var (releases, sawEverything) = await SweepReleases(client, deployment, statuses);
+                var routes = JiraRestRoutes.For(await GetDeploymentType(client, connection));
+                var (releases, sawEverything) = await SweepReleases(client, routes, statuses);
 
                 return (client, releases, sawEverything);
             }

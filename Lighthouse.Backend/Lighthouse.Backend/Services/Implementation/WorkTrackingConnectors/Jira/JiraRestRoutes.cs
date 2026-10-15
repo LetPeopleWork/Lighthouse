@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private static readonly JiraRestRoutes UnidentifiedRoutes = new Unidentified();
 
-        // Asked before the deployment is known, so they cannot depend on it.
+        // Asked to find out which kind of Jira this is, so it cannot depend on the answer.
         public const string ServerInfo = "rest/api/2/serverInfo";
 
         public const string Myself = "rest/api/2/myself";
@@ -52,6 +52,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 _ => throw new ArgumentOutOfRangeException(nameof(deployment), deployment, null),
             };
 
+        /// <summary>The kind of Jira these routes were chosen for.</summary>
+        public abstract JiraDeployment Deployment { get; }
+
         /// <summary>
         /// Cloud's is read with a query string and paged by token; Data Center's takes a json body and is
         /// paged by offset.
@@ -76,6 +79,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private sealed class Cloud : JiraRestRoutes
         {
+            public override JiraDeployment Deployment => JiraDeployment.Cloud;
+
             public override string Search => "rest/api/3/search/jql";
 
             public override string? PagedProjectSearch => "rest/api/3/project/search";
@@ -92,6 +97,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private class DataCenter : JiraRestRoutes
         {
+            public override JiraDeployment Deployment => JiraDeployment.DataCenter;
+
             public override string Search => "rest/api/latest/search";
 
             public override string? PagedProjectSearch => null;
@@ -113,6 +120,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// </summary>
         private sealed class Unidentified : DataCenter
         {
+            public override JiraDeployment Deployment => JiraDeployment.Unknown;
+
             public override string? PagedProjectSearch => "rest/api/2/project/search";
 
             public override bool FallsBackToProjectListWhenSearchIsMissing => true;
