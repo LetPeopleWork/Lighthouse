@@ -15,8 +15,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     /// </summary>
     public partial class Story6084TheFillRunsEverywhereTest : ReconstructOverTimeHistoryAcceptanceTest
     {
-        private const string PendingDeliver = "Story #6084 — pending DELIVER";
-
         private const int ThirtyDays = 30;
 
         /// <summary>

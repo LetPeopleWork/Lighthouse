@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Moq;
 using NUnit.Framework;
+using Serilog.Events;
 
 namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
 {
@@ -218,6 +219,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         {
             Assert.That(ReadStoredAppSetting(AppSettingKeys.FeatureOrderingPolicy), Is.EqualTo(expectedValue),
                 "Additive only. The row it migrated from stops being read; it is not deleted, because a migration that turns out wrong has no way back once it is gone.");
+        }
+
+        private void ThenTheLogSaysTheOrderingSettingWasSwitched(bool wasOn, bool isOn)
+        {
+            var whichWay = $"switched from {wasOn} to {isOn}";
+            var lines = CapturedLogs.At(LogEventLevel.Information)
+                .Where(message => message.Contains(FeatureOrderingOptionalFeatureKey, StringComparison.Ordinal)
+                               && message.Contains(whichWay, StringComparison.Ordinal))
+                .ToList();
+
+            Assert.That(lines, Has.Count.EqualTo(1),
+                $"Switching the ordering setting {(isOn ? "on" : "off")} from {(wasOn ? "on" : "off")} must leave one Information line " +
+                $"naming the setting and saying '{whichWay}', so the log can answer when this instance changed it.");
+        }
+
+        private void ThenNothingAboutTheOrderingSettingWasLoggedAsAProblem()
+        {
+            var problems = CapturedLogs.AtOrAbove(LogEventLevel.Warning)
+                .Where(message => message.Contains(FeatureOrderingOptionalFeatureKey, StringComparison.Ordinal))
+                .ToList();
+
+            Assert.That(problems, Is.Empty,
+                "Switching a behaviour setting is not a problem, so it must not reach the Task Manager: " + string.Join(" | ", problems));
         }
 
         // --- Parsing ---

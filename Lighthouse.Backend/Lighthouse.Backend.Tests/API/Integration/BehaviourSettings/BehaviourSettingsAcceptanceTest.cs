@@ -18,8 +18,12 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
+using Serilog;
+using Serilog.Events;
+using Serilog.Extensions.Logging;
 
 namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
 {
@@ -79,6 +83,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         protected HttpClient Client = null!;
         protected Mock<ILicenseService> LicenseServiceMock = null!;
         protected Mock<IForecastUpdater> ForecastUpdaterMock = null!;
+        protected CapturedLogMessages CapturedLogs = null!;
 
         [SetUp]
         public void Init()
@@ -89,6 +94,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             LicenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
 
             ForecastUpdaterMock = new Mock<IForecastUpdater>();
+            CapturedLogs = new CapturedLogMessages();
 
             var connectorMock = new Mock<IWorkTrackingConnector>();
             connectorMock
@@ -116,6 +122,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
 
                         services.RemoveAll<IForecastUpdater>();
                         services.AddSingleton(_ => ForecastUpdaterMock.Object);
+
+                        // Serilog is the pipeline, so an ILoggerProvider added here would be inert; replacing
+                        // the factory is what makes the instance's own log readable to a scenario.
+                        services.RemoveAll<ILoggerFactory>();
+                        services.AddSingleton<ILoggerFactory>(_ => new SerilogLoggerFactory(
+                            new LoggerConfiguration()
+                                .MinimumLevel.Verbose()
+                                .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+                                .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+                                .WriteTo.Sink(CapturedLogs)
+                                .CreateLogger(),
+                            dispose: true));
                     });
                 });
 

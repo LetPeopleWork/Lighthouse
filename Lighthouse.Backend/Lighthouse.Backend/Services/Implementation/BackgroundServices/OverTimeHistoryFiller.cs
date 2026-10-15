@@ -144,21 +144,6 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             {
                 using var scope = scopeFactory.CreateScope();
 
-                // Settled before the pass counts as running, so an ask dropped here never shows the
-                // maintenance gate a fill that is not happening. Read from this pass's own scope because
-                // the filler lives as long as the process and would otherwise see the switch as it stood
-                // at start-up. A pass that got past this point finishes even if the switch goes off.
-                if (!scope.ServiceProvider.GetRequiredService<IOverTimeHistoryFillSwitch>().IsSwitchedOn())
-                {
-                    logger.LogInformation(
-                        "Over-time reconstruction dropped a waiting pass for {OwnerType} {OwnerId} ({MetricFamily}); filling in past days is switched off",
-                        request.OwnerType,
-                        request.OwnerId,
-                        MetricFamily);
-
-                    return;
-                }
-
                 await FillWhileCountedAsRunningAsync(scope.ServiceProvider, request, cancellationToken);
             }
             catch (Exception failure)

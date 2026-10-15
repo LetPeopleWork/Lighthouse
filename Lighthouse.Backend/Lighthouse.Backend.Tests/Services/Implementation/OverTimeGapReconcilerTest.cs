@@ -1,7 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices;
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.BackgroundServices;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Moq;
@@ -24,11 +23,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var filler = new Mock<IOverTimeHistoryFiller>();
             filler.Setup(f => f.AskFor(It.IsAny<OverTimeFillRequest>())).Callback<OverTimeFillRequest>(request => asked = request);
 
-            var fillSwitch = new Mock<IOverTimeHistoryFillSwitch>();
-            fillSwitch.Setup(s => s.IsSwitchedOn()).Returns(true);
-
             var clock = new FakeLighthouseClock(new DateTimeOffset(2026, 9, 22, 9, 0, 0, TimeSpan.Zero));
-            var subject = new OverTimeGapReconciler(clock, filler.Object, new ReconstructionMemo(), fillSwitch.Object);
+            var subject = new OverTimeGapReconciler(clock, filler.Object, new ReconstructionMemo());
 
             subject.AskForTheDaysThatAreMissing(1, OwnerType.Team, Today.AddDays(-2), Today.AddDays(3), []);
 
@@ -43,7 +39,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var filler = new Mock<IOverTimeHistoryFiller>();
 
-            ReconcilerOver(filler, new ReconstructionMemo(), switchedOn: true)
+            ReconcilerOver(filler, new ReconstructionMemo())
                 .AskForTheDaysThatAreMissing(1, OwnerType.Team, null, Today, []);
 
             filler.Verify(f => f.AskFor(It.IsAny<OverTimeFillRequest>()), Times.Never);
@@ -54,19 +50,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var filler = new Mock<IOverTimeHistoryFiller>();
 
-            ReconcilerOver(filler, new ReconstructionMemo(), switchedOn: true)
+            ReconcilerOver(filler, new ReconstructionMemo())
                 .AskForTheDaysThatAreMissing(1, OwnerType.Team, Today.AddDays(-1), Today, [Today.AddDays(-1), Today]);
-
-            filler.Verify(f => f.AskFor(It.IsAny<OverTimeFillRequest>()), Times.Never);
-        }
-
-        [Test]
-        public void MissingDaysWhileTheFillIsSwitchedOff_AreNotAskedFor()
-        {
-            var filler = new Mock<IOverTimeHistoryFiller>();
-
-            ReconcilerOver(filler, new ReconstructionMemo(), switchedOn: false)
-                .AskForTheDaysThatAreMissing(1, OwnerType.Team, Today.AddDays(-3), Today, []);
 
             filler.Verify(f => f.AskFor(It.IsAny<OverTimeFillRequest>()), Times.Never);
         }
@@ -80,7 +65,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var memo = new ReconstructionMemo();
             memo.TheWalkHasAlreadyWorkedOut(1, OwnerType.Team, Today.AddDays(-2));
 
-            ReconcilerOver(filler, memo, switchedOn: true)
+            ReconcilerOver(filler, memo)
                 .AskForTheDaysThatAreMissing(1, OwnerType.Team, Today.AddDays(-3), Today, [Today.AddDays(-1)]);
 
             Assert.That(asked?.CandidateDays, Is.EqualTo(new List<DateOnly> { Today.AddDays(-3), Today }));
@@ -98,20 +83,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var filler = new Mock<IOverTimeHistoryFiller>();
             filler.Setup(f => f.AskFor(It.IsAny<OverTimeFillRequest>())).Callback<OverTimeFillRequest>(request => asked = request);
 
-            ReconcilerOver(filler, new ReconstructionMemo(), switchedOn: true)
+            ReconcilerOver(filler, new ReconstructionMemo())
                 .AskForTheDaysThatAreMissing(1, OwnerType.Team, Today.AddYears(-200), Today, []);
 
             Assert.That(asked?.CandidateDays, Has.Count.EqualTo(tenYearsOfDays));
         }
 
-        private static OverTimeGapReconciler ReconcilerOver(Mock<IOverTimeHistoryFiller> filler, ReconstructionMemo memo, bool switchedOn)
+        private static OverTimeGapReconciler ReconcilerOver(Mock<IOverTimeHistoryFiller> filler, ReconstructionMemo memo)
         {
-            var fillSwitch = new Mock<IOverTimeHistoryFillSwitch>();
-            fillSwitch.Setup(s => s.IsSwitchedOn()).Returns(switchedOn);
-
             var clock = new FakeLighthouseClock(new DateTimeOffset(2026, 9, 22, 9, 0, 0, TimeSpan.Zero));
 
-            return new OverTimeGapReconciler(clock, filler.Object, memo, fillSwitch.Object);
+            return new OverTimeGapReconciler(clock, filler.Object, memo);
         }
     }
 }

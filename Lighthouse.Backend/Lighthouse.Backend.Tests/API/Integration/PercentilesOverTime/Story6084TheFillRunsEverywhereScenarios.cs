@@ -22,7 +22,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         // The instance this change is for: an admin had switched the fill off on the release before, and after
         // the upgrade both over-time charts fill in on the next open without anyone touching anything.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task After_the_upgrade_an_instance_whose_admin_had_switched_the_fill_off_fills_in_both_over_time_charts()
         {
             var teamId = GivenATeamThatFinishedOneItemADayForTheLastFourMonths();
@@ -47,7 +46,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         // so the waiting chart is filled like the first: the only things that hold a fill back are the
         // maintenance gate, the per-visit budget and how far back the stored history reaches.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task A_chart_waiting_its_turn_still_fills_in_whatever_an_old_fill_setting_says()
         {
             var fillingTeamId = GivenATeamThatFinishedOneItemADayForTheLastFourMonths();

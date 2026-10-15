@@ -53,8 +53,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 
         private Mock<IProcessBehaviorSnapshotWriter> limitWriterMock = null!;
 
-        private Mock<IOverTimeHistoryFillSwitch> fillSwitchMock = null!;
-
         private RecordingLogger<OverTimeHistoryFiller> logger = null!;
 
         private ServiceProvider services = null!;
@@ -71,14 +69,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             percentileWriterMock = new Mock<IPercentileSnapshotWriter>();
             limitWriterMock = new Mock<IProcessBehaviorSnapshotWriter>();
-            fillSwitchMock = new Mock<IOverTimeHistoryFillSwitch>();
             logger = new RecordingLogger<OverTimeHistoryFiller>();
 
             workItemRepositoryMock
                 .Setup(repository => repository.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
                 .Returns((Expression<Func<WorkItem, bool>> predicate) => storedItems.AsQueryable().Where(predicate));
             limitWriterMock.Setup(writer => writer.FamiliesFor(It.IsAny<Team>())).Returns([]);
-            fillSwitchMock.Setup(fillSwitch => fillSwitch.IsSwitchedOn()).Returns(true);
 
             services = new ServiceCollection()
                 .AddSingleton(teamRepositoryMock.Object)
@@ -86,7 +82,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
                 .AddSingleton(workItemRepositoryMock.Object)
                 .AddSingleton(percentileWriterMock.Object)
                 .AddSingleton(limitWriterMock.Object)
-                .AddSingleton(fillSwitchMock.Object)
                 .AddSingleton<ILighthouseClock>(new FakeLighthouseClock(Now))
                 .AddSingleton(_ => new DatabaseMaintenanceGate(Mock.Of<IUpdateStatusStore>(), subject))
                 .AddSingleton<ReconstructionMemo>()
@@ -256,18 +251,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
             await subject.DrainAsync(CancellationToken.None);
 
             teamRepositoryMock.Verify(repository => repository.GetById(TeamId), Times.Exactly(2));
-        }
-
-        [Test]
-        public async Task AWaitingPass_WhileFillingInPastDaysIsSwitchedOff_LoadsNoOwner()
-        {
-            fillSwitchMock.Setup(fillSwitch => fillSwitch.IsSwitchedOn()).Returns(false);
-            GivenATeamLastObservedOn(Today);
-
-            subject.AskFor(RequestFor(TeamId, Today));
-            await subject.DrainAsync(CancellationToken.None);
-
-            teamRepositoryMock.Verify(repository => repository.GetById(TeamId), Times.Never);
         }
 
         [Test]

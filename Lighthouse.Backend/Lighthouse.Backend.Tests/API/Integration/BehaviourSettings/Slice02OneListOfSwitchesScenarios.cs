@@ -256,5 +256,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
 
             ThenTheSettingItMigratedFromIsStillStored(OrderOwnedByThisInstance);
         }
+
+        // @driving_port @real-io @observability - switching a behaviour setting is answered in the
+        // instance's own log, which way it went and a write that changes nothing included, at Information
+        // so it never reads as a problem.
+        [Test]
+        public async Task Switching_a_setting_leaves_a_line_in_the_log_saying_which_way_it_went()
+        {
+            GivenTheCallerAdministersTheInstance();
+
+            await WhenTheAdminHandsTheOrderOverInBehaviourSettings();
+            await WhenTheAdminHandsTheOrderOverInBehaviourSettings();
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenTheLogSaysTheOrderingSettingWasSwitched(wasOn: false, isOn: true);
+                ThenTheLogSaysTheOrderingSettingWasSwitched(wasOn: true, isOn: true);
+                ThenNothingAboutTheOrderingSettingWasLoggedAsAProblem();
+            }
+        }
     }
 }
