@@ -1,13 +1,12 @@
 namespace Lighthouse.Backend.Models
 {
     /// <summary>
-    /// What reading an item's links said about its parent: nothing, one issue, or several. Several is kept
-    /// as an answer of its own, because a wrongly guessed parent looks exactly like correct data.
+    /// What reading an item's links said about its parent: nothing, one issue, or several. Several is not
+    /// guessed at here, because a wrongly guessed parent looks exactly like correct data. Place decides
+    /// under which of them the item hangs, or says why it hangs under none.
     /// </summary>
     public readonly record struct ParentResolution
     {
-        private const string NotBuiltYet = "SCAFFOLD: placing an item among several candidates is not built yet";
-
         private readonly ParentCandidate[]? candidates;
 
         private ParentResolution(ParentCandidate[] candidates)
@@ -18,9 +17,19 @@ namespace Lighthouse.Backend.Models
         public static ParentResolution From(IReadOnlyList<string> distinctCounterpartKeys)
             => From([.. distinctCounterpartKeys.Select(key => new ParentCandidate(key, null))]);
 
-        // SCAFFOLD: candidates that carry the date their link was made.
+        // SCAFFOLD: the pick does not use link dates yet.
         public static ParentResolution From(IReadOnlyList<ParentCandidate> candidatesWithTheirLinkDates)
-            => candidatesWithTheirLinkDates.Count == 0 ? default : new([.. candidatesWithTheirLinkDates]);
+            => candidatesWithTheirLinkDates.Count == 0 ? default : new([.. InKeyOrder(candidatesWithTheirLinkDates)]);
+
+        /// <summary>
+        /// Jira lists links in no promised order, so the keys are sorted to make two readings of the same
+        /// links one answer. Two links to the same issue are one candidate, dated by the older link.
+        /// </summary>
+        private static IEnumerable<ParentCandidate> InKeyOrder(IReadOnlyList<ParentCandidate> candidatesWithTheirLinkDates)
+            => candidatesWithTheirLinkDates
+                .GroupBy(candidate => candidate.Key, StringComparer.Ordinal)
+                .Select(sameIssue => new ParentCandidate(sameIssue.Key, sameIssue.Min(candidate => candidate.LinkedAt)))
+                .OrderBy(candidate => candidate.Key, StringComparer.Ordinal);
 
         public IReadOnlyList<ParentCandidate> CandidatesWithTheirLinkDates => candidates ?? [];
 
@@ -33,15 +42,20 @@ namespace Lighthouse.Backend.Models
         public string Key => IsResolved ? Candidates[0] : string.Empty;
 
         /// <summary>
-        /// Where an item whose links name several issues hangs. A Team's items hang under Features, so every
-        /// candidate this instance does not hold as a Feature is set aside first, and exactly one left over
-        /// is the answer.
+        /// Where an item whose links name several issues hangs. One link or none is not a question: the
+        /// caller stores it as it is. A Team's items hang under Features, so every candidate this instance
+        /// does not hold as a Feature is set aside first, and exactly one left over is the answer.
         /// </summary>
         public ParentPlacement Place(StoredFeatures storedFeatures, ParentNarrowing narrowing)
         {
+            if (!IsAmbiguous)
+            {
+                return ParentPlacement.NotAsked;
+            }
+
             if (narrowing == ParentNarrowing.DoNotNarrow)
             {
-                throw new NotImplementedException($"{NotBuiltYet} ({Candidates.Count} candidates, {narrowing})");
+                throw new NotImplementedException($"Placing among {Candidates.Count} candidates without narrowing them is not built yet");
             }
 
             var features = CandidatesWithTheirLinkDates.Where(candidate => storedFeatures.Holds(candidate.Key)).ToList();
@@ -61,11 +75,10 @@ namespace Lighthouse.Backend.Models
         }
 
         /// <summary>
-        /// Two answers naming the same keys, in any order, are the same answer. Left to the compiler, the
-        /// comparison would be between the arrays those keys are held in, and two separately built answers
-        /// would never match.
+        /// Two answers naming the same keys, in any order, are the same answer: From sorts them, so they
+        /// compare in one order. Left to the compiler, the comparison would be between the arrays those keys
+        /// are held in, and two separately built answers would never match.
         /// </summary>
-        // SCAFFOLD: From must canonicalise the keys (ordinal sort, distinct) so Equals and GetHashCode become order-free.
         public bool Equals(ParentResolution other) => Candidates.SequenceEqual(other.Candidates);
 
         public override int GetHashCode()

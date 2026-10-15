@@ -7,6 +7,8 @@ namespace Lighthouse.Backend.Models
     /// </summary>
     public sealed record ParentPlacement
     {
+        public static ParentPlacement NotAsked { get; } = new();
+
         public static ParentPlacement NotPlacedBecause(ParentNotPlacedReason reason)
             => new() { Outcome = ParentPlacementOutcome.NotPlaced, WhyNotPlaced = reason };
 
@@ -59,11 +61,8 @@ namespace Lighthouse.Backend.Models
     /// Every Feature this instance holds, by reference id, with the date it was created when that is known.
     /// Read once per fetch and only ever asked questions, so whoever places a parent cannot write through it.
     /// </summary>
-    // SCAFFOLD: answers whether it holds a Feature. Answering a created date from it is not built yet.
     public sealed class StoredFeatures
     {
-        private const string NotBuiltYet = "SCAFFOLD: reading a stored Feature's created date is not built yet";
-
         private readonly Dictionary<string, DateTime?> createdDates;
 
         public StoredFeatures(IReadOnlyDictionary<string, DateTime?> createdDatesByReferenceId)
@@ -73,7 +72,11 @@ namespace Lighthouse.Backend.Models
 
         public bool Holds(string referenceId) => createdDates.ContainsKey(referenceId);
 
+        /// <summary>
+        /// Unknown for a Feature this instance does not hold, and for the empty created date Jira sends for
+        /// some migrated issues: read at face value, that would be the earliest date there is.
+        /// </summary>
         public DateTime? CreatedDateOf(string referenceId)
-            => throw new NotImplementedException($"{NotBuiltYet} ({createdDates.Count} held, asked about {referenceId})");
+            => createdDates.TryGetValue(referenceId, out var created) && created != DateTime.MinValue ? created : null;
     }
 }

@@ -40,7 +40,6 @@ namespace Lighthouse.Backend.Tests.Models
         // ----- Slice 01: narrowing to the Features this instance holds ---------------------------------------
 
         [Test]
-        [Ignore(PendingStory6301.Slice01)]
         [Category("slice-01")]
         [Category("edge")]
         public void One_candidate_is_not_a_question_for_the_pick()
@@ -68,7 +67,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(PendingStory6301.Slice01)]
         [Category("slice-01")]
         public void Narrowing_to_the_one_stored_Feature_places_the_record_under_it()
         {
@@ -80,7 +78,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(PendingStory6301.Slice01)]
         [Category("slice-01")]
         [Category("error")]
         public void No_stored_Feature_among_the_candidates_places_nothing_and_says_why()
@@ -101,7 +98,6 @@ namespace Lighthouse.Backend.Tests.Models
 
         /// <summary>Holds only until the oldest-link rule exists. That rule's own scenarios replace it.</summary>
         [Test]
-        [Ignore(PendingStory6301.Slice01)]
         [Category("slice-01")]
         [Category("error")]
         public void Two_stored_Features_are_not_placed_until_there_is_a_rule_to_choose_between_them()
@@ -118,7 +114,6 @@ namespace Lighthouse.Backend.Tests.Models
         /// in listing order would make an unchanged item look changed on every refresh that reorders.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice01)]
         [Category("slice-01")]
         [Category("property")]
         public void Two_readings_of_the_same_links_in_another_order_are_the_same_answer()
@@ -136,7 +131,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [TestCaseSource(nameof(SetsNarrowingAloneDecides))]
-        [Ignore(PendingStory6301.Slice01)]
         [Category("slice-01")]
         [Category("property")]
         public void Every_order_of_the_same_candidates_gives_the_same_placement_when_narrowing_decides(ParentCandidate[] candidates, StoredFeatures stored)
