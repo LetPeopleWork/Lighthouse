@@ -1,0 +1,491 @@
+{
+  "roadmap": {
+    "project_id": "story-6301-only-features-as-parent-candidates",
+    "created_at": "2026-10-15T00:00:00Z",
+    "goal": "When a record's links of the configured type name two or more issues, place it instead of refusing: at Team grain keep only the Features Lighthouse holds, then pick by the oldest standing link, the earliest created date and the lowest key; apply the same pick at Portfolio grain and in the parent sweep without narrowing; report every such record as placed or not placed, on the refresh row and in at most one aggregated Warning line per outcome per fetch.",
+    "total_steps": 18,
+    "source": "docs/feature/story-6301-only-features-as-parent-candidates/feature-delta.md (DISCOVER to DISTILL, including the binding Maintainer decisions blocks and the two DISTILL review gates), slices/slice-01..03, docs/product/architecture/adr-238-several-link-candidates-are-placed-by-the-oldest-link-in-the-work-item-service.md",
+    "paradigm": "OOP backend (.NET 10, NUnit 4.6 + Moq + WebApplicationFactory over real EF); React 18 + TypeScript frontend (Vitest + RTL). No Hypothesis/PBT mandate emitted: it is a Python pilot and this corpus has declined it on the record (DISTILL Scope and reconciliation). Properties are expressed the DISTILL way: exhaustive permutations and a seeded Random(6301) corpus, no new test dependency.",
+    "standing_constraints": [
+      "Comments are rare and why-only, written for a stranger. No code comment may cite an internal reference (DDD-5, AC-1.7, D11, ADR-238, US-02, slice ids). Say the reason in plain language or write nothing. The one exception is a narrow #pragma warning disable, which carries its reason inline; an ADO item number is fine there. Fix offending comments in any file you touch (the untrue 'left each of these where it was' and 'kept whatever it already had' sentences go when their files are touched).",
+      "No step edits Program.cs. DESIGN needs no DI change: WorkItemService asks for IFeatureRepository in place of IRepository<Feature>, and DI already resolves both from one registration. If a step seems to need a DI line, stop and report it: it is a design change that force-fulls every live-connector suite in CI.",
+      "Mutation testing is not in this roadmap. It runs after DELIVER on frozen code, and the maintainer holds before it.",
+      "Un-skip discipline. A step removes [Ignore(PendingStory6301.SliceNN)] (backend) or it.skip with the pendingStory6301 marker (frontend) only from the tests it lists, and only once they pass. If a listed test already passes before the step's production change, prove it can fail by sabotage-by-substitution (keep every parameter read; never comment a call out, never if(false)), restore, then un-skip it. At the end of each slice, grep -rn 'PendingStory6301.SliceNN' Lighthouse.Backend and grep -rn pendingStory6301 Lighthouse.Frontend/src return nothing for that slice.",
+      "SCAFFOLD markers in production code: grep -rn SCAFFOLD Lighthouse.Backend/Lighthouse.Backend Lighthouse.Frontend/src lists 12 lines in 6 files at hand-off. The three kernel files hold 8 (ParentResolution.cs 4, ParentPlacement.cs 3, ParentCandidate.cs 1), FeatureRepository.cs 2, RefreshLog.ts 1, Issue.cs 1. Slice 01 clears all of them except two: ParentResolution.cs:21 (the dated-candidate From overload, kept by 01-02 as a reworded marker saying the pick does not use link dates yet, removed by 02-03) and Issue.cs (removed by 02-02). After slice 02 the grep is empty.",
+      "Copy is pinned by the maintainer (DISTILL 'Maintainer decisions: UI sketch review'). Use it verbatim: lead-ins '{Owner} placed N record(s) whose links name more than one issue: ' and '{Owner} could not place N record(s) whose links name more than one issue: '; brackets '(only Feature; set aside ...)', '(oldest link, yyyy-MM-dd; set aside ...)', '(earliest created, yyyy-MM-dd; set aside ...)', '(lowest key; set aside ...)'; not-placed reasons 'none is a Feature Lighthouse holds' and, slice 01 only, 'more than one is a Feature Lighthouse holds'; tail 'It takes no parent from its links.'; owners 'Team \"X\"', 'Portfolio \"X\"', 'the parents of Portfolio \"X\"'s Features'. Both lines are Warning level. Refresh History captions are the only text that goes through Terminology. The repeated phrase lives in one const (S1192).",
+      "A link date is shown as the UTC calendar day of the instant, yyyy-MM-dd, formatted with CultureInfo.InvariantCulture via string.Create (S6618). Name the zone explicitly: the test suites run pinned to Europe/Zurich, so an implicit local conversion shifts the day. Ordering uses the full instant, never the day.",
+      "Local gates before every step's commit, each read in full (never piped through tail or head): (1) dotnet build in Lighthouse.Backend, zero warnings; (2) the analyzer sweep, dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore, logged and filtered to this change's files with BOTH halves, { git diff --name-only <slice base>; git status --porcelain -uall | awk '{print $2}'; } | grep '\\.cs$' - the pre-commit ledger hook does not run in a git worktree, so this sweep is the only local check of the INFO rules; (3) dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"; (4) for frontend steps, pnpm test then pnpm build (zero errors and warnings; prebuild runs biome check --write). Never run dotnet test --no-build while another build is writing bin/.",
+      "Backend preflight, pre-applied in every new or edited line: CA1859 concrete types on non-public returns, parameters and locals (List<T>, the sealed StoredFeatures, never IReadOnlyList or an interface); CA1861 hoist constant arrays in tests to private static readonly; NUnit2045 group independent asserts in using (Assert.EnterMultipleScope()), inside helpers too; NUnit2056 never Assert.Multiple; NUnit2046 Has.Count / Has.Length; NUnit4002 Is.Zero and Is.Default; NUnit1028 TestCaseSource providers private static, then re-check CA1859; CA1869 cache JsonSerializerOptions; CA1806 capture every Try* result; S4136 the new ParentResolution.From overload sits beside the existing one; S125 no prose comment line ends in ';'; S2325/S4487 stubs use instance state; S3267 LINQ instead of accumulating foreach (the changelog walk, the narrowing); S3776 keep the placing step, Place and the changelog walk under complexity 15 (a lambda counts toward its method); S3236 no explicit parameter names to ThrowIf* guards; S107 no constructor gains a parameter; CS8524 a discard-free switch over ParentPlacementRule or ParentNotPlacedReason carries a narrow #pragma warning disable CS8524 with its reason inline, CS8509 still applies; a mock asserted with Times.Never is built in [SetUp].",
+      "Widening a shared contract: before editing IFeatureRepository, WorkItemBase, SyncOutcome or RefreshLog, grep the short AND the fully qualified name in production and test projects (test doubles are where the forgotten implementation lives), and extend the builders first. The RefreshLog entity is serialised directly, so the payload gains recordsPlacedFromLinksNamingMoreThanOneParent; grep the tests for any payload-shape list that must gain it.",
+      "EF migration (slice 01 only): dotnet restore && dotnet build over the whole solution from Lighthouse.Backend first (migration DLLs are HintPath references), port 5432 free, then pwsh Lighthouse.Backend/Create-Migration.ps1 -MigrationName AddPlacedParentCountToRefreshLog - never dotnet ef migrations add. Expand-only, int not null, defaultValue 0 on both providers, no CLR initializer on the property. Then the ordered second pass (dotnet build each migrations csproj --no-incremental, then the solution --no-incremental) and a throwaway Database__Provider=sqlite start with the Kestrel keys overridden, grepping its output for PendingModelChanges. The InMemory provider never warns. HistoricalSchemaPatch needs no entry (verified at DESIGN: it lists no RefreshLog columns).",
+      "Frontend preflight: S6754 every useState destructured as [thing, setThing]; S7761 data-* only through dataset; S7735 no negated condition in a ternary; S3358 no ternary inside a template-literal slot on a ternary branch; no inline pluralisation ternaries inside template literals; readonly props on every JSX-returning function; globalThis over window; a catch parameter is named error_; pass single-arg pure functions directly. Before changing a visible label or data-testid, grep -rn the old text in Lighthouse.EndToEndTests/ (DISTILL found 0 hits; re-grep in the same edit).",
+      "Architecture tests: never assert an ArchUnit edge that only exists inside an async method body; verify any new ArchUnit rule with dotnet build -c Release && dotnet test -c Release --filter FullyQualifiedName~Architecture, because CI builds Release and Debug lies.",
+      "Test-time budget: a new backend test class stays under 34 s and a frontend test file under 63 s in CI (Scripts/test-timings/test-time-budget.json; warn-only until the switch). Speed up before allowlisting.",
+      "Live connectors: the default filtered run excludes them. Jira is the only live category this story wakes, run deliberately once in slice 02 (dogfood step) and by CI on every push because Jira paths change. A 4xx/429 from the dogfood instance is environmental; only this story's own assertion is in scope. Never print the JiraLighthouseIntegrationTestToken value.",
+      "Worktree hygiene: work only in /storage/repos/Lighthouse/.claude/worktrees/resilient-wobbling-russell with absolute paths; copy valid_not_expired_license.json from the main checkout before the first dotnet test (two Licensing tests otherwise red); prefix git with LEAN_CTX_DISABLED=1 in this worktree.",
+      "Commits: focused conventional commits per step through des-commit with the step id, scope parents (feat(parents): ..., test(parents): ..., refactor(parents): ...), refactors separate from behaviour. A step may carry more than one commit under the same step id (precedent: story-5884-work-item-age-bands, whose step notes say 'two commits, in this order'). Docs (docs/teams/edit.md, docs/portfolios/edit.md, docs/settings/systeminfo.md), screenshots and release notes are finalize work, not roadmap steps."
+    ]
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "A Work Item linked to one Feature and to incidents counts toward that Feature",
+      "description": "US-01, Team grain. Candidates travel on the record from the connector; one placing step in WorkItemService narrows them to the stored Features on both Team fetches; exactly one left places the record, none or several leave it not placed and reported. The refresh row splits the count into placed and not placed, Refresh History shows the two figures in the instance's terms and gains its loading and failure looks, and the Team half of the connector's ambiguity warning is deleted. Portfolio grain still refuses and counts as not placed until slice 03 (DISTILL wave decision). Slice brief: slices/slice-01-narrow-to-features.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Walking skeleton: an item caused by its Feature and an incident lands under the Feature, and Refresh History counts it placed",
+          "agent": "nw-software-crafter",
+          "step_type": "walking-skeleton",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/Slice01NarrowToFeaturesScenarios.cs",
+          "scenario_name": "A_Work_Item_linked_to_one_Feature_and_an_incident_counts_toward_the_Feature",
+          "criteria": [
+            "After a Portfolio refresh stores the Feature, a Team refresh stores the Work Item linked to that Feature and to an incident under the Feature",
+            "The Parent Override Field's Additional Field value on the stored Work Item shows the same Feature key",
+            "GET /api/latest/systeminfo/refreshlog returns recordsPlacedFromLinksNamingMoreThanOneParent = 1 and recordsWhoseLinksNamedMoreThanOneParent = 0 for that Team refresh",
+            "A record with a single link is still stored under the key that link names, and its Additional Field value shows that key, exactly as before",
+            "The active guards Reading_the_links_costs_the_tracker_no_extra_request and Status_changes_beside_link_entries_are_read_as_before stay green"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/ParentCandidate.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/ParentResolution.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/ParentPlacement.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Parents/ParentSourceSelector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/SyncOutcome.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/RefreshLog.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/LighthouseAppContextModelSnapshot.cs",
+            "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/LighthouseAppContextModelSnapshot.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/Slice01NarrowToFeaturesScenarios.cs"
+          ],
+          "dependencies": [],
+          "implementation_notes": "~2-2.5h, tagged for sizing review and kept as one step on purpose: it is the thinnest line through every layer, and the steps after it harden each layer behind a test of its own. TWO COMMITS, in this order, both through des-commit with step id 01-01. COMMIT 1, refactor(parents): extract the pair of parent writes into ParentSourceSelector.HangUnder(owner, record, key) - today SetTheParentTheOverrideNames (JiraWorkTrackingConnector.cs:1706-1711) writes ParentReferenceId and ShowBackWhatTheLinksSaid (:1725-1734) writes the override's Additional Field value; the connector now calls HangUnder for its lone candidate. No behaviour change, every test green before and after, nothing else in the commit. COMMIT 2, feat(parents): the skeleton. Thinnest means: ParentResolution.From(IReadOnlyList<ParentCandidate>) builds the value (the key-sorted canonical form can wait for 01-02 unless it falls out for free); Place handles only the Narrow path where exactly one candidate is a stored Feature; StoredFeatures.Holds answers from its dictionary; GetStoredFeatureCreatedDates is a plain projection over (ReferenceId, CreatedDate) (duplicate and MinValue handling are 01-03). WorkItemBase gains the [NotMapped] transient ParentCandidatesFromLinks, copied by the copy constructor - without the copy it never survives new WorkItem(workItem, team) in the connector. Keep the old bool LinksNamedMoreThanOneParent beside it for now so the WorkItemServiceTest builders at :1569/:1577 and the Portfolio count paths keep compiling; 01-04 removes it. The connector sets the candidates where it sets the bool (:1672-1673). WorkItemService swaps IRepository<Feature> for IFeatureRepository (same parameter count, no Program.cs edit); in WorkItemServiceTest change only the mock's declared type to Mock<IFeatureRepository>. The private placing step is called once in ResolveRemoteFetch after its full/delta branch, on the downloaded, deduplicated records, before SyncWorkItem; it takes one snapshot only when some record has two or more candidates, and applies a placement through HangUnder, so the connector (one candidate) and the placing step (several) write the pair one way. Team not-placed now comes from the step, not CountTheRecordsNobodyCouldPlace; the Portfolio paths keep the old count. SyncOutcome gains RecordsPlacedFromLinksNamingMoreThanOneParent (init); RefreshLog gains the column appended last; TeamUpdater copies it at :104. LOCAL GATES for this step beyond the standing ones: the migration exists for both providers (generated per the standing EF constraint) and the throwaway sqlite start prints no PendingModelChanges. Remove the SCAFFOLD markers only for what this step genuinely builds; the rest go in 01-02 and 01-03."
+        },
+        {
+          "id": "01-02",
+          "name": "The pick at Team grain decides from the candidates and the snapshot alone, in any order",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/ParentResolutionPlacementTest.cs",
+          "scenario_name": "One_candidate_is_not_a_question_for_the_pick; Narrowing_to_the_one_stored_Feature_places_the_record_under_it; No_stored_Feature_among_the_candidates_places_nothing_and_says_why; Two_stored_Features_are_not_placed_until_there_is_a_rule_to_choose_between_them; Two_readings_of_the_same_links_in_another_order_are_the_same_answer; Every_order_of_the_same_candidates_gives_the_same_placement_when_narrowing_decides",
+          "criteria": [
+            "Fewer than two candidates returns NotAsked with no key, no rule and nothing set aside",
+            "Narrowing that leaves one stored Feature places it, decided by OnlyFeatureAmongLinks, with every other candidate set aside",
+            "Narrowing that leaves none returns NotPlaced for NoneIsAStoredFeature; leaving two or more returns NotPlaced for MoreThanOneStoredFeature",
+            "Every ordering of the same keys, through either From overload, is one equal answer with one hash code, and gives one placement"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/ParentResolution.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/ParentPlacement.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/ParentCandidate.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/ParentResolutionPlacementTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/IssueExtensionsParentLinkTest.cs"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "implementation_notes": "~1.5h. Pure function: Place reads its arguments and nothing else, writes nothing, logs nothing. Both From overloads collapse duplicates on the key (ordinal) and sort by key (ordinal), so Equals and GetHashCode become order-free without changing their bodies; Two_readings_... goes through the string overload, so the sort must live where both overloads meet. The sort changes Candidates order for existing callers: IssueExtensionsParentLinkTest asserts Is.EqualTo(BothCandidates) at :138 and Is.EqualTo(BothChildren) at :206; if those reds come from order alone, sort the expected arrays (hoisted, CA1861) rather than loosening to Is.EquivalentTo, so the canonical order stays pinned. Rewrite ParentResolution's header: several candidates are now placed or reported, not refused. StoredFeatures.CreatedDateOf answers null for an unknown id and treats DateTime.MinValue as unknown (IssueFactory writes MinValue for an empty created); slice 02 relies on it. MoreThanOneStoredFeature exists only until 02-03 deletes it; the enum is not stored, so deleting a member later is safe. LOCAL GATE: after this step the kernel files carry exactly one SCAFFOLD marker, at ParentResolution.cs:21 on the dated-candidate From overload, reworded to say the pick does not use link dates yet (no slice id in the text, per the comments rule); 02-03 removes it."
+        },
+        {
+          "id": "01-03",
+          "name": "The stored-Feature snapshot holds every Feature with its earliest known created date, the level above included",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/FeatureRepositoryTest.cs",
+          "scenario_name": "The_stored_Feature_snapshot_holds_every_Feature_with_its_created_date_the_level_above_included; A_reference_id_stored_twice_keeps_its_earliest_known_created_date; Slice01NarrowToFeaturesScenarios.A_Feature_stored_only_as_the_level_above_a_Portfolio_counts_as_a_Feature_Lighthouse_holds",
+          "criteria": [
+            "The snapshot answers for every stored Feature across Portfolios, including those stored only as the level above",
+            "A reference id stored twice answers with its earliest known created date, and DateTime.MinValue never counts as known",
+            "A Work Item caused by a stored level-above Feature and an incident is stored under that Feature after a Team refresh",
+            "The snapshot is one projection query and loads no forecasts, children or simulation results"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IFeatureRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/FeatureRepositoryTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/Slice01NarrowToFeaturesScenarios.cs"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "implementation_notes": "~1h. Read-only projection, sibling of GetAllReferenceIds (FeatureRepository.cs:39-42), which exists because reading a Feature pulls in forecasts and simulation results. Project (ReferenceId, CreatedDate) only, group by reference id ordinal, keep the minimum date that is not MinValue, else unknown. Must translate on SQLite and PostgreSQL: the snapshot test runs on real EF through IntegrationTestBase; if the grouping does not translate, materialise the two-column projection first and group in memory, which is still one query. Its doc says it is read once per fetch and asked questions only. LOCAL GATE: FeatureRepository.cs carries no SCAFFOLD marker after this step."
+        },
+        {
+          "id": "01-04",
+          "name": "The record carries its candidates and nothing that can disagree with them",
+          "agent": "nw-software-crafter",
+          "step_type": "refactor",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs",
+          "scenario_name": "UpdateWorkItemsForTeam_CheaperRefresh_CountsWhatItDownloadedAndCouldNotPlace; UpdateFeaturesForPortfolio_CheaperRefresh_CountsWhatItDownloadedAndCouldNotPlace; ParentSourceSelectorTest (new HangUnder cases)",
+          "criteria": [
+            "Being ambiguous is read from the record's candidates alone; no second field on the record can say otherwise",
+            "A copied record carries its candidates and every other member as before, and the stored model gains no column for them",
+            "A cheaper Team refresh and a cheaper Portfolio refresh still count each downloaded record nobody could place, now built from its candidates",
+            "Hanging a record under a key changes its parent reference and, only when the override names a link type, the override's Additional Field value, and no other member of the record"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Parents/ParentSourceSelectorTest.cs"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "implementation_notes": "~1h. Pure refactor plus two unit tests DISTILL left to DELIVER (the builder migration and HangUnder). Delete the transitional bool from 01-01; the Portfolio count paths (FetchEveryFeature :845, FetchOnlyTheFeaturesThatMoved :927) count ParentCandidatesFromLinks.IsAmbiguous until slice 03 wires them to the placing step. Builders ADownloadThatNobodyCouldPlace (:1562) and ADownloadedFeatureNobodyCouldPlace (:1572) build two non-stored candidates instead of setting the bool. HangUnder cases assert the declared mutation set {ParentReferenceId, AdditionalFieldValues[override id]} and that every other member is unchanged. The existing ParentSourceSelectorTest case 'two issues answer, yields nothing' still holds for the connector half and stays. LOCAL GATES: no new migration is generated by this step and the throwaway sqlite start still prints no PendingModelChanges (this is what proves 'no column'); the WorkItemBase property doc no longer claims a record keeps what it already had."
+        },
+        {
+          "id": "01-05",
+          "name": "Both Team fetch paths place what they downloaded, count it, and touch nothing else",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/Slice01NarrowToFeaturesScenarios.cs",
+          "scenario_name": "A_Work_Item_with_a_single_link_keeps_it_Feature_or_not; A_Work_Item_that_can_no_longer_be_placed_takes_the_trackers_own_parent_not_the_Feature_it_had; A_Work_Item_that_did_not_move_keeps_its_reading_until_it_is_next_read; A_Feature_stored_after_the_Work_Item_was_read_is_picked_up_when_the_Work_Item_is_next_read; Placed_and_not_placed_add_up_to_every_Work_Item_whose_links_name_two_or_more_issues; plus WorkItemServiceTest fetch-path cases",
+          "criteria": [
+            "A full and a cheap Team refresh each place and count only the records they downloaded; placed plus not placed equals the records with two or more candidates, for every mix",
+            "A record with one link or none keeps exactly the parent it was read with and counts in neither figure",
+            "A record that can no longer be placed takes the tracker's own parent from this reading and shows nothing in the Additional Field, never the Feature it had before",
+            "A Feature stored after a Work Item was read is used the next time that Work Item is read, and not before"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/Slice01NarrowToFeaturesScenarios.cs"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "implementation_notes": "~1.5h. There are six fetch paths and three call points (ResolveRemoteFetch, ResolveRemoteFeatureFetch, ResolveRemoteParentFeatureFetch), one call per resolver after its full/delta branch. Slice 01 wires and pins the Team one only: the two Portfolio paths keep counting not placed and the sweep stays uncounted until slice 03, as DISTILL decided, so the four remaining fetch-path unit tests land in 03-01 and 03-02. Unit tests here: FetchEverything and FetchOnlyWhatMoved each report placed and not placed through SyncOutcome; records with fewer than two candidates are equal before and after the step. The step returns its two counts and the resolver adds them to SyncOutcome with 'with'. A not-placed record is not touched by the step: the connector already gave it the tracker's own parent and an empty Additional Field value, and WorkItemBase.Update overwrites the stored parent with that, which is the accepted default flagged for the maintainer's hold. CountTheRecordsNobodyCouldPlace no longer serves the Team paths. LOCAL GATE (a unit test, not an acceptance criterion): the snapshot is requested exactly once per fetch with two or more candidates and never (Times.Never, on a mock built in [SetUp]) when no record has two or more."
+        },
+        {
+          "id": "01-06",
+          "name": "One placed line and one not-placed line per fetch name every record, its pick, why, and what was set aside",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/Slice01NarrowToFeaturesScenarios.cs",
+          "scenario_name": "The_refresh_names_the_Feature_it_chose_why_and_what_it_set_aside; A_Work_Item_linked_only_to_non_Features_is_reported_not_silently_dropped; Two_Features_left_after_narrowing_are_not_guessed_before_the_oldest_link_rule_exists; A_Work_Item_kept_under_its_lone_link_is_not_placed_once_a_second_non_Feature_is_linked; plus ParentPlacementReportTest",
+          "criteria": [
+            "A Team refresh that placed records writes exactly one Warning line beginning 'Team \"Payments\" placed N record(s) whose links name more than one issue: ' naming each record, its Feature and '(only Feature; set aside ...)'",
+            "A Team refresh with records it could not place writes exactly one Warning line naming each record with every candidate and its reason, ending 'It takes no parent from its links.'",
+            "Two stored Features left after narrowing are reported with 'more than one is a Feature Lighthouse holds' and the record is stored with no parent",
+            "An item stored under its lone incident that gains a second non-Feature link is reported not placed and stored with no parent",
+            "The formatter returns no line for an outcome with no records, and the singular reads 'record', the plural 'records'"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Parents/ParentPlacementReport.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Parents/ParentPlacementReportTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/Slice01NarrowToFeaturesScenarios.cs"
+          ],
+          "dependencies": [
+            "01-05"
+          ],
+          "implementation_notes": "~1.5h. ParentPlacementReport is a new pure static formatter in Services.Implementation.Parents, kept out of WorkItemService (1198 lines) so the approved copy is pinned without capturing a logger: placements in, the two line bodies (or none) out. The shell logs them at Warning through ILogger<WorkItemService>; the acceptance harness reads them from RecordingLogger<WorkItemService>. Copy is the standing-constraint copy, verbatim. A switch over ParentNotPlacedReason / ParentPlacementRule without a discard needs the CS8524 pragma with its reason inline. The connector's Team-half warning still writes in this step; 01-07 deletes it, which is why Several_records_share_one_placed_line_and_one_not_placed_line is not in this step."
+        },
+        {
+          "id": "01-07",
+          "name": "The connector stops claiming Team items were left where they were",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/Slice01NarrowToFeaturesScenarios.cs",
+          "scenario_name": "Several_records_share_one_placed_line_and_one_not_placed_line; ParentFromIssueLinks.Slice03AmbiguityRefusalScenarios.The_refresh_records_how_many_records_it_could_not_place (rewritten)",
+          "criteria": [
+            "A Team refresh with two placed and two not-placed records writes one placed line and one not-placed line, each naming both of its records",
+            "No Team refresh writes any line containing 'where it was'",
+            "A Team refresh of three records naming only non-stored candidates still records 3 not placed on its row",
+            "The rest of the epic-6028 refusal suite stays green"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Parents/ParentSourceSelector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice03AmbiguityRefusalScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice03AmbiguityRefusalSpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/Slice01NarrowToFeaturesScenarios.cs"
+          ],
+          "dependencies": [
+            "01-06"
+          ],
+          "implementation_notes": "~1h. Delete only the Team-side call of ReportTheRecordsWhoseLinksNamedMoreThanOneParent (:317) and its list; the Portfolio call (:1258), the method and AnItemAndWhatItsLinksOffered stay until 03-03. The three slice-01-tagged refusal tests read the connector's logger, so deleting the Team half reds them; they go in the same step, never one later. Decision taken autonomously (AFK, recorded here): The_warning_names_the_item_and_every_candidate and Several_items_nobody_could_place_share_one_warning are deleted, because A_Work_Item_linked_only_to_non_Features_is_reported_not_silently_dropped and Several_records_share_one_placed_line_and_one_not_placed_line now pin the same knowledge on the new line; The_refresh_records_how_many_records_it_could_not_place is rewritten, because its count of 3 stays true as 'not placed': keep the row assertion, drop the connector-warning assertion, and drop its retired tag. Delete any Specifications helper left unused (TheOneWarningTheRefreshWrote is still used by nothing once both go; TheOneWarningNaming stays for the slice-03-tagged tests). The two slice-03-tagged tests stay untouched and green. LOCAL GATES: grep -rn 'retired-by-story-6301-slice-01' Lighthouse.Backend returns nothing; ParentSourceSelector's header no longer says the tracker's own parent is never consulted while the override is set (it is what remains when the links do not place a record)."
+        },
+        {
+          "id": "01-08",
+          "name": "An architecture rule keeps the pick pure",
+          "agent": "nw-software-crafter",
+          "step_type": "enforcement",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+          "scenario_name": "ParentPlacementKernel_DependsOnNoServiceOrData; NamedModules_AreNonEmpty (extended)",
+          "criteria": [
+            "ParentResolution, ParentCandidate, ParentPlacement and StoredFeatures depend on no Lighthouse.Backend.Services or Lighthouse.Backend.Data namespace",
+            "A guard fails if any of the kernel types the rule names is missing, so the rule cannot pass by matching nothing",
+            "Pointing the kernel at a repository type (sabotage, then restored) reds the rule in a Release build",
+            "WorkTrackingConnectors_DoNotDependOnAnyRepository stays green"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs"
+          ],
+          "dependencies": [
+            "01-07"
+          ],
+          "implementation_notes": "~45 min. DISTILL left this rule to DELIVER; DESIGN's enforcement table names it 'not written yet; DELIVER slice 01 adds it'. Follow the existing NamedModules_AreNonEmpty guard in the same file for the 'not empty' shape, naming the four types explicitly. The edge it forbids is a type dependency in a signature or field, never one only reachable inside an async body, so it holds in Release; verify with the Release build per the standing constraint. Test method name is the crafter's to adjust; the scenario name here is the proposed one."
+        },
+        {
+          "id": "01-09",
+          "name": "Refresh History shows placed and not placed apart, in the instance's term for the row's records",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.test.tsx",
+          "scenario_name": "shows the worst single refresh for each figure, placed apart from not placed, in the instance's Work Item term; shows only the figure that is above zero across the window; reads a refresh recorded before the split as not placed, which is what happened to it; uses the instance's Feature term on a Portfolio, whose records are Features",
+          "criteria": [
+            "A Team row shows 'Max {Work Items} Placed From Links Naming More Than One Parent' and 'Max {Work Items} Not Placed: Links Name More Than One Parent', each the window's maximum single refresh, in the instance's Work Items term",
+            "A Portfolio row uses the instance's Features term in both captions",
+            "Each figure shows only when it is above zero across the window, and a row from an older backend without the placed field reads as not placed",
+            "The 'Fetched' caption appears nowhere on the page"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/SystemInfo/RefreshLog.ts",
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.test.tsx"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "implementation_notes": "~1.5h. Copy B as the maintainer approved it, in the existing caption-over-value stat row; no new control (the sketch in the DISTILL maintainer block). Terms come from Terminology: getTerm(WORK_ITEMS) on a Team entity, getTerm(FEATURES) on a Portfolio entity, never a hard-coded word. The new model field is optional like its sibling (a backend T? is null on the wire; model it so both absent and null read as zero). Keep the comment that explains why the figure is a max and not a sum, without the sentence about 'Fetched'. Delete the active test marked retiredByStory6301Slice01 (:300) and its marker constant (an unused const reds Biome). Grep Lighthouse.EndToEndTests/ for 'Fetched With Links' and 'More Than One Parent' in the same edit. Watch S3358 and inline pluralisation when building the captions: extract a helper with a named local. LOCAL GATE: RefreshLog.ts carries no SCAFFOLD marker after this step."
+        },
+        {
+          "id": "01-10",
+          "name": "Refresh History says it is loading, and says when it could not load, instead of claiming there is no history",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.test.tsx",
+          "scenario_name": "shows a spinner while the history is on its way, and neither the empty message nor the entity picker; says it could not load the history when the request fails, not that there is none",
+          "criteria": [
+            "While the request is in flight the section shows a centred spinner and neither the empty message nor the entity picker",
+            "A failed request shows an error alert reading 'Could not load refresh history.'",
+            "'No refresh history available yet.' shows only for an empty, successful answer (the active guard stays green)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.test.tsx"
+          ],
+          "dependencies": [
+            "01-09"
+          ],
+          "implementation_notes": "~1h. Reuse the ThirdPartyPackagesSection look (:140-150): CircularProgress in a centred Box, MUI Alert severity='error'. Today the error only reaches console.error (RefreshHistorySection.tsx:35-43, 68-74). One request on mount with no parameter, so no keyed query is needed and no late answer for an old request can land. useState pairs named [thing, setThing] (S6754); catch parameter error_. Delete the pendingStory6301 constant with its last use. SLICE-END LOCAL GATES: grep -rn pendingStory6301 Lighthouse.Frontend/src and grep -rn 'PendingStory6301.Slice01' Lighthouse.Backend return nothing; the SCAFFOLD grep lists only ParentResolution.cs:21 and Issue.cs; check the section by hand with the browser throttled to a slow connection."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "A Work Item linked to several Features counts toward the oldest link's Feature, every refresh",
+      "description": "US-02, Team grain. The changelog Jira already sends dates each counterpart's standing link; the pick orders what narrowing leaves by dated before undated, earliest link, known created date, earliest created date, lowest key (ordinal); the placed line names the rule that decided, its date, and the candidates set aside with theirs. Spike 00 is the entry gate: it captures Jira Cloud's real changelog 'Link' item and replaces the provisional wire-format builders. If Cloud records no dated Link entry, the code path is the same (every candidate undated) and the slice ships the fallback-only wording the maintainer block describes. Slice brief: slices/slice-02-oldest-link-wins.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Spike 00: what Jira Cloud's changelog really records when a link is added, removed and added again",
+          "agent": "nw-software-crafter",
+          "step_type": "spike",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TrackerWireFormats.cs",
+          "scenario_name": "IssueFactoryLinkDatesTest.Status_changes_beside_link_entries_are_read_as_before (active guard, must stay green on the captured shape)",
+          "criteria": [
+            "The slice-02 brief's 'Spike result' records, from a live read of both ends, the Link item's field and fieldtype, which of to/from/toString/fromString carry the counterpart key, whether both issues get an entry, and each history's created timestamp, for an add, a remove and a re-add",
+            "JiraWireFormat.ALinkAddedAt, ALinkRemovedAt and ALinkAddedNamingTheCounterpartOnlyInItsSentence build exactly the captured shape and are no longer marked provisional",
+            "If Cloud records no dated Link entry, the brief says so, no builder is invented, and the brief lists the steps that take their 'IF SPIKE NEGATIVE' branch: 02-02, 02-03, 02-04, 02-05, 03-01 and 03-02",
+            "Both issues the spike used carry no link the spike made",
+            "Status_changes_beside_link_entries_are_read_as_before stays green"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TrackerWireFormats.cs",
+            "docs/feature/story-6301-only-features-as-parent-candidates/slices/slice-02-oldest-link-wins.md"
+          ],
+          "dependencies": [
+            "01-10"
+          ],
+          "implementation_notes": "<= 2h, time-boxed. Instance letpeoplework.atlassian.net, project LGHTHSDMO, link type 'Blocks'. Basic auth: username atlassian.pushchair@huser-berta.com (the default JiraParentLinkDirectionDogfoodTest and JiraLinkTypeDogfoodTest use), token from env var JiraLighthouseIntegrationTestToken; never echo it, never write it to a file in the repo. Pick two LGHTHSDMO issues no dogfood test or slice-01 data relies on (not LGHTHSDMO-7, -9 or 8430..8433). Sequence: POST rest/api/2/issueLink (type Blocks), wait a minute, read the new link id from rest/api/2/issue/{key}?fields=issuelinks, DELETE rest/api/2/issueLink/{id}, wait, POST it again, then GET rest/api/2/issue/{key}?expand=changelog on BOTH ends and keep the raw 'histories' entries whose items name the Link field. Finally DELETE the re-added link and re-read both ends to confirm none of the spike's links remain. What to record answers DESIGN's open shape question: is the key in to/from (shape PROJECT-123) or only in toString/fromString with a link id in to/from; is an addition a non-empty to-side and a removal a from-side with an empty to-side; is created an offset timestamp. Replace the three builders with the captured shape, keeping their signatures if the shape allows so callers in IssueFactoryLinkDatesTest and ParentPlacementAcceptanceTest.TheHistory (:632-636) need no change; if a signature must change, change the callers in this step. Strip anything customer-identifying from the captured payload (none expected on the dogfood instance). GATE: a negative result switches 02-02, 02-03, 02-04, 02-05, 03-01 and 03-02 to their 'IF SPIKE NEGATIVE' branch; the maintainer acknowledges the fallback-only wording at the hold."
+        },
+        {
+          "id": "02-02",
+          "name": "Each counterpart's standing link is dated from the changelog the search already brought back",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/IssueFactoryLinkDatesTest.cs",
+          "scenario_name": "An_added_link_dates_its_counterpart_by_when_it_was_added; A_removed_link_leaves_its_counterpart_undated; A_link_added_again_dates_from_when_it_was_added_again; Entries_out_of_order_are_read_by_when_they_happened; A_key_named_only_in_the_sentence_is_read_from_the_sentence; A_removal_whose_adding_was_never_recorded_changes_nothing",
+          "criteria": [
+            "An added link dates its counterpart key by the instant of the addition",
+            "A removal leaves the key undated; a re-add dates it from the re-add; a removal whose addition was never seen changes nothing",
+            "Histories are read in the order their created instants say, whatever order the array lists them",
+            "A key found only in the sentence is read from the one issue-key-shaped token there, never from the renamable link phrase",
+            "Status transitions parse exactly as before, and reading an issue makes no new Jira request"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Factories/IssueFactory.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/Issue.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/IssueFactoryLinkDatesTest.cs"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "implementation_notes": "~1.5h. Sibling of StatusTransitionsIn (IssueFactory.cs:60-71), over the same histories, as LINQ (S3267) and under complexity 15. Sort by each history's created, not array order; addition records the instant for the key, removal clears it; whatever remains is the standing link's date. Key from to/from when it has the PROJECT-123 shape, otherwise the single key-shaped token in toString/fromString, per the captured shape from 02-01 (if the spike showed the key always sits in one place, delete the branch that never occurs and say why in the commit). Use [GeneratedRegex] if a regex is needed (SYSLIB1045). Dates are per counterpart key, not per link type: the Link item names no type in a structured field. Parse the instant as an offset and keep it UTC. LOCAL GATE: Issue.cs carries no SCAFFOLD marker after this step. IF SPIKE NEGATIVE: Cloud has no Link entry to parse, so do not build a parser for an invented shape; delete the five link-dating tests whose fixture would be fiction, keep A_removal_whose_adding_was_never_recorded_changes_nothing only if it still says something true, keep the active status guard, and resolve Issue.LinkAddedAt's SCAFFOLD by documenting that it stays empty on Cloud (or remove the member if 02-04 no longer needs it); record which in the slice brief."
+        },
+        {
+          "id": "02-03",
+          "name": "The pick orders what narrowing leaves and always ends somewhere, and the line names the rule that decided",
+          "agent": "nw-software-crafter",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/ParentResolutionPlacementTest.cs",
+          "scenario_name": "The_oldest_dated_link_wins; A_dated_link_beats_an_undated_one; Among_undated_links_the_earliest_known_created_date_wins; When_everything_else_ties_the_lowest_key_wins_compared_character_by_character; Without_narrowing_nothing_is_set_aside_first_and_the_pick_always_ends_somewhere; Every_order_of_the_same_candidates_gives_the_same_placement; Every_record_with_two_or_more_candidates_is_either_placed_among_them_or_refused_for_holding_no_Feature; plus Slice02OldestLinkWinsScenarios.With_no_link_dates_the_older_Feature_wins; With_no_link_dates_and_Features_of_the_same_age_the_lower_key_wins; A_Feature_with_no_recorded_created_date_counts_as_unknown_not_as_the_oldest",
+          "criteria": [
+            "Among the candidates left, a dated link beats an undated one and the earliest link wins; among undated ones a known created date beats an unknown one and the earliest wins; then the lowest key, compared ordinally (OPS-12 before OPS-9)",
+            "The rule named is the first criterion on which the winner beats the runner-up, and every other original candidate is set aside with its date, if any",
+            "Every permutation, under both narrowings, gives one placement, and every record with two or more candidates is placed among them or refused only for holding no stored Feature",
+            "A Team refresh of undated links places the record by earliest created or lowest key and the placed line shows '(earliest created, yyyy-MM-dd; set aside ...)' or '(lowest key; set aside ...)'",
+            "Two stored Features left after narrowing are no longer refused: the record is placed among them"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/ParentResolution.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/ParentPlacement.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Parents/ParentPlacementReport.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Parents/ParentPlacementReportTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/ParentResolutionPlacementTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/Slice01NarrowToFeaturesScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/Slice02OldestLinkWinsScenarios.cs"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "implementation_notes": "~2h, tagged for sizing review; no split needed (one rule, its formatter and the tests it retires). Adds step 3 of the rule to Place and deletes ParentNotPlacedReason.MoreThanOneStoredFeature (not stored, safe to delete). Delete ParentResolutionPlacementTest.Two_stored_Features_are_not_placed_until_there_is_a_rule_to_choose_between_them and Slice01NarrowToFeaturesScenarios.Two_Features_left_after_narrowing_are_not_guessed_before_the_oldest_link_rule_exists in this step: both go red the moment the pick decides, and A_Work_Item_linked_to_two_Features_counts_toward_the_one_it_was_linked_to_first (02-04) replaces them. Created dates come from StoredFeatures.CreatedDateOf, where null and DateTime.MinValue are unknown; taken at face value MinValue would always win. The formatter becomes total over ParentPlacementRule here (CS8524 pragma with its reason if discard-free): set-aside entries carry ', yyyy-MM-dd' when dated, nothing when not. The three fallback acceptance scenarios run through the real refresh with no link history, so they pass on this step. Remove the remaining kernel SCAFFOLD marker at ParentResolution.cs:21 now that the pick reads link dates. LOCAL GATE: the SCAFFOLD grep is empty after this step. IF SPIKE NEGATIVE: the code is the same, which is DESIGN's point that the spike changes data, not code. The_oldest_dated_link_wins and A_dated_link_beats_an_undated_one pin a rule no Cloud data reaches; default is to keep the kernel rule and both tests, because a Data Center instance may still date links, and to record that in the slice brief. The three fallback scenarios are unaffected."
+        },
+        {
+          "id": "02-04",
+          "name": "A Work Item linked to two Features counts toward the one it was linked to first, whatever order Jira lists them in",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/Slice02OldestLinkWinsScenarios.cs",
+          "scenario_name": "A_Work_Item_linked_to_two_Features_counts_toward_the_one_it_was_linked_to_first; The_same_Work_Item_stays_under_the_same_Feature_however_the_tracker_orders_its_links; A_dated_link_wins_over_a_link_with_no_recorded_date; A_link_removed_and_added_again_counts_from_when_it_was_added_again; A_history_that_arrives_out_of_order_is_read_by_when_each_entry_happened; A_long_history_is_read_in_full_before_a_link_is_dated; An_older_link_to_an_incident_never_wins",
+          "criteria": [
+            "A Team refresh stores the Work Item under the Feature whose standing link is oldest and writes '{item} under {Feature} (oldest link, yyyy-MM-dd; set aside {other}, yyyy-MM-dd)'",
+            "A refresh that only reverses the link order leaves the item under the same Feature, on the cheap refresh too",
+            "A re-added link counts from its re-add, histories out of order are read by when they happened, and a truncated changelog is read in full through the existing re-read before any link is dated",
+            "An older link to a non-Feature never wins: narrowing sets it aside first",
+            "The refresh makes no more Jira requests than before (the request-cost guard stays green)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/IssueExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/IssueExtensionsParentLinkTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/Slice02OldestLinkWinsScenarios.cs"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "implementation_notes": "~1.5h. ResolveParentFromLinks (IssueExtensions.cs:104-114) takes the issue's LinkAddedAt and attaches each candidate's date; a candidate with no entry is undated. The direction and type matching from Bug #6203 are unchanged, and the existing IssueExtensionsParentLinkTest cases stay green; add one case that dates are attached. The truncated-changelog path is the existing per-issue re-read (JiraWorkTrackingConnector.cs:1389-1454): the dates must be parsed from the full history it returns, not the truncated first page. IF SPIKE NEGATIVE: every candidate on Cloud is undated, so the four history scenarios and the oldest-link bracket describe a world that does not exist; per the maintainer block the slice ships fallback-only wording - delete those scenarios, keep the reorder scenario reworded to the fallback bracket, keep An_older_link_to_an_incident_never_wins reworded to created dates, record each change in the slice brief, and flag it for the maintainer's acknowledgement at the hold."
+        },
+        {
+          "id": "02-05",
+          "name": "The live dogfood instance's link history is read through the same path the refresh uses",
+          "agent": "nw-software-crafter",
+          "step_type": "integration",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraParentLinkDirectionDogfoodTest.cs",
+          "scenario_name": "New read-only case in the existing JiraParentLinkDirectionDogfoodTest class (not a DISTILL row): the Causes chain LGHTHSDMO-8430..8433 dates its links, or records that none exist",
+          "criteria": [
+            "Reading LGHTHSDMO-8430..8433 through the connector dates each counterpart of their Causes links, matching the shape Spike 00 captured",
+            "The case only reads the instance, and ignores itself when the credential environment variable is absent",
+            "The default filtered test run excludes it, and CI's Jira live run includes it"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraParentLinkDirectionDogfoodTest.cs"
+          ],
+          "dependencies": [
+            "02-04"
+          ],
+          "implementation_notes": "~45 min. Not a DISTILL scenario: DESIGN's component table and the DEVOPS environment matrix ask for it. It extends the existing class JiraParentLinkDirectionDogfoodTest, confirmed present at the path above with fixture-level [Category(\"Integration\")] and [Category(\"JiraIntegration\")], username default atlassian.pushchair@huser-berta.com, env var JiraLighthouseIntegrationTestToken, Assert.Ignore when it is unset, and chain constants LGHTHSDMO-8430..8433. Add one read-only JiraIntegration-category case beside the existing GetWorkItemsForTeam_* cases, on the same connection; no write to the instance. Its existing case GetWorkItemsForTeam_TheLinkTypesName_StillReadsBothWaysAndRefusesTheMiddle reads connector output, which still refuses at the connector, so it stays as it is. IF SPIKE NEGATIVE: the new case asserts the dates are empty, so a Cloud change that starts recording them reds it and reopens the wording. Assert on a link that exists rather than pinning an exact date list a Jira administrator can change. Run it deliberately once with --filter TestCategory=JiraIntegration and FullyQualifiedName~JiraParentLinkDirectionDogfoodTest; a 4xx/429 is environmental. SLICE-END LOCAL GATES: grep -rn 'PendingStory6301.Slice02' Lighthouse.Backend is empty and the SCAFFOLD grep is empty; record the A3 measurement plan (Steve's items, denominator, pre-registered threshold) in the slice brief as it says."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "A Feature linked to several issues above it gets one parent, the oldest link's",
+      "description": "US-03, Portfolio grain. The same pick on both Portfolio fetches with no narrowing; created dates come from the stored parent Features where they exist, otherwise the lowest key decides, which allows the one documented move once the sweep has stored the candidates. The Portfolio row counts placed Features; the parent sweep is placed and logged on its own line but never counted; the Portfolio half of the connector warning is deleted. Slice brief: slices/slice-03-portfolio-oldest-link.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "A Portfolio refresh places each Feature with several candidates above it, and its row counts them",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/Slice03PortfolioOldestLinkScenarios.cs",
+          "scenario_name": "A_Feature_linked_to_two_issues_above_it_rolls_up_to_the_one_it_was_linked_to_first; At_Portfolio_level_nothing_is_set_aside_before_the_oldest_link_is_picked; Undated_parents_that_are_not_stored_fall_back_to_the_lowest_key; An_undated_Feature_moves_once_to_the_older_parent_after_the_parents_are_stored_and_then_holds; A_Portfolio_pointed_at_a_link_that_also_reads_downward_names_every_candidate; A_cheap_Portfolio_refresh_places_and_counts_what_it_downloaded; plus WorkItemServiceTest Portfolio fetch-path cases",
+          "criteria": [
+            "A full and a cheap Portfolio refresh each place every downloaded Feature with two or more candidates by the pick with nothing set aside first, and never leave one not placed",
+            "The Portfolio's refresh row reports those Features as placed, and placed plus not placed equals the Features with two or more candidates",
+            "Undated candidates above that are not stored fall to the lowest key; once the sweep has stored them, the Feature moves once to the earliest created on its next re-read and then holds (Full, Delta, Delta reads PAY-7, PAY-9, PAY-9)",
+            "A Portfolio reading a phrase both ends share writes one placed line naming the pick, the rule and all twelve children set aside",
+            "A Portfolio refresh of three Features each naming two non-stored issues above records 3 placed and 0 not placed on its row"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice03AmbiguityRefusalScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/Slice03PortfolioOldestLinkScenarios.cs"
+          ],
+          "dependencies": [
+            "02-04"
+          ],
+          "implementation_notes": "~2h. Second call point: ResolveRemoteFeatureFetch calls the placing step once after its full/delta branch with ParentNarrowing.DoNotNarrow; FetchEveryFeature (:845) and FetchOnlyTheFeaturesThatMoved (:927) stop using CountTheRecordsNobodyCouldPlace, which is deleted if nothing else uses it. PortfolioUpdater copies the placed count at :167 (the Feature half only). Fetch-path unit tests for the two Portfolio paths, as 01-05 did for Team. The one-time move is the accepted AFK default for the maintainer's hold (DISCUSS Outcome KPIs decision note): within one Portfolio refresh the Feature half runs before the sweep (WorkItemService.cs:52-53), so nothing goes back over the Feature; it moves only when it is next re-read. Retiring the slice-03-tagged refusal tests: A_portfolio_refresh_records_the_count_on_its_own_row goes red here (DoNotNarrow plus lowest key always places), so it is rewritten in this step to read its three records as placed, with the connector-warning assertion dropped and its tag removed (the last criterion above). A_portfolio_refresh_reports_it_the_same_way is deleted in this step only if it is red here; if it is still green (it reads the connector's output and warning, which do not change until 03-03), it is deleted in 03-03 together with the warning. Its replacement is A_Portfolio_pointed_at_a_link_that_also_reads_downward_names_every_candidate. IF SPIKE NEGATIVE: the dated-link scenarios here (rolls_up, nothing_is_set_aside, reads_downward, cheap refresh) are reworded to the fallback brackets, as slice 02 recorded."
+        },
+        {
+          "id": "03-02",
+          "name": "The issues above are placed by the same rule, named on their own line, and not counted",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/Slice03PortfolioOldestLinkScenarios.cs",
+          "scenario_name": "The_issues_above_are_placed_too_named_on_their_own_line_and_not_counted; plus WorkItemServiceTest parent-sweep fetch-path cases",
+          "criteria": [
+            "A parent the sweep fetches whose links name two or more issues is stored under the pick, with no narrowing",
+            "Its placed line names the owner as 'the parents of Portfolio \"X\"'s Features' and states the rule and the set-aside candidates",
+            "The Portfolio's row does not count the sweep's records, and a Portfolio refresh writes at most four placement lines",
+            "A full sweep that downloads the same parent twice places and names it once"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/Slice03PortfolioOldestLinkScenarios.cs"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "implementation_notes": "~1.5h. Third call point: ResolveRemoteParentFeatureFetch, DoNotNarrow, after its full/delta branch. The full sweep has no dedup today (WorkItemService.cs:1111); deduplicate before placing. The sweep's counts are discarded on purpose: SyncOutcome's stated rule (SyncOutcome.cs:17-20) keeps the sweep out of the row, and the Portfolio row means the Portfolio's own Features. The owner wording is DESIGN's proposed copy, pinned as written; it still carries the default word Feature, which is listed for the maintainer at the hold. Fetch-path unit tests for the sweep's two branches complete the six. IF SPIKE NEGATIVE: the scenario's two themes carry no link dates on Cloud, so the line names the rule that decided by the fallback - earliest created when the themes' stored created dates differ, otherwise lowest key - and its set-aside entries carry no date. Reword the scenario's expected line to that bracket (for example '(earliest created, yyyy-MM-dd; set aside {other theme})') and its expected parent to whichever theme the fallback picks, and record the change in the slice brief."
+        },
+        {
+          "id": "03-03",
+          "name": "The connector's ambiguity warning is gone, and nothing of the old refusal is left behind",
+          "agent": "nw-software-crafter",
+          "step_type": "refactor",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/Slice03PortfolioOldestLinkScenarios.cs",
+          "scenario_name": "Guard only, nothing un-skipped here: A_Portfolio_pointed_at_a_link_that_also_reads_downward_names_every_candidate (already un-skipped in 03-01; the diagnosis is now carried only by the placed line); ParentFromIssueLinks.Slice03AmbiguityRefusalScenarios.Two_links_to_the_same_issue_are_one_candidate",
+          "criteria": [
+            "A refresh at either grain writes no connector line about records whose links name more than one issue",
+            "The Portfolio refresh stores every downloaded Feature, with or without several links",
+            "A Portfolio misconfigured to read downward is still diagnosable from the placed line alone",
+            "A refresh whose links each name one issue writes no warning at all"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice03AmbiguityRefusalScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice03AmbiguityRefusalSpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/ParentPlacementAcceptanceTest.cs"
+          ],
+          "dependencies": [
+            "03-02"
+          ],
+          "implementation_notes": "~45 min. Structural cleanup, kept out of the criteria because none of it is observable on its own: delete the Portfolio call of ReportTheRecordsWhoseLinksNamedMoreThanOneParent (:1258), the method itself (:1339-1358), the AnItemAndWhatItsLinksOffered record struct (:1684) and the list plumbing in CreateWorkItemsFromIssues and CreateFeaturesFromIssues; CreateWorkItemFromJiraIssue returns the record. If A_portfolio_refresh_reports_it_the_same_way survived 03-01 because it was still green, it goes red now with the warning and is deleted here. The remaining epic-6028 refusal tests that read the connector's logger (NothingWasWrittenToTheLogAsAWarning in Two_links_to_the_same_issue_are_one_candidate and A_refresh_with_nothing_it_could_not_place_records_none) stay green; delete TheOneWarningNaming and any other Specifications helper left unused. Delete the PendingStory6301 class from the harness once its last use is gone. The connector header and the deleted method's doc carried the untrue 'left each of these where it was'; make sure no sentence like it survives in the connector. SLICE-END LOCAL GATES: grep -rn for PendingStory6301, pendingStory6301, retired-by-story-6301, retiredByStory6301 and SCAFFOLD returns nothing outside docs/."
+        }
+      ]
+    }
+  ]
+}
