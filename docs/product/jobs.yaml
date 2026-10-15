@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-10-13
+updated: 2026-10-15
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -63,6 +63,7 @@ feature_context:
   - story-6218-readable-cli-output
   - story-6193-usage-data-from-clients
   - story-6251-team-feature-size
+  - story-6301-only-features-as-parent-candidates
 
 jobs:
   - id: job-rbac-bootstrap
@@ -6983,6 +6984,26 @@ jobs:
         epic-4365's field-override job was scored on, and for the same reason. Current satisfaction: 0 -
         such an instance sees the no-children warning on every feature with no explanation, and the one
         setting that looks like it should help produces a JSON blob as a parent key. Gap: 4.
+    revisions:
+      - story: story-6301-only-features-as-parent-candidates
+        date: 2026-10-15
+        wave: DIVERGE
+        note: >
+          Same job, same persona; a case #6028 pre-registered as the one that would send the design back.
+          On an instance where one link type carries the hierarchy and other cause relations ("caused by"
+          incidents), most items name several candidates and #6028 refused them all, so the anxiety
+          mitigation above ("an item with more than one candidate takes no parent") produced the very
+          symptom the consequence job job-lead-size-features-from-real-children-not-a-default describes.
+          Revised by maintainer decision: narrow the candidates to stored Features (Team grain), then pick
+          the oldest link by changelog date (both grains), and report placed and not-placed items
+          separately. Satisfaction not re-scored until Steve's refresh log confirms the narrowing places
+          most items (A2).
+        outcome_statements:
+          - Minimise the number of Work Items that count toward no Feature only because the same link type also links them to non-Feature issues.
+          - Minimise the likelihood that a Work Item counts toward a different Feature on two refreshes when nothing on its links changed.
+          - Minimise the time it takes an administrator to find which items were placed by picking the oldest link, and under which Feature.
+          - Minimise the number of extra requests to the tracker that placing an ambiguous item costs.
+          - Minimise the number of refreshes between an ambiguous item being read and it counting toward its Feature.
 
   - id: job-lead-size-features-from-real-children-not-a-default
     title: Size features from their real children, not from a default

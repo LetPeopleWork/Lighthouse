@@ -10003,3 +10003,88 @@ System Context & Container: **unchanged for the Lighthouse product**. CI test-ti
 
 - [ADR-237](./adr-237-test-time-budget-guard.md): a test file or class over its time budget fails the verify job. Accepted 2026-10-14, provisional: taken while the maintainer was away, pending ratification.
 - Cross-ref: ADR-074 (per-fixture host ownership, `[NonParallelizable]` allowlist guard) — unchanged; amended only if a reusable host later becomes the default for acceptance harnesses.
+
+---
+
+## Application Architecture — story-6301-only-features-as-parent-candidates (DESIGN delta)
+
+Feature: story-6301-only-features-as-parent-candidates (ADO User Story #6301, under Epic #6028). This is the
+second follow-up to `parent-from-issue-links`, after Bug #6203. When an item's links of the configured type
+name two or more issues, a Team keeps only the stored Features among them. Then, at both grains, the oldest
+current link wins (dated before undated, then the earliest created date, then the lowest key). The outcome
+is reported as placed or not placed. DESIGN 2026-10-15, PROPOSE, maintainer AFK. Full design:
+`docs/feature/story-6301-only-features-as-parent-candidates/feature-delta.md` → "Wave: DESIGN / …"
+(DDD-1…DDD-17).
+
+The pattern is unchanged: ports-and-adapters, a pure rule in the `Models` kernel, and a thin I/O shell in the
+service. There is no new container, no new bounded context and no new dependency.
+
+### Key invariants introduced
+
+- **6301-I1 (DDD-7): several candidates are decided in `WorkItemService`, never in a connector.** The
+  connector carries the candidates with their link dates on the record, as a transient value. One private
+  placing step, called once in each of the three resolvers (Team, Portfolio, parent sweep) after their
+  full/delta branch, places them before anything is saved. (ADR-238)
+- **6301-I2 (DDD-5): the pick is pure and order-free.** `ParentResolution.Place(snapshot, narrowing)` reads
+  a read-only stored-Feature snapshot and returns a plan. Its total order ends at the ordinal key, so the
+  `issuelinks` order can never decide.
+- **6301-I3 (DDD-8): one writer of the pair.** `ParentSourceSelector.HangUnder` writes `ParentReferenceId`
+  and the override's show-back value, for one candidate (connector) and several (service) alike.
+- **6301-I4 (DDD-1, D1): a lone candidate is stored as-is.** Narrowing applies only with two or more
+  candidates, and only at Team grain. Native-parent and field sources are untouched.
+- **6301-I5 (DDD-12): placed + not placed = records with two or more candidates,** per fetch, on the
+  `RefreshLog` row. The parent sweep is placed and logged, not counted.
+
+### Component decomposition (headline)
+
+- **Backend:**
+  - CREATE `ParentCandidate`, `ParentPlacement` (+ `ParentNarrowing`, `ParentPlacementRule`, `StoredFeatures`)
+    in `Models`, and a pure `ParentPlacementReport` formatter in `Services/Implementation/Parents`.
+  - EXTEND:
+    - `ParentResolution` (candidates with dates, `Place`)
+    - `WorkItemBase` (the bool becomes a `[NotMapped]` resolution, carried by the copy constructor)
+    - `Issue` and `IssueFactory` (link dates from the changelog already fetched)
+    - `IssueExtensions.ResolveParentFromLinks`
+    - `ParentSourceSelector` (`HangUnder`)
+    - `IFeatureRepository` (`GetStoredFeatureCreatedDates`, one projection)
+    - `WorkItemService` (the placing step; asks for `IFeatureRepository`, same parameter count)
+    - `SyncOutcome`, `RefreshLog`, `TeamUpdater`, `PortfolioUpdater`
+  - DELETE the connector's ambiguity warning and its record pairing.
+- **Frontend:** EXTEND `models/SystemInfo/RefreshLog.ts` and `RefreshHistorySection.tsx`. The section gets
+  two max-per-window figures, each shown only above zero, in the Team's Work Items or the Portfolio's
+  Features term. It also gets the loading spinner and could-not-load alert reused from
+  `ThirdPartyPackagesSection`.
+- **Migration:** one, expand-only. `RefreshLog.RecordsPlacedFromLinksNamingMoreThanOneParent` (int, default
+  0) via `Create-Migration.ps1 -MigrationName AddPlacedParentCountToRefreshLog`. The existing
+  `RecordsWhoseLinksNamedMoreThanOneParent` keeps its name and now means "not placed".
+- No `Program.cs` edit, no new Jira request, no RBAC change, no Lighthouse-Clients change (verified), and
+  usage data N/A (for DEVOPS to record).
+
+### Known gaps (this feature)
+
+- Timing gap (accepted): a Feature stored after the Team read an item is picked up on the item's next
+  reading. At Portfolio grain, an undated Feature whose candidates above were not stored yet takes the
+  lowest key, and can move once to the earliest-created candidate after the sweep stores them.
+- Link dates are keyed by counterpart key, not link type (the changelog names no type in a structured
+  field). The Data Center changelog shape is unverified. Both degrade to the deterministic fallback.
+
+### C4
+
+System Context and Container: topology **unchanged**, so `c4-diagrams.md` is untouched. The feature delta
+carries L1/L2 with the changed responsibilities named, and an L3 for the parent-resolution path.
+
+### Architectural Enforcement (this feature)
+
+- Existing ArchUnitNET leaf-adapter rule, unchanged. New ArchUnitNET rule: the placement kernel types depend
+  on no `Services` or `Data` namespace.
+- Per-fetch-site unit tests and the placed + not-placed invariant; a property test over link permutations.
+- Request-count, query-count (one projection per fetch, none when nothing is ambiguous) and log-budget
+  (at most one placed and one not-placed line per fetch) tests.
+
+### ADR References (this feature)
+
+- [ADR-238](./adr-238-several-link-candidates-are-placed-by-the-oldest-link-in-the-work-item-service.md):
+  several link candidates are placed by the oldest link, in `WorkItemService`. Supersedes ADR-193 §4 and
+  the warning placement in §6. Accepted 2026-10-15 for the product rule. The engineering choices are provisional, pending the maintainer's
+  ratification (they were taken while the maintainer was AFK, as with ADR-237).
+- Cross-refs: ADR-193 §1-§3, §5 (unchanged).

@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-10-14
+updated: 2026-10-15
 description: >
   KPI contracts — per-outcome data collection, dashboard mapping, alerting thresholds.
   Created during the DEVOPS wave of work-tracking-oauth-authentication.
@@ -2028,4 +2028,102 @@ outcomes:
     alerting:
       - condition: "self-test failure, or a missing, empty or malformed CSV after a green run"
         action: "step fails in both stacks, backend warn mode included"
+    status: designed-not-shipped
+
+  # story-6301-only-features-as-parent-candidates (DEVOPS 2026-10-15). Several link candidates are
+  # narrowed to stored Features at Team grain, then placed by the oldest current link, then the
+  # earliest created Feature, then the lowest key. Instruments: the RefreshLog row, the two aggregated
+  # Warning lines WorkItemService writes per fetch, and the test suite. No automated alert reaches the
+  # vendor (self-hosted); usage data N/A (see the feature delta).
+
+  - id: OUT-6301-ambiguous-items-placed
+    feature: story-6301-only-features-as-parent-candidates
+    title: Work Items whose links name 2+ issues are counted toward a Feature (north star)
+    target: ">= 80% placed of all 2+-candidate Work Items on a full Team refresh after the upgrade (hypothesis: placed >= 4x not placed)"
+    ga_baseline: "0% (every such item was refused before this story)"
+    measurement_scope: per_instance   # n = 1 (Steve's customer), directional
+    measured_by: >
+      placed / (placed + not placed) on the Team RefreshLog row of the first full Team refresh after the
+      upgrade. Read from Settings -> System Info -> Refresh History or GET /api/latest/systeminfo/refreshlog
+      (RbacGuard SystemAdmin), shared out of band by the customer. Fallback: the n in the two Warning lines.
+    log_fields:
+      refresh_log_row:
+        - "RecordsPlacedFromLinksNamingMoreThanOneParent (new int column, default 0; payload recordsPlacedFromLinksNamingMoreThanOneParent)"
+        - "RecordsWhoseLinksNamedMoreThanOneParent (existing column, now means not placed; payload recordsWhoseLinksNamedMoreThanOneParent)"
+      warning_lines:
+        - "placed: {Owner} placed {n} {records} whose links name more than one issue: KEY under PARENT ({rule}[, {date}]; set aside ...)"
+        - "not placed: {Owner} could not place {n} {records} whose links name more than one issue: KEY (linked to ...; {reason}). It takes no parent from its links."
+    measurement_window: >
+      first full Team refresh after the customer upgrades. RefreshLog rows are pruned by a run-count
+      retention setting, so the row (or log) must be collected before later refreshes push it out.
+    gate: soft
+    alerting:
+      - condition: "placed share < 80% on the customer's first full refresh"
+        action: "manual: review R1 / A3 (oldest link is not the customer's parent) before release notes claim the fix"
+    status: designed-not-shipped
+
+  - id: OUT-PFIL-never-a-guessed-parent
+    feature: story-6301-only-features-as-parent-candidates
+    origin_feature: parent-from-issue-links   # Epic 6028; id kept so its history stays traceable
+    title: No item gets a parent that cannot be reproduced from its links (redefined by story 6301)
+    target: >
+      0 parent flips across 2 refreshes with unchanged links and stored Features; placed + not placed =
+      records with 2+ candidates in every fetch; 100% of placed records named with pick, rule and
+      candidates set aside
+    previous_target: "0 items receive a parent chosen from more than one candidate (Epic 6028, superseded)"
+    measurement_scope: per_instance
+    measured_by: >
+      CI: the property-based acceptance test (link order permuted, refresh repeated) on ParentResolution.Place;
+      the invariant test (placed + not placed = records with 2+ candidates, per fetch, all six fetch paths);
+      the formatter tests pinning that every placed entry carries pick, rule and set-aside. Per instance:
+      the RefreshLog row's two figures equal the n of the two Warning lines of the same refresh.
+    log_fields:
+      refresh_log_row: [RecordsPlacedFromLinksNamingMoreThanOneParent, RecordsWhoseLinksNamedMoreThanOneParent]
+      warning_lines: ["placed line (pick, rule, set-aside)", "not-placed line (candidates, reason)"]
+    measurement_window: every push (CI)
+    gate: hard
+    alerting:
+      - condition: "any property, invariant or formatter assertion fails"
+        action: "backend build fails (red)"
+    known_exception: >
+      Portfolio grain: an undated Feature may move once from lowest key to earliest created when the
+      sweep first stores its candidates (stored Features changed, so within the target's wording).
+    status: designed-not-shipped
+
+  - id: OUT-6301-no-extra-requests
+    feature: story-6301-only-features-as-parent-candidates
+    title: Placing several candidates costs no extra Jira request (carries OUT-PFIL-no-extra-requests)
+    target: "Jira requests per Team / Portfolio refresh unchanged from the pre-change baseline"
+    measurement_scope: vendor_demo_only
+    measured_by: "Request-count acceptance test against the pre-change baseline (AC-1.9, AC-2.6); the link dates come from the changelog already fetched."
+    measurement_window: every push (CI)
+    gate: hard
+    alerting:
+      - condition: "request count > baseline"
+        action: "backend build fails (red)"
+    status: designed-not-shipped
+
+  - id: OUT-6301-lone-candidates-unchanged
+    feature: story-6301-only-features-as-parent-candidates
+    title: Items with exactly one link candidate keep their parent
+    target: "0 changed ParentReferenceId values for one-candidate items"
+    measurement_scope: vendor_demo_only
+    measured_by: "Acceptance test over a mixed fixture (one-candidate and several-candidate items in one refresh)."
+    measurement_window: every push (CI)
+    gate: hard
+    alerting:
+      - condition: "any one-candidate item's ParentReferenceId differs from today's value"
+        action: "backend build fails (red)"
+    status: designed-not-shipped
+
+  - id: OUT-6301-features-off-the-default
+    feature: story-6301-only-features-as-parent-candidates
+    title: Features sized from real children instead of the default size (feeds OUT-PFIL-hierarchy-recovered)
+    target: ">= 50% relative drop in the share of Features with IsUsingDefaultFeatureSize after one full Portfolio refresh"
+    ga_baseline: "~100% on the customer's instance (reported: most items ignore their parentage)"
+    measurement_scope: per_instance   # n = 1, lagging
+    measured_by: "Share of Features using the default size in the Feature list, before the upgrade and after one full Portfolio refresh, shared out of band."
+    measurement_window: one full Portfolio refresh after the upgrade
+    gate: advisory
+    alerting: []
     status: designed-not-shipped

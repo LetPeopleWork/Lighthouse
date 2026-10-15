@@ -1,0 +1,33 @@
+# Environment inventory - story-6301-only-features-as-parent-candidates
+# Consumed by DISTILL for environmental realism.
+#
+# Pure business logic: the parent pick is a pure method, placed by WorkItemService during a refresh.
+# No endpoint, no configuration key, no secret, no dependency, no chart or image change, no Program.cs
+# edit. The one schema change is an expand-only RefreshLog column (both providers). The OS axis is
+# clean; the two axes that matter are noted below.
+
+target_environments:
+  - name: clean
+    description: "Any supported runtime. Nothing to install or configure; the migration runs at startup as every migration does."
+    platform: [linux, macos, windows]
+    preconditions: []
+
+notes:
+  db_provider:
+    values: [sqlite, postgres]
+    why: >
+      One migration per provider project (Lighthouse.Migrations.Sqlite, Lighthouse.Migrations.Postgres),
+      AddPlacedParentCountToRefreshLog, generated with Create-Migration.ps1 after a backend build. The new
+      GetStoredFeatureCreatedDates projection must translate on both. EF InMemory hides a missing migration,
+      so verifysqlite / verifypostgres (and a throwaway sqlite start grepping PendingModelChanges) are the
+      proof. Check that both migrations carry defaultValue 0, which keeps rollback to the previous release safe.
+  jira_deployment:
+    values: [cloud, data_center]
+    why: >
+      The link date comes from changelog Link items. Cloud's shape is pinned by the Spike 00 payload
+      (fixture for IssueFactory). Data Center is assumed equal (R2) and no instance is available; if it
+      differs, candidates are undated and the pick falls to earliest created, then lowest key, still
+      deterministic. The live JiraIntegration dogfood test reads Cloud only.
+  ci_exposure: >
+    Jira connector paths change, so CI adds Category=JiraIntegration. No shared path (Program.cs, csproj,
+    .sln, connector interfaces) changes, so the other live connector suites stay off.

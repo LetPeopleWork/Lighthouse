@@ -1,6 +1,6 @@
 schema_version: 1
 feature_id: parent-from-issue-links
-updated: 2026-09-18
+updated: 2026-10-15
 note: >
   No ADO Epic yet — this journey is the DISCUSS wave run on 2026-09-18 to decide whether one should
   exist. Origin: Steve relaying a Jira Data Center instance whose portfolio-level items have no direct
@@ -129,6 +129,21 @@ journeys:
 
           The most likely real misconfiguration is D7's: the same link type set on both the portfolio and
           the team, so a feature sees one match per child. The refusal is what says so.
+
+          REVISION (story-6301-only-features-as-parent-candidates, 2026-10-15, maintainer decision),
+          recorded rather than folded in: refusing proved to be the workflow, not the exception, on an
+          instance whose one link type carries both the hierarchy and other cause relations ("is caused
+          by" incidents) - most Work Items named several candidates and counted toward no Feature, which
+          is the very symptom refusing was meant to prevent. The reason above still stands (a wrong
+          parent looks like correct data), so the answer is a deterministic, reported pick, not a guess:
+          with two or more distinct candidates, a Team keeps only those that are a stored Feature (any
+          Portfolio, by reference id); then, at both grains, the candidate whose current link has the
+          oldest changelog date wins, a dated link beats an undated one, then the oldest Feature created
+          date, then the lowest key. Never issuelinks order. A Portfolio does not narrow, because the
+          level above is never a Portfolio Feature. A lone candidate is stored as-is, as before. Every
+          item with two or more candidates is reported, split into placed (naming the pick, the rule
+          that decided and the candidates set aside) and not placed (naming every candidate). Links
+          only; native parent and override-field values are unchanged.
       - id: D5
         question: What does a premium licence gate?
         decision: >
@@ -211,8 +226,11 @@ journeys:
           unproven pre-requisite of the feature and the first slice's hypothesis.
       - trigger: An item carries more than one link of the named type
         recovery: >
-          No parent, and a warning naming the item and every candidate key (D4). The refresh still
-          succeeds and every other item in the fetch parents normally.
+          Revised 2026-10-15 (D4 REVISION): the item is placed by the narrowing and oldest-link rule and
+          reported as placed, or, when none of its candidates is a stored Feature, reported as not placed
+          with every candidate named. The refresh still succeeds and every other item in the fetch parents
+          normally. A Feature stored after the item was read is picked up the next time the item is read.
+          Originally: no parent, and a warning naming the item and every candidate key.
       - trigger: An item carries no link of the named type
         recovery: >
           No parent and no warning — identical to an empty override field today. An item genuinely
@@ -227,6 +245,10 @@ journeys:
           Every feature with children sees one match per child and is refused by D4, naming them. The
           refusal is the diagnosis: it says the portfolio is pointed at the link that carries the level
           below it rather than the level above.
+
+          Revised 2026-10-15 (D4 REVISION): a Portfolio no longer refuses; such a feature is placed under
+          the oldest of its links, often one of its own children, and the placed warning naming every
+          candidate is now the diagnosis.
       - trigger: The setting is saved against a connector that cannot honour it
         recovery: >
           Validation refuses the reference on Azure DevOps, ServiceNow, Linear and CSV. Linear and CSV
