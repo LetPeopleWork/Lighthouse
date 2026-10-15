@@ -243,6 +243,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             Assert.That(DatabaseContext.OptionalFeatures.Any(f => f.Key == OptionalFeatureKeys.DeltaSyncKey), Is.False);
         }
 
+        // The fill always runs, so a new instance has neither the setting nor any record of having switched it.
+        [Test]
+        [Ignore("Story #6084 — pending DELIVER")]
+        public async Task SeedAsync_OnAnEmptyDatabase_NeverAddsTheHistoryFillNorARecordAboutIt()
+        {
+            var subject = CreateSubject();
+
+            await subject.Seed();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(DatabaseContext.OptionalFeatures.Any(feature => feature.Key == OverTimeHistoryFillKey), Is.False,
+                    "A new instance was given a history fill setting, though there is nothing left to switch.");
+                Assert.That(DatabaseContext.AppSettings.Any(setting => setting.Key == "OptionalFeatures:HistoryFillSwitchedOnByDefault"), Is.False,
+                    "A new instance was given a record of switching the history fill on, which nothing reads any more.");
+            }
+        }
+
         [Test]
         public async Task SeedAsync_CanBeCalledMultipleTimes_WithoutErrors()
         {

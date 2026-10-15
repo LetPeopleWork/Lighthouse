@@ -147,6 +147,52 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
                 "Clearing out retired settings removed the record that the history fill was switched on.");
         }
 
+        // The record that the history fill was switched on once is cleared by its key, because it was written
+        // at runtime with the number every runtime setting gets, zero, which a default setting also carries. So
+        // clearing it must not take any other setting that shares its number, and the clear-out by number must
+        // go on removing exactly what it removed before and keeping everything it kept, numbers it skips included.
+        [Test]
+        [Ignore("Story #6084 — pending DELIVER")]
+        public async Task SeedAsync_RemovesTheRecordThatTheHistoryFillWasSwitchedOn_AndKeepsEverythingTheClearOutByNumberKeeps()
+        {
+            // Arrange
+            DatabaseContext.AppSettings.AddRange(
+                new AppSetting { Id = 0, Key = TheRecordThatTheHistoryFillWasSwitchedOn, Value = "true" },
+                new AppSetting { Id = 0, Key = AppSettingKeys.InstallTimestamp, Value = "2026-01-01T00:00:00Z" },
+                new AppSetting { Id = 9, Key = "RetiredUnderNumber9", Value = "retired" },
+                new AppSetting { Id = 18, Key = "KeptUnderNumber18", Value = "18" },
+                new AppSetting { Id = 26, Key = "KeptUnderNumber26", Value = "26" },
+                new AppSetting { Id = 37, Key = "KeptUnderNumber37", Value = "37" });
+            await DatabaseContext.SaveChangesAsync();
+
+            var subject = CreateSubject();
+
+            // Act
+            await subject.Seed();
+            await subject.Seed();
+
+            // Assert
+            Assert.That(DatabaseContext.AppSettings.Select(setting => setting.Key).ToList(), Is.EquivalentTo(WhatStartUpKeeps),
+                "Start-up should remove the record that the history fill was switched on and the setting retired under number 9, and keep every other setting.");
+        }
+
+        private const string TheRecordThatTheHistoryFillWasSwitchedOn = "OptionalFeatures:HistoryFillSwitchedOnByDefault";
+
+        private static readonly string[] WhatStartUpKeeps =
+        [
+            AppSettingKeys.TeamDataRefreshInterval,
+            AppSettingKeys.TeamDataRefreshAfter,
+            AppSettingKeys.TeamDataRefreshStartDelay,
+            AppSettingKeys.FeaturesRefreshInterval,
+            AppSettingKeys.FeaturesRefreshAfter,
+            AppSettingKeys.FeaturesRefreshStartDelay,
+            AppSettingKeys.RefreshLogRetentionRuns,
+            AppSettingKeys.InstallTimestamp,
+            "KeptUnderNumber18",
+            "KeptUnderNumber26",
+            "KeptUnderNumber37",
+        ];
+
         private AppSettingSeeder CreateSubject()
         {
             return new AppSettingSeeder(DatabaseContext, Mock.Of<ILogger<AppSettingSeeder>>());
