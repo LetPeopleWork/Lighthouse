@@ -1116,7 +1116,7 @@ Mean set-up per test: Refinement about 1.4 s (1.53 s via `RefinementNeedAcceptan
 
 **Local baseline for slice 04:** summed TRX duration of the in-scope classes **948.4 s** with the timer on (917.7 s in the RED run on the base commit, timer off). The machine was busy (1-minute load average about 15 when read during the step), so treat the sums as this machine's figure under load, not a lower bound.
 
-**What it means for 04-02.** Refinement and Reports are set-up-bound: about two thirds of their time is building a fresh host, creating the database and running the seeders, and that holds for both derived Refinement bases, not only the direct classes. TeamFeatureSize is body-bound (40 % set-up, its set-up is already the cheapest at 0.6 s a test), so sharing its host would save at most about 31 s of summed time.
+**What it means for 04-02.** Refinement and Reports are set-up-bound: about two thirds of their time is building a fresh host, creating the database and running the seeders, and that holds for both derived Refinement bases, not only the direct classes. The timer wraps database creation and seeding as well as host start, so set-up-bound does not mean host-bound; how much of it is the host only shows once the host is shared (04-02). TeamFeatureSize is body-bound (40 % set-up, its set-up is already the cheapest at 0.6 s a test), so sharing its host would save at most about 31 s of summed time.
 
 **E-names** (base `b01cebc33` vs this step): 488 names before and 488 after; `comm -23` prints nothing (**0 names lost**) and `comm -13` prints nothing, so counts are unchanged. All 488 passed in both runs.
 
@@ -1132,23 +1132,25 @@ Mean set-up per test: Refinement about 1.4 s (1.53 s via `RefinementNeedAcceptan
 | Metrics cache (`Cache<string, object>`, keyed by owner id) | A fresh database numbers Teams from one again, so a figure cached for one scenario's Team 1 would answer the next. | Cleared in `[SetUp]` in both harnesses. |
 | Recent-problems buffer (`/logs/problems`) | Holds every problem any scenario raised; report ids restart at one. | Reports reads only the problems recorded since its scenario started. |
 | Over-time history filler and reconstruction memo (keyed by owner id) | Only fed by the history-fill pass, a hosted service the test factory removes. | Proven harmless: no pass ever runs in these hosts, and no in-scope scenario drains the filler or reads either object. |
+| Update queue, update status store, usage-data queue, domain-event dispatcher, write-back round context | Would carry work or status from one scenario into the next. | Proven harmless: no in-scope scenario triggers an update or emits or reads usage data. |
 | Clock, licence, scripted forecasts, voter connections | Per-scenario inputs. | Fixture-owned objects reset in `[SetUp]` / `[TearDown]`, never a DI registration closing over a per-test field. |
 
-**Timer re-run — PROVISIONAL** (`LIGHTHOUSE_FIXTURE_TIMING=1`, in-scope filter, one run, taken before other sessions loaded the machine; load average 1.2 at start, 11.9 at end; 04-01's run was at about 15, so the two runs were not at comparable load). Set-up = per-test `[SetUp]` plus the new `[OneTimeSetUp]`; body = TRX duration minus per-test set-up and tear-down; total = TRX sum plus one-time set-up and tear-down.
+**Timer re-run — superseded.** A first single run (`LIGHTHOUSE_FIXTURE_TIMING=1`, load average 1.2 → 11.9) set beside 04-01's run (load about 15) reported −55 % in total, −57 % / −60 % in Refinement / Reports set-up, and called the ⅓ indicator "provisionally met". Those numbers are withdrawn: the two runs being compared were at very different loads, so most of the drop was the machine, not the change.
 
-| Harness | Tests | Set-up before → after | Body before → after | Total before → after |
-|---|---|---|---|---|
-| `RefinementAcceptanceTest` (all) | 300 | 424.6 s → 181.8 s (156.6 + 25.2 one-time) | 221.4 s → 100.0 s | 648.6 s → 282.7 s (−56 %) |
-| — direct | 33 | 49.0 s → 22.4 s | 16.7 s → 6.8 s | 66.0 s → 29.2 s |
-| — via `SizingVotesAcceptanceTest` | 144 | 187.1 s → 78.1 s | 111.2 s → 49.6 s | 299.4 s → 128.0 s |
-| — via `RefinementNeedAcceptanceTest` | 123 | 188.5 s → 81.3 s | 93.5 s → 43.7 s | 283.3 s → 125.4 s |
-| `ReportsAcceptanceTest` | 136 | 142.2 s → 56.9 s (55.1 + 1.8 one-time) | 80.5 s → 34.9 s | 223.7 s → 92.2 s (−59 %) |
-| `TeamFeatureSizeAcceptanceTest` (unchanged) | 52 | 30.8 s → 20.6 s | 45.2 s → 30.3 s | 76.1 s → 51.0 s |
-| **All in scope** | 488 | 597.6 s → 259.3 s | 347.1 s → 165.3 s | 948.4 s → 425.9 s (−55 %) |
+**Equal-load measurement** (quiet machine, 2026-10-15 09:55–10:06). Runs alternate between the base (04-01, `2cfbacfff`, in a temporary worktree) and HEAD (04-02 and its refactor). Totals are summed in-scope test durations from TRX plus, for HEAD, the one-time host start.
 
-Per-test set-up is now about 0.5 s in Refinement and 0.4 s in Reports (database creation and seeding), down from 1.4 s and 1.05 s. Body times fell too, and so did TeamFeatureSize, which was not touched: the machine was far less loaded than in 04-01, so part of every drop is load. The set-up sums isolate the change best: they fell by 57 % in Refinement and 60 % in Reports against 33 % in the untouched TeamFeatureSize.
+| Pair | Load (1 min) | Base total | HEAD total (incl. one-time) | Δ | Refinement base → HEAD | Reports base → HEAD | TeamFeatureSize (unchanged) | Wall base → HEAD |
+|---|---|---|---|---|---|---|---|---|
+| ab-1 | 17.0 → 22.5 | 821.9 s | 628.0 s | −24 % | 555.2 → 425.7 s | 208.9 → 138.5 s | 57.8 / 63.9 s | 82 s → 72 s |
+| ab-2 | 22.5 → 13.7 | 608.4 s | 438.3 s | −28 % | 415.8 → 294.7 s | 152.4 → 95.5 s | 40.2 / 48.1 s | 59 s → 53 s |
+| base-q / q2 (back to back, load rising 9 → 17) | 10.2 → 17.2 | 583.0 s | 598.4 s | +3 % (HEAD ran under the higher load) | 399.1 → 387.4 s | 145.1 → 145.0 s | 38.8 / 66.0 s | 57 s → 70 s |
+| q1 (HEAD alone) | 5.0 → 9.5 | — | 497.0 s | — | 334.0 s | 112.8 s | 50.2 s | 56 s |
 
-**Local indicator (⅓ drop): provisionally met, to be confirmed.** The in-scope summed time fell from 948.4 s to 425.9 s including the one-time host start (−55 %); taking TeamFeatureSize's 33 % as the load effect alone, the two changed harnesses still fell well beyond it. Because the load differed between the two runs, this needs a re-run on a quiet machine before it counts.
+In the alternating pairs, sharing the host cuts summed time by about a quarter (Refinement −23 to −29 %, Reports −34 to −37 %) and wall time by about 10 %. HEAD still spends about 0.55–0.75 s of per-test set-up in Refinement: the database being created and seeded for every scenario, which is now the main cost. The one-time host start is about 26–43 s per run in total for Refinement.
+
+**Local indicator (⅓ drop, AC-04.3): not met overall.** Summed in-scope time fell by about a quarter; Reports alone meets the third. Once the host is shared, creating and seeding each scenario's database is the dominant set-up cost, and host start was a smaller share than 04-01's timer suggested, because that timer wrapped database seeding as well as host start.
+
+**Follow-up candidate (not this story):** cheaper per-scenario database set-up, for example copying a seeded template database file instead of migrating and seeding for every scenario.
 
 **TeamFeatureSize left alone.** Body-bound in 04-01 (set-up 40 %, 0.59 s a test, the cheapest of the three), and it counts the SQL commands each request sends through a per-test interceptor; sharing its host would save at most about 30 s summed and would need that counter made fixture-owned for little return.
 
@@ -1166,7 +1168,7 @@ Run one after another under `nice -n 19` while two other sessions were running b
 
 All three are green with no failures at all, so none of the known environmental signatures appeared. The wall times reflect a shared, loaded machine and say nothing about CI.
 
-**Owed.** (1) A `FixtureSetupTimer` re-run on a quiet machine, beside 04-01's numbers, to confirm the at-least-a-third drop. (2) E-04d after push, CI-only: the median of at least five `main` runs of the backend test job at or under 192 s.
+**Owed.** E-04d after push, CI-only: the median of at least five `main` runs of the backend test job at or under 192 s.
 
 ## Wave: DELIVER / slice 01
 
