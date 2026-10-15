@@ -188,6 +188,79 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             }
         }
 
+        /// <summary>
+        /// The connection's share is what a connection save compares before and after, to decide whether its
+        /// Teams and Portfolios need a refresh. It has to move exactly when the whole fingerprint does, or a
+        /// save either refreshes for nothing or leaves every owner on the connection serving stale fields.
+        /// </summary>
+        [TestCaseSource(nameof(EveryEditToTheConnectionsFields))]
+        public void ForConnection_AnEditToTheConnectionsFields_MovesExactlyWhenItShapesAFetch_AndTheWholeFingerprintMovesWithIt(
+            string edit, bool shapesAFetch, Action<WorkTrackingSystemConnection> anOperatorEdit)
+        {
+            var portfolio = APortfolio();
+            var connection = portfolio.WorkTrackingSystemConnection;
+            var shareBefore = FetchFingerprint.ForConnection(connection);
+            var wholeBefore = FetchFingerprint.For(portfolio);
+
+            anOperatorEdit(connection);
+
+            var shareMoved = FetchFingerprint.ForConnection(connection) != shareBefore;
+            var wholeMoved = FetchFingerprint.For(portfolio) != wholeBefore;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(shareMoved, Is.EqualTo(shapesAFetch), $"The connection's share {(shapesAFetch ? "did not move" : "moved")} when the fields were {edit}.");
+                Assert.That(wholeMoved, Is.EqualTo(shareMoved), $"The whole fingerprint and the connection's share disagree about the fields being {edit}.");
+            }
+        }
+
+        /// <summary>
+        /// A save compares two answers by value, and the connection it compares is re-read from the database,
+        /// so two separately built but identical connections must answer the same.
+        /// </summary>
+        [Test]
+        public void ForConnection_TwoSeparatelyBuiltButIdenticalConnections_AnswerTheSame()
+        {
+            Assert.That(
+                FetchFingerprint.ForConnection(APortfolio().WorkTrackingSystemConnection),
+                Is.EqualTo(FetchFingerprint.ForConnection(APortfolio().WorkTrackingSystemConnection)));
+        }
+
+        [Test]
+        public void ForConnection_AConnectionThatWasNotLoaded_StillAnswers_AndDifferentlyFromALoadedOne()
+        {
+            var notLoaded = FetchFingerprint.ForConnection(null);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(notLoaded, Is.Not.Empty);
+                Assert.That(notLoaded, Is.Not.EqualTo(FetchFingerprint.ForConnection(AConnection())));
+            }
+        }
+
+        [Test]
+        public void ForConnection_LeavesTheConnectionAsItFoundIt()
+        {
+            var connection = APortfolio(everyCollectionReversed: true).WorkTrackingSystemConnection;
+            var fieldsBefore = connection.AdditionalFieldDefinitions.Select(definition => definition.Id).ToList();
+
+            FetchFingerprint.ForConnection(connection);
+
+            Assert.That(connection.AdditionalFieldDefinitions.Select(definition => definition.Id), Is.EqualTo(fieldsBefore));
+        }
+
+        private static IEnumerable<TestCaseData> EveryEditToTheConnectionsFields()
+        {
+            yield return FieldEdit("added", true, c => c.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 9, DisplayName = "Risk", Reference = "customfield_10009" }));
+            yield return FieldEdit("removed", true, c => c.AdditionalFieldDefinitions.RemoveAt(0));
+            yield return FieldEdit("re-referenced", true, c => c.AdditionalFieldDefinitions[0].Reference = "customfield_99999");
+            yield return FieldEdit("relabelled", true, c => c.AdditionalFieldDefinitions[0].DisplayName = "Owning Team");
+            yield return FieldEdit("re-ordered", false, c => c.AdditionalFieldDefinitions.Reverse());
+        }
+
+        private static TestCaseData FieldEdit(string edit, bool shapesAFetch, Action<WorkTrackingSystemConnection> anOperatorEdit)
+            => new TestCaseData(edit, shapesAFetch, anOperatorEdit).SetArgDisplayNames(edit);
+
         private static IEnumerable<TestCaseData> EveryRegisteredProperty()
         {
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.DataRetrievalValue), p => p.DataRetrievalValue = "project = SOMETHING-ELSE");

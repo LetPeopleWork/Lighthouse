@@ -19,6 +19,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
     public static class FetchFingerprint
     {
         /// <summary>
+        /// The registered properties that live on the connection rather than on a Team or Portfolio, and so
+        /// change for every owner on the connection at once. <see cref="ForConnection"/> renders exactly these.
+        /// Declared first because static initialisers run top to bottom and the full list below includes it.
+        /// </summary>
+        public static IReadOnlyCollection<string> ConnectionScopedProperties { get; } =
+        [
+            nameof(WorkTrackingSystemConnection.AdditionalFieldDefinitions),
+            nameof(WorkTrackingSystemConnection.WorkTrackingSystem),
+        ];
+
+        /// <summary>
         /// Every property whose change makes the next cycle download the whole query. The guard test
         /// <c>FetchShapingPropertyGuardTest</c> records why each one is here, and why every other property
         /// an operator can edit is not.
@@ -39,8 +50,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             nameof(Portfolio.FeatureOwnerAdditionalFieldDefinitionId),
             nameof(Portfolio.SizeEstimateAdditionalFieldDefinitionId),
             nameof(Portfolio.DependencyOverrideAdditionalFieldDefinitionId),
-            nameof(WorkTrackingSystemConnection.AdditionalFieldDefinitions),
-            nameof(WorkTrackingSystemConnection.WorkTrackingSystem),
+            .. ConnectionScopedProperties,
 
             nameof(WorkTrackingSystemOptionsOwner.WorkTrackingSystemConnectionId),
         ];
@@ -68,7 +78,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         public static string For(IWorkItemQueryOwner queryOwner)
         {
             var portfolio = queryOwner as Portfolio;
-            var connection = queryOwner.WorkTrackingSystemConnection;
 
             string[] whatIsAskedForAndHowTheAnswerIsRead =
             [
@@ -83,13 +92,28 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 Render(portfolio?.FeatureOwnerAdditionalFieldDefinitionId),
                 Render(portfolio?.SizeEstimateAdditionalFieldDefinitionId),
                 Render(portfolio?.DependencyOverrideAdditionalFieldDefinitionId),
-                Render(connection?.AdditionalFieldDefinitions),
-                connection?.WorkTrackingSystem.ToString() ?? Absent,
+                ForConnection(queryOwner.WorkTrackingSystemConnection),
                 Render(queryOwner.WorkTrackingSystemConnectionId),
             ];
 
             return Digest(string.Join(BetweenProperties, whatIsAskedForAndHowTheAnswerIsRead));
         }
+
+        /// <summary>
+        /// The connection's share of <see cref="For"/>: what changes for every Team and Portfolio on
+        /// <paramref name="connection"/> at once. Two answers compare by value, so a connection save can tell
+        /// whether it moved the fingerprint of everything on the connection.
+        /// </summary>
+        /// <remarks>
+        /// Rendered, not digested, and joined with the same separator <see cref="For"/> uses between its
+        /// properties: <see cref="For"/> splices this answer in where the two properties used to sit, so every
+        /// fingerprint already stored keeps matching after an upgrade.
+        /// </remarks>
+        public static string ForConnection(WorkTrackingSystemConnection? connection)
+            => string.Join(
+                BetweenProperties,
+                Render(connection?.AdditionalFieldDefinitions),
+                connection?.WorkTrackingSystem.ToString() ?? Absent);
 
         private const string Absent = "-";
 

@@ -1,6 +1,7 @@
 using System.Reflection;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
@@ -215,6 +216,52 @@ namespace Lighthouse.Backend.Tests.Architecture
                     + "different item. Widening this set spends transition history to achieve what the next full cycle already "
                     + "achieves; narrowing it merges two trackers' work into one record. " + Because);
             }
+        }
+
+        /// <summary>
+        /// How an operator changes each fetch-shaping property of a connection. A connection save decides
+        /// whether to refresh its Teams and Portfolios from the connection's share of the fingerprint alone,
+        /// so a connection property the share does not render would be saved and never acted on.
+        /// </summary>
+        private static readonly Dictionary<string, Action<WorkTrackingSystemConnection>> HowAnOperatorChangesEachConnectionProperty = new(StringComparer.Ordinal)
+        {
+            [nameof(WorkTrackingSystemConnection.AdditionalFieldDefinitions)] = connection => connection.AdditionalFieldDefinitions.Add(
+                new AdditionalFieldDefinition { Id = 9, DisplayName = "Risk", Reference = "customfield_10009" }),
+            [nameof(WorkTrackingSystemConnection.WorkTrackingSystem)] = connection => connection.WorkTrackingSystem = WorkTrackingSystems.AzureDevOps,
+        };
+
+        [Test]
+        public void EveryFetchShapingPropertyOfTheConnectionIsRenderedByTheConnectionsShare()
+        {
+            var registeredOnTheConnection = FetchFingerprint.RegisteredProperties
+                .Where(property => typeof(WorkTrackingSystemConnection).GetProperty(property, BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly) is not null)
+                .ToHashSet(StringComparer.Ordinal);
+
+            var notRendered = HowAnOperatorChangesEachConnectionProperty
+                .Where(edit => !MovesTheConnectionsShare(edit.Value))
+                .Select(edit => edit.Key)
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(FetchFingerprint.ConnectionScopedProperties.ToHashSet(StringComparer.Ordinal), Is.EquivalentTo(registeredOnTheConnection),
+                    "The connection's share and the registry disagree about which fetch-shaping properties live on the connection. " + Because);
+                Assert.That(HowAnOperatorChangesEachConnectionProperty.Keys, Is.EquivalentTo(registeredOnTheConnection),
+                    "Every fetch-shaping property of the connection needs an edit here, or nothing proves the connection's share reads it.");
+                Assert.That(notRendered, Is.Empty,
+                    "Changed on the connection without moving the connection's share: " + string.Join(", ", notRendered) + ". " + Because);
+            }
+        }
+
+        private static bool MovesTheConnectionsShare(Action<WorkTrackingSystemConnection> anOperatorEdit)
+        {
+            var connection = new WorkTrackingSystemConnection { Id = 7, Name = "Tracker", WorkTrackingSystem = WorkTrackingSystems.Jira };
+            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 1, DisplayName = "Owner", Reference = "customfield_10001" });
+            var before = FetchFingerprint.ForConnection(connection);
+
+            anOperatorEdit(connection);
+
+            return FetchFingerprint.ForConnection(connection) != before;
         }
 
         /// <summary>
