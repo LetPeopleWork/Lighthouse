@@ -89,7 +89,7 @@ If you want to syncronize back data from Lighthouse to Jira, you additionally ne
 With the Scoped Access Tokens, it's **not possible** to load any boards. This is a restriction by Jira, as the endpoint to load the boards does not support this method of authentication. Lighthouse will display "No Boards available" in that case. Either just manually configure your teams/portfolios, or start out with a personal API Token, and then switch to the scoped token once you are done with your configuration.
 
 ### Jira Data Center (Personal Access Token)
-The above description is true if you are working against a Jira Cloud instance. In case you are connecting to an on-premise Jira version (*Server* or *Data Center*), there are small differences.
+The above description is true if you are working against a Jira Cloud instance. In case you are connecting to an on-premise Jira version (*Server* or *Data Center*), there are small differences. Lighthouse supports Jira Server and Data Center from version 8 onwards.
 
 Instead of an *API Token*, you have to provide a *Personal Access Token*. See the [Atlassian Documentation](https://confluence.atlassian.com/enterprise/using-personal-access-tokens-1026032365.html) for more details.
 
