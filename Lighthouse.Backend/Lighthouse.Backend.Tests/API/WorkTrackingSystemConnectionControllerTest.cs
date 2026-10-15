@@ -11,6 +11,7 @@ using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Globalization;
 using System.Linq.Expressions;
 
 namespace Lighthouse.Backend.Tests.API
@@ -348,7 +349,7 @@ namespace Lighthouse.Backend.Tests.API
                 x => x.Log(
                     LogLevel.Error,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((state, _) => state.ToString()!.Contains("12")),
+                    It.Is<It.IsAnyType>((state, _) => state.ToString()!.Contains(connectionId.ToString(CultureInfo.InvariantCulture))),
                     failure,
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);

@@ -955,17 +955,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
         {
             public static readonly NoWaitingForTheDisk Instance = new();
 
+            private const string CommitWithoutWaitingForTheDisk = "PRAGMA synchronous=OFF;";
+
             public override void ConnectionOpened(DbConnection connection, ConnectionEndEventData eventData)
             {
                 using var pragma = connection.CreateCommand();
-                pragma.CommandText = "PRAGMA synchronous=OFF;";
+                pragma.CommandText = CommitWithoutWaitingForTheDisk;
                 pragma.ExecuteNonQuery();
             }
 
             public override async Task ConnectionOpenedAsync(DbConnection connection, ConnectionEndEventData eventData, CancellationToken cancellationToken = default)
             {
                 await using var pragma = connection.CreateCommand();
-                pragma.CommandText = "PRAGMA synchronous=OFF;";
+                pragma.CommandText = CommitWithoutWaitingForTheDisk;
                 await pragma.ExecuteNonQueryAsync(cancellationToken);
             }
         }
