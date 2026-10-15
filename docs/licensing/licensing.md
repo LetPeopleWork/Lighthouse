@@ -116,6 +116,7 @@ Please check https://letpeople.work for the complete and up to date terms and co
 There are two kind of "Premium Features" that you unlock with a license. Some features are constraints that are meant to be permanent, as they are mainly useful when the tool adoption is scaling within an organization. These are the constraints that are in place if you are a free user:
 - Maximum of three teams per Lighthouse instance (compared to unlimited teams with a license)
 - Maximum of one portfolio per Lighthouse instance (compared to unlimited portfolios with a license)
+- One [report](../reports/reports.html#community-and-premium) of each type per team and per portfolio, for example one Then & Now report (compared to unlimited reports with a license)
 - No possibility to export and import the Lighthouse configuration through the settings
 - No possibility to configure [Mappings](../settings/worktrackingsystems.html#write-back-mappings) to sync metrics and forecasts back to your work tracking system
 

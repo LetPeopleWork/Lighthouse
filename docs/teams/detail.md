@@ -5,12 +5,13 @@ parent: Teams
 nav_order: 1
 ---
 
-Once you have created your team, you can see all the details on this page. It's split into tabs: *Features*, *Forecasts*, *Metrics*, *Refinement* and *Settings*.
+Once you have created your team, you can see all the details on this page. It's split into tabs: *Features*, *Forecasts*, *Metrics*, *Refinement*, *Reports* and *Settings*.
 
 In the [Features Tab](#features), you can browse through all the features from the various portfolios the team is involved in, and see how many items are left to do for this team in each feature.
 In the [Forecasts Tab](#forecasts), you can run manual forecasts, predict new work items, and check how past forecasts held up.
 In the [Metrics Tab](../metrics/metrics.html), you can see various charts for Metrics for this team.
 In the [Refinement Tab](#refinement), you can see how many work items to refine before the next Refinement, and vote on their size.
+In the [Reports Tab](../reports/reports.html), you can keep reports on this team's flow, such as a [Then & Now](../reports/thenandnow.html) report that shows whether flow changed since a given day.
 
 - TOC
 {:toc}

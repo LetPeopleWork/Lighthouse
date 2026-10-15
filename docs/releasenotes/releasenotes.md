@@ -14,10 +14,21 @@ Every Team now has the **Feature Size** chart and the **Feature Size Percentiles
 
 **Feature Size Percentiles** also gets **View Data**, on Teams and on Portfolios, listing the closed Features its percentiles are based on. Full detail: [Feature Size on a Team](https://docs.lighthouse.letpeople.work/metrics/portfolio-features.html#feature-size-on-a-team).
 
+## Reporting: Then & Now
+
+You started coaching a Team three months ago. They limited their WIP and began slicing smaller. Then someone asks: *did it change anything?* The Metrics tab shows only recent days, so the "before" has long dropped out of view, and screenshots taken back then never quite compare to today's.
+
+Every Team and Portfolio now has a **Reports** tab, and its first report type is **Then & Now**. Pick a window, **Then**, such as the 90 days before you came in. Lighthouse freezes its flow metrics on the spot, rebuilding them from history if Then ended in the past. **Now** slides and always ends today. Each time you open the report, Cycle Time, Throughput, WIP and Work Item Age sit side by side, Then against Now, with the change on every line. A summary at the top tells you at a glance what improved and what got worse.
+
+![Then & Now report](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/report_thenandnow.png)
+
+Reports are listed on the Overview next to each Team and Portfolio, so the evidence is one click away when the question comes. Community includes one Then & Now report per Team and Portfolio; Premium has no limit. Full detail: [Reports](https://docs.lighthouse.letpeople.work/reports/reports.html).
+
 ## Bugfixes and Improvements
 
 - **Clicking a chart now lists the Work Items with the columns that explain why they are there.** The Estimation vs. Cycle Time dialog shows each Work Item's Estimate next to its Cycle Time, the Blocked list shows since when each Work Item is Blocked, a Feature's child items show when each started and closed, and **Manage columns** offers the rest; the layout you choose is remembered for each chart. Full detail: [Viewing the Data Behind a Widget](https://docs.lighthouse.letpeople.work/metrics/widgets.html#columns-in-the-work-items-dialog).
 - **Every row of a long list can now be reached.** A list used to stop at its first 100 rows without saying there were more, so a Team with 143 Work Items in refinement could not vote on the last 43. A list of more than 100 rows now says how many it holds, for example `1–100 of 143`, and its arrows page to the rest. Sorting, filtering, the search in Third-party packages, and Export and Copy all cover the whole list. Lists of 100 rows or fewer look as before.
+- **The Overview's Deliveries column stays readable.** It shows at most two Deliveries per Portfolio, then a *+N more* link to the rest. While loading it shows a spinner, and if the Deliveries cannot be loaded it says so, instead of claiming there are none.
 
 ## Contributions ❤️
 

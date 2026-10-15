@@ -452,3 +452,6 @@ Where one team works several features in sequence, you will see each bar begin o
 
 # Metrics
 Similar to the Team Details, the Portfolio contains metrics. The visuals are mostly the same as for the teams, the difference is that they are applied at feature level on the Portfolio. Check the [Metrics Page](../metrics/metrics.html) for more details.
+
+# Reports
+The *Reports* tab, between *Metrics* and *Settings*, keeps reports on this portfolio's flow, such as a [Then & Now](../reports/thenandnow.html) report that shows whether flow changed since a given day. A Portfolio offers Then lengths of 90 or 180 days. See [Reports](../reports/reports.html) for creating, editing and deleting them.

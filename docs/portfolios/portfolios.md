@@ -15,6 +15,8 @@ Portfolios are an essential building block for using Lighthouse. You can use Por
 # Gain an Overview
 The overview, as the name suggests, shows you a rough overview over all the portfolios. You can see which portfolios are defined, and how many Features are defined as part of this portfolio.
 
+The *Deliveries* and *Reports* columns show at most two entries each: a chip per Delivery, and each [report](../reports/reports.html#reports-on-the-overview) by name. When a portfolio has more, a *+N more* link under them opens its Deliveries or Reports tab. While a cell is loading it shows a small spinner, and if its data cannot be loaded it says *Couldn't load Deliveries* or *Couldn't load Reports* rather than claiming there are none.
+
 # Create a new Portfolio
 If you want to create a new portfolio, click on the *Add New* button on top. That will bring you to the [Portfolio Creation Page](./edit.html).
 
@@ -30,7 +32,7 @@ If you want to delete a portfolio, you can click on the 🗑️ icon on the righ
 ![Portfolio Deletion](../assets/features/portfolios_delete.png)
 
 {: .important}
-Deleting a portfolio will remove it from Lighthouse with no functionality to undo this change. This will not remove any of the involved teams in this portfolio though.
+Deleting a portfolio will remove it from Lighthouse with no functionality to undo this change. This will not remove any of the involved teams in this portfolio though. The portfolio's [reports](../reports/reports.html) are deleted with it.
 
 {: .note}
 You can always add a portfolio again using the same queries. Deleting a portfolio has no effect at all on the data in your Work Tracking System.
