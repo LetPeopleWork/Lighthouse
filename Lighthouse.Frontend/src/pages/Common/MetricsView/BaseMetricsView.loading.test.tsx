@@ -446,10 +446,10 @@ const widgetsOnScreen = () =>
 // Size included, is framed from the first render.
 const placedOnlyOnceTheirDataSaysSo = new Set(["estimationVsCycleTime"]);
 
-// Portfolio & Features is the one page whose opening look this story changes, on both owners,
-// because Feature Size is framed there from the first render; its rows are pending with the
-// story's others. On a Team the page gains Feature Size, and its frame is placed before its data
-// only once the Feature Size frame is always placed.
+// Portfolio & Features has rows of its own, on a Team and on a Portfolio, because its opening look
+// is the one that includes Feature Size: that frame is placed at the first render, with a spinner,
+// before any Features arrive. These rows were held back until the Feature Size frame was always
+// placed up front; it now is, so they run like every other page's.
 const isPortfolioAndFeatures = ([, , category]: readonly [
 	Owner,
 	string,
