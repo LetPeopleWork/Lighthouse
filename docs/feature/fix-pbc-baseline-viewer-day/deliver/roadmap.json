@@ -1,0 +1,129 @@
+{
+  "roadmap": {
+    "project_id": "fix-pbc-baseline-viewer-day",
+    "created_at": "2026-10-15",
+    "total_steps": 3,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "A Process Behaviour Chart must never call a baseline 'in the future' just because the viewer's calendar day is ahead of the instance's. Today, a Team or Portfolio with no configured baseline uses the display window (ending on the viewer's local today) as its baseline and runs it through BaselineValidationService.Validate, whose 'end must not be in the future' rule is anchored on the instance day (Clock.Today). Between local midnight and instance midnight every PBC of a viewer ahead of the instance zone renders BaselineInvalid (CI: Europe/Zurich browser vs UTC backend, 22:00-24:00 UTC; the Throughput PBC also loses its forecast-filter toggle). The baseline picker in settings has the mirror defect: its max is the UTC day, while the server judges the end against the instance day, which the browser cannot know. Fix: (1) the implicit baseline (display window) skips the future-end rule and keeps every other rule; (2) a configured baseline may end at most one day after the instance day, on save and at render, so any viewer may pick their own today; anything two or more days ahead stays refused; (3) the picker's max is the viewer's local today; (4) the four duplicated resolve-and-validate blocks become one helper. Acceptance: new regression tests RED before and GREEN after; full backend suite (minus live-connector categories) and frontend suite + build stay GREEN; Stryker per-feature kill rate >= 80% on the touched methods."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator (inline, following the bug-5064 / bug-6054 precedent for a surgical fix whose RCA prescribes the sites)",
+    "reviewed_at": "2026-10-15",
+    "notes": "No architect dispatch. The /nw-bugfix Phase 1 RCA (@nw-troubleshooter, 2026-10-15) is the design input; the orchestrator re-read every fix site before writing this roadmap: the three builders in BaseMetricsService.cs (591-601, 646-656, 709-719), the inline Feature Size block in PortfolioMetricsService.cs (77-87), the four save-path calls in TeamController/TeamsController/PortfolioController/PortfoliosController, the picker in FlowMetricsConfigurationComponent.tsx (max at ~724) and utils/date/localDate.ts. Verified that the stored baseline travels as UTC midnight of the picked day (TeamExtensions.cs:53 SpecifyKind Utc; BaselineValidationService comment), so the picker's read/write encoding is the wire contract and must NOT change; only its max is wrong. The frontend has no access to the instance day, which is why the server tolerates one day for configured baselines (maintainer decision 2026-10-15)."
+  },
+  "user_decisions": [
+    "2026-10-15 maintainer approved RCA direction: the implicit baseline skips only the future-end rule; one helper replaces the four duplicated blocks.",
+    "2026-10-15 maintainer: keep the CI time-zone mismatch (browser Europe/Zurich, backend UTC) as a deliberate probe; correct the misleading comment in Lighthouse.EndToEndTests/playwright.config.ts.",
+    "2026-10-15 maintainer: fold the picker defect into this fix, as 'Allow 1 day past': picker max = viewer's local today; a configured baseline may end at most one day after the instance day (save and render)."
+  ],
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/fix-pbc-baseline-viewer-day/feature-delta.md",
+    "rca_source": "Inline in /nw-bugfix Phase 1 (@nw-troubleshooter, 2026-10-15), fix sites re-verified by orchestrator",
+    "ci_evidence": "GitHub Actions runs 38648741423 and 38648717256 (2026-10-14 ~22:41 UTC), ForecastFilter.spec.ts page snapshot: 'Baseline end date must not be in the future.'"
+  },
+  "out_of_scope": [
+    "The cutoff-window rule on the implicit baseline (a display window longer than DoneItemsCutoffDays reports 'outside the data cutoff window') — intended, unchanged.",
+    "Making the frontend aware of the instance day.",
+    "Setting Lighthouse__TimeZone in the CI verify workflows."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "The baseline rules judge 'future' in a way any viewer's calendar can satisfy",
+      "description": "Backend. The validator learns the two cases; the metrics services route every PBC through one helper that picks the right case.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Baseline validator: a picked baseline may end one day past the instance day; the display window is never 'future'",
+          "description": "Extend BaselineValidationService with the two cases and pin them in BaselineValidationServiceTest.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BaselineValidationServiceTest.cs",
+          "scenario_name": "A baseline ending on the viewer's today is never refused as future; one ending two days past the instance day still is",
+          "red_to_green_tests": [
+            "BaselineValidationServiceTest :: a picked baseline ending one day after the instance day is valid (pin the CI moment: FakeLighthouseClock 2026-10-14 22:40 UTC in UTC, end 2026-10-15)",
+            "BaselineValidationServiceTest :: the display window used as baseline, ending one day after the instance day, is valid",
+            "BaselineValidationServiceTest :: the display window used as baseline still fails the other rules (end not after start; shorter than 14 days; start outside the cutoff window)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BaselineValidationService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BaselineValidationServiceTest.cs"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "Public Validate(start, end, doneItemsCutoffDays, today) keeps its signature (four controllers and the services call it). Its future rule refuses only an end more than one day after `today`; an end of today+1 is valid, today+2 is invalid with a message containing 'future'. The existing Validate_EndDateInFuture_ReturnsInvalid (+5 days) stays green unchanged.",
+            "New public ValidateDisplayWindowAsBaseline(DateTime start, DateTime end, int doneItemsCutoffDays, DateOnly today) runs every rule except the future-end rule.",
+            "No public method takes a bool flag (Sonar S2360/S3242 family): the two public entry points share a private core.",
+            "RED tests fail against the current code for the stated reason (valid expected, invalid 'future' returned) and the RED output is recorded before GREEN.",
+            "Any comment states the why in plain words, e.g. that the browser cannot know the instance's day and a viewer's today is at most one day ahead of it; no internal references (no RC-A, no bug numbers outside a pragma)."
+          ],
+          "implementation_notes": "Follow the file's existing test style (NUnit, Assert.EnterMultipleScope, FakeLighthouseClock, TestToday). Consult docs/ci-learnings.md before writing code. Commit: `fix(metrics): a baseline ending on the viewer's today is not in the future`"
+        },
+        {
+          "id": "01-02",
+          "name": "Every PBC resolves its baseline through one helper that picks the right rule",
+          "description": "Extract a protected ResolveBaseline helper in BaseMetricsService used by the three builders and by PortfolioMetricsService's Feature Size PBC; regression tests through the public service methods for every PBC kind on Team and Portfolio.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/TeamMetricsServiceTests.cs",
+          "scenario_name": "With no baseline configured and the display window ending on the viewer's today, one day ahead of the instance day, every PBC is Ready",
+          "red_to_green_tests": [
+            "TeamMetricsServiceTests :: no baseline, displayEnd = TestToday.AmbientAsUtcMidnight.AddDays(1) → Ready, BaselineConfigured false, data points cover the window — parameterised over Throughput, filtered Throughput, WIP, Total Work Item Age, Cycle Time, Arrivals",
+            "PortfolioMetricsServiceTests :: same, parameterised over Throughput, WIP, Total Work Item Age, Cycle Time, Arrivals, Feature Size",
+            "TeamMetricsServiceTests :: configured baseline ending instance day + 1 → Ready (RED today: rejected as future)",
+            "TeamMetricsServiceTests (guard, green before and after) :: configured baseline ending instance day + 2 → BaselineInvalid, reason contains 'future', BaselineConfigured true"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BaseMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PortfolioMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/TeamMetricsServiceTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PortfolioMetricsServiceTests.cs"
+          ],
+          "dependencies": ["01-01"],
+          "criteria": [
+            "One protected helper in BaseMetricsService resolves (start, end, configured, validation) from the owner's baseline or the display window, calling Validate when configured and ValidateDisplayWindowAsBaseline otherwise, anchored on `asOf ?? Clock.Today`. All four former copies (BaseMetricsService ~591-601, ~646-656, ~709-719; PortfolioMetricsService ~77-87) call it; no copy of the old block survives.",
+            "The 'BaselineDatesNotSet' regression tests are RED against current code (BaselineInvalid 'future') and GREEN after; tests drive the public Get*ProcessBehaviourChart methods, not the helper.",
+            "Existing PBC tests (including every BaselineDatesNotSet_LongRange and BaselineInvalid case) stay green unchanged.",
+            "Full backend suite run with the documented filter (TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration) is green, and `dotnet build` has zero warnings."
+          ],
+          "implementation_notes": "Use TestCase/TestCaseSource parameterisation consistent with the file. Watch CA1859/CA1861/S107 per docs/ci-learnings.md; a tuple or small record return is fine. In a worktree, exactly 2 Licensing tests fail on the gitignored premium licence fixture — environmental; copy valid_not_expired_license.json from /storage/repos/Lighthouse if needed. Commit: `fix(metrics): process behaviour charts resolve their baseline in one place, display window never 'future'`"
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "The baseline picker offers the viewer's own today",
+      "description": "Frontend picker max uses the viewer's local day; E2E config comment corrected.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "PBC Baseline End picker's latest day is the viewer's local today",
+          "description": "Change the max of the 'PBC Baseline End' date input from the UTC day to the viewer's local day; keep the value encoding untouched; correct the playwright.config.ts comment.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/BaseSettings/FlowMetricsConfigurationComponent.test.tsx",
+          "scenario_name": "West of UTC in the evening, the latest pickable baseline end is the viewer's today, not UTC's tomorrow",
+          "red_to_green_tests": [
+            "FlowMetricsConfigurationComponent.test.tsx :: with Date faked (vi.useFakeTimers({ toFake: ['Date'] })) to a moment whose local day differs from its UTC day, the 'PBC Baseline End' input's max attribute equals formatLocalDate(now)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/BaseSettings/FlowMetricsConfigurationComponent.tsx",
+            "Lighthouse.Frontend/src/components/Common/BaseSettings/FlowMetricsConfigurationComponent.test.tsx",
+            "Lighthouse.EndToEndTests/playwright.config.ts (comment only)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "max = formatLocalDate(new Date()) from utils/date/localDate.ts. The defaultValue/onChange encoding (toISOString().slice(0,10) / new Date('YYYY-MM-DD'), i.e. UTC midnight of the picked day) is the wire contract the backend relies on and is NOT changed; the min computation is NOT changed.",
+            "The test must be RED on current code in the test runner's time zone. If the suite pins TZ to UTC (check vitest config / package.json test script), choose a fake instant and assertion that still fails today — e.g. set process.env.TZ for the test or assert against a local day that differs from the UTC day only under a non-UTC zone — and state in the report how RED was proven. Use the repo's existing Date-only fake-timer idiom and restore real timers afterwards.",
+            "The playwright.config.ts comment (~147-158) no longer claims Lighthouse__TimeZone is set where the instance starts; it says in plain words that CI deliberately runs the browser in Europe/Zurich against a UTC backend so day-boundary mismatches between viewer and instance show up.",
+            "`pnpm test` green; `pnpm build` zero errors and zero warnings (prebuild runs `biome check --write` — commit any formatting it applies)."
+          ],
+          "implementation_notes": "No visible UI change (same field, label and layout) — no sketch needed (maintainer informed). Comments: plain-language why only. Commit: `fix(settings): the baseline picker offers the viewer's own today`"
+        }
+      ]
+    }
+  ]
+}
