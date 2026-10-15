@@ -8,6 +8,20 @@ namespace Lighthouse.Backend.Tests.Cache
     {
         private static readonly TimeSpan LongExpiry = TimeSpan.FromMinutes(5);
 
+        // Every participant blocks in a barrier until all of them have arrived. On pool threads that
+        // parks a dozen or more workers, which stalls every other test in the assembly until the pool
+        // grows, and the race itself barely runs. Each participant gets a thread of its own instead.
+        private static Task[] OnDedicatedThreads(int count, Action<int> participant)
+        {
+            return Enumerable.Range(0, count)
+                .Select(i => Task.Factory.StartNew(
+                    () => participant(i),
+                    CancellationToken.None,
+                    TaskCreationOptions.LongRunning,
+                    TaskScheduler.Default))
+                .ToArray();
+        }
+
         [Test]
         public async Task ConcurrentInsertsOnUniqueKeys_DoNotThrow_AndAllValuesAreRetrievable()
         {
@@ -16,7 +30,7 @@ namespace Lighthouse.Backend.Tests.Cache
             var exceptions = new ConcurrentBag<Exception>();
             using var barrier = new Barrier(threadCount);
 
-            var tasks = Enumerable.Range(0, threadCount).Select(i => Task.Run(() =>
+            var tasks = OnDedicatedThreads(threadCount, i =>
             {
                 try
                 {
@@ -27,7 +41,7 @@ namespace Lighthouse.Backend.Tests.Cache
                 {
                     exceptions.Add(ex);
                 }
-            })).ToArray();
+            });
 
             await Task.WhenAll(tasks);
 
@@ -60,10 +74,10 @@ namespace Lighthouse.Backend.Tests.Cache
                 }
             }
 
-            using var stop = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
-            using var barrier = new Barrier(writerThreads + readerThreads);
+            using var stop = new CancellationTokenSource();
+            using var barrier = new Barrier(writerThreads + readerThreads, _ => stop.CancelAfter(TimeSpan.FromMilliseconds(200)));
 
-            var writers = Enumerable.Range(0, writerThreads).Select(t => Task.Run(() =>
+            var writers = OnDedicatedThreads(writerThreads, t =>
             {
                 try
                 {
@@ -81,9 +95,9 @@ namespace Lighthouse.Backend.Tests.Cache
                 {
                     exceptions.Add(ex);
                 }
-            })).ToArray();
+            });
 
-            var readers = Enumerable.Range(0, readerThreads).Select(t => Task.Run(() =>
+            var readers = OnDedicatedThreads(readerThreads, t =>
             {
                 try
                 {
@@ -104,7 +118,7 @@ namespace Lighthouse.Backend.Tests.Cache
                 {
                     exceptions.Add(ex);
                 }
-            })).ToArray();
+            });
 
             await Task.WhenAll(writers.Concat(readers));
 
@@ -127,7 +141,7 @@ namespace Lighthouse.Backend.Tests.Cache
             var nonDefaultResults = new ConcurrentBag<string>();
             using var barrier = new Barrier(readerThreads);
 
-            var tasks = Enumerable.Range(0, readerThreads).Select(_ => Task.Run(() =>
+            var tasks = OnDedicatedThreads(readerThreads, _ =>
             {
                 try
                 {
@@ -142,7 +156,7 @@ namespace Lighthouse.Backend.Tests.Cache
                 {
                     exceptions.Add(ex);
                 }
-            })).ToArray();
+            });
 
             await Task.WhenAll(tasks);
 
@@ -224,10 +238,10 @@ namespace Lighthouse.Backend.Tests.Cache
             }
 
             var exceptions = new ConcurrentBag<Exception>();
-            using var stop = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
-            using var barrier = new Barrier(backgroundThreads + 1);
+            using var stop = new CancellationTokenSource();
+            using var barrier = new Barrier(backgroundThreads + 1, _ => stop.CancelAfter(TimeSpan.FromMilliseconds(500)));
 
-            var background = Enumerable.Range(0, backgroundThreads).Select(t => Task.Run(() =>
+            var background = OnDedicatedThreads(backgroundThreads, t =>
             {
                 try
                 {
@@ -244,9 +258,9 @@ namespace Lighthouse.Backend.Tests.Cache
                 {
                     exceptions.Add(ex);
                 }
-            })).ToArray();
+            });
 
-            var invalidator = Task.Run(() =>
+            var invalidator = OnDedicatedThreads(1, _ =>
             {
                 try
                 {
@@ -264,7 +278,7 @@ namespace Lighthouse.Backend.Tests.Cache
                 {
                     exceptions.Add(ex);
                 }
-            });
+            })[0];
 
             await Task.WhenAll(background);
             await invalidator;
