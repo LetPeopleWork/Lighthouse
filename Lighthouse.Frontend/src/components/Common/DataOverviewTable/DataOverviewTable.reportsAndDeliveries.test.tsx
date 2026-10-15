@@ -868,3 +868,100 @@ describe("Deliveries on the Overview", () => {
 		expect(theColumnTitles()).not.toContain("Deliveries");
 	});
 });
+
+describe("What the Overview's chip columns offer", () => {
+	const theMenuOf = async (
+		user: ReturnType<typeof userEvent.setup>,
+		column: string,
+	): Promise<string[]> => {
+		await user.click(screen.getByLabelText(`${column} column menu`));
+		const menu = await screen.findByRole("menu");
+		return within(menu)
+			.getAllByRole("menuitem")
+			.map((item) => (item.textContent ?? "").trim());
+	};
+
+	// A cell holds chips, not a value, so sorting or filtering by it would reorder or empty the table for no reason.
+	it.each(["Reports", "Deliveries"])(
+		"lets a reader hide the %s column but neither sort nor filter by it",
+		async (column) => {
+			const user = userEvent.setup();
+			renderTheTable("portfolios", [PORTFOLIO_APOLLO]);
+			await whenReady("Apollo", "reports");
+			await whenReady("Apollo", "deliveries");
+
+			const offered = await theMenuOf(user, column);
+
+			expect(offered).toContain("Hide column");
+			expect(offered.some((item) => /sort/i.test(item))).toBe(false);
+			expect(offered.some((item) => /filter/i.test(item))).toBe(false);
+		},
+	);
+
+	it("stacks a cell's chips, and a dimmed cell takes no clicks while it is read again", async () => {
+		const reread = deferred<ReturnType<typeof activeDeliveries>>();
+		const { queryClient } = renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
+			deliveryService: deliveriesAnswering(
+				vi
+					.fn()
+					.mockResolvedValueOnce(
+						activeDeliveries(
+							aDelivery(1, "Winter Release"),
+							aDelivery(2, "Autumn Release"),
+						),
+					)
+					.mockReturnValue(reread.promise),
+			),
+		});
+		const ready = await whenReady("Apollo", "deliveries");
+		const stack = within(ready)
+			.getByText(/^Winter Release/)
+			.closest("a")?.parentElement;
+		expect(stack).toHaveStyle({ display: "flex", flexDirection: "column" });
+
+		act(() => {
+			void queryClient.invalidateQueries({
+				queryKey: ["deliveries", "portfolio", APOLLO.id],
+			});
+		});
+
+		const cell = theCellOf("Apollo", "deliveries");
+		await waitFor(() =>
+			expect(theLookOf(cell).dataset.cellStatus).toBe("loading"),
+		);
+		const chip = within(cell).getByText(/^Winter Release/);
+		expect(theBoxDimmingTheChip(cell, chip)).toHaveStyle({
+			pointerEvents: "none",
+		});
+	});
+});
+
+describe("A Delivery's chip on the Overview", () => {
+	it("says Cannot forecast for a Delivery that has no likelihood yet", async () => {
+		const unforecast = aDelivery(1, "Winter Release");
+		unforecast.likelihoodPercentage = null;
+		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
+			deliveryService: deliveriesAnswering(
+				vi.fn().mockResolvedValue(activeDeliveries(unforecast)),
+			),
+		});
+
+		const cell = await whenReady("Apollo", "deliveries");
+
+		expect(linkNamesIn(cell)[0]).toMatch(/\| Cannot forecast$/);
+	});
+
+	it("says Cannot forecast when a Team has no history to forecast from, whatever the likelihood", async () => {
+		const blocked = aDelivery(1, "Winter Release");
+		blocked.teamsWithoutForecast = ["Rocket"];
+		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
+			deliveryService: deliveriesAnswering(
+				vi.fn().mockResolvedValue(activeDeliveries(blocked)),
+			),
+		});
+
+		const cell = await whenReady("Apollo", "deliveries");
+
+		expect(linkNamesIn(cell)[0]).toMatch(/\| Cannot forecast$/);
+	});
+});

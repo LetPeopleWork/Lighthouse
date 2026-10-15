@@ -530,3 +530,49 @@ tests (`77a5a266c`). Production code unchanged between the two runs.
 Every targeted survivor was killed. What remains is exactly the justified list above: seven message strings
 (L26, L44, L67 survived; L80, L99, L165 no coverage; L102 survived), L29's template-key fallback (no coverage) and
 the equivalent L24 boundary.
+
+---
+
+# Mutation testing — 6305 (Reports and {Deliveries} on the Overview, slice 12)
+
+Run 2026-10-15 against local `main` @ `bcf37f536` plus the kill-round tests below. Frontend only: the story
+changes no backend file, so the backend is N/A. Gate is 80 %.
+
+| stack | score | tested | killed | survived | timeout | no coverage | wall clock |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Frontend (StrykerJS) | **85.06 %** | 154 | 131 | 23 | 0 | 0 | 6 m 51 s (incremental, 28 reused) |
+
+First run 77.92 % (120 killed, 34 survived, 10 m 29 s). Configs: `stryker.6305.frontend.json`,
+`vitest.stryker.6305.config.ts` (copy it into `Lighthouse.Frontend/` before running). Mutated: `OverviewCellChips.tsx`,
+`DeliveriesChips.tsx`, `ReportsChips.tsx`, `useOwnerReports.ts` whole, and `DataOverviewTable.tsx:165-198` (the two
+chip columns).
+
+| file | tested | killed | survived |
+| --- | --- | --- | --- |
+| DataOverviewTable.tsx (lines 165-198) | 26 | 25 | 1 |
+| DeliveriesChips.tsx | 47 | 41 | 6 |
+| OverviewCellChips.tsx | 66 | 54 | 12 |
+| ReportsChips.tsx | 12 | 8 | 4 |
+| useOwnerReports.ts | 3 | 3 | 0 |
+
+### Closed by this pass
+
+New cases in `DataOverviewTable.reportsAndDeliveries.test.tsx`:
+
+- "lets a reader hide the Reports / Deliveries column but neither sort nor filter by it" — the columns' `hideable`,
+  `sortable: false` and `filterable: false` (4 mutants).
+- "stacks a cell's chips, and a dimmed cell takes no clicks while it is read again" — the chips' column stack and the
+  dimmed box's `pointer-events: none` (3).
+- "says Cannot forecast for a Delivery that has no likelihood yet" and "… when a Team has no history to forecast
+  from, whatever the likelihood" — both halves of the cannot-forecast condition and the teams-without-forecast
+  default (4).
+
+### Accepted survivors
+
+- **Styling strings and objects (22)**: the spinner's centring (`position`, `top`, `left`, the negative half-size
+  margins), the cell's `minHeight` / padding, the Delivery chip's white bold label, pointer cursor and hover fade, and
+  `textDecoration: none` on the chip links. They change only how a chip or the spinner looks, which jsdom does not lay
+  out; the looks a reader depends on (the colour by likelihood, the 0.4 dimming, the column stack, pointer-events) are
+  pinned.
+- **`DataOverviewTable.tsx:175` `if (!isPortfolio(row))` → `false` (1)**: the {Deliveries} column exists only when the
+  table holds Portfolios, and the Overview never mixes Teams into the Portfolios table, so no row reaches the guard.
