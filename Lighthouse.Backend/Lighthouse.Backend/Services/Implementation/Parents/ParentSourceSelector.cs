@@ -7,9 +7,10 @@ namespace Lighthouse.Backend.Services.Implementation.Parents
     /// Decides where one record's parent was read from.
     ///
     /// A Team or a Portfolio that names something in Parent Override Field is declaring it authoritative,
-    /// so the parent the tracker reports for itself is not consulted at all while it is set. What was
-    /// named is either a field of the tracker's or one of its link types, and those are read in entirely
-    /// different places - which is the whole of what this decides.
+    /// so whatever it yields replaces the parent the tracker reports for itself. That parent is what
+    /// remains only when it yields nothing, as when a record's links cannot be narrowed down to one. What
+    /// was named is either a field of the tracker's or one of its link types, and those are read in
+    /// entirely different places - which is the whole of what this decides.
     ///
     /// This lives apart from any one tracker because the rule belongs to the Team and the Portfolio rather
     /// than to the tracker, and apart from the sibling that decides the same thing for dependencies

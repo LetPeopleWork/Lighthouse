@@ -295,20 +295,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var epicLinkFieldName = TheFieldTheInstanceHangsParentsOn(team, JiraFieldNames.EpicLinkFieldName);
 
             var workItems = new List<WorkItem>();
-            var itemsAndTheirLinks = new List<AnItemAndWhatItsLinksOffered>();
 
             foreach (var issue in issues)
             {
-                var itemAndItsLinks = CreateWorkItemFromJiraIssue(issue, team, customFieldReferences);
-                var workItem = itemAndItsLinks.Item;
+                var workItem = CreateWorkItemFromJiraIssue(issue, team, customFieldReferences).Item;
 
                 TrySetParentFromTheFieldTheInstanceHangsItOn(workItem, issue, epicLinkFieldName);
 
-                itemsAndTheirLinks.Add(itemAndItsLinks);
                 workItems.Add(new WorkItem(workItem, team));
             }
-
-            ReportTheRecordsWhoseLinksNamedMoreThanOneParent(team, itemsAndTheirLinks);
 
             return workItems;
         }
@@ -1329,7 +1324,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// lines bury the rest of the refresh under them.
         /// </summary>
         private void ReportTheRecordsWhoseLinksNamedMoreThanOneParent(
-            IWorkItemQueryOwner owner, List<AnItemAndWhatItsLinksOffered> itemsAndTheirLinks)
+            Portfolio owner, List<AnItemAndWhatItsLinksOffered> itemsAndTheirLinks)
         {
             var recordsAndWhatTheyAreLinkedTo = itemsAndTheirLinks
                 .Where(itemAndItsLinks => itemAndItsLinks.FromTheMatchingLinks.IsAmbiguous)

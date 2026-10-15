@@ -11,7 +11,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
     /// An item hangs under one thing, so several candidates cannot be narrowed by keeping one of them.
     /// There is no tie-break here and none is wanted: the first one seen, the one linked most recently and
     /// the one whose key sorts first are all guesses, and a guessed parent moves work under something it
-    /// does not belong to while looking exactly like correct data. Refusing leaves the item where it was,
+    /// does not belong to while looking exactly like correct data. Refusing takes no parent from the links,
     /// which is visibly unfinished rather than invisibly wrong.
     /// </summary>
     [TestFixture]
@@ -81,49 +81,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         }
 
         /// <summary>
-        /// An item that was refused looks on screen exactly like one nobody ever linked, so unless the
-        /// refresh says which item it was and what it pointed at, the person who has to go and remove one of
-        /// those links cannot find either the item or the links.
-        /// </summary>
-        [Test]
-        [Category("retired-by-story-6301-slice-01")]
-        public async Task The_warning_names_the_item_and_every_candidate()
-        {
-            TheParentOverrideNames(TheLinkTypeTheOverrideNames.Name);
-            TheIssueHasLinksOfTheNamedTypeTo(TheAmbiguousItem, OneCandidate, TheOtherCandidate);
-
-            await TheTeamIsRefreshed();
-
-            Assert.That(
-                TheOneWarningTheRefreshWrote(),
-                Does.Contain(TheAmbiguousItem).And.Contain(OneCandidate).And.Contain(TheOtherCandidate),
-                "Naming the item without its candidates sends somebody to open it in the tracker and read the links back for themselves, and naming a number instead of either tells them only that there is work to do somewhere.");
-        }
-
-        /// <summary>
-        /// A bulk edit that went wrong produces these by the hundred, and a line per item buries the rest of
-        /// the refresh under them. One line that grows is readable; a hundred lines that repeat are not.
-        /// </summary>
-        [Test]
-        [Category("retired-by-story-6301-slice-01")]
-        public async Task Several_items_nobody_could_place_share_one_warning()
-        {
-            TheParentOverrideNames(TheLinkTypeTheOverrideNames.Name);
-            TheIssueHasLinksOfTheNamedTypeTo(TheAmbiguousItem, OneCandidate, TheOtherCandidate);
-            TheIssueHasLinksOfTheNamedTypeTo(TheOtherAmbiguousItem, ACandidateOfTheOtherAmbiguousItem, TheOtherCandidateOfTheOtherAmbiguousItem);
-
-            await TheTeamIsRefreshed();
-
-            Assert.That(
-                TheOneWarningTheRefreshWrote(),
-                Does.Contain(TheAmbiguousItem)
-                    .And.Contain(TheOtherAmbiguousItem)
-                    .And.Contain(ACandidateOfTheOtherAmbiguousItem)
-                    .And.Contain(TheOtherCandidateOfTheOtherAmbiguousItem),
-                "One line for the whole refresh only helps if it is the whole refresh - a line that reports the first item and drops the rest is worse than several lines, because it looks complete.");
-        }
-
-        /// <summary>
         /// A Portfolio reads its own records and hangs them under their own parents, so the same links can
         /// leave it with the same unanswerable question. An administrator who runs Portfolios and not Teams
         /// would otherwise be shown nothing at all.
@@ -154,7 +111,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         /// recorded on the row, not only said once into the log and lost.
         /// </summary>
         [Test]
-        [Category("retired-by-story-6301-slice-01")]
         public async Task The_refresh_records_how_many_records_it_could_not_place()
         {
             TheParentOverrideNames(TheLinkTypeTheOverrideNames.Name);
@@ -164,13 +120,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
             var teamId = await TheTeamIsRefreshedByTheRunningApplication();
 
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(TheRowTheRefreshRecorded(RefreshType.Team, teamId).RecordsWhoseLinksNamedMoreThanOneParent, Is.EqualTo(3),
-                    "Three records came back with no parent and no way to choose one, and a row that says none of them did tells somebody looking at refresh history that this tracker is in better order than it is.");
-                Assert.That(TheOneWarningTheRefreshWrote(), Does.Contain(TheAmbiguousItem),
-                    "Recording the number does not replace saying which records they were - a count nobody can act on sends the reader back to the log, and the log has to still be one line.");
-            }
+            Assert.That(TheRowTheRefreshRecorded(RefreshType.Team, teamId).RecordsWhoseLinksNamedMoreThanOneParent, Is.EqualTo(3),
+                "Three records came back with no parent and no way to choose one, and a row that says none of them did tells somebody looking at refresh history that this tracker is in better order than it is.");
         }
 
         /// <summary>

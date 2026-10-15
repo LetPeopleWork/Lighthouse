@@ -359,7 +359,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// gone, because it was never true.
         /// </summary>
         [Test]
-        [Ignore(PendingStory6301.Slice01)]
         [Category("edge")]
         public async Task Several_records_share_one_placed_line_and_one_not_placed_line()
         {

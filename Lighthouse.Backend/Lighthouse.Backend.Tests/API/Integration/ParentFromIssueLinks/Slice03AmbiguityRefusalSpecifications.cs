@@ -365,21 +365,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                 .Select(call => call.Arguments[2]?.ToString() ?? string.Empty)];
 
         /// <summary>
-        /// The single warning the refresh wrote. Counting is the point: one line per item turns a tracker
-        /// where a bulk edit went wrong into hundreds of lines, and a log that long is one nobody reads to
-        /// the end - so the item that really needed attention is the one that gets missed.
-        /// </summary>
-        private string TheOneWarningTheRefreshWrote()
-        {
-            var warnings = WhatTheRefreshWarnedAbout();
-
-            Assert.That(warnings, Has.Count.EqualTo(1),
-                $"A refresh with items nobody could place has exactly one thing to say about them. It said: {string.Join(" | ", warnings)}");
-
-            return warnings[0];
-        }
-
-        /// <summary>
         /// The one warning that names a given item. A Portfolio refresh has other things it may warn about -
         /// link names that matched nothing, for one - and those are not this scenario's business; what is,
         /// is that the item nobody could place is spoken of once and not once per link.
