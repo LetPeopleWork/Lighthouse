@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -18,6 +19,8 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
@@ -170,6 +173,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
 
                     services.RemoveAll<IForecastService>();
                     services.AddScoped(_ => new Mock<IForecastService>().Object);
+
+                    services.ConfigureDbContext<LighthouseAppContext>((_, options) => options.AddInterceptors(NoWaitingForTheDisk.Instance));
                 });
             });
 
@@ -937,6 +942,31 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
             while (store.HasActiveWork() && DateTime.UtcNow < deadline)
             {
                 await Task.Delay(20);
+            }
+        }
+
+        /// <summary>
+        /// Most scenarios here run a dozen real updates, and each of them commits many times. By default
+        /// SQLite waits for the disk to confirm every commit, and with several of these hosts writing at
+        /// once that wait was about a third of a scenario's time. A test database thrown away after the
+        /// test has no crash to survive, so its commits need not wait. Production keeps its own setting.
+        /// </summary>
+        private sealed class NoWaitingForTheDisk : DbConnectionInterceptor
+        {
+            public static readonly NoWaitingForTheDisk Instance = new();
+
+            public override void ConnectionOpened(DbConnection connection, ConnectionEndEventData eventData)
+            {
+                using var pragma = connection.CreateCommand();
+                pragma.CommandText = "PRAGMA synchronous=OFF;";
+                pragma.ExecuteNonQuery();
+            }
+
+            public override async Task ConnectionOpenedAsync(DbConnection connection, ConnectionEndEventData eventData, CancellationToken cancellationToken = default)
+            {
+                await using var pragma = connection.CreateCommand();
+                pragma.CommandText = "PRAGMA synchronous=OFF;";
+                await pragma.ExecuteNonQueryAsync(cancellationToken);
             }
         }
 

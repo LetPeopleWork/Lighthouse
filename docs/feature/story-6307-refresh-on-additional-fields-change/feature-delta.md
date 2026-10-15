@@ -904,7 +904,8 @@ seeded terminology (`clean`).
 ## Wave: DISTILL / [REF] Test placement
 
 - Backend acceptance: `Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/`, a story folder with its own
-  harness `ConnectionFieldChangeAcceptanceTest` (real host, fresh SQLite, System Admin client, a stand-in tracker
+  harness `ConnectionFieldChangeAcceptanceTest` (real host, fresh SQLite whose commits do not wait for the disk, since
+  the file is thrown away after the test, System Admin client, a stand-in tracker
   that holds one stamped item per Team and Portfolio, can hold every answer and can refuse one Team; Nordwind's three
   connections, five Teams and two Portfolios seeded by name, plus Nordwind Jira Roadmaps with Roadmap North and South where a scenario asks for it). One partial-class pair per behaviour group:
   `Slice01FieldChangeUpdatesItsOwners…`, `Slice01SavesThatStartNothing…`, `Slice02ConnectionsSayWhoUsesThem…`.
