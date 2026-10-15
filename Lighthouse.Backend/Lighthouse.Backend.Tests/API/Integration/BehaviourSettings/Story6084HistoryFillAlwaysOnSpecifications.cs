@@ -2,11 +2,10 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Data;
-using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using Lighthouse.Backend.Tests.TestHelpers;
+using static Lighthouse.Backend.Tests.TestHelpers.TheHistoryFillAsAnEarlierReleaseStoredIt;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -31,19 +30,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             SettingRemovedButTheRecordKept,
             NotYetOffered,
         }
-
-        /// <summary>
-        /// The key the setting was addressed by, spelled out because the product's constant for it is on its
-        /// way out, and because an instance upgrading into this release carries this exact string whatever
-        /// the code calls it.
-        /// </summary>
-        private const string TheHistoryFillKey = "OverTimeHistoryFill";
-
-        /// <summary>
-        /// The record the release that switched the fill on by default kept, so that it switched it on only
-        /// once. Spelled out for the same reason as the setting's key.
-        /// </summary>
-        private const string TheRecordOfTheOneTimeSwitchOn = "OptionalFeatures:HistoryFillSwitchedOnByDefault";
 
         private const string WhatTheAdminTypedToProtectTheBackup = "chosen by the admin";
 
@@ -127,12 +113,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         /// </summary>
         private async Task<HttpStatusCode> WhenAScriptSwitchesTheHistoryFillOff()
         {
+            var asServed = TheFillAsTheLastReleaseStoredIt(enabled: true);
             var payload = JsonSerializer.Serialize(new
             {
                 id = IdentityEverySeededSettingCarries,
                 key = TheHistoryFillKey,
-                name = TheFillAsTheLastReleaseStoredIt(enabled: true).Name,
-                description = TheFillAsTheLastReleaseStoredIt(enabled: true).Description,
+                name = asServed.Name,
+                description = asServed.Description,
                 enabled = false,
                 isPremium = false,
                 isPreview = true,
@@ -264,23 +251,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
                 or HowTheLastReleaseLeftTheFill.SwitchedOffByTheAdmin
                 or HowTheLastReleaseLeftTheFill.SettingRemovedButTheRecordKept)
             {
-                context.AppSettings.Add(new AppSetting { Id = 0, Key = TheRecordOfTheOneTimeSwitchOn, Value = "true" });
+                context.AppSettings.Add(TheRecordOfTheOneTimeSwitchOnAsStored());
             }
 
             context.SaveChanges();
         }
-
-        private static OptionalFeature TheFillAsTheLastReleaseStoredIt(bool enabled)
-            => new()
-            {
-                Id = IdentityEverySeededSettingCarries,
-                Key = TheHistoryFillKey,
-                Name = "Fill in past days on over-time charts",
-                Description = "A preview. While this is on, opening Percentiles Over Time or PBC Over Time fills in the days the chart is missing.",
-                Enabled = enabled,
-                IsPreview = true,
-                IsPremium = false,
-            };
 
         /// <summary>Every stored app setting as key and value, in key order, so two readings compare line by line.</summary>
         private List<string> ReadEveryStoredValue()

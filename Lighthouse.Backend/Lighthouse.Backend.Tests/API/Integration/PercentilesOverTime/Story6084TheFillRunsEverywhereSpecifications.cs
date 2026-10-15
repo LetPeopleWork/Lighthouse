@@ -1,9 +1,9 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
-using Lighthouse.Backend.Models.OptionalFeatures;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using static Lighthouse.Backend.Tests.TestHelpers.TheHistoryFillAsAnEarlierReleaseStoredIt;
 
 namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 {
@@ -16,15 +16,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     public partial class Story6084TheFillRunsEverywhereTest : ReconstructOverTimeHistoryAcceptanceTest
     {
         private const int ThirtyDays = 30;
-
-        /// <summary>
-        /// The key the setting was stored under, spelled out because the product's constant for it is on its
-        /// way out, and an instance upgrading into this release still carries this exact string.
-        /// </summary>
-        private const string TheHistoryFillKey = "OverTimeHistoryFill";
-
-        /// <summary>The record the release before kept of having switched the fill on once.</summary>
-        private const string TheRecordOfTheOneTimeSwitchOn = "OptionalFeatures:HistoryFillSwitchedOnByDefault";
 
         // --- Given ---
 
@@ -63,8 +54,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             context.OptionalFeatures.RemoveRange(context.OptionalFeatures.Where(feature => feature.Key == TheHistoryFillKey));
             context.AppSettings.RemoveRange(context.AppSettings.Where(setting => setting.Key == TheRecordOfTheOneTimeSwitchOn));
 
-            context.OptionalFeatures.Add(ASwitchedOffFillSetting());
-            context.AppSettings.Add(new AppSetting { Id = 0, Key = TheRecordOfTheOneTimeSwitchOn, Value = "true" });
+            context.OptionalFeatures.Add(TheFillAsTheLastReleaseStoredIt(enabled: false));
+            context.AppSettings.Add(TheRecordOfTheOneTimeSwitchOnAsStored());
 
             context.SaveChanges();
         }
@@ -98,7 +89,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
             if (stored == null)
             {
-                context.OptionalFeatures.Add(ASwitchedOffFillSetting());
+                context.OptionalFeatures.Add(TheFillAsTheLastReleaseStoredIt(enabled: false));
             }
             else
             {
@@ -134,17 +125,5 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
                 $"{chart} for owner {ownerId} was opened and should have filled in every day from {from:yyyy-MM-dd} to " +
                 $"{to:yyyy-MM-dd}. Missing: {string.Join(", ", expected.Except(held))}.");
         }
-
-        private static OptionalFeature ASwitchedOffFillSetting()
-            => new()
-            {
-                Id = 0,
-                Key = TheHistoryFillKey,
-                Name = "Fill in past days on over-time charts",
-                Description = "A preview. While this is on, opening Percentiles Over Time or PBC Over Time fills in the days the chart is missing.",
-                Enabled = false,
-                IsPreview = true,
-                IsPremium = false,
-            };
     }
 }
