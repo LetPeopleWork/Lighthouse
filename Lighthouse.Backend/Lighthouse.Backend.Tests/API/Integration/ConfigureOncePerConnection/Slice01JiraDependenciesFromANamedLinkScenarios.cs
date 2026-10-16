@@ -81,6 +81,31 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             }
         }
 
+        // Jira's stock Blocks type is named the very word its outward end reads. Typed exactly as that end
+        // reads, "blocks" is the phrase and picks its end; otherwise the both-ways finding's own advice
+        // would lead straight back to the same finding.
+        [Test]
+        [Category("us-01")]
+        [Category("ac-1.1")]
+        [Category("edge")]
+        [Category("contract-shape:bounded-change")]
+        public async Task Naming_blocks_on_the_stock_Blocks_type_reads_the_end_that_phrase_names()
+        {
+            JiraHoldsTheFeatures("PAY-112", "PAY-98");
+            OnJira("PAY-112", "blocks", "PAY-98");
+            PaymentsPlatformNamesAsItsDependencyField("blocks");
+
+            await PaymentsPlatformRefreshes();
+            var shown = await WhatRefreshHistoryShowsForPaymentsPlatform();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(await WhatTheFeatureWaitsOn("PAY-112"), Is.EqualTo(PAY98));
+                Assert.That(await WhatTheFeatureWaitsOn("PAY-98"), Is.EqualTo(Nothing));
+                Assert.That(shown.Findings, Is.Not.Null.And.Empty, "A phrase that picks an end has nothing to report.");
+            }
+        }
+
         // Kenji Watanabe's instance renamed the inward end of Blocks to "waits for" and he types it with
         // capitals: the same result "is blocked by" gives on a stock instance.
         [Test]

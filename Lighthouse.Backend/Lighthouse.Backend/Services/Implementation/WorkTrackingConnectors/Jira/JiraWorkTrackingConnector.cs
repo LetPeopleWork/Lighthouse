@@ -1267,8 +1267,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             List<string>? fromTheNamedLinkType = theDependencyField switch
             {
-                { NamesALinkTypePointingBothWays: true } => [],
-                { NamesALinkType: true } => issue.Fields.ExtractDependencyReferencesFromLinks(theDependencyField.LinkTypeName, theDependencyField.Direction),
+                { NamesALinkTypeWhoseWaitingEndIsUnclear: true } => [],
+                { NamesALinkType: true } => issue.Fields.ExtractDependencyReferencesFromLinks(theDependencyField.LinkTypeName, theDependencyField.DependencyDirection),
                 _ => null,
             };
 
@@ -1283,7 +1283,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// </summary>
         private static List<RefreshFinding> WhatReadingTheDependencyFieldFound(Portfolio portfolio, ResolvedReference theDependencyField)
         {
-            if (!theDependencyField.NamesALinkTypePointingBothWays)
+            if (!theDependencyField.NamesALinkTypeWhoseWaitingEndIsUnclear)
             {
                 return [];
             }
@@ -1843,8 +1843,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 if (answeringTypes.Count == 1)
                 {
+                    var answeringType = answeringTypes[0];
                     customFieldReferences[reference] = ResolvedReference.ALinkType(
-                        answeringTypes[0].Name, answeringTypes[0].DirectionReadFrom(reference), [answeringTypes[0].Inward, answeringTypes[0].Outward]);
+                        answeringType.Name,
+                        answeringType.DirectionReadFrom(reference),
+                        answeringType.DependencyDirectionReadFrom(reference),
+                        [answeringType.Inward, answeringType.Outward]);
                 }
             }
 
@@ -2055,6 +2059,28 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return readsInward ? LinkDirection.Inward : LinkDirection.Outward;
             }
 
+            /// <summary>
+            /// A Dependency Field has to say which end waits, and the both-ways finding tells the administrator
+            /// to type one end's phrase. On Jira's stock Blocks type that phrase, 'blocks', is also the type's
+            /// name, so letting the name win would send them straight back to the same finding. Here a phrase
+            /// typed exactly as Jira writes it picks its end first; anything less exact is read as above.
+            /// </summary>
+            public LinkDirection DependencyDirectionReadFrom(string reference)
+            {
+                var typedAsTheInwardEndReads = ReadsExactly(Inward, reference);
+                var typedAsTheOutwardEndReads = ReadsExactly(Outward, reference);
+
+                if (typedAsTheInwardEndReads != typedAsTheOutwardEndReads)
+                {
+                    return typedAsTheInwardEndReads ? LinkDirection.Inward : LinkDirection.Outward;
+                }
+
+                return DirectionReadFrom(reference);
+            }
+
+            private static bool ReadsExactly(string label, string reference)
+                => label.Length > 0 && string.Equals(label, reference, StringComparison.Ordinal);
+
             private static bool Reads(string label, string reference)
                 => label.Length > 0 && string.Equals(label, reference, StringComparison.OrdinalIgnoreCase);
         }
@@ -2096,19 +2122,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// guessed from a bare string that looks the same either way. A link type is carried by its name,
         /// which loses the phrase that was typed, so which end that phrase pointed at travels beside it, and
         /// so do the phrases its two ends read as, which are what an administrator chooses between when the
-        /// one typed points at neither.
+        /// one typed points at neither. A parent and a dependency read that end by different rules, so each
+        /// carries its own.
         /// </summary>
         private readonly record struct ResolvedReference(
-            string FieldId, string LinkTypeName, LinkDirection Direction, IReadOnlyList<string> PhrasesOfItsEnds)
+            string FieldId, string LinkTypeName, LinkDirection Direction, LinkDirection DependencyDirection, IReadOnlyList<string> PhrasesOfItsEnds)
         {
-            public static ResolvedReference Nothing => new(string.Empty, string.Empty, LinkDirection.Both, []);
+            public static ResolvedReference Nothing => new(string.Empty, string.Empty, LinkDirection.Both, LinkDirection.Both, []);
 
-            public static ResolvedReference AField(string fieldId) => new(fieldId, string.Empty, LinkDirection.Both, []);
+            public static ResolvedReference AField(string fieldId) => new(fieldId, string.Empty, LinkDirection.Both, LinkDirection.Both, []);
 
-            public static ResolvedReference ALinkType(string linkTypeName, LinkDirection direction, IReadOnlyList<string> phrasesOfItsEnds)
-                => new(string.Empty, linkTypeName, direction, phrasesOfItsEnds);
+            public static ResolvedReference ALinkType(
+                string linkTypeName, LinkDirection direction, LinkDirection dependencyDirection, IReadOnlyList<string> phrasesOfItsEnds)
+                => new(string.Empty, linkTypeName, direction, dependencyDirection, phrasesOfItsEnds);
 
-            public bool NamesALinkTypePointingBothWays => NamesALinkType && Direction == LinkDirection.Both;
+            public bool NamesALinkTypeWhoseWaitingEndIsUnclear => NamesALinkType && DependencyDirection == LinkDirection.Both;
 
             public bool NamesALinkType => LinkTypeName.Length > 0;
 
