@@ -12,6 +12,8 @@ How much of a Feature does your Team usually take on? Until now, the only Featur
 
 Every Team now has the **Feature Size** chart and the **Feature Size Percentiles** widget. On a Team, a Feature's size is the Team's own share of it, and the Status Indicator flags an open Feature whose share has already grown past what the Team usually finishes. Reading the Team is enough: Features from Portfolios you cannot open are counted too, without naming those Portfolios.
 
+![Feature Size on a Team](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/teamFeatureSize.png)
+
 **Feature Size Percentiles** also gets **View Data**, on Teams and on Portfolios, listing the closed Features its percentiles are based on. Full detail: [Feature Size on a Team](https://docs.lighthouse.letpeople.work/metrics/portfolio-features.html#feature-size-on-a-team).
 
 ## Reporting: Then & Now
