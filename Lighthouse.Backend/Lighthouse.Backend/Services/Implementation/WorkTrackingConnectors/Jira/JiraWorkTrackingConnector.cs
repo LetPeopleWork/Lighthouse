@@ -1219,11 +1219,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             var features = new List<Feature>();
 
-            var customFieldReferences = await GetCustomFieldReferences(portfolio.WorkTrackingSystemConnection);
+            var resolution = await ResolveTheAdditionalFieldReferences(portfolio.WorkTrackingSystemConnection, LinkTypesMayAnswer.WhatAnAdministratorTyped);
+            var customFieldReferences = resolution.References;
             var portfolioLinkFieldName = TheFieldTheInstanceHangsParentsOn(portfolio, JiraFieldNames.ParentLinkFieldName);
 
             var theDependencyField = WhatTheNamedAdditionalFieldResolvedTo(
                 portfolio, portfolio.DependencyOverrideAdditionalFieldDefinitionId, customFieldReferences);
+            StopUnlessTheDependencyFieldCouldBeLookedUp(portfolio, theDependencyField, resolution.LinkTypes);
             var dependencyFieldFindings = WhatReadingTheDependencyFieldFound(portfolio, theDependencyField);
 
             foreach (var issue in issues)
@@ -1245,6 +1247,40 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
 
             return features;
+        }
+
+        /// <summary>
+        /// A Dependency Field naming something that is not a field can only be read once the link types are
+        /// known. With that list refused the name stays unresolved, every Feature would be read as waiting
+        /// on nothing, and each Feature handed back overwrites the dependencies stored for it. Stopping the
+        /// refresh leaves those as they were until the list can be read again.
+        /// </summary>
+        private void StopUnlessTheDependencyFieldCouldBeLookedUp(
+            Portfolio portfolio, ResolvedReference theDependencyField, IssueLinkTypeListing linkTypes)
+        {
+            var named = TheDefinitionNamed(portfolio, portfolio.DependencyOverrideAdditionalFieldDefinitionId);
+
+            if (named is null || named.IsPredefined || !theDependencyField.ResolvedToNothing || linkTypes.RefusedWith is not { } status)
+            {
+                return;
+            }
+
+            var answer = $"{(int)status} ({status})";
+
+            logger.LogWarning(
+                "The refresh of Portfolio {PortfolioName} was stopped: its Dependency Field names '{Reference}', which is not a field, "
+                + "and Jira answered the issue link type list with {Answer}, so whether it names a link type could not be told. "
+                + "Its stored dependencies were left as they were.",
+                portfolio.Name,
+                named.Reference,
+                answer);
+
+            throw new JiraReadException(ConnectionValidationResult.Failure(
+                "issue_link_types_unreadable",
+                $"The Dependency Field of {portfolio.Name} names '{named.Reference}', which is not a field, and Jira answered "
+                + $"its issue link type list with {answer}, so the refresh was stopped. Nothing Lighthouse already holds was changed.",
+                $"GET {JiraRestRoutes.IssueLinkType} answered {answer}.",
+                JiraReadException.AdditionalFieldsFieldName));
         }
 
         private static string GetOwningTeam(Portfolio portfolio, WorkItemBase workItem)

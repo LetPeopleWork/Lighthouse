@@ -119,6 +119,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         private readonly List<string> requestsJiraAnswered = [];
 
+        private bool jiraRefusesToListItsLinkTypes;
+
         private readonly Dictionary<string, AnAzureDevOpsOrganisation> organisations = new(StringComparer.OrdinalIgnoreCase);
 
         private readonly Dictionary<string, Portfolio> adoPortfolios = new(StringComparer.Ordinal);
@@ -173,6 +175,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             jiraLinkTypes.AddRange([Blocks, Dependency, Relates]);
             jiraFieldNames.Clear();
             requestsJiraAnswered.Clear();
+            jiraRefusesToListItsLinkTypes = false;
             organisations.Clear();
             adoPortfolios.Clear();
             warningsOfTheLastRefresh = [];
@@ -249,6 +252,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         protected void JiraDefinesTheField(string name) => jiraFieldNames.Add(name);
 
+        /// <summary>The instance answers its issue link type list with 503 Service Unavailable.</summary>
+        protected void JiraRefusesToListItsLinkTypes() => jiraRefusesToListItsLinkTypes = true;
+
         protected void OnJiraTheFieldOf(string key, string fieldName, string value)
         {
             var index = jiraFieldNames.IndexOf(fieldName);
@@ -265,6 +271,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         /// </summary>
         protected void PaymentsPlatformNamesAsItsDependencyField(string reference)
             => NameTheDependencyField(theJiraPortfolio, reference);
+
+        /// <summary>
+        /// The connection carries an Additional Field whose Reference is <paramref name="reference"/>, which
+        /// the Portfolio does not name as its Dependency Field yet.
+        /// </summary>
+        protected void PaymentsPlatformsConnectionRegisters(string reference)
+            => RegisterTheDependencyField(theJiraPortfolio, reference);
+
+        /// <summary>The admin picks the Additional Field the connection registered as the Dependency Field.</summary>
+        protected Task PaymentsPlatformsAdminNamesTheRegisteredFieldAsItsDependencyField()
+        {
+            var registered = theJiraPortfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions
+                .Single(definition => !definition.IsPredefined).Id;
+
+            return PaymentsPlatformsAdminSavesItsSettings(settings => settings["dependencyOverrideAdditionalFieldDefinitionId"] = registered);
+        }
 
         // ----- What somebody does -----------------------------------------------------------------------
 
@@ -464,15 +486,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         // ----- The running application -----------------------------------------------------------------
 
         private static void NameTheDependencyField(Portfolio portfolio, string reference)
+            => portfolio.DependencyOverrideAdditionalFieldDefinitionId = RegisterTheDependencyField(portfolio, reference);
+
+        private static int RegisterTheDependencyField(Portfolio portfolio, string reference)
         {
+            var id = TheDependencyFieldId + portfolio.Id;
+
             portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
             {
-                Id = TheDependencyFieldId + portfolio.Id,
+                Id = id,
                 DisplayName = reference,
                 Reference = reference,
             });
 
-            portfolio.DependencyOverrideAdditionalFieldDefinitionId = TheDependencyFieldId + portfolio.Id;
+            return id;
         }
 
         private WorkTrackingSystemConnection AnAzureDevOpsConnectionTo(string url)
@@ -723,6 +750,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             lock (requestsJiraAnswered)
             {
                 requestsJiraAnswered.Add(path);
+            }
+
+            if (jiraRefusesToListItsLinkTypes && path.EndsWith(JiraWireFormat.IssueLinkTypeEndpoint, StringComparison.Ordinal))
+            {
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
+                {
+                    Content = new StringContent("{\"errorMessages\":[\"Service Unavailable\"]}", Encoding.UTF8, "application/json"),
+                };
             }
 
             var body = path switch

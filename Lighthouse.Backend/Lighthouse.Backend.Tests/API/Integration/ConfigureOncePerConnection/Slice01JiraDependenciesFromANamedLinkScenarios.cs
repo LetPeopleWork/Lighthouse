@@ -217,6 +217,37 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 "One link type replaces the default; adding the two together would leave nobody able to say where an edge came from.");
         }
 
+        // Without the link type list a name that is not a field cannot be told from one that matches nothing,
+        // and reading it as nothing would rewrite every Feature as waiting on nothing.
+        [Test]
+        [Category("us-01")]
+        [Category("ac-1.4")]
+        [Category("error")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_refused_link_type_list_stops_the_refresh_and_leaves_the_stored_dependencies_as_they_were()
+        {
+            JiraHoldsTheFeatures("PAY-112", "PAY-98", "PAY-50");
+            OnJira("PAY-112", "depends on", "PAY-98");
+            OnJira("PAY-112", "is blocked by", "PAY-50");
+            JiraRefusesToListItsLinkTypes();
+            PaymentsPlatformsConnectionRegisters("depends on");
+
+            await PaymentsPlatformRefreshes();
+            var beforeNamingIt = await WhatTheFeatureWaitsOn("PAY-112");
+
+            await PaymentsPlatformsAdminNamesTheRegisteredFieldAsItsDependencyField();
+            await PaymentsPlatformRefreshes();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(beforeNamingIt, Is.EqualTo(PAY50), "positive control: a dependency was stored before the link was named");
+                Assert.That(await WhatTheFeatureWaitsOn("PAY-112"), Is.EqualTo(PAY50),
+                    "A refresh that cannot tell what the name means must not rewrite what was stored.");
+                Assert.That(WhatTheLastRefreshWarned(), Has.Some.Matches<string>(warning => warning.Contains(PaymentsPlatform, StringComparison.Ordinal) && warning.Contains("503", StringComparison.Ordinal)),
+                    "Whoever reads the log has to learn which Portfolio stopped and what Jira answered.");
+            }
+        }
+
         // Lukas Brandt's Dependency Field names the ordinary text field "Blocked By Keys".
         [Test]
         [Category("us-01")]
