@@ -82,6 +82,14 @@ const SomeoneElseSavedFirst =
 
 type UsedBy = { teams: number; portfolios: number };
 
+type Field = { id: number; displayName: string; reference: string };
+
+const TheStoryPointsField: Field = {
+	id: 11,
+	displayName: StoryPoints,
+	reference: "customfield_10016",
+};
+
 type Words = {
 	team: string;
 	teams: string;
@@ -106,7 +114,7 @@ const SquadsAndPrograms: Words = {
 /** How the page asks the server to save and leave the updates to their next scheduled run. */
 type SaveChoice = { startUpdates?: boolean };
 
-const nordwindJiraDc = (usedBy: UsedBy) =>
+const nordwindJiraDc = (usedBy: UsedBy, fields: Field[]) =>
 	Object.assign(
 		new WorkTrackingSystemConnection({
 			id: 7,
@@ -136,9 +144,7 @@ const nordwindJiraDc = (usedBy: UsedBy) =>
 					isOptional: false,
 				},
 			],
-			additionalFieldDefinitions: [
-				{ id: 11, displayName: StoryPoints, reference: "customfield_10016" },
-			],
+			additionalFieldDefinitions: fields,
 		}),
 		{ usedBy },
 	);
@@ -148,21 +154,23 @@ const givenPriyaOpensTheConnectionPage = async ({
 	words = TheDefaultWords,
 	validation = { isValid: true },
 	save = undefined as (() => Promise<never>) | undefined,
+	fields = [TheStoryPointsField],
 }: {
 	usedBy?: UsedBy;
+	fields?: Field[];
 	words?: Words;
 	validation?: { isValid: boolean; message?: string };
 	save?: () => Promise<never>;
 } = {}) => {
 	const server = createMockWorkTrackingSystemService();
 	vi.mocked(server.getWorkTrackingSystems).mockResolvedValue([
-		nordwindJiraDc(usedBy),
+		nordwindJiraDc(usedBy, fields),
 	]);
 	vi.mocked(server.addNewWorkTrackingSystemConnection).mockImplementation(
 		async (connection) => connection,
 	);
 	vi.mocked(server.getConfiguredWorkTrackingSystems).mockResolvedValue([
-		nordwindJiraDc(usedBy),
+		nordwindJiraDc(usedBy, fields),
 	]);
 	vi.mocked(server.validateWorkTrackingSystemConnection).mockResolvedValue(
 		validation,
@@ -269,6 +277,20 @@ const whenPriyaAddsFixVersions = async () => {
 const whenPriyaRenamesStoryPoints = async () => {
 	fireEvent.click(screen.getByRole("button", { name: "edit" }));
 	const dialog = await fillTheFieldDialog("Estimate");
+	fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+	await theFieldDialogCloses();
+};
+
+const theRowOf = (displayName: string) =>
+	screen.getByText(displayName).closest("li") as HTMLElement;
+
+const whenPriyaEditsTheFieldIn = async (
+	row: HTMLElement,
+	displayName: string,
+	reference: string,
+) => {
+	fireEvent.click(within(row).getByRole("button", { name: "edit" }));
+	const dialog = await fillTheFieldDialog(displayName, reference);
 	fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
 	await theFieldDialogCloses();
 };
@@ -599,6 +621,48 @@ describe("Story #6307 - changing a connection's Additional Fields asks whether t
 
 			await thenTheConnectionIsSavedWith(server, StoryPoints);
 			thenNoQuestionIsAsked();
+		});
+
+		// Stored values and rules hang off a field's id, and the server gives a field that comes back
+		// under a new id a fresh one, so it loads it again even though its name and reference are as before.
+		// @us-02 @contract-shape:bounded-change
+		it("a field Priya removed and added back with the same name and reference asks the question", async () => {
+			await givenPriyaOpensNordwindJiraDc();
+			whenPriyaRemovesStoryPoints();
+			fireEvent.click(screen.getByRole("button", { name: "Add Field" }));
+			const dialog = await fillTheFieldDialog(StoryPoints, "customfield_10016");
+			fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+			await theFieldDialogCloses();
+
+			whenPriyaPressesSave();
+
+			expect(
+				await theQuestion("Update 4 Teams and 2 Portfolios?"),
+			).toBeInTheDocument();
+		});
+
+		// @us-02 @contract-shape:bounded-change
+		it("swapping the names and references of two fields asks the question", async () => {
+			await givenPriyaOpensNordwindJiraDc({
+				fields: [
+					TheStoryPointsField,
+					{ id: 12, displayName: FixVersions, reference: "fixVersions" },
+				],
+			});
+			const storyPoints = theRowOf(StoryPoints);
+			const fixVersions = theRowOf(FixVersions);
+			await whenPriyaEditsTheFieldIn(storyPoints, FixVersions, "fixVersions");
+			await whenPriyaEditsTheFieldIn(
+				fixVersions,
+				StoryPoints,
+				"customfield_10016",
+			);
+
+			whenPriyaPressesSave();
+
+			expect(
+				await theQuestion("Update 4 Teams and 2 Portfolios?"),
+			).toBeInTheDocument();
 		});
 
 		// @error @us-02 @contract-shape:unbounded-preservation

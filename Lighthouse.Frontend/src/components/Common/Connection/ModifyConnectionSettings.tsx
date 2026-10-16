@@ -108,11 +108,13 @@ function resolveValidationErrorMessage(
 	};
 }
 
-// A field is what it is called and where it is read from; its id and its place in the list say nothing
-// about what the Teams and Portfolios will load.
+// Stored values and rules are keyed by a field's id, so a field that comes back under a new id is a
+// change even when its name and reference are the same. The order of the list still does not matter.
 const whatTheFieldsLoad = (fields: IAdditionalFieldDefinition[]): string =>
 	fields
-		.map((field) => JSON.stringify([field.displayName, field.reference]))
+		.map((field) =>
+			JSON.stringify([field.id, field.displayName, field.reference]),
+		)
 		.sort((a, b) => a.localeCompare(b))
 		.join("\n");
 
