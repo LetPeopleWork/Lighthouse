@@ -10167,7 +10167,7 @@ one application service behind a port, the controller only maps; the service pub
 
 - **6303-I1: every reader of an owner setting reads the effective value.** The property readers use today returns
   `(source, own, default) → effective` from one pure function in `Models`; the own value is behind *follow* /
-  *own(value)* mutators with private setters (ADR-240). Connectors, selectors, `EstimateNormalizer`, metrics and
+  *own(value)* mutators with private setters (ADR-241). Connectors, selectors, `EstimateNormalizer`, metrics and
   `FetchFingerprint.For` keep their code.
 - **6303-I2: defaults never enter `FetchFingerprint.ForConnection`.** They reach the fingerprint only as a follower's
   effective value in its own `For` slot; `FetchShapingPropertyGuardTest` gains that third category.
@@ -10180,7 +10180,7 @@ one application service behind a port, the controller only maps; the service pub
   missed until its next scheduled update (accepted). Every save that changed a default
   writes one Information entry naming the connection, the changed defaults and their followers (names only; Serilog
   file, read in Settings → System Info → Logs, `SystemAdmin` only). **The PUT response is unchanged** and the page
-  still navigates to `/` (ADR-239 §3 stands). No after-save notice (ADR-241).
+  still navigates to `/` (ADR-239 §3 stands). No after-save notice (ADR-242).
 - **6303-I3a: a stale connection save cannot win or mislead.** The connection's existing concurrency token is applied
   before `Save()`; a stale one is refused with 409 `concurrency-conflict` (never retried), and nothing is queued or
   logged for it. A save without a token behaves as today: it is guarded only by the token value its own request read,
@@ -10188,7 +10188,7 @@ one application service behind a port, the controller only maps; the service pub
 - **6303-I3b: a connection PUT without `defaults` keeps every stored default.** The connection request carries the
   defaults as one nested `defaults` member, the connection-side counterpart of G-R1 (b) on owner PUTs. Absent keeps
   every stored default, so an old browser tab or a script that drops unknown properties cannot clear one; present is
-  authoritative, and a null inside it clears that default and is logged like any other changed default (ADR-241).
+  authoritative, and a null inside it clears that default and is logged like any other changed default (ADR-242).
 - **6303-I4: the browser asks before, with counts only, from slice 06.** The reused 6307 dialog reads follower counts
   from the connection list read it already makes: no dialog when nobody follows a changed default; the update question
   for a followed fetch-time default or an Additional Field change; plain Cancel / Save for Estimation-only (built in
@@ -10206,10 +10206,10 @@ one application service behind a port, the controller only maps; the service pub
   counterparts on the named end; ADO's relation-type listing is connector-local, asked only when a reference missed the
   field list, at most once per connection per Validate and per refresh, and remembered only for that call — never on
   the connector, which the factory caches per tracker and shares; a non-directional type reads nothing and warns
-  (ADR-242).
+  (ADR-243).
 - **6303-I8: refresh findings ride on the records to the `RefreshLog` row** (one nullable text column), at most one
   per kind per whole-query fetch; delta runs write none, and Refresh History shows the latest **full** run's findings
-  with its time (ADR-243).
+  with its time (ADR-244).
 - **6303-I9: no owner is switched to follow except by its own settings save.** An owner hand-set to the default's
   value stays *Own*; only a save of that owner (or its creation, D11) changes its source. A client that echoes a
   stale value without a source does switch a follower to *Own*: accepted, and mode-aware clients send the source.
@@ -10218,7 +10218,7 @@ one application service behind a port, the controller only maps; the service pub
 ### Component decomposition (headline)
 
 - **Backend:** EXTEND the owner settings (C1–C5) with a source column each and mutators; `WorkTrackingSystemConnection`
-  with flat nullable default columns (no FK, for the reasons in ADR-240); `WorkTrackingSystemConnectionController` PUT
+  with flat nullable default columns (no FK, for the reasons in ADR-241); `WorkTrackingSystemConnectionController` PUT
   as a mapper onto `IConnectionSaveService` (which replaces its `IDomainEventDispatcher`, so it stays at 7 constructor
   parameters); `IWorkTrackingSystemConnectionUsage` (follower counts); settings DTOs (nullable source, followed name);
   `DependencySourceSelector`; Jira `IssueExtensions` and connector; ADO connector and `WorkItemExtensions`;
@@ -10262,15 +10262,15 @@ feature helps anyone. `UsageDataEventName` is unchanged.
 
 ### ADR References (this feature)
 
-- [ADR-240](./adr-240-an-inherited-setting-is-its-own-value-plus-a-source-and-the-owner-answers-with-the-effective-value.md):
+- [ADR-241](./adr-241-an-inherited-setting-is-its-own-value-plus-a-source-and-the-owner-answers-with-the-effective-value.md):
   an inherited setting is the owner's own value plus a source; the owner answers with the effective value; values
   pointing at a deleted field are repaired at the upgrade. **Accepted 2026-10-16.**
-- [ADR-241](./adr-241-a-connection-save-queues-the-owners-whose-own-fetch-fingerprint-moved-and-says-who-follows.md):
+- [ADR-242](./adr-242-a-connection-save-queues-the-owners-whose-own-fetch-fingerprint-moved-and-says-who-follows.md):
   a connection save queues the owners whose own fetch fingerprint moved; the dialog counts the followers and one log
   entry names them. Narrows ADR-239 §1 and §8; §3 stands. **Accepted 2026-10-16.**
-- [ADR-242](./adr-242-a-dependency-field-may-name-a-link-type-read-as-a-third-source-of-the-dependency-selector.md):
+- [ADR-243](./adr-243-a-dependency-field-may-name-a-link-type-read-as-a-third-source-of-the-dependency-selector.md):
   a Dependency Field may name a link type, read as a third source of the dependency selector. **Accepted 2026-10-16.**
-- [ADR-243](./adr-243-refresh-findings-ride-on-the-records-and-land-on-the-refresh-log-row.md): refresh findings ride
+- [ADR-244](./adr-244-refresh-findings-ride-on-the-records-and-land-on-the-refresh-log-row.md): refresh findings ride
   on the records and land on the refresh log row. **Accepted 2026-10-16.**
 - Unchanged and relied on: ADR-140, ADR-167, ADR-193 §5, ADR-239 §3.
 

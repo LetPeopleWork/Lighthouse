@@ -1,4 +1,4 @@
-# ADR-242: A Dependency Field may name a link type, read as a third source of the dependency selector; ADO's relation-type lookup stays inside its adapter
+# ADR-243: A Dependency Field may name a link type, read as a third source of the dependency selector; ADO's relation-type lookup stays inside its adapter
 
 **Status**: Accepted (maintainer, 2026-10-16, DESIGN pass 2). Proposed by Morgan in pass 1; the maintainer confirmed
 D2 for Azure DevOps — a non-directional relation type or a base name without its end reads nothing and warns — and
@@ -93,4 +93,4 @@ default; no fallback.
 
 - [ADR-193](./adr-193-parent-source-is-a-declared-connector-capability.md) (§2, §3, §5 applied; §1 not).
 - [ADR-157](./adr-157-dependency-references-stored-on-the-feature.md).
-- [ADR-243](./adr-243-refresh-findings-ride-on-the-records-and-land-on-the-refresh-log-row.md) (where the findings go).
+- [ADR-244](./adr-244-refresh-findings-ride-on-the-records-and-land-on-the-refresh-log-row.md) (where the findings go).

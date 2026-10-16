@@ -1,4 +1,4 @@
-# ADR-241: A connection save queues the owners whose own fetch fingerprint moved, and says who follows
+# ADR-242: A connection save queues the owners whose own fetch fingerprint moved, and says who follows
 
 **Status**: Accepted (2026-10-16 — Morgan, DESIGN wave, PROPOSE, pass 2). Pass 1 proposed a save notice carried in
 the PUT response; the maintainer withdrew it. Who follows is now said by the pre-save dialog (counts) and one log
@@ -14,7 +14,7 @@ ADR-239 compares the connection's share of the fetch fingerprint, `FetchFingerpr
 a connection save, and queues **every** owner on the connection when it moved. It rejected comparing each owner's full
 `For()` as "same answer, at the cost of loading every owner before the merge".
 
-Connection defaults (ADR-240) change that. A default is connection data, but it must not enter `ForConnection`:
+Connection defaults (ADR-241) change that. A default is connection data, but it must not enter `ForConnection`:
 
 - `For` splices `ForConnection` into every owner's digest (`FetchFingerprint.cs:80-96`), so rendering a default there
   changes every stored fingerprint at the upgrade — a full download for every owner on release day.
@@ -215,5 +215,5 @@ role that can save a connection.
 
 - [ADR-239](./adr-239-a-connection-save-that-moves-the-fetch-fingerprint-starts-the-affected-updates.md) (§1 and §8
   narrowed; §3 stands).
-- [ADR-240](./adr-240-an-inherited-setting-is-its-own-value-plus-a-source-and-the-owner-answers-with-the-effective-value.md).
+- [ADR-241](./adr-241-an-inherited-setting-is-its-own-value-plus-a-source-and-the-owner-answers-with-the-effective-value.md).
 - [ADR-140](./adr-140-fetch-fingerprint-on-the-config-aggregate.md).

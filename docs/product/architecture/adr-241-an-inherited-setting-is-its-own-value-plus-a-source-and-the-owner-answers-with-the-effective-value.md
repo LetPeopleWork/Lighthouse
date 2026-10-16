@@ -1,11 +1,11 @@
-# ADR-240: An inherited setting is the owner's own value plus a source, and the owner answers with the effective value
+# ADR-241: An inherited setting is the owner's own value plus a source, and the owner answers with the effective value
 
 **Status**: Accepted (2026-10-16 — Morgan, DESIGN wave, interaction mode PROPOSE, pass 2; every *proposed* point of
 pass 1 accepted by the maintainer, and the upgrade rule for values naming a deleted field changed by them).
 **Feature**: `epic-6303-configure-once-per-connection` (ADO Epic #6303; Stories #6304, #6313)
 **Decider**: Morgan (Solution Architect); D9–D11, D16, D18 and G-R1 (b) are the maintainer's (DISCUSS, 2026-10-16)
 **Relationship to prior ADRs**: follows ADR-167's "nullable columns behind a paired mutator" over an owned type;
-keeps ADR-140's fingerprint on the config aggregate; ADR-241 decides how a changed default reaches the queue.
+keeps ADR-140's fingerprint on the config aggregate; ADR-242 decides how a changed default reaches the queue.
 
 ## Context
 
@@ -152,6 +152,6 @@ Facts from the code at `9d7086d77`:
 
 - [ADR-167](./adr-167-source-binding-as-nullable-columns-behind-a-paired-mutator.md): the columns-behind-mutators precedent.
 - [ADR-140](./adr-140-fetch-fingerprint-on-the-config-aggregate.md): the fingerprint this keeps stable.
-- [ADR-241](./adr-241-a-connection-save-queues-the-owners-whose-own-fetch-fingerprint-moved-and-says-who-follows.md):
+- [ADR-242](./adr-242-a-connection-save-queues-the-owners-whose-own-fetch-fingerprint-moved-and-says-who-follows.md):
   the fan-out, the save-time log entry and the pre-save dialog.
 - Full analysis: `docs/feature/epic-6303-configure-once-per-connection/feature-delta.md` (Wave: DESIGN).

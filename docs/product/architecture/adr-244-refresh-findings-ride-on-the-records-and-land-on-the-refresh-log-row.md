@@ -1,4 +1,4 @@
-# ADR-243: Refresh findings ride on the records and land on the refresh log row
+# ADR-244: Refresh findings ride on the records and land on the refresh log row
 
 **Status**: Accepted (maintainer, 2026-10-16, DESIGN pass 2; both the transport and the store as recommended).
 **Feature**: `epic-6303-configure-once-per-connection` (Stories #6300 slice 02, #6312 slices 03–04)
@@ -76,4 +76,4 @@ leaf adapters; ADR-183's interface header warns against making them reach into t
 ## Cross-reference
 
 - [ADR-238](./adr-238-several-link-candidates-are-placed-by-the-oldest-link-in-the-work-item-service.md).
-- [ADR-242](./adr-242-a-dependency-field-may-name-a-link-type-read-as-a-third-source-of-the-dependency-selector.md).
+- [ADR-243](./adr-243-a-dependency-field-may-name-a-link-type-read-as-a-third-source-of-the-dependency-selector.md).
