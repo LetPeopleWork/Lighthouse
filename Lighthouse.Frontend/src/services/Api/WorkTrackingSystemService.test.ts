@@ -726,5 +726,20 @@ describe("WorkTrackingSystemService", () => {
 				startUpdates: "false",
 			});
 		});
+
+		// @us-03 @driving_port @contract-shape:bounded-change
+		it("saving and updating leaves the server to start the updates now", async () => {
+			mockedAxios.put.mockResolvedValueOnce({ data: nordwindJiraDc });
+
+			await workTrackingSystemService.updateWorkTrackingSystemConnection(
+				nordwindJiraDc,
+				{ startUpdates: true },
+			);
+
+			expect(theStartUpdatesTheSaveAskedFor()).toEqual({
+				path: "/worktrackingsystemconnections/7",
+				startUpdates: null,
+			});
+		});
 	});
 });
