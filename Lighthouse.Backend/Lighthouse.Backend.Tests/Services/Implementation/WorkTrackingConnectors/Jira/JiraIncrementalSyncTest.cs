@@ -469,7 +469,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             await subject.GetWorkItemsForTeam(team, manyKeys, CancellationToken.None);
 
             Assert.That(jira.SearchRequests.Count() - requestsBefore, Is.EqualTo(2),
-                "250 key clauses in one GET is a URL no proxy is obliged to carry; the batch is chunked the way "
+                "250 keys are split so that one round trip asks for, and hands back, a bounded amount; the batch is chunked the way "
                 + "the Azure DevOps connector chunks its id list.");
         }
 
@@ -649,7 +649,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             await subject.GetFeaturesForProject(portfolio, manyKeys, CancellationToken.None);
 
             Assert.That(jira.SearchRequests.Count() - requestsBefore, Is.EqualTo(2),
-                "250 key clauses in one GET is a URL no proxy is obliged to carry; the batch is chunked the way "
+                "250 keys are split so that one round trip asks for, and hands back, a bounded amount; the batch is chunked the way "
                 + "the by-key Work Item fetch chunks its id list.");
         }
 
