@@ -675,11 +675,6 @@ describe("WorkTrackingSystemService", () => {
 			workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
 		};
 
-		type SavesWithAChoice = (
-			connection: IWorkTrackingSystemConnection,
-			choice: { startUpdates: boolean },
-		) => Promise<IWorkTrackingSystemConnection>;
-
 		const theStartUpdatesTheSaveAskedFor = () => {
 			const [url, , config] = mockedAxios.put.mock.calls[0] as [
 				string,
@@ -715,11 +710,10 @@ describe("WorkTrackingSystemService", () => {
 		it("saving only asks the server to leave the updates to their next scheduled run", async () => {
 			mockedAxios.put.mockResolvedValueOnce({ data: nordwindJiraDc });
 
-			await (
-				workTrackingSystemService.updateWorkTrackingSystemConnection as SavesWithAChoice
-			).call(workTrackingSystemService, nordwindJiraDc, {
-				startUpdates: false,
-			});
+			await workTrackingSystemService.updateWorkTrackingSystemConnection(
+				nordwindJiraDc,
+				{ startUpdates: false },
+			);
 
 			expect(theStartUpdatesTheSaveAskedFor()).toEqual({
 				path: "/worktrackingsystemconnections/7",

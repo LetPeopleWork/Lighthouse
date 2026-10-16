@@ -11,6 +11,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import type { ISaveConnectionChoice } from "../../../services/Api/WorkTrackingSystemService";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
 import {
 	createMockApiServiceContext,
@@ -108,9 +109,6 @@ const SquadsAndPrograms: Words = {
 	portfolio: "Program",
 	portfolios: "Programs",
 };
-
-/** How the page asks the server to save and leave the updates to their next scheduled run. */
-type SaveChoice = { startUpdates?: boolean };
 
 const nordwindJiraDc = (usedBy: UsedBy, fields: Field[]) =>
 	Object.assign(
@@ -335,7 +333,7 @@ const theChoiceTheSaveCarried = (
 	(
 		vi.mocked(server.updateWorkTrackingSystemConnection).mock
 			.calls[0] as unknown[]
-	)[1] as SaveChoice | undefined;
+	)[1] as ISaveConnectionChoice | undefined;
 
 const thenSheIsBackOnTheOverview = () =>
 	waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/"));
