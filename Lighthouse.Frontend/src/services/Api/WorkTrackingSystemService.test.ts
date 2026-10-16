@@ -661,7 +661,7 @@ describe("WorkTrackingSystemService", () => {
 	// The connection page asks whether to update the Teams and Portfolios on a connection
 	// whose Additional Fields changed, so it needs to know how many there are, and to be able to save
 	// while leaving their updates to the next scheduled run.
-	describe("Story #6307 - pending DELIVER", () => {
+	describe("what the question after an Additional Fields change needs from the server", () => {
 		const nordwindJiraDc: IWorkTrackingSystemConnection = {
 			id: 7,
 			name: "Nordwind Jira DC",
