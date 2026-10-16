@@ -57,7 +57,7 @@ const relativeToSource = (path: string): string =>
 
 describe("one staleness rule, and it is Lighthouse's", () => {
 	// @kpi @contract-shape:unbounded-preservation
-	it.skip("the browser's copy of the rule is gone", () => {
+	it("the browser's copy of the rule is gone", () => {
 		const stillNamingIt = shippedSourceFiles(sourceRoot)
 			.filter((path) => readFileSync(path, "utf8").includes(THE_DELETED_RULE))
 			.map(relativeToSource);
@@ -66,7 +66,7 @@ describe("one staleness rule, and it is Lighthouse's", () => {
 	});
 
 	// @kpi @contract-shape:unbounded-preservation
-	it.skip("nothing in the app compares days with a staleness threshold", () => {
+	it("nothing in the app compares days with a staleness threshold", () => {
 		const offenders = shippedSourceFiles(sourceRoot)
 			.map(relativeToSource)
 			.filter((path) => !ALLOWED.includes(path))
