@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using System.Text.Json.Nodes;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
@@ -200,6 +201,34 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
+        [Test]
+        public async Task GetConnection_ReadById_SaysNothingAboutWhoUsesIt()
+        {
+            client.AsSystemAdmin();
+
+            var connection = await GetConnection(healthyConnectionId);
+
+            Assert.That(PropertyNames(connection), Does.Not.Contain("usedBy"));
+        }
+
+        [Test]
+        public async Task UpdateConnection_BodyStillCarriesWhoUsesIt_SavesAndAnswersWithoutIt()
+        {
+            client.AsSystemAdmin();
+            var body = await GetConnection(healthyConnectionId);
+            body["usedBy"] = new JsonObject { ["teams"] = 99, ["portfolios"] = 99 };
+
+            using var content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
+            var response = await client.PutAsync($"/api/latest/worktrackingsystemconnections/{healthyConnectionId}", content);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), responseBody);
+                Assert.That(PropertyNames(JsonNode.Parse(responseBody)!.AsObject()), Does.Not.Contain("usedBy"));
+            }
+        }
+
         private static IEnumerable<Action<HttpClient>> RolesBelowSystemAdmin =>
         [
             c => c.AsViewer(),
@@ -215,6 +244,16 @@ namespace Lighthouse.Backend.Tests.API.Integration
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
 
             return JsonNode.Parse(body)!.AsArray();
+        }
+
+        private async Task<JsonObject> GetConnection(int connectionId)
+        {
+            var response = await client.GetAsync($"/api/latest/worktrackingsystemconnections/{connectionId}");
+            var body = await response.Content.ReadAsStringAsync();
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+
+            return JsonNode.Parse(body)!.AsObject();
         }
 
         private static IEnumerable<string> PropertyNames(JsonObject jsonObject)
