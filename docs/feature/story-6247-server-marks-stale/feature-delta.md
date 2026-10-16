@@ -209,3 +209,84 @@ D6 the event uses the same rule; D7 clients + DFR in scope, last slice; D8 days 
 the clock seam for the zone, keep or remove `WorkItemBecameStale` / `WasStaleAtLastSync`.
 
 **Upstream changes:** none against DISCOVER (none exists). Resolves `story-6217-lighthouse-skills` G4.
+
+---
+
+## Wave: DESIGN / [REF] Scope and mode
+
+Application scope, PROPOSE mode (maintainer, 2026-10-16). Architect: Morgan (`nw-solution-architect`). Every
+recommended option taken in AFK mode; none changes what a user sees. ADR-240 (Proposed).
+
+## Wave: DESIGN / [REF] Decisions
+
+| ID | Decision |
+|---|---|
+| DDD-1 | **One pure domain policy** `Models/Staleness/StalenessPolicy` (`For(owner)`, `Evaluate(candidate, zone, asOfDay) → StalenessVerdict(IsStale, Reasons)`). No clock dependency; zone and day passed as values. Rejected: a `WorkItemBase` method (cannot judge a Feature's past state on the Portfolio read), an `IStalenessService` port (ceremony over pure arithmetic). |
+| DDD-2 | **Semantics = DISCUSS D4**, plus the context reason `TimeInStateWhileBlocked` (Blocked and past time in state; does not make the item stale). |
+| DDD-3 | **Days** = `asOfDay − InstanceCalendar.DayOf(enteredAt, zone) + 1`, minimum 1 — the Work Item Age arithmetic (`WorkItemBase.cs:160`, browser `age.ts:24-27`), so D4's boundaries keep their meaning. `asOfDay = DateOnly.FromDateTime(asOfDate)`. Blocked days use the same arithmetic on the `blockedSince` the read already resolves; null `blockedSince` → no blocked-duration reason. |
+| DDD-4 | **Reads that carry it**: only `GET teams/{id}/metrics/wip` (Team thresholds) and `GET portfolios/{id}/metrics/wip` (Portfolio thresholds, `FeatureDto : WorkItemDto`). Every Stale surface — Stale count/RAG, Stale and WIP dialogs, aging dots and its dialog, aging-pace data — reads `inProgressItems` from these. Evaluated on the DTO's resolved fields after the as-of projection. |
+| DDD-5 | **Not carried** by `blockedItemsAtDate` (spans To Do, no time-in-state column), Team `featuresInProgress` and Feature child items (owner ambiguous, no Stale UI), cycle-time / run-chart / size / SLE-risk reads. |
+| DDD-6 | **Wire**: `isStale: bool?`, `staleReasons: StaleReasonDto[]?` with `{ kind, days, stateName? }`, all `[JsonIgnore(WhenWritingNull)]` — absent means "Lighthouse does not say". `StaleReasonKind { TimeInState, BlockedDuration, TimeInStateWhileBlocked }` serialises PascalCase via the global `JsonStringEnumConverter`; TS mirrors it as a string union, never a numeric enum. |
+| DDD-7 | **DTO wiring without a new ctor parameter** (the ctor already carries an S107 suppression): the two WIP projections set the verdict after construction through one narrow method on `WorkItemDto`. |
+| DDD-8 | **Sync-time event on the same policy**: inject `ILighthouseClock` into `WorkItemService`, evaluate with `clock.Today` and `blockedItemService.IsBlocked`, blockedSince = `CurrentStateEnteredAt` when blocked (as the live read does). `ThresholdDays` = the threshold of the reason that fired. Keep `WorkItemBecameStale` and `WasStaleAtLastSync` (removal leaves a dead column; dropping it is not expand-only). |
+| DDD-9 | **Frontend**: `IWorkItem` gains `isStale?` / `staleReasons?`; aging chart, `TimeInStateBadge` (tooltip formats the server reasons as today: `Blocked 6d`, `12d in Review`), dialog columns and `BaseMetricsView` read them; threshold props for staleness dropped; `utils/staleness/` deleted. `hasStaleConfig` and the Blocked RAG keep reading thresholds from settings. |
+| DDD-10 | **Clients**: `client/metricsWording.ts` `InProgressItem` gains the fields; unknown reason kinds are dropped, never fail the item; `describeStaleNow` beside `describeBlockedNow`; `describeWhatWipLeavesUnsaid` says when Lighthouse does not say which are Stale. mcp-core `summariseCurrentWip`, cli `headlineLines`, both WIP tool descriptions. `FEATURE_REQUIRES_SERVER_NEWER_THAN.staleness` documents the gate; runtime falls back on field presence (as `isBlocked`). DFR SKILL.md: step 3 lists the fields, a Stale decision after Blocked (no duplicates), a "Stale unknown" bullet, calm-day rule, evals. Contract fixture test pins the wire shape. |
+| DDD-11 | **Guards**: ArchUnitNET — `Models.Staleness` depends on nothing in `Services`/`API`. Vitest — nothing in `src/` compares days against a staleness threshold (allow-list `hasStaleConfig` and the Blocked RAG), making `OUT-one-stale-rule` executable. |
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Existing | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `deriveStaleness` | `Lighthouse.Frontend/src/utils/staleness/deriveStaleness.ts` | the whole rule | DELETE (semantics ported) | D3 |
+| `WorkItemService.IsStale` | `Services/Implementation/WorkItems/WorkItemService.cs:486` | second rule | REPLACE with the policy | D6 |
+| `InstanceCalendar`, `WorkItemBase.AgeOnDay` | `Models/InstanceCalendar.cs`, `Models/WorkItemBase.cs` | day reduction, +1 | REUSE | D8 parity with Work Item Age |
+| `WorkItemDto` | `API/DTO/WorkItemDto.cs` | resolved snapshot fields | EXTEND, additive | single wire home |
+| `IBlockedItemService` | `IBlockedItemService.cs` | is-blocked decision | REUSE | the one blocked authority |
+| `StalenessPolicy` | — | none | CREATE NEW | no owner-level pure policy exists; pure-function contract |
+| Blocked pass-through | `lighthouse-clients/packages/client/src/metricsWording.ts` | absence semantics | EXTEND | same compatibility model |
+
+## Wave: DESIGN / [REF] Component decomposition
+
+| Path | Change |
+|---|---|
+| `Lighthouse.Backend/Lighthouse.Backend/Models/Staleness/` (`StalenessPolicy`, `StalenessVerdict`, `StaleReasonKind`) | NEW |
+| `API/DTO/WorkItemDto.cs`, `API/DTO/StaleReasonDto.cs` | EXTEND / NEW |
+| `API/TeamMetricsController.cs` (`wip`), `API/PortfolioMetricsController.cs` (`wip`) | EXTEND |
+| `Services/Implementation/WorkItems/WorkItemService.cs` | MODIFY (clock, policy) |
+| `Models/Events/WorkItemBecameStale.cs` | KEEP (semantics change) |
+| Frontend `models/WorkItem.ts`, `TimeInStateBadge.tsx`, `WorkItemAgingChart.tsx`, `WorkItemsDialog.tsx`, `workItemColumns.tsx`, `BaseMetricsView.tsx` | MODIFY |
+| Frontend `utils/staleness/*` | DELETE |
+| Clients `client/src/metricsWording.ts`, `client/src/index.ts`, `mcp-core/src/index.ts`, `cli/src/metricsOutput.ts`, `skills/lighthouse-daily-flow-review/` | MODIFY |
+| `docs/product/architecture/adr-240-…md`, `brief.md` section | NEW / EXTEND |
+
+## Wave: DESIGN / [REF] Driving and driven ports
+
+- Driving: the two WIP HTTP reads (+ `asOfDate`); the sync pipeline (`WorkItemService` update cycle).
+- Driven: none new. The in-process domain event dispatcher (existing) for `WorkItemBecameStale`.
+
+## Wave: DESIGN / [REF] Loading and failure looks
+
+**N/A, because** no view is new and none fetches anything new: the Stale signals arrive on the WIP read the widgets
+already wait for, under their existing `WidgetShell` status. A slow or failed WIP read looks exactly as today.
+
+## Wave: DESIGN / [REF] Technology
+
+No change: .NET 10 / EF Core, React 18 + TypeScript, clients TypeScript. OOP backend per `CLAUDE.md`.
+
+## Wave: DESIGN / [REF] Open questions for DISTILL / DELIVER
+
+- Pin: an omitted `asOfDate` binds `DateTime.MinValue` and returns an empty snapshot (`TeamMetricsController.cs:140`); a future `asOfDate` is not clamped. Pin current behaviour; do not change it here.
+- Verify the WIP query is refetched after a thresholds save (else a threshold edit shows late, weakening ADR-026's DDD-8).
+- Which released Lighthouse version the clients' `staleness` gate names — set when slice 01 ships.
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+- DISCUSS US-03 says the skill uses "the instance's term for Stale". **There is no Terminology key for Stale**
+  (`TerminologySeeder.cs` has `blocked`, not `stale`; clients `terminology.ts` likewise). New assumption: the literal
+  "Stale", as the dashboard shows it (`BaseMetricsView.tsx:706`). No user-visible change from today.
+- DISCUSS D1 left "any other read the UI shows a Stale badge on" to DESIGN: the inventory finds none beyond the two
+  WIP reads (DDD-4/5).
+
+## Wave: DESIGN / [REF] Handoff
+
+DEVOPS skipped by the maintainer (2026-10-16) → DISTILL.

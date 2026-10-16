@@ -10146,3 +10146,42 @@ reacts by enqueuing through the existing updaters.
 - [ADR-239](./adr-239-a-connection-save-that-moves-the-fetch-fingerprint-starts-the-affected-updates.md): a connection
   save that moves the fetch fingerprint starts the affected updates. **Accepted 2026-10-16.**
 - Amended: ADR-030 (not applied to connection saves), ADR-140 (the passive connection fan-out, for saves through the PUT).
+
+## Application Architecture — story-6247-server-marks-stale
+
+Feature: story-6247-server-marks-stale (ADO User Story #6247) · Wave: DESIGN · 2026-10-16 · Morgan, PROPOSE mode
+
+Staleness is decided once, in a pure domain policy (`Models/Staleness/StalenessPolicy`), and both the Team and
+Portfolio WIP reads and the sync-time `WorkItemBecameStale` event call it. The browser's `deriveStaleness` is
+deleted; the frontend, `lh`, the MCP tools and the Daily Flow Review read `isStale` / `staleReasons` from
+`GET …/metrics/wip`. No new container, endpoint, table or migration.
+
+```mermaid
+C4Container
+  title Staleness after story 6247
+  Person(coach, "Flow coach")
+  System_Boundary(lh, "Lighthouse") {
+    Container(spa, "React SPA", "TypeScript", "Renders Stale badges, dots and count from the WIP read")
+    Container(api, "Lighthouse API", "ASP.NET Core", "WIP reads evaluate StalenessPolicy as of asOfDate; sync raises WorkItemBecameStale with the same policy")
+    ContainerDb(db, "Database", "EF Core", "Thresholds on the owner; CurrentStateEnteredAt, WasStaleAtLastSync on the Work Item")
+  }
+  System_Ext(clients, "lh CLI / MCP servers", "Pass isStale + staleReasons through; Daily Flow Review skill reads them")
+  Rel(coach, spa, "Reads the Flow Overview")
+  Rel(coach, clients, "Asks for the Daily Flow Review")
+  Rel(spa, api, "GET teams|portfolios/{id}/metrics/wip")
+  Rel(clients, api, "GET teams|portfolios/{id}/metrics/wip")
+  Rel(api, db, "Reads")
+```
+
+Invariants:
+
+- `StalenessPolicy` depends on nothing in `Services` or `API` (ArchUnitNET guard).
+- Nothing in `Lighthouse.Frontend/src` compares days in state or blocked days against a staleness threshold (Vitest
+  guard); the thresholds are read only for the "is a threshold set" check and the Blocked RAG.
+- `isStale` / `staleReasons` are omitted on reads that do not evaluate staleness.
+
+### ADR References (this feature)
+
+- [ADR-240](./adr-240-lighthouse-decides-staleness-once-on-the-server.md): Lighthouse decides staleness once, on the
+  server, and says why. **Proposed 2026-10-16.**
+- Superseded: ADR-026's placement of the rule in the browser. Amended: ADR-070.
