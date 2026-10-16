@@ -599,9 +599,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                 .Returns<HttpRequestMessage, CancellationToken>(
                     (request, _) => Task.FromResult(AnAnswerTo(
                         request.RequestUri?.AbsolutePath ?? string.Empty,
-                        Uri.UnescapeDataString(request.RequestUri?.Query ?? string.Empty))));
+                        WhatTheRequestAsksFor(request))));
 
             return mock.Object;
+        }
+
+        /// <summary>The query string, or the search's jql when the query travels in the body instead.</summary>
+        private static string WhatTheRequestAsksFor(HttpRequestMessage request)
+        {
+            var query = Uri.UnescapeDataString(request.RequestUri?.Query ?? string.Empty);
+
+            return query.Length > 0 ? query : SearchBody.ValueIn(JiraConnectorTestSetup.BodyOf(request), "jql");
         }
 
         private HttpResponseMessage AnAnswerTo(string path, string query)

@@ -2,6 +2,7 @@ using Moq;
 using Moq.Protected;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {
@@ -51,37 +52,54 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     /// </summary>
     public sealed class RecordedRequests
     {
-        private readonly List<string> urls = [];
-        private readonly List<string> bodies = [];
+        private readonly List<RecordedRequest> requests = [];
 
-        public IReadOnlyList<string> Urls => urls;
+        public IReadOnlyList<string> Urls => [.. requests.Where(request => request.Url is not null).Select(request => request.Url!)];
 
-        public IReadOnlyList<string> Bodies => bodies;
+        public IReadOnlyList<string> Bodies => [.. requests.Select(request => request.Body)];
 
-        public IReadOnlyList<string> Paths => urls.ConvertAll(url => new Uri(url).AbsolutePath);
+        public IReadOnlyList<string> Paths => [.. Urls.Select(url => new Uri(url).AbsolutePath)];
 
-        /// <summary>The last request whose path names a search - the one carrying the field list.</summary>
-        public string LastSearchUrl
+        /// <summary>The field list the last search asked for, comma-joined, read out of that search's body.</summary>
+        public string FieldsAskedForInTheLastSearch()
         {
-            get
-            {
-                var searches = urls.FindAll(url => url.Contains("/search", StringComparison.Ordinal));
+            var lastSearch = requests.FindLast(request => request.Url?.Contains("/search", StringComparison.Ordinal) == true);
 
-                return searches[searches.Count - 1];
-            }
+            return lastSearch is null ? string.Empty : SearchBody.ValueIn(lastSearch.Body, "fields");
         }
 
-        public string FieldsAskedForInTheLastSearch()
-            => System.Web.HttpUtility.ParseQueryString(new Uri(LastSearchUrl).Query)["fields"] ?? string.Empty;
-
         public void Record(HttpRequestMessage request, string body)
+            => requests.Add(new RecordedRequest(request.RequestUri?.AbsoluteUri, body));
+
+        private sealed record RecordedRequest(string? Url, string Body);
+    }
+
+    /// <summary>
+    /// Reads one parameter out of the json body a Jira search was sent with. A list reads back comma-joined
+    /// and a number as its digits, and a body without the parameter reads back empty.
+    /// </summary>
+    public static class SearchBody
+    {
+        public static string ValueIn(string body, string name)
         {
-            if (request.RequestUri is not null)
+            if (string.IsNullOrWhiteSpace(body))
             {
-                urls.Add(request.RequestUri.AbsoluteUri);
+                return string.Empty;
             }
 
-            bodies.Add(body);
+            using var json = JsonDocument.Parse(body);
+
+            if (json.RootElement.ValueKind != JsonValueKind.Object || !json.RootElement.TryGetProperty(name, out var value))
+            {
+                return string.Empty;
+            }
+
+            return value.ValueKind switch
+            {
+                JsonValueKind.Array => string.Join(",", value.EnumerateArray().Select(entry => entry.ToString())),
+                JsonValueKind.String => value.GetString() ?? string.Empty,
+                _ => value.GetRawText(),
+            };
         }
     }
 }

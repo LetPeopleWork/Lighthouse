@@ -56,8 +56,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         public abstract JiraDeployment Deployment { get; }
 
         /// <summary>
-        /// Cloud's is read with a query string and paged by token; Data Center's takes a json body and is
-        /// paged by offset.
+        /// Both take their parameters in a json body. Cloud's is paged by token, Data Center's by offset.
         /// </summary>
         public abstract string Search { get; }
 

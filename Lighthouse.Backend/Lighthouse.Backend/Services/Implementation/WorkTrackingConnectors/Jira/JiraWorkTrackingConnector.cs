@@ -16,6 +16,7 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Lighthouse.Backend.Extensions;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
@@ -51,15 +52,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private const string SweepFields = "key,updated";
 
         /// <summary>
-        /// Data Center's search takes the same parameters in a json body as it does in a query string, which is
-        /// the only way to ask it for a query longer than a request line holds. Its bundled Tomcat refuses a
-        /// request line over 8 KB with a bare 400, and nothing on the way to the request knows how long the one
-        /// it is about to make is - a chunk bounds how many keys are asked for, never how many bytes they cost.
-        /// The two differences from the query string: expand and fields are lists rather than comma-joined text.
+        /// Both deployments are searched with the parameters in a json body, which is the only way to ask for a
+        /// query longer than a request line holds: Data Center's bundled Tomcat refuses a request line over 8 KB
+        /// with a bare 400, and Jira Cloud answers 414. The two bodies still differ in shape. Data Center reads
+        /// expand as a list and Cloud reads it as one comma-joined string, and Cloud is paged by token where
+        /// Data Center is paged by offset.
         /// </summary>
         private static readonly string DataCenterSearchPath = JiraRestRoutes.For(JiraDeployment.DataCenter).Search;
 
+        private static readonly string CloudSearchPath = JiraRestRoutes.For(JiraDeployment.Cloud).Search;
+
         private static readonly string[] TheChangelogAsWell = ["changelog"];
+
+        private const string CloudChangelogExpansion = "changelog";
+
+        // A first page has no token and a sweep wants no expansion. Leaving both out of the body, rather than
+        // sending null, is what Cloud accepts on every page.
+        private static readonly JsonSerializerOptions CloudSearchBodyOptions =
+            new() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
 
         private const int MaxCloudSearchPages = 100;
 
@@ -268,9 +278,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var issues = new List<Issue>();
 
-            // A changed set can run to thousands of keys, and every key is another OR clause in a URL that has
-            // to survive whatever proxy sits in front of Jira - chunked the way the Azure DevOps connector
-            // chunks its id list.
+            // A changed set can run to thousands of keys. The query rides in the body on both deployments, so
+            // the chunk only bounds how much one round trip asks for and hands back.
             foreach (var chunk in referenceIds.Chunk(ReferenceIdsPerQuery))
             {
                 // Chunking is paging by another name - each chunk is its own round trip - so it is a
@@ -337,8 +346,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var issues = new List<Issue>();
 
-            // Chunked exactly like the by-key Work Item fetch: every key is another OR clause in a URL that has
-            // to survive whatever proxy sits in front of Jira.
+            // Chunked exactly like the by-key Work Item fetch, to bound how much one round trip asks for and
+            // hands back.
             foreach (var chunk in referenceIds.Chunk(ReferenceIdsPerQuery))
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -362,8 +371,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var issues = new List<Issue>();
 
-            // Same reason the sweep half chunks: each key is another OR clause, and this fetch also asks for
-            // expand=changelog, so an unsplit list is the longest URL the connector builds.
+            // Chunked like the sweep half, and for more reason: this fetch also asks for the changelog, so an
+            // unsplit list would be the largest answer the connector asks for in one round trip.
             foreach (var chunk in keys.Chunk(ReferenceIdsPerQuery))
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -2370,23 +2379,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 // in rather than after the whole result set, which on a large team is minutes away.
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var url = new StringBuilder(JiraRestRoutes.For(JiraDeployment.Cloud).Search).Append('?');
-                url.Append("jql=").Append(Uri.EscapeDataString(request.Jql));
-                url.Append("&fields=").Append(Uri.EscapeDataString(request.Fields));
-
-                if (request.ExpandChangelog)
+                var payload = JsonSerializer.Serialize(new
                 {
-                    url.Append("&expand=changelog");
-                }
+                    jql = request.Jql,
+                    fields = request.Fields.Split(','),
+                    expand = request.ExpandChangelog ? CloudChangelogExpansion : null,
+                    maxResults = request.PageLimit,
+                    nextPageToken = string.IsNullOrEmpty(nextPageToken) ? null : nextPageToken,
+                }, CloudSearchBodyOptions);
 
-                url.Append("&maxResults=").Append(request.PageLimit);
-
-                if (!string.IsNullOrEmpty(nextPageToken))
-                {
-                    url.Append("&nextPageToken=").Append(Uri.EscapeDataString(nextPageToken));
-                }
-
-                var response = await client.GetAsync(url.ToString(), cancellationToken);
+                var response = await client.PostAsync(CloudSearchPath, AsJson(payload), cancellationToken);
                 var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
                 if (!response.IsSuccessStatusCode)

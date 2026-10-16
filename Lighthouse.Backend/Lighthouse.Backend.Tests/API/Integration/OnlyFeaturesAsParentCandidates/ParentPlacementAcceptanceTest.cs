@@ -563,7 +563,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
             var query = request.RequestUri?.Query ?? string.Empty;
             var jql = query.TrimStart('?').Split('&').FirstOrDefault(part => part.StartsWith("jql=", StringComparison.Ordinal)) ?? string.Empty;
 
-            return Uri.UnescapeDataString(jql.Length > 4 ? jql[4..] : JiraConnectorTestSetup.BodyOf(request));
+            return jql.Length > 4
+                ? Uri.UnescapeDataString(jql[4..])
+                : SearchBody.ValueIn(JiraConnectorTestSetup.BodyOf(request), "jql");
         }
 
         private List<AnIssueOnTheTracker> TheIssuesAskedForBy(string jql)
