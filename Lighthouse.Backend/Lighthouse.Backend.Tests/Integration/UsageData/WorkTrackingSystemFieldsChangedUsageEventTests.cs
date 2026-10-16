@@ -103,6 +103,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // beside it, it is refused.
         [TestCase("")]
         [TestCase(",\"updates\":\"Soon\"")]
+        [TestCase(",\"updates\":7")]
         [TestCase(",\"updates\":\"Now\",\"reportTemplate\":\"ThenAndNow\"")]
         [TestCase(",\"updates\":\"Later\",\"workTrackingSystem\":\"Jira\"")]
         [TestCase(",\"updates\":\"Now\",\"route\":\"TeamDetail_Metrics\"")]

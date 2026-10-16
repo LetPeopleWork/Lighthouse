@@ -69,8 +69,9 @@ None.
 - `UsageDataController.cs:200`, the refusal of an `updates` value outside the list. Every mutant of
   the validation condition is a compile error, because its later `is not { } offset` patterns must be
   definitely assigned, so Stryker cannot test any part of it. This holds for the older enum checks beside
-  it as well. No unit test sends an out-of-range number for `updates`. The acceptance suite sends
-  an unknown name (`"Soon"`), and the JSON reader refuses that before this check runs.
+  it as well. The acceptance suite's unknown name (`"Soon"`) is refused by the JSON reader before this
+  check runs, so an out-of-range number (`"updates":7`) was added to the same refusal test after the run:
+  with the `updates` check deleted that case fails (1 of 12), with it restored all 12 pass.
 - `PostHogUsageDataPublisher.cs:208` and `:276`: passing `Updates?.ToString()` along and declaring the
   `updates` property. Stryker has no mutator for either.
 - The new log call in `ConnectionFetchShapeChangedUpdateTriggerHandler` and the `Count` arguments it
