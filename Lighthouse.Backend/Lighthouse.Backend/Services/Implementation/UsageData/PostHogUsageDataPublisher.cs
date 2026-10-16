@@ -239,18 +239,17 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         /// switched and which way it went; when a sizing vote was cast relative to the Team's
         /// Refinement; which verdict a Refinement day showed; which type of report was created or
         /// opened; whether a connection's updates run now or later after its fields were changed; the
-        /// four facts about the instance,
-        /// none of which the browser is ever asked for; which surface the batch came from, written on
-        /// every message so a count can always be split by it; and the two instructions that keep the
-        /// caller's own address out of what the collector stores.
+        /// four facts about the instance, none of which the browser is ever asked for; which surface
+        /// the batch came from, written on every message so a count can always be split by it; and the
+        /// two instructions that keep the caller's own address out of what the collector stores.
         ///
         /// The address, the kind of system, the setting, its direction, the sizing moment, the
-        /// verdict, the report type and when the updates run are each left out entirely on an event they
-        /// do not belong to, rather than written
-        /// as an empty value or as off - an "enabled: false" on an event that switched nothing would
-        /// read as a switch nobody made. The two instructions below are also empty-looking and are written
-        /// anyway, on purpose: an absent instruction is one the collector does not follow, and what
-        /// it would not follow is the instruction to throw away the caller's own address.
+        /// verdict, the report type and when the updates run are each left out entirely on an event
+        /// they do not belong to, rather than written as an empty value or as off - an
+        /// "enabled: false" on an event that switched nothing would read as a switch nobody made. The
+        /// two instructions below are also empty-looking and are written anyway, on purpose: an absent
+        /// instruction is one the collector does not follow, and what it would not follow is the
+        /// instruction to throw away the caller's own address.
         /// </summary>
         private sealed record WhatEachMessageCarries(
             [property: JsonPropertyName("route")]
