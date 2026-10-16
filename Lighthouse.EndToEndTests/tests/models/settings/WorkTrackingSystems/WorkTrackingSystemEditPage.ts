@@ -34,6 +34,33 @@ export class WorkTrackingSystemEditPage {
 		return this.page.getByRole("button", { name: "Save" });
 	}
 
+	/** The section where a connection holds what its Teams and Portfolios read unless they set their own. */
+	get defaultsSection(): Locator {
+		return this.page.getByRole("region", {
+			name: "Defaults for Teams and Portfolios",
+		});
+	}
+
+	async setTheTeamsEstimationDefault(
+		field: string,
+		unit: string,
+	): Promise<void> {
+		const teams = this.defaultsSection.getByRole("group", { name: "Teams" });
+		await teams.getByRole("combobox", { name: "Estimation Field" }).click();
+		await this.page.getByRole("option", { name: field, exact: true }).click();
+		await teams.getByRole("textbox", { name: "Estimation Unit" }).fill(unit);
+	}
+
+	/** Saves, and answers the question the page asks before saving with "Save". */
+	async saveAnswering(question: string): Promise<OverviewPage> {
+		await this.createButton.click();
+		const dialog = this.page.getByRole("dialog", { name: question });
+		await dialog.getByRole("button", { name: "Save", exact: true }).click();
+		await dialog.waitFor({ state: "detached" });
+
+		return new OverviewPage(this.page, new LighthousePage(this.page));
+	}
+
 	get reconnectBanner(): Locator {
 		return this.page.getByText(
 			"Reconnect required — the OAuth refresh token is no longer valid",

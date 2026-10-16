@@ -129,6 +129,14 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 		await this.waitForChangesSaved();
 	}
 
+	/** What the Estimation Field shows, once its section is open. */
+	async getSelectedEstimation(): Promise<string> {
+		await this.page
+			.getByRole("heading", { name: "Estimation", exact: true })
+			.click();
+		return (await this.estimationFieldCombobox.textContent()) ?? "";
+	}
+
 	async hasSaveButton(): Promise<boolean> {
 		return this.saveButton.isVisible();
 	}

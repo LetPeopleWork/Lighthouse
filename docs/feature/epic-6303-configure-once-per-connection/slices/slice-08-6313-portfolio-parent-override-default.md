@@ -1,7 +1,8 @@
 # Slice 08 — Story 6313 — The Portfolios' Parent Override Field is set once
 
 **ADO**: Story #6313 (Epic #6303) · **User story**: US-07 · **Estimate**: ~0.5 day · **Depends on**: finished #6304 (05a – 06, D19)
-**Release point**: yes — each #6313 slice completes one setting and can be released on its own (L8).
+**Release point**: no — #6313 releases after slice 12, its last slice (L8). Alone, this slice completes one setting
+and leaves `main` releasable.
 **Locked decisions**: D8 (separate from the Teams' default), D9–D13, D21
 
 ## Goal
@@ -33,7 +34,7 @@ Disproves "Portfolios on a connection share their parent link" if dogfood Portfo
 then few follow the default.
 
 ## Production data / dogfood
-Dev instance's Portfolios on the Jira connection; Steve's customer's configuration when shared.
+Dev instance's Portfolios on the Jira connection; the reporting customer's configuration when shared.
 
 ## Acceptance criteria
 AC-7.1 – AC-7.5; AC-F.1 – AC-F.5 (save dialog count and log entry); AC-4.4 and AC-4.8 – AC-4.10 at Portfolio grain.

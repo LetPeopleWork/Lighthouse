@@ -16,9 +16,11 @@ building only on finished earlier ones (D19):
 
 **Feature type**: cross-cutting (Jira and Azure DevOps connectors, configuration aggregates, settings UI, sync
 fingerprint).
-**Waves present**: DISCUSS. DISCOVER and DIVERGE skipped by explicit maintainer decision.
-**State of `main` read**: `897950cb9` (2026-10-16). Pass 1 drafted; pass 2 applied the maintainer's decisions;
-pass 3 applies the Story regrouping and the product-owner review (verdict: rejected pending revisions).
+**Waves present**: DISCUSS, DESIGN, DEVOPS and DISTILL. DISCOVER and DIVERGE skipped by explicit maintainer
+decision.
+**State of `main` read**: `897950cb9` (2026-10-16). DISCUSS ran in three passes (draft, the maintainer's decisions,
+the Story regrouping and the product-owner review); its Definition of Ready is READY after DESIGN (see Definition
+of Ready).
 
 ---
 
@@ -227,7 +229,8 @@ Maintainer decisions of 2026-10-16 (OD-n refers to pass 1's open decision), plus
 - **D21 — The defaults group offers only the settings the connection's tracker honours (m7).** Per the table
   above: five on Jira and Azure DevOps, Feature Owner and Estimation on CSV; hidden on Linear and ServiceNow.
 - **D22 — Slice 05 splits into 05a and 05b now (M4).** 05a: the mechanism end to end for the Teams' Parent
-  Override Field, with the follower count in the save dialog and the log entry. 05b: D17's delete refusal and the
+  Override Field, with the log entry; a changed default saves with no dialog, exactly as today, and the save
+  dialog's follower count arrives with slice 06. 05b: D17's delete refusal and the
   older-payload round trip (G-R1 (b)).
 
 ### Gates — G-R1 decided, G-07 moot (maintainer, 2026-10-16)
@@ -255,12 +258,13 @@ Maintainer decisions of 2026-10-16 (OD-n refers to pass 1's open decision), plus
 - **L8 — Every slice leaves `main` releasable; a Story's release point is its last slice.** A slice may land
   without the next one shipping, and no slice introduces a silent failure (slice 03's AC-3.9 is why).
 
-### The save dialog and the log entry — acceptance criteria (D12; slices 05a and 06–12; amended after DESIGN)
+### The save dialog and the log entry — acceptance criteria (D12; the log entry from slice 05a, the dialog from slice 06; amended after DESIGN and review)
 
-- **AC-F.1** When a System Admin saves a connection on which a default was set for the first time or changed, and at
-  least one owner follows it, the save dialog shows, before the save completes, how many Teams and Portfolios follow
+- **AC-F.1** From slice 06 on, when a System Admin saves a connection on which a default was set for the first time
+  or changed, and at least one owner follows it, the save dialog shows, before the save completes, how many Teams and Portfolios follow
   it (for example "Update 3 Teams and 0 Portfolios?"). Every owner in *Connection default* mode counts, including
-  those that follow because their setting was empty at the upgrade. The same save writes one log entry naming them.
+  those that follow because their setting was empty at the upgrade. The same save writes one log entry naming them;
+  the log entry is written from slice 05a, before the dialog exists.
 - **AC-F.2** The dialog never asks to confirm the default itself. Cancel leaves the connection unsaved, as it does
   today. Whether to start updates is asked only when the save would start any (AC-F.5).
 - **AC-F.3** When no owner follows the changed default, no dialog appears and the save works as today; the log entry
@@ -271,8 +275,10 @@ Maintainer decisions of 2026-10-16 (OD-n refers to pass 1's open decision), plus
 - **AC-F.5** From slice 06 on, when a changed default is read at fetch time and has followers, the dialog asks Save
   only or Save and update, with the follower count. That is the same question Story 6307 asks for a field change,
   asked once. When only an Estimation default with followers changed, nothing needs updating and the dialog offers
-  only Save ("Change the Estimation default?"). Before slice 06 a dialog for a changed default always offers only
-  Save.
+  only Save ("Change the Estimation default?"); that plain-Save variant needs the Estimation default, so it is built
+  in slice 12 on top of slice 06's dialog. Before slice 06 a changed default opens no dialog: the save works exactly
+  as today (a dialog appears only for an Additional Field change, as today) and still writes the log entry. No
+  dialog copy the maintainer has not approved is ever built, and #6304 releases only after slice 06.
 - After the save the page navigates to the Overview as today, with no notice; the updates appear in Task Manager →
   Activity. Copy approved by the maintainer (UI-3); polish allowed in DELIVER without changing meaning.
 
@@ -534,7 +540,7 @@ as AC-3.9 (D5a).
 
 `job_id: job-config-admin-set-a-connection-setting-once` · **ADO Story #6304** · slices 05a, 05b
 
-**Problem.** Steve Pereira's customer runs 14 Teams on one Jira DC connection, each reading its parent from the
+**Problem.** The reported installation runs 14 Teams on one Jira DC connection, each reading its parent from the
 `is caused by` link. Each new Team is another chance to forget the Parent Override Field; a forgotten one shows
 every Work Item unparented with nothing pointing at the cause.
 **Who.** config-admin as System Admin (sets the default) and as Team admin (follows or overrides).
@@ -543,14 +549,15 @@ every Work Item unparented with nothing pointing at the cause.
 Before: the Parent Override Field is set Team by Team; "Fraud Signals" was created without it and its Work Items
 hang under no Feature.
 After: in **Settings → Connections → (connection) → Defaults for Teams and Portfolios** set **Parent Override
-Field for Teams** to "Caused by", save → the dialog says 3 Teams follow it; save → **Team settings → Advanced** on
-Fraud Signals shows "Connection default (Caused by)", and **Settings → System Info → Logs** names Fraud Signals, Ops
-Tooling and Mobile Wallet.
+Field for Teams** to "Caused by", save (no dialog in slice 05a; from slice 06 the dialog first says 3 Teams follow
+it, US-05) → **Team settings → Advanced** on Fraud Signals shows "Connection default (Caused by)", and **Settings →
+System Info → Logs** names Fraud Signals, Ops Tooling and Mobile Wallet.
 Decision enabled: whether a new Team can be onboarded without the parent checklist — and, from the log entry,
 whether a Team that was empty on purpose must be set back to None.
 
 **Domain examples**
-1. "Fraud Signals", empty at the upgrade → follows; counted in the dialog and named in the log entry.
+1. "Fraud Signals", empty at the upgrade → follows; named in the log entry (and, from slice 06, counted in the save
+   dialog).
 2. "Ledger", with its own "Caused by" → stays *Own*, unaffected.
 3. "Mobile Wallet", empty at the upgrade but meant as None → follows and is named in the log entry; its admin picks
    **None** → *Own* + empty, no longer follows.
@@ -560,11 +567,11 @@ whether a Team that was empty on purpose must be set back to None.
 
 **UAT scenarios**
 ```gherkin
-Scenario: Saving the default says how many follow it, and the log names them
+Scenario: Saving the default saves as today, and the log names who follows it
   Given Fraud Signals, Ops Tooling and Mobile Wallet had no Parent Override Field at the upgrade
   And Ledger has "Caused by" as its own value
   When Maria Santos sets Parent Override Field for Teams to "Caused by" and saves the connection
-  Then the save dialog says 3 Teams follow "Caused by"
+  Then the save completes with no dialog, as today
   And the log entry names Fraud Signals, Ops Tooling and Mobile Wallet and not Ledger
 
 Scenario: A follower reads the default as its own
@@ -600,7 +607,8 @@ Scenario: An older client's round trip changes nothing
   Then no Team's mode or effective Parent Override Field has changed
 ```
 
-**Acceptance criteria** (05a: AC-4.1 – 4.7 and AC-F.1 – F.4; 05b: AC-4.8 – 4.10)
+**Acceptance criteria** (05a: AC-4.1 – 4.7 and the log-entry part of AC-F.1 – F.4, with no dialog for a changed
+default; 05b: AC-4.8 – 4.10; the dialog part of AC-F arrives with slice 06, US-05)
 - [ ] AC-4.1 The connection holds an optional Parent Override default for Teams among its own Additional Fields;
   only a System Admin can set it.
 - [ ] AC-4.2 A Team on *Connection default* behaves exactly as if it owned the default: after its update its Work
@@ -632,8 +640,8 @@ back-filled from emptiness (D10); a value naming a field the connection no longe
 and is cleared (D10 as amended). One resolver (L3) used by both connectors, `FetchFingerprint.For` and
 `WorkItemRelatedSettingsChanged`; with no default an empty follower's effective value is `null`, so stored
 fingerprints are byte-identical across the upgrade, except for the repaired deleted-field owners. The followed
-display name travels on the Team settings DTO. Follower counts for the save dialog come from the connection list
-read; one Information log entry per save names the followers.
+display name travels on the Team settings DTO. One Information log entry per save names the followers. From slice
+06 the save dialog's follower counts come from the connection list read.
 PUT without the mode (D18 as amended, G-R1 (b)): keep the stored mode unless the payload's value is present, non-empty
 and differs from the effective value, then *Own* with that value. Briefs: `slices/slice-05a-6304-team-parent-override-default.md`,
 `slices/slice-05b-6304-referenced-fields-and-older-payloads.md`.
@@ -647,15 +655,16 @@ and differs from the effective value, then *Own* with that value. Briefs: `slice
 **Who.** config-admin as System Admin, changing a default and wanting to check the result now.
 
 ##### Elevator Pitch
-Before: (after US-04 alone) a changed default reaches each follower at its next scheduled update, possibly hours
-later, with nothing saying so.
+Before: (after US-04 alone) a changed default saves with no dialog and reaches each follower at its next scheduled
+update, possibly hours later, with nothing on screen saying so.
 After: save the connection with "Parent Link" as the new default → the dialog says 9 Teams follow it and will
 update; choose **Save and update** → 9 rows in **Task Manager → Activity**.
 Decision enabled: check the result now, or come back later.
 
 **Domain examples** — 1. 9 follow, 5 own → the dialog says 9 will update; Save and update → 9 updating. 2. Nobody
-follows → no dialog, nothing updating, the log entry says none follow. 3. Estimation default changed (after #6313)
-with 4 followers → the plain dialog "Change the Estimation default?" offers only Save; nothing updates.
+follows → no dialog, nothing updating, the log entry says none follow. 3. Estimation default changed (built in slice 12,
+on top of this slice's dialog) with 4 followers → the plain dialog "Change the Estimation default?" offers only Save;
+nothing updates.
 
 **UAT scenarios**
 ```gherkin
@@ -680,8 +689,11 @@ Scenario: Saving without updating
 - [ ] AC-5.1 After Save and update, the Task Manager shows an update for every follower whose fetched data the change
   affects, and for no owner that owns its value.
 - [ ] AC-5.2 Save only starts no update.
-- [ ] AC-5.3 Before the save, the dialog says how many followers will update — 9 in the first scenario, none in the
-  second. After *Save only* none update, and they pick the change up at their next scheduled update (AC-F.5).
+- [ ] AC-5.3 Before the save, the dialog says how many followers will update — 9 in the first scenario. When nobody
+  follows, as in the second scenario, no dialog appears and the save completes as today (AC-F.3). After *Save only*
+  none update, and they pick the change up at their next scheduled update (AC-F.5).
+- [ ] AC-5.4 This slice brings the save dialog for a changed default, in the maintainer-approved UI-3 form: the
+  follower count (AC-F.1) and the update question (AC-F.5). Before it, a changed default saves with no dialog.
 
 **Technical notes** — followers whose `FetchFingerprint.For` moved are queued through `ConnectionFetchShapeChanged`
 (S18); `startUpdates=false` is the existing switch.
@@ -984,7 +996,7 @@ Scenario: Clearing the default
 - [ ] AC-11.2 A change shows on the next page load and starts no update.
 - [ ] AC-11.3 Clearing the default leaves followers with no estimation.
 - [ ] AC-11.4 When owners follow it, the save dialog counts the followers and says no update is needed (plain
-  Save, "Change the Estimation default?"); the log entry names them.
+  Save, "Change the Estimation default?", built in this slice on top of slice 06's dialog); the log entry names them.
 - [ ] AC-11.5 On the connection page the Estimation default reuses the owner's Estimation editor inline (field, unit,
   non-numeric flag, and categories when non-numeric), collapsed until a field is chosen, once for Teams and once for
   Portfolios; a following owner's page shows "Connection default (Story Points, Points)" (UI-5).
@@ -1011,9 +1023,9 @@ reach the followers' data → the next settings. ("Bring hand-configured owners 
 | 02 | #6300 | US-02 | A named Jira link that matched nothing says so on Refresh History | ~0.5d | `slices/slice-02-6300-a-named-link-that-matched-nothing-says-so.md` |
 | 03 | #6312 | US-03 | ADO relation type accepted where a field name goes; warns until read | ~0.5d | `slices/slice-03-6312-ado-relation-type-accepted-as-a-reference.md` |
 | 04 | #6312 | US-03 | ADO Portfolio reads dependencies from the named relation end | ~1d | `slices/slice-04-6312-ado-dependencies-from-a-named-relation-type.md` |
-| 05a | #6304 | US-04 | Teams' Parent Override default, end to end, with the dialog count and log entry | ~1d | `slices/slice-05a-6304-team-parent-override-default.md` |
+| 05a | #6304 | US-04 | Teams' Parent Override default, end to end, with the log entry (no save dialog until 06) | ~1d | `slices/slice-05a-6304-team-parent-override-default.md` |
 | 05b | #6304 | US-04 | Referenced fields cannot be deleted; older payloads change nothing | ~0.5d | `slices/slice-05b-6304-referenced-fields-and-older-payloads.md` |
-| 06 | #6304 | US-05 | A changed default updates exactly the followers | ~0.5d | `slices/slice-06-6304-default-change-updates-the-followers.md` |
+| 06 | #6304 | US-05 | A changed default updates exactly the followers; the save dialog (UI-3, both variants) arrives | ~0.5d | `slices/slice-06-6304-default-change-updates-the-followers.md` |
 | ~~07~~ | ~~#6304~~ | ~~US-06~~ | ~~Owners matching a default follow it in one step~~ — **dropped (UI-4)** | — | `slices/slice-07-6304-matching-owners-follow-the-default.md` (marked DROPPED) |
 | 08 | #6313 | US-07 | Portfolios' Parent Override default | ~0.5d | `slices/slice-08-6313-portfolio-parent-override-default.md` |
 | 09 | #6313 | US-08 | Dependency Field default | ~0.5d | `slices/slice-09-6313-dependency-field-default.md` |
@@ -1023,14 +1035,15 @@ reach the followers' data → the next settings. ("Bring hand-configured owners 
 
 **Release points (L8):** #6300 after 02 (not after 01 — see US-01); #6312 after 04 (03 alone is safe by AC-3.9);
 #6304 after 06 — 05a and 05b each leave `main` releasable, and D17 and the G-R1 (b) PUT rule land in 05b; #6313
-after each of 08–12, every one a complete setting.
+after 12, its last slice — each of 08–11 is a complete setting and leaves `main` releasable, but the Story is
+released only when 12 has landed.
 
 ### Carpaccio taste tests
 
 | Test | Verdict |
 |---|---|
-| 4+ new components in one slice is not thin | Resolved by the 05a / 05b split (D22). 05a still carries migration, resolver, connection section, dropdown entry and the dialog count + log entry — the minimum for one setting to be followed end to end; nothing in it is removable without leaving the mechanism unusable. |
-| A new abstraction ships first | Pass. ADO's relation-type lookup arrives in 03 as user-visible validation; the resolver, dialog count, log entry and defaults section in 05a; later slices reuse them. |
+| 4+ new components in one slice is not thin | Resolved by the 05a / 05b split (D22). 05a still carries migration, resolver, connection section, dropdown entry and the log entry — the minimum for one setting to be followed end to end (the save dialog's count waits for 06, so no unapproved dialog copy is built); nothing in it is removable without leaving the mechanism unusable. |
+| A new abstraction ships first | Pass. ADO's relation-type lookup arrives in 03 as user-visible validation; the resolver, log entry and defaults section in 05a; the dialog count in 06; later slices reuse them. |
 | No slice disproves a pre-commitment → decoration | Pass — each brief names its hypothesis (01 one-way phrase reads direction; 03 relation types reachable with `vso.work`; 04 no extra request; 05a fingerprints survive the upgrade, except deleted-field repairs; 05b an older client round trip is harmless; ~~07 hand-configured owners want to follow~~ (dropped, UI-4); 08–12 each setting really is per connection). |
 | Synthetic data only → plumbing | 01–04 dogfood on the dev instance's real Jira and ADO (P2, P8). 05a–12 on the dev instance's real connections (`:5169`) plus demo data for E2E and screenshots. |
 | 2+ slices identical except for scale → merge | 08–11 look alike but each ships a different setting alone, at the maintainer's request (D7). 03 and 04 stay apart because 03 alone can end #6312 cheaply if the relation-type list is unreachable. |
@@ -1044,7 +1057,7 @@ after each of 08–12, every one a complete setting.
    before anything depends on the PUT contract (G-R1 (b)); 06 at once, otherwise a changed default is invisible for
    hours. On a hand-configured installation the default reaches existing owners only when their admins switch them
    to *Connection default*, one by one.
-4. **#6313 (08 → 12)** — 08 (Steve's Portfolio parent case), 09 (builds on #6300 / #6312), 10, 11, then 12 (no
+4. **#6313 (08 → 12)** — 08 (the Portfolios' Parent Override Field default, the same mechanism on the second grain), 09 (builds on #6300 / #6312), 10, 11, then 12 (no
    refetch, lowest risk).
 
 ---
@@ -1074,14 +1087,15 @@ after each of 08–12, every one a complete setting.
 - #6300 / #6312: Additional Fields → Validate (Jira: Epic 6028 resolver; ADO: field lookup, then relation types
   from slice 03) → `DependencySourceSelector` → `Feature.DependsOnReferences` → Features → Dependencies; findings on
   Refresh History. Slice 01 is the skeleton; 04 extends it to ADO.
-- #6304: connection edit page (S16) → save dialog with follower counts (Story 6307's, UI-3) → connection PUT →
-  resolver → `FetchFingerprint.For` → connectors → stored records; the save writes one log entry naming the
-  followers; → `ConnectionFetchShapeChanged` → queue → Task Manager → Activity. Slice 05a is the skeleton; 06 joins
-  the queue.
+- #6304: connection edit page (S16) → connection PUT → resolver → `FetchFingerprint.For` → connectors → stored
+  records; the save writes one log entry naming the followers; → `ConnectionFetchShapeChanged` → queue → Task
+  Manager → Activity. Slice 05a is the skeleton (no save dialog for a changed default); 06 adds the save dialog with
+  follower counts (Story 6307's, UI-3) and joins the queue.
 
-E2E: one walking skeleton for #6304 on demo data (set a default, see the follower count in the save dialog, see a
-Team follow). #6300 /
-#6312 are covered below E2E unless demo data can carry a named link.
+E2E: one walking skeleton, landing with slice 12, on the seeded CSV demo connection: set the Teams' Estimation
+default, then see a Team follow it. CSV is the demo tracker, and of the defaults CSV honours (D21) the Estimation
+default is the one a Team reads. Slices 05a–11 are covered below E2E. #6300 / #6312 are covered below E2E unless
+demo data can carry a named link.
 
 ---
 
@@ -1092,9 +1106,9 @@ Team follow). #6300 /
 | Name the link | existing Additional Fields editor + Validate | `SystemAdmin` (unchanged) |
 | Select it | existing Dependency Field dropdown | `PortfolioWrite` (unchanged) |
 | Read the result / warning | existing Features → Dependencies; existing Refresh History (D5a) | unchanged |
-| Set a default; see the follower count | new "Defaults for Teams and Portfolios" section on the connection page (UI-1), existing connection PUT, Story 6307's save dialog (UI-3); names in Settings → System Info → Logs | `SystemAdmin` |
+| Set a default; see the follower count | new "Defaults for Teams and Portfolios" section on the connection page (UI-1), existing connection PUT, Story 6307's save dialog (UI-3, from slice 06); names in Settings → System Info → Logs | `SystemAdmin` |
 | Follow / override | existing dropdowns on Team / Portfolio settings, one new entry "Connection default (value)" (S22, UI-2) | `TeamWrite` / `PortfolioWrite` |
-| Clients | `PUT /v1/teams/{id}`, `/v1/portfolios/{id}`, `/v1/worktrackingsystemconnections/{id}` | additive fields only; no mode on a PUT keeps the stored mode (G-R1 (b)) |
+| Clients | `PUT /v1/teams/{id}`, `/v1/portfolios/{id}`, `/v1/worktrackingsystemconnections/{id}` | additive fields only; no mode on an owner PUT keeps the stored mode (G-R1 (b)); the connection PUT carries the defaults as one nested `defaults` member: absent keeps every stored default, present is authoritative, and a null inside it clears that default and is logged |
 
 ---
 
@@ -1105,11 +1119,11 @@ is the DEVOPS wave's question (house rule) — see the checklist.
 
 | KPI | Who / does what | Target | Measured by | Baseline |
 |---|---|---|---|---|
-| `OUT-6303-dependencies-recovered` | Portfolios that model waits with a non-default link show them | **100%** of Features whose named link points at a Feature Lighthouse stores show that dependency after the update (allowing only counterparts outside every Portfolio, which epic-4365 already reports) | On the dev instance (`:5169`): count Features in the slice-01 Jira Portfolio and the slice-04 ADO Portfolio carrying ≥ 1 link of the named type to a stored Feature, against Features with ≥ 1 dependency, before and after; recorded in slices 01 and 04. Steve's customer: same count, n = 1 | **0%** — no such Feature shows a dependency today (Jira silently, S6/S7) |
+| `OUT-6303-dependencies-recovered` | Portfolios that model waits with a non-default link show them | **100%** of Features whose named link points at a Feature Lighthouse stores show that dependency after the update (allowing only counterparts outside every Portfolio, which epic-4365 already reports) | On the dev instance (`:5169`): count Features in the slice-01 Jira Portfolio and the slice-04 ADO Portfolio carrying ≥ 1 link of the named type to a stored Feature, against Features with ≥ 1 dependency, before and after; recorded in slices 01 and 04. The reporting customer (n = 1): same count | **0%** — no such Feature shows a dependency today (Jira silently, S6/S7) |
 | `OUT-6303-set-once` | System Admin configures a setting for N owners | 1 connection save instead of N owner saves; 0 per new owner | Saves counted in the slice-05a dogfood script | N |
 | ~~`OUT-6303-followers-share`~~ | **Dropped** (OQ-7, 2026-10-16, CA-D7) | — | Slice 07 was the lever and there is no usage-data event; the remaining claim (new owners start on *Connection default*) is guaranteed by D11 and pinned by AC-4.5, so a KPI adds nothing | — |
 | `OUT-6303-no-change-on-upgrade` | Owners whose effective setting changed through the upgrade | **0**, except owners whose setting pointed at a deleted Additional Field (repaired by D10, named in the release notes) | Upgrade test (AC-4.4) | — |
-| `OUT-6303-no-surprise` | Admin learns how many owners a default affects before the save completes, and who, after | 100% of default saves with followers show the follower count before the save completes; 100% of default saves write the log entry naming the followers (or saying none follow) | AC-F test coverage; dogfood | no count, no entry |
+| `OUT-6303-no-surprise` | Admin learns how many owners a default affects before the save completes, and who, after | From slice 06, 100% of default saves with followers show the follower count before the save completes; from slice 05a, 100% of default saves write the log entry naming the followers (or saying none follow) | AC-F test coverage; dogfood | no count, no entry |
 | `OUT-6303-no-extra-requests` | Tracker requests per refresh | Jira unchanged; ADO ≤ +1 relation-type listing per connection per Validate and per refresh | Request count vs baseline (AC-1.6, AC-3.7) | — |
 
 ---
@@ -1141,8 +1155,8 @@ is the DEVOPS wave's question (house rule) — see the checklist.
   AC-4.10 pins it: a scripted GET-then-PUT round trip changes no owner's mode or effective value, for echoing and
   property-dropping clients alike. Residual: a client that deliberately sends a different value without a mode
   makes the owner *Own* — which is what that request means.
-- **R2 — D10's accepted consequence.** An owner that was None on purpose follows the first default. The save dialog's
-  follower count and the log entry naming the followers are the mitigation; slice 05a's dogfood counts how many
+- **R2 — D10's accepted consequence.** An owner that was None on purpose follows the first default. The log entry
+  naming the followers (from slice 05a) and the save dialog's follower count (from slice 06) are the mitigation; slice 05a's dogfood counts how many
   owners on the dev instance are empty today.
 - **R3 — #6312's value on Services.** If Services exposes only system relation types, #6312 serves teams that
   record waits with Successor / Predecessor the other way round, and on-premises Server users with custom types;
@@ -1159,7 +1173,9 @@ is the DEVOPS wave's question (house rule) — see the checklist.
   guard. UI gating via `useRbac()` only.
 - **Lighthouse-Clients CLI/MCP versioning — none (D18 as amended by G-R1).** Payloads pass through untyped (S23);
   new properties are additive; MCP reads Team settings only for cycle-time names. #6300 / #6312 change no payload.
-  No client release: a PUT without the mode keeps the stored mode. **Under R1:** a scripted GET-then-PUT round trip
+  No client release: a PUT without the mode keeps the stored mode, and a connection PUT without the nested
+  `defaults` member keeps every stored default (a client that drops unknown properties sends none); when `defaults`
+  is present it is authoritative, and a null inside it clears that default and is logged. **Under R1:** a scripted GET-then-PUT round trip
   of Team and Portfolio settings through the CLI (`lh team update` / `lh portfolio update` with the payload a GET
   returned) changes no owner's mode or effective value (AC-4.10); DISTILL runs it in both the echoing and the
   property-dropping shape, and both must pass.
@@ -1359,7 +1375,7 @@ decision) or **ACCEPTED** (decided by the maintainer in pass 2).
 | DDD-6 | How do the defaults reach the fetch fingerprint? | Never through `ForConnection`; only as each owner's effective value, in the owner's own slot of `For`. The guard test gains a third category for them | **LOCKED** — F2, AC-4.4, D13 |
 | DDD-7 | Which owners does a connection save queue? | Those whose `FetchFingerprint.For` differs before and after the save, "before" rendered from the row read in the same unit of work, before anything is changed. Which owners moved is a pure rule in `Models` (two fingerprint maps in, owner ids out); `IConnectionSaveService` gathers the maps and publishes one `ConnectionFetchShapeChanged`, unchanged. A field-definition edit still queues everyone; an Estimation default queues nobody | **LOCKED** (ADR-241) |
 | DDD-8 | How is "who follows" recorded at save? | **One Information log entry per save that changed a default**, written by `IConnectionSaveService` after `Save()`: the connection, each changed default (setting, grain, old and new display name) and its followers by name, and how many were queued. The PUT response is **unchanged** (ADR-239 §3 stands). Read in Settings → System Info → Logs, which shows the Serilog file at the shipped Information level and is `SystemAdmin`-only (F13, F17); the entry carries names only — no credentials, no tracker field values. A refused or stale save writes none | **ACCEPTED** (P-5 as changed by the maintainer; ADR-241) |
-| DDD-9 | What does the browser show at save? | No after-save notice; the page navigates to `/` as today (S3). Before the save completes, the reused 6307 dialog (UI-3) shows how many Teams / Portfolios follow the changed defaults: **no dialog** when nobody follows any changed default and no Additional Field changed; *plain* (Cancel / Save) when only page-load defaults (Estimation) with followers changed, and in 05a for any changed default with followers; *update question* (Cancel / Save only / Save and update) when a fetch-time default with followers changed (slice 06 on) or an Additional Field changed. Names are never in the dialog. The dialog's choice says whether Additional Fields changed: `ISaveConnectionChoice` gains `additionalFieldsChanged: boolean`, set from `fieldsChangedSince(loadedFields, additionalFields)` (`ModifyConnectionSettings.tsx:575`), and `EditConnection.tsx:90` guards on `choice?.additionalFieldsChanged` instead of `choice` (F18). Shapes: update question → `{ startUpdates: <answer>, additionalFieldsChanged: <fieldsChangedSince> }`; plain Save → `{ startUpdates: true, additionalFieldsChanged: false }` (the request a dialog-less save sends); no dialog → no choice. The open condition at `:572-576` widens to "fields changed and used, or a changed default has followers" | **ACCEPTED** (P-5 changed; UI-3) |
+| DDD-9 | What does the browser show at save? | No after-save notice; the page navigates to `/` as today (S3). Before the save completes, the reused 6307 dialog (UI-3) shows how many Teams / Portfolios follow the changed defaults: **no dialog** when nobody follows any changed default and no Additional Field changed; *plain* (Cancel / Save) when only page-load defaults (Estimation) with followers changed (built in slice 12, on slice 06's dialog); *update question* (Cancel / Save only / Save and update) when a fetch-time default with followers changed or an Additional Field changed. The dialog opens for a changed default **from slice 06**: in 05a a changed default saves exactly as today, with no dialog, so no unapproved dialog copy is ever built and #6304 releases only after 06. Names are never in the dialog. The dialog's choice says whether Additional Fields changed: `ISaveConnectionChoice` gains `additionalFieldsChanged: boolean`, set from `fieldsChangedSince(loadedFields, additionalFields)` (`ModifyConnectionSettings.tsx:575`), and `EditConnection.tsx:90` guards on `choice?.additionalFieldsChanged` instead of `choice` (F18). Shapes: update question → `{ startUpdates: <answer>, additionalFieldsChanged: <fieldsChangedSince> }`; plain Save → `{ startUpdates: true, additionalFieldsChanged: false }` (the request a dialog-less save sends); no dialog → no choice. The open condition at `:572-576` widens to "fields changed and used, or a changed default has followers" | **ACCEPTED** (P-5 changed; UI-3) |
 | DDD-10 | Where do the dialog's counts come from? | The connection list read the page already makes: `usedBy` gains the number of followers per default (the existing `IWorkTrackingSystemConnectionUsage` port). No new fetch. Counts are as of page load and appear **only in the dialog**, never on the page (UI-1); the log entry, computed at save, is the record | **ACCEPTED** (P-6 a) |
 | DDD-11 | Where does G-R1 (b) live? | In the owner's mutator that applies an incoming setting: mode present → applied; mode absent → `own(value)` only if the value is non-null and differs from the effective value **before** the request; else unchanged. Source members on the PUT DTOs are nullable. **Estimation bundle**: one value; non-null when its field is set; differs when the field, the unit (ordinal), the non-numeric flag or the ordered category list differs → `own(whole bundle)` (resolves OQ-3). A stale echo without a source can turn a follower into an owner: accepted, CA-8 | **LOCKED** — G-R1 (b), S6964 / **ACCEPTED** (bundle rule, AFK recommended option; ADR-240) |
 | DDD-12 | What does a GET return per setting? | The existing id field carries the **effective** value; beside it the source and the followed default's display name | **ACCEPTED** (P-7 a) |
@@ -1402,8 +1418,8 @@ decision) or **ACCEPTED** (decided by the maintainer in pass 2).
 | `WorkTrackingSystemConnectionController` | `API/…` | **EXTEND** — the PUT maps the DTO (defaults included, with temporary ids of fields added in the same save via `NewAdditionalFieldTargets`) onto the handle from `IConnectionSaveService.Open`, keeps the 400 / 403 checks, calls `Commit`, maps *refused* to the 409. `IDomainEventDispatcher` leaves its constructor, `IConnectionSaveService` takes its place (still 7). Response unchanged | 05a, 05b, 06 |
 | `IConnectionSaveService` + implementation | `Services/Interfaces/IConnectionSaveService.cs`, `Services/Implementation/Connections/ConnectionSaveService.cs` | **CREATE NEW** — the save's unit of work: before / after `For` per owner, refusal, token, save, publish, the one log entry (DDD-25, DDD-26). The 6307 fan-out moves here from the controller | 05a (fan-out per owner, log), 05b (refusal), 06 (queue for defaults) |
 | Movers rule, in-use rule | `Models/` (static, pure) | **CREATE NEW** — "which owners moved" (two fingerprint maps → owner ids); "which removed fields are still in use" (connection, owners, removed ids → referring defaults and owners) | 05a, 05b |
-| `WorkTrackingSystemConnectionDto` | `API/DTO/…` | **EXTEND** — defaults and the supported set (request and response); no response-only notice | 05a |
-| `IWorkTrackingSystemConnectionUsage` / `ConnectionUsage` | `Services/Interfaces/…`, `Services/Implementation/…` | **EXTEND** — follower counts per default beside the owner counts (DDD-10) | 05a |
+| `WorkTrackingSystemConnectionDto` | `API/DTO/…` | **EXTEND** — the defaults as **one nested `defaults` member** and the supported set (request and response); no response-only notice. On the PUT, an absent `defaults` keeps every stored default; a present `defaults` is authoritative, and a null inside it clears that default and is logged | 05a |
+| `IWorkTrackingSystemConnectionUsage` / `ConnectionUsage` | `Services/Interfaces/…`, `Services/Implementation/…` | **EXTEND** — follower counts per default beside the owner counts (DDD-10) | 06 |
 | `SettingsOwnerDtoBase`, `PortfolioSettingDto` | `API/DTO/…` | **EXTEND** — per setting: nullable source, followed default's display name; existing id field = effective value | 05a, 08–12 |
 | `TeamExtensions`, `PortfolioExtensions` | `API/Helpers/…` | **EXTEND** — apply incoming settings through the mutators (DDD-11); create applies the same rule on a new owner (D11); refuse (400) an own value naming no Additional Field of the owner's connection (DDD-18) | 05a / 05b, 08 |
 | `DependencySourceSelector` | `Services/Implementation/Dependencies/…` | **EXTEND** — third source (DDD-13) | 01 |
@@ -1412,7 +1428,7 @@ decision) or **ACCEPTED** (decided by the maintainer in pass 2).
 | `AzureDevOpsWorkTrackingConnector` | `…/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs` | **EXTEND** — relation-type listing as a per-call value (never a field: F15), field-vs-relation resolution (connector-local), Validate accepting it, refresh not warning "no field", the `:1142` condition reading the resolution | 03, 04 |
 | `WorkItemExtensions` (ADO) | `…/AzureDevOps/WorkItemExtensions.cs` | **EXTEND** — `ExtractDependencyReferences` takes the `Rel` to match (default unchanged) | 04 |
 | Evidence on the record | `Models/WorkItemBase.cs` or `Feature` | **EXTEND** — one transient value: what the dependency source turned out to be, the link names / `Rel` values seen | 02 |
-| `RefreshFinding` | `Models/` | **CREATE NEW** — closed kind + setting + what was named + what was seen | 02 |
+| `RefreshFinding` | `Models/` | **CREATE NEW** — closed kind + setting + what was named + what was seen. The closed set of kinds: `NamedLinkMatchedNothing`, `NamedLinkPointsBothWays`, `RelationTypeHasNoDirection`, `RelationTypeNamedWithoutItsEnd`, `RelationTypeNotYetReadForDependencies` (slice 03 only, retired by slice 04), `RelationTypeCannotBeReadHere` | 02 |
 | `WorkItemService` | `Services/Implementation/WorkItems/WorkItemService.cs` | **EXTEND** — aggregate evidence into findings once per fetch, beside the 6301 placement step | 02 |
 | `SyncOutcome`, `RefreshLog`, `TeamUpdater`, `PortfolioUpdater` | `Models/…`, `…/Update/…` | **EXTEND** — carry the findings to one new nullable text column; delta runs write none | 02 |
 | Refresh-log read | the existing refresh-log controller and its DTO | **EXTEND** — per entity, the findings of the latest `Mode == Full` run and that run's time (DDD-15) | 02 |
@@ -1421,19 +1437,21 @@ decision) or **ACCEPTED** (decided by the maintainer in pass 2).
 
 | Component | File | Change | Slice |
 |---|---|---|---|
-| Connection model + service | `models/WorkTracking/WorkTrackingSystemConnection.ts`, `services/Api/WorkTrackingSystemService.ts` | **EXTEND** — defaults, supported set, follower counts on `usedBy` (zod `.nullable()` for nullable members) | 05a |
-| `ModifyConnectionSettings` | `components/Common/Connection/ModifyConnectionSettings.tsx` | **EXTEND** — "Defaults for Teams and Portfolios" group after Additional Fields (`:793-818`) from `InputGroup` + `FormSelectField`; open the dialog when a default changed | 05a |
-| `UpdateQuestion` | existing 6307 dialog | **EXTEND** — follower counts for the changed defaults (no names); the *plain* variant (Cancel / Save); no dialog when nobody follows (DDD-9, UI-3) | 05a (plain), 06 (question) |
-| `EditConnection` | `pages/Connections/Edit/EditConnection.tsx` | **EXTEND (one rule)** — still navigates to `/` after save; sends `WorkTrackingSystemFieldsChanged` only when the choice says Additional Fields changed (F18) | 05a |
+| Connection model + service | `models/WorkTracking/WorkTrackingSystemConnection.ts`, `services/Api/WorkTrackingSystemService.ts` | **EXTEND** — the nested `defaults` member and the supported set (05a), follower counts on `usedBy` (06) (zod `.nullable()` for nullable members) | 05a, 06 |
+| `ModifyConnectionSettings` | `components/Common/Connection/ModifyConnectionSettings.tsx` | **EXTEND** — "Defaults for Teams and Portfolios" group after Additional Fields (`:793-818`) from `InputGroup` + `FormSelectField` (05a); open the dialog when a changed default has followers (06) | 05a, 06 |
+| `UpdateQuestion` | existing 6307 dialog | **EXTEND** — follower counts for the changed defaults (no names); the update question; the *plain* variant (Cancel / Save) for an Estimation-only change; no dialog when nobody follows (DDD-9, UI-3) | 06 (counts, question), 12 (plain) |
+| `EditConnection` | `pages/Connections/Edit/EditConnection.tsx` | **EXTEND (one rule)** — still navigates to `/` after save; sends `WorkTrackingSystemFieldsChanged` only when the choice says Additional Fields changed (F18) | 06 |
 | `FormSelectField` | `components/Common/FormSelectField/FormSelectField.tsx` | **EXTEND** — optional first entry "Connection default (…)" | 05a |
 | Owner dropdowns | `AdvancedInputs.tsx` (moves to `FormSelectField`), `DependenciesComponent.tsx`, `FeatureSizeComponent.tsx`, `OwnershipComponent.tsx`, `EstimationFieldComponent.tsx` | **EXTEND** — the first entry; sends the source | 05a, 08–12 |
 | Settings models, `useModifySettings` | `models/Common/BaseSettings.ts`, portfolio settings model, `hooks/useModifySettings.ts` | **EXTEND** — source as a string-literal union, followed name | 05a |
 | Estimation default editor | `EstimationFieldComponent.tsx` | **REUSE inline** on the connection page, once per grain, collapsed until a field is chosen (UI-5) | 12 |
 | Refresh History | `models/SystemInfo/RefreshLog.ts`, `RefreshHistorySection.tsx` | **EXTEND** — optional findings with their run's time; the latest full run's findings under the figures | 02 |
 
-**Slice placement of the dialog.** 05a ships the plain variant (counts, Cancel / Save) for a changed default with
-followers: before slice 06 no update is started by a default change, so there is nothing to ask. Slice 06 adds the
-update-question variant. Slice 07 is dropped; nothing on the page lists or counts followers.
+**Slice placement of the dialog.** 05a ships no dialog for a changed default: the save works exactly as today and
+writes the log entry. Slice 06 brings the maintainer-approved UI-3 dialog for a changed default with followers (the
+follower count and the update question). The Estimation-only plain Save variant needs the Estimation default, so it
+is built in slice 12 on top of slice 06's dialog. No unapproved dialog copy is ever built, and #6304 releases only
+after 06. Slice 07 is dropped; nothing on the page lists or counts followers.
 
 ### Deliberately not touched
 
@@ -1451,11 +1469,28 @@ write-back mappings and their FK, the Linear / CSV / ServiceNow connectors, RBAC
 | Name the link / relation type | existing Additional Fields editor → connection PUT; `POST …/worktrackingsystemconnections/validate` | ADO Validate widened (03); contract unchanged | `SystemAdmin` |
 | Select the Dependency Field | existing Portfolio PUT | unchanged | `PortfolioWrite` |
 | Read findings | existing refresh-log read | one optional list member per entity: the latest full run's findings and its time | unchanged |
-| Set defaults | existing `PUT /v1/worktrackingsystemconnections/{id}` (`startUpdates` as today) | additive request members; response unchanged | `SystemAdmin` |
+| Set defaults | existing `PUT /v1/worktrackingsystemconnections/{id}` (`startUpdates` as today) | one nested `defaults` request member: absent keeps every stored default; present is authoritative, and a null inside it clears that default and is logged; response unchanged | `SystemAdmin` |
 | Counts at save | existing connection list read | `usedBy` gains follower counts per default | `SystemAdmin` |
 | Who followed, at save | existing Settings → System Info log | one Information entry per save that changed a default | `SystemAdmin` (`LogsController.cs:23`) |
 | Follower updates | existing Task Manager → Activity | unchanged | unchanged |
 | Follow / override on an owner | existing `PUT /v1/teams/{id}`, `/v1/portfolios/{id}`, their GETs and create | additive members; G-R1 (b) | `TeamWrite` / `PortfolioWrite` |
+
+**Names, setting by setting** (as DISTILL's tests pin them; DELIVER may rename, consistently across tests and code).
+The owner request member is the existing id member, which carries the effective value, with `<member>Source` and
+`<member>DefaultName` beside it; the source column is 0 = follows, 1 = own.
+
+| Setting | Owner request member | Connection `defaults` member | Source column |
+|---|---|---|---|
+| Teams' Parent Override Field | `parentOverride…` on the Team | `parentOverrideForTeams` | `ParentOverrideSource` (Teams) |
+| Portfolios' Parent Override Field | `parentOverride…` on the Portfolio | `parentOverrideForPortfolios` | `ParentOverrideSource` (Portfolios) |
+| Dependency Field | `dependencyOverride…` | `dependencyFieldForPortfolios` | `DependencyFieldSource` |
+| Size Estimate Field | `sizeEstimate…` | `sizeEstimateFieldForPortfolios` | `SizeEstimateFieldSource` |
+| Feature Owner Field | `featureOwner…` | `featureOwnerFieldForPortfolios` | `FeatureOwnerFieldSource` |
+| Teams' Estimation | `estimation…` on the Team | `estimationForTeams` | `EstimationSource` (Teams) |
+| Portfolios' Estimation | `estimation…` on the Portfolio | `estimationForPortfolios` | `EstimationSource` (Portfolios) |
+
+A refresh finding names its setting with one of `ParentOverrideField`, `DependencyField`, `SizeEstimateField`,
+`FeatureOwnerField`, `EstimationField`, spelled as DISTILL pins them.
 
 ## Wave: DESIGN / [REF] Driven Ports and Adapters
 
@@ -1637,7 +1672,7 @@ is the only place that compares; the controller only maps; the event and queue a
 | DDD-6 | Defaults never in `ForConnection` | LOCKED | 241 |
 | DDD-7 | Queue the owners whose `For` moved, before vs after; movers rule pure in `Models` | LOCKED | 241 |
 | DDD-8 | One Information log entry per default-changing save naming the followers; PUT response unchanged | ACCEPTED | 241 |
-| DDD-9 | No after-save notice; the pre-save dialog (UI-3): none when nobody follows, plain Save when nothing refreshes, the update question otherwise; `WorkTrackingSystemFieldsChanged` only when Additional Fields changed | ACCEPTED | 241 |
+| DDD-9 | No after-save notice; from slice 06, the pre-save dialog (UI-3): none when nobody follows, plain Save when nothing refreshes, the update question otherwise; `WorkTrackingSystemFieldsChanged` only when Additional Fields changed | ACCEPTED | 241 |
 | DDD-10 | Dialog counts from follower counts on the list read's `usedBy`; never shown on the page | ACCEPTED | 241 |
 | DDD-11 | G-R1 (b) in the owner mutator, against the pre-request effective value; nullable sources; Estimation bundle compared as one value; stale-echo flip accepted (CA-8) | LOCKED / ACCEPTED | 240 |
 | DDD-12 | GET: effective value in the existing field + source + followed name | ACCEPTED | 240 |
@@ -1659,7 +1694,8 @@ is the only place that compares; the controller only maps; the event and queue a
 | DDD-28 | Upgrade repair is a data step, expand-only, owner → connection → field definitions on both providers | ACCEPTED | 240 |
 
 No decision is left PROPOSED. Engineering choices taken while the maintainer is AFK, each the recommended option:
-05a ships only the plain-Save dialog (no default change can start updates before slice 06); a log entry is written for
+05a ships no dialog for a changed default (the dialog arrives with slice 06, its Estimation-only plain variant with
+slice 12); a log entry is written for
 every save that changed a default, followers or not; the dialog's counts are per grain in the title, as in 6307. After
 review iteration 2: the application service and its two pure rules (DDD-25); the per-call ADO listing (DDD-14); the
 latest-full-run read for findings (DDD-15); the Estimation bundle rule (DDD-11); no FK (DDD-27).
@@ -1810,7 +1846,8 @@ Opens on Save, before anything is stored; counts come from the read the page alr
 |---|---|
 | Defaults nobody follows, nothing else | **none** — saves as today |
 | A fetch-time default with followers (slice 06 on), or Additional Fields (as today, 6307) | update question: Cancel / Save only / Save and update |
-| Only defaults read at page load (Estimation) with followers; and in 05a, any default with followers | plain: Cancel / Save |
+| Only defaults read at page load (Estimation) with followers (slice 12 on, built on slice 06's dialog) | plain: Cancel / Save |
+| Any changed default, before slice 06 | **none** — saves exactly as today (a dialog only for an Additional Field change, as today) |
 
 ```
 ┌ Update 3 Teams and 0 Portfolios? ──────────────┐
@@ -1880,7 +1917,7 @@ refresh never clears them (DDD-15).
 | Stale echo behaves as documented | AT: a follower of "Caused by" is loaded; the default moves to "Parent Link"; the stale owner body is PUT back without a source → *Own ("Caused by")*; with `source: ConnectionDefault` → still follows (CA-8) |
 | Estimation bundle is one value | Unit table: each part alone differing owns; all equal unchanged; field null unchanged; categories reordered owns |
 | The log names the followers | Logger-capturing test on `IConnectionSaveService`: one Information entry per save that changed a default, naming exactly the owners in `ConnectionDefault`; none for a save that changed no default, was refused, or was stale |
-| The dialog follows UI-3 | Vitest: no dialog when every changed default has no follower; plain Save for page-load-only changes; the question otherwise; no owner name rendered; `WorkTrackingSystemFieldsChanged` sent for an Additional Field change, not for a default-only change |
+| The dialog follows UI-3 | Vitest (from slice 06; the plain variant from slice 12): no dialog when every changed default has no follower; plain Save for page-load-only changes; the question otherwise; no owner name rendered; `WorkTrackingSystemFieldsChanged` sent for an Additional Field change, not for a default-only change |
 | A late answer never lands | Vitest: connection A's answer arriving after B's does not replace B's defaults; the same on an owner page |
 | No extra tracker request | Request-count tests (Jira 01; ADO 03, 04: ≤ 1 listing per connection per Validate / refresh) |
 | The ADO listing never outlives its call | AT with one connector instance, as the factory caches it: two Portfolios on two ADO connections → one listing request each, each to its own organisation; the first again → one new request. The connector holds no field of the listing's type |
@@ -1919,7 +1956,9 @@ refresh never clears them (DDD-15).
 - **Concurrency:** keep applying the client's connection token in `Commit` before `Save()`; run the in-use query in
   `Commit` against the database, never the `Open` snapshot; publish and log only after a successful save.
 - **S6964:** every new value-type member on a `[FromBody]` DTO is nullable.
-- **Enums go out as strings, in as ints:** the frontend mirrors `SettingSource` as a string-literal union.
+- **Enums on the wire:** `SettingSource` is sent as a string in responses. On requests the global
+  `JsonStringEnumConverter` (`Program.cs`) accepts both the name and the int; the browser sends the name. The frontend
+  mirrors `SettingSource` as a string-literal union.
 - **zod:** every nullable member `.nullable()`, never bare `.optional()`.
 - **CA1869:** the findings serializer options are a `static readonly` field.
 - **The log entry:** Information level, one per default-changing save, structured template, names only.
@@ -2070,6 +2109,12 @@ Two rules follow for DELIVER:
   `SettingSource`): that prefix is on the shared whitelist. Only the connection model itself must carry it.
 - **A red live category on a shared slice is triaged before the push counts as judged**: a 429 / 4xx from Linear,
   ServiceNow or GitHub is environmental; a failure in a Jira or ADO dependency / parent test is this Epic's.
+- **A red whose only failures are 429s (rate limits) on a shared slice:** re-run the job once. If it is still red
+  with 429s only, record in that slice's brief that it was not judged by Sonar (the red backend job skipped
+  `sonar-gates`), and get a green, Sonar-judged run before the next slice is pushed. Expected 429 exposure per slice:
+  01–02 Jira only and 03–04 ADO only, so none from the shared Linear key or the GitHub pair; 05a and 08–12 wake every
+  live suite, so each is exposed to the Linear key CI shares and to the unauthenticated GitHub pair (60 requests an
+  hour per runner IP); 05b and 06 none, unless the slice touches `WorkTrackingSystemConnection*.cs` or `Program.cs`.
 
 | Existing job | What it proves here |
 |---|---|
@@ -2087,14 +2132,17 @@ dependencies keep reading the tracker's own link: the selector's default path is
 set, saving opens no dialog). No spec calls the `BaseEditPage` Parent Override / Estimation helpers or the Portfolio
 Size Estimate / Feature Owner helpers today, so the new first dropdown entry breaks no locator; `grep -r` the E2E
 project for every changed label and `data-testid` all the same (ci-learnings 230). **Recommended for DISTILL** (its
-call): one walking skeleton for #6304 / #6313 on the seeded **CSV** demo connection, whose tracker offers the
-Estimation default: set the Teams' Estimation default, save (plain dialog), open a Team that follows it and read
+call): one walking skeleton for #6304 / #6313, landing with **slice 12**, on the seeded **CSV** demo connection,
+whose tracker offers the Estimation default: set the Teams' Estimation default, save (plain dialog, built in 12), open a Team that follows it and read
 `Connection default (…)`. The spec sets the Team to follow at its top rather than inheriting that from the seeder
 (ci-learnings 231). #6300 / #6312 get no E2E: they are reading rules proven by ATs, fixtures and the live categories.
 `@screenshot` shots are finalization (one per theme), outside `pnpm run test`.
 
 **Local gates (mirror CI)**, all green before a step is committed:
-1. `dotnet build` in `Lighthouse.Backend/`, zero warnings.
+1. `dotnet build` in `Lighthouse.Backend/`, zero warnings other than NU1901–NU1904. NU1903
+   (Microsoft.AspNetCore.SignalR.Common 10.0.12, test project) predates this Epic. `Directory.Build.props:24` keeps
+   NU1901–NU1904 out of warnings-as-errors by design. The local gate is zero warnings other than NU1901–NU1904.
+   Track the package advisory separately; this Epic makes no dependency change.
 2. The analyzer sweep before every push (ci-learnings 7-95), filtered with `git diff` **and** `git status --porcelain`.
 3. `dotnet test --filter "TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration"`.
 4. **Live connector tests run deliberately**, because these slices change the connectors:
@@ -2116,11 +2164,11 @@ Activity, the dev instance, and the test suite. Full contracts in `docs/product/
 
 | KPI | Instrument | Fields / signal | Method | Threshold |
 |---|---|---|---|---|
-| `OUT-6303-dependencies-recovered` (north star) | Dev instance `:5169`; Refresh History findings; live dogfood tests | Features with ≥ 1 stored dependency (`TrackerLink`) whose named link points at a stored Feature; the Portfolio's latest full run carries **no** "no Feature carries that link" finding | Before (O-P1) and after one full Portfolio refresh, slice-01 Jira and slice-04 ADO Portfolios; Steve's customer the same count, shared out of band (n = 1) | 100% of qualifying Features (counterparts outside every Portfolio excepted). Below → slice brief records why before the release note claims it |
+| `OUT-6303-dependencies-recovered` (north star) | Dev instance `:5169`; Refresh History findings; live dogfood tests | Features with ≥ 1 stored dependency (`TrackerLink`) whose named link points at a stored Feature; the Portfolio's latest full run carries **no** "no Feature carries that link" finding | Before (O-P1) and after one full Portfolio refresh, slice-01 Jira and slice-04 ADO Portfolios; the reporting customer (n = 1) | 100% of qualifying Features (counterparts outside every Portfolio excepted). Below → slice brief records why before the release note claims it |
 | `OUT-6303-set-once` | Dogfood script (slice 05a); AT | PUTs issued: 1 connection PUT vs N owner PUTs; every follower's effective value after the one PUT | Count the saves; the AT asserts N followers read the new value after one connection PUT and no owner PUT | 1 save for N owners, 0 per new owner (D11); any owner PUT needed = red |
 | `OUT-6303-no-change-on-upgrade` | Migration test on SQLite and Postgres; pinned fingerprint digests; O-P2 query | Own / empty owners: digest byte-identical, source and value as tabled; dangling owners: `ConnectionDefault`, value cleared, digest moved | CI on every push; per instance the O-P2 `SELECT` before the upgrade names the expected exceptions | 0 changed besides the dangling set; any other digest moved = red |
-| `OUT-6303-no-surprise` | Vitest (dialog); logger-capturing test on `IConnectionSaveService`; the Information log entry | Dialog follower count per grain; one entry per default-changing save: connection, setting, grain, old and new default name, follower names (or "no Team follows it"), queued count | CI; per instance read in Settings → System Info → Logs (Information is the shipped minimum level; an admin who raised it to Warning will not see it, F17) | 100% of default saves with followers show the count; 100% of default-changing saves write exactly one entry; refused or stale saves write none |
-| `OUT-6303-no-extra-requests` | Request-count tests | Jira requests per refresh vs baseline; ADO `workitemrelationtypes` requests per connection per Validate and per refresh, across two connections on one cached connector | CI | Jira +0; ADO ≤ +1 per connection per call; any more = red |
+| `OUT-6303-no-surprise` | Vitest (dialog, from slice 06); logger-capturing test on `IConnectionSaveService`; the Information log entry | Dialog follower count per grain; one entry per default-changing save: connection, setting, grain, old and new default name, follower names (or "no Team follows it"), queued count | CI; per instance read in Settings → System Info → Logs (Information is the shipped minimum level; an admin who raised it to Warning will not see it, F17) | 100% of default saves with followers show the count; 100% of default-changing saves write exactly one entry; refused or stale saves write none |
+| `OUT-6303-no-extra-requests` | Request-count tests: Jira in slice 01; ADO in slices 03–04, with one cached connector and two connections | Jira requests per refresh vs baseline; ADO `workitemrelationtypes` requests per connection per Validate and per refresh | CI | 0 extra requests for Jira; ≤ 1 for ADO per Validate or refresh, per connection; any more = red |
 
 `RefreshLog` retention is a run count, so the dev-instance and customer readings come from the **first full refresh**
 after the slice ships, collected before later runs prune it. The log entry is the only per-instance record of who
@@ -2144,14 +2192,15 @@ member `WorkTrackingSystemFieldsChanged = 19`). #6300 / #6312 have no user actio
 read inside refreshes, most of them scheduled, which have no consenting caller.
 
 **Behaviour change to an existing event (DDD-9, F18).** `WorkTrackingSystemFieldsChanged` is today sent whenever the
-save dialog returned a choice; from slice 05a it is sent only when the choice says Additional Fields changed
+save dialog returned a choice; from slice 06 (when the dialog first opens for a default) it is sent only when the
+choice says Additional Fields changed
 (`choice?.additionalFieldsChanged`). Checked against `docs/settings/usagedata.md`:
 - Row :62 ("A connection's Additional Fields were changed … answered whether to update … A change saved without that
   question being answered is never reported, and neither is one your server refused") **stays correct**: the event
   still fires only for an Additional Fields change whose question was answered, with `Now` / `Later`.
 - Row :96 (the *When the updates run* field, "Only on a connection's Additional Fields being changed … nineteen
   events") **stays correct**: no event is added, the field and its two values are unchanged.
-- **Owed by DELIVER slice 05a (one sentence, not a correction):** the same dialog now also opens for a change to the
+- **Owed by DELIVER slice 06 (one sentence, not a correction):** the same dialog now also opens for a change to the
   connection's defaults, so add to row :62 "A change to the connection's defaults alone is never reported, even when
   the same question was answered." Without it a reader who sees the question for a default cannot tell from the page
   whether answering it sent anything. The Vitest that pins "not sent for a default-only change" is the guard.
@@ -2171,7 +2220,7 @@ column:
 | Owner source columns (`int not null default 0`) | Never maps them; its **inserts rely on the database default**, so each generated migration must carry `defaultValue: 0` on **both** providers (checked per slice, as story 6301's CA-O1) | Safe if checked |
 | Connection default columns (nullable) | Never maps them | Safe; defaults are inert |
 | Owner on *Own* | The same column holds its value (DDD-4 maps the renamed own property to the existing column) | Reads exactly what it read |
-| Owner on *Connection default* | Its own value was cleared (DDD-5), so the older build reads the column as **empty**: the tracker's own parent field / dependency link, no size / owner / estimate | **Expected loss of the inherited value, not corruption.** The fingerprint moves (default → empty), so its next update downloads everything. This is what that owner read before it followed |
+| Owner on *Connection default* | When an owner follows a default, its own value is cleared (DDD-5), so neither a downgrade nor a later re-follow recovers it. An older build reads the tracker's own field for that owner, which is **empty**: the tracker's own parent field / dependency link, no size / owner / estimate | **Expected loss of the inherited value and of the owner's earlier own value, not corruption.** The fingerprint moves (default → empty), so its next update downloads everything. Called out in the release notes (below) |
 | Dangling owners repaired at the upgrade (DDD-21) | Stay empty | What the upgrade already made them read |
 | Stored dependencies | `TrackerLink`, a member the older build knows (F6) | Safe; a named-link dependency disappears at its next refresh on the older build, as before the Epic |
 
@@ -2189,7 +2238,9 @@ start-up rather than once in a migration; not proposed.
 
 **Release-day behaviour.** No default exists, so every follower reads empty, which is what it read before; only the
 dangling owners' fingerprints move, and no update is queued (DDD-21). Release note per slice whose migration repairs
-dangling values (DESIGN wording, configurable terms).
+dangling values (DESIGN wording, configurable terms). **Release-note item (every #6304 / #6313 release):** when a Team
+or Portfolio follows a connection default, its own earlier value for that setting is cleared; installing the previous
+release does not bring it back, and on that release the owner reads nothing of its own for the setting.
 
 **Production validation (per instance, advisory):** after the upgrade, the connection page shows "Defaults for Teams
 and Portfolios" on Jira / ADO / CSV only; a first default save with followers opens the dialog and writes the log
@@ -2226,8 +2277,8 @@ by `/release`. No branch, no PR.
 | Existing thing | Must not break | Guard |
 |---|---|---|
 | Older CLI (`lh team update` / `lh portfolio update`) and MCP | yes | G-R1 (b): a PUT without the source keeps the stored mode; AC-4.10's GET-then-PUT round trip, echoing and property-dropping. MCP reads Team settings for cycle-time names only. **CLI and MCP have no connection-write command**, so they cannot touch defaults. No client release |
-| Older browser tab (JS from before the upgrade) | yes | Owner PUT: as the CLI (G-R1 (b)); the existing id field carries the effective value (DDD-12), so an unchanged echo changes nothing. Refresh log: the findings member is additive and zod strips unknown keys. `DependencySource`: closed zod enum, and named-link references are stored as `TrackerLink`, a member it knows (F6) — no parse failure. Connection PUT: an old tab sends no default members; see CA-O2 |
-| Lighthouse-Clients library `updateWorkTrackingConnection` (untyped pass-through) | yes | A script that GETs and PUTs back the whole connection echoes the defaults; one that drops them is CA-O2 |
+| Older browser tab (JS from before the upgrade) | yes | Owner PUT: as the CLI (G-R1 (b)); the existing id field carries the effective value (DDD-12), so an unchanged echo changes nothing. Refresh log: the findings member is additive and zod strips unknown keys. `DependencySource`: closed zod enum, and named-link references are stored as `TrackerLink`, a member it knows (F6) — no parse failure. Connection PUT: an old tab sends no `defaults` member, and **a connection PUT without `defaults` keeps every stored default** (CA-O2) |
+| Lighthouse-Clients library `updateWorkTrackingConnection` (untyped pass-through) | yes | A script that GETs and PUTs back the whole connection echoes `defaults` unchanged; one that drops it is covered by the same guard: **a connection PUT without `defaults` keeps every stored default** (CA-O2). A present `defaults` is authoritative; a null inside it clears that default and is logged |
 | Helm chart | yes | No values, template or appVersion-pinning change; migrations run in the app at start-up; the upgrade-path harness's row counts are unchanged by value-only data steps |
 | SQLite and PostgreSQL | yes | Seven migrations per provider, data steps hand-added to both, quoted identifiers on Postgres; migration tests on both; verify jobs |
 | Migration fixtures seeding through the model | yes | `HistoricalSchemaPatch` lists every new column on **`Teams`, `Portfolios` and `WorkTrackingSystemConnections`** (both fixtures seed all three); `RefreshLog` and `Deliveries` are not seeded there, so N/A for them (CA-O1) |
@@ -2284,7 +2335,7 @@ contracts of single artifacts; KPI ids live in `docs/product/kpi-contracts.yaml`
   on both providers; followers read empty on an older build, as before they followed; re-upgrade limits accepted
   (CA-O4).
 - **[O4]** Usage data **N/A** (maintainer, verbatim above); `WorkTrackingSystemFieldsChanged` now Additional-Field-only;
-  one sentence owed to `docs/settings/usagedata.md` in slice 05a.
+  one sentence owed to `docs/settings/usagedata.md` in slice 06.
 - **[O5]** KPIs instrumented through the dev instance, Refresh History findings, the Information log entry, the
   migration test and request counts; contracts appended to `kpi-contracts.yaml`; no automated alert (self-hosted).
 - **[O6]** Mutation once at the Epic's end on frozen code, whole-file scope as tabled; unit tests must score what the
@@ -2293,5 +2344,391 @@ contracts of single artifacts; KPI ids live in `docs/product/kpi-contracts.yaml`
   defaults as one nested `defaults` member: absent keeps every stored default, present is authoritative (CA-O2, as
   overruled).
 - **[O8]** KPI ids stay out of `outcomes/registry.yaml` (house pattern).
-- **[O9]** E2E: existing specs must stay green; one CSV-demo walking skeleton for the defaults recommended to DISTILL.
+- **[O9]** E2E: existing specs must stay green; one walking skeleton for the defaults, landing with slice 12, on the
+  seeded CSV demo connection: set the Teams' Estimation default, then see a Team follow it.
 - Peer review skipped: no trigger (no infrastructure, no deployment change, no new SLO), as story 6301.
+
+## Wave: DISTILL / [REF] Maintainer decisions: UI sketch review (2026-10-16)
+
+The maintainer reviewed the sketches with the DESIGN decisions on 2026-10-16, before AFK mode, so DISTILL did not ask again. Copied from `design/maintainer-decisions-2026-10-16.md` (UI section), as the house rule asks; the tests pin this copy and layout.
+
+
+- **UI-1 — defaults section**: its own section, "Defaults for Teams and Portfolios", below Additional Fields
+  on the connection edit page. Sub-headings *Teams* and *Portfolios*, one row per setting, listing only the
+  settings the tracker honours; hidden on Linear and ServiceNow. **No follower count and no "Show who" on
+  the page** (see UI-4).
+
+  ```
+  ┌ Defaults for Teams and Portfolios ──────────────────┐
+  │ Teams and Portfolios on this connection use these   │
+  │ unless they set their own.                          │
+  │ Teams                                               │
+  │  Parent Override Field   [ Caused by          ▾ ]   │
+  │  Estimation              [ None ▾ ] (expands)       │
+  │ Portfolios                                          │
+  │  Parent Override Field   [ None               ▾ ]   │
+  │  Dependency Field        [ depends on         ▾ ]   │
+  │  Size Estimate Field     [ None               ▾ ]   │
+  │  Feature Owner Field     [ None               ▾ ]   │
+  │  Estimation              [ None ▾ ] (expands)       │
+  └─────────────────────────────────────────────────────┘
+  ```
+
+- **UI-2 — owner settings**: the first dropdown entry is `Connection default (<value>)` (FormSelectField),
+  with the helper text "Set on the <tracker> connection." Picking any other entry, None included, makes the
+  value the owner's own.
+
+  ```
+  Parent Override Field
+  [ Connection default (Caused by)   ▾ ]
+    ├ Connection default (Caused by)
+    ├ None
+    ├ Caused by
+    └ Epic Link
+  ```
+
+- **UI-3 — save dialog**: the 6307 `UpdateQuestion` is reused. If nobody follows a changed default, there is
+  no dialog and the save works as it does today. A change that refreshes nothing (an Estimation-only change)
+  gets a plain Save. Names are not listed in the dialog; they go to the log. The dialog for a changed default
+  arrives with slice 06 (both variants; the plain Estimation one is built in slice 12 on top of it). In slice 05a a
+  changed default saves exactly as today, with no dialog, so no unapproved dialog copy is ever built.
+
+  ```
+  ┌ Update 3 Teams and 0 Portfolios? ──────────────┐
+  │ 3 Teams follow the Parent Override Field       │
+  │ default. Their parents change only once they   │
+  │ have been updated. Save only: they change at   │
+  │ their next scheduled update.                   │
+  │        Cancel   Save only   Save and update    │
+  └────────────────────────────────────────────────┘
+
+  ┌ Change the Estimation default? ────────────────┐
+  │ 4 Teams follow it; they show the new           │
+  │ estimation the next time their pages load.     │
+  │                          Cancel   Save         │
+  └────────────────────────────────────────────────┘
+  ```
+
+- **UI-4 — slice 07 dropped completely.** There is no "who follows / who differs" view, no "make these
+  follow" action, and no follower count on the page. Owners hand-set to the same value as the default stay
+  *Own*; an admin switches each one on its own settings page. Story #6304 is now slices 05a, 05b and 06.
+- **UI-5 — Estimation default**: the owner's existing Estimation editor is reused inline (field, unit,
+  non-numeric flag, and categories when non-numeric), stays collapsed until a field is chosen, once for
+  Teams and once for Portfolios. The owner page shows `Connection default (Story Points, Points)`.
+- **UI-6 — copy, accepted** (configurable terms render in the user's words; wording may be polished in
+  DELIVER without changing meaning):
+
+  ```
+  Refresh History (Portfolio row):
+    ⚠ The Dependency Field names "depends on", and no Feature carries that link.
+      Links seen: is blocked by, relates to.
+    ⚠ The Dependency Field names "Blocks", which points both ways.
+      Name one end: "blocks" or "is blocked by".
+    ⚠ The Parent Override Field points at an Azure DevOps relation type,
+      which only the Dependency Field reads.
+
+  Connection save refused (field still in use):
+    ✕ "Caused by" cannot be removed. It is the Teams' Parent Override Field
+      default, and Ledger uses it as its own. Nothing was saved.
+  ```
+
+## Wave: DISTILL / [REF] Scope and reconciliation
+
+- Scope: every remaining AC of the four Stories, in slice order — #6300 (slices 01–02), #6312 (03–04), #6304 (05a,
+  05b, 06), #6313 (08–12). US-06 and slice 07 are dropped (UI-4) and get no scenario.
+- Read: this delta in full (DISCUSS, DESIGN, DEVOPS waves), `design/maintainer-decisions-2026-10-16.md`,
+  `upstream-changes.md`, `environments.yaml`, `slices/*.md`, ADR-240 – ADR-243, `docs/product/architecture/brief.md`
+  (the epic's section), the `OUT-6303-*` entries of `docs/product/kpi-contracts.yaml`,
+  `docs/architecture/atdd-infrastructure-policy.md`, the story-6301 DISTILL precedent and the parent-from-issue-links
+  harnesses, `docs/ci-learnings.md`.
+- **Reconciliation: three cross-wave mismatches, all resolved; none open.** The first DISTILL pass logged
+  "0 contradictions"; the final review found three, and each is now settled in the upstream wave as well as here:
+  1. *The shape of the defaults on the connection PUT.* DESIGN named flat members; DEVOPS CA-O2 asked what a PUT that
+     omits them does. Resolved: the PUT carries the defaults as one nested `defaults` member — absent keeps every
+     stored default, present is authoritative, a null inside it clears that default and is logged. The tests pin
+     this shape.
+  2. *Where the E2E walking skeleton lives.* The #6304 E2E cannot run on CSV demo data (CSV offers only the Feature
+     Owner and Estimation defaults, D21). Resolved: the E2E skeleton lands with slice 12, on the CSV demo
+     connection's Estimation default.
+  3. *A save dialog in slice 05a.* The first pass built an unapproved plain dialog for 05a. Resolved: 05a has no
+     dialog, a changed default saves exactly as today; the approved UI-3 dialog (both variants) arrives with slice
+     06, and the Estimation-only plain variant is built in slice 12 on top of it. The 05a dialog test is replaced by
+     "saves without asking anything", tagged retired by slice 06.
+- Language: C# (NUnit 4.6, real host through `TestWebApplicationFactory`), TypeScript (Vitest + RTL), Playwright.
+  The state-delta port, `.feature` files and the Python domain-types module do not apply here, by the policy file and
+  the corpus precedent; the "and nothing else changed" half of each scenario is asserted explicitly (the owner that
+  owns its value, the other grain, no extra request, no entry written). Every test carries a `contract-shape:` category
+  or tag.
+
+## Wave: DISTILL / [REF] Scenarios
+
+Every backend test carries `[Category("epic-6303-configure-once-per-connection")]`, its `story-NNNN`, `slice-NN`,
+`us-NN` and `ac-N.N` categories. Pending ones carry `[Ignore(PendingEpic6303.SliceNN)]` (the upgrade test:
+`Ignore = PendingEpic6303.SliceNN` on each case). `grep -rn "PendingEpic6303" Lighthouse.Backend` lists what DELIVER
+still has to un-skip on the backend; `grep -rn "it.skip" <the three new frontend files>` on the frontend; the E2E is
+`test.fixme`. Counts are cases (a `TestCase` row counts once). Error = `error` category; edge = `edge`.
+
+| Slice | File (`Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/`) | Cases | Happy | Error | Edge | Active guards |
+|---|---|---|---|---|---|---|
+| 01 | `Slice01JiraDependenciesFromANamedLinkScenarios.cs` | 10 | 5 | 3 | 2 | 4 |
+| 02 | `Slice02NamedLinkThatMatchedNothingScenarios.cs` | 6 | 1 | 2 | 3 | 0 |
+| 03 | `Slice03AzureDevOpsRelationTypeAcceptedScenarios.cs` | 12 | 2 | 8 | 2 | 1 |
+| 04 | `Slice04AzureDevOpsDependenciesFromANamedRelationEndScenarios.cs` | 10 | 5 | 5 | 0 | 1 |
+| 05a | `Slice05aTeamsParentOverrideDefaultScenarios.cs` | 18 | 7 | 5 | 6 | 1 |
+| 05b | `Slice05bReferencedFieldsAndOlderPayloadsScenarios.cs` | 22 | 9 | 13 | 0 | 1 |
+| 06 | `Slice06DefaultChangeUpdatesTheFollowersScenarios.cs` | 5 | 1 | 3 | 1 | 0 |
+| 08 | `Slice08PortfoliosParentOverrideDefaultScenarios.cs` | 4 | 2 | 2 | 0 | 0 |
+| 09 | `Slice09PortfoliosDependencyFieldDefaultScenarios.cs` | 2 | 1 | 1 | 0 | 0 |
+| 10 | `Slice10PortfoliosSizeEstimateFieldDefaultScenarios.cs` | 3 | 1 | 1 | 1 | 0 |
+| 11 | `Slice11PortfoliosFeatureOwnerFieldDefaultScenarios.cs` | 3 | 1 | 1 | 1 | 0 |
+| 12 | `Slice12EstimationDefaultScenarios.cs` | 6 | 2 | 2 | 2 | 0 |
+| 05a, 08–12 | `Integration/Containers/ConnectionDefaultsUpgradeMigrationTests.cs` (SQLite and Postgres × 7 settings) | 14 | — | 14 (repair cases) | — | 0 |
+| 05a | `Services/Implementation/WorkItems/FetchFingerprintAcrossTheConnectionDefaultsUpgradeTest.cs` | 4 | — | — | — | 4 |
+| | **Backend total** | **119** | 37 | 46 + 14 | 18 | 12 |
+
+Error and edge together are 64 of the 101 acceptance cases (63%), error alone 46%, before counting the upgrade's
+repair cases.
+
+**Slice 01** (US-01, AC-1.1 – 1.6): `A_Feature_waits_on_what_its_named_one_way_link_points_at` (walking skeleton,
+kpi) · `The_other_ends_phrase_reads_the_other_direction` · `A_renamed_phrase_typed_in_any_case_is_read_like_the_stock_one`
+(edge) · `A_real_field_carrying_the_name_of_a_link_phrase_is_read_as_the_field` (edge, active guard) ·
+`A_link_types_own_name_reads_nothing_and_Refresh_History_names_both_phrases` (error) ·
+`A_phrase_both_ends_share_reads_nothing_and_says_so` (error) · `Naming_a_link_replaces_is_blocked_by_for_that_Portfolio`
+(error) · `A_Portfolio_naming_an_ordinary_field_reads_its_keys_exactly_as_before` (active guard) ·
+`A_Portfolio_naming_nothing_still_reads_is_blocked_by` (active guard) · `Naming_a_link_costs_the_Jira_instance_no_extra_request`
+(kpi, active guard: steady use naming the link against the same Portfolio after it stops naming one).
+
+**Slice 02** (US-02, AC-2.1 – 2.3; the latest-full-run findings):
+`Nothing_matched_the_named_link_and_Refresh_History_lists_the_links_that_were_seen` (error, kpi; one finding, one log
+line, labelled with the run that found it) · `Several_Features_without_the_link_share_one_finding_and_one_line` (error)
+· `Something_matched_so_Refresh_History_shows_no_finding` · `A_Portfolio_whose_Features_carry_no_links_at_all_is_told_nothing`
+(edge) · `A_Dependency_Field_naming_an_ordinary_field_stays_silent` (edge) ·
+`A_cheap_refresh_keeps_showing_the_full_downloads_finding_and_its_time_until_the_next_full_download` (edge).
+
+**Slice 03** (US-03 validate half, AC-3.1 – 3.3, 3.7, 3.9, 3.10):
+`A_relation_type_reference_with_its_end_validates_where_a_field_name_goes` · `A_relation_type_reference_matches_in_any_case`
+(edge) · `A_field_that_exists_validates_without_asking_for_the_relation_types` (edge, active guard) ·
+`A_typo_still_fails_and_lists_the_relation_types_the_organisation_defines` (error) ·
+`An_organisation_that_will_not_list_its_relation_types_fails_validation_saying_so` (error) ·
+`Validate_asks_the_organisation_for_its_relation_types_at_most_once` (kpi) ·
+`A_refresh_does_not_report_a_relation_type_reference_as_a_missing_field` (error) ·
+`Until_relations_are_read_a_relation_type_Dependency_Field_reads_nothing_and_says_not_yet` (error, **retired by slice
+04**) · `A_relation_type_named_as_Parent_Override_Field_keeps_the_native_parent_and_says_why` (error) ·
+`A_relation_type_named_in_another_setting_reads_as_nothing_named_and_says_why` (error, 3 cases: Size Estimate, Feature
+Owner and Estimation field). Validate is posted to the validate route the Validate button posts to, and the HTTP
+status is asserted with the answer (200 accepted, 400 refused).
+
+**Slice 04** (US-03 read half, AC-3.4 – 3.7; the per-refresh memo):
+`A_Feature_waits_on_the_work_item_at_the_other_end_of_the_named_relation` (walking skeleton, kpi) ·
+`Naming_the_reverse_end_reads_the_other_direction` · `Naming_a_relation_end_replaces_Predecessor_for_that_Portfolio` ·
+`A_Parent_Override_Field_on_the_same_Portfolio_does_not_stop_the_relation_being_read` (error; the relations-skip trap)
+· `A_relation_type_named_without_its_end_reads_nothing_and_names_both_ends` (error) ·
+`Related_has_no_direction_so_it_reads_nothing_and_says_so` (error) ·
+`Nothing_carrying_the_named_end_says_so_once_and_lists_the_relation_types_seen` (error) ·
+`Naming_a_relation_end_costs_one_relation_type_listing_and_nothing_per_work_item` (kpi) ·
+`Two_organisations_on_one_shared_connector_each_answer_with_their_own_relation_types` (error; one cached connector,
+each organisation listed once) · `A_Portfolio_naming_nothing_still_reads_Predecessor_without_listing_relation_types`
+(active guard).
+
+**Slice 05a** (US-04, AC-4.1 – 4.7, AC-F.1 – F.4):
+`One_save_on_the_connection_and_every_Team_that_named_nothing_reads_its_parents_from_the_default` (walking skeleton,
+kpi) · `A_Team_with_its_own_Parent_Override_Field_is_unaffected_by_the_default` ·
+`A_Team_that_chose_None_keeps_the_trackers_own_parent_whatever_the_default_says` (edge) ·
+`A_new_Team_follows_the_default_from_the_start` · `A_Team_admin_without_connection_rights_sees_which_field_the_Team_follows`
+· `Someone_without_connection_rights_cannot_save_the_connection` (error, active guard) · `Jira_and_Azure_DevOps_offer_every_default`
+(2 cases) · `A_CSV_connection_offers_only_Feature_Owner_and_Estimation` (edge) · `Linear_and_ServiceNow_offer_no_default`
+(edge, 2 cases) · `A_default_the_tracker_does_not_honour_is_refused_and_nothing_is_saved` (error, 400) ·
+`A_save_that_changes_no_default_writes_no_log_entry` (edge) · `A_default_nobody_follows_still_writes_an_entry_saying_none_follow`
+(error) · `A_save_without_the_defaults_keeps_every_default` (error; `defaults` absent) ·
+`Clearing_a_default_stops_the_followers_reading_it_and_is_logged` (`defaults` present with a null) ·
+`The_admin_whose_copy_is_stale_is_refused_and_the_first_default_stands` (error; 409, one entry only) ·
+`A_field_added_in_the_same_save_can_be_the_default` (edge).
+
+**Slice 05b** (US-04, AC-4.8 – 4.10; D17 and G-R1 (b)):
+`A_field_the_default_and_a_Team_use_cannot_be_removed_and_the_refusal_says_who` (error; 409 `additional-field-in-use`,
+the approved refusal copy in full) · `A_field_only_a_Team_uses_as_its_own_cannot_be_removed` (error) ·
+`A_field_only_a_default_names_cannot_be_removed` (error) · `A_field_nobody_uses_is_removed_as_today` (active guard) ·
+`A_Team_that_starts_using_the_field_while_the_removal_is_being_saved_still_blocks_it` (error; the in-use race) ·
+`A_Team_cannot_name_a_field_its_connection_does_not_have` (error; owner-side 400) ·
+`A_Team_saved_by_a_client_that_may_not_send_the_source` (error, 7 cases: echo, empty, other field, owner empty, owner
+other field, explicit None, explicit follow) · `A_script_that_saves_back_what_it_read_changes_nothing` (7 cases: the
+echoing and the property-dropping shape, for a follower, an owner, a Portfolio owner and a Portfolio follower) ·
+`A_stale_copy_saved_back_without_its_source_makes_the_Team_own_the_old_default` (error; the accepted consequence,
+CA-8) · `A_stale_copy_saved_back_with_its_source_keeps_the_Team_following_the_new_default`.
+
+**Slice 06** (US-05, AC-5.1 – 5.3, AC-F.5): `Save_and_update_updates_exactly_the_Teams_that_follow_the_changed_default`
+(walking skeleton, kpi; Task Manager rows, each follower downloads everything once, the full log entry) ·
+`Save_only_starts_no_update_and_still_names_the_followers` (error) ·
+`After_save_only_a_follower_picks_the_change_up_at_its_next_scheduled_update` (edge) ·
+`When_nobody_follows_the_default_nothing_updates_and_the_entry_says_none_follow` (error) ·
+`A_changed_default_does_not_update_the_owners_or_the_Portfolios` (error).
+
+**Slices 08 – 12** (US-07 – US-11): see the files; each slice has its follower-reads-the-default scenario (the
+following Portfolio downloads everything once, the owner keeps its field, the entry names the follower) and its error
+scenario: the other grain is never reached (08), Ignore Dependencies (09) and the Owning Team (11) are never offered
+as defaults, an owner starts no update (10), clearing the Estimation default leaves the followers with none, an owner
+keeps its bundle, a round trip of a follower's bundle leaves it following, and an Estimation change starts no update
+(12, walking skeleton). Slices 10 and 11 each add an empty-value case (AC-9.3, AC-10.3, edge): a follower's Feature
+with nothing in the default field is sized at the Portfolio's default of 25, and its work is shared by every Team, as
+an empty own field gives today; both read through the Feature route.
+
+**Upgrade** (AC-4.4, 7.5, 8.5, 9.5, 10.5, 11.6): for each of the seven settings, on SQLite and on Postgres, four owners
+written before the upgrade — own field, nothing, a deleted field, another connection's field. After it: the first is
+*Own* with its field; the others follow (source 0) with no value; the first two keep the fingerprint they had before
+(recomputed with `FetchFingerprint.For` on an EF reload, against the one computed when they were written). The unit
+guard pins the literal digests of an owning and a not-naming Team and Portfolio today
+(`23f7d688…`, `6a24ccb8…`, `71bb307d…`, `aaf2516f…`) and must stay green through every slice.
+
+**Frontend** (Vitest; 30 cases, 18 error or edge, 4 active guards):
+- `src/pages/Connections/Edit/EditConnection.defaults.test.tsx` (19): the section and its rows per tracker (Jira, CSV;
+  hidden on Linear and ServiceNow — active guard), configurable terms, no follower count on the page; the loading look
+  while the connection is on its way and the section once it arrives; an answer for a connection Priya has already
+  left is dropped and the one she opened shows its own defaults; could-not-load shows `Could not load this
+  connection.` with Try again and no section. Slice 05a: a changed default saves without asking anything, nested in
+  `defaults`, with no choice (retired by slice 06), and an unchanged save sends the defaults as read. Slice 06: the
+  UI-3 update question in the approved copy with `{ startUpdates, additionalFieldsChanged: false }`, Save only, no
+  names in the dialog, nobody follows → no dialog and no choice, Cancel, **the `WorkTrackingSystemFieldsChanged`
+  guard** (a default-only save reports no fields-changed event). Slice 12: the Estimation plain dialog in the approved
+  copy, the bundle sent nested in `defaults` with `{ startUpdates: true, additionalFieldsChanged: false }`, and the
+  Estimation editor collapsed until a field is chosen.
+- `src/pages/Common/AdvancedInputs/AdvancedInputs.connectionDefault.test.tsx` (6): the first entry
+  `Connection default (Caused by)` with `Set on the Jira connection.`, the tracker's name for Azure DevOps, the name
+  shown without the connection's field list, None and another field make the value the Team's own, back to following.
+- `src/pages/Settings/SystemInfo/RefreshHistorySection.findings.test.tsx` (5): the three UI-6 Refresh History copies in
+  configurable terms (`no Epic carries that link` with Feature renamed to Epic), the label
+  `as of the full download on 16 Oct, 09:12`, no finding and no label after a full download with nothing to say
+  (active guard), and an older backend's rows without the member still rendering (active guard).
+
+**E2E** `Lighthouse.EndToEndTests/tests/specs/settings/ConnectionDefaults.spec.ts` (1, `test.fixme` until slice 12).
+
+## Wave: DISTILL / [REF] Walking-skeleton strategy
+
+- Backend, one skeleton per release point, all pending at hand-off: slice 01 (Jira, a named phrase read), slice 04
+  (Azure DevOps, a named relation end read), slice 05a (one save, every empty Team follows, the entry names them),
+  slice 06 (Save and update queues exactly the followers), slice 12 (Estimation followed on the next page load).
+  Slices 02, 03, 05b and 08 – 11 have none of their own; their first scenario plays that role.
+- They run the real host. Harness A (`NamedDependencyLinkAcceptanceTest`) runs the production Jira and Azure DevOps
+  connectors over faked transports, posts Validate to the validate route, saves Portfolio settings through the
+  settings routes, and triggers refreshes through `IPortfolioUpdater.TriggerUpdate` (the scheduler's entry; no route
+  starts a single Portfolio's refresh in this shape). It reads what a Feature waits on and where it hangs through the
+  Feature route, Refresh History over HTTP and the log. Harness B (`ConnectionDefaultsAcceptanceTest`) drives the
+  connection, Team and Portfolio routes as JSON and reads the Task Manager, Refresh History, Feature and Team
+  work-in-progress routes and the log, over a stand-in tracker that reports what it was asked to read.
+- Givens seed through the repositories, the precedent of the story-6301 harnesses: the Portfolios, Teams and
+  connections a scenario starts from are stored before the application is first asked. No When and no Then touches
+  a repository, the database or a service directly.
+- **E2E earns its place, once.** DEVOPS recommended a CSV-demo skeleton. CSV offers only the Feature Owner and
+  Estimation defaults, so it is slice 12's: on demo scenario 0, the admin sets the Teams' Estimation default to
+  `Story Points` / `Points` on "Demo Data CSV Connector", saves through `Change the Estimation default?`, and
+  Team Voyager (no estimation of its own; Team Zenith owns Story Points) shows `Connection default (Story Points,
+  Points)`. It is the only path where the browser, the connection PUT and the owner's read meet. It was run locally
+  unfixme'd and is RED for the right reason. No other E2E is added (thin sanity check).
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+| Adapter | How the tests meet it | Real I/O? |
+|---|---|---|
+| Jira REST (search, link types, fields) | Real `JiraWorkTrackingConnector` over `Mock<HttpMessageHandler>` answering `JiraWireFormat` bodies; every request recorded | Transport faked (6301 policy row) |
+| Azure DevOps WIT client (query, work items with relations, fields, relation types, revisions) | Real `AzureDevOpsWorkTrackingConnector` subclass overriding only `GetWorkItemTrackingHttpClientAsync`, one cached instance across organisations; `Mock<WorkItemTrackingHttpClient>` per organisation | Client faked (policy row appended) |
+| Azure DevOps relation-type listing payload | `WorkItemRelationType` built per reference name | Provisional until slice 03's spike (P8) records one |
+| Connection, Team and Portfolio routes | `PUT/GET /api/latest/worktrackingsystemconnections[/{id}]`, `/api/latest/teams/{id}[/settings]`, `/api/latest/portfolios/{id}[/settings]`, `POST /api/latest/teams`, as JSON | Real |
+| Task Manager, Refresh History | `GET /api/latest/update/tasks`, `GET /api/latest/systeminfo/refreshlog` | Real |
+| Validate | `POST /api/latest/worktrackingsystemconnections/validate`, the route the Validate button posts to | Real (over the faked Azure DevOps client) |
+| What a Feature waits on and where an item hangs | `GET /api/latest/features/references`, `GET /api/latest/teams/{id}/metrics/wip` | Real |
+| The log | `CapturedLogMessages` Serilog sink behind the host's `ILoggerFactory` | Real formatting (policy row appended) |
+| EF on SQLite and Postgres (the upgrade) | Real SQLite file, `PostgresContainerFixture`, `IMigrator` | Real (policy row appended) |
+| `IConnectionSaveService` | Production service, decorated only for the race | Real (policy row appended) |
+
+Driving adapters: the connection page (Vitest + E2E), the owner settings dropdown (Vitest), Refresh History (Vitest),
+the connection, owner, validate, Feature and refresh-log routes and the refresh trigger (backend acceptance). The
+connectors are driven adapters: the tests reach them only through those routes and the refresh.
+
+## Wave: DISTILL / [REF] Production scaffolds
+
+`grep -rn "SCAFFOLD" Lighthouse.Backend/Lighthouse.Backend Lighthouse.Frontend/src` lists them.
+- `Services/Interfaces/IConnectionSaveService.cs` (new): `Open(int connectionId, CancellationToken)` →
+  `ConnectionSaveHandle?`, `Commit(ConnectionSaveHandle, Guid? concurrencyToken, bool startUpdates, CancellationToken)`
+  → `ConnectionSaveOutcome`, with `ConnectionSaveHandle(int ConnectionId)` and `ConnectionSaveOutcome(bool Refused)`.
+  Not registered; the race scenario's decorator applies once DELIVER registers an implementation.
+- `models/SystemInfo/RefreshLog.ts`: optional `latestFullRunFindings?: RefreshFinding[]` and `latestFullRunAt?`,
+  with `RefreshFinding`, `RefreshFindingKind` and `RefreshFindingSetting`.
+
+Not scaffolded, on purpose: the DTO members and the source columns (the tests read JSON and raw SQL, so DELIVER
+shapes them; a column would move the model snapshot without a migration), `SettingSource`, the resolver, the D21 map,
+the refusal rule.
+
+## Wave: DISTILL / [REF] Test placement
+
+- `Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/`: `PendingEpic6303.cs`, harness A
+  `NamedDependencyLinkAcceptanceTest.cs` (slices 01 – 04), harness B `ConnectionDefaultsAcceptanceTest.cs` (05a – 12),
+  one file per slice.
+- `Integration/Containers/ConnectionDefaultsUpgradeMigrationTests.cs`; `Services/Implementation/WorkItems/FetchFingerprintAcrossTheConnectionDefaultsUpgradeTest.cs`.
+- Frontend tests beside their components; E2E spec in `tests/specs/settings/`, POM methods added to
+  `WorkTrackingSystemEditPage` (`defaultsSection`, `setTheTeamsEstimationDefault`, `saveAnswering`) and `TeamEditPage`
+  (`getSelectedEstimation`).
+- Left to DELIVER as unit tests (ADR-025): the `(source, own, default) → effective` resolver table (ADR-240 enforcement),
+  the Estimation bundle comparison table, the G-R1 (b) apply rule as a pure function, the D21 map, the refusal rule's
+  copy for several defaults and owners, the link-phrase and relation-end resolution kernels, and the per-refresh
+  relation-type memo.
+
+## Wave: DISTILL / [REF] Red classification
+
+Full table: `distill/red-classification.md`. Backend 119 cases: **107 RED, 0 BROKEN, 12 active guards green**.
+Frontend 30: **26 RED, 0 BROKEN, 4 active guards green**. E2E 1: **RED** (the defaults region is absent on the demo
+connection page). Re-run after the final review's revision; the could-not-load scenario is no longer a guard (it
+waits for the approved copy), and the native-parent scenario now fails only on the missing finding. A first run found seven pending backend scenarios green, because they asserted only an absence; each
+gained a positive control and is RED in the recorded run. Assertions that met a null answer were rewritten to fail as
+assertions rather than with `ArgumentNullException`.
+
+## Wave: DISTILL / [REF] Pre-requisites for DELIVER
+
+1. **Slice 03 spike (P8):** record a real `GET _apis/wit/workitemrelationtypes` answer from the dev organisation and
+   replace `AnAzureDevOpsOrganisation.AsListed`; confirm `vso.work` can read it.
+2. **Owner Parent Override dropdown has no accessible name today** (`AdvancedInputs.tsx`: `InputLabel` without
+   `labelId`), so the AdvancedInputs scenarios find no `combobox` named `Parent Override Field`; slice 05a links them.
+3. **Migrations** through `CreateMigration` on every provider, never `dotnet ef`; each new owner column also goes into
+   `HistoricalSchemaPatch`, or the upgrade test and other migration fixtures go red naming the column.
+4. **Register `IConnectionSaveService`** (it replaces the dispatcher on the controller, which stays at 7 parameters);
+   the race scenario only exercises the gap once it is registered.
+5. The upgrade test needs Docker locally (Postgres container); it runs in the filtered suite.
+6. Worktrees: copy `valid_not_expired_license.json` from the main checkout.
+
+## Wave: DISTILL / [REF] Wave decisions
+
+- **Names pinned by the tests (DELIVER may rename, consistently across tests and code):**
+  - Refresh-log rows: `latestFullRunFindings` (array of `{ kind, setting, named, seen[] }`) and `latestFullRunAt`, the
+    same on every row of an entity; absent means not built. Kinds `NamedLinkMatchedNothing`, `NamedLinkPointsBothWays`,
+    `RelationTypeHasNoDirection`, `RelationTypeNamedWithoutItsEnd`, `RelationTypeNotYetReadForDependencies` (slice 03
+    only), `RelationTypeCannotBeReadHere`. Settings `ParentOverrideField`, `DependencyField`, `SizeEstimateField`,
+    `FeatureOwnerField`, `EstimationField`.
+  - Owner settings DTO: the existing id members carry the effective value; beside each, `<member>Source`
+    (`ConnectionDefault` / `Own`, out as strings, accepted as strings) and `<member>DefaultName`, for `parentOverride`,
+    `dependencyOverride`, `sizeEstimate`, `featureOwner`, `estimation`; plus `workTrackingSystem` for the helper text.
+  - Connection DTO: `defaults` with `parentOverrideForTeams`, `estimationForTeams`, `parentOverrideForPortfolios`,
+    `dependencyFieldForPortfolios`, `sizeEstimateFieldForPortfolios`, `featureOwnerFieldForPortfolios`,
+    `estimationForPortfolios` (field ids; Estimation as `{ additionalFieldDefinitionId, unit, useNonNumericEstimation,
+    estimationCategoryValues }`; a field added in the same save by its temporary negative id); `supportedDefaults`
+    (those member names); `usedBy.followers` keyed by the same names.
+  - Source columns read by raw SQL: `ParentOverrideSource` (Teams and Portfolios), `DependencyFieldSource`,
+    `SizeEstimateFieldSource`, `FeatureOwnerFieldSource`, `EstimationSource`; 0 = follows, 1 = own.
+  - Frontend: the section is a `region` named `Defaults for Teams and Portfolios` with `group`s named `Teams` and
+    `Portfolios`; the owner dropdown reports `parentOverrideSource` through `onSettingsChange`.
+- **Copy pinned:** UI-3 and UI-6 as approved; the log entry
+  `Connection "Jira DC – Payments" changed the Teams' Parent Override Field default from "Caused by" to "Parent Link"; 3 Teams follow it: Fraud Signals, Ops Tooling, Mobile Wallet; 3 updates queued.`
+  in full at slice 06, followers in creation order, `no Team follows it` when none do; earlier slices pin fragments.
+- **Every When and Then goes through a route** (review revision): Validate through the validate route, Portfolio
+  settings through the settings routes, what a Feature waits on and where an item hangs through the Feature and Team
+  work-in-progress routes, Refresh History through its route. The faked Azure DevOps client stays per organisation:
+  the host's connector factory hands the one recorded connector to the validate route too.
+- **The upgrade repairs another connection's field like a deleted one** (it names no Additional Field of the owner's
+  connection, the DDD-21 rule), taken as the recommended reading.
+- **AC-3.10 is asserted for every setting it names** (Parent Override, Size Estimate, Feature Owner, Estimation), and
+  AC-9.3 / AC-10.3 by a RED acceptance case each, so no AC is left without a failing test. The empty-value cases rely
+  on the stand-in tracker handing back no field value, which is what an empty field is.
+- **Completeness audit (informational):** 15 of 15 checklist items pass → COMPLETE. No SPECIFICATION_AMBIGUITY routed
+  upstream.
+- **Step reuse (informational):** harness A has about 30 step methods over 35 cases, harness B about 45 over 61; the
+  owner, default and connection nouns are enums (`ConnectionDefault`, `OwnerSetting`, `Source`, `RoundTrip`). Not chased
+  at the cost of readable names.
+- **Usage data:** N/A, as DEVOPS decided. No new event; the fields-changed event must not fire for a default-only save.
+- **Peer review** of this DISTILL is for the orchestrator's review gate; not run inside this wave.

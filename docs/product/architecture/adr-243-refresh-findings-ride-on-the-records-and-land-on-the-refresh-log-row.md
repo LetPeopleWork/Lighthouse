@@ -29,7 +29,9 @@ leaf adapters; ADR-183's interface header warns against making them reach into t
 3. **Carried by `SyncOutcome`** as an `init` member (the 6301 precedent), written by the updaters.
 4. **Stored as one nullable text column on `RefreshLog`**: a list of findings, each with a closed `kind`, the setting,
    what was named and what was seen. Tracker values stay literal; the browser builds the sentence in the configured
-   terms.
+   terms. The closed set of kinds: `NamedLinkMatchedNothing`, `NamedLinkPointsBothWays`,
+   `RelationTypeHasNoDirection`, `RelationTypeNamedWithoutItsEnd`, `RelationTypeNotYetReadForDependencies` (slice 03
+   only, retired by slice 04), `RelationTypeCannotBeReadHere`.
 5. **Shown as the findings of the selected entity's latest whole-query run** under its figures in Refresh History,
    labelled with that run's time. A delta run (`RefreshLog.Mode == SyncMode.Delta`) reads only moved records, so it
    assesses nothing and writes no findings; the read takes the latest row with `Mode == Full`, so a delta refresh can

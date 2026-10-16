@@ -1,0 +1,33 @@
+namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
+{
+    /// <summary>
+    /// Why a scenario of this epic is not run yet. DELIVER removes the Ignore of one scenario at a time,
+    /// in the order of its slice, and deletes a constant here once nothing names it any more.
+    /// </summary>
+    internal static class PendingEpic6303
+    {
+        public const string Slice01 = "Pending: a Jira Portfolio reads its dependencies from the link phrase it names (epic 6303, slice 01).";
+
+        public const string Slice02 = "Pending: a named Jira link that matched nothing says so on Refresh History (epic 6303, slice 02).";
+
+        public const string Slice03 = "Pending: an Azure DevOps relation type is accepted where a field name goes (epic 6303, slice 03).";
+
+        public const string Slice04 = "Pending: an Azure DevOps Portfolio reads its dependencies from the relation end it names (epic 6303, slice 04).";
+
+        public const string Slice05a = "Pending: the Teams' Parent Override Field is set once on the connection (epic 6303, slice 05a).";
+
+        public const string Slice05b = "Pending: a field a default names cannot be removed, and an older client's round trip changes nothing (epic 6303, slice 05b).";
+
+        public const string Slice06 = "Pending: a changed default updates exactly the owners that follow it (epic 6303, slice 06).";
+
+        public const string Slice08 = "Pending: the Portfolios' Parent Override Field is set once on the connection (epic 6303, slice 08).";
+
+        public const string Slice09 = "Pending: the Portfolios' Dependency Field is set once on the connection (epic 6303, slice 09).";
+
+        public const string Slice10 = "Pending: the Portfolios' Size Estimate Field is set once on the connection (epic 6303, slice 10).";
+
+        public const string Slice11 = "Pending: the Portfolios' Feature Owner Field is set once on the connection (epic 6303, slice 11).";
+
+        public const string Slice12 = "Pending: Estimation is set once on the connection (epic 6303, slice 12).";
+    }
+}

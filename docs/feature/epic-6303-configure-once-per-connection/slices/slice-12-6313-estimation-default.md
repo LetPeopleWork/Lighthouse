@@ -1,7 +1,7 @@
 # Slice 12 — Story 6313 — Estimation is set once
 
 **ADO**: Story #6313 (Epic #6303) · **User story**: US-11 · **Estimate**: ~1 day (the ADO Story's ~2.5d assumes ~0.5d here; see the Scope Assessment) · **Depends on**: finished #6304 (05a – 06); slice 11 (order)
-**Release point**: yes — completes one setting and can be released on its own; #6313's last slice (L8).
+**Release point**: yes — #6313's last slice; #6313 releases after this slice (L8).
 **Locked decisions**: D7, D9–D13, D16 (one bundle), D21
 
 ## Goal
@@ -23,6 +23,11 @@ queues nothing and slice 06 correctly does nothing. The work is the bundle and t
   Teams and once for Portfolios. The owner page shows "Connection default (Story Points, Points)".
 - Shown on Jira, Azure DevOps and CSV connections (CSV reads Additional Field values,
   `CsvWorkTrackingConnector.cs:244-254`); hidden on Linear and ServiceNow (D21).
+- The save dialog's plain-Save variant ("Change the Estimation default?" — Cancel / Save, UI-3) for an
+  Estimation-only change with followers, built here on top of slice 06's dialog, since it needs the Estimation
+  default.
+- The E2E walking skeleton for the defaults, on the seeded CSV demo connection: set the Teams' Estimation default,
+  then see a Team follow it (`Connection default (…)`).
 
 ## OUT
 - Following the field alone while owning the unit or categories (D16).
@@ -32,7 +37,8 @@ Disproves "estimation is the same across Teams on one connection" if dogfood Tea
 carry different estimation fields or categories — then few follow the default.
 
 ## Production data / dogfood
-Dev instance: Teams on one connection with Story Points; demo data for the screenshot.
+Dev instance: Teams on one connection with Story Points; the seeded CSV demo data for the E2E walking skeleton and
+the screenshot.
 
 ## Acceptance criteria
 AC-11.1 – AC-11.6 (AC-11.6 is AC-4.4 at Team and Portfolio grain); AC-F.1 – AC-F.5 (plain-Save dialog and log entry).
@@ -44,3 +50,5 @@ estimation from it." (configurable terms)
 ## Changed assumptions
 - 2026-10-16 (DESIGN, maintainer P-5, P-12, UI-3, UI-5): plain-Save dialog count and log entry instead of a save
   notice; deleted-field values repaired at the upgrade; the inline Estimation editor is the approved UI.
+- 2026-10-16 (review, maintainer decision): the plain-Save variant is built in this slice on top of slice 06's
+  dialog; the E2E walking skeleton lands here; #6313 releases after this slice.

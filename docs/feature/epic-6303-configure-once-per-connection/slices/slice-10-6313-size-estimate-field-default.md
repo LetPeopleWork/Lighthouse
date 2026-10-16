@@ -1,7 +1,8 @@
 # Slice 10 — Story 6313 — The Portfolios' Size Estimate Field is set once
 
 **ADO**: Story #6313 (Epic #6303) · **User story**: US-09 · **Estimate**: ~0.5 day · **Depends on**: finished #6304 (05a – 06); slice 09 (order)
-**Release point**: yes — completes one setting and can be released on its own (L8).
+**Release point**: no — #6313 releases after slice 12, its last slice (L8). Alone, this slice completes one setting
+and leaves `main` releasable.
 **Locked decisions**: D7 (one slice per setting), D9–D13, D21
 
 ## Goal

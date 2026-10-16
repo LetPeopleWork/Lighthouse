@@ -2185,13 +2185,13 @@ outcomes:
       type) points at a Feature Lighthouse stores show that dependency after one full Portfolio refresh;
       counterparts outside every Portfolio excepted (epic-4365 already reports those)
     ga_baseline: "0% (no such Feature shows a dependency today; Jira silently)"
-    measurement_scope: per_instance   # dev instance :5169 plus Steve's customer, n = 1, directional
+    measurement_scope: per_instance   # dev instance :5169 plus the reporting customer (n = 1), directional
     measured_by: >
       On the dev instance (:5169): Features with >= 1 link of the named type to a stored Feature, against
       Features with >= 1 stored dependency (DependencySource TrackerLink), in the slice-01 Jira Portfolio and the
       slice-04 ADO Portfolio, counted before the slice ships and after one full Portfolio refresh; recorded in
       slices 01 and 04. The Portfolio's latest full run in Refresh History carries no "no Feature carries that
-      link" finding. Steve's customer: the same count, shared out of band.
+      link" finding. The reporting customer (n = 1): the same count.
     log_fields:
       refresh_log_row:
         - "findings (new nullable text column; the latest full run's findings shown under the Portfolio's figures, with that run's time)"
@@ -2252,16 +2252,17 @@ outcomes:
     feature: epic-6303-configure-once-per-connection
     title: An admin learns how many owners a default affects before the save, and who, after
     target: >
-      100% of default saves with followers show the follower count in the pre-save dialog; 100% of
+      from slice 06, 100% of default saves with followers show the follower count in the pre-save dialog; 100% of
       default-changing saves write exactly one Information log entry naming the followers (or saying none
       follow); refused (409 additional-field-in-use) and stale (409 concurrency-conflict) saves write none
     ga_baseline: "no count, no entry"
     measurement_scope: per_instance
     measured_by: >
-      CI: Vitest over the dialog variants (none when nobody follows; plain Save for page-load-only changes; the
-      update question otherwise; no owner name rendered); a logger-capturing test on IConnectionSaveService.
-      Per instance: the entry in Settings -> System Info -> Logs (SystemAdmin only), visible at the shipped
-      Information minimum level.
+      CI: Vitest over the dialog variants (from slice 06: none when nobody follows; the update question; no owner
+      name rendered; from slice 12: plain Save for page-load-only changes); a logger-capturing test on
+      IConnectionSaveService. Per instance: the entry in Settings -> System Info -> Logs (SystemAdmin only),
+      visible at the shipped Information minimum level. Admins who set the log level at Warning or above cannot
+      read the entry, so for them the CI logger test is the only proof.
     log_fields:
       information_entry:
         - "connection name; per changed default: setting, grain (Teams / Portfolios), old and new default display name"

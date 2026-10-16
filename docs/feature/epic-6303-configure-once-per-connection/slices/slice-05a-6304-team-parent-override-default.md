@@ -1,4 +1,4 @@
-# Slice 05a — Story 6304 — The Teams' Parent Override Field is set once; saving it says how many follow
+# Slice 05a — Story 6304 — The Teams' Parent Override Field is set once; saving it names the followers in the log
 
 **ADO**: Story #6304 (Epic #6303) · **User story**: US-04 (first half) · **Estimate**: ~1 day · **Depends on**: finished #6312 (order rule, D19)
 **Release point**: no — #6304 releases after slice 06. Alone, this slice leaves `main` releasable: no default
@@ -8,8 +8,8 @@ field (AC-4.4) (L8). Between 05a and 05b an older client's round trip could stil
 
 ## Goal
 A System Admin sets "Parent Override Field for Teams" on the connection. A Team in *Connection default* mode reads
-it as its own; a Team with its own value — including a deliberate None — is unaffected. Saving the default shows, in
-the save dialog, how many Teams follow it, and the log entry names them.
+it as its own; a Team with its own value — including a deliberate None — is unaffected. Saving the default works
+exactly as today, with no dialog, and the log entry names the Teams that follow it.
 
 ## IN
 - Expand-only migration (`CreateMigration`, all providers): a nullable default FK on the connection; a mode column
@@ -23,9 +23,10 @@ the save dialog, how many Teams follow it, and the log entry names them.
 - Connection edit page: a "Defaults for Teams and Portfolios" section below Additional Fields
   (`ModifyConnectionSettings.tsx:793-818`), with *Teams* / *Portfolios* sub-headings and one row per setting the
   tracker honours; hidden on Linear and ServiceNow; no follower count, no "Show who" (D21, UI-1, AC-4.7).
-- **The save dialog (plain variant: Cancel / Save)** counts the followers of each changed default, from the
-  connection list read; no dialog when nobody follows; one Information log entry per save names them
-  (AC-F.1 – AC-F.4). After the save the page navigates to the Overview as today.
+- **No save dialog for a changed default in this slice**: the save works exactly as today (a dialog opens only for
+  an Additional Field change, as today). One Information log entry per save names the followers of each changed
+  default, or says none follow (the log-entry part of AC-F.1 – AC-F.4). After the save the page navigates to the
+  Overview as today.
 - Team Advanced section: the Parent Override dropdown's first entry "Connection default (…)" with helper text
   "Set on the <tracker> connection." (`AdvancedInputs.tsx:28-52`, UI-2); the followed display name travels on the
   Team settings DTO.
@@ -34,8 +35,9 @@ the save dialog, how many Teams follow it, and the log entry names them.
 
 ## OUT
 - D17's delete refusal and the older-payload PUT rule with its round trip (slice 05b, G-R1 (b)).
-- Immediate update on a default change and the dialog's update question (slice 06 — until then the next scheduled
-  cycle picks it up through the fingerprint). Portfolio grain (Story #6313, slice 08). Slice 07's follow list and
+- The save dialog for a changed default — its follower count and update question — and the immediate update (slice
+  06; until then the next scheduled cycle picks the change up through the fingerprint). The Estimation-only plain
+  Save variant (slice 12). Portfolio grain (Story #6313, slice 08). Slice 07's follow list and
   bulk follow are dropped (UI-4).
 
 ## Learning hypothesis
@@ -45,16 +47,17 @@ that would mean a full refetch of every Team on release day.
 
 ## Production data / dogfood
 Dev instance's Jira connection with its real Teams: before/after fingerprints equal; count Teams empty today (R2);
-count the Teams whose Parent Override pointed at a deleted field before the upgrade; set a default, read the dialog's
-count and the log entry, create one new Team and see it follow. Count the saves it took against the saves N Teams
-would need (`OUT-6303-set-once`). Demo data for the E2E walking skeleton.
+count the Teams whose Parent Override pointed at a deleted field before the upgrade; set a default, read the log
+entry, create one new Team and see it follow. Count the saves it took against the saves N Teams
+would need (`OUT-6303-set-once`). No E2E here: the walking skeleton lands with slice 12.
 
 ## UI
-Approved by the maintainer (UI-1, UI-2, UI-3): defaults section, save dialog variant (plain), dropdown entry;
-loading / could-not-load look from DESIGN.
+Approved by the maintainer (UI-1, UI-2): defaults section, dropdown entry; loading / could-not-load look from
+DESIGN. No dialog for a changed default: the approved UI-3 dialog arrives with slice 06, so no unapproved dialog copy
+is built.
 
 ## Acceptance criteria
-AC-4.1 – AC-4.7 (AC-4.4 as amended); AC-F.1 – AC-F.4 as amended.
+AC-4.1 – AC-4.7 (AC-4.4 as amended); the log-entry part of AC-F.1 – AC-F.4 as amended (no dialog in this slice).
 
 ## Release notes (finalize)
 "Teams whose Parent Override Field pointed at an Additional Field that had been deleted now read the tracker's own
@@ -63,3 +66,5 @@ value again, from their next update." (configurable terms)
 ## Changed assumptions
 - 2026-10-16 (DESIGN, maintainer P-5, P-12): the after-save notice is replaced by the pre-save dialog count and one
   log entry; values pointing at a deleted field are repaired at the upgrade.
+- 2026-10-16 (review, maintainer decision): this slice ships no save dialog for a changed default; the UI-3 dialog,
+  both variants, arrives with slice 06, and #6304 releases only after 06.

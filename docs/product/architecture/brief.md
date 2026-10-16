@@ -10185,10 +10185,15 @@ one application service behind a port, the controller only maps; the service pub
   before `Save()`; a stale one is refused with 409 `concurrency-conflict` (never retried), and nothing is queued or
   logged for it. A save without a token behaves as today: it is guarded only by the token value its own request read,
   and it leaves the token unchanged.
-- **6303-I4: the browser asks before, with counts only.** The reused 6307 dialog reads follower counts from the
-  connection list read it already makes: no dialog when nobody follows a changed default; plain Cancel / Save for
-  Estimation-only (and for any followed default in 05a); the update question for a followed fetch-time default (slice
-  06 on) or an Additional Field change. No names in the dialog; no follower count on the page.
+- **6303-I3b: a connection PUT without `defaults` keeps every stored default.** The connection request carries the
+  defaults as one nested `defaults` member, the connection-side counterpart of G-R1 (b) on owner PUTs. Absent keeps
+  every stored default, so an old browser tab or a script that drops unknown properties cannot clear one; present is
+  authoritative, and a null inside it clears that default and is logged like any other changed default (ADR-241).
+- **6303-I4: the browser asks before, with counts only, from slice 06.** The reused 6307 dialog reads follower counts
+  from the connection list read it already makes: no dialog when nobody follows a changed default; the update question
+  for a followed fetch-time default or an Additional Field change; plain Cancel / Save for Estimation-only (built in
+  slice 12 on top of slice 06's dialog). Before slice 06 a changed default saves exactly as today, with no dialog. No
+  names in the dialog; no follower count on the page.
 - **6303-I5: the upgrade changes nothing except values that pointed at nothing.** Per slice, expand-only: empty →
   *Connection default*; a value naming one of the connection's Additional Fields → *Own*; a value naming a field the
   connection no longer has → cleared and *Connection default*. No default exists on release day; nothing is queued at

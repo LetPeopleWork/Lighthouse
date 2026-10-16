@@ -50,6 +50,13 @@ role that can save a connection.
    - The controller maps the DTO onto the handle's connection exactly as it does today (name, options, Additional
      Fields, write-back mappings, and now the defaults), and keeps today's write-back validation (400) and licence
      check (403).
+   - **The defaults travel as one nested `defaults` member of the connection request**, the connection-side
+     counterpart of G-R1 (b) (an owner PUT without the source keeps the stored source). When `defaults` is absent,
+     every stored default stays as it is, so a browser tab opened before the upgrade, or a script that drops
+     properties it does not know, can never clear one. When `defaults` is present it is authoritative: each member
+     sets its default, and a null inside it clears that default, which the save then logs like any other changed
+     default (decision 4). With flat nullable members, *absent* and *cleared* would bind alike; nesting is what
+     keeps them apart.
    - `Commit(handle, concurrencyToken, startUpdates)`, in order:
      1. **In-use check from a fresh read, not from the `Open` snapshot.** One set-based query in the same unit of
         work: the Teams and Portfolios on this connection whose own value of any of the five settings is one of the
@@ -111,10 +118,13 @@ role that can save a connection.
    the connection list read the page already makes (`usedBy`, through the existing `IWorkTrackingSystemConnectionUsage`
    port). Per save:
    - nobody follows any changed default and no Additional Field changed → **no dialog**; the save works as today;
-   - only defaults read at page load (Estimation) with followers changed, or — in slice 05a, before a default change
-     starts any update — any changed default with followers → **plain**: Cancel / Save;
-   - a fetch-time default with followers changed (slice 06 on), or an Additional Field changed → the **update
-     question**: Cancel / Save only / Save and update.
+   - only defaults read at page load (Estimation) with followers changed → **plain**: Cancel / Save (built in slice
+     12, on top of slice 06's dialog, since it needs the Estimation default);
+   - a fetch-time default with followers changed, or an Additional Field changed → the **update question**: Cancel /
+     Save only / Save and update.
+   The dialog opens for a changed default **from slice 06**. In slice 05a a changed default saves exactly as today,
+   with no dialog (only an Additional Field change opens one, as today), and the log entry is still written. So no
+   dialog copy the maintainer has not approved is ever built, and #6304 releases only after slice 06.
    The title carries counts per grain ("Update 3 Teams and 0 Portfolios?", "Change the Estimation default?"); names
    are never shown in the dialog. Counts are as of page load; the log entry, computed at save, is the record.
    **The choice the dialog returns, and the usage-data guard.** `ISaveConnectionChoice`
@@ -157,7 +167,8 @@ role that can save a connection.
 **Positive**
 - Exactly the owners whose fetched data a save changes are updated (AC-5.1), with one code path for field and default
   edits.
-- The PUT contract, the clients and the page's navigation stay as they are.
+- The PUT response, the clients and the page's navigation stay as they are; the request gains one optional nested
+  `defaults` member, and a request without it keeps every stored default.
 - A record of who followed each change exists for every default-changing save, from the browser or a client.
 
 **Negative / accepted**
@@ -185,6 +196,8 @@ role that can save a connection.
   commits; the connection save, removing X, commits → 409 `additional-field-in-use` naming that Team, X still exists.
   (Driven deterministically by a test seam between `Open` and `Commit`, not by timing.)
 - Acceptance, owner PUT: an own value naming no Additional Field of the owner's connection → 400.
+- Acceptance, connection PUT: a request without `defaults` keeps every stored default; one with
+  `defaults.parentOverrideForTeams: null` clears that default and writes the log entry for it.
 - Logger test (a capturing `ILogger` on the service): exactly one Information entry per default-changing save, naming
   exactly the owners in `ConnectionDefault` at commit for each changed default, saying "none" when there are none, and
   none for a save that changed no default or was refused.
