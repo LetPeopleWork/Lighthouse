@@ -819,11 +819,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 				ownerKind={ownerKind}
 				ageBandColumn={ageBandColumn}
 				sleRiskColumn={sleRiskColumn}
-				timeInStateColumn={{
-					now,
-					stalenessThresholdDays,
-					blockedStalenessThresholdDays,
-				}}
+				timeInStateColumn={{ now }}
 			/>
 		</>
 	);

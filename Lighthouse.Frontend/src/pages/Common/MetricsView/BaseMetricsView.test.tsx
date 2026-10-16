@@ -7176,8 +7176,6 @@ describe("which lists carry the risk column", () => {
 			estimationVsCycleTimeData: null,
 			arrivalsData: null,
 			workItemLookup: new Map(),
-			stalenessThresholdDays: undefined,
-			blockedStalenessThresholdDays: undefined,
 			perStatePercentileValues: [],
 			sleRiskValues,
 			doingStates: ["In Progress"],

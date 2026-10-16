@@ -570,8 +570,6 @@ type ViewDataInputs = {
 	readonly estimationVsCycleTimeData: IEstimationVsCycleTimeResponse | null;
 	readonly arrivalsData: RunChartData | null;
 	readonly workItemLookup: Map<number, IWorkItem>;
-	readonly stalenessThresholdDays: number | undefined;
-	readonly blockedStalenessThresholdDays: number | undefined;
 	readonly perStatePercentileValues: IPerStatePercentileValues[];
 	readonly sleRiskValues: ISleRisk[];
 	readonly doingStates: string[];
@@ -687,10 +685,7 @@ export function buildViewData(
 		sleRiskColumn,
 	};
 
-	const timeInStateColumn = {
-		stalenessThresholdDays: inputs.stalenessThresholdDays,
-		blockedStalenessThresholdDays: inputs.blockedStalenessThresholdDays,
-	};
+	const timeInStateColumn = { now: inputs.endDate };
 
 	return {
 		wipOverview: {
@@ -1948,8 +1943,6 @@ export const BaseMetricsView = <
 		estimationVsCycleTimeData,
 		arrivalsData,
 		workItemLookup,
-		stalenessThresholdDays,
-		blockedStalenessThresholdDays,
 		perStatePercentileValues,
 		sleRiskValues,
 		doingStates,
