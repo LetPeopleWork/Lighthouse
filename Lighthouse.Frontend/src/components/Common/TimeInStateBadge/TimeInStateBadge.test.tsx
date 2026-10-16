@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
-import TimeInStateBadge from "./TimeInStateBadge";
+import type { StaleReasonKind } from "../../../models/WorkItem";
+import TimeInStateBadge, { daysInState } from "./TimeInStateBadge";
 
 describe("TimeInStateBadge", () => {
 	const now = new Date("2026-05-25T12:00:00Z");
@@ -181,4 +182,80 @@ describe("TimeInStateBadge shows the staleness Lighthouse decided", () => {
 			);
 		},
 	);
+
+	test("a reason that names no state reads as the state the Work Item is in", () => {
+		render(
+			<TimeInStateBadge
+				currentStateEnteredAt={threeDaysInReview}
+				currentStateName="Review"
+				isStale={true}
+				staleReasons={[{ kind: "TimeInState", days: 12 }]}
+				now={now}
+			/>,
+		);
+
+		expect(screen.getByTestId("time-in-state-stale")).toHaveAttribute(
+			"aria-label",
+			"3d in Review — 12d in Review",
+		);
+	});
+
+	test("a reason of a kind this Lighthouse does not know is left out of the tooltip", () => {
+		render(
+			<TimeInStateBadge
+				currentStateEnteredAt={threeDaysInReview}
+				currentStateName="Review"
+				isStale={true}
+				staleReasons={[
+					{ kind: "BlockedDuration", days: 6 },
+					{ kind: "SomethingNewer" as unknown as StaleReasonKind, days: 9 },
+				]}
+				now={now}
+			/>,
+		);
+
+		expect(screen.getByTestId("time-in-state-stale")).toHaveAttribute(
+			"aria-label",
+			"3d in Review — Blocked 6d",
+		);
+	});
+});
+
+describe("TimeInStateBadge counts to the reader's own calendar day", () => {
+	// A range end arrives as the reader's local midnight. In Zurich that instant is still the day
+	// before in UTC, while Lighthouse is asked about the reader's local day.
+	const rangeEnd = new Date(2026, 4, 25);
+
+	test("the suite runs east of Greenwich, so a local midnight is not a UTC midnight", () => {
+		expect(rangeEnd.getTimezoneOffset()).toBeLessThan(0);
+	});
+
+	test("a Work Item that entered its state on 15 May has been in it 11 days on 25 May, as Lighthouse reports", () => {
+		const serverReportedDays = 11;
+
+		render(
+			<TimeInStateBadge
+				currentStateEnteredAt={new Date("2026-05-15T12:00:00Z")}
+				currentStateName="Review"
+				isStale={true}
+				staleReasons={[
+					{
+						kind: "TimeInState",
+						days: serverReportedDays,
+						stateName: "Review",
+					},
+				]}
+				now={rangeEnd}
+			/>,
+		);
+
+		expect(screen.getByTestId("time-in-state-stale")).toHaveAttribute(
+			"aria-label",
+			`${serverReportedDays}d in Review — ${serverReportedDays}d in Review`,
+		);
+	});
+
+	test("daysInState counts to the local day of the instant it is given", () => {
+		expect(daysInState(new Date("2026-05-15T12:00:00Z"), rangeEnd)).toBe(11);
+	});
 });

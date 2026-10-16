@@ -7247,6 +7247,19 @@ describe("which lists carry the risk column", () => {
 		},
 	);
 
+	// Lighthouse judged staleness on the range's last day, so the Time in State label beside its
+	// reason must count to that same day, not to today.
+	it.each(["wipOverview", "staleOverview"])(
+		"the %s list counts Time in State to the range's last day",
+		(key) => {
+			const rangeEnd = new Date(2026, 4, 25);
+
+			const list = viewDataWith([], "team", { endDate: rangeEnd })[key];
+
+			expect(list?.timeInStateColumn?.now).toBe(rangeEnd);
+		},
+	);
+
 	const CONTEXT_OF_EVERY_LIST: Record<string, WorkItemsDialogContextId> = {
 		wipOverview: "inProgress",
 		blockedOverview: "blocked",

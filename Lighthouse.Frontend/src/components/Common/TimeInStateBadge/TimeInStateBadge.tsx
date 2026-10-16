@@ -1,6 +1,6 @@
 import { Box, Tooltip } from "@mui/material";
 import type React from "react";
-import type { IStaleReason } from "../../../models/WorkItem";
+import type { IStaleReason, StaleReasonKind } from "../../../models/WorkItem";
 import getAgeInDaysFromStart from "../../../utils/date/age";
 
 type TimeInStateBadgeProps = {
@@ -19,13 +19,24 @@ export const daysInState = (
 		return 0;
 	}
 
-	return getAgeInDaysFromStart(currentStateEnteredAt, now);
+	// Count to the reader's calendar day, the one Lighthouse is asked about: a range end arrives as
+	// its local midnight, which east of Greenwich is still the day before in UTC.
+	const readersDay = new Date(
+		Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 12),
+	);
+	return getAgeInDaysFromStart(currentStateEnteredAt, readersDay);
 };
 
-const describeReason = (reason: IStaleReason): string =>
+const knownReasonKinds: ReadonlySet<StaleReasonKind> = new Set([
+	"TimeInState",
+	"BlockedDuration",
+	"TimeInStateWhileBlocked",
+]);
+
+const describeReason = (reason: IStaleReason, stateName: string): string =>
 	reason.kind === "BlockedDuration"
 		? `Blocked ${reason.days}d`
-		: `${reason.days}d in ${reason.stateName}`;
+		: `${reason.days}d in ${reason.stateName ?? stateName}`;
 
 const TimeInStateBadge: React.FC<TimeInStateBadgeProps> = ({
 	currentStateEnteredAt,
@@ -42,7 +53,11 @@ const TimeInStateBadge: React.FC<TimeInStateBadgeProps> = ({
 	const label = `${days}d in ${currentStateName}`;
 
 	if (isStale) {
-		const tooltip = `${label} — ${staleReasons.map(describeReason).join("; ")}`;
+		const reasons = staleReasons
+			.filter((reason) => knownReasonKinds.has(reason.kind))
+			.map((reason) => describeReason(reason, currentStateName))
+			.join("; ");
+		const tooltip = `${label} — ${reasons}`;
 
 		return (
 			<Tooltip title={tooltip} placement="top">

@@ -836,8 +836,9 @@ describe("WorkItemsDialog Component", () => {
 		);
 
 		// The column's day is the range's last day on a past range, which is the day Lighthouse judged
-		// the rows on, so the label and the reason beside it count to the same day.
-		const theRangesLastDay = new Date("2026-05-25T12:00:00Z");
+		// the rows on, so the label and the reason beside it count to the same day. A range end arrives
+		// as the reader's local midnight, which in Zurich is still the day before in UTC.
+		const theRangesLastDay = new Date(2026, 4, 25);
 
 		// @contract-shape:pure-function
 		test("a row Lighthouse marks stale shows the stale badge, counted to the column's day, with no threshold given", () => {
