@@ -129,7 +129,7 @@ const SnackbarErrorHandler: React.FC<SnackbarErrorHandlerProps> = ({
 	}, [showError]);
 
 	const handleClose = (
-		_event?: Event | React.SyntheticEvent,
+		_event?: Event | React.SyntheticEvent | null,
 		reason?: string,
 	) => {
 		if (reason === "clickaway") return;
