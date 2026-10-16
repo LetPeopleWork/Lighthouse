@@ -248,7 +248,7 @@ Enable **Configure Blocked Items** to define what "blocked" means for your proce
 We do not recommend identifying blocked work by *state* alone. Tags/labels work better from a Flow perspective. [More Details here](https://www.prokanban.org/blog/whats-wrong-with-having-a-blocked-column).
 
 ### Blocked Staleness Threshold
-Optionally enable **Set Blocked Items Staleness Threshold** and set a number of days. This calibrates the [Blocked Over Time](../metrics/flow-metrics.html#blocked-over-time) status indicator: it turns amber once the oldest blocked item ages past 75% of the threshold and red once it reaches the threshold. Without a threshold configured, that widget prompts you to set one.
+Optionally enable **Set Blocked Items Staleness Threshold** and set a number of days. This calibrates the [Blocked Over Time](../metrics/flow-metrics.html#blocked-over-time) status indicator: it turns amber once the oldest blocked item ages past 75% of the threshold and red once it reaches the threshold. Without a threshold configured, that widget prompts you to set one. It also decides when a blocked Work Item counts as [stale](../metrics/flow-overview.html#what-counts-as-stale): once it has been blocked for at least this many days.
 
 ## Process Behaviour Chart Baseline
 Lighthouse can show **Process Behaviour Charts (PBC)** in the Metrics view. To enable them, configure a **baseline start** and **baseline end** date.

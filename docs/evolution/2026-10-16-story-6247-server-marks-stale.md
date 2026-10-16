@@ -146,7 +146,7 @@ trigger keeps its semantics and moves with the rule).
 | --- | --- |
 | User docs | Done. `docs/metrics/flow-overview.md` gains "What counts as stale": Lighthouse decides, the rule in plain words, the reason tooltip, the instance's time zone, and the past-range label. Its old line that Blocked Work Items are never counted as stale is corrected. `docs/metrics/flow-metrics.md`'s aging chart note now points to that rule. |
 | `docs/aiintegration.md` | Unchanged, because it documents neither the WIP read's fields nor what the MCP tools return, and its Daily Flow Review line (Blocked, past the SLE, at risk, WIP over its limit) is still true until slice 03 ships. The fields and the skill's Stale item are documented with slice 03. |
-| Release notes | Owed. A vNext line and the ADO `Release Notes` tag are for the maintainer to confirm. |
+| Release notes | #6247 carries the ADO `Release Notes` tag (maintainer confirmed), so `/release` picks it up under Bugfixes and Improvements. |
 | Screenshots | N/A, because nothing looks different: the same red badge, tooltip format and red dot. |
 | Lighthouse-Clients | Slice 03, still to come: pass the fields through, a version bump, and a version gate naming the first Lighthouse release with them. Until then `lh … --json` already returns the fields unchanged. |
 | Website | N/A, because Stale is already on the site as part of the Flow Overview and no new capability is marketed. |
@@ -166,8 +166,9 @@ trigger keeps its semantics and moves with the rule).
   budget allowlist; a scenario added there should make it faster rather than split it.
 - **The NU1903 advisory on `Microsoft.AspNetCore.SignalR.Common` 10.0.12** in the test project is unrelated to
   this story.
-- **Whether the WIP read is refetched after a thresholds save** was left for DELIVER to check by hand and is not
-  recorded. If it is not, a threshold edit shows only on the next read.
+- **The WIP read is refetched after a thresholds save**: the final review found the metrics queries use
+  `staleTime: 0` and `gcTime: 0`, so returning to the dashboard reads the new verdict. Not yet checked by hand
+  in a browser.
 
 ## Migrated out of the workspace
 
