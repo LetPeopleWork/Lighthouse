@@ -2101,6 +2101,88 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             }
         }
 
+        [Test]
+        public async Task A_move_into_the_same_state_from_another_state_is_not_taken_for_a_correction()
+        {
+            var team = CreateTeam();
+            var stored = AStoredItemThatEntered(team, "In Progress", TheShiftedTime);
+
+            await RefreshTheTeamWith(team, ItsWholeHistory(CreateIncomingFor(stored, "In Progress", StateCategories.Doing, ("Blocked", "In Progress", WhenItMovedOn))));
+
+            domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(
+                    It.Is<WorkItemTransitioned>(e => e.FromState == "Blocked" && e.ToState == "In Progress"),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Test]
+        public async Task One_dropped_row_stands_in_for_only_one_of_two_moves_between_the_same_states()
+        {
+            var team = CreateTeam();
+            var stored = AStoredItemThatEntered(team, "In Progress", TheShiftedTime);
+
+            await RefreshTheTeamWith(team, ItsWholeHistory(CreateIncomingFor(stored, "In Progress", StateCategories.Doing,
+                ("To Do", "In Progress", TheCorrectedTime),
+                ("To Do", "In Progress", WhenItMovedOn))));
+
+            domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(It.IsAny<WorkItemTransitioned>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Test]
+        public async Task A_Feature_read_without_its_whole_history_never_loses_a_stored_transition()
+        {
+            var storedFeatureTransitions = await RefreshAFeatureStoredAs(
+                [("To Do", "In Progress", TheShiftedTime)],
+                [("To Do", "In Progress", TheCorrectedTime)],
+                transitionsAreItsWholeHistory: false);
+
+            Assert.That(storedFeatureTransitions.Select(t => t.TransitionedAt), Is.EquivalentTo(new[] { TheShiftedTime, TheCorrectedTime }));
+        }
+
+        [Test]
+        public async Task A_stored_Feature_transition_the_whole_history_still_names_keeps_its_row()
+        {
+            var storedFeatureTransitions = await RefreshAFeatureStoredAs(
+                [("To Do", "In Progress", TheFirstReadingDay), ("In Progress", "In Review", TheShiftedTime)],
+                [("To Do", "In Progress", TheFirstReadingDay), ("In Progress", "In Review", TheCorrectedTime)],
+                transitionsAreItsWholeHistory: true);
+
+            Assert.That(storedFeatureTransitions.Select(t => (t.ToState, t.TransitionedAt)),
+                Is.EquivalentTo(new[] { ("In Progress", TheFirstReadingDay), ("In Review", TheCorrectedTime) }));
+        }
+
+        private async Task<List<FeatureStateTransition>> RefreshAFeatureStoredAs(
+            (string FromState, string ToState, DateTime At)[] stored,
+            (string FromState, string ToState, DateTime At)[] read,
+            bool transitionsAreItsWholeHistory)
+        {
+            var team = CreateTeam();
+            var portfolio = CreatePortfolio();
+            var storedFeature = new Feature(team, 1) { Id = idCounter++, ReferenceId = "FTR-RECONCILED", State = read[^1].ToState };
+            var storedFeatureTransitions = stored
+                .Select(t => new FeatureStateTransition { FeatureId = storedFeature.Id, FromState = t.FromState, ToState = t.ToState, TransitionedAt = t.At })
+                .ToList();
+            GivenTheFeatureTransitionsStoredAre(storedFeatureTransitions);
+            featureRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Feature, bool>>()))
+                .Returns((Func<Feature, bool> predicate) => new List<Feature> { storedFeature }.SingleOrDefault(predicate));
+
+            var incoming = new Feature(team, 1)
+            {
+                ReferenceId = storedFeature.ReferenceId,
+                State = storedFeature.State,
+                SyncedTransitions = [.. read.Select(t => new WorkItemStateTransition { FromState = t.FromState, ToState = t.ToState, TransitionedAt = t.At })],
+                TransitionsAreItsWholeHistory = transitionsAreItsWholeHistory,
+            };
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>())).ReturnsAsync([incoming]);
+
+            await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
+
+            return storedFeatureTransitions;
+        }
+
         private void GivenTheFeatureTransitionsStoredAre(List<FeatureStateTransition> storedFeatureTransitions)
         {
             featureStateTransitionRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<FeatureStateTransition, bool>>>()))
