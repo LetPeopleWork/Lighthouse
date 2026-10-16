@@ -1,0 +1,64 @@
+# Environment inventory - epic-6303-configure-once-per-connection
+# Consumed by DISTILL for environmental realism.
+#
+# A change inside the existing product: settings an owner inherits from its Work Tracking Connection, and the
+# Dependency Field naming a Jira link type or an Azure DevOps relation type. No endpoint, configuration key,
+# secret, dependency, chart or image change. Schema changes are expand-only migrations on both providers (one
+# RefreshLog text column in slice 02; owner source columns, connection default columns and two data steps in
+# slices 05a and 08-12). Program.cs gains one DI line (IConnectionSaveService). The OS axis is clean; the axes
+# that matter are noted below.
+
+target_environments:
+  - name: clean
+    description: "Any supported runtime. Nothing to install or configure; migrations, including their data steps, run at startup as every migration does."
+    platform: [linux, macos, windows]
+    preconditions: []
+  - name: upgraded-with-dangling-values
+    description: >
+      An instance upgraded from a release before the Epic, where some Team or Portfolio setting names an Additional
+      Field its own connection no longer has (deleted, or left from a connection change). The migration sets those
+      owners to Connection default and clears the value; every other owner's fetch fingerprint is byte-identical.
+    platform: [linux, macos, windows]
+    preconditions:
+      - "owner rows with own values, empty values, and values naming no Additional Field of their own connection"
+
+notes:
+  db_provider:
+    values: [sqlite, postgres]
+    why: >
+      Seven migrations per provider project (Lighthouse.Migrations.Sqlite, Lighthouse.Migrations.Postgres),
+      generated with Create-Migration.ps1 after a backend build, then the ordered second build pass. The two data
+      steps (clear dangling values, then set Own where a value is still present) are hand-added to BOTH providers'
+      files in that order; on Postgres every identifier is double-quoted. Owner source columns must carry
+      defaultValue 0 in both generated migrations, which is what lets the previous release insert rows after a
+      rollback. EF InMemory hides a missing migration and runs no data step, so the migration test on both
+      providers, verifysqlite / verifypostgres, and a throwaway sqlite start grepping PendingModelChanges are the
+      proof. HistoricalSchemaPatch lists every new column on Teams, Portfolios and WorkTrackingSystemConnections.
+  jira_deployment:
+    values: [cloud, data_center]
+    why: >
+      The named link type is read from the issue links the search already returns; no new request. Cloud's shape
+      is pinned by recorded wire fixtures and the live JiraIntegration dogfood tests; Data Center is assumed equal
+      (link-type endpoint shipped since 6028, DC verification still owed, not blocking).
+  ado_deployment:
+    values: [services, server_2022]
+    why: >
+      The relation-type listing (workitemrelationtypes) is new: at most one per connection per Validate and per
+      refresh, created per call and never kept on the cached connector. Fixtures for Services and Server 2022 are
+      recorded in slice 03; the live AdoIntegration category reaches the dev organisation (Services) only.
+  tracker_type:
+    values: [jira, azure_devops, csv, linear, servicenow]
+    why: >
+      Which defaults the connection offers: Jira and Azure DevOps all five; CSV Estimation and Feature Owner;
+      Linear and ServiceNow none (the group is hidden). The seeded demo connection is CSV, so a demo-data E2E can
+      only exercise the Estimation (or Feature Owner) default.
+  client_shape:
+    values: [current_browser, browser_tab_opened_before_upgrade, older_cli_or_mcp, client_library_script]
+    why: >
+      Owner PUTs without a source keep the stored mode (G-R1 option b), for echoing and property-dropping
+      clients alike. The client library can write connections (updateWorkTrackingConnection). A connection PUT
+      without the nested defaults member keeps every stored default; only a present defaults member changes them.
+  ci_exposure: >
+    Slices 01-02 add Category=JiraIntegration; 03-04 add Category=AdoIntegration. Slices 05a and 08-12 touch
+    Models/WorkTrackingSystemConnection.cs (and 05a Program.cs), which are shared paths, so CI runs every live
+    connector suite (Jira, ADO, Linear, ServiceNow, GitHub) on those pushes. Locally, Linear is never run.

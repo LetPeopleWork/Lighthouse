@@ -1997,3 +1997,301 @@ job `job-config-admin-see-which-owners-differ-from-the-connection`, the story ma
 03, 04, 05a, 05b, 06, 07 (dropped), 08–12 — in `design/upstream-changes.md`; the product owner has applied them
 (DISCUSS "Changed Assumptions (from DESIGN …)"). Review iteration 2's fixes add nothing upstream. Peer review
 (solution-architect-reviewer) iteration 2 re-runs next.
+
+---
+
+## Wave: DEVOPS / [REF] Scope and prior-wave reading
+
+**Agent**: Apex (`nw-platform-architect`) · **Date**: 2026-10-16 · **Mode**: autonomous subagent, maintainer AFK,
+documents only (no code, no commit, no ADO). A change inside the existing product: no new container, workflow, job,
+flag, dependency, configuration key or secret; no chart, image or packaging change. What it does change is CI
+*exposure* (which live-connector suites wake up) and the database, once per slice that adds a setting.
+
+```
+✓ This file: DISCUSS Outcome KPIs, Pre-requisites, Risks, Checklist (usage data), DoD; DESIGN in full (1297-1999)
+✓ design/maintainer-decisions-2026-10-16.md (DEVOPS: usage data none), design/upstream-changes.md (headings, release notes)
+✓ story-6301 DEVOPS sections and environments.yaml (precedent for structure and tone)
+✓ docs/product/kpi-contracts.yaml (header, story-6301 entries)
+✓ docs/ci-learnings.md: the pre-push analyzer sweep (7-95), preflight rules (153-200), Program.cs / shared path (203),
+  Jira routes (212), zod .nullable() (219), EF migrations (221-225), E2E label / data-testid / demo-data rules (227-232)
+✓ Scripts/test-selection/path-classifier.sh (SHARED_REGEX), .github/workflows/ci_backend.yml (filter step),
+  ci_verifysqlite.yml (E2E = `pnpm run test`, grep-invert @screenshot|@auth|@rbac|@proxyauth)
+✓ Program.cs:1401 (services are registered there by hand: IConnectionSaveService needs a line)
+✓ Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs and its two migration fixtures (what they seed)
+✓ Factories/DemoDataFactory.cs:72-73, 102-116 (CSV demo connection; demo Teams set Estimation directly)
+✓ docs/settings/usagedata.md:62, :96; UsageDataEventName.cs (last member WorkTrackingSystemFieldsChanged = 19)
+✓ Lighthouse.EndToEndTests (specs and POMs touching these settings)
+✓ /storage/repos/lighthouse-clients/packages: CLI and MCP only READ connections; updateWorkTrackingConnection exists
+  in the client library alone, with no CLI command or MCP tool behind it
+⊘ DISTILL / DELIVER (follow this wave)
+```
+
+## Wave: DEVOPS / [REF] Pre-requisites
+
+| # | Pre-requisite | State | Blocks |
+|---|---|---|---|
+| O-P1 | Dev instance `:5169` baseline for `OUT-6303-dependencies-recovered`: Features with ≥ 1 dependency in the slice-01 Jira Portfolio and the slice-04 ADO Portfolio, counted **before** the slice ships (restore with `Restore-DbBackup.ps1` if the instance moved on) | Not done | The KPI's before/after reading in slices 01 and 04 |
+| O-P2 | OQ-5: count, on the dev database **before** 05a's migration, the owners whose value names no Additional Field of their own connection (the DDD-28 predicate run as a `SELECT`) | Not done | The release-note claim's number and `OUT-6303-no-change-on-upgrade`'s expected exception set |
+| O-P3 | Fingerprint digests pinned and committed **before** 05a's migration (DESIGN enforcement) | Not done | AC-4.4 as amended |
+| O-P4 | Jira dogfood project with a non-Blocks link between Features (DISCUSS P2); ADO dev organisation with a directional non-Predecessor relation and a `vso.work` PAT (P8, OQ-1) | Admin step | Slices 01 and 03 / 04 live runs |
+| O-P5 | Backend built before `Create-Migration.ps1`, then the ordered second pass (ci-learnings 224) | Procedure | Each migration's verification |
+| O-P6 | Premium licence fixture copied into a worktree | Procedure | Local `dotnet test` only (2 Licensing tests) |
+
+## Wave: DEVOPS / [REF] Environment matrix
+
+| Axis | Values | What differs for this Epic | Covered by |
+|---|---|---|---|
+| OS (runtime) | linux, macos, windows; Docker image; Helm chart | Nothing: no file system, process, path or configuration code | Existing `ci_verify{sqlite,postgres,windows,macos}`, `ci_docker`, `ci_chart`; no new axis |
+| Database provider | SQLite, PostgreSQL | **Seven** expand-only migrations per provider: 02 (one nullable text column on `RefreshLog`), 05a, 08, 09, 10, 11, 12 (owner source column `int not null default 0`, connection default column(s), and the two hand-added data steps). The data steps are hand-written SQL in **both** providers' files: on Postgres every identifier double-quoted (`"Teams"`, `"WorkTrackingSystemConnectionId"`), the `NOT EXISTS` predicate identical in meaning (DDD-28) | `verifysqlite` / `verifypostgres` start the migrated app; the migration test on both providers (own / empty / dangling / other connection's field); a throwaway `Database__Provider=sqlite` start grepping `PendingModelChanges`, Kestrel keys overridden |
+| Test provider | EF InMemory | Hides a missing migration and runs no data step | Trusted for rules and ATs, never for the migration |
+| Jira deployment | Cloud, Data Center | Link payload shape for the named link type; **no new request** (AC-1.6). If DELIVER does add a route after all, it goes through `JiraRestRoutes` with its DC answer (ci-learnings 212) | Recorded wire fixtures in `TrackerWireFormats`; live `JiraIntegration` on the dogfood Cloud site; DC assumed equal (P3, not blocking) |
+| ADO deployment | Services, Server 2022 | The new `workitemrelationtypes` listing (≤ 1 per connection per Validate and per refresh, per-call) | Fixtures for both recorded in slice 03; live `AdoIntegration` on the dev organisation (Services only; no Server instance) |
+| Tracker types (D21) | Jira, ADO, CSV, Linear, ServiceNow | Which defaults the group offers: CSV Estimation and Feature Owner; Linear and ServiceNow hidden | Unit table over the D21 map; the PUT's refusal of an unsupported default |
+| Auth mode | RBAC on, auth off | No new permission. With auth off every caller is one subject, so every caller can set defaults and read the log entry, as for every `SystemAdmin` surface today | Existing RBAC suites; nothing new |
+
+## Wave: DEVOPS / [REF] CI/CD pipeline outline
+
+**No new workflow, job or step.** The existing `ci.yml` pipeline covers the Epic. What it does with each slice:
+
+| Slices | Paths the classifier sees | Live categories CI adds |
+|---|---|---|
+| 01, 02 (#6300) | `…/WorkTrackingConnectors/Jira/`, `DependencySourceSelector`, `WorkItemService`, `Models/RefreshLog.cs`, `RefreshFinding`, migrations, Refresh History frontend | `JiraIntegration` only (`JIRA_REGEX`) |
+| 03, 04 (#6312) | `…/WorkTrackingConnectors/AzureDevOps/` | `AdoIntegration` only (`ADO_REGEX`) |
+| 05a, 08, 09, 10, 11, 12 | `Models/WorkTrackingSystemConnection.cs` (the default columns) — and in 05a `Program.cs` (the `IConnectionSaveService` registration) | **All of `Category=Integration`** (`SHARED_REGEX`: `Models/(WorkTrackingSystemConnection…` and `Program.cs`): Jira, ADO, Linear, ServiceNow and the unauthenticated GitHub pair |
+| 05b, 06 | `ConnectionSaveService`, `Models/` rules, `API/Helpers/…Extensions` | None, **unless** the slice touches `WorkTrackingSystemConnection*.cs` or `Program.cs` |
+
+The shared-path exposure in six slices is a **consequence DESIGN did not name**, not a design change: the default
+columns must live on the connection model, and a new service needs a DI line. It costs (ci-learnings 203): a run ~258
+tests larger, the Linear key's quota that CI shares, the GitHub pair's runner-IP budget, and — because a red backend
+job **skips `sonar-gates`** — a slice that ships unjudged by Sonar until the red is fixed or proven environmental.
+Two rules follow for DELIVER:
+
+- **Name new `Models/` files so they do not start with `WorkTrackingSystemConnection`** (the D21 map, the rules,
+  `SettingSource`): that prefix is on the shared whitelist. Only the connection model itself must carry it.
+- **A red live category on a shared slice is triaged before the push counts as judged**: a 429 / 4xx from Linear,
+  ServiceNow or GitHub is environmental; a failure in a Jira or ADO dependency / parent test is this Epic's.
+
+| Existing job | What it proves here |
+|---|---|
+| `ci_changes` → `path-classifier.sh` | The exposure above |
+| `ci_backend` | `TreatWarningsAsErrors` build; unit + acceptance (`Category!=Integration`), including the ATs DESIGN lists under Architectural Enforcement (fan-out, stale save, race, stale echo, ADO listing per call, findings after a delta, request counts); the migration tests on both providers (`Integration.Containers`); plus the live categories above |
+| `ci_frontend` | Vitest (dialog variants, late-answer, the `WorkTrackingSystemFieldsChanged` rule), `tsc -b`, `vite build`, Biome |
+| `ci_sonar_gates` | No new issue. Exposure: S107 on the connection controller (stays at 7) and on `ConnectionSaveService` (five); S6964 on the new `[FromBody]` members; CA1869 on the findings serializer; CA1859 / CA1861 / NUnit1028 / NUnit2045 in the new tests; S3776 in the save service's `Commit` and the dialog's open condition; S6754 / S7761 / S7764 on the frontend |
+| `ci_verifysqlite`, `ci_verifypostgres` | Real provider start on every new migration; E2E (below) |
+| `ci_verifywindows`, `ci_verifymacos`, `ci_docker`, packaging, `ci_chart` | Unchanged. The chart's upgrade-path harness compares row counts: the data steps change values, never row counts |
+
+**E2E (thin sanity check, one walking skeleton per flow, POMs, seeded demo data).** Existing specs that must stay
+green and are in reach: `features/FeatureDependencies.spec.ts` and `portfolios/MultiTeamForecast.spec.ts` (demo
+dependencies keep reading the tracker's own link: the selector's default path is unchanged), `portfolios/PortfolioEdit.spec.ts`,
+`jira/jira.spec.ts` and `ado/ado.spec.ts` (connection, Team and Portfolio created through the pages; with no default
+set, saving opens no dialog). No spec calls the `BaseEditPage` Parent Override / Estimation helpers or the Portfolio
+Size Estimate / Feature Owner helpers today, so the new first dropdown entry breaks no locator; `grep -r` the E2E
+project for every changed label and `data-testid` all the same (ci-learnings 230). **Recommended for DISTILL** (its
+call): one walking skeleton for #6304 / #6313 on the seeded **CSV** demo connection, whose tracker offers the
+Estimation default: set the Teams' Estimation default, save (plain dialog), open a Team that follows it and read
+`Connection default (…)`. The spec sets the Team to follow at its top rather than inheriting that from the seeder
+(ci-learnings 231). #6300 / #6312 get no E2E: they are reading rules proven by ATs, fixtures and the live categories.
+`@screenshot` shots are finalization (one per theme), outside `pnpm run test`.
+
+**Local gates (mirror CI)**, all green before a step is committed:
+1. `dotnet build` in `Lighthouse.Backend/`, zero warnings.
+2. The analyzer sweep before every push (ci-learnings 7-95), filtered with `git diff` **and** `git status --porcelain`.
+3. `dotnet test --filter "TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration"`.
+4. **Live connector tests run deliberately**, because these slices change the connectors:
+   - Slices 01–02: `JiraIntegration` — at least `JiraDependencyDogfoodTest`, `JiraLinkTypeDogfoodTest`, and the class
+     DELIVER extends for the named link type; once per slice, not in a loop.
+   - Slices 03–04: `AdoIntegration` — `AzureDevOpsWorkTrackingConnectorTest` (the Validate and relations paths),
+     plus the slice 03 spike against the dev organisation.
+   - **Never `LinearIntegration` locally**: the key is shared with CI, repeated local runs rate-limit (429) the next
+     CI build, and only one of the resulting failures names the 429. Linear's code does not change; CI runs it on the
+     shared slices anyway. ServiceNow likewise stays off locally.
+5. `pnpm test`, then `pnpm build` (prebuild runs `biome check --write`; remove `*/docs` symlinks first).
+6. Before any E2E-touching commit, run the affected Playwright specs locally.
+
+## Wave: DEVOPS / [REF] Monitoring contracts (KPI → instrument)
+
+Self-hosted: no vendor dashboard and no automated alert to the vendor. The instruments are the customer's own
+Refresh History (`RefreshLog`), the Serilog file in Settings → System Info → Logs (`SystemAdmin`), Task Manager →
+Activity, the dev instance, and the test suite. Full contracts in `docs/product/kpi-contracts.yaml`.
+
+| KPI | Instrument | Fields / signal | Method | Threshold |
+|---|---|---|---|---|
+| `OUT-6303-dependencies-recovered` (north star) | Dev instance `:5169`; Refresh History findings; live dogfood tests | Features with ≥ 1 stored dependency (`TrackerLink`) whose named link points at a stored Feature; the Portfolio's latest full run carries **no** "no Feature carries that link" finding | Before (O-P1) and after one full Portfolio refresh, slice-01 Jira and slice-04 ADO Portfolios; Steve's customer the same count, shared out of band (n = 1) | 100% of qualifying Features (counterparts outside every Portfolio excepted). Below → slice brief records why before the release note claims it |
+| `OUT-6303-set-once` | Dogfood script (slice 05a); AT | PUTs issued: 1 connection PUT vs N owner PUTs; every follower's effective value after the one PUT | Count the saves; the AT asserts N followers read the new value after one connection PUT and no owner PUT | 1 save for N owners, 0 per new owner (D11); any owner PUT needed = red |
+| `OUT-6303-no-change-on-upgrade` | Migration test on SQLite and Postgres; pinned fingerprint digests; O-P2 query | Own / empty owners: digest byte-identical, source and value as tabled; dangling owners: `ConnectionDefault`, value cleared, digest moved | CI on every push; per instance the O-P2 `SELECT` before the upgrade names the expected exceptions | 0 changed besides the dangling set; any other digest moved = red |
+| `OUT-6303-no-surprise` | Vitest (dialog); logger-capturing test on `IConnectionSaveService`; the Information log entry | Dialog follower count per grain; one entry per default-changing save: connection, setting, grain, old and new default name, follower names (or "no Team follows it"), queued count | CI; per instance read in Settings → System Info → Logs (Information is the shipped minimum level; an admin who raised it to Warning will not see it, F17) | 100% of default saves with followers show the count; 100% of default-changing saves write exactly one entry; refused or stale saves write none |
+| `OUT-6303-no-extra-requests` | Request-count tests | Jira requests per refresh vs baseline; ADO `workitemrelationtypes` requests per connection per Validate and per refresh, across two connections on one cached connector | CI | Jira +0; ADO ≤ +1 per connection per call; any more = red |
+
+`RefreshLog` retention is a run count, so the dev-instance and customer readings come from the **first full refresh**
+after the slice ships, collected before later runs prune it. The log entry is the only per-instance record of who
+followed a default; the Serilog file's own retention applies.
+
+## Wave: DEVOPS / [REF] Observability stack
+
+Existing, unchanged in kind: Serilog via `ILogger` (one new **Information** entry per default-changing connection save,
+written by `IConnectionSaveService`'s own logger after `Save()`, structured template, names only — no credentials, no
+tracker field values; the dependency "nothing matched" warnings keep their log lines and now also reach Refresh
+History), the `RefreshLog` table and Refresh History (one nullable text column carrying findings; the section shows the
+latest **full** run's with its time), and Task Manager → Activity (the followers' queued updates, as for 6307). No
+metric, trace, dashboard or alert is added. No new data leaves the instance.
+
+## Wave: DEVOPS / [REF] Usage-data event
+
+**N/A.** The maintainer, verbatim (2026-10-16, `design/maintainer-decisions-2026-10-16.md`): *"Usage-data event:
+none. N/A, because a connection default is set once at setup; an event would count configuration saves, not whether
+the feature helps anyone. `UsageDataEventName` is unchanged."* Nothing is appended to `UsageDataEventName` (last
+member `WorkTrackingSystemFieldsChanged = 19`). #6300 / #6312 have no user action to count either: dependencies are
+read inside refreshes, most of them scheduled, which have no consenting caller.
+
+**Behaviour change to an existing event (DDD-9, F18).** `WorkTrackingSystemFieldsChanged` is today sent whenever the
+save dialog returned a choice; from slice 05a it is sent only when the choice says Additional Fields changed
+(`choice?.additionalFieldsChanged`). Checked against `docs/settings/usagedata.md`:
+- Row :62 ("A connection's Additional Fields were changed … answered whether to update … A change saved without that
+  question being answered is never reported, and neither is one your server refused") **stays correct**: the event
+  still fires only for an Additional Fields change whose question was answered, with `Now` / `Later`.
+- Row :96 (the *When the updates run* field, "Only on a connection's Additional Fields being changed … nineteen
+  events") **stays correct**: no event is added, the field and its two values are unchanged.
+- **Owed by DELIVER slice 05a (one sentence, not a correction):** the same dialog now also opens for a change to the
+  connection's defaults, so add to row :62 "A change to the connection's defaults alone is never reported, even when
+  the same question was answered." Without it a reader who sees the question for a default cannot tell from the page
+  whether answering it sent anything. The Vitest that pins "not sent for a default-only change" is the guard.
+
+## Wave: DEVOPS / [REF] Deployment strategy and rollback
+
+Ships in ordinary releases (standalone Windows / macOS arm64 / Linux AppImage, Docker image, Helm chart appVersion);
+users upgrade versions, the app recreates on upgrade, and migrations run at start-up. Nothing in the release process
+changes. **No feature flag**: each Story is releasable on its own (D19), and a default nobody sets changes nothing.
+
+**Rollback first: install the previous release.** Safe because every migration is expand-only, and checked per
+column:
+
+| What the upgrade wrote | What an older build does with it | Verdict |
+|---|---|---|
+| `RefreshLog` findings column (nullable text) | Never maps it; its inserts leave it null | Safe |
+| Owner source columns (`int not null default 0`) | Never maps them; its **inserts rely on the database default**, so each generated migration must carry `defaultValue: 0` on **both** providers (checked per slice, as story 6301's CA-O1) | Safe if checked |
+| Connection default columns (nullable) | Never maps them | Safe; defaults are inert |
+| Owner on *Own* | The same column holds its value (DDD-4 maps the renamed own property to the existing column) | Reads exactly what it read |
+| Owner on *Connection default* | Its own value was cleared (DDD-5), so the older build reads the column as **empty**: the tracker's own parent field / dependency link, no size / owner / estimate | **Expected loss of the inherited value, not corruption.** The fingerprint moves (default → empty), so its next update downloads everything. This is what that owner read before it followed |
+| Dangling owners repaired at the upgrade (DDD-21) | Stay empty | What the upgrade already made them read |
+| Stored dependencies | `TrackerLink`, a member the older build knows (F6) | Safe; a named-link dependency disappears at its next refresh on the older build, as before the Epic |
+
+**Re-upgrading after a downgrade — two accepted limits** (rare path; recorded, not built):
+1. An owner that *followed* and was **edited on the older build** to hold its own value keeps source
+   `ConnectionDefault` (the older build never writes the column; a Team it creates gets the database default 0). After
+   upgrading again it reads the connection default and ignores the value set on the older build. Visible: its settings
+   page shows `Connection default (…)`.
+2. The older build has no D17 guard, so it can delete an Additional Field a connection default still names. After
+   upgrading again the default is dangling, and its followers read nothing for that setting (the F1 failure, for
+   followers). No data step re-runs.
+Neither is a product question: the house rollback promise is that the previous build runs on the upgraded database,
+which holds. If the maintainer wants the re-upgrade path hardened, the cheap fix is a data step that runs on **every**
+start-up rather than once in a migration; not proposed.
+
+**Release-day behaviour.** No default exists, so every follower reads empty, which is what it read before; only the
+dangling owners' fingerprints move, and no update is queued (DDD-21). Release note per slice whose migration repairs
+dangling values (DESIGN wording, configurable terms).
+
+**Production validation (per instance, advisory):** after the upgrade, the connection page shows "Defaults for Teams
+and Portfolios" on Jira / ADO / CSV only; a first default save with followers opens the dialog and writes the log
+entry; Refresh History shows a finding only for a named link that matched nothing. The demo instance shows no finding.
+
+## Wave: DEVOPS / [REF] Mutation testing strategy
+
+`per-feature` (CLAUDE.md, unchanged), ≥ 80% kill rate, both stacks, run **once at the end of the Epic on frozen code**,
+one survivor-kill round plus one cheap re-run. Configs and results under
+`docs/feature/epic-6303-configure-once-per-connection/mutation/` (6301 precedent: `stryker.6303.backend.json`,
+`stryker.6303.frontend.json`, `vitest.stryker.6303.config.ts`, `results.md`). Backend: whole-file `mutate` entries
+only (Stryker.NET ignores line spans), `test-case-filter` excluding `API.Integration`, `Integration.Containers` and
+the live categories — the acceptance suite costs ~80 min against ~3 without it. So every rule the ATs exercise
+(G-R1 (b), the movers, the refusal, the log entry) must also have **unit** tests that score its mutants: on the pure
+rules, on `TeamExtensions` / `PortfolioExtensions`, and on `ConnectionSaveService` with its logger captured.
+
+| Scope | Files (whole file) | Note |
+|---|---|---|
+| Backend, in | `Models/` effective-value rule, movers rule, in-use / refusal rule, D21 map, `RefreshFinding`; `Services/Implementation/Connections/ConnectionSaveService.cs`; `Services/Implementation/Dependencies/DependencySourceSelector.cs`; `…/Jira/IssueExtensions.cs`; `…/AzureDevOps/WorkItemExtensions.cs`; `API/Helpers/TeamExtensions.cs`, `API/Helpers/PortfolioExtensions.cs`; `Services/Implementation/WorkTrackingSystemConnectionUsage.cs` | The rules, the save, the reading rules, G-R1 (b) |
+| Backend, in with triage | `Models/WorkTrackingSystemOptionsOwner.cs`, `Models/Portfolio.cs`, `Models/WorkTrackingSystemConnection.cs` (mutators and accessors among plain properties); `WorkItemService.cs` (only the findings step is this Epic's) | Score and triage survivors per line from `mutation-report.json` |
+| Backend, out | `JiraWorkTrackingConnector.cs`, `AzureDevOpsWorkTrackingConnector.cs` (thousands of lines; this Epic routes and delegates), the connection controller (a mapper), migrations, DTOs, `SettingSource` (an enum), `RefreshLog` / `SyncOutcome` / updaters (one assignment each) | If DELIVER extracts the ADO field-vs-relation resolution or the Jira "nothing matched" check into its own small class, that class moves to *in* |
+| Frontend (StrykerJS in place, `disableTypeChecks: false`, commit first, after the backend, never concurrently) | `components/Common/Connection/ModifyConnectionSettings.tsx` (triage: the defaults group and the open condition), the `UpdateQuestion` dialog, `FormSelectField.tsx`, `pages/Connections/Edit/EditConnection.tsx`, `hooks/useModifySettings.ts`, the owner dropdown components, `RefreshHistorySection.tsx` | JSX text is not mutated: pin user-visible copy with literal strings in the tests (ci-learnings 258-259) |
+
+Disbelieve any score whose per-file coverage is not checked in `mutation-report.json`.
+
+## Wave: DEVOPS / [REF] Branching strategy
+
+Trunk-based on `main`, unchanged: one focused commit per step, pushed to `origin main` only when green and when the
+maintainer releases the hold. Stories in order, each finished before the next starts (D19). Releases cut from `main`
+by `/release`. No branch, no PR.
+
+## Wave: DEVOPS / [REF] Coexistence matrix
+
+| Existing thing | Must not break | Guard |
+|---|---|---|
+| Older CLI (`lh team update` / `lh portfolio update`) and MCP | yes | G-R1 (b): a PUT without the source keeps the stored mode; AC-4.10's GET-then-PUT round trip, echoing and property-dropping. MCP reads Team settings for cycle-time names only. **CLI and MCP have no connection-write command**, so they cannot touch defaults. No client release |
+| Older browser tab (JS from before the upgrade) | yes | Owner PUT: as the CLI (G-R1 (b)); the existing id field carries the effective value (DDD-12), so an unchanged echo changes nothing. Refresh log: the findings member is additive and zod strips unknown keys. `DependencySource`: closed zod enum, and named-link references are stored as `TrackerLink`, a member it knows (F6) — no parse failure. Connection PUT: an old tab sends no default members; see CA-O2 |
+| Lighthouse-Clients library `updateWorkTrackingConnection` (untyped pass-through) | yes | A script that GETs and PUTs back the whole connection echoes the defaults; one that drops them is CA-O2 |
+| Helm chart | yes | No values, template or appVersion-pinning change; migrations run in the app at start-up; the upgrade-path harness's row counts are unchanged by value-only data steps |
+| SQLite and PostgreSQL | yes | Seven migrations per provider, data steps hand-added to both, quoted identifiers on Postgres; migration tests on both; verify jobs |
+| Migration fixtures seeding through the model | yes | `HistoricalSchemaPatch` lists every new column on **`Teams`, `Portfolios` and `WorkTrackingSystemConnections`** (both fixtures seed all three); `RefreshLog` and `Deliveries` are not seeded there, so N/A for them (CA-O1) |
+| Demo data | yes | `DemoDataFactory` sets demo Teams' Estimation directly (`:72-73`); with private setters it must go through *own(value)*, keeping those Teams on their own value so every demo-data E2E reads what it reads today (ci-learnings 231) |
+| 6307 fan-out and `startUpdates` | yes | Field-definition edits still queue every owner; response shape byte-identical (AT) |
+| `WorkTrackingSystemFieldsChanged` | changes on purpose | Sent only for Additional Field changes (Vitest); doc sentence owed (Usage-data event) |
+| Live-connector suites | yes | Jira / ADO categories run deliberately; shared slices wake all of them in CI |
+| SonarCloud gate | yes | DESIGN's pre-applied rules; the analyzer sweep before every push |
+
+## Wave: DEVOPS / [REF] Changed assumptions
+
+- **CA-O1: `HistoricalSchemaPatch` covers the connection table too.** DESIGN: *"add every new `Teams` / `Portfolios`
+  column to `HistoricalSchemaPatch`."* Both migration fixtures (`BlockedRuleSetMigrationTests`,
+  `DeliveryMetricSnapshotDayKeyMigrationTests`) also seed a `WorkTrackingSystemConnection` through the model, so the
+  new default columns on `WorkTrackingSystemConnections` must be listed as well, or those fixtures die with "table has
+  no column named …" in a test unrelated to the slice. `RefreshLog` and `Deliveries`: N/A, not seeded there.
+- **CA-O2: a connection PUT that omits the defaults.** DESIGN states G-R1 (b) for owner PUTs only; for the connection
+  PUT it says "additive request members". With nullable members, *absent* and *cleared* bind alike, so a browser tab
+  opened before the upgrade (or a library script that drops unknown properties) clears every default on save. The
+  window is narrow (a tab must outlive the upgrade *and* a default must have been set since) and the result is not
+  silent: the new backend writes the log entry naming the changed defaults and their followers, and queues them.
+  **Overruled by the orchestrator, AFK, 2026-10-16: not accepted.** A cleared default silently changes the parents
+  or dependencies of every follower, and the Lighthouse-Clients library *does* write connections
+  (`updateWorkTrackingConnection`, `packages/client/src/index.ts:2331`, an untyped pass-through that an MCP agent or
+  a script fills in). Rule instead: the connection PUT carries the defaults as **one nested `defaults` member**.
+  When the member is absent, every stored default stays as it is. When it is present, it is authoritative, and a
+  null inside it clears that default. This is the connection-side counterpart of G-R1 (b): an old tab or script never
+  sends the member, so it can no longer clear anything. DISTILL pins both shapes with an AT ("a connection PUT without
+  `defaults` keeps them; one with `defaults.parentOverrideForTeams: null` clears that default and logs it"), and
+  DELIVER builds the DTO that way from slice 05a.
+- **CA-O3: six slices force the full live-connector suite in CI.** DESIGN is silent on CI exposure; the default
+  columns on `Models/WorkTrackingSystemConnection.cs` and the `Program.cs` registration match `SHARED_REGEX`.
+  Accepted (see CI/CD pipeline outline); new `Models/` files avoid the `WorkTrackingSystemConnection` prefix.
+- **CA-O4: rollback holds; re-upgrade after a downgrade has two accepted limits** (see Deployment strategy).
+
+None changes a product decision.
+
+## Wave: DEVOPS / [REF] Outcome registry check
+
+`nwave-ai outcomes check-delta` (2026-10-16, after this wave was written): **4 outcomes checked, 0 collisions.**
+Warnings only: `OUT-6303`, and the precedent ids this section cites (`OUT-6301`, `OUT-5878`), are not in
+`docs/product/outcomes/registry.yaml`. Expected, no action: that registry holds `specification` / `operation`
+contracts of single artifacts; KPI ids live in `docs/product/kpi-contracts.yaml`, as with `OUT-6301-*` and
+`OUT-5878-*` (same warning, same disposition).
+
+## Wave: DEVOPS / [REF] Wave decisions
+
+- **[O1]** No new infrastructure, workflow, job, flag, dependency or configuration; the existing pipeline exercises
+  the Epic (CI/CD pipeline outline).
+- **[O2]** Live categories: `JiraIntegration` deliberately in 01–02, `AdoIntegration` in 03–04; never Linear locally.
+  Slices 05a and 08–12 wake every live suite in CI through the shared path (CA-O3); accepted, triage reds before a
+  push counts as judged.
+- **[O3]** Rollback = previous release; every migration expand-only, `defaultValue: 0` on the source columns checked
+  on both providers; followers read empty on an older build, as before they followed; re-upgrade limits accepted
+  (CA-O4).
+- **[O4]** Usage data **N/A** (maintainer, verbatim above); `WorkTrackingSystemFieldsChanged` now Additional-Field-only;
+  one sentence owed to `docs/settings/usagedata.md` in slice 05a.
+- **[O5]** KPIs instrumented through the dev instance, Refresh History findings, the Information log entry, the
+  migration test and request counts; contracts appended to `kpi-contracts.yaml`; no automated alert (self-hosted).
+- **[O6]** Mutation once at the Epic's end on frozen code, whole-file scope as tabled; unit tests must score what the
+  excluded acceptance suite exercises.
+- **[O7]** `HistoricalSchemaPatch` gains the connection's new columns too (CA-O1). The connection PUT carries the
+  defaults as one nested `defaults` member: absent keeps every stored default, present is authoritative (CA-O2, as
+  overruled).
+- **[O8]** KPI ids stay out of `outcomes/registry.yaml` (house pattern).
+- **[O9]** E2E: existing specs must stay green; one CSV-demo walking skeleton for the defaults recommended to DISTILL.
+- Peer review skipped: no trigger (no infrastructure, no deployment change, no new SLO), as story 6301.

@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-10-15
+updated: 2026-10-16
 description: >
   KPI contracts — per-outcome data collection, dashboard mapping, alerting thresholds.
   Created during the DEVOPS wave of work-tracking-oauth-authentication.
@@ -2170,4 +2170,126 @@ outcomes:
     gate: advisory
     alerting: []
     acceptance_scenarios: []   # not measurable by a test: read per instance, after the customer's upgrade
+    status: designed-not-shipped
+
+  # --- epic-6303-configure-once-per-connection (DEVOPS 2026-10-16) ---------------------------------------
+  # No usage-data event (maintainer, 2026-10-16): a connection default is set once at setup, so an event would
+  # count configuration saves, not whether the feature helps anyone. OUT-6303-followers-share was dropped at
+  # DISCUSS (CA-D7) and has no entry.
+
+  - id: OUT-6303-dependencies-recovered
+    feature: epic-6303-configure-once-per-connection
+    title: Portfolios that model waits with a non-default link type show those dependencies (north star)
+    target: >
+      100% of Features whose named link (Jira link type on a named end, or Azure DevOps directional relation
+      type) points at a Feature Lighthouse stores show that dependency after one full Portfolio refresh;
+      counterparts outside every Portfolio excepted (epic-4365 already reports those)
+    ga_baseline: "0% (no such Feature shows a dependency today; Jira silently)"
+    measurement_scope: per_instance   # dev instance :5169 plus Steve's customer, n = 1, directional
+    measured_by: >
+      On the dev instance (:5169): Features with >= 1 link of the named type to a stored Feature, against
+      Features with >= 1 stored dependency (DependencySource TrackerLink), in the slice-01 Jira Portfolio and the
+      slice-04 ADO Portfolio, counted before the slice ships and after one full Portfolio refresh; recorded in
+      slices 01 and 04. The Portfolio's latest full run in Refresh History carries no "no Feature carries that
+      link" finding. Steve's customer: the same count, shared out of band.
+    log_fields:
+      refresh_log_row:
+        - "findings (new nullable text column; the latest full run's findings shown under the Portfolio's figures, with that run's time)"
+      warning_lines:
+        - "the existing dependency 'nothing matched' warning, now also emitted for a named link type"
+    measurement_window: >
+      first full Portfolio refresh after each slice ships. RefreshLog rows are pruned by a run-count retention
+      setting, so the reading is taken before later refreshes push it out.
+    gate: soft
+    alerting:
+      - condition: "recovered share < 100% of qualifying Features on the dev instance"
+        action: "manual: the slice brief records which Features and why, before release notes claim the fix"
+    acceptance_scenarios: []   # DISTILL fills; plus the live JiraIntegration / AdoIntegration dogfood tests
+    status: designed-not-shipped
+
+  - id: OUT-6303-set-once
+    feature: epic-6303-configure-once-per-connection
+    title: A System Admin sets a Team or Portfolio setting once on the connection instead of on every owner
+    target: "1 connection save instead of N owner saves; 0 saves per new owner (new owners start on Connection default)"
+    ga_baseline: "N owner saves"
+    measurement_scope: vendor_demo_only
+    measured_by: >
+      Slice 05a dogfood script on the dev instance counts the saves needed to give N Teams one Parent Override
+      Field. Acceptance test: after one connection PUT, every follower's effective value (the existing settings
+      field) reads the new default, with no owner PUT; a Team created afterwards reads it too.
+    measurement_window: every push (CI); once at slice 05a (dogfood)
+    gate: hard
+    alerting:
+      - condition: "any follower needs its own save to read the default"
+        action: "backend build fails (red)"
+    acceptance_scenarios: []   # DISTILL fills
+    status: designed-not-shipped
+
+  - id: OUT-6303-no-change-on-upgrade
+    feature: epic-6303-configure-once-per-connection
+    title: The upgrade changes no owner's effective setting, except values pointing at a deleted Additional Field
+    target: >
+      0 owners whose effective setting or stored fetch fingerprint changes through the upgrade, except owners whose
+      value named no Additional Field of their own connection (repaired to Connection default, named in the
+      release notes)
+    measurement_scope: per_instance
+    measured_by: >
+      CI: the migration test on SQLite and Postgres with an own, an empty, a dangling and an
+      other-connection's-field owner, against fingerprint digests pinned before slice 05a's migration (own and
+      empty unchanged; dangling and other-connection Connection default, value cleared, digest moved). Per
+      instance: the dangling-value SELECT (the migration's predicate) run on the dev database before the upgrade
+      names the expected exceptions (OQ-5).
+    log_fields: {}
+    measurement_window: every push (CI); once before slice 05a's migration on the dev instance
+    gate: hard
+    alerting:
+      - condition: "any own or empty owner's digest, source or value moves in the migration test"
+        action: "backend build fails (red)"
+    acceptance_scenarios: []   # DISTILL fills
+    status: designed-not-shipped
+
+  - id: OUT-6303-no-surprise
+    feature: epic-6303-configure-once-per-connection
+    title: An admin learns how many owners a default affects before the save, and who, after
+    target: >
+      100% of default saves with followers show the follower count in the pre-save dialog; 100% of
+      default-changing saves write exactly one Information log entry naming the followers (or saying none
+      follow); refused (409 additional-field-in-use) and stale (409 concurrency-conflict) saves write none
+    ga_baseline: "no count, no entry"
+    measurement_scope: per_instance
+    measured_by: >
+      CI: Vitest over the dialog variants (none when nobody follows; plain Save for page-load-only changes; the
+      update question otherwise; no owner name rendered); a logger-capturing test on IConnectionSaveService.
+      Per instance: the entry in Settings -> System Info -> Logs (SystemAdmin only), visible at the shipped
+      Information minimum level.
+    log_fields:
+      information_entry:
+        - "connection name; per changed default: setting, grain (Teams / Portfolios), old and new default display name"
+        - "follower names (or 'no Team follows it' / 'no Portfolio follows it'); number of updates queued"
+        - "names only: no credentials, no tracker field values"
+    measurement_window: every push (CI)
+    gate: hard
+    alerting:
+      - condition: "a dialog or log assertion fails"
+        action: "frontend or backend build fails (red)"
+    acceptance_scenarios: []   # DISTILL fills
+    status: designed-not-shipped
+
+  - id: OUT-6303-no-extra-requests
+    feature: epic-6303-configure-once-per-connection
+    title: Reading named links costs Jira nothing and Azure DevOps at most one relation-type listing per call
+    target: >
+      Jira: 0 additional requests per refresh. Azure DevOps: <= 1 workitemrelationtypes request per connection
+      per Validate and per refresh, never shared across connections or remembered across calls
+    measurement_scope: vendor_demo_only
+    measured_by: >
+      Request-count tests: Jira (slice 01) against the pre-change baseline; ADO (slices 03, 04) per Validate and
+      per refresh; an acceptance test with one cached connector instance and two Portfolios on two ADO
+      connections (one listing each, to its own organisation; the first again issues one new request).
+    measurement_window: every push (CI)
+    gate: hard
+    alerting:
+      - condition: "request count > target"
+        action: "backend build fails (red)"
+    acceptance_scenarios: []   # DISTILL fills
     status: designed-not-shipped
