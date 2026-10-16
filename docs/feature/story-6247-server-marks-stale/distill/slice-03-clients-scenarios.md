@@ -214,6 +214,11 @@ Scenario: A calm day is still one line only when nothing is stale either
 `gravity-calm` itself stays calm: every Work Item gains `"isStale": false`, so the existing calm-day case
 keeps meaning what it meant.
 
+## The day a read asks about
+
+`asOfDate` is reduced with `DateOnly.FromDateTime`; an offset instant from a non-browser client is reduced to its
+UTC date — clients must send a date or local-noon value.
+
 ## Versioning (AC-5)
 
 Minor version bump on `client`, `cli`, `mcp-core`, and on `mcp-http` / `mcp-stdio` as they pick it up, through

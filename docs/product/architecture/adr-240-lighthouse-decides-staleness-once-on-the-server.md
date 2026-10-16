@@ -29,7 +29,10 @@ third.
    `StalenessVerdict(IsStale, Reasons)`. The candidate carries state category, state name, entered-at, is-blocked and
    blocked-since. The policy takes the zone and the day as values and never depends on `ILighthouseClock`, like the
    other Models helpers.
-2. **The semantics are the browser's**: Doing only; Blocked takes precedence; time in state stale when days `>`
+2. **The semantics are the browser's, with one deliberate tightening**: only Work Items in progress (Doing)
+   can be stale. The browser judged every Work Item on the WIP read, so a Work Item the read returns in a Done
+   state (a past read with no state history, say) could read stale there and does not here; the Doing-only
+   guard is locked by DISCUSS D4. Otherwise: Blocked takes precedence; time in state stale when days `>`
    threshold and not Blocked; blocked duration stale when blocked days `≥` blocked threshold; `0` turns a trigger off;
    a Blocked item past the time-in-state threshold carries a `TimeInStateWhileBlocked` reason that does not make it
    stale.

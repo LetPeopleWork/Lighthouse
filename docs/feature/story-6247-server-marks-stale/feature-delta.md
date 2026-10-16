@@ -227,7 +227,7 @@ recommended option taken in AFK mode; none changes what a user sees. ADR-240 (Pr
 | ID | Decision |
 |---|---|
 | DDD-1 | **One pure domain policy** `Models/Staleness/StalenessPolicy` (`For(owner)`, `Evaluate(candidate, zone, asOfDay) → StalenessVerdict(IsStale, Reasons)`). No clock dependency; zone and day passed as values. Rejected: a `WorkItemBase` method (cannot judge a Feature's past state on the Portfolio read), an `IStalenessService` port (ceremony over pure arithmetic). |
-| DDD-2 | **Semantics = DISCUSS D4**, plus the context reason `TimeInStateWhileBlocked` (Blocked and past time in state; does not make the item stale). |
+| DDD-2 | **Semantics = DISCUSS D4**, plus the context reason `TimeInStateWhileBlocked` (Blocked and past time in state; does not make the item stale). D4 is the browser's rule with one deliberate tightening: only Doing Work Items can be stale. The browser judged every Work Item on the WIP read, so one the read returns in a Done state (a past read with no state history) could read stale there and does not on the server. |
 | DDD-3 | **Days** = `asOfDay − InstanceCalendar.DayOf(enteredAt, zone) + 1`, minimum 1 — the Work Item Age arithmetic (`WorkItemBase.cs:160`, browser `age.ts:24-27`), so D4's boundaries keep their meaning. `asOfDay = DateOnly.FromDateTime(asOfDate)`. Blocked days use the same arithmetic on the `blockedSince` the read already resolves; null `blockedSince` → no blocked-duration reason. |
 | DDD-4 | **Reads that carry it**: only `GET teams/{id}/metrics/wip` (Team thresholds) and `GET portfolios/{id}/metrics/wip` (Portfolio thresholds, `FeatureDto : WorkItemDto`). Every Stale surface — Stale count/RAG, Stale and WIP dialogs, aging dots and its dialog, aging-pace data — reads `inProgressItems` from these. Evaluated on the DTO's resolved fields after the as-of projection. |
 | DDD-5 | **Not carried** by `blockedItemsAtDate` (spans To Do, no time-in-state column), Team `featuresInProgress` and Feature child items (owner ambiguous, no Stale UI), cycle-time / run-chart / size / SLE-risk reads. |
@@ -336,7 +336,7 @@ story and acceptance-criterion tags (`@us-0n`, `@AC-n`) live only in this table,
 
 Slice 01 — backend, `Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01ServerMarksStaleScenarios.cs`
 (driving port: the Team and Portfolio WIP reads). A WIP read mutates nothing, so the walking skeleton is
-unbounded-preservation; scenarios judging one item's verdict are pure-function over its facts and the
+unbounded-preservation and asserts it; scenarios judging one item's verdict are pure-function over its facts and the
 thresholds:
 
 | Scenario | Tags |
@@ -347,7 +347,7 @@ thresholds:
 | A Blocked Work Item under the blocked threshold is not stale however long it has sat in its state (Blocked 2 days, 9 in state: context reason only) | `@driving_port @us-01 @AC-2 @error @contract-shape:pure-function` |
 | A Blocked Work Item is stale for its blocked time and still shows how long it has sat in its state | `@driving_port @us-01 @AC-2 @contract-shape:pure-function` |
 | A Work Item still Blocked in its state is not stale before the blocked threshold, even past the time-in-state one | `@driving_port @us-01 @AC-2 @error @contract-shape:pure-function` |
-| With both thresholds off no Work Item is stale and none carries a reason | `@driving_port @us-01 @AC-3 @error @contract-shape:unbounded-preservation` |
+| With both thresholds off no Work Item is stale and none carries a reason | `@driving_port @us-01 @AC-3 @error @contract-shape:pure-function` |
 | Turning the time-in-state trigger off leaves the blocked trigger working | `@driving_port @us-01 @AC-3 @error @contract-shape:pure-function` |
 | Turning the blocked trigger off leaves the time-in-state trigger working | `@driving_port @us-01 @AC-3 @error @contract-shape:pure-function` |
 | A Work Item is judged as of the day the read asks about, not today (chained: day 5, day 6) | `@driving_port @us-01 @AC-4 @contract-shape:pure-function` |
@@ -355,7 +355,16 @@ thresholds:
 | A Feature goes stale once it has sat longer than the Portfolio's threshold (5 → no, 6 → yes) | `@driving_port @us-01 @AC-5 @boundary @contract-shape:pure-function` |
 | A Blocked Feature is stale for its blocked time against the Portfolio's blocked threshold | `@driving_port @us-01 @AC-5 @contract-shape:pure-function` |
 | The Blocked items read says nothing about staleness — **active, green** | `@driving_port @us-01 @error @contract-shape:unbounded-preservation` |
-| A WIP read without a day answers with no Work Items — **active, green; pins today's behaviour** | `@driving_port @us-01 @edge @contract-shape:unbounded-preservation` |
+| A WIP read without a day answers with no Work Items — **active, green; pins today's behaviour** | `@driving_port @us-01 @edge @contract-shape:pure-function` |
+| A flow coach reading today's work in progress sees which Work Item has sat too long (read as of today, so the live path runs) — *added at the slice-01 review* | `@driving_port @real-io @us-01 @AC-4 @contract-shape:pure-function` |
+| A Work Item is judged in the state it held on the day asked about, not the one it holds now (moved on the day after) — *added at the slice-01 review* | `@driving_port @real-io @us-01 @AC-4 @contract-shape:pure-function` |
+| A Feature Blocked today is stale for the days since its open blocked spell began (live blocked rule, open spell) — *added at the slice-01 review* | `@driving_port @real-io @us-01 @AC-5 @contract-shape:pure-function` |
+
+The two `unbounded-preservation` scenarios (the walking skeleton and the Blocked items read) snapshot the stored
+Work Items (state, state category, entered-at, the refresh's stale flag) and the blocked spells before the read
+and assert them unchanged after it. The other two that carried the tag asserted only verdict fields and were
+re-tagged `pure-function` at the slice-01 review. Every other scenario asks about a past day; the three added at
+that review read as of today (or across a state change) so the live branches of both reads are exercised.
 
 The two trigger-off scenarios were `bounded-change` at the first DISTILL pass; a read changes nothing, so they
 are pure-function like their siblings. Every reason is compared together with whether its `stateName` was on
@@ -546,3 +555,11 @@ DTO mapping are plain data and are written in full. None of it changes runtime b
 - Mandate 12: domain types `StalenessThresholds`, `ReasonSeen`, `StalenessSeen`, `StaleReasonKind`;
   step bodies delegate to the harness in one or two statements. Step-reuse ratio (informational):
   100 step invocations / 24 step methods ≈ 4.2× on the backend scenarios.
+
+## Wave: DELIVER / [REF] Notes
+
+- `asOfDate` is reduced with `DateOnly.FromDateTime`; an offset instant from a non-browser client is reduced to
+  its UTC date — clients must send a date or local-noon value (slice 03 note).
+- Slice-01 review: `StalenessPolicy.ThresholdCrossedBy` refuses a verdict that is not stale (one more unit
+  case in `StalenessPolicyTest.cs`, now 15 tests, 26 cases). The refresh-signal fixture runs on a frozen
+  instance clock, so its Given and the refresh agree on today across midnight.
