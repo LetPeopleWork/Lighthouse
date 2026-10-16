@@ -115,6 +115,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task GetWorkItemsForTeam_SaysTheTransitionsAreTheWholeHistoryOnlyWhenEveryEntryOfItCouldBeRead()
+        {
+            var wholeHistory = await TheSingleWorkItemWithHistory(AStatusChangeAt("2026-08-01T09:30:00.000+0000"));
+            var historyWithAnUnreadableEntry = await TheSingleWorkItemWithHistory(
+                AStatusChangeAt("2026-08-01T09:30:00.000+0000"), AStatusChangeAt("not a date"));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(wholeHistory.TransitionsAreItsWholeHistory, Is.True,
+                    "An issue served with every entry of its changelog, each one readable, may replace the transitions "
+                    + "stored for it; otherwise a status change Jira has since re-dated stays stored twice.");
+                Assert.That(historyWithAnUnreadableEntry.TransitionsAreItsWholeHistory, Is.False,
+                    "An entry that could not be read is a transition missing from this reading, and a reading with one "
+                    + "missing would delete that transition from what is stored.");
+            }
+        }
+
+        [Test]
         public async Task GetWorkItemsForTeam_LeavesOutAnOrderingTheTeamsOwnQueryCarries()
         {
             var jira = new JiraStub(Cloud);
@@ -1160,6 +1178,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return workItems.Single();
         }
 
+        private static async Task<WorkItem> TheSingleWorkItemWithHistory(params string[] histories)
+        {
+            var jira = new JiraStub(Cloud) { ChangelogHistories = histories };
+            var subject = CreateSubject(jira.Handler);
+
+            var workItems = await subject.GetWorkItemsForTeam(CreateTeam(), CancellationToken.None);
+
+            return workItems.Single();
+        }
+
+        private static string AStatusChangeAt(string created)
+            => $"{{\"id\":\"1\",\"created\":{JsonSerializer.Serialize(created)},"
+                + "\"items\":[{\"field\":\"status\",\"fromString\":\"To Do\",\"toString\":\"In Progress\"}]}";
+
         /// <summary>
         /// A recording stand-in for a Jira instance: it answers the handful of endpoints the connector calls and
         /// keeps every request URI, which is where the interesting assertions live (which JQL, which fields).
@@ -1194,6 +1226,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             public string? Updated { get; set; } = "2026-08-01T10:00:00.000+0000";
 
             public int ChangelogEntryCount { get; set; }
+
+            /// <summary>History entries served inline with every issue, counted as the changelog's whole total.</summary>
+            public string[] ChangelogHistories { get; set; } = [];
 
             /// <summary>
             /// What a Data Center sweep finds, in the order the instance would hand it back. Data Center has
@@ -1309,8 +1344,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             private string IssueJson(string key)
             {
                 var updatedField = Updated is null ? string.Empty : $"\"updated\":{JsonSerializer.Serialize(Updated)},";
-                var changelog = ChangelogEntryCount > 0
-                    ? $"\"changelog\":{{\"total\":{ChangelogEntryCount},\"histories\":[]}},"
+                var changelog = ChangelogEntryCount > 0 || ChangelogHistories.Length > 0
+                    ? $"\"changelog\":{{\"total\":{Math.Max(ChangelogEntryCount, ChangelogHistories.Length)},\"histories\":[{string.Join(",", ChangelogHistories)}]}},"
                     : string.Empty;
 
                 return $"{{\"key\":\"{key}\",{changelog}\"fields\":{{"
