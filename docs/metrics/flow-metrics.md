@@ -99,7 +99,7 @@ Toggle the **pace percentiles** control in the top-right of the chart to overlay
 For each *Doing* state, Lighthouse draws horizontal background bands at that state's historical cycle-time percentiles, shaded from cool (faster than typical) at the bottom to red (slower than typical) at the top. Unlike the SLE line — which is a single threshold across the whole chart — these bands let you judge whether an item is aging faster or slower than your usual pace **for the specific state it is currently in**. States without their own percentile data inherit the bands carried over from the previous state.
 
 {: .note}
-A **stale** item (one that has been in its current state longer than the configured staleness threshold) appears red in the chart, just like a blocked item. Clicking its bubble shows the item's **Time in State** highlighted in red. An item that is blocked *and* over the threshold is treated as blocked, not stale.
+A **stale** item appears red in the chart, just like a blocked item. Clicking its bubble shows the item's **Time in State** highlighted in red. Which items are stale is Lighthouse's own answer, the same one the [Stale Items Overview](flow-overview.html#what-counts-as-stale) counts: a blocked item is judged by how long it has been blocked, not by how long it has sat in its state.
 
 ## Work Item Age Band Column
 
