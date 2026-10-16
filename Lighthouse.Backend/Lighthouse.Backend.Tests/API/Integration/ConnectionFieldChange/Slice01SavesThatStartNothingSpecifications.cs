@@ -6,11 +6,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
     public partial class Slice01SavesThatStartNothingTest : ConnectionFieldChangeAcceptanceTest
     {
         /// <summary>
-        /// The admin's "Save only": store the connection and leave the updates to the schedule.
-        /// </summary>
-        private const string SaveOnly = "false";
-
-        /// <summary>
         /// The field Jira offers on every connection, registered by Lighthouse rather than by the admin.
         /// </summary>
         private const string Releases = "Releases";

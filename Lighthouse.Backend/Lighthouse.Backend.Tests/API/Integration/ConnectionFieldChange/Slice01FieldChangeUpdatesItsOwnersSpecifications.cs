@@ -3,12 +3,10 @@ using Lighthouse.Backend.Models;
 namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
 {
     /// <summary>
-    /// Step definitions for slice 01 that only this fixture needs. The shared ones are in the harness.
+    /// Step definitions that only this fixture needs. The shared ones are in the harness.
     /// </summary>
     public partial class Slice01FieldChangeUpdatesItsOwnersTest : ConnectionFieldChangeAcceptanceTest
     {
-        private const string UpdateNow = "true";
-
         /// <summary>
         /// How many times each ran once the tracker answered again: Atlas and Cobalt once more after the
         /// run they were already in or waiting for, everyone else once.

@@ -63,6 +63,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
         protected const string FixVersions = "Fix Versions";
         protected const string FixVersionsReference = "fixVersions";
 
+        /// <summary>
+        /// The admin's "Save and update": store the connection and start the updates now.
+        /// </summary>
+        protected const string UpdateNow = "true";
+
+        /// <summary>
+        /// The admin's "Save only": store the connection and leave the updates to the schedule.
+        /// </summary>
+        protected const string SaveOnly = "false";
+
         private const string ConnectionsRoute = "/api/latest/worktrackingsystemconnections";
         private const string TaskListRoute = "/api/latest/update/tasks";
         private const string JsonMediaType = "application/json";
