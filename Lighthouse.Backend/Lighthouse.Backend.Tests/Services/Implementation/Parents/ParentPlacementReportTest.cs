@@ -128,6 +128,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Parents
         }
 
         [Test]
+        public void Lines_ALinkDayHeldInLocalTime_IsStillNamedByItsUtcDay()
+        {
+            var lines = ParentPlacementReport.Lines(TheOwner, [Placed("PAY-420",
+                [new ParentCandidate(TheOtherFeature, June17), new ParentCandidate(TheFeature, LateOnMarch4.ToLocalTime())],
+                (TheFeature, January15), (TheOtherFeature, November2))]);
+
+            Assert.That(lines, Is.EqualTo(TheLineForTheOldestLink), "A server east of UTC holds this link as made on the 5th; the line still names the 4th.");
+        }
+
+        [Test]
         public void Lines_PlacedByTheEarliestCreatedFeature_NamesItsCreatedDayAndAddsNoDateToAnUndatedLink()
         {
             var lines = ParentPlacementReport.Lines(TheOwner, [Placed("PAY-421",

@@ -147,6 +147,17 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         [Category("slice-02")]
         [Category("edge")]
+        public void Two_links_to_the_same_issue_are_one_candidate_dated_by_the_older_link()
+        {
+            var resolution = ParentResolution.From([LinkedOn(AFeature, June17), LinkedOn(AFeature, March4)]);
+
+            Assert.That(resolution.CandidatesWithTheirLinkDates, Is.EqualTo(new[] { LinkedOn(AFeature, March4) }),
+                "The item has hung under that issue since the first of the two links was made.");
+        }
+
+        [Test]
+        [Category("slice-02")]
+        [Category("edge")]
         public void A_dated_link_beats_an_undated_one()
         {
             var placement = ParentResolution.From([Undated(AFeature), LinkedOn(AnotherFeature, June17)])

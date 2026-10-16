@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
@@ -238,6 +239,98 @@ namespace Lighthouse.Backend.Tests.Factories
                 "'causes' and 'is caused by' are two different links, so the one this item reads its parent through keeps its own date.");
         }
 
+        [Test]
+        [Category("edge")]
+        public void An_entry_without_a_history_id_is_read_after_those_with_one_at_the_same_instant()
+        {
+            var issue = AnIssueWithTheHistory(
+                AnEntry(null, AnInstantAsCloudWritesIt(May1), ALinkItem(null, null, AFeature, Sentence(AFeature))),
+                JiraWireFormat.ALinkRemovedAt(May1, AFeature, Sentence(AFeature), 30001));
+
+            Assert.That(issue.StandingLinks, Is.EqualTo(new[] { ACausedByLink(AFeature, May1) }),
+                "Nothing tells when an entry without an id came within its instant, so it goes last, and here that leaves the link added back.");
+        }
+
+        [Test]
+        [Category("edge")]
+        public void A_history_id_written_as_a_number_is_taken_as_no_id()
+        {
+            var issue = AnIssueWithTheHistory(
+                AnEntry("30001", AnInstantAsCloudWritesIt(February1), ALinkItem(null, null, AFeature, Sentence(AFeature))));
+
+            Assert.That(issue.StandingLinks, Is.EqualTo(new[] { ACausedByLink(AFeature, February1) }),
+                "Jira writes the id as a string. Another shape must cost the entry its place among same-instant entries, not the whole issue.");
+        }
+
+        [Test]
+        [Category("edge")]
+        public void A_link_entry_without_a_sentence_stands_with_an_empty_one()
+        {
+            var issue = AnIssueWithTheHistory(
+                AnEntry("\"30001\"", AnInstantAsCloudWritesIt(February1), ALinkItem(null, null, AFeature, null)));
+
+            Assert.That(issue.StandingLinks, Is.EqualTo(new[] { new StandingLink(AFeature, string.Empty, February1) }),
+                "With no sentence there is no phrase for the link to be matched by, so it stands but dates no parent link.");
+        }
+
+        [Test]
+        [Category("edge")]
+        public void A_key_written_where_the_key_belongs_is_taken_whatever_the_sentence_says()
+        {
+            const string ASentenceNamingNoKey = "This issue is caused by the payments rework";
+
+            var issue = AnIssueWithTheHistory(
+                AnEntry("\"30001\"", AnInstantAsCloudWritesIt(February1), ALinkItem(null, null, AFeature, ASentenceNamingNoKey)));
+
+            Assert.That(issue.StandingLinks, Is.EqualTo(new[] { new StandingLink(AFeature, ASentenceNamingNoKey, February1) }),
+                "The sentence is read for a key only when the entry gives none, so its wording cannot lose a link the entry names.");
+        }
+
+        [Test]
+        [Category("edge")]
+        public void A_sentence_naming_two_issues_names_no_counterpart()
+        {
+            var issue = AnIssueWithTheHistory(
+                JiraWireFormat.ALinkAddedNamingTheCounterpartOnlyInItsSentence(April10, "10443", $"This issue {TheUpwardPhrase} {AFeature} {AnotherFeature}"));
+
+            Assert.That(issue.StandingLinks, Is.Empty,
+                "Either key could be the counterpart, and a guessed one would date a link from an entry that may not be its own.");
+        }
+
+        [Test]
+        [Category("edge")]
+        public void A_total_that_is_not_a_number_leaves_the_history_read_as_whole()
+        {
+            var json = JsonNode.Parse(JiraWireFormat.AnIssueWithItsHistory(
+                TheItem,
+                "Story",
+                JiraWireFormat.AnInstant(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
+                JiraWireFormat.AnInstant(new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc)),
+                string.Empty,
+                [],
+                [JiraWireFormat.ALinkAddedAt(February1, AFeature, Sentence(AFeature))]))!;
+            json["changelog"]!["total"] = null;
+
+            var issue = TheIssueIn(json.ToJsonString());
+
+            Assert.That(issue.StandingLinks, Is.EqualTo(new[] { ACausedByLink(AFeature, February1) }),
+                "Only a total that says more entries exist marks a history as partial. One that says nothing readable is no such claim.");
+        }
+
+        [Test]
+        [Category("edge")]
+        public void A_link_end_with_no_phrase_takes_no_date()
+        {
+            var unlabelled = new JiraLinkType("Causes", string.Empty, "causes");
+            var issue = AnIssueWithTheLinksAndHistory(
+                [unlabelled.LinkWhoseInwardIssueIs(AFeature)],
+                JiraWireFormat.ALinkAddedAt(February1, AFeature, Sentence(AFeature)));
+
+            Assert.That(issue.Fields.ResolveParentFromLinks("Causes", LinkDirection.Inward, issue.StandingLinks).CandidatesWithTheirLinkDates,
+                Is.EqualTo(new[] { new ParentCandidate(AFeature, null) }),
+                "Without the phrase, any sentence ending in the key would match, including one written for a link of another type.");
+        }
+
         private const string TheUpwardPhrase = "is caused by";
 
         private static readonly JiraLinkType Causes = new("Causes", TheUpwardPhrase, "causes");
@@ -275,6 +368,29 @@ namespace Lighthouse.Backend.Tests.Factories
                 histories,
                 entriesInAll);
 
+            return TheIssueIn(json);
+        }
+
+        /// <summary>A history entry in a shape the shared builders do not write; <paramref name="id"/> and <paramref name="created"/> are raw JSON, or null to leave the id out.</summary>
+        private static string AnEntry(string? id, string created, string item)
+            => "{" + (id is null ? string.Empty : "\"id\": " + id + ", ") + "\"created\": " + created + ", \"items\": [" + item + "]}";
+
+        private static string AnInstantAsCloudWritesIt(DateTime at)
+            => "\"" + new DateTimeOffset(at, TimeSpan.Zero).ToOffset(TimeSpan.FromHours(2)).ToString("yyyy-MM-dd'T'HH:mm:ss.fff", System.Globalization.CultureInfo.InvariantCulture) + "+0200\"";
+
+        private static string ALinkItem(string? from, string? fromString, string? to, string? toString)
+            => new JsonObject
+            {
+                ["field"] = "Link",
+                ["fieldtype"] = "jira",
+                ["from"] = from,
+                ["fromString"] = fromString,
+                ["to"] = to,
+                ["toString"] = toString,
+            }.ToJsonString();
+
+        private static Issue TheIssueIn(string json)
+        {
             using var document = JsonDocument.Parse(json);
 
             return new IssueFactory(Mock.Of<ILogger<IssueFactory>>())
