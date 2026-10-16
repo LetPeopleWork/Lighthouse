@@ -15,6 +15,11 @@ import {
 } from "../../models/WorkTracking/WriteBackMappingDefinition";
 import { BaseApiService } from "./BaseApiService";
 
+/**
+ * The answer to the question asked after a connection's Additional Fields changed: update its Teams
+ * and Portfolios now, or leave them to their next scheduled update. A save that asked no question
+ * passes no choice at all, which is how the two are told apart.
+ */
 export interface ISaveConnectionChoice {
 	startUpdates: boolean;
 }

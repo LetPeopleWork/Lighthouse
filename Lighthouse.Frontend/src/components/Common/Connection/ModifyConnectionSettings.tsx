@@ -583,7 +583,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		}
 	};
 
-	const saveAnswering = async (choice?: ISaveConnectionChoice) => {
+	const saveAnswering = async (choice: ISaveConnectionChoice) => {
 		const connection = connectionAwaitingAnswer;
 		setConnectionAwaitingAnswer(null);
 		if (connection) {
