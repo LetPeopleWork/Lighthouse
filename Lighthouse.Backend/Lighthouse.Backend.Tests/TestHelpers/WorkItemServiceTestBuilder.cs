@@ -10,6 +10,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -135,7 +136,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 new DependencyRefreshReporter(
                     new DependencyDecision(new DependencyHonourPolicy(), ALicensedInstance()),
                     Mock.Of<ILogger<DependencyRefreshReporter>>()),
-                new UpdateCancellationContext());
+                new UpdateCancellationContext(),
+                new FakeLighthouseClock(DateTimeOffset.UtcNow));
 
         /// <summary>
         /// Licensed, because these fixtures are about what a refresh stores and none of them is about what

@@ -14,12 +14,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
     [Category("slice-01")]
     public partial class Slice01StaleSignalTest : FasterUpdatesAcceptanceTest
     {
-        private const string Pending = "pending — DELIVER (story-6247 slice 01)";
-
         // @driving_port @contract-shape:bounded-change
         // Chained: the second refresh finds the same Work Item still stale and says nothing new.
         [Test]
-        [Ignore(Pending)]
         public async Task A_refresh_signals_a_Work_Item_going_stale_once_with_the_threshold_it_crossed()
         {
             var team = GivenATeamThatCallsWorkStaleAfterFiveDaysInAStateOrThreeDaysBlocked();
@@ -34,7 +31,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
 
         // @driving_port @boundary @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task A_refresh_does_not_signal_a_Work_Item_that_has_sat_exactly_as_long_as_the_threshold()
         {
             var team = GivenATeamThatCallsWorkStaleAfterFiveDaysInAStateOrThreeDaysBlocked();
@@ -47,7 +43,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
 
         // @driving_port @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task A_refresh_does_not_signal_a_Blocked_Work_Item_still_under_the_blocked_threshold()
         {
             var team = GivenATeamWithThresholds(timeInStateDays: 5, blockedDays: 10);
@@ -60,7 +55,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
 
         // @driving_port @contract-shape:bounded-change
         [Test]
-        [Ignore(Pending)]
         public async Task A_refresh_signals_a_Blocked_Work_Item_with_the_blocked_threshold_it_crossed()
         {
             var team = GivenATeamWithThresholds(timeInStateDays: 0, blockedDays: 3);
@@ -75,7 +69,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
         // With both triggers on, the threshold named is the blocked one, because that is the reason
         // that made the Work Item stale.
         [Test]
-        [Ignore(Pending)]
         public async Task A_refresh_names_the_blocked_threshold_when_a_Blocked_Work_Item_goes_stale_with_both_thresholds_set()
         {
             var team = GivenATeamThatCallsWorkStaleAfterFiveDaysInAStateOrThreeDaysBlocked();
@@ -88,7 +81,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
 
         // @driving_port @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task A_refresh_never_signals_staleness_while_both_thresholds_are_off()
         {
             var team = GivenATeamWithThresholds(timeInStateDays: 0, blockedDays: 0);
