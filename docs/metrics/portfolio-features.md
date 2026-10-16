@@ -135,6 +135,8 @@ If no active features exist, the status defaults to **Sustain**.
 
 ## Feature Size on a Team
 
+![Feature Size on a Team](../assets/features/metrics/teamFeatureSize.png)
+
 On a Team, a Feature's size is **this Team's share** of it: the number of the Team's own Work Items under that Feature, in any state. Other Teams' Work Items under the same Feature are not counted. This answers *how much of a Feature do we usually take on*, and pairs with the Team's own Cycle Time.
 
 - **Which Features are shown:** every Feature that a Portfolio in Lighthouse loads and that has at least one of the Team's Work Items under it. The Team does not need to be part of that Portfolio. Features using the [Default Feature Size](../portfolios/edit.html#default-feature-size) are left out, as they are not broken down yet.

@@ -21,6 +21,8 @@ You can do so by clicking on the 🖊️ icon on the right side of the work trac
 {: .important}
 As the secret information (like API Tokens) are not available to the end user, you will **always** have to provide this information again on any change.
 
+If your change touches the [Additional Fields](#additional-fields) of a connection that Teams or Portfolios use, saving asks how many of them it will update. **Save and update** updates them now and returns to the overview, **Save only** leaves them to their next scheduled update, and **Cancel** keeps your edits on the page. A connection nobody uses saves without asking.
+
 ## Deleting Systems
 You can also delete Work Tracking Systems if they are not needed anymore. To do so, you can click on the 🗑️ icon on the right side of the work tracking system. This will permanently delete this work tracking system.
 

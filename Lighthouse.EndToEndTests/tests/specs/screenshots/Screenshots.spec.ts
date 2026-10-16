@@ -505,6 +505,29 @@ testWithDemo(
 );
 
 testWithDemo(
+	"Take @screenshot of a team's feature size",
+	async ({ testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
+		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
+		const metricsPage = await teamDetailPage.goToMetrics();
+
+		const widgets = await metricsPage.switchCategory(
+			MetricsCategories.PortfolioAndFeatures,
+		);
+		const featureSizeWidget = await metricsPage.getWidgetByName(
+			MetricsWidgetNames.FeatureSize,
+			widgets,
+		);
+		await metricsPage.waitUntilEveryChartHasLoaded();
+
+		await takeElementScreenshot(
+			featureSizeWidget.Widget,
+			"features/metrics/teamFeatureSize.png",
+		);
+	},
+);
+
+testWithDemo(
 	"Take @screenshot of named cycle times on the charts and the config editor",
 	async ({ page, testData, overviewPage }) => {
 		await overviewPage.lightHousePage.goToOverview();
