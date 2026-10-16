@@ -584,6 +584,65 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
+        public void TriggerUpdate_ACheapRefresh_LeavesTheFindingsOfItsRowUnsaid()
+        {
+            var project = CreateProject(DateTime.Now.AddDays(-1));
+            SetupProjects(project);
+
+            workItemServiceMock
+                .Setup(x => x.UpdateFeaturesForPortfolio(project))
+                .ReturnsAsync(SyncOutcome.DeltaSync(10, 2));
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            Assert.That(recordedRefresh?.Findings, Is.Null,
+                "A cheap refresh reads only what moved, so it cannot tell a setting is now fine. An empty list "
+                + "would say so, and Refresh History would drop the finding the last whole download recorded.");
+        }
+
+        [Test]
+        public void TriggerUpdate_AWholeDownloadThatFailedPartWay_LeavesTheFindingsOfItsRowUnsaid()
+        {
+            var project = CreateProject(DateTime.Now.AddDays(-1));
+            SetupProjects(project);
+            var finding = new RefreshFinding(
+                RefreshFindingKind.NamedLinkPointsBothWays, RefreshFindingSetting.DependencyField, "Dependency", BothDependencyPhrases);
+
+            workItemServiceMock
+                .Setup(x => x.UpdateFeaturesForPortfolio(project))
+                .ReturnsAsync(SyncOutcome.FullSync(2) with { Findings = [finding] });
+            deliverySourceSyncServiceMock
+                .Setup(x => x.ResyncSourceBoundDeliveries(It.IsAny<Portfolio>(), It.IsAny<RecordableDeliveries>()))
+                .ThrowsAsync(new InvalidOperationException("the save failed"));
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(recordedRefresh?.Success, Is.False);
+                Assert.That(recordedRefresh?.Findings, Is.Null,
+                    "A refresh that did not finish has not judged the configuration, so it must not replace "
+                    + "what the last one that did finish said.");
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_AWholeDownloadThatFoundNothingWrong_RecordsThatItFoundNothing()
+        {
+            var project = CreateProject(DateTime.Now.AddDays(-1));
+            SetupProjects(project);
+
+            workItemServiceMock
+                .Setup(x => x.UpdateFeaturesForPortfolio(project))
+                .ReturnsAsync(SyncOutcome.FullSync(2));
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            Assert.That(recordedRefresh?.Findings, Is.Not.Null.And.Empty,
+                "A finished whole download that found nothing is what clears a finding once the setting is fixed.");
+        }
+
+        [Test]
         public void TriggerUpdate_ConnectorRefusedTheQuery_TheReasonNamesThePortfolioTheAnswerAndTheQuery()
         {
             var project = SetupPortfolioWhoseQueryIsRefused();

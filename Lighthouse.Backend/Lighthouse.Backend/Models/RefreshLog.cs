@@ -59,8 +59,11 @@ namespace Lighthouse.Backend.Models
         public int RecordsPlacedFromLinksNamingMoreThanOneParent { get; set; }
 
         /// <summary>
-        /// What this refresh found wrong with how a setting is configured. Empty on a cheap refresh, which
-        /// reads too little to judge, and absent on a row written before findings were recorded.
+        /// What this refresh found wrong with how a setting is configured. Only a whole download that
+        /// finished can judge that, so only such a refresh writes a list here, and an empty list means it
+        /// found nothing wrong. A cheap refresh reads too little to judge and a failed one did not finish,
+        /// so both leave this null, as does a row written before findings were recorded; Refresh History
+        /// then keeps showing what the last refresh that did judge found.
         /// </summary>
         public List<RefreshFinding>? Findings { get; set; }
     }

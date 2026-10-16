@@ -166,7 +166,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                         Cancelled = cancelled,
                         RecordsPlacedFromLinksNamingMoreThanOneParent = outcome.RecordsPlacedFromLinksNamingMoreThanOneParent,
                         RecordsWhoseLinksNamedMoreThanOneParent = outcome.RecordsWhoseLinksNamedMoreThanOneParent,
-                        Findings = [.. outcome.Findings],
+                        Findings = success && outcome.Mode == SyncMode.Full ? [.. outcome.Findings] : null,
                     });
 
                     ReportUpdateSummary(serviceProvider, project.Name, outcome, stopwatch.ElapsedMilliseconds, success);
