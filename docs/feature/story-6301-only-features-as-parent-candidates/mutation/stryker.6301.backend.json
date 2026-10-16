@@ -1,0 +1,24 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Models/ParentResolution.cs",
+      "**/Models/ParentPlacement.cs",
+      "**/Models/SyncOutcome.cs",
+      "**/Services/Implementation/Parents/ParentPlacementReport.cs",
+      "**/Services/Implementation/Parents/ParentSourceSelector.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/Jira/IssueExtensions.cs",
+      "**/Services/Implementation/Repositories/FeatureRepository.cs",
+      "**/Factories/IssueFactory.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~ParentResolutionPlacementTest|FullyQualifiedName~ParentPlacementReportTest|FullyQualifiedName~ParentSourceSelectorTest|FullyQualifiedName~IssueFactory|FullyQualifiedName~IssueExtensions|FullyQualifiedName~FeatureRepositoryTest|FullyQualifiedName~SyncOutcome|FullyQualifiedName~WorkItemServiceTest|FullyQualifiedName~API.Integration.OnlyFeaturesAsParentCandidates|FullyQualifiedName~API.Integration.ParentFromIssueLinks)&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~Dogfood",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
