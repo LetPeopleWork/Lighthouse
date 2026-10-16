@@ -145,9 +145,7 @@ namespace Lighthouse.Backend.Factories
 
         private static IEnumerable<LinkChange> LinkChangesIn(JsonElement history)
         {
-            var created = StringOrNull(history, JiraFieldNames.CreatedDateFieldName);
-
-            if (!DateTimeOffset.TryParse(created, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var at))
+            if (JiraInstantOrNull(StringOrNull(history, JiraFieldNames.CreatedDateFieldName)) is not DateTime at)
             {
                 return [];
             }
@@ -159,7 +157,7 @@ namespace Lighthouse.Backend.Factories
             return history.GetProperty(JiraFieldNames.ItemsFieldName).EnumerateArray()
                 .Where(item => StringOrNull(item, JiraFieldNames.FieldFieldName) == LinkFieldName)
                 .Select(item => new LinkChange(
-                    at.UtcDateTime,
+                    at,
                     historyId,
                     LinkEndOn(item, FromPropertyName, JiraFieldNames.FromStringPropertyName),
                     LinkEndOn(item, ToPropertyName, JiraFieldNames.ToStringPropertyName)));
@@ -205,9 +203,10 @@ namespace Lighthouse.Backend.Factories
 
         private static IEnumerable<WorkItemStateTransition> ExtractStatusTransitionsFromHistory(JsonElement history)
         {
-            var historyEntryCreationDateAsString = history.GetProperty(JiraFieldNames.CreatedDateFieldName).GetString() ?? string.Empty;
-            var historyEntryCreationDate = DateTime.Parse(historyEntryCreationDateAsString, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
-            var transitionedAt = DateTime.SpecifyKind(historyEntryCreationDate, DateTimeKind.Utc);
+            if (JiraInstantOrNull(StringOrNull(history, JiraFieldNames.CreatedDateFieldName)) is not DateTime transitionedAt)
+            {
+                return [];
+            }
 
             return history.GetProperty(JiraFieldNames.ItemsFieldName).EnumerateArray()
                 .Where(item => item.GetProperty(JiraFieldNames.FieldFieldName).GetString() == JiraFieldNames.StatusFieldName)
@@ -340,29 +339,23 @@ namespace Lighthouse.Backend.Factories
 
         private static DateTime? GetCreatedDateFromFields(JsonElement fields)
         {
-            var createdDateAsString = fields.GetProperty(JiraFieldNames.CreatedDateFieldName).GetString() ?? string.Empty;
-
-            if (string.IsNullOrEmpty(createdDateAsString))
-            {
-                return DateTime.MinValue;
-            }
-
-            var createdDate = DateTime.Parse(createdDateAsString, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
-            return DateTime.SpecifyKind(createdDate, DateTimeKind.Utc);
+            return JiraInstantOrNull(StringOrNull(fields, JiraFieldNames.CreatedDateFieldName)) ?? DateTime.MinValue;
         }
 
         // Missing or unreadable stays null rather than a sentinel, which would claim knowledge the tracker never
         // gave; a null makes the next update download everything again.
         private static DateTime? GetUpdatedDateFromFields(JsonElement fields)
         {
-            var updatedAsString = fields.GetFieldValue(JiraFieldNames.UpdatedFieldName);
+            return JiraInstantOrNull(fields.GetFieldValue(JiraFieldNames.UpdatedFieldName));
+        }
 
-            if (!DateTimeOffset.TryParse(updatedAsString, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var updated))
-            {
-                return null;
-            }
-
-            return updated.UtcDateTime;
+        // A Jira stamp carries its own offset. Parsed as a DateTime it would come out in the server's local time,
+        // so only reading it as a DateTimeOffset keeps the instant it names whatever zone the server runs in.
+        private static DateTime? JiraInstantOrNull(string? stamp)
+        {
+            return DateTimeOffset.TryParse(stamp, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var at)
+                ? at.UtcDateTime
+                : null;
         }
 
         private static string GetTitleFromFields(JsonElement fields)

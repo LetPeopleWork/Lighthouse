@@ -151,14 +151,30 @@ namespace Lighthouse.Backend.Tests.Factories
         {
             var jsonDocument = CreateJsonDocument();
 
+            var theInstantJiraNames = new DateTime(2024, 4, 7, 7, 40, 12, 704, DateTimeKind.Utc);
+            TheHostZoneIsAwayFromUtcAt(theInstantJiraNames);
+
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(issue.CreatedDate.HasValue, Is.True);
-                Assert.That(issue.CreatedDate?.Date, Is.EqualTo(new DateTime(2024, 4, 7, 0, 0, 0, DateTimeKind.Utc).Date));
+                Assert.That(issue.CreatedDate, Is.EqualTo(theInstantJiraNames),
+                    "The template stamps the issue 2024-04-07T09:40:12.704+0200.");
                 Assert.That(issue.CreatedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
             }
+        }
+
+        [Test]
+        public void CreateIssue_UnreadableCreatedDate_SetsToDateTimeMinValue()
+        {
+            var jsonDocument = CreateJsonDocument(json =>
+            {
+                json["fields"][JiraFieldNames.CreatedDateFieldName] = "garbage";
+            });
+
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+
+            Assert.That(issue.CreatedDate, Is.EqualTo(DateTime.MinValue));
         }
 
         [Test]
@@ -552,6 +568,80 @@ namespace Lighthouse.Backend.Tests.Factories
 
                 Assert.That(transitions[^1].TransitionedAt.Date, Is.EqualTo(currentStateEnteredDate.Date));
             }
+        }
+
+        [TestCase("2026-02-01T11:00:00.000+0200", 2026, 2, 1, 9)]
+        [TestCase("2026-07-01T11:00:00.000+0200", 2026, 7, 1, 9)]
+        public void A_status_change_stamped_with_an_offset_is_read_as_the_instant_it_names(string stamp, int year, int month, int day, int hourUtc)
+        {
+            var theInstantJiraNames = new DateTime(year, month, day, hourUtc, 0, 0, DateTimeKind.Utc);
+            TheHostZoneIsAwayFromUtcAt(theInstantJiraNames);
+
+            var transition = TheOnlyTransitionOfAStatusChangeStamped(stamp);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(transition.TransitionedAt, Is.EqualTo(theInstantJiraNames));
+                Assert.That(transition.TransitionedAt.Kind, Is.EqualTo(DateTimeKind.Utc));
+            }
+        }
+
+        [Test]
+        public void A_status_change_stamped_in_utc_is_read_as_exactly_that_instant()
+        {
+            var theInstantJiraNames = new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc);
+            TheHostZoneIsAwayFromUtcAt(theInstantJiraNames);
+
+            var transition = TheOnlyTransitionOfAStatusChangeStamped("2024-09-27T00:00:00.0000000Z");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(transition.TransitionedAt, Is.EqualTo(theInstantJiraNames));
+                Assert.That(transition.TransitionedAt.Kind, Is.EqualTo(DateTimeKind.Utc));
+            }
+        }
+
+        [TestCase("", TestName = "A history entry without a created stamp is skipped")]
+        [TestCase("\"created\": null, ", TestName = "A history entry whose created stamp is null is skipped")]
+        [TestCase("\"created\": \"garbage\", ", TestName = "A history entry whose created stamp cannot be read is skipped")]
+        public void A_history_entry_whose_stamp_cannot_be_read_is_skipped(string createdProperty)
+        {
+            var jsonDocument = CreateJsonDocument(json =>
+            {
+                AddChangelogEntries(json, [
+                    CreateChangelogEntry("Backlog", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
+                    JsonNode.Parse("{" + createdProperty + "\"items\": [{\"field\": \"status\", \"fromString\": \"Implementation\", \"toString\": \"Verification\"}]}"),
+                ]);
+            });
+
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(issue.StateTransitions, Has.Count.EqualTo(1));
+                Assert.That(issue.StateTransitions[0].FromState, Is.EqualTo("Backlog"));
+                Assert.That(issue.StateTransitions[0].ToState, Is.EqualTo("Implementation"));
+            }
+        }
+
+        private WorkItemStateTransition TheOnlyTransitionOfAStatusChangeStamped(string stamp)
+        {
+            var jsonDocument = CreateJsonDocument(json =>
+            {
+                var entry = CreateChangelogEntry("Backlog", "Implementation", DateTime.MinValue);
+                entry[JiraFieldNames.CreatedDateFieldName] = stamp;
+                AddChangelogEntries(json, [entry]);
+            });
+
+            return CreateIssueFactory().GetAllStateTransitions(jsonDocument.RootElement).Single();
+        }
+
+        // On a host that keeps UTC, reading Jira's wall-clock time as if it were UTC gives the right answer by
+        // accident, so these tests would pass there whether or not the offset is honoured.
+        private static void TheHostZoneIsAwayFromUtcAt(DateTime instant)
+        {
+            Assert.That(TimeZoneInfo.Local.GetUtcOffset(instant), Is.Not.EqualTo(TimeSpan.Zero),
+                $"The test host is on '{TimeZoneInfo.Local.Id}', which keeps UTC at {instant:o}; run the tests with lighthouse.runsettings.");
         }
 
         private static void AddChangelogEntries(JsonNode jsonNode, JsonArray changelogEntries)

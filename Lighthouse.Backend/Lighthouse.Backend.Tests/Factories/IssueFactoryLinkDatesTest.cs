@@ -176,10 +176,11 @@ namespace Lighthouse.Backend.Tests.Factories
         [Category("edge")]
         public void A_status_change_in_the_same_entry_as_a_link_is_read_as_if_it_stood_alone()
         {
+            Assert.That(TimeZoneInfo.Local.GetUtcOffset(April10), Is.Not.EqualTo(TimeSpan.Zero),
+                $"The test host is on '{TimeZoneInfo.Local.Id}', which keeps UTC on that day, so a reading that took Jira's wall-clock time for UTC would pass here; run the tests with lighthouse.runsettings.");
+
             var issue = AnIssueWithTheHistory(
                 JiraWireFormat.ALinkAddedBesideAStatusChangeAt(April10, AFeature, Sentence(AFeature), "To Do", "In Progress"));
-            var theSameStatusChangeAlone = AnIssueWithTheHistory(JiraWireFormat.AStatusChangeAt(April10, "To Do", "In Progress"))
-                .StateTransitions.Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -187,8 +188,9 @@ namespace Lighthouse.Backend.Tests.Factories
                     "The link item in the entry is not a status change.");
                 Assert.That(issue.StateTransitions[0].FromState, Is.EqualTo("To Do"));
                 Assert.That(issue.StateTransitions[0].ToState, Is.EqualTo("In Progress"));
-                Assert.That(issue.StateTransitions[0].TransitionedAt, Is.EqualTo(theSameStatusChangeAlone.TransitionedAt),
+                Assert.That(issue.StateTransitions[0].TransitionedAt, Is.EqualTo(April10),
                     "Every cycle-time figure is built from these instants, so sharing an entry with a link must not move one.");
+                Assert.That(issue.StateTransitions[0].TransitionedAt.Kind, Is.EqualTo(DateTimeKind.Utc));
                 Assert.That(issue.StandingLinks, Is.EqualTo(new[] { ACausedByLink(AFeature, April10) }),
                     "The link in the same entry is dated by it too.");
             }
