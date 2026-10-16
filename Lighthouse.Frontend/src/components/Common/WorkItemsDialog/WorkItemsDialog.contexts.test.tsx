@@ -1667,16 +1667,20 @@ describe("what each catalogue column says, and how it sorts", () => {
 	);
 
 	it(
-		"Time in State counts a blocked item as stale from the day it was blocked",
+		"Time in State gives the blocked time Lighthouse names as the reason a blocked item is stale",
 		() => {
 			openTheDialog({
 				context: "aging",
-				items: inFlight,
-				timeInStateColumn: {
-					now: NOW,
-					stalenessThresholdDays: 100,
-					blockedStalenessThresholdDays: 5,
-				},
+				items: inFlight.map((item) =>
+					item === oldestButJustMoved
+						? {
+								...item,
+								isStale: true,
+								staleReasons: [{ kind: "BlockedDuration" as const, days: 10 }],
+							}
+						: item,
+				),
+				timeInStateColumn: { now: NOW },
 			});
 
 			expect(

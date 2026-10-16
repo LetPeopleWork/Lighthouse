@@ -1,0 +1,378 @@
+{
+  "roadmap": {
+    "project_id": "story-6247-server-marks-stale",
+    "created_at": "2026-10-16",
+    "total_steps": 7,
+    "total_phases": 2,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "goal": "Story #6247: Lighthouse decides once, on the server, which Work Items in progress are stale and why, and every surface reads that answer. Slice 01 (backend, releasable alone: `lh ... --json` already passes the fields through) writes the pure StalenessPolicy (Doing only; Blocked takes precedence; time in state stale when days > threshold and not Blocked; blocked duration stale when Blocked days >= blocked threshold; 0 turns a trigger off; a TimeInStateWhileBlocked context reason that does not make the item stale; days counted on the instance calendar as of the read's day), carries `isStale` / `staleReasons` on GET teams/{id}/metrics/wip and GET portfolios/{id}/metrics/wip through WorkItemDto.CarryStaleness, and moves the sync-time WorkItemBecameStale signal onto the same policy. Slice 02 (frontend) makes the Time-in-State badge and its tooltip, the Work Items dialog column, the aging chart's dots, the Flow Overview Stale count/RAG and the aging-pace data read the server's fields, drops the staleness threshold props from the badge, the dialog column and the chart (BaseMetricsView keeps its two for hasStaleConfig and the Blocked RAG), and deletes Lighthouse.Frontend/src/utils/staleness/. Done when every DISTILL pending scenario for slices 01 and 02 is un-ignored / un-skipped and green: no `[Ignore(Pending)]` remains in Models/Staleness/StalenessPolicyTest.cs or API/Integration/Staleness/, and no `.skip` remains in TimeInStateBadge.test.tsx, WorkItemsDialog.test.tsx, WorkItemAgingChart.test.tsx, BaseMetricsView.test.tsx (story-6247 describe) or utils/oneStalenessRule.enforcement.test.ts; the three active guards (Blocked items read says nothing, WIP read without a day, StalenessPolicyPurityArchUnitTest) stay green throughout. Slice 03 (lighthouse-clients), docs prose, release notes, evolution record, Stryker and ADO transitions are NOT steps here.",
+    "paradigm_note": "The Hypothesis + state-delta unit mandate from nw-roadmap does not apply, deliberately. Backend is C# + NUnit 4.6 + Moq + WebApplicationFactory, frontend TypeScript + Vitest + RTL; neither test project references a property-testing library (DISTILL: 'FsCheck is not referenced by the test project'; the closed input space is covered by [TestCase] / it.each boundary tables). DISTILL authored every acceptance and policy unit test. The crafter authors no new acceptance test: RED is removing `[Ignore(Pending)]` / `.skip` and watching the test fail as distill/red-classification.md records (all MISSING_FUNCTIONALITY, 0 BROKEN); GREEN is production code. Two classes of test edit are allowed and are named per step: (a) existing tests that the step makes wrong (threshold-driven badge, dialog, chart and Flow Overview tests; the deriveStaleness suite), rewritten onto `isStale` / `staleReasons` or deleted in the same commit as the change that makes them wrong; (b) mechanical arity edits (WorkItemServiceTestBuilder gains the clock). Where a pending test is GREEN_ON_TODAY or will already pass once an earlier step has wired the read, the step names it and says how its RED is demonstrated instead (sabotage by substitution, never by commenting a call out: docs/ci-learnings.md). Steps that touch more than one test file list them all in test_files; test_file names the primary one.",
+    "exit_gates": [
+      "End of every phase: backend suite green with `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"` (exactly 2 Licensing failures in a git worktree are the gitignored valid_not_expired_license.json fixture, not a regression; 10 ReleaseServiceTest failures under load are contention). `dotnet build` zero compiler warnings; the 2 NU1903 advisories on Microsoft.AspNetCore.SignalR.Common 10.0.12 predate this story and are out of scope.",
+      "End of phase 02: `pnpm test` and `pnpm build` green with zero errors and zero warnings in Lighthouse.Frontend/. Run `pnpm exec biome check ./src` read-only FIRST: `pnpm build`'s prebuild is `biome check --write` and rewrites files (and remove any `*/docs` symlinks before it runs).",
+      "Before any push: `cd Lighthouse.Backend && dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore`, filtered to the union of `git diff --name-only <base>` and `git status --porcelain` (new files are invisible to git diff), with zero findings in a touched or new file. Frontend: Biome clean on every touched file. SonarCloud: no new issue of any severity.",
+      "Program.cs is NOT edited by this story, and must not be: WorkItemService is registered by type (`AddScoped<IWorkItemService, WorkItemService>`) and ILighthouseClock is already a registered singleton, so the new constructor parameter in 01-04 resolves without a registration change. CI therefore does not run the full live-connector Integration suite for this change. If a step finds itself editing Program.cs, stop and say why at the hold.",
+      "End of phase 01 (slice-01 dogfood and its learning hypothesis): start the backend locally via `Lighthouse.Backend/Start-DevServer.ps1` (or `/run-dev`; NEVER the shared dev instance on :5169, and override the Kestrel keys if a spare port is needed, since ASPNETCORE_URLS is ignored), load demo data, and read `GET /api/latest/teams/{id}/metrics/wip?asOfDate=<today>` for a demo Team, plus the same Team for a past day and one demo Portfolio's `/api/latest/portfolios/{id}/metrics/wip?asOfDate=<today>`. Record: whether any demo Work Item reads `isStale: true` and with which reason (demo Teams and Portfolios set a 5-day blocked threshold and no time-in-state threshold, so the only possible reason is BlockedDuration on a Work Item Blocked 5+ days); that a Work Item with no time-in-state threshold never carries a TimeInState reason; and that `staleReasons[].kind` is a PascalCase string. If the read cannot reproduce what the browser's rule shows for the same Team and day (other than the instance-zone day count near midnight), the slice's hypothesis is disproved; report at the hold, do not paper over it.",
+      "End of phase 02 (slice-02 dogfood): with the same local instance, open a demo Team's Flow Overview on the current range and on a past range; the Stale count equals the number of `isStale: true` entries on the WIP read for the same day (OUT-stale-agrees). Answer DESIGN's open question by hand: after saving a changed staleness threshold in the Team settings, does the Flow Overview's WIP query refetch so the change shows at once? Record yes/no; if no, raise it at the hold rather than fixing it inside this story. Check under a throttled connection that the Stale widget, aging chart and dialogs still show WidgetShell's loading and could-not-load looks exactly as before (no new fetch is added).",
+      "Ratification at the hold before any push: ADR-240 is still 'Proposed'; the AFK maintainer decision recorded at DISTILL review, to revisit: the Flow Overview's Stale and WIP dialogs pass the range end as the Time in State column's `now`, so on a past range the 'Nd in State' label counts to the range end instead of today (02-01). Also list the existing-test rewrites and deletions each step made under paradigm_note (a).",
+      "Comments in new and touched code: rare, plain-language why, never an internal reference (no D-, DDD-, US-, AC-, UC-, UPSTREAM-, CI- or ADR- numbers). Touching a file whose comments break the rule means fixing them in the same change (PortfolioMetricsController's wip action carries several, see 01-03). The DISTILL `// SCAFFOLD: true` markers (StalenessPolicy.cs, TimeInStateBadge.tsx props) are removed by the step that makes the scaffold real.",
+      "Push order: phase 01 may be pushed on its own (each Epic ships alone; slice 01 already gives `lh --json` users the fields). Phase 02 depends on phase 01 being on main. Never push red: a step whose pending tests are not yet green keeps them skipped.",
+      "The AC-/US-/D-/DDD-/OUT- tags in this roadmap are navigation aids only; never copy them into code comments, test names or commit subjects.",
+      "Phase 02 is pushed as a whole (02-01 to 02-03), never per step: between 02-01 and 02-02 the dialog badges read the server while the Stale count still uses the browser rule."
+    ]
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "verdict": "conditionally_approved; 2 high + 4 low applied by the orchestrator",
+    "date": "2026-10-16"
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-6247-server-marks-stale/feature-delta.md",
+    "red_classification": "docs/feature/story-6247-server-marks-stale/distill/red-classification.md",
+    "slices": "docs/feature/story-6247-server-marks-stale/slices/slice-01-server-marks-stale.md, slice-02-dashboard-reads-server-answer.md",
+    "adr": "docs/product/architecture/adr-240-lighthouse-decides-staleness-once-on-the-server.md",
+    "harness": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Staleness/StaleWorkItemsAcceptanceTest.cs (WIP reads); Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs (refresh signal, update queue and event capture)",
+    "ci_learnings": "docs/ci-learnings.md",
+    "ado_story": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6247"
+  },
+  "user_decisions": [
+    "D1 / DDD-4 / DDD-5 - only GET teams/{id}/metrics/wip and GET portfolios/{id}/metrics/wip carry the verdict; blockedItemsAtDate, Team featuresInProgress, Feature child items, cycle-time, run-chart, size and SLE-risk reads do not.",
+    "D2 / DDD-6 - wire `isStale: bool?` and `staleReasons: [{ kind, days, stateName? }]?`, both omitted when null (absent = Lighthouse does not say); `stateName` omitted, not null, on a BlockedDuration reason; kind is StaleReasonKind { TimeInState, BlockedDuration, TimeInStateWhileBlocked } as PascalCase strings; reason order: the reason that makes the item stale first, the context reason after.",
+    "D3 / DDD-9 - the frontend reads the server's answer and deriveStaleness is deleted; hasStaleConfig and the Blocked RAG keep reading thresholds from settings.",
+    "D4 / DDD-2 - one rule with the browser's semantics, plus the TimeInStateWhileBlocked context reason (shown only when days in state > threshold).",
+    "D5 / DDD-3 - judged as of the read's day (asOfDate); D8 - days on the instance calendar: asOfDay - DayOf(enteredAt, zone) + 1, minimum 1, the Work Item Age arithmetic.",
+    "D6 / DDD-8 - WorkItemBecameStale uses the same policy; ILighthouseClock injected into WorkItemService; the Doing + entered-at guard runs before IsBlocked is asked; ThresholdDays is the threshold of the reason that fired; WorkItemBecameStale and WasStaleAtLastSync are kept (expand-only).",
+    "DDD-7 - WorkItemDto.CarryStaleness(policy, zone, asOfDay) is the one home of the DTO-to-candidate mapping; no new constructor parameter on the DTO (it already carries an S107 suppression).",
+    "DDD-11 - ArchUnitNET: Models.Staleness depends on nothing in Services, API or Data; Vitest guard: nothing in src/ compares days with a staleness threshold (allow-list blockedMaxAgeRag.ts).",
+    "DISTILL maintainer decision (AFK, to revisit) - the dialog column's `now` is the range end on a past range, so label and Lighthouse's reason count to the same day.",
+    "DISTILL maintainer decision - UI sketches: none needed; no new look, DELIVER re-sketches nothing."
+  ],
+  "out_of_scope": [
+    "Slice 03 - lighthouse-clients pass-through (client metricsWording, mcp-core summariseCurrentWip, cli headlineLines, tool descriptions, the `staleness` version gate) and the Daily Flow Review skill's Stale item: 18 scenarios specified in docs/feature/story-6247-server-marks-stale/distill/slice-03-clients-scenarios.md with the wire fixtures distill/wip-read-with-staleness.json and distill/wip-read-without-staleness.json. The maintainer runs it later from the clients repo, once slice 01 is released and its version is known.",
+    "Changing the rule beyond D4 / D8 (new triggers, per-state thresholds, Feature-level rules); staleness on To Do or Done Work Items; any new setting, UI control or Terminology key (Stale stays a fixed label).",
+    "Removing WorkItemBecameStale or the WasStaleAtLastSync column (expand-only migrations; no migration in this story).",
+    "Changing the pinned behaviour of a WIP read without asOfDate (binds DateTime.MinValue, answers with no Work Items) or clamping a future asOfDate.",
+    "A usage-data event: N/A, because DEVOPS was skipped by the maintainer and a read-model field is not a feature to count (DISCUSS out-of-scope).",
+    "E2E: no Playwright spec (DISTILL: every surface's wiring is proven through the real host and RTL; what E2E would add, that the dashboard calls the WIP read, is unchanged).",
+    "Finalize items: docs/metrics/flow-overview.md and docs/aiintegration.md prose, the release-notes line on #6247, the evolution record, screenshots (N/A, no visual change), Stryker on frozen code (>= 80 % on the new backend rule; Stryker.NET must skip the acceptance suite), ADO state transitions."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Lighthouse marks stale on its WIP reads",
+      "description": "Backend only, releasable alone. The pure policy and the walking skeleton through the Team WIP read first, then the rest of the Team read's boundaries, then the Portfolio read, then the sync-time signal onto the same policy. No frontend file is touched; every existing read is byte-for-byte unchanged except the two WIP reads gaining two optional fields.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "A flow coach reads which Work Item has sat too long in Review and why, from one pure rule",
+          "description": "Walking skeleton. Replace the scaffold body of StalenessPolicy.Evaluate(candidate, zone, asOfDay) with the rule: Doing only; time in state days = asOfDay - InstanceCalendar.DayOf(enteredAt, zone) + 1 (minimum 1), stale when > threshold and not Blocked; blocked days by the same arithmetic on blockedSince, stale when >= blocked threshold; 0 turns a trigger off; a Blocked item whose days in state are past the time-in-state threshold carries TimeInStateWhileBlocked without becoming stale; unknown entered day = no time-in-state reason, unknown blocked start = no blocked reason, but a Blocked item with an unknown entered day and a known blocked start is still judged by its blocked time. Then wire the Team WIP read: build StalenessPolicy.For(team) once per read and call dto.CarryStaleness(policy, clock.Zone, DateOnly.FromDateTime(asOfDate)) on each projected WorkItemDto after construction. Map StaleReason to StaleReasonDto with stateName omitted when null.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Staleness/StalenessPolicyTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Staleness/StalenessPolicyTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01ServerMarksStaleScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StalenessPolicyPurityArchUnitTest.cs"
+          ],
+          "scenario_name": "@walking_skeleton A_flow_coach_reads_which_Work_Item_has_sat_too_long_in_Review_and_why; StalenessPolicyTest (14 tests, 25 cases): A_Work_Item_in_progress_goes_stale_only_once_it_has_sat_longer_than_the_threshold; A_Blocked_Work_Item_goes_stale_once_it_has_been_Blocked_for_the_blocked_threshold; A_Blocked_Work_Item_long_in_its_state_is_judged_by_its_blocked_time_and_shows_both; A_Blocked_Work_Item_under_the_blocked_threshold_is_not_stale_however_long_it_has_sat_in_its_state; A_Blocked_Work_Item_shows_its_time_in_state_only_once_it_is_past_the_threshold; A_Blocked_Work_Item_whose_state_entry_is_unknown_is_still_judged_by_its_blocked_time; A_threshold_of_zero_turns_its_trigger_off; A_blocked_threshold_of_zero_leaves_a_long_Blocked_Work_Item_not_stale_but_still_shows_its_time_in_state; Only_Work_Items_in_progress_can_be_stale; A_Work_Item_whose_state_entry_is_unknown_has_no_time_in_state_to_judge; A_Blocked_Work_Item_with_no_known_blocked_start_has_no_blocked_time_to_judge; Days_are_counted_on_the_instance_calendar_not_in_UTC; A_Work_Item_Blocked_on_the_day_asked_about_has_been_Blocked_for_one_day; The_policy_reads_both_thresholds_from_their_owner",
+          "unskips": [
+            "Slice01ServerMarksStaleScenarios.cs :: A_flow_coach_reads_which_Work_Item_has_sat_too_long_in_Review_and_why (@walking_skeleton)",
+            "StalenessPolicyTest.cs :: all 14 tests (25 cases) listed in scenario_name"
+          ],
+          "guards_kept_green": [
+            "Slice01ServerMarksStaleScenarios.cs :: The_Blocked_items_read_says_nothing_about_staleness (active) - blockedItemsAtDate must NOT call CarryStaleness",
+            "Slice01ServerMarksStaleScenarios.cs :: A_WIP_read_without_a_day_answers_with_no_Work_Items (active)",
+            "StalenessPolicyPurityArchUnitTest.cs :: Models.Staleness depends on nothing in Services, API or Data (active)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Staleness/StalenessPolicy.cs (edit - real Evaluate body; remove the SCAFFOLD marker and the scaffold's const message)",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Staleness/StalenessVerdict.cs and StaleReasonKind.cs (edit only if Evaluate needs it; records are already written in full)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkItemDto.cs (edit - CarryStaleness sets IsStale and StaleReasons from the verdict; reason order kept)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/StaleReasonDto.cs (edit only if the mapping needs it)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs (edit - GetCurrentWipForTeam only: policy built once, CarryStaleness after construction)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Staleness/StalenessPolicyTest.cs (edit - remove [Ignore(Pending)] on all 14 tests; drop the Pending const once unused)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01ServerMarksStaleScenarios.cs (edit - remove [Ignore(Pending)] on the walking skeleton only)",
+            "ARCHITECTURE.md (edit - the ADR table row '026 / 070 | Cross-surface staleness derivation' gains 240: the rule now lives once on the server; same change, per the keep-ARCHITECTURE.md-current rule)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "A Team with thresholds 5 / 3 reading its WIP for a day on which a Work Item in progress, not Blocked, has sat 6 days in Review answers that Work Item with isStale true and exactly one reason { kind: \"TimeInState\", days: 6, stateName: \"Review\" } (walking skeleton, through the real host).",
+            "All 25 StalenessPolicyTest cases green: > for time in state (5 no, 6 yes; 1 no, 2 yes), >= for blocked (2 no, 3 yes, 4 yes), Blocked precedence with both reasons in stale-first order, context reason only under the blocked threshold and only past the time-in-state threshold, 0 off on each trigger, only Doing, unknown entered day, unknown blocked start, instance-calendar day counting (22:30 UTC is the next day in Zurich), a block starting on or after the day asked about counts 1 day, thresholds read from the owner.",
+            "Evaluate is pure: no clock, no service, no I/O; the ArchUnit purity rule stays green.",
+            "The Blocked items read and the cycle-time, run-chart and other reads carry no isStale / staleReasons key at all (omitted, not null).",
+            "`dotnet build` zero warnings (NU1903 pre-existing); the story-6247 category green except the pending tests later steps own."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note; the policy's input space is closed (two thresholds, a day count, blocked or not) and DISTILL wrote it as [TestCase] boundary tables. RED per red-classification.md: every policy case fails on the scaffold's InvalidOperationException; the walking skeleton fails on isStale null. SIZING FLAG: 15 tests (26 cases) in one step, above the 8-scenario flag. Kept together because the 14 unit tests are the boundary table of ONE pure function and the skeleton is one projection line; splitting would leave Evaluate half-written across commits. If the step runs past half a day, split it at the Blocked branch: 01-01a = skeleton + time-in-state cases (in progress >, 0 off, only Doing, unknown entered day, instance calendar, owner thresholds), 01-01b = every Blocked case. Reuse InstanceCalendar.DayOf and the WorkItemBase.AgeOnDay arithmetic (WorkItemBase.cs ~160) rather than re-deriving the +1; do not use fractional TotalDays. Pre-apply docs/ci-learnings.md: S2325 (a helper that touches no instance state must be static), S3776 (keep Evaluate under cognitive complexity 15: extract the time-in-state and blocked branches into small private methods), S1192 (the scaffold's message const goes when the throw goes), CA1859 (concrete collection types for private helpers), S125 (no prose comment line ending in ';'). The projection lambda in GetCurrentWipForTeam becomes a block body (construct, CarryStaleness, return) - keep the existing comments there, they are already plain language. Do not touch GetBlockedItemsAtDate.",
+          "sizing_review": "@sizing-review-needed (justified: see implementation_notes)"
+        },
+        {
+          "id": "01-02",
+          "name": "The Team WIP read holds the rule at its boundaries, as of the day asked about, Blocked or not",
+          "description": "Un-skip the remaining Team WIP-read scenarios. They exercise the policy through the real host on the DTO's resolved fields after the as-of projection: blocked-since from a recorded blocked spell on a past day (the read's existing history branch), as-of day counting, both triggers off, each trigger off alone, an unknown state entry. Fix whatever the real projection gets wrong (most likely the past-day blocked-since and blocked state handed to CarryStaleness).",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01ServerMarksStaleScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01ServerMarksStaleScenarios.cs"
+          ],
+          "scenario_name": "A_Work_Item_goes_stale_once_it_has_sat_in_its_state_longer_than_the_threshold (5,False)/(6,True); A_Blocked_Work_Item_goes_stale_on_the_day_it_reaches_the_blocked_threshold (2,False)/(3,True); A_Blocked_Work_Item_under_the_blocked_threshold_is_not_stale_however_long_it_has_sat_in_its_state; A_Blocked_Work_Item_is_stale_for_its_blocked_time_and_still_shows_how_long_it_has_sat_in_its_state; A_Work_Item_still_Blocked_in_its_state_is_not_stale_before_the_blocked_threshold_even_past_the_time_in_state_one; With_both_thresholds_off_no_Work_Item_is_stale_and_none_carries_a_reason; Turning_the_time_in_state_trigger_off_leaves_the_blocked_trigger_working; Turning_the_blocked_trigger_off_leaves_the_time_in_state_trigger_working; A_Work_Item_is_judged_as_of_the_day_the_read_asks_about_not_today; A_Work_Item_whose_state_entry_Lighthouse_never_saw_is_not_stale",
+          "unskips": [
+            "Slice01ServerMarksStaleScenarios.cs :: the 10 Team tests (12 cases) listed in scenario_name"
+          ],
+          "guards_kept_green": [
+            "the walking skeleton from 01-01",
+            "The_Blocked_items_read_says_nothing_about_staleness; A_WIP_read_without_a_day_answers_with_no_Work_Items; StalenessPolicyPurityArchUnitTest",
+            "existing Team WIP read tests (BlockedItems/ acceptance and TeamMetricsController tests) unchanged"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01ServerMarksStaleScenarios.cs (edit - remove [Ignore(Pending)] on the 10 Team tests)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs (edit only if a scenario shows the projection hands CarryStaleness the wrong blocked state or blocked-since for a past day)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkItemDto.cs (edit only if the DTO's resolved fields differ from what the candidate needs)"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "criteria": [
+            "Time in state 5 days reads isStale false, 6 days true; Blocked 2 days false, 3 days true (AC-1, AC-2 boundaries through the read).",
+            "A Work Item Blocked 2 days and 9 days in state (recorded blocked spell, past day) reads isStale false with only the TimeInStateWhileBlocked reason; Blocked 3+ days reads true with BlockedDuration first and TimeInStateWhileBlocked after it, the BlockedDuration reason carrying no stateName key.",
+            "Both thresholds 0: no Work Item reads stale and none carries a reason (staleReasons empty); each trigger off alone leaves the other one working (AC-3).",
+            "The same Work Item read for day 5 and then day 6 answers false then true: days are counted to asOfDate, not today (AC-4).",
+            "A Work Item with no known state entry reads isStale false.",
+            "`dotnet build` zero warnings; Slice01ServerMarksStaleTest green except the two Portfolio tests 01-03 owns."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. SIZING / RED CONCERN: 10 tests (12 cases), above the 8 flag, and most are expected to pass the moment they are un-skipped, because 01-01 already wired the read and the policy is complete. red-classification.md recorded each failing on isStale null before the wiring existed; that is their recorded RED. To keep the evidence honest in this step, run them once with the wiring sabotaged BY SUBSTITUTION (in GetCurrentWipForTeam, replace the CarryStaleness call with `_ = policy;` so every variable stays read - commenting the call out trips CS9113 / S1199, see docs/ci-learnings.md), confirm each fails on isStale null, restore, and note per test in the commit body which needed a production change and which passed on un-skip. The harness asks about noon UTC so [FromQuery] DateTime asOfDate lands on the same day in any host zone; live reads take blocked-since from the day the item entered its state, so the 'Blocked 2 days, 9 in state' cases depend on the historic-range branch (asOfDate before clock.Today) resolving blocked-since from the recorded spell. Do not change the pinned behaviour of a read without asOfDate.",
+          "sizing_review": "@sizing-review-needed (justified: see implementation_notes)"
+        },
+        {
+          "id": "01-03",
+          "name": "The Portfolio WIP read marks a stale Feature against the Portfolio's thresholds",
+          "description": "Wire the Portfolio WIP read: StalenessPolicy.For(portfolio) once per read, and CarryStaleness on each FeatureDto (FeatureDto : WorkItemDto) after construction, so the verdict judges the Feature's as-of state (statesAsOf) and the blocked-since the read already resolves (history on a past day, the open per-portfolio spell live).",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01ServerMarksStaleScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01ServerMarksStaleScenarios.cs"
+          ],
+          "scenario_name": "A_Feature_goes_stale_once_it_has_sat_in_its_state_longer_than_the_Portfolios_threshold (5,False)/(6,True); A_Blocked_Feature_is_stale_for_its_blocked_time_against_the_Portfolios_blocked_threshold",
+          "unskips": [
+            "Slice01ServerMarksStaleScenarios.cs :: A_Feature_goes_stale_once_it_has_sat_in_its_state_longer_than_the_Portfolios_threshold (2 cases)",
+            "Slice01ServerMarksStaleScenarios.cs :: A_Blocked_Feature_is_stale_for_its_blocked_time_against_the_Portfolios_blocked_threshold"
+          ],
+          "guards_kept_green": [
+            "every Team scenario from 01-01 and 01-02; the three active guards",
+            "existing Portfolio WIP read tests (Portfolio blocked-spell acceptance, PortfolioMetricsController tests) unchanged",
+            "Portfolio blockedItemsAtDate carries no staleness"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs (edit - GetInProgressFeatures only: policy built once, CarryStaleness after construction; and rewrite the action's comments that cite internal references - 'UPSTREAM-7', 'US-03 / ADR-102/103', 'US-03 AC4', 'US-02 / ADR-103', 'D16 / UPSTREAM-2', 'CI2, US-04 AC3' - into their plain-language reasons, since this step touches the action)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01ServerMarksStaleScenarios.cs (edit - remove [Ignore(Pending)] on the two Portfolio tests; drop the Pending const once unused)"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "criteria": [
+            "A Portfolio with thresholds 5 / 3: a Feature in progress 5 days in its state reads isStale false, 6 days true, with one TimeInState reason naming the state (AC-5).",
+            "A Blocked Feature past the Portfolio's blocked threshold reads isStale true with BlockedDuration first and TimeInStateWhileBlocked after it; the Team's thresholds play no part.",
+            "No `[Ignore(Pending)]` remains in Slice01ServerMarksStaleScenarios.cs.",
+            "The Portfolio action's comments read as plain-language reasons with no internal reference.",
+            "`dotnet build` zero warnings; Slice01ServerMarksStaleTest fully green."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. RED per red-classification.md: isStale null on the Feature (nothing calls CarryStaleness on this read yet), so this step has a genuine RED. The verdict must judge the Feature's as-of state, which is why the policy takes a candidate built from the DTO's resolved fields rather than the Feature entity (a WorkItemBase method would judge today's state on a past read). The lambda becomes a block body. S3776: the action is already long; keep the added lines to construct / carry / return. Rewriting the comments changes no behaviour; keep it in the same commit (comments rule: fix as you go)."
+        },
+        {
+          "id": "01-04",
+          "name": "A refresh signals a Work Item going stale under the same rule, with the threshold it crossed",
+          "description": "Move WorkItemService's sync-time staleness onto StalenessPolicy. Inject ILighthouseClock into WorkItemService (one more primary-constructor parameter; the existing S107 suppression already covers the list). CollectStalenessEvents and AddStalenessEventIfThresholdCrossed lose `static`. Keep the existing Doing + CurrentStateEnteredAt guard first, and only then ask blockedItemService.IsBlocked(workItem, team), so an item with nothing to judge costs no blocked evaluation. Evaluate with clock.Zone and clock.Today, blockedSince = CurrentStateEnteredAt when blocked (as the live read does). ThresholdDays on WorkItemBecameStale = the threshold of the reason that made the item stale (BlockedDuration -> BlockedStalenessThresholdDays, TimeInState -> StalenessThresholdDays). Delete the old IsStale. WasStaleAtLastSync semantics unchanged (set on a false-to-true flip, cleared when not stale).",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01StaleSignalScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01StaleSignalScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/WorkItemServiceTestBuilder.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs"
+          ],
+          "scenario_name": "A_refresh_signals_a_Work_Item_going_stale_once_with_the_threshold_it_crossed; A_refresh_does_not_signal_a_Work_Item_that_has_sat_exactly_as_long_as_the_threshold; A_refresh_does_not_signal_a_Blocked_Work_Item_still_under_the_blocked_threshold; A_refresh_signals_a_Blocked_Work_Item_with_the_blocked_threshold_it_crossed; A_refresh_names_the_blocked_threshold_when_a_Blocked_Work_Item_goes_stale_with_both_thresholds_set; A_refresh_never_signals_staleness_while_both_thresholds_are_off",
+          "unskips": [
+            "Slice01StaleSignalScenarios.cs :: all 6 tests listed in scenario_name"
+          ],
+          "guards_kept_green": [
+            "WorkItemServiceTest.cs :: UpdateWorkItemsForTeam_StalenessThresholdCrossed_PublishesWorkItemBecameStaleOnceWithThreshold (30 days > 5, ThresholdDays 5)",
+            "WorkItemServiceTest.cs :: UpdateWorkItemsForTeam_ItemLeavesDoingThenReentersStale_ResetsFlagAndRepublishesOnSecondCrossing",
+            "Slice02JiraCloudTeamDeltaScenarios.cs :: An_issue_that_stopped_moving_still_goes_stale (FasterUpdates; must still raise under whole-day counting)",
+            "WorkItemDomainEventsGoldTest and every other WorkItemServiceTestBuilder consumer",
+            "all slice-01 WIP-read scenarios and the three active guards"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs (edit - ILighthouseClock parameter; policy-based staleness in AddStalenessEventIfThresholdCrossed; both methods non-static; old IsStale deleted)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/WorkItemServiceTestBuilder.cs (edit - mechanical arity: pass an ILighthouseClock, defaulting to a real LighthouseClock on UTC and the system TimeProvider, or the double the suite already uses; no assertion changed)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01StaleSignalScenarios.cs (edit - remove [Ignore(Pending)] on all 6; drop the Pending const)"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "criteria": [
+            "A Team with thresholds 5 / 3 and a Work Item 6 days in progress: the scheduled refresh raises exactly one WorkItemBecameStale { WorkItemId, ThresholdDays = 5 }, and a second refresh raises none (AC-6).",
+            "At exactly 5 days: no signal, at any time of day (whole instance days, not fractional TotalDays from UtcNow).",
+            "A Blocked Work Item 7 days in its state with blocked threshold 10: no signal (Blocked takes precedence).",
+            "Thresholds 0 / 3, Blocked 3 days: one signal with ThresholdDays 3. Thresholds 5 / 3, Blocked 3 days: one signal with ThresholdDays 3 (the blocked threshold, the reason that fired).",
+            "Both thresholds 0: no signal for a 30-day in-progress item or a 30-day Blocked item.",
+            "The two existing WorkItemServiceTest staleness tests and An_issue_that_stopped_moving_still_goes_stale stay green unchanged.",
+            "IsBlocked is not called for an item outside Doing or without a state entry.",
+            "No `[Ignore(Pending)]` remains anywhere under API/Integration/Staleness/ or in StalenessPolicyTest.cs; Program.cs untouched; `dotnet build` zero warnings."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. RED per red-classification.md: 4 of 6 MISSING_FUNCTIONALITY (one WorkItemBecameStale(1, 5) raised for the Blocked item; ThresholdDays 0 instead of 3; two signals with thresholds off; no signal at 3 days blocked with 5 / 3). TWO GREEN_ON_TODAY TESTS MUST BE PROVEN FALSIFIABLE BEFORE THEIR GREEN IS TRUSTED: A_refresh_signals_a_Work_Item_going_stale_once_with_the_threshold_it_crossed passes on today's rule only after 10:00 UTC, and A_refresh_does_not_signal_a_Work_Item_that_has_sat_exactly_as_long_as_the_threshold is its boundary partner. After GREEN, run the 6 once with the policy stubbed always-not-stale BY SUBSTITUTION in AddStalenessEventIfThresholdCrossed (keep every parameter and field read, e.g. evaluate and then use `false` for isStaleNow while keeping `_ = verdict;`; never comment the call out - CS9113 / S1199 per docs/ci-learnings.md), confirm 'signals once' and 'names the blocked threshold' and 'signals a Blocked Work Item' fail on the missing signal, restore, and record the run in the commit body. Pre-apply: S2325 is why the two methods must lose `static` in the same edit that makes them read the injected clock and blocked service; S3776 on AddStalenessEventIfThresholdCrossed (extract the ThresholdDays choice into a small helper); CA1859. FasterUpdatesAcceptanceTest registers a capturing handler for WorkItemBecameStale on the real dispatcher; check how GivenATeamThatCallsWorkStaleAfterFiveDays seeds its entered-at before trusting An_issue_that_stopped_moving_still_goes_stale (whole-day counting can only add days, never remove them, so it should stay green). The bounded-change contract: the only mutation is WasStaleAtLastSync on the Team's still-held Work Items, plus one event per false-to-true flip. ROADMAP REVIEW: the always-not-stale stub cannot falsify 'does not signal a Work Item that has sat exactly as long as the threshold'. Add a second substitution run: inside AddStalenessEventIfThresholdCrossed make the stale decision off-by-one (time in state judged with >= instead of >) or always-true, keeping every parameter read; confirm that boundary test fails, restore, and record both sabotage runs in the commit body. Test builder default clock: use the existing Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock, and keep WorkItemServiceTest's existing staleness tests green under it."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "The dashboard reads Lighthouse's answer",
+      "description": "Frontend only, after phase 01 is on main. The badge and the dialog column first (the column definition loses its thresholds, which forces the aging chart's and the Flow Overview's column objects to change with it), then the aging chart's dots and the Flow Overview's Stale count and aging-pace data, then the browser's rule is deleted and the source guard goes green. No visual change for a current range.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "The Time-in-State badge and the Work Items dialog column show the staleness Lighthouse decided",
+          "description": "TimeInStateBadge renders red exactly when its `isStale` prop is true, with the tooltip / aria-label `<label> — <reasons>` joined by '; ', formatting BlockedDuration as `Blocked {days}d` and TimeInState / TimeInStateWhileBlocked as `{days}d in {stateName}`; the 'Nd in State' label is still counted in the browser to `now`. Remove the stalenessThresholdDays / blockedStalenessThresholdDays props and the deriveStaleness import from the badge, and the two threshold fields from TimeInStateColumnDefinition; workItemColumns passes the row's isStale and staleReasons to the badge. Callers' column objects follow: WorkItemAgingChart's bubble dialog passes `{ now }`; BaseMetricsView's buildViewData builds the Stale and WIP dialogs' column as `{ now: endDate }` (the range end - maintainer decision to revisit) and ViewDataInputs loses the two threshold fields.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/components/Common/TimeInStateBadge/TimeInStateBadge.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/components/Common/TimeInStateBadge/TimeInStateBadge.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx"
+          ],
+          "scenario_name": "TimeInStateBadge shows the staleness Lighthouse decided: is red when Lighthouse marks the Work Item stale, even with no threshold given; is not red when Lighthouse says the Work Item is not stale, however long it has sat; is not red when Lighthouse does not say, as an older Lighthouse does not; a Blocked Work Item not yet stale stays un-red even though Lighthouse names its time in state; its tooltip gives Lighthouse's reason: %s (blocked time / time in state / blocked time and the time in state beside it). WorkItemsDialog: a row Lighthouse marks stale shows the stale badge, counted to the column's day, with no threshold given; a row Lighthouse says is not stale shows no stale badge, however long it has sat",
+          "unskips": [
+            "TimeInStateBadge.test.tsx :: the 5 tests (7 cases) of describe 'TimeInStateBadge shows the staleness Lighthouse decided'",
+            "WorkItemsDialog.test.tsx :: the 2 story-6247 tests in the Time in State describe"
+          ],
+          "guards_kept_green": [
+            "TimeInStateBadge.test.tsx :: day-count label tests (1d / 2d / 3d / 11d, today counts as 1d, em dash with no entered date)",
+            "WorkItemsDialog.test.tsx :: Time in State column shown and the aging / stale lists sorted by Age",
+            "the frontend suite in full"
+          ],
+          "existing_tests_rewritten_or_deleted": [
+            "TimeInStateBadge.test.tsx (first describe): 'applies the stale treatment only when days strictly exceed the threshold ...' (4 cases), 'never applies the stale treatment when the threshold is %s', 'renders an em dash and no stale treatment when there is no entered date even past a threshold', 'does not apply the stale treatment to a blocked item over the staleness threshold ...', 'marks a blocked item as stale when blocked duration exceeds blockedStalenessThresholdDays', 'renders stale reasons in an accessible label on the stale badge', 'renders blocked-duration driver and context-time-in-state reasons when both triggers fire', 'cross-surface consistency: same emphasis colour ...' - each passes threshold props the badge no longer has. Delete the ones the new describe already covers (threshold boundaries now live in StalenessPolicyTest); rewrite onto isStale / staleReasons the ones that still say something the new describe does not (em dash with isStale true; the error.main colour).",
+            "WorkItemsDialog.test.tsx: 'applies the stale treatment when the threshold reaches the badge' and 'applies no stale treatment when the threshold is zero' - rewrite onto items carrying isStale (two marked stale -> two stale badges in Age order; none marked -> none), or delete as covered by the two new tests.",
+            "WorkItemsDialog.contexts.test.tsx: 'Time in State counts a blocked item as stale from the day it was blocked' - rewrite so the WIP-1 row carries isStale true and a BlockedDuration reason of 10 days and the column passes only `now`; the aria-label still contains 'Blocked 10d'.",
+            "WorkItemAgingChart.test.tsx: 'gives the bubble dialog a Time in State column carrying both staleness thresholds' - becomes 'gives the bubble dialog a Time in State column counted to the chart's day', expecting `{ now }`; the WorkItemsDialog mock's timeInStateColumn type and its data-time-in-state-threshold attribute lose the threshold.",
+            "BaseMetricsView.test.tsx: the viewDataWith helper (~line 7179) drops stalenessThresholdDays / blockedStalenessThresholdDays from the ViewDataInputs it builds and passes endDate."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/TimeInStateBadge/TimeInStateBadge.tsx (edit - read isStale / staleReasons; drop the threshold props and the deriveStaleness import; remove the SCAFFOLD marker)",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx (edit - TimeInStateColumnDefinition loses its two threshold fields)",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/workItemColumns.tsx (edit - timeInStateGridColumn passes row.isStale and row.staleReasons)",
+            "Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.tsx (edit - the bubble dialog's timeInStateColumn is `{ now }`; the chart's own threshold props stay until 02-02)",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx (edit - buildViewData's timeInStateColumn = { now: endDate }; ViewDataInputs: thresholds out, endDate in)",
+            "the five test files in test_files (un-skips and the rewrites listed above)"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "criteria": [
+            "The badge is red (error.main, data-testid time-in-state-stale) exactly when isStale is true, with no threshold given; not red when isStale is false or absent, the label still reading e.g. '31d in Review' (US-02 AC-2).",
+            "A Blocked Work Item with isStale false and a TimeInStateWhileBlocked reason stays un-red.",
+            "Tooltip / aria-label reads '3d in Review — Blocked 6d', '3d in Review — 12d in Review' and '3d in Review — Blocked 6d; 12d in Review' for the three reason sets.",
+            "A dialog row marked stale on a past range shows '12d in Review' counted to the column's `now`, with aria-label '12d in Review — 12d in Review'; a row marked not stale shows no stale badge and '31d in Review'.",
+            "On a past range, the Flow Overview's Stale and WIP dialogs count the label to the range end (maintainer decision, to ratify at the hold).",
+            "No component outside BaseMetricsView's two settings-derived uses and blockedMaxAgeRag.ts still receives a staleness threshold for the badge or the dialog column; `pnpm exec tsc -b` clean."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note; single-shot UI renders against fixed answers. RED per red-classification.md: the four 'is red' / tooltip cases fail (no time-in-state-stale element) and the dialog's 'marks stale' test fails the same way; the three badge 'not red' tests and the dialog's 'not stale' test are GREEN_ON_TODAY guards with their own positive controls (the label text), which they keep after the switch. Keep `isBlocked` in the badge's props type (the pending Blocked test passes it) but stop reading it for staleness; Biome flags an unused destructured binding, so do not destructure what is not read, and keep blockedSince only if something still reads it. The reason union is a string union (StaleReasonKind in models/WorkItem.ts): the server sends PascalCase strings, never numbers, so compare against the string literals. Keep the tooltip text byte-identical to today's format so no visual changes on a current range. The dialog-column `now` change is the one number a reader sees move (past ranges only); it is a recorded maintainer decision to revisit, not a new design. Pre-apply docs/ci-learnings.md frontend rules (S6754 setter naming if any state is added, S7761 for any new data-attribute read in a test helper, RTL name matchers are unanchored - the pending tests already anchor with ^...$). ROADMAP REVIEW: the three badge 'not red' tests and the dialog 'not stale' test pass as soon as they are un-skipped. Prove they read isStale: temporarily make the badge red whenever isStale !== true (substitution, not deletion), confirm those four fail, restore, and record it in the commit body."
+        },
+        {
+          "id": "02-02",
+          "name": "The aging chart's dots and the Flow Overview's Stale count and aging pace count what Lighthouse marked stale",
+          "description": "WorkItemAgingChart reds a dot exactly when an item in it has isStale true (groupWorkItems stops calling deriveStaleness), and the chart's stalenessThresholdDays / blockedStalenessThresholdDays props are removed; BaseMetricsView stops passing them to it. BaseMetricsView's staleItems = inProgressItems with isStale === true, and the aging-pace data's agingItems[].isStale = item.isStale === true, so a past range is judged as of the range end everywhere. BaseMetricsView keeps its own two threshold props for hasStaleConfig and the Blocked RAG (buildWidgetFooters / RagInputs).",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.test.tsx"
+          ],
+          "scenario_name": "BaseMetricsView 'Stale signals show the staleness Lighthouse decided': the Team's Stale count is the number of Work Items Lighthouse marks stale; the Portfolio's Stale count is the number of Features Lighthouse marks stale; the aging chart's health counts a Work Item Lighthouse marks stale as stale; on a past range, the aging chart's health does not call stale a Work Item Lighthouse judged not stale on the range's last day. WorkItemAgingChart 'stale dots show the staleness Lighthouse decided': reds the dot of a Work Item Lighthouse marks stale, however recently it moved; does not red the dot of a Work Item Lighthouse says is not stale, however long it has sat; does not red the dot of a Work Item an older Lighthouse said nothing about",
+          "unskips": [
+            "BaseMetricsView.test.tsx :: the 4 tests of describe 'Stale signals show the staleness Lighthouse decided'",
+            "WorkItemAgingChart.test.tsx :: the 3 tests of describe 'stale dots show the staleness Lighthouse decided'"
+          ],
+          "guards_kept_green": [
+            "BaseMetricsView.test.tsx :: 'counts blocked items across To Do and In Progress, not just the WIP set' and the Blocked RAG test passing blockedStalenessThresholdDays={10} (the Blocked RAG still reads the threshold)",
+            "hasStaleConfig behaviour: the Stale widget still shows its not-configured look when both thresholds are 0",
+            "WorkItemAgingChart.test.tsx :: Blocked dots still red; every non-staleness chart test"
+          ],
+          "existing_tests_rewritten_or_deleted": [
+            "BaseMetricsView.test.tsx: 'counts stale items in the stale overview widget excluding blocked items' (~line 1671) - its items carry no isStale and it expects 2 from thresholds 1 / 0; rewrite so items 11 and 12 carry isStale true and the Blocked item 13 carries isStale false (count 2, RAG red), keeping the thresholds it passes for hasStaleConfig.",
+            "WorkItemAgingChart.test.tsx: describe 'Stale items functionality' - 'reds a stale, non-blocked bubble with the same emphasis as blocked' and 'does not red a stale bubble when staleness is disabled (threshold 0)' pass threshold props the chart no longer has and are covered by the new describe; delete them with the seriesColorOf helper (the bubble-dialog column test was already rewritten in 02-01; move it out of the describe if the describe goes).",
+            "WorkItemAgingChart.test.tsx: add the control `expect(normalColour).toBeDefined();` beside each `expect(normalColour).not.toBe(errorColor);` in the two 'does not red' tests, so an undefined Story colour cannot make an absent dot colour pass."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.tsx (edit - groupWorkItems reads isStale; threshold props and deriveStaleness import removed)",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx (edit - staleItems and agingItems read isStale; deriveStaleness import removed; stop passing thresholds to WorkItemAgingChart and buildWidgetNodes' ctx; hasStaleConfig and RagInputs.blockedStalenessThresholdDays unchanged)",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx and Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.test.tsx (un-skips, the rewrites and the control listed above)"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "criteria": [
+            "For the mix of five answers (three marked stale though they moved today, one marked not stale after a month, one with no answer), the Team's and the Portfolio's Stale count read exactly 3, and the Team's widget view-data count reads 3 (US-02 AC-1, AC-5, OUT-stale-agrees).",
+            "One of ten past the 14-day target and marked stale turns the aging health red; on the 1-31 March 2026 range, the same item judged not stale on 31 March leaves it amber (AC-3: the past-range defect is fixed).",
+            "A dot is red exactly when its item is marked stale (or Blocked): one dot in errorColor for a stale item that moved today; one dot in the Story colour, and that colour defined, for not stale and for no answer.",
+            "WorkItemAgingChart has no staleness threshold prop; BaseMetricsView still accepts its two and uses them only for hasStaleConfig and the Blocked RAG.",
+            "No shipped file imports utils/staleness/deriveStaleness (grep clean before 02-03)."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: see paradigm_note. RED per red-classification.md: Team and Portfolio Stale counts read 2 instead of 3; aging health amber instead of red, and red instead of amber on the past range; the 'reds the dot' chart test fails on the colour. The two chart 'does not red' tests are GREEN_ON_TODAY guards with the one-dot positive control. 7 scenarios, under the flag. BaseMetricsView is large and near Sonar's complexity limits: change the two expressions in place, do not add branches (S3776). `item.isStale === true` rather than `!!item.isStale` keeps absent-means-not-stale explicit. The guard in 02-03 allows `(stalenessThresholdDays ?? 0) > 0` (hasStaleConfig) and blockedMaxAgeRag.ts, so leave those exactly as they are. ROADMAP REVIEW: do the same for the chart's 'does not red' dot tests: temporarily colour a dot red whenever isStale !== true, confirm they fail, restore, record in the commit body."
+        },
+        {
+          "id": "02-03",
+          "name": "The browser's copy of the rule is gone and nothing in the app compares days with a staleness threshold",
+          "description": "Delete Lighthouse.Frontend/src/utils/staleness/ (deriveStaleness.ts and deriveStaleness.test.ts; its coverage now lives in StalenessPolicyTest) and un-skip the two source-guard cases of utils/oneStalenessRule.enforcement.test.ts.",
+          "agent": "nw-software-crafter",
+          "commit_type": "refactor",
+          "test_file": "Lighthouse.Frontend/src/utils/oneStalenessRule.enforcement.test.ts",
+          "test_files": [
+            "Lighthouse.Frontend/src/utils/oneStalenessRule.enforcement.test.ts",
+            "Lighthouse.Frontend/src/utils/staleness/deriveStaleness.test.ts"
+          ],
+          "scenario_name": "one staleness rule, and it is Lighthouse's: the browser's copy of the rule is gone; nothing in the app compares days with a staleness threshold",
+          "unskips": [
+            "oneStalenessRule.enforcement.test.ts :: the browser's copy of the rule is gone",
+            "oneStalenessRule.enforcement.test.ts :: nothing in the app compares days with a staleness threshold"
+          ],
+          "guards_kept_green": [
+            "oneStalenessRule.enforcement.test.ts :: the nine active pattern cases (4 'recognises a copy', 5 'lets through')",
+            "the frontend suite in full; `pnpm build` clean"
+          ],
+          "existing_tests_rewritten_or_deleted": [
+            "Lighthouse.Frontend/src/utils/staleness/deriveStaleness.test.ts - DELETED with the module it tests (DISCUSS DoD 2: equivalent rule coverage lives in the backend's StalenessPolicyTest, green since 01-01)."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/utils/staleness/deriveStaleness.ts (DELETE)",
+            "Lighthouse.Frontend/src/utils/staleness/deriveStaleness.test.ts (DELETE)",
+            "Lighthouse.Frontend/src/utils/oneStalenessRule.enforcement.test.ts (edit - it.skip -> it on the two KPI cases)"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "criteria": [
+            "No shipped .ts / .tsx file under Lighthouse.Frontend/src names deriveStaleness (OUT-one-stale-rule, US-02 AC-4).",
+            "No shipped file outside blockedMaxAgeRag.ts compares a value with an identifier containing stalenessThreshold, other than against 0.",
+            "utils/staleness/ no longer exists; the nine pattern cases stay green.",
+            "No `.skip` remains in the five story-6247 frontend test files.",
+            "`pnpm test`, `pnpm exec biome check ./src` and `pnpm build` green with zero warnings (phase exit gate)."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: structural source guard over the shipped tree; see paradigm_note. RED per red-classification.md: 4 shipped files named deriveStaleness and 1 file compared against a threshold - after 02-01 and 02-02 the only offender left should be utils/staleness/deriveStaleness.ts itself, so un-skip FIRST and confirm the guard names exactly that file (and nothing else) before deleting it; any other offender means an earlier step missed a consumer. A separate refactor commit: it removes dead code and changes no behaviour. The guard only recognises a threshold under a name containing 'stalenessThreshold'; a renamed copy is left to review, so read the 02-01 / 02-02 diffs once more for any day comparison under another name."
+        }
+      ]
+    }
+  ]
+}

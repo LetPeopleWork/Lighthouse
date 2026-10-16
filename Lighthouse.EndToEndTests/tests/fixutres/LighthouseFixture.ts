@@ -199,10 +199,17 @@ async function suppressUpdateNotifications(page: Page): Promise<void> {
 	});
 }
 
+async function suppressModalPrompts(page: Page): Promise<void> {
+	await suppressUpdateNotifications(page);
+	await suppressTheUsageDataDialog(page);
+}
+
 export const testWithAuth = base.extend<LighthouseFixtures>({
+	page: async ({ page }, use) => {
+		await suppressModalPrompts(page);
+		await use(page);
+	},
 	loginPage: async ({ page }, use) => {
-		await suppressUpdateNotifications(page);
-		await suppressTheUsageDataDialog(page);
 		const lighthousePage = new LighthousePage(page);
 		const loginPage = await lighthousePage.openWithAuth();
 
@@ -211,9 +218,11 @@ export const testWithAuth = base.extend<LighthouseFixtures>({
 });
 
 export const test = base.extend<LighthouseFixtures>({
+	page: async ({ page }, use) => {
+		await suppressModalPrompts(page);
+		await use(page);
+	},
 	overviewPage: async ({ page, request }, use) => {
-		await suppressUpdateNotifications(page);
-		await suppressTheUsageDataDialog(page);
 		const lighthousePage = new LighthousePage(page);
 		const overviewPage = await lighthousePage.open();
 

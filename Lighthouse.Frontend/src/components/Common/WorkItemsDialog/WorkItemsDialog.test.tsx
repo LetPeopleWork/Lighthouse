@@ -835,35 +835,59 @@ describe("WorkItemsDialog Component", () => {
 			},
 		);
 
-		test("applies the stale treatment when the threshold reaches the badge", () => {
+		// The column's day is the range's last day on a past range, which is the day Lighthouse judged
+		// the rows on, so the label and the reason beside it count to the same day. A range end arrives
+		// as the reader's local midnight, which in Zurich is still the day before in UTC.
+		const theRangesLastDay = new Date(2026, 4, 25);
+
+		// @contract-shape:pure-function
+		test("a row Lighthouse marks stale shows the stale badge, counted to the column's day, with no threshold given", () => {
+			const markedStale: IWorkItem = {
+				...timeInStateItems[2],
+				currentStateEnteredAt: new Date("2026-05-14T08:00:00Z"),
+				isStale: true,
+				staleReasons: [{ kind: "TimeInState", days: 12, stateName: "Review" }],
+			};
+
 			render(
 				<WorkItemsDialog
 					{...defaultProps}
-					items={timeInStateItems}
+					items={[markedStale]}
 					context="stale"
-					timeInStateColumn={{ now, stalenessThresholdDays: 5 }}
+					timeInStateColumn={{ now: theRangesLastDay }}
 				/>,
 			);
 
-			const staleBadges = screen.getAllByTestId("time-in-state-stale");
-			expect(staleBadges).toHaveLength(2);
-			expect(staleBadges[0]).toHaveTextContent("16d in Active");
-			expect(staleBadges[1]).toHaveTextContent("8d in Review");
+			const stale = screen.getByTestId("time-in-state-stale");
+			expect(stale).toHaveTextContent(/^12d in Review$/);
+			expect(stale).toHaveAttribute(
+				"aria-label",
+				"12d in Review — 12d in Review",
+			);
 		});
 
-		test("applies no stale treatment when the threshold is zero", () => {
+		// @error @contract-shape:pure-function
+		test("a row Lighthouse says is not stale shows no stale badge, however long it has sat", () => {
+			const notStale: IWorkItem = {
+				...timeInStateItems[2],
+				currentStateEnteredAt: new Date("2026-04-25T08:00:00Z"),
+				isStale: false,
+				staleReasons: [],
+			};
+
 			render(
 				<WorkItemsDialog
 					{...defaultProps}
-					items={timeInStateItems}
+					items={[notStale]}
 					context="stale"
-					timeInStateColumn={{ now, stalenessThresholdDays: 0 }}
+					timeInStateColumn={{ now: theRangesLastDay }}
 				/>,
 			);
 
 			expect(
 				screen.queryByTestId("time-in-state-stale"),
 			).not.toBeInTheDocument();
+			expect(screen.getByText(/^31d in Review$/)).toBeInTheDocument();
 		});
 	});
 

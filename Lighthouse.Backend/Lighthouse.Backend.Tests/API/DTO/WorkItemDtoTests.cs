@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Staleness;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.DTO
@@ -69,6 +70,37 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Assert.That(dto.IsBlocked, Is.False);
                 Assert.That(dto.BlockedSince, Is.Null);
                 Assert.That(dto.Approximate, Is.False);
+            }
+        }
+
+        [Test]
+        [Category("story-6247")]
+        public void CarryStaleness_JudgesTheStateAndBlockedStartTheDtoCarries()
+        {
+            var enteredAndBlocked = new DateTime(2026, 6, 1, 8, 0, 0, DateTimeKind.Utc);
+            var workItem = new WorkItem
+            {
+                Name = "Blocked Item",
+                ReferenceId = "PHX-4",
+                State = "Blocked",
+                StateCategory = StateCategories.Doing,
+                CurrentStateEnteredAt = enteredAndBlocked,
+            };
+            var team = new Team { StalenessThresholdDays = 5, BlockedStalenessThresholdDays = 3 };
+            var dto = new WorkItemDto(workItem, TestToday.Clock, isBlocked: true, [], enteredAndBlocked);
+
+            dto.CarryStaleness(StalenessPolicy.For(team), TestToday.Zone, new DateOnly(2026, 6, 10));
+
+            var expectedReasons = new List<StaleReasonDto>
+            {
+                new(StaleReasonKind.BlockedDuration, 10, null),
+                new(StaleReasonKind.TimeInStateWhileBlocked, 10, "Blocked"),
+            };
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(dto.IsStale, Is.True);
+                Assert.That(dto.StaleReasons, Is.EqualTo(expectedReasons));
             }
         }
     }

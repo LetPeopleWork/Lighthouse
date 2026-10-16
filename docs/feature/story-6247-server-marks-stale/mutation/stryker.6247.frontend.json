@@ -1,0 +1,28 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": { "configFile": "vitest.stryker.mutation.ts" },
+  "reporters": ["clear-text", "progress", "json"],
+  "coverageAnalysis": "perTest",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": ["/dist", "/coverage", "/playwright-report", "/reports"],
+  "mutate": [
+    "src/components/Common/TimeInStateBadge/TimeInStateBadge.tsx",
+    "src/components/Common/Charts/WorkItemAgingChart.tsx:310-310",
+    "src/components/Common/Charts/WorkItemAgingChart.tsx:472-472",
+    "src/components/Common/Charts/WorkItemAgingChart.tsx:481-481",
+    "src/components/Common/Charts/WorkItemAgingChart.tsx:793-793",
+    "src/pages/Common/MetricsView/BaseMetricsView.tsx:687-687",
+    "src/pages/Common/MetricsView/BaseMetricsView.tsx:1704-1704",
+    "src/pages/Common/MetricsView/BaseMetricsView.tsx:1857-1857",
+    "src/components/Common/WorkItemsDialog/workItemColumns.tsx:546-547"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": 0 },
+  "incrementalFile": "reports/mutation/stryker-incremental-6247.json",
+  "jsonReporter": { "fileName": "reports/mutation/stryker-6247-frontend.json" },
+  "tempDirName": ".stryker-tmp-6247"
+}

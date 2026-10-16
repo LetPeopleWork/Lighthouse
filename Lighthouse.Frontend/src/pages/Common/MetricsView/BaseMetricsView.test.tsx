@@ -1668,28 +1668,25 @@ describe("BaseMetricsView component", () => {
 		});
 	});
 
-	it("counts stale items in the stale overview widget excluding blocked items", async () => {
-		const tenDaysAgo = new Date();
-		tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
-
+	it("the stale overview widget counts the Work Items Lighthouse marked stale, and no others", async () => {
 		const staleScenarioItems: IWorkItem[] = [
 			{
 				...mockInProgressItems[0],
 				id: 11,
 				isBlocked: false,
-				currentStateEnteredAt: tenDaysAgo,
+				isStale: true,
 			},
 			{
 				...mockInProgressItems[0],
 				id: 12,
 				isBlocked: false,
-				currentStateEnteredAt: tenDaysAgo,
+				isStale: true,
 			},
 			{
 				...mockInProgressItems[0],
 				id: 13,
 				isBlocked: true,
-				currentStateEnteredAt: tenDaysAgo,
+				isStale: false,
 			},
 		];
 
@@ -6789,6 +6786,189 @@ describe("BaseMetricsView component", () => {
 			expect(svc.getWipPbc).not.toHaveBeenCalled();
 		});
 	});
+
+	// The Flow Overview's Stale signals come from the same answer the WIP read gives `lh` and the MCP
+	// tools. The thresholds are still handed over, because "is staleness set
+	// up at all" is still read from settings; what is stale no longer is.
+	describe("Stale signals show the staleness Lighthouse decided", () => {
+		const today = new Date();
+		const aMonthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+		const anItemInProgress = (
+			id: number,
+			overrides: Partial<IWorkItem>,
+		): IWorkItem => ({
+			...mockInProgressItems[0],
+			id,
+			referenceId: `ITEM-${id}`,
+			name: `Item ${id}`,
+			...overrides,
+		});
+
+		const showTheDashboardOf = (
+			entity: Team | Portfolio,
+			ownerKind: "team" | "portfolio",
+			category: CategoryKey,
+			inProgressItems: IWorkItem[],
+			range = "/metrics",
+		) => {
+			// The view tells a Team's service from a Portfolio's by whether it can list Features in
+			// progress, so only the Team's has that method.
+			const portfolioService = {
+				...createMockMetricsService<IWorkItem>(),
+				getInProgressItems: vi.fn().mockResolvedValue(inProgressItems),
+			};
+			const metricsService =
+				ownerKind === "team"
+					? {
+							...portfolioService,
+							getFeaturesInProgress: vi.fn().mockResolvedValue([]),
+						}
+					: portfolioService;
+
+			localStorage.setItem(
+				`lighthouse:metrics:${ownerKind}:${entity.id}:category`,
+				category,
+			);
+
+			render(
+				<MemoryRouter initialEntries={[range]}>
+					<BaseMetricsView
+						entity={entity}
+						metricsService={metricsService}
+						title={ownerKind === "team" ? "Work Items" : "Features"}
+						defaultDateRange={30}
+						doingStates={["To Do", "In Progress", "Review"]}
+						stalenessThresholdDays={5}
+						blockedStalenessThresholdDays={3}
+						hasBlockedConfig={true}
+					/>
+				</MemoryRouter>,
+			);
+		};
+
+		// Three marked stale though they moved today, one Lighthouse says is not stale though it has
+		// sat a month, and one an older Lighthouse said nothing about. Worked out in the browser, the
+		// count would be the last two instead.
+		const aMixOfAnswers = (): IWorkItem[] => [
+			anItemInProgress(11, { currentStateEnteredAt: today, isStale: true }),
+			anItemInProgress(12, {
+				currentStateEnteredAt: today,
+				isBlocked: true,
+				isStale: true,
+			}),
+			anItemInProgress(15, { currentStateEnteredAt: today, isStale: true }),
+			anItemInProgress(13, {
+				currentStateEnteredAt: aMonthAgo,
+				isStale: false,
+			}),
+			anItemInProgress(14, { currentStateEnteredAt: aMonthAgo }),
+		];
+
+		// @driving_port @kpi @contract-shape:pure-function
+		it("the Team's Stale count is the number of Work Items Lighthouse marks stale", async () => {
+			const team = new Team();
+			team.name = "Stale Answer Team";
+			team.id = 177;
+			team.systemWIPLimit = 6;
+			team.lastUpdated = new Date();
+
+			showTheDashboardOf(team, "team", "flow-overview", aMixOfAnswers());
+
+			await waitFor(() => {
+				expect(screen.getByTestId("stale-overview-count")).toHaveTextContent(
+					/^3$/,
+				);
+			});
+			expect(
+				screen.getByTestId("widget-view-data-count-staleOverview"),
+			).toHaveTextContent(/^3$/);
+		});
+
+		// @driving_port @kpi @contract-shape:pure-function
+		it("the Portfolio's Stale count is the number of Features Lighthouse marks stale", async () => {
+			const portfolio = new Portfolio();
+			portfolio.name = "Stale Answer Portfolio";
+			portfolio.id = 178;
+			portfolio.lastUpdated = new Date();
+
+			showTheDashboardOf(
+				portfolio,
+				"portfolio",
+				"flow-overview",
+				aMixOfAnswers(),
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("stale-overview-count")).toHaveTextContent(
+					/^3$/,
+				);
+			});
+		});
+
+		// @driving_port @contract-shape:pure-function
+		it("the aging chart's health counts a Work Item Lighthouse marks stale as stale", async () => {
+			// One of ten past the 14-day target is within the 85% promise, so only a stale (or Blocked)
+			// Work Item among them turns the aging health red.
+			const pastTheTargetAndStale = anItemInProgress(21, {
+				workItemAge: 20,
+				currentStateEnteredAt: today,
+				isStale: true,
+			});
+			const withinTheTarget = Array.from({ length: 9 }, (_, index) =>
+				anItemInProgress(30 + index, {
+					workItemAge: 5,
+					currentStateEnteredAt: today,
+					isStale: false,
+				}),
+			);
+
+			showTheDashboardOf(mockProject, "portfolio", "flow-metrics", [
+				pastTheTargetAndStale,
+				...withinTheTarget,
+			]);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("widget-rag-aging")).toHaveTextContent(
+					/^red$/,
+				);
+			});
+		});
+
+		// @driving_port @error @contract-shape:pure-function
+		it("on a past range, the aging chart's health does not call stale a Work Item Lighthouse judged not stale on the range's last day", async () => {
+			// Two days in its state on the range's last day, months by today: the browser counted to
+			// today, while Lighthouse judged the item as of the range end and found it not stale.
+			const rangeEnd = new Date(2026, 2, 31, 12, 0, 0);
+			const twoDaysBeforeTheRangeEnded = new Date(2026, 2, 30, 12, 0, 0);
+			const pastTheTargetNotStale = anItemInProgress(21, {
+				workItemAge: 20,
+				currentStateEnteredAt: twoDaysBeforeTheRangeEnded,
+				isStale: false,
+			});
+			const withinTheTarget = Array.from({ length: 9 }, (_, index) =>
+				anItemInProgress(30 + index, {
+					workItemAge: 5,
+					currentStateEnteredAt: rangeEnd,
+					isStale: false,
+				}),
+			);
+
+			showTheDashboardOf(
+				mockProject,
+				"portfolio",
+				"flow-metrics",
+				[pastTheTargetNotStale, ...withinTheTarget],
+				"/metrics?startDate=2026-03-01&endDate=2026-03-31",
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("widget-rag-aging")).toHaveTextContent(
+					/^amber$/,
+				);
+			});
+		});
+	});
 });
 
 describe("buildWorkItemLookup", () => {
@@ -6993,8 +7173,6 @@ describe("which lists carry the risk column", () => {
 			estimationVsCycleTimeData: null,
 			arrivalsData: null,
 			workItemLookup: new Map(),
-			stalenessThresholdDays: undefined,
-			blockedStalenessThresholdDays: undefined,
 			perStatePercentileValues: [],
 			sleRiskValues,
 			doingStates: ["In Progress"],
@@ -7060,6 +7238,19 @@ describe("which lists carry the risk column", () => {
 
 			expect(estimation?.context).toBe("estimation");
 			expect(estimation?.ownerKind).toBe(ownerKind);
+		},
+	);
+
+	// Lighthouse judged staleness on the range's last day, so the Time in State label beside its
+	// reason must count to that same day, not to today.
+	it.each(["wipOverview", "staleOverview"])(
+		"the %s list counts Time in State to the range's last day",
+		(key) => {
+			const rangeEnd = new Date(2026, 4, 25);
+
+			const list = viewDataWith([], "team", { endDate: rangeEnd })[key];
+
+			expect(list?.timeInStateColumn?.now).toBe(rangeEnd);
 		},
 	);
 

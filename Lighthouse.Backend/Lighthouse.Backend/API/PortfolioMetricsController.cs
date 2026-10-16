@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Models.Staleness;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
@@ -123,24 +124,25 @@ namespace Lighthouse.Backend.API
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
                     forecastWindowStart, FeatureForecastWindow.EndFor(forecastWindowStart, features));
 
-                // UPSTREAM-7: the population is date-correct and D16 made the age as-of, but the state
-                // stayed today-anchored — and the aging chart buckets by state, so features that have
-                // moved on to a Done state since fell out of the chart entirely.
+                // The population and the age are already as of the chosen day, but the state would otherwise
+                // be today's — and the aging chart buckets by state, so features that have moved on to a Done
+                // state since would fall out of the chart entirely.
                 var statesAsOf = portfolioMetricsService.GetFeatureStatesAsOf(portfolio, features, asOfDate);
 
-                // US-03 / ADR-102/103: for a past range, "is it blocked" cannot be answered by evaluating the
+                // For a past range, "is it blocked" cannot be answered by evaluating the
                 // blocked rule against today's feature — the state it matches on has moved on since. The
                 // captured per-portfolio spells are the record of what was true back then, so a historic read
                 // prefers them. A feature with no capture history at all predates capture, and there the live
                 // rule is the only answer available; a feature WITH history but no covering spell reads not
-                // blocked — absence of a spell is evidence, not a gap (US-03 AC4). This mirrors the team read.
-                var isHistoricRange = DateOnly.FromDateTime(asOfDate) < clock.Today;
+                // blocked — absence of a spell is evidence, not a gap. This mirrors the team read.
+                var asOfDay = DateOnly.FromDateTime(asOfDate);
+                var isHistoricRange = asOfDay < clock.Today;
                 var featureIds = features.Select(f => f.Id).ToList();
 
                 // Indexed once rather than scanned per feature: both lookups sit inside the projection below,
                 // so a linear Contains/FirstOrDefault makes a portfolio of n features cost O(n²).
                 var openSpellByFeature = (isHistoricRange
-                        ? featureBlockedTransitionRepository.GetBlockedTransitionsAt(portfolio.Id, DateOnly.FromDateTime(asOfDate))
+                        ? featureBlockedTransitionRepository.GetBlockedTransitionsAt(portfolio.Id, asOfDay)
                         : [])
                     .GroupBy(transition => transition.FeatureId)
                     .ToDictionary(group => group.Key, group => group.First());
@@ -149,12 +151,14 @@ namespace Lighthouse.Backend.API
                         : [])
                     .ToHashSet();
 
-                // US-02 / ADR-103: the open per-portfolio blocked spell supplies live blockedSince (its enter
-                // timestamp) for each currently-blocked feature — null when the feature has no open spell.
+                // The open per-portfolio blocked spell supplies the live blockedSince (its enter timestamp)
+                // for each currently-blocked feature — null when the feature has no open spell.
                 var openSpells = featureBlockedTransitionRepository.GetOpenSpellsForPortfolio(portfolio.Id);
 
-                // D16 / UPSTREAM-2: portfolio half of the same fix — without asOf here the portfolio
-                // aging chart and percentile card would disagree for the same range (CI2, US-04 AC3).
+                var stalenessPolicy = StalenessPolicy.For(portfolio);
+
+                // Age is anchored on asOfDate, not today, so the portfolio aging chart and its percentile
+                // card agree for the same range.
                 return features.Select(f =>
                 {
                     var answerFromHistory = isHistoricRange && idsWithBlockedHistory.Contains(f.Id);
@@ -164,7 +168,9 @@ namespace Lighthouse.Backend.API
                     var liveBlockedSince = openSpells.TryGetValue(f.Id, out var openSpell) ? openSpell.EnteredAt : (DateTime?)null;
                     var blockedSince = answerFromHistory ? blockedSpell?.EnteredAt : liveBlockedSince;
 
-                    return new FeatureDto(f, clock, blackoutPeriods, isBlocked, blockedSince, null, null, asOfDate, statesAsOf.GetValueOrDefault(f.Id)) { Estimate = WorkItemEstimateDto.For(portfolio, f) };
+                    var dto = new FeatureDto(f, clock, blackoutPeriods, isBlocked, blockedSince, null, null, asOfDate, statesAsOf.GetValueOrDefault(f.Id)) { Estimate = WorkItemEstimateDto.For(portfolio, f) };
+                    dto.CarryStaleness(stalenessPolicy, clock.Zone, asOfDay);
+                    return dto;
                 });
             });
         }
@@ -620,7 +626,7 @@ namespace Lighthouse.Backend.API
                     .Select(transition => transition.FeatureId)
                     .ToHashSet();
 
-                // Read-side defensive intersection (ADR-104): a feature that has left the portfolio is
+                // Read-side defensive intersection: a feature that has left the portfolio is
                 // excluded even on dates inside its spell, mirroring the team drill-through shape.
                 var reconstructed = portfolioMetricsService
                     .GetBlockedEligibleFeaturesForPortfolio(portfolio)
@@ -634,7 +640,7 @@ namespace Lighthouse.Backend.API
             });
         }
 
-        // Reconciliation guard (ADR-099): where a captured BlockedCountSnapshot exists for the requested date,
+        // Reconciliation guard: where a captured BlockedCountSnapshot exists for the requested date,
         // compare it against the reconstructed membership count. A divergence signals a capture gap and must
         // never be silent — surface it as a structured warning.
         private void ReconcileReconstructedCountWithSnapshot(int ownerId, OwnerType ownerType, DateOnly targetDate, int reconstructedCount)

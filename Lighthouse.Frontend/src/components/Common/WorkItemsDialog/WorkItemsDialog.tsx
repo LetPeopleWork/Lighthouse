@@ -97,8 +97,6 @@ export interface WarningsColumnDescriptor {
 
 export interface TimeInStateColumnDefinition {
 	now?: Date;
-	stalenessThresholdDays?: number;
-	blockedStalenessThresholdDays?: number;
 }
 
 // With no rows yet, the grid's own loading look is a skeleton of blank rows, which reads like a

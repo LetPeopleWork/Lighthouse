@@ -543,10 +543,8 @@ function timeInStateGridColumn(
 			<TimeInStateBadge
 				currentStateEnteredAt={row.currentStateEnteredAt ?? null}
 				currentStateName={row.state}
-				stalenessThresholdDays={definition.stalenessThresholdDays}
-				blockedStalenessThresholdDays={definition.blockedStalenessThresholdDays}
-				isBlocked={row.isBlocked}
-				blockedSince={row.blockedSince ?? null}
+				isStale={row.isStale}
+				staleReasons={row.staleReasons}
 				now={definition.now}
 			/>
 		),

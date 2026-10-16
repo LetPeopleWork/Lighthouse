@@ -2,6 +2,7 @@ using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 ﻿using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Models.Staleness;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Parents;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -31,7 +32,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         IFeatureOrdering featureOrdering,
         IDependencyReconciler dependencyReconciler,
         IDependencyRefreshReporter dependencyRefreshReporter,
-        UpdateCancellationContext cancellationContext)
+        UpdateCancellationContext cancellationContext,
+        ILighthouseClock clock)
         : IWorkItemService
 #pragma warning restore S107
     {
@@ -150,7 +152,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 events.AddRange(CollectDomainEvents(team, syncedItem, newTransitions));
             }
 
-            events.AddRange(CollectStalenessEvents(team, EverythingTheTeamStillHas(storedWorkItems, itemsWithTransitions, itemsRemovedThisCycle), syncTime));
+            events.AddRange(CollectStalenessEvents(team, EverythingTheTeamStillHas(storedWorkItems, itemsWithTransitions, itemsRemovedThisCycle)));
 
             await stateTransitionRepository.Save();
             await workItemRepository.Save();
@@ -432,13 +434,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// what this cycle happened to download. An item that stopped changing is
         /// exactly the item a delta cycle stops fetching, and exactly the item that goes stale.
         /// </summary>
-        private static List<IDomainEvent> CollectStalenessEvents(Team team, List<WorkItem> workItems, DateTime syncTime)
+        private List<IDomainEvent> CollectStalenessEvents(Team team, List<WorkItem> workItems)
         {
             var events = new List<IDomainEvent>();
+            var policy = StalenessPolicy.For(team);
 
             foreach (var workItem in workItems)
             {
-                AddStalenessEventIfThresholdCrossed(team, workItem, syncTime, events);
+                AddStalenessEventIfThresholdCrossed(team, policy, workItem, events);
             }
 
             return events;
@@ -459,13 +462,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return survivors;
         }
 
-        private static void AddStalenessEventIfThresholdCrossed(Team team, WorkItem workItem, DateTime syncTime, List<IDomainEvent> events)
+        private void AddStalenessEventIfThresholdCrossed(Team team, StalenessPolicy policy, WorkItem workItem, List<IDomainEvent> events)
         {
-            var isStaleNow = IsStale(team, workItem, syncTime);
+            var verdict = JudgeStaleness(team, policy, workItem);
+            var isStaleNow = verdict.IsStale;
             if (isStaleNow && !workItem.WasStaleAtLastSync)
             {
                 workItem.WasStaleAtLastSync = true;
-                events.Add(new WorkItemBecameStale(workItem.Id, team.StalenessThresholdDays));
+                events.Add(new WorkItemBecameStale(workItem.Id, policy.ThresholdCrossedBy(verdict)));
                 return;
             }
 
@@ -483,14 +487,26 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return workItem.State;
         }
 
-        private static bool IsStale(Team team, WorkItem workItem, DateTime syncTime)
+        /// <summary>
+        /// Judged by the same rule the WIP reads answer with. The cheap checks come first, so an item with
+        /// nothing to judge never pays for a blocked evaluation.
+        /// </summary>
+        private StalenessVerdict JudgeStaleness(Team team, StalenessPolicy policy, WorkItem workItem)
         {
             if (workItem.StateCategory != StateCategories.Doing || !workItem.CurrentStateEnteredAt.HasValue)
             {
-                return false;
+                return StalenessVerdict.NotStale;
             }
 
-            return (syncTime - workItem.CurrentStateEnteredAt.Value).TotalDays > team.StalenessThresholdDays;
+            var isBlocked = blockedItemService.IsBlocked(workItem, team);
+            var candidate = new StalenessCandidate(
+                workItem.StateCategory,
+                workItem.State,
+                workItem.CurrentStateEnteredAt,
+                isBlocked,
+                isBlocked ? workItem.CurrentStateEnteredAt : null);
+
+            return policy.Evaluate(candidate, clock.Zone, clock.Today);
         }
 
         private async Task PublishDomainEvents(IReadOnlyList<IDomainEvent> events)

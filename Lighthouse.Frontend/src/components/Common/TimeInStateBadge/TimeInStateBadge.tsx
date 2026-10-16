@@ -1,19 +1,14 @@
 import { Box, Tooltip } from "@mui/material";
 import type React from "react";
+import type { IStaleReason, StaleReasonKind } from "../../../models/WorkItem";
 import getAgeInDaysFromStart from "../../../utils/date/age";
-import {
-	deriveStaleness,
-	type StalenessResult,
-} from "../../../utils/staleness/deriveStaleness";
 
 type TimeInStateBadgeProps = {
 	currentStateEnteredAt: Date | null;
 	currentStateName: string;
-	stalenessThresholdDays?: number;
-	blockedStalenessThresholdDays?: number;
-	isBlocked?: boolean;
-	blockedSince?: string | null;
 	now?: Date;
+	isStale?: boolean;
+	staleReasons?: IStaleReason[];
 };
 
 export const daysInState = (
@@ -24,17 +19,31 @@ export const daysInState = (
 		return 0;
 	}
 
-	return getAgeInDaysFromStart(currentStateEnteredAt, now);
+	// Count to the reader's calendar day, the one Lighthouse is asked about: a range end arrives as
+	// its local midnight, which east of Greenwich is still the day before in UTC.
+	const readersDay = new Date(
+		Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 12),
+	);
+	return getAgeInDaysFromStart(currentStateEnteredAt, readersDay);
 };
+
+const knownReasonKinds: ReadonlySet<StaleReasonKind> = new Set([
+	"TimeInState",
+	"BlockedDuration",
+	"TimeInStateWhileBlocked",
+]);
+
+const describeReason = (reason: IStaleReason, stateName: string): string =>
+	reason.kind === "BlockedDuration"
+		? `Blocked ${reason.days}d`
+		: `${reason.days}d in ${reason.stateName ?? stateName}`;
 
 const TimeInStateBadge: React.FC<TimeInStateBadgeProps> = ({
 	currentStateEnteredAt,
 	currentStateName,
-	stalenessThresholdDays,
-	blockedStalenessThresholdDays,
-	isBlocked = false,
-	blockedSince = null,
 	now = new Date(),
+	isStale = false,
+	staleReasons = [],
 }) => {
 	if (currentStateEnteredAt === null) {
 		return <span>—</span>;
@@ -43,21 +52,12 @@ const TimeInStateBadge: React.FC<TimeInStateBadgeProps> = ({
 	const days = daysInState(currentStateEnteredAt, now);
 	const label = `${days}d in ${currentStateName}`;
 
-	const staleResult: StalenessResult = deriveStaleness(
-		{ currentStateEnteredAt, isBlocked, currentStateName, blockedSince },
-		stalenessThresholdDays,
-		blockedStalenessThresholdDays ?? 0,
-		now,
-	);
-
-	if (staleResult.isStale) {
-		const reasonsText = staleResult.reasons
-			.map((r) => {
-				if (r.kind === "blocked-duration") return `Blocked ${r.days}d`;
-				return `${r.days}d in ${r.stateName}`;
-			})
+	if (isStale) {
+		const reasons = staleReasons
+			.filter((reason) => knownReasonKinds.has(reason.kind))
+			.map((reason) => describeReason(reason, currentStateName))
 			.join("; ");
-		const tooltip = `${label} — ${reasonsText}`;
+		const tooltip = `${label} — ${reasons}`;
 
 		return (
 			<Tooltip title={tooltip} placement="top">

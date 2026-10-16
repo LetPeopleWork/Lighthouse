@@ -361,7 +361,7 @@ Rejected regardless of scale: microservices, full CQRS / a separate read store, 
 | 007 / 008 / 010 / 011 | OAuth provider registry, credential separation, single-flight refresh, popup flow |
 | 012 / 013 | Rule-engine generalisation & match semantics (forecast filter) |
 | 015 / 016 / 017 | Work-item state-transition placement, derivation, capture/dispatch |
-| 026 / 070 | Cross-surface staleness derivation & blocked precedence (070 amends 026) |
+| 026 / 070 / 240 | Cross-surface staleness derivation & blocked precedence (070 amends 026); the rule now lives once on the server, which judges each Work Item on the WIP reads (240) |
 | 029 / 030 | Auto-save-on-valid mechanism + dependent-data reload split |
 | 048 / 049 / 050 | Forward-only metric snapshots: store, recorder hook point, history endpoint (§6) |
 | 067 / 068 / 102 – 104 | Rule-based blocked definition, transition capture, feature-level blocked spells |

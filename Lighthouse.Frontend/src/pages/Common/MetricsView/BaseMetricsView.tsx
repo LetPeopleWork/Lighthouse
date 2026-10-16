@@ -87,7 +87,6 @@ import {
 	sleRiskColumnHeaderName,
 } from "../../../utils/charts/sleRisk";
 import { formatLocalDate } from "../../../utils/date/localDate";
-import { deriveStaleness } from "../../../utils/staleness/deriveStaleness";
 import { appColors } from "../../../utils/theme/colors";
 import BlockedOverviewWidget from "./BlockedOverviewWidget";
 import { computeBlockedMaxAgeRag } from "./blockedMaxAgeRag";
@@ -570,8 +569,6 @@ type ViewDataInputs = {
 	readonly estimationVsCycleTimeData: IEstimationVsCycleTimeResponse | null;
 	readonly arrivalsData: RunChartData | null;
 	readonly workItemLookup: Map<number, IWorkItem>;
-	readonly stalenessThresholdDays: number | undefined;
-	readonly blockedStalenessThresholdDays: number | undefined;
 	readonly perStatePercentileValues: IPerStatePercentileValues[];
 	readonly sleRiskValues: ISleRisk[];
 	readonly doingStates: string[];
@@ -687,10 +684,7 @@ export function buildViewData(
 		sleRiskColumn,
 	};
 
-	const timeInStateColumn = {
-		stalenessThresholdDays: inputs.stalenessThresholdDays,
-		blockedStalenessThresholdDays: inputs.blockedStalenessThresholdDays,
-	};
+	const timeInStateColumn = { now: inputs.endDate };
 
 	return {
 		wipOverview: {
@@ -1030,8 +1024,6 @@ function buildWidgetNodes(ctx: {
 	isPremium: boolean;
 	hasForecastFilter: boolean;
 	forecastFilterConditions: readonly EvaluatorCondition[];
-	stalenessThresholdDays: number | undefined;
-	blockedStalenessThresholdDays?: number;
 	cumulativeStateTime: ICumulativeStateTimeResponse | null;
 	displayedCumulativeStateTime: ICumulativeStateTimeResponse | null;
 	cumulativeScopeDefinitionId: number | null;
@@ -1146,8 +1138,6 @@ function buildWidgetNodes(ctx: {
 				serviceLevelExpectation={ctx.serviceLevelExpectation}
 				sleRangeInDays={ctx.sleRangeInDays}
 				doingStates={ctx.doingStates}
-				stalenessThresholdDays={ctx.stalenessThresholdDays}
-				blockedStalenessThresholdDays={ctx.blockedStalenessThresholdDays}
 				perStatePercentileValues={ctx.perStatePercentileValues}
 				workItemAgePercentileValues={ctx.workItemAgePercentilesValues}
 				now={ctx.endDate}
@@ -1709,18 +1699,9 @@ export const BaseMetricsView = <
 
 	// blockedItems spans To Do + In Progress (from useMetricsData's blocked-eligible fetch), so the
 	// overview count/RAG include items blocked while still in To Do — not just the WIP (in-progress) set.
-	// inProgressItems is a snapshot as of endDate, so staleness is measured against endDate rather
-	// than today — otherwise a past range reports every item as having sat in its state for all the
-	// days since the range closed.
-	const staleItems = inProgressItems.filter(
-		(item) =>
-			deriveStaleness(
-				item,
-				stalenessThresholdDays,
-				blockedStalenessThresholdDays,
-				endDate,
-			).isStale,
-	);
+	// The server judges staleness as of the range's end and an older server says nothing, which
+	// counts as not stale.
+	const staleItems = inProgressItems.filter((item) => item.isStale === true);
 	const hasStaleConfig =
 		(stalenessThresholdDays ?? 0) > 0 ||
 		(blockedStalenessThresholdDays ?? 0) > 0;
@@ -1798,8 +1779,6 @@ export const BaseMetricsView = <
 		isPremium,
 		hasForecastFilter,
 		forecastFilterConditions,
-		stalenessThresholdDays,
-		blockedStalenessThresholdDays,
 		cumulativeStateTime,
 		displayedCumulativeStateTime:
 			cumulativeStateTimeForScope ??
@@ -1875,11 +1854,7 @@ export const BaseMetricsView = <
 		agingItems: inProgressItems.map((item) => ({
 			workItemAge: item.workItemAge,
 			isBlocked: item.isBlocked,
-			isStale: deriveStaleness(
-				item,
-				stalenessThresholdDays,
-				blockedStalenessThresholdDays,
-			).isStale,
+			isStale: item.isStale === true,
 		})),
 		wipOverTimeValues: wipOverTimeData
 			? Array.from({ length: wipOverTimeData.history }, (_, i) =>
@@ -1948,8 +1923,6 @@ export const BaseMetricsView = <
 		estimationVsCycleTimeData,
 		arrivalsData,
 		workItemLookup,
-		stalenessThresholdDays,
-		blockedStalenessThresholdDays,
 		perStatePercentileValues,
 		sleRiskValues,
 		doingStates,
