@@ -624,6 +624,55 @@ namespace Lighthouse.Backend.Tests.Factories
             }
         }
 
+        [Test]
+        public void An_issue_whose_changelog_holds_every_entry_and_each_reads_has_its_whole_history()
+        {
+            var issue = AnIssueWhoseChangelog(json => AddChangelogEntries(json, [
+                CreateChangelogEntry("Backlog", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
+                CreateChangelogEntry("Implementation", "Verification", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)),
+            ]));
+
+            Assert.That(issue.HasItsWholeHistory, Is.True);
+        }
+
+        [Test]
+        public void An_issue_read_without_its_changelog_does_not_have_its_whole_history()
+        {
+            var issue = AnIssueWhoseChangelog(json => json.AsObject().Remove(JiraFieldNames.ChangelogFieldName));
+
+            Assert.That(issue.HasItsWholeHistory, Is.False);
+        }
+
+        [Test]
+        public void An_issue_whose_changelog_holds_fewer_entries_than_its_total_does_not_have_its_whole_history()
+        {
+            var issue = AnIssueWhoseChangelog(json =>
+            {
+                AddChangelogEntries(json, [CreateChangelogEntry("Backlog", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc))]);
+                json[JiraFieldNames.ChangelogFieldName]![JiraFieldNames.TotalFieldName] = 2;
+            });
+
+            Assert.That(issue.HasItsWholeHistory, Is.False);
+        }
+
+        [Test]
+        public void An_issue_with_one_history_entry_that_cannot_be_read_does_not_have_its_whole_history()
+        {
+            var issue = AnIssueWhoseChangelog(json => AddChangelogEntries(json, [
+                CreateChangelogEntry("Backlog", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
+                JsonNode.Parse("{\"created\": \"garbage\", \"items\": [{\"field\": \"status\", \"fromString\": \"Implementation\", \"toString\": \"Verification\"}]}"),
+            ]));
+
+            Assert.That(issue.HasItsWholeHistory, Is.False);
+        }
+
+        private Issue AnIssueWhoseChangelog(Action<JsonNode> shapeIt)
+        {
+            var jsonDocument = CreateJsonDocument(shapeIt);
+
+            return CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+        }
+
         private WorkItemStateTransition TheOnlyTransitionOfAStatusChangeStamped(string stamp)
         {
             var jsonDocument = CreateJsonDocument(json =>

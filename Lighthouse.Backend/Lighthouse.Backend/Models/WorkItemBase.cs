@@ -13,6 +13,7 @@ namespace Lighthouse.Backend.Models
         {
             Update(workItemBase);
             SyncedTransitions = workItemBase.SyncedTransitions;
+            TransitionsAreItsWholeHistory = workItemBase.TransitionsAreItsWholeHistory;
             ParentCandidatesFromLinks = workItemBase.ParentCandidatesFromLinks;
         }
 
@@ -56,6 +57,15 @@ namespace Lighthouse.Backend.Models
 
         [NotMapped]
         public IReadOnlyList<WorkItemStateTransition> SyncedTransitions { get; init; } = [];
+
+        /// <summary>
+        /// Whether the transitions this reading carries are the record's whole history, every entry of it
+        /// read. Only then may they replace what is stored; a reading that holds part of the history, or
+        /// skipped an entry it could not read, can only add to it. Not stored, because it describes the
+        /// reading, not the record.
+        /// </summary>
+        [NotMapped]
+        public bool TransitionsAreItsWholeHistory { get; set; }
 
         /// <summary>
         /// Every issue the links on this record named as somewhere to hang it, as this reading found them.

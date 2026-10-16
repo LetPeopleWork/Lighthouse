@@ -33,6 +33,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         public IReadOnlyList<WorkItemStateTransition> StateTransitions { get; set; } = [];
 
         /// <summary>
+        /// Whether the issue came with its changelog, the changelog held every entry Jira counts for it, and
+        /// every entry could be read.
+        /// </summary>
+        public bool HasItsWholeHistory { get; init; }
+
+        /// <summary>
         /// Every link the issue's history says still stands, each with when it was made. A link with no entry
         /// here is one the history never recorded.
         /// </summary>

@@ -146,7 +146,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             var events = new List<IDomainEvent>();
             foreach (var syncedItem in itemsWithTransitions)
             {
-                var newTransitions = SyncStateTransitions(syncedItem.PersistedItem, syncedItem.SyncedTransitions);
+                var newTransitions = SyncStateTransitions(syncedItem.PersistedItem, syncedItem.SyncedTransitions, syncedItem.TransitionsAreItsWholeHistory);
                 events.AddRange(CollectDomainEvents(team, syncedItem, newTransitions));
             }
 
@@ -265,7 +265,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 var persistedItem = SyncWorkItem(item, existingItem);
 
                 var syncedTransitions = WithSyncDeltaTransition(connector, team.WorkTrackingSystemConnection, persistedItem, item.SyncedTransitions, priorState, syncTime);
-                itemsWithTransitions.Add(new SyncedItem(persistedItem, syncedTransitions, wasBlocked));
+                itemsWithTransitions.Add(new SyncedItem(persistedItem, syncedTransitions, item.TransitionsAreItsWholeHistory, wasBlocked));
             }
 
             return itemsWithTransitions;
@@ -526,7 +526,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
         }
 
-        private sealed record SyncedItem(WorkItem PersistedItem, IReadOnlyList<WorkItemStateTransition> SyncedTransitions, bool WasBlockedBeforeSync);
+        private sealed record SyncedItem(WorkItem PersistedItem, IReadOnlyList<WorkItemStateTransition> SyncedTransitions, bool TransitionsAreItsWholeHistory, bool WasBlockedBeforeSync);
 
         private static IReadOnlyList<WorkItemStateTransition> WithSyncDeltaTransition(
             IWorkTrackingConnector connector,
@@ -571,15 +571,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return existingItem;
         }
 
-        private List<WorkItemStateTransition> SyncStateTransitions(WorkItem workItem, IReadOnlyList<WorkItemStateTransition> syncedTransitions)
+        /// <returns>The transitions that are moves the item made, as opposed to corrections of a stored one.</returns>
+        private List<WorkItemStateTransition> SyncStateTransitions(WorkItem workItem, IReadOnlyList<WorkItemStateTransition> syncedTransitions, bool transitionsAreItsWholeHistory)
         {
             var existingTransitions = stateTransitionRepository
                 .GetAllByPredicate(transition => transition.WorkItemId == workItem.Id)
                 .ToList();
 
-            var newTransitions = syncedTransitions
-                .Where(transition => !existingTransitions.Exists(stored =>
-                    stored.ToState == transition.ToState && stored.TransitionedAt == transition.TransitionedAt))
+            var addedTransitions = syncedTransitions
+                .Where(transition => !existingTransitions.Exists(stored => IsTheSameMove(stored.ToState, stored.TransitionedAt, transition)))
                 .Select(transition => new WorkItemStateTransition
                 {
                     WorkItemId = workItem.Id,
@@ -589,12 +589,50 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 })
                 .ToList();
 
-            newTransitions.ForEach(stateTransitionRepository.Add);
+            var removedTransitions = MayReplaceTheStoredHistory(syncedTransitions, transitionsAreItsWholeHistory)
+                ? existingTransitions.FindAll(stored => !syncedTransitions.Any(transition => IsTheSameMove(stored.ToState, stored.TransitionedAt, transition)))
+                : [];
 
-            workItem.CurrentStateEnteredAt = DeriveCurrentStateEnteredAt(workItem, existingTransitions.Concat(newTransitions));
+            addedTransitions.ForEach(stateTransitionRepository.Add);
+            removedTransitions.ForEach(stateTransitionRepository.Remove);
 
-            return newTransitions;
+            workItem.CurrentStateEnteredAt = DeriveCurrentStateEnteredAt(workItem, existingTransitions.Except(removedTransitions).Concat(addedTransitions));
+
+            return WithoutCorrections(addedTransitions, removedTransitions);
         }
+
+        // A row added in the same refresh that drops a row for the same move is that move with its time
+        // corrected, not a move the item made. This also takes a genuine second move between the same two
+        // states for a correction when the same reading drops a row for that move; the history cannot tell
+        // the two apart.
+        private static List<WorkItemStateTransition> WithoutCorrections(List<WorkItemStateTransition> addedTransitions, List<WorkItemStateTransition> removedTransitions)
+        {
+            var notYetCorrected = new List<WorkItemStateTransition>(removedTransitions);
+            var moves = new List<WorkItemStateTransition>();
+
+            foreach (var added in addedTransitions)
+            {
+                var corrected = notYetCorrected.Find(removed => removed.FromState == added.FromState && removed.ToState == added.ToState);
+                if (corrected == null)
+                {
+                    moves.Add(added);
+                }
+                else
+                {
+                    notYetCorrected.Remove(corrected);
+                }
+            }
+
+            return moves;
+        }
+
+        private static bool IsTheSameMove(string storedToState, DateTime storedTransitionedAt, WorkItemStateTransition transition)
+            => storedToState == transition.ToState && storedTransitionedAt == transition.TransitionedAt;
+
+        // Only a whole history may stand in for what is stored. An empty one never does: a reading that
+        // brought back nothing is far more likely to have lost the history than to have found none.
+        private static bool MayReplaceTheStoredHistory(IReadOnlyList<WorkItemStateTransition> syncedTransitions, bool transitionsAreItsWholeHistory)
+            => transitionsAreItsWholeHistory && syncedTransitions.Count > 0;
 
         private static DateTime? DeriveCurrentStateEnteredAt(WorkItem workItem, IEnumerable<WorkItemStateTransition> transitions)
         {
@@ -824,7 +862,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             var connector = GetWorkItemServiceForWorkTrackingSystem(portfolio.WorkTrackingSystemConnection.WorkTrackingSystem);
 
             var downloadedFeatures = new List<Feature>();
-            var featuresWithTransitions = new List<(Feature persistedFeature, IReadOnlyList<WorkItemStateTransition> syncedTransitions)>();
+            var featuresWithTransitions = new List<(Feature persistedFeature, IReadOnlyList<WorkItemStateTransition> syncedTransitions, bool transitionsAreItsWholeHistory)>();
             var syncedFeatures = new List<SyncedFeature>();
 
             // Read BEFORE UpdateFeatures below clears the collection: what the portfolio already stores is
@@ -846,7 +884,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 var featureFromDatabase = AddOrUpdateFeature(feature, existingFeature);
 
                 downloadedFeatures.Add(featureFromDatabase);
-                featuresWithTransitions.Add((featureFromDatabase, feature.SyncedTransitions));
+                featuresWithTransitions.Add((featureFromDatabase, feature.SyncedTransitions, feature.TransitionsAreItsWholeHistory));
 
                 // Parent features are captured through RefreshParentFeatures and never emit blocked
                 // spells - exclude them from the eligible edge-detection set.
@@ -868,9 +906,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             // Edge detection runs in the SAME second pass as SyncFeatureStateTransitions because feature.Id
             // is 0 until the Save above — the FeatureBlocked/Unblocked events must carry the persisted id.
             var events = new List<IDomainEvent>();
-            foreach (var (persistedFeature, syncedTransitions) in featuresWithTransitions)
+            foreach (var (persistedFeature, syncedTransitions, transitionsAreItsWholeHistory) in featuresWithTransitions)
             {
-                SyncFeatureStateTransitions(persistedFeature, syncedTransitions);
+                SyncFeatureStateTransitions(persistedFeature, syncedTransitions, transitionsAreItsWholeHistory);
             }
 
             foreach (var syncedFeature in syncedFeatures)
@@ -1074,15 +1112,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         private sealed record SyncedFeature(Feature PersistedFeature, bool WasObservedBeforeSync, bool WasBlockedBeforeSync);
 
-        private void SyncFeatureStateTransitions(Feature feature, IReadOnlyList<WorkItemStateTransition> syncedTransitions)
+        private void SyncFeatureStateTransitions(Feature feature, IReadOnlyList<WorkItemStateTransition> syncedTransitions, bool transitionsAreItsWholeHistory)
         {
             var existingTransitions = featureStateTransitionRepository
                 .GetAllByPredicate(transition => transition.FeatureId == feature.Id)
                 .ToList();
 
-            var newTransitions = syncedTransitions
-                .Where(transition => !existingTransitions.Exists(stored =>
-                    stored.ToState == transition.ToState && stored.TransitionedAt == transition.TransitionedAt))
+            var addedTransitions = syncedTransitions
+                .Where(transition => !existingTransitions.Exists(stored => IsTheSameMove(stored.ToState, stored.TransitionedAt, transition)))
                 .Select(transition => new FeatureStateTransition
                 {
                     FeatureId = feature.Id,
@@ -1092,9 +1129,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 })
                 .ToList();
 
-            newTransitions.ForEach(featureStateTransitionRepository.Add);
+            var removedTransitions = MayReplaceTheStoredHistory(syncedTransitions, transitionsAreItsWholeHistory)
+                ? existingTransitions.FindAll(stored => !syncedTransitions.Any(transition => IsTheSameMove(stored.ToState, stored.TransitionedAt, transition)))
+                : [];
 
-            feature.CurrentStateEnteredAt = DeriveCurrentStateEnteredAt(feature, existingTransitions.Concat(newTransitions));
+            addedTransitions.ForEach(featureStateTransitionRepository.Add);
+            removedTransitions.ForEach(featureStateTransitionRepository.Remove);
+
+            feature.CurrentStateEnteredAt = DeriveCurrentStateEnteredAt(feature, existingTransitions.Except(removedTransitions).Concat(addedTransitions));
         }
 
         private Feature AddOrUpdateFeature(Feature feature, Feature? featureFromDatabase)

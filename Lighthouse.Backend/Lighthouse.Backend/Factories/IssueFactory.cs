@@ -49,6 +49,7 @@ namespace Lighthouse.Backend.Factories
                 Labels = labels,
                 Fields = fields,
                 StateTransitions = GetAllStateTransitions(json),
+                HasItsWholeHistory = HoldsItsWholeHistory(json),
                 StandingLinks = StandingLinksIn(json),
             };
         }
@@ -70,6 +71,19 @@ namespace Lighthouse.Backend.Factories
             return histories.EnumerateArray()
                 .SelectMany(ExtractStatusTransitionsFromHistory)
                 .ToList();
+        }
+
+        private static bool HoldsItsWholeHistory(JsonElement json)
+        {
+            if (!json.TryGetProperty(JiraFieldNames.ChangelogFieldName, out var changelog))
+            {
+                return false;
+            }
+
+            var histories = changelog.GetProperty(JiraFieldNames.HistoriesFieldName);
+
+            return !HoldsOnlyPartOfItsHistory(changelog, histories)
+                && histories.EnumerateArray().All(history => JiraInstantOrNull(StringOrNull(history, JiraFieldNames.CreatedDateFieldName)) is not null);
         }
 
         private sealed record LinkEnd(string CounterpartKey, string Sentence);

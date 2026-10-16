@@ -1616,6 +1616,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 Tags = issue.Labels,
                 StateCategory = workItemQueryOwner.MapStateToStateCategory(issue.State),
                 SyncedTransitions = WorkItemStateTransitionMapper.MapToMappedStates(issue.StateTransitions, workItemQueryOwner),
+                TransitionsAreItsWholeHistory = issue.HasItsWholeHistory,
             };
 
             PopulateAdditionalFieldValues(issue, workItem, additionalFieldDefs, customFieldReferences);

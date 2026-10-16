@@ -100,6 +100,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 .Returns((Expression<Func<WorkItemStateTransition, bool>> predicate) => storedTransitions.Where(predicate.Compile()).AsQueryable());
             stateTransitionRepositoryMock.Setup(x => x.Add(It.IsAny<WorkItemStateTransition>()))
                 .Callback((WorkItemStateTransition transition) => storedTransitions.Add(transition));
+            stateTransitionRepositoryMock.Setup(x => x.Remove(It.IsAny<WorkItemStateTransition?>()))
+                .Callback((WorkItemStateTransition? transition) => storedTransitions.Remove(transition!));
         }
 
         [Test]
@@ -1956,6 +1958,190 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             domainEventDispatcherMock.Verify(
                 x => x.PublishAsync(It.IsAny<WorkItemBlocked>(), It.IsAny<CancellationToken>()),
                 Times.Never);
+        }
+
+        private static readonly DateTime TheShiftedTime = new(2026, 2, 1, 10, 0, 0, DateTimeKind.Utc);
+        private static readonly DateTime TheCorrectedTime = new(2026, 2, 1, 9, 0, 0, DateTimeKind.Utc);
+        private static readonly DateTime WhenItMovedOn = new(2026, 2, 3, 14, 0, 0, DateTimeKind.Utc);
+
+        [Test]
+        public async Task A_Work_Item_read_with_its_whole_history_replaces_its_stored_transitions()
+        {
+            var team = CreateTeam();
+            var stored = AStoredItemThatEntered(team, "In Progress", TheShiftedTime);
+
+            await RefreshTheTeamWith(team, ItsWholeHistory(CreateIncomingFor(stored, "In Progress", StateCategories.Doing, ("To Do", "In Progress", TheCorrectedTime))));
+
+            var transitionsLeft = TransitionsStoredFor(stored);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(transitionsLeft, Has.Count.EqualTo(1));
+                Assert.That(transitionsLeft[0].TransitionedAt, Is.EqualTo(TheCorrectedTime));
+                Assert.That(stored.CurrentStateEnteredAt, Is.EqualTo(TheCorrectedTime));
+            }
+        }
+
+        [Test]
+        public async Task A_Work_Item_read_without_its_whole_history_never_loses_a_stored_transition()
+        {
+            var team = CreateTeam();
+            var stored = AStoredItemThatEntered(team, "In Progress", TheShiftedTime);
+
+            await RefreshTheTeamWith(team, CreateIncomingFor(stored, "In Progress", StateCategories.Doing, ("To Do", "In Progress", TheCorrectedTime)));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TransitionsStoredFor(stored).Select(t => t.TransitionedAt), Is.EquivalentTo(new[] { TheShiftedTime, TheCorrectedTime }));
+                stateTransitionRepositoryMock.Verify(x => x.Remove(It.IsAny<WorkItemStateTransition?>()), Times.Never);
+            }
+        }
+
+        [Test]
+        public async Task A_Work_Item_whose_whole_history_reads_as_empty_keeps_its_stored_transitions()
+        {
+            var team = CreateTeam();
+            var stored = AStoredItemThatEntered(team, "In Progress", TheShiftedTime);
+
+            await RefreshTheTeamWith(team, ItsWholeHistory(CreateIncomingFor(stored, "In Progress", StateCategories.Doing)));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TransitionsStoredFor(stored).Select(t => t.TransitionedAt), Is.EqualTo(new[] { TheShiftedTime }));
+                Assert.That(stored.CurrentStateEnteredAt, Is.EqualTo(TheShiftedTime));
+            }
+        }
+
+        [Test]
+        public async Task A_stored_transition_the_whole_history_still_names_keeps_its_row()
+        {
+            var team = CreateTeam();
+            var stored = AStoredItemThatEntered(team, "In Review", TheShiftedTime, fromState: "In Progress");
+            var theRowStillNamed = StoreTransition(stored, "To Do", "In Progress", TheFirstReadingDay);
+
+            await RefreshTheTeamWith(team, ItsWholeHistory(CreateIncomingFor(stored, "In Review", StateCategories.Doing,
+                ("To Do", "In Progress", TheFirstReadingDay),
+                ("In Progress", "In Review", TheCorrectedTime))));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TransitionsStoredFor(stored), Has.Count.EqualTo(2));
+                Assert.That(TransitionsStoredFor(stored), Does.Contain(theRowStillNamed));
+                stateTransitionRepositoryMock.Verify(x => x.Remove(It.IsAny<WorkItemStateTransition?>()), Times.Once);
+                stateTransitionRepositoryMock.Verify(x => x.Remove(theRowStillNamed), Times.Never);
+                stateTransitionRepositoryMock.Verify(x => x.Add(It.IsAny<WorkItemStateTransition>()), Times.Once);
+                stateTransitionRepositoryMock.Verify(x => x.Add(It.Is<WorkItemStateTransition>(t => t.TransitionedAt == TheCorrectedTime && t.ToState == "In Review")), Times.Once);
+            }
+        }
+
+        [Test]
+        public async Task A_corrected_time_is_not_a_state_change_and_raises_no_WorkItemTransitioned()
+        {
+            var team = CreateTeam();
+            var stored = AStoredItemThatEntered(team, "In Progress", TheShiftedTime);
+
+            await RefreshTheTeamWith(team, ItsWholeHistory(CreateIncomingFor(stored, "In Progress", StateCategories.Doing, ("To Do", "In Progress", TheCorrectedTime))));
+
+            domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(It.IsAny<WorkItemTransitioned>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Test]
+        public async Task A_genuinely_new_transition_read_beside_a_correction_raises_exactly_its_one_WorkItemTransitioned()
+        {
+            var team = CreateTeam();
+            var stored = AStoredItemThatEntered(team, "In Progress", TheShiftedTime);
+
+            await RefreshTheTeamWith(team, ItsWholeHistory(CreateIncomingFor(stored, "In Review", StateCategories.Doing,
+                ("To Do", "In Progress", TheCorrectedTime),
+                ("In Progress", "In Review", WhenItMovedOn))));
+
+            using (Assert.EnterMultipleScope())
+            {
+                domainEventDispatcherMock.Verify(
+                    x => x.PublishAsync(It.IsAny<WorkItemTransitioned>(), It.IsAny<CancellationToken>()),
+                    Times.Once);
+                domainEventDispatcherMock.Verify(
+                    x => x.PublishAsync(
+                        It.Is<WorkItemTransitioned>(e => e.WorkItemId == stored.Id && e.FromState == "In Progress" && e.ToState == "In Review"),
+                        It.IsAny<CancellationToken>()),
+                    Times.Once);
+            }
+        }
+
+        [Test]
+        public async Task A_Feature_read_with_its_whole_history_replaces_its_stored_transitions()
+        {
+            var team = CreateTeam();
+            var portfolio = CreatePortfolio();
+            var storedFeature = new Feature(team, 1) { Id = idCounter++, ReferenceId = "FTR-CORRECTED", State = "In Progress" };
+            var storedFeatureTransitions = new List<FeatureStateTransition>
+            {
+                new() { FeatureId = storedFeature.Id, FromState = "To Do", ToState = "In Progress", TransitionedAt = TheShiftedTime },
+            };
+            GivenTheFeatureTransitionsStoredAre(storedFeatureTransitions);
+            featureRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Feature, bool>>()))
+                .Returns((Func<Feature, bool> predicate) => new List<Feature> { storedFeature }.SingleOrDefault(predicate));
+
+            var incoming = new Feature(team, 1)
+            {
+                ReferenceId = storedFeature.ReferenceId,
+                State = "In Progress",
+                SyncedTransitions = [new WorkItemStateTransition { FromState = "To Do", ToState = "In Progress", TransitionedAt = TheCorrectedTime }],
+                TransitionsAreItsWholeHistory = true,
+            };
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>())).ReturnsAsync([incoming]);
+
+            await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(storedFeatureTransitions.Select(t => t.TransitionedAt), Is.EqualTo(new[] { TheCorrectedTime }));
+                Assert.That(storedFeature.CurrentStateEnteredAt, Is.EqualTo(TheCorrectedTime));
+            }
+        }
+
+        private void GivenTheFeatureTransitionsStoredAre(List<FeatureStateTransition> storedFeatureTransitions)
+        {
+            featureStateTransitionRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<FeatureStateTransition, bool>>>()))
+                .Returns((Expression<Func<FeatureStateTransition, bool>> predicate) => storedFeatureTransitions.Where(predicate.Compile()).AsQueryable());
+            featureStateTransitionRepositoryMock.Setup(x => x.Add(It.IsAny<FeatureStateTransition>()))
+                .Callback((FeatureStateTransition transition) => storedFeatureTransitions.Add(transition));
+            featureStateTransitionRepositoryMock.Setup(x => x.Remove(It.IsAny<FeatureStateTransition?>()))
+                .Callback((FeatureStateTransition? transition) => storedFeatureTransitions.Remove(transition!));
+        }
+
+        private WorkItem AStoredItemThatEntered(Team team, string state, DateTime enteredAt, string fromState = "To Do")
+        {
+            var stored = CreateWorkItemWithTransitions(team, state);
+            workItems.Add(stored);
+            StoreTransition(stored, fromState, state, enteredAt);
+            stored.CurrentStateEnteredAt = enteredAt;
+            return stored;
+        }
+
+        private WorkItemStateTransition StoreTransition(WorkItem workItem, string fromState, string toState, DateTime transitionedAt)
+        {
+            var transition = new WorkItemStateTransition { WorkItemId = workItem.Id, FromState = fromState, ToState = toState, TransitionedAt = transitionedAt };
+            storedTransitions.Add(transition);
+            return transition;
+        }
+
+        private List<WorkItemStateTransition> TransitionsStoredFor(WorkItem workItem)
+            => [.. storedTransitions.Where(t => t.WorkItemId == workItem.Id)];
+
+        private static WorkItem ItsWholeHistory(WorkItem incoming)
+        {
+            incoming.TransitionsAreItsWholeHistory = true;
+            return incoming;
+        }
+
+        private async Task RefreshTheTeamWith(Team team, WorkItem incoming)
+        {
+            workTrackingConnectorMock.Setup(x => x.SupportsTransitionHistory(It.IsAny<WorkTrackingSystemConnection>())).Returns(true);
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsForTeam(team, It.IsAny<CancellationToken>())).ReturnsAsync([incoming]);
+
+            await CreateSubject().UpdateWorkItemsForTeam(team);
         }
 
         private static WorkItem CreateIncomingFor(WorkItem existing, string newState, StateCategories stateCategory, params (string fromState, string toState, DateTime transitionedAt)[] transitions)
