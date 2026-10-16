@@ -205,3 +205,113 @@ describe("TimeInStateBadge", () => {
 		expect(stale).toHaveStyle({ color: "rgb(211, 47, 47)" });
 	});
 });
+
+// Story 6247 slice 02: the badge shows Lighthouse's own answer. No staleness threshold is handed to
+// it any more, so none of these pass one. Pending until DELIVER switches the badge over.
+describe("TimeInStateBadge shows the staleness Lighthouse decided", () => {
+	const now = new Date("2026-05-25T12:00:00Z");
+	const threeDaysInReview = new Date("2026-05-23T08:00:00Z");
+
+	test.skip("is red when Lighthouse marks the Work Item stale, even with no threshold given", () => {
+		render(
+			<TimeInStateBadge
+				currentStateEnteredAt={threeDaysInReview}
+				currentStateName="Review"
+				isStale={true}
+				staleReasons={[{ kind: "TimeInState", days: 3, stateName: "Review" }]}
+				now={now}
+			/>,
+		);
+
+		const stale = screen.getByTestId("time-in-state-stale");
+		expect(stale).toHaveTextContent(/^3d in Review$/);
+		expect(stale).toHaveStyle({ color: "rgb(211, 47, 47)" });
+	});
+
+	test.skip("is not red when Lighthouse says the Work Item is not stale, however long it has sat", () => {
+		render(
+			<TimeInStateBadge
+				currentStateEnteredAt={new Date("2026-04-25T08:00:00Z")}
+				currentStateName="Review"
+				isStale={false}
+				staleReasons={[]}
+				now={now}
+			/>,
+		);
+
+		expect(screen.queryByTestId("time-in-state-stale")).not.toBeInTheDocument();
+		expect(screen.getByText(/^31d in Review$/)).toBeInTheDocument();
+	});
+
+	test.skip("is not red when Lighthouse does not say, as an older Lighthouse does not", () => {
+		render(
+			<TimeInStateBadge
+				currentStateEnteredAt={new Date("2026-04-25T08:00:00Z")}
+				currentStateName="Review"
+				now={now}
+			/>,
+		);
+
+		expect(screen.queryByTestId("time-in-state-stale")).not.toBeInTheDocument();
+	});
+
+	test.skip("a Blocked Work Item not yet stale stays un-red even though Lighthouse names its time in state", () => {
+		render(
+			<TimeInStateBadge
+				currentStateEnteredAt={new Date("2026-05-14T08:00:00Z")}
+				currentStateName="Review"
+				isBlocked={true}
+				isStale={false}
+				staleReasons={[
+					{ kind: "TimeInStateWhileBlocked", days: 12, stateName: "Review" },
+				]}
+				now={now}
+			/>,
+		);
+
+		expect(screen.queryByTestId("time-in-state-stale")).not.toBeInTheDocument();
+	});
+
+	test.skip.each([
+		[
+			"blocked time",
+			[{ kind: "BlockedDuration" as const, days: 6 }],
+			"3d in Review — Blocked 6d",
+		],
+		[
+			"time in state",
+			[{ kind: "TimeInState" as const, days: 12, stateName: "Review" }],
+			"3d in Review — 12d in Review",
+		],
+		[
+			"blocked time and the time in state beside it",
+			[
+				{ kind: "BlockedDuration" as const, days: 6 },
+				{
+					kind: "TimeInStateWhileBlocked" as const,
+					days: 12,
+					stateName: "Review",
+				},
+			],
+			"3d in Review — Blocked 6d; 12d in Review",
+		],
+	])(
+		"its tooltip gives Lighthouse's reason: %s",
+		(_reason, staleReasons, expectedTooltip) => {
+			render(
+				<TimeInStateBadge
+					currentStateEnteredAt={threeDaysInReview}
+					currentStateName="Review"
+					isStale={true}
+					staleReasons={staleReasons}
+					now={now}
+				/>,
+			);
+
+			expect(screen.getByTestId("time-in-state-stale")).toHaveAttribute(
+				"aria-label",
+				expectedTooltip,
+			);
+		},
+	);
+});

@@ -1,5 +1,7 @@
-﻿using Lighthouse.Backend.Models;
+﻿using System.Text.Json.Serialization;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Models.Staleness;
 using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.API.DTO
@@ -95,5 +97,21 @@ namespace Lighthouse.Backend.API.DTO
         /// Null when the owner has no estimation field, or the row has no single owner to ask.
         /// </summary>
         public WorkItemEstimateDto? Estimate { get; init; }
+
+        /// <summary>
+        /// Null on every read that does not judge staleness, and then left off the wire: an absent
+        /// answer says "Lighthouse does not say", where a false would claim the item is not stale.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? IsStale { get; private set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public IReadOnlyList<StaleReasonDto>? StaleReasons { get; private set; }
+
+        public void CarryStaleness(StalenessVerdict verdict)
+        {
+            IsStale = verdict.IsStale;
+            StaleReasons = [.. verdict.Reasons.Select(StaleReasonDto.From)];
+        }
     }
 }

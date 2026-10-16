@@ -1,5 +1,6 @@
 import { Box, Tooltip } from "@mui/material";
 import type React from "react";
+import type { IStaleReason } from "../../../models/WorkItem";
 import getAgeInDaysFromStart from "../../../utils/date/age";
 import {
 	deriveStaleness,
@@ -14,6 +15,9 @@ type TimeInStateBadgeProps = {
 	isBlocked?: boolean;
 	blockedSince?: string | null;
 	now?: Date;
+	// SCAFFOLD: true - Lighthouse's answer, accepted but not yet read; the badge still works it out itself.
+	isStale?: boolean;
+	staleReasons?: IStaleReason[];
 };
 
 export const daysInState = (

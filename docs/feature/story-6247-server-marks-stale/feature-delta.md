@@ -290,3 +290,207 @@ No change: .NET 10 / EF Core, React 18 + TypeScript, clients TypeScript. OOP bac
 ## Wave: DESIGN / [REF] Handoff
 
 DEVOPS skipped by the maintainer (2026-10-16) → DISTILL.
+
+---
+
+## Wave: DISTILL / [REF] Run log
+
+- `[lang-mode]` C# (.NET 10, NUnit 4) backend + TypeScript (Vitest + RTL) frontend; clients (TypeScript,
+  Vitest) as a spec only. `[policy-mode]` inherit — `docs/architecture/atdd-infrastructure-policy.md`
+  already covers every port in scope (WebApplicationFactory, real EF, licence mock; the Faster Updates
+  harness for the refresh: connector mock, capturing handler on the real dispatcher; RTL with held
+  services). No row added. `[port-mode]` n/a — the policy records that the Python state-delta port does
+  not apply to this C#/TS project.
+- **DEVOPS artifacts missing** (skipped by the maintainer, 2026-10-16) — default environment matrix
+  (clean / with-pre-commit / with-stale-config) applies; none of the three changes a scenario here, since
+  no install, hook or config file is involved. Warned, not blocked.
+- **Reconciliation passed — 0 contradictions** across DISCUSS and DESIGN (DEVOPS absent). DESIGN's
+  "Changed Assumptions" (no Terminology key for Stale; no third read carries the flag) refine DISCUSS
+  rather than contradict it.
+
+## Wave: DISTILL / [REF] Maintainer decision — UI sketches
+
+**UI sketches: none needed — no new look; maintainer confirmed 2026-10-16.** The badge, its tooltip
+format (`Blocked 6d`, `12d in Review`), the aging chart's red dot and the Stale count keep exactly the look
+they have; only where the answer comes from changes. DELIVER re-sketches nothing.
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+Slice 01 — backend, `Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01ServerMarksStaleScenarios.cs`
+(driving port: the Team and Portfolio WIP reads):
+
+| Scenario | Tags |
+|---|---|
+| A flow coach reads which Work Item has sat too long in Review and why | `@walking_skeleton @driving_port @real-io @us-01 @contract-shape:bounded-change` |
+| A Work Item goes stale once it has sat in its state longer than the threshold (5 → no, 6 → yes) | `@driving_port @us-01 @AC-1 @boundary` |
+| A Blocked Work Item goes stale on the day it reaches the blocked threshold (2 → no, 3 → yes) | `@driving_port @us-01 @AC-2 @boundary` |
+| A Blocked Work Item under the blocked threshold is not stale however long it has sat in its state (Blocked 2 days, 9 in state: context reason only) | `@us-01 @AC-2 @error` |
+| A Blocked Work Item is stale for its blocked time and still shows how long it has sat in its state | `@us-01 @AC-2` |
+| A Work Item still Blocked in its state is not stale before the blocked threshold, even past the time-in-state one | `@us-01 @AC-2 @error` |
+| With both thresholds off no Work Item is stale and none carries a reason | `@us-01 @AC-3 @error` |
+| Turning the time-in-state trigger off leaves the blocked trigger working | `@us-01 @AC-3 @error` |
+| Turning the blocked trigger off leaves the time-in-state trigger working | `@us-01 @AC-3 @error` |
+| A Work Item is judged as of the day the read asks about, not today (chained: day 5, day 6) | `@us-01 @AC-4` |
+| A Work Item whose state entry Lighthouse never saw is not stale | `@us-01 @edge` |
+| A Feature goes stale once it has sat longer than the Portfolio's threshold (5 → no, 6 → yes) | `@us-01 @AC-5 @boundary` |
+| A Blocked Feature is stale for its blocked time against the Portfolio's blocked threshold | `@us-01 @AC-5` |
+| The Blocked items read says nothing about staleness — **active, green** | `@us-01 @error @contract-shape:unbounded-preservation` |
+| A WIP read without a day answers with no Work Items — **active, green; pins today's behaviour** | `@us-01 @edge` |
+
+Slice 01 — the refresh signal, `…/Staleness/Slice01StaleSignalScenarios.cs` (driving port: the scheduled
+Team refresh through the production update queue; observable: `WorkItemBecameStale` on the real dispatcher):
+
+| Scenario | Tags |
+|---|---|
+| A refresh signals a Work Item going stale once, with the threshold it crossed (chained: second refresh is silent) | `@driving_port @us-01 @AC-6` |
+| A refresh does not signal a Work Item that has sat exactly as long as the threshold | `@AC-6 @boundary @error` |
+| A refresh does not signal a Blocked Work Item still under the blocked threshold | `@AC-6 @error` |
+| A refresh signals a Blocked Work Item with the blocked threshold it crossed | `@AC-6` |
+| A refresh never signals staleness while both thresholds are off | `@AC-6 @error` |
+
+Slice 01 — the rule at its boundaries, `Lighthouse.Backend.Tests/Models/Staleness/StalenessPolicyTest.cs`
+(unit, layer 1; 12 tests, 22 cases): time in state `>` (5/6, 1/2); blocked `≥` (2/3/4); Blocked precedence
+with both reasons; context reason only; threshold 0 off (3 cases) and blocked-off context reason; only
+Doing (To Do, Done, Unknown); unknown entered day; unknown blocked start; days on the instance calendar
+(22:30 UTC is the next day in Zurich); a block starting on or after the day asked about counts 1 day;
+thresholds read from the owner. This is the coverage `deriveStaleness.test.ts` carries today, so that file
+can go at DELIVER.
+
+Slice 01 — architecture, `Lighthouse.Backend.Tests/Architecture/StalenessPolicyPurityArchUnitTest.cs`
+(**active, green**): the policy exists under its own name; `Models.Staleness` depends on nothing in
+`Services`, `API` or `Data`.
+
+Slice 02 — frontend (Vitest + RTL, `it.skip` / `test.skip`):
+
+| File | Scenario |
+|---|---|
+| `components/Common/TimeInStateBadge/TimeInStateBadge.test.tsx` | is red when Lighthouse marks the Work Item stale, even with no threshold given |
+| ″ | is not red when Lighthouse says the Work Item is not stale, however long it has sat (`@error`) |
+| ″ | is not red when Lighthouse does not say, as an older Lighthouse does not (`@error`) |
+| ″ | a Blocked Work Item not yet stale stays un-red even though Lighthouse names its time in state (`@error`) |
+| ″ | its tooltip gives Lighthouse's reason — `Blocked 6d`; `12d in Review`; `Blocked 6d; 12d in Review` (3 cases) |
+| `components/Common/Charts/WorkItemAgingChart.test.tsx` | reds the dot of a Work Item Lighthouse marks stale, however recently it moved |
+| ″ | does not red the dot of a Work Item Lighthouse says is not stale, however long it has sat (`@error`) |
+| ″ | does not red the dot of a Work Item an older Lighthouse said nothing about (`@error`) |
+| `pages/Common/MetricsView/BaseMetricsView.test.tsx` | the Team's Stale count is the number of Work Items Lighthouse marks stale (`@kpi OUT-stale-agrees`) |
+| ″ | the Portfolio's Stale count is the number of Features Lighthouse marks stale (`@kpi OUT-stale-agrees`) |
+| ″ | the aging chart's health counts a Work Item Lighthouse marks stale as stale |
+| ″ | the aging chart's health does not call stale a Work Item Lighthouse says is not stale (the past-range case, `@error`) |
+| `utils/oneStalenessRule.enforcement.test.ts` | the browser's copy of the rule is gone (`@kpi OUT-one-stale-rule`) |
+| ″ | nothing in the app compares days with a staleness threshold (`@kpi OUT-one-stale-rule`) |
+| ″ | nine cases on the guard's own pattern — **active, green** |
+
+Slice 03 — clients: 18 scenarios in `distill/slice-03-clients-scenarios.md`, with the wire-shape fixture
+`distill/wip-read-with-staleness.json`, for DELIVER to write into `lighthouse-clients`.
+
+Counts: slice 01 — 20 acceptance scenarios (23 runnable cases; 21 pending, 2 active) + 12 policy unit
+tests (22 cases, pending) + 2 architecture rules (active); slice 02 — 14 scenarios (16 pending cases) +
+9 active guard cases; slice 03 — 18 specified. Error/edge share: slice 01 acceptance 11 of 20 (55%),
+slice 02 6 of 14 (43%), slice 03 8 of 18 (44%).
+
+## Wave: DISTILL / [REF] WS strategy
+
+One walking skeleton for the feature: *A flow coach reads which Work Item has sat too long in Review and
+why*, through `GET /api/latest/teams/{id}/metrics/wip?asOfDate=…` on the real host. The Architecture of
+Reference treatments apply (real host and EF, licence faked).
+
+**Deviation, recorded on purpose:** the nWave rule is that the walking skeleton is green at DISTILL
+hand-off. Here it cannot be: the skeleton *is* the feature (no read says `isStale` until the policy is
+written), and this project's practice is that every not-yet-passing acceptance test is skipped and the
+hand-off is green. The skeleton is therefore `[Ignore]`d with the rest and **becomes green at DELIVER
+step 1** — un-skipping it is that step's RED, and the first slice-01 commit makes it pass.
+
+Tier B (state-machine PBT): not declared. The journey is one read and one refresh with a closed input
+space (two thresholds, a day count, blocked or not) that the boundary tables cover; FsCheck is not
+referenced by the test project.
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+| Adapter | Real I/O scenario | Covered by |
+|---|---|---|
+| EF `LighthouseAppContext` + `IWorkItemRepository`, `IRepository<Feature>`, `IWorkItemBlockedTransitionRepository`, `IFeatureBlockedTransitionRepository` | YES | every slice-01 WIP-read scenario (seeded through the real repositories, read back through the real controllers) |
+| `IWorkItemStateTransitionRepository` (where a refresh derives the day a Work Item entered its state) | YES | the five refresh-signal scenarios |
+| `IDomainEventDispatcher` (real; capturing handler added beside the production ones) | YES | the five refresh-signal scenarios |
+| `IWorkTrackingConnector` | faked by policy (external) | refresh-signal scenarios, through `FasterUpdatesAcceptanceTest` |
+| `ILighthouseClock` | real | the WIP reads take the day from `asOfDate`; the refresh scenarios count days from the real clock's today |
+
+No new driven adapter: zero "MISSING" rows.
+
+## Wave: DISTILL / [REF] Scaffolds (RED-ready, `// SCAFFOLD: true`)
+
+| File | What it is |
+|---|---|
+| `Lighthouse.Backend/Models/Staleness/StalenessPolicy.cs` | `StalenessCandidate` record; `StalenessPolicy.For(owner)` (reads the two thresholds); `Evaluate(candidate, zone, asOfDay)` **throws `InvalidOperationException("Not yet implemented -- RED scaffold …")`** |
+| `Lighthouse.Backend/Models/Staleness/StalenessVerdict.cs` | `StalenessVerdict(IsStale, Reasons)`, `StaleReason(Kind, Days, StateName?)` |
+| `Lighthouse.Backend/Models/Staleness/StaleReasonKind.cs` | `TimeInState`, `BlockedDuration`, `TimeInStateWhileBlocked` |
+| `Lighthouse.Backend/API/DTO/StaleReasonDto.cs` | `{ kind, days, stateName? }` — `stateName` omitted when null |
+| `Lighthouse.Backend/API/DTO/WorkItemDto.cs` (extended, not marked) | `IsStale: bool?`, `StaleReasons: StaleReasonDto[]?`, both `[JsonIgnore(WhenWritingNull)]`; `CarryStaleness(verdict)` — the narrow setter. Nothing calls it yet, so every read is byte-for-byte unchanged |
+| `Lighthouse.Frontend/src/models/WorkItem.ts` (extended) | `isStale?`, `staleReasons?`, `StaleReasonKind` string union, `IStaleReason` |
+| `Lighthouse.Frontend/src/components/Common/TimeInStateBadge/TimeInStateBadge.tsx` (marked on the props) | optional `isStale` / `staleReasons` props, accepted and not read yet — skipped tests are type-checked, so the props had to exist |
+
+Scaffold exception choice: C# has no `AssertionError`, and NUnit's `AssertionException` is a test-framework
+type that production code may not reference, so the throwing body uses `InvalidOperationException` with
+one `const` message (S1192) that interpolates the instance's thresholds (S2325 / S4487 — a scaffold that
+does not touch instance state does not build here). Only `Evaluate` is logic; `For`, the records and the
+DTO mapping are plain data and are written in full. None of it changes runtime behaviour today.
+
+## Wave: DISTILL / [REF] Test placement
+
+- `Lighthouse.Backend.Tests/API/Integration/Staleness/` — new folder beside `BlockedItems/` and
+  `FasterUpdates/`, same partial-class `*Scenarios.cs` + `*Specifications.cs` split. `StaleWorkItemsAcceptanceTest`
+  is the harness (real host, seeding, read helpers); the refresh scenarios inherit
+  `FasterUpdatesAcceptanceTest`, which already carries the update queue and the event capture.
+- `Lighthouse.Backend.Tests/Models/Staleness/` mirrors `Models/Staleness/` (precedent: `Models/InstanceCalendarTest.cs`).
+- `Lighthouse.Backend.Tests/Architecture/` for the ArchUnitNET rule (precedent: the `*PurityArchUnitTest` files).
+- Frontend tests sit in the existing test file of each component they drive, inside the describe that
+  already holds its fixtures and mocks; the guard sits in `src/utils/` (not `utils/staleness/`, which
+  DELIVER deletes). Precedent: `*.enforcement.test.ts` files.
+- No Playwright spec: every surface's wiring is proven at a cheaper level — the WIP read through the real
+  host, each widget through RTL against a held service — and the one thing E2E would add, that the
+  dashboard calls the WIP read, is unchanged by this story.
+
+## Wave: DISTILL / [REF] Driving adapter coverage
+
+| Entry point (DESIGN) | Scenario through its protocol |
+|---|---|
+| `GET /api/latest/teams/{id}/metrics/wip?asOfDate=` | walking skeleton + 11 Team scenarios (HTTP, real host) |
+| `GET /api/latest/portfolios/{id}/metrics/wip?asOfDate=` | 2 Portfolio scenarios (HTTP, real host) |
+| `GET /api/latest/teams/{id}/metrics/blockedItemsAtDate` (must not carry it) | 1 active scenario (HTTP) |
+| The Team refresh (`ITeamUpdater.TriggerUpdate` → update queue → `WorkItemService`) | 5 refresh-signal scenarios |
+| Flow Overview / aging chart / Time-in-State badge | 12 RTL scenarios (slice 02), plus the 2 source guards |
+| `lh metrics team --metrics wip`, MCP `lighthouse_team_metrics_wip`, DFR skill | slice-03 spec (`runCliSession`, `createLocalLighthouseMcpServer`, eval cases) |
+
+## Wave: DISTILL / [REF] Pre-requisites and notes for DELIVER
+
+- Driving ports and wire names: DESIGN DDD-4, DDD-6. `stateName` is left off the wire when null
+  (Blocked time belongs to no state); DESIGN wrote `stateName?`, this pins "omitted" rather than `null`.
+- Reason order on the wire: the reason that makes the item stale first, the context reason after it
+  (`BlockedDuration`, then `TimeInStateWhileBlocked`) — the order `deriveStaleness` uses today, which the
+  tooltip joins with `; `.
+- Live reads take blocked-since from the day the item entered its current state, as today, so on a
+  current read a Blocked item's blocked days equal its days in state. The scenarios that need the two
+  apart ("Blocked 2 days, 9 in state") seed a recorded blocked spell and read a past day.
+- Pinned, unchanged: an omitted `asOfDate` binds `DateTime.MinValue` and answers with no Work Items.
+- `BaseMetricsView` keeps its two threshold props: `hasStaleConfig` and the Blocked RAG still read them.
+  The slice-02 tests pass them for that reason; the badge and chart tests pass none, because DELIVER drops
+  those props there.
+- The refresh-signal pair *fires once* / *not at exactly the threshold* pass on today's rule at some
+  times of day and not others (fractional days from `UtcNow`); they stay pending until the new rule makes
+  them deterministic. See `distill/red-classification.md`.
+- Not done here, owed to DELIVER: delete `utils/staleness/*` (its tests included) once slice 02 is green;
+  check the WIP query is refetched after a thresholds save (DESIGN open question); set the clients'
+  `staleness` gate when slice 01 is released.
+- Pre-existing, not from this change: `dotnet build` reports 2 `NU1903` package-audit warnings
+  (`Microsoft.AspNetCore.SignalR.Common` 10.0.12) — NuGet restore advisories, not compiler warnings.
+
+## Wave: DISTILL / [REF] Self-completeness and mandate notes
+
+- AT-completeness (15-item check): 13/15 — COMPLETE. Gaps, both documented: no concurrency matrix (one
+  refresh at a time is the product's own guarantee; nothing here races) and no environment matrix
+  (DEVOPS skipped; default matrix does not touch these scenarios). No `SPECIFICATION_AMBIGUITY` found.
+- Mandate 8 (state-delta): per the project policy the Python port does not apply; the "nothing else
+  changed" half is asserted explicitly where it matters (the Blocked read says nothing; the refresh
+  raises nothing when it should not, with a positive control that the Work Items were still there).
+- Mandate 12: domain types `StalenessThresholds`, `ReasonSeen`, `StalenessSeen`, `StaleReasonKind`;
+  step bodies delegate to the harness in one or two statements. Step-reuse ratio (informational):
+  97 step invocations / 24 step methods ≈ 4.0× on the backend scenarios.
