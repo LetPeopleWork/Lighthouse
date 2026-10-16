@@ -425,6 +425,12 @@ get re-applied.
 
 ## Tests
 
+### 2026-10-16 — Jira dates were stored shifted by the server's UTC offset, and every test was green on any zone
+- **Symptom**: on a server outside UTC, a Jira item's created date and its status-change times were stored off by the server's offset (an hour or two in Europe). No test failed, locally or in CI — not even under the suite's `TZ=Europe/Zurich`.
+- **Root cause**: `IssueFactory` read Jira's zoned strings (`2024-03-05T10:00:00.000+0100`) with `DateTime.Parse(s, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal)` and then `DateTime.SpecifyKind(x, DateTimeKind.Utc)`. That parse honours the string's offset but returns the instant converted to the **server's local time**; `SpecifyKind` then relabels that local wall clock as UTC, so the stored instant is wrong by the server's offset. The tests only compared `.Date`, which a one- or two-hour shift rarely moves.
+- **Fix**: `Factories/IssueFactory.cs` parses with `DateTimeOffset.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var at)` and stores `at.UtcDateTime`. `Architecture/ZonedTimestampParsingArchUnitTest` scans every production source and fails, naming file:line, on any `DateTime.Parse` / `TryParse` / `ParseExact` / `TryParseExact` call that passes `AssumeUniversal` without `AdjustToUniversal` in the same call. It fails on any host zone, UTC included.
+- **Rule going forward**: never read a timestamp that may carry its own zone with `DateTime.Parse(..., AssumeUniversal)` followed by `SpecifyKind(Utc)`; use `DateTimeOffset.TryParse(..., DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var at)` and take `at.UtcDateTime` (or add `AdjustToUniversal` to the `DateTime` call). A test of a parsed instant must assert the **exact** instant, not `.Date`, and must assert that the host zone is not UTC (`TimeZoneInfo.Local.BaseUtcOffset != TimeSpan.Zero`) so it cannot pass vacuously. Backend tests run with `TZ=Europe/Zurich`, set by `Lighthouse.Backend.Tests/lighthouse.runsettings` — that is what makes such an assertion bite.
+
 ### 2026-10-15 — a test file or class over the time budget fails CI (both stacks only warn for now)
 - **Symptom**: a 115 s frontend file merged on 12 Oct and nobody saw it until the frontend job had grown by five minutes over two weeks. Nothing in CI compared a file's time to anything.
 - **Root cause**: the timing CSVs were uploaded on every run and read by nobody, so drift showed up only as a trend in job durations.
