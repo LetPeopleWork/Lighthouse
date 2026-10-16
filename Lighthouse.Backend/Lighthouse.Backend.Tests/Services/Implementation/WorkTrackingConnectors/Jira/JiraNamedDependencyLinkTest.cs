@@ -18,7 +18,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private const string WhatBlocksIt = "PAY-50";
 
+        private const string WhatGatesIt = "PAY-77";
+
         private static readonly JiraLinkType StockBlocks = new("Blocks", "is blocked by", "blocks");
+
+        private static readonly JiraLinkType Gate = new("Gate", "is gated by", "blocks");
 
         /// <summary>
         /// Jira's stock Blocks type is named the word its outward end reads. Typed exactly as one end reads,
@@ -57,6 +61,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(WhatItWaitsOn(feature), Is.Empty);
                 Assert.That(feature.RefreshFindings.Select(finding => finding.Kind), Is.EqualTo(new List<RefreshFindingKind> { RefreshFindingKind.NamedLinkPointsBothWays }));
             }
+        }
+
+        /// <summary>
+        /// What was typed settles on one link type, and only that type's links are read. Another type whose
+        /// end happens to read the same word as that type's name is a different relationship.
+        /// </summary>
+        [Test]
+        public async Task Only_links_of_the_type_the_reference_settled_on_are_read()
+        {
+            var subject = AnInstanceDefining(
+                [StockBlocks, Gate],
+                JiraWireFormat.AnEpic(TheFeature, StockBlocks.LinkWhoseInwardIssueIs(WhatBlocksIt), Gate.LinkWhoseInwardIssueIs(WhatGatesIt)));
+
+            var feature = (await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("is blocked by"), CancellationToken.None)).Single();
+
+            Assert.That(WhatItWaitsOn(feature), Is.EqualTo(new List<string> { WhatBlocksIt }));
         }
 
         private static string AFeatureThatBlocksOneAndIsBlockedByAnother()

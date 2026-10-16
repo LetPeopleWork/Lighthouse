@@ -99,6 +99,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 .ToList();
 
         /// <summary>
+        /// The other issues this one waits on, read from its links of the one type a Portfolio's Dependency
+        /// Field settled on, matched by that type's name alone. Another type can have an end that reads the
+        /// very word this type is named - an administrator's "Gate" whose outward end reads "blocks" beside
+        /// the stock Blocks type - and its links are a different relationship that must not be read here.
+        /// </summary>
+        public static List<string> ExtractDependencyReferencesFromLinksOfType(
+            this JsonElement fields, string linkTypeName, LinkDirection direction)
+            => IssueLinksOf(fields)
+                .Where(link => Reads(LabelOf(link, JiraFieldNames.NamePropertyName), linkTypeName))
+                .Select(link => CounterpartOf(link, direction).Key)
+                .Where(key => key.Length > 0)
+                .ToList();
+
+        /// <summary>
         /// The issue this one hangs under, read from its links of one configured type.
         ///
         /// Jira writes a link once and offers it from both ends, handing each issue a pointer to the

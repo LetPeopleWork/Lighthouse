@@ -1268,7 +1268,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             List<string>? fromTheNamedLinkType = theDependencyField switch
             {
                 { NamesALinkTypeWhoseWaitingEndIsUnclear: true } => [],
-                { NamesALinkType: true } => issue.Fields.ExtractDependencyReferencesFromLinks(theDependencyField.LinkTypeName, theDependencyField.DependencyDirection),
+                { NamesALinkType: true } => issue.Fields.ExtractDependencyReferencesFromLinksOfType(theDependencyField.LinkTypeName, theDependencyField.DependencyDirection),
                 _ => null,
             };
 
