@@ -30,14 +30,28 @@ const THRESHOLD_ON_THE_RIGHT =
 
 const isComment = (line: string): boolean => /^\s*(\/\/|\*|\/\*)/.test(line);
 
+// Biome wraps a long comparison after its operator, leaving each side on its own line. An arrow's
+// `=>` is not a comparison and does not count.
+const ENDS_ON_A_COMPARISON = /(?<!=)[<>]=?\s*$/;
+
+const joinComparisonsWrappedAfterTheOperator = (lines: string[]): string[] =>
+	lines.reduce<string[]>((joined, line) => {
+		const last = joined.length - 1;
+		if (last >= 0 && ENDS_ON_A_COMPARISON.test(joined[last])) {
+			joined[last] = `${joined[last]} ${line.trim()}`;
+		} else {
+			joined.push(line);
+		}
+		return joined;
+	}, []);
+
 const comparesDaysWithAStalenessThreshold = (source: string): boolean =>
-	source
-		.split("\n")
-		.filter((line) => !isComment(line))
-		.some(
-			(line) =>
-				THRESHOLD_ON_THE_LEFT.test(line) || THRESHOLD_ON_THE_RIGHT.test(line),
-		);
+	joinComparisonsWrappedAfterTheOperator(
+		source.split("\n").filter((line) => !isComment(line)),
+	).some(
+		(line) =>
+			THRESHOLD_ON_THE_LEFT.test(line) || THRESHOLD_ON_THE_RIGHT.test(line),
+	);
 
 const shippedSourceFiles = (directory: string): string[] =>
 	readdirSync(directory).flatMap((entry) => {
@@ -87,6 +101,8 @@ describe("one staleness rule, and it is Lighthouse's", () => {
 		"\tdaysInState >= blockedStalenessThresholdDays &&",
 		"const stale = stalenessThresholdDays < item.days;",
 		"return age > props.stalenessThresholdDays;",
+		"const stale =\n\tdaysInState(item.currentStateEnteredAt, now) >\n\t\tstalenessThresholdDays;",
+		"return (\n\tstalenessThresholdDays <=\n\t\titem.daysInState\n);",
 	])("the guard recognises a copy of the rule: %s", (line) => {
 		expect(comparesDaysWithAStalenessThreshold(line)).toBe(true);
 	});
@@ -98,6 +114,8 @@ describe("one staleness rule, and it is Lighthouse's", () => {
 		"onChange={(e) => handleStalenessThresholdChange(e.target.value)}",
 		"// time-in-state: daysInState > stalenessThresholdDays",
 		"const isStale = item.isStale === true;",
+		"const isEnabled =\n\t(settings.stalenessThresholdDays ?? 0) >\n\t\t0;",
+		"const thresholdOf = (settings) =>\n\tsettings.stalenessThresholdDays;",
 	])("the guard lets through what is not the rule: %s", (line) => {
 		expect(comparesDaysWithAStalenessThreshold(line)).toBe(false);
 	});

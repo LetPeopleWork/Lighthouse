@@ -1668,31 +1668,25 @@ describe("BaseMetricsView component", () => {
 		});
 	});
 
-	it("counts stale items in the stale overview widget excluding blocked items", async () => {
-		const tenDaysAgo = new Date();
-		tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
-
+	it("the stale overview widget counts the Work Items Lighthouse marked stale, and no others", async () => {
 		const staleScenarioItems: IWorkItem[] = [
 			{
 				...mockInProgressItems[0],
 				id: 11,
 				isBlocked: false,
 				isStale: true,
-				currentStateEnteredAt: tenDaysAgo,
 			},
 			{
 				...mockInProgressItems[0],
 				id: 12,
 				isBlocked: false,
 				isStale: true,
-				currentStateEnteredAt: tenDaysAgo,
 			},
 			{
 				...mockInProgressItems[0],
 				id: 13,
 				isBlocked: true,
 				isStale: false,
-				currentStateEnteredAt: tenDaysAgo,
 			},
 		];
 
