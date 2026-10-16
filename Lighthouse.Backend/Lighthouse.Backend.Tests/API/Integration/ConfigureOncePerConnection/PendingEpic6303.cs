@@ -6,8 +6,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     /// </summary>
     internal static class PendingEpic6303
     {
-        public const string Slice01 = "Pending: a Jira Portfolio reads its dependencies from the link phrase it names (epic 6303, slice 01).";
-
         public const string Slice02 = "Pending: a named Jira link that matched nothing says so on Refresh History (epic 6303, slice 02).";
 
         public const string Slice03 = "Pending: an Azure DevOps relation type is accepted where a field name goes (epic 6303, slice 03).";
