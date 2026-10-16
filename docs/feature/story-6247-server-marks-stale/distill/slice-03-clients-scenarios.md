@@ -1,9 +1,19 @@
 # Slice 03 — Clients and the Daily Flow Review read Lighthouse's staleness (US-03)
 
 Executable scenarios for the `lighthouse-clients` repository. DISTILL could not write them there (this
-session does not touch that repository), so DELIVER turns each block below into a pending Vitest test in
-the file named, un-skips it, and makes it pass. The wording of user-facing copy is pinned here as literal
-text; tests compare against the literal, never against the constant that produces it.
+session does not touch that repository), so they are not yet RED-classified the way slices 01 and 02 are.
+The wording of user-facing copy is pinned here as literal text; tests compare against the literal, never
+against the constant that produces it.
+
+## DELIVER steps for this slice
+
+1. **Write every scenario below as `it.skip` / `it.skip.each` in the file named, copy both fixtures, run the
+   suite once with the skips removed to confirm each scenario is RED for the missing behaviour (not for a
+   setup or import error), put the skips back, and record the classification beside
+   `distill/red-classification.md`.** Only then implement.
+2. Un-skip one scenario at a time, starting with the walking skeleton (the MCP tool scenario), and make it
+   pass.
+3. Bump the versions and set the gate (see Versioning) once slice 01's release is known.
 
 Test mechanisms follow the project's ATDD infrastructure policy rows for the clients: `lh` through
 `runCliSession(args, io, { env, terminal, now })`, the local MCP server through
@@ -18,8 +28,9 @@ slice 01 ships: one Work Item stale for its time in Review, one Blocked and stal
 beside it, one not stale. DELIVER copies it byte for byte to
 `lighthouse-clients/test-support/stalenessContract/wip-read-with-staleness.json`, the way
 `test-support/usageDataContract/` holds the usage data contract, and every scenario below that needs a WIP
-answer serves those bytes from `aFakeLighthouse`. A second fixture, `wip-read-without-staleness.json`, is
-the same three Work Items with `isStale` and `staleReasons` removed: what an older Lighthouse answers.
+answer serves those bytes from `aFakeLighthouse`. The second fixture, `wip-read-without-staleness.json`
+(also beside this file, copied the same way), is the same three Work Items with `isStale` and `staleReasons`
+removed: what an older Lighthouse answers.
 
 Field names and values the clients may rely on (backend acceptance tests in
 `Lighthouse.Backend.Tests/API/Integration/Staleness/` hold the server to the same names):

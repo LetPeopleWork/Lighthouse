@@ -6790,8 +6790,8 @@ describe("BaseMetricsView component", () => {
 		});
 	});
 
-	// Story 6247 slice 02: the Flow Overview's Stale signals come from the same answer the WIP read
-	// gives `lh` and the MCP tools. The thresholds are still handed over, because "is staleness set
+	// The Flow Overview's Stale signals come from the same answer the WIP read gives `lh` and the MCP
+	// tools. The thresholds are still handed over, because "is staleness set
 	// up at all" is still read from settings; what is stale no longer is.
 	describe("Stale signals show the staleness Lighthouse decided", () => {
 		const today = new Date();
@@ -6813,6 +6813,7 @@ describe("BaseMetricsView component", () => {
 			ownerKind: "team" | "portfolio",
 			category: CategoryKey,
 			inProgressItems: IWorkItem[],
+			range = "/metrics",
 		) => {
 			// The view tells a Team's service from a Portfolio's by whether it can list Features in
 			// progress, so only the Team's has that method.
@@ -6833,17 +6834,19 @@ describe("BaseMetricsView component", () => {
 				category,
 			);
 
-			renderWithRouter(
-				<BaseMetricsView
-					entity={entity}
-					metricsService={metricsService}
-					title={ownerKind === "team" ? "Work Items" : "Features"}
-					defaultDateRange={30}
-					doingStates={["To Do", "In Progress", "Review"]}
-					stalenessThresholdDays={5}
-					blockedStalenessThresholdDays={3}
-					hasBlockedConfig={true}
-				/>,
+			render(
+				<MemoryRouter initialEntries={[range]}>
+					<BaseMetricsView
+						entity={entity}
+						metricsService={metricsService}
+						title={ownerKind === "team" ? "Work Items" : "Features"}
+						defaultDateRange={30}
+						doingStates={["To Do", "In Progress", "Review"]}
+						stalenessThresholdDays={5}
+						blockedStalenessThresholdDays={3}
+						hasBlockedConfig={true}
+					/>
+				</MemoryRouter>,
 			);
 		};
 
@@ -6865,6 +6868,7 @@ describe("BaseMetricsView component", () => {
 			anItemInProgress(14, { currentStateEnteredAt: aMonthAgo }),
 		];
 
+		// @driving_port @kpi @contract-shape:pure-function
 		it.skip("the Team's Stale count is the number of Work Items Lighthouse marks stale", async () => {
 			const team = new Team();
 			team.name = "Stale Answer Team";
@@ -6884,6 +6888,7 @@ describe("BaseMetricsView component", () => {
 			).toHaveTextContent(/^3$/);
 		});
 
+		// @driving_port @kpi @contract-shape:pure-function
 		it.skip("the Portfolio's Stale count is the number of Features Lighthouse marks stale", async () => {
 			const portfolio = new Portfolio();
 			portfolio.name = "Stale Answer Portfolio";
@@ -6904,6 +6909,7 @@ describe("BaseMetricsView component", () => {
 			});
 		});
 
+		// @driving_port @contract-shape:pure-function
 		it.skip("the aging chart's health counts a Work Item Lighthouse marks stale as stale", async () => {
 			// One of ten past the 14-day target is within the 85% promise, so only a stale (or Blocked)
 			// Work Item among them turns the aging health red.
@@ -6932,26 +6938,32 @@ describe("BaseMetricsView component", () => {
 			});
 		});
 
-		it.skip("the aging chart's health does not call stale a Work Item Lighthouse says is not stale, however long it has sat", async () => {
-			// This is the past-range case: the browser counted the month in its state to today, while
-			// Lighthouse judged the item as of the range's last day and found it not stale.
+		// @driving_port @error @contract-shape:pure-function
+		it.skip("on a past range, the aging chart's health does not call stale a Work Item Lighthouse judged not stale on the range's last day", async () => {
+			// Two days in its state on the range's last day, months by today: the browser counted to
+			// today, while Lighthouse judged the item as of the range end and found it not stale.
+			const rangeEnd = new Date(2026, 2, 31, 12, 0, 0);
+			const twoDaysBeforeTheRangeEnded = new Date(2026, 2, 30, 12, 0, 0);
 			const pastTheTargetNotStale = anItemInProgress(21, {
 				workItemAge: 20,
-				currentStateEnteredAt: aMonthAgo,
+				currentStateEnteredAt: twoDaysBeforeTheRangeEnded,
 				isStale: false,
 			});
 			const withinTheTarget = Array.from({ length: 9 }, (_, index) =>
 				anItemInProgress(30 + index, {
 					workItemAge: 5,
-					currentStateEnteredAt: today,
+					currentStateEnteredAt: rangeEnd,
 					isStale: false,
 				}),
 			);
 
-			showTheDashboardOf(mockProject, "portfolio", "flow-metrics", [
-				pastTheTargetNotStale,
-				...withinTheTarget,
-			]);
+			showTheDashboardOf(
+				mockProject,
+				"portfolio",
+				"flow-metrics",
+				[pastTheTargetNotStale, ...withinTheTarget],
+				"/metrics?startDate=2026-03-01&endDate=2026-03-31",
+			);
 
 			await waitFor(() => {
 				expect(screen.getByTestId("widget-rag-aging")).toHaveTextContent(

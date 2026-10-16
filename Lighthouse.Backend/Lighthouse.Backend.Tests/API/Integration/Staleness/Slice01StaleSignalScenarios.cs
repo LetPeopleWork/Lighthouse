@@ -4,7 +4,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.Staleness
 {
     /// <summary>
-    /// Story 6247, slice 01: the signal a refresh raises when a Work Item goes stale follows the same rule
+    /// The signal a refresh raises when a Work Item goes stale follows the same rule
     /// the WIP reads answer with. Nothing subscribes to the signal yet, so the signal itself is the
     /// observable. Driving port: the scheduled Team refresh, run by the production update queue.
     /// </summary>
@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
     {
         private const string Pending = "pending — DELIVER (story-6247 slice 01)";
 
-        // @driving_port @us-01 @AC-6 @contract-shape:bounded-change
+        // @driving_port @contract-shape:bounded-change
         // Chained: the second refresh finds the same Work Item still stale and says nothing new.
         [Test]
         [Ignore(Pending)]
@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenNoWorkItemWasSignalledAsStale();
         }
 
-        // @driving_port @us-01 @AC-6 @boundary @error @contract-shape:unbounded-preservation
+        // @driving_port @boundary @error @contract-shape:unbounded-preservation
         [Test]
         [Ignore(Pending)]
         public async Task A_refresh_does_not_signal_a_Work_Item_that_has_sat_exactly_as_long_as_the_threshold()
@@ -45,7 +45,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenNoWorkItemWasSignalledAsStale();
         }
 
-        // @driving_port @us-01 @AC-6 @error @contract-shape:unbounded-preservation
+        // @driving_port @error @contract-shape:unbounded-preservation
         [Test]
         [Ignore(Pending)]
         public async Task A_refresh_does_not_signal_a_Blocked_Work_Item_still_under_the_blocked_threshold()
@@ -58,7 +58,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenNoWorkItemWasSignalledAsStale();
         }
 
-        // @driving_port @us-01 @AC-6 @contract-shape:bounded-change
+        // @driving_port @contract-shape:bounded-change
         [Test]
         [Ignore(Pending)]
         public async Task A_refresh_signals_a_Blocked_Work_Item_with_the_blocked_threshold_it_crossed()
@@ -71,7 +71,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemWasSignalledAsStale(item, thresholdDays: 3);
         }
 
-        // @driving_port @us-01 @AC-6 @error @contract-shape:unbounded-preservation
+        // @driving_port @contract-shape:bounded-change
+        // With both triggers on, the threshold named is the blocked one, because that is the reason
+        // that made the Work Item stale.
+        [Test]
+        [Ignore(Pending)]
+        public async Task A_refresh_names_the_blocked_threshold_when_a_Blocked_Work_Item_goes_stale_with_both_thresholds_set()
+        {
+            var team = GivenATeamThatCallsWorkStaleAfterFiveDaysInAStateOrThreeDaysBlocked();
+            var item = GivenTheTeamHasAWorkItemThatHasBeenInItsStateFor(team, "ITEM-1", BlockedState, days: 3);
+
+            await WhenTheScheduledRefreshRuns(team);
+
+            ThenTheWorkItemWasSignalledAsStale(item, thresholdDays: 3);
+        }
+
+        // @driving_port @error @contract-shape:unbounded-preservation
         [Test]
         [Ignore(Pending)]
         public async Task A_refresh_never_signals_staleness_while_both_thresholds_are_off()

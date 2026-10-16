@@ -10175,10 +10175,14 @@ C4Container
 
 Invariants:
 
-- `StalenessPolicy` depends on nothing in `Services` or `API` (ArchUnitNET guard).
-- Nothing in `Lighthouse.Frontend/src` compares days in state or blocked days against a staleness threshold (Vitest
-  guard); the thresholds are read only for the "is a threshold set" check and the Blocked RAG.
-- `isStale` / `staleReasons` are omitted on reads that do not evaluate staleness.
+- **6247-I1** — `StalenessPolicy` depends on nothing in `Services` or `API` (ArchUnitNET guard).
+- **6247-I2** — Nothing in `Lighthouse.Frontend/src` compares days in state or blocked days against a staleness
+  threshold (Vitest guard, which recognises a threshold by a name containing `stalenessThreshold`); the thresholds
+  are read only for the "is a threshold set" check and the Blocked RAG.
+- **6247-I3** — `isStale` / `staleReasons` are omitted on reads that do not evaluate staleness.
+- **6247-I4** — `WorkItemBecameStale` fires on a Work Item's false→true flip into stale, judged by the same
+  `StalenessPolicy` the WIP reads use, and never again while it stays stale; `ThresholdDays` is the threshold of
+  the reason that made it stale.
 
 ### ADR References (this feature)
 

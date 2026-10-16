@@ -64,8 +64,9 @@ third.
 ## Consequences
 
 - One rule, covered by backend unit tests at its boundaries; the browser's copy and its tests go.
-- A badge's "N days in State" label is still computed in the browser and can read one day different from the server's
-  reason near midnight.
+- A badge's "N days in State" label is still computed in the browser, counted to the dialog column's `now`. DELIVER
+  passes the range end as that `now`, so on a past range the label and the server's reason count to the same day;
+  the residual difference is one day near midnight, where the browser's zone and the instance's zone disagree.
 - Past ranges now judge staleness as of the range's end on every surface, including the dialog badges and the
   aging-pace data, which measured against today before.
 - The Blocked RAG and the "is a threshold set" check still read the thresholds from settings; they are not the

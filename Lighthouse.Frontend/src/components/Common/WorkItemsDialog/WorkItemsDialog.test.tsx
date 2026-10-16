@@ -865,6 +865,60 @@ describe("WorkItemsDialog Component", () => {
 				screen.queryByTestId("time-in-state-stale"),
 			).not.toBeInTheDocument();
 		});
+
+		// The column's day is the range's last day on a past range, which is the day Lighthouse judged
+		// the rows on, so the label and the reason beside it count to the same day.
+		const theRangesLastDay = new Date("2026-05-25T12:00:00Z");
+
+		// @contract-shape:pure-function
+		test.skip("a row Lighthouse marks stale shows the stale badge, counted to the column's day, with no threshold given", () => {
+			const markedStale: IWorkItem = {
+				...timeInStateItems[2],
+				currentStateEnteredAt: new Date("2026-05-14T08:00:00Z"),
+				isStale: true,
+				staleReasons: [{ kind: "TimeInState", days: 12, stateName: "Review" }],
+			};
+
+			render(
+				<WorkItemsDialog
+					{...defaultProps}
+					items={[markedStale]}
+					context="stale"
+					timeInStateColumn={{ now: theRangesLastDay }}
+				/>,
+			);
+
+			const stale = screen.getByTestId("time-in-state-stale");
+			expect(stale).toHaveTextContent(/^12d in Review$/);
+			expect(stale).toHaveAttribute(
+				"aria-label",
+				"12d in Review — 12d in Review",
+			);
+		});
+
+		// @error @contract-shape:pure-function
+		test.skip("a row Lighthouse says is not stale shows no stale badge, however long it has sat", () => {
+			const notStale: IWorkItem = {
+				...timeInStateItems[2],
+				currentStateEnteredAt: new Date("2026-04-25T08:00:00Z"),
+				isStale: false,
+				staleReasons: [],
+			};
+
+			render(
+				<WorkItemsDialog
+					{...defaultProps}
+					items={[notStale]}
+					context="stale"
+					timeInStateColumn={{ now: theRangesLastDay }}
+				/>,
+			);
+
+			expect(
+				screen.queryByTestId("time-in-state-stale"),
+			).not.toBeInTheDocument();
+			expect(screen.getByText(/^31d in Review$/)).toBeInTheDocument();
+		});
 	});
 
 	describe("Feature owning team functionality", () => {

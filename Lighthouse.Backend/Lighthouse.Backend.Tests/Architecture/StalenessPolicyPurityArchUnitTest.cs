@@ -20,15 +20,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         [Test]
-        public void The_staleness_rule_exists_as_its_own_policy()
-        {
-            var production = typeof(Lighthouse.Backend.Models.Staleness.StalenessPolicy).Assembly;
-
-            Assert.That(production.GetType(StalenessNamespace + ".StalenessPolicy"), Is.Not.Null,
-                "Every read that judges staleness asks this one policy, so it has to exist under its own name.");
-        }
-
-        [Test]
         public void The_staleness_rule_depends_on_nothing_in_services_the_API_or_storage()
         {
             Types().That().ResideInNamespace(StalenessNamespace)

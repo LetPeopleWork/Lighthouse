@@ -206,12 +206,13 @@ describe("TimeInStateBadge", () => {
 	});
 });
 
-// Story 6247 slice 02: the badge shows Lighthouse's own answer. No staleness threshold is handed to
-// it any more, so none of these pass one. Pending until DELIVER switches the badge over.
+// The badge shows Lighthouse's own answer. No staleness threshold is handed to it any more, so none
+// of these pass one. Pending until DELIVER switches the badge over.
 describe("TimeInStateBadge shows the staleness Lighthouse decided", () => {
 	const now = new Date("2026-05-25T12:00:00Z");
 	const threeDaysInReview = new Date("2026-05-23T08:00:00Z");
 
+	// @contract-shape:pure-function
 	test.skip("is red when Lighthouse marks the Work Item stale, even with no threshold given", () => {
 		render(
 			<TimeInStateBadge
@@ -228,6 +229,7 @@ describe("TimeInStateBadge shows the staleness Lighthouse decided", () => {
 		expect(stale).toHaveStyle({ color: "rgb(211, 47, 47)" });
 	});
 
+	// @error @contract-shape:pure-function
 	test.skip("is not red when Lighthouse says the Work Item is not stale, however long it has sat", () => {
 		render(
 			<TimeInStateBadge
@@ -243,6 +245,7 @@ describe("TimeInStateBadge shows the staleness Lighthouse decided", () => {
 		expect(screen.getByText(/^31d in Review$/)).toBeInTheDocument();
 	});
 
+	// @error @contract-shape:unbounded-preservation
 	test.skip("is not red when Lighthouse does not say, as an older Lighthouse does not", () => {
 		render(
 			<TimeInStateBadge
@@ -253,8 +256,10 @@ describe("TimeInStateBadge shows the staleness Lighthouse decided", () => {
 		);
 
 		expect(screen.queryByTestId("time-in-state-stale")).not.toBeInTheDocument();
+		expect(screen.getByText(/^31d in Review$/)).toBeInTheDocument();
 	});
 
+	// @error @contract-shape:pure-function
 	test.skip("a Blocked Work Item not yet stale stays un-red even though Lighthouse names its time in state", () => {
 		render(
 			<TimeInStateBadge
@@ -270,8 +275,10 @@ describe("TimeInStateBadge shows the staleness Lighthouse decided", () => {
 		);
 
 		expect(screen.queryByTestId("time-in-state-stale")).not.toBeInTheDocument();
+		expect(screen.getByText(/^12d in Review$/)).toBeInTheDocument();
 	});
 
+	// @contract-shape:pure-function
 	test.skip.each([
 		[
 			"blocked time",

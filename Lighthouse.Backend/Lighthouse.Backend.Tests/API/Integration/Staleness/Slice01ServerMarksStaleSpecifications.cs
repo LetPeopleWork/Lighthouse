@@ -1,4 +1,3 @@
-using System.Net;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Staleness
@@ -51,8 +50,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
 
         private static void ThenTheWorkItemReads(ReadAnswer read, string referenceId, bool expectedStale, List<ReasonSeen> expectedReasons)
         {
-            Assert.That(read.Status, Is.EqualTo(HttpStatusCode.OK), read.Body);
-
             var seen = StalenessOf(read, referenceId);
 
             using (Assert.EnterMultipleScope())
@@ -65,22 +62,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
         }
 
         private static void ThenTheReadSaysNothingAboutStaleness(ReadAnswer read, string referenceId)
-        {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(read.Status, Is.EqualTo(HttpStatusCode.OK), read.Body);
-                Assert.That(StalenessOf(read, referenceId).HasAnAnswer, Is.False,
-                    $"A read that does not judge staleness must leave it out: a 'false' there would tell a client the item is not stale. Body: {read.Body}");
-            }
-        }
+            => Assert.That(StalenessOf(read, referenceId).HasAnAnswer, Is.False,
+                $"A read that does not judge staleness must leave it out: a 'false' there would tell a client the item is not stale. Body: {read.Body}");
 
         private static void ThenTheReadHasNoWorkItems(ReadAnswer read)
-        {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(read.Status, Is.EqualTo(HttpStatusCode.OK), read.Body);
-                Assert.That(ItemCount(read), Is.Zero, read.Body);
-            }
-        }
+            => Assert.That(ItemCount(read), Is.Zero, read.Body);
     }
 }

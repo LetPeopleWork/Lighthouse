@@ -848,12 +848,17 @@ describe("WorkItemAgingChart component", () => {
 		});
 	});
 
-	// Story 6247 slice 02: a dot is red for staleness exactly when Lighthouse marks an item in it
-	// stale. No threshold is handed to the chart any more, so none of these pass one.
+	// A dot is red for staleness exactly when Lighthouse marks an item in it stale. No threshold is
+	// handed to the chart any more, so none of these pass one.
 	describe("stale dots show the staleness Lighthouse decided", () => {
 		const now = new Date("2026-05-25T12:00:00Z");
 
-		const colourOfTheOnlyDot = (item: IWorkItem): string | undefined => {
+		// What an un-flagged Story's dot is drawn in, so a "not red" case cannot pass on a missing dot.
+		const normalColour = getColorMapForKeys(["Story"]).Story;
+
+		const theDotsOf = (
+			item: IWorkItem,
+		): { count: number; colourOfTheFirst: string | undefined } => {
 			render(
 				<WorkItemAgingChart
 					ownerKind="team"
@@ -869,9 +874,11 @@ describe("WorkItemAgingChart component", () => {
 			const seriesAttr = screen.getByTestId("mock-chart-container").dataset
 				.series;
 			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
-			return series?.[0]?.data?.[0]?.color;
+			const dots: { color?: string }[] = series?.[0]?.data ?? [];
+			return { count: dots.length, colourOfTheFirst: dots[0]?.color };
 		};
 
+		// @contract-shape:pure-function
 		it.skip("reds the dot of a Work Item Lighthouse marks stale, however recently it moved", () => {
 			const markedStale: IWorkItem = {
 				...mockInProgressItems[0],
@@ -881,9 +888,13 @@ describe("WorkItemAgingChart component", () => {
 				staleReasons: [{ kind: "TimeInState", days: 6, stateName: "Review" }],
 			};
 
-			expect(colourOfTheOnlyDot(markedStale)).toBe(errorColor);
+			expect(theDotsOf(markedStale)).toEqual({
+				count: 1,
+				colourOfTheFirst: errorColor,
+			});
 		});
 
+		// @error @contract-shape:pure-function
 		it.skip("does not red the dot of a Work Item Lighthouse says is not stale, however long it has sat", () => {
 			const notStale: IWorkItem = {
 				...mockInProgressItems[0],
@@ -893,9 +904,14 @@ describe("WorkItemAgingChart component", () => {
 				staleReasons: [],
 			};
 
-			expect(colourOfTheOnlyDot(notStale)).not.toBe(errorColor);
+			expect(normalColour).not.toBe(errorColor);
+			expect(theDotsOf(notStale)).toEqual({
+				count: 1,
+				colourOfTheFirst: normalColour,
+			});
 		});
 
+		// @error @contract-shape:unbounded-preservation
 		it.skip("does not red the dot of a Work Item an older Lighthouse said nothing about", () => {
 			const noAnswer: IWorkItem = {
 				...mockInProgressItems[0],
@@ -903,7 +919,11 @@ describe("WorkItemAgingChart component", () => {
 				currentStateEnteredAt: new Date("2026-04-01T08:00:00Z"),
 			};
 
-			expect(colourOfTheOnlyDot(noAnswer)).not.toBe(errorColor);
+			expect(normalColour).not.toBe(errorColor);
+			expect(theDotsOf(noAnswer)).toEqual({
+				count: 1,
+				colourOfTheFirst: normalColour,
+			});
 		});
 	});
 

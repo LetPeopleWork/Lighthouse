@@ -108,8 +108,15 @@ namespace Lighthouse.Backend.API.DTO
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IReadOnlyList<StaleReasonDto>? StaleReasons { get; private set; }
 
-        public void CarryStaleness(StalenessVerdict verdict)
+        /// <summary>
+        /// Judges the item on the fields this DTO already resolved for the day asked about, so the verdict
+        /// and the badge beside it always read the same state, entry day and blocked start.
+        /// </summary>
+        public void CarryStaleness(StalenessPolicy policy, TimeZoneInfo zone, DateOnly asOfDay)
         {
+            var candidate = new StalenessCandidate(StateCategory, State, CurrentStateEnteredAt, IsBlocked, BlockedSince);
+            var verdict = policy.Evaluate(candidate, zone, asOfDay);
+
             IsStale = verdict.IsStale;
             StaleReasons = [.. verdict.Reasons.Select(StaleReasonDto.From)];
         }

@@ -99,6 +99,44 @@ namespace Lighthouse.Backend.Tests.Models.Staleness
             }
         }
 
+        // [days in state, expected to show the time in state] - the same strict "longer than" as the
+        // trigger, so a Blocked item names its time in state only once it is past the threshold.
+        [TestCase(5, false)]
+        [TestCase(6, true)]
+        [Ignore(Pending)]
+        public void A_Blocked_Work_Item_shows_its_time_in_state_only_once_it_is_past_the_threshold(int daysInState, bool expectedToShow)
+        {
+            var verdict = PolicyWith(timeInStateThreshold: 5, blockedThreshold: 3)
+                .Evaluate(Blocked(daysInState, daysBlocked: 2), Zurich, AsOfDay);
+
+            var expectedReasons = expectedToShow
+                ? new List<StaleReason> { new(StaleReasonKind.TimeInStateWhileBlocked, daysInState, Review) }
+                : [];
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.IsStale, Is.False);
+                Assert.That(verdict.Reasons, Is.EqualTo(expectedReasons));
+            }
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public void A_Blocked_Work_Item_whose_state_entry_is_unknown_is_still_judged_by_its_blocked_time()
+        {
+            var candidate = Blocked(daysInState: 30, daysBlocked: 4) with { EnteredStateAt = null };
+
+            var verdict = PolicyWith(timeInStateThreshold: 5, blockedThreshold: 3).Evaluate(candidate, Zurich, AsOfDay);
+
+            var expectedReasons = new List<StaleReason> { new(StaleReasonKind.BlockedDuration, 4, null) };
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.IsStale, Is.True);
+                Assert.That(verdict.Reasons, Is.EqualTo(expectedReasons));
+            }
+        }
+
         // [time-in-state threshold, blocked threshold, blocked]
         [TestCase(0, 0, false)]
         [TestCase(0, 0, true)]

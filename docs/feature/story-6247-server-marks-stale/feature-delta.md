@@ -64,7 +64,7 @@ every surface — dashboard, `lh`, MCP — answers from one rule.
 
 #### Elevator Pitch
 Before: `GET /api/latest/teams/{id}/metrics/wip` returns `isBlocked`/`blockedSince` per Work Item but no staleness; only the browser can work it out.
-After: run `lh metrics team --metrics wip --id <id>` (or call the endpoint) → each Work Item carries `isStale` and its reasons, e.g. stale "12 days in Review" or "Blocked 6 days".
+After: run `lh metrics team --metrics wip --id <id> --json` (or call the endpoint) → each Work Item carries `isStale` and its reasons, e.g. stale "12 days in Review" or "Blocked 6 days". The clients' `--json` / `--toon` output returns the read's facts unchanged (`lighthouse-clients/packages/cli/src/index.ts:1279`, the global output flags), so slice 01 reaches `lh` users before slice 03 adds the headline line.
 Decision enabled: which stuck Work Items to raise in today's daily, without opening the dashboard.
 
 #### Acceptance Criteria
@@ -104,14 +104,14 @@ discuss, so the daily covers every stuck Work Item, not only the Blocked ones.
 
 #### Elevator Pitch
 Before: the skill names Blocked and at-risk Work Items, and says nothing about stale ones.
-After: ask the assistant for the Daily Flow Review → it lists stale Work Items that are not already listed as Blocked, with Lighthouse's reason ("12 days in Review"), using the instance's term for Stale.
+After: ask the assistant for the Daily Flow Review → it lists stale Work Items that are not already listed as Blocked, with Lighthouse's reason ("12 days in Review"). Blocked and Work Item render as the instance's terms; "Stale" is the fixed label the dashboard shows, because there is no Terminology key for it, and adding one is out of scope (corrected at DESIGN).
 Decision enabled: which stale Work Items the Team discusses today.
 
 #### Acceptance Criteria
 1. `lighthouse_team_metrics_wip` (and `lh metrics team --metrics wip`) pass through `isStale` and its reasons unchanged; the `summary` text mentions stale Work Items when there are any.
 2. The Daily Flow Review lists a stale Work Item with the reason Lighthouse gave; a Work Item already listed as Blocked is not listed twice.
 3. Against a Lighthouse without the fields, the skill says Lighthouse does not say which Work Items are stale, and never works it out itself.
-4. A calm day ("Nothing to decide today…") still requires no stale Work Items as well.
+4. The calm-day message appears only when there are also no stale Work Items.
 5. Client packages carry a version bump and the version gate names the first Lighthouse release with the fields.
 
 ## Wave: DISCUSS / [REF] Out-of-scope
@@ -131,7 +131,12 @@ Decision enabled: which stale Work Items the Team discusses today.
   the Lighthouse release that ships US-01. Release needs the manual `pnpm release:version` bump.
 - **Website** — **N/A, because** no new capability is marketed; Stale is already on the site as part of the Flow
   Overview. The Daily Flow Review skill's listing changes only in what it covers.
-- **Terminology** — "Stale"/"Blocked"/"Work Item" render as the instance's terms in the summary and the skill.
+- **Terminology** — "Blocked" and "Work Item" render as the instance's terms in the summary and the skill.
+  "Stale" is a fixed label: there is no Terminology key for it, and adding one is out of scope (corrected at
+  DESIGN).
+- **Demo data** — the demo Teams and Portfolios set a 5-day blocked threshold and no time-in-state threshold;
+  DELIVER checks at slice 01's dogfood whether a demo Work Item reads stale and records the result.
+- **Screenshots** — **N/A, because** no visual change (US-02 AC6).
 - **Docs** — `docs/metrics/flow-overview.md` (Stale is now Lighthouse's answer, days in the instance's zone),
   `docs/aiintegration.md` (WIP read carries staleness). At finalization.
 
@@ -160,13 +165,13 @@ the second repository, which DFR work always needs.
 | 03 | Clients and the Daily Flow Review read it | US-03 | Disproves "pass-through is enough" if the skill still needs to compute anything to place a stale Work Item. |
 
 Order 01 → 02 → 03: 02 and 03 each depend only on 01. Each slice ships on its own (01 already gives `lh` users the
-flag through the raw read).
+flag: `lh metrics team --metrics wip --id <id> --json` returns the read's facts unchanged).
 
 ## Wave: DISCUSS / [REF] Outcome KPI
 
 | KPI | Target | Measurement |
 |-----|--------|-------------|
-| `OUT-one-stale-rule` | 0 staleness rules outside the backend domain after slice 02 | `grep` for threshold-based staleness logic in `Lighthouse.Frontend/src` and `lighthouse-clients/packages` → none |
+| `OUT-one-stale-rule` | 0 staleness rules outside the backend domain after slice 02 | The Vitest guard (`utils/oneStalenessRule.enforcement.test.ts`): no shipped file in `Lighthouse.Frontend/src` names `deriveStaleness`, and none compares a value with an identifier containing `stalenessThreshold` (a copy under another name is outside its reach and left to review). `lighthouse-clients/packages`: by review at slice 03 |
 | `OUT-stale-agrees` | 100% agreement between Flow Overview Stale count and the WIP read's `isStale` count, same Team and date | Acceptance tests on demo data, current and past range |
 
 ## Wave: DISCUSS / [REF] Definition of Done
@@ -227,23 +232,27 @@ recommended option taken in AFK mode; none changes what a user sees. ADR-240 (Pr
 | DDD-4 | **Reads that carry it**: only `GET teams/{id}/metrics/wip` (Team thresholds) and `GET portfolios/{id}/metrics/wip` (Portfolio thresholds, `FeatureDto : WorkItemDto`). Every Stale surface — Stale count/RAG, Stale and WIP dialogs, aging dots and its dialog, aging-pace data — reads `inProgressItems` from these. Evaluated on the DTO's resolved fields after the as-of projection. |
 | DDD-5 | **Not carried** by `blockedItemsAtDate` (spans To Do, no time-in-state column), Team `featuresInProgress` and Feature child items (owner ambiguous, no Stale UI), cycle-time / run-chart / size / SLE-risk reads. |
 | DDD-6 | **Wire**: `isStale: bool?`, `staleReasons: StaleReasonDto[]?` with `{ kind, days, stateName? }`, all `[JsonIgnore(WhenWritingNull)]` — absent means "Lighthouse does not say". `StaleReasonKind { TimeInState, BlockedDuration, TimeInStateWhileBlocked }` serialises PascalCase via the global `JsonStringEnumConverter`; TS mirrors it as a string union, never a numeric enum. |
-| DDD-7 | **DTO wiring without a new ctor parameter** (the ctor already carries an S107 suppression): the two WIP projections set the verdict after construction through one narrow method on `WorkItemDto`. |
-| DDD-8 | **Sync-time event on the same policy**: inject `ILighthouseClock` into `WorkItemService`, evaluate with `clock.Today` and `blockedItemService.IsBlocked`, blockedSince = `CurrentStateEnteredAt` when blocked (as the live read does). `ThresholdDays` = the threshold of the reason that fired. Keep `WorkItemBecameStale` and `WasStaleAtLastSync` (removal leaves a dead column; dropping it is not expand-only). |
-| DDD-9 | **Frontend**: `IWorkItem` gains `isStale?` / `staleReasons?`; aging chart, `TimeInStateBadge` (tooltip formats the server reasons as today: `Blocked 6d`, `12d in Review`), dialog columns and `BaseMetricsView` read them; threshold props for staleness dropped; `utils/staleness/` deleted. `hasStaleConfig` and the Blocked RAG keep reading thresholds from settings. |
+| DDD-7 | **DTO wiring without a new ctor parameter** (the ctor already carries an S107 suppression): the two WIP projections call one narrow method after construction, `WorkItemDto.CarryStaleness(StalenessPolicy policy, TimeZoneInfo zone, DateOnly asOfDay)`. It builds the `StalenessCandidate` from the DTO's own resolved fields (`StateCategory`, `State`, `CurrentStateEnteredAt`, `IsBlocked`, `BlockedSince`), so the DTO→candidate mapping has one home and both reads share it (revised at DISTILL review). |
+| DDD-8 | **Sync-time event on the same policy**: inject `ILighthouseClock` into `WorkItemService`, evaluate with `clock.Today` and `blockedItemService.IsBlocked`, blockedSince = `CurrentStateEnteredAt` when blocked (as the live read does). The existing Doing + entered-at guard runs before `IsBlocked` is asked, so an item with nothing to judge costs no blocked evaluation. `CollectStalenessEvents` and `AddStalenessEventIfThresholdCrossed` lose `static`, since they now read the injected clock and blocked service. `ThresholdDays` = the threshold of the reason that fired. Keep `WorkItemBecameStale` and `WasStaleAtLastSync` (removal leaves a dead column; dropping it is not expand-only). |
+| DDD-9 | **Frontend**: `IWorkItem` gains `isStale?` / `staleReasons?`; aging chart, `TimeInStateBadge` (tooltip formats the server reasons as today: `Blocked 6d`, `12d in Review`), dialog columns and `BaseMetricsView` read them; the badge's "Nd in State" label still counts in the browser, to the dialog column's `now`, and DELIVER passes the range end as that `now` so label and reason agree on past ranges (residual difference only near midnight across zones); threshold props for staleness dropped; `utils/staleness/` deleted. `hasStaleConfig` and the Blocked RAG keep reading thresholds from settings. |
 | DDD-10 | **Clients**: `client/metricsWording.ts` `InProgressItem` gains the fields; unknown reason kinds are dropped, never fail the item; `describeStaleNow` beside `describeBlockedNow`; `describeWhatWipLeavesUnsaid` says when Lighthouse does not say which are Stale. mcp-core `summariseCurrentWip`, cli `headlineLines`, both WIP tool descriptions. `FEATURE_REQUIRES_SERVER_NEWER_THAN.staleness` documents the gate; runtime falls back on field presence (as `isBlocked`). DFR SKILL.md: step 3 lists the fields, a Stale decision after Blocked (no duplicates), a "Stale unknown" bullet, calm-day rule, evals. Contract fixture test pins the wire shape. |
 | DDD-11 | **Guards**: ArchUnitNET — `Models.Staleness` depends on nothing in `Services`/`API`. Vitest — nothing in `src/` compares days against a staleness threshold (allow-list `hasStaleConfig` and the Blocked RAG), making `OUT-one-stale-rule` executable. |
 
 ## Wave: DESIGN / [REF] Reuse Analysis
 
-| Existing | File | Overlap | Decision | Justification |
-|---|---|---|---|---|
-| `deriveStaleness` | `Lighthouse.Frontend/src/utils/staleness/deriveStaleness.ts` | the whole rule | DELETE (semantics ported) | D3 |
-| `WorkItemService.IsStale` | `Services/Implementation/WorkItems/WorkItemService.cs:486` | second rule | REPLACE with the policy | D6 |
-| `InstanceCalendar`, `WorkItemBase.AgeOnDay` | `Models/InstanceCalendar.cs`, `Models/WorkItemBase.cs` | day reduction, +1 | REUSE | D8 parity with Work Item Age |
-| `WorkItemDto` | `API/DTO/WorkItemDto.cs` | resolved snapshot fields | EXTEND, additive | single wire home |
-| `IBlockedItemService` | `IBlockedItemService.cs` | is-blocked decision | REUSE | the one blocked authority |
-| `StalenessPolicy` | — | none | CREATE NEW | no owner-level pure policy exists; pure-function contract |
-| Blocked pass-through | `lighthouse-clients/packages/client/src/metricsWording.ts` | absence semantics | EXTEND | same compatibility model |
+| Existing | File | Overlap | Decision | Justification | Contract shape |
+|---|---|---|---|---|---|
+| `deriveStaleness` | `Lighthouse.Frontend/src/utils/staleness/deriveStaleness.ts` | the whole rule | DELETE (semantics ported) | D3 | — (deleted) |
+| `WorkItemService.IsStale` | `Services/Implementation/WorkItems/WorkItemService.cs:486` | second rule | REPLACE with the policy | D6 | the staleness refresh is **bounded-change** — universe: the Team's still-held Work Items; delta: `WasStaleAtLastSync` on those items, plus one `WorkItemBecameStale` per false→true flip and none otherwise |
+| `InstanceCalendar`, `WorkItemBase.AgeOnDay` | `Models/InstanceCalendar.cs`, `Models/WorkItemBase.cs` | day reduction, +1 | REUSE | D8 parity with Work Item Age | pure-function |
+| `WorkItemDto` | `API/DTO/WorkItemDto.cs` | resolved snapshot fields | EXTEND, additive; `CarryStaleness(policy, zone, asOfDay)` is the one home of the DTO→candidate mapping | single wire home | — |
+| Team / Portfolio WIP reads | `API/TeamMetricsController.cs`, `API/PortfolioMetricsController.cs` | the snapshot the verdict judges | EXTEND | the reads every Stale surface already uses | **unbounded-preservation** — read-only, mutate no tracked entity |
+| `IBlockedItemService` | `IBlockedItemService.cs` | is-blocked decision | REUSE | the one blocked authority | — |
+| `StalenessPolicy` | — | none | CREATE NEW | no owner-level pure policy exists | **pure-function** |
+| `StalenessCandidate` | — (in `Models/Staleness/StalenessPolicy.cs`) | none | CREATE NEW | the policy's input, already resolved for the day asked about; a `WorkItemBase` cannot be the input, because the Portfolio read passes a Feature's past state separately | pure-function (value) |
+| `StaleReason` | — (in `Models/Staleness/StalenessVerdict.cs`) | none | CREATE NEW | the domain's reason record, free of wire concerns | pure-function (value) |
+| `StaleReasonDto` | — (`API/DTO/StaleReasonDto.cs`) | mirrors `StaleReason` | CREATE NEW, kept apart from `StaleReason` | decouples the wire from the domain record: the wire omits a null `stateName` and is pinned by the clients' contract fixture, so a domain rename or a new field cannot change it silently | pure-function (value) |
+| Blocked pass-through | `lighthouse-clients/packages/client/src/metricsWording.ts` | absence semantics | EXTEND | same compatibility model | pure-function |
 
 ## Wave: DESIGN / [REF] Component decomposition
 
@@ -286,6 +295,10 @@ No change: .NET 10 / EF Core, React 18 + TypeScript, clients TypeScript. OOP bac
   "Stale", as the dashboard shows it (`BaseMetricsView.tsx:706`). No user-visible change from today.
 - DISCUSS D1 left "any other read the UI shows a Stale badge on" to DESIGN: the inventory finds none beyond the two
   WIP reads (DDD-4/5).
+- DISCUSS D5 says "today for a plain read". **Every WIP read carries an `asOfDate`**: the actions' parameter is a
+  non-nullable `[FromQuery] DateTime`, so an omitted one binds `DateTime.MinValue` rather than today
+  (`TeamMetricsController.cs:140`). "Today" in D5 is therefore the day the caller chooses to send; the dashboard
+  sends today or the range end, and the clients must send it too (their client already passes `asOfDate` on every WIP call).
 
 ## Wave: DESIGN / [REF] Handoff
 
@@ -312,81 +325,105 @@ DEVOPS skipped by the maintainer (2026-10-16) → DISTILL.
 
 **UI sketches: none needed — no new look; maintainer confirmed 2026-10-16.** The badge, its tooltip
 format (`Blocked 6d`, `12d in Review`), the aging chart's red dot and the Stale count keep exactly the look
-they have; only where the answer comes from changes. DELIVER re-sketches nothing.
+they have; only where the answer comes from changes. DELIVER re-sketches nothing. One number a reader sees
+does move: on a past range the dialogs' "Nd in State" label counts to the range end instead of today (see the
+maintainer decision under Pre-requisites, to revisit).
 
 ## Wave: DISTILL / [REF] Scenario list with tags
 
+Every scenario carries a `@contract-shape` tag, in the code (a `// @…` comment above the test) and here. The
+story and acceptance-criterion tags (`@us-0n`, `@AC-n`) live only in this table, not in code comments.
+
 Slice 01 — backend, `Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01ServerMarksStaleScenarios.cs`
-(driving port: the Team and Portfolio WIP reads):
+(driving port: the Team and Portfolio WIP reads). A WIP read mutates nothing, so the walking skeleton is
+unbounded-preservation; scenarios judging one item's verdict are pure-function over its facts and the
+thresholds:
 
 | Scenario | Tags |
 |---|---|
-| A flow coach reads which Work Item has sat too long in Review and why | `@walking_skeleton @driving_port @real-io @us-01 @contract-shape:bounded-change` |
-| A Work Item goes stale once it has sat in its state longer than the threshold (5 → no, 6 → yes) | `@driving_port @us-01 @AC-1 @boundary` |
-| A Blocked Work Item goes stale on the day it reaches the blocked threshold (2 → no, 3 → yes) | `@driving_port @us-01 @AC-2 @boundary` |
-| A Blocked Work Item under the blocked threshold is not stale however long it has sat in its state (Blocked 2 days, 9 in state: context reason only) | `@us-01 @AC-2 @error` |
-| A Blocked Work Item is stale for its blocked time and still shows how long it has sat in its state | `@us-01 @AC-2` |
-| A Work Item still Blocked in its state is not stale before the blocked threshold, even past the time-in-state one | `@us-01 @AC-2 @error` |
-| With both thresholds off no Work Item is stale and none carries a reason | `@us-01 @AC-3 @error` |
-| Turning the time-in-state trigger off leaves the blocked trigger working | `@us-01 @AC-3 @error` |
-| Turning the blocked trigger off leaves the time-in-state trigger working | `@us-01 @AC-3 @error` |
-| A Work Item is judged as of the day the read asks about, not today (chained: day 5, day 6) | `@us-01 @AC-4` |
-| A Work Item whose state entry Lighthouse never saw is not stale | `@us-01 @edge` |
-| A Feature goes stale once it has sat longer than the Portfolio's threshold (5 → no, 6 → yes) | `@us-01 @AC-5 @boundary` |
-| A Blocked Feature is stale for its blocked time against the Portfolio's blocked threshold | `@us-01 @AC-5` |
-| The Blocked items read says nothing about staleness — **active, green** | `@us-01 @error @contract-shape:unbounded-preservation` |
-| A WIP read without a day answers with no Work Items — **active, green; pins today's behaviour** | `@us-01 @edge` |
+| A flow coach reads which Work Item has sat too long in Review and why | `@walking_skeleton @driving_port @real-io @us-01 @contract-shape:unbounded-preservation` |
+| A Work Item goes stale once it has sat in its state longer than the threshold (5 → no, 6 → yes) | `@driving_port @us-01 @AC-1 @boundary @contract-shape:pure-function` |
+| A Blocked Work Item goes stale on the day it reaches the blocked threshold (2 → no, 3 → yes) | `@driving_port @us-01 @AC-2 @boundary @contract-shape:pure-function` |
+| A Blocked Work Item under the blocked threshold is not stale however long it has sat in its state (Blocked 2 days, 9 in state: context reason only) | `@driving_port @us-01 @AC-2 @error @contract-shape:pure-function` |
+| A Blocked Work Item is stale for its blocked time and still shows how long it has sat in its state | `@driving_port @us-01 @AC-2 @contract-shape:pure-function` |
+| A Work Item still Blocked in its state is not stale before the blocked threshold, even past the time-in-state one | `@driving_port @us-01 @AC-2 @error @contract-shape:pure-function` |
+| With both thresholds off no Work Item is stale and none carries a reason | `@driving_port @us-01 @AC-3 @error @contract-shape:unbounded-preservation` |
+| Turning the time-in-state trigger off leaves the blocked trigger working | `@driving_port @us-01 @AC-3 @error @contract-shape:pure-function` |
+| Turning the blocked trigger off leaves the time-in-state trigger working | `@driving_port @us-01 @AC-3 @error @contract-shape:pure-function` |
+| A Work Item is judged as of the day the read asks about, not today (chained: day 5, day 6) | `@driving_port @us-01 @AC-4 @contract-shape:pure-function` |
+| A Work Item whose state entry Lighthouse never saw is not stale | `@driving_port @us-01 @edge @contract-shape:pure-function` |
+| A Feature goes stale once it has sat longer than the Portfolio's threshold (5 → no, 6 → yes) | `@driving_port @us-01 @AC-5 @boundary @contract-shape:pure-function` |
+| A Blocked Feature is stale for its blocked time against the Portfolio's blocked threshold | `@driving_port @us-01 @AC-5 @contract-shape:pure-function` |
+| The Blocked items read says nothing about staleness — **active, green** | `@driving_port @us-01 @error @contract-shape:unbounded-preservation` |
+| A WIP read without a day answers with no Work Items — **active, green; pins today's behaviour** | `@driving_port @us-01 @edge @contract-shape:unbounded-preservation` |
+
+The two trigger-off scenarios were `bounded-change` at the first DISTILL pass; a read changes nothing, so they
+are pure-function like their siblings. Every reason is compared together with whether its `stateName` was on
+the wire, so a Blocked-duration reason that carried a state name fails the comparison.
 
 Slice 01 — the refresh signal, `…/Staleness/Slice01StaleSignalScenarios.cs` (driving port: the scheduled
 Team refresh through the production update queue; observable: `WorkItemBecameStale` on the real dispatcher):
 
 | Scenario | Tags |
 |---|---|
-| A refresh signals a Work Item going stale once, with the threshold it crossed (chained: second refresh is silent) | `@driving_port @us-01 @AC-6` |
-| A refresh does not signal a Work Item that has sat exactly as long as the threshold | `@AC-6 @boundary @error` |
-| A refresh does not signal a Blocked Work Item still under the blocked threshold | `@AC-6 @error` |
-| A refresh signals a Blocked Work Item with the blocked threshold it crossed | `@AC-6` |
-| A refresh never signals staleness while both thresholds are off | `@AC-6 @error` |
+| A refresh signals a Work Item going stale once, with the threshold it crossed (chained: second refresh is silent) | `@driving_port @us-01 @AC-6 @contract-shape:bounded-change` |
+| A refresh does not signal a Work Item that has sat exactly as long as the threshold | `@driving_port @us-01 @AC-6 @boundary @error @contract-shape:unbounded-preservation` |
+| A refresh does not signal a Blocked Work Item still under the blocked threshold | `@driving_port @us-01 @AC-6 @error @contract-shape:unbounded-preservation` |
+| A refresh signals a Blocked Work Item with the blocked threshold it crossed (thresholds 0/3) | `@driving_port @us-01 @AC-6 @contract-shape:bounded-change` |
+| A refresh names the blocked threshold when a Blocked Work Item goes stale with both thresholds set (5/3, Blocked 3 days → `ThresholdDays` 3) | `@driving_port @us-01 @AC-6 @contract-shape:bounded-change` |
+| A refresh never signals staleness while both thresholds are off | `@driving_port @us-01 @AC-6 @error @contract-shape:unbounded-preservation` |
 
 Slice 01 — the rule at its boundaries, `Lighthouse.Backend.Tests/Models/Staleness/StalenessPolicyTest.cs`
-(unit, layer 1; 12 tests, 22 cases): time in state `>` (5/6, 1/2); blocked `≥` (2/3/4); Blocked precedence
-with both reasons; context reason only; threshold 0 off (3 cases) and blocked-off context reason; only
-Doing (To Do, Done, Unknown); unknown entered day; unknown blocked start; days on the instance calendar
+(unit, layer 1, `@contract-shape:pure-function`; 14 tests, 25 cases): time in state `>` (5/6, 1/2); blocked
+`≥` (2/3/4); Blocked precedence with both reasons; context reason only; the context reason's own boundary
+(Blocked 5 days in state with threshold 5 → none, 6 → shown); threshold 0 off (3 cases) and blocked-off context
+reason; only Doing (To Do, Done, Unknown); unknown entered day; a Blocked item with an unknown entered day but a
+known blocked start is still judged by its blocked time; unknown blocked start; days on the instance calendar
 (22:30 UTC is the next day in Zurich); a block starting on or after the day asked about counts 1 day;
 thresholds read from the owner. This is the coverage `deriveStaleness.test.ts` carries today, so that file
 can go at DELIVER.
 
 Slice 01 — architecture, `Lighthouse.Backend.Tests/Architecture/StalenessPolicyPurityArchUnitTest.cs`
-(**active, green**): the policy exists under its own name; `Models.Staleness` depends on nothing in
-`Services`, `API` or `Data`.
+(**active, green**, `@contract-shape:unbounded-preservation`): `Models.Staleness` depends on nothing in
+`Services`, `API` or `Data`. (The first pass also asserted that the policy type exists; the dependency rule and
+the unit tests already fail without it, so that check was dropped.)
 
-Slice 02 — frontend (Vitest + RTL, `it.skip` / `test.skip`):
+Slice 02 — frontend (Vitest + RTL, `it.skip` / `test.skip`). `@driving_port` marks the tests that enter at the
+Flow Overview page itself; the badge, chart and dialog tests render that component on its own:
 
-| File | Scenario |
-|---|---|
-| `components/Common/TimeInStateBadge/TimeInStateBadge.test.tsx` | is red when Lighthouse marks the Work Item stale, even with no threshold given |
-| ″ | is not red when Lighthouse says the Work Item is not stale, however long it has sat (`@error`) |
-| ″ | is not red when Lighthouse does not say, as an older Lighthouse does not (`@error`) |
-| ″ | a Blocked Work Item not yet stale stays un-red even though Lighthouse names its time in state (`@error`) |
-| ″ | its tooltip gives Lighthouse's reason — `Blocked 6d`; `12d in Review`; `Blocked 6d; 12d in Review` (3 cases) |
-| `components/Common/Charts/WorkItemAgingChart.test.tsx` | reds the dot of a Work Item Lighthouse marks stale, however recently it moved |
-| ″ | does not red the dot of a Work Item Lighthouse says is not stale, however long it has sat (`@error`) |
-| ″ | does not red the dot of a Work Item an older Lighthouse said nothing about (`@error`) |
-| `pages/Common/MetricsView/BaseMetricsView.test.tsx` | the Team's Stale count is the number of Work Items Lighthouse marks stale (`@kpi OUT-stale-agrees`) |
-| ″ | the Portfolio's Stale count is the number of Features Lighthouse marks stale (`@kpi OUT-stale-agrees`) |
-| ″ | the aging chart's health counts a Work Item Lighthouse marks stale as stale |
-| ″ | the aging chart's health does not call stale a Work Item Lighthouse says is not stale (the past-range case, `@error`) |
-| `utils/oneStalenessRule.enforcement.test.ts` | the browser's copy of the rule is gone (`@kpi OUT-one-stale-rule`) |
-| ″ | nothing in the app compares days with a staleness threshold (`@kpi OUT-one-stale-rule`) |
-| ″ | nine cases on the guard's own pattern — **active, green** |
+| File | Scenario | Tags |
+|---|---|---|
+| `components/Common/TimeInStateBadge/TimeInStateBadge.test.tsx` | is red when Lighthouse marks the Work Item stale, even with no threshold given | `@us-02 @AC-2 @contract-shape:pure-function` |
+| ″ | is not red when Lighthouse says the Work Item is not stale, however long it has sat (label still `31d in Review`) | `@us-02 @AC-2 @error @contract-shape:pure-function` |
+| ″ | is not red when Lighthouse does not say, as an older Lighthouse does not (label still `31d in Review`) | `@us-02 @AC-2 @error @contract-shape:unbounded-preservation` |
+| ″ | a Blocked Work Item not yet stale stays un-red even though Lighthouse names its time in state (label still `12d in Review`) | `@us-02 @AC-2 @error @contract-shape:pure-function` |
+| ″ | its tooltip gives Lighthouse's reason — `Blocked 6d`; `12d in Review`; `Blocked 6d; 12d in Review` (3 cases) | `@us-02 @AC-2 @contract-shape:pure-function` |
+| `components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx` | a row Lighthouse marks stale shows the stale badge, counted to the column's day, with no threshold given (`12d in Review — 12d in Review`) | `@us-02 @AC-2 @contract-shape:pure-function` |
+| ″ | a row Lighthouse says is not stale shows no stale badge, however long it has sat (label still `31d in Review`) | `@us-02 @AC-2 @error @contract-shape:pure-function` |
+| `components/Common/Charts/WorkItemAgingChart.test.tsx` | reds the dot of a Work Item Lighthouse marks stale, however recently it moved (one dot, `errorColor`) | `@us-02 @AC-2 @contract-shape:pure-function` |
+| ″ | does not red the dot of a Work Item Lighthouse says is not stale, however long it has sat (one dot, the Story colour) | `@us-02 @AC-2 @error @contract-shape:pure-function` |
+| ″ | does not red the dot of a Work Item an older Lighthouse said nothing about (one dot, the Story colour) | `@us-02 @AC-2 @error @contract-shape:unbounded-preservation` |
+| `pages/Common/MetricsView/BaseMetricsView.test.tsx` | the Team's Stale count is the number of Work Items Lighthouse marks stale | `@driving_port @us-02 @AC-1 @kpi OUT-stale-agrees @contract-shape:pure-function` |
+| ″ | the Portfolio's Stale count is the number of Features Lighthouse marks stale | `@driving_port @us-02 @AC-5 @kpi OUT-stale-agrees @contract-shape:pure-function` |
+| ″ | the aging chart's health counts a Work Item Lighthouse marks stale as stale | `@driving_port @us-02 @AC-3 @contract-shape:pure-function` |
+| ″ | on a past range (1–31 March 2026), the aging chart's health does not call stale a Work Item Lighthouse judged not stale on the range's last day | `@driving_port @us-02 @AC-3 @error @contract-shape:pure-function` |
+| `utils/oneStalenessRule.enforcement.test.ts` | the browser's copy of the rule is gone | `@us-02 @AC-4 @kpi OUT-one-stale-rule @contract-shape:unbounded-preservation` |
+| ″ | nothing in the app compares days with a staleness threshold | `@us-02 @AC-4 @kpi OUT-one-stale-rule @contract-shape:unbounded-preservation` |
+| ″ | nine cases on the guard's own pattern — **active, green** | `@contract-shape:pure-function` |
 
-Slice 03 — clients: 18 scenarios in `distill/slice-03-clients-scenarios.md`, with the wire-shape fixture
-`distill/wip-read-with-staleness.json`, for DELIVER to write into `lighthouse-clients`.
+US-02 AC2 ("the badge is red exactly when the server says `isStale`; its tooltip lists the server's reasons")
+is traced to the five badge scenarios, the two dialog scenarios and the three aging-dot scenarios. The guard
+only recognises a threshold under a name containing `stalenessThreshold`; a copy of the rule under another name
+is outside its reach and is left to review.
 
-Counts: slice 01 — 20 acceptance scenarios (23 runnable cases; 21 pending, 2 active) + 12 policy unit
-tests (22 cases, pending) + 2 architecture rules (active); slice 02 — 14 scenarios (16 pending cases) +
-9 active guard cases; slice 03 — 18 specified. Error/edge share: slice 01 acceptance 11 of 20 (55%),
-slice 02 6 of 14 (43%), slice 03 8 of 18 (44%).
+Slice 03 — clients: 18 scenarios in `distill/slice-03-clients-scenarios.md`, with the wire-shape fixtures
+`distill/wip-read-with-staleness.json` and `distill/wip-read-without-staleness.json`, for DELIVER to write into
+`lighthouse-clients`.
+
+Counts: slice 01 — 21 acceptance scenarios (24 runnable cases; 22 pending, 2 active) + 14 policy unit
+tests (25 cases, pending) + 1 architecture rule (active); slice 02 — 16 scenarios (18 pending cases) +
+9 active guard cases; slice 03 — 18 specified. Error/edge share: slice 01 acceptance 11 of 21 (52%),
+slice 02 7 of 16 (44%), slice 03 8 of 18 (44%).
 
 ## Wave: DISTILL / [REF] WS strategy
 
@@ -409,8 +446,8 @@ referenced by the test project.
 | Adapter | Real I/O scenario | Covered by |
 |---|---|---|
 | EF `LighthouseAppContext` + `IWorkItemRepository`, `IRepository<Feature>`, `IWorkItemBlockedTransitionRepository`, `IFeatureBlockedTransitionRepository` | YES | every slice-01 WIP-read scenario (seeded through the real repositories, read back through the real controllers) |
-| `IWorkItemStateTransitionRepository` (where a refresh derives the day a Work Item entered its state) | YES | the five refresh-signal scenarios |
-| `IDomainEventDispatcher` (real; capturing handler added beside the production ones) | YES | the five refresh-signal scenarios |
+| `IWorkItemStateTransitionRepository` (where a refresh derives the day a Work Item entered its state) | YES | the six refresh-signal scenarios |
+| `IDomainEventDispatcher` (real; capturing handler added beside the production ones) | YES | the six refresh-signal scenarios |
 | `IWorkTrackingConnector` | faked by policy (external) | refresh-signal scenarios, through `FasterUpdatesAcceptanceTest` |
 | `ILighthouseClock` | real | the WIP reads take the day from `asOfDate`; the refresh scenarios count days from the real clock's today |
 
@@ -424,7 +461,7 @@ No new driven adapter: zero "MISSING" rows.
 | `Lighthouse.Backend/Models/Staleness/StalenessVerdict.cs` | `StalenessVerdict(IsStale, Reasons)`, `StaleReason(Kind, Days, StateName?)` |
 | `Lighthouse.Backend/Models/Staleness/StaleReasonKind.cs` | `TimeInState`, `BlockedDuration`, `TimeInStateWhileBlocked` |
 | `Lighthouse.Backend/API/DTO/StaleReasonDto.cs` | `{ kind, days, stateName? }` — `stateName` omitted when null |
-| `Lighthouse.Backend/API/DTO/WorkItemDto.cs` (extended, not marked) | `IsStale: bool?`, `StaleReasons: StaleReasonDto[]?`, both `[JsonIgnore(WhenWritingNull)]`; `CarryStaleness(verdict)` — the narrow setter. Nothing calls it yet, so every read is byte-for-byte unchanged |
+| `Lighthouse.Backend/API/DTO/WorkItemDto.cs` (extended, not marked) | `IsStale: bool?`, `StaleReasons: StaleReasonDto[]?`, both `[JsonIgnore(WhenWritingNull)]`; `CarryStaleness(StalenessPolicy policy, TimeZoneInfo zone, DateOnly asOfDay)` — builds the `StalenessCandidate` from the DTO's own resolved fields and delegates to the throwing `Evaluate`, so the DTO→candidate mapping has one home. Nothing calls it yet, so every read is byte-for-byte unchanged |
 | `Lighthouse.Frontend/src/models/WorkItem.ts` (extended) | `isStale?`, `staleReasons?`, `StaleReasonKind` string union, `IStaleReason` |
 | `Lighthouse.Frontend/src/components/Common/TimeInStateBadge/TimeInStateBadge.tsx` (marked on the props) | optional `isStale` / `staleReasons` props, accepted and not read yet — skipped tests are type-checked, so the props had to exist |
 
@@ -456,8 +493,8 @@ DTO mapping are plain data and are written in full. None of it changes runtime b
 | `GET /api/latest/teams/{id}/metrics/wip?asOfDate=` | walking skeleton + 11 Team scenarios (HTTP, real host) |
 | `GET /api/latest/portfolios/{id}/metrics/wip?asOfDate=` | 2 Portfolio scenarios (HTTP, real host) |
 | `GET /api/latest/teams/{id}/metrics/blockedItemsAtDate` (must not carry it) | 1 active scenario (HTTP) |
-| The Team refresh (`ITeamUpdater.TriggerUpdate` → update queue → `WorkItemService`) | 5 refresh-signal scenarios |
-| Flow Overview / aging chart / Time-in-State badge | 12 RTL scenarios (slice 02), plus the 2 source guards |
+| The Team refresh (`ITeamUpdater.TriggerUpdate` → update queue → `WorkItemService`) | 6 refresh-signal scenarios |
+| Flow Overview / aging chart / Time-in-State badge / Work Items dialog | 14 RTL scenarios (slice 02), plus the 2 source guards |
 | `lh metrics team --metrics wip`, MCP `lighthouse_team_metrics_wip`, DFR skill | slice-03 spec (`runCliSession`, `createLocalLighthouseMcpServer`, eval cases) |
 
 ## Wave: DISTILL / [REF] Pre-requisites and notes for DELIVER
@@ -471,9 +508,24 @@ DTO mapping are plain data and are written in full. None of it changes runtime b
   current read a Blocked item's blocked days equal its days in state. The scenarios that need the two
   apart ("Blocked 2 days, 9 in state") seed a recorded blocked spell and read a past day.
 - Pinned, unchanged: an omitted `asOfDate` binds `DateTime.MinValue` and answers with no Work Items.
+- The backend harness asks about noon UTC, so `[FromQuery] DateTime asOfDate` lands on the same day in any host
+  time zone, and every read asserts its HTTP 200 inside the one read helper rather than in each `Then`.
+- **Maintainer decision, to revisit (taken AFK at DISTILL review, 2026-10-16): the dialog column's `now` is the
+  range end.** The "Nd in State" label is still counted in the browser, to the Time in State column's `now`.
+  Today the Flow Overview's Stale and WIP dialogs pass no `now`, so on a past range the label counts to today
+  while Lighthouse's reason counts to the range end. DELIVER passes the range end as that `now`, so label and
+  reason agree; this follows D5 (judged as of the read's date). It changes what a past-range dialog row reads
+  (the label gets shorter), so the maintainer should confirm it; the alternative is to keep counting the label
+  to today and accept the two numbers differing on past ranges. A residual one-day difference remains only near
+  midnight, where the browser's zone and the instance's zone disagree on the day.
+- `TimeInStateWhileBlocked`'s own boundary is the trigger's: shown only when the days in state are `>` the
+  threshold (5 with threshold 5 → none, 6 → shown).
+- A Blocked Work Item whose state entry is unknown is still judged by a known blocked start (the browser's
+  rule does the same). The sync-time path never meets that case, because it takes blocked-since from the
+  entered-at it has already required.
 - `BaseMetricsView` keeps its two threshold props: `hasStaleConfig` and the Blocked RAG still read them.
-  The slice-02 tests pass them for that reason; the badge and chart tests pass none, because DELIVER drops
-  those props there.
+  The slice-02 tests pass them for that reason; the badge, chart and dialog tests pass none, because DELIVER
+  drops those props there.
 - The refresh-signal pair *fires once* / *not at exactly the threshold* pass on today's rule at some
   times of day and not others (fractional days from `UtcNow`); they stay pending until the new rule makes
   them deterministic. See `distill/red-classification.md`.
@@ -493,4 +545,4 @@ DTO mapping are plain data and are written in full. None of it changes runtime b
   raises nothing when it should not, with a positive control that the Work Items were still there).
 - Mandate 12: domain types `StalenessThresholds`, `ReasonSeen`, `StalenessSeen`, `StaleReasonKind`;
   step bodies delegate to the harness in one or two statements. Step-reuse ratio (informational):
-  97 step invocations / 24 step methods ≈ 4.0× on the backend scenarios.
+  100 step invocations / 24 step methods ≈ 4.2× on the backend scenarios.

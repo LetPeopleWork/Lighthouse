@@ -22,15 +22,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
     /// </summary>
     public readonly record struct StalenessThresholds(int TimeInStateDays, int BlockedDays);
 
-    /// <summary>One reason as a reader of the WIP read sees it.</summary>
-    public sealed record ReasonSeen(string Kind, int Days, string? StateName);
+    /// <summary>
+    /// One reason as a reader of the WIP read sees it. Whether the state name was on the wire at all is
+    /// kept apart from its value, because Blocked time belongs to no state and must leave the name off.
+    /// </summary>
+    public sealed record ReasonSeen(string Kind, int Days, bool HasStateName, string? StateName);
 
     /// <summary>What the WIP read answered about one Work Item or Feature.</summary>
     public sealed record StalenessSeen(bool HasAnAnswer, bool? IsStale, List<ReasonSeen> Reasons);
 
     /// <summary>
-    /// Production-composition harness for Story 6247: the real ASP.NET host, real EF, the real metrics
-    /// controllers and blocked decision. Only the licence port is faked. Seeding writes preconditions
+    /// Production-composition harness for the staleness reads: the real ASP.NET host, real EF, the real
+    /// metrics controllers and blocked decision. Only the licence port is faked. Seeding writes preconditions
     /// (Work Items, Features, when they entered their state, when they became Blocked); what is stale
     /// is only ever read back off the WIP reads.
     /// </summary>
@@ -40,15 +43,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
         protected const string Review = "Review";
         protected const string BlockedState = "Blocked";
 
-        private static readonly JsonSerializerOptions WebJson = new(JsonSerializerDefaults.Web);
-
         private static int testDateOffset;
 
         protected TestWebApplicationFactory<Program> RootFactory = null!;
         protected WebApplicationFactory<Program> Factory = null!;
         protected HttpClient Client = null!;
 
-        /// <summary>The day the reads ask about. Always in the past, as every range end but today's is.</summary>
+        /// <summary>
+        /// The day the reads ask about. Always in the past, as every range end but today's is. Noon UTC, so
+        /// the day the query string carries is the same day in any host time zone.
+        /// </summary>
         protected DateTime AsOf;
 
         protected TimeZoneInfo Zone = null!;
@@ -59,7 +63,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
         public void Init()
         {
             var offsetDays = Interlocked.Increment(ref testDateOffset) * 90;
-            AsOf = new DateTime(2026, 6, 15, 8, 0, 0, DateTimeKind.Utc).AddDays(-offsetDays);
+            AsOf = new DateTime(2026, 6, 15, 12, 0, 0, DateTimeKind.Utc).AddDays(-offsetDays);
 
             RootFactory = new TestWebApplicationFactory<Program>();
 
@@ -272,10 +276,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
         private static async Task<ReadAnswer> Read(HttpClient client, string url)
         {
             var response = await client.GetAsync(url);
-            return new ReadAnswer(response.StatusCode, await response.Content.ReadAsStringAsync());
+            var body = await response.Content.ReadAsStringAsync();
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+
+            return new ReadAnswer(body);
         }
 
-        protected readonly record struct ReadAnswer(HttpStatusCode Status, string Body);
+        protected readonly record struct ReadAnswer(string Body);
 
         // --- Reading the answer back ---
 
@@ -303,14 +311,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
                 hasFlag || hasReasons,
                 hasFlag && flag.ValueKind != JsonValueKind.Null ? flag.GetBoolean() : null,
                 hasReasons && reasons.ValueKind == JsonValueKind.Array
-                    ? reasons.Deserialize<List<ReasonSeen>>(WebJson) ?? []
+                    ? [.. reasons.EnumerateArray().Select(ReasonAsSeen)]
                     : []);
         }
 
-        protected static ReasonSeen TimeInState(int days, string state) => new("TimeInState", days, state);
+        private static ReasonSeen ReasonAsSeen(JsonElement reason)
+        {
+            var hasStateName = reason.TryGetProperty("stateName", out var stateName);
 
-        protected static ReasonSeen BlockedFor(int days) => new("BlockedDuration", days, null);
+            return new ReasonSeen(
+                reason.GetProperty("kind").GetString() ?? string.Empty,
+                reason.GetProperty("days").GetInt32(),
+                hasStateName,
+                hasStateName ? stateName.GetString() : null);
+        }
 
-        protected static ReasonSeen TimeInStateWhileBlocked(int days, string state) => new("TimeInStateWhileBlocked", days, state);
+        protected static ReasonSeen TimeInState(int days, string state) => new("TimeInState", days, HasStateName: true, state);
+
+        protected static ReasonSeen BlockedFor(int days) => new("BlockedDuration", days, HasStateName: false, null);
+
+        protected static ReasonSeen TimeInStateWhileBlocked(int days, string state) => new("TimeInStateWhileBlocked", days, HasStateName: true, state);
     }
 }
