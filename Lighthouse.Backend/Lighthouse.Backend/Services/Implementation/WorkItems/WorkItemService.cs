@@ -179,17 +179,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 ? await FetchOnlyWhatMoved(connector, team, storedWorkItems, scan.Stamps)
                 : await FetchEverything(connector, team);
 
-            var (placed, notPlaced) = PlaceWhatTheLinksLeftOpen(team, ParentPlacementReport.Team(team.Name), ParentNarrowing.Narrow, fetch.WorkItems);
+            var placements = PlaceWhatTheLinksLeftOpen(team, ParentPlacementReport.Team(team.Name), ParentNarrowing.Narrow, fetch.WorkItems);
 
-            return fetch with
-            {
-                Outcome = fetch.Outcome with
-                {
-                    RecordsPlacedFromLinksNamingMoreThanOneParent = placed,
-                    RecordsWhoseLinksNamedMoreThanOneParent = notPlaced,
-                },
-            };
+            return fetch with { Outcome = CountingThePlacements(fetch.Outcome, placements) };
         }
+
+        private static SyncOutcome CountingThePlacements(SyncOutcome outcome, (int Placed, int NotPlaced) placements)
+            => outcome with
+            {
+                RecordsPlacedFromLinksNamingMoreThanOneParent = placements.Placed,
+                RecordsWhoseLinksNamedMoreThanOneParent = placements.NotPlaced,
+            };
 
         /// <summary>
         /// Hangs each downloaded record whose links named several issues under one of them, before anything
@@ -376,7 +376,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         // Jira DC offset pagination over an unordered JQL can return the same ReferenceId twice in one fetch;
         // persisting both breaks the SingleOrDefault above on every later sync (docs/ci-learnings.md 2026-05-25).
         // The identity sweep enumerates the very same query, so it collapses under the very same rule, and
-        // so does the portfolio's Feature query - one collapse rule, one warning, named after whoever synced.
+        // so do the portfolio's Feature and parent queries - one collapse rule, one warning, named after whoever synced.
         private List<T> DeduplicateByReferenceId<T>(List<T> fetchedRecords, string syncedFor, Func<T, string> referenceIdOf)
         {
             var groupedByReferenceId = fetchedRecords.GroupBy(referenceIdOf).ToList();
@@ -923,16 +923,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 ? await FetchOnlyTheFeaturesThatMoved(connector, portfolio, storedFeatures, scan.Stamps)
                 : await FetchEveryFeature(connector, portfolio, Stopping);
 
-            var (placed, notPlaced) = PlaceWhatTheLinksLeftOpen(portfolio, ParentPlacementReport.Portfolio(portfolio.Name), ParentNarrowing.DoNotNarrow, fetch.Features);
+            var placements = PlaceWhatTheLinksLeftOpen(portfolio, ParentPlacementReport.Portfolio(portfolio.Name), ParentNarrowing.DoNotNarrow, fetch.Features);
 
-            return fetch with
-            {
-                Outcome = fetch.Outcome with
-                {
-                    RecordsPlacedFromLinksNamingMoreThanOneParent = placed,
-                    RecordsWhoseLinksNamedMoreThanOneParent = notPlaced,
-                },
-            };
+            return fetch with { Outcome = CountingThePlacements(fetch.Outcome, placements) };
         }
 
         /// <summary>The scan for the portfolio: the same Feature query, asking only for identity plus the remote change stamp.</summary>

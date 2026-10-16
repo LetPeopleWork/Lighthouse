@@ -24,9 +24,10 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 {
     /// <summary>
-    /// Step definitions for the third slice. The door pressed here is a Team refresh, as in the second
-    /// slice, but the instance behind it is a different one: the items on it carry more than one link of
-    /// the type the override names, which is the case the second slice's instance never contains.
+    /// Step definitions for items whose links offer more than one parent. The door pressed here is mostly
+    /// a Team refresh, as in the scenarios about which end of a link a parent sits on, but the instance
+    /// behind it is a different one: the items on it carry more than one link of the type the override
+    /// names, which that other instance never contains.
     ///
     /// The two harnesses stand side by side rather than one deriving from the other because what they
     /// describe does not overlap - a scenario about which of several candidates is refused has nothing to
@@ -315,8 +316,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             owner.ParentOverrideAdditionalFieldDefinitionId = TheAdditionalFieldTheOverridePointsAt;
         }
 
-        private static string TheParentOf<TRecord>(List<TRecord> refreshed, string key)
-            where TRecord : WorkItemBase
+        private static string TheParentOf(List<WorkItem> refreshed, string key)
         {
             var item = refreshed.Find(refreshedItem => refreshedItem.ReferenceId == key);
 

@@ -4,9 +4,9 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 {
     /// <summary>
-    /// Acceptance scenarios - Slice 03: what a refresh does with an item whose links offer it more than
-    /// one parent. Driving port: a Team refresh, which is what actually writes the parent every forecast
-    /// is drawn from.
+    /// Acceptance scenarios: what a refresh does with an item whose links offer it more than one parent.
+    /// Driving port: a Team refresh, which is what actually writes the parent every forecast is drawn
+    /// from, and a Portfolio refresh for the row its own refresh history shows.
     ///
     /// A Team's item hangs under a Feature, and none of the issues on this instance is a Feature Lighthouse
     /// holds. So an item whose links name several of them has nothing to be placed under, and takes no
@@ -19,8 +19,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
     public partial class Slice03AmbiguityRefusalTest
     {
         /// <summary>
-        /// Two candidates and no parent. Emptiness is what refuses every tie-break at once - whichever of
-        /// the two a rule would have reached for, it is not there.
+        /// Two candidates, neither of them a Feature Lighthouse holds, and no parent. Emptiness shows that
+        /// no tie-break reached for either of them.
         /// </summary>
         [Test]
         public async Task An_item_with_two_distinct_candidates_takes_neither_of_them()
