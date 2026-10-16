@@ -8234,3 +8234,138 @@ jobs:
         rules, the decisions built on configuration. Current satisfaction 1 - the effect does arrive eventually,
         but late and invisibly, and the bridge is a sentence. Gap 3. Estimated from evidence, not surveyed;
         mapped from the 1-10 outcome estimates in the feature's diverge/job-analysis.md.
+
+  - id: job-config-admin-name-the-link-our-dependencies-live-in
+    title: Name the link our dependencies actually live in
+    persona: config-admin
+    feature_context: epic-6303-configure-once-per-connection
+    ado: "Stories #6300 (Jira) and #6312 (Azure DevOps) (Epic #6303)"
+    created: 2026-10-16
+    complements: job-config-admin-point-at-the-field-that-carries-dependencies
+    note: >
+      Raised by Steve Pereira as a follow-up to Epic 6028. Jira dependencies are read only from links whose inward
+      phrase is "is blocked by" (IssueExtensions.cs:13, :66-85) and Azure DevOps only from Predecessor
+      (WorkItemExtensions.cs:8), so an instance that records waits with another link type ("depends on", a custom
+      relation type) shows nothing under Features -> Dependencies. On Jira it is worse: the Dependency Field
+      dropdown already offers a link-type Additional Field (registered for Epic 6028's parent override), and
+      picking it silently yields no dependencies at all - a link-type field stores an empty value
+      (JiraWorkTrackingConnector.cs:1733), naming a field replaces the default link (DependencySourceSelector.cs),
+      and the "no link matched" warning is switched off once a field is named (:1282). Maintainer decision
+      (2026-10-16): the Dependency Field stays the one setting and accepts any Additional Field; each tracker
+      resolves it as Parent Override resolves on Jira - a link type (Jira: type name or phrase; Azure DevOps:
+      relation reference name with its end) is read as links, anything else as the field's value, as today.
+      DISCOVER and DIVERGE skipped by maintainer decision.
+    job_story: >
+      When our teams record that one Feature waits on another with a link type other than the one Lighthouse reads
+      by default,
+      I want to tell Lighthouse which link that is, in the place I already name our dependency field,
+      so Features -> Dependencies shows the waits we already maintain instead of an empty list.
+    dimensions:
+      functional: >
+        Pick an Additional Field naming a link (a Jira link phrase, or an Azure DevOps relation reference name with
+        its end) as the Portfolio's Dependency Field; dependencies are read from that link on the end it names. A
+        name that points both ways, or a link nobody carries, says so.
+      emotional: >
+        Move from "the dependency view is not for us, our Jira is set up differently" to choosing one entry in
+        a dropdown they have used before.
+      social: >
+        Avoid telling teams to re-record every dependency as "Blocks" to suit a tool.
+    forces:
+      push: >
+        The Dependencies view is empty with no explanation, and the one setting that looks like it should help
+        makes it emptier and quieter.
+      pull: >
+        The link type is already registered for the parent override; Lighthouse already resolves it and reads
+        direction from the phrase.
+      anxiety: >
+        "If I pick the wrong phrase, do the waits point backwards?" Mitigated because the typed one-way phrase
+        sets the direction, and a two-way name is refused with both phrases named.
+      habit: >
+        Opening Jira beside the forecast to check what each Feature waits on.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 0
+      gap: 4
+      rationale: >
+        Importance 4 rather than 5 because it applies only to instances that model waits with a non-Blocks link;
+        for those it is worth 5. Current satisfaction 0 - an empty view, silently. Estimated from evidence, not
+        surveyed.
+
+  - id: job-config-admin-set-a-connection-setting-once
+    title: Set a setting once for every Team and Portfolio on a connection
+    persona: config-admin
+    feature_context: epic-6303-configure-once-per-connection
+    ado: "Stories #6304 (mechanism, Teams' Parent Override Field) and #6313 (the other settings) (Epic #6303)"
+    created: 2026-10-16
+    note: >
+      Five settings point at one connection's Additional Fields and are in practice the same for every Team or
+      Portfolio on it: Parent Override Field (Teams; Portfolios), Dependency Field, Estimation (field, unit,
+      non-numeric flag and categories), Size Estimate Field and Feature Owner Field
+      (WorkTrackingSystemOptionsOwner.cs:68-76, Portfolio.cs:21-25). Each is entered owner by owner today. The
+      connection carries a default per setting; each owner stores a mode beside its value (Connection default or
+      Own; Own with nothing selected is a deliberate None). At the upgrade an owner with an empty value follows the
+      default, an owner with a value keeps it as its own; no default exists on release day, so nothing changes
+      then. Saving a default tells the admin which Teams and Portfolios now follow it.
+    job_story: >
+      When every Team and Portfolio on one connection reads the same field for the same purpose,
+      I want to set it once on the connection and have each of them follow it unless I say otherwise,
+      so adding a Team is not a checklist and one forgotten Team does not quietly read the wrong field.
+    dimensions:
+      functional: >
+        A default per setting on the connection; owners follow or override; saving a default names who follows
+        it; a changed default updates exactly the owners whose fetch it moves.
+      emotional: >
+        From "did I remember the parent field on the new Team?" to setting it once and reading who follows it.
+      social: >
+        Never be the admin whose fifteenth Team shows every Work Item unparented in the review.
+    forces:
+      push: >
+        Tedious, easy to get wrong on one Team, invisible when wrong: a missed Parent Override Field reads as a
+        Team with no hierarchy.
+      pull: >
+        The settings already point at the connection's own Additional Fields; the connection save already updates
+        its Teams and Portfolios (Story 6307).
+      anxiety: >
+        "If I set a default, what else changes?" Answered at save by the list of Teams and Portfolios that now
+        follow it, including those that followed because their setting was empty.
+      habit: >
+        Copying the same choices into every new Team by hand, from a checklist or from memory.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 2
+      gap: 2
+      rationale: >
+        Importance 4 on instances with many Teams on one connection (Steve's customer: 14+). Satisfaction 2 - it
+        works, by repetition. Estimated from the report, not surveyed.
+
+  - id: job-config-admin-see-which-owners-differ-from-the-connection
+    title: See at a glance which Teams and Portfolios differ from their connection
+    persona: config-admin
+    feature_context: epic-6303-configure-once-per-connection
+    ado: "Story #6304 (Epic #6303)"
+    created: 2026-10-16
+    complements: job-config-admin-set-a-connection-setting-once
+    note: >
+      The "hard to see at a glance" half of Epic 6303's problem. Answered by each owner's settings showing
+      "Connection default (value)" or its own value, by the save of a default naming who follows it, and by
+      owners whose own value already equals the default being offered to follow it in one step.
+    job_story: >
+      When a forecast on one Team looks off,
+      I want to see which Teams and Portfolios follow the connection's setting and which carry their own,
+      so I find the odd one out without opening each of them.
+    dimensions:
+      functional: >
+        Per default, who follows it and who carries an own value (named, with the value); owners whose own value
+        equals the default can follow it in one step.
+      emotional: From opening fourteen settings pages to reading one list.
+      social: Explain a difference between two Teams by pointing at a setting, not by guessing.
+    forces:
+      push: Fourteen pages to open; a difference is found only after a forecast has been questioned.
+      pull: The connection page the admin already owns.
+      anxiety: "Will moving owners onto the default change their data?" No - their effective value is unchanged.
+      habit: Opening each Team's settings in turn.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: Importance 3 - diagnostic rather than daily. Estimated, not surveyed.

@@ -1,6 +1,6 @@
 schema_version: 1
 feature_id: epic-4365-dependencies
-updated: 2026-08-16
+updated: 2026-10-16
 note: >
   ADO Epic #4365 "Show Feature Dependencies", created 2026-02-23, tagged Documentation / Release
   Notes. SPLIT 2026-08-16: the forecasting half became ADO Epic #5792 "Dependency-Aware Forecasting"
@@ -105,6 +105,21 @@ journeys:
           Lighthouse an author of dependency data, which is a different posture from the one it takes
           everywhere else, and it would need a precedence rule against the tracker that this one does
           not. To change a dependency, change it in the tracker.
+
+          REVISION (epic-6303-configure-once-per-connection, Stories #6300 Jira / #6312 Azure DevOps, 2026-10-16, maintainer
+          decision), recorded rather than folded in: the Dependency Field stays the one setting and accepts
+          any Additional Field, resolved per tracker the way Parent Override resolves on Jira. If it resolves
+          to a link type - on Jira a type name or inward / outward phrase (the Epic 6028 resolver), on Azure
+          DevOps a relation type reference name with its end (e.g. System.LinkTypes.Related-Forward) -
+          dependencies are read from links of that type on the end it names; otherwise the field's value is
+          split and read exactly as D15 says. Field lookup runs first. One link type per Portfolio, and it
+          REPLACES the default link exactly as a field does - the D15 posture is kept. A name that points both
+          ways reads nothing and warns naming both phrases or ends; a named link nobody carries warns once,
+          listing what was seen; both warnings appear on Refresh History. The default with nothing named is
+          unchanged: "is blocked by" on Jira, System.LinkTypes.Dependency-Reverse on Azure DevOps. On Azure
+          DevOps a Dependency Field naming a link type counts as reading relations, so the relations fetch is
+          not skipped when a Parent Override is set. Still Portfolio only. Story #6313 lets the connection carry
+          a default Dependency Field that Portfolios inherit and may override.
       - id: D15
         question: How does one field express a LIST of dependencies, and what is in it?
         decision: >

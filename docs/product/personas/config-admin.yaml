@@ -39,6 +39,9 @@ primary_jobs:
   - job-config-admin-know-when-a-delivery-source-degrades  # epic-5565-delivery-date-sync (2026-08-22, #5565): a vanished Release, a lost capability and a refused Release write each say so where the fix lives
   - job-config-admin-know-any-credential-is-failing-not-just-oauth  # epic-5511-task-manager (2026-08-23, #5019): a PAT or API token that broke fails silently; only OAuth is watched today
   - job-config-admin-name-the-link-our-hierarchy-lives-in  # parent-from-issue-links (2026-09-18): name the issue link that carries the hierarchy, where field names are already named
+  - job-config-admin-name-the-link-our-dependencies-live-in  # epic-6303-configure-once-per-connection (2026-10-16, #6300 Jira, #6312 Azure DevOps): name the link that means "waits on", where the Dependency Field is already named
+  - job-config-admin-set-a-connection-setting-once  # epic-6303-configure-once-per-connection (2026-10-16, #6304, #6313): set a field-pointing setting once on the connection; Teams and Portfolios follow or override
+  - job-config-admin-see-which-owners-differ-from-the-connection  # epic-6303-configure-once-per-connection (2026-10-16, #6304): see who follows the connection and who carries its own value
 
 goals:
   - Save a configuration change and trust that what I saved is what persisted
@@ -67,6 +70,12 @@ frustrations:
   - >-
     Adding a field to a Connection changes nothing visible for hours: the Teams and Portfolios on it keep the old
     field set until each one updates, so a rule on the new field silently matches nothing (story-6307, Bug #6306)
+  - >-
+    The same field is chosen Team by Team and Portfolio by Portfolio on one connection; one forgotten Team silently
+    reads no parent or no estimate, and nothing shows which Teams differ (epic-6303, #6304, #6313)
+  - >-
+    A Jira instance that records waits with a link other than "is blocked by" shows no dependencies, and naming
+    that link as the Dependency Field made the view emptier and quieter (epic-6303, #6300; Azure DevOps #6312)
 
 mental_model:
   - A config aggregate (this Team, this Connection) is a single shared document; editing it is
@@ -103,6 +112,12 @@ vocabulary:
     "noise" / "quiet" — whether a write-back emails the issue's watchers. "Quiet" means NO
     watcher email; it does NOT mean invisible — the change is always recorded in issue history
     and always fires webhooks, on every Jira deployment
+  - >-
+    "connection default" — a setting carried by a Work Tracking Connection that its Teams and Portfolios
+    follow unless they carry their own; shown on an owner as "Connection default (value)" (epic-6303)
+  - >-
+    "own value" — a Team's or Portfolio's own choice for such a setting, including a deliberate None; it is not
+    changed by a connection default (epic-6303)
 
 related_personas:
   - delivery-lead-rte (often the same person at portfolio scope; owns Portfolio config)

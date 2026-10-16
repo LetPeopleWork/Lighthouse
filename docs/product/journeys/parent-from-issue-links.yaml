@@ -1,6 +1,6 @@
 schema_version: 1
 feature_id: parent-from-issue-links
-updated: 2026-10-15
+updated: 2026-10-16
 note: >
   No ADO Epic yet — this journey is the DISCUSS wave run on 2026-09-18 to decide whether one should
   exist. Origin: Steve relaying a Jira Data Center instance whose portfolio-level items have no direct
@@ -176,6 +176,15 @@ journeys:
           — work item to feature, and feature to the level above — and were always separate settings.
           Multiple overrides per team stays out (Benjamin to Steve, 2026-09-18): it brings a precedence
           problem that D4 exists specifically to refuse.
+
+          REVISION (epic-6303-configure-once-per-connection, Stories #6304 Teams / #6313 Portfolios, 2026-10-16, maintainer
+          decision), recorded rather than folded in: still one setting per Team and one per Portfolio, but
+          each may now follow a default carried by the Work Tracking Connection - one default for Teams and
+          a separate one for Portfolios, because they name different links (the reason above). Each owner
+          stores a mode beside the value: Connection default, or Own (Own with nothing selected is a
+          deliberate None). At the upgrade an owner with no Parent Override Field follows the connection
+          default and an owner with one keeps it as its own; no default exists yet on release day, so
+          nothing changes then. New Teams and Portfolios start on the connection default.
       - id: D8
         question: Can a parent be declared inside Lighthouse?
         decision: >

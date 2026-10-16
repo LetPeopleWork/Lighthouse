@@ -1,0 +1,119 @@
+schema_version: 1
+feature_id: epic-6303-configure-once-per-connection
+updated: 2026-10-16
+note: >
+  ADO Epic #6303 "Configure once per Work Tracking Connection", reported by Steve Pereira as a follow-up to Epic
+  #6028. Four Stories, all in Next, in this order, each shipping on its own: #6300 (read dependencies from a
+  configurable Jira link type), #6312 (the same for an Azure DevOps relation type), #6304 (connection defaults that
+  Teams and Portfolios inherit and can override - the mechanism with the Teams' Parent Override Field) and #6313
+  (more Team and Portfolio settings set once on the connection). Later Stories build only on finished earlier ones. DISCOVER and
+  DIVERGE skipped by maintainer decision; grounded in the code reality check in
+  docs/feature/epic-6303-configure-once-per-connection/feature-delta.md. Maintainer decisions taken 2026-10-16.
+
+  Two finds that shaped it. (1) A Jira link-type Additional Field is already selectable as a Portfolio's
+  Dependency Field and silently yields no dependencies: it stores an empty value
+  (JiraWorkTrackingConnector.cs:1733), naming a field replaces the default link, and the "no link matched"
+  warning is off once a field is named (:1282). On Azure DevOps nothing resolves a link type yet - Parent Override
+  and Additional Fields read field values only (AzureDevOpsWorkTrackingConnector.cs:690-736, :1241-1252) - so
+  Story #6312 teaches ADO the same field-first-then-link-type resolution, against the relations that already
+  arrive with the fetch. (2) null already means None on every field-pointing setting, so following a connection
+  default is a mode stored beside the value, never a reinterpreted null.
+
+journeys:
+
+  - name: name-the-link-our-dependencies-live-in
+    goal: >
+      A configuration administrator on Jira or Azure DevOps whose teams record waits with a link other than the
+      default ("is blocked by" / Predecessor) names that link once per Portfolio, in the Dependency Field they
+      already use, and Features -> Dependencies shows the waits they already maintain.
+    persona: "config-admin (primary: registers and selects the link); product-owner and delivery-lead-rte (read
+      the Dependencies view and never open the setting)"
+    job_id: job-config-admin-name-the-link-our-dependencies-live-in
+    jobs:
+      - job-config-admin-name-the-link-our-dependencies-live-in
+      - job-po-see-what-a-feature-is-waiting-on
+
+    emotional_arc:
+      start: Written off - "our Dependencies view is empty, and picking our link in Dependency Field made it quieter."
+      middle: Recognised - "I picked the same link entry I use for the parent, typed as 'depends on', and it validated."
+      end: Trusted - "PAY-112 waits on PAY-98, as in Jira; when I typed the name instead of the phrase it told me which phrase to use."
+
+    steps:
+      - step: Register the link as an Additional Field on the connection (Jira phrase "depends on"; Azure DevOps reference name with end "Contoso.DependsOn-Forward")
+        sees: Validate succeeds; an unknown name is refused, listing the link / relation types the tracker defines
+      - step: Portfolio settings -> Dependency Settings -> Dependency Field, pick it, save
+        sees: the existing dropdown and save; the Portfolio updates (existing)
+      - step: Features -> Dependencies
+        sees: each Feature waiting on the counterpart its named one-way link points at; a Dependency Field naming an ordinary field reads its value as before
+
+    error_paths:
+      - when: a name that points both ways is named (Jira type name or shared phrase; ADO reference without its end)
+        sees: no dependencies for the Portfolio and one warning per refresh naming both phrases or ends to choose from
+      - when: no Feature in the whole-query fetch carries the named link
+        sees: one warning per refresh naming what was looked for and the link phrases / relation types seen
+      - when: the Portfolio names nothing
+        sees: dependencies read from "is blocked by" (Jira) or Predecessor (Azure DevOps), exactly as before
+      - when: an Azure DevOps Portfolio also names a Parent Override Field
+        sees: the named relation is still read; the relations fetch is not skipped
+      - when: the connection is Linear or CSV
+        sees: unchanged behaviour; documented as not applicable
+
+    shared_artifacts:
+      - name: the link phrase
+        source: AdditionalFieldDefinition.Reference on the connection, resolved by the Epic 6028 resolver (field first, link type second)
+      - name: the dependency source of a Portfolio
+        source: DependencySourceSelector - the one place deciding tracker link, field or named link
+      - name: Feature / Portfolio nouns
+        source: Terminology (TerminologySeeder defaults, user-renamable)
+
+  - name: set-it-once-on-the-connection
+    goal: >
+      A System Admin sets a field-pointing setting once on a Work Tracking Connection, sees which Teams and
+      Portfolios now follow it, and every new Team or Portfolio follows it without anyone remembering to.
+    persona: "config-admin as System Admin (sets defaults); config-admin as Team / Portfolio admin (sees what
+      their owner inherits, overrides it)"
+    job_id: job-config-admin-set-a-connection-setting-once
+    jobs:
+      - job-config-admin-set-a-connection-setting-once
+      - job-config-admin-see-which-owners-differ-from-the-connection
+
+    emotional_arc:
+      start: Wary - "fourteen Teams, and I have to remember the parent field on every new one."
+      middle: Informed - "I saved the default; it told me which Teams now follow it, including three that had nothing set."
+      end: Confident - "new Teams follow it, the odd ones out are named, and changing it updates exactly the followers."
+
+    steps:
+      - step: Settings -> Connections -> (connection) -> Defaults for Teams and Portfolios; choose a value; save
+        sees: >
+          the save notice, informational, naming how many and which Teams / Portfolios now follow the default
+          (including those that follow because their setting was empty at the upgrade); with slice 06, those whose
+          fetch moved are updating
+      - step: Open a Team's settings
+        sees: the setting reads "Connection default (value)" when it follows, or its own value / None
+      - step: Create a new Team on the connection
+        sees: it starts on "Connection default (value)"
+      - step: Owners whose own value equals the default
+        sees: listed on the connection with a one-step "follow the default"; nothing is updated because nothing they read changes
+
+    error_paths:
+      - when: the admin lacks SystemAdmin
+        sees: the connection save is refused as today; an owner admin can still override on their own owner
+      - when: an Additional Field referenced by a default or an owner is deleted
+        sees: the deletion refused, naming the defaults and the Teams / Portfolios that refer to it
+      - when: another admin saved one of the owners being moved to follow
+        sees: that owner reported as changed by someone else, not overwritten; the others move
+      - when: an owner had deliberately chosen None and its setting was empty at the upgrade
+        sees: it follows the default once one is set; the save notice names it, so the admin can set it back to None
+
+    shared_artifacts:
+      - name: effective value of a setting
+        source: one resolver (owner mode, own value, connection default) read by both connectors, FetchFingerprint.For and the settings-change check
+      - name: followers of a default
+        source: owners in Connection default mode on the connection - consumed by the save notice, the connection list and the update queue
+      - name: Team / Portfolio nouns
+        source: Terminology (TerminologySeeder defaults, user-renamable)
+
+changelog:
+  - date: 2026-10-16
+    feature: epic-6303-configure-once-per-connection
+    change: Journeys created at DISCUSS with the maintainer's decisions.
