@@ -74,6 +74,9 @@ const NordwindJiraDc = "Nordwind Jira DC";
 const StoryPoints = "Story Points";
 const FixVersions = "Fix Versions";
 
+// Nordwind Jira DC is read by 4 Teams and 2 Portfolios unless a test says otherwise.
+const TheQuestionOnNordwindJiraDc = "Update 4 Teams and 2 Portfolios?";
+
 const TheFieldsAlert =
 	"Additional Fields will be loaded with the next refresh of data.";
 const SomeoneElseSavedFirst =
@@ -263,12 +266,18 @@ const fillTheFieldDialog = async (displayName: string, reference?: string) => {
 const theFieldDialogCloses = () =>
 	waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
 
-const whenPriyaAddsFixVersions = async () => {
+const whenPriyaAddsTheField = async (
+	displayName: string,
+	reference: string,
+) => {
 	fireEvent.click(screen.getByRole("button", { name: "Add Field" }));
-	const dialog = await fillTheFieldDialog(FixVersions, "fixVersions");
+	const dialog = await fillTheFieldDialog(displayName, reference);
 	fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
 	await theFieldDialogCloses();
 };
+
+const whenPriyaAddsFixVersions = () =>
+	whenPriyaAddsTheField(FixVersions, "fixVersions");
 
 const whenPriyaRenamesStoryPoints = async () => {
 	fireEvent.click(screen.getByRole("button", { name: "edit" }));
@@ -372,7 +381,7 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			await whenPriyaAddsFixVersions();
 			whenPriyaPressesSave();
 
-			const question = await theQuestion("Update 4 Teams and 2 Portfolios?");
+			const question = await theQuestion(TheQuestionOnNordwindJiraDc);
 			expect(question).toHaveTextContent(
 				"You changed the Additional Fields. Their values only fill in once each Team and Portfolio on this connection has been updated.",
 			);
@@ -391,10 +400,7 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			await whenPriyaAddsFixVersions();
 			whenPriyaPressesSave();
 
-			await whenSheAnswers(
-				"Update 4 Teams and 2 Portfolios?",
-				"Save and update",
-			);
+			await whenSheAnswers(TheQuestionOnNordwindJiraDc, "Save and update");
 
 			await thenTheConnectionIsSavedWith(server, FixVersions);
 			expect([undefined, true]).toContain(
@@ -414,7 +420,7 @@ describe("changing a connection's Additional Fields asks whether to update its T
 				whenPriyaPressesSave();
 
 				expect(
-					await theQuestion("Update 4 Teams and 2 Portfolios?"),
+					await theQuestion(TheQuestionOnNordwindJiraDc),
 				).toBeInTheDocument();
 			},
 		);
@@ -425,7 +431,7 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			await whenPriyaAddsFixVersions();
 			whenPriyaPressesSave();
 
-			await whenSheAnswers("Update 4 Teams and 2 Portfolios?", "Cancel");
+			await whenSheAnswers(TheQuestionOnNordwindJiraDc, "Cancel");
 
 			await waitFor(thenNoQuestionIsAsked);
 			expect(server.updateWorkTrackingSystemConnection).not.toHaveBeenCalled();
@@ -510,10 +516,7 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			await whenPriyaAddsFixVersions();
 			whenPriyaPressesSave();
 
-			await whenSheAnswers(
-				"Update 4 Teams and 2 Portfolios?",
-				"Save and update",
-			);
+			await whenSheAnswers(TheQuestionOnNordwindJiraDc, "Save and update");
 
 			expect(
 				await screen.findByText(SomeoneElseSavedFirst),
@@ -606,11 +609,8 @@ describe("changing a connection's Additional Fields asks whether to update its T
 		it("a field Priya added and removed again before saving asks no question", async () => {
 			const server = await givenPriyaOpensNordwindJiraDc();
 			await whenPriyaAddsFixVersions();
-			const fixVersions = screen.getByText(FixVersions).closest("li");
 			fireEvent.click(
-				within(fixVersions as HTMLElement).getByRole("button", {
-					name: "delete",
-				}),
+				within(theRowOf(FixVersions)).getByRole("button", { name: "delete" }),
 			);
 
 			whenPriyaPressesSave();
@@ -625,15 +625,12 @@ describe("changing a connection's Additional Fields asks whether to update its T
 		it("a field Priya removed and added back with the same name and reference asks the question", async () => {
 			await givenPriyaOpensNordwindJiraDc();
 			whenPriyaRemovesStoryPoints();
-			fireEvent.click(screen.getByRole("button", { name: "Add Field" }));
-			const dialog = await fillTheFieldDialog(StoryPoints, "customfield_10016");
-			fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
-			await theFieldDialogCloses();
+			await whenPriyaAddsTheField(StoryPoints, "customfield_10016");
 
 			whenPriyaPressesSave();
 
 			expect(
-				await theQuestion("Update 4 Teams and 2 Portfolios?"),
+				await theQuestion(TheQuestionOnNordwindJiraDc),
 			).toBeInTheDocument();
 		});
 
@@ -657,7 +654,7 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			whenPriyaPressesSave();
 
 			expect(
-				await theQuestion("Update 4 Teams and 2 Portfolios?"),
+				await theQuestion(TheQuestionOnNordwindJiraDc),
 			).toBeInTheDocument();
 		});
 
@@ -689,7 +686,7 @@ describe("changing a connection's Additional Fields asks whether to update its T
 
 			whenPriyaPressesSave();
 
-			const question = await theQuestion("Update 4 Teams and 2 Portfolios?");
+			const question = await theQuestion(TheQuestionOnNordwindJiraDc);
 			expect(question).toHaveTextContent(
 				"Save only: they fill in with the next scheduled update instead.",
 			);
@@ -704,7 +701,7 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			await whenPriyaAddsFixVersions();
 			whenPriyaPressesSave();
 
-			await whenSheAnswers("Update 4 Teams and 2 Portfolios?", "Save only");
+			await whenSheAnswers(TheQuestionOnNordwindJiraDc, "Save only");
 
 			await thenTheConnectionIsSavedWith(server, FixVersions);
 			expect(theChoiceTheSaveCarried(server)).toEqual({ startUpdates: false });
@@ -723,7 +720,7 @@ describe("changing a connection's Additional Fields asks whether to update its T
 				await whenPriyaAddsFixVersions();
 				whenPriyaPressesSave();
 
-				await whenSheAnswers("Update 4 Teams and 2 Portfolios?", answer);
+				await whenSheAnswers(TheQuestionOnNordwindJiraDc, answer);
 
 				await thenSheIsBackOnTheOverview();
 				expect(theUsageDataSent()).toEqual([
@@ -738,7 +735,7 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			await whenPriyaAddsFixVersions();
 			whenPriyaPressesSave();
 
-			await whenSheAnswers("Update 4 Teams and 2 Portfolios?", "Cancel");
+			await whenSheAnswers(TheQuestionOnNordwindJiraDc, "Cancel");
 
 			await waitFor(thenNoQuestionIsAsked);
 			expect(theUsageDataSent()).toEqual([]);
@@ -753,10 +750,7 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			await whenPriyaAddsFixVersions();
 			whenPriyaPressesSave();
 
-			await whenSheAnswers(
-				"Update 4 Teams and 2 Portfolios?",
-				"Save and update",
-			);
+			await whenSheAnswers(TheQuestionOnNordwindJiraDc, "Save and update");
 
 			expect(
 				await screen.findByText(SomeoneElseSavedFirst),
