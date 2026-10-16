@@ -55,7 +55,6 @@ import {
 	sleRiskColumnHeaderName,
 } from "../../../utils/charts/sleRisk";
 import { getWorkItemName } from "../../../utils/featureName";
-import { deriveStaleness } from "../../../utils/staleness/deriveStaleness";
 import { getColorMapForKeys } from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
@@ -273,9 +272,6 @@ const ScatterMarker = (
 const groupWorkItems = (
 	items: IWorkItem[],
 	doingStates: string[],
-	stalenessThresholdDays: number | undefined,
-	blockedStalenessThresholdDays: number | undefined,
-	now: Date,
 ): IGroupedWorkItem[] => {
 	const groups: Record<string, IGroupedWorkItem> = {};
 
@@ -311,14 +307,7 @@ const groupWorkItems = (
 			groups[key].hasBlockedItems = true;
 		}
 
-		if (
-			deriveStaleness(
-				item,
-				stalenessThresholdDays,
-				blockedStalenessThresholdDays,
-				now,
-			).isStale
-		) {
+		if (item.isStale === true) {
 			groups[key].hasStaleItems = true;
 		}
 	}
@@ -342,8 +331,6 @@ interface WorkItemAgingChartProps {
 	/** The team's target in days. Separate from the percentile above, which needs a probability too. */
 	sleRangeInDays?: number;
 	doingStates: string[];
-	stalenessThresholdDays?: number;
-	blockedStalenessThresholdDays?: number;
 	now?: Date;
 	perStatePercentileValues?: IPerStatePercentileValues[];
 	workItemAgePercentileValues?: IPercentileValue[];
@@ -363,8 +350,6 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	serviceLevelExpectation = null,
 	sleRangeInDays,
 	doingStates,
-	stalenessThresholdDays,
-	blockedStalenessThresholdDays,
 	now: providedNow,
 	perStatePercentileValues = NO_PER_STATE_PERCENTILES,
 	workItemAgePercentileValues = NO_PERCENTILES,
@@ -482,16 +467,9 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	}, [activePercentiles, visiblePercentiles]);
 
 	const now = useMemo(() => providedNow ?? new Date(), [providedNow]);
-	const nowTime = now.getTime();
 
 	useEffect(() => {
-		const grouped = groupWorkItems(
-			inProgressItems,
-			doingStates,
-			stalenessThresholdDays,
-			blockedStalenessThresholdDays,
-			new Date(nowTime),
-		);
+		const grouped = groupWorkItems(inProgressItems, doingStates);
 		const filtered = grouped.filter((g) => {
 			return g.items.some((item) => {
 				const itemType = item.type || "";
@@ -500,14 +478,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 			});
 		});
 		setGroupedDataPoints(filtered);
-	}, [
-		inProgressItems,
-		doingStates,
-		visibleTypes,
-		stalenessThresholdDays,
-		blockedStalenessThresholdDays,
-		nowTime,
-	]);
+	}, [inProgressItems, doingStates, visibleTypes]);
 
 	const handleShowItems = (items: IWorkItem[]) => {
 		setSelectedItems(items);

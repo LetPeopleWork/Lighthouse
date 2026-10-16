@@ -754,82 +754,32 @@ describe("WorkItemAgingChart component", () => {
 		});
 	});
 
-	describe("Stale items functionality", () => {
+	it("gives the bubble dialog a Time in State column counted to the chart's day", async () => {
 		const now = new Date("2026-05-25T12:00:00Z");
+		const { default: WorkItemsDialogMock } = await import(
+			"../WorkItemsDialog/WorkItemsDialog"
+		);
 
-		const seriesColorOf = (
-			items: IWorkItem[],
-			stalenessThresholdDays: number,
-			blockedStalenessThresholdDays = 0,
-		): string | undefined => {
-			render(
-				<WorkItemAgingChart
-					ownerKind="team"
-					sleRiskValues={[]}
-					inProgressItems={items}
-					percentileValues={mockPercentileValues}
-					serviceLevelExpectation={mockSLE}
-					doingStates={["To Do", "In Progress", "Review"]}
-					stalenessThresholdDays={stalenessThresholdDays}
-					blockedStalenessThresholdDays={blockedStalenessThresholdDays}
-					now={now}
-				/>,
-			);
+		render(
+			<WorkItemAgingChart
+				ownerKind="team"
+				sleRiskValues={[]}
+				inProgressItems={mockInProgressItems}
+				percentileValues={mockPercentileValues}
+				serviceLevelExpectation={mockSLE}
+				doingStates={["To Do", "In Progress", "Review"]}
+				now={now}
+			/>,
+		);
 
-			const container = screen.getByTestId("mock-chart-container");
-			const seriesAttr = container.dataset.series;
-			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
-			return series?.[0]?.data?.[0]?.color;
-		};
+		const calls = (
+			WorkItemsDialogMock as unknown as {
+				mock: { calls: Array<[{ timeInStateColumn?: unknown }]> };
+			}
+		).mock.calls;
+		const dialogProps = calls[calls.length - 1]?.[0];
 
-		it("reds a stale, non-blocked bubble with the same emphasis as blocked", () => {
-			const staleItem: IWorkItem = {
-				...mockInProgressItems[0],
-				isBlocked: false,
-				currentStateEnteredAt: new Date("2026-05-23T23:00:00Z"),
-			};
-
-			expect(seriesColorOf([staleItem], 1)).toBe(errorColor);
-		});
-
-		it("does not red a stale bubble when staleness is disabled (threshold 0)", () => {
-			const oldButNotStaleItem: IWorkItem = {
-				...mockInProgressItems[0],
-				isBlocked: false,
-				currentStateEnteredAt: new Date("2026-05-23T23:00:00Z"),
-			};
-
-			expect(seriesColorOf([oldButNotStaleItem], 0)).not.toBe(errorColor);
-		});
-
-		it("gives the bubble dialog a Time in State column counted to the chart's day", async () => {
-			const { default: WorkItemsDialogMock } = await import(
-				"../WorkItemsDialog/WorkItemsDialog"
-			);
-
-			render(
-				<WorkItemAgingChart
-					ownerKind="team"
-					sleRiskValues={[]}
-					inProgressItems={mockInProgressItems}
-					percentileValues={mockPercentileValues}
-					serviceLevelExpectation={mockSLE}
-					doingStates={["To Do", "In Progress", "Review"]}
-					stalenessThresholdDays={7}
-					blockedStalenessThresholdDays={3}
-					now={now}
-				/>,
-			);
-
-			const calls = (
-				WorkItemsDialogMock as unknown as {
-					mock: { calls: Array<[{ timeInStateColumn?: unknown }]> };
-				}
-			).mock.calls;
-			const dialogProps = calls[calls.length - 1]?.[0];
-
-			expect(dialogProps?.timeInStateColumn).toEqual({ now });
-		});
+		expect(dialogProps?.timeInStateColumn).toEqual({ now });
 	});
 
 	// A dot is red for staleness exactly when Lighthouse marks an item in it stale. No threshold is
@@ -863,7 +813,7 @@ describe("WorkItemAgingChart component", () => {
 		};
 
 		// @contract-shape:pure-function
-		it.skip("reds the dot of a Work Item Lighthouse marks stale, however recently it moved", () => {
+		it("reds the dot of a Work Item Lighthouse marks stale, however recently it moved", () => {
 			const markedStale: IWorkItem = {
 				...mockInProgressItems[0],
 				isBlocked: false,
@@ -879,7 +829,7 @@ describe("WorkItemAgingChart component", () => {
 		});
 
 		// @error @contract-shape:pure-function
-		it.skip("does not red the dot of a Work Item Lighthouse says is not stale, however long it has sat", () => {
+		it("does not red the dot of a Work Item Lighthouse says is not stale, however long it has sat", () => {
 			const notStale: IWorkItem = {
 				...mockInProgressItems[0],
 				isBlocked: false,
@@ -888,6 +838,7 @@ describe("WorkItemAgingChart component", () => {
 				staleReasons: [],
 			};
 
+			expect(normalColour).toBeDefined();
 			expect(normalColour).not.toBe(errorColor);
 			expect(theDotsOf(notStale)).toEqual({
 				count: 1,
@@ -896,13 +847,14 @@ describe("WorkItemAgingChart component", () => {
 		});
 
 		// @error @contract-shape:unbounded-preservation
-		it.skip("does not red the dot of a Work Item an older Lighthouse said nothing about", () => {
+		it("does not red the dot of a Work Item an older Lighthouse said nothing about", () => {
 			const noAnswer: IWorkItem = {
 				...mockInProgressItems[0],
 				isBlocked: false,
 				currentStateEnteredAt: new Date("2026-04-01T08:00:00Z"),
 			};
 
+			expect(normalColour).toBeDefined();
 			expect(normalColour).not.toBe(errorColor);
 			expect(theDotsOf(noAnswer)).toEqual({
 				count: 1,

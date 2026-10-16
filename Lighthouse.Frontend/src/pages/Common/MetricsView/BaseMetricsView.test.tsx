@@ -1677,18 +1677,21 @@ describe("BaseMetricsView component", () => {
 				...mockInProgressItems[0],
 				id: 11,
 				isBlocked: false,
+				isStale: true,
 				currentStateEnteredAt: tenDaysAgo,
 			},
 			{
 				...mockInProgressItems[0],
 				id: 12,
 				isBlocked: false,
+				isStale: true,
 				currentStateEnteredAt: tenDaysAgo,
 			},
 			{
 				...mockInProgressItems[0],
 				id: 13,
 				isBlocked: true,
+				isStale: false,
 				currentStateEnteredAt: tenDaysAgo,
 			},
 		];
@@ -6869,7 +6872,7 @@ describe("BaseMetricsView component", () => {
 		];
 
 		// @driving_port @kpi @contract-shape:pure-function
-		it.skip("the Team's Stale count is the number of Work Items Lighthouse marks stale", async () => {
+		it("the Team's Stale count is the number of Work Items Lighthouse marks stale", async () => {
 			const team = new Team();
 			team.name = "Stale Answer Team";
 			team.id = 177;
@@ -6889,7 +6892,7 @@ describe("BaseMetricsView component", () => {
 		});
 
 		// @driving_port @kpi @contract-shape:pure-function
-		it.skip("the Portfolio's Stale count is the number of Features Lighthouse marks stale", async () => {
+		it("the Portfolio's Stale count is the number of Features Lighthouse marks stale", async () => {
 			const portfolio = new Portfolio();
 			portfolio.name = "Stale Answer Portfolio";
 			portfolio.id = 178;
@@ -6910,7 +6913,7 @@ describe("BaseMetricsView component", () => {
 		});
 
 		// @driving_port @contract-shape:pure-function
-		it.skip("the aging chart's health counts a Work Item Lighthouse marks stale as stale", async () => {
+		it("the aging chart's health counts a Work Item Lighthouse marks stale as stale", async () => {
 			// One of ten past the 14-day target is within the 85% promise, so only a stale (or Blocked)
 			// Work Item among them turns the aging health red.
 			const pastTheTargetAndStale = anItemInProgress(21, {
@@ -6939,7 +6942,7 @@ describe("BaseMetricsView component", () => {
 		});
 
 		// @driving_port @error @contract-shape:pure-function
-		it.skip("on a past range, the aging chart's health does not call stale a Work Item Lighthouse judged not stale on the range's last day", async () => {
+		it("on a past range, the aging chart's health does not call stale a Work Item Lighthouse judged not stale on the range's last day", async () => {
 			// Two days in its state on the range's last day, months by today: the browser counted to
 			// today, while Lighthouse judged the item as of the range end and found it not stale.
 			const rangeEnd = new Date(2026, 2, 31, 12, 0, 0);
