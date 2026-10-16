@@ -145,7 +145,7 @@ trigger keeps its semantics and moves with the rule).
 | Item | Answer |
 | --- | --- |
 | User docs | Done. `docs/metrics/flow-overview.md` gains "What counts as stale": Lighthouse decides, the rule in plain words, the reason tooltip, the instance's time zone, and the past-range label. Its old line that Blocked Work Items are never counted as stale is corrected. `docs/metrics/flow-metrics.md`'s aging chart note now points to that rule. |
-| `docs/aiintegration.md` | Unchanged, because it documents neither the WIP read's fields nor what the MCP tools return, and its Daily Flow Review line (Blocked, past the SLE, at risk, WIP over its limit) is still true until slice 03 ships. The fields and the skill's Stale item are documented with slice 03. |
+| `docs/aiintegration.md` | Written ahead for slice 03 (maintainer's call): the CLI/MCP WIP read carries `isStale` and `staleReasons`, and the Daily Flow Review names stale Work Items with Lighthouse's reason, never twice with Blocked, and says so when an older Lighthouse does not tell. Accurate once the slice 03 client release ships. |
 | Release notes | #6247 carries the ADO `Release Notes` tag (maintainer confirmed), so `/release` picks it up under Bugfixes and Improvements. |
 | Screenshots | N/A, because nothing looks different: the same red badge, tooltip format and red dot. |
 | Lighthouse-Clients | Slice 03, still to come: pass the fields through, a version bump, and a version gate naming the first Lighthouse release with them. Until then `lh … --json` already returns the fields unchanged. |
