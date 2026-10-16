@@ -16,6 +16,7 @@ import {
 import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
+import { ExpectedTestFailure } from "../../../tests/ExpectedTestFailure";
 import {
 	createMockApiServiceContext,
 	createMockTerminologyService,
@@ -316,6 +317,13 @@ const FieldEdits = [
 
 const whenPriyaPressesSave = () =>
 	fireEvent.click(screen.getByRole("button", { name: /^Save$/ }));
+
+// The page's Save button stays busy for a moment after every press, so a second press waits for it.
+const whenPriyaPressesSaveAgain = async () => {
+	const save = screen.getByRole("button", { name: /^Save$/ });
+	await waitFor(() => expect(save).toBeEnabled());
+	fireEvent.click(save);
+};
 
 const theQuestion = (title: string) =>
 	screen.findByRole("dialog", { name: title });
@@ -870,5 +878,33 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			await waitFor(thenNoQuestionIsAsked);
 			expect(mockNavigate).not.toHaveBeenCalled();
 		});
+
+		// Any other failure goes to the page's error handler; the question must not be left in the way.
+		// @error @us-02 @contract-shape:unbounded-preservation
+		it.each(["Save and update", "Save only"])(
+			"when the save fails for any other reason after %s, the question closes and can be answered again",
+			async (answer) => {
+				const saving = aSaveStillOnItsWay();
+				await givenPriyaOpensNordwindJiraDc({ save: saving.save });
+				await whenPriyaAddsFixVersions();
+				whenPriyaPressesSave();
+				await whenSheAnswers(TheQuestionOnNordwindJiraDc, answer);
+				await thenTheQuestionWaitsOnTheSave(answer);
+
+				saving.refuse(new ExpectedTestFailure("The server could not save"));
+
+				await waitFor(thenNoQuestionIsAsked);
+				expect(mockNavigate).not.toHaveBeenCalled();
+
+				await whenPriyaPressesSaveAgain();
+
+				const question = await theQuestion(TheQuestionOnNordwindJiraDc);
+				for (const each of TheAnswers) {
+					expect(
+						within(question).getByRole("button", { name: each }),
+					).toBeEnabled();
+				}
+			},
+		);
 	});
 });

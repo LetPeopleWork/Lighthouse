@@ -1,8 +1,10 @@
 import { defineConfig } from "vitest/config";
+import { EXPECTED_TEST_FAILURE } from "./src/tests/ExpectedTestFailure.ts";
 
 export default defineConfig({
 	test: {
 		globals: true,
+		onUnhandledError: (error) => error.name !== EXPECTED_TEST_FAILURE,
 		environment: "jsdom",
 		setupFiles: ["./setupTests.ts"],
 		env: {

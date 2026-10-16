@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { ExpectedTestFailure } from "../../../tests/ExpectedTestFailure";
 import { testTheme } from "../../../tests/testTheme";
 import ActionButton from "./ActionButton";
 
@@ -165,6 +166,50 @@ describe("ActionButton component", () => {
 		);
 
 		expect(screen.getByTestId("test-icon")).toBeInTheDocument();
+	});
+
+	it("is ready to be pressed again after its handler fails", async () => {
+		const user = userEvent.setup();
+		const buttonText = "Test Button";
+		const mockHandler = vi
+			.fn()
+			.mockRejectedValue(new ExpectedTestFailure("The save failed"));
+
+		render(
+			<ActionButton buttonText={buttonText} onClickHandler={mockHandler} />,
+		);
+
+		const button = screen.getByRole("button", { name: buttonText });
+		await user.click(button);
+
+		await waitFor(() => expect(button).toBeEnabled(), { timeout: 1000 });
+		expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+		expect(mockHandler).toHaveBeenCalledTimes(1);
+	});
+
+	it("takes the focus when asked to", () => {
+		const mockHandler = vi.fn().mockResolvedValue(undefined);
+
+		render(
+			<>
+				<ActionButton buttonText="First" onClickHandler={mockHandler} />
+				<ActionButton
+					buttonText="Second"
+					onClickHandler={mockHandler}
+					autoFocus
+				/>
+			</>,
+		);
+
+		expect(screen.getByRole("button", { name: "Second" })).toHaveFocus();
+	});
+
+	it("does not take the focus unless asked to", () => {
+		const mockHandler = vi.fn().mockResolvedValue(undefined);
+
+		render(<ActionButton buttonText="First" onClickHandler={mockHandler} />);
+
+		expect(screen.getByRole("button", { name: "First" })).not.toHaveFocus();
 	});
 
 	it("shows loading indicator when externalIsWaiting is true", () => {
