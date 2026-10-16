@@ -10,6 +10,8 @@ Warning level, and the one-time Portfolio-grain move described under Consequence
 (`docs/feature/story-6301-only-features-as-parent-candidates/feature-delta.md`, "Wave: DISTILL / [REF]
 Maintainer decisions: UI sketch review (2026-10-15)"). The one-time move stays open for the maintainer at
 the hold, recorded under the maintainer's Q5 answer (an item corrects itself the next time it is re-read).
+*Update (DELIVER, 2026-10-16):* the maintainer accepted every open hold item as built, the one-time
+Portfolio-grain move included, so the engineering choices are Accepted too.
 
 **Feature**: `story-6301-only-features-as-parent-candidates`, ADO User Story #6301, under Epic #6028.
 

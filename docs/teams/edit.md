@@ -399,7 +399,24 @@ Jira writes a link once and offers it from both ends, so it does not matter whic
 {: .note}
 A link type holds no value of its own, so once the reference resolves to one, the Additional Field shows the key it found on each Work Item instead. That is the quickest way to check the setting is reading what you expected without opening Jira.
 
-{: .important}
-If one Work Item's links of that type name two different issues, Lighthouse leaves it where it already was rather than pick one — a parent chosen wrongly moves work under something it does not belong to and looks exactly like correct data afterwards. The refresh writes one warning naming each affected Work Item together with every issue its links offered, and **Settings > System Info** counts them in the refresh history. Narrow those links down to one and the next refresh places the item. When the ones left out are exactly those with children of their own, the type's name is reading the links down to their children as well; type the phrase that points up instead.
+#### When a Work Item's links name more than one issue
+
+A Work Item hangs under one Feature, so when its links of that type name two or more different issues, Lighthouse decides between them the same way on every refresh:
+
+1. **Only Features count.** Every issue that is not a Feature in one of your Portfolios is set aside first. An incident, a risk or any other issue the same link type happens to join is never taken as the parent.
+2. **One Feature left:** the Work Item is placed under it.
+3. **Several Features left:** the **oldest link** wins, the link made first according to the Work Item's history in Jira. A link whose date Jira's history does not show loses to one whose date it shows. When that does not decide, the **Feature created first** wins, and after that the **lowest key**, compared character by character (so `PAY-100` comes before `PAY-99`).
+4. **No Feature left:** the Work Item is not placed by its links. It keeps the parent Jira itself gives it, if it has one.
+
+Every refresh that had to decide writes a warning listing what it did, for example:
+
+`Team "Payments" placed 1 record whose links name more than one issue: PAY-420 under PAY-88 (oldest link, 2026-03-04; set aside PAY-91, 2026-06-17)`
+
+The day is the UTC day the link was made. **Settings > System Info** shows, in the refresh history, the most Work Items one refresh placed this way and the most it could not place. Both figures appear only when there was something to count. See [Refresh History](../settings/systeminfo.html#refresh-history).
+
+{: .note}
+A link is dated from the Work Item's own history. When the issue at the other end of a link was moved to another project or renamed, the history names it by its old key, so that link counts as undated. When Jira hands over only part of a long history, none of the Work Item's links are dated, because the missing part could have removed and re-added any of them.
+
+When the Features picked are consistently the ones above where you expected, or the issues set aside are exactly the ones with children of their own, the phrase you typed is reading the links down to the children as well. Type the phrase that points up instead.
 
 If two *different* link types both answer to the phrase you typed, Lighthouse resolves neither, for the same reason. Pick a phrase that belongs to only one of them.

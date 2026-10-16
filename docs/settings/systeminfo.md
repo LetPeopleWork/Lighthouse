@@ -26,6 +26,10 @@ In order to observe the refresh times of your teams and portfolios, Lighthouse i
 
 You can see when you refreshed, how many items (Work Items or Features) were fetched, and how long it took.
 
+On a Jira connection whose parent setting names an issue link type, two more figures can appear: the most Work Items or Features a single refresh placed although their links named more than one parent, and the most it could not place. Each figure shows only when it is above zero. They are the highest count in any one refresh, not a total, because every refresh reads the same untidy records again. How such a record is placed is described for [Teams](../teams/edit.html#when-a-work-items-links-name-more-than-one-issue) and [Portfolios](../portfolios/edit.html#when-a-features-links-name-more-than-one-issue).
+
+While the history is loading, a spinner shows in its place. If it cannot be loaded, the section says *Could not load refresh history.*
+
 
 ## Logs
 We really hope you don't need this...but then again, Software is complex and it's very possible that once you run into a problem and need some more details on what was going on (or we ask for this info to better find the problem).  

@@ -271,8 +271,27 @@ Jira writes a link once and offers it from both ends, so it does not matter whic
 {: .note}
 A link type holds no value of its own, so once the reference resolves to one, the Additional Field shows the key it found on each Feature instead. That is the quickest way to check the setting is reading what you expected without opening Jira.
 
-{: .important}
-If one Feature's links of that type name two different issues, Lighthouse leaves it where it already was rather than pick one — a parent chosen wrongly moves work under something it does not belong to and looks exactly like correct data afterwards. The refresh writes one warning naming each affected Feature together with every issue its links offered, and **Settings > System Info** counts them in the refresh history. Narrow those links down to one and the next refresh places the Feature. When the ones left out are exactly those with children of their own, the type's name is reading the links down to their children as well; type the phrase that points up instead.
+#### When a Feature's links name more than one issue
+
+When one Feature's links of that type name two or more different issues, Lighthouse places it under one of them, deciding the same way on every refresh. Unlike on a Team, every issue stays a candidate, because a Feature's parent is not itself one of your Features:
+
+1. The **oldest link** wins, the link made first according to the Feature's history in Jira. A link whose date Jira's history does not show loses to one whose date it shows.
+2. When that does not decide, the parent **created first** wins. Only a parent Lighthouse also holds as a Feature has a creation date it knows about.
+3. After that, the **lowest key** wins, compared character by character (so `PAY-100` comes before `PAY-99`).
+
+Every refresh that had to decide writes a warning listing what it did, for example:
+
+`Portfolio "Payments" placed 1 record whose links name more than one issue: PAY-88 under PAY-7 (oldest link, 2026-03-04; set aside PAY-9, 2026-06-17)`
+
+The day is the UTC day the link was made. **Settings > System Info** shows, in the refresh history, the most Features one refresh placed this way. See [Refresh History](../settings/systeminfo.html#refresh-history).
+
+{: .note}
+A Feature that already had several parent links is placed the first time Lighthouse reads it again after an update. It can move once at that point, to the parent these rules pick.
+
+{: .note}
+A link is dated from the Feature's own history. When the issue at the other end of a link was moved to another project or renamed, the history names it by its old key, so that link counts as undated. When Jira hands over only part of a long history, none of the Feature's links are dated, because the missing part could have removed and re-added any of them.
+
+When the parents picked are consistently one level off, or the issues set aside are exactly the ones with children of their own, the phrase you typed is reading the links down to the children as well. Type the phrase that points up instead.
 
 If two *different* link types both answer to the phrase you typed, Lighthouse resolves neither, for the same reason. Pick a phrase that belongs to only one of them.
 
