@@ -59,6 +59,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "sizing_moment",
             "source",
             "timestamp",
+            "updates",
             "version",
             "work_tracking_system",
         ];

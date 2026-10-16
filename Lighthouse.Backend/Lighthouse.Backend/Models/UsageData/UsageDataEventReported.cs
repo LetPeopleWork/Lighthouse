@@ -9,7 +9,8 @@ namespace Lighthouse.Backend.Models.UsageData
     /// say which page somebody opened, one says which kind of work tracking system was connected,
     /// one says which setting was switched and whether it is now on or off, and a sizing vote says
     /// when it was cast relative to the Team's Refinement, and a Refinement day says which verdict
-    /// its tab showed, and a report being created or opened says which type of report it was; the
+    /// its tab showed, and a report being created or opened says which type of report it was, and a change to a
+    /// connection's fields says whether its updates run now or later; the
     /// rest say only that somebody did something. Which event may carry which part is declared in
     /// <see cref="UsageDataEventShapes"/>.
     ///
@@ -27,5 +28,6 @@ namespace Lighthouse.Backend.Models.UsageData
         int OffsetMs,
         int Sequence,
         UsageDataRefinementVerdict? RefinementVerdict = null,
-        UsageDataReportTemplate? ReportTemplate = null);
+        UsageDataReportTemplate? ReportTemplate = null,
+        UsageDataUpdates? Updates = null);
 }

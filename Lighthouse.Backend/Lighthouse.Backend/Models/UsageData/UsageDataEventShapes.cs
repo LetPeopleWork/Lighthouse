@@ -7,7 +7,8 @@ namespace Lighthouse.Backend.Models.UsageData
     /// which one; one says which kind of work tracking system was connected; one says which setting
     /// was switched and which way; the sizing events say when they happened relative to the
     /// Team's Refinement; one says which verdict a Refinement day showed; two say which type of
-    /// report was created or opened; the rest are about something somebody did, which happens on
+    /// report was created or opened; one says whether a connection's updates run now or later after
+    /// its fields were changed; the rest are about something somebody did, which happens on
     /// no particular page, and they carry nothing but their name.
     ///
     /// This is a declaration rather than a rule applied at each call site, because the promise it
@@ -73,6 +74,14 @@ namespace Lighthouse.Backend.Models.UsageData
         private static readonly FrozenSet<UsageDataEventName> EventsThatSayWhichTypeOfReport =
             FrozenSet.ToFrozenSet([UsageDataEventName.ReportCreated, UsageDataEventName.ReportOpened]);
 
+        /// <summary>
+        /// The one event that says whether a connection's Teams and Portfolios were updated straight
+        /// after its fields were changed or left for later. That answer is the whole reason it is
+        /// counted, and no other event asks the question.
+        /// </summary>
+        private static readonly FrozenSet<UsageDataEventName> EventsThatSayWhenTheUpdatesRun =
+            FrozenSet.ToFrozenSet([UsageDataEventName.WorkTrackingSystemFieldsChanged]);
+
         public static bool Fits(UsageDataEventReported reported)
         {
             var name = reported.Name;
@@ -83,7 +92,8 @@ namespace Lighthouse.Backend.Models.UsageData
                 && IsCarriedExactlyWhenDeclared(EventsThatSayWhichSettingWasSwitched, name, reported.Enabled)
                 && IsCarriedExactlyWhenDeclared(EventsThatSayWhenTheyHappenedInRefinement, name, reported.SizingMoment)
                 && IsCarriedExactlyWhenDeclared(EventsThatSayWhichVerdictARefinementDayShowed, name, reported.RefinementVerdict)
-                && IsCarriedExactlyWhenDeclared(EventsThatSayWhichTypeOfReport, name, reported.ReportTemplate);
+                && IsCarriedExactlyWhenDeclared(EventsThatSayWhichTypeOfReport, name, reported.ReportTemplate)
+                && IsCarriedExactlyWhenDeclared(EventsThatSayWhenTheUpdatesRun, name, reported.Updates);
         }
 
         private static bool NamesItsPage(UsageDataEventName name, UsageDataRouteKey? route)

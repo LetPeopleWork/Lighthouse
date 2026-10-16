@@ -92,6 +92,7 @@ namespace Lighthouse.Backend.Tests.Models.UsageData
                 UsageDataEventName.OptionalFeatureToggled => nameOnly with { OptionalFeature = UsageDataOptionalFeature.FeatureOrder, Enabled = true },
                 UsageDataEventName.TeamRefinementDayVerdictShown => nameOnly with { RefinementVerdict = UsageDataRefinementVerdict.None },
                 UsageDataEventName.ReportCreated or UsageDataEventName.ReportOpened => nameOnly with { ReportTemplate = UsageDataReportTemplate.ThenAndNow },
+                UsageDataEventName.WorkTrackingSystemFieldsChanged => nameOnly with { Updates = UsageDataUpdates.Now },
                 _ => nameOnly,
             };
         }

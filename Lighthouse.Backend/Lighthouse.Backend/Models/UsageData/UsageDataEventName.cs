@@ -46,5 +46,7 @@ namespace Lighthouse.Backend.Models.UsageData
         ReportOpened = 17,
 
         ReportDeleted = 18,
+
+        WorkTrackingSystemFieldsChanged = 19,
     }
 }

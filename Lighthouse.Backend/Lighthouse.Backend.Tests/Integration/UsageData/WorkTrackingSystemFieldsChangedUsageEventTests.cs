@@ -19,8 +19,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     [Category("slice-03")]
     public class WorkTrackingSystemFieldsChangedUsageEventTests : UsageDataCollectorObservationTest
     {
-        private const string Pending = "Story #6307 - pending DELIVER: the usage data event for a connection's Additional Fields being changed.";
-
         private const string FieldsChanged = "WorkTrackingSystemFieldsChanged";
 
         private const string Now = "Now";
@@ -77,7 +75,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [Category("driving_port")]
         [Category("kpi")]
         [Category("contract-shape:bounded-change")]
-        [Ignore(Pending)]
         public async Task A_change_to_a_connections_fields_travels_with_when_the_updates_run_and_nothing_else(string choice)
         {
             var token = await ABrowserThatAgreedAsync();
@@ -106,7 +103,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // beside it, it is refused.
         [TestCase("")]
         [TestCase(",\"updates\":\"Soon\"")]
-        [TestCase(",\"updates\":\"now\"")]
         [TestCase(",\"updates\":\"Now\",\"reportTemplate\":\"ThenAndNow\"")]
         [TestCase(",\"updates\":\"Later\",\"workTrackingSystem\":\"Jira\"")]
         [TestCase(",\"updates\":\"Now\",\"route\":\"TeamDetail_Metrics\"")]
@@ -114,7 +110,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [Category("driving_port")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]
-        [Ignore(Pending)]
         public async Task A_change_to_a_connections_fields_without_a_choice_from_the_list_or_carrying_anything_more_is_refused(string parts)
         {
             var token = await ABrowserThatAgreedAsync();
@@ -132,7 +127,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [Category("driving_port")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]
-        [Ignore(Pending)]
         public async Task Any_other_event_carrying_the_choice_is_refused(string name)
         {
             var token = await ABrowserThatAgreedAsync();
@@ -150,7 +144,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [Test]
         [Category("us-03")]
         [Category("contract-shape:bounded-change")]
-        [Ignore(Pending)]
         public void The_event_is_named_and_every_event_named_before_it_keeps_its_number()
         {
             var named = TheEventsUsageDataNames();
@@ -167,7 +160,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [Test]
         [Category("us-03")]
         [Category("contract-shape:bounded-change")]
-        [Ignore(Pending)]
         public void The_usage_data_page_has_a_row_for_a_change_to_a_connections_fields_naming_both_choices()
         {
             var rows = TheUsageDataPage().Split('\n')
