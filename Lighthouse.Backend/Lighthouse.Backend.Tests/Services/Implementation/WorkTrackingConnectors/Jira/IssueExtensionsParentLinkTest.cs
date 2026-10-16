@@ -41,6 +41,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static readonly DateTime TheDayTheParentWasLinked = new(2026, 3, 4, 9, 15, 0, DateTimeKind.Utc);
 
+        private const string DependsOn = "depends on";
+
+        private static readonly JiraLinkType Dependency = new("Dependency", "is depended on by", DependsOn);
+
+        private static readonly string[] OnlyTheParent = [TheParent];
+
+        /// <summary>
+        /// A Dependency Field naming the outward phrase reads the issue holding that end as the one waiting.
+        /// The issue at the other end is handed the same link pointing back, and a link of any other type
+        /// on the same issue says nothing about this one.
+        /// </summary>
+        [Test]
+        public void ExtractDependencyReferencesFromLinks_ReadsOnlyTheEndThePhraseNamesOnTheTypeItNames()
+        {
+            var fields = FieldsOfAnIssueWith(
+                Dependency.LinkWhoseOutwardIssueIs(TheParent),
+                Dependency.LinkWhoseInwardIssueIs(AnotherParent),
+                JiraLinkType.Blocks("is blocked by").LinkWhoseOutwardIssueIs(AChild),
+                Cloners.LinkWhoseOutwardIssueIs(AnotherChild));
+
+            var waitsOn = fields.ExtractDependencyReferencesFromLinks("Dependency", LinkDirection.Outward);
+
+            Assert.That(waitsOn, Is.EqualTo(OnlyTheParent));
+        }
+
+        [Test]
+        public void ExtractDependencyReferencesFromLinks_TheIssueBeingWaitedOnWaitsOnNothing()
+        {
+            var fields = FieldsOfAnIssueWith(Dependency.LinkWhoseInwardIssueIs(AChild));
+
+            var waitsOn = fields.ExtractDependencyReferencesFromLinks(DependsOn, LinkDirection.Outward);
+
+            Assert.That(waitsOn, Is.Empty);
+        }
+
         [Test]
         public void YieldsTheOutwardCounterpartOfALinkWhoseInwardEndThisIssueHolds()
         {

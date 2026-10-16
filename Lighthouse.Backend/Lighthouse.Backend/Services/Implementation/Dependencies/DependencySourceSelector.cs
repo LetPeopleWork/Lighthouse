@@ -37,10 +37,28 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
         /// </summary>
         public static List<FeatureDependencyReference> TheDependenciesOf(
             Portfolio portfolio, WorkItemBase workItem, IReadOnlyList<string> fromTheTrackersOwnLink)
+            => TheDependenciesOf(portfolio, workItem, fromTheTrackersOwnLink, fromALinkTypeThePortfolioNamed: null);
+
+        /// <summary>
+        /// What one Feature waits on, for a tracker whose Dependency Field may name one of its link types
+        /// rather than a field. The tracker hands over what it read off the links of that type, or nothing
+        /// when what was named turned out to be a field. A link the Portfolio named is still a link somebody
+        /// drew in the tracker, so it is recorded as one.
+        /// </summary>
+        public static List<FeatureDependencyReference> TheDependenciesOf(
+            Portfolio portfolio,
+            WorkItemBase workItem,
+            IReadOnlyList<string> fromTheTrackersOwnLink,
+            IReadOnlyList<string>? fromALinkTypeThePortfolioNamed)
         {
             if (ReadsTheTrackersOwnLink(portfolio))
             {
                 return AsReferences(fromTheTrackersOwnLink, DependencySource.TrackerLink);
+            }
+
+            if (fromALinkTypeThePortfolioNamed is not null)
+            {
+                return AsReferences(fromALinkTypeThePortfolioNamed, DependencySource.TrackerLink);
             }
 
             var typedIntoTheField = workItem.GetAdditionalFieldValue(portfolio.DependencyOverrideAdditionalFieldDefinitionId);

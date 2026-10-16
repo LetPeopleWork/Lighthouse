@@ -85,6 +85,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
+        /// The other issues this one waits on, read from its links of the one type a Portfolio named in
+        /// place of "is blocked by". The phrase that was typed says which end does the waiting, so only the
+        /// entries handed to that end are read: the issue being waited on is handed the same link with no
+        /// key at that end, and so does not wait on anything in return.
+        /// </summary>
+        public static List<string> ExtractDependencyReferencesFromLinks(
+            this JsonElement fields, string linkTypeReference, LinkDirection direction)
+            => IssueLinksOf(fields)
+                .Where(link => LinkTypeAnswersTo(link, linkTypeReference))
+                .Select(link => CounterpartOf(link, direction).Key)
+                .Where(key => key.Length > 0)
+                .ToList();
+
+        /// <summary>
         /// The issue this one hangs under, read from its links of one configured type.
         ///
         /// Jira writes a link once and offers it from both ends, handing each issue a pointer to the

@@ -1230,7 +1230,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 var estimatedSize = GetEstimatedSize(portfolio, workItem);
                 var owningTeam = GetOwningTeam(portfolio, workItem);
 
-                var feature = new Feature(workItem, TheIssuesItWaitsOn(portfolio, workItem, issue))
+                var feature = new Feature(workItem, TheIssuesItWaitsOn(portfolio, workItem, issue, customFieldReferences))
                 {
                     EstimatedSize = estimatedSize,
                     OwningTeam = owningTeam,
@@ -1252,10 +1252,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// <summary>
         /// What one issue waits on. Jira supplies what it read off the issue's own links; which of that is
         /// used, and what a Portfolio reading a field of its own gets instead, is not this tracker's
-        /// decision to make.
+        /// decision to make. A Dependency Field that names a link type rather than a field is read off
+        /// the links the issue already carries, so it costs the instance no request of its own.
         /// </summary>
-        private static List<FeatureDependencyReference> TheIssuesItWaitsOn(Portfolio portfolio, WorkItemBase workItem, Issue issue)
-            => DependencySourceSelector.TheDependenciesOf(portfolio, workItem, issue.Fields.ExtractDependencyReferences());
+        private static List<FeatureDependencyReference> TheIssuesItWaitsOn(
+            Portfolio portfolio, WorkItemBase workItem, Issue issue, Dictionary<string, ResolvedReference> customFieldReferences)
+        {
+            var theDependencyField = WhatTheNamedAdditionalFieldResolvedTo(
+                portfolio, portfolio.DependencyOverrideAdditionalFieldDefinitionId, customFieldReferences);
+
+            var fromTheNamedLinkType = theDependencyField.NamesALinkType
+                ? issue.Fields.ExtractDependencyReferencesFromLinks(theDependencyField.LinkTypeName, theDependencyField.Direction)
+                : null;
+
+            return DependencySourceSelector.TheDependenciesOf(
+                portfolio, workItem, issue.Fields.ExtractDependencyReferences(), fromTheNamedLinkType);
+        }
 
         /// <summary>
         /// A Jira administrator can rename the inward link name Lighthouse reads, and a renamed instance
@@ -1645,7 +1657,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             WorkItemBase workItem,
             Dictionary<string, ResolvedReference> customFieldReferences)
         {
-            var theOverride = WhatTheParentOverrideResolvedTo(workItemQueryOwner, customFieldReferences);
+            var theOverride = WhatTheNamedAdditionalFieldResolvedTo(
+                workItemQueryOwner, workItemQueryOwner.ParentOverrideAdditionalFieldDefinitionId, customFieldReferences);
 
             var source = theOverride.NamesALinkType
                 ? ParentSource.ALinkTypeTheOverrideNames
@@ -1670,15 +1683,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// What the Additional Field named in Parent Override Field turned out to be on this instance.
-        /// Reading an issue is static and fetches nothing, so the resolution it needs travels in with the
-        /// references it is already handed.
+        /// What the Additional Field a setting names - Parent Override Field, or a Portfolio's Dependency
+        /// Field - turned out to be on this instance: a field, a link type, or nothing. Reading an issue is
+        /// static and fetches nothing, so the resolution it needs travels in with the references it is
+        /// already handed.
         /// </summary>
-        private static ResolvedReference WhatTheParentOverrideResolvedTo(
-            IWorkItemQueryOwner workItemQueryOwner, Dictionary<string, ResolvedReference> customFieldReferences)
+        private static ResolvedReference WhatTheNamedAdditionalFieldResolvedTo(
+            IWorkItemQueryOwner workItemQueryOwner, int? namedDefinitionId, Dictionary<string, ResolvedReference> customFieldReferences)
         {
             var named = workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions
-                .Find(definition => definition.Id == workItemQueryOwner.ParentOverrideAdditionalFieldDefinitionId);
+                .Find(definition => definition.Id == namedDefinitionId);
 
             return named is not null && customFieldReferences.TryGetValue(named.Reference, out var resolved)
                 ? resolved

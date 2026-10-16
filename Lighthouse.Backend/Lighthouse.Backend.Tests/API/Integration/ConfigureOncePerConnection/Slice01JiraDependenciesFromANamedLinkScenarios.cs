@@ -38,7 +38,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private static readonly DependencySource[] ReadFromThePortfoliosField = [DependencySource.PortfolioField];
 
         [Test]
-        [Ignore(PendingEpic6303.Slice01)]
         [Category("us-01")]
         [Category("ac-1.1")]
         [Category("walking_skeleton")]
