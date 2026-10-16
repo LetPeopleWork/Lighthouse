@@ -33,7 +33,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
         // @driving_port @boundary @contract-shape:pure-function
         [TestCase(5, false)]
         [TestCase(6, true)]
-        [Ignore(Pending)]
         public async Task A_Work_Item_goes_stale_once_it_has_sat_in_its_state_longer_than_the_threshold(int daysInState, bool expectedStale)
         {
             var team = GivenATeamThatCallsWorkStaleAfterFiveDaysInAStateOrThreeDaysBlocked();
@@ -47,7 +46,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
         // @driving_port @boundary @contract-shape:pure-function
         [TestCase(2, false)]
         [TestCase(3, true)]
-        [Ignore(Pending)]
         public async Task A_Blocked_Work_Item_goes_stale_on_the_day_it_reaches_the_blocked_threshold(int daysBlocked, bool expectedStale)
         {
             var team = GivenATeamThatCallsWorkStaleAfterFiveDaysInAStateOrThreeDaysBlocked();
@@ -60,7 +58,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
 
         // @driving_port @error @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task A_Blocked_Work_Item_under_the_blocked_threshold_is_not_stale_however_long_it_has_sat_in_its_state()
         {
             var team = GivenATeamWithThresholds(new StalenessThresholds(TimeInStateDays: 5, BlockedDays: 3));
@@ -74,7 +71,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
 
         // @driving_port @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task A_Blocked_Work_Item_is_stale_for_its_blocked_time_and_still_shows_how_long_it_has_sat_in_its_state()
         {
             var team = GivenATeamThatCallsWorkStaleAfterFiveDaysInAStateOrThreeDaysBlocked();
@@ -88,7 +84,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
 
         // @driving_port @error @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task A_Work_Item_still_Blocked_in_its_state_is_not_stale_before_the_blocked_threshold_even_past_the_time_in_state_one()
         {
             var team = GivenATeamWithThresholds(new StalenessThresholds(TimeInStateDays: 5, BlockedDays: 10));
@@ -101,7 +96,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
 
         // @driving_port @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task With_both_thresholds_off_no_Work_Item_is_stale_and_none_carries_a_reason()
         {
             var team = GivenATeamWithThresholds(new StalenessThresholds(TimeInStateDays: 0, BlockedDays: 0));
@@ -116,7 +110,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
 
         // @driving_port @error @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task Turning_the_time_in_state_trigger_off_leaves_the_blocked_trigger_working()
         {
             var team = GivenATeamWithThresholds(new StalenessThresholds(TimeInStateDays: 0, BlockedDays: 3));
@@ -131,7 +124,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
 
         // @driving_port @error @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task Turning_the_blocked_trigger_off_leaves_the_time_in_state_trigger_working()
         {
             var team = GivenATeamWithThresholds(new StalenessThresholds(TimeInStateDays: 5, BlockedDays: 0));
@@ -147,7 +139,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
         // @driving_port @contract-shape:pure-function
         // Chained: the same Work Item, read as of two consecutive days.
         [Test]
-        [Ignore(Pending)]
         public async Task A_Work_Item_is_judged_as_of_the_day_the_read_asks_about_not_today()
         {
             var team = GivenATeamThatCallsWorkStaleAfterFiveDaysInAStateOrThreeDaysBlocked();
@@ -162,7 +153,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
 
         // @driving_port @edge @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task A_Work_Item_whose_state_entry_Lighthouse_never_saw_is_not_stale()
         {
             var team = GivenATeamThatCallsWorkStaleAfterFiveDaysInAStateOrThreeDaysBlocked();
