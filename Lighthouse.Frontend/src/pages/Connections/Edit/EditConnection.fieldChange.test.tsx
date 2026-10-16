@@ -11,7 +11,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
-import type { ISaveConnectionChoice } from "../../../services/Api/WorkTrackingSystemService";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
 import {
 	createMockApiServiceContext,
@@ -338,11 +337,7 @@ const thenTheConnectionIsSavedWith = async (
 
 const theChoiceTheSaveCarried = (
 	server: ReturnType<typeof createMockWorkTrackingSystemService>,
-) =>
-	(
-		vi.mocked(server.updateWorkTrackingSystemConnection).mock
-			.calls[0] as unknown[]
-	)[1] as ISaveConnectionChoice | undefined;
+) => vi.mocked(server.updateWorkTrackingSystemConnection).mock.calls[0][1];
 
 const thenSheIsBackOnTheOverview = () =>
 	waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/"));
