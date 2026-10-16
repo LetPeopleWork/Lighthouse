@@ -1,0 +1,18 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/API/WorkTrackingSystemConnectionController.cs",
+      "**/Services/Implementation/WorkTrackingSystemConnectionUsage.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "FullyQualifiedName~WorkTrackingSystemConnectionControllerTest|FullyQualifiedName~WorkTrackingSystemConnectionControllerWriteBackTest|FullyQualifiedName~WriteBackLicenseGateTest|FullyQualifiedName~WorkTrackingSystemConnectionUsageTest",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

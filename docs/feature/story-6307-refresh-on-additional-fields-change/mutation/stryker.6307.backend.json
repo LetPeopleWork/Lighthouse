@@ -1,0 +1,25 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/API/DTO/WorkTrackingSystemConnectionDto.cs",
+      "**/API/UsageDataController.cs",
+      "**/API/WorkTrackingSystemConnectionController.cs",
+      "**/API/WorkTrackingSystemConnectionsController.cs",
+      "**/Models/UsageData/UsageDataEventShapes.cs",
+      "**/Services/Implementation/BackgroundServices/Update/ConnectionFetchShapeChangedUpdateTriggerHandler.cs",
+      "**/Services/Implementation/UsageData/PostHogUsageDataPublisher.cs",
+      "**/Services/Implementation/WorkItems/FetchFingerprint.cs",
+      "**/Services/Implementation/WorkTrackingSystemConnectionUsage.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~WorkTrackingSystemConnectionDtoTest|FullyQualifiedName~UsageDataControllerTests|FullyQualifiedName~WorkTrackingSystemConnectionControllerTest|FullyQualifiedName~WorkTrackingSystemConnectionsControllerTest|FullyQualifiedName~WorkTrackingSystemConnectionControllerWriteBackTest|FullyQualifiedName~WriteBackLicenseGateTest|FullyQualifiedName~UsageDataEventShapesTests|FullyQualifiedName~ConnectionFetchShapeChangedUpdateTriggerHandlerTest|FullyQualifiedName~Services.Implementation.UsageData|FullyQualifiedName~FetchFingerprint|FullyQualifiedName~WorkTrackingSystemConnectionUsage)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Tests.Integration&FullyQualifiedName!~Dogfood",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
