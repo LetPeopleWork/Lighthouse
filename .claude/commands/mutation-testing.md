@@ -30,7 +30,8 @@ survivor is acceptable.
    `bin/` **crashes the test host** mid-run (`The active test run was aborted. Reason: Test host
    process crashed`) and the failures look like real test failures. Finish one, then start the other.
 2. **The tree must be green first.** A red suite makes every mutant "killed" for the wrong reason.
-3. `rm -rf StrykerOutput` (backend) so you cannot misread a previous run's report.
+3. Before the **first** backend run of a feature, `rm -rf StrykerOutput` so you cannot misread a
+   previous run's report. Between kill rounds, keep it and read the newest timestamped folder.
 
 ---
 
@@ -71,6 +72,17 @@ dotnet stryker --config-file ../../docs/feature/<feature>/mutation/stryker.<id>.
   `results.md` that you did, and why the change is covered another way.
 - **`test-case-filter` must cover every changed file's tests**, not just the headline ones. A file
   whose tests are filtered out reports as survivors across the board.
+- **Leave integration and acceptance tests out of the filter by default.** Anything under
+  `Tests/API/Integration/` boots the whole app through `TestWebApplicationFactory` on a real SQLite
+  file with migrations applied, so a single test costs seconds rather than milliseconds. Under
+  `perTestInIsolation`, which starts a fresh test host for every mutant, that turns a few-minute
+  run into the better part of an hour. An earlier feature measured 80 minutes with them in against
+  3 without, and story 6301's run with two acceptance suites in took about 45 minutes for 236
+  mutants. Include a specific acceptance suite only for a good reason, and say
+  in `results.md` why: for example, a behaviour that only that suite pins, which no unit test
+  reaches. Excluding them makes mutants that only an acceptance test reaches show up as
+  survivors. Triage those survivors, and close each with a unit test where one is cheap.
+  Typical filter tail: `&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood`.
 - `solution` is relative to the **run directory**, hence `../Lighthouse.sln`.
 
 ### Reading the log — the number that matters
@@ -152,9 +164,18 @@ five frontend runs of ~32 min each over 905 mutants, where only the survivors ne
   suite for each mutant — fine for a few dozen mutants, ruinous for hundreds.
 - **Incremental mode.** Frontend: run with `--incremental` and set
   `"incrementalFile": "reports/mutation/stryker-incremental-<id>.json"` (`reports/mutation/` is gitignored — never commit it).
-  The next run re-tests only mutants whose code or covering tests changed. Backend: Stryker.NET's
-  `--with-baseline` with a disk baseline (`"baseline": { "provider": "disk" }`) does the same job;
-  confirm on first use that the second run reports reused results before relying on it.
+  The next run re-tests only mutants whose code or covering tests changed.
+- **Backend: do NOT use `--with-baseline` / `--since`.** Stryker.NET 5.0 marks it experimental, and
+  story 6301 found it useless for a kill round, for two reasons:
+  - It re-tests only mutants in *source* files that differ from the committish. A kill round
+    changes only tests, so every mutant is dropped as "Removed by since filter" and 0 are tested.
+  - In a git worktree it diffs the **main checkout**, not the worktree: the "Changed file" lines
+    name paths outside the worktree.
+
+  Make a backend kill round cheap by narrowing instead. Put only the files that still have
+  survivors in `mutate`, and only the unit tests that cover them in `test-case-filter`. Record the
+  score of the full first run alongside the kill round's per-file figures, never a narrowed run's
+  score alone.
 - Use a plain first run (no `--incremental` file yet, or `--force`) for the score you record if you
   changed the config between runs; incremental results from a different config are not comparable.
 - Stop at the gate. Once a stack is ≥ 80 % and the remaining survivors are triaged, record them —
