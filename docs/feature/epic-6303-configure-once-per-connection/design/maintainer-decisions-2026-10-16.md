@@ -99,3 +99,19 @@ pins them in tests. Nothing here is open.
 
 - **Usage-data event: none.** N/A, because a connection default is set once at setup; an event would count
   configuration saves, not whether the feature helps anyone. `UsageDataEventName` is unchanged.
+
+## UI-7 — Azure DevOps relation-type warnings (approved during DELIVER, 2026-10-16)
+
+The Refresh History copy for the two Azure DevOps findings that UI-6 did not cover. It follows the approved Jira
+"points both ways" wording:
+
+```
+⚠ The Dependency Field names "System.LinkTypes.Related", which has no direction.
+  Name a relation type with two ends, such as "System.LinkTypes.Dependency-Reverse".
+
+⚠ The Dependency Field names "Contoso.DependsOn" without its end.
+  Name one end: "Contoso.DependsOn-Forward" or "Contoso.DependsOn-Reverse".
+```
+
+The quoted names are the ones the admin typed (and, for the second, the two ends built from it). The example type
+in the first warning is a literal suggestion and stays as written.

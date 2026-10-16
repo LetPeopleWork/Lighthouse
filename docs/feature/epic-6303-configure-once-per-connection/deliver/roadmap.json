@@ -1,0 +1,1293 @@
+{
+  "roadmap": {
+    "project_id": "epic-6303-configure-once-per-connection",
+    "created_at": "2026-10-16T00:00:00Z",
+    "goal": "Let a Portfolio's Dependency Field name a Jira link phrase or an Azure DevOps relation end, reading dependencies from it and saying on Refresh History when the name matched nothing or points both ways; then let a Work Tracking Connection carry defaults for the Teams' and Portfolios' Parent Override Field, the Dependency, Size Estimate and Feature Owner Fields and the Estimation bundle, which every owner follows unless it keeps its own value, with one log entry per default-changing save naming the followers, a pre-save dialog that counts them, and an update queued for exactly the owners whose fetch moved.",
+    "total_steps": 48,
+    "source": "docs/feature/epic-6303-configure-once-per-connection/feature-delta.md (DISCUSS to DISTILL, including the maintainer UI decisions and the DISTILL wave decisions with the pinned names), slices/slice-01..12 (07 dropped), distill/red-classification.md, design/maintainer-decisions-2026-10-16.md, docs/product/architecture/adr-241 (inherited setting), adr-242 (connection save), adr-243 (dependency link), adr-244 (refresh findings), brief.md epic-6303 section",
+    "paradigm": "OOP backend (.NET 10, ports and adapters; NUnit 4.6 + Moq + WebApplicationFactory over real EF, SQLite file and a Postgres container for the upgrade test); React 18 + TypeScript frontend (Vitest + RTL); Playwright with POMs for the one walking skeleton. No Hypothesis/PBT mandate: it is a Python pilot and this corpus has declined it on the record (story 6301). Where DESIGN says 'property-based test' (the movers rule, the effective-value rule, the Estimation bundle), write an exhaustive TestCase / TestCaseSource table over the whole small domain instead; no new test dependency.",
+    "standing_constraints": [
+      "Before every step, read docs/ci-learnings.md and pre-apply every rule it lists (CLAUDE.md requires it); the backend and frontend preflights below are its current extract, the ledger wins where they differ.",
+      "Comments are rare and why-only, written for a stranger. No code comment may cite an internal reference (D10, DDD-4, AC-F.1, G-R1, CA-8, U-13, slice ids, ADR-241..244). Say the reason in plain language or write nothing. The one exception is a narrow #pragma warning disable, which carries its reason inline; an ADO item number is fine there. The renamed own-value property mapped to an old column name carries a one-line why. Fix offending comments in any file you touch.",
+      "Un-skip discipline. A step removes [Ignore(PendingEpic6303.SliceNN)] (or Ignore = PendingEpic6303.SliceNN on an upgrade TestCase row) only from the tests it lists, and only once they pass. Frontend tests are plain it.skip in EditConnection.defaults.test.tsx, AdvancedInputs.connectionDefault.test.tsx and RefreshHistorySection.findings.test.tsx (no slice marker in the call; the @us tag decides: US-01..03 slices 01..03, US-04 slice 05a, US-05 slice 06, US-11 slice 12); the E2E is test.fixme in ConnectionDefaults.spec.ts. If a listed test already passes before the step's production change, prove it can fail by sabotage-by-substitution (keep every parameter read, assign the dependency to a discard; never comment a call out, never if(false), never a bare block), restore, then un-skip. At the end of each slice, grep -rn 'PendingEpic6303.SliceNN' Lighthouse.Backend returns nothing for that slice, delete that constant from PendingEpic6303.cs, and the it.skip tests for that slice's user story are gone. Active guards (green today) are listed per step and must stay green.",
+      "SCAFFOLD inventory: grep -rn SCAFFOLD Lighthouse.Backend/Lighthouse.Backend Lighthouse.Frontend/src lists exactly one line at hand-off, Services/Interfaces/IConnectionSaveService.cs:3. Step 05-03 implements and registers the service and removes that marker; the handle and outcome records may be reshaped as long as the race scenario's decorator in ConnectionDefaultsAcceptanceTest follows. models/SystemInfo/RefreshLog.ts already carries the RefreshFinding types DISTILL scaffolded, without a marker; step 01-05 makes them real. After slice 05a the grep is empty.",
+      "Copy is pinned by the maintainer (UI-1..UI-6) and by the tests; use it verbatim, through Terminology for configurable words only: section region 'Defaults for Teams and Portfolios' with groups 'Teams' and 'Portfolios' and the lead 'Teams and Portfolios on this connection use these unless they set their own.'; owner entry 'Connection default (<value>)' with helper 'Set on the <tracker> connection.'; could-not-load 'Could not load this connection.' with Try again; dialog titles 'Update N Teams and M Portfolios?' and 'Change the Estimation default?'; Refresh History 'The Dependency Field names \"<named>\", and no <Feature> carries that link. Links seen: <seen>.', 'The Dependency Field names \"<named>\", which points both ways. Name one end: \"<a>\" or \"<b>\".', 'The Parent Override Field points at an Azure DevOps relation type, which only the Dependency Field reads.' and the label 'as of the full download on 16 Oct, 09:12'; refusal '\"Caused by\" cannot be removed. It is the Teams' Parent Override Field default, and Ledger uses it as its own. Nothing was saved.'; the log entry 'Connection \"Jira DC – Payments\" changed the Teams' Parent Override Field default from \"Caused by\" to \"Parent Link\"; 3 Teams follow it: Fraud Signals, Ops Tooling, Mobile Wallet; 3 updates queued.' (followers in creation order; 'no Team follows it' when none). Tracker values stay literal. A phrase repeated three times in one file lives in one const (S1192).",
+      "Names pinned by the tests (rename only consistently across tests and code): refresh-log rows latestFullRunFindings [{kind, setting, named, seen[]}] and latestFullRunAt; kinds NamedLinkMatchedNothing, NamedLinkPointsBothWays, RelationTypeHasNoDirection, RelationTypeNamedWithoutItsEnd, RelationTypeNotYetReadForDependencies (slice 03 only), RelationTypeCannotBeReadHere; settings ParentOverrideField, DependencyField, SizeEstimateField, FeatureOwnerField, EstimationField. Owner DTO: the existing id member carries the effective value, beside it <member>Source (ConnectionDefault / Own, strings out, strings or ints in) and <member>DefaultName, plus workTrackingSystem. Connection DTO: one nested defaults member with parentOverrideForTeams, estimationForTeams, parentOverrideForPortfolios, dependencyFieldForPortfolios, sizeEstimateFieldForPortfolios, featureOwnerFieldForPortfolios, estimationForPortfolios; supportedDefaults; usedBy.followers keyed by the same names. Source columns ParentOverrideSource (Teams and Portfolios), DependencyFieldSource, SizeEstimateFieldSource, FeatureOwnerFieldSource, EstimationSource; 0 = follows, 1 = own.",
+      "Local gates before every step's commit, each read in full (never piped through tail or head): (1) dotnet build in Lighthouse.Backend, zero warnings other than NU1901-NU1904 (NU1903 on SignalR.Common in the test project predates this Epic); (2) the analyzer sweep, dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore, logged and filtered to this change's files with BOTH halves, { git diff --name-only <slice base>; git status --porcelain -uall | awk '{print $2}'; } | grep '\\.cs$', run before every push and not only before the commit; (3) dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\" (the upgrade test needs Docker for its Postgres container and runs in this filter); (4) for frontend steps pnpm test, then pnpm build with zero errors and warnings (prebuild runs biome check --write; remove any */docs symlinks first); (5) before an E2E-touching commit, the affected Playwright spec run locally. Never run dotnet test --no-build while another build is writing bin/. A red suite spanning unrelated subsystems is a concurrent build, not a regression.",
+      "Backend preflight, pre-applied in every new or edited line: CA1859 concrete types on non-public returns, parameters and locals (List<T>, Dictionary<K,V>, never IReadOnlyList or an interface; a test helper returns the concrete subject); CA1861 constant arrays in tests hoisted to private static readonly; NUnit2045 independent asserts in using (Assert.EnterMultipleScope()), inside helpers too; NUnit2056 never Assert.Multiple; NUnit2046 Has.Count / Has.Length; NUnit4002 Is.Zero and Is.Default; NUnit1028 TestCaseSource providers private static, then re-check CA1859; CA1869 the findings JsonSerializerOptions is one static readonly field (production and tests); CA1806 capture every Try* result; S6964 every new value-type member on a [FromBody] DTO (sources, the defaults bundle flags) is nullable; S107 WorkTrackingSystemConnectionController stays at 7 (IConnectionSaveService replaces IDomainEventDispatcher), ConnectionSaveService takes at most 5, WorkItemService already carries a narrow S107 pragma and gains no parameter; S4136 overloads adjacent; S125 no prose comment line ends in ';'; S2325/S4487 stubs read instance state (instance-derived NotImplementedException message); S3267 LINQ over accumulating foreach; S3776 keep Commit, the findings step, the apply rule and the dialog's open condition under 15 (a lambda counts toward its method); S3236 no explicit parameter names to ThrowIf* guards; S1192 shared copy in one const; S6618 string.Create(CultureInfo.InvariantCulture, ...) never FormattableString.Invariant; CS8524 a discard-free switch over SettingSource or the finding kind carries a narrow #pragma warning disable CS8524 with its reason inline; a mock asserted with Times.Never is built in [SetUp]; System.Text.Json outside a controller sets PropertyNameCaseInsensitive = true.",
+      "Frontend preflight: S6754 every useState destructured as [thing, setThing]; S7761 data-* only through dataset; S7735 no negated condition in a ternary; S3358 no ternary inside a template-literal slot on a ternary branch, no inline pluralisation ternaries in template literals (extract a helper); S7764 globalThis over window; S7770 pass single-arg pure functions directly; readonly props on every JSX-returning function; a catch parameter is named error_; zod .nullable() for every backend T? member, never bare .optional() (the refresh-log findings stay optional because older backends omit them); SettingSource mirrored as the string-literal union 'ConnectionDefault' | 'Own' (enums serialise as strings out). Before changing a visible label, accessible name or data-testid, grep -rn the old text in Lighthouse.EndToEndTests/ in the same edit (the owner dropdowns gain a first entry; the Parent Override InputLabel gains a labelId).",
+      "Widening a shared contract: before editing WorkTrackingSystemOptionsOwner, Portfolio, IWorkItemQueryOwner, WorkTrackingSystemConnection, WorkItemBase/Feature, SyncOutcome, RefreshLog, the settings DTOs (SettingsOwnerDtoBase, PortfolioSettingDto), WorkTrackingSystemConnectionDto or IWorkTrackingSystemConnectionUsage, grep the short AND the fully qualified name in production and test projects (test doubles and builders are where the forgotten writer lives: WorkItemServiceTestBuilder, the Team/Portfolio test builders, DemoDataFactory) and extend the builders first. Every writer of an owner setting goes through follow() / own(value) once the setters are private; DemoDataFactory's demo Teams keep their Estimation through own(value) so every demo-data E2E reads what it reads today. RefreshLog is serialised directly: grep the tests for any payload-shape list that must gain the findings members.",
+      "EF migrations (01-03, 05-02, 08-01, 09-01, 10-01, 11-01, 12-01): dotnet restore && dotnet build over the whole solution from Lighthouse.Backend first (migration DLLs are HintPath references), port 5432 free, then pwsh Lighthouse.Backend/Create-Migration.ps1 -MigrationName <Name> - never dotnet ef migrations add. Expand-only. Source columns are int not null with defaultValue: 0 on BOTH providers (an older build's inserts rely on the database default), no CLR initializer; default columns nullable; the RefreshLog findings column nullable text. Hand-add the two data steps to BOTH providers' generated files, in this order: (a) clear the owner's value where NOT EXISTS an AdditionalFieldDefinition with that id AND the owner's own WorkTrackingSystemConnectionId (a field of another connection counts as dangling; for Estimation a dangling field empties the whole bundle in each provider's stored form); (b) set the source to 1 where the value is still not null. Postgres identifiers double-quoted. The renamed own-value property maps to the existing column name, so no column change may appear for it. Then the ordered second pass (dotnet build each migrations csproj --no-incremental, then the solution --no-incremental) and a throwaway Database__Provider=sqlite start with the Kestrel keys overridden (never 5169), grepping its output for PendingModelChanges. The InMemory provider never warns. Every new column on Teams, Portfolios and WorkTrackingSystemConnections also goes into Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs (both migration fixtures seed all three tables), or unrelated migration fixtures go red naming the column; RefreshLog is not seeded there, so it needs no entry.",
+      "Architecture tests: the new rules (WorkTrackingSystemConnectionController depends on neither IDomainEventDispatcher nor FetchFingerprint, matched by type; the effective-value, movers, in-use, apply rules and the supported-defaults map depend on nothing outside Models and the BCL, following the StalenessPolicyPurityArchUnitTest precedent; Services does not depend on API.DTO; the ADO connector holds no field of the relation-type listing's type) are verified with dotnet build -c Release && dotnet test -c Release --filter FullyQualifiedName~Architecture, because CI builds Release and Debug lies. Never assert an ArchUnit edge that exists only inside an async method body. New Models files do not start with WorkTrackingSystemConnection (that prefix is on the CI shared-path whitelist); only the connection model itself carries it.",
+      "Test-time budget: a new backend test class stays under 34 s and a frontend test file under 63 s in CI (Scripts/test-timings/test-time-budget.json; warn-only until the switch). Watch ConnectionDefaultsUpgradeMigrationTests (Postgres container) and the Slice05b class (22 cases). Speed up before allowlisting.",
+      "Live connectors: the default filtered run excludes them. Run deliberately, once per slice, never in a loop: JiraIntegration in slices 01 and 02 (at least JiraDependencyDogfoodTest, JiraLinkTypeDogfoodTest and the class extended for the named link type); AdoIntegration in slices 03 and 04 (AzureDevOpsWorkTrackingConnectorTest Validate and relations paths, plus the slice 03 spike against the dev organisation). Never LinearIntegration or ServiceNowIntegration locally (the Linear key is shared with CI). CI wakes every live suite on 05-03 (Program.cs) and on every step that edits Models/WorkTrackingSystemConnection.cs (05a, 08..12); triage a red there before the push counts as judged: a 4xx/429 from Linear, ServiceNow or GitHub is environmental, a Jira or ADO dependency/parent failure is this Epic's; a 429-only red is re-run once, and if still red the slice brief records that Sonar did not judge it and a green judged run lands before the next slice is pushed. Never print a token value.",
+      "Work in the main checkout /storage/repos/Lighthouse with absolute paths. Each Story finishes before the next starts (#6300 slices 01-02, #6312 03-04, #6304 05a-06, #6313 08-12); no step of a later Story starts before the earlier Story's last step is green.",
+      "Commits: focused conventional commits per step through des-commit with the step id; scopes dependencies for slices 01-04 and connection-defaults for 05a-12 (feat(...), test(...), refactor(...)); refactors in their own commit, before the behaviour commit, under the same step id when a step carries both. Push only when green and when the maintainer releases the hold. Mutation testing is NOT in this roadmap: Stryker runs once after DELIVER on frozen code (DEVOPS scope), which is why every rule the acceptance tests exercise also gets unit tests here. Docs prose (docs/portfolios/edit.md, docs/teams/edit.md, docs/settings/worktrackingsystems.md, docs/settings/systeminfo.md, docs/concepts/worktrackingsystems/jira.md and azuredevops.md, docs/features/features.md, docs/concepts/howlighthouseforecasts.md), @screenshots, release notes (crediting Steve Pereira, plus the per-slice repaired-value sentence and the follow-clears-own-value item), website follow-ups and ADO tags are finalize work, not roadmap steps. Two exceptions stay in their steps because the house rule ties them to the change: ARCHITECTURE.md (§3, §5, §16 rows for ADR-241..244) and the one sentence DEVOPS owes docs/settings/usagedata.md row :62 in slice 06.",
+      "Usage data: no new event (DEVOPS: a connection default is configuration, not usage). Do not append to UsageDataEventName; the only usagedata.md change is the slice-06 sentence above.",
+      "Mutation testing owner and timing: the AFK orchestrator runs /mutation-testing once, after the whole-feature refactor and adversarial review, on frozen code, >= 80% kill rate per stack (Stryker.NET excluding the acceptance suite; Stryker for the frontend files this Epic touched)."
+    ],
+    "deviations": [
+      "Walking-skeleton placement: in phases 02, 05, 07 and 12 the @walking_skeleton scenario is not on the phase's first step, by design. 02-01/02-02 build the backend half that 02-03, the first step a user sees, reads. 05-01..05-03 are the refactor, the migration and the service the skeleton runs through, so 05-04 is the first step that can carry a slice scenario through the driving port; 05-08, the connection page's Defaults section, is the frontend skeleton DISTILL pinned and needs the DTO from 05-04. 07-01 is the backend skeleton; 07-03, the save dialog, is the frontend one and needs the follower counts 07-02 adds. 12-01 is the migration; 12-02 is the backend skeleton, and 12-05 is the one Playwright skeleton, which needs every earlier step. Each skeleton sits on the first step that can make it pass and is never deferred past it.",
+      "Frontend tests carry no slice marker; their @us tag decides the step (US-01..03 slices 01..03, US-04 slice 05a, US-05 slice 06, US-11 slice 12).",
+      "Tags such as @us-02 or @us-05b in files outside this Epic's three frontend test files (ReportView, Reports panels, EditConnection.fieldChange, refinement tests) belong to other features' DISTILL waves and are not this Epic's scenarios."
+    ]
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 01 — A Jira Portfolio reads dependencies from the link phrase it names",
+      "description": "US-01, Story #6300. The Dependency Field may resolve to a Jira link type; the typed phrase sets the end; DependencySourceSelector gains a third source; a type name or a shared phrase reads nothing and raises one NamedLinkPointsBothWays finding on Refresh History. Because DISTILL pins that finding in this slice, the findings path DESIGN placed in slice 02 (RefreshFinding, evidence on the Feature, the WorkItemService step, SyncOutcome, the RefreshLog column and its migration, the refresh-log read, the frontend rendering) lands here; slice 02 adds the nothing-matched kind and the latest-full-run read. Not #6300's release point. Brief: slices/slice-01-6300-jira-dependencies-from-a-named-link-phrase.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Walking skeleton: a Feature waits on what its named one-way link points at",
+          "agent": "nw-software-crafter",
+          "step_type": "walking-skeleton",
+          "tags": [
+            "@walking_skeleton",
+            "@kpi"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice01JiraDependenciesFromANamedLinkScenarios.cs",
+          "scenario_name": "A_Feature_waits_on_what_its_named_one_way_link_points_at; active guard Naming_a_link_costs_the_Jira_instance_no_extra_request",
+          "criteria": [
+            "A Portfolio whose Dependency Field names the Additional Field whose reference is 'depends on' shows, through GET /api/latest/features/references after its refresh, PAY-112 waiting on PAY-98 and PAY-98 waiting on nothing",
+            "The stored references say DependencySource.TrackerLink; no enum member is added",
+            "The Jira request count of a refresh naming the link equals the count of the same refresh naming nothing"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencySourceSelector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/IssueExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice01JiraDependenciesFromANamedLinkScenarios.cs"
+          ],
+          "dependencies": [],
+          "implementation_notes": "~2h. Thinnest line through every layer: the reference resolution the connector already does for Parent Override (field first, then link type by name or phrase, JiraWorkTrackingConnector.cs ~:1993-2019, :2058-2070; IssueExtensions.cs ~:106-120, :190-212) now also serves the Dependency Field; where today a link-type Dependency Field stores an empty value (~:1733), the connector collects, per Feature, the counterpart key on the end the typed phrase reads as (JiraIssueLinkType.DirectionReadFrom), reusing the walker ResolveParentFromLinks uses, and hands it to DependencySourceSelector's new third source ('a link type the Portfolio named'); the selector decides, as it does for the tracker link and the field. Only the one-direction happy path here; the other end, case and rename, and the both-ways refusal are 01-02 and 01-03. issuelinks already arrives with *all, so no request is added; if one ever seems needed it goes through JiraRestRoutes with its Data Center answer. Re-read the Jira connector line numbers with fresh=true before citing them. LOCAL GATE: wire-fixture unit cases in the existing IssueExtensions tests over TrackerWireFormats for this path."
+        },
+        {
+          "id": "01-02",
+          "name": "The named end sets the direction, in any case and under a renamed phrase, and replaces is blocked by; a field stays a field",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice01JiraDependenciesFromANamedLinkScenarios.cs",
+          "scenario_name": "The_other_ends_phrase_reads_the_other_direction; A_renamed_phrase_typed_in_any_case_is_read_like_the_stock_one; Naming_a_link_replaces_is_blocked_by_for_that_Portfolio; active guards A_real_field_carrying_the_name_of_a_link_phrase_is_read_as_the_field, A_Portfolio_naming_an_ordinary_field_reads_its_keys_exactly_as_before, A_Portfolio_naming_nothing_still_reads_is_blocked_by",
+          "criteria": [
+            "Naming 'is depended on by' shows PAY-98 waiting on PAY-112",
+            "A renamed inward phrase typed in another case ('Waits For') reads like the stock phrase: PAY-140 waits on PAY-77, PAY-77 on nothing",
+            "A Portfolio naming a link reads only that link; its is blocked by links no longer count for it",
+            "A real field whose name equals a link phrase, an ordinary field, and no Dependency Field all read exactly as before"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencySourceSelector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/IssueExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Dependencies/DependencySourceSelectorTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice01JiraDependenciesFromANamedLinkScenarios.cs",
+            "ARCHITECTURE.md"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "implementation_notes": "~1.5h. Exhaustive TestCase table on DependencySourceSelector (pure): {no field, ordinary field, named link} x {Linear/CSV opt-out, Jira, ADO} -> which source and which references; the named-link source replaces the tracker link (one link type, no union). Wire-fixture unit cases for both ends, rename, case-insensitive match on name, inward and outward phrase. ARCHITECTURE.md §3 in the same change: the Dependency Field may name a link type (a third dependency source), and correct the sentence saying the connector declares the parent source (that port was never built)."
+        },
+        {
+          "id": "01-03",
+          "name": "A name that points both ways reads nothing and is recorded as one finding on the Portfolio's refresh row",
+          "agent": "nw-software-crafter",
+          "tags": [
+            "@sizing-review-needed"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs",
+          "scenario_name": "WorkItemServiceTest findings cases (new, DISTILL left them to DELIVER): one NamedLinkPointsBothWays finding per whole-query Portfolio fetch however many Features carry it; none on a delta fetch; RefreshLogTest round trip of the findings column",
+          "criteria": [
+            "A Portfolio fetch whose Dependency Field resolved to a type name or a phrase both ends share records no dependency and returns exactly one finding of kind NamedLinkPointsBothWays, setting DependencyField, naming what was typed and listing both phrases as seen",
+            "A delta fetch writes no finding; a Team fetch writes none",
+            "The finding reaches the Portfolio's RefreshLog row and reads back unchanged, and the log carries one aggregated Warning line for it",
+            "A refresh log row written before this change, with the column null, still reads"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/RefreshFinding.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/SyncOutcome.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/RefreshLog.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/",
+            "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTestBuilder.cs"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "implementation_notes": "~2.5h, tagged for sizing review and kept whole on purpose: the findings path is one chain (record -> service -> SyncOutcome -> RefreshLog) and each half is untestable without the other; split at the migration if it runs long. Follows ADR-244 and the story-6301 path: the connector puts a transient, [NotMapped] value on each Feature it returns (what the Dependency Field resolved to, the phrases seen), carried by the copy constructor; WorkItemService decides once per fetch in a private step beside PlaceWhatTheLinksLeftOpen in ResolveRemoteFeatureFetch (~:984 after the 6247 merge; re-read fresh), whole-query branch only, at most one finding per kind, one aggregated log line; SyncOutcome gains an init member; RefreshLog gains one nullable text column (System.Text.Json with a static readonly options field, CA1869), appended last; PortfolioUpdater copies it beside RecordsPlacedFromLinksNamingMoreThanOneParent (~:167). The kind is a closed enum serialised by name in the column. EF migration per the standing constraint: Create-Migration.ps1 -MigrationName AddRefreshFindingsToRefreshLog (DEVOPS listed this migration under slice 02; it moves here). No HistoricalSchemaPatch entry (RefreshLog is not seeded there). WorkItemService gains no constructor parameter. Re-read WorkItemService.cs, WorkItemServiceTest.cs and WorkItemServiceTestBuilder.cs with fresh=true first: story 6247 changed all three."
+        },
+        {
+          "id": "01-04",
+          "name": "Refresh History's read sends the Portfolio's findings, and the both-ways scenarios pass end to end",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice01JiraDependenciesFromANamedLinkScenarios.cs",
+          "scenario_name": "A_link_types_own_name_reads_nothing_and_Refresh_History_names_both_phrases; A_phrase_both_ends_share_reads_nothing_and_says_so",
+          "criteria": [
+            "GET /api/latest/systeminfo/refreshlog carries latestFullRunFindings and latestFullRunAt on every row of the Portfolio, the same on each row, with exactly one NamedLinkPointsBothWays finding naming 'Dependency' and seeing 'depends on' and 'is depended on by'",
+            "No Feature of the Portfolio waits on anything after that refresh",
+            "An entity whose rows carry no findings is sent without the members' content changing what older clients read"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/SystemInfoController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice01JiraDependenciesFromANamedLinkScenarios.cs"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "implementation_notes": "~1h. The read (SystemInfoController GetRefreshLog ~:95) attaches, per entity, the findings of its latest row that has them and that row's time; the backend picks the row, the browser never searches. Taking only Mode == Full rows is slice 02's scenario (02-02) and lands there, so this step reads the latest whole-query row the findings step wrote. Grep the tests for any refresh-log payload-shape list that must gain the two members. SLICE-END: none yet; slice 01 ends at 01-05."
+        },
+        {
+          "id": "01-05",
+          "name": "Refresh History shows a both-ways finding under the Portfolio's figures, and stays as it was without one",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.findings.test.tsx",
+          "scenario_name": "a link type named by its name rather than one end asks which end is meant",
+          "criteria": [
+            "Selecting the Portfolio shows 'The Dependency Field names \"Blocks\", which points both ways. Name one end: \"blocks\" or \"is blocked by\".' under its figures",
+            "Rows without the findings members keep rendering their history (the slice-02 guards stay skipped until 02-03)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/SystemInfo/RefreshLog.ts",
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.findings.test.tsx"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "implementation_notes": "~1h. Render from the existing read; no new fetch, so the section's existing spinner and alert are its loading and could-not-load looks. Sentences built in the browser from kind + setting + named + seen, configurable words through Terminology, tracker values literal; a kind the browser does not know renders nothing (rows written by a build that knew RelationTypeNotYetReadForDependencies will outlive slice 04). Copy as module constants pinned against literals. SLICE-END GATES: grep -rn 'PendingEpic6303.Slice01' Lighthouse.Backend is empty and the Slice01 constant is deleted; JiraIntegration run deliberately once (standing constraint); dogfood AC-1.7 / OUT-6303-dependencies-recovered on the dev instance (O-P1 baseline counted BEFORE this slice's first push; P2 link on a handful of Features) and record both numbers in the slice brief's Changed assumptions."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice 02 — A named Jira link that matched nothing says so on Refresh History",
+      "description": "US-02, Story #6300's release point. The connector's 'none of your links is called …' check no longer returns early for a link-type Dependency Field and becomes NamedLinkMatchedNothing evidence; Refresh History shows the latest FULL run's findings with that run's time, so a cheap refresh never blanks them. Brief: slices/slice-02-6300-a-named-link-that-matched-nothing-says-so.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Nothing matched the named link: one finding per whole-query refresh listing the links seen, silent otherwise",
+          "agent": "nw-software-crafter",
+          "step_type": "walking-skeleton",
+          "tags": [
+            "@walking_skeleton",
+            "@kpi"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice02NamedLinkThatMatchedNothingScenarios.cs",
+          "scenario_name": "Nothing_matched_the_named_link_and_Refresh_History_lists_the_links_that_were_seen; Several_Features_without_the_link_share_one_finding_and_one_line; Something_matched_so_Refresh_History_shows_no_finding; A_Portfolio_whose_Features_carry_no_links_at_all_is_told_nothing; A_Dependency_Field_naming_an_ordinary_field_stays_silent",
+          "criteria": [
+            "A Portfolio naming 'depends on' whose Features carry only other links gets one NamedLinkMatchedNothing finding listing the phrases seen, and one log line, however many Features it has",
+            "Anything matching, no links at all, or an ordinary field: Refresh History sends an empty findings list, not an absent one",
+            "A Portfolio naming nothing keeps today's is blocked by diagnostic in the log"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/SystemInfoController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice02NamedLinkThatMatchedNothingScenarios.cs"
+          ],
+          "dependencies": [
+            "01-05"
+          ],
+          "implementation_notes": "~2h. Generalise ReportLinksThatMeantNothingHere (JiraWorkTrackingConnector.cs ~:1275-1309): the expected name is the named phrase when a link type is named, is blocked by otherwise; lift the early return at ~:1282 for a link-type field only. The decision moves to the 01-03 findings step (evidence on the records), whole-query only, silent when anything matched or nothing is linked. Several scenarios assert an empty list rather than null: a full run that found nothing writes an empty list, so the read sends []. If the connector-side check becomes its own small class, it enters the mutation scope (DEVOPS)."
+        },
+        {
+          "id": "02-02",
+          "name": "A cheap refresh keeps showing the full download's finding and its time until the next full download",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice02NamedLinkThatMatchedNothingScenarios.cs",
+          "scenario_name": "A_cheap_refresh_keeps_showing_the_full_downloads_finding_and_its_time_until_the_next_full_download",
+          "criteria": [
+            "After a full run with a finding and then a delta run, every row of the Portfolio carries the full run's findings and the full run's time",
+            "A later full run without the finding clears it",
+            "A full run older than the window the section shows still counts"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/SystemInfoController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice02NamedLinkThatMatchedNothingScenarios.cs"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "implementation_notes": "~1h. The read takes, per entity, the latest row with Mode == SyncMode.Full, whatever window is asked for. SLICE-PREP: JiraIntegration run deliberately once; dogfood on slice 01's Portfolio deliberately mis-named ('depend on'), read the finding, correct, re-run; record in the slice brief."
+        },
+        {
+          "id": "02-03",
+          "name": "Refresh History says which named link nothing carries, which links were seen, and as of which full download",
+          "agent": "nw-software-crafter",
+          "step_type": "walking-skeleton",
+          "tags": [
+            "@walking_skeleton",
+            "@kpi"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.findings.test.tsx",
+          "scenario_name": "a named link nothing carries is shown with the links that were seen and when that was found; active guards a full download that found nothing to say shows no finding and no label, rows from a backend that sends no findings still show their history",
+          "criteria": [
+            "With Feature renamed to Epic, the section shows 'The Dependency Field names \"depends on\", and no Epic carries that link. Links seen: is blocked by, relates to.'",
+            "Beside it, 'as of the full download on 16 Oct, 09:12', formatted as a local day and time",
+            "An empty findings list shows no finding and no label; rows from a backend that sends no findings still render the history"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.findings.test.tsx"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "implementation_notes": "~45 min. Format the time through the existing local-date utilities (src/utils/date/localDate.ts), never toISOString; the suites run in Europe/Zurich. SLICE-END GATES: grep -rn 'PendingEpic6303.Slice02' Lighthouse.Backend empty, constant deleted, no US-01/US-02 it.skip left. #6300 is releasable."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Slice 03 — An Azure DevOps relation type is accepted where a field name goes",
+      "description": "US-03 validate half, Story #6312. A reference that misses the field list is looked up once per call in the organisation's relation types (never remembered on the cached connector); Validate accepts reference name plus end, refuses a typo listing the types, and says so when the listing is refused; a refresh no longer reports it as a missing field; until slice 04 a relation-type Dependency Field reads nothing and says not yet; in any other setting it reads as nothing named and says why. Brief: slices/slice-03-6312-ado-relation-type-accepted-as-a-reference.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Spike, then Validate accepts a relation type reference with its end, in any case, asking at most once",
+          "agent": "nw-software-crafter",
+          "step_type": "feature",
+          "tags": [
+            "@spike-first"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice03AzureDevOpsRelationTypeAcceptedScenarios.cs",
+          "scenario_name": "A_relation_type_reference_with_its_end_validates_where_a_field_name_goes; A_relation_type_reference_matches_in_any_case; Validate_asks_the_organisation_for_its_relation_types_at_most_once; active guard A_field_that_exists_validates_without_asking_for_the_relation_types",
+          "criteria": [
+            "POST /api/latest/worktrackingsystemconnections/validate answers 200 for an Additional Field referencing 'Contoso.DependsOn-Forward', also typed in another case",
+            "Validate lists the organisation's relation types at most once per call, and not at all when every reference is a field",
+            "A field whose name collides with a relation type validates as the field"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/NamedDependencyLinkAcceptanceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TrackerWireFormats/",
+            "docs/feature/epic-6303-configure-once-per-connection/slices/slice-03-6312-ado-relation-type-accepted-as-a-reference.md"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "implementation_notes": "~2.5h including the spike. SPIKE FIRST (DISTILL pre-requisite 1, P8, OQ-1): with a vso.work PAT, record a real GET _apis/wit/workitemrelationtypes answer from the dev organisation (SDK GetRelationTypesAsync is the candidate), replace the provisional AnAzureDevOpsOrganisation.AsListed with it, and add a Server 2022 fixture if one can be obtained (otherwise say so in the brief). Record which directional types the organisation lists: slice 04's vehicle is chosen from them. IF THE LISTING IS REFUSED with vso.work: stop and report to the maintainer before building on it (the slice's learning hypothesis). Then: the listing is a value created at the start of one Validate call for that call's connection and passed down that call's chain; the connector holds no field of its type (ArchUnit or reflection check). Directional types are listed end by end; match reference names case-insensitively; display names never. Field lookup runs first and wins."
+        },
+        {
+          "id": "03-02",
+          "name": "Validate refuses a typo listing the organisation's relation types, and says so when it may not list them",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice03AzureDevOpsRelationTypeAcceptedScenarios.cs",
+          "scenario_name": "A_typo_still_fails_and_lists_the_relation_types_the_organisation_defines; An_organisation_that_will_not_list_its_relation_types_fails_validation_saying_so",
+          "criteria": [
+            "A typo answers 400 and the message lists the relation types the organisation defines",
+            "A refused or failing listing answers 400 saying the relation types could not be read, never that the field is missing, and never resolves the reference to nothing"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice03AzureDevOpsRelationTypeAcceptedScenarios.cs"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "implementation_notes": "~1h. Follow the Jira precedent for an empty or refused listing (JiraWorkTrackingConnector.cs ~:1821-1830). Log the failure once with the exception as first argument (S6667)."
+        },
+        {
+          "id": "03-03",
+          "name": "A refresh resolves a relation-type reference as a link type: no missing-field warning, and a Dependency Field naming one says not yet",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice03AzureDevOpsRelationTypeAcceptedScenarios.cs",
+          "scenario_name": "A_refresh_does_not_report_a_relation_type_reference_as_a_missing_field; Until_relations_are_read_a_relation_type_Dependency_Field_reads_nothing_and_says_not_yet",
+          "criteria": [
+            "After a refresh neither the log nor Refresh History says no field is called the relation type",
+            "A Dependency Field resolving to a relation type reads no dependencies and Refresh History shows one RelationTypeNotYetReadForDependencies finding per refresh"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/RefreshFinding.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice03AzureDevOpsRelationTypeAcceptedScenarios.cs"
+          ],
+          "dependencies": [
+            "03-02"
+          ],
+          "implementation_notes": "~1.5h. At refresh the listing is created at the start of one owner's fetch for that connection (never on the connector, which the factory caches per tracker for two minutes and shares) and asked only when a reference missed the field list (AzureDevOpsWorkTrackingConnector.cs ~:690-736, the ~:727-729 warning). The resolution travels as Jira's does (field vs link type plus end), never persisted. Evidence on the records feeds the 01-03 findings step."
+        },
+        {
+          "id": "03-04",
+          "name": "A relation type named in any other setting reads as nothing named and Refresh History says only the Dependency Field reads one",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice03AzureDevOpsRelationTypeAcceptedScenarios.cs",
+          "scenario_name": "A_relation_type_named_as_Parent_Override_Field_keeps_the_native_parent_and_says_why; A_relation_type_named_in_another_setting_reads_as_nothing_named_and_says_why (3 rows: Size Estimate Field, Feature Owner Field, Estimation field); frontend RefreshHistorySection.findings.test.tsx 'a relation type named as the Parent Override Field says only the Dependency Field reads one'",
+          "criteria": [
+            "A relation type named as Parent Override keeps the native parent and raises one RelationTypeCannotBeReadHere finding for that owner",
+            "Named as Size Estimate, Feature Owner or Estimation field it reads as if nothing were named and raises one finding naming the setting",
+            "Refresh History shows 'The Parent Override Field points at an Azure DevOps relation type, which only the Dependency Field reads.'"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice03AzureDevOpsRelationTypeAcceptedScenarios.cs",
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.findings.test.tsx"
+          ],
+          "dependencies": [
+            "03-03"
+          ],
+          "implementation_notes": "~2h. Several findings may arise in one refresh (one per setting). A Team's Parent Override finding also needs the Team fetch path and TeamUpdater to carry findings (the 01-03 step was Portfolio-only); a Team's Estimation finding likewise. Check whether the 01-03 step must run on the Team resolver too and extend it there (ResolveRemoteFetch ~:185). SLICE-END GATES: AdoIntegration run deliberately once (Validate and relations paths); grep -rn 'PendingEpic6303.Slice03' Lighthouse.Backend empty, constant deleted (Until_relations_are_read_… stays, green, until 04-01 deletes it); no US-03 it.skip left; the spike's listing and the chosen slice 04 vehicle recorded in the brief."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Slice 04 — An Azure DevOps Portfolio reads dependencies from the relation end it names",
+      "description": "US-03 read half, Story #6312's release point. ExtractDependencyReferences takes the Rel to match; the relations batch is read whenever the Dependency Field names a relation type, whatever the Parent Override says; one listing per connection per refresh across a shared cached connector; no end, no direction and nothing matching each say so once. Slice 03's not-yet finding is retired by reading. Brief: slices/slice-04-6312-ado-dependencies-from-a-named-relation-type.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Walking skeleton: a Feature waits on the work item at the other end of the named relation, replacing Predecessor",
+          "agent": "nw-software-crafter",
+          "step_type": "walking-skeleton",
+          "tags": [
+            "@walking_skeleton",
+            "@kpi"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice04AzureDevOpsDependenciesFromANamedRelationEndScenarios.cs",
+          "scenario_name": "A_Feature_waits_on_the_work_item_at_the_other_end_of_the_named_relation; Naming_the_reverse_end_reads_the_other_direction; Naming_a_relation_end_replaces_Predecessor_for_that_Portfolio; active guard A_Portfolio_naming_nothing_still_reads_Predecessor_without_listing_relation_types",
+          "criteria": [
+            "Naming 'Contoso.DependsOn-Forward' shows 4711 waiting on 4702; naming the reverse end reads the other direction",
+            "A Portfolio naming a relation end no longer reads Predecessor; one naming nothing still does and lists no relation types",
+            "Slice 03's not-yet finding is no longer raised: the scenario Until_relations_are_read_… owned by 03-03 is retired (deleted with the kind), not re-owned here"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/WorkItemExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencySourceSelector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/RefreshFinding.cs",
+            "Lighthouse.Frontend/src/models/SystemInfo/RefreshLog.ts",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice03AzureDevOpsRelationTypeAcceptedScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice04AzureDevOpsDependenciesFromANamedRelationEndScenarios.cs"
+          ],
+          "dependencies": [
+            "03-04"
+          ],
+          "implementation_notes": "~2h. ExtractDependencyReferences (WorkItemExtensions.cs ~:54-78) takes the Rel to match, default unchanged (System.LinkTypes.Dependency-Reverse); routed through slice 01's selector source. If the spike changed the vehicle from Contoso.DependsOn, the fixtures follow the spike, not the reverse. Retire RelationTypeNotYetReadForDependencies from the backend enum and the frontend union in this step and delete its test (DISTILL tags it retired by slice 04); the browser already renders an unknown kind as nothing (01-05), which covers rows written before. Wire-fixture units both ends and default."
+        },
+        {
+          "id": "04-02",
+          "name": "Relations are read with a Parent Override set, at one listing per connection per refresh across a shared connector",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice04AzureDevOpsDependenciesFromANamedRelationEndScenarios.cs",
+          "scenario_name": "A_Parent_Override_Field_on_the_same_Portfolio_does_not_stop_the_relation_being_read; Naming_a_relation_end_costs_one_relation_type_listing_and_nothing_per_work_item; Two_organisations_on_one_shared_connector_each_answer_with_their_own_relation_types",
+          "criteria": [
+            "With a Parent Override Field on the same Portfolio, 4711 still waits on 4702",
+            "A refresh adds exactly one relation-type listing to the request sequence and no request per work item",
+            "One cached connector refreshing Portfolios on two organisations lists each organisation once against its own organisation; refreshing the first again lists again"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice04AzureDevOpsDependenciesFromANamedRelationEndScenarios.cs"
+          ],
+          "dependencies": [
+            "04-01"
+          ],
+          "implementation_notes": "~1.5h. Close the S14 trap: the relations-fetch skip (~:1142-1145, decided at ~:648 by ReadsTheTrackersOwnLink) reads the resolution, so a relation-type Dependency Field counts as from relations. The per-call listing created in 03-03 is threaded through the owner's fetch chain only."
+        },
+        {
+          "id": "04-03",
+          "name": "No end, no direction, or nothing carrying the named end each say so once",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice04AzureDevOpsDependenciesFromANamedRelationEndScenarios.cs",
+          "scenario_name": "A_relation_type_named_without_its_end_reads_nothing_and_names_both_ends; Related_has_no_direction_so_it_reads_nothing_and_says_so; Nothing_carrying_the_named_end_says_so_once_and_lists_the_relation_types_seen",
+          "criteria": [
+            "A base name without its end reads nothing and raises one RelationTypeNamedWithoutItsEnd finding naming the Forward and Reverse ends",
+            "System.LinkTypes.Related reads nothing and raises one RelationTypeHasNoDirection finding",
+            "A named end no work item carries raises one NamedLinkMatchedNothing finding listing the Rel values seen, never one per work item"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice04AzureDevOpsDependenciesFromANamedRelationEndScenarios.cs",
+            "ARCHITECTURE.md"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "implementation_notes": "~1.5h. Frontend sentences for RelationTypeHasNoDirection and RelationTypeNamedWithoutItsEnd are not pinned by any Vitest (gap reported); render them in the UI-6 style only if the maintainer approves the wording, otherwise leave them unrendered. ARCHITECTURE.md §3: the ADO relation-type listing is connector-local and per call; §16 rows for ADR-243 and ADR-244. SLICE-END GATES: AdoIntegration run deliberately once; dogfood OUT-6303-dependencies-recovered for ADO (O-P1 baseline before the push), numbers in the brief; grep -rn 'PendingEpic6303.Slice04' Lighthouse.Backend empty, constant deleted. #6312 is releasable."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Slice 05a — The Teams' Parent Override Field is set once on the connection, and the save names the followers in the log",
+      "description": "US-04 first half, Story #6304. SettingSource, the pure effective-value rule, the owner's existing property answering with the effective value, private setters behind follow/own, the Teams' source column and the connection's default column with the upgrade repair, IConnectionSaveService owning the save (registered; replaces the dispatcher on the controller), the nested defaults member, the D21 map, one Information log entry per default-changing save, the owner DTO's source and followed name, the connection page's defaults section with its loading, could-not-load and late-answer looks, and the owner dropdown's first entry. No save dialog for a changed default: that is slice 06. Brief: slices/slice-05a-6304-team-parent-override-default.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "An owner setting is its own value plus a source, and every reader gets the effective value",
+          "agent": "nw-software-crafter",
+          "step_type": "refactor",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/EffectiveSettingTest.cs",
+          "scenario_name": "EffectiveSettingTest (new): exhaustive table source {ConnectionDefault, Own} x own {null, set} x default {null, set} through the owner's public property; WorkTrackingSystemOptionsOwnerTest follow/own mutator cases (follow clears the own value)",
+          "criteria": [
+            "A follower and an owner read alike: the Team's existing Parent Override property returns the default for a follower, its own value for an owner, null for an owner with None",
+            "Every writer sets the source and the value through the owner's mutators; following clears the own value and a follower reads the default",
+            "No reader of the property changes its code and no column changes"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/SettingSource.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/EffectiveSetting.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/IWorkItemQueryOwner.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Factories/DemoDataFactory.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/EffectiveSettingTest.cs"
+          ],
+          "dependencies": [
+            "04-03"
+          ],
+          "implementation_notes": "~2h. Pure refactor, nothing stored yet: the source and the connection's default exist on the model as [NotMapped] members in this step (an owner with a value reads as Own, one without as ConnectionDefault, and no default is set, so every effective value equals today's) and 05-02 maps them with the migration. Verify no migration is generated and no PendingModelChanges appears. The rule is one static pure function in Models (file name must not start with WorkTrackingSystemConnection). The connection's default accessor is read through the owner's loaded connection; an owner built without one reads a follower's value as null (accepted, ADR-241). Grep every writer of ParentOverrideAdditionalFieldDefinitionId (production, tests, builders, DemoDataFactory) before making the setter private; IWorkItemQueryOwner's member becomes get-only. CS8524 pragma on a discard-free switch over SettingSource."
+        },
+        {
+          "id": "05-02",
+          "name": "The upgrade adds the Teams' source and the connection's default, repairs values pointing at nothing, and moves no other fingerprint",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ConnectionDefaultsUpgradeMigrationTests.cs",
+          "scenario_name": "On_SQLite_owners_that_named_nothing_or_a_missing_field_follow_and_owners_keep_their_field(TeamsParentOverrideField); On_Postgres_owners_that_named_nothing_or_a_missing_field_follow_and_owners_keep_their_field(TeamsParentOverrideField); active guards FetchFingerprintAcrossTheConnectionDefaultsUpgradeTest.A_Team_that_names_its_own_Parent_Override_Field_keeps_its_fingerprint, A_Team_that_names_no_Parent_Override_Field_keeps_its_fingerprint, A_Portfolio_that_names_its_own_fields_keeps_its_fingerprint, A_Portfolio_that_names_no_field_keeps_its_fingerprint",
+          "criteria": [
+            "After the upgrade on both providers a Team with its own field is Own with that field; one naming nothing, a deleted field or another connection's field follows with no value",
+            "The first two keep the fingerprint they had before; the pinned digests stay green",
+            "Nothing is queued at the upgrade"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemConnection.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/",
+            "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ConnectionDefaultsUpgradeMigrationTests.cs"
+          ],
+          "dependencies": [
+            "05-01"
+          ],
+          "implementation_notes": "~2h. FIRST, before generating anything (O-P2, OQ-5): run the DDD-28 predicate as a SELECT on the dev database and record how many Teams the repair will move, in the slice brief (no customer identifiers). Then Create-Migration.ps1 -MigrationName AddTeamsParentOverrideDefault: Teams.ParentOverrideSource int not null default 0 and WorkTrackingSystemConnections' Teams Parent Override default column (nullable, no FK, DDD-27), plus the two hand-added data steps on both providers (standing EF constraint). HistoricalSchemaPatch gains both columns. FetchShapingPropertyGuardTest gains its third category, 'reaches the fingerprint through the owner's effective value', for the source and default properties; FetchFingerprint.For / ForConnection get no code change. Touching Models/WorkTrackingSystemConnection.cs wakes every live suite in CI (standing constraint)."
+        },
+        {
+          "id": "05-03",
+          "name": "The connection save moves into IConnectionSaveService, which the controller calls in place of the dispatcher",
+          "agent": "nw-software-crafter",
+          "step_type": "refactor",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Connections/ConnectionSaveServiceTest.cs",
+          "scenario_name": "ConnectionSaveServiceTest (new): Open returns null for an unknown id; Commit applies the token and saves; the 6307 fan-out publishes ConnectionFetchShapeChanged for every owner when ForConnection moved and nothing when startUpdates is false; a publish failure after a stored save still reports saved. Guards: the existing story-6307 connection-save acceptance tests and Someone_without_connection_rights_cannot_save_the_connection stay green",
+          "criteria": [
+            "A connection save behaves exactly as before: same response, same 400 / 403 / 404 / 409, same owners queued",
+            "The controller still takes 7 constructor parameters and depends on neither IDomainEventDispatcher nor FetchFingerprint",
+            "The service is registered and no SCAFFOLD marker is left"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IConnectionSaveService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Connections/ConnectionSaveService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Connections/ConnectionSaveServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectionSaveArchitectureTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionControllerTest.cs"
+          ],
+          "dependencies": [
+            "05-02"
+          ],
+          "implementation_notes": "~2.5h. No behaviour change; nothing else in the commit. Open(id) replaces GetEntityByIdAnExecuteAction's read in the PUT and renders each owner's For from that same read; the controller keeps mapping the DTO onto the handle's connection and its write-back (400) and licence (403) checks; Commit applies the client token, saves, re-reads the owners untracked, and publishes the unchanged event (still every owner when ForConnection moved, narrowed in slice 06). The service takes the connection, Team and Portfolio repositories, the dispatcher and its own logger (5), takes no DTO (Services must not depend on API.DTO). This is the one Program.cs line of the Epic: it force-fulls every live-connector suite in CI. New ArchUnit test (Release check) for the controller's forbidden dependencies, matched by type. A mock asserted Times.Never built in [SetUp]."
+        },
+        {
+          "id": "05-04",
+          "name": "Walking skeleton: one save on the connection and every Team that named nothing reads its parents from the default; the log names them",
+          "agent": "nw-software-crafter",
+          "step_type": "walking-skeleton",
+          "tags": [
+            "@walking_skeleton",
+            "@kpi",
+            "@sizing-review-needed"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05aTeamsParentOverrideDefaultScenarios.cs",
+          "scenario_name": "One_save_on_the_connection_and_every_Team_that_named_nothing_reads_its_parents_from_the_default; A_Team_with_its_own_Parent_Override_Field_is_unaffected_by_the_default; A_Team_that_chose_None_keeps_the_trackers_own_parent_whatever_the_default_says; active guard Someone_without_connection_rights_cannot_save_the_connection",
+          "criteria": [
+            "A System Admin PUTs defaults.parentOverrideForTeams = 'Caused by'; after their refreshes Fraud Signals', Ops Tooling's and Mobile Wallet's Work Items hang under what Caused by names, read through the Team work-in-progress route",
+            "Ledger, owning its field, and a Team owning None keep reading exactly what they read before",
+            "The save writes exactly one Information log entry naming the connection, the changed default with old and new names, and its followers in creation order",
+            "Someone without SystemAdmin is still refused"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemConnection.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Connections/ConnectionSaveService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Connections/ConnectionSaveServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05aTeamsParentOverrideDefaultScenarios.cs",
+            "ARCHITECTURE.md"
+          ],
+          "dependencies": [
+            "05-03"
+          ],
+          "implementation_notes": "~2.5h, tagged for sizing review and kept whole as the thinnest line through DTO, controller, service, model and log. The DTO gains one nested defaults member (request and response); in this step only parentOverrideForTeams. The service compares the default before and after and writes the entry after Save() through its own logger: Information, a structured template, names only. The Jira connector already reads the effective value through the owner (05-01), so nothing changes there. Logger-capturing unit test on the service for the entry. ARCHITECTURE.md §3 (settings an owner inherits; defaults reach the fingerprint only through the effective value) and §5 (the save's rules live in IConnectionSaveService, the controller maps; the save logs who follows)."
+        },
+        {
+          "id": "05-05",
+          "name": "A connection offers only the defaults its tracker honours, and refuses any other",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05aTeamsParentOverrideDefaultScenarios.cs",
+          "scenario_name": "Jira_and_Azure_DevOps_offer_every_default ('Jira offers every default', 'Azure DevOps offers every default'); A_CSV_connection_offers_only_Feature_Owner_and_Estimation; Linear_and_ServiceNow_offer_no_default ('Linear offers no default', 'ServiceNow offers no default'); A_default_the_tracker_does_not_honour_is_refused_and_nothing_is_saved",
+          "criteria": [
+            "supportedDefaults lists all seven member names on Jira and Azure DevOps, featureOwnerFieldForPortfolios plus both Estimation members on CSV, and an empty list on Linear and ServiceNow",
+            "A PUT setting a default the tracker does not honour answers 400 and stores nothing"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/SupportedConnectionDefaults.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/SupportedConnectionDefaultsTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05aTeamsParentOverrideDefaultScenarios.cs"
+          ],
+          "dependencies": [
+            "05-04"
+          ],
+          "implementation_notes": "~1h. One static map in Models keyed by tracker (DDD-16/17, ServiceNow hidden, CSV Feature Owner and Estimation). The map names all seven settings now, though only the Teams' Parent Override is stored until 08..12; a PUT naming a not-yet-built default is refused as unsupported by the build, not silently dropped. Exhaustive unit table tracker x setting."
+        },
+        {
+          "id": "05-06",
+          "name": "The defaults member is authoritative when present and keeps every default when absent; a stale save is refused; a new field can be the default",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05aTeamsParentOverrideDefaultScenarios.cs",
+          "scenario_name": "A_save_that_changes_no_default_writes_no_log_entry; A_default_nobody_follows_still_writes_an_entry_saying_none_follow; A_save_without_the_defaults_keeps_every_default; Clearing_a_default_stops_the_followers_reading_it_and_is_logged; The_admin_whose_copy_is_stale_is_refused_and_the_first_default_stands; A_field_added_in_the_same_save_can_be_the_default",
+          "criteria": [
+            "A PUT without defaults keeps every stored default and writes no entry; a PUT with an unchanged defaults member writes no entry",
+            "A null inside defaults clears that default, its followers read nothing for it, and the entry records the change",
+            "A default nobody follows still writes one entry saying 'no Team follows it'",
+            "A second admin saving with a stale token gets 409 concurrency-conflict; the first default stands, nothing is queued and only one entry exists",
+            "An Additional Field added in the same save, named by its temporary negative id, becomes the default"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Connections/ConnectionSaveService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Connections/ConnectionSaveServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05aTeamsParentOverrideDefaultScenarios.cs"
+          ],
+          "dependencies": [
+            "05-05"
+          ],
+          "implementation_notes": "~2h. Absent and cleared must bind differently: the nested object's presence is the signal. Temporary ids map through NewAdditionalFieldTargets. The token stays optional; a token-less save behaves as today. Publish and log only after a successful Save(); a refused or stale save writes nothing. Logger-capturing unit cases for each entry shape (none changed, none follow, cleared, refused, stale)."
+        },
+        {
+          "id": "05-07",
+          "name": "A Team's settings say what it follows and from where, and a new Team follows from the start",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05aTeamsParentOverrideDefaultScenarios.cs",
+          "scenario_name": "A_new_Team_follows_the_default_from_the_start; A_Team_admin_without_connection_rights_sees_which_field_the_Team_follows",
+          "criteria": [
+            "GET /api/latest/teams/{id}/settings carries the effective field in the existing member, parentOverrideSource 'ConnectionDefault' or 'Own', parentOverrideDefaultName and workTrackingSystem",
+            "A Team created through POST /api/latest/teams starts on ConnectionDefault",
+            "A Team admin without connection rights reads 'Caused by' as the followed name"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/SettingsOwnerDtoBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/TeamExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05aTeamsParentOverrideDefaultScenarios.cs"
+          ],
+          "dependencies": [
+            "05-06"
+          ],
+          "implementation_notes": "~1.5h. Source members nullable on the request (S6964). In this slice an incoming value without a source keeps today's meaning (own); slice 05b brings the G-R1 (b) rule, and no release is cut between the two. SettingSource out as a string (global JsonStringEnumConverter), accepted as name or int."
+        },
+        {
+          "id": "05-08",
+          "name": "The connection page shows Defaults for Teams and Portfolios with the settings the tracker honours, in this instance's words",
+          "agent": "nw-software-crafter",
+          "step_type": "walking-skeleton",
+          "tags": [
+            "@walking_skeleton"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.defaults.test.tsx",
+          "scenario_name": "a Jira connection shows a Defaults for Teams and Portfolios section with the settings Jira honours for each; a CSV connection offers only the Feature Owner and Estimation defaults; the section speaks in the words this instance uses; the page never says how many follow a default; active guards a Linear connection shows no defaults section, a ServiceNow connection shows no defaults section",
+          "criteria": [
+            "A region 'Defaults for Teams and Portfolios' below Additional Fields with groups 'Teams' and 'Portfolios' and one row per supported default",
+            "Configurable words render in the instance's terms ('Defaults for Squads and Programs')",
+            "No follower count anywhere on the page; no section on Linear or ServiceNow"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/WorkTracking/WorkTrackingSystemConnection.ts",
+            "Lighthouse.Frontend/src/services/Api/WorkTrackingSystemService.ts",
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.defaults.test.tsx"
+          ],
+          "dependencies": [
+            "05-07"
+          ],
+          "implementation_notes": "~2h. InputGroup + FormSelectField after Additional Fields (ModifyConnectionSettings.tsx ~:793-818); rows listed from supportedDefaults; the rows for settings not yet stored (08..12) are listed only once their slice lands, so only the Teams' Parent Override row is live now; the test's Jira row expectations decide what this step must show, read them first. zod .nullable() for every nullable member. Grep Lighthouse.EndToEndTests for any label touched."
+        },
+        {
+          "id": "05-09",
+          "name": "The defaults share the page's loading and could-not-load looks, and an answer for a connection already left never lands",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.defaults.test.tsx",
+          "scenario_name": "while the connection is on its way the page shows its loading look, and the section once it arrives; an answer for the connection Priya has left is dropped, and the one she opened shows its own defaults; when the connection cannot be loaded the page says so, and no section pretends it has no defaults",
+          "criteria": [
+            "While the connection loads the page shows its existing loading look and no section",
+            "When connection A's answer arrives after B's, B's defaults are shown",
+            "A failed load shows 'Could not load this connection.' with Try again, and no section"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.defaults.test.tsx"
+          ],
+          "dependencies": [
+            "05-08"
+          ],
+          "implementation_notes": "~1.5h. No new fetch. EditConnection loads through its own promise loader (~:42-52): add the id check there, or move the read to a TanStack query keyed by id, whichever is the smaller change. The could-not-load copy and Try again are new on this page (DISTILL turned the former guard RED for them); the sketch is approved (UI-1)."
+        },
+        {
+          "id": "05-10",
+          "name": "A changed default saves nested in the connection without asking anything, and an unchanged save sends the defaults as read",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.defaults.test.tsx",
+          "scenario_name": "a default 3 Teams follow saves without asking anything, nested in the connection, as a save does today (retired by slice 06); a save that changes neither a default nor a field sends the defaults as they were and asks nothing",
+          "criteria": [
+            "Choosing a default and saving sends defaults.parentOverrideForTeams in the PUT with no dialog and navigates to / as today",
+            "A save changing nothing sends the defaults it read and opens no dialog"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.defaults.test.tsx"
+          ],
+          "dependencies": [
+            "05-09"
+          ],
+          "implementation_notes": "~1h. The first scenario is tagged retired-by-slice-06: it goes in 07-03 when the dialog arrives. No dialog copy is built in this slice."
+        },
+        {
+          "id": "05-11",
+          "name": "The Team's Parent Override dropdown opens with Connection default (…), says where it is set, and any other entry makes the value the Team's own",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/AdvancedInputs/AdvancedInputs.connectionDefault.test.tsx",
+          "scenario_name": "shows the followed field as the first entry, with where it is set; names the tracker of the connection the default is set on; shows the followed field to a Team admin who cannot read the connection's fields; choosing None makes None the Team's own choice; choosing a field makes it the Team's own; a Team that chose None can go back to following the connection",
+          "criteria": [
+            "The combobox named 'Parent Override Field' opens with 'Connection default (Caused by)' and the helper 'Set on the Jira connection.' ('Azure DevOps' on ADO)",
+            "The followed name shows without the connection's field list",
+            "None or another field reports parentOverrideSource 'Own' through onSettingsChange; picking the first entry reports 'ConnectionDefault'"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/AdvancedInputs/AdvancedInputs.tsx",
+            "Lighthouse.Frontend/src/components/Common/FormSelectField/FormSelectField.tsx",
+            "Lighthouse.Frontend/src/models/Common/BaseSettings.ts",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/pages/Common/AdvancedInputs/AdvancedInputs.connectionDefault.test.tsx"
+          ],
+          "dependencies": [
+            "05-10"
+          ],
+          "implementation_notes": "~2h. DISTILL pre-requisite 2: the dropdown's InputLabel has no labelId today, so link it (accessible name 'Parent Override Field'), and grep Lighthouse.EndToEndTests for the old locator in the same edit. AdvancedInputs moves to FormSelectField with its optional first entry. The page always sends the source it read (avoids the stale-echo flip). SLICE-END GATES: grep -rn 'PendingEpic6303.Slice05a' Lighthouse.Backend returns nothing (the two 05a upgrade rows were un-skipped in 05-02) and the constant is deleted; no US-04 it.skip is left; dogfood OUT-6303-set-once on the dev instance (fingerprints before/after equal except repaired Teams; set a default; read the entry; create a Team and see it follow), numbers in the brief."
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "name": "Slice 05b — A field a default or an owner uses cannot be removed, and an older client's round trip changes nothing",
+      "description": "US-04 second half, Story #6304. The pure in-use rule and the 409 additional-field-in-use with the approved copy, fed by a fresh set-based query in Commit; the owner-side 400 for a field not on the owner's connection; the G-R1 (b) apply rule on the Team PUT and the round trip in both shapes; the accepted stale-echo flip pinned. The three Portfolio rows of the round-trip table cannot pass before the Portfolio source exists and move to slice 08 (gap). Brief: slices/slice-05b-6304-referenced-fields-and-older-payloads.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "06-01",
+          "name": "Removing a field a default or a Team uses as its own is refused, naming them; nothing is saved",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05bReferencedFieldsAndOlderPayloadsScenarios.cs",
+          "scenario_name": "A_field_the_default_and_a_Team_use_cannot_be_removed_and_the_refusal_says_who; A_field_only_a_Team_uses_as_its_own_cannot_be_removed; A_field_only_a_default_names_cannot_be_removed; active guard A_field_nobody_uses_is_removed_as_today",
+          "criteria": [
+            "The PUT answers 409 code additional-field-in-use with '\"Caused by\" cannot be removed. It is the Teams' Parent Override Field default, and Ledger uses it as its own. Nothing was saved.' and the field still exists",
+            "A field only a Team owns, or only a default names, is refused the same way, naming only who uses it",
+            "A field nobody uses is removed as today"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/AdditionalFieldInUse.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Connections/ConnectionSaveService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IConnectionSaveService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/AdditionalFieldInUseTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05bReferencedFieldsAndOlderPayloadsScenarios.cs"
+          ],
+          "dependencies": [
+            "05-11"
+          ],
+          "implementation_notes": "~2h. The rule is pure and data-only in Models: removed ids, the connection's default ids, the owner rows -> referring defaults and owners; the refusal copy for several defaults and owners is unit-tabled there (DISTILL left it to DELIVER). Commit runs one set-based query (owners on this connection whose own value of any of the five settings is a removed id) in the same unit of work, before the token and Save(). The query names all five settings' own values now, so slices 08..12 only add their column to it. The controller maps 'refused' to 409. ArchUnit: the rule depends on nothing outside Models (Release check)."
+        },
+        {
+          "id": "06-02",
+          "name": "A Team that starts using a field while its removal is being saved still blocks it, and a Team cannot name a field its connection lacks",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05bReferencedFieldsAndOlderPayloadsScenarios.cs",
+          "scenario_name": "A_Team_that_starts_using_the_field_while_the_removal_is_being_saved_still_blocks_it; A_Team_cannot_name_a_field_its_connection_does_not_have",
+          "criteria": [
+            "With a Team PUT committed between Open and Commit, the removal answers 409 naming 'Ops Tooling uses it as its own' and the field survives",
+            "A Team PUT naming another connection's field answers 400 and the Team still follows"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/TeamExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05bReferencedFieldsAndOlderPayloadsScenarios.cs"
+          ],
+          "dependencies": [
+            "06-01"
+          ],
+          "implementation_notes": "~1.5h. The race is driven deterministically by the harness decorating the registered IConnectionSaveService between Open and Commit (DISTILL pre-requisite 4); if 05-03 reshaped the handle, the decorator follows. The owner-side check reads the owner's connection's field definitions in its own unit of work. Check the Team controller's constructor width before adding anything (S107)."
+        },
+        {
+          "id": "06-03",
+          "name": "A Team saved by a client that may not send the source keeps its source unless it sends a different, non-empty value",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05bReferencedFieldsAndOlderPayloadsScenarios.cs",
+          "scenario_name": "A_Team_saved_by_a_client_that_may_not_send_the_source (7 rows: 'A follower sent back what it reads keeps following', 'A follower sent back empty keeps following', 'A follower sent another field owns it', 'An owner sent back empty keeps its own field', 'An owner sent another field owns that one', 'A follower sent None as its own chooses None', 'An owner sent as following drops its own value')",
+          "criteria": [
+            "Source present: applied as sent, Own with null being a deliberate None, ConnectionDefault clearing the own value",
+            "Source absent: the Team owns the value only when it is non-null and differs from the effective value before the request; otherwise nothing changes"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/IncomingSetting.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/TeamExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/IncomingSettingTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Helpers/TeamExtensionsTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05bReferencedFieldsAndOlderPayloadsScenarios.cs"
+          ],
+          "dependencies": [
+            "06-02"
+          ],
+          "implementation_notes": "~1.5h. Seven acceptance rows of one rule, counted as one scenario family. The apply rule is a pure function in Models with an exhaustive unit table (source {absent, Own, ConnectionDefault} x sent {null, equal to effective, different} x stored source), mutation-scored without the acceptance suite. Create applies the same rule to a new owner whose stored source starts at ConnectionDefault. CS8524 pragma where the switch is discard-free."
+        },
+        {
+          "id": "06-04",
+          "name": "A script that saves back what it read changes no Team, and a stale copy behaves as documented",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05bReferencedFieldsAndOlderPayloadsScenarios.cs",
+          "scenario_name": "A_script_that_saves_back_what_it_read_changes_nothing, the four Team rows (Fraud Signals and Ledger, EchoingEveryProperty and DroppingWhatItDoesNotKnow); A_stale_copy_saved_back_without_its_source_makes_the_Team_own_the_old_default; A_stale_copy_saved_back_with_its_source_keeps_the_Team_following_the_new_default",
+          "criteria": [
+            "A GET-then-PUT of a follower and an owner, echoing every property or dropping unknown ones, leaves source and effective value unchanged",
+            "A copy read before the default moved, saved back without its source, makes the Team Own the old value (accepted); with its source it keeps following the new default"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05bReferencedFieldsAndOlderPayloadsScenarios.cs"
+          ],
+          "dependencies": [
+            "06-03"
+          ],
+          "implementation_notes": "~1h. These should pass on 06-03's rule; prove each can fail by sabotage-by-substitution before un-skipping. The three Portfolio rows (Merchant Onboarding x2, Card Issuing) need the Portfolio source column of slice 08: move their pending marker from the method-level Ignore to Ignore = PendingEpic6303.Slice08 on those three TestCase rows (the upgrade test's pattern) and drop the method-level Ignore; 08-03 un-skips them. CLI check from the brief: lh team get then lh team update with that payload, both shapes, against a local instance, changes nothing; record it. SLICE-END GATES: grep -rn 'PendingEpic6303.Slice05b' Lighthouse.Backend empty (the three Portfolio rows now name Slice08), constant deleted."
+        }
+      ]
+    },
+    {
+      "id": "07",
+      "name": "Slice 06 — A changed default updates exactly the owners that follow it, and the save dialog asks first",
+      "description": "US-05, Story #6304's release point. The pure movers rule narrows the published owners to those whose For moved; Save only queues nothing and still logs; the entry says how many were queued; usedBy carries follower counts per default; the maintainer-approved UI-3 update question opens for a followed fetch-time default; WorkTrackingSystemFieldsChanged is sent only for an Additional Field change. Brief: slices/slice-06-6304-default-change-updates-the-followers.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "07-01",
+          "name": "Walking skeleton: Save and update queues exactly the Teams whose fetch the changed default moved",
+          "agent": "nw-software-crafter",
+          "step_type": "walking-skeleton",
+          "tags": [
+            "@walking_skeleton",
+            "@kpi"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice06DefaultChangeUpdatesTheFollowersScenarios.cs",
+          "scenario_name": "Save_and_update_updates_exactly_the_Teams_that_follow_the_changed_default; A_changed_default_does_not_update_the_owners_or_the_Portfolios; After_save_only_a_follower_picks_the_change_up_at_its_next_scheduled_update",
+          "criteria": [
+            "Task Manager (GET /api/latest/update/tasks) shows an update for exactly Fraud Signals, Ops Tooling and Mobile Wallet, each downloading everything once, and none for Ledger or any Portfolio",
+            "The log entry ends '3 updates queued.' in the full pinned wording",
+            "After Save only, a follower's next scheduled update downloads everything because its fingerprint moved",
+            "A field-definition edit still queues every owner; the PUT response is byte-identical to today's"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/OwnersWhoseFetchMoved.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Connections/ConnectionSaveService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/OwnersWhoseFetchMovedTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Connections/ConnectionSaveServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice06DefaultChangeUpdatesTheFollowersScenarios.cs"
+          ],
+          "dependencies": [
+            "06-04"
+          ],
+          "implementation_notes": "~2h. The movers rule takes two plain maps (owner id -> fingerprint string) and returns ids; Models never sees FetchFingerprint. Replace DESIGN's property-based test with an exhaustive table over {Own, follower} x {default changed, field definition changed, Estimation changed, nothing} x startUpdates. The event and its handler stay unchanged. Measure the save on the dev instance's largest connection (the slice's hypothesis) and record it."
+        },
+        {
+          "id": "07-02",
+          "name": "Save only starts nothing and still names the followers; nobody following says so; the list read counts followers per default",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice06DefaultChangeUpdatesTheFollowersScenarios.cs",
+          "scenario_name": "Save_only_starts_no_update_and_still_names_the_followers; When_nobody_follows_the_default_nothing_updates_and_the_entry_says_none_follow; plus WorkTrackingSystemConnectionUsageTest follower-count cases (new)",
+          "criteria": [
+            "startUpdates=false queues nothing and writes one entry naming the followers",
+            "With every Team owning its value nothing is queued and the entry says 'no Team follows it'",
+            "The connection list read's usedBy carries followers per default member name"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Connections/ConnectionSaveService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IWorkTrackingSystemConnectionUsage.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingSystemConnectionUsage.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingSystemConnectionUsageTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice06DefaultChangeUpdatesTheFollowersScenarios.cs"
+          ],
+          "dependencies": [
+            "07-01"
+          ],
+          "implementation_notes": "~1.5h. Follower counts ride the existing usage port, so the list controller gains no parameter. Grep for every implementation and double of IWorkTrackingSystemConnectionUsage (short and fully qualified) before widening it."
+        },
+        {
+          "id": "07-03",
+          "name": "The save dialog asks whether to update the followers of a changed default, counts them, names nobody, and stays away when nobody follows",
+          "agent": "nw-software-crafter",
+          "step_type": "walking-skeleton",
+          "tags": [
+            "@walking_skeleton"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.defaults.test.tsx",
+          "scenario_name": "asks whether to update the 3 Teams that follow it, and Save and update says so; Save only sends the default without starting any update; the dialog never names who follows; a default nobody follows saves without asking anything; Cancel saves nothing and keeps Priya's choice on the page",
+          "criteria": [
+            "'Update 3 Teams and 0 Portfolios?' with the approved body and Cancel / Save only / Save and update; Save and update sends startUpdates true, Save only false",
+            "No Team name appears in the dialog; a default nobody follows opens no dialog; Cancel saves nothing and keeps the choice",
+            "The slice 05a scenario 'a default 3 Teams follow saves without asking anything …' is deleted as retired"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connection/UpdateQuestion.tsx",
+            "Lighthouse.Frontend/src/models/WorkTracking/WorkTrackingSystemConnection.ts",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.defaults.test.tsx"
+          ],
+          "dependencies": [
+            "07-02"
+          ],
+          "implementation_notes": "~2h. Reuse the 6307 UpdateQuestion (locate it fresh; DESIGN cites ModifyConnectionSettings.tsx ~:884-890). The open condition (~:572-576) widens to 'fields changed and the connection is used, or a changed default has followers'; keep it under S3776 with a helper. Counts come from usedBy as of page load; the dialog fetches nothing. Copy pinned against literals; inline pluralisation goes through a helper (S3358)."
+        },
+        {
+          "id": "07-04",
+          "name": "Answering the question about a default does not report that Additional Fields changed",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.defaults.test.tsx",
+          "scenario_name": "answering the question about a default does not report that Additional Fields changed",
+          "criteria": [
+            "A default-only save answered through the dialog sends no WorkTrackingSystemFieldsChanged event",
+            "An Additional Field change answered through the same question still sends it, with Now or Later"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/services/Api/WorkTrackingSystemService.ts",
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.defaults.test.tsx",
+            "docs/settings/usagedata.md",
+            "ARCHITECTURE.md"
+          ],
+          "dependencies": [
+            "07-03"
+          ],
+          "implementation_notes": "~1h. ISaveConnectionChoice gains additionalFieldsChanged: boolean from fieldsChangedSince(loadedFields, additionalFields) (~:575); EditConnection.saveAndNavigate (~:90) guards on choice?.additionalFieldsChanged. The update question returns { startUpdates, additionalFieldsChanged }. The one sentence DEVOPS owes usagedata.md row :62 lands here: 'A change to the connection's defaults alone is never reported, even when the same question was answered.' ARCHITECTURE.md §5: ConnectionFetchShapeChanged carries only the owners whose fetch moved; the browser's question also opens for a default change with followers. SLICE-END GATES: grep -rn 'PendingEpic6303.Slice06' Lighthouse.Backend empty, constant deleted; no US-05 it.skip left. #6304 is releasable."
+        }
+      ]
+    },
+    {
+      "id": "08",
+      "name": "Slice 08 — The Portfolios' Parent Override Field is set once",
+      "description": "US-07, Story #6313. A separate Portfolios' default; the Portfolio source column with the upgrade repair; the Portfolio PUT gains the G-R1 (b) rule, the owner-side 400 and the round trip; the Teams' and Portfolios' defaults never reach each other. Brief: slices/slice-08-6313-portfolio-parent-override-default.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "08-01",
+          "name": "The upgrade adds the Portfolios' Parent Override source and default and repairs values pointing at nothing",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ConnectionDefaultsUpgradeMigrationTests.cs",
+          "scenario_name": "On_SQLite_…(PortfoliosParentOverrideField); On_Postgres_…(PortfoliosParentOverrideField); plus EffectiveSettingTest rows at Portfolio grain",
+          "criteria": [
+            "On both providers a Portfolio owning its field is Own; naming nothing, a deleted or another connection's field follows with no value",
+            "Every other fingerprint, Team and Portfolio, is byte-identical"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemConnection.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/",
+            "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ConnectionDefaultsUpgradeMigrationTests.cs"
+          ],
+          "dependencies": [
+            "07-04"
+          ],
+          "implementation_notes": "~1.5h. Create-Migration.ps1 -MigrationName AddPortfoliosParentOverrideDefault: Portfolios.ParentOverrideSource and the connection's Portfolios Parent Override default column, both data steps on both providers, HistoricalSchemaPatch entries. The Parent Override property lives on the shared owner base, so the grain decides which default it reads. Count the dev database's dangling Portfolios first (O-P2 pattern) for the release note."
+        },
+        {
+          "id": "08-02",
+          "name": "A Portfolio that names nothing hangs its Features under what the Portfolios' default names; the two grains never mix",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice08PortfoliosParentOverrideDefaultScenarios.cs",
+          "scenario_name": "A_Portfolio_that_names_nothing_hangs_its_Features_under_what_the_Portfolios_default_names; A_Portfolio_with_its_own_field_is_unaffected; The_Portfolios_default_never_reaches_a_Team; The_Teams_default_never_reaches_a_Portfolio",
+          "criteria": [
+            "After one connection save with the Portfolios' default, Card Issuing downloads everything once and its Features hang under the Parent Link items; Merchant Onboarding, owning its field, is not queued",
+            "The Portfolio settings read 'Own' / 'Parent Link' for the owner",
+            "The Teams' default is never counted for or read by a Portfolio, nor the reverse; the log entry names the following Portfolios",
+            "New Vitest case in ModifyProjectSettings.test.tsx: a Portfolio following the Parent Override default shows 'Connection default (<value>)' as the selected first entry, and picking another entry sends ParentOverrideSource Own"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/PortfolioSettingDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Connections/ConnectionSaveService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingSystemConnectionUsage.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice08PortfoliosParentOverrideDefaultScenarios.cs",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx"
+          ],
+          "dependencies": [
+            "08-01"
+          ],
+          "implementation_notes": "~2h. defaults.parentOverrideForPortfolios; the log entry and usedBy.followers at Portfolio grain ('Portfolios' in the instance's terms); the connection page's Portfolios row for it goes live (ModifyConnectionSettings), and the Portfolio Advanced section uses the same AdvancedInputs entry from 05-11 with the Portfolio's settings (no Vitest pins the Portfolio side: add a unit case beside the existing ModifyProjectSettings tests)."
+        },
+        {
+          "id": "08-03",
+          "name": "A Portfolio saved by an older client or a script keeps what it follows, and cannot name a field its connection lacks",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05bReferencedFieldsAndOlderPayloadsScenarios.cs",
+          "scenario_name": "A_script_that_saves_back_what_it_read_changes_nothing, the three Portfolio rows moved from slice 05b: (\"Merchant Onboarding\",EchoingEveryProperty,\"Own\",\"Parent Link\"), (\"Merchant Onboarding\",DroppingWhatItDoesNotKnow,\"Own\",\"Parent Link\"), (\"Card Issuing\",DroppingWhatItDoesNotKnow,\"ConnectionDefault\",null); plus PortfolioExtensionsTest apply-rule and owner-side 400 cases",
+          "criteria": [
+            "A GET-then-PUT of a Portfolio owner and follower, in both shapes, changes neither source nor effective value",
+            "A Portfolio PUT naming another connection's field answers 400",
+            "Removing a field the Portfolios' default or a Portfolio uses as its own is refused, naming them"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/PortfolioExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Helpers/PortfolioExtensionsTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05bReferencedFieldsAndOlderPayloadsScenarios.cs"
+          ],
+          "dependencies": [
+            "08-02"
+          ],
+          "implementation_notes": "~1.5h. Reuse 06-03's pure apply rule; no new rule. The Portfolio owner-side 400 and the Portfolio-grain refusal copy have no acceptance case (gap reported): pin them with unit cases on PortfolioExtensions and on the in-use rule. SLICE-END GATES: grep -rn 'PendingEpic6303.Slice08' Lighthouse.Backend empty, constant deleted."
+        }
+      ]
+    },
+    {
+      "id": "09",
+      "name": "Slice 09 — The Portfolios' Dependency Field is set once",
+      "description": "US-08, Story #6313. A Dependency Field default, a field or a link type; Ignore Dependencies stays the Portfolio's own. Brief: slices/slice-09-6313-dependency-field-default.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "09-01",
+          "name": "The upgrade adds the Dependency Field source and default and repairs values pointing at nothing",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ConnectionDefaultsUpgradeMigrationTests.cs",
+          "scenario_name": "On_SQLite_…(PortfoliosDependencyField); On_Postgres_…(PortfoliosDependencyField); plus EffectiveSettingTest rows for the Dependency Field",
+          "criteria": [
+            "On both providers the four seeded owners land as tabled; other fingerprints unchanged",
+            "Every reader of the Portfolio's Dependency Field, DependencySourceSelector included, reads the effective value without a code change"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemConnection.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/",
+            "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ConnectionDefaultsUpgradeMigrationTests.cs"
+          ],
+          "dependencies": [
+            "08-03"
+          ],
+          "implementation_notes": "~1.5h. Create-Migration.ps1 -MigrationName AddPortfoliosDependencyFieldDefault; the Portfolio.cs property follows the 05-01 shape (own value renamed onto the same column, source, mutators, effective getter); grep every writer first."
+        },
+        {
+          "id": "09-02",
+          "name": "A following Portfolio reads its dependencies from the default; an owner is left alone; Ignore Dependencies is never inherited",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice09PortfoliosDependencyFieldDefaultScenarios.cs",
+          "scenario_name": "A_following_Portfolio_reads_its_dependencies_from_the_default_and_an_owner_is_left_alone; Ignore_Dependencies_is_never_taken_from_the_connection",
+          "criteria": [
+            "The follower downloads everything once and reads the default field's dependencies; the owner is not queued",
+            "The connection offers no Ignore Dependencies default and a follower's own switch still applies",
+            "New Vitest case in DependenciesComponent.test.tsx: a follower shows 'Connection default (<value>)' first with the helper 'Set on the <tracker> connection.', and picking None makes it Own with no field"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/PortfolioSettingDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/PortfolioExtensions.cs",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/Advanced/DependenciesComponent.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice09PortfoliosDependencyFieldDefaultScenarios.cs",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/Advanced/DependenciesComponent.test.tsx"
+          ],
+          "dependencies": [
+            "09-01"
+          ],
+          "implementation_notes": "~2h. defaults.dependencyFieldForPortfolios, dependencyOverrideSource / dependencyOverrideDefaultName, the in-use query and log entry cover it, the connection page row goes live (Jira, ADO only), DependenciesComponent gains the first entry (no Vitest pins it: add a unit case). SLICE-END GATES: grep -rn 'PendingEpic6303.Slice09' Lighthouse.Backend empty, constant deleted."
+        }
+      ]
+    },
+    {
+      "id": "10",
+      "name": "Slice 10 — The Portfolios' Size Estimate Field is set once",
+      "description": "US-09, Story #6313. Brief: slices/slice-10-6313-size-estimate-field-default.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "10-01",
+          "name": "The upgrade adds the Size Estimate Field source and default and repairs values pointing at nothing",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ConnectionDefaultsUpgradeMigrationTests.cs",
+          "scenario_name": "On_SQLite_…(PortfoliosSizeEstimateField); On_Postgres_…(PortfoliosSizeEstimateField); plus EffectiveSettingTest rows",
+          "criteria": [
+            "On both providers the four seeded owners land as tabled; other fingerprints unchanged"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemConnection.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/",
+            "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ConnectionDefaultsUpgradeMigrationTests.cs"
+          ],
+          "dependencies": [
+            "09-02"
+          ],
+          "implementation_notes": "~1.5h. Create-Migration.ps1 -MigrationName AddPortfoliosSizeEstimateFieldDefault; same shape as 09-01."
+        },
+        {
+          "id": "10-02",
+          "name": "A following Portfolio sizes its Features from the default field, an empty value falls back to the Portfolio's default size, an owner is left alone",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice10PortfoliosSizeEstimateFieldDefaultScenarios.cs",
+          "scenario_name": "A_following_Portfolio_reads_its_sizes_from_the_default_and_an_owner_is_left_alone; A_following_Feature_with_no_size_in_the_default_field_takes_the_Portfolios_default_size; A_Portfolio_that_owns_its_size_field_starts_no_update_when_the_default_changes",
+          "criteria": [
+            "The tracker is asked to read the default field for the follower, which downloads everything once",
+            "A follower's Feature with no value is sized at the Portfolio's default of 25, read through the Feature route",
+            "An owner starts no update when the default changes",
+            "New Vitest case in FeatureSizeComponent.test.tsx: a follower of the Size Estimate default shows 'Connection default (<value>)' first; picking a field makes it Own"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/PortfolioSettingDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/PortfolioExtensions.cs",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/FeatureSizeComponent.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice10PortfoliosSizeEstimateFieldDefaultScenarios.cs",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/Advanced/FeatureSizeComponent.test.tsx"
+          ],
+          "dependencies": [
+            "10-01"
+          ],
+          "implementation_notes": "~1.5h. defaults.sizeEstimateFieldForPortfolios, sizeEstimateSource / sizeEstimateDefaultName; FeatureSizeComponent (~:178) gains the entry (add a unit case; locate the file fresh). SLICE-END GATES: grep -rn 'PendingEpic6303.Slice10' Lighthouse.Backend empty, constant deleted."
+        }
+      ]
+    },
+    {
+      "id": "11",
+      "name": "Slice 11 — The Portfolios' Feature Owner Field is set once",
+      "description": "US-10, Story #6313. Offered on Jira, Azure DevOps and CSV; the Owning Team stays the Portfolio's own. Brief: slices/slice-11-6313-feature-owner-field-default.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "11-01",
+          "name": "The upgrade adds the Feature Owner Field source and default and repairs values pointing at nothing",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ConnectionDefaultsUpgradeMigrationTests.cs",
+          "scenario_name": "On_SQLite_…(PortfoliosFeatureOwnerField); On_Postgres_…(PortfoliosFeatureOwnerField); plus EffectiveSettingTest rows",
+          "criteria": [
+            "On both providers the four seeded owners land as tabled; other fingerprints unchanged",
+            "The extrapolation's read of the Feature Owner Field (WorkItemService) reads the effective value"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemConnection.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/",
+            "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ConnectionDefaultsUpgradeMigrationTests.cs"
+          ],
+          "dependencies": [
+            "10-02"
+          ],
+          "implementation_notes": "~1.5h. Create-Migration.ps1 -MigrationName AddPortfoliosFeatureOwnerFieldDefault. WorkItemService reads portfolio.FeatureOwnerAdditionalFieldDefinitionId at ~:773 (after the 6247 merge): unchanged code, now the effective value."
+        },
+        {
+          "id": "11-02",
+          "name": "A following Portfolio reads its Features' owners from the default field, an empty value shares the work, and the Owning Team is never taken from the connection",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice11PortfoliosFeatureOwnerFieldDefaultScenarios.cs",
+          "scenario_name": "A_following_Portfolio_reads_its_Feature_owners_from_the_default_and_an_owner_is_left_alone; A_following_Feature_with_no_owner_in_the_default_field_is_shared_by_every_Team; The_Owning_Team_is_never_taken_from_the_connection",
+          "criteria": [
+            "The tracker is asked to read the default field for the follower, which downloads everything once; the owner is not queued",
+            "A follower's Feature with no value is shared by every Team, read through the Feature route",
+            "The connection offers featureOwnerFieldForPortfolios and no Owning Team default",
+            "New Vitest case in OwnershipComponent.test.tsx: a follower of the Feature Owner default shows 'Connection default (<value>)' first; picking a field makes it Own"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/PortfolioSettingDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/PortfolioExtensions.cs",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/OwnershipComponent.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice11PortfoliosFeatureOwnerFieldDefaultScenarios.cs",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/Advanced/OwnershipComponent.test.tsx"
+          ],
+          "dependencies": [
+            "11-01"
+          ],
+          "implementation_notes": "~1.5h. defaults.featureOwnerFieldForPortfolios, featureOwnerSource / featureOwnerDefaultName; the row goes live on Jira, ADO and CSV; OwnershipComponent (~:34-48) gains the entry (add a unit case). SLICE-END GATES: grep -rn 'PendingEpic6303.Slice11' Lighthouse.Backend empty, constant deleted."
+        }
+      ]
+    },
+    {
+      "id": "12",
+      "name": "Slice 12 — Estimation is set once",
+      "description": "US-11, Story #6313's release point. The Estimation bundle (field, unit, non-numeric flag, ordered categories) per grain, followed or owned whole; read at page load, so nothing is queued; the plain 'Change the Estimation default?' dialog on top of slice 06's; the owner's Estimation editor reused inline; the E2E walking skeleton on the CSV demo connection. Brief: slices/slice-12-6313-estimation-default.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "12-01",
+          "name": "The upgrade adds the Estimation source on Teams and Portfolios and the two default bundles, emptying a bundle whose field points at nothing",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ConnectionDefaultsUpgradeMigrationTests.cs",
+          "scenario_name": "On_SQLite_…(TeamsEstimation); On_SQLite_…(PortfoliosEstimation); On_Postgres_…(TeamsEstimation); On_Postgres_…(PortfoliosEstimation); plus EstimationBundleTest (new): each part alone differing owns, all equal unchanged, field null unchanged, categories reordered owns",
+          "criteria": [
+            "On both providers, per grain, an owner with an Estimation Field owns its whole bundle; none, a deleted or another connection's field follows with the bundle emptied",
+            "The bundle compares as one value under the apply rule"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/EstimationBundle.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemConnection.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/",
+            "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/EstimationBundleTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ConnectionDefaultsUpgradeMigrationTests.cs"
+          ],
+          "dependencies": [
+            "11-02"
+          ],
+          "implementation_notes": "~2.5h. Create-Migration.ps1 -MigrationName AddEstimationDefaults: Teams.EstimationSource, Portfolios.EstimationSource, four default columns per grain on the connection; the dangling-field data step empties the whole bundle (field and unit NULL, flag false, categories empty in each provider's stored form). The four Estimation members become effective getters over one bundle; following clears the whole own bundle; unit compared by ordinal; categories compared in order. No bool sentinel initializer on the flag column. EstimateNormalizer and BaseMetricsService keep their code."
+        },
+        {
+          "id": "12-02",
+          "name": "Walking skeleton: every Team without an estimation shows the default on its next page load and nothing updates",
+          "agent": "nw-software-crafter",
+          "step_type": "walking-skeleton",
+          "tags": [
+            "@walking_skeleton"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice12EstimationDefaultScenarios.cs",
+          "scenario_name": "Every_Team_without_an_estimation_shows_the_default_on_its_next_page_load_and_nothing_updates; A_following_Portfolio_shows_the_Portfolios_Estimation_default; A_Portfolio_with_its_own_estimation_keeps_it_and_the_Teams_default_never_reaches_a_Portfolio; Clearing_the_Estimation_default_leaves_the_followers_without_an_estimation",
+          "criteria": [
+            "After defaults.estimationForTeams = Story Points / Points, a following Team reads ('Story Points', 'Points', 'ConnectionDefault', 'Story Points') and no update is queued",
+            "A following Portfolio shows the Portfolios' bundle; an owning Portfolio keeps its own and never reads the Teams' default",
+            "Clearing the default leaves followers following with no estimation; the log entry names the followers"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/SettingsOwnerDtoBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Connections/ConnectionSaveService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice12EstimationDefaultScenarios.cs"
+          ],
+          "dependencies": [
+            "12-01"
+          ],
+          "implementation_notes": "~2h. The bundle travels as { additionalFieldDefinitionId, unit, useNonNumericEstimation, estimationCategoryValues } inside defaults, nullable flags (S6964). The movers rule already queues nobody for it (Estimation is not in the fingerprint); prove it with a table row, not by special-casing."
+        },
+        {
+          "id": "12-03",
+          "name": "A script that saves back a follower's estimation leaves it following",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice12EstimationDefaultScenarios.cs",
+          "scenario_name": "A_script_that_saves_back_a_followers_estimation_leaves_it_following(EchoingEveryProperty); A_script_that_saves_back_a_followers_estimation_leaves_it_following(DroppingWhatItDoesNotKnow)",
+          "criteria": [
+            "Both round-trip shapes leave the follower on ConnectionDefault with the default bundle"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/TeamExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/PortfolioExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice12EstimationDefaultScenarios.cs"
+          ],
+          "dependencies": [
+            "12-02"
+          ],
+          "implementation_notes": "~1h. The apply rule from 06-03 over the bundle as one value (12-01's comparison)."
+        },
+        {
+          "id": "12-04",
+          "name": "The Estimation default is edited with the owner's Estimation editor, collapsed until a field is chosen, and saved through 'Change the Estimation default?'",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.defaults.test.tsx",
+          "scenario_name": "a changed Estimation default 4 Teams follow asks only to save, because nothing needs updating; the Estimation default stays collapsed to its field until a field is chosen",
+          "criteria": [
+            "'Change the Estimation default?' with '4 Teams follow it; they show the new estimation the next time their pages load.' and only Cancel / Save; Save sends the bundle nested in defaults with { startUpdates: true, additionalFieldsChanged: false }",
+            "The inline editor shows only its field until a field is chosen, once for Teams and once for Portfolios",
+            "A following owner's Estimation shows 'Connection default (Story Points, Points)'"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connection/UpdateQuestion.tsx",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/EstimationFieldComponent.tsx",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.defaults.test.tsx"
+          ],
+          "dependencies": [
+            "12-03"
+          ],
+          "implementation_notes": "~2h. Reuse EstimationFieldComponent inline (locate it fresh; it is used at ModifyTeamSettings.tsx ~:293 and ModifyProjectSettings.tsx ~:301) and give it the owner-side 'Connection default (…)' entry. The plain variant opens only when nothing fetch-time changed and an Estimation default with followers did."
+        },
+        {
+          "id": "12-05",
+          "name": "E2E walking skeleton: an admin sets the Teams' Estimation once on the CSV demo connection and a Team without one shows it",
+          "agent": "nw-software-crafter",
+          "step_type": "walking-skeleton",
+          "tags": [
+            "@walking_skeleton",
+            "@e2e"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/settings/ConnectionDefaults.spec.ts",
+          "scenario_name": "@walking_skeleton @US-11 an admin sets the Teams' Estimation once on the connection and a Team without one shows it",
+          "criteria": [
+            "On demo scenario 0, 'Demo Data CSV Connector' shows the defaults region; setting Story Points / Points and saving through 'Change the Estimation default?' leads to Team Voyager's settings showing 'Connection default (Story Points, Points)'",
+            "Every existing demo-data spec in reach stays green (FeatureDependencies, MultiTeamForecast, PortfolioEdit, jira, ado)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/settings/ConnectionDefaults.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/",
+            "Lighthouse.Backend/Lighthouse.Backend/Factories/DemoDataFactory.cs"
+          ],
+          "dependencies": [
+            "12-04"
+          ],
+          "implementation_notes": "~1.5h. Turn test.fixme into test. POM methods (WorkTrackingSystemEditPage defaultsSection, setTheTeamsEstimationDefault, saveAnswering; TeamEditPage getSelectedEstimation) exist from DISTILL or are completed here; the spec sets Team Voyager to follow at its top rather than inheriting it from the seeder (ci-learnings), and page objects wait for settled content, not visibility. Demo Teams with their own Estimation keep it through own(value). Run the spec and the in-reach specs locally against a live instance before committing (never 5169). SLICE-END GATES: grep -rn 'PendingEpic6303' Lighthouse.Backend returns nothing and PendingEpic6303.cs is deleted; no it.skip left in the three frontend files; no test.fixme left in ConnectionDefaults.spec.ts; grep -rn SCAFFOLD returns nothing. #6313 is releasable; mutation testing follows on frozen code, outside this roadmap."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved"
+  }
+}
