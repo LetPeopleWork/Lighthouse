@@ -358,13 +358,13 @@ const theUsageDataSent = () =>
 		.map(([use]) => use as { name: string })
 		.filter((use) => use.name === "WorkTrackingSystemFieldsChanged");
 
-describe("Story #6307 - changing a connection's Additional Fields asks whether to update its Teams and Portfolios", () => {
+describe("changing a connection's Additional Fields asks whether to update its Teams and Portfolios", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		route.id = "7";
 	});
 
-	describe("slice 02 - the question before the save", () => {
+	describe("the question before the save", () => {
 		// @walking_skeleton @driving_port @us-02 @contract-shape:bounded-change
 		it("adding a field and pressing Save asks whether to update the 4 Teams and 2 Portfolios on the connection", async () => {
 			const server = await givenPriyaOpensNordwindJiraDc();
@@ -681,7 +681,7 @@ describe("Story #6307 - changing a connection's Additional Fields asks whether t
 		});
 	});
 
-	describe("slice 03 - save now, update later", () => {
+	describe("save now, update later", () => {
 		// @us-03 @contract-shape:pure-function
 		it("the question offers to save only and says when the field fills in then", async () => {
 			await givenPriyaOpensNordwindJiraDc();

@@ -18,10 +18,9 @@ const premiumLicense: ILicenseStatus = {
 	canUsePremiumFeatures: true,
 };
 
-// Story #5574, DoD 5 / KPI 3 — no silent no-ops. ServiceNow brings no predefined additional
-// fields in slice 01 and write-back to ServiceNow is permanently out of scope (D8), so leaving
-// either control enabled would ship a button that does nothing. Found by inspection during
-// DESIGN; easy to miss because both gates are written as "not Linear, not Csv".
+// ServiceNow ships no predefined additional fields, its connector cannot fill custom ones yet, and
+// Lighthouse never writes back to ServiceNow, so leaving either control enabled would ship a button
+// that does nothing. Easy to miss because both gates are written as "not Linear, not Csv".
 describe("Connection settings a ServiceNow administrator should not be offered", () => {
 	beforeEach(() => {
 		vi.mocked(useLicenseRestrictions).mockReturnValue({
