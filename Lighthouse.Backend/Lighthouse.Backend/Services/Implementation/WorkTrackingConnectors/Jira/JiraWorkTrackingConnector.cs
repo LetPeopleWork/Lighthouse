@@ -1222,6 +1222,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var customFieldReferences = await GetCustomFieldReferences(portfolio.WorkTrackingSystemConnection);
             var portfolioLinkFieldName = TheFieldTheInstanceHangsParentsOn(portfolio, JiraFieldNames.ParentLinkFieldName);
 
+            var theDependencyField = WhatTheNamedAdditionalFieldResolvedTo(
+                portfolio, portfolio.DependencyOverrideAdditionalFieldDefinitionId, customFieldReferences);
+            var dependencyFieldFindings = WhatReadingTheDependencyFieldFound(portfolio, theDependencyField);
+
             foreach (var issue in issues)
             {
                 var workItem = CreateWorkItemFromJiraIssue(issue, portfolio, customFieldReferences);
@@ -1230,14 +1234,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 var estimatedSize = GetEstimatedSize(portfolio, workItem);
                 var owningTeam = GetOwningTeam(portfolio, workItem);
 
-                var theDependencyField = WhatTheNamedAdditionalFieldResolvedTo(
-                    portfolio, portfolio.DependencyOverrideAdditionalFieldDefinitionId, customFieldReferences);
-
                 var feature = new Feature(workItem, TheIssuesItWaitsOn(portfolio, workItem, issue, theDependencyField))
                 {
                     EstimatedSize = estimatedSize,
                     OwningTeam = owningTeam,
-                    RefreshFindings = WhatReadingTheDependencyFieldFound(portfolio, theDependencyField),
+                    RefreshFindings = dependencyFieldFindings,
                 };
 
                 features.Add(feature);
@@ -1264,16 +1265,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private static List<FeatureDependencyReference> TheIssuesItWaitsOn(
             Portfolio portfolio, WorkItemBase workItem, Issue issue, ResolvedReference theDependencyField)
         {
-            List<string>? fromTheNamedLinkType = null;
-
-            if (theDependencyField.NamesALinkTypePointingBothWays)
+            List<string>? fromTheNamedLinkType = theDependencyField switch
             {
-                fromTheNamedLinkType = [];
-            }
-            else if (theDependencyField.NamesALinkType)
-            {
-                fromTheNamedLinkType = issue.Fields.ExtractDependencyReferencesFromLinks(theDependencyField.LinkTypeName, theDependencyField.Direction);
-            }
+                { NamesALinkTypePointingBothWays: true } => [],
+                { NamesALinkType: true } => issue.Fields.ExtractDependencyReferencesFromLinks(theDependencyField.LinkTypeName, theDependencyField.Direction),
+                _ => null,
+            };
 
             return DependencySourceSelector.TheDependenciesOf(
                 portfolio, workItem, issue.Fields.ExtractDependencyReferences(), fromTheNamedLinkType);
@@ -1291,8 +1288,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return [];
             }
 
-            var named = portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions
-                .Find(definition => definition.Id == portfolio.DependencyOverrideAdditionalFieldDefinitionId)?.Reference ?? string.Empty;
+            var named = TheDefinitionNamed(portfolio, portfolio.DependencyOverrideAdditionalFieldDefinitionId)?.Reference ?? string.Empty;
 
             return [new RefreshFinding(RefreshFindingKind.NamedLinkPointsBothWays, RefreshFindingSetting.DependencyField, named, theDependencyField.PhrasesOfItsEnds)];
         }
@@ -1719,13 +1715,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private static ResolvedReference WhatTheNamedAdditionalFieldResolvedTo(
             IWorkItemQueryOwner workItemQueryOwner, int? namedDefinitionId, Dictionary<string, ResolvedReference> customFieldReferences)
         {
-            var named = workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions
-                .Find(definition => definition.Id == namedDefinitionId);
+            var named = TheDefinitionNamed(workItemQueryOwner, namedDefinitionId);
 
             return named is not null && customFieldReferences.TryGetValue(named.Reference, out var resolved)
                 ? resolved
                 : ResolvedReference.Nothing;
         }
+
+        private static AdditionalFieldDefinition? TheDefinitionNamed(IWorkItemQueryOwner workItemQueryOwner, int? namedDefinitionId)
+            => workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions
+                .Find(definition => definition.Id == namedDefinitionId);
 
         /// <summary>
         /// The resolved key of the field this instance keeps an item's parent in, or nothing at all while
