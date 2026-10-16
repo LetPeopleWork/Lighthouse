@@ -626,7 +626,7 @@ namespace Lighthouse.Backend.API
                     .Select(transition => transition.FeatureId)
                     .ToHashSet();
 
-                // Read-side defensive intersection (ADR-104): a feature that has left the portfolio is
+                // Read-side defensive intersection: a feature that has left the portfolio is
                 // excluded even on dates inside its spell, mirroring the team drill-through shape.
                 var reconstructed = portfolioMetricsService
                     .GetBlockedEligibleFeaturesForPortfolio(portfolio)
@@ -640,7 +640,7 @@ namespace Lighthouse.Backend.API
             });
         }
 
-        // Reconciliation guard (ADR-099): where a captured BlockedCountSnapshot exists for the requested date,
+        // Reconciliation guard: where a captured BlockedCountSnapshot exists for the requested date,
         // compare it against the reconstructed membership count. A divergence signals a capture gap and must
         // never be silent — surface it as a structured warning.
         private void ReconcileReconstructedCountWithSnapshot(int ownerId, OwnerType ownerType, DateOnly targetDate, int reconstructedCount)
