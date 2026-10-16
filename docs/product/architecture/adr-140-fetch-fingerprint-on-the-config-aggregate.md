@@ -133,7 +133,7 @@ consistent with ADR-138's rule that ambiguity always resolves to the expensive a
   N-entity write at connection-save time. Deliberate at this product's scale: an instance has tens of
   entities per connection, not thousands, and the passive form keeps the connection-save path free of a
   fan-out write and of the partial-failure question that comes with one.
-  **Amended 2026-10-15 (story 6307, proposed, pending maintainer approval):** a save through the connection PUT
+  **Amended 2026-10-15 (story 6307, accepted by the maintainer 2026-10-16):** a save through the connection PUT
   that moves the connection's share of the fingerprint now starts an update of every Team and Portfolio on the
   connection by default; the browser asks first, with a Save-only choice (`startUpdates=false`). The updates go
   through a domain event and the update queue

@@ -1,10 +1,10 @@
 # ADR-239: A connection save that moves the fetch fingerprint starts the affected updates
 
-**Status**: Proposed (DESIGN 2026-10-15, interaction mode PROPOSE), pending maintainer approval. The decision to
-start updates on a connection save was taken by the maintainer at DISCUSS (2026-10-15); the mechanism below is
-proposed.
+**Status**: Accepted (maintainer, 2026-10-16). The decision to start updates on a connection save was taken by
+the maintainer at DISCUSS (2026-10-15); the mechanism below was proposed at DESIGN (2026-10-15) and accepted once
+built.
 **Feature**: `story-6307-refresh-on-additional-fields-change` (ADO User Story #6307, split out of Bug #6306)
-**Decider**: Morgan (Solution Architect); maintainer approval pending
+**Decider**: Morgan (Solution Architect); accepted by the maintainer 2026-10-16
 **Narrows**: ADR-030 ("expensive ⇒ intentional") for connection saves. **Amends**: ADR-140's consequence "A connection
 change fans out … passive".
 

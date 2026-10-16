@@ -6,7 +6,7 @@
 **Decider**: Morgan (Solution Architect), interaction mode = PROPOSE
 **Relates to**: ADR-029 (auto-save mechanism)
 
-> **Amended 2026-10-15 (story 6307, proposed, pending maintainer approval):** the "expensive ⇒ intentional" rule
+> **Amended 2026-10-15 (story 6307, accepted by the maintainer 2026-10-16):** the "expensive ⇒ intentional" rule
 > does not apply to a work tracking connection save. A connection save that changes what its Teams and Portfolios
 > fetch starts their updates server-side, by default; the browser asks first, with a Save-only choice; see
 > [ADR-239](./adr-239-a-connection-save-that-moves-the-fetch-fingerprint-starts-the-affected-updates.md). The
