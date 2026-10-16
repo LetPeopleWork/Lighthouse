@@ -599,20 +599,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                 .Returns<HttpRequestMessage, CancellationToken>(
                     (request, _) => Task.FromResult(AnAnswerTo(
                         request.RequestUri?.AbsolutePath ?? string.Empty,
-                        WhatTheRequestAsksFor(request))));
+                        JiraConnectorTestSetup.JqlOf(request))));
 
             return mock.Object;
         }
 
-        /// <summary>The query string, or the search's jql when the query travels in the body instead.</summary>
-        private static string WhatTheRequestAsksFor(HttpRequestMessage request)
-        {
-            var query = Uri.UnescapeDataString(request.RequestUri?.Query ?? string.Empty);
-
-            return query.Length > 0 ? query : SearchBody.ValueIn(JiraConnectorTestSetup.BodyOf(request), "jql");
-        }
-
-        private HttpResponseMessage AnAnswerTo(string path, string query)
+        private HttpResponseMessage AnAnswerTo(string path, string jql)
         {
             whatTheRefreshesAskedFor.Add(path);
 
@@ -631,7 +623,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                 _ when path.EndsWith(FieldListEndpoint, StringComparison.Ordinal)
                     => JiraWireFormat.TheFieldListDefining(customFieldsTheInstanceDefines),
                 _ when path.EndsWith(IssueLinkTypeEndpoint, StringComparison.Ordinal) => TheLinkTypesItDefines(),
-                _ when path.Contains(SearchEndpoint, StringComparison.Ordinal) => TheIssuesItServes(query),
+                _ when path.Contains(SearchEndpoint, StringComparison.Ordinal) => TheIssuesItServes(jql),
                 _ => "{}",
             };
 
@@ -641,11 +633,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             };
         }
 
-        private string TheIssuesItServes(string query)
+        private string TheIssuesItServes(string jql)
         {
             foreach (var (whatTheQueryAsksFor, issues) in whatEachQueryFinds)
             {
-                if (query.Contains(whatTheQueryAsksFor, StringComparison.Ordinal))
+                if (jql.Contains(whatTheQueryAsksFor, StringComparison.Ordinal))
                 {
                     return OnePageOf(issues);
                 }

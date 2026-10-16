@@ -988,7 +988,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(deploymentType);
             var aWholeChunkOfLongKeys = Enumerable.Range(1, 200)
-                .Select(number => $"FC2MOBILE-{number:D9}")
+                .Select(number => $"LONGPROJECTKEY-{number:D9}")
                 .ToList();
 
             var workItems = await subject.GetWorkItemsForTeam(team, aWholeChunkOfLongKeys, CancellationToken.None);
@@ -1179,30 +1179,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// </summary>
         private sealed record SearchAsk(Uri Uri, string Body, HttpMethod Method)
         {
-            /// <summary>The named property of the json body, or null when the body has no such property.</summary>
-            public JsonElement? InTheBody(string name)
-            {
-                if (Body.Length == 0)
-                {
-                    return null;
-                }
+            public JsonElement? InTheBody(string name) => SearchBody.PropertyIn(Body, name);
 
-                using var json = JsonDocument.Parse(Body);
-
-                return json.RootElement.TryGetProperty(name, out var value) ? value.Clone() : null;
-            }
-
-            public IReadOnlyList<string> NamesInTheBody()
-            {
-                if (Body.Length == 0)
-                {
-                    return [];
-                }
-
-                using var json = JsonDocument.Parse(Body);
-
-                return [.. json.RootElement.EnumerateObject().Select(property => property.Name)];
-            }
+            public IReadOnlyList<string> NamesInTheBody() => SearchBody.NamesIn(Body);
 
             public string Value(string name)
             {

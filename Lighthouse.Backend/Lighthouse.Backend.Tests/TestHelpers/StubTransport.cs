@@ -75,21 +75,18 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     }
 
     /// <summary>
-    /// Reads one parameter out of the json body a Jira search was sent with. A list reads back comma-joined
-    /// and a number as its digits, and a body without the parameter reads back empty.
+    /// Reads the json body a Jira search was sent with. A body that is empty, or is not a json object, carries
+    /// no parameter at all.
     /// </summary>
     public static class SearchBody
     {
+        /// <summary>
+        /// One parameter as text. A list reads back comma-joined and a number as its digits, and a body without
+        /// the parameter reads back empty.
+        /// </summary>
         public static string ValueIn(string body, string name)
         {
-            if (string.IsNullOrWhiteSpace(body))
-            {
-                return string.Empty;
-            }
-
-            using var json = JsonDocument.Parse(body);
-
-            if (json.RootElement.ValueKind != JsonValueKind.Object || !json.RootElement.TryGetProperty(name, out var value))
+            if (PropertyIn(body, name) is not { } value)
             {
                 return string.Empty;
             }
@@ -100,6 +97,41 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 JsonValueKind.String => value.GetString() ?? string.Empty,
                 _ => value.GetRawText(),
             };
+        }
+
+        /// <summary>One parameter as json, for when its shape is the point, or null when the body has no such parameter.</summary>
+        public static JsonElement? PropertyIn(string body, string name)
+        {
+            using var json = ObjectIn(body);
+
+            return json is not null && json.RootElement.TryGetProperty(name, out var value) ? value.Clone() : null;
+        }
+
+        /// <summary>The name of every parameter the body carries, in the order it carries them.</summary>
+        public static IReadOnlyList<string> NamesIn(string body)
+        {
+            using var json = ObjectIn(body);
+
+            return json is null ? [] : [.. json.RootElement.EnumerateObject().Select(property => property.Name)];
+        }
+
+        private static JsonDocument? ObjectIn(string body)
+        {
+            if (string.IsNullOrWhiteSpace(body))
+            {
+                return null;
+            }
+
+            var json = JsonDocument.Parse(body);
+
+            if (json.RootElement.ValueKind == JsonValueKind.Object)
+            {
+                return json;
+            }
+
+            json.Dispose();
+
+            return null;
         }
     }
 }

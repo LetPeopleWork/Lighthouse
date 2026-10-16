@@ -2379,14 +2379,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 // in rather than after the whole result set, which on a large team is minutes away.
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var payload = JsonSerializer.Serialize(new
-                {
-                    jql = request.Jql,
-                    fields = request.Fields.Split(','),
-                    expand = request.ExpandChangelog ? CloudChangelogExpansion : null,
-                    maxResults = request.PageLimit,
-                    nextPageToken = string.IsNullOrEmpty(nextPageToken) ? null : nextPageToken,
-                }, CloudSearchBodyOptions);
+                var payload = CloudSearchBody(request, nextPageToken);
 
                 var response = await client.PostAsync(CloudSearchPath, AsJson(payload), cancellationToken);
                 var body = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -2410,6 +2403,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             return null;
         }
+
+        /// <summary>The json body of one Cloud search page, carrying the token for every page after the first.</summary>
+        private static string CloudSearchBody(CloudSearchRequest request, string? nextPageToken)
+            => JsonSerializer.Serialize(new
+            {
+                jql = request.Jql,
+                fields = request.Fields.Split(','),
+                expand = request.ExpandChangelog ? CloudChangelogExpansion : null,
+                maxResults = request.PageLimit,
+                nextPageToken,
+            }, CloudSearchBodyOptions);
 
         /// <summary>
         /// The offset walk over Jira Data Center's search endpoint, which has no page token: the only way to

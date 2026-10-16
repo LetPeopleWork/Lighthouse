@@ -1361,7 +1361,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 if (path.Contains("search", StringComparison.Ordinal))
                 {
-                    var jql = SearchBody.ValueIn(JiraConnectorTestSetup.BodyOf(request), "jql");
+                    var jql = JiraConnectorTestSetup.JqlOf(request);
                     SearchQueries.Enqueue(jql);
 
                     return RespondToSearch(jql);

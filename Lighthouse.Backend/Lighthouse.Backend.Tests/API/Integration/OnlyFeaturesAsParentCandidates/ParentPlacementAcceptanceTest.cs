@@ -548,7 +548,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
                     => JiraWireFormat.TheLinkTypeListDefining([JiraWireFormat.ALinkTypeDefinition(0, CausedBy)]),
                 _ when path.EndsWith("/changelog", StringComparison.Ordinal) => TheFullHistoryAt(path),
                 _ when path.Contains(JiraWireFormat.SearchEndpoint, StringComparison.Ordinal)
-                    => JiraWireFormat.OnePageOf(TheIssuesAskedForBy(TheQueryIn(request)).Select(issue => issue.OnTheWire())),
+                    => JiraWireFormat.OnePageOf(TheIssuesAskedForBy(JiraConnectorTestSetup.JqlOf(request)).Select(issue => issue.OnTheWire())),
                 _ => "{}",
             };
 
@@ -556,16 +556,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
             {
                 Content = new StringContent(body, Encoding.UTF8, "application/json"),
             };
-        }
-
-        private static string TheQueryIn(HttpRequestMessage request)
-        {
-            var query = request.RequestUri?.Query ?? string.Empty;
-            var jql = query.TrimStart('?').Split('&').FirstOrDefault(part => part.StartsWith("jql=", StringComparison.Ordinal)) ?? string.Empty;
-
-            return jql.Length > 4
-                ? Uri.UnescapeDataString(jql[4..])
-                : SearchBody.ValueIn(JiraConnectorTestSetup.BodyOf(request), "jql");
         }
 
         private List<AnIssueOnTheTracker> TheIssuesAskedForBy(string jql)

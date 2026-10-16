@@ -981,22 +981,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// </summary>
         private static async Task<(ConnectionValidationResult Verdict, string Jql)> TheOutcomeFor(Team team)
         {
-            var searches = new List<AskedSearch>();
+            var cloudQueries = new List<string>();
             var handler = AHandlerWhereSearch(
                 OnCloud,
                 request =>
                 {
-                    searches.Add(new AskedSearch(
-                        request.Method, request.RequestUri?.PathAndQuery ?? string.Empty, JiraConnectorTestSetup.BodyOf(request)));
+                    if ((request.RequestUri?.AbsolutePath ?? string.Empty).Contains(CloudSearchPath, StringComparison.Ordinal))
+                    {
+                        cloudQueries.Add(JiraConnectorTestSetup.JqlOf(request));
+                    }
+
                     return Respond(HttpStatusCode.OK, OnePageHoldingOneIssue);
                 },
                 []);
             var connector = JiraConnectorTestSetup.AConnectorOver(handler);
 
             var verdict = await connector.ValidateTeamSettings(team);
-            var cloudSearch = searches.Find(search => search.PathAndQuery.Contains(CloudSearchPath, StringComparison.Ordinal));
 
-            return (verdict, cloudSearch is null ? string.Empty : JqlOf(cloudSearch));
+            return (verdict, cloudQueries.Count == 0 ? string.Empty : cloudQueries[0]);
         }
 
         /// <summary>
@@ -1017,23 +1019,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// <summary>The JQL the connector put on the wire, read back out of the search it asked for.</summary>
         private static async Task<string> TheQueryIssuedFor(Team team)
             => (await TheOutcomeFor(team)).Jql;
-
-        private static string JqlOf(AskedSearch search)
-        {
-            if (search.Method != HttpMethod.Get)
-            {
-                return SearchBody.ValueIn(search.Body, "jql");
-            }
-
-            var url = search.PathAndQuery;
-            var jqlParameter = url[(url.IndexOf('?', StringComparison.Ordinal) + 1)..]
-                .Split('&')
-                .First(parameter => parameter.StartsWith("jql=", StringComparison.Ordinal));
-
-            return Uri.UnescapeDataString(jqlParameter["jql=".Length..]);
-        }
-
-        private sealed record AskedSearch(HttpMethod Method, string PathAndQuery, string Body);
 
         private static bool NamesBothTheQueryAndWhatJiraAnswered(object? loggedState)
         {
