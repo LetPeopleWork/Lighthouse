@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,6 +16,7 @@ import type { IOAuthService } from "../../../services/Api/OAuthService";
 import type { IPortfolioService } from "../../../services/Api/PortfolioService";
 import type { ITeamService } from "../../../services/Api/TeamService";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
+import { EXPECTED_TEST_FAILURE } from "../../../tests/ExpectedTestFailure";
 import {
 	createMockApiServiceContext,
 	createMockSystemInfoService,
@@ -633,6 +634,39 @@ describe("ModifyConnectionSettings", () => {
 				).toBeInTheDocument();
 			});
 			expect(defaultProps.saveConnectionSettings).toHaveBeenCalled();
+		});
+
+		it("does not blame someone else when the save fails for another reason", async () => {
+			const user = userEvent.setup();
+			defaultProps.validateConnectionSettings.mockResolvedValue({
+				isValid: true,
+			});
+			// The failure escapes to the global error handler, so it carries the name the test setup lets through.
+			defaultProps.saveConnectionSettings.mockRejectedValue(
+				Object.assign(new ApiError(500, "The server fell over."), {
+					name: EXPECTED_TEST_FAILURE,
+				}),
+			);
+
+			renderComponent({
+				getSupportedSystems: vi.fn().mockResolvedValue([mockSystemNoAuth]),
+			});
+
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Save/i }),
+				).not.toBeDisabled();
+			});
+
+			await user.click(screen.getByRole("button", { name: /Save/i }));
+
+			await waitFor(() =>
+				expect(defaultProps.saveConnectionSettings).toHaveBeenCalled(),
+			);
+			await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+			expect(
+				screen.queryByText(/changed by someone else/i),
+			).not.toBeInTheDocument();
 		});
 
 		it("shows the plan-limit fallback copy for a 403 ApiError with no server message", async () => {
