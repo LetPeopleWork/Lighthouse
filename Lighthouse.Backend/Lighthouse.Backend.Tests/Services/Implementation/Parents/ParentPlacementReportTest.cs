@@ -148,6 +148,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Parents
         }
 
         [Test]
+        public void Lines_ACreatedDayReadBackWithoutAKind_IsNamedAsStored()
+        {
+            var earlyOnNovember2AsTheDatabaseReturnsIt = new DateTime(2025, 11, 2, 0, 30, 0, DateTimeKind.Unspecified);
+
+            var lines = ParentPlacementReport.Lines(TheOwner, [Placed("PAY-421",
+                [new ParentCandidate(TheOtherFeature, null), new ParentCandidate(TheFeature, null)],
+                (TheFeature, earlyOnNovember2AsTheDatabaseReturnsIt), (TheOtherFeature, January15))]);
+
+            Assert.That(lines, Is.EqualTo(TheLineForTheEarliestCreated), "Created dates are stored in UTC and can come back without a kind; read as local time, a server east of UTC would name the 1st.");
+        }
+
+        [Test]
         public void Lines_PlacedByTheLowestKey_NamesNoDate()
         {
             var lines = ParentPlacementReport.Lines(TheOwner, [Placed("PAY-422",
