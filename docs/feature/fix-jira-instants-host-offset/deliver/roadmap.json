@@ -1,0 +1,108 @@
+{
+  "roadmap": {
+    "project_id": "fix-jira-instants-host-offset",
+    "created_at": "2026-10-16T00:00:00Z",
+    "goal": "Jira status-change times and an issue's created date are stored as the instant Jira names on every server, whatever its time zone; a history entry without a readable time is skipped instead of failing the issue; and a Jira item re-read with its whole, fully readable history replaces its stored transitions, so a corrected time never leaves a shifted duplicate behind. Limit, accepted by the maintainer (option 1, not option 2): an item that is not downloaded again because it did not change keeps its shifted rows until it changes; no forced full refresh.",
+    "total_steps": 3,
+    "source": "Root-cause analysis 2026-10-16 (nw-bugfix Phase 1), approved by the maintainer with option 1: replace a Jira item's stored transitions when it is re-read with its complete history. No ADO item (maintainer: just do it).",
+    "paradigm": "OOP backend (.NET 10, NUnit 4.6 + Moq). Tests run with TZ=Europe/Zurich pinned by Lighthouse.Backend/lighthouse.runsettings.",
+    "standing_constraints": [
+      "Comments are rare and why-only, written for a stranger. No code comment may cite an internal reference (step ids, ADR numbers, RCA). Say the reason in plain language or write nothing.",
+      "Consult docs/ci-learnings.md and pre-apply every rule (Sonar-gate analyzer rules fail the build: CA1861, CA1859, CA1825, CA2016, NUnit1028/2045/2056 and friends).",
+      "dotnet build must have zero warnings (the two pre-existing NU1903 warnings on Microsoft.AspNetCore.SignalR.Common in the tests csproj are known and not yours).",
+      "Run backend tests with: dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\". Never run live-connector categories. In a worktree exactly 2 Licensing tests may fail on a missing gitignored licence file; 10 ReleaseServiceTest failures under load are contention.",
+      "No EF migration: nothing in the schema changes.",
+      "Exact-instant tests assert the full DateTime (value and Kind Utc), never only .Date. Each one first asserts the host zone is not UTC at the input's instant (TimeZoneInfo.Local.GetUtcOffset(...) != TimeSpan.Zero), so a run that lost the Europe/Zurich pin fails loudly instead of passing for the wrong reason.",
+      "Commit through des-commit with ONE --owned-paths flag followed by every path.",
+      "Work only in /storage/repos/Lighthouse/.claude/worktrees/resilient-wobbling-russell; pass absolute paths."
+    ]
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Jira instants are read as the instant Jira names",
+      "description": "Fix the parse, stop shifted duplicates from accumulating, and guard the pattern.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "A Jira status change and an issue's created date are stored as the instant Jira names on any server zone",
+          "agent": "nw-software-crafter",
+          "step_type": "bugfix",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/IssueFactoryTest.cs",
+          "scenario_name": "A_status_change_stamped_with_an_offset_is_read_as_the_instant_it_names",
+          "criteria": [
+            "RED first: with the current code, under the pinned Europe/Zurich zone, these new tests fail on the exact instant: a winter status change '2026-02-01T11:00:00.000+0200' must be 2026-02-01T09:00:00Z (current gives 10:00Z); a summer one '2026-07-01T11:00:00.000+0200' must be 09:00Z (current gives 11:00Z); a Z-stamped '2024-09-27T00:00:00.0000000Z' must stay exactly that instant (current gives 02:00Z); the issue created date '2024-04-07T09:40:12.704+0200' must be 2024-04-07T07:40:12.704Z. Each result has Kind Utc.",
+            "Every exact-instant test (new and tightened) first asserts TimeZoneInfo.Local.GetUtcOffset(<the input's instant>) is not TimeSpan.Zero, so a run without the Europe/Zurich pin fails instead of passing vacuously.",
+            "Tighten CreateIssue_CreatedDate_ReadsFromCorrectField to exact equality. RED proof for every tightened test too: run it against the unfixed code first and record in the report that it failed on the instant.",
+            "A history entry whose created is absent, JSON null or unreadable ('garbage') is skipped: the issue is still built and only the readable entries' transitions come out (current code throws).",
+            "A missing created on the issue itself still gives DateTime.MinValue (CreateIssue_NoCreatedDate_SetsToDateTimeMinValue stays green); an unreadable non-empty one also gives MinValue instead of throwing.",
+            "In IssueFactoryLinkDatesTest, A_status_change_in_the_same_entry_as_a_link_is_read_as_if_it_stood_alone compares TransitionedAt against the absolute expected instant (2026-04-10T09:00:00Z), not against a second parse.",
+            "GREEN: one private helper in IssueFactory reads a Jira instant via DateTimeOffset.TryParse(s, InvariantCulture, AssumeUniversal | AdjustToUniversal) and returns .UtcDateTime or null; ExtractStatusTransitionsFromHistory and the created-date read use it. GetUpdatedDateFromFields and LinkChangesIn may route through the same helper if it keeps their behaviour (their tests stay green). DateTime.Parse + SpecifyKind disappears from IssueFactory.",
+            "Full backend unit suite green; zero build warnings."
+          ],
+          "implementation_notes": "Root cause: DateTime.Parse(s, InvariantCulture, AssumeUniversal) on a string carrying an offset or Z returns server-LOCAL time (Kind Local); SpecifyKind(Utc) then relabels that local wall time as UTC. Sites: IssueFactory.ExtractStatusTransitionsFromHistory (~206-220) and the issue created-date read (~340-352). The newer readers (LinkChangesIn ~146, GetUpdatedDateFromFields ~356) already use DateTimeOffset. Test helpers: Lighthouse.Backend.Tests/TestHelpers/TrackerWireFormats.cs (JiraWireFormat.AStatusChangeAt writes entries in +02:00) and IssueFactoryTest's own CreateChangelogEntry. TimeZoneInfo guard pattern: Lighthouse.Backend.Tests ForecastControllerCalendarDayAnchorTest.cs ~line 137.",
+          "dependencies": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Factories/IssueFactory.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/IssueFactoryTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/IssueFactoryLinkDatesTest.cs"
+          ]
+        },
+        {
+          "id": "01-02",
+          "name": "A Jira item re-read with its whole history replaces its stored transitions, so a corrected time leaves no shifted duplicate",
+          "agent": "nw-software-crafter",
+          "step_type": "bugfix",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs",
+          "scenario_name": "A_Work_Item_read_with_its_whole_history_replaces_its_stored_transitions",
+          "criteria": [
+            "RED first: a stored Work Item has transitions To Do->In Progress at 2026-02-01T10:00Z (the shifted time an earlier, faulty read stored); the next refresh downloads it with its whole history giving that transition at 09:00Z. Afterwards exactly one stored transition exists for it, at 09:00Z, and CurrentStateEnteredAt is 09:00Z. With the current code two rows exist and CurrentStateEnteredAt is 10:00Z.",
+            "The same for a Feature in a Portfolio refresh (SyncFeatureStateTransitions): one row, at the corrected time.",
+            "Stored transitions the whole history still contains keep their rows (not deleted and re-added); only rows the history no longer names are removed and only missing ones are added.",
+            "A correction is not a state change. Rule: an added row that takes the place of a removed row with the same FromState and ToState in the same refresh is a correction and raises no WorkItemTransitioned (CollectDomainEvents emits one per transition it is handed, so hand it only the genuinely new ones). Test: re-reading an item whose only difference is a corrected time raises no WorkItemTransitioned; a genuinely new transition read in the same refresh still raises its one event. Blocked/Unblocked events are unaffected.",
+            "The record carries whether its transitions are its whole, fully readable history: a [NotMapped] bool on WorkItemBase (default false; WorkItemBase already has a [NotMapped] member to mirror), copied by the WorkItemBase copy constructor. No EF migration. It must reach the sync from the DOWNLOADED item, not the persisted one: carry it on the SyncedItem record (Work Items, built in SyncDownloadedItems) and alongside the transitions in featuresWithTransitions (Features), and pass it into SyncStateTransitions / SyncFeatureStateTransitions. Pin with a test that the flag survives the path into the sync.",
+            "Jira sets it true only when the issue's history is whole and readable: IssueFactory exposes on Issue that the changelog was present, was not partial (the existing HoldsOnlyPartOfItsHistory test: total greater than the entries held), and no history entry was skipped as unreadable; CreateWorkItemFromJiraIssue copies that. Every other connector leaves it false and keeps today's add-only behaviour exactly (a test pins that a non-whole-history record never loses a stored row).",
+            "Never delete on an empty read: when the read set of transitions is empty, stored rows are kept even if the flag is true (a Jira answer that dropped its changelog must not wipe history or null CurrentStateEnteredAt). Pin with a test.",
+            "Feature path: SyncFeatureStateTransitions gains the same reconcile, removing through featureStateTransitionRepository.Remove; Work Items through stateTransitionRepository.Remove.",
+            "Full backend unit suite green; zero build warnings."
+          ],
+          "implementation_notes": "WorkItemService.SyncStateTransitions (~574-596) and SyncFeatureStateTransitions (~1077-1096) add rows not already matched on (ToState, TransitionedAt) and never remove any. SyncStateTransitions' returned list feeds CollectDomainEvents(team, syncedItem, newTransitions) (~149): read that method to decide how a correction stays silent. WithSyncDeltaTransition (~531) adds a synthetic transition only for connectors without transition history; Jira reports SupportsTransitionHistory, so the synthetic row never applies to a whole-history record. Repositories expose Remove(T). Consider whether CurrentStateEnteredAt must be derived from the reconciled set (it must).",
+          "dependencies": ["01-01"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/Issue.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Factories/IssueFactory.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/IssueFactoryTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/WorkItemServiceTestBuilder.cs"
+          ]
+        },
+        {
+          "id": "01-03",
+          "name": "No backend code can read a zoned string with DateTime.Parse and relabel it as UTC again",
+          "agent": "nw-software-crafter",
+          "step_type": "bugfix",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/JiraInstantParsingArchUnitTest.cs",
+          "scenario_name": "No_production_code_parses_a_date_with_AssumeUniversal_without_AdjustToUniversal",
+          "criteria": [
+            "A source-scan test in the style of Architecture/CalendarDayAnchorSeamArchUnitTest.cs walks the production sources (Lighthouse.Backend/Lighthouse.Backend/**/*.cs, excluding bin/obj) and fails naming file:line for any DateTime.Parse / DateTime.TryParse / DateTime.ParseExact call that passes DateTimeStyles.AssumeUniversal without DateTimeStyles.AdjustToUniversal in the same call.",
+            "It fails against the code as it was before step 01-01 (prove it once by pointing it at the pre-fix IssueFactory text inline in the test or by a fixture string) and passes on the current tree. If another production site trips it, report it to the orchestrator instead of fixing it silently, unless the fix is the same one-line DateTimeOffset/AdjustToUniversal change with a covering test.",
+            "Append a rule to docs/ci-learnings.md: reading a zoned timestamp with DateTime.Parse(AssumeUniversal) and SpecifyKind(Utc) shifts it by the server's offset; use DateTimeOffset.TryParse(..., AssumeUniversal | AdjustToUniversal).UtcDateTime; tests must assert the exact instant, not .Date.",
+            "Full backend unit suite green; zero build warnings."
+          ],
+          "implementation_notes": "Mirror the existing source-scan test's file discovery and failure message shape. Keep the matcher simple and textual; it is a guard, not a parser.",
+          "dependencies": ["01-01"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/JiraInstantParsingArchUnitTest.cs",
+            "docs/ci-learnings.md"
+          ]
+        }
+      ]
+    }
+  ]
+}
