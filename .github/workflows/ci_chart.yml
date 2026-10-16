@@ -318,6 +318,10 @@ jobs:
     needs: [validate, install-smoke, upgrade-path, detect-publish]
     if: needs.detect-publish.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
+    # Two publishes in flight would race on docs/charts/index.yaml; queue them instead.
+    concurrency:
+      group: chart-publish
+      cancel-in-progress: false
     # Reuse the server release gate: publishing the chart waits for the same maintainer approval
     # as ci_release.yml. Configure required reviewers on the `Release` environment in repo settings.
     environment:
@@ -333,6 +337,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           token: ${{ secrets.RELEASE_CREATION_TOKEN }}
+          # Full history, so the publish commit can be rebased onto main further down.
+          fetch-depth: 0
 
       - name: Setup Helm
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
@@ -353,4 +359,16 @@ jobs:
           version="$(helm show chart ./chart | awk '/^version:/ {print $2; exit}')"
           git add docs/charts
           git commit -m "chore(chart): publish lighthouse-${version} to docs/charts (ADR-083)"
-          git push origin HEAD:main
+          # The checkout is the commit that started the run, and the run then waits at the Release gate,
+          # usually long enough for main to move on. The publish commit only adds files under
+          # docs/charts/, so it goes on top of main as it is now.
+          for attempt in 1 2 3; do
+            if git pull --rebase origin main && git push origin HEAD:main; then
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "push attempt ${attempt} lost a race with another push to main; retrying"
+            sleep 5
+          done
+          echo "::error::could not land the chart publish commit on top of main after 3 attempts"
+          exit 1

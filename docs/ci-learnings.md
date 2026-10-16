@@ -1426,6 +1426,12 @@ get re-applied.
 
 ## Infra & flakes
 
+### 2026-10-16 — the clients smoke installed by exact version ten seconds after publishing and got ETARGET
+- **Symptom**: lighthouse-clients `Client CI` run `38886881093` went red on `smoke-integration` and `smoke-platform (ubuntu-latest)` with `npm error notarget No matching version found for @letpeoplework/lighthouse-cli@1.8.1`, although `changeset publish` had reported all five packages published.
+- **Root cause**: npm takes seconds to minutes before a fresh publish installs; the smoke jobs started right after the `release` job and installed by exact version during that window.
+- **Fix**: the clients `release` job ends with "Wait until npm serves every published version": it polls `npm view <name>@<version>` for every non-private package every 15 s, up to 10 minutes, and fails naming what is missing. The smoke jobs `need` the release job, so they start once the registry answers.
+- **Rule going forward**: anything that installs a just-published package by exact version must first wait for the registry to serve it, by polling, never by a fixed sleep.
+
 ### 2026-10-14 — the Sonar scan action could not fetch SonarSource's signing key, and a fully green frontend job went red
 - **Symptom**: `Verify Frontend / frontend` FAILURE on `main` (run `38570239004`, commit `364b90b77`) after `Test Files 480 passed`, `Tests 7594 passed` and a clean build. The failing step was `Frontend SonarCloud` (`SonarSource/sonarqube-scan-action`): `gpg: keyserver receive failed: Server indicated a failure` against `hkps://keyserver.ubuntu.com`, the same against the fallback `hkps://keys.openpgp.org`, then `Action failed: Failed to import SonarSource public key from all keyservers`. `sonar-gates` was skipped as a consequence; every other job, including the backend's own Sonar scan, was green.
 - **Root cause**: the action verifies the scanner CLI download with SonarSource's PGP key, fetched from public keyservers at run time, and both keyservers refused the request — an outage outside this repository, not a code defect.
@@ -1718,6 +1724,12 @@ runs, and the two before this one were green on the Docker job.
 - **Rule going forward**: a `[Test]` that asserts a row CANNOT be inserted (FK violation), that a cascade DELETE removes child rows, or that an FK-referenced row must exist, MUST run on SQLite — never on `UseInMemoryDatabase`. Grep for `UseInMemoryDatabase` in new FK-touching test code and flag it unless the test documents why FK enforcement is irrelevant. A green InMemory run is NOT evidence that FK-dependent behaviour is correct.
 
 ## Helm chart
+
+### 2026-10-16 — the chart publish waited at the Release gate, main moved on, and its push was rejected
+- **Symptom**: `Helm Chart / publish` failed at "Commit the published chart" with `! [rejected] HEAD -> main (fetch first)` (run `38887528813`), after every check and the gate approval had passed. Nothing was published.
+- **Root cause**: the job checked out the commit that triggered the run (`e9ba62e9e`), then waited at the `Release` gate; meanwhile a docs commit landed on `main`, so pushing the publish commit was no longer a fast-forward. Re-running cannot help: it checks out the same old commit.
+- **Fix**: `ci_chart.yml` `publish` checks out with `fetch-depth: 0`, rebases its commit onto `origin/main` right before pushing (3 attempts), and runs under `concurrency: chart-publish` so two publishes never race on `index.yaml`. The 0.1.20 publish was recovered with `gh workflow run "Helm Chart" -f publish=true` on current `main`.
+- **Rule going forward**: a job that pushes to `main` after waiting at an environment gate must rebase onto the current `main` before pushing, never push the commit it checked out; and never push to `main` while such a job is parked at its gate, until this fix is in.
 
 ### 2026-07-26 — `chart/README.md` is helm-docs-GENERATED; hand-editing the version pins drifts the `config-ref` gate
 - **Symptom**: `Helm Chart / validate` failed at "config-ref drift gate" with `config-ref drift: chart/README.md is stale — run helm-docs and commit`, and `publish` was skipped — so the release-cycle chart bump (0.1.6 → 0.1.7) never published. The diff the gate printed was only the two `helm search` / `helm install` lines still reading the OLD chart + app version.
