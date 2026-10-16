@@ -989,7 +989,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         /// <summary>
         /// Every Feature read through a misconfigured setting shows the same misconfiguration, so it is
-        /// reported once per kind for the whole refresh, never once per Feature. Only a whole-query refresh
+        /// reported once per kind and setting for the whole refresh, never once per Feature. Only a whole-query refresh
         /// judges: a cheap one reads the few Features that moved, which says nothing about the setting, and
         /// reporting nothing from it leaves the last whole-query refresh's word standing.
         /// </summary>
@@ -1002,7 +1002,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             var findings = fetch.Features
                 .SelectMany(feature => feature.RefreshFindings)
-                .DistinctBy(finding => finding.Kind)
+                .DistinctBy(finding => (finding.Kind, finding.Setting))
                 .ToList();
 
             foreach (var finding in findings)

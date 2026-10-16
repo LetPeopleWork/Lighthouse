@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Models
 
         /// <summary>
         /// What a whole-query update found wrong with how a setting is configured, at most one of each kind
-        /// however many records showed it. A cheap update reads only the records that moved, which says
+        /// for each setting however many records showed it. A cheap update reads only the records that moved, which says
         /// nothing about the configuration, so it never carries any.
         /// </summary>
         public IReadOnlyList<RefreshFinding> Findings { get; init; } = [];

@@ -1471,6 +1471,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         /// <summary>
+        /// The same misconfiguration in two different settings is two things for the administrator to fix,
+        /// so each setting keeps its own finding.
+        /// </summary>
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_TwoSettingsShowTheSameKindOfFinding_RecordsOneFindingForEachSetting()
+        {
+            var portfolio = CreatePortfolio();
+            var inTheDependencyField = new RefreshFinding(RefreshFindingKind.NamedLinkPointsBothWays, RefreshFindingSetting.DependencyField, "Dependency", BothDependencyPhrases);
+            var inTheParentOverrideField = new RefreshFinding(RefreshFindingKind.NamedLinkPointsBothWays, RefreshFindingSetting.ParentOverrideField, "Dependency", BothDependencyPhrases);
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([.. EveryKindOfFeature.Select(referenceId => new Feature
+                {
+                    ReferenceId = referenceId,
+                    LastChangedRemote = TheFirstReadingDay,
+                    RefreshFindings = [inTheDependencyField, inTheParentOverrideField],
+                })]);
+
+            NothingAboveTheFeaturesIsDownloaded();
+
+            var outcome = await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
+
+            Assert.That(outcome.Findings.Select(finding => finding.Setting),
+                Is.EquivalentTo(new List<RefreshFindingSetting> { RefreshFindingSetting.DependencyField, RefreshFindingSetting.ParentOverrideField }));
+        }
+
+        /// <summary>
         /// A cheap refresh reads only the Features that moved, which says nothing about how the Portfolio is
         /// configured, so it records no finding and says nothing - the last whole-query refresh's word stands.
         /// </summary>

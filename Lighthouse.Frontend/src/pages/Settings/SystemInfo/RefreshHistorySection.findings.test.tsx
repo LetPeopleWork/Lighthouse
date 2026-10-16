@@ -10,7 +10,7 @@ import type {
  * Priya names "depends on" as Payments Platform's Dependency Field, its update finishes, and Dependencies
  * stays empty. Refresh History, on Payments Platform, now says why, as of the latest full download: no
  * Feature carries that link, and these are the links that were seen. Each finding reads in the words this
- * instance uses. Skipped until the slice that makes the finding exists.
+ * instance uses. The cases still skipped describe findings the backend does not make yet; the rest run.
  */
 
 vi.mock("@mui/x-charts", async () => {
