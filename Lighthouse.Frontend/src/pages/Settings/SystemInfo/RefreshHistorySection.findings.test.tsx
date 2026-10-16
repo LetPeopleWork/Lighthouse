@@ -126,7 +126,7 @@ describe("Refresh History says what a Portfolio's settings named that its latest
 	});
 
 	// @error @us-01 @ac-1.3 @contract-shape:pure-function
-	it.skip("a link type named by its name rather than one end asks which end is meant", async () => {
+	it("a link type named by its name rather than one end asks which end is meant", async () => {
 		await givenRefreshHistoryHolds(paymentsPlatformRows([PointsBothWays]));
 
 		expect(

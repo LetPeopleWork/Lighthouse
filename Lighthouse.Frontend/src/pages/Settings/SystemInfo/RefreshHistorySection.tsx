@@ -17,6 +17,7 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { appColors } from "../../../utils/theme/colors";
+import { sentenceFor } from "./refreshFindingSentences";
 
 interface EntityOption {
 	key: string;
@@ -259,6 +260,13 @@ const RefreshHistorySection: React.FC = () => {
 			...(lastRunAt ? [{ label: "Last Run", value: lastRunAt }] : []),
 		];
 
+		const findingSentences = (
+			filtered.find((l) => l.latestFullRunFindings !== undefined)
+				?.latestFullRunFindings ?? []
+		)
+			.map(sentenceFor)
+			.filter((sentence) => sentence !== null);
+
 		return (
 			<>
 				<RefreshHistoryChart data={filtered} />
@@ -272,6 +280,11 @@ const RefreshHistorySection: React.FC = () => {
 						</Box>
 					))}
 				</Box>
+				{findingSentences.map((sentence) => (
+					<Typography key={sentence} variant="body2" sx={{ mt: 2 }}>
+						{sentence}
+					</Typography>
+				))}
 			</>
 		);
 	};
