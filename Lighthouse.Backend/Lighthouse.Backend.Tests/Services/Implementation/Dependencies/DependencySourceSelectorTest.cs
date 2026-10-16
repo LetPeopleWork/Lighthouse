@@ -112,6 +112,92 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
             }
         }
 
+        public enum WhatThePortfolioNamed
+        {
+            Nothing,
+            AnOrdinaryField,
+            ALinkType,
+        }
+
+        public enum TheTrackerAsking
+        {
+            OneThatCannotServeANamedField,
+            OneWhoseFieldMayNameALinkType,
+            OneThatServesOnlyFields,
+        }
+
+        /// <summary>
+        /// Every tracker asks with what it read off its own links, and the field holds keys of its own, so
+        /// each answer shows which of the three it came from. A link type the Portfolio named replaces the
+        /// tracker's own link outright: adding the two together would leave nobody able to say where an
+        /// edge came from. A tracker that serves only fields reads a name as a field, whatever it names.
+        /// </summary>
+        [TestCaseSource(nameof(EverySettingOnEveryTracker))]
+        public void TheDependenciesOf_ReadsOneSourceDecidedByThePortfolioAndTheTracker(
+            WhatThePortfolioNamed named, TheTrackerAsking tracker, string[] expectedReferences, DependencySource expectedSource)
+        {
+            var portfolio = named == WhatThePortfolioNamed.Nothing ? new Portfolio() : APortfolioReadingItsOwnField();
+            var workItem = AWorkItemWhoseFieldReads("LGHTHSDMO-11;LGHTHSDMO-12");
+
+            var dependencies = AskedBy(tracker, portfolio, workItem, named);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(dependencies.ConvertAll(d => d.ReferenceId), Is.EqualTo(expectedReferences));
+                Assert.That(dependencies.TrueForAll(d => d.Source == expectedSource), Is.True);
+            }
+        }
+
+        /// <summary>
+        /// A named link type that no link on this Feature carries means the Feature waits on nothing.
+        /// Falling back to "is blocked by" would quietly make the setting mean "both".
+        /// </summary>
+        [Test]
+        public void TheDependenciesOf_ANamedLinkTypeNoLinkCarries_WaitsOnNothingRatherThanFallingBack()
+        {
+            var dependencies = DependencySourceSelector.TheDependenciesOf(
+                APortfolioReadingItsOwnField(), AWorkItemWhoseFieldReads("LGHTHSDMO-11"), WhatTheTrackerLinkedTo, NoLinkOfTheNamedType);
+
+            Assert.That(dependencies, Is.Empty);
+        }
+
+        private static readonly string[] WhatTheNamedLinkTypePointsAt = ["LGHTHSDMO-98"];
+
+        private static readonly string[] NoLinkOfTheNamedType = [];
+
+        private static IEnumerable<TestCaseData> EverySettingOnEveryTracker()
+        {
+            const TheTrackerAsking OptsOut = TheTrackerAsking.OneThatCannotServeANamedField;
+            const TheTrackerAsking LinkAware = TheTrackerAsking.OneWhoseFieldMayNameALinkType;
+            const TheTrackerAsking FieldsOnly = TheTrackerAsking.OneThatServesOnlyFields;
+
+            yield return new TestCaseData(WhatThePortfolioNamed.Nothing, OptsOut, WhatTheTrackerLinkedTo, DependencySource.TrackerLink);
+            yield return new TestCaseData(WhatThePortfolioNamed.AnOrdinaryField, OptsOut, WhatTheTrackerLinkedTo, DependencySource.TrackerLink);
+            yield return new TestCaseData(WhatThePortfolioNamed.ALinkType, OptsOut, WhatTheTrackerLinkedTo, DependencySource.TrackerLink);
+
+            yield return new TestCaseData(WhatThePortfolioNamed.Nothing, LinkAware, WhatTheTrackerLinkedTo, DependencySource.TrackerLink);
+            yield return new TestCaseData(WhatThePortfolioNamed.AnOrdinaryField, LinkAware, WhatTheFieldNames, DependencySource.PortfolioField);
+            yield return new TestCaseData(WhatThePortfolioNamed.ALinkType, LinkAware, WhatTheNamedLinkTypePointsAt, DependencySource.TrackerLink);
+
+            yield return new TestCaseData(WhatThePortfolioNamed.Nothing, FieldsOnly, WhatTheTrackerLinkedTo, DependencySource.TrackerLink);
+            yield return new TestCaseData(WhatThePortfolioNamed.AnOrdinaryField, FieldsOnly, WhatTheFieldNames, DependencySource.PortfolioField);
+            yield return new TestCaseData(WhatThePortfolioNamed.ALinkType, FieldsOnly, WhatTheFieldNames, DependencySource.PortfolioField);
+        }
+
+        private static List<FeatureDependencyReference> AskedBy(
+            TheTrackerAsking tracker, Portfolio portfolio, WorkItemBase workItem, WhatThePortfolioNamed named)
+        {
+            var fromTheNamedLinkType = named == WhatThePortfolioNamed.ALinkType ? WhatTheNamedLinkTypePointsAt : null;
+
+            return tracker switch
+            {
+                TheTrackerAsking.OneThatCannotServeANamedField => DependencySourceSelector.TheTrackersOwnLinksOnly(WhatTheTrackerLinkedTo),
+                TheTrackerAsking.OneWhoseFieldMayNameALinkType => DependencySourceSelector.TheDependenciesOf(portfolio, workItem, WhatTheTrackerLinkedTo, fromTheNamedLinkType),
+                TheTrackerAsking.OneThatServesOnlyFields => DependencySourceSelector.TheDependenciesOf(portfolio, workItem, WhatTheTrackerLinkedTo),
+                _ => throw new ArgumentOutOfRangeException(nameof(tracker)),
+            };
+        }
+
         private static Portfolio APortfolioReadingItsOwnField()
             => new() { DependencyOverrideAdditionalFieldDefinitionId = TheFieldTheyNamed };
 

@@ -8,7 +8,9 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
     /// Decides where one Feature's dependencies were read from, and turns them into references.
     ///
     /// A Portfolio that names a field is declaring that field authoritative, so the tracker's own link is
-    /// not consulted at all while it is set - the same posture the parent setting beside it takes.
+    /// not consulted at all while it is set - the same posture the parent setting beside it takes. On a
+    /// tracker where the name may be one of its link types instead, links of that one type replace the
+    /// tracker's own link rather than being added to it, so every edge still has exactly one source.
     ///
     /// This lives apart from any one tracker because the rule belongs to the Portfolio rather than to the
     /// tracker. Written inside a tracker, it is a rule the next tracker has to be told about; the first

@@ -63,7 +63,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice01)]
         [Category("us-01")]
         [Category("ac-1.1")]
         [Category("contract-shape:bounded-change")]
@@ -85,7 +84,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         // Kenji Watanabe's instance renamed the inward end of Blocks to "waits for" and he types it with
         // capitals: the same result "is blocked by" gives on a stock instance.
         [Test]
-        [Ignore(PendingEpic6303.Slice01)]
         [Category("us-01")]
         [Category("ac-1.2")]
         [Category("edge")]
@@ -179,7 +177,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice01)]
         [Category("us-01")]
         [Category("ac-1.4")]
         [Category("error")]

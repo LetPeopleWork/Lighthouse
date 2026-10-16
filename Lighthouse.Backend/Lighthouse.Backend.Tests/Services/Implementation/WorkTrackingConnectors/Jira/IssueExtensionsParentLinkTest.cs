@@ -76,6 +76,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(waitsOn, Is.Empty);
         }
 
+        /// <summary>
+        /// The issue carries both ends of a Dependency link and both ends of a Blocks link whose inward end an
+        /// administrator renamed. Whatever was typed - the type's name or either phrase, in any case - picks the
+        /// type, and the direction alone picks which end does the waiting.
+        /// </summary>
+        [TestCase("Dependency", LinkDirection.Outward, TheParent)]
+        [TestCase("DEPENDENCY", LinkDirection.Outward, TheParent)]
+        [TestCase("Depends On", LinkDirection.Outward, TheParent)]
+        [TestCase("dependency", LinkDirection.Inward, AnotherParent)]
+        [TestCase("IS DEPENDED ON BY", LinkDirection.Inward, AnotherParent)]
+        [TestCase("Blocks", LinkDirection.Inward, AChild)]
+        [TestCase("Waits For", LinkDirection.Inward, AChild)]
+        [TestCase("BLOCKS", LinkDirection.Outward, AnotherChild)]
+        public void ExtractDependencyReferencesFromLinks_ReadsTheEndTheDirectionNamesOnTheTypeWhateverWasTyped(
+            string reference, LinkDirection direction, string expected)
+        {
+            var renamedBlocks = JiraLinkType.Blocks("waits for");
+            var fields = FieldsOfAnIssueWith(
+                Dependency.LinkWhoseOutwardIssueIs(TheParent),
+                Dependency.LinkWhoseInwardIssueIs(AnotherParent),
+                renamedBlocks.LinkWhoseInwardIssueIs(AChild),
+                renamedBlocks.LinkWhoseOutwardIssueIs(AnotherChild));
+
+            var waitsOn = fields.ExtractDependencyReferencesFromLinks(reference, direction);
+
+            Assert.That(waitsOn, Is.EqualTo(new List<string> { expected }));
+        }
+
         [Test]
         public void YieldsTheOutwardCounterpartOfALinkWhoseInwardEndThisIssueHolds()
         {
