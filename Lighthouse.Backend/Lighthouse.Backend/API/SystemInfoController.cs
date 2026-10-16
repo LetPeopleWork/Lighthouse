@@ -1,3 +1,4 @@
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Authorization;
@@ -90,14 +91,14 @@ namespace Lighthouse.Backend.API
 
         // Guarded where GetSystemInfo is not: the refresh history is instance-wide operational
         // detail, while GetSystemInfo carries the version and auth status the app shell needs for
-        // every signed-in user. [Authorize] alone asks only that the caller be somebody, and after
-        // ADR-137 that includes any viewer who reaches the Jira frame.
+        // every signed-in user. [Authorize] alone asks only that the caller be somebody, and that
+        // includes any viewer who opens Lighthouse embedded inside Jira.
         [HttpGet("refreshlog")]
         [RbacGuard(RbacGuardRequirement.SystemAdmin)]
-        [ProducesResponseType<IEnumerable<RefreshLog>>(StatusCodes.Status200OK)]
-        public ActionResult<IEnumerable<RefreshLog>> GetRefreshLog()
+        [ProducesResponseType<IEnumerable<RefreshLogDto>>(StatusCodes.Status200OK)]
+        public ActionResult<IEnumerable<RefreshLogDto>> GetRefreshLog()
         {
-            return Ok(refreshLogService.GetRefreshLogs());
+            return Ok(RefreshLogDto.ListFor(refreshLogService.GetRefreshLogs()));
         }
     }
 }

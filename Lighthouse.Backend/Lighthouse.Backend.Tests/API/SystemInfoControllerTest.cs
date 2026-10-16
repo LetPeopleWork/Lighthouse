@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Startup;
 using Lighthouse.Backend.API;
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
@@ -19,6 +20,8 @@ namespace Lighthouse.Backend.Tests.API
 {
     public class SystemInfoControllerTest
     {
+        private static readonly int[] TheOnlyRow = [1];
+
         private Mock<ISystemInfoService> systemInfoServiceMock;
         private Mock<IRefreshLogService> refreshLogServiceMock;
         private Mock<IRbacAdministrationService> rbacMock;
@@ -432,7 +435,37 @@ namespace Lighthouse.Backend.Tests.API
 
                 var okResult = response.Result as OkObjectResult;
                 Assert.That(okResult!.StatusCode, Is.EqualTo(200));
-                Assert.That(okResult.Value, Is.EqualTo(logs));
+                Assert.That((okResult.Value as IEnumerable<RefreshLogDto>)?.Select(row => row.Id), Is.EqualTo(TheOnlyRow));
+            }
+        }
+
+        [Test]
+        public void GetRefreshLog_EveryRowOfAnEntityCarriesTheFindingsOfItsLatestRefreshThatRecordedAny()
+        {
+            var earlier = new DateTime(2026, 10, 1, 8, 0, 0, DateTimeKind.Utc);
+            var later = earlier.AddHours(1);
+            var newest = later.AddHours(1);
+            var olderFinding = new RefreshFinding(RefreshFindingKind.NamedLinkMatchedNothing, RefreshFindingSetting.DependencyField, "Dependency", []);
+            var newerFinding = new RefreshFinding(RefreshFindingKind.NamedLinkPointsBothWays, RefreshFindingSetting.DependencyField, "Dependency", []);
+            refreshLogServiceMock.Setup(x => x.GetRefreshLogs()).Returns(
+            [
+                new RefreshLog { Id = 4, Type = RefreshType.Portfolio, EntityId = 7, ExecutedAt = newest, Findings = null },
+                new RefreshLog { Id = 3, Type = RefreshType.Portfolio, EntityId = 7, ExecutedAt = later, Findings = [newerFinding] },
+                new RefreshLog { Id = 2, Type = RefreshType.Portfolio, EntityId = 7, ExecutedAt = earlier, Findings = [olderFinding] },
+                new RefreshLog { Id = 1, Type = RefreshType.Team, EntityId = 7, ExecutedAt = newest, Findings = null },
+            ]);
+
+            var rows = ((CreateSubject().GetRefreshLog().Result as OkObjectResult)?.Value as IEnumerable<RefreshLogDto>)?.ToList() ?? [];
+            var portfolioRows = rows.Where(row => row.Type == RefreshType.Portfolio).ToList();
+            var teamRow = rows.Single(row => row.Type == RefreshType.Team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(portfolioRows, Has.Count.EqualTo(3));
+                Assert.That(portfolioRows.Select(row => row.LatestFullRunFindings?.Single()), Is.All.EqualTo(newerFinding));
+                Assert.That(portfolioRows.Select(row => row.LatestFullRunAt), Is.All.EqualTo(later));
+                Assert.That(teamRow.LatestFullRunFindings, Is.Null, "A Team that shares the Portfolio's id is a different entity.");
+                Assert.That(teamRow.LatestFullRunAt, Is.Null);
             }
         }
     }

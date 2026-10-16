@@ -127,7 +127,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         // Ana Souza names the type, "Dependency", which reads both ways.
         [Test]
-        [Ignore(PendingEpic6303.Slice01)]
         [Category("us-01")]
         [Category("ac-1.3")]
         [Category("error")]
@@ -155,7 +154,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice01)]
         [Category("us-01")]
         [Category("ac-1.3")]
         [Category("error")]
