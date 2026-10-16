@@ -48,6 +48,8 @@ See details for [Jira](../concepts/worktrackingsystems/jira.html) and [Azure Dev
 
 Additional Fields are used by the UI and reporting features and can also be targeted by Data Sync Mappings. When changing an existing connection, secret options (such as API tokens) will always need to be re-entered.
 
+A new or changed field only has values once the Teams and Portfolios on the connection have been updated. So when you change the Additional Fields of a connection they use, Lighthouse asks whether to update them now or leave it to their next scheduled update. A change saved through the API, the CLI or the MCP server updates them right away.
+
 
 ## Data Sync Mappings
 
