@@ -43,9 +43,16 @@ namespace Lighthouse.Backend.Models.Staleness
         /// The threshold a stale item crossed. The reason that made it stale is always listed first.
         /// </summary>
         public int ThresholdCrossedBy(StalenessVerdict staleVerdict)
-            => staleVerdict.Reasons[0].Kind == StaleReasonKind.BlockedDuration
+        {
+            if (!staleVerdict.IsStale)
+            {
+                throw new ArgumentException("An item that is not stale has crossed no threshold.", nameof(staleVerdict));
+            }
+
+            return staleVerdict.Reasons[0].Kind == StaleReasonKind.BlockedDuration
                 ? blockedThresholdDays
                 : timeInStateThresholdDays;
+        }
 
         private int? DaysInStateIfPastThreshold(StalenessCandidate candidate, TimeZoneInfo zone, DateOnly asOfDay)
         {

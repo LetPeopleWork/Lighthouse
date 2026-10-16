@@ -251,6 +251,17 @@ namespace Lighthouse.Backend.Tests.Models.Staleness
             Assert.That(verdict.Reasons, Is.EqualTo(expectedReasons));
         }
 
+        // A Blocked item under its blocked threshold still lists its time in state, so asking which
+        // threshold it crossed would otherwise answer with one it never crossed.
+        [Test]
+        public void Asking_which_threshold_an_item_that_is_not_stale_crossed_is_refused()
+        {
+            var policy = PolicyWith(timeInStateThreshold: 5, blockedThreshold: 3);
+            var notStale = policy.Evaluate(Blocked(daysInState: 9, daysBlocked: 2), Zurich, AsOfDay);
+
+            Assert.That(() => policy.ThresholdCrossedBy(notStale), Throws.ArgumentException);
+        }
+
         private static StalenessPolicy PolicyWith(int timeInStateThreshold, int blockedThreshold)
             => StalenessPolicy.For(new Team
             {
