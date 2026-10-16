@@ -83,8 +83,11 @@ namespace Lighthouse.Backend.Factories
             var histories = changelog.GetProperty(JiraFieldNames.HistoriesFieldName);
 
             return !HoldsOnlyPartOfItsHistory(changelog, histories)
-                && histories.EnumerateArray().All(history => JiraInstantOrNull(StringOrNull(history, JiraFieldNames.CreatedDateFieldName)) is not null);
+                && histories.EnumerateArray().All(history => WhenItHappened(history) is not null);
         }
+
+        private static DateTime? WhenItHappened(JsonElement history)
+            => JiraInstantOrNull(StringOrNull(history, JiraFieldNames.CreatedDateFieldName));
 
         private sealed record LinkEnd(string CounterpartKey, string Sentence);
 
@@ -159,7 +162,7 @@ namespace Lighthouse.Backend.Factories
 
         private static IEnumerable<LinkChange> LinkChangesIn(JsonElement history)
         {
-            if (JiraInstantOrNull(StringOrNull(history, JiraFieldNames.CreatedDateFieldName)) is not DateTime at)
+            if (WhenItHappened(history) is not DateTime at)
             {
                 return [];
             }
@@ -217,7 +220,7 @@ namespace Lighthouse.Backend.Factories
 
         private static IEnumerable<WorkItemStateTransition> ExtractStatusTransitionsFromHistory(JsonElement history)
         {
-            if (JiraInstantOrNull(StringOrNull(history, JiraFieldNames.CreatedDateFieldName)) is not DateTime transitionedAt)
+            if (WhenItHappened(history) is not DateTime transitionedAt)
             {
                 return [];
             }
