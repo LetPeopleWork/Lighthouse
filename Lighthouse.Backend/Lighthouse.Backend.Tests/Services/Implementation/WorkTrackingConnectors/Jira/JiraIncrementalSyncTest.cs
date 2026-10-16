@@ -133,6 +133,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task GetWorkItemsForTeam_DoesNotTakeAChangelogReReadThatStoppedShortForTheWholeHistory()
+        {
+            var theFirstHundredEntries = Enumerable.Range(0, 100)
+                .Select(minute => AStatusChangeAt(new DateTime(2026, 8, 1, 9, 0, 0, DateTimeKind.Utc).AddMinutes(minute).ToString("yyyy-MM-dd'T'HH:mm:ss.fff'+0000'", CultureInfo.InvariantCulture)))
+                .ToArray();
+            var jira = new JiraStub(Cloud) { ChangelogEntryCount = 150, ChangelogHistories = theFirstHundredEntries };
+            jira.ChangelogPages.Add($"{{\"startAt\":0,\"maxResults\":100,\"total\":150,\"isLast\":false,\"values\":[{string.Join(",", theFirstHundredEntries)}]}}");
+            jira.ChangelogPages.Add("{\"startAt\":100,\"maxResults\":100,\"total\":150}");
+            var subject = CreateSubject(jira.Handler);
+
+            var workItem = (await subject.GetWorkItemsForTeam(CreateTeam(), CancellationToken.None)).Single();
+
+            Assert.That(workItem.TransitionsAreItsWholeHistory, Is.False,
+                "Jira said the history holds 150 entries and only 100 could be read. Taking those 100 for the whole "
+                + "history would delete the stored transitions the other 50 recorded.");
+        }
+
+        [Test]
         public async Task GetWorkItemsForTeam_LeavesOutAnOrderingTheTeamsOwnQueryCarries()
         {
             var jira = new JiraStub(Cloud);
@@ -1203,6 +1221,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             private readonly List<SearchAsk> searchAsks = [];
             private int failSearchesFromRequestNumber = int.MaxValue;
             private int searchCount;
+            private int changelogPagesServed;
 
             public JiraStub(string deploymentType)
             {
@@ -1229,6 +1248,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             /// <summary>History entries served inline with every issue, counted as the changelog's whole total.</summary>
             public string[] ChangelogHistories { get; set; } = [];
+
+            /// <summary>What the paged changelog endpoint answers, one page per request, in order.</summary>
+            public List<string> ChangelogPages { get; } = [];
 
             /// <summary>
             /// What a Data Center sweep finds, in the order the instance would hand it back. Data Center has
@@ -1266,6 +1288,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 if (path.EndsWith("rest/api/latest/field", StringComparison.Ordinal))
                 {
                     return Ok("[]");
+                }
+
+                if (path.EndsWith("/changelog", StringComparison.Ordinal) && changelogPagesServed < ChangelogPages.Count)
+                {
+                    return Ok(ChangelogPages[changelogPagesServed++]);
                 }
 
                 if (path.EndsWith("/changelog", StringComparison.Ordinal))

@@ -1337,7 +1337,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// fifty long-lived issues is fifty of them - which is why the token has to reach in here. Without
         /// it a cancelled Cloud download still pays for every one before the page loop notices.
         /// </summary>
-        private async Task<List<JsonElement>> GetAllChangelogEntriesForIssue(
+        private sealed record ChangelogReading(List<JsonElement> Entries, int? EntriesJiraReported);
+
+        private async Task<ChangelogReading> GetAllChangelogEntriesForIssue(
             HttpClient jiraClient, string issueId, CancellationToken cancellationToken)
         {
             var allChangelogHistories = new List<JsonElement>();
@@ -1345,6 +1347,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             const int maxResults = 100; // Jira's max per page
             var isLast = false;
             var totalChangelogs = 0;
+            int? entriesJiraReported = null;
 
             while (!isLast)
             {
@@ -1383,6 +1386,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 if (changelogJson.RootElement.TryGetProperty(JiraFieldNames.TotalFieldName, out var totalProp))
                 {
                     totalChangelogs = totalProp.GetInt32();
+                    entriesJiraReported = Math.Max(entriesJiraReported ?? 0, totalChangelogs);
                 }
 
                 // Check for 'isLast' (v3) or determine from pagination values (v2)
@@ -1401,11 +1405,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             logger.LogDebug("Retrieved {Count} of {Total} changelog entries for Issue {Key}", allChangelogHistories.Count, totalChangelogs, issueId);
 
-            return allChangelogHistories;
+            return new ChangelogReading(allChangelogHistories, entriesJiraReported);
         }
 
-        private static JsonElement MergeChangelogIntoIssueJson(JsonElement issueJson, List<JsonElement> changelogHistories)
+        // The re-read can end before it reaches the last entry, so the merged changelog keeps the total Jira
+        // reported rather than the count read, which is what still marks such a history as partial.
+        private static JsonElement MergeChangelogIntoIssueJson(JsonElement issueJson, List<JsonElement> changelogHistories, int entriesJiraReported)
         {
+            var entriesInAll = Math.Max(entriesJiraReported, changelogHistories.Count);
+
             using var stream = new MemoryStream();
             using var writer = new Utf8JsonWriter(stream);
 
@@ -1422,7 +1430,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                     writer.WriteNumber(JiraFieldNames.StartAtFieldName, 0);
                     writer.WriteNumber(JiraFieldNames.MaxResultsFieldName, changelogHistories.Count);
-                    writer.WriteNumber(JiraFieldNames.TotalFieldName, changelogHistories.Count);
+                    writer.WriteNumber(JiraFieldNames.TotalFieldName, entriesInAll);
 
                     writer.WritePropertyName(JiraFieldNames.HistoriesFieldName);
                     writer.WriteStartArray();
@@ -1448,7 +1456,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 writer.WriteNumber(JiraFieldNames.StartAtFieldName, 0);
                 writer.WriteNumber(JiraFieldNames.MaxResultsFieldName, changelogHistories.Count);
-                writer.WriteNumber(JiraFieldNames.TotalFieldName, changelogHistories.Count);
+                writer.WriteNumber(JiraFieldNames.TotalFieldName, entriesInAll);
 
                 writer.WritePropertyName(JiraFieldNames.HistoriesFieldName);
                 writer.WriteStartArray();
@@ -2316,9 +2324,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (ShouldFetchFullChangelog(jsonIssue, issueKey, out var totalChangelogs))
             {
-                var allChangelogHistories = await GetAllChangelogEntriesForIssue(client, issueKey, cancellationToken);
-                issueToProcess = MergeChangelogIntoIssueJson(jsonIssue, allChangelogHistories);
-                logger.LogDebug("Found Issue {Key} with {ChangelogCount} complete changelog entries", issueKey, allChangelogHistories.Count);
+                var reading = await GetAllChangelogEntriesForIssue(client, issueKey, cancellationToken);
+                issueToProcess = MergeChangelogIntoIssueJson(jsonIssue, reading.Entries, reading.EntriesJiraReported ?? totalChangelogs);
+                logger.LogDebug("Found Issue {Key} with {ChangelogCount} complete changelog entries", issueKey, reading.Entries.Count);
             }
             else
             {

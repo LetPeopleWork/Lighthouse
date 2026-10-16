@@ -82,9 +82,17 @@ namespace Lighthouse.Backend.Factories
 
             var histories = changelog.GetProperty(JiraFieldNames.HistoriesFieldName);
 
-            return !HoldsOnlyPartOfItsHistory(changelog, histories)
+            return SaysItHoldsEveryEntry(changelog, histories)
                 && histories.EnumerateArray().All(history => WhenItHappened(history) is not null);
         }
+
+        // A reading may replace the stored transitions only when it proves it is complete, so a changelog
+        // that gives no readable total counts as partial here, unlike for dating links.
+        private static bool SaysItHoldsEveryEntry(JsonElement changelog, JsonElement histories)
+            => changelog.TryGetProperty(JiraFieldNames.TotalFieldName, out var total)
+                && total.ValueKind == JsonValueKind.Number
+                && total.TryGetInt32(out var entriesInAll)
+                && entriesInAll <= histories.GetArrayLength();
 
         private static DateTime? WhenItHappened(JsonElement history)
             => JiraInstantOrNull(StringOrNull(history, JiraFieldNames.CreatedDateFieldName));

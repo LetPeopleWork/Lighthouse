@@ -666,6 +666,25 @@ namespace Lighthouse.Backend.Tests.Factories
             Assert.That(issue.HasItsWholeHistory, Is.False);
         }
 
+        [TestCase(false, TestName = "An issue whose changelog says nothing of its total does not have its whole history")]
+        [TestCase(true, TestName = "An issue whose changelog total is not a number does not have its whole history")]
+        public void An_issue_whose_changelog_does_not_say_how_many_entries_it_holds_does_not_have_its_whole_history(bool totalIsThereButUnreadable)
+        {
+            var issue = AnIssueWhoseChangelog(json =>
+            {
+                AddChangelogEntries(json, [CreateChangelogEntry("Backlog", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc))]);
+                var changelog = json[JiraFieldNames.ChangelogFieldName]!.AsObject();
+                changelog.Remove(JiraFieldNames.TotalFieldName);
+                if (totalIsThereButUnreadable)
+                {
+                    changelog[JiraFieldNames.TotalFieldName] = "many";
+                }
+            });
+
+            Assert.That(issue.HasItsWholeHistory, Is.False,
+                "Replacing the stored transitions is only safe once the reading proves it holds every entry.");
+        }
+
         private Issue AnIssueWhoseChangelog(Action<JsonNode> shapeIt)
         {
             var jsonDocument = CreateJsonDocument(shapeIt);
