@@ -258,4 +258,8 @@ describe("TimeInStateBadge counts to the reader's own calendar day", () => {
 	test("daysInState counts to the local day of the instant it is given", () => {
 		expect(daysInState(new Date("2026-05-15T12:00:00Z"), rangeEnd)).toBe(11);
 	});
+
+	test("daysInState counts no days for a Work Item whose state entry is unknown", () => {
+		expect(daysInState(null, rangeEnd)).toBe(0);
+	});
 });

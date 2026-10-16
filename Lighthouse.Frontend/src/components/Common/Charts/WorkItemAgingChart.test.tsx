@@ -861,6 +861,46 @@ describe("WorkItemAgingChart component", () => {
 				colourOfTheFirst: normalColour,
 			});
 		});
+
+		it("reds the dot once a fresh answer marks the Work Item stale", () => {
+			const notYetStale: IWorkItem = {
+				...mockInProgressItems[0],
+				isBlocked: false,
+				currentStateEnteredAt: new Date("2026-05-20T08:00:00Z"),
+				isStale: false,
+				staleReasons: [],
+			};
+			const chartFor = (item: IWorkItem) => (
+				<WorkItemAgingChart
+					ownerKind="team"
+					sleRiskValues={[]}
+					inProgressItems={[item]}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+					now={now}
+				/>
+			);
+			const colourOfTheFirstDot = () => {
+				const seriesAttr = screen.getByTestId("mock-chart-container").dataset
+					.series;
+				const series = seriesAttr ? JSON.parse(seriesAttr) : [];
+				return series?.[0]?.data?.[0]?.color;
+			};
+
+			const { rerender } = render(chartFor(notYetStale));
+			expect(colourOfTheFirstDot()).toBe(normalColour);
+
+			rerender(
+				chartFor({
+					...notYetStale,
+					isStale: true,
+					staleReasons: [{ kind: "TimeInState", days: 6, stateName: "Review" }],
+				}),
+			);
+
+			expect(colourOfTheFirstDot()).toBe(errorColor);
+		});
 	});
 
 	it("uses explicit axis IDs and x-axis height for stable tick rendering", () => {

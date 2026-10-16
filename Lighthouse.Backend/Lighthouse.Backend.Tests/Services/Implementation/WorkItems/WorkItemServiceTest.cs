@@ -1855,6 +1855,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
+        [Category("story-6247")]
+        public async Task UpdateWorkItemsForTeam_BlockedPastTheBlockedThreshold_PublishesWorkItemBecameStaleWithTheBlockedThreshold()
+        {
+            var team = CreateTeam();
+            team.StalenessThresholdDays = 30;
+            team.BlockedStalenessThresholdDays = 3;
+            team.BlockedRuleSetJson = BlockedByStateRuleSetJson("Blocked");
+
+            var enteredBlocked = DateTime.UtcNow.AddDays(-10);
+            var incoming = CreateWorkItemWithTransitions(team, "Blocked", ("Doing", "Blocked", enteredBlocked));
+            incoming.StateCategory = StateCategories.Doing;
+
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsForTeam(team, CancellationToken.None)).ReturnsAsync([incoming]);
+
+            var subject = CreateSubject();
+            await subject.UpdateWorkItemsForTeam(team);
+
+            domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(
+                    It.Is<WorkItemBecameStale>(e => e.WorkItemId == incoming.Id && e.ThresholdDays == 3),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Test]
         public async Task UpdateWorkItemsForTeam_ItemLeavesDoingThenReentersStale_ResetsFlagAndRepublishesOnSecondCrossing()
         {
             var team = CreateTeam();

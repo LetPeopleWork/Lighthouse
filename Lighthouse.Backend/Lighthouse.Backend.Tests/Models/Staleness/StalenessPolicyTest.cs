@@ -251,6 +251,20 @@ namespace Lighthouse.Backend.Tests.Models.Staleness
             Assert.That(verdict.Reasons, Is.EqualTo(expectedReasons));
         }
 
+        [Test]
+        public void A_stale_Work_Item_crossed_the_threshold_of_the_reason_that_made_it_stale()
+        {
+            var policy = PolicyWith(timeInStateThreshold: 5, blockedThreshold: 3);
+            var staleWhileBlocked = policy.Evaluate(Blocked(daysInState: 9, daysBlocked: 4), Zurich, AsOfDay);
+            var staleInItsState = policy.Evaluate(InProgress(daysInState: 9), Zurich, AsOfDay);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(policy.ThresholdCrossedBy(staleWhileBlocked), Is.EqualTo(3));
+                Assert.That(policy.ThresholdCrossedBy(staleInItsState), Is.EqualTo(5));
+            }
+        }
+
         // A Blocked item under its blocked threshold still lists its time in state, so asking which
         // threshold it crossed would otherwise answer with one it never crossed.
         [Test]
