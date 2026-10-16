@@ -2,9 +2,12 @@ using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.WorkItemRules;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Staleness
@@ -18,6 +21,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
 
         [SetUp]
         public void ForgetTheTrackersRecords() => trackerRecords.Clear();
+
+        // The Given counts days back from today and the refresh judges against today, so both have to
+        // see the same today even when a scenario runs across midnight.
+        protected override void ReplaceServicesForTheScenario(IServiceCollection services)
+        {
+            services.RemoveAll<ILighthouseClock>();
+            services.AddSingleton<ILighthouseClock>(new FakeLighthouseClock(DateTimeOffset.UtcNow, LighthouseClock.ResolveInstanceTimeZone(null)));
+        }
 
         // --- Given ---
 

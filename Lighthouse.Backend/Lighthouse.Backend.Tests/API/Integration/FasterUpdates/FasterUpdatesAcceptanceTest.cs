@@ -159,6 +159,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                             .WriteTo.Sink(CapturedLogs)
                             .CreateLogger(),
                         dispose: true));
+
+                    ReplaceServicesForTheScenario(services);
                 });
             });
 
@@ -171,6 +173,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             {
                 seeder.Seed().GetAwaiter().GetResult();
             }
+        }
+
+        /// <summary>
+        /// The last word on the host's services, for a fixture that has to swap one more port than the
+        /// rest. Every other fixture leaves the production registrations as they are.
+        /// </summary>
+        protected virtual void ReplaceServicesForTheScenario(IServiceCollection services)
+        {
         }
 
         [TearDown]

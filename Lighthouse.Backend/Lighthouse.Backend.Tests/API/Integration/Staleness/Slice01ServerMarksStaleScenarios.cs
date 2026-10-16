@@ -21,11 +21,39 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             var team = GivenATeamThatCallsWorkStaleAfterFiveDaysInAStateOrThreeDaysBlocked();
             GivenAWorkItemHasBeenInItsStateFor(team, "STORY-12", Review, days: 12);
             GivenAWorkItemHasBeenInItsStateFor(team, "STORY-2", InProgress, days: 2);
+            var storedBefore = GivenWhatLighthouseHasStored();
 
             var read = await WhenTheTeamsWorkInProgressIsRead(team);
 
             ThenTheWorkItemIsStaleBecause(read, "STORY-12", TimeInState(12, Review));
             ThenTheWorkItemIsNotStale(read, "STORY-2");
+            ThenTheReadLeftWhatLighthouseHasStoredUnchanged(storedBefore);
+        }
+
+        // @driving_port @real-io @contract-shape:pure-function
+        [Test]
+        public async Task A_flow_coach_reading_todays_work_in_progress_sees_which_Work_Item_has_sat_too_long()
+        {
+            var team = GivenATeamThatCallsWorkStaleAfterFiveDaysInAStateOrThreeDaysBlocked();
+            GivenAWorkItemHasBeenInItsStateUntilTodayFor(team, "STORY-12", Review, days: 12);
+            GivenAWorkItemHasBeenInItsStateUntilTodayFor(team, "STORY-2", InProgress, days: 2);
+
+            var read = await WhenTheTeamsWorkInProgressIsReadForToday(team);
+
+            ThenTheWorkItemIsStaleBecause(read, "STORY-12", TimeInState(12, Review));
+            ThenTheWorkItemIsNotStale(read, "STORY-2");
+        }
+
+        // @driving_port @real-io @contract-shape:pure-function
+        [Test]
+        public async Task A_Work_Item_is_judged_in_the_state_it_held_on_the_day_asked_about_not_the_one_it_holds_now()
+        {
+            var team = GivenATeamThatCallsWorkStaleAfterFiveDaysInAStateOrThreeDaysBlocked();
+            GivenAWorkItemThatHadBeenInAStateForDaysOnTheDayAskedAboutAndMovedOnTheDayAfter(team, "STORY-1", InProgress, days: 12, movedTo: Review);
+
+            var read = await WhenTheTeamsWorkInProgressIsRead(team);
+
+            ThenTheWorkItemIsStaleBecause(read, "STORY-1", TimeInState(12, InProgress));
         }
 
         // @driving_port @boundary @contract-shape:pure-function
@@ -92,7 +120,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemReads(read, "STORY-1", expectedStale: false, [TimeInStateWhileBlocked(7, BlockedState)]);
         }
 
-        // @driving_port @error @contract-shape:unbounded-preservation
+        // @driving_port @error @contract-shape:pure-function
         [Test]
         public async Task With_both_thresholds_off_no_Work_Item_is_stale_and_none_carries_a_reason()
         {
@@ -187,6 +215,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemIsStaleBecause(read, "EPIC-1", BlockedFor(3), TimeInStateWhileBlocked(12, InProgress));
         }
 
+        // @driving_port @real-io @contract-shape:pure-function
+        // Read for today, so the blocked rule decides and the open blocked spell says since when.
+        [Test]
+        public async Task A_Feature_Blocked_today_is_stale_for_the_days_since_its_open_blocked_spell_began()
+        {
+            var portfolio = GivenAPortfolioWithThresholds(new StalenessThresholds(TimeInStateDays: 5, BlockedDays: 3));
+            var feature = GivenAFeatureHasBeenInItsStateUntilTodayFor(portfolio, "EPIC-1", BlockedState, days: 12);
+            GivenTheFeatureHasBeenBlockedInThePortfolioUntilTodayFor(feature, portfolio, days: 4);
+
+            var read = await WhenThePortfoliosWorkInProgressIsReadForToday(portfolio);
+
+            ThenTheWorkItemIsStaleBecause(read, "EPIC-1", BlockedFor(4), TimeInStateWhileBlocked(12, BlockedState));
+        }
+
         // @driving_port @error @contract-shape:unbounded-preservation
         // Green at hand-off on purpose: it holds today, and it is what keeps a read that never judges
         // staleness from starting to claim "not stale".
@@ -196,13 +238,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             var team = GivenATeamThatCallsWorkStaleAfterFiveDaysInAStateOrThreeDaysBlocked();
             var item = GivenAWorkItemHasBeenInItsStateFor(team, "STORY-1", InProgress, days: 12);
             GivenTheWorkItemHasBeenBlockedFor(item, days: 4);
+            var storedBefore = GivenWhatLighthouseHasStored();
 
             var read = await WhenTheTeamsBlockedItemsAreReadForTheDay(team);
 
             ThenTheReadSaysNothingAboutStaleness(read, "STORY-1");
+            ThenTheReadLeftWhatLighthouseHasStoredUnchanged(storedBefore);
         }
 
-        // @driving_port @edge @contract-shape:unbounded-preservation
+        // @driving_port @edge @contract-shape:pure-function
         // Pins today's behaviour, which this story does not change: without a day, the read answers
         // for no day at all.
         [Test]

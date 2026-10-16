@@ -31,6 +31,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
     /// <summary>What the WIP read answered about one Work Item or Feature.</summary>
     public sealed record StalenessSeen(bool HasAnAnswer, bool? IsStale, List<ReasonSeen> Reasons);
 
+    /// <summary>The fields of a stored Work Item a read must never write.</summary>
+    public sealed record StoredWorkItem(string ReferenceId, string State, StateCategories StateCategory, DateTime? CurrentStateEnteredAt, bool WasStaleAtLastSync);
+
+    public sealed record StoredBlockedSpell(int WorkItemId, DateTime EnteredAt, DateTime? LeftAt);
+
     /// <summary>
     /// Production-composition harness for the staleness reads: the real ASP.NET host, real EF, the real
     /// metrics controllers and blocked decision. Only the licence port is faked. Seeding writes preconditions
@@ -58,6 +63,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
         protected TimeZoneInfo Zone = null!;
 
         protected DateOnly AsOfDay => DateOnly.FromDateTime(AsOf);
+
+        /// <summary>
+        /// Today on the instance calendar, read once when the scenario starts so its Given and its read
+        /// agree on the day.
+        /// </summary>
+        protected DateOnly InstanceToday;
+
+        /// <summary>
+        /// Noon on today's instance calendar, sent without an offset the way a browser asks about its own
+        /// day. A read for today takes the live path rather than the recorded history.
+        /// </summary>
+        protected DateTime TodayAtNoon => InstanceToday.ToDateTime(new TimeOnly(12, 0));
 
         [SetUp]
         public void Init()
@@ -89,7 +106,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
                 seeder.Seed().GetAwaiter().GetResult();
             }
 
-            Zone = setupScope.ServiceProvider.GetRequiredService<ILighthouseClock>().Zone;
+            var clock = setupScope.ServiceProvider.GetRequiredService<ILighthouseClock>();
+            Zone = clock.Zone;
+            InstanceToday = clock.Today;
         }
 
         [TearDown]
@@ -112,8 +131,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
         /// there <paramref name="days"/> days - the entered day and the day asked about both count, as
         /// they do for Work Item Age. Noon on the instance calendar keeps the day clear of midnight.
         /// </summary>
-        protected DateTime EnteredDaysBefore(int days, DateOnly asOfDay)
-            => TimeZoneInfo.ConvertTimeToUtc(asOfDay.AddDays(-(days - 1)).ToDateTime(new TimeOnly(12, 0)), Zone);
+        protected DateTime EnteredDaysBefore(int days, DateOnly asOfDay) => NoonOn(asOfDay.AddDays(-(days - 1)));
+
+        protected DateTime NoonOn(DateOnly day) => TimeZoneInfo.ConvertTimeToUtc(day.ToDateTime(new TimeOnly(12, 0)), Zone);
 
         protected DateTime EnteredDaysBefore(int days) => EnteredDaysBefore(days, AsOfDay);
 
@@ -190,6 +210,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             repository.Save().GetAwaiter().GetResult();
         }
 
+        /// <summary>The tracker's record of a Work Item moving from one state to another.</summary>
+        protected void SeedStateTransition(int workItemId, string fromState, string toState, DateTime transitionedAt)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IWorkItemStateTransitionRepository>();
+
+            repository.Add(new WorkItemStateTransition { WorkItemId = workItemId, FromState = fromState, ToState = toState, TransitionedAt = transitionedAt });
+            repository.Save().GetAwaiter().GetResult();
+        }
+
         protected int SeedPortfolio(StalenessThresholds thresholds)
         {
             using var scope = Factory.Services.CreateScope();
@@ -202,6 +232,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
                     Name = $"Connection {Guid.NewGuid():N}",
                     WorkTrackingSystem = WorkTrackingSystems.AzureDevOps,
                 },
+                BlockedRuleSetJson = FeatureBlockedWhileInTheBlockedState(),
                 StalenessThresholdDays = thresholds.TimeInStateDays,
                 BlockedStalenessThresholdDays = thresholds.BlockedDays,
             };
@@ -252,12 +283,34 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             repository.Save().GetAwaiter().GetResult();
         }
 
-        private static string BlockedWhileInTheBlockedState()
+        private static string BlockedWhileInTheBlockedState() => BlockedWhileFieldIsBlockedState("workitem.state");
+
+        private static string FeatureBlockedWhileInTheBlockedState() => BlockedWhileFieldIsBlockedState("feature.state");
+
+        private static string BlockedWhileFieldIsBlockedState(string stateFieldKey)
             => JsonSerializer.Serialize(new WorkItemRuleSet
             {
                 Mode = WorkItemRuleSet.ModeOr,
-                Conditions = [new WorkItemRuleCondition { FieldKey = "workitem.state", Operator = RuleOperators.Equals, Value = BlockedState }],
+                Conditions = [new WorkItemRuleCondition { FieldKey = stateFieldKey, Operator = RuleOperators.Equals, Value = BlockedState }],
             });
+
+        // --- What is stored, read straight from storage ---
+
+        protected List<StoredWorkItem> TheStoredWorkItems()
+        {
+            using var scope = Factory.Services.CreateScope();
+            return [.. scope.ServiceProvider.GetRequiredService<IWorkItemRepository>().GetAll()
+                .OrderBy(item => item.Id)
+                .Select(item => new StoredWorkItem(item.ReferenceId, item.State, item.StateCategory, item.CurrentStateEnteredAt, item.WasStaleAtLastSync))];
+        }
+
+        protected List<StoredBlockedSpell> TheStoredBlockedSpells()
+        {
+            using var scope = Factory.Services.CreateScope();
+            return [.. scope.ServiceProvider.GetRequiredService<IWorkItemBlockedTransitionRepository>().GetAll()
+                .OrderBy(spell => spell.Id)
+                .Select(spell => new StoredBlockedSpell(spell.WorkItemId, spell.EnteredAt, spell.LeftAt))];
+        }
 
         // --- Driving port: the reads a dashboard, `lh` and the MCP tools make ---
 
