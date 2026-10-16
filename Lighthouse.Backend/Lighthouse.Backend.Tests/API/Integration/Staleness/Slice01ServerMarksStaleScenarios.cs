@@ -14,8 +14,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
     [Category("slice-01")]
     public partial class Slice01ServerMarksStaleTest : StaleWorkItemsAcceptanceTest
     {
-        private const string Pending = "pending — DELIVER (story-6247 slice 01)";
-
         // @walking_skeleton @driving_port @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task A_flow_coach_reads_which_Work_Item_has_sat_too_long_in_Review_and_why()
@@ -166,7 +164,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
         // @driving_port @boundary @contract-shape:pure-function
         [TestCase(5, false)]
         [TestCase(6, true)]
-        [Ignore(Pending)]
         public async Task A_Feature_goes_stale_once_it_has_sat_in_its_state_longer_than_the_Portfolios_threshold(int daysInState, bool expectedStale)
         {
             var portfolio = GivenAPortfolioWithThresholds(new StalenessThresholds(TimeInStateDays: 5, BlockedDays: 3));
@@ -179,7 +176,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
 
         // @driving_port @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task A_Blocked_Feature_is_stale_for_its_blocked_time_against_the_Portfolios_blocked_threshold()
         {
             var portfolio = GivenAPortfolioWithThresholds(new StalenessThresholds(TimeInStateDays: 5, BlockedDays: 3));
