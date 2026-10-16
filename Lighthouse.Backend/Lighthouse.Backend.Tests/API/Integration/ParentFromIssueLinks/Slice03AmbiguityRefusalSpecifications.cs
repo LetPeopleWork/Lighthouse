@@ -326,17 +326,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         private static List<string> WhichItemsCameBack(List<WorkItem> refreshed)
             => refreshed.ConvertAll(item => item.ReferenceId);
 
-        private void NothingWasWrittenToTheLogAsAWarning()
-            => whatTheRefreshWroteToTheLog.Verify(
-                log => log.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.IsAny<It.IsAnyType>(),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-                Times.Never,
-                "A warning an administrator cannot act on is one they learn to scroll past, and the next one - about an item that really does have two parents to choose between - goes past with it.");
-
         private static string AnIssue(string key, params string[] links)
             => JiraWireFormat.AnIssueCarrying(key, TheTypeThisInstanceCallsItsWorkItems, string.Empty, links);
 

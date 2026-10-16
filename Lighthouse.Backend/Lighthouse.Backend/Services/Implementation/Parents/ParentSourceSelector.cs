@@ -49,9 +49,9 @@ namespace Lighthouse.Backend.Services.Implementation.Parents
 
             if (source == ParentSource.ALinkTypeTheOverrideNames)
             {
-                // Several issues answering the same link type name none of them here: what the tracker
-                // reports cannot say which one is the real parent, and a wrong guess moves work under
-                // something it does not belong to while looking exactly like correct data.
+                // Several issues answering the same link type name none of them here. The choice among them
+                // is made by the refresh, which knows which of them this instance holds as Features and when
+                // each was created.
                 return fromTheMatchingLinks.Key;
             }
 

@@ -1271,8 +1271,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             };
 
         /// <summary>
-        /// The portfolio half of the same thing, through its own door. Nothing is set aside at this level,
-        /// because the issues above a Feature are not Features the Portfolio holds, so the pick always ends
+        /// The portfolio half of the same thing, through its own door. Nothing is set aside at this level:
+        /// the issues above a Feature are stored only once a refresh has read them, so setting aside what is
+        /// not stored would throw away every parent the first time it is seen. The pick always ends
         /// somewhere: two incidents nobody stores fall to the lowest key. Its refresh history is a page of its
         /// own, read by people who never open a Team, so the placement is counted on its row.
         /// </summary>
@@ -1524,6 +1525,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                     "positive control: this fixture is about the whole-query path, so it has to have taken it.");
                 Assert.That(storedIssuesAbove, Has.Count.EqualTo(1),
                     "The tracker sent the issue above twice; it is one issue, so it is stored once.");
+                Assert.That(TimesTheLinesName(TheIssueAbove), Is.EqualTo(1),
+                    "The copies are dropped before anything is placed, so the line names the issue above once.");
                 TheIssueAboveWasPlacedAndNotCounted(outcome, storedIssuesAbove[0]);
             }
 

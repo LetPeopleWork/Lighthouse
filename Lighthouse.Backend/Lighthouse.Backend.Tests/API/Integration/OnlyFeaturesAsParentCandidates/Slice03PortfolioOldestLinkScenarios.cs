@@ -7,9 +7,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
     /// parent, the one whose link was made first. Driving port: a Portfolio refresh through the running
     /// application.
     ///
-    /// Nothing is set aside first at this level. The level above a Feature is never one of the Portfolio's
-    /// own Features, so "only the Features Lighthouse holds" would either throw away every parent or keep
-    /// only the ones a Feature already named. The pick alone decides, and every candidate is named in the
+    /// Nothing is set aside first at this level. The issues above a Feature are stored only once a refresh
+    /// has read them, so "only the Features Lighthouse holds" would throw away every parent the first time
+    /// it is seen. The pick alone decides, and every candidate is named in the
     /// line, so a Portfolio reading its links in the wrong direction stays easy to spot.
     /// </summary>
     [TestFixture]

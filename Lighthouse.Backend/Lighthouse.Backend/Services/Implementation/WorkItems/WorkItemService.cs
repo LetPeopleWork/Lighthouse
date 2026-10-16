@@ -194,15 +194,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         /// <summary>
         /// Hangs each downloaded record whose links named several issues under one of them, before anything
-        /// is saved. A Team first sets aside the candidates Lighthouse does not hold as Features; a Portfolio
-        /// sets nothing aside, because the issues above its Features are not Features it holds. Among what is
-        /// left the oldest link wins, then the issue created first, then the lowest key. The connector cannot
-        /// make that choice, because only the stored Features say which candidate is one and when it was
-        /// created, so it hands every candidate on and the choice is made here. The stored Features are read
-        /// once for the whole fetch, and not at all when no record needs them. Records with one link or none
-        /// are not touched: the connector already gave them their parent. What was decided is written as a
-        /// warning, because a parent picked on the administrator's behalf, or not picked at all, is something
-        /// they are asked to check.
+        /// is saved. A Team first sets aside the candidates Lighthouse does not hold as Features. A Portfolio
+        /// sets nothing aside: the issues above its Features are stored only once a refresh has read them, so
+        /// setting aside what Lighthouse does not hold would throw away every parent the first time it is
+        /// seen. Among what is left the oldest link wins, then the issue created first, then the lowest key.
+        /// The connector cannot make that choice, because only the stored Features say which candidate is one
+        /// and when it was created, so it hands every candidate on and the choice is made here. The stored
+        /// Features are read once for the whole fetch, and not at all when no record needs them. Records with
+        /// one link or none are not touched: the connector already gave them their parent. What was decided
+        /// is written as a warning, because a parent picked on the administrator's behalf, or not picked at
+        /// all, is something they are asked to check.
         /// </summary>
         private (int Placed, int NotPlaced) PlaceWhatTheLinksLeftOpen<TRecord>(IWorkItemQueryOwner owner, string ownerInTheLog, ParentNarrowing narrowing, List<TRecord> downloaded)
             where TRecord : WorkItemBase
@@ -374,10 +375,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return stored?.LastChangedRemote != record.ChangedAt;
         }
 
-        // Jira DC offset pagination over an unordered JQL can return the same ReferenceId twice in one fetch;
-        // persisting both breaks the SingleOrDefault above on every later sync (docs/ci-learnings.md 2026-05-25).
-        // The identity sweep enumerates the very same query, so it collapses under the very same rule, and
-        // so do the portfolio's Feature and parent queries - one collapse rule, one warning, named after whoever synced.
+        // Offset paging over an unordered query, as Jira Data Center does it, can return the same ReferenceId
+        // twice in one fetch. Storing both copies breaks the SingleOrDefault lookups on every later sync, and
+        // placing both would count and name one record twice. So every download and every identity scan, for
+        // a Team, a Portfolio's Features and the issues above them alike, keeps the first copy of each under
+        // this one rule and one warning, named after whoever synced.
         private List<T> DeduplicateByReferenceId<T>(List<T> fetchedRecords, string syncedFor, Func<T, string> referenceIdOf)
         {
             var groupedByReferenceId = fetchedRecords.GroupBy(referenceIdOf).ToList();

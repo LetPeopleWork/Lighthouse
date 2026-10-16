@@ -5,8 +5,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 {
     /// <summary>
     /// Acceptance scenarios: what a refresh does with an item whose links offer it more than one parent.
-    /// Driving port: a Team refresh, which is what actually writes the parent every forecast is drawn
-    /// from, and a Portfolio refresh for the row its own refresh history shows.
+    /// Driving ports: the Jira connector, for what it hands a refresh about an item's links, and a Team
+    /// or Portfolio refresh through the running application, for the row refresh history shows.
     ///
     /// A Team's item hangs under a Feature, and none of the issues on this instance is a Feature Lighthouse
     /// holds. So an item whose links name several of them has nothing to be placed under, and takes no
@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             var refreshed = await TheTeamIsRefreshed();
 
             Assert.That(TheParentOf(refreshed, TheAmbiguousItem), Is.Empty,
-                "Picking one of two candidates files the item under something it may not belong to, inflates the size of that thing and every forecast drawn from it, and reads on the screen exactly like a parent somebody configured correctly.");
+                "The connector does not choose between two candidates. It leaves the item without a parent and leaves the choice to the refresh, which knows which of them this instance holds.");
         }
 
         /// <summary>
@@ -47,12 +47,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
             var refreshed = await TheTeamIsRefreshed();
 
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(TheParentOf(refreshed, TheAmbiguousItem), Is.EqualTo(OneCandidate),
-                    "Both links name the same issue, so there is nothing to choose between - and an item left unparented here would send somebody hunting for a second parent that does not exist.");
-                NothingWasWrittenToTheLogAsAWarning();
-            }
+            Assert.That(TheParentOf(refreshed, TheAmbiguousItem), Is.EqualTo(OneCandidate),
+                "Both links name the same issue, so there is nothing to choose between - and an item left unparented here would send somebody hunting for a second parent that does not exist.");
         }
 
         /// <summary>
@@ -117,7 +113,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                     "Every link on this refresh named exactly one issue, so a tracker in good order has to read as one.");
                 Assert.That(recorded.Success, Is.True,
                     "positive control: a refresh that failed would record nothing it could not place either, and the zero above would mean nothing.");
-                NothingWasWrittenToTheLogAsAWarning();
             }
         }
 

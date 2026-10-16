@@ -35,8 +35,9 @@ namespace Lighthouse.Backend.Models
 
     /// <summary>
     /// Whether candidates that are not a stored Feature are set aside first. A Team's items hang under
-    /// Features, so the rest can go. A Portfolio's Features hang under the level above, which is never one
-    /// of its own Features, so nothing there can be set aside on that ground.
+    /// Features, so the rest can go. A Portfolio's Features hang under the level above, whose issues are
+    /// stored only once a refresh has read them, so setting aside what is not stored would throw away every
+    /// parent the first time it is seen.
     /// </summary>
     public enum ParentNarrowing
     {
