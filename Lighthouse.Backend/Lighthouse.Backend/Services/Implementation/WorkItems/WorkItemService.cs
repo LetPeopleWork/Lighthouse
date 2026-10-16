@@ -469,7 +469,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             if (isStaleNow && !workItem.WasStaleAtLastSync)
             {
                 workItem.WasStaleAtLastSync = true;
-                events.Add(new WorkItemBecameStale(workItem.Id, ThresholdThatMadeItStale(team, verdict)));
+                events.Add(new WorkItemBecameStale(workItem.Id, policy.ThresholdCrossedBy(verdict)));
                 return;
             }
 
@@ -495,7 +495,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         {
             if (workItem.StateCategory != StateCategories.Doing || !workItem.CurrentStateEnteredAt.HasValue)
             {
-                return new StalenessVerdict(false, []);
+                return StalenessVerdict.NotStale;
             }
 
             var isBlocked = blockedItemService.IsBlocked(workItem, team);
@@ -508,12 +508,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             return policy.Evaluate(candidate, clock.Zone, clock.Today);
         }
-
-        // The reason that made the item stale comes first, and the signal names that reason's threshold.
-        private static int ThresholdThatMadeItStale(Team team, StalenessVerdict verdict)
-            => verdict.Reasons[0].Kind == StaleReasonKind.BlockedDuration
-                ? team.BlockedStalenessThresholdDays
-                : team.StalenessThresholdDays;
 
         private async Task PublishDomainEvents(IReadOnlyList<IDomainEvent> events)
         {
