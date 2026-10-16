@@ -41,7 +41,7 @@ primary_jobs:
   - job-config-admin-name-the-link-our-hierarchy-lives-in  # parent-from-issue-links (2026-09-18): name the issue link that carries the hierarchy, where field names are already named
   - job-config-admin-name-the-link-our-dependencies-live-in  # epic-6303-configure-once-per-connection (2026-10-16, #6300 Jira, #6312 Azure DevOps): name the link that means "waits on", where the Dependency Field is already named
   - job-config-admin-set-a-connection-setting-once  # epic-6303-configure-once-per-connection (2026-10-16, #6304, #6313): set a field-pointing setting once on the connection; Teams and Portfolios follow or override
-  - job-config-admin-see-which-owners-differ-from-the-connection  # epic-6303-configure-once-per-connection (2026-10-16, #6304): see who follows the connection and who carries its own value
+  - job-config-admin-see-which-owners-differ-from-the-connection  # epic-6303-configure-once-per-connection (2026-10-16): DEFERRED, slice 07 dropped (UI-4); today the admin knows, before saving, how many follow, and finds their names in the log
 
 goals:
   - Save a configuration change and trust that what I saved is what persisted

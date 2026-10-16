@@ -8303,19 +8303,20 @@ jobs:
       non-numeric flag and categories), Size Estimate Field and Feature Owner Field
       (WorkTrackingSystemOptionsOwner.cs:68-76, Portfolio.cs:21-25). Each is entered owner by owner today. The
       connection carries a default per setting; each owner stores a mode beside its value (Connection default or
-      Own; Own with nothing selected is a deliberate None). At the upgrade an owner with an empty value follows the
-      default, an owner with a value keeps it as its own; no default exists on release day, so nothing changes
-      then. Saving a default tells the admin which Teams and Portfolios now follow it.
+      Own; Own with nothing selected is a deliberate None). At the upgrade an owner with an empty value - or one
+      pointing at an Additional Field that had been deleted - follows the default, an owner with a value keeps it as
+      its own; no default exists on release day. Saving a default shows, before it completes, how many Teams and
+      Portfolios follow it, and writes one log entry naming them (maintainer, DESIGN 2026-10-16).
     job_story: >
       When every Team and Portfolio on one connection reads the same field for the same purpose,
       I want to set it once on the connection and have each of them follow it unless I say otherwise,
       so adding a Team is not a checklist and one forgotten Team does not quietly read the wrong field.
     dimensions:
       functional: >
-        A default per setting on the connection; owners follow or override; saving a default names who follows
-        it; a changed default updates exactly the owners whose fetch it moves.
+        A default per setting on the connection; owners follow or override; saving a default says how many follow
+        it and logs who; a changed default updates exactly the owners whose fetch it moves.
       emotional: >
-        From "did I remember the parent field on the new Team?" to setting it once and reading who follows it.
+        From "did I remember the parent field on the new Team?" to setting it once and knowing how many follow it.
       social: >
         Never be the admin whose fifteenth Team shows every Work Item unparented in the review.
     forces:
@@ -8326,8 +8327,9 @@ jobs:
         The settings already point at the connection's own Additional Fields; the connection save already updates
         its Teams and Portfolios (Story 6307).
       anxiety: >
-        "If I set a default, what else changes?" Answered at save by the list of Teams and Portfolios that now
-        follow it, including those that followed because their setting was empty.
+        "If I set a default, what else changes?" Answered before the save completes by the save dialog's count of
+        the Teams and Portfolios that follow it, and after it by the log entry naming them, including those that
+        followed because their setting was empty.
       habit: >
         Copying the same choices into every new Team by hand, from a checklist or from memory.
     opportunity_score:
@@ -8342,13 +8344,18 @@ jobs:
     title: See at a glance which Teams and Portfolios differ from their connection
     persona: config-admin
     feature_context: epic-6303-configure-once-per-connection
-    ado: "Story #6304 (Epic #6303)"
+    ado: "Story #6304 (Epic #6303) - no longer served"
+    status: deferred
+    status_reason: >
+      Slice 07 dropped by the maintainer (UI-4), 2026-10-16; no story serves it. Kept because the job is still real.
+      What epic-6303 gives instead: the admin knows, before saving, how many follow a default (save dialog), and
+      finds their names in the log; each owner's settings show "Connection default (value)" or its own value.
     created: 2026-10-16
     complements: job-config-admin-set-a-connection-setting-once
     note: >
-      The "hard to see at a glance" half of Epic 6303's problem. Answered by each owner's settings showing
+      The "hard to see at a glance" half of Epic 6303's problem. Was to be answered by each owner's settings showing
       "Connection default (value)" or its own value, by the save of a default naming who follows it, and by
-      owners whose own value already equals the default being offered to follow it in one step.
+      owners whose own value already equals the default being offered to follow it in one step (slice 07, dropped).
     job_story: >
       When a forecast on one Team looks off,
       I want to see which Teams and Portfolios follow the connection's setting and which carry their own,

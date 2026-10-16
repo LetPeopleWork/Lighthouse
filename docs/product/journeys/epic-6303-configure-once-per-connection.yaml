@@ -68,48 +68,49 @@ journeys:
 
   - name: set-it-once-on-the-connection
     goal: >
-      A System Admin sets a field-pointing setting once on a Work Tracking Connection, sees which Teams and
-      Portfolios now follow it, and every new Team or Portfolio follows it without anyone remembering to.
+      A System Admin sets a field-pointing setting once on a Work Tracking Connection, knows before saving how many
+      Teams and Portfolios follow it (their names are in the log), and every new Team or Portfolio follows it without
+      anyone remembering to.
     persona: "config-admin as System Admin (sets defaults); config-admin as Team / Portfolio admin (sees what
       their owner inherits, overrides it)"
     job_id: job-config-admin-set-a-connection-setting-once
     jobs:
       - job-config-admin-set-a-connection-setting-once
-      - job-config-admin-see-which-owners-differ-from-the-connection
 
     emotional_arc:
       start: Wary - "fourteen Teams, and I have to remember the parent field on every new one."
-      middle: Informed - "I saved the default; it told me which Teams now follow it, including three that had nothing set."
-      end: Confident - "new Teams follow it, the odd ones out are named, and changing it updates exactly the followers."
+      middle: Informed - "before I saved, it told me 3 Teams follow it; the log names them, including three that had nothing set."
+      end: Confident - "new Teams follow it, and changing it updates exactly the followers."
 
     steps:
       - step: Settings -> Connections -> (connection) -> Defaults for Teams and Portfolios; choose a value; save
         sees: >
-          the save notice, informational, naming how many and which Teams / Portfolios now follow the default
-          (including those that follow because their setting was empty at the upgrade); with slice 06, those whose
-          fetch moved are updating
+          before saving, the dialog counts the Teams / Portfolios that follow each changed default (including those
+          that follow because their setting was empty at the upgrade) and, from slice 06, asks whether to update them
+          now; after saving, Settings -> System Info -> Logs names them, and their updates appear in Task Manager ->
+          Activity
       - step: Open a Team's settings
-        sees: the setting reads "Connection default (value)" when it follows, or its own value / None
+        sees: the setting reads "Connection default (value)" with "Set on the <tracker> connection." when it follows, or its own value / None
       - step: Create a new Team on the connection
         sees: it starts on "Connection default (value)"
-      - step: Owners whose own value equals the default
-        sees: listed on the connection with a one-step "follow the default"; nothing is updated because nothing they read changes
 
     error_paths:
       - when: the admin lacks SystemAdmin
         sees: the connection save is refused as today; an owner admin can still override on their own owner
-      - when: an Additional Field referenced by a default or an owner is deleted
-        sees: the deletion refused, naming the defaults and the Teams / Portfolios that refer to it
-      - when: another admin saved one of the owners being moved to follow
-        sees: that owner reported as changed by someone else, not overwritten; the others move
+      - when: an Additional Field referenced by a default or an owner is removed
+        sees: the save refused, naming the default and the Teams / Portfolios that use the field as their own; nothing saved
       - when: an owner had deliberately chosen None and its setting was empty at the upgrade
-        sees: it follows the default once one is set; the save notice names it, so the admin can set it back to None
+        sees: it follows the default once one is set; the log entry names it, so the admin can set it back to None
+      - when: an owner's setting pointed at an Additional Field that had been deleted before the upgrade
+        sees: it follows the connection default and reads the tracker's own value again from its next update (release-noted)
 
     shared_artifacts:
       - name: effective value of a setting
         source: one resolver (owner mode, own value, connection default) read by both connectors, FetchFingerprint.For and the settings-change check
       - name: followers of a default
-        source: owners in Connection default mode on the connection - consumed by the save notice, the connection list and the update queue
+        source: owners in Connection default mode on the connection - consumed by the save dialog's counts, the log entry, the connection list read (counts only, never shown on the page) and the update queue
+      - name: the connection list
+        source: follower counts for the save dialog
       - name: Team / Portfolio nouns
         source: Terminology (TerminologySeeder defaults, user-renamable)
 
@@ -117,3 +118,10 @@ changelog:
   - date: 2026-10-16
     feature: epic-6303-configure-once-per-connection
     change: Journeys created at DISCUSS with the maintainer's decisions.
+  - date: 2026-10-16
+    feature: epic-6303-configure-once-per-connection
+    change: >
+      Back-propagated from DESIGN (maintainer P-5, P-12, UI-4): the save notice became a pre-save dialog count plus a
+      log entry; values pointing at a deleted field are repaired at the upgrade; slice 07 dropped, so the "owners
+      whose own value equals the default" step, its concurrent-edit error path and the deferred job
+      job-config-admin-see-which-owners-differ-from-the-connection were removed from this journey.

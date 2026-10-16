@@ -10146,3 +10146,125 @@ reacts by enqueuing through the existing updaters.
 - [ADR-239](./adr-239-a-connection-save-that-moves-the-fetch-fingerprint-starts-the-affected-updates.md): a connection
   save that moves the fetch fingerprint starts the affected updates. **Accepted 2026-10-16.**
 - Amended: ADR-030 (not applied to connection saves), ADR-140 (the passive connection fan-out, for saves through the PUT).
+
+## Application Architecture — epic-6303-configure-once-per-connection (DESIGN delta)
+
+Feature: epic-6303-configure-once-per-connection (ADO Epic #6303; Stories #6300, #6312, #6304, #6313). A Work Tracking
+Connection carries defaults for five owner settings (Parent Override Field for Teams and for Portfolios, Dependency
+Field, Size Estimate Field, Feature Owner Field, and the Estimation bundle per grain); each Team and Portfolio follows
+the default or keeps its own value. Jira and Azure DevOps Dependency Fields may name a link / relation type, and what a
+refresh found lands in Refresh History. DESIGN 2026-10-16, PROPOSE, two passes and two review iterations; every
+decision **accepted** (by the maintainer, UI-1 … UI-6 included; the engineering choices made while the maintainer was
+AFK took the recommended option and are recorded in the feature delta). Full design:
+`docs/feature/epic-6303-configure-once-per-connection/feature-delta.md` → "Wave: DESIGN / …" (DDD-1 … DDD-28;
+DDD-19 dropped with slice 07). DISCUSS changes: `design/upstream-changes.md` (U-1 … U-21), applied by the product owner.
+
+The pattern is unchanged: ports and adapters; settings resolve in the pure `Models` kernel; the connection save runs in
+one application service behind a port, the controller only maps; the service publishes the existing
+`ConnectionFetchShapeChanged` after commit; the queue and connectors keep their shape.
+
+### Key invariants introduced
+
+- **6303-I1: every reader of an owner setting reads the effective value.** The property readers use today returns
+  `(source, own, default) → effective` from one pure function in `Models`; the own value is behind *follow* /
+  *own(value)* mutators with private setters (ADR-240). Connectors, selectors, `EstimateNormalizer`, metrics and
+  `FetchFingerprint.For` keep their code.
+- **6303-I2: defaults never enter `FetchFingerprint.ForConnection`.** They reach the fingerprint only as a follower's
+  effective value in its own `For` slot; `FetchShapingPropertyGuardTest` gains that third category.
+- **6303-I3: a connection save queues exactly the owners whose own `For` moved, and writes one log entry.** The save
+  runs in `IConnectionSaveService` (Open / Commit in one unit of work): `For` is rendered per owner from the row read
+  in that unit of work, before anything changes, and again after `Save()` from an untracked re-read; pure,
+  data-only `Models` rules say which owners moved (two plain id → fingerprint maps) and which removed fields are in use
+  (rows from a fresh set-based query in `Commit`, never the `Open` snapshot); the service does every database read; the
+  movers go into the unchanged event. An owner changed by someone else during the save may be queued once extra or
+  missed until its next scheduled update (accepted). Every save that changed a default
+  writes one Information entry naming the connection, the changed defaults and their followers (names only; Serilog
+  file, read in Settings → System Info → Logs, `SystemAdmin` only). **The PUT response is unchanged** and the page
+  still navigates to `/` (ADR-239 §3 stands). No after-save notice (ADR-241).
+- **6303-I3a: a stale connection save cannot win or mislead.** The connection's existing concurrency token is applied
+  before `Save()`; a stale one is refused with 409 `concurrency-conflict` (never retried), and nothing is queued or
+  logged for it. A save without a token behaves as today: it is guarded only by the token value its own request read,
+  and it leaves the token unchanged.
+- **6303-I4: the browser asks before, with counts only.** The reused 6307 dialog reads follower counts from the
+  connection list read it already makes: no dialog when nobody follows a changed default; plain Cancel / Save for
+  Estimation-only (and for any followed default in 05a); the update question for a followed fetch-time default (slice
+  06 on) or an Additional Field change. No names in the dialog; no follower count on the page.
+- **6303-I5: the upgrade changes nothing except values that pointed at nothing.** Per slice, expand-only: empty →
+  *Connection default*; a value naming one of the connection's Additional Fields → *Own*; a value naming a field the
+  connection no longer has → cleared and *Connection default*. No default exists on release day; nothing is queued at
+  the upgrade; a repaired owner downloads everything at its next scheduled update. Release notes call it out.
+- **6303-I6: an Additional Field still named by a default or by an owner's own value cannot be removed.** The PUT
+  refuses the whole save with 409 `additional-field-in-use`, naming the default and those owners; nothing is deleted.
+  The owners are read fresh at commit; a Team / Portfolio PUT naming a field not on its connection gets 400; a Team
+  save landing between the check and the commit is an accepted millisecond window.
+- **6303-I7: a Dependency Field naming a link type is a third dependency source.** `DependencySourceSelector` reads the
+  counterparts on the named end; ADO's relation-type listing is connector-local, asked only when a reference missed the
+  field list, at most once per connection per Validate and per refresh, and remembered only for that call — never on
+  the connector, which the factory caches per tracker and shares; a non-directional type reads nothing and warns
+  (ADR-242).
+- **6303-I8: refresh findings ride on the records to the `RefreshLog` row** (one nullable text column), at most one
+  per kind per whole-query fetch; delta runs write none, and Refresh History shows the latest **full** run's findings
+  with its time (ADR-243).
+- **6303-I9: no owner is switched to follow except by its own settings save.** An owner hand-set to the default's
+  value stays *Own*; only a save of that owner (or its creation, D11) changes its source. A client that echoes a
+  stale value without a source does switch a follower to *Own*: accepted, and mode-aware clients send the source.
+  (Slice 07, the bulk follow, was dropped by the maintainer.)
+
+### Component decomposition (headline)
+
+- **Backend:** EXTEND the owner settings (C1–C5) with a source column each and mutators; `WorkTrackingSystemConnection`
+  with flat nullable default columns (no FK, for the reasons in ADR-240); `WorkTrackingSystemConnectionController` PUT
+  as a mapper onto `IConnectionSaveService` (which replaces its `IDomainEventDispatcher`, so it stays at 7 constructor
+  parameters); `IWorkTrackingSystemConnectionUsage` (follower counts); settings DTOs (nullable source, followed name);
+  `DependencySourceSelector`; Jira `IssueExtensions` and connector; ADO connector and `WorkItemExtensions`;
+  `WorkItemService`, `SyncOutcome`, `RefreshLog` and its read. CREATE `IConnectionSaveService`, `SettingSource`, the
+  effective-value rule, the movers and in-use rules, the per-tracker supported-settings map, `RefreshFinding`. No new
+  controller.
+- **Frontend:** EXTEND `ModifyConnectionSettings` with "Defaults for Teams and Portfolios" below Additional Fields
+  (`InputGroup` + `FormSelectField`; hidden on Linear and ServiceNow); `FormSelectField` with a first "Connection default
+  (…)" entry; the owner dropdowns; the 6307 `UpdateQuestion`; Refresh History. REUSE `EstimationFieldComponent` inline
+  for the Estimation defaults. `EditConnection` still navigates to `/`, and sends `WorkTrackingSystemFieldsChanged`
+  only when the dialog's choice says `additionalFieldsChanged` (a new member of `ISaveConnectionChoice`).
+- **Loading, could-not-load and late answers:** no new fetch. The defaults section and the owner dropdown's first
+  entry render from the one answer their pages already load and share those pages' looks; an answer for an id the page
+  no longer shows is dropped. Refresh History findings ride on its existing read.
+
+### C4
+
+Topology unchanged: no new container, store or external system. One new call to an existing external system (Azure
+DevOps `workitemrelationtypes`). L1, L2 and an L3 of the settings and fan-out path are in the feature delta.
+
+### Architectural Enforcement (this feature)
+
+- ArchUnitNET: `API` reaches owner own-values only through the mutators; `WorkTrackingSystemConnectionController`
+  depends on neither `IDomainEventDispatcher` nor `FetchFingerprint`; the leaf-adapter and connector-repository rules
+  unchanged; the effective-value, movers and in-use rules and the supported-settings map live in `Models` and depend on
+  nothing in `Services` or `Data`.
+- `FetchShapingPropertyGuardTest` third category; pinned `For` digests committed before the first migration; a
+  migration test on both providers over an own, an empty, a dangling and a cross-connection owner.
+- Property test: a default change never moves an `Own` owner's `For` and always moves a fetch-time follower's.
+- Capturing-logger test for the one log entry; WebApplicationFactory ATs for the queued set, an unchanged response
+  shape, a stale second save refused, the in-use race (owner adopts a field between Open and Commit), the stale-echo flip, and findings surviving a delta run; an ADO AT with one
+  cached connector across two connections; Vitest + RTL for the three dialog cases, no owner name, the usage-data
+  event only on field changes, and a late answer that never lands.
+- Recorded wire fixtures (`TrackerWireFormats`) as the consumer contract for Jira link payloads and ADO relation types;
+  `JiraIntegration` / `AdoIntegration` run deliberately in slices 01–04.
+
+### Usage data
+
+N/A, because a connection default is set once at setup; an event would count configuration saves, not whether the
+feature helps anyone. `UsageDataEventName` is unchanged.
+
+### ADR References (this feature)
+
+- [ADR-240](./adr-240-an-inherited-setting-is-its-own-value-plus-a-source-and-the-owner-answers-with-the-effective-value.md):
+  an inherited setting is the owner's own value plus a source; the owner answers with the effective value; values
+  pointing at a deleted field are repaired at the upgrade. **Accepted 2026-10-16.**
+- [ADR-241](./adr-241-a-connection-save-queues-the-owners-whose-own-fetch-fingerprint-moved-and-says-who-follows.md):
+  a connection save queues the owners whose own fetch fingerprint moved; the dialog counts the followers and one log
+  entry names them. Narrows ADR-239 §1 and §8; §3 stands. **Accepted 2026-10-16.**
+- [ADR-242](./adr-242-a-dependency-field-may-name-a-link-type-read-as-a-third-source-of-the-dependency-selector.md):
+  a Dependency Field may name a link type, read as a third source of the dependency selector. **Accepted 2026-10-16.**
+- [ADR-243](./adr-243-refresh-findings-ride-on-the-records-and-land-on-the-refresh-log-row.md): refresh findings ride
+  on the records and land on the refresh log row. **Accepted 2026-10-16.**
+- Unchanged and relied on: ADR-140, ADR-167, ADR-193 §5, ADR-239 §3.

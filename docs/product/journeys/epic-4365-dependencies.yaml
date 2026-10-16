@@ -110,7 +110,8 @@ journeys:
           decision), recorded rather than folded in: the Dependency Field stays the one setting and accepts
           any Additional Field, resolved per tracker the way Parent Override resolves on Jira. If it resolves
           to a link type - on Jira a type name or inward / outward phrase (the Epic 6028 resolver), on Azure
-          DevOps a relation type reference name with its end (e.g. System.LinkTypes.Related-Forward) -
+          DevOps a relation type reference name with its end (e.g. System.LinkTypes.Dependency-Forward; a
+          non-directional type such as System.LinkTypes.Related reads nothing and warns) -
           dependencies are read from links of that type on the end it names; otherwise the field's value is
           split and read exactly as D15 says. Field lookup runs first. One link type per Portfolio, and it
           REPLACES the default link exactly as a field does - the D15 posture is kept. A name that points both

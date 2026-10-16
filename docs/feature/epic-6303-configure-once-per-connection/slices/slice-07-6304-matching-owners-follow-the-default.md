@@ -1,8 +1,14 @@
-# Slice 07 — Story 6304 — Owners whose own value equals a default follow it in one step
+# Slice 07 — Story 6304 — Owners whose own value equals a default follow it in one step — DROPPED
 
-**ADO**: Story #6304 (Epic #6303) · **User story**: US-06 · **Estimate**: ~1 day · **Depends on**: slices 05a, 05b, 06
-**Release point**: yes — #6304's last slice; #6304 releases after it (L8).
-**Locked decisions**: D9, D10, D12, D14 (with G-07: `SystemAdmin` is enough)
+**Status**: **DROPPED (maintainer, 2026-10-16, UI-4) — not delivered.** No who-follows / who-differs view, no bulk
+follow, no follower count on the connection page. An owner hand-set to the default's value stays *Own*; its admin
+switches it to *Connection default* on its own settings page. #6304 releases after slice 06. G-07 is moot; US-06 and
+AC-6.* are dropped; job `job-config-admin-see-which-owners-differ-from-the-connection` is deferred. The brief below
+is kept for the record only.
+
+~~**ADO**: Story #6304 (Epic #6303) · **User story**: US-06 · **Estimate**: ~1 day · **Depends on**: slices 05a, 05b, 06~~
+~~**Release point**: yes — #6304's last slice; #6304 releases after it (L8).~~
+~~**Locked decisions**: D9, D10, D12, D14 (with G-07: `SystemAdmin` is enough)~~
 
 ## Goal
 The connection's defaults group shows, per default, how many Teams / Portfolios follow it and which carry their own

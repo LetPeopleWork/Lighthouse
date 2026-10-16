@@ -43,7 +43,8 @@ organisation refuses it — which would send the ADO half back to the maintainer
 
 ## Production data / dogfood
 The dev instance's ADO connection (letpeoplework). Record the relation types it returns (settles R3: whether
-Services offers anything beyond its system types).
+Services offers anything beyond its system types). Record which directional relation types the organisation lists;
+slice 04's test vehicle is chosen from them.
 
 ## Acceptance criteria
 AC-3.1, AC-3.2, AC-3.3, AC-3.7 (Validate half), AC-3.9, AC-3.10.

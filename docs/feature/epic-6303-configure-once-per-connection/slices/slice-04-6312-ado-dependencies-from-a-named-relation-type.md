@@ -2,7 +2,7 @@
 
 **ADO**: Story #6312 (Epic #6303) · **User story**: US-03 (read half) · **Estimate**: ~1 day · **Depends on**: slice 03
 **Release point**: yes — #6312's last slice; #6312 releases after it (L8).
-**Locked decisions**: D1, D2 (no end → nothing + warn), D3 (replaces Predecessor), D5, D5a, D6
+**Locked decisions**: D1, D2 (no end, or no direction → nothing + warn), D3 (replaces Predecessor), D5, D5a, D6
 
 ## Goal
 A Portfolio whose Dependency Field resolves to an ADO relation end reads, per Feature, the relations whose `Rel` is
@@ -20,7 +20,8 @@ the waiting-end walker exists (`WorkItemExtensions.cs:54-78`) with a constant `R
 - **Trap closed**: the relations fetch is skipped when a Parent Override is set and dependencies "do not come from
   relations" (`:1142-1145`, decided at `:648` by `ReadsTheTrackersOwnLink`). A Dependency Field resolving to a
   link type counts as coming from relations. Asserted with a Parent Override set.
-- ADO "nothing matched" and "no end" warnings on slice 02's surface, Refresh History (D5a).
+- ADO "nothing matched", "no end" and "no direction" (`System.LinkTypes.Related`, D2 / CA-6) warnings on slice 02's
+  surface, Refresh History (D5a).
 - Docs prose drafted for `docs/concepts/worktrackingsystems/azuredevops.md` (:101-114, :203-207).
 
 ## OUT
@@ -32,7 +33,8 @@ baseline.
 
 ## Production data / dogfood
 Dev instance ADO project: a Portfolio named with a non-Predecessor relation actually present on its Features (from
-slice 03's list; `System.LinkTypes.Related-Forward` will do as a test vehicle). Measures
+slice 03's list; a directional relation type that slice 03's spike recorded as present on the dev organisation —
+`System.LinkTypes.Dependency-Forward` at the least; Related is non-directional and reads nothing, CA-6). Measures
 `OUT-6303-dependencies-recovered` for ADO the same way as slice 01: Features carrying ≥ 1 relation of the named end
 to a stored Feature against Features whose `DependsOnReferences` hold it, before and after (baseline 0%, target
 100%). Record both numbers here.
