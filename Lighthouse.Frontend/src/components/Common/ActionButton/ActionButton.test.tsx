@@ -212,6 +212,33 @@ describe("ActionButton component", () => {
 		expect(screen.getByRole("button", { name: "First" })).not.toHaveFocus();
 	});
 
+	it("tells assistive technology it is busy only while its handler runs", async () => {
+		const user = userEvent.setup();
+		const buttonText = "Test Button";
+		let finish = () => {};
+		const mockHandler = vi.fn().mockImplementation(
+			() =>
+				new Promise<void>((resolve) => {
+					finish = resolve;
+				}),
+		);
+
+		render(
+			<ActionButton buttonText={buttonText} onClickHandler={mockHandler} />,
+		);
+
+		const button = screen.getByRole("button", { name: buttonText });
+		expect(button).toHaveAttribute("aria-busy", "false");
+
+		await user.click(button);
+		expect(button).toHaveAttribute("aria-busy", "true");
+
+		finish();
+		await waitFor(() => expect(button).toHaveAttribute("aria-busy", "false"), {
+			timeout: 1000,
+		});
+	});
+
 	it("shows loading indicator when externalIsWaiting is true", () => {
 		const buttonText = "Test Button";
 		const mockHandler = vi.fn().mockResolvedValue(undefined);

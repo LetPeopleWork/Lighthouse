@@ -56,6 +56,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 			variant={buttonVariant}
 			onClick={handleClick}
 			disabled={disabled || isWaiting}
+			aria-busy={isWaiting}
 			startIcon={!isWaiting && startIcon}
 			fullWidth={fullWidth}
 			color={color}
