@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import ValidationActions from "./ValidationActions";
 
@@ -98,5 +98,37 @@ describe("ValidationActions", () => {
 
 		const saveButton = screen.getByText("Save");
 		expect(saveButton).toBeDisabled();
+	});
+
+	it("keeps Save busy and disabled until the save has finished", async () => {
+		let finishTheSave = () => {};
+		const onSave = vi.fn(
+			() =>
+				new Promise<void>((resolve) => {
+					finishTheSave = resolve;
+				}),
+		);
+		render(
+			<ValidationActions
+				{...defaultProps}
+				onValidate={undefined}
+				onSave={onSave}
+			/>,
+		);
+		const save = screen.getByRole("button", { name: "Save" });
+
+		fireEvent.click(save);
+		await act(() => vi.advanceTimersByTimeAsync(1000));
+
+		expect(save).toBeDisabled();
+		expect(within(save).getByRole("progressbar")).toBeInTheDocument();
+
+		await act(async () => {
+			finishTheSave();
+			await vi.advanceTimersByTimeAsync(1000);
+		});
+
+		expect(save).toBeEnabled();
+		expect(within(save).queryByRole("progressbar")).not.toBeInTheDocument();
 	});
 });

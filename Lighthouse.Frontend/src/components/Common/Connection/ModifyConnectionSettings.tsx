@@ -40,6 +40,7 @@ import WriteBackMappingsEditor from "../../../pages/Settings/Connections/WriteBa
 import { ApiError } from "../../../services/Api/ApiError";
 import type { ISaveConnectionChoice } from "../../../services/Api/WorkTrackingSystemService";
 import { useTerminology } from "../../../services/TerminologyContext";
+import ActionButton from "../ActionButton/ActionButton";
 import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
 import OAuthAuthForm from "../Connections/OAuthAuthForm";
 import ReconnectBanner from "../Connections/ReconnectBanner";
@@ -132,8 +133,8 @@ const isUsed = (usage: IConnectionUsage): boolean =>
 interface UpdateQuestionProps {
 	open: boolean;
 	usage: IConnectionUsage;
-	onUpdate: () => void;
-	onSaveOnly: () => void;
+	onUpdate: () => Promise<void>;
+	onSaveOnly: () => Promise<void>;
 	onCancel: () => void;
 }
 
@@ -146,6 +147,7 @@ const UpdateQuestion: React.FC<UpdateQuestionProps> = ({
 }) => {
 	const titleId = useId();
 	const descriptionId = useId();
+	const [saving, setSaving] = useState(false);
 	const { getTerm } = useTerminology();
 	const team = getTerm(TERMINOLOGY_KEYS.TEAM);
 	const portfolio = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
@@ -153,10 +155,19 @@ const UpdateQuestion: React.FC<UpdateQuestionProps> = ({
 	const portfolios =
 		usage.portfolios === 1 ? portfolio : getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
 
+	const whileSaving = (answer: () => Promise<void>) => async () => {
+		setSaving(true);
+		try {
+			await answer();
+		} finally {
+			setSaving(false);
+		}
+	};
+
 	return (
 		<Dialog
 			open={open}
-			onClose={onCancel}
+			onClose={saving ? undefined : onCancel}
 			aria-labelledby={titleId}
 			aria-describedby={descriptionId}
 		>
@@ -169,15 +180,22 @@ const UpdateQuestion: React.FC<UpdateQuestionProps> = ({
 				</DialogContentText>
 			</DialogContent>
 			<DialogActions>
-				<Button onClick={onCancel} color="primary">
+				<Button onClick={onCancel} color="primary" disabled={saving}>
 					Cancel
 				</Button>
-				<Button onClick={onSaveOnly} color="primary">
-					Save only
-				</Button>
-				<Button onClick={onUpdate} color="primary" autoFocus>
-					Save and update
-				</Button>
+				<ActionButton
+					buttonText="Save only"
+					onClickHandler={whileSaving(onSaveOnly)}
+					buttonVariant="text"
+					disabled={saving}
+				/>
+				<ActionButton
+					buttonText="Save and update"
+					onClickHandler={whileSaving(onUpdate)}
+					buttonVariant="text"
+					disabled={saving}
+					autoFocus
+				/>
 			</DialogActions>
 		</Dialog>
 	);
@@ -584,10 +602,13 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	};
 
 	const saveAnswering = async (choice: ISaveConnectionChoice) => {
-		const connection = connectionAwaitingAnswer;
-		setConnectionAwaitingAnswer(null);
-		if (connection) {
-			await save(connection, choice);
+		if (!connectionAwaitingAnswer) {
+			return;
+		}
+		try {
+			await save(connectionAwaitingAnswer, choice);
+		} finally {
+			setConnectionAwaitingAnswer(null);
 		}
 	};
 

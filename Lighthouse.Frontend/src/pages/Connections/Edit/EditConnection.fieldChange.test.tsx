@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
+	act,
 	fireEvent,
 	render,
 	screen,
@@ -8,7 +9,10 @@ import {
 } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { WorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import {
+	type IWorkTrackingSystemConnection,
+	WorkTrackingSystemConnection,
+} from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
@@ -151,14 +155,16 @@ const givenPriyaOpensTheConnectionPage = async ({
 	usedBy = { teams: 4, portfolios: 2 },
 	words = TheDefaultWords,
 	validation = { isValid: true },
-	save = undefined as (() => Promise<never>) | undefined,
+	save = undefined as
+		| (() => Promise<IWorkTrackingSystemConnection>)
+		| undefined,
 	fields = [TheStoryPointsField],
 }: {
 	usedBy?: UsedBy;
 	fields?: Field[];
 	words?: Words;
 	validation?: { isValid: boolean; message?: string };
-	save?: () => Promise<never>;
+	save?: () => Promise<IWorkTrackingSystemConnection>;
 } = {}) => {
 	const server = createMockWorkTrackingSystemService();
 	vi.mocked(server.getWorkTrackingSystems).mockResolvedValue([
@@ -355,6 +361,41 @@ const thenNoNoticeAboutTheUpdatesIsShown = () => {
 			/being updated|are updating|will be loaded|next refresh/i,
 		),
 	).not.toBeInTheDocument();
+};
+
+// A save that stays on its way until the test lets it succeed or refuses it.
+const aSaveStillOnItsWay = () => {
+	const settle = {
+		succeed: () => {},
+		refuse: (_error: unknown) => {},
+	};
+	const onItsWay = new Promise<IWorkTrackingSystemConnection>(
+		(resolve, reject) => {
+			settle.succeed = () =>
+				resolve(nordwindJiraDc({ teams: 4, portfolios: 2 }, []));
+			settle.refuse = reject;
+		},
+	);
+	return { save: () => onItsWay, ...settle };
+};
+
+const TheAnswers = ["Cancel", "Save only", "Save and update"] as const;
+
+// A closed question leaves the page only once its closing animation has run.
+const longerThanTheQuestionTakesToClose = () =>
+	act(() => new Promise((resolve) => setTimeout(resolve, 500)));
+
+const thenTheQuestionWaitsOnTheSave = async (answer: string) => {
+	const question = await theQuestion(TheQuestionOnNordwindJiraDc);
+	const busy = within(question).getByRole("button", { name: answer });
+	await waitFor(() =>
+		expect(within(busy).getByRole("progressbar")).toBeInTheDocument(),
+	);
+	expect(within(question).getAllByRole("progressbar")).toHaveLength(1);
+	for (const each of TheAnswers) {
+		expect(within(question).getByRole("button", { name: each })).toBeDisabled();
+	}
+	return question;
 };
 
 const theUsageDataSent = () =>
@@ -764,6 +805,70 @@ describe("changing a connection's Additional Fields asks whether to update its T
 
 			await thenSheIsBackOnTheOverview();
 			expect(theUsageDataSent()).toEqual([]);
+		});
+	});
+
+	describe("while the answer is being saved", () => {
+		// @us-02 @contract-shape:bounded-change
+		it.each(["Save and update", "Save only"])(
+			"after %s the question stays open, that button is busy and no answer can be pressed until the save is done",
+			async (answer) => {
+				const saving = aSaveStillOnItsWay();
+				const server = await givenPriyaOpensNordwindJiraDc({
+					save: saving.save,
+				});
+				await whenPriyaAddsFixVersions();
+				whenPriyaPressesSave();
+
+				await whenSheAnswers(TheQuestionOnNordwindJiraDc, answer);
+
+				await thenTheQuestionWaitsOnTheSave(answer);
+				expect(server.updateWorkTrackingSystemConnection).toHaveBeenCalledTimes(
+					1,
+				);
+				expect(mockNavigate).not.toHaveBeenCalled();
+
+				saving.succeed();
+
+				await thenSheIsBackOnTheOverview();
+			},
+		);
+
+		// @error @us-02 @contract-shape:unbounded-preservation
+		it("Esc does not close the question while the save is on its way", async () => {
+			const saving = aSaveStillOnItsWay();
+			await givenPriyaOpensNordwindJiraDc({ save: saving.save });
+			await whenPriyaAddsFixVersions();
+			whenPriyaPressesSave();
+			await whenSheAnswers(TheQuestionOnNordwindJiraDc, "Save and update");
+			const question = await thenTheQuestionWaitsOnTheSave("Save and update");
+
+			fireEvent.keyDown(question, { key: "Escape" });
+			await longerThanTheQuestionTakesToClose();
+
+			expect(
+				screen.getByRole("dialog", { name: TheQuestionOnNordwindJiraDc }),
+			).toBeInTheDocument();
+			saving.succeed();
+			await thenSheIsBackOnTheOverview();
+		});
+
+		// @error @us-02 @contract-shape:unbounded-preservation
+		it("when someone else saved first, the question closes and the page says so", async () => {
+			const saving = aSaveStillOnItsWay();
+			await givenPriyaOpensNordwindJiraDc({ save: saving.save });
+			await whenPriyaAddsFixVersions();
+			whenPriyaPressesSave();
+			await whenSheAnswers(TheQuestionOnNordwindJiraDc, "Save and update");
+			await thenTheQuestionWaitsOnTheSave("Save and update");
+
+			saving.refuse(new ApiError(409, "Conflict"));
+
+			expect(
+				await screen.findByText(SomeoneElseSavedFirst),
+			).toBeInTheDocument();
+			await waitFor(thenNoQuestionIsAsked);
+			expect(mockNavigate).not.toHaveBeenCalled();
 		});
 	});
 });

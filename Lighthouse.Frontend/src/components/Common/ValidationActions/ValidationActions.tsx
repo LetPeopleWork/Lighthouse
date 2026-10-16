@@ -12,7 +12,7 @@ export type ValidationState = "pending" | "success" | "failed";
 interface ValidationActionsProps {
 	onCancel?: () => void;
 	onValidate?: () => Promise<boolean>;
-	onSave: () => void;
+	onSave: () => void | Promise<void>;
 	inputsValid: boolean;
 	validationFailedMessage?: string;
 	saveButtonText?: string;
@@ -59,10 +59,9 @@ const ValidationActions: React.FC<ValidationActionsProps> = ({
 		}
 	};
 
-	const handleSave = () => {
-		onSave();
+	const handleSave = async () => {
+		await onSave();
 		setValidationState("pending");
-		return Promise.resolve();
 	};
 
 	return (

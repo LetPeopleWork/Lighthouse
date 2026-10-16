@@ -15,6 +15,7 @@ interface ActionButtonProps {
 	startIcon?: React.ReactNode;
 	fullWidth?: boolean;
 	color?: "primary" | "secondary" | "success" | "error" | "info" | "warning";
+	autoFocus?: boolean;
 }
 
 const ActionButton: React.FC<ActionButtonProps> = ({
@@ -28,6 +29,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 	startIcon,
 	fullWidth = false,
 	color = "primary",
+	autoFocus = false,
 }) => {
 	const [internalIsWaiting, setInternalIsWaiting] = useState<boolean>(false);
 
@@ -36,13 +38,15 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 	const handleClick = async () => {
 		setInternalIsWaiting(true);
 
-		await Promise.all([
-			onClickHandler(),
-			// At least switch to waiting state for 300ms to avoid flickering
-			new Promise((resolve) => setTimeout(resolve, 300)),
-		]);
-
-		setInternalIsWaiting(false);
+		try {
+			await Promise.all([
+				onClickHandler(),
+				// At least switch to waiting state for 300ms to avoid flickering
+				new Promise((resolve) => setTimeout(resolve, 300)),
+			]);
+		} finally {
+			setInternalIsWaiting(false);
+		}
 	};
 
 	const isWaiting = internalIsWaiting || externalIsWaiting;
@@ -55,6 +59,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 			startIcon={!isWaiting && startIcon}
 			fullWidth={fullWidth}
 			color={color}
+			autoFocus={autoFocus}
 			sx={{
 				position: "relative",
 				display: "flex",
