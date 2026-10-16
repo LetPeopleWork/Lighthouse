@@ -863,7 +863,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 				<UpdateQuestion
 					open={connectionAwaitingAnswer !== null}
 					usage={usage}
-					onUpdate={() => saveAnswering()}
+					onUpdate={() => saveAnswering({ startUpdates: true })}
 					onSaveOnly={() => saveAnswering({ startUpdates: false })}
 					onCancel={() => setConnectionAwaitingAnswer(null)}
 				/>

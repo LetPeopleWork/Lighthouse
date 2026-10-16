@@ -69,8 +69,6 @@ vi.mock(
 	}),
 );
 
-const Pending = "Story #6307 - pending DELIVER";
-
 const NordwindJiraDc = "Nordwind Jira DC";
 const StoryPoints = "Story Points";
 const FixVersions = "Fix Versions";
@@ -717,11 +715,11 @@ describe("Story #6307 - changing a connection's Additional Fields asks whether t
 		});
 
 		// @kpi @us-03 @contract-shape:bounded-change
-		it.skip.each([
+		it.each([
 			["Save and update", "Now"],
 			["Save only", "Later"],
 		])(
-			`${Pending}: answering %s tells usage data the updates run %s and nothing else`,
+			`answering %s tells usage data the updates run %s and nothing else`,
 			async (answer, updates) => {
 				await givenPriyaOpensNordwindJiraDc();
 				await whenPriyaAddsFixVersions();
@@ -737,7 +735,7 @@ describe("Story #6307 - changing a connection's Additional Fields asks whether t
 		);
 
 		// @error @us-03 @contract-shape:unbounded-preservation
-		it.skip(`${Pending}: Cancel tells usage data nothing`, async () => {
+		it(`Cancel tells usage data nothing`, async () => {
 			await givenPriyaOpensNordwindJiraDc();
 			await whenPriyaAddsFixVersions();
 			whenPriyaPressesSave();
@@ -750,7 +748,7 @@ describe("Story #6307 - changing a connection's Additional Fields asks whether t
 
 		// The answer only counts once the save it chose has gone through; a refused save changed nothing.
 		// @error @us-03 @contract-shape:unbounded-preservation
-		it.skip(`${Pending}: a save refused because someone else saved first tells usage data nothing`, async () => {
+		it(`a save refused because someone else saved first tells usage data nothing`, async () => {
 			await givenPriyaOpensNordwindJiraDc({
 				save: () => Promise.reject(new ApiError(409, "Conflict")),
 			});

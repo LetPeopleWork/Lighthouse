@@ -6,6 +6,7 @@ import type {
 	UsageDataReportTemplate,
 	UsageDataRouteKey,
 	UsageDataSizingMoment,
+	UsageDataUpdates,
 	UsageDataWorkTrackingSystem,
 } from "../../models/UsageData/UsageData";
 import { BaseApiService } from "./BaseApiService";
@@ -39,6 +40,7 @@ export const UsageDataEventName = {
 	ReportCreated: "ReportCreated",
 	ReportOpened: "ReportOpened",
 	ReportDeleted: "ReportDeleted",
+	WorkTrackingSystemFieldsChanged: "WorkTrackingSystemFieldsChanged",
 } as const;
 
 export type UsageDataEventName =
@@ -67,6 +69,8 @@ export interface IUsageDataEvent {
 	refinementVerdict?: UsageDataRefinementVerdict;
 	/** Only when a report is created or opened: its Type, from usage data's own list. */
 	reportTemplate?: UsageDataReportTemplate;
+	/** Only on a connection's Additional Fields being changed: whether its updates run now or later. */
+	updates?: UsageDataUpdates;
 	/** How long before this batch was handed in the thing happened, so a reader can order them. */
 	offsetMs: number;
 	sequence: number;

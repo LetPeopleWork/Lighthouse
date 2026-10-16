@@ -6,6 +6,7 @@ import type {
 	UsageDataRefinementVerdict,
 	UsageDataReportTemplate,
 	UsageDataSizingMoment,
+	UsageDataUpdates,
 	UsageDataWorkTrackingSystem,
 } from "../../models/UsageData/UsageData";
 import type { WorkTrackingSystemType } from "../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -27,6 +28,7 @@ export interface UsageDataCapabilityUse {
 	sizingMoment?: UsageDataSizingMoment;
 	refinementVerdict?: UsageDataRefinementVerdict;
 	reportTemplate?: UsageDataReportTemplate;
+	updates?: UsageDataUpdates;
 }
 
 /**

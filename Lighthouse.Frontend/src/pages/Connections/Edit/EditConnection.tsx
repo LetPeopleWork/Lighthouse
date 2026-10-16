@@ -7,6 +7,7 @@ import ModifyConnectionSettings from "../../../components/Common/Connection/Modi
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useRbacGate } from "../../../hooks/useRbacGate";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { UsageDataUpdates } from "../../../models/UsageData/UsageData";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
@@ -84,6 +85,16 @@ const EditConnectionPage: React.FC = () => {
 		choice?: ISaveConnectionChoice,
 	) => {
 		await saveConnectionSettings(connection, choice);
+		// A choice is only passed once somebody answered the question, so a save that asked nothing
+		// reports nothing.
+		if (choice) {
+			reportUsage({
+				name: UsageDataEventName.WorkTrackingSystemFieldsChanged,
+				updates: choice.startUpdates
+					? UsageDataUpdates.Now
+					: UsageDataUpdates.Later,
+			});
+		}
 		reportFailedNavigation(navigate("/"));
 	};
 

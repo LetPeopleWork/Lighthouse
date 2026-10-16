@@ -155,6 +155,19 @@ export const UsageDataReportTemplate = {
 export type UsageDataReportTemplate =
 	(typeof UsageDataReportTemplate)[keyof typeof UsageDataReportTemplate];
 
+/**
+ * When the Teams and Portfolios on a connection update after its Additional Fields changed, said as
+ * a choice from this list: straight away, or with the next scheduled update. Only the answer
+ * travels, never the connection, its fields or how many Teams and Portfolios use it.
+ */
+export const UsageDataUpdates = {
+	Now: "Now",
+	Later: "Later",
+} as const;
+
+export type UsageDataUpdates =
+	(typeof UsageDataUpdates)[keyof typeof UsageDataUpdates];
+
 export const USAGE_DATA_DOCS_URL =
 	"https://docs.lighthouse.letpeople.work/settings/usagedata.html";
 

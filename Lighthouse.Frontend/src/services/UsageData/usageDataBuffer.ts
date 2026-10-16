@@ -4,6 +4,7 @@ import type {
 	UsageDataReportTemplate,
 	UsageDataRouteKey,
 	UsageDataSizingMoment,
+	UsageDataUpdates,
 	UsageDataWorkTrackingSystem,
 } from "../../models/UsageData/UsageData";
 import type { UsageDataEventName } from "../Api/UsageDataService";
@@ -25,6 +26,7 @@ export interface NoticedEvent {
 	sizingMoment?: UsageDataSizingMoment;
 	refinementVerdict?: UsageDataRefinementVerdict;
 	reportTemplate?: UsageDataReportTemplate;
+	updates?: UsageDataUpdates;
 	noticedAt: number;
 }
 
