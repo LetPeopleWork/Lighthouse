@@ -12,8 +12,6 @@ namespace Lighthouse.Backend.Tests.Models.Staleness
     [Category("story-6247")]
     public class StalenessPolicyTest
     {
-        private const string Pending = "pending — DELIVER (story-6247 slice 01): StalenessPolicy.Evaluate";
-
         private const string Review = "Review";
 
         private static readonly DateOnly AsOfDay = new(2026, 5, 25);
@@ -25,7 +23,6 @@ namespace Lighthouse.Backend.Tests.Models.Staleness
         [TestCase(6, 5, true)]
         [TestCase(1, 1, false)]
         [TestCase(2, 1, true)]
-        [Ignore(Pending)]
         public void A_Work_Item_in_progress_goes_stale_only_once_it_has_sat_longer_than_the_threshold(int daysInState, int threshold, bool expectedStale)
         {
             var verdict = PolicyWith(threshold, blockedThreshold: 3)
@@ -46,7 +43,6 @@ namespace Lighthouse.Backend.Tests.Models.Staleness
         [TestCase(2, 3, false)]
         [TestCase(3, 3, true)]
         [TestCase(4, 3, true)]
-        [Ignore(Pending)]
         public void A_Blocked_Work_Item_goes_stale_once_it_has_been_Blocked_for_the_blocked_threshold(int daysBlocked, int blockedThreshold, bool expectedStale)
         {
             var verdict = PolicyWith(timeInStateThreshold: 0, blockedThreshold)
@@ -64,7 +60,6 @@ namespace Lighthouse.Backend.Tests.Models.Staleness
         }
 
         [Test]
-        [Ignore(Pending)]
         public void A_Blocked_Work_Item_long_in_its_state_is_judged_by_its_blocked_time_and_shows_both()
         {
             var verdict = PolicyWith(timeInStateThreshold: 5, blockedThreshold: 3)
@@ -84,7 +79,6 @@ namespace Lighthouse.Backend.Tests.Models.Staleness
         }
 
         [Test]
-        [Ignore(Pending)]
         public void A_Blocked_Work_Item_under_the_blocked_threshold_is_not_stale_however_long_it_has_sat_in_its_state()
         {
             var verdict = PolicyWith(timeInStateThreshold: 5, blockedThreshold: 3)
@@ -103,7 +97,6 @@ namespace Lighthouse.Backend.Tests.Models.Staleness
         // trigger, so a Blocked item names its time in state only once it is past the threshold.
         [TestCase(5, false)]
         [TestCase(6, true)]
-        [Ignore(Pending)]
         public void A_Blocked_Work_Item_shows_its_time_in_state_only_once_it_is_past_the_threshold(int daysInState, bool expectedToShow)
         {
             var verdict = PolicyWith(timeInStateThreshold: 5, blockedThreshold: 3)
@@ -121,7 +114,6 @@ namespace Lighthouse.Backend.Tests.Models.Staleness
         }
 
         [Test]
-        [Ignore(Pending)]
         public void A_Blocked_Work_Item_whose_state_entry_is_unknown_is_still_judged_by_its_blocked_time()
         {
             var candidate = Blocked(daysInState: 30, daysBlocked: 4) with { EnteredStateAt = null };
@@ -141,7 +133,6 @@ namespace Lighthouse.Backend.Tests.Models.Staleness
         [TestCase(0, 0, false)]
         [TestCase(0, 0, true)]
         [TestCase(0, 3, false)]
-        [Ignore(Pending)]
         public void A_threshold_of_zero_turns_its_trigger_off(int timeInStateThreshold, int blockedThreshold, bool isBlocked)
         {
             var candidate = isBlocked ? Blocked(daysInState: 30, daysBlocked: 30) : InProgress(30);
@@ -156,7 +147,6 @@ namespace Lighthouse.Backend.Tests.Models.Staleness
         }
 
         [Test]
-        [Ignore(Pending)]
         public void A_blocked_threshold_of_zero_leaves_a_long_Blocked_Work_Item_not_stale_but_still_shows_its_time_in_state()
         {
             var verdict = PolicyWith(timeInStateThreshold: 5, blockedThreshold: 0)
@@ -174,7 +164,6 @@ namespace Lighthouse.Backend.Tests.Models.Staleness
         [TestCase(StateCategories.ToDo)]
         [TestCase(StateCategories.Done)]
         [TestCase(StateCategories.Unknown)]
-        [Ignore(Pending)]
         public void Only_Work_Items_in_progress_can_be_stale(StateCategories category)
         {
             var candidate = InProgress(30) with { StateCategory = category };
@@ -189,7 +178,6 @@ namespace Lighthouse.Backend.Tests.Models.Staleness
         }
 
         [Test]
-        [Ignore(Pending)]
         public void A_Work_Item_whose_state_entry_is_unknown_has_no_time_in_state_to_judge()
         {
             var candidate = InProgress(30) with { EnteredStateAt = null };
@@ -204,7 +192,6 @@ namespace Lighthouse.Backend.Tests.Models.Staleness
         }
 
         [Test]
-        [Ignore(Pending)]
         public void A_Blocked_Work_Item_with_no_known_blocked_start_has_no_blocked_time_to_judge()
         {
             var candidate = Blocked(daysInState: 30, daysBlocked: 30) with { BlockedSince = null };
@@ -219,7 +206,6 @@ namespace Lighthouse.Backend.Tests.Models.Staleness
         }
 
         [Test]
-        [Ignore(Pending)]
         public void Days_are_counted_on_the_instance_calendar_not_in_UTC()
         {
             // 22:30 UTC on the 19th is already the 20th in Zurich: six days to the 25th there, seven in UTC.
@@ -238,7 +224,6 @@ namespace Lighthouse.Backend.Tests.Models.Staleness
         // after it, still counts as one day.
         [TestCase(0)]
         [TestCase(1)]
-        [Ignore(Pending)]
         public void A_Work_Item_Blocked_on_the_day_asked_about_has_been_Blocked_for_one_day(int daysLater)
         {
             var candidate = Blocked(daysInState: 1, daysBlocked: 1) with { BlockedSince = AtNoonOn(AsOfDay.AddDays(daysLater)) };
@@ -255,7 +240,6 @@ namespace Lighthouse.Backend.Tests.Models.Staleness
         }
 
         [Test]
-        [Ignore(Pending)]
         public void The_policy_reads_both_thresholds_from_their_owner()
         {
             var team = new Team { StalenessThresholdDays = 5, BlockedStalenessThresholdDays = 3 };

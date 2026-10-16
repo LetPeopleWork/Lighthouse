@@ -1,4 +1,3 @@
-// SCAFFOLD: true
 using System.Text.Json.Serialization;
 using Lighthouse.Backend.Models.Staleness;
 

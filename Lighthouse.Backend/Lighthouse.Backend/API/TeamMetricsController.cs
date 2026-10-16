@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Models.Staleness;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
@@ -142,6 +143,7 @@ namespace Lighthouse.Backend.API
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
             {
                 var workItems = teamMetricsService.GetWipSnapshotForTeam(team, asOfDate).ToList();
+                var asOfDay = DateOnly.FromDateTime(asOfDate);
 
                 // For a past range, "is it blocked" cannot be answered by evaluating the
                 // blocked rule against today's item — the tags/state it matches on have moved on since.
@@ -149,13 +151,13 @@ namespace Lighthouse.Backend.API
                 // read prefers it. An item with no history at all predates blocked capture, and there the
                 // live rule is still the only answer available — the same one today's read gives, so the
                 // fallback cannot regress an item that was already reading correctly.
-                var isHistoricRange = DateOnly.FromDateTime(asOfDate) < clock.Today;
+                var isHistoricRange = asOfDay < clock.Today;
                 var workItemIds = workItems.Select(w => w.Id).ToList();
 
                 // Indexed once rather than scanned per item: both lookups sit inside the projection
                 // below, so a linear Contains/FirstOrDefault makes a board of n items cost O(n²).
                 var openSpellByItem = (isHistoricRange
-                        ? workItemBlockedTransitionRepository.GetBlockedTransitionsAt(DateOnly.FromDateTime(asOfDate))
+                        ? workItemBlockedTransitionRepository.GetBlockedTransitionsAt(asOfDay)
                         : [])
                     .GroupBy(transition => transition.WorkItemId)
                     .ToDictionary(group => group.Key, group => group.First());
@@ -163,6 +165,8 @@ namespace Lighthouse.Backend.API
                         ? workItemBlockedTransitionRepository.GetWorkItemIdsWithBlockedHistory(workItemIds)
                         : [])
                     .ToHashSet();
+
+                var stalenessPolicy = StalenessPolicy.For(team);
 
                 return workItems.Select(w =>
                 {
@@ -174,7 +178,9 @@ namespace Lighthouse.Backend.API
                     var blockedSince = answerFromHistory ? blockedSpell?.EnteredAt : liveBlockedSince;
 
                     // Anchor age on asOfDate, not today, so the aging chart's dot heights match the chosen range.
-                    return new WorkItemDto(w, clock, isBlocked, [], blockedSince, asOfDate) { Estimate = WorkItemEstimateDto.For(team, w) };
+                    var dto = new WorkItemDto(w, clock, isBlocked, [], blockedSince, asOfDate) { Estimate = WorkItemEstimateDto.For(team, w) };
+                    dto.CarryStaleness(stalenessPolicy, clock.Zone, asOfDay);
+                    return dto;
                 });
             });
         }

@@ -18,7 +18,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
 
         // @walking_skeleton @driving_port @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task A_flow_coach_reads_which_Work_Item_has_sat_too_long_in_Review_and_why()
         {
             var team = GivenATeamThatCallsWorkStaleAfterFiveDaysInAStateOrThreeDaysBlocked();

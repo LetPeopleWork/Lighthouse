@@ -1,4 +1,3 @@
-// SCAFFOLD: true
 namespace Lighthouse.Backend.Models.Staleness
 {
     public sealed record StaleReason(StaleReasonKind Kind, int Days, string? StateName);
