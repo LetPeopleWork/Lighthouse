@@ -712,7 +712,7 @@ describe("WorkTrackingSystemService", () => {
 		});
 
 		// @us-03 @driving_port @contract-shape:bounded-change
-		it.skip("saving only asks the server to leave the updates to their next scheduled run", async () => {
+		it("saving only asks the server to leave the updates to their next scheduled run", async () => {
 			mockedAxios.put.mockResolvedValueOnce({ data: nordwindJiraDc });
 
 			await (

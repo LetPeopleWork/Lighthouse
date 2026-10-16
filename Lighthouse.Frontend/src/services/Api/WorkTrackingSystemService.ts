@@ -15,6 +15,10 @@ import {
 } from "../../models/WorkTracking/WriteBackMappingDefinition";
 import { BaseApiService } from "./BaseApiService";
 
+export interface ISaveConnectionChoice {
+	startUpdates: boolean;
+}
+
 export interface IWorkTrackingSystemService {
 	getWorkTrackingSystems(): Promise<IWorkTrackingSystemConnection[]>;
 	getConfiguredWorkTrackingSystems(): Promise<IWorkTrackingSystemConnection[]>;
@@ -23,6 +27,7 @@ export interface IWorkTrackingSystemService {
 	): Promise<IWorkTrackingSystemConnection>;
 	updateWorkTrackingSystemConnection(
 		modifiedConnection: IWorkTrackingSystemConnection,
+		choice?: ISaveConnectionChoice,
 	): Promise<IWorkTrackingSystemConnection>;
 	deleteWorkTrackingSystemConnection(connectionId: number): Promise<void>;
 	validateWorkTrackingSystemConnection(
@@ -97,10 +102,13 @@ export class WorkTrackingSystemService
 
 	async updateWorkTrackingSystemConnection(
 		modifiedConnection: IWorkTrackingSystemConnection,
+		choice?: ISaveConnectionChoice,
 	): Promise<IWorkTrackingSystemConnection> {
+		const holdUpdatesBack =
+			choice?.startUpdates === false ? "?startUpdates=false" : "";
 		return await this.withErrorHandling(async () => {
 			const response = await this.apiService.put<IWorkTrackingSystemConnection>(
-				`/worktrackingsystemconnections/${modifiedConnection.id}`,
+				`/worktrackingsystemconnections/${modifiedConnection.id}${holdUpdatesBack}`,
 				this.serializeConnectionForApi(modifiedConnection),
 			);
 

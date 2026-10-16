@@ -10,6 +10,7 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
+import type { ISaveConnectionChoice } from "../../../services/Api/WorkTrackingSystemService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import {
 	usageDataWorkTrackingSystemFor,
@@ -51,6 +52,7 @@ const EditConnectionPage: React.FC = () => {
 
 	const saveConnectionSettings = async (
 		connection: IWorkTrackingSystemConnection,
+		choice?: ISaveConnectionChoice,
 	) => {
 		const isBeingSetUp = isNewConnection && connection.id === 0;
 
@@ -60,6 +62,7 @@ const EditConnectionPage: React.FC = () => {
 				)
 			: await workTrackingSystemService.updateWorkTrackingSystemConnection(
 					connection,
+					choice,
 				);
 
 		// Only a connection being set up, never one being edited. Somebody changing a password on a
@@ -76,8 +79,11 @@ const EditConnectionPage: React.FC = () => {
 		return saved;
 	};
 
-	const saveAndNavigate = async (connection: IWorkTrackingSystemConnection) => {
-		await saveConnectionSettings(connection);
+	const saveAndNavigate = async (
+		connection: IWorkTrackingSystemConnection,
+		choice?: ISaveConnectionChoice,
+	) => {
+		await saveConnectionSettings(connection, choice);
 		reportFailedNavigation(navigate("/"));
 	};
 

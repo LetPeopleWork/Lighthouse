@@ -687,7 +687,7 @@ describe("Story #6307 - changing a connection's Additional Fields asks whether t
 
 	describe("slice 03 - save now, update later", () => {
 		// @us-03 @contract-shape:pure-function
-		it.skip(`${Pending}: the question offers to save only and says when the field fills in then`, async () => {
+		it("the question offers to save only and says when the field fills in then", async () => {
 			await givenPriyaOpensNordwindJiraDc();
 			await whenPriyaAddsFixVersions();
 
@@ -703,7 +703,7 @@ describe("Story #6307 - changing a connection's Additional Fields asks whether t
 		});
 
 		// @driving_port @us-03 @contract-shape:bounded-change
-		it.skip(`${Pending}: Save only saves the new field, holds the updates back and returns to the overview`, async () => {
+		it("Save only saves the new field, holds the updates back and returns to the overview", async () => {
 			const server = await givenPriyaOpensNordwindJiraDc();
 			await whenPriyaAddsFixVersions();
 			whenPriyaPressesSave();

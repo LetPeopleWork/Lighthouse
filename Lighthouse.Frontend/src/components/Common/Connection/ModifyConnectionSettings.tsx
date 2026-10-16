@@ -38,6 +38,7 @@ import type { IWriteBackMappingDefinition } from "../../../models/WorkTracking/W
 import AdditionalFieldsEditor from "../../../pages/Settings/Connections/AdditionalFieldsEditor";
 import WriteBackMappingsEditor from "../../../pages/Settings/Connections/WriteBackMappingsEditor";
 import { ApiError } from "../../../services/Api/ApiError";
+import type { ISaveConnectionChoice } from "../../../services/Api/WorkTrackingSystemService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
 import OAuthAuthForm from "../Connections/OAuthAuthForm";
@@ -132,6 +133,7 @@ interface UpdateQuestionProps {
 	open: boolean;
 	usage: IConnectionUsage;
 	onUpdate: () => void;
+	onSaveOnly: () => void;
 	onCancel: () => void;
 }
 
@@ -139,6 +141,7 @@ const UpdateQuestion: React.FC<UpdateQuestionProps> = ({
 	open,
 	usage,
 	onUpdate,
+	onSaveOnly,
 	onCancel,
 }) => {
 	const titleId = useId();
@@ -162,12 +165,15 @@ const UpdateQuestion: React.FC<UpdateQuestionProps> = ({
 			</DialogTitle>
 			<DialogContent>
 				<DialogContentText id={descriptionId}>
-					{`You changed the Additional Fields. Their values only fill in once each ${team} and ${portfolio} on this connection has been updated.`}
+					{`You changed the Additional Fields. Their values only fill in once each ${team} and ${portfolio} on this connection has been updated. Save only: they fill in with the next scheduled update instead.`}
 				</DialogContentText>
 			</DialogContent>
 			<DialogActions>
 				<Button onClick={onCancel} color="primary">
 					Cancel
+				</Button>
+				<Button onClick={onSaveOnly} color="primary">
+					Save only
 				</Button>
 				<Button onClick={onUpdate} color="primary" autoFocus>
 					Save and update
@@ -183,6 +189,7 @@ interface ModifyConnectionSettingsProps {
 	getConnectionSettings: () => Promise<IWorkTrackingSystemConnection | null>;
 	saveConnectionSettings: (
 		connection: IWorkTrackingSystemConnection,
+		choice?: ISaveConnectionChoice,
 	) => Promise<unknown>;
 	validateConnectionSettings: (
 		connection: IWorkTrackingSystemConnection,
@@ -557,9 +564,12 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		}
 	};
 
-	const save = async (connection: IWorkTrackingSystemConnection) => {
+	const save = async (
+		connection: IWorkTrackingSystemConnection,
+		choice?: ISaveConnectionChoice,
+	) => {
 		try {
-			await saveConnectionSettings(connection);
+			await saveConnectionSettings(connection, choice);
 		} catch (error_) {
 			if (
 				error_ instanceof ApiError &&
@@ -573,11 +583,11 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		}
 	};
 
-	const saveAndUpdate = async () => {
+	const saveAnswering = async (choice?: ISaveConnectionChoice) => {
 		const connection = connectionAwaitingAnswer;
 		setConnectionAwaitingAnswer(null);
 		if (connection) {
-			await save(connection);
+			await save(connection, choice);
 		}
 	};
 
@@ -853,7 +863,8 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 				<UpdateQuestion
 					open={connectionAwaitingAnswer !== null}
 					usage={usage}
-					onUpdate={saveAndUpdate}
+					onUpdate={() => saveAnswering()}
+					onSaveOnly={() => saveAnswering({ startUpdates: false })}
 					onCancel={() => setConnectionAwaitingAnswer(null)}
 				/>
 			</Container>
