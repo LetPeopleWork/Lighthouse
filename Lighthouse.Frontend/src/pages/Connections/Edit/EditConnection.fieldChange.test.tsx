@@ -1,3 +1,4 @@
+import { createTheme, ThemeProvider } from "@mui/material";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	act,
@@ -117,6 +118,11 @@ const SquadsAndPrograms: Words = {
 	portfolios: "Programs",
 };
 
+// Dialogs open and close without animating, so a dialog that closes has left the page by the next tick.
+const NoAnimations = createTheme({
+	transitions: { duration: { enteringScreen: 0, leavingScreen: 0 } },
+});
+
 const nordwindJiraDc = (usedBy: UsedBy, fields: Field[]) =>
 	Object.assign(
 		new WorkTrackingSystemConnection({
@@ -206,18 +212,20 @@ const givenPriyaOpensTheConnectionPage = async ({
 				})
 			}
 		>
-			<MemoryRouter>
-				<ApiServiceContext.Provider
-					value={createMockApiServiceContext({
-						workTrackingSystemService: server,
-						terminologyService: terminology,
-					})}
-				>
-					<TerminologyProvider>
-						<EditConnectionPage />
-					</TerminologyProvider>
-				</ApiServiceContext.Provider>
-			</MemoryRouter>
+			<ThemeProvider theme={NoAnimations}>
+				<MemoryRouter>
+					<ApiServiceContext.Provider
+						value={createMockApiServiceContext({
+							workTrackingSystemService: server,
+							terminologyService: terminology,
+						})}
+					>
+						<TerminologyProvider>
+							<EditConnectionPage />
+						</TerminologyProvider>
+					</ApiServiceContext.Provider>
+				</MemoryRouter>
+			</ThemeProvider>
 		</QueryClientProvider>,
 	);
 
@@ -389,9 +397,8 @@ const aSaveStillOnItsWay = () => {
 
 const TheAnswers = ["Cancel", "Save only", "Save and update"] as const;
 
-// A closed question leaves the page only once its closing animation has run.
-const longerThanTheQuestionTakesToClose = () =>
-	act(() => new Promise((resolve) => setTimeout(resolve, 500)));
+const theNextTick = () =>
+	act(() => new Promise((resolve) => setTimeout(resolve, 0)));
 
 const thenTheQuestionWaitsOnTheSave = async (answer: string) => {
 	const question = await theQuestion(TheQuestionOnNordwindJiraDc);
@@ -852,7 +859,7 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			const question = await thenTheQuestionWaitsOnTheSave("Save and update");
 
 			fireEvent.keyDown(question, { key: "Escape" });
-			await longerThanTheQuestionTakesToClose();
+			await theNextTick();
 
 			expect(
 				screen.getByRole("dialog", { name: TheQuestionOnNordwindJiraDc }),
