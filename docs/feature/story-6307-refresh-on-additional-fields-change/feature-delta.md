@@ -1051,3 +1051,12 @@ answers the C7b question, and DELIVER pins it with a unit test.
   examples.
 - Step reuse, informational: the backend scenarios call 37 distinct steps 116 times (about 3.1 each); the page tests
   share 18 helpers.
+
+## Wave: DELIVER / [REF] Maintainer decisions — hold before mutation (2026-10-16)
+
+| # | Question | Decision |
+|---|----------|----------|
+| H1 | ADR status | ADR-239 (renumbered from 238: story 6301 reached main first with its own ADR-238) is **Accepted**, with its amendments to ADR-030 and ADR-140. |
+| H2 | Dialog copy when one count is zero ("Update 3 Teams and 0 Portfolios?", body names both kinds) | **Kept as is.** |
+| H3 | No busy state while a save is in flight (older than this story: `ValidationActions` never waited for `onSave`) | **Fixed in this story, dialog and page Save.** The question dialog stays open while the save runs: the clicked button spins and every button, Esc and the backdrop do nothing until the save settles; success navigates as before, a 409 closes the dialog and shows the existing conflict message on the page. The page's Save button spins and stays disabled through validation and save (`ValidationActions` waits for `onSave`; it is used only by this page). Reuses the `ActionButton` spinner. |
+| H4 | The edit page never sends `concurrencyToken` (older than this story: two admins saving the same connection overwrite each other) | **Noted only**, no ticket for now. |
