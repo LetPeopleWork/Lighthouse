@@ -59,6 +59,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         private Mock<IWorkItemStateTransitionRepository> stateTransitionRepositoryMock;
         private Mock<IFeatureStateTransitionRepository> featureStateTransitionRepositoryMock;
         private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
+        private RecordingLogger<WorkItemService> whatTheServiceWrote;
 
         private int idCounter;
         private List<WorkItem> workItems;
@@ -76,6 +77,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             stateTransitionRepositoryMock = new Mock<IWorkItemStateTransitionRepository>();
             featureStateTransitionRepositoryMock = new Mock<IFeatureStateTransitionRepository>();
             domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
+            whatTheServiceWrote = new RecordingLogger<WorkItemService>();
 
             featureStateTransitionRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<FeatureStateTransition, bool>>>()))
                 .Returns(new List<FeatureStateTransition>().AsQueryable());
@@ -1536,6 +1538,49 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             }
         }
 
+        /// <summary>
+        /// A Portfolio Feature that is also the issue above another of its Features is read by both halves of
+        /// one refresh. The Feature half already placed and stored it, so the sweep for the issues above
+        /// leaves it alone: placing it again, against Features this refresh has just stored, could pick
+        /// another parent and save it over the one the counted line names.
+        /// </summary>
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_AFeatureIsAlsoTheIssueAboveAnother_IsPlacedOnceAndKeepsTheParentItsLineNames()
+        {
+            var portfolio = CreatePortfolio();
+            portfolio.ParentOverrideAdditionalFieldDefinitionId = TheFieldThatNamesTheLinkType;
+            var stored = TheFeaturesTheRefreshStores();
+            featureRepositoryMock
+                .Setup(repository => repository.GetByPredicate(It.IsAny<Func<Feature, bool>>()))
+                .Returns((Func<Feature, bool> predicate) => stored.SingleOrDefault(predicate));
+            featureRepositoryMock
+                .SetupSequence(repository => repository.GetStoredFeatureCreatedDates())
+                .Returns(new StoredFeatures(new Dictionary<string, DateTime?>()))
+                .Returns(new StoredFeatures(new Dictionary<string, DateTime?> { ["INC-5610"] = TheFirstReadingDay.AddYears(-1) }));
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([TheIssueAboveAsDownloaded(), AFeatureUnderTheIssueAbove(TheFirstReadingDay)]);
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetParentFeaturesDetails(portfolio, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Portfolio _, IEnumerable<string> keys, CancellationToken _) => keys.Contains(TheIssueAbove) ? [TheIssueAboveAsDownloaded()] : []);
+
+            var subject = CreateSubject();
+
+            var outcome = await subject.UpdateFeaturesForPortfolio(portfolio);
+
+            var theIssueAbove = stored.Single(feature => feature.ReferenceId == TheIssueAbove);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(theIssueAbove.ParentReferenceId, Is.EqualTo("INC-5602"),
+                    "Nothing was stored when the Feature half placed it, so the lowest key decided, and that is the parent it keeps.");
+                Assert.That(whatTheServiceWrote.Warnings.Count(line => line.Contains($"{TheIssueAbove} under ", StringComparison.Ordinal)), Is.EqualTo(1),
+                    "One refresh places a record once, so only one line names where it went.");
+                Assert.That(outcome.RecordsPlacedFromLinksNamingMoreThanOneParent, Is.EqualTo(1),
+                    "It is one of the Portfolio's own Features, so its row counts it, once.");
+            }
+        }
+
         private static void TheIssueAboveWasPlacedAndNotCounted(SyncOutcome outcome, Feature storedIssueAbove)
         {
             using (Assert.EnterMultipleScope())
@@ -2093,6 +2138,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 .WithStateTransitionRepository(stateTransitionRepositoryMock.Object)
                 .WithFeatureStateTransitionRepository(featureStateTransitionRepositoryMock.Object)
                 .WithDomainEventDispatcher(domainEventDispatcherMock.Object)
+                .WithLogger(whatTheServiceWrote)
                 .Build();
         }
     }

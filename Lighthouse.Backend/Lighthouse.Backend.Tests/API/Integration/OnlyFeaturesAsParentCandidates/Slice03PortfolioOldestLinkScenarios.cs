@@ -256,6 +256,48 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
             }
         }
 
+        /// <summary>
+        /// A Portfolio Feature can also be the issue above another of its Features, so the sweep for the
+        /// issues above downloads it a second time in the same refresh. By then that refresh has stored the
+        /// created dates the first placing could not see, so placing it again could pick another parent, and
+        /// the counted line would name a parent that was never stored.
+        /// </summary>
+        [Test]
+        [Category("edge")]
+        public async Task A_Feature_that_is_also_the_parent_of_another_Feature_is_placed_once_and_stored_as_its_line_says()
+        {
+            ThePortfolioReadsItsFeaturesParentsFromTheCausedByLink();
+            ThePortfolioHoldsTheFeature(TheLaterCreatedFeature, On(2025, 6, 1));
+            ThePortfolioHoldsTheFeature(TheEarlierCreatedFeature, On(2025, 1, 1));
+            ThePortfolioHoldsTheFeature(TheFeatureAboveAnother);
+            ThePortfolioHoldsTheFeature(TheFeatureBelowIt);
+            TheIssueIsCausedBy(TheFeatureAboveAnother, TheEarlierCreatedFeature, TheLaterCreatedFeature);
+            TheIssueIsCausedBy(TheFeatureBelowIt, TheFeatureAboveAnother);
+
+            await ThePortfolioRefreshes();
+
+            var placedLine = TheOneLineThatPlacedFor(ThePortfolio);
+            var linesThatPlacedIt = WhatTheLastRefreshWarned().Count(line => line.Contains($"{TheFeatureAboveAnother} under ", StringComparison.Ordinal));
+            var parentsLines = WhatTheLastRefreshWarned().Where(line => line.StartsWith(TheParentsOfThePortfoliosFeatures, StringComparison.Ordinal));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(placedLine, Does.Contain($"{TheFeatureAboveAnother} under {TheStoredParentOfTheFeature(TheFeatureAboveAnother)} ("),
+                    "The counted line has to name the parent that was stored, or the administrator checks an answer Lighthouse did not keep.");
+                Assert.That(linesThatPlacedIt, Is.EqualTo(1),
+                    "One refresh places a record once. Two lines with two different answers leave nobody able to tell which one holds.");
+                Assert.That(parentsLines.Where(line => line.Contains(TheFeatureAboveAnother, StringComparison.Ordinal)), Is.Empty,
+                    "The line for the issues above exists so they are not mistaken for the Portfolio's own Features, so it must not name one.");
+            }
+        }
+
+        private const string TheLaterCreatedFeature = "PAY-10";
+
+        private const string TheEarlierCreatedFeature = "PAY-20";
+
+        private const string TheFeatureAboveAnother = "PAY-30";
+
+        private const string TheFeatureBelowIt = "PAY-40";
+
         private static readonly string[] TwelveChildren = [.. Enumerable.Range(300, 12).Select(number => $"PAY-{number}")];
 
         private static readonly string[] TheOneMoveThenItHolds = [TheInitiative, TheOlderInitiative, TheOlderInitiative];

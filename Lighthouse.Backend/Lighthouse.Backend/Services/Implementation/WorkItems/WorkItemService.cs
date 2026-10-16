@@ -50,8 +50,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             var fetchShape = FetchShape.Of(portfolio);
 
-            var outcome = (await RefreshFeatures(portfolio, fetchShape.Changed)) with { Reason = fetchShape.Reason };
-            await RefreshParentFeatures(portfolio, fetchShape.Changed);
+            var featureHalf = await RefreshFeatures(portfolio, fetchShape.Changed);
+            await RefreshParentFeatures(portfolio, fetchShape.Changed, featureHalf.Downloaded);
+            var outcome = featureHalf.Outcome with { Reason = fetchShape.Reason };
 
             await UpdateRemainingWorkForPortfolio(portfolio);
 
@@ -816,7 +817,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return buckets;
         }
 
-        private async Task<SyncOutcome> RefreshFeatures(Portfolio portfolio, bool fetchShapeChanged)
+        private async Task<(SyncOutcome Outcome, HashSet<string> Downloaded)> RefreshFeatures(Portfolio portfolio, bool fetchShapeChanged)
         {
             var connector = GetWorkItemServiceForWorkTrackingSystem(portfolio.WorkTrackingSystemConnection.WorkTrackingSystem);
 
@@ -882,7 +883,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             await SweepDepartedFeatureSpells(portfolio, featuresTheQueryStillReturns);
 
-            return fetch.Outcome;
+            return (fetch.Outcome, fetch.Features.Select(feature => feature.ReferenceId).ToHashSet(StringComparer.Ordinal));
         }
 
         /// <summary>
@@ -1121,10 +1122,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return featureFromDatabase;
         }
 
-        private async Task RefreshParentFeatures(Portfolio project, bool fetchShapeChanged)
+        /// <summary>
+        /// A Portfolio Feature can also be the issue above another of its Features. When the Feature half has
+        /// already downloaded it in this refresh, the sweep does not ask for it again: a second reading would
+        /// place it a second time, against the Features this refresh has just stored, and could save another
+        /// parent over the one the Portfolio's counted line names.
+        /// </summary>
+        private async Task RefreshParentFeatures(Portfolio project, bool fetchShapeChanged, HashSet<string> downloadedByTheFeatureHalf)
         {
             var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystemConnection.WorkTrackingSystem);
-            var parentFeatureIds = project.Features.Where(f => !string.IsNullOrEmpty(f.ParentReferenceId)).Select(f => f.ParentReferenceId).Distinct().ToList();
+            var parentFeatureIds = project.Features
+                .Where(f => !string.IsNullOrEmpty(f.ParentReferenceId))
+                .Select(f => f.ParentReferenceId)
+                .Distinct()
+                .Where(parentFeatureId => !downloadedByTheFeatureHalf.Contains(parentFeatureId))
+                .ToList();
 
             if (parentFeatureIds.Count == 0)
             {

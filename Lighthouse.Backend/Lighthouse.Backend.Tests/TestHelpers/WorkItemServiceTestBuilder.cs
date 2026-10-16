@@ -37,6 +37,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         private IWorkItemStateTransitionRepository stateTransitionRepository = Mock.Of<IWorkItemStateTransitionRepository>();
         private IFeatureStateTransitionRepository featureStateTransitionRepository = Mock.Of<IFeatureStateTransitionRepository>();
         private IDomainEventDispatcher domainEventDispatcher = Mock.Of<IDomainEventDispatcher>();
+        private ILogger<WorkItemService> logger = Mock.Of<ILogger<WorkItemService>>();
 
         /// <summary>
         /// The connector the service is to talk to. Wrapping it in a factory is what every call site did by
@@ -107,9 +108,15 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             return this;
         }
 
+        public WorkItemServiceTestBuilder WithLogger(ILogger<WorkItemService> serviceLogger)
+        {
+            logger = serviceLogger;
+            return this;
+        }
+
         public WorkItemService Build()
             => new(
-                Mock.Of<ILogger<WorkItemService>>(),
+                logger,
                 workTrackingConnectorFactory,
                 featureRepository,
                 workItemRepository,
