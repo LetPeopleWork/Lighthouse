@@ -1325,6 +1325,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<DateTime>("ExecutedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Findings")
+                        .HasColumnType("text");
+
                     b.Property<int>("ItemCount")
                         .HasColumnType("integer");
 

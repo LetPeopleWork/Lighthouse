@@ -57,5 +57,11 @@ namespace Lighthouse.Backend.Models
         /// how often a parent was decided on their behalf.
         /// </summary>
         public int RecordsPlacedFromLinksNamingMoreThanOneParent { get; set; }
+
+        /// <summary>
+        /// What this refresh found wrong with how a setting is configured. Empty on a cheap refresh, which
+        /// reads too little to judge, and absent on a row written before findings were recorded.
+        /// </summary>
+        public List<RefreshFinding>? Findings { get; set; }
     }
 }

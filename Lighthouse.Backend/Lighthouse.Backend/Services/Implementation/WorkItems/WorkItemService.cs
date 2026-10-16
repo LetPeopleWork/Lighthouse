@@ -982,8 +982,42 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 : await FetchEveryFeature(connector, portfolio, Stopping);
 
             var placements = PlaceWhatTheLinksLeftOpen(portfolio, ParentPlacementReport.Portfolio(portfolio.Name), ParentNarrowing.DoNotNarrow, fetch.Features);
+            var findings = ReportWhatTheSettingsLeftUnread(portfolio, fetch);
 
-            return fetch with { Outcome = CountingThePlacements(fetch.Outcome, placements) };
+            return fetch with { Outcome = CountingThePlacements(fetch.Outcome, placements) with { Findings = findings } };
+        }
+
+        /// <summary>
+        /// Every Feature read through a misconfigured setting shows the same misconfiguration, so it is
+        /// reported once per kind for the whole refresh, never once per Feature. Only a whole-query refresh
+        /// judges: a cheap one reads the few Features that moved, which says nothing about the setting, and
+        /// reporting nothing from it leaves the last whole-query refresh's word standing.
+        /// </summary>
+        private List<RefreshFinding> ReportWhatTheSettingsLeftUnread(Portfolio portfolio, RemoteFeatureFetch fetch)
+        {
+            if (fetch.Outcome.Mode != SyncMode.Full)
+            {
+                return [];
+            }
+
+            var findings = fetch.Features
+                .SelectMany(feature => feature.RefreshFindings)
+                .DistinctBy(finding => finding.Kind)
+                .ToList();
+
+            foreach (var finding in findings)
+            {
+                logger.LogWarning(
+                    "Portfolio {PortfolioName}: its {Setting} names '{Named}', which the refresh could not read as configured ({FindingKind}). "
+                    + "What it saw: {Seen}",
+                    portfolio.Name,
+                    finding.Setting,
+                    finding.Named,
+                    finding.Kind,
+                    string.Join(", ", finding.Seen.Select(seen => $"'{seen}'")));
+            }
+
+            return findings;
         }
 
         /// <summary>The scan for the portfolio: the same Feature query, asking only for identity plus the remote change stamp.</summary>

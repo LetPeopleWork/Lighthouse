@@ -65,6 +65,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private RefreshLog? recordedRefresh;
 
+        private static readonly string[] BothDependencyPhrases = ["depends on", "is depended on by"];
+
         private int idCounter;
 
         [SetUp]
@@ -561,6 +563,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 Assert.That(summary, Does.Not.Contain("encryption").IgnoreCase);
                 Assert.That(summary, Does.Not.Contain("credential").IgnoreCase);
             }
+        }
+
+        [Test]
+        public void TriggerUpdate_TheRefreshFoundSomethingWrongWithASetting_RecordsTheFindingOnItsRow()
+        {
+            var project = CreateProject(DateTime.Now.AddDays(-1));
+            SetupProjects(project);
+            var finding = new RefreshFinding(
+                RefreshFindingKind.NamedLinkPointsBothWays, RefreshFindingSetting.DependencyField, "Dependency", BothDependencyPhrases);
+
+            workItemServiceMock
+                .Setup(x => x.UpdateFeaturesForPortfolio(project))
+                .ReturnsAsync(SyncOutcome.FullSync(2) with { Findings = [finding] });
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            Assert.That(recordedRefresh?.Findings, Is.EqualTo(new[] { finding }),
+                "Refresh History reads the finding off the Portfolio's row, so the row has to carry it.");
         }
 
         [Test]

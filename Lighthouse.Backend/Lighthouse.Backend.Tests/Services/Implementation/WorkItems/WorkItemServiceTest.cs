@@ -45,6 +45,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
         private static readonly ParentCandidate[] OneIncident = [new ParentCandidate(TheLoneLink, null)];
 
+        private static readonly string[] BothDependencyPhrases = ["depends on", "is depended on by"];
+
         private static readonly string[] EveryKindOfRecord =
             [TheRecordUnderAFeatureAndAnIncident, TheRecordUnderTwoIncidents, TheRecordWithOneLink, TheRecordWithNoLink];
 
@@ -1429,6 +1431,89 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
         private int TimesTheLinesName(string referenceId)
             => whatTheServiceWrote.Warnings.Sum(line => line.Split($"{referenceId} under ", StringSplitOptions.None).Length - 1);
+
+        /// <summary>
+        /// A Dependency Field naming a link type, or a phrase both its ends share, cannot say which end waits,
+        /// so every Feature the refresh reads shows the same misconfiguration. The administrator is told once
+        /// for the whole refresh, with the two phrases they have to choose between.
+        /// </summary>
+        [TestCase("Dependency", "depends on", "is depended on by")]
+        [TestCase("relates to", "relates to", "relates to")]
+        public async Task UpdateFeaturesForPortfolio_FullRefreshWhereTheDependencyFieldPointsBothWays_RecordsOneFindingAndOneWarning(
+            string named, string inward, string outward)
+        {
+            var portfolio = CreatePortfolio();
+            string[] bothPhrases = [inward, outward];
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([.. EveryKindOfFeature.Select(referenceId => AFeatureWhoseDependencyFieldPointsBothWays(referenceId, named, bothPhrases, TheFirstReadingDay))]);
+
+            NothingAboveTheFeaturesIsDownloaded();
+
+            var subject = CreateSubject();
+
+            var outcome = await subject.UpdateFeaturesForPortfolio(portfolio);
+            var theFinding = outcome.Findings.Count > 0 ? outcome.Findings[0] : null;
+            var linesNamingIt = whatTheServiceWrote.Warnings.Where(line => line.Contains($"'{named}'", StringComparison.Ordinal)).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Mode, Is.EqualTo(SyncMode.Full), "positive control: only the whole-query refresh judges a setting.");
+                Assert.That(outcome.Findings, Has.Count.EqualTo(1), "One finding per refresh, never one per Feature.");
+                Assert.That(theFinding?.Kind, Is.EqualTo(RefreshFindingKind.NamedLinkPointsBothWays));
+                Assert.That(theFinding?.Setting, Is.EqualTo(RefreshFindingSetting.DependencyField));
+                Assert.That(theFinding?.Named, Is.EqualTo(named));
+                Assert.That(theFinding?.Seen, Is.EqualTo(bothPhrases));
+                Assert.That(linesNamingIt, Has.Count.EqualTo(1), "One warning line for the whole refresh, never one per Feature.");
+                Assert.That(linesNamingIt.FirstOrDefault() ?? string.Empty, Does.Contain(inward).And.Contain(outward));
+            }
+        }
+
+        /// <summary>
+        /// A cheap refresh reads only the Features that moved, which says nothing about how the Portfolio is
+        /// configured, so it records no finding and says nothing - the last whole-query refresh's word stands.
+        /// </summary>
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_CheaperRefreshWhereTheDependencyFieldPointsBothWays_RecordsNoFinding()
+        {
+            var whenEveryStoredRecordLastChanged = TheFirstReadingDay.AddDays(-30);
+
+            var portfolio = CreatePortfolio();
+            portfolio.FetchFingerprint = FetchFingerprint.For(portfolio);
+            portfolio.UpdateFeatures([.. EveryKindOfFeature.Select(referenceId => AStampedFeature(referenceId, whenEveryStoredRecordLastChanged))]);
+
+            TheTrackerCanBeScanned();
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.SweepFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([.. EveryKindOfFeature.Select(referenceId => new RemoteRecordStamp(referenceId, TheFirstReadingDay))]);
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([.. EveryKindOfFeature.Select(referenceId => AFeatureWhoseDependencyFieldPointsBothWays(referenceId, "Dependency", BothDependencyPhrases, TheFirstReadingDay))]);
+
+            NothingAboveTheFeaturesIsDownloaded();
+
+            var subject = CreateSubject();
+
+            var outcome = await subject.UpdateFeaturesForPortfolio(portfolio);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Mode, Is.EqualTo(SyncMode.Delta), "positive control: every stored Feature moved, so this refresh has to be the cheap one.");
+                Assert.That(outcome.Findings, Is.Empty);
+                Assert.That(whatTheServiceWrote.Warnings, Has.None.Contains("'Dependency'"));
+            }
+        }
+
+        private static Feature AFeatureWhoseDependencyFieldPointsBothWays(string referenceId, string named, string[] seen, DateTime lastChangedRemote)
+            => new()
+            {
+                ReferenceId = referenceId,
+                LastChangedRemote = lastChangedRemote,
+                RefreshFindings = [new RefreshFinding(RefreshFindingKind.NamedLinkPointsBothWays, RefreshFindingSetting.DependencyField, named, seen)],
+            };
 
         private static void ThePortfolioPlacedEveryFeatureWhoseLinksNameSeveralIssues(SyncOutcome outcome, List<Feature> stored)
         {

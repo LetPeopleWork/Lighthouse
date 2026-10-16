@@ -1230,10 +1230,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 var estimatedSize = GetEstimatedSize(portfolio, workItem);
                 var owningTeam = GetOwningTeam(portfolio, workItem);
 
-                var feature = new Feature(workItem, TheIssuesItWaitsOn(portfolio, workItem, issue, customFieldReferences))
+                var theDependencyField = WhatTheNamedAdditionalFieldResolvedTo(
+                    portfolio, portfolio.DependencyOverrideAdditionalFieldDefinitionId, customFieldReferences);
+
+                var feature = new Feature(workItem, TheIssuesItWaitsOn(portfolio, workItem, issue, theDependencyField))
                 {
                     EstimatedSize = estimatedSize,
                     OwningTeam = owningTeam,
+                    RefreshFindings = WhatReadingTheDependencyFieldFound(portfolio, theDependencyField),
                 };
 
                 features.Add(feature);
@@ -1253,20 +1257,44 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// What one issue waits on. Jira supplies what it read off the issue's own links; which of that is
         /// used, and what a Portfolio reading a field of its own gets instead, is not this tracker's
         /// decision to make. A Dependency Field that names a link type rather than a field is read off
-        /// the links the issue already carries, so it costs the instance no request of its own.
+        /// the links the issue already carries, so it costs the instance no request of its own. A name that
+        /// points both ways cannot say which end waits, and guessing would invent dependencies in both
+        /// directions, so it reads nothing at all.
         /// </summary>
         private static List<FeatureDependencyReference> TheIssuesItWaitsOn(
-            Portfolio portfolio, WorkItemBase workItem, Issue issue, Dictionary<string, ResolvedReference> customFieldReferences)
+            Portfolio portfolio, WorkItemBase workItem, Issue issue, ResolvedReference theDependencyField)
         {
-            var theDependencyField = WhatTheNamedAdditionalFieldResolvedTo(
-                portfolio, portfolio.DependencyOverrideAdditionalFieldDefinitionId, customFieldReferences);
+            List<string>? fromTheNamedLinkType = null;
 
-            var fromTheNamedLinkType = theDependencyField.NamesALinkType
-                ? issue.Fields.ExtractDependencyReferencesFromLinks(theDependencyField.LinkTypeName, theDependencyField.Direction)
-                : null;
+            if (theDependencyField.NamesALinkTypePointingBothWays)
+            {
+                fromTheNamedLinkType = [];
+            }
+            else if (theDependencyField.NamesALinkType)
+            {
+                fromTheNamedLinkType = issue.Fields.ExtractDependencyReferencesFromLinks(theDependencyField.LinkTypeName, theDependencyField.Direction);
+            }
 
             return DependencySourceSelector.TheDependenciesOf(
                 portfolio, workItem, issue.Fields.ExtractDependencyReferences(), fromTheNamedLinkType);
+        }
+
+        /// <summary>
+        /// A Dependency Field that read nothing because what it names points both ways looks, from the
+        /// outside, exactly like a Portfolio with no dependencies. Saying so, with the two phrases the
+        /// administrator can choose between, is what turns that silence into something they can fix.
+        /// </summary>
+        private static List<RefreshFinding> WhatReadingTheDependencyFieldFound(Portfolio portfolio, ResolvedReference theDependencyField)
+        {
+            if (!theDependencyField.NamesALinkTypePointingBothWays)
+            {
+                return [];
+            }
+
+            var named = portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions
+                .Find(definition => definition.Id == portfolio.DependencyOverrideAdditionalFieldDefinitionId)?.Reference ?? string.Empty;
+
+            return [new RefreshFinding(RefreshFindingKind.NamedLinkPointsBothWays, RefreshFindingSetting.DependencyField, named, theDependencyField.PhrasesOfItsEnds)];
         }
 
         /// <summary>
@@ -1817,7 +1845,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 if (answeringTypes.Count == 1)
                 {
                     customFieldReferences[reference] = ResolvedReference.ALinkType(
-                        answeringTypes[0].Name, answeringTypes[0].DirectionReadFrom(reference));
+                        answeringTypes[0].Name, answeringTypes[0].DirectionReadFrom(reference), [answeringTypes[0].Inward, answeringTypes[0].Outward]);
                 }
             }
 
@@ -2067,16 +2095,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// name and an administrator may type a link type into it instead, and the two are read in
         /// entirely different places - so which of them arrived is carried here rather than left to be
         /// guessed from a bare string that looks the same either way. A link type is carried by its name,
-        /// which loses the phrase that was typed, so which end that phrase pointed at travels beside it.
+        /// which loses the phrase that was typed, so which end that phrase pointed at travels beside it, and
+        /// so do the phrases its two ends read as, which are what an administrator chooses between when the
+        /// one typed points at neither.
         /// </summary>
-        private readonly record struct ResolvedReference(string FieldId, string LinkTypeName, LinkDirection Direction)
+        private readonly record struct ResolvedReference(
+            string FieldId, string LinkTypeName, LinkDirection Direction, IReadOnlyList<string> PhrasesOfItsEnds)
         {
-            public static ResolvedReference Nothing => new(string.Empty, string.Empty, LinkDirection.Both);
+            public static ResolvedReference Nothing => new(string.Empty, string.Empty, LinkDirection.Both, []);
 
-            public static ResolvedReference AField(string fieldId) => new(fieldId, string.Empty, LinkDirection.Both);
+            public static ResolvedReference AField(string fieldId) => new(fieldId, string.Empty, LinkDirection.Both, []);
 
-            public static ResolvedReference ALinkType(string linkTypeName, LinkDirection direction)
-                => new(string.Empty, linkTypeName, direction);
+            public static ResolvedReference ALinkType(string linkTypeName, LinkDirection direction, IReadOnlyList<string> phrasesOfItsEnds)
+                => new(string.Empty, linkTypeName, direction, phrasesOfItsEnds);
+
+            public bool NamesALinkTypePointingBothWays => NamesALinkType && Direction == LinkDirection.Both;
 
             public bool NamesALinkType => LinkTypeName.Length > 0;
 

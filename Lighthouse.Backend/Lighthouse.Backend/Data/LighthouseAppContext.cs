@@ -26,6 +26,8 @@ namespace Lighthouse.Backend.Data
     {
         private static readonly JsonSerializerOptions RefinementSettingsJson = new(JsonSerializerDefaults.General);
 
+        private static readonly JsonSerializerOptions RefreshFindingsJson = new(JsonSerializerDefaults.Web) { PropertyNameCaseInsensitive = true };
+
         public DbSet<Team> Teams { get; set; } = null!;
 
         public DbSet<Feature> Features { get; set; } = null!;
@@ -639,6 +641,25 @@ namespace Lighthouse.Backend.Data
             ConfigureRefinementSettings(modelBuilder);
             ConfigureSizingLog(modelBuilder);
             ConfigureReports(modelBuilder);
+            ConfigureRefreshFindings(modelBuilder);
+        }
+
+        // A row written before findings were recorded holds no value at all, and reads back as having none.
+        private static void ConfigureRefreshFindings(ModelBuilder modelBuilder)
+        {
+            var findingsConverter = new ValueConverter<List<RefreshFinding>?, string?>(
+                v => JsonSerializer.Serialize(v, RefreshFindingsJson),
+                v => JsonSerializer.Deserialize<List<RefreshFinding>>(v!, RefreshFindingsJson));
+
+            var findingsComparer = new ValueComparer<List<RefreshFinding>?>(
+                (c1, c2) => JsonSerializer.Serialize(c1, RefreshFindingsJson) == JsonSerializer.Serialize(c2, RefreshFindingsJson),
+                c => JsonSerializer.Serialize(c, RefreshFindingsJson).GetHashCode(),
+                c => JsonSerializer.Deserialize<List<RefreshFinding>>(JsonSerializer.Serialize(c, RefreshFindingsJson), RefreshFindingsJson));
+
+            modelBuilder.Entity<RefreshLog>()
+                .Property(log => log.Findings)
+                .HasConversion(findingsConverter)
+                .Metadata.SetValueComparer(findingsComparer);
         }
 
         private static void ConfigureReports(ModelBuilder modelBuilder)

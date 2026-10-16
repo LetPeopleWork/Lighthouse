@@ -36,6 +36,11 @@ namespace Lighthouse.Backend.Models
         public Feature(WorkItemBase workItemBase, IEnumerable<FeatureDependencyReference> dependsOn) : base(workItemBase)
         {
             dependsOnReferences.AddRange(dependsOn);
+
+            if (workItemBase is Feature feature)
+            {
+                RefreshFindings = feature.RefreshFindings;
+            }
         }
 
         public Feature(Team team, int remainingItems) : this([(team, remainingItems, remainingItems)])
@@ -114,6 +119,13 @@ namespace Lighthouse.Backend.Models
         public int? ManualRank { get; set; }
 
         public string OwningTeam { get; set; } = string.Empty;
+
+        /// <summary>
+        /// What reading this record showed to be wrong with how a setting is configured. Only the refresh
+        /// reads it, deciding once for the whole download what is worth reporting, so it is never stored.
+        /// </summary>
+        [NotMapped]
+        public IReadOnlyList<RefreshFinding> RefreshFindings { get; set; } = [];
 
         [NotMapped]
         public IEnumerable<Team> Teams => FeatureWork.Select(t => t.Team);

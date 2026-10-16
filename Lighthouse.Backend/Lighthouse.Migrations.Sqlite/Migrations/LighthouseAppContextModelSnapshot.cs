@@ -1263,6 +1263,9 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<DateTime>("ExecutedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Findings")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("ItemCount")
                         .HasColumnType("INTEGER");
 
