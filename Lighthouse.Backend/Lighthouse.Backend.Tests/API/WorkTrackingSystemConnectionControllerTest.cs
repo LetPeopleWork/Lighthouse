@@ -382,6 +382,92 @@ namespace Lighthouse.Backend.Tests.API
                 Times.Never);
         }
 
+        [Test]
+        [Category("contract-shape:bounded-change")]
+        public async Task UpdateWorkTrackingSystemConnection_FieldAdded_PublishesTheTeamsAndPortfoliosOnThisConnectionOnly()
+        {
+            var subject = CreateSubjectForAConnectionWithOwnersHereAndElsewhere();
+            ConnectionFetchShapeChanged? published = null;
+            domainEventDispatcherMock.Setup(x => x.PublishAsync(It.IsAny<ConnectionFetchShapeChanged>(), It.IsAny<CancellationToken>()))
+                .Callback<ConnectionFetchShapeChanged, CancellationToken>((change, _) => published = change)
+                .Returns(Task.CompletedTask);
+
+            await subject.UpdateWorkTrackingSystemConnectionAsync(OwnedConnectionId, AConnectionSaveWithAnAddedField());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(published?.ConnectionId, Is.EqualTo(OwnedConnectionId));
+                Assert.That(published?.TeamIds, Is.EqualTo(TeamsOnTheOwnedConnection));
+                Assert.That(published?.PortfolioIds, Is.EqualTo(PortfoliosOnTheOwnedConnection));
+            }
+        }
+
+        [Test]
+        [Category("contract-shape:bounded-change")]
+        public async Task UpdateWorkTrackingSystemConnection_FieldAddedButUpdatesLeftForLater_PublishesNothing()
+        {
+            var subject = CreateSubjectForAConnectionWithOwnersHereAndElsewhere();
+
+            await subject.UpdateWorkTrackingSystemConnectionAsync(OwnedConnectionId, AConnectionSaveWithAnAddedField(), startUpdates: false);
+
+            repositoryMock.Verify(x => x.Save(), Times.Once);
+            domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(It.IsAny<ConnectionFetchShapeChanged>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Test]
+        [Category("contract-shape:bounded-change")]
+        public async Task UpdateWorkTrackingSystemConnection_OnlyTheNameChanged_PublishesNothing()
+        {
+            var subject = CreateSubjectForAConnectionWithOwnersHereAndElsewhere();
+
+            await subject.UpdateWorkTrackingSystemConnectionAsync(OwnedConnectionId, new WorkTrackingSystemConnectionDto { Id = OwnedConnectionId, Name = "Renamed" });
+
+            repositoryMock.Verify(x => x.Save(), Times.Once);
+            domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(It.IsAny<ConnectionFetchShapeChanged>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        private const int OwnedConnectionId = 12;
+
+        private const int OtherConnectionId = 99;
+
+        private static readonly int[] TeamsOnTheOwnedConnection = [2];
+
+        private static readonly int[] PortfoliosOnTheOwnedConnection = [7];
+
+        private WorkTrackingSystemConnectionController CreateSubjectForAConnectionWithOwnersHereAndElsewhere()
+        {
+            repositoryMock.Setup(x => x.GetById(OwnedConnectionId))
+                .Returns(new WorkTrackingSystemConnection { Id = OwnedConnectionId, Name = "Connection" });
+
+            var teams = new List<Team>
+            {
+                new() { Id = 2, WorkTrackingSystemConnectionId = OwnedConnectionId },
+                new() { Id = 3, WorkTrackingSystemConnectionId = OtherConnectionId },
+            };
+            var portfolios = new List<Portfolio>
+            {
+                new() { Id = 7, WorkTrackingSystemConnectionId = OwnedConnectionId },
+                new() { Id = 8, WorkTrackingSystemConnectionId = OtherConnectionId },
+            };
+            teamRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Team, bool>>>()))
+                .Returns((Expression<Func<Team, bool>> predicate) => teams.AsQueryable().Where(predicate));
+            portfolioRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Portfolio, bool>>>()))
+                .Returns((Expression<Func<Portfolio, bool>> predicate) => portfolios.AsQueryable().Where(predicate));
+
+            return CreateSubject();
+        }
+
+        private static WorkTrackingSystemConnectionDto AConnectionSaveWithAnAddedField()
+        {
+            var connectionDto = new WorkTrackingSystemConnectionDto { Id = OwnedConnectionId, Name = "Connection" };
+            connectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { DisplayName = "Sprint", Reference = "System.Sprint" });
+            return connectionDto;
+        }
+
         public enum FailingStep
         {
             LookingUpTheTeamsAndPortfolios,
