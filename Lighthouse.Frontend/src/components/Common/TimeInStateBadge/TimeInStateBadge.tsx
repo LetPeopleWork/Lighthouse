@@ -6,7 +6,6 @@ import getAgeInDaysFromStart from "../../../utils/date/age";
 type TimeInStateBadgeProps = {
 	currentStateEnteredAt: Date | null;
 	currentStateName: string;
-	isBlocked?: boolean;
 	now?: Date;
 	isStale?: boolean;
 	staleReasons?: IStaleReason[];

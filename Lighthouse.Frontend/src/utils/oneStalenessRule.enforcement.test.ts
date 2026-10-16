@@ -80,7 +80,7 @@ describe("one staleness rule, and it is Lighthouse's", () => {
 	});
 
 	// The two checks above are only as good as the pattern they share, so it is held to the shapes it
-	// has to catch and the ones it has to let through. These run from the start.
+	// has to catch and the ones it has to let through.
 	// @contract-shape:pure-function
 	it.each([
 		"if (days > stalenessThreshold) {",

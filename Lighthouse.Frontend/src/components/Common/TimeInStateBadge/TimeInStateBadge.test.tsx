@@ -68,7 +68,7 @@ describe("TimeInStateBadge", () => {
 });
 
 // The badge shows Lighthouse's own answer. No staleness threshold is handed to it any more, so none
-// of these pass one. Pending until DELIVER switches the badge over.
+// of these pass one.
 describe("TimeInStateBadge shows the staleness Lighthouse decided", () => {
 	const now = new Date("2026-05-25T12:00:00Z");
 	const threeDaysInReview = new Date("2026-05-23T08:00:00Z");
@@ -126,7 +126,6 @@ describe("TimeInStateBadge shows the staleness Lighthouse decided", () => {
 			<TimeInStateBadge
 				currentStateEnteredAt={new Date("2026-05-14T08:00:00Z")}
 				currentStateName="Review"
-				isBlocked={true}
 				isStale={false}
 				staleReasons={[
 					{ kind: "TimeInStateWhileBlocked", days: 12, stateName: "Review" },
