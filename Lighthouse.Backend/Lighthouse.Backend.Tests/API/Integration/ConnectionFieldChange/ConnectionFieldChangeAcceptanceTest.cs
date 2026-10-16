@@ -382,13 +382,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
                     GivenTheInstanceRunsOnTheCommunityLicence();
                     break;
                 case Refusal.AnUnfinishedWriteBackMapping:
-                    MappingsOf(read).Add(new JsonObject
-                    {
-                        ["id"] = 0,
-                        ["valueSource"] = nameof(WriteBackValueSource.WorkItemAgeCycleTime),
-                        ["appliesTo"] = nameof(WriteBackAppliesTo.Team),
-                        ["additionalFieldDefinitionId"] = null,
-                    });
+                    MappingsOf(read).Add(AWriteBackMappingOnto(additionalFieldDefinitionId: null));
                     break;
             }
 
@@ -841,13 +835,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
                     read["authenticationMethodKey"] = AuthenticationMethodKeys.JiraDataCenter;
                     break;
                 case EditThatChangesNothingFetched.NewWriteBackMapping:
-                    MappingsOf(read).Add(new JsonObject
-                    {
-                        ["id"] = 0,
-                        ["valueSource"] = nameof(WriteBackValueSource.WorkItemAgeCycleTime),
-                        ["appliesTo"] = nameof(WriteBackAppliesTo.Team),
-                        ["additionalFieldDefinitionId"] = TheField(FieldsOf(read), StoryPoints)["id"]!.GetValue<int>(),
-                    });
+                    MappingsOf(read).Add(AWriteBackMappingOnto(TheField(FieldsOf(read), StoryPoints)["id"]!.GetValue<int>()));
                     break;
                 case EditThatChangesNothingFetched.SameFieldsInAnotherOrder:
                     var asRead = NamesOf(FieldsOf(read));
@@ -858,6 +846,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
                     break;
             }
         }
+
+        /// <summary>
+        /// A new write-back mapping as the page adds it. Without a field to write into it is unfinished.
+        /// </summary>
+        private static JsonObject AWriteBackMappingOnto(int? additionalFieldDefinitionId) => new()
+        {
+            ["id"] = 0,
+            ["valueSource"] = nameof(WriteBackValueSource.WorkItemAgeCycleTime),
+            ["appliesTo"] = nameof(WriteBackAppliesTo.Team),
+            ["additionalFieldDefinitionId"] = additionalFieldDefinitionId,
+        };
 
         private static JsonArray FieldsOf(JsonObject read) => read[AdditionalFieldDefinitions]!.AsArray();
 
