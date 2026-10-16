@@ -10143,6 +10143,6 @@ reacts by enqueuing through the existing updaters.
 
 ### ADR References (this feature)
 
-- [ADR-238](./adr-238-a-connection-save-that-moves-the-fetch-fingerprint-starts-the-affected-updates.md): a connection
+- [ADR-239](./adr-239-a-connection-save-that-moves-the-fetch-fingerprint-starts-the-affected-updates.md): a connection
   save that moves the fetch fingerprint starts the affected updates. **Proposed, pending maintainer approval.**
 - Amended: ADR-030 (not applied to connection saves), ADR-140 (the passive connection fan-out, for saves through the PUT).

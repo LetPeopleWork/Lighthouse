@@ -1,4 +1,4 @@
-# ADR-238: A connection save that moves the fetch fingerprint starts the affected updates
+# ADR-239: A connection save that moves the fetch fingerprint starts the affected updates
 
 **Status**: Proposed (DESIGN 2026-10-15, interaction mode PROPOSE), pending maintainer approval. The decision to
 start updates on a connection save was taken by the maintainer at DISCUSS (2026-10-15); the mechanism below is

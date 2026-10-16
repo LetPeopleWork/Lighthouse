@@ -133,7 +133,7 @@ pending maintainer approval.** Full detail: `feature-delta.md` (`## Wave: DESIGN
 - [DDD-11] Teams enqueued before Portfolios.
 - [DDD-12] No licence gate or RBAC change; the "Update All" premium gate is an endpoint attribute the fan-out never hits.
 - [DDD-13] SUPERSEDED by S3/S4 (2026-10-15): navigate to `/` as today, no notice.
-- [DDD-14] New ADR-238; ADR-030 and ADR-140 carry dated amendment notes (Q3).
+- [DDD-14] New ADR-239; ADR-030 and ADR-140 carry dated amendment notes (Q3).
 - [DDD-15] One Information log line per fan-out (ids and counts, no field names).
 - [DDD-16] A stored save answers 200 even if the owner lookup or a handler fails after `Save()` (added 2026-10-15).
 - [DDD-17] `usedBy { teams, portfolios }` on the connection list read, through one read-only usage port (S107)

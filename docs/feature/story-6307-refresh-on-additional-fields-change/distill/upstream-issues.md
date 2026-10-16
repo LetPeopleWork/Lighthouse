@@ -15,9 +15,9 @@ revisit them when he is back.
    every connection in the list (`Slice02ConnectionsSayWhoUsesThemTest`). DESIGN's driving-port list and DDD-9 should
    say so. The read by id is still the one that registers a tracker's own fields, which is why it is not the place
    for this either way.
-2. **Resolved by DESIGN: the save-result DTO is gone** (DDD-6 superseded; brief and ADR-238 point 3 struck out). As
+2. **Resolved by DESIGN: the save-result DTO is gone** (DDD-6 superseded; brief and ADR-239 point 3 struck out). As
    first raised: `docs/product/architecture/brief.md`
-   invariant 6307-I4, the component list's `WorkTrackingSystemConnectionSaveResultDto`, and ADR-238 decision point 3
+   invariant 6307-I4, the component list's `WorkTrackingSystemConnectionSaveResultDto`, and ADR-239 decision point 3
    still say the PUT answers with `queuedUpdates { teams, portfolios }`. No scenario asks for it and the page does not
    read it. DESIGN amends brief and ADR (or DELIVER does, as part of slice 01's documentation step); until then a
    crafter reading the brief would build a DTO nobody uses. The DEVOPS Lighthouse-Clients row also mentions

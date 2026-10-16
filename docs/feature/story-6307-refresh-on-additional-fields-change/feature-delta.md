@@ -513,7 +513,7 @@ All **proposed, pending maintainer approval**.
 | DDD-11 | **Teams are enqueued before Portfolios**, so a Portfolio's forecast in the same round runs over Team data that already carries the field. | Arbitrary order: harmless but can forecast a Portfolio once over stale Team data. |
 | DDD-12 | **No licence gate, no new RBAC rule.** `TriggerUpdate` is ungated; the premium gate on "Update All" is an endpoint attribute (`[LicenseGuard(RequirePremium = true)]`, `TeamsController.cs:72`, `PortfoliosController.cs`) and the fan-out never passes through it. The PUT stays `[RbacGuard(SystemAdmin)]`; the existing `CheckLicensePermissions` refusal returns before `Save()`, so a refused save publishes nothing. (D4, D10) | — |
 | DDD-13 | **SUPERSEDED by S3/S4 (2026-10-15): navigate to `/` as today, no after-save notice.** Original proposal: stay on the edit page after Save and show the notice beside the Save button; fallback, pass the counts in router navigation state. | Keep navigating to `/` and drop the notice (this is what S3 chose, since the question before Save carries the message). |
-| DDD-14 | **ADR text: a new ADR-238** records the connection-save fan-out and narrows ADR-030's "expensive ⇒ intentional" rule for connection saves; ADR-030 and ADR-140 get dated amendment notes pointing at it (ADR-140's "passive fan-out" consequence is superseded for saves through the PUT). (Q3, D1) | Rewrite ADR-030 or ADR-140 in place: loses the record of why the earlier rule held. |
+| DDD-14 | **ADR text: a new ADR-239** records the connection-save fan-out and narrows ADR-030's "expensive ⇒ intentional" rule for connection saves; ADR-030 and ADR-140 get dated amendment notes pointing at it (ADR-140's "passive fan-out" consequence is superseded for saves through the PUT). (Q3, D1) | Rewrite ADR-030 or ADR-140 in place: loses the record of why the earlier rule held. |
 | DDD-15 | **One Information log line per fan-out** from the handler: connection id and the two counts, never field names. The per-owner rows and outcomes stay where they are (Task Manager, `RefreshLog`). | — |
 | DDD-16 | **A stored save answers 200, whatever happens after it.** (Added 2026-10-15, review F-7/F-8.) A handler that throws is caught and logged by `DomainEventDispatcher.InvokeHandlerSafely`, so the PUT answers 200. The controller's own owner-id lookup and publish, which run after `Save()`, are wrapped the same way: catch, log one Error line naming the connection, answer 200. The save is committed, and every owner recovers at its next scheduled update because its stored fingerprint was never rewritten. The catch needs a narrow `#pragma warning disable CA1031` with a plain-language reason inline. | Let the exception surface as 500: tells the admin the save failed when it was stored, inviting a second save that changes nothing. |
 | DDD-17 | **`usedBy { teams, portfolios }` on the connection list read** (added 2026-10-15, after S4 and upstream issue 1). The edit page reads `GET …/worktrackingsystemconnections` and picks its connection by id; it never calls the read by id. The counts come from one read-only port injected into the list controller (seventh parameter, at the S107 limit). | (a) The read by id: the page does not call it, and it registers predefined fields. (b) Two repositories on the list controller: eight parameters, fails S107. (c) A new controller: cannot share the list route. |
@@ -757,7 +757,7 @@ the Task Manager, the refresh history and the rendered page, not through a `stat
 
 Prior waves read: this file (DISCUSS, DESIGN, DEVOPS and the sketch decisions S1 to S7), `wave-decisions.md` (the
 only wave-decisions file; there are no per-wave subfolders), `design/upstream-changes.md` (UC-1, accepted), the three
-slice briefs, ADR-238, `docs/product/architecture/brief.md`'s 6307 section, `.nwave/des-config.json` (no
+slice briefs, ADR-239, `docs/product/architecture/brief.md`'s 6307 section, `.nwave/des-config.json` (no
 `deliverable_type`, so `application`), `docs/ci-learnings.md`. `kpi-contracts.yaml` has no 6307 entry; the outcome
 KPIs above are the contract.
 
@@ -797,7 +797,7 @@ fixture. Frontend tags are a comment line above each test. Backend files are und
 | 1.6 | `An_update_that_fails_leaves_the_field_saved_and_the_others_updating` | us-01, driving_port, **error**, bounded-change | AC-1.6 |
 | 1.7 | `The_Team_whose_update_failed_downloads_everything_at_its_next_update` (chained from 1.6 through `GivenPriyaAddedFixVersionsAndSaved` and `GivenTheUpdateOfHasFailed`; one When) | us-01, driving_port, **error**, bounded-change | AC-1.6 |
 | 1.8 | `Adding_a_field_on_the_community_licence_updates_every_Team_and_Portfolio_on_the_connection` | us-01, driving_port, bounded-change | AC-1.9 |
-| 1.9 | `A_save_that_asks_to_update_now_updates_every_Team_and_Portfolio_on_the_connection` | us-03, driving_port, bounded-change | ADR-238 point 6 |
+| 1.9 | `A_save_that_asks_to_update_now_updates_every_Team_and_Portfolio_on_the_connection` | us-03, driving_port, bounded-change | ADR-239 point 6 |
 | 1.21 | `Adding_a_field_to_a_connection_only_Portfolios_read_from_lists_their_updates_in_the_Task_Manager` | us-01, driving_port, bounded-change | AC-1.1 at the Portfolio-only boundary |
 | 1.10 | `A_save_that_asks_for_neither_now_nor_later_is_refused_and_stores_nothing` (2: `maybe`, `later`); Then `ThenTheSaveIsRefusedBecauseItAsksForNeitherNowNorLater` | us-03, driving_port, **error**, unbounded-preservation | DDD-8 |
 
@@ -812,7 +812,7 @@ fixture. Frontend tags are a comment line above each test. Backend files are und
 | 1.14 | `A_save_that_is_refused_stores_nothing_and_starts_no_update` (3: someone else saved first, too many fields for the licence, an unfinished write-back mapping; `ThenTheSaveIsRefusedBecause(refusal)` maps them to 409, 403 and 400 inside the harness) | us-01, driving_port, **error**, unbounded-preservation | AC-1.7 |
 | 1.15 | `Saving_only_stores_the_field_and_starts_no_update` | us-03, driving_port, **error**, bounded-change | AC-3.1 |
 | 1.16 | `After_saving_only_the_next_scheduled_update_downloads_everything` (chained from 1.15: its When and Then become `GivenPriyaAddedFixVersionsAndSaved` and `GivenNoTeamOrPortfolioHasBeenUpdatedSince`) | us-03, driving_port, bounded-change | AC-3.3 |
-| 1.17 | `Looking_up_a_connection_that_registers_the_trackers_own_field_starts_no_update` | us-01, driving_port, **error**, unbounded-preservation | D11, ADR-238 point 5 |
+| 1.17 | `Looking_up_a_connection_that_registers_the_trackers_own_field_starts_no_update` | us-01, driving_port, **error**, unbounded-preservation | D11, ADR-239 point 5 |
 | 1.18 | `A_field_registered_by_a_lookup_does_not_make_the_next_save_start_updates` (chained from 1.17 through `GivenSomeoneHasLookedUpTheConnection`) | us-01, driving_port, **error**, unbounded-preservation | D11 |
 
 `Services/Implementation/WorkItems/FetchFingerprintPinnedDigestTest.cs`, **guard**: 1.19 a Team and 1.20 a

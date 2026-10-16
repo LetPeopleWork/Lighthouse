@@ -8,7 +8,7 @@ their next scheduled run with `?startUpdates=false`.
 
 ## IN scope
 - After the connection PUT stores the save, start every Team and Portfolio on that connection whose fetch
-  fingerprint the save moved, through a domain event and a handler calling `TriggerUpdate` (D1, D2, D8; ADR-238).
+  fingerprint the save moved, through a domain event and a handler calling `TriggerUpdate` (D1, D2, D8; ADR-239).
   Every licence (D4).
 - Start nothing for a save that changes nothing fetched (API token, name, address, sign-in method, write-back
   mapping, the same fields in another order), for Teams on other connections, for a connection nobody uses, for a
