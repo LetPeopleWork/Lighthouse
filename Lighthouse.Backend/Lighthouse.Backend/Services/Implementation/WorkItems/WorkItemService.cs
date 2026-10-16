@@ -894,13 +894,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// </summary>
         private sealed record RemoteFeatureFetch(List<Feature> Features, List<string> StillOnTheTracker, SyncOutcome Outcome);
 
-        private static async Task<RemoteFeatureFetch> FetchEveryFeature(IWorkTrackingConnector connector, Portfolio portfolio, CancellationToken stopping)
+        private async Task<RemoteFeatureFetch> FetchEveryFeature(IWorkTrackingConnector connector, Portfolio portfolio, CancellationToken stopping)
         {
             var recordsFromTracker = (await connector.GetFeaturesForProject(portfolio, stopping)).ToList();
+            var actualFeatures = DeduplicateByReferenceId(recordsFromTracker, portfolio.Name, feature => feature.ReferenceId);
 
             return new RemoteFeatureFetch(
-                recordsFromTracker,
-                recordsFromTracker.ConvertAll(feature => feature.ReferenceId),
+                actualFeatures,
+                actualFeatures.ConvertAll(feature => feature.ReferenceId),
                 SyncOutcome.FullSync(recordsFromTracker.Count));
         }
 

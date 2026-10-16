@@ -1387,6 +1387,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 "Nothing needed placing, so a read of every stored Feature would be a query spent on no question.");
         }
 
+        /// <summary>
+        /// Paging over an unordered query can hand the same Feature over twice in one full download. It is
+        /// one Feature, so it is placed, counted, named and stored once.
+        /// </summary>
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_FullRefreshSendsAFeatureTwice_PlacesCountsAndStoresItOnce()
+        {
+            var portfolio = CreatePortfolio();
+            portfolio.ParentOverrideAdditionalFieldDefinitionId = TheFieldThatNamesTheLinkType;
+            var stored = TheFeaturesTheRefreshStores();
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([
+                    ADownloadedFeature(TheFeatureUnderTwoIncidents, TheTrackersOwnParent, TwoIssuesNobodyHoldsAsAFeature, string.Empty, TheFirstReadingDay),
+                    ADownloadedFeature(TheFeatureUnderTwoIncidents, TheTrackersOwnParent, TwoIssuesNobodyHoldsAsAFeature, string.Empty, TheFirstReadingDay)]);
+            TheStoredFeaturesAre(TheStoredFeature);
+
+            NothingAboveTheFeaturesIsDownloaded();
+
+            var subject = CreateSubject();
+
+            var outcome = await subject.UpdateFeaturesForPortfolio(portfolio);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Mode, Is.EqualTo(SyncMode.Full),
+                    "positive control: the duplicate arrives on the whole-query path, so it has to have taken it.");
+                Assert.That(outcome.RecordsPlacedFromLinksNamingMoreThanOneParent, Is.EqualTo(1),
+                    "One Feature was placed, however many copies of it the tracker sent.");
+                Assert.That(stored.FindAll(feature => feature.ReferenceId == TheFeatureUnderTwoIncidents), Has.Count.EqualTo(1),
+                    "It is one Feature, so it is stored once.");
+                Assert.That(TimesTheLinesName(TheFeatureUnderTwoIncidents), Is.EqualTo(1),
+                    "The line names it once, so it agrees with the count beside it.");
+            }
+        }
+
+        private int TimesTheLinesName(string referenceId)
+            => whatTheServiceWrote.Warnings.Sum(line => line.Split($"{referenceId} under ", StringSplitOptions.None).Length - 1);
+
         private static void ThePortfolioPlacedEveryFeatureWhoseLinksNameSeveralIssues(SyncOutcome outcome, List<Feature> stored)
         {
             using (Assert.EnterMultipleScope())
