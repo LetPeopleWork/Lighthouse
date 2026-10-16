@@ -1,6 +1,6 @@
 """Turn a social-posts/<version>-slack.md draft into a chat.postMessage payload.
 
-Usage: python3 -I slack_release_payload.py <draft.md> <target-channel-id> <general-channel-id>
+Usage: python3 -I slack_release_payload.py <draft.md> <target-channel-id> <lighthouse-channel-id>
 
 A line `<!-- image: <public png url> | <alt text> -->` becomes a Block Kit image block
 at that spot, and the text around it becomes mrkdwn section blocks. Other `<!-- ... -->`
@@ -9,7 +9,7 @@ Slack, not the draft, would choose which link it previews.
 """
 import json, re, sys
 
-draft, channel, general_id = sys.argv[1], sys.argv[2], sys.argv[3]
+draft, channel, mention_id = sys.argv[1], sys.argv[2], sys.argv[3]
 lines = open(draft, encoding="utf-8").read().splitlines()
 
 blocks, chunk, fallback = [], [], []
@@ -28,7 +28,7 @@ for line in lines:
         continue
     if re.match(r"^<!--.*-->$", line):
         continue
-    line = re.sub(r"#general(?![A-Za-z0-9_])", f"<#{general_id}>", line)
+    line = re.sub(r"#lighthouse(?![A-Za-z0-9_])", f"<#{mention_id}>", line)
     chunk.append(line)
     fallback.append(line)
 flush()

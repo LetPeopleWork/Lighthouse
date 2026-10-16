@@ -1,21 +1,21 @@
 ---
-description: Draft a Slack #general post from the latest release-notes block. Resolves Slack handles via the Slack Web API, optionally posts the draft to #general using a bot token, and saves the draft to disk for review.
+description: "Draft a Slack #lighthouse post from the latest release-notes block. Resolves Slack handles via the Slack Web API, optionally posts the draft to #lighthouse using a bot token, and saves the draft to disk for review."
 allowed-tools: Bash, Read, Edit, Write, Glob, Grep, AskUserQuestion
 ---
 
 # /release-social — draft the Slack post for the latest release
 
-You are drafting a **Slack** post from the most recent release block at the top of `docs/releasenotes/releasenotes.md`: a friendly internal-community update for the `letpeoplework` workspace, `#general` channel. After review, you can POST it directly via the Slack Web API using a bot token.
+You are drafting a **Slack** post from the most recent release block at the top of `docs/releasenotes/releasenotes.md`: a friendly internal-community update for the `letpeoplework` workspace, `#lighthouse` channel, posted as a new top-level message (never a reply in an older thread). After review, you can POST it directly via the Slack Web API using a bot token.
 
 ## Prerequisites — Slack bot configuration
 
 Posting to Slack runs against the **Slack Web API**, not the MCP server. A Slack bot user must be configured with:
 
 - **Bot token** in env var `SLACK_BOT_TOKEN` (format `xoxb-...`). Required for both identity lookup and posting.
-- **Scopes**: `chat:write` (post messages), `users:read` (resolve contributor handles), `channels:read` (resolve `#general` to a channel ID). Add `chat:write.public` if you want the bot to post without being invited to the channel.
-- **Bot invited to `#general`** once, unless `chat:write.public` is granted.
+- **Scopes**: `chat:write` (post messages), `users:read` (resolve contributor handles), `channels:read` (resolve `#lighthouse` to a channel ID). Add `chat:write.public` if you want the bot to post without being invited to the channel.
+- **Bot invited to `#lighthouse`** once, unless `chat:write.public` is granted.
 
-Optional: `SLACK_CHANNEL_ID` env var — if set, post there instead of resolving `#general`. Useful for testing in a private channel first.
+Optional: `SLACK_CHANNEL_ID` env var — if set, post there instead of resolving `#lighthouse`. Useful for testing in a private channel first.
 
 **Token handling rules** (non-negotiable):
 
@@ -28,7 +28,7 @@ Optional: `SLACK_CHANNEL_ID` env var — if set, post there instead of resolving
 - **Release notes source**: `docs/releasenotes/releasenotes.md` — the FIRST `# Lighthouse vX.Y.Z.W` block (top of file) is the release we draft for, unless `$ARGUMENTS` names a different version.
 - **Output folder**: `social-posts/` at repo root (outside `docs/` so Jekyll won't publish it). Create it with `mkdir -p` if missing. File per release:
   - `social-posts/<version>-slack.md`
-- **Slack cache**: `social-posts/.slack-cache.json` — caches the resolved user list and `#general` channel ID for 24 hours so we don't hammer `users.list` on every run. Store ONLY `{id, real_name, display_name}` per user — no emails, no profile fields. This file MUST be gitignored before it's written; check `.gitignore` and append if needed.
+- **Slack cache**: `social-posts/.slack-cache.json` — caches the resolved user list and `#lighthouse` channel ID for 24 hours so we don't hammer `users.list` on every run. Store ONLY `{id, real_name, display_name}` per user — no emails, no profile fields. This file MUST be gitignored before it's written; check `.gitignore` and append if needed.
 - **Slack API base**: `https://slack.com/api/`. All calls use `curl` with `Authorization: Bearer $SLACK_BOT_TOKEN`. Every response must be checked for `ok: true`; surface `error` strings verbatim on failure.
 - **Docs URL** for the changelog link: prefer the GitHub compare link in the release block; if that's `compare/<old>...HEAD` (placeholder), fall back to `https://docs.lighthouse.letpeople.work/releasenotes.html`.
 
@@ -68,7 +68,7 @@ If `social-posts/.slack-cache.json` exists and its `fetched_at` is less than 24 
 curl -sS -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
   'https://slack.com/api/users.list?limit=200' -o /tmp/slack-users.json
 
-# List public channels to find #general. Bot needs channels:read.
+# List public channels to find #lighthouse. Bot needs channels:read.
 curl -sS -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
   'https://slack.com/api/conversations.list?types=public_channel&limit=200' \
   -o /tmp/slack-channels.json
@@ -100,18 +100,22 @@ For every contributor name, case-insensitive exact match against `real_name` OR 
 
 ### 2d — resolve the target channel
 
-If `SLACK_CHANNEL_ID` is set, use it directly. Otherwise look up the channel named `general` in the cache. If neither resolves, fall back to draft-only mode for posting (handles still resolved fine).
+If `SLACK_CHANNEL_ID` is set, use it directly. Otherwise look up the channel named `lighthouse` in the cache. If neither resolves, fall back to draft-only mode for posting (handles still resolved fine).
+
+## Step 2e — ask what's coming next
+
+Every post ends with a short *What's coming next* part. **Ask the user for it — never assume or derive it** from the ADO board, open feature workspaces, or commits on `main`: what is in flight is not the same as what the maintainer wants to announce. Use one free-text question (e.g. "What should the post say is coming next? One to three items, or 'skip'"). If they say skip, leave the section out.
 
 ## Step 3 — draft the Slack post
 
-Slack uses **mrkdwn**: `*bold*` (single asterisks), `_italic_`, no `#`/`##` headings, links are `<https://url|label>`. **Channel mentions**: keep the human-readable `#general` in the draft file (so the .md stays readable), and let Step 6b substitute it for the API-required `<#CHANNELID>` syntax at post time. The bare text `#general` is auto-linked only when typed in the Slack client — `chat.postMessage` does NOT auto-resolve it.
+Slack uses **mrkdwn**: `*bold*` (single asterisks), `_italic_`, no `#`/`##` headings, links are `<https://url|label>`. **Channel mentions**: keep the human-readable `#lighthouse` in the draft file (so the .md stays readable), and let Step 6b substitute it for the API-required `<#CHANNELID>` syntax at post time. The bare text `#lighthouse` is auto-linked only when typed in the Slack client — `chat.postMessage` does NOT auto-resolve it.
 
 Structure (adapt to actual content; don't pad if a section is empty):
 
 ```
 :bulb: *Lighthouse <version> is out!* :rocket:
 
-Hey #general — here's what shipped:
+Hey #lighthouse — here's what shipped:
 
 *<Headline 1>*
 <1–2 sentence plain-language summary. End with <https://docs.lighthouse.letpeople.work/...|read more> if a docs link exists.>
@@ -126,6 +130,9 @@ Hey #general — here's what shipped:
 
 *Thanks to* <@U123>, <@U456>, and *Plain Name* for the feedback that shaped this release :heart:
 
+*What's coming next*
+• <item from Step 2e, in the user's words, lightly tightened>
+
 Full changelog: <https://github.com/LetPeopleWork/Lighthouse/compare/<old>...<new>|here>
 ```
 
@@ -138,13 +145,14 @@ Rules:
 - Emoji budget: max 4 total. Prefer `:rocket:`, `:heart:`, `:bug:`, `:sparkles:`, `:bulb:`, `:warning:`. Skip `:lighthouse:` unless you know the workspace has that custom emoji.
 - Tone: pragmatic, mildly enthusiastic — match the release-notes voice. **Banned words**: "excited", "thrilled", "game-changing", "revolutionary".
 - Drop the `*Thanks to*` line entirely if no contributors.
+- *What's coming next*: max 3 bullets, only what the user gave in Step 2e, no dates or promises they did not make.
 
 ## Step 4 — show the draft and collect the review decision
 
 Print the draft inline so the user can read it without opening files. Then use `AskUserQuestion` (one question):
 
 - **Slack action** —
-  - If `SLACK_BOT_TOKEN` IS set AND a channel resolved: options `Use as-is and post to #general (Recommended)`, `Use as-is, save only`, `Tweak it`, `Skip Slack`.
+  - If `SLACK_BOT_TOKEN` IS set AND a channel resolved: options `Use as-is and post to #lighthouse (Recommended)`, `Use as-is, save only`, `Tweak it`, `Skip Slack`.
   - Otherwise: options `Use as-is, save only (Recommended)`, `Tweak it`, `Skip Slack`. Description explains why posting isn't available (missing token / unresolved channel).
 
 If the user picks `Tweak it`, ask one follow-up free-text question for changes and re-draft **once**. Don't loop.
@@ -155,7 +163,7 @@ If the user picks `Tweak it`, ask one follow-up free-text question for changes a
 mkdir -p social-posts
 ```
 
-Write `social-posts/<version>-slack.md` — pure Slack mrkdwn body, ready to post. Top of file: `<!-- Paste into #general in the letpeoplework Slack, or post via /release-social. -->`. Nothing else outside the message body except the `<!-- image: ... -->` markers from Step 3.
+Write `social-posts/<version>-slack.md` — pure Slack mrkdwn body, ready to post. Top of file: `<!-- Paste into #lighthouse in the letpeoplework Slack, or post via /release-social. -->`. Nothing else outside the message body except the `<!-- image: ... -->` markers from Step 3.
 
 Skip the file if the user said to skip Slack.
 
@@ -172,21 +180,21 @@ Read the saved `social-posts/<version>-slack.md`. If it contains a `<!-- Posted:
 Build it with the checked-in script `.claude/scripts/slack_release_payload.py`, never by hand or with an inline heredoc (the shell guard blocks those, and quoting the body breaks):
 
 ```bash
-GENERAL_CH_ID=$(jq -r '.channels[] | select(.name=="general") | .id' social-posts/.slack-cache.json)
+LIGHTHOUSE_CH_ID=$(jq -r '.channels[] | select(.name=="lighthouse") | .id' social-posts/.slack-cache.json)
 payload=$(mktemp)
 python3 -I .claude/scripts/slack_release_payload.py \
-  social-posts/<version>-slack.md "$CHANNEL_ID" "$GENERAL_CH_ID" > "$payload"
+  social-posts/<version>-slack.md "$CHANNEL_ID" "$LIGHTHOUSE_CH_ID" > "$payload"
 jq -r '.blocks[] | .type' "$payload"   # sanity check: section / image / section ...
 ```
 
 What the script does:
 - drops the `<!-- ... -->` header and paper-trail lines;
 - turns each `<!-- image: URL | alt -->` marker into a Block Kit `{"type":"image","image_url":…,"alt_text":…}` block at that spot, and the text between markers into `mrkdwn` `section` blocks (it stops if a section goes over Slack's 3000-character limit; shorten that part);
-- swaps `#general` for the clickable `<#CHANNELID>` form;
+- swaps `#lighthouse` for the clickable `<#CHANNELID>` form;
 - keeps the whole text as the `text` fallback, which notifications and old clients show;
 - sets `unfurl_links`/`unfurl_media` to `false`, because the screenshots are already inline and a link preview would only add a second card below them.
 
-`$CHANNEL_ID` is the resolved channel ID from Step 2d (target of the post — may be `#testing` or another override). `$GENERAL_CH_ID` is always the `#general` channel ID, used only for body-mention substitution; keep them separate so trial posts to `#testing` still render the `#general` reference as a real channel link (clickable, navigates the reader to where the live post will end up).
+`$CHANNEL_ID` is the resolved channel ID from Step 2d (target of the post — may be `#testing` or another override). `$LIGHTHOUSE_CH_ID` is always the `#lighthouse` channel ID, used only for body-mention substitution; keep them separate so trial posts to `#testing` still render the `#lighthouse` reference as a real channel link (clickable, navigates the reader to where the live post will end up).
 
 ### 6c — POST `chat.postMessage`
 
@@ -202,7 +210,7 @@ rm -f "$payload"
 
 Check `ok` in `/tmp/slack-resp.json`. On `ok: false`, map the `error` field:
 
-- `not_in_channel` → tell user to invite the bot to `#general` (or grant `chat:write.public`). Saved draft stays. Stop.
+- `not_in_channel` → tell user to invite the bot to `#lighthouse` (or grant `chat:write.public`). Saved draft stays. Stop.
 - `invalid_auth` / `token_revoked` / `account_inactive` → tell user the token is bad. Saved draft stays. Stop.
 - `channel_not_found` → tell user the resolved channel ID doesn't exist; suggest setting `SLACK_CHANNEL_ID` explicitly or refreshing the cache. Saved draft stays. Stop.
 - `invalid_blocks` (often with `downloading image failed`) → an `image_url` is not publicly fetchable as an image. Re-check every marker URL with curl, fix or drop the marker, rebuild the payload. Saved draft stays. Stop.
@@ -224,7 +232,7 @@ rm -f /tmp/slack-resp.json /tmp/slack-perma.json
 Insert a second HTML-comment line directly under the existing header, recording the permalink and an ISO timestamp:
 
 ```
-<!-- Paste into #general in the letpeoplework Slack, or post via /release-social. -->
+<!-- Paste into #lighthouse in the letpeoplework Slack, or post via /release-social. -->
 <!-- Posted: <permalink> at <ISO timestamp> -->
 ```
 
@@ -237,7 +245,7 @@ Four-line summary:
 1. Release version, headline count, bullet count, contributor count.
 2. Slack identity resolution: handles resolved / unresolved (or "skipped — `SLACK_BOT_TOKEN` unset").
 3. Slack draft path.
-4. Slack post status: `posted` + permalink / `saved only` / `failed: <error>`. Only remind to paste manually if not posted ("paste `<path>` into `#general`").
+4. Slack post status: `posted` + permalink / `saved only` / `failed: <error>`. Only remind to paste manually if not posted ("paste `<path>` into `#lighthouse`").
 
 ## Guardrails
 
@@ -248,6 +256,8 @@ Four-line summary:
 - Always gitignore `social-posts/.slack-cache.json` before writing it. The cache contains workspace user metadata.
 - Never invent a Slack user ID. Unresolved names stay as bold plain text.
 - Never overwrite an existing draft file without asking.
+- Never write *What's coming next* without asking the user first (Step 2e).
+- Always post as a new top-level message in `#lighthouse`, never as a thread reply.
 - Never restate the entire release notes verbatim. The post is a short summary.
 - Never reference image URLs that aren't in the release block (no inventing assets).
 - Drop the `Thanks to ...` line entirely if no contributors.

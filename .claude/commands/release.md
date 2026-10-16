@@ -182,7 +182,7 @@ stale unless every release updates it. Needs the real tag and date from Phase 5.
 
 ## Phase 6 — announce on Slack
 
-Invoke the **`release-social`** skill (Slack only — LinkedIn was removed). Pass the real tag as its argument so it targets the right block. Walk the user through the draft and, on their explicit pick, post to `#general`.
+Invoke the **`release-social`** skill (Slack only — LinkedIn was removed). Pass the real tag as its argument so it targets the right block. Walk the user through the draft and, on their explicit pick, post as a new message in `#lighthouse`, including a short *What's coming next* part the skill asks you for.
 
 ## Phase 7 — final report
 
