@@ -311,7 +311,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var organisation = new Organisation(relations: new() { [TheFeature] = [ARelation(DependsOnForward, TheItemItWaitsOn)] });
             var portfolio = APortfolioWhoseDependencyFieldNames(DependsOn);
-            portfolio.ParentOverrideAdditionalFieldDefinitionId = TheRealFieldId;
+            portfolio.OwnParentOverride(TheRealFieldId);
 
             await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None);
 
@@ -328,7 +328,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 10, DisplayName = "Parent", Reference = DependsOnForward });
             connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 11, DisplayName = "Size", Reference = DependsOnReverse });
             connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 12, DisplayName = "Owner", Reference = ARealField });
-            portfolio.ParentOverrideAdditionalFieldDefinitionId = 10;
+            portfolio.OwnParentOverride(10);
             portfolio.SizeEstimateAdditionalFieldDefinitionId = 11;
             portfolio.FeatureOwnerAdditionalFieldDefinitionId = 12;
             portfolio.EstimationAdditionalFieldDefinitionId = 12;
@@ -353,7 +353,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var organisation = new Organisation();
             var portfolio = APortfolio();
             portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 10, DisplayName = "Parent", Reference = DependsOn });
-            portfolio.ParentOverrideAdditionalFieldDefinitionId = 10;
+            portfolio.OwnParentOverride(10);
 
             var feature = (await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None)).Single(f => f.ReferenceId == $"{TheFeature}");
 

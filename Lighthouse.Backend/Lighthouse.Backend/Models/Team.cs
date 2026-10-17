@@ -30,6 +30,8 @@ namespace Lighthouse.Backend.Models
 
         public List<WorkItem> WorkItems { get; } = [];
 
+        protected override int? ParentOverrideConnectionDefault => WorkTrackingSystemConnection?.ParentOverrideForTeams;
+
         /// <summary>Null until a Team admin first saves the refinement section.</summary>
         public RefinementSettings? RefinementSettings { get; set; }
 

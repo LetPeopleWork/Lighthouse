@@ -1121,7 +1121,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateWorkItemsForTeam_FullRefresh_PlacesAndCountsOnlyTheRecordsWhoseLinksNameSeveralIssues()
         {
             var team = CreateTeam();
-            team.ParentOverrideAdditionalFieldDefinitionId = TheFieldThatNamesTheLinkType;
+            team.OwnParentOverride(TheFieldThatNamesTheLinkType);
 
             workTrackingConnectorMock
                 .Setup(connector => connector.GetWorkItemsForTeam(team, It.IsAny<CancellationToken>()))
@@ -1153,7 +1153,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var whenEveryStoredRecordLastChanged = TheFirstReadingDay.AddDays(-30);
 
             var team = CreateTeam();
-            team.ParentOverrideAdditionalFieldDefinitionId = TheFieldThatNamesTheLinkType;
+            team.OwnParentOverride(TheFieldThatNamesTheLinkType);
             team.FetchFingerprint = FetchFingerprint.For(team);
 
             foreach (var referenceId in EveryKindOfRecord)
@@ -1201,7 +1201,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateWorkItemsForTeam_NoRecordWhoseLinksNameSeveralIssues_NeverReadsTheStoredFeatures()
         {
             var team = CreateTeam();
-            team.ParentOverrideAdditionalFieldDefinitionId = TheFieldThatNamesTheLinkType;
+            team.OwnParentOverride(TheFieldThatNamesTheLinkType);
 
             workTrackingConnectorMock
                 .Setup(connector => connector.GetWorkItemsForTeam(team, It.IsAny<CancellationToken>()))
@@ -1290,7 +1290,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForPortfolio_FullRefresh_PlacesAndCountsOnlyTheFeaturesWhoseLinksNameSeveralIssues()
         {
             var portfolio = CreatePortfolio();
-            portfolio.ParentOverrideAdditionalFieldDefinitionId = TheFieldThatNamesTheLinkType;
+            portfolio.OwnParentOverride(TheFieldThatNamesTheLinkType);
             var stored = TheFeaturesTheRefreshStores();
 
             workTrackingConnectorMock
@@ -1326,7 +1326,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var whenEveryStoredRecordLastChanged = TheFirstReadingDay.AddDays(-30);
 
             var portfolio = CreatePortfolio();
-            portfolio.ParentOverrideAdditionalFieldDefinitionId = TheFieldThatNamesTheLinkType;
+            portfolio.OwnParentOverride(TheFieldThatNamesTheLinkType);
             portfolio.FetchFingerprint = FetchFingerprint.For(portfolio);
             portfolio.UpdateFeatures([
                 .. EveryKindOfFeature.Select(referenceId => AStampedFeature(referenceId, whenEveryStoredRecordLastChanged)),
@@ -1373,7 +1373,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForPortfolio_NoFeatureWhoseLinksNameSeveralIssues_NeverReadsTheStoredFeatures()
         {
             var portfolio = CreatePortfolio();
-            portfolio.ParentOverrideAdditionalFieldDefinitionId = TheFieldThatNamesTheLinkType;
+            portfolio.OwnParentOverride(TheFieldThatNamesTheLinkType);
 
             workTrackingConnectorMock
                 .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>()))
@@ -1405,7 +1405,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForPortfolio_FullRefreshSendsAFeatureTwice_PlacesCountsAndStoresItOnce()
         {
             var portfolio = CreatePortfolio();
-            portfolio.ParentOverrideAdditionalFieldDefinitionId = TheFieldThatNamesTheLinkType;
+            portfolio.OwnParentOverride(TheFieldThatNamesTheLinkType);
             var stored = TheFeaturesTheRefreshStores();
 
             workTrackingConnectorMock
@@ -1868,7 +1868,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForPortfolio_FullRefresh_PlacesTheIssuesAboveOnceAndCountsNoneOfThem()
         {
             var portfolio = CreatePortfolio();
-            portfolio.ParentOverrideAdditionalFieldDefinitionId = TheFieldThatNamesTheLinkType;
+            portfolio.OwnParentOverride(TheFieldThatNamesTheLinkType);
             var stored = TheFeaturesTheRefreshStores();
 
             workTrackingConnectorMock
@@ -1908,7 +1908,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var whenEveryStoredRecordLastChanged = TheFirstReadingDay.AddDays(-30);
 
             var portfolio = CreatePortfolio();
-            portfolio.ParentOverrideAdditionalFieldDefinitionId = TheFieldThatNamesTheLinkType;
+            portfolio.OwnParentOverride(TheFieldThatNamesTheLinkType);
             portfolio.FetchFingerprint = FetchFingerprint.For(portfolio);
             var theStoredFeature = AFeatureUnderTheIssueAbove(whenEveryStoredRecordLastChanged);
             portfolio.UpdateFeatures([theStoredFeature]);
@@ -1956,7 +1956,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForPortfolio_AFeatureIsAlsoTheIssueAboveAnother_IsPlacedOnceAndKeepsTheParentItsLineNames()
         {
             var portfolio = CreatePortfolio();
-            portfolio.ParentOverrideAdditionalFieldDefinitionId = TheFieldThatNamesTheLinkType;
+            portfolio.OwnParentOverride(TheFieldThatNamesTheLinkType);
             var stored = TheFeaturesTheRefreshStores();
             featureRepositoryMock
                 .Setup(repository => repository.GetByPredicate(It.IsAny<Func<Feature, bool>>()))

@@ -66,7 +66,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     Reference = parentFieldReference
                 });
 
-                team.ParentOverrideAdditionalFieldDefinitionId = 1;
+                team.OwnParentOverride(1);
             }
 
             var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
@@ -96,7 +96,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     Reference = parentFieldReference
                 });
 
-                portfolio.ParentOverrideAdditionalFieldDefinitionId = 1;
+                portfolio.OwnParentOverride(1);
             }
 
             var workItems = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);

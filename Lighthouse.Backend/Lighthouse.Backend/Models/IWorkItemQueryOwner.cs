@@ -23,8 +23,8 @@ namespace Lighthouse.Backend.Models
         List<StateMapping> StateMappings { get; set; }
 
         int DoneItemsCutoffDays { get; set; }
-        
-        int? ParentOverrideAdditionalFieldDefinitionId { get; set; }
+
+        int? ParentOverrideAdditionalFieldDefinitionId { get; }
 
         StateCategories MapStateToStateCategory(string state);
 

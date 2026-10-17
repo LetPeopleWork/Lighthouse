@@ -274,6 +274,45 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(result, Is.EquivalentTo(["New", "Active", "Resolved"]));
         }
 
+        [TestCase(null)]
+        [TestCase(4)]
+        public void Owning_a_Parent_Override_Field_keeps_the_value_and_marks_it_the_owners(int? fieldId)
+        {
+            var subject = CreateSubject();
+
+            subject.OwnParentOverride(fieldId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.ParentOverrideSource, Is.EqualTo(SettingSource.Own));
+                Assert.That(subject.OwnParentOverrideAdditionalFieldDefinitionId, Is.EqualTo(fieldId));
+                Assert.That(subject.ParentOverrideAdditionalFieldDefinitionId, Is.EqualTo(fieldId));
+            }
+        }
+
+        [Test]
+        public void Following_the_default_clears_the_owners_own_Parent_Override_Field()
+        {
+            var subject = CreateSubject();
+            subject.OwnParentOverride(4);
+
+            subject.FollowParentOverrideDefault();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.ParentOverrideSource, Is.EqualTo(SettingSource.ConnectionDefault));
+                Assert.That(subject.OwnParentOverrideAdditionalFieldDefinitionId, Is.Null);
+            }
+        }
+
+        [Test]
+        public void An_owner_nobody_has_set_follows_the_default()
+        {
+            var subject = CreateSubject();
+
+            Assert.That(subject.ParentOverrideSource, Is.EqualTo(SettingSource.ConnectionDefault));
+        }
+
         private static WorkTrackingSystemOptionsOwnerTestClass CreateSubject()
         {
             return new WorkTrackingSystemOptionsOwnerTestClass();

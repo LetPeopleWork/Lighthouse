@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 {
@@ -274,7 +275,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.DoingStates), p => p.DoingStates = ["Active"]);
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.DoneStates), p => p.DoneStates = ["Done"]);
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.StateMappings), p => p.StateMappings[0].States.Add("Testing"));
-            yield return Case(nameof(WorkTrackingSystemOptionsOwner.ParentOverrideAdditionalFieldDefinitionId), p => p.ParentOverrideAdditionalFieldDefinitionId = 2);
+            yield return Case(nameof(WorkTrackingSystemOptionsOwner.ParentOverrideAdditionalFieldDefinitionId), p => p.OwnParentOverride(2));
             yield return Case(nameof(Portfolio.FeatureOwnerAdditionalFieldDefinitionId), p => p.FeatureOwnerAdditionalFieldDefinitionId = null);
             yield return Case(nameof(Portfolio.SizeEstimateAdditionalFieldDefinitionId), p => p.SizeEstimateAdditionalFieldDefinitionId = 3);
             yield return Case(nameof(Portfolio.DependencyOverrideAdditionalFieldDefinitionId), p => p.DependencyOverrideAdditionalFieldDefinitionId = 2);
@@ -339,12 +340,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                         new StateMapping { Name = "Done", States = [.. InOperatorOrder("Released", "Shipped")] }),
                 ],
                 DoneItemsCutoffDays = 365,
-                ParentOverrideAdditionalFieldDefinitionId = 1,
                 FeatureOwnerAdditionalFieldDefinitionId = 1,
                 SizeEstimateAdditionalFieldDefinitionId = 2,
                 WorkTrackingSystemConnectionId = 7,
                 WorkTrackingSystemConnection = connection,
-            };
+            }.OwningParentOverride(1);
         }
 
         private static WorkTrackingSystemConnection AConnection()

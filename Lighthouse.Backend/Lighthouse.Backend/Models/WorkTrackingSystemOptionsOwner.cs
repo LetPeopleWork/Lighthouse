@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Extensions;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Models
@@ -73,7 +74,43 @@ namespace Lighthouse.Backend.Models
 
         public List<string> EstimationCategoryValues { get; set; } = [];
 
-        public int? ParentOverrideAdditionalFieldDefinitionId { get; set; }
+        /// <summary>
+        /// The Additional Field the connectors read an item's parent from, as this owner answers it: its
+        /// own choice, or the connection's default while it follows. Null means the tracker's own parent.
+        /// </summary>
+        [NotMapped]
+        public int? ParentOverrideAdditionalFieldDefinitionId
+            => EffectiveSetting.Of(ParentOverrideSource, OwnParentOverrideAdditionalFieldDefinitionId, ParentOverrideConnectionDefault);
+
+        // The column keeps its old name so that renaming what the code reads costs no schema change.
+        [Column(nameof(ParentOverrideAdditionalFieldDefinitionId))]
+        public int? OwnParentOverrideAdditionalFieldDefinitionId { get; private set; }
+
+        private SettingSource? chosenParentOverrideSource;
+
+        /// <summary>
+        /// Until the source is stored, an owner that names a field owns it and one that names none
+        /// follows, which with no default set reads exactly what it read before.
+        /// </summary>
+        [NotMapped]
+        public SettingSource ParentOverrideSource
+            => chosenParentOverrideSource
+                ?? (OwnParentOverrideAdditionalFieldDefinitionId.HasValue ? SettingSource.Own : SettingSource.ConnectionDefault);
+
+        protected virtual int? ParentOverrideConnectionDefault => null;
+
+        public void FollowParentOverrideDefault()
+        {
+            chosenParentOverrideSource = SettingSource.ConnectionDefault;
+            OwnParentOverrideAdditionalFieldDefinitionId = null;
+        }
+
+        /// <param name="additionalFieldDefinitionId">Null is a deliberate None: the tracker's own parent, whatever the default says.</param>
+        public void OwnParentOverride(int? additionalFieldDefinitionId)
+        {
+            chosenParentOverrideSource = SettingSource.Own;
+            OwnParentOverrideAdditionalFieldDefinitionId = additionalFieldDefinitionId;
+        }
 
         public StateCategories MapStateToStateCategory(string state)
         {

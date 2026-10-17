@@ -3,6 +3,7 @@ using Lighthouse.Backend.Services.Implementation.Parents;
 using NUnit.Framework;
 using System.Collections;
 using System.Reflection;
+using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Parents
 {
@@ -195,7 +196,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Parents
             => value is IEnumerable items and not string ? string.Join(", ", items.Cast<object>()) : value;
 
         private static Team ATeamWhoseOverridePointsAt(int? additionalFieldDefinitionId)
-            => new() { ParentOverrideAdditionalFieldDefinitionId = additionalFieldDefinitionId };
+            => new Team().OwningParentOverride(additionalFieldDefinitionId);
 
         private static WorkItemBase ARecordCarrying(string parentTypedIntoTheNamedField)
         {

@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 {
@@ -57,7 +58,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         private static Team ATeam()
-            => new()
+            => new Team()
             {
                 Id = 4,
                 Name = "Atlas",
@@ -68,13 +69,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 DoingStates = ["In Progress", "In Review"],
                 DoneStates = ["Done"],
                 StateMappings = [new StateMapping { Name = "In Progress", States = ["In Progress", "In Review"] }],
-                ParentOverrideAdditionalFieldDefinitionId = 1,
                 WorkTrackingSystemConnectionId = 7,
                 WorkTrackingSystemConnection = AConnection(),
-            };
+            }.OwningParentOverride(1);
 
         private static Portfolio APortfolio()
-            => new()
+            => new Portfolio()
             {
                 Id = 3,
                 Name = "Fleet Platform",
@@ -85,12 +85,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 DoingStates = ["Implementing"],
                 DoneStates = ["Done"],
                 StateMappings = [],
-                ParentOverrideAdditionalFieldDefinitionId = null,
                 FeatureOwnerAdditionalFieldDefinitionId = 1,
                 SizeEstimateAdditionalFieldDefinitionId = 1,
                 DependencyOverrideAdditionalFieldDefinitionId = null,
                 WorkTrackingSystemConnectionId = 7,
                 WorkTrackingSystemConnection = AConnection(),
-            };
+            }.OwningParentOverride(null);
     }
 }

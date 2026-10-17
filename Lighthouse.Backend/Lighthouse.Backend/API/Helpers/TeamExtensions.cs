@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.API.Helpers
             {
                 team.Name = teamSetting.Name;
                 team.DataRetrievalValue = teamSetting.DataRetrievalValue;
-                team.ParentOverrideAdditionalFieldDefinitionId = teamSetting.ParentOverrideAdditionalFieldDefinitionId;
+                team.OwnParentOverride(teamSetting.ParentOverrideAdditionalFieldDefinitionId);
                 team.FeatureWIP = teamSetting.FeatureWIP;
                 team.UseFixedDatesForThroughput = teamSetting.UseFixedDatesForThroughput;
                 team.ThroughputHistory = teamSetting.ThroughputHistory;

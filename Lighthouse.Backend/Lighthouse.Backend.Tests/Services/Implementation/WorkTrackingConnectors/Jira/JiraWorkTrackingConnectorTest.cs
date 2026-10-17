@@ -113,7 +113,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Reference = "customrelationfield"
             });
 
-            team.ParentOverrideAdditionalFieldDefinitionId = 1;
+            team.OwnParentOverride(1);
 
             var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
             var workItem = workItems.Single(wi => wi.ReferenceId == "LGHTHSDMO-1726");
@@ -136,7 +136,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Reference = "customfield_10038"
             });
 
-            portfolio.ParentOverrideAdditionalFieldDefinitionId = 1;
+            portfolio.OwnParentOverride(1);
 
             var workItems = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
             var workItem = workItems.Single(wi => wi.ReferenceId == "LGHTHSDMO-1726");

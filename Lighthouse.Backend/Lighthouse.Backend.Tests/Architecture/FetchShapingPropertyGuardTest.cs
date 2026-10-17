@@ -65,6 +65,12 @@ namespace Lighthouse.Backend.Tests.Architecture
             /// <summary>In the fingerprint AND a save-time purge: the same reference id now means a different item.</summary>
             AFullDownloadAndAFreshStart,
 
+            /// <summary>
+            /// Not hashed under its own name: it reaches the fingerprint as the owner's effective value,
+            /// which is registered, so a change to it moves the fingerprint exactly when that value moves.
+            /// </summary>
+            ThroughTheOwnersEffectiveValue,
+
             /// <summary>Excluded: a change costs nothing remote, for the recorded reason.</summary>
             Nothing,
         }
@@ -93,6 +99,10 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "MapRawStateToMappedName and MapStateToStateCategory both consult it, so it decides the State and StateCategory stored against every record. Moving a raw state from one mapping to another leaves AllStates identical and changes both."),
             new("ParentOverrideAdditionalFieldDefinitionId", Cost.AFullDownload,
                 "Decides which field the connectors read ParentReferenceId out of, so it decides the whole parent hierarchy."),
+            new(nameof(WorkTrackingSystemOptionsOwner.OwnParentOverrideAdditionalFieldDefinitionId), Cost.ThroughTheOwnersEffectiveValue,
+                "The owner's own choice, read through ParentOverrideAdditionalFieldDefinitionId only while the owner does not follow the connection's default."),
+            new(nameof(WorkTrackingSystemConnection.ParentOverrideForTeams), Cost.ThroughTheOwnersEffectiveValue,
+                "CONNECTION-SCOPED, and never in the connection's share: it reaches the fingerprint of each Team that follows it, as that Team's ParentOverrideAdditionalFieldDefinitionId, and of no Team that names its own field."),
             new(nameof(Portfolio.FeatureOwnerAdditionalFieldDefinitionId), Cost.AFullDownload,
                 "Read at sync time and stored as Feature.OwningTeam. Under delta an unchanged Feature is never re-derived, so the old owner survives the edit."),
             new(nameof(Portfolio.SizeEstimateAdditionalFieldDefinitionId), Cost.AFullDownload,
@@ -196,7 +206,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void TheSaveTimeDecisionAndTheFingerprintReadTheSamePropertySet()
         {
             var inTheFingerprint = WhatEachPropertyCosts
-                .Where(decision => decision.Cost != Cost.Nothing)
+                .Where(decision => decision.Cost is Cost.AFullDownload or Cost.AFullDownloadAndAFreshStart)
                 .Select(decision => decision.Property)
                 .ToHashSet(StringComparer.Ordinal);
 

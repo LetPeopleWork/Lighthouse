@@ -288,7 +288,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 DisplayName = "is child of",
                 Reference = "is child of",
             });
-            portfolio.ParentOverrideAdditionalFieldDefinitionId = TheDependencyFieldId + 1;
+            portfolio.OwnParentOverride(TheDependencyFieldId + 1);
 
             var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 

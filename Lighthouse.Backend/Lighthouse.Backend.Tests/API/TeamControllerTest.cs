@@ -240,7 +240,7 @@ namespace Lighthouse.Backend.Tests.API
             team.FeatureWIP = 3;
             team.DataRetrievalValue = "SELECT * FROM *";
             team.WorkTrackingSystemConnectionId = 37;
-            team.ParentOverrideAdditionalFieldDefinitionId = 5;
+            team.OwnParentOverride(5);
             team.ServiceLevelExpectationProbability = 75;
             team.ServiceLevelExpectationRange = 10;
             team.SystemWIPLimit = 5;

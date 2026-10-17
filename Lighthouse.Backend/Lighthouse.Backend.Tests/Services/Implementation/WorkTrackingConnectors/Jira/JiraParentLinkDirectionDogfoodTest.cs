@@ -151,7 +151,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Reference = reference,
             });
 
-            team.ParentOverrideAdditionalFieldDefinitionId = 1;
+            team.OwnParentOverride(1);
 
             var workItems = await CreateSubject().GetWorkItemsForTeam(team, CancellationToken.None);
 

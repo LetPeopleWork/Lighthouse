@@ -812,8 +812,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 DoingStates = ["In Progress"],
                 DoneStates = ["Done"],
                 ThroughputHistory = 30,
-                ParentOverrideAdditionalFieldDefinitionId = ownParentOverride is null ? null : TheFieldOn(connection, ownParentOverride),
-            };
+            }.OwningParentOverride(ownParentOverride is null ? null : TheFieldOn(connection, ownParentOverride));
 
             var repository = services.GetRequiredService<IRepository<Team>>();
             repository.Add(team);
@@ -841,7 +840,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             if (ownsEverything)
             {
-                portfolio.ParentOverrideAdditionalFieldDefinitionId = TheFieldOn(connection, ParentLink);
+                portfolio.OwnParentOverride(TheFieldOn(connection, ParentLink));
                 portfolio.DependencyOverrideAdditionalFieldDefinitionId = TheFieldOn(connection, BlockedByKeys);
                 portfolio.SizeEstimateAdditionalFieldDefinitionId = TheFieldOn(connection, TShirtSize);
                 portfolio.FeatureOwnerAdditionalFieldDefinitionId = TheFieldOn(connection, ProductOwner);

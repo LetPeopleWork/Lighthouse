@@ -213,7 +213,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             {
                 case UpgradedSetting.TeamsParentOverrideField:
                 case UpgradedSetting.PortfoliosParentOverrideField:
-                    owner.ParentOverrideAdditionalFieldDefinitionId = value;
+                    owner.OwnParentOverride(value);
                     break;
                 case UpgradedSetting.PortfoliosDependencyField:
                     ((Portfolio)owner).DependencyOverrideAdditionalFieldDefinitionId = value;

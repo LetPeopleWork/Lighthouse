@@ -459,7 +459,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             switch (setting)
             {
                 case ASettingThatReadsAField.ParentOverrideField:
-                    portfolio.ParentOverrideAdditionalFieldDefinitionId = fieldId;
+                    portfolio.OwnParentOverride(fieldId);
                     break;
                 case ASettingThatReadsAField.SizeEstimateField:
                     portfolio.SizeEstimateAdditionalFieldDefinitionId = fieldId;
@@ -515,7 +515,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 Reference = reference,
             });
 
-            team.ParentOverrideAdditionalFieldDefinitionId = fieldId;
+            team.OwnParentOverride(fieldId);
         }
 
         /// <summary>The Team's connection carries an Additional Field for <paramref name="reference"/> that no setting of the Team names.</summary>

@@ -269,7 +269,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, payloadReads) = AnAzureDevOpsHoldingOneItemOfType("Feature", whatTheDependencyFieldSays: "1799");
             var portfolio = APortfolioReadingItsDependenciesFromAField();
-            portfolio.ParentOverrideAdditionalFieldDefinitionId = 1;
+            portfolio.OwnParentOverride(1);
 
             await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
@@ -446,7 +446,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static Portfolio APortfolioReadingItsParentFromAField()
         {
             var portfolio = APortfolio();
-            portfolio.ParentOverrideAdditionalFieldDefinitionId = 1;
+            portfolio.OwnParentOverride(1);
 
             return portfolio;
         }
@@ -476,8 +476,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 DataRetrievalValue = TheFilterTheProjectIsFetchedBy,
                 WorkTrackingSystemConnectionId = 1,
                 WorkTrackingSystemConnection = AConnectionDefiningTheParentField(),
-                ParentOverrideAdditionalFieldDefinitionId = 1,
-            };
+            }.OwningParentOverride(1);
 
             TheTypeAndStatesItFetches(team, "User Story");
 

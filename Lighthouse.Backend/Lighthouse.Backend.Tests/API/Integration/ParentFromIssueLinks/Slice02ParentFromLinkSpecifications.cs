@@ -530,7 +530,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                 Reference = whatTheParentOverrideNames,
             });
 
-            owner.ParentOverrideAdditionalFieldDefinitionId = TheAdditionalFieldTheOverridePointsAt;
+            ((WorkTrackingSystemOptionsOwner)owner).OwnParentOverride(TheAdditionalFieldTheOverridePointsAt);
         }
 
         private static string TheParentOf<TRecord>(List<TRecord> refreshed, string key)

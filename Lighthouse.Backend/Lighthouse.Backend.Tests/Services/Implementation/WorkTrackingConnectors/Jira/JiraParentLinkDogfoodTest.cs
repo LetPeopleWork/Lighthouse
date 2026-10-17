@@ -151,7 +151,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Reference = TheLinkTypeTheOverrideNames,
             });
 
-            team.ParentOverrideAdditionalFieldDefinitionId = 1;
+            team.OwnParentOverride(1);
 
             return await TheParentOfEachItemReturnedFor(team);
         }

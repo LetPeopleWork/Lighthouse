@@ -334,7 +334,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
                 Reference = reference,
             });
 
-            owner.ParentOverrideAdditionalFieldDefinitionId = fieldId;
+            ((WorkTrackingSystemOptionsOwner)owner).OwnParentOverride(fieldId);
         }
 
         private void TheTrackerHolds(string key, string issueType, string created, string? owner = TheTeamsProject)

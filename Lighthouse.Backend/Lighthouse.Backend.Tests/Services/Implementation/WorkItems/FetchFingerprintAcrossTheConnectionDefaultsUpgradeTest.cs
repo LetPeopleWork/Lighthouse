@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 {
@@ -72,7 +73,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         private static Team ATeam(int? parentOverride)
-            => new()
+            => new Team()
             {
                 Id = 31,
                 Name = "Fraud Signals",
@@ -83,13 +84,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 DoingStates = ["In Progress"],
                 DoneStates = ["Done"],
                 StateMappings = [],
-                ParentOverrideAdditionalFieldDefinitionId = parentOverride,
                 WorkTrackingSystemConnectionId = 21,
                 WorkTrackingSystemConnection = AConnection(),
-            };
+            }.OwningParentOverride(parentOverride);
 
         private static Portfolio APortfolio(bool namesItsOwnFields)
-            => new()
+            => new Portfolio()
             {
                 Id = 41,
                 Name = "Card Issuing",
@@ -100,12 +100,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 DoingStates = ["Implementing"],
                 DoneStates = ["Done"],
                 StateMappings = [],
-                ParentOverrideAdditionalFieldDefinitionId = namesItsOwnFields ? CausedBy : null,
                 DependencyOverrideAdditionalFieldDefinitionId = namesItsOwnFields ? BlockedByKeys : null,
                 SizeEstimateAdditionalFieldDefinitionId = namesItsOwnFields ? TShirtSize : null,
                 FeatureOwnerAdditionalFieldDefinitionId = namesItsOwnFields ? ProductOwner : null,
                 WorkTrackingSystemConnectionId = 21,
                 WorkTrackingSystemConnection = AConnection(),
-            };
+            }.OwningParentOverride(namesItsOwnFields ? CausedBy : null);
     }
 }
