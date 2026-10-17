@@ -92,6 +92,22 @@ are reviewed is complete.
 
 Wave-defined reviewers and gates run without asking — they are part of the wave, not an extra.
 
+## Ask first, with a 15-minute default, for choices that cost a lot of time
+
+Some choices are not product decisions, but they cost a lot of wall clock. Examples: widening a mutation
+run to slow acceptance suites, re-running a long gate, picking a much heavier approach than the default,
+or anything you expect to add **20 minutes or more** to the run. Do not simply take your recommendation
+on these. Raise them first:
+
+1. Post a short message with the choice, the options, the time each one costs, and your recommendation.
+   End it with: *"Going with <recommendation> at HH:MM unless you say otherwise."*
+2. Start a 15-minute background timer (`sleep 900` via Bash `run_in_background`). Keep working on anything
+   that does not depend on the answer.
+3. If a reply arrives, follow it. If the timer fires with no reply, go with the recommendation and log it.
+
+This is not a stop: the marker stays `running`, and no push notification is needed beyond the status
+update.
+
 ## When to stop — and then really stop
 
 Stop only when continuing would mean guessing something that is the maintainer's to decide:
