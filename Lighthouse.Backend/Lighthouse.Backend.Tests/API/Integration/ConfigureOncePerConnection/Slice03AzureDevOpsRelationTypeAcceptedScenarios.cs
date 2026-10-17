@@ -110,19 +110,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         public void The_shared_connector_keeps_no_relation_type_listing_between_calls()
         {
             var listing = typeof(AzureDevOpsWorkTrackingConnector).GetNestedType("RelationTypeListing", BindingFlags.NonPublic);
+            var resolution = typeof(AzureDevOpsWorkTrackingConnector).GetNestedType("AdditionalFieldResolution", BindingFlags.NonPublic);
             var fields = typeof(AzureDevOpsWorkTrackingConnector).GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+            Type[] whatAnswersForOneOrganisation = [.. new[] { listing, resolution }.OfType<Type>()];
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(listing, Is.Not.Null, "The connector no longer names its relation-type listing as this check expects.");
-                Assert.That(fields.Where(field => Mentions(field.FieldType, listing!)).Select(field => field.Name), Is.Empty);
+                Assert.That(resolution, Is.Not.Null, "The connector no longer names its additional-field resolution as this check expects.");
+                Assert.That(fields.Where(field => whatAnswersForOneOrganisation.Any(kept => Mentions(field.FieldType, kept))).Select(field => field.Name), Is.Empty);
             }
         }
 
-        private static bool Mentions(Type type, Type listing)
-            => type == listing
-                || (type.HasElementType && Mentions(type.GetElementType()!, listing))
-                || type.GetGenericArguments().Any(argument => Mentions(argument, listing));
+        private static bool Mentions(Type type, Type kept)
+            => type == kept
+                || (type.GetElementType() is { } element && Mentions(element, kept))
+                || type.GetGenericArguments().Any(argument => Mentions(argument, kept));
 
         [Test]
         [Category("us-03")]
@@ -140,6 +143,61 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 Assert.That(answer.Message, Does.Contain("Contoso.DependsOnn-Forward"), "The refusal names what was not found.");
                 Assert.That(answer.Message, Does.Contain(ContosoDependsOnForward).And.Contain(Successor).And.Contain(Related),
                     "The refusal lists what the organisation does define, so the admin can copy the right one.");
+            }
+        }
+
+        // Attachments, hyperlinks and artifact links are listed beside the relation types but never link one
+        // work item to another, so naming one is a typo like any other and the list offered never shows them.
+        [Test]
+        [Category("us-03")]
+        [Category("ac-3.2")]
+        [Category("error")]
+        [Category("contract-shape:pure-function")]
+        public async Task A_link_to_something_other_than_a_work_item_is_not_accepted_as_a_relation_type()
+        {
+            var answer = await TheAdministratorValidatesAConnectionTo(ContosoOrganisation, "Hyperlink");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answer.Status, Is.EqualTo(HttpStatusCode.BadRequest), RefusedAsTheButtonReadsIt);
+                Assert.That(answer.IsValid, Is.False);
+            }
+        }
+
+        [Test]
+        [Category("us-03")]
+        [Category("ac-3.2")]
+        [Category("error")]
+        [Category("contract-shape:pure-function")]
+        public async Task The_relation_types_offered_on_a_typo_leave_out_links_to_anything_but_a_work_item()
+        {
+            var answer = await TheAdministratorValidatesAConnectionTo(ContosoOrganisation, "Contoso.DependsOnn-Forward");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answer.Message, Does.Contain(Successor), "The refusal still lists the relation types it does define.");
+                Assert.That(answer.Message, Does.Not.Contain("AttachedFile").And.Not.Contain("Hyperlink").And.Not.Contain("ArtifactLink"));
+            }
+        }
+
+        [TestCase(false, TestName = "An organisation that lists no relation types at all fails validation saying it listed none")]
+        [TestCase(true, TestName = "An organisation that answers the listing without a list fails validation saying it listed none")]
+        [Category("us-03")]
+        [Category("ac-3.2")]
+        [Category("error")]
+        [Category("contract-shape:pure-function")]
+        public async Task An_organisation_that_listed_no_relation_types_fails_validation_saying_it_listed_none(bool withoutAList)
+        {
+            var contoso = TheOrganisationAt(ContosoOrganisation);
+            contoso.RelationTypesItLists.Clear();
+            contoso.AnswersTheListingWithoutAList = withoutAList;
+
+            var answer = await TheAdministratorValidatesAConnectionTo(ContosoOrganisation, ContosoDependsOnForward);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answer.Status, Is.EqualTo(HttpStatusCode.BadRequest), RefusedAsTheButtonReadsIt);
+                Assert.That(answer.Message, Does.Contain("It listed no relation types at all to check them against."));
             }
         }
 
@@ -229,7 +287,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             {
                 Assert.That(WhatTheLastRefreshWarned().Where(line => line.Contains("No field in this Azure DevOps organisation is called", StringComparison.Ordinal)), Is.Empty,
                     "A relation type is not a field nobody could find, and saying so on every refresh teaches the admin to ignore the log.");
-                Assert.That(shown.Findings?.Select(finding => finding.Named), Has.None.Contains("no field"));
+                Assert.That(shown.Findings?.Select(finding => finding.Kind), Is.EqualTo(TheNotYetReadFinding),
+                    "The one thing Refresh History says about it is that it is not read yet.");
             }
         }
 
@@ -282,6 +341,35 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 Assert.That(shown.TheFirstFinding?.Kind, Is.EqualTo("RelationTypeCannotBeReadHere"));
                 Assert.That(shown.TheFirstFinding?.Setting, Is.EqualTo("ParentOverrideField"));
                 Assert.That(shown.TheFirstFinding?.Named, Is.EqualTo(ContosoDependsOnForward));
+            }
+        }
+
+        // The field list is asked first and wins at refresh just as it does in Validate, so a field that happens
+        // to share its name with a relation-type end keeps reading the field.
+        [Test]
+        [Category("us-03")]
+        [Category("ac-3.1")]
+        [Category("edge")]
+        [Category("active-guard")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_field_named_exactly_like_a_relation_type_end_is_read_as_the_field()
+        {
+            var contoso = TheOrganisationAt(ContosoOrganisation);
+            contoso.FieldsItDefines.Add(ContosoDependsOnForward);
+            contoso.Holds(Item4711, Item4702);
+            contoso.Fills(Item4711, ContosoDependsOnForward, $"{Item4702}");
+            AnAzureDevOpsTeam(StoreOperations, ContosoOrganisation);
+            TheTeamNamesAsItsParentOverrideField(StoreOperations, ContosoDependsOnForward);
+
+            await TheTeamRefreshes(StoreOperations);
+            var parent = await TheParentTheTeamShowsFor(StoreOperations, Item4711);
+            var shown = await WhatRefreshHistoryShowsForTheTeam(StoreOperations);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(parent, Is.EqualTo($"{Item4702}"), "The parent is read from the field.");
+                Assert.That(shown.Findings, Is.Not.Null.And.Empty, "Nothing about a field that reads is worth a warning.");
+                Assert.That(contoso.RelationTypeListings, Is.Zero, "A reference the field list answered needs no relation types.");
             }
         }
 

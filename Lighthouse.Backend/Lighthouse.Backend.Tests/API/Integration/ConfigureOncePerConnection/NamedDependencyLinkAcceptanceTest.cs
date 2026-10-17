@@ -1014,7 +1014,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                             throw TheListingFailsWith;
                         }
 
-                        return Task.FromResult(RelationTypesItLists.ConvertAll(AsListed));
+                        return Task.FromResult(AnswersTheListingWithoutAList ? null! : RelationTypesItLists.ConvertAll(AsListed));
                     });
 
                 client
@@ -1045,6 +1045,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             /// <summary>What the request for the relation types fails with instead of answering, when set.</summary>
             public Exception? TheListingFailsWith { get; set; }
+
+            /// <summary>The request for the relation types is answered, but with no list in the answer at all.</summary>
+            public bool AnswersTheListingWithoutAList { get; set; }
 
             public int RelationTypeListings => Requests.Count(request => request == "relation types");
 
