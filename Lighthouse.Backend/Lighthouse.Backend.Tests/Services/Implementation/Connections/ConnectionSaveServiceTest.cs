@@ -251,6 +251,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
         [Test]
         [Category("contract-shape:bounded-change")]
+        public async Task Commit_TheTeamsDefaultSetAndOneTeamFollowsIt_LogsOneEntrySayingTheTeamFollowsIt()
+        {
+            var log = new RecordingLogger<ConnectionSaveService>();
+            var subject = CreateSubjectForAConnectionWithNamedTeams(log, [new Team { Id = 2, Name = "Alpha", WorkTrackingSystemConnectionId = OwnedConnectionId }]);
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.ParentOverrideForTeams = CausedById;
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
+
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection: the Teams' default Parent Override Field changed from none to Caused by; 1 Team follows it: Alpha"));
+        }
+
+        [Test]
+        [Category("contract-shape:bounded-change")]
         public async Task Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas()
         {
             var log = new RecordingLogger<ConnectionSaveService>();

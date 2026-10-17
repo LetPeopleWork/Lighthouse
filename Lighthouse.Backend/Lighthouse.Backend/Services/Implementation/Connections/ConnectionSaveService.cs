@@ -115,6 +115,10 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                 {
                     logger.LogInformation("Connection {ConnectionName}: the Teams' default Parent Override Field changed from {PreviousField} to {NewField}; no Team follows it", connection.Name, previousField, newField);
                 }
+                else if (followers.Count == 1)
+                {
+                    logger.LogInformation("Connection {ConnectionName}: the Teams' default Parent Override Field changed from {PreviousField} to {NewField}; 1 Team follows it: {Followers:l}", connection.Name, previousField, newField, followers[0]);
+                }
                 else
                 {
                     logger.LogInformation("Connection {ConnectionName}: the Teams' default Parent Override Field changed from {PreviousField} to {NewField}; {FollowerCount} Teams follow it: {Followers:l}", connection.Name, previousField, newField, followers.Count, string.Join(", ", followers));
