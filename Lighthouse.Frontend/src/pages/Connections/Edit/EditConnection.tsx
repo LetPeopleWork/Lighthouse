@@ -1,9 +1,11 @@
-import { Alert, Container, Link, Typography } from "@mui/material";
+import { Alert, Button, Container, Link, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import type React from "react";
-import { useContext } from "react";
+import { useCallback, useContext } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router";
 import CreateConnectionWizard from "../../../components/Common/Connection/CreateConnectionWizard";
 import ModifyConnectionSettings from "../../../components/Common/Connection/ModifyConnectionSettings";
+import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useRbacGate } from "../../../hooks/useRbacGate";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -35,21 +37,34 @@ const EditConnectionPage: React.FC = () => {
 	const { workTrackingSystemService } = useContext(ApiServiceContext);
 	const reportUsage = useUsageDataReporter();
 
-	const getSupportedSystems = async () => {
-		return await workTrackingSystemService.getWorkTrackingSystems();
-	};
+	const getSupportedSystems = useCallback(
+		() => workTrackingSystemService.getWorkTrackingSystems(),
+		[workTrackingSystemService],
+	);
 
-	const getConnectionSettings =
-		async (): Promise<IWorkTrackingSystemConnection | null> => {
-			if (isNewConnection) {
-				return null;
-			}
+	const connectionId = isNewConnection ? undefined : Number.parseInt(id, 10);
 
+	// Keyed by the connection, so an answer for a connection somebody has already left never lands
+	// on the one they opened since.
+	const connectionQuery = useQuery({
+		queryKey: ["workTrackingSystemConnection", connectionId],
+		queryFn: async (): Promise<IWorkTrackingSystemConnection | null> => {
 			const allConnections =
 				await workTrackingSystemService.getConfiguredWorkTrackingSystems();
-			const connectionId = Number.parseInt(id, 10);
 			return allConnections.find((c) => c.id === connectionId) ?? null;
-		};
+		},
+		enabled: !isNewConnection,
+		refetchOnWindowFocus: false,
+	});
+	const { refetch } = connectionQuery;
+
+	const getConnectionSettings = useCallback(async () => {
+		const { data, error } = await refetch();
+		if (error) {
+			throw error;
+		}
+		return data ?? null;
+	}, [refetch]);
 
 	const saveConnectionSettings = async (
 		connection: IWorkTrackingSystemConnection,
@@ -146,9 +161,41 @@ const EditConnectionPage: React.FC = () => {
 		);
 	}
 
+	if (connectionQuery.data === undefined && connectionQuery.isFetching) {
+		return (
+			<LoadingAnimation isLoading hasError={false}>
+				{null}
+			</LoadingAnimation>
+		);
+	}
+
+	if (connectionQuery.isLoadingError) {
+		return (
+			<Container maxWidth={false}>
+				<Alert
+					severity="error"
+					action={
+						<Button
+							color="inherit"
+							size="small"
+							onClick={() => {
+								refetch().catch(() => undefined);
+							}}
+						>
+							Try again
+						</Button>
+					}
+				>
+					Could not load this connection.
+				</Alert>
+			</Container>
+		);
+	}
+
 	return (
 		<SnackbarErrorHandler>
 			<ModifyConnectionSettings
+				key={connectionId}
 				title={pageTitle}
 				getSupportedSystems={getSupportedSystems}
 				getConnectionSettings={getConnectionSettings}

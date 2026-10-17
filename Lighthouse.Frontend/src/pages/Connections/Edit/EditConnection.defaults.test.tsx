@@ -443,7 +443,7 @@ describe("defaults set once on the connection", () => {
 		});
 
 		// @edge @us-04 @contract-shape:unbounded-preservation
-		it.skip("while the connection is on its way the page shows its loading look, and the section once it arrives", async () => {
+		it("while the connection is on its way the page shows its loading look, and the section once it arrives", async () => {
 			let answer: (connections: IWorkTrackingSystemConnection[]) => void =
 				() => {};
 			await givenPriyaOpensJiraDcPayments({
@@ -469,7 +469,7 @@ describe("defaults set once on the connection", () => {
 		});
 
 		// @error @us-04 @contract-shape:unbounded-preservation
-		it.skip("an answer for the connection Priya has left is dropped, and the one she opened shows its own defaults", async () => {
+		it("an answer for the connection Priya has left is dropped, and the one she opened shows its own defaults", async () => {
 			let answerForPayments: (
 				connections: IWorkTrackingSystemConnection[],
 			) => void = () => {};
@@ -508,7 +508,7 @@ describe("defaults set once on the connection", () => {
 		});
 
 		// @error @us-04 @contract-shape:unbounded-preservation
-		it.skip("when the connection cannot be loaded the page says so, and no section pretends it has no defaults", async () => {
+		it("when the connection cannot be loaded the page says so, and no section pretends it has no defaults", async () => {
 			await givenPriyaOpensJiraDcPayments({
 				loading: Promise.reject(new Error("The server could not be reached")),
 			});
