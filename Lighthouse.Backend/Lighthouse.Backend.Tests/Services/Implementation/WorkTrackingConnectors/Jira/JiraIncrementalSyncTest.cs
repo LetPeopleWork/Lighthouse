@@ -63,10 +63,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static readonly string[] TheFirstTwoOffsets = ["0", "50"];
 
         /// <summary>
-        /// The request-line budget Jira Data Center's bundled Tomcat ships with. A search whose query alone is
-        /// longer than this cannot be asked for in a url at all, whatever the rest of the request costs.
+        /// The 8 KB request line that Data Center's bundled Tomcat ships with, and that the gateways and proxies
+        /// in front of Jira Cloud enforce much the same. A search whose query alone is longer than this cannot
+        /// be asked for in a url at all, whatever the rest of the request costs.
         /// </summary>
-        private const int TomcatsRequestLineBudget = 8192;
+        private const int ARequestLineBudget = 8192;
+
+        private static readonly string[] EveryPartOfAFirstCloudPage = ["jql", "fields", "expand", "maxResults"];
+        private static readonly string[] TheEveryFieldList = [EveryField];
 
         [TestCase(Cloud)]
         [TestCase(DataCenter)]
@@ -350,8 +354,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var stamps = await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
-            Assert.That(stamps.Select(stamp => stamp.ReferenceId), Is.EqualTo(BothPages),
-                "A sweep that stops at page one under-reports the query, and 'stored minus swept' deletes everything it missed.");
+            var theSecondPageAsked = jira.SearchRequests.Last().InTheBody("nextPageToken");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stamps.Select(stamp => stamp.ReferenceId), Is.EqualTo(BothPages),
+                    "A sweep that stops at page one under-reports the query, and 'stored minus swept' deletes everything it missed.");
+                Assert.That(theSecondPageAsked?.GetString(), Is.EqualTo(TheSecondPage),
+                    "The next page is asked for with the token Jira handed back, carried in the body with the query.");
+            }
         }
 
         [Test]
@@ -458,7 +469,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             await subject.GetWorkItemsForTeam(team, manyKeys, CancellationToken.None);
 
             Assert.That(jira.SearchRequests.Count() - requestsBefore, Is.EqualTo(2),
-                "250 key clauses in one GET is a URL no proxy is obliged to carry; the batch is chunked the way "
+                "250 keys are split so that one round trip asks for, and hands back, a bounded amount; the batch is chunked the way "
                 + "the Azure DevOps connector chunks its id list.");
         }
 
@@ -638,7 +649,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             await subject.GetFeaturesForProject(portfolio, manyKeys, CancellationToken.None);
 
             Assert.That(jira.SearchRequests.Count() - requestsBefore, Is.EqualTo(2),
-                "250 key clauses in one GET is a URL no proxy is obliged to carry; the batch is chunked the way "
+                "250 keys are split so that one round trip asks for, and hands back, a bounded amount; the batch is chunked the way "
                 + "the by-key Work Item fetch chunks its id list.");
         }
 
@@ -971,12 +982,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        [Test]
-        public async Task GetWorkItemsForTeamByReferenceId_OnDataCenter_AsksForAQueryNoRequestLineCouldCarry()
+        [TestCase(Cloud)]
+        [TestCase(DataCenter)]
+        public async Task GetWorkItemsForTeamByReferenceId_AsksForAQueryNoRequestLineCouldCarry(string deploymentType)
         {
-            var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
+            var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(deploymentType);
             var aWholeChunkOfLongKeys = Enumerable.Range(1, 200)
-                .Select(number => $"LIGHTHOUSEPROJ-{number:D9}")
+                .Select(number => $"LONGPROJECTKEY-{number:D9}")
                 .ToList();
 
             var workItems = await subject.GetWorkItemsForTeam(team, aWholeChunkOfLongKeys, CancellationToken.None);
@@ -986,16 +998,50 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(whatTheQueryCostsInARequestLine, Is.GreaterThan(TomcatsRequestLineBudget),
+                Assert.That(whatTheQueryCostsInARequestLine, Is.GreaterThan(ARequestLineBudget),
                     "positive control: a query that still fits in a request line proves nothing about one that does not.");
-                Assert.That(download.Uri.OriginalString, Has.Length.LessThan(TomcatsRequestLineBudget),
-                    "A full chunk of keys this long does not fit in a request line, and Data Center's bundled "
-                    + "Tomcat answers a bare 400 to a request line that does not fit.");
+                Assert.That(download.Uri.OriginalString, Has.Length.LessThan(ARequestLineBudget),
+                    "A full chunk of keys this long does not fit in a request line. Data Center's bundled Tomcat "
+                    + "answers a bare 400 to one that does not fit, and Jira Cloud answers 414, so the query has to "
+                    + "ride in the body.");
                 Assert.That(download.Value("jql"), Does.Contain(aWholeChunkOfLongKeys[^1]),
                     "The whole chunk still has to reach Jira - a query truncated to fit asks for fewer records "
                     + "than the sweep reported as moved, and the rest are then stored stale.");
                 Assert.That(workItems.Count(), Is.EqualTo(aWholeChunkOfLongKeys.Count),
                     "positive control: the answer was read back.");
+            }
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_OnCloud_PostsTheSearchWithTheChangelogExpansionAsOneString()
+        {
+            var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud);
+
+            await subject.GetWorkItemsForTeam(team, TheTwoKeysAskedFor, CancellationToken.None);
+
+            var download = jira.SearchRequests.Last();
+            var expand = download.InTheBody("expand");
+            var fields = download.InTheBody("fields");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(download.Method, Is.EqualTo(HttpMethod.Post),
+                    "A query sent in the request line is refused once a chunk of long keys outgrows it.");
+                Assert.That(download.Uri.PathAndQuery, Does.EndWith(JiraRestRoutes.For(JiraDeployment.Cloud).Search),
+                    "Nothing of the search may ride in the query string.");
+                Assert.That(download.Body, Is.Not.Empty, "The search has to carry its parameters in a json body.");
+                Assert.That(download.InTheBody("jql")?.GetString(), Is.EqualTo(TheKeyedQuery));
+                Assert.That(expand?.ValueKind, Is.EqualTo(JsonValueKind.String),
+                    "Cloud reads expand as one comma-joined string. Sent as a list, the way Data Center takes it, "
+                    + "the changelog would not come back, and every transition would silently be lost.");
+                Assert.That(expand?.GetString(), Is.EqualTo(TheChangelogExpansion));
+                Assert.That(fields?.ValueKind, Is.EqualTo(JsonValueKind.Array),
+                    "Cloud reads fields as a list in the body.");
+                Assert.That(fields?.EnumerateArray().Select(field => field.GetString()), Is.EqualTo(TheEveryFieldList),
+                    "Cloud answers with the issue id and nothing else when the body names no field.");
+                Assert.That(download.InTheBody("maxResults")?.ValueKind, Is.EqualTo(JsonValueKind.Number));
+                Assert.That(download.NamesInTheBody(), Is.EquivalentTo(EveryPartOfAFirstCloudPage),
+                    "A first page carries no page token, not even an empty one.");
             }
         }
 
@@ -1127,18 +1173,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         /// <summary>
-        /// One search Lighthouse asked Jira for. Cloud puts its parameters in the query string and Data Center
-        /// puts them in a json body, and every assertion in this fixture is about which parameters were asked
-        /// for rather than about which half of the request carried them. A list reads back comma-joined, which
-        /// is the same text the query string would have carried.
+        /// One search Lighthouse asked Jira for. <see cref="Value"/> answers which parameters were asked for,
+        /// whichever half of the request carried them, with a list read back comma-joined. Where the shape of
+        /// the body is the point, <see cref="InTheBody"/> reads the body alone.
         /// </summary>
-        private sealed record SearchAsk(Uri Uri, string Body)
+        private sealed record SearchAsk(Uri Uri, string Body, HttpMethod Method)
         {
+            public JsonElement? InTheBody(string name) => SearchBody.PropertyIn(Body, name);
+
+            public IReadOnlyList<string> NamesInTheBody() => SearchBody.NamesIn(Body);
+
             public string Value(string name)
             {
                 var fromTheRequestLine = ValueInTheRequestLine(name);
 
-                return fromTheRequestLine.Length > 0 ? fromTheRequestLine : ValueInTheBody(name);
+                return fromTheRequestLine.Length > 0 ? fromTheRequestLine : SearchBody.ValueIn(Body, name);
             }
 
             private string ValueInTheRequestLine(string name)
@@ -1147,28 +1196,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 var match = Array.Find(pairs, pair => pair.StartsWith($"{name}=", StringComparison.Ordinal));
 
                 return match is null ? string.Empty : System.Uri.UnescapeDataString(match[(name.Length + 1)..]);
-            }
-
-            private string ValueInTheBody(string name)
-            {
-                if (Body.Length == 0)
-                {
-                    return string.Empty;
-                }
-
-                using var json = JsonDocument.Parse(Body);
-
-                if (!json.RootElement.TryGetProperty(name, out var value))
-                {
-                    return string.Empty;
-                }
-
-                return value.ValueKind switch
-                {
-                    JsonValueKind.Array => string.Join(",", value.EnumerateArray().Select(entry => entry.GetString())),
-                    JsonValueKind.Number => value.GetInt32().ToString(CultureInfo.InvariantCulture),
-                    _ => value.GetString() ?? string.Empty,
-                };
             }
         }
 
@@ -1212,7 +1239,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         /// <summary>
         /// A recording stand-in for a Jira instance: it answers the handful of endpoints the connector calls and
-        /// keeps every request URI, which is where the interesting assertions live (which JQL, which fields).
+        /// keeps every search it was asked for, which is where the interesting assertions live (which JQL, which
+        /// fields).
         /// </summary>
         private sealed class JiraStub
         {
@@ -1302,7 +1330,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 if (path.Contains("search", StringComparison.Ordinal))
                 {
-                    var ask = new SearchAsk(uri, JiraConnectorTestSetup.BodyOf(request));
+                    var ask = new SearchAsk(uri, JiraConnectorTestSetup.BodyOf(request), request.Method);
                     searchAsks.Add(ask);
 
                     return RespondToSearch(ask);

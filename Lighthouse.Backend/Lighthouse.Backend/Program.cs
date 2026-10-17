@@ -132,29 +132,10 @@ namespace Lighthouse.Backend
 
                 if (isStandalone)
                 {
-                    // Register the banner to print once the server is actually up
-                    app.Lifetime.ApplicationStarted.Register(() =>
-                    {
-                        PrintSystemInfo(app, builder);
-                    });
-
                     Log.Information("Backend is ready. Starting web host...");
-
-                    // This is the CRITICAL change: await the blocking run call
-                    await app.RunAsync();
                 }
-                else
-                {
-                    // Standard dev/production mode logic
-                    _ = Task.Run(async () =>
-                    {
-                        await app.StartAsync();
-                        await Task.Delay(500);
-                        PrintSystemInfo(app, builder);
-                    });
 
-                    await app.WaitForShutdownAsync();
-                }
+                await RunHostAsync(app, () => PrintSystemInfo(app, builder));
             }
             catch (Exception ex)
             {
@@ -173,6 +154,12 @@ namespace Lighthouse.Backend
             {
                 await Log.CloseAndFlushAsync();
             }
+        }
+
+        internal static async Task RunHostAsync(WebApplication app, Action onStarted)
+        {
+            app.Lifetime.ApplicationStarted.Register(onStarted);
+            await app.RunAsync();
         }
 
         private static void ConfigureApp(WebApplication app)

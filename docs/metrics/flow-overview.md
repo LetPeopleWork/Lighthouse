@@ -104,10 +104,22 @@ This widget shows how many in-progress items had been sitting in their current s
 
 ![Stale Items Overview](../assets/features/metrics/staleOverview.png)
 
-The staleness threshold (in days) is configured in your Team or Portfolio settings. Blocked items are **not** counted here — they are reported by the [Blocked Overview](#blocked-overview) instead, so a single item is never counted as both blocked and stale. The target is always zero stale items. Use the **View Data** button to see all currently stale items.
+The staleness threshold and the blocked staleness threshold (both in days) are configured in your Team or Portfolio settings. The target is always zero stale items. Use the **View Data** button to see all currently stale items.
+
+## What counts as stale
+
+Lighthouse decides which items are stale, once, with one rule. This widget, the red **Time in State** badges in the View Data dialogs and the red dots on the [Work Item Aging Chart](flow-metrics.html#work-item-aging-chart) all show that one answer, and the WIP read of the API carries it too, so a script or an AI assistant reading Lighthouse sees the same stale items you do.
+
+- Only items in progress — in a state you configured as *Doing* — can be stale.
+- An item that is not blocked is stale once it has sat in its current state for **more** days than the staleness threshold.
+- A blocked item is judged by how long it has been blocked instead: it is stale once it has been blocked for **at least** the blocked staleness threshold. Until then it is not stale, however long it has sat in its state, and it shows up in the [Blocked Overview](#blocked-overview) only.
+- A threshold that is not set, or set to 0, turns its check off. With both off, no item is stale.
+- Days are counted the way Work Item Age counts them: the day an item entered its state is day 1, and the day boundary is midnight in the time zone of your Lighthouse instance, not of your browser. Close to midnight a badge may therefore read one day differently from what you expect.
+
+A stale item's **Time in State** badge is red, and its tooltip says why, for example `12d in Review — Blocked 6d`.
 
 {: .important}
-Staleness is measured against the **last day of the selected date range**, not against today. On a historical range an item that sat still is judged by how long it had been still *on that end date*, so closing a range in the past no longer makes everything in it read as stale.
+Staleness is measured against the **last day of the selected date range**, not against today. On a historical range an item that sat still is judged by how long it had been still *on that end date*, so closing a range in the past no longer makes everything in it read as stale. The **days in State** label in the View Data dialogs counts to that end date as well, so on a past range it agrees with the reason in the tooltip.
 
 ## Status Indicator
 

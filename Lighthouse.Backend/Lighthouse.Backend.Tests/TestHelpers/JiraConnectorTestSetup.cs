@@ -144,8 +144,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         }
 
         /// <summary>
-        /// What a request carried besides its url. Data Center's search takes its parameters in a JSON body,
-        /// so a fixture that only looks at the url sees a request that asks for nothing at all.
+        /// What a request carried besides its url. Both deployments' searches take their parameters in a JSON
+        /// body, so a fixture that only looks at the url sees a search that asks for nothing at all.
         /// </summary>
         public static string BodyOf(HttpRequestMessage request)
         {
@@ -158,5 +158,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
             return reader.ReadToEnd();
         }
+
+        /// <summary>The JQL a search asked Jira for, read out of its body; empty for a request that is no search.</summary>
+        public static string JqlOf(HttpRequestMessage request) => SearchBody.ValueIn(BodyOf(request), "jql");
     }
 }

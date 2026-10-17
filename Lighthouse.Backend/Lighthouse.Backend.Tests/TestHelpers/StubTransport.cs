@@ -2,6 +2,7 @@ using Moq;
 using Moq.Protected;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {
@@ -51,37 +52,86 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     /// </summary>
     public sealed class RecordedRequests
     {
-        private readonly List<string> urls = [];
-        private readonly List<string> bodies = [];
+        private readonly List<RecordedRequest> requests = [];
 
-        public IReadOnlyList<string> Urls => urls;
+        public IReadOnlyList<string> Urls => [.. requests.Where(request => request.Url is not null).Select(request => request.Url!)];
 
-        public IReadOnlyList<string> Bodies => bodies;
+        public IReadOnlyList<string> Bodies => [.. requests.Select(request => request.Body)];
 
-        public IReadOnlyList<string> Paths => urls.ConvertAll(url => new Uri(url).AbsolutePath);
+        public IReadOnlyList<string> Paths => [.. Urls.Select(url => new Uri(url).AbsolutePath)];
 
-        /// <summary>The last request whose path names a search - the one carrying the field list.</summary>
-        public string LastSearchUrl
+        /// <summary>The field list the last search asked for, comma-joined, read out of that search's body.</summary>
+        public string FieldsAskedForInTheLastSearch()
         {
-            get
-            {
-                var searches = urls.FindAll(url => url.Contains("/search", StringComparison.Ordinal));
+            var lastSearch = requests.FindLast(request => request.Url?.Contains("/search", StringComparison.Ordinal) == true);
 
-                return searches[searches.Count - 1];
-            }
+            return lastSearch is null ? string.Empty : SearchBody.ValueIn(lastSearch.Body, "fields");
         }
 
-        public string FieldsAskedForInTheLastSearch()
-            => System.Web.HttpUtility.ParseQueryString(new Uri(LastSearchUrl).Query)["fields"] ?? string.Empty;
-
         public void Record(HttpRequestMessage request, string body)
+            => requests.Add(new RecordedRequest(request.RequestUri?.AbsoluteUri, body));
+
+        private sealed record RecordedRequest(string? Url, string Body);
+    }
+
+    /// <summary>
+    /// Reads the json body a Jira search was sent with. A body that is empty, or is not a json object, carries
+    /// no parameter at all.
+    /// </summary>
+    public static class SearchBody
+    {
+        /// <summary>
+        /// One parameter as text. A list reads back comma-joined and a number as its digits, and a body without
+        /// the parameter reads back empty.
+        /// </summary>
+        public static string ValueIn(string body, string name)
         {
-            if (request.RequestUri is not null)
+            if (PropertyIn(body, name) is not { } value)
             {
-                urls.Add(request.RequestUri.AbsoluteUri);
+                return string.Empty;
             }
 
-            bodies.Add(body);
+            return value.ValueKind switch
+            {
+                JsonValueKind.Array => string.Join(",", value.EnumerateArray().Select(entry => entry.ToString())),
+                JsonValueKind.String => value.GetString() ?? string.Empty,
+                _ => value.GetRawText(),
+            };
+        }
+
+        /// <summary>One parameter as json, for when its shape is the point, or null when the body has no such parameter.</summary>
+        public static JsonElement? PropertyIn(string body, string name)
+        {
+            using var json = ObjectIn(body);
+
+            return json is not null && json.RootElement.TryGetProperty(name, out var value) ? value.Clone() : null;
+        }
+
+        /// <summary>The name of every parameter the body carries, in the order it carries them.</summary>
+        public static IReadOnlyList<string> NamesIn(string body)
+        {
+            using var json = ObjectIn(body);
+
+            return json is null ? [] : [.. json.RootElement.EnumerateObject().Select(property => property.Name)];
+        }
+
+        private static JsonDocument? ObjectIn(string body)
+        {
+            if (string.IsNullOrWhiteSpace(body))
+            {
+                return null;
+            }
+
+            var json = JsonDocument.Parse(body);
+
+            if (json.RootElement.ValueKind == JsonValueKind.Object)
+            {
+                return json;
+            }
+
+            json.Dispose();
+
+            return null;
         }
     }
 }

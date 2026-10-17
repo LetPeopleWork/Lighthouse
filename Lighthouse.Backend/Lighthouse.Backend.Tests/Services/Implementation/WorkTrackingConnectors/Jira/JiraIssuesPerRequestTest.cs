@@ -40,8 +40,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         /// <summary>
-        /// How large a page the connector asked Jira for, read out of whichever half of the request carried it:
-        /// Cloud asks in the query string, Data Center asks in a json body.
+        /// How large a page the connector asked Jira for, read out of whichever half of the request carried it.
+        /// Both deployments ask in a json body today, and a page size in the request line would still be found.
         /// </summary>
         private static async Task<string> ThePageSizeAskedFor(string deploymentType, string? issuesPerRequestOption)
         {

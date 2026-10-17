@@ -118,6 +118,8 @@ LIGHTHOUSE_API_KEY=<key> \
 lh metrics team --id 1 --metrics throughput,cycleTime --json
 ```
 
+The work in progress (`lh metrics team --metrics wip` or `lh metrics portfolio --metrics wip`) carries Lighthouse's staleness answer for every Work Item: `isStale`, and in `staleReasons` why, such as `{ "kind": "TimeInState", "days": 12, "stateName": "Review" }` or `{ "kind": "BlockedDuration", "days": 6 }`. It is the same answer the [Stale Items Overview](./metrics/flow-overview.html#what-counts-as-stale) shows, so a script never has to apply the thresholds itself. The MCP tool `lighthouse_team_metrics_wip` returns the same fields, and its summary names the stale Work Items.
+
 Another common automation pattern is to list teams, pick an ID, and run a forecast.
 
 ```bash
@@ -313,7 +315,7 @@ This is especially useful if your client supports importing custom skills or pro
 Two more skills build on the Lighthouse skill above, each walking an assistant through one recurring Team routine. Import them the same way as the Lighthouse skill:
 
 - **Refinement** gets a Team ready for its next [Refinement](./teams/detail.html#refinement): whether to refine more or stop, and which Work Items are worth the session's time. A developer can ask which Work Items wait for their vote, and vote or comment once they confirm. Try: "Are we ready for Thursday's Refinement?"
-- **Daily Flow Review** opens a Team's daily with what to decide and discuss today: Work Items that are blocked, past the SLE or at risk of missing it, and WIP over its limit, each as a question for the Team, never a task for a person. Try: "What should Gravity discuss today?"
+- **Daily Flow Review** opens a Team's daily with what to decide and discuss today: Work Items that are blocked, stale, past the SLE or at risk of missing it, and WIP over its limit, each as a question for the Team, never a task for a person. A stale Work Item comes with the reason Lighthouse gave, such as "12 days in Review", and one already listed as blocked is not listed twice. Which Work Items are stale is always [Lighthouse's own answer](./metrics/flow-overview.html#what-counts-as-stale): against an older Lighthouse that does not say, the skill tells you so instead of working it out itself. Try: "What should Gravity discuss today?"
 
 Downloads:
 

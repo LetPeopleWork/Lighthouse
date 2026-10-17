@@ -857,7 +857,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var resolutions = await ResolveAll(jira, ThreeDatedReleases);
 
-            var jql = QueryValue(jira.SearchRequests.Single(), "jql");
+            var jql = jira.SearchQueries.Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -1217,9 +1217,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             /// <summary>The paged project search answers 404, as if this Jira had never had it.</summary>
             public bool LostItsProjectSearch { get; set; }
 
-            public IReadOnlyList<Uri> SearchRequests =>
-                [.. Requests.Where(uri => uri.AbsolutePath.Contains("/search", StringComparison.Ordinal)
-                    && !uri.AbsolutePath.EndsWith("/project/search", StringComparison.Ordinal))];
+            /// <summary>The jql of every search, in the order asked, read out of the body each search carries.</summary>
+            public ConcurrentQueue<string> SearchQueries { get; } = new();
 
             public IReadOnlyList<Uri> VersionListRequests =>
                 [.. Requests.Where(uri => uri.AbsolutePath.EndsWith("/version", StringComparison.Ordinal))];
@@ -1362,7 +1361,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 if (path.Contains("search", StringComparison.Ordinal))
                 {
-                    return RespondToSearch(uri);
+                    var jql = JiraConnectorTestSetup.JqlOf(request);
+                    SearchQueries.Enqueue(jql);
+
+                    return RespondToSearch(jql);
                 }
 
                 return Ok("{}");
@@ -1414,14 +1416,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     $"\"values\":[{string.Join(",", page.Select(version => version.Json))}]}}");
             }
 
-            private HttpResponseMessage RespondToSearch(Uri uri)
+            private HttpResponseMessage RespondToSearch(string jql)
             {
                 if (RefusesTheSearch)
                 {
                     return Refuse(HttpStatusCode.InternalServerError);
                 }
 
-                var askedAbout = ReleaseIdsNamedIn(QueryValue(uri, "jql"));
+                var askedAbout = ReleaseIdsNamedIn(jql);
 
                 var issues = releaseIdsByIssueKey
                     .Where(work => work.Value.Exists(askedAbout.Contains))
