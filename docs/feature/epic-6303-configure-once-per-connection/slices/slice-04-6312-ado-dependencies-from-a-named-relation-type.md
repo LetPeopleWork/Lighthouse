@@ -41,6 +41,8 @@ to a stored Feature against Features whose `DependsOnReferences` hold it, before
 
 Baseline: 0% (no named relation read before slice 04). To be measured in the maintainer's manual review on huserben/ThisIsADemo (Tested By links 5816→5819, 5822→5825/5828).
 
+**Result (2026-10-17, maintainer's manual review on huserben/ThisIsADemo):** reviewed and accepted. Naming `Microsoft.VSTS.Common.TestedBy-Forward` reads the 3 Tested By links as dependencies: 3 of 3, which is **100%** against the 0% baseline. Target met.
+
 ## Acceptance criteria
 AC-3.4 – AC-3.8.
 
