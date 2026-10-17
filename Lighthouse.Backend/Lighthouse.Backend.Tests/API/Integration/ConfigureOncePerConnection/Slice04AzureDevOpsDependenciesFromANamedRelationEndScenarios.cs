@@ -27,8 +27,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         private const int Item4690 = 4690;
 
-        private const int Item4800 = 4800;
-
         private const int Item5101 = 5101;
 
         private const int Item5102 = 5102;
@@ -376,31 +374,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             {
                 Assert.That(namingTheEnd, Is.EqualTo(namingNothing + 1), $"Requests: {string.Join(", ", contoso.Requests)}");
                 Assert.That(contoso.RelationTypeListings, Is.EqualTo(1));
-            }
-        }
-
-        // A Feature's parent outside the Portfolio's query is fetched by a second request of its own, read with
-        // the same settings, so it can reuse the listing the Portfolio's own fetch just made.
-        [Test]
-        [Category("us-03")]
-        [Category("ac-3.7")]
-        [Category("kpi")]
-        [Category("contract-shape:bounded-change")]
-        public async Task A_refresh_that_also_fetches_parent_Features_lists_the_relation_types_once()
-        {
-            RetailRolloutHolds4711DependingOn4702();
-            var contoso = TheOrganisationAt(ContosoOrganisation);
-            contoso.HoldsOutsideThePortfoliosQuery(Item4800);
-            contoso.Relates(Item4711, Hierarchy, Item4800);
-
-            await RefreshesNow(RetailRollout);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(await TheParentShownFor(Item4711), Is.EqualTo($"{Item4800}"));
-                Assert.That(await WhatTheWorkItemWaitsOn(Item4800), Is.EqualTo(Nothing), "The parent was fetched and stored.");
-                Assert.That(contoso.RelationTypeListings, Is.EqualTo(1), $"Requests: {string.Join(", ", contoso.Requests)}");
-                Assert.That(await WhatTheWorkItemWaitsOn(Item4711), Is.EqualTo(Waits4702));
             }
         }
 

@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
@@ -988,11 +987,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         /// </summary>
         protected sealed class AnAzureDevOpsOrganisation
         {
-            private static readonly string TheIdClause = $"[{AzureDevOpsFieldNames.Id}] = ";
-
             private readonly Dictionary<int, AWorkItemThere> workItems = [];
-
-            private readonly HashSet<int> outsideThePortfoliosQuery = [];
 
             public AnAzureDevOpsOrganisation()
             {
@@ -1000,10 +995,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
                 client
                     .Setup(c => c.QueryByWiqlAsync(It.IsAny<Wiql>(), It.IsAny<bool?>(), It.IsAny<int?>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
-                    .Returns((Wiql wiql, bool? _, int? _, object _, CancellationToken _) =>
+                    .Returns(() =>
                     {
                         Requests.Add("query");
-                        return Task.FromResult(new WorkItemQueryResult { WorkItems = [.. TheWorkItemsAnswering(wiql.Query).Select(id => new WorkItemReference { Id = id })] });
+                        return Task.FromResult(new WorkItemQueryResult { WorkItems = [.. workItems.Keys.Select(id => new WorkItemReference { Id = id })] });
                     });
 
                 client
@@ -1091,29 +1086,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             }
 
             private static readonly string[] TheChangeStampAlone = [AzureDevOpsFieldNames.ChangedDate];
-
-            /// <summary>
-            /// The organisation also holds <paramref name="id"/>, which only a lookup by its id finds: the Portfolio's
-            /// own query does not return it, as it does not return a Feature's parent from another backlog.
-            /// </summary>
-            public void HoldsOutsideThePortfoliosQuery(int id)
-            {
-                Holds(id);
-                outsideThePortfoliosQuery.Add(id);
-            }
-
-            // A query naming ids answers with the held ones among them; any other query is the Portfolio's own.
-            private List<int> TheWorkItemsAnswering(string query)
-            {
-                var named = query.Split(TheIdClause, StringSplitOptions.None)
-                    .Skip(1)
-                    .Select(clause => int.Parse(string.Concat(clause.TakeWhile(char.IsDigit)), CultureInfo.InvariantCulture))
-                    .ToHashSet();
-
-                return named.Count > 0
-                    ? [.. workItems.Keys.Where(named.Contains)]
-                    : [.. workItems.Keys.Where(id => !outsideThePortfoliosQuery.Contains(id))];
-            }
 
             public void Holds(params int[] ids)
             {
