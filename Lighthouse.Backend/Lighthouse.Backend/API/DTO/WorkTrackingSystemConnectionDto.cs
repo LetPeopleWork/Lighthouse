@@ -53,6 +53,7 @@ namespace Lighthouse.Backend.API.DTO
             };
 
             ConcurrencyToken = workTrackingSystemConnection.ConcurrencyToken;
+            Defaults = new ConnectionDefaultsDto(workTrackingSystemConnection);
         }
 
         [JsonRequired]
@@ -80,14 +81,17 @@ namespace Lighthouse.Backend.API.DTO
 
         public Guid? ConcurrencyToken { get; set; }
 
+        // Nested so that a save leaving it out keeps every default, while a null inside it clears one.
+        public ConnectionDefaultsDto? Defaults { get; set; }
+
         // Only the list of connections says who uses each one. The setter is private so a saved body that
         // still carries the counts it was read with cannot bind them back.
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public ConnectionUsage? UsedBy { get; private set; }
+        public ConnectionUsageDto? UsedBy { get; private set; }
 
-        public WorkTrackingSystemConnectionDto WithUsage(ConnectionUsage usage)
+        public WorkTrackingSystemConnectionDto WithUsage(ConnectionUsage usage, ConnectionFollowers followers)
         {
-            UsedBy = usage;
+            UsedBy = new ConnectionUsageDto(usage.Teams, usage.Portfolios, followers);
             return this;
         }
     }

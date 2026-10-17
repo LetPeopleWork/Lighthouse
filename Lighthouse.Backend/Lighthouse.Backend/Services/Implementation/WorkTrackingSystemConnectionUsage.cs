@@ -16,6 +16,15 @@ namespace Lighthouse.Backend.Services.Implementation
                 connectionId => new ConnectionUsage(teams.GetValueOrDefault(connectionId), portfolios.GetValueOrDefault(connectionId)));
         }
 
+        public IReadOnlyDictionary<int, ConnectionFollowers> FollowersByConnection()
+        {
+            // Where a Team's setting comes from is held on the loaded Team, so the Teams are counted in memory.
+            return teamRepository.GetAllByPredicate(_ => true).AsEnumerable()
+                .Where(team => team.ParentOverrideSource == SettingSource.ConnectionDefault)
+                .GroupBy(team => team.WorkTrackingSystemConnectionId)
+                .ToDictionary(group => group.Key, group => new ConnectionFollowers(group.Count()));
+        }
+
         private static Dictionary<int, int> CountByConnection<TOwner>(IRepository<TOwner> repository) where TOwner : WorkTrackingSystemOptionsOwner
         {
             return repository.GetAllByPredicate(_ => true)

@@ -37,6 +37,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             "writeBackMappingDefinitions",
             "requiresReconnect",
             "concurrencyToken",
+            "defaults",
         ];
 
         private static readonly string[] OptionPropertiesToday =

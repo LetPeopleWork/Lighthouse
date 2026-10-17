@@ -479,7 +479,9 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         private static IWorkTrackingSystemConnectionUsage NobodyUsesAnyConnection()
-            => Mock.Of<IWorkTrackingSystemConnectionUsage>(usage => usage.ByConnection() == new Dictionary<int, ConnectionUsage>());
+            => Mock.Of<IWorkTrackingSystemConnectionUsage>(usage =>
+                usage.ByConnection() == new Dictionary<int, ConnectionUsage>()
+                && usage.FollowersByConnection() == new Dictionary<int, ConnectionFollowers>());
 
         [Test]
         [TestCase(OAuthCredentialStatus.RefreshFailed)]

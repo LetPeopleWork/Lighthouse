@@ -30,7 +30,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private static readonly string[] NothingOffered = [];
 
         [Test]
-        [Ignore(PendingEpic6303.Slice05a)]
         [Category("ac-4.1")]
         [Category("ac-4.2")]
         [Category("ac-f.1")]
@@ -56,7 +55,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice05a)]
         [Category("ac-4.2")]
         [Category("contract-shape:bounded-change")]
         public async Task A_Team_with_its_own_Parent_Override_Field_is_unaffected_by_the_default()
@@ -75,7 +73,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice05a)]
         [Category("ac-4.3")]
         [Category("edge")]
         [Category("contract-shape:bounded-change")]

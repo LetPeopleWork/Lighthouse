@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Implementation.Connections;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -16,6 +17,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         private const int OwnedConnectionId = 12;
 
         private const int OtherConnectionId = 99;
+
+        private const int CausedById = 40;
 
         private static readonly int[] TeamsOnTheOwnedConnection = [2];
 
@@ -196,6 +199,58 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         {
             LookingUpTheTeamsAndPortfolios,
             PublishingTheChange,
+        }
+
+        [Test]
+        [Category("contract-shape:bounded-change")]
+        public async Task Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated()
+        {
+            var log = new RecordingLogger<ConnectionSaveService>();
+            var subject = CreateSubjectForAConnectionWithNamedTeams(log);
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.ParentOverrideForTeams = CausedById;
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
+
+            var written = log.Written(LogLevel.Information);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(written, Has.Count.EqualTo(1));
+                Assert.That(written, Has.Some.EqualTo("Connection Connection: the Teams' default Parent Override Field changed from none to Caused by; 2 Teams follow it: Alpha, Bravo"));
+            }
+        }
+
+        [Test]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task Commit_TheTeamsDefaultUnchanged_LogsNothing()
+        {
+            var log = new RecordingLogger<ConnectionSaveService>();
+            var subject = CreateSubjectForAConnectionWithNamedTeams(log);
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.Name = "Renamed";
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
+
+            Assert.That(log.Everything, Is.Empty);
+        }
+
+        private ConnectionSaveService CreateSubjectForAConnectionWithNamedTeams(RecordingLogger<ConnectionSaveService> log)
+        {
+            var connection = new WorkTrackingSystemConnection { Id = OwnedConnectionId, Name = "Connection" };
+            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = CausedById, DisplayName = "Caused by", Reference = "customfield_10500" });
+            connectionRepositoryMock.Setup(x => x.GetById(OwnedConnectionId)).Returns(connection);
+
+            var teams = new List<Team>
+            {
+                new() { Id = 5, Name = "Bravo", WorkTrackingSystemConnectionId = OwnedConnectionId },
+                new() { Id = 2, Name = "Alpha", WorkTrackingSystemConnectionId = OwnedConnectionId },
+                new Team { Id = 9, Name = "Chose None", WorkTrackingSystemConnectionId = OwnedConnectionId }.OwningParentOverride(null),
+                new() { Id = 3, Name = "Elsewhere", WorkTrackingSystemConnectionId = OtherConnectionId },
+            };
+            teamRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Team, bool>>>()))
+                .Returns((Expression<Func<Team, bool>> predicate) => teams.AsQueryable().Where(predicate));
+
+            return new(connectionRepositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, domainEventDispatcherMock.Object, log);
         }
 
         private void GivenTheOwnedConnection()

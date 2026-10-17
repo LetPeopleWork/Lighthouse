@@ -101,6 +101,11 @@ namespace Lighthouse.Backend.API
             UpdateAdditionalFieldDefinitions(existingConnection, updatedConnection.AdditionalFieldDefinitions, newFields);
             UpdateWriteBackMappingDefinitions(existingConnection, updatedConnection.WriteBackMappingDefinitions, newFields);
 
+            if (updatedConnection.Defaults is { } defaults)
+            {
+                existingConnection.ParentOverrideForTeams = defaults.ParentOverrideForTeams;
+            }
+
             var mappingValidation = WriteBackMappingValidator.Validate(existingConnection.WriteBackMappingDefinitions);
             if (!mappingValidation.IsValid)
             {

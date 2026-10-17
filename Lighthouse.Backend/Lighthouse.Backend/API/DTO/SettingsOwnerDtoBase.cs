@@ -26,6 +26,8 @@ namespace Lighthouse.Backend.API.DTO
             BlockedRuleSetJson = workTrackingSystemOptionsOwner.BlockedRuleSetJson;
             WaitStates = workTrackingSystemOptionsOwner.WaitStates;
             ParentOverrideAdditionalFieldDefinitionId = workTrackingSystemOptionsOwner.ParentOverrideAdditionalFieldDefinitionId;
+            ParentOverrideSource = workTrackingSystemOptionsOwner.ParentOverrideSource;
+            ParentOverrideDefaultName = workTrackingSystemOptionsOwner.ParentOverrideDefaultName;
             ProcessBehaviourChartBaselineStartDate = workTrackingSystemOptionsOwner.ProcessBehaviourChartBaselineStartDate;
             ProcessBehaviourChartBaselineEndDate = workTrackingSystemOptionsOwner.ProcessBehaviourChartBaselineEndDate;
             EstimationAdditionalFieldDefinitionId = workTrackingSystemOptionsOwner.EstimationAdditionalFieldDefinitionId;
@@ -72,6 +74,10 @@ namespace Lighthouse.Backend.API.DTO
         public int SystemWIPLimit { get; set; }
 
         public int? ParentOverrideAdditionalFieldDefinitionId { get; set; }
+
+        public SettingSource? ParentOverrideSource { get; private set; }
+
+        public string? ParentOverrideDefaultName { get; private set; }
 
         public DateTime? ProcessBehaviourChartBaselineStartDate { get; set; }
 

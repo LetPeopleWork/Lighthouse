@@ -459,9 +459,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             teamIds[name] = JsonNode.Parse(body)!["id"]!.GetValue<int>();
         }
 
+        // Only the refresh history is set aside: what the save before it logged is still that save's to read.
         protected async Task WhenTheNextScheduledUpdateOf(string owner)
         {
-            await SetTheRestAside();
+            await SetTheRefreshHistoryAside();
 
             if (teamIds.TryGetValue(owner, out var team))
             {
@@ -698,6 +699,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                     State = "In Progress",
                     StateCategory = StateCategories.Doing,
                     Order = "1",
+                    StartedDate = TheItemLastChangedAt,
                     ParentReferenceId = WhatTheFieldHolds(parentField),
                 }, team)
                 {
@@ -812,7 +814,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 DoingStates = ["In Progress"],
                 DoneStates = ["Done"],
                 ThroughputHistory = 30,
-            }.OwningParentOverride(ownParentOverride is null ? null : TheFieldOn(connection, ownParentOverride));
+            };
+
+            // A Team that names nothing follows the connection's default, which is where a new Team starts.
+            if (ownParentOverride is not null)
+            {
+                team.OwnParentOverride(TheFieldOn(connection, ownParentOverride));
+            }
 
             var repository = services.GetRequiredService<IRepository<Team>>();
             repository.Add(team);
@@ -861,9 +869,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         private async Task SetTheRestAside()
         {
-            lastHistoryEntryBeforeTheSave = (await TheRefreshHistory()).Select(entry => entry.Id).DefaultIfEmpty(0).Max();
+            await SetTheRefreshHistoryAside();
             logLinesBeforeTheSave = whatWasLogged.At(LogEventLevel.Information).Count;
         }
+
+        private async Task SetTheRefreshHistoryAside()
+            => lastHistoryEntryBeforeTheSave = (await TheRefreshHistory()).Select(entry => entry.Id).DefaultIfEmpty(0).Max();
 
         private Task SaveTheConnection(Action<JsonObject> edit, bool? startUpdates) => SaveTheConnection(JiraDcPayments, edit, startUpdates);
 

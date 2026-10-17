@@ -99,6 +99,10 @@ namespace Lighthouse.Backend.Models
 
         protected virtual int? ParentOverrideConnectionDefault => null;
 
+        /// <summary>The field the connection's default names, shown whichever source the owner chose.</summary>
+        [NotMapped]
+        public string? ParentOverrideDefaultName => WorkTrackingSystemConnection?.DisplayNameOfField(ParentOverrideConnectionDefault);
+
         protected virtual void ChooseParentOverrideSource(SettingSource source) => chosenParentOverrideSource = source;
 
         public void FollowParentOverrideDefault()

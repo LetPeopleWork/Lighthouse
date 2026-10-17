@@ -63,12 +63,15 @@ namespace Lighthouse.Backend.API
                 .GetAll()
                 .ToDictionary(c => c.WorkTrackingSystemConnectionId);
             var usageByConnectionId = connectionUsage.ByConnection();
+            var followersByConnectionId = connectionUsage.FollowersByConnection();
 
             var connectionDtos = existingConnections.Select(c =>
             {
                 credentialsByConnectionId.TryGetValue(c.Id, out var credential);
                 return new WorkTrackingSystemConnectionDto(c, credential, cryptoService)
-                    .WithUsage(usageByConnectionId.GetValueOrDefault(c.Id, ConnectionUsage.Unused));
+                    .WithUsage(
+                        usageByConnectionId.GetValueOrDefault(c.Id, ConnectionUsage.Unused),
+                        followersByConnectionId.GetValueOrDefault(c.Id, ConnectionFollowers.None));
             });
             return Ok(connectionDtos);
         }
