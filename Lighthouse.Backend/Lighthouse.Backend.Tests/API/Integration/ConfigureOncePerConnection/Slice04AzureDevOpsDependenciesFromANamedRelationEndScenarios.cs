@@ -265,6 +265,47 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             }
         }
 
+        [Test]
+        [Category("us-03")]
+        [Category("ac-3.6")]
+        [Category("error")]
+        [Category("contract-shape:bounded-change")]
+        public async Task Features_carrying_no_relations_at_all_say_nothing_about_the_named_end()
+        {
+            var contoso = TheOrganisationAt(ContosoOrganisation);
+            contoso.Holds(Item4711, Item4702);
+            AnAzureDevOpsPortfolio(RetailRollout, ContosoOrganisation);
+            NamesAsItsDependencyField(RetailRollout, ContosoDependsOnForward);
+
+            await RefreshesNow(RetailRollout);
+            var shown = await WhatRefreshHistoryShowsFor(RetailRollout);
+
+            Assert.That(shown.Findings, Is.Not.Null.And.Empty, "Having no dependencies is the ordinary case.");
+        }
+
+        // An attachment, a hyperlink or a build link points at no work item, so it could never have matched.
+        [Test]
+        [Category("us-03")]
+        [Category("ac-3.6")]
+        [Category("error")]
+        [Category("contract-shape:bounded-change")]
+        public async Task Resource_links_are_left_out_of_the_relation_types_seen()
+        {
+            var contoso = TheOrganisationAt(ContosoOrganisation);
+            contoso.Holds(Item4711, Item4702);
+            contoso.Relates(Item4711, "AttachedFile", Item4702);
+            contoso.Relates(Item4711, "Hyperlink", Item4702);
+            contoso.Relates(Item4711, "ArtifactLink", Item4702);
+            contoso.Relates(Item4711, Related, Item4702);
+            AnAzureDevOpsPortfolio(RetailRollout, ContosoOrganisation);
+            NamesAsItsDependencyField(RetailRollout, ContosoDependsOnForward);
+
+            await RefreshesNow(RetailRollout);
+            var shown = await WhatRefreshHistoryShowsFor(RetailRollout);
+
+            Assert.That(shown.TheFirstFinding?.Seen ?? Array.Empty<string>(), Is.EqualTo(OnlyRelated));
+        }
+
         // Without this the refresh could never say a name lacks its end: Validate would refuse it first.
         [Test]
         [Category("us-03")]
@@ -421,6 +462,37 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 Assert.That(shown.FindingsAsOf, Is.Not.EqualTo(shown.NewestRunAt), "What is shown comes from the last refresh that finished.");
                 Assert.That(sentWhileStopped, Has.None.StartsWith("payload:").And.None.StartsWith("relations:"),
                     $"Nothing it downloads can be kept, so it downloads nothing. Requests: {string.Join(", ", sentWhileStopped)}");
+            }
+        }
+
+        // A listing remembered from the first organisation's refresh would answer its next refresh with relation
+        // types that may have changed since.
+        [Test]
+        [Category("us-03")]
+        [Category("ac-3.7")]
+        [Category("error")]
+        [Category("contract-shape:bounded-change")]
+        public async Task Refreshing_the_first_organisation_again_lists_its_relation_types_again()
+        {
+            RetailRolloutHolds4711DependingOn4702();
+            var fabrikam = TheOrganisationAt(FabrikamOrganisation);
+            fabrikam.Holds(Item5101, Item5102);
+            fabrikam.Relates(Item5101, FabrikamNeedsForward, Item5102);
+            AnAzureDevOpsPortfolio(NorthernStores, FabrikamOrganisation);
+            NamesAsItsDependencyField(NorthernStores, FabrikamNeedsForward);
+
+            await RefreshesNow(RetailRollout);
+            await RefreshesNow(NorthernStores);
+            var contosoListingsBefore = TheOrganisationAt(ContosoOrganisation).RelationTypeListings;
+            await SomethingMakesTheNextRefreshDownloadEverything(RetailRollout);
+            await RefreshesNow(RetailRollout);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(contosoListingsBefore, Is.EqualTo(1));
+                Assert.That(TheOrganisationAt(ContosoOrganisation).RelationTypeListings, Is.GreaterThan(contosoListingsBefore));
+                Assert.That(fabrikam.RelationTypeListings, Is.EqualTo(1));
+                Assert.That(await WhatTheWorkItemWaitsOn(Item4711), Is.EqualTo(Waits4702));
             }
         }
 
