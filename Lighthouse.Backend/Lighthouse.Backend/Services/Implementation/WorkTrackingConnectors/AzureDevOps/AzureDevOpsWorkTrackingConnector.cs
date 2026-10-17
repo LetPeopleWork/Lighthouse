@@ -83,9 +83,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             logger.LogDebug("Updating Work Items for Team {TeamName}", team.Name);
 
-            var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsByQuery(team, TheQueryATeamIsFetchedBy(team), cancellationToken);
+            var (adoWorkItems, additionalFieldResolution) = await FetchAdoWorkItemsByQuery(team, TheQueryATeamIsFetchedBy(team), cancellationToken);
 
-            return await TheTeamsWorkItemsFrom(team, adoWorkItems, additionalFieldReferences, cancellationToken);
+            return await TheTeamsWorkItemsFrom(team, adoWorkItems, additionalFieldResolution, cancellationToken);
         }
 
         /// <summary>
@@ -93,17 +93,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// </summary>
         public async Task<IEnumerable<LighthouseWorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
         {
-            var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsById(team, referenceIds, cancellationToken);
+            var (adoWorkItems, additionalFieldResolution) = await FetchAdoWorkItemsById(team, referenceIds, cancellationToken);
 
-            return await TheTeamsWorkItemsFrom(team, adoWorkItems, additionalFieldReferences, cancellationToken);
+            return await TheTeamsWorkItemsFrom(team, adoWorkItems, additionalFieldResolution, cancellationToken);
         }
 
         private async Task<IEnumerable<LighthouseWorkItem>> TheTeamsWorkItemsFrom(
-            Team team, IEnumerable<AdoWorkItem> adoWorkItems, AdditionalFieldResolution additionalFieldReferences, CancellationToken cancellationToken)
+            Team team, IEnumerable<AdoWorkItem> adoWorkItems, AdditionalFieldResolution additionalFieldResolution, CancellationToken cancellationToken)
         {
-            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, team, additionalFieldReferences, dependenciesComeFromRelations: false, cancellationToken);
-            var workItems = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, team, additionalFieldReferences.Fields, cancellationToken);
-            var settingFindings = WhatReadingTheSettingsEveryOwnerHasFound(team, additionalFieldReferences);
+            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, team, additionalFieldResolution, dependenciesComeFromRelations: false, cancellationToken);
+            var workItems = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, team, additionalFieldResolution.Fields, cancellationToken);
+            var settingFindings = WhatReadingTheSettingsEveryOwnerHasFound(team, additionalFieldResolution);
 
             var relations = await relationsTask;
 
@@ -133,9 +133,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// </summary>
         public async Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
         {
-            var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsById(project, referenceIds, cancellationToken);
+            var (adoWorkItems, additionalFieldResolution) = await FetchAdoWorkItemsById(project, referenceIds, cancellationToken);
 
-            return await ThePortfoliosFeaturesFrom(project, adoWorkItems, additionalFieldReferences, cancellationToken);
+            return await ThePortfoliosFeaturesFrom(project, adoWorkItems, additionalFieldResolution, cancellationToken);
         }
 
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project, CancellationToken cancellationToken)
@@ -629,19 +629,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         private async Task<List<Feature>> GetFeaturesForProjectByQuery(Portfolio portfolio, string query, CancellationToken cancellationToken)
         {
-            var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsByQuery(portfolio, query, cancellationToken);
+            var (adoWorkItems, additionalFieldResolution) = await FetchAdoWorkItemsByQuery(portfolio, query, cancellationToken);
 
-            return await ThePortfoliosFeaturesFrom(portfolio, adoWorkItems, additionalFieldReferences, cancellationToken);
+            return await ThePortfoliosFeaturesFrom(portfolio, adoWorkItems, additionalFieldResolution, cancellationToken);
         }
 
         private async Task<List<Feature>> ThePortfoliosFeaturesFrom(
-            Portfolio portfolio, IEnumerable<AdoWorkItem> adoWorkItems, AdditionalFieldResolution additionalFieldReferences, CancellationToken cancellationToken)
+            Portfolio portfolio, IEnumerable<AdoWorkItem> adoWorkItems, AdditionalFieldResolution additionalFieldResolution, CancellationToken cancellationToken)
         {
             var dependenciesComeFromRelations = DependencySourceSelector.ReadsTheTrackersOwnLink(portfolio);
-            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, portfolio, additionalFieldReferences, dependenciesComeFromRelations, cancellationToken);
+            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, portfolio, additionalFieldResolution, dependenciesComeFromRelations, cancellationToken);
 
-            var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, portfolio, additionalFieldReferences.Fields, cancellationToken);
-            var settingFindings = WhatReadingThePortfoliosSettingsFound(portfolio, additionalFieldReferences);
+            var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, portfolio, additionalFieldResolution.Fields, cancellationToken);
+            var settingFindings = WhatReadingThePortfoliosSettingsFound(portfolio, additionalFieldResolution);
 
             var relations = await relationsTask;
             var features = new List<Feature>();
@@ -711,12 +711,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         /// <summary>
         /// Whether every configured field matches a field, or failing that a relation type, in this
-        /// organisation. Each one is
-        /// resolved straight against the field list rather than through the id-keyed lookup below, and it
-        /// has to stay that way: these definitions belong to a connection the caller loaded from the
-        /// database, so the only way to make their ids unique enough to key a dictionary on would be to
-        /// write to them - and writing to a stored row's identity is refused by the next save through that
-        /// connection, wherever that next save happens to be (Bug #6010).
+        /// organisation. Each one is resolved straight against the field list rather than through the
+        /// id-keyed lookup below, and it has to stay that way: these definitions belong to a connection the
+        /// caller loaded from the database, so the only way to make their ids unique enough to key a
+        /// dictionary on would be to write to them - and writing to a stored row's identity is refused by
+        /// the next save through that connection, wherever that next save happens to be (Bug #6010).
         /// </summary>
         private async Task<ConnectionValidationResult> TheVerdictOnTheAdditionalFields(WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions)
         {
@@ -809,7 +808,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// list, so a connection whose references are all fields costs no extra request. The listing lives in
         /// this call alone, for the same reason Validate keeps it there.
         /// </summary>
-        private async Task<AdditionalFieldResolution> GetCustomFieldReferences(
+        private async Task<AdditionalFieldResolution> ResolveTheAdditionalFields(
             WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions, CancellationToken cancellationToken)
         {
             var availableFields = await TheFieldsTheOrganisationDefines(witClient, cancellationToken);
@@ -828,21 +827,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 }
 
                 relationTypes ??= await TheRelationTypesTheOrganisationLists(witClient, cancellationToken);
-                WarnUnlessItNamesARelationType(additionalFieldDefinition, relationTypes, resolution);
+
+                if (relationTypes.HasAnEndCalled(additionalFieldDefinition.Reference))
+                {
+                    resolution.RelationTypes.Add(additionalFieldDefinition.Id);
+                    continue;
+                }
+
+                WarnThatNothingWillBeReadFor(additionalFieldDefinition, relationTypes);
             }
 
             return resolution;
         }
 
-        private void WarnUnlessItNamesARelationType(
-            AdditionalFieldDefinition additionalFieldDefinition, RelationTypeListing relationTypes, AdditionalFieldResolution resolution)
+        private void WarnThatNothingWillBeReadFor(AdditionalFieldDefinition additionalFieldDefinition, RelationTypeListing relationTypes)
         {
-            if (relationTypes.HasAnEndCalled(additionalFieldDefinition.Reference))
-            {
-                resolution.RelationTypes.Add(additionalFieldDefinition.Id);
-                return;
-            }
-
             if (relationTypes.WasRefused)
             {
                 logger.LogWarning(
@@ -914,10 +913,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 return ([], AdditionalFieldResolution.None());
             }
 
-            var additionalFieldsRef = await GetCustomFieldReferences(witClient, workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions, cancellationToken);
-            var adoWorkItems = await GetAdoWorkItemsById(workItemIds, workItemQueryOwner, additionalFieldsRef.Fields.Values, cancellationToken);
+            var additionalFieldResolution = await ResolveTheAdditionalFields(witClient, workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions, cancellationToken);
+            var adoWorkItems = await GetAdoWorkItemsById(workItemIds, workItemQueryOwner, additionalFieldResolution.Fields.Values, cancellationToken);
 
-            return (adoWorkItems, additionalFieldsRef);
+            return (adoWorkItems, additionalFieldResolution);
         }
 
         // A reference id on Azure DevOps is the tracker's own numeric work-item id, so anything else cannot
@@ -1252,7 +1251,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<RelationsOfWorkItems> GetRelationsOfWorkItems(
             IEnumerable<AdoWorkItem> adoWorkItems,
             WorkTrackingSystemOptionsOwner workTrackingSystemOptionOwner,
-            AdditionalFieldResolution additionalFieldReferences,
+            AdditionalFieldResolution additionalFieldResolution,
             bool dependenciesComeFromRelations,
             CancellationToken cancellationToken)
         {
@@ -1260,10 +1259,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             // whatever this item is waiting on. So naming a field to read the parent from is no longer
             // reason enough on its own to skip reading them - skipping it while the dependencies still
             // live there leaves every dependency unread, for good, and an empty list of dependencies is a
-            // believable answer, so nothing about it looks wrong.
-            // A Parent Override Field naming a relation type reads no parent, so the native one still has to be read.
+            // believable answer, so nothing about it looks wrong. A Parent Override Field naming a relation
+            // type reads no parent at all, so the native parent link still has to be read.
             var theParentComesFromAField = workTrackingSystemOptionOwner.ParentOverrideAdditionalFieldDefinitionId.HasValue
-                && !additionalFieldReferences.NamesARelationType(workTrackingSystemOptionOwner.ParentOverrideAdditionalFieldDefinitionId);
+                && !additionalFieldResolution.NamesARelationType(workTrackingSystemOptionOwner.ParentOverrideAdditionalFieldDefinitionId);
 
             if (theParentComesFromAField && !dependenciesComeFromRelations)
             {
