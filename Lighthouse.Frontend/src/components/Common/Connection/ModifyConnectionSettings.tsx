@@ -57,7 +57,7 @@ import SecretHandlingNotice, {
 
 const OAUTH_KEY_SUFFIX = ".oauth";
 
-const CONCURRENCY_CONFLICT_STATUS = 409;
+const CONFLICT_STATUS = 409;
 // The server's own sentence names the field and who still uses it, so it is shown as it stands.
 const FIELD_STILL_IN_USE_CODE = "additional-field-in-use";
 const CONCURRENCY_CONFLICT_COPY =
@@ -712,10 +712,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		try {
 			await saveConnectionSettings(connection, choice);
 		} catch (error_) {
-			if (
-				error_ instanceof ApiError &&
-				error_.code === CONCURRENCY_CONFLICT_STATUS
-			) {
+			if (error_ instanceof ApiError && error_.code === CONFLICT_STATUS) {
 				setValidationErrorMessage(
 					error_.problemCode === FIELD_STILL_IN_USE_CODE
 						? error_.message
