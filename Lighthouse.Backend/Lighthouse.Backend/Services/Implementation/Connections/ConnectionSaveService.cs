@@ -17,7 +17,9 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
     {
         private const string NoField = "none";
 
-        private static readonly ConnectionSaveOutcome Saved = new(Refused: false);
+        private const string TeamsParentOverrideDefault = "Teams' Parent Override Field";
+
+        private static readonly ConnectionSaveOutcome Saved = new([]);
 
         public Task<ConnectionSaveHandle?> Open(int connectionId, CancellationToken cancellationToken)
         {
@@ -27,6 +29,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                 : new ConnectionSaveHandle(connection, FetchFingerprint.ForConnection(connection))
                 {
                     TeamsParentOverrideDefaultBeforeSave = TeamsParentOverrideDefaultOf(connection),
+                    StoredFieldsBeforeSave = connection.AdditionalFieldDefinitions.ToDictionary(field => field.Id, field => field.DisplayName),
                 };
             return Task.FromResult(handle);
         }
@@ -34,6 +37,12 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
         public async Task<ConnectionSaveOutcome> Commit(ConnectionSaveHandle handle, Guid? concurrencyToken, bool startUpdates, CancellationToken cancellationToken)
         {
             var connection = handle.Connection;
+            var fieldsInUse = FieldsStillInUseAmong(handle.RemovedFields(), connection);
+            if (fieldsInUse.Count > 0)
+            {
+                return new ConnectionSaveOutcome(fieldsInUse);
+            }
+
             connectionRepository.Update(connection);
 
             if (concurrencyToken.HasValue)
@@ -47,6 +56,52 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             await StartUpdatesIfFetchShapeMoved(handle, startUpdates, cancellationToken);
 
             return Saved;
+        }
+
+        // Read from the database rather than from what this request has loaded, so a Team or Portfolio saved
+        // with the field after this save was opened still blocks its removal. A setting that follows a default
+        // holds no value of its own, so only the owners that chose the field themselves are found here.
+        private List<AdditionalFieldInUse> FieldsStillInUseAmong(List<RemovedAdditionalField> removed, WorkTrackingSystemConnection connection)
+        {
+            if (removed.Count == 0)
+            {
+                return [];
+            }
+
+            var connectionId = connection.Id;
+            var removedIds = removed.Select(field => (int?)field.Id).ToList();
+
+            var teams = teamRepository.GetAllByPredicate(team => team.WorkTrackingSystemConnectionId == connectionId
+                    && removedIds.Contains(team.OwnParentOverrideAdditionalFieldDefinitionId))
+                .OrderBy(team => team.Id)
+                .Select(team => new { team.Name, team.OwnParentOverrideAdditionalFieldDefinitionId })
+                .AsEnumerable()
+                .Select(team => new OwnerNamingFields(team.Name, [team.OwnParentOverrideAdditionalFieldDefinitionId]));
+
+            var portfolios = portfolioRepository.GetAllByPredicate(portfolio => portfolio.WorkTrackingSystemConnectionId == connectionId
+                    && (removedIds.Contains(portfolio.OwnParentOverrideAdditionalFieldDefinitionId)
+                        || removedIds.Contains(portfolio.DependencyOverrideAdditionalFieldDefinitionId)
+                        || removedIds.Contains(portfolio.SizeEstimateAdditionalFieldDefinitionId)
+                        || removedIds.Contains(portfolio.FeatureOwnerAdditionalFieldDefinitionId)))
+                .OrderBy(portfolio => portfolio.Id)
+                .Select(portfolio => new
+                {
+                    portfolio.Name,
+                    portfolio.OwnParentOverrideAdditionalFieldDefinitionId,
+                    portfolio.DependencyOverrideAdditionalFieldDefinitionId,
+                    portfolio.SizeEstimateAdditionalFieldDefinitionId,
+                    portfolio.FeatureOwnerAdditionalFieldDefinitionId,
+                })
+                .AsEnumerable()
+                .Select(portfolio => new OwnerNamingFields(portfolio.Name, [
+                    portfolio.OwnParentOverrideAdditionalFieldDefinitionId,
+                    portfolio.DependencyOverrideAdditionalFieldDefinitionId,
+                    portfolio.SizeEstimateAdditionalFieldDefinitionId,
+                    portfolio.FeatureOwnerAdditionalFieldDefinitionId,
+                ]));
+
+            DefaultNamingAField[] defaults = [new(TeamsParentOverrideDefault, connection.ParentOverrideForTeams)];
+            return AdditionalFieldInUse.AmongTheRemoved(removed, defaults, [.. teams, .. portfolios]);
         }
 
         private async Task PointTheDefaultAtTheFieldAddedInThisSave(ConnectionSaveHandle handle)

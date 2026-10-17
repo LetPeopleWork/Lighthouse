@@ -21,7 +21,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             "\"Caused by\" cannot be removed. It is the Teams' Parent Override Field default, and Ledger uses it as its own. Nothing was saved.";
 
         [Test]
-        [Ignore(PendingEpic6303.Slice05b)]
         [Category("ac-4.8")]
         [Category("error")]
         [Category("driving_port")]
@@ -44,7 +43,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice05b)]
         [Category("ac-4.8")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]
@@ -62,7 +60,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice05b)]
         [Category("ac-4.8")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]

@@ -123,7 +123,11 @@ namespace Lighthouse.Backend.API
                 return StatusCode(StatusCodes.Status403Forbidden, null);
             }
 
-            await connectionSaveService.Commit(save, updatedConnection.ConcurrencyToken, startUpdates, CancellationToken.None);
+            var outcome = await connectionSaveService.Commit(save, updatedConnection.ConcurrencyToken, startUpdates, CancellationToken.None);
+            if (outcome.Refused)
+            {
+                return RefusedAsRemovingAFieldInUse(outcome.FieldsInUse);
+            }
 
             return Ok(new WorkTrackingSystemConnectionDto(existingConnection));
         }
@@ -191,13 +195,14 @@ namespace Lighthouse.Backend.API
         }
 
         // A default must name a field this connection still has once the save is merged, or one this save adds.
-        // Anything else, a field removed in the same edit or another connection's, would leave every Team that
-        // follows the default reading a field that is not there.
+        // Anything else, such as another connection's field, would leave every Team that follows the default
+        // reading a field that is not there. A default left naming a field this same edit removes is kept, so
+        // that the save refuses the removal and says the default still uses that field.
         private static bool TryApplyDefaults(ConnectionSaveHandle save, ConnectionDefaultsDto defaults, NewAdditionalFieldTargets newFields)
         {
             var named = defaults.ParentOverrideForTeams;
             var addedInThisSave = newFields.FieldNamedBy(named);
-            if (named is { } fieldId && addedInThisSave is null && !save.Connection.HoldsStoredField(fieldId))
+            if (named is { } fieldId && addedInThisSave is null && !save.Connection.HoldsStoredField(fieldId) && !save.Removes(fieldId))
             {
                 return false;
             }
@@ -233,6 +238,17 @@ namespace Lighthouse.Backend.API
                 detail: $"Not an Additional Field of this connection: {WorkTrackingSystemConnectionDto.NameOf(ConnectionDefaultSetting.ParentOverrideForTeams)}.");
             problem.Extensions["code"] = "connection-default-field-unknown";
             return new ObjectResult(problem) { StatusCode = StatusCodes.Status400BadRequest };
+        }
+
+        private ObjectResult RefusedAsRemovingAFieldInUse(IReadOnlyList<AdditionalFieldInUse> fieldsInUse)
+        {
+            var problem = ProblemDetailsFactory.CreateProblemDetails(
+                HttpContext,
+                statusCode: StatusCodes.Status409Conflict,
+                title: "An Additional Field this save removes is still in use.",
+                detail: AdditionalFieldInUse.Refusal(fieldsInUse));
+            problem.Extensions["code"] = "additional-field-in-use";
+            return new ObjectResult(problem) { StatusCode = StatusCodes.Status409Conflict };
         }
 
         private bool HasLicenseFor(WorkTrackingSystemConnection connection)
