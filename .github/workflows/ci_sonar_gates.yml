@@ -48,7 +48,6 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       
       - name: Checkout
-        if: inputs.frontend-ran
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: '0'
@@ -72,3 +71,17 @@ jobs:
         if: inputs.frontend-ran && github.ref == 'refs/heads/main'
         working-directory: ./Lighthouse.Frontend
         run: pnpm audit --audit-level=low --prod
+
+      - name: Setup .NET
+        if: inputs.backend-ran && github.ref == 'refs/heads/main'
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.401'
+
+      # dotnet list exits 0 even when it finds vulnerable packages, so the step fails on its output.
+      - name: Audit Backend Dependencies
+        if: inputs.backend-ran && github.ref == 'refs/heads/main'
+        working-directory: ./Lighthouse.Backend
+        run: |
+          dotnet list Lighthouse.sln package --vulnerable --include-transitive 2>&1 | tee audit.txt
+          ! grep -q "has the following vulnerable packages" audit.txt
