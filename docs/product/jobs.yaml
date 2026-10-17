@@ -65,6 +65,7 @@ feature_context:
   - story-6251-team-feature-size
   - story-6301-only-features-as-parent-candidates
   - story-6307-refresh-on-additional-fields-change
+  - epic-6298-report-pdf-export
 
 jobs:
   - id: job-rbac-bootstrap
@@ -8376,3 +8377,57 @@ jobs:
       current_satisfaction: 1
       gap: 2
       rationale: Importance 3 - diagnostic rather than daily. Estimated, not surveyed.
+
+  - id: job-share-numbers-outside-lighthouse
+    title: Put numbers I trust in front of someone who will not or cannot open Lighthouse
+    persona: "flow-coach (also delivery-lead-rte, product-owner)"
+    feature_context: epic-6298-report-pdf-export
+    ado: "Epic #6298 Report PDF Export (predecessors #1822, #4753)"
+    created: 2026-10-17
+    note: >
+      NEW in DIVERGE of epic-6298-report-pdf-export. Changelog: created 2026-10-17 from diverge/job-analysis.md,
+      adopting the id the DISCOVER journey proposed and elevating its wording from "export a PDF" to the strategic
+      level (an outside reader decides on evidence, on their own, possibly weeks later). Three circumstances share
+      it: per engagement (coach hand-over or sponsor update), a recurring cadence (team lead or PM status update)
+      and ad hoc. When the report is a Then & Now it carries the result of job-flow-coach-show-whether-flow-changed
+      to its audience; the job itself is independent of the report type. A candidate reader job (read numbers from
+      a tool I do not use without learning it) is recorded in job-analysis.md and is not an entry. Evidence is one
+      informant, the maintainer (backlog #1822, #4753 and the 2026-10-17 interview); DISCOVER G1-G3 failed and
+      the maintainer accepted the risk. Scores are DESK ESTIMATES by the diverger.
+    job_story: >
+      When someone who will not or cannot open Lighthouse needs to know where our flow or forecast stands,
+      I want to hand them the numbers I already read in Lighthouse in a form that explains itself and says when
+      it was taken,
+      so they can form a view and decide on their own, without me rebuilding the numbers or narrating every caveat.
+    dimensions:
+      functional: >
+        A dated snapshot of a report (Team or Portfolio, when it was produced, its windows, the instance's terms)
+        that reaches the reader's own carrier - slide deck, email, document - and reads without Lighthouse.
+      emotional: >
+        From burdened ("screenshots again, then cropping them into the slide") to confident ("they read it on
+        their own, and it says when it was taken").
+      social: >
+        The sender looks prepared to a sponsor or client; the numbers travel under Lighthouse's name, which is how
+        people who have never opened the tool come to know it.
+    forces:
+      push: >
+        Screenshots cropped into slides, CSV rebuilt in a spreadsheet, or an AI assistant asked to build a
+        dashboard over the MCP connection (maintainer 2026-10-17; #1822). None of them carries the date or windows
+        unless the sender adds them.
+      pull: >
+        Reports are meant as the static, share-optimised counterpart of the interactive charts (maintainer
+        2026-10-17), and Then & Now already freezes its "before".
+      anxiety: >
+        The reader quotes an old number as today's; the file carries names it should not; the export does not
+        work on this host or edition.
+      habit: >
+        Screenshot, crop, paste, and type the date into the slide by hand.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 2
+      gap: 2
+      rationale: >
+        Importance 4 - one informant, but three observed workarounds on three cadences; not 5 without direct
+        user interviews. Satisfaction 2 - the workarounds reach the reader, but undated and without the report's
+        explanation (OS3 14, OS1 13, OS6 12 as 1-10 desk estimates in diverge/job-analysis.md). Gap 2 until the
+        3-5 user question in the DISCOVER feature delta adds informants.

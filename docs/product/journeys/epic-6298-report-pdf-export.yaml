@@ -1,0 +1,76 @@
+schema_version: 1
+feature_id: epic-6298-report-pdf-export
+updated: 2026-10-17
+ado: "#6298 Report PDF Export (Premium)"
+note: >
+  Seeded in DISCOVER (2026-10-17) as one hypothesis journey. It extends step 3 of
+  show-what-changed-since-the-engagement-started (epic-5878-baseline.yaml), where "the sponsor needs it outside
+  Lighthouse" was out of scope, and generalises it to any report type. Evidence is second-hand (the maintainer's
+  account of their users' past behaviour, plus ADO #1822 and #4753); no Lighthouse user has walked this journey.
+  The job id job-share-numbers-outside-lighthouse is PROPOSED, not yet in docs/product/jobs.yaml - DIVERGE or
+  DISCUSS adds or re-points it. Mechanism, share form, first payload and licence gate are open (DIVERGE questions
+  in docs/feature/epic-6298-report-pdf-export/feature-delta.md). Terms in braces ({team}, {portfolio},
+  {feature}, {work items}, {delivery}) render as the instance's configured words.
+
+journeys:
+
+  - name: take-a-report-to-people-who-will-not-open-lighthouse
+    goal: >
+      Someone who reads a report in Lighthouse (a flow coach per engagement, a team lead or PM on a recurring
+      cadence, or anyone ad hoc) gets it in front of a reader outside Lighthouse - one who will not open the tool or
+      cannot reach it (Standalone) - without screenshots or rebuilding the numbers elsewhere.
+    persona: "flow-coach, delivery-lead-rte or product-owner (reader of the report in Lighthouse); outside reader: sponsor, client or stakeholder (candidate report-reader, not created)"
+    jobs:
+      - job-share-numbers-outside-lighthouse   # proposed
+      - job-flow-coach-show-whether-flow-changed  # when the report is a Then & Now
+    emotional_arc:
+      start: Burdened - "Screenshots again, then cropping them into the slide."
+      middle: Relieved - "One file, and it reads without Lighthouse."
+      end: Confident - "They read it on their own and it says when it was taken."
+    steps:
+      - id: 1
+        name: Open the report
+        action: "{team} or {portfolio} -> Reports -> open the report to share (first payload planned: Then & Now)"
+        emotional_state: {entry: Burdened, exit: Ready}
+        shared_artifacts: [report_values]
+        failure_modes:
+          - What the user wants to share is a metrics chart or a forecast, not a report type that exists yet - today people capture metrics charts and forecasts, and the first planned report (Then & Now) has no charts
+      - id: 2
+        name: Export
+        action: "Export as PDF (mechanism open: browser/Tauri print, server rendering, or another share form)"
+        emotional_state: {entry: Ready, exit: Relieved}
+        shared_artifacts: [report_values, generated_at, report_windows]
+        failure_modes:
+          - Export unavailable on this licence - say so and why, never a silent missing button
+          - Rendering unavailable on this host (e.g. missing system libraries on a minimal Linux server) - a clear "cannot render" state
+          - Report cannot be loaded - no PDF of stale or partial numbers
+          - Reader without export permission - no export action (RBAC)
+        integration_checkpoint: The PDF shows the same values as the screen at the moment of export
+      - id: 3
+        name: Put it where the reader is
+        action: "Attach to an email, drop into slides or a document, or hand over at the end of an engagement"
+        emotional_state: {entry: Relieved, exit: Relieved}
+        shared_artifacts: [generated_at]
+        failure_modes:
+          - The user needs an image for a slide, or data to rebuild, rather than a PDF - today some people export CSV or have an AI build a dashboard over the MCP connection instead of sharing a picture
+      - id: 4
+        name: The outside reader reads it
+        action: "Sponsor, client or stakeholder reads the PDF without Lighthouse, possibly weeks later"
+        emotional_state: {entry: Sceptical, exit: Oriented}
+        shared_artifacts: [report_values, generated_at, report_windows]
+        failure_modes:
+          - Reader takes old numbers as current - the PDF names when it was produced and the windows it covers
+          - Reader does not know the configured words - the PDF uses the instance's terms, nothing tool-internal
+          - Offline reader sees a fallback font - fonts ship with the app
+
+shared_artifacts:
+  report_values: {source: "the report as shown on screen (Then frozen at creation; Now computed for its window)", consumers: [PDF body]}
+  generated_at: {source: "export time", consumers: [PDF header or footer, the outside reader]}
+  report_windows: {source: "the report's windows (Then & Now: Then and Now windows from the summary header)", consumers: [PDF header]}
+
+changelog:
+  - date: 2026-10-17
+    feature: epic-6298-report-pdf-export
+    change: >
+      Seeded in DISCOVER with one hypothesis journey extending step 3 of epic-5878-baseline's
+      show-what-changed-since-the-engagement-started; proposed job job-share-numbers-outside-lighthouse.

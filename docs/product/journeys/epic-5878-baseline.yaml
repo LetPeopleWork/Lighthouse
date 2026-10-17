@@ -1,6 +1,6 @@
 schema_version: 1
 feature_id: epic-5878-baseline
-updated: 2026-10-14
+updated: 2026-10-17
 ado: "#5878 Baseline (ValueFlow, Community)"
 note: >
   Seeded in DISCOVER (2026-10-02) as two hypothesis journeys; refined in DISCUSS (2026-10-02) to the converged
@@ -73,7 +73,7 @@ journeys:
         failure_modes:
           - Sponsor reads a red panel without context - no narrative by design; the coach explains (author note later)
           - Sponsor wants a different Now - fixed for readers; an editor changes it for everyone or creates another report
-          - Sponsor needs it outside Lighthouse - out of scope in v1 (PDF/email/schedule later, Epic 5882)
+          - Sponsor needs it outside Lighthouse - out of scope in v1; PDF continues in epic-6298-report-pdf-export.yaml, email/schedule in Epic 5882
         integration_checkpoint: A Viewer sees exactly what the coach sees, without write actions
         gherkin: |
           Scenario: A reader sees reports but cannot create one
@@ -178,3 +178,8 @@ changelog:
       DESIGN peer-review pass - D52 replaces D35's header sentence: the summary header no longer says "frozen" or
       "days since Then ended" (that line waits for slice 07's sketch); the sample size shows in the header, not on
       every value; the closed count is {throughput}'s total once captured, else the {cycle time} sample size.
+  - date: 2026-10-17
+    feature: epic-6298-report-pdf-export
+    change: >
+      Step 3's "Sponsor needs it outside Lighthouse" failure mode now points to epic-6298-report-pdf-export.yaml for
+      the PDF; email and scheduled sending stay with Epic 5882.

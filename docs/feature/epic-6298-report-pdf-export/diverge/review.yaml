@@ -1,0 +1,51 @@
+review_rounds:
+  - round: 1
+    review_date: "2026-10-17"
+    reviewer: "nw-diverger-reviewer"
+    approval_status: "rejected_pending_revisions"
+    blocking_issues:
+      - id: BI-1
+        dimension: option_diversity
+        finding: "First payload not diverged across the curated options (options 2-6 all Then & Now); scored only as a separate pool."
+        resolution: "Option 5 now carries a chart-bearing Custom Metric Report (#6299); Option 6 a Delivery with its Features' forecasts. The options carry four payloads. Both re-scored; the pool is kept as a cross-check."
+      - id: BI-2
+        dimension: taste_application
+        finding: "Option 4 F=5 despite new work and a desk-checked Standalone path, while Option 1 got F=4 for an analogous WebKit caveat; the 4.50 vs 4.40 lead rested on it."
+        resolution: "One feasibility rule for all options (desk-checked or new work caps F at 4). Option 4 F 5 -> 4, now tied with Option 1 at 4.40. Tie-break rule stated in taste-evaluation.md section 4 (higher D+V 8 vs 7, then under-served outcome coverage). Sensitivity re-run (S1-S8, splits 3/3). Recommendation re-issued as a tie-break, dissent rewritten."
+    minor_issues_resolved:
+      - "competitive-research I3/I6 reworded to 'observed in N of the researched products'; Nave kept as [U] and marked as unused by any insight or score."
+      - "Evaluative framing ('avoids', 'saves', 'suits') removed from options-raw.md; options 4 and 5 state that mechanism detail is a DESIGN decision."
+      - "Licence pool: the L3/L4 base-weight tie is stated with its tie-break (L3 leads under reversibility-heavy weights; L3 and L4 combine)."
+      - "'Helm memory about 1.5 GiB': kept. It is sourced from the spike findings' Recommendation section ('raise the Helm memory limit to about 1.5 GiB'); the reviewer looked only at the constraints line. Citation added."
+      - "Sensitivity labels now show from -> to."
+      - "Option 3 Desirability kept at 3 and justified by network reach (readers outside the instance's network), not by Standalone, consistent with the stated Standalone rule."
+      - "Recommendation Q1 reworded as a rendering path, mechanism left to DESIGN; Standalone '~0 MB' flagged as desk-checked with a probe before DESIGN."
+      - "Gate labels prefixed DIVERGE-G1..G4; DISCOVER G1-G3 failures stated as remaining open and accepted (D2)."
+      - "'Hire criteria' renamed 'Who it is for'."
+  - round: 2
+    review_date: "2026-10-17"
+    reviewer: "nw-diverger-reviewer"
+    approval_status: "conditionally_approved"
+    blocking_issues: []
+    round1_blockers:
+      BI-1: "RESOLVED - four distinct first payloads across the options; no pair identical on share form and payload."
+      BI-2: "RESOLVED - one feasibility cap applied to all options; tie-break legitimate and traceable (uses components already in the matrix, adjusts no weight); dissent honestly represented."
+    dimensions:
+      jtbd_rigor: PASSED
+      research_quality: PASSED
+      option_diversity: PASSED
+      taste_application: PASSED
+      recommendation_coherence: PASSED
+    spot_checks:
+      - "All base totals, S1-S8, payload pool, licence pool (base and reversibility weights) and OS1-OS7 opportunity scores recomputed: all match."
+      - "1.5 GiB Helm figure confirmed in the spike findings' Recommendation ('Docker / Helm' bullet)."
+      - "DIVERGE-G1..G4 labels consistent; DISCOVER G1-G3 failures stated as open and accepted."
+    conditions_addressed_after_round_2:
+      - "Tie-break and licence reversibility weights labelled post-hoc (introduced after the ties appeared); rule 1 stated to add no new information."
+      - "Rule 2 softened: not needed, and close on its own (depends on how partial coverage is weighed)."
+      - "DVF elimination rule stated (total below 6 eliminates)."
+      - "Option 3 'not reachable' softened to a desk judgement with no Lighthouse data."
+      - "I1 reworded to 'None of the four products documents...'; I6 no longer claims 'cheapest'."
+      - "Standalone print probe on macOS and Linux made an explicit entry condition for DESIGN in recommendation.md."
+      - "jobs.yaml entry job-share-numbers-outside-lighthouse confirmed present (end of file; the file exceeds ctx_search's size limit, which is why the reviewer's search found nothing). Uncommitted by instruction: this wave makes no commits."
+    final_status: "approved for handoff to DISCUSS (conditions addressed; no further review round, max 2 reached)"
