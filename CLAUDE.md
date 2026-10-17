@@ -92,6 +92,17 @@ Two standing principles worth keeping visible here because they're easy to skip 
   dashboard widgets, and keyed TanStack queries so a late answer for an old request never lands. DISTILL
   then pins both states, and E2E page objects wait for `data-widget-status="ready"` rather than mere
   visibility. Check it by hand with the browser throttled to a slow connection.
+- **DESIGN ends with an architecture summary for the maintainer.** When a DESIGN wave finishes (in AFK
+  mode too, as part of the wave-done update), post a short, high-level summary in chat, so the maintainer
+  can learn from it and keep up:
+  1. **The feature's shape in hexagonal terms.** Cover the driving adapters, the application services and
+     ports, the domain (Models) pieces, and the driven adapters (trackers, persistence). Mark each one new or
+     modified, name any new external call, and say what stays unchanged. Include a small ASCII diagram.
+  2. **The design patterns that were weighed.** Examples: the SOLID principles at play, domain events,
+     outbox, unit of work, value objects, strategy, optimistic concurrency, a JSON column versus a child
+     table. Say which were chosen and which were rejected, with one line of why for each.
+
+  It is a learning aid, not a replacement for `brief.md` or the ADRs.
 - **Each Epic ships on its own.** When DISCUSS splits a feature into several Epics, each one must be
   deliverable and releasable alone: finished, it adds something valuable to at least some users, even if
   no other Epic of the split ever ships. Order the slices Epic by Epic, so one Epic is completed before
