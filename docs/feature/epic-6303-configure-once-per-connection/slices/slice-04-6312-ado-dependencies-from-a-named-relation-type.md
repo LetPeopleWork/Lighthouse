@@ -39,6 +39,8 @@ slice 03's list; a directional relation type that slice 03's spike recorded as p
 to a stored Feature against Features whose `DependsOnReferences` hold it, before and after (baseline 0%, target
 100%). Record both numbers here.
 
+Baseline: 0% (no named relation read before slice 04). To be measured in the maintainer's manual review on huserben/ThisIsADemo (Tested By links 5816→5819, 5822→5825/5828).
+
 ## Acceptance criteria
 AC-3.4 – AC-3.8.
 
