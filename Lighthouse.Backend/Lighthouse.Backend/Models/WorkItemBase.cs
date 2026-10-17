@@ -15,6 +15,7 @@ namespace Lighthouse.Backend.Models
             SyncedTransitions = workItemBase.SyncedTransitions;
             TransitionsAreItsWholeHistory = workItemBase.TransitionsAreItsWholeHistory;
             ParentCandidatesFromLinks = workItemBase.ParentCandidatesFromLinks;
+            RefreshFindings = workItemBase.RefreshFindings;
         }
 
         public int Id { get; set; }
@@ -77,6 +78,13 @@ namespace Lighthouse.Backend.Models
         /// </summary>
         [NotMapped]
         public IReadOnlyList<ParentCandidate> ParentCandidatesFromLinks { get; set; } = [];
+
+        /// <summary>
+        /// What reading this record showed to be wrong with how a setting is configured. Only the refresh
+        /// reads it, deciding once for the whole download what is worth reporting, so it is never stored.
+        /// </summary>
+        [NotMapped]
+        public IReadOnlyList<RefreshFinding> RefreshFindings { get; set; } = [];
 
         /// <param name="zone">
         /// Bug #5567: both ends are stored instants, so both reduce to a day in the instance zone -

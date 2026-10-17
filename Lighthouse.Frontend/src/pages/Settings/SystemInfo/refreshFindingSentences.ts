@@ -43,9 +43,13 @@ type FindingSentence = (
 	featureTerm: string,
 ) => string;
 
+const cannotBeReadHere = (settingName: string) =>
+	`The ${settingName} points at an Azure DevOps relation type, which only the Dependency Field reads.`;
+
 const SENTENCES: Readonly<Record<string, FindingSentence>> = {
 	NamedLinkPointsBothWays: pointsBothWays,
 	NamedLinkMatchedNothing: matchedNothing,
+	RelationTypeCannotBeReadHere: cannotBeReadHere,
 };
 
 // Rows outlive the build that wrote them, so a kind or setting this browser does not know reads as

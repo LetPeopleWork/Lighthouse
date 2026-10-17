@@ -10,7 +10,7 @@ import type {
  * Priya names "depends on" as Payments Platform's Dependency Field, its update finishes, and Dependencies
  * stays empty. Refresh History, on Payments Platform, now says why, as of the latest full download: no
  * Feature carries that link, and these are the links that were seen. Each finding reads in the words this
- * instance uses. The cases still skipped describe findings the backend does not make yet; the rest run.
+ * instance uses.
  */
 
 vi.mock("@mui/x-charts", async () => {
@@ -137,7 +137,7 @@ describe("Refresh History says what a Portfolio's settings named that its latest
 	});
 
 	// @error @us-03 @ac-3.10 @contract-shape:pure-function
-	it.skip("a relation type named as the Parent Override Field says only the Dependency Field reads one", async () => {
+	it("a relation type named as the Parent Override Field says only the Dependency Field reads one", async () => {
 		await givenRefreshHistoryHolds(
 			paymentsPlatformRows([ARelationTypeAsParentOverride]),
 		);

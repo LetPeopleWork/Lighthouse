@@ -183,8 +183,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 : await FetchEverything(connector, team);
 
             var placements = PlaceWhatTheLinksLeftOpen(team, ParentPlacementReport.Team(team.Name), ParentNarrowing.Narrow, fetch.WorkItems);
+            var findings = ReportWhatTheSettingsLeftUnread($"Team {team.Name}", fetch.Outcome, fetch.WorkItems, _ => true);
 
-            return fetch with { Outcome = CountingThePlacements(fetch.Outcome, placements) };
+            return fetch with { Outcome = CountingThePlacements(fetch.Outcome, placements) with { Findings = findings } };
         }
 
         private static SyncOutcome CountingThePlacements(SyncOutcome outcome, (int Placed, int NotPlaced) placements)
@@ -982,33 +983,34 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 : await FetchEveryFeature(connector, portfolio, Stopping);
 
             var placements = PlaceWhatTheLinksLeftOpen(portfolio, ParentPlacementReport.Portfolio(portfolio.Name), ParentNarrowing.DoNotNarrow, fetch.Features);
-            var findings = ReportWhatTheSettingsLeftUnread(portfolio, fetch);
+            var findings = ReportWhatTheSettingsLeftUnread($"Portfolio {portfolio.Name}", fetch.Outcome, fetch.Features, setting => TheSettingIsRead(portfolio, setting));
 
             return fetch with { Outcome = CountingThePlacements(fetch.Outcome, placements) with { Findings = findings } };
         }
 
         /// <summary>
-        /// Every Feature read through a misconfigured setting shows the same misconfiguration, so it is
-        /// reported once per kind and setting for the whole refresh, never once per Feature. Only a whole-query refresh
-        /// judges: a cheap one reads the few Features that moved, which says nothing about the setting, and
+        /// Every record read through a misconfigured setting shows the same misconfiguration, so it is
+        /// reported once per kind and setting for the whole refresh, never once per record. Only a whole-query refresh
+        /// judges: a cheap one reads the few records that moved, which says nothing about the setting, and
         /// reporting nothing from it leaves the last whole-query refresh's word standing.
         /// </summary>
-        private List<RefreshFinding> ReportWhatTheSettingsLeftUnread(Portfolio portfolio, RemoteFeatureFetch fetch)
+        private List<RefreshFinding> ReportWhatTheSettingsLeftUnread(
+            string owner, SyncOutcome outcome, IEnumerable<WorkItemBase> records, Func<RefreshFindingSetting, bool> theSettingIsRead)
         {
-            if (fetch.Outcome.Mode != SyncMode.Full)
+            if (outcome.Mode != SyncMode.Full)
             {
                 return [];
             }
 
-            var findings = fetch.Features
-                .SelectMany(feature => feature.RefreshFindings)
-                .Where(finding => TheSettingIsRead(portfolio, finding.Setting))
+            var findings = records
+                .SelectMany(record => record.RefreshFindings)
+                .Where(finding => theSettingIsRead(finding.Setting))
                 .DistinctBy(finding => (finding.Kind, finding.Setting))
                 .ToList();
 
             foreach (var finding in findings)
             {
-                WarnAbout(portfolio, finding);
+                WarnAbout(owner, finding);
             }
 
             return findings;
@@ -1021,15 +1023,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         private static bool TheSettingIsRead(Portfolio portfolio, RefreshFindingSetting setting)
             => !(portfolio.IgnoreDependencies && setting == RefreshFindingSetting.DependencyField);
 
-        private void WarnAbout(Portfolio portfolio, RefreshFinding finding)
+        private void WarnAbout(string owner, RefreshFinding finding)
         {
             var setting = TheNameAnAdministratorKnows(finding.Setting);
 
             if (finding.Kind == RefreshFindingKind.NamedLinkPointsBothWays)
             {
                 logger.LogWarning(
-                    "Portfolio {PortfolioName}: its {Setting} names '{Named}', which points both ways. Name one end: {Ends}.",
-                    portfolio.Name,
+                    "{Owner}: its {Setting} names '{Named}', which points both ways. Name one end: {Ends}.",
+                    owner,
                     setting,
                     finding.Named,
                     string.Join(" or ", finding.Seen.Select(seen => $"'{seen}'")));
@@ -1039,8 +1041,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             if (finding.Kind == RefreshFindingKind.NamedLinkMatchedNothing)
             {
                 logger.LogWarning(
-                    "Portfolio {PortfolioName}: its {Setting} names '{Named}', and no Feature carries that link. Links seen: {LinksSeen}.",
-                    portfolio.Name,
+                    "{Owner}: its {Setting} names '{Named}', and no Feature carries that link. Links seen: {LinksSeen}.",
+                    owner,
                     setting,
                     finding.Named,
                     string.Join(", ", finding.Seen));
@@ -1050,16 +1052,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             if (finding.Kind == RefreshFindingKind.RelationTypeNotYetReadForDependencies)
             {
                 logger.LogWarning(
-                    "Portfolio {PortfolioName}: its {Setting} names '{Named}', an Azure DevOps relation type, which this version does not read yet, so no dependencies were read.",
-                    portfolio.Name,
+                    "{Owner}: its {Setting} names '{Named}', an Azure DevOps relation type, which this version does not read yet, so no dependencies were read.",
+                    owner,
                     setting,
                     finding.Named);
                 return;
             }
 
             logger.LogWarning(
-                "Portfolio {PortfolioName}: its {Setting} names '{Named}', which the refresh could not read as configured. What it saw: {Seen}",
-                portfolio.Name,
+                "{Owner}: its {Setting} names '{Named}', which the refresh could not read as configured. What it saw: {Seen}",
+                owner,
                 setting,
                 finding.Named,
                 string.Join(", ", finding.Seen.Select(seen => $"'{seen}'")));

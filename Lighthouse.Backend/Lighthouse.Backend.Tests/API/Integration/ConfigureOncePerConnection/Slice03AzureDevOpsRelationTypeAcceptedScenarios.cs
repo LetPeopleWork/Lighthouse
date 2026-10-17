@@ -227,7 +227,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice03)]
         [Category("us-03")]
         [Category("ac-3.10")]
         [Category("error")]
@@ -256,7 +255,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         [TestCase(ASettingThatReadsAField.SizeEstimateField, TestName = "A relation type named as Size Estimate Field reads as nothing named and says why")]
         [TestCase(ASettingThatReadsAField.FeatureOwnerField, TestName = "A relation type named as Feature Owner Field reads as nothing named and says why")]
         [TestCase(ASettingThatReadsAField.EstimationField, TestName = "A relation type named as Estimation field reads as nothing named and says why")]
-        [Ignore(PendingEpic6303.Slice03)]
         [Category("us-03")]
         [Category("ac-3.10")]
         [Category("error")]

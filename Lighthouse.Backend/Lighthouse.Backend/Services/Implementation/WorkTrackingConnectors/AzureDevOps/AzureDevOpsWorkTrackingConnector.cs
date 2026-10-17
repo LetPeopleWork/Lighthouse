@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsByQuery(team, TheQueryATeamIsFetchedBy(team), cancellationToken);
 
-            return await TheTeamsWorkItemsFrom(team, adoWorkItems, additionalFieldReferences.Fields, cancellationToken);
+            return await TheTeamsWorkItemsFrom(team, adoWorkItems, additionalFieldReferences, cancellationToken);
         }
 
         /// <summary>
@@ -95,14 +95,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsById(team, referenceIds, cancellationToken);
 
-            return await TheTeamsWorkItemsFrom(team, adoWorkItems, additionalFieldReferences.Fields, cancellationToken);
+            return await TheTeamsWorkItemsFrom(team, adoWorkItems, additionalFieldReferences, cancellationToken);
         }
 
         private async Task<IEnumerable<LighthouseWorkItem>> TheTeamsWorkItemsFrom(
-            Team team, IEnumerable<AdoWorkItem> adoWorkItems, Dictionary<int, string> additionalFieldReferences, CancellationToken cancellationToken)
+            Team team, IEnumerable<AdoWorkItem> adoWorkItems, AdditionalFieldResolution additionalFieldReferences, CancellationToken cancellationToken)
         {
-            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, team, dependenciesComeFromRelations: false, cancellationToken);
-            var workItems = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, team, additionalFieldReferences, cancellationToken);
+            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, team, additionalFieldReferences, dependenciesComeFromRelations: false, cancellationToken);
+            var workItems = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, team, additionalFieldReferences.Fields, cancellationToken);
+            var settingFindings = WhatReadingTheSettingsEveryOwnerHasFound(team, additionalFieldReferences);
 
             var relations = await relationsTask;
 
@@ -110,6 +111,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             {
                 var parentReference = GetParentReference(team, workItem, relations.ParentReferences);
                 workItem.ParentReferenceId = parentReference;
+                workItem.RefreshFindings = settingFindings;
             }
 
             return workItems.Select(workItem => new LighthouseWorkItem(workItem, team));
@@ -636,10 +638,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             Portfolio portfolio, IEnumerable<AdoWorkItem> adoWorkItems, AdditionalFieldResolution additionalFieldReferences, CancellationToken cancellationToken)
         {
             var dependenciesComeFromRelations = DependencySourceSelector.ReadsTheTrackersOwnLink(portfolio);
-            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, portfolio, dependenciesComeFromRelations, cancellationToken);
+            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, portfolio, additionalFieldReferences, dependenciesComeFromRelations, cancellationToken);
 
             var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, portfolio, additionalFieldReferences.Fields, cancellationToken);
-            var dependencyFieldFindings = WhatReadingTheDependencyFieldFound(portfolio, additionalFieldReferences);
+            var settingFindings = WhatReadingThePortfoliosSettingsFound(portfolio, additionalFieldReferences);
 
             var relations = await relationsTask;
             var features = new List<Feature>();
@@ -655,7 +657,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                     EstimatedSize = estimatedSize,
                     OwningTeam = owningTeam,
                     ParentReferenceId = parentReference,
-                    RefreshFindings = dependencyFieldFindings,
+                    RefreshFindings = settingFindings,
                 };
 
                 features.Add(feature);
@@ -666,20 +668,38 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         /// <summary>
         /// A Dependency Field naming a relation type reads nothing until relations are read for dependencies,
-        /// which looks exactly like a Portfolio whose Features wait on nothing. Recording it on every Feature
-        /// lets the refresh say so once, instead of leaving the empty answer to speak for itself.
+        /// which looks exactly like a Portfolio whose Features wait on nothing. Every other setting reads a
+        /// field and never a relation type, so naming one there reads as if nothing were named. Either way
+        /// the empty answer looks believable, so every record carries the finding and the refresh says it once.
         /// </summary>
-        private static IReadOnlyList<RefreshFinding> WhatReadingTheDependencyFieldFound(Portfolio portfolio, AdditionalFieldResolution additionalFieldReferences)
+        private static List<RefreshFinding> WhatReadingThePortfoliosSettingsFound(Portfolio portfolio, AdditionalFieldResolution resolution)
+            =>
+            [
+                .. ARelationTypeNamedIn(portfolio, resolution, portfolio.DependencyOverrideAdditionalFieldDefinitionId, RefreshFindingKind.RelationTypeNotYetReadForDependencies, RefreshFindingSetting.DependencyField),
+                .. WhatReadingTheSettingsEveryOwnerHasFound(portfolio, resolution),
+                .. ARelationTypeNamedIn(portfolio, resolution, portfolio.SizeEstimateAdditionalFieldDefinitionId, RefreshFindingKind.RelationTypeCannotBeReadHere, RefreshFindingSetting.SizeEstimateField),
+                .. ARelationTypeNamedIn(portfolio, resolution, portfolio.FeatureOwnerAdditionalFieldDefinitionId, RefreshFindingKind.RelationTypeCannotBeReadHere, RefreshFindingSetting.FeatureOwnerField),
+            ];
+
+        private static List<RefreshFinding> WhatReadingTheSettingsEveryOwnerHasFound(WorkTrackingSystemOptionsOwner owner, AdditionalFieldResolution resolution)
+            =>
+            [
+                .. ARelationTypeNamedIn(owner, resolution, owner.ParentOverrideAdditionalFieldDefinitionId, RefreshFindingKind.RelationTypeCannotBeReadHere, RefreshFindingSetting.ParentOverrideField),
+                .. ARelationTypeNamedIn(owner, resolution, owner.EstimationAdditionalFieldDefinitionId, RefreshFindingKind.RelationTypeCannotBeReadHere, RefreshFindingSetting.EstimationField),
+            ];
+
+        private static IEnumerable<RefreshFinding> ARelationTypeNamedIn(
+            WorkTrackingSystemOptionsOwner owner, AdditionalFieldResolution resolution, int? definitionId, RefreshFindingKind kind, RefreshFindingSetting setting)
         {
-            if (!additionalFieldReferences.NamesARelationType(portfolio.DependencyOverrideAdditionalFieldDefinitionId))
+            if (!resolution.NamesARelationType(definitionId))
             {
-                return [];
+                yield break;
             }
 
-            var named = portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions
-                .Find(definition => definition.Id == portfolio.DependencyOverrideAdditionalFieldDefinitionId)?.Reference ?? string.Empty;
+            var named = owner.WorkTrackingSystemConnection.AdditionalFieldDefinitions
+                .Find(definition => definition.Id == definitionId)?.Reference ?? string.Empty;
 
-            return [new RefreshFinding(RefreshFindingKind.RelationTypeNotYetReadForDependencies, RefreshFindingSetting.DependencyField, named, [])];
+            yield return new RefreshFinding(kind, setting, named, []);
         }
 
         private static async Task VerifyConnection(WorkItemTrackingHttpClient witClient)
@@ -1232,6 +1252,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<RelationsOfWorkItems> GetRelationsOfWorkItems(
             IEnumerable<AdoWorkItem> adoWorkItems,
             WorkTrackingSystemOptionsOwner workTrackingSystemOptionOwner,
+            AdditionalFieldResolution additionalFieldReferences,
             bool dependenciesComeFromRelations,
             CancellationToken cancellationToken)
         {
@@ -1240,7 +1261,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             // reason enough on its own to skip reading them - skipping it while the dependencies still
             // live there leaves every dependency unread, for good, and an empty list of dependencies is a
             // believable answer, so nothing about it looks wrong.
-            if (workTrackingSystemOptionOwner.ParentOverrideAdditionalFieldDefinitionId.HasValue && !dependenciesComeFromRelations)
+            // A Parent Override Field naming a relation type reads no parent, so the native one still has to be read.
+            var theParentComesFromAField = workTrackingSystemOptionOwner.ParentOverrideAdditionalFieldDefinitionId.HasValue
+                && !additionalFieldReferences.NamesARelationType(workTrackingSystemOptionOwner.ParentOverrideAdditionalFieldDefinitionId);
+
+            if (theParentComesFromAField && !dependenciesComeFromRelations)
             {
                 return RelationsOfWorkItems.None();
             }
@@ -1564,12 +1589,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         }
 
         /// <summary>
-        /// The relation types one organisation lists, each directional type once per end. A reference matches an
-        /// end by its reference name in any case, never by the name it is displayed under, because a relation
-        /// on a work item carries the reference name and nothing else. Attachments, hyperlinks and artifact
-        /// links are listed beside them but never link one work item to another, so nothing can name them.
-        /// </summary>
-        /// <summary>
         /// What each additional field definition resolved to on one fetch: the field it reads, empty when it
         /// reads none, and which of the definitions named a relation type instead. Never stored: it answers
         /// for the organisation of the fetch that built it.
@@ -1581,6 +1600,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             public bool NamesARelationType(int? definitionId) => definitionId.HasValue && RelationTypes.Contains(definitionId.Value);
         }
 
+        /// <summary>
+        /// The relation types one organisation lists, each directional type once per end. A reference matches an
+        /// end by its reference name in any case, never by the name it is displayed under, because a relation
+        /// on a work item carries the reference name and nothing else. Attachments, hyperlinks and artifact
+        /// links are listed beside them but never link one work item to another, so nothing can name them.
+        /// </summary>
         private sealed class RelationTypeListing
         {
             private RelationTypeListing(List<string> ends, bool wasRefused)
