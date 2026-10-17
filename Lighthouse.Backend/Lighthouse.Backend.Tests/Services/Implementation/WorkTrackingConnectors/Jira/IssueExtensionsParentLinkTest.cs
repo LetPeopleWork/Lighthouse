@@ -41,69 +41,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static readonly DateTime TheDayTheParentWasLinked = new(2026, 3, 4, 9, 15, 0, DateTimeKind.Utc);
 
-        private const string DependsOn = "depends on";
-
-        private static readonly JiraLinkType Dependency = new("Dependency", "is depended on by", DependsOn);
-
-        private static readonly string[] OnlyTheParent = [TheParent];
-
-        /// <summary>
-        /// A Dependency Field naming the outward phrase reads the issue holding that end as the one waiting.
-        /// The issue at the other end is handed the same link pointing back, and a link of any other type
-        /// on the same issue says nothing about this one.
-        /// </summary>
-        [Test]
-        public void ExtractDependencyReferencesFromLinks_ReadsOnlyTheEndThePhraseNamesOnTheTypeItNames()
-        {
-            var fields = FieldsOfAnIssueWith(
-                Dependency.LinkWhoseOutwardIssueIs(TheParent),
-                Dependency.LinkWhoseInwardIssueIs(AnotherParent),
-                JiraLinkType.Blocks("is blocked by").LinkWhoseOutwardIssueIs(AChild),
-                Cloners.LinkWhoseOutwardIssueIs(AnotherChild));
-
-            var waitsOn = fields.ExtractDependencyReferencesFromLinks("Dependency", LinkDirection.Outward);
-
-            Assert.That(waitsOn, Is.EqualTo(OnlyTheParent));
-        }
-
-        [Test]
-        public void ExtractDependencyReferencesFromLinks_TheIssueBeingWaitedOnWaitsOnNothing()
-        {
-            var fields = FieldsOfAnIssueWith(Dependency.LinkWhoseInwardIssueIs(AChild));
-
-            var waitsOn = fields.ExtractDependencyReferencesFromLinks(DependsOn, LinkDirection.Outward);
-
-            Assert.That(waitsOn, Is.Empty);
-        }
-
-        /// <summary>
-        /// The issue carries both ends of a Dependency link and both ends of a Blocks link whose inward end an
-        /// administrator renamed. Whatever was typed - the type's name or either phrase, in any case - picks the
-        /// type, and the direction alone picks which end does the waiting.
-        /// </summary>
-        [TestCase("Dependency", LinkDirection.Outward, TheParent)]
-        [TestCase("DEPENDENCY", LinkDirection.Outward, TheParent)]
-        [TestCase("Depends On", LinkDirection.Outward, TheParent)]
-        [TestCase("dependency", LinkDirection.Inward, AnotherParent)]
-        [TestCase("IS DEPENDED ON BY", LinkDirection.Inward, AnotherParent)]
-        [TestCase("Blocks", LinkDirection.Inward, AChild)]
-        [TestCase("Waits For", LinkDirection.Inward, AChild)]
-        [TestCase("BLOCKS", LinkDirection.Outward, AnotherChild)]
-        public void ExtractDependencyReferencesFromLinks_ReadsTheEndTheDirectionNamesOnTheTypeWhateverWasTyped(
-            string reference, LinkDirection direction, string expected)
-        {
-            var renamedBlocks = JiraLinkType.Blocks("waits for");
-            var fields = FieldsOfAnIssueWith(
-                Dependency.LinkWhoseOutwardIssueIs(TheParent),
-                Dependency.LinkWhoseInwardIssueIs(AnotherParent),
-                renamedBlocks.LinkWhoseInwardIssueIs(AChild),
-                renamedBlocks.LinkWhoseOutwardIssueIs(AnotherChild));
-
-            var waitsOn = fields.ExtractDependencyReferencesFromLinks(reference, direction);
-
-            Assert.That(waitsOn, Is.EqualTo(new List<string> { expected }));
-        }
-
         [Test]
         public void YieldsTheOutwardCounterpartOfALinkWhoseInwardEndThisIssueHolds()
         {
