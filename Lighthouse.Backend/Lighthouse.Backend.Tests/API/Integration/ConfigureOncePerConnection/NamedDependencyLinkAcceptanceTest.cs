@@ -1009,6 +1009,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                             throw new VssServiceException("TF401027: You need the Git 'GenericRead' permission to perform this action.");
                         }
 
+                        if (TheListingFailsWith is not null)
+                        {
+                            throw TheListingFailsWith;
+                        }
+
                         return Task.FromResult(RelationTypesItLists.ConvertAll(AsListed));
                     });
 
@@ -1037,6 +1042,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             public List<string> RelationTypesItLists { get; } = [.. RelationTypesAnOrganisationAnswered.Select(type => type.ReferenceName)];
 
             public bool RefusesToListItsRelationTypes { get; set; }
+
+            /// <summary>What the request for the relation types fails with instead of answering, when set.</summary>
+            public Exception? TheListingFailsWith { get; set; }
 
             public int RelationTypeListings => Requests.Count(request => request == "relation types");
 

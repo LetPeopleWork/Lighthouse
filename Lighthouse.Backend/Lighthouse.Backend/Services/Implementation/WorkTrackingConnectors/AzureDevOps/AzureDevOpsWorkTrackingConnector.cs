@@ -773,7 +773,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// Asked for afresh on every call and handed down that call only: one connector serves every
         /// connection to Azure DevOps, so a listing kept between calls would answer for the wrong organisation.
         /// An answer that arrives without a list is read as an empty one, since nothing refused; a refusal or a
-        /// failed request is kept apart, because it says nothing about which relation types exist.
+        /// failed request is kept apart, because it says nothing about which relation types exist. A request
+        /// that timed out counts as failed, while one the caller cancelled still stops the caller.
         /// </summary>
         private async Task<RelationTypeListing> TheRelationTypesTheOrganisationLists(WorkItemTrackingHttpClient witClient, CancellationToken cancellationToken)
         {
@@ -781,7 +782,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             {
                 return RelationTypeListing.Of(await witClient.GetRelationTypesAsync(cancellationToken: cancellationToken) ?? []);
             }
-            catch (Exception failure) when (failure is VssException or HttpRequestException)
+            catch (Exception failure) when (failure is VssException or HttpRequestException or TimeoutException
+                || (failure is OperationCanceledException && !cancellationToken.IsCancellationRequested))
             {
                 logger.LogWarning(failure, "Azure DevOps would not list the relation types for this organisation");
 

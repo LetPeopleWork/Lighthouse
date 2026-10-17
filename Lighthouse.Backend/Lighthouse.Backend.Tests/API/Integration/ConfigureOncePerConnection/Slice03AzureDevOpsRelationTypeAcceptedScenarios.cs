@@ -29,6 +29,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         private const string StoreOperations = "Store Operations";
 
+        private const string AcceptedAsTheButtonReadsIt = "The Validate button is answered with OK.";
+
+        private const string RefusedAsTheButtonReadsIt = "A refused connection is answered as a bad request, as the Validate button reads it.";
+
+        private const string TheNativeParentStands = "The native parent stands.";
+
         private static readonly string[] Nothing = [];
 
         private static readonly string[] TheNotYetReadFinding = ["RelationTypeNotYetReadForDependencies"];
@@ -52,7 +58,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(answer.Status, Is.EqualTo(HttpStatusCode.OK), "The Validate button is answered with OK.");
+                Assert.That(answer.Status, Is.EqualTo(HttpStatusCode.OK), AcceptedAsTheButtonReadsIt);
                 Assert.That(answer.IsValid, Is.True, $"Validate refused it: {answer.Message}");
             }
         }
@@ -68,7 +74,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(answer.Status, Is.EqualTo(HttpStatusCode.OK), "The Validate button is answered with OK.");
+                Assert.That(answer.Status, Is.EqualTo(HttpStatusCode.OK), AcceptedAsTheButtonReadsIt);
                 Assert.That(answer.IsValid, Is.True, $"Validate refused it: {answer.Message}");
             }
         }
@@ -88,7 +94,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(answer.Status, Is.EqualTo(HttpStatusCode.OK), "The Validate button is answered with OK.");
+                Assert.That(answer.Status, Is.EqualTo(HttpStatusCode.OK), AcceptedAsTheButtonReadsIt);
                 Assert.That(answer.IsValid, Is.True, $"Validate refused it: {answer.Message}");
                 Assert.That(contoso.RelationTypeListings, Is.Zero,
                     "The relation types are asked for only when a reference missed the field list.");
@@ -129,7 +135,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(answer.Status, Is.EqualTo(HttpStatusCode.BadRequest), "A refused connection is answered as a bad request, as the Validate button reads it.");
+                Assert.That(answer.Status, Is.EqualTo(HttpStatusCode.BadRequest), RefusedAsTheButtonReadsIt);
                 Assert.That(answer.IsValid, Is.False);
                 Assert.That(answer.Message, Does.Contain("Contoso.DependsOnn-Forward"), "The refusal names what was not found.");
                 Assert.That(answer.Message, Does.Contain(ContosoDependsOnForward).And.Contain(Successor).And.Contain(Related),
@@ -152,10 +158,35 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(answer.Status, Is.EqualTo(HttpStatusCode.BadRequest), "A refused connection is answered as a bad request, as the Validate button reads it.");
+                Assert.That(answer.Status, Is.EqualTo(HttpStatusCode.BadRequest), RefusedAsTheButtonReadsIt);
                 Assert.That(answer.IsValid, Is.False);
                 Assert.That(answer.Message, Does.Contain("relation types"),
                     "The admin learns that the relation types could not be read, not that the field is missing.");
+            }
+        }
+
+        // A request that timed out or never reached Azure DevOps says no more about the reference than a
+        // refusal does, so it is answered the same way and not as an unexpected error.
+        [TestCase(typeof(TaskCanceledException), TestName = "A relation-type listing that timed out without anybody cancelling fails validation saying the relation types could not be read")]
+        [TestCase(typeof(TimeoutException), TestName = "A relation-type listing that ran out of time fails validation saying the relation types could not be read")]
+        [TestCase(typeof(HttpRequestException), TestName = "A relation-type listing that never reached Azure DevOps fails validation saying the relation types could not be read")]
+        [Category("us-03")]
+        [Category("ac-3.2")]
+        [Category("error")]
+        [Category("contract-shape:pure-function")]
+        public async Task A_relation_type_listing_that_failed_on_the_way_fails_validation_saying_so(Type failure)
+        {
+            TheOrganisationAt(ContosoOrganisation).TheListingFailsWith = Activator.CreateInstance(failure, "The request to list the relation types did not complete.") as Exception
+                ?? throw new InvalidOperationException($"{failure} is not an exception this scenario can throw.");
+
+            var answer = await TheAdministratorValidatesAConnectionTo(ContosoOrganisation, ContosoDependsOnForward);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answer.Status, Is.EqualTo(HttpStatusCode.BadRequest), RefusedAsTheButtonReadsIt);
+                Assert.That(answer.IsValid, Is.False);
+                Assert.That(answer.Message, Does.Contain("would not list its relation types"),
+                    "The admin learns that the relation types could not be read, not that something unexpected went wrong.");
             }
         }
 
@@ -172,7 +203,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(answer.Status, Is.EqualTo(HttpStatusCode.OK), "The Validate button is answered with OK.");
+                Assert.That(answer.Status, Is.EqualTo(HttpStatusCode.OK), AcceptedAsTheButtonReadsIt);
                 Assert.That(answer.IsValid, Is.True, $"Validate refused it: {answer.Message}");
                 Assert.That(contoso.RelationTypeListings, Is.EqualTo(1), "Three relation-type references, one listing.");
             }
@@ -246,7 +277,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(await TheParentShownFor(Item4711), Is.EqualTo($"{Item4702}"), "The native parent stands.");
+                Assert.That(await TheParentShownFor(Item4711), Is.EqualTo($"{Item4702}"), TheNativeParentStands);
                 Assert.That(shown.Findings, Is.Not.Null.And.Count.EqualTo(1));
                 Assert.That(shown.TheFirstFinding?.Kind, Is.EqualTo("RelationTypeCannotBeReadHere"));
                 Assert.That(shown.TheFirstFinding?.Setting, Is.EqualTo("ParentOverrideField"));
@@ -275,7 +306,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(parent, Is.EqualTo($"{Item4702}"), "The native parent stands.");
+                Assert.That(parent, Is.EqualTo($"{Item4702}"), TheNativeParentStands);
                 Assert.That(afterACheapRefresh.NewestRunMode, Is.EqualTo("Delta"));
                 Assert.That(afterACheapRefresh.Findings, Is.Not.Null.And.Count.EqualTo(1),
                     "A cheap refresh cannot tell the setting is fine now, so the full download's finding still shows.");
@@ -304,7 +335,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             await TheTeamRefreshes(StoreOperations);
 
-            Assert.That(await TheParentTheTeamShowsFor(StoreOperations, Item4711), Is.EqualTo($"{Item4702}"), "The native parent stands.");
+            Assert.That(await TheParentTheTeamShowsFor(StoreOperations, Item4711), Is.EqualTo($"{Item4702}"), TheNativeParentStands);
         }
 
         // A Parent Override Field the listing shows to name neither a field nor a relation type is a missing
