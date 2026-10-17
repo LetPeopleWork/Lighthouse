@@ -27,6 +27,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         private const int Item4702 = 4702;
 
+        private const string StoreOperations = "Store Operations";
+
         private static readonly string[] Nothing = [];
 
         private static readonly string[] TheNotYetReadFinding = ["RelationTypeNotYetReadForDependencies"];
@@ -235,7 +237,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         {
             var contoso = TheOrganisationAt(ContosoOrganisation);
             contoso.Holds(Item4711, Item4702);
-            contoso.Relates(Item4711, "System.LinkTypes.Hierarchy-Reverse", Item4702);
+            contoso.Relates(Item4711, Hierarchy, Item4702);
             AnAzureDevOpsPortfolio(RetailRollout, ContosoOrganisation);
             NamesAsItsParentOverrideField(RetailRollout, ContosoDependsOnForward);
 
@@ -249,6 +251,53 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 Assert.That(shown.TheFirstFinding?.Kind, Is.EqualTo("RelationTypeCannotBeReadHere"));
                 Assert.That(shown.TheFirstFinding?.Setting, Is.EqualTo("ParentOverrideField"));
                 Assert.That(shown.TheFirstFinding?.Named, Is.EqualTo(ContosoDependsOnForward));
+            }
+        }
+
+        // A listing that was refused says nothing about whether the reference names a relation type, so the
+        // parent the tracker reports for itself has to stand rather than every item losing its parent.
+        [Test]
+        [Category("us-03")]
+        [Category("ac-3.10")]
+        [Category("error")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_relation_type_named_as_a_Teams_Parent_Override_Field_keeps_the_native_parent_when_the_relation_types_cannot_be_listed()
+        {
+            var contoso = TheOrganisationAt(ContosoOrganisation);
+            contoso.Holds(Item4711, Item4702);
+            contoso.Relates(Item4711, Hierarchy, Item4702);
+            contoso.RefusesToListItsRelationTypes = true;
+            AnAzureDevOpsTeam(StoreOperations, ContosoOrganisation);
+            TheTeamNamesAsItsParentOverrideField(StoreOperations, ContosoDependsOnForward);
+
+            await TheTeamRefreshes(StoreOperations);
+
+            Assert.That(await TheParentTheTeamShowsFor(StoreOperations, Item4711), Is.EqualTo($"{Item4702}"), "The native parent stands.");
+        }
+
+        // A Parent Override Field the listing shows to name neither a field nor a relation type is a missing
+        // field: it is warned about, and it reads no parent, as it always has.
+        [Test]
+        [Category("us-03")]
+        [Category("ac-3.10")]
+        [Category("edge")]
+        [Category("active-guard")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_Teams_Parent_Override_Field_naming_nothing_the_organisation_defines_reads_no_parent()
+        {
+            var contoso = TheOrganisationAt(ContosoOrganisation);
+            contoso.Holds(Item4711, Item4702);
+            contoso.Relates(Item4711, Hierarchy, Item4702);
+            AnAzureDevOpsTeam(StoreOperations, ContosoOrganisation);
+            TheTeamNamesAsItsParentOverrideField(StoreOperations, "Custom.NoSuchParent");
+
+            await TheTeamRefreshes(StoreOperations);
+            var parent = await TheParentTheTeamShowsFor(StoreOperations, Item4711);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(parent, Is.Empty);
+                Assert.That(WhatTheLastRefreshWarned(), Has.Some.Contains("No field in this Azure DevOps organisation is called Custom.NoSuchParent"));
             }
         }
 

@@ -834,6 +834,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                     continue;
                 }
 
+                if (relationTypes.WasRefused)
+                {
+                    resolution.CouldNotTell.Add(additionalFieldDefinition.Id);
+                }
+
                 WarnThatNothingWillBeReadFor(additionalFieldDefinition, relationTypes);
             }
 
@@ -1260,9 +1265,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             // reason enough on its own to skip reading them - skipping it while the dependencies still
             // live there leaves every dependency unread, for good, and an empty list of dependencies is a
             // believable answer, so nothing about it looks wrong. A Parent Override Field naming a relation
-            // type reads no parent at all, so the native parent link still has to be read.
-            var theParentComesFromAField = workTrackingSystemOptionOwner.ParentOverrideAdditionalFieldDefinitionId.HasValue
-                && !additionalFieldResolution.NamesARelationType(workTrackingSystemOptionOwner.ParentOverrideAdditionalFieldDefinitionId);
+            // type reads no parent at all, so the native parent link still has to be read - and so it does
+            // when the relation types could not be listed, since the reference may well be one.
+            var parentOverride = workTrackingSystemOptionOwner.ParentOverrideAdditionalFieldDefinitionId;
+            var theParentComesFromAField = parentOverride.HasValue
+                && !additionalFieldResolution.NamesARelationType(parentOverride)
+                && !additionalFieldResolution.CouldNotTellWhatItNames(parentOverride);
 
             if (theParentComesFromAField && !dependenciesComeFromRelations)
             {
@@ -1589,14 +1597,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         /// <summary>
         /// What each additional field definition resolved to on one fetch: the field it reads, empty when it
-        /// reads none, and which of the definitions named a relation type instead. Never stored: it answers
-        /// for the organisation of the fetch that built it.
+        /// reads none, which of the definitions named a relation type instead, and which matched no field
+        /// while the relation types could not be listed, so nobody can tell whether they name one. Never
+        /// stored: it answers for the organisation of the fetch that built it.
         /// </summary>
-        private sealed record AdditionalFieldResolution(Dictionary<int, string> Fields, HashSet<int> RelationTypes)
+        private sealed record AdditionalFieldResolution(Dictionary<int, string> Fields, HashSet<int> RelationTypes, HashSet<int> CouldNotTell)
         {
-            public static AdditionalFieldResolution None() => new([], []);
+            public static AdditionalFieldResolution None() => new([], [], []);
 
             public bool NamesARelationType(int? definitionId) => definitionId.HasValue && RelationTypes.Contains(definitionId.Value);
+
+            public bool CouldNotTellWhatItNames(int? definitionId) => definitionId.HasValue && CouldNotTell.Contains(definitionId.Value);
         }
 
         /// <summary>

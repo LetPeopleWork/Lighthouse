@@ -87,7 +87,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         protected const string ContosoDependsOnReverse = "Contoso.DependsOn-Reverse";
 
-        private const string Hierarchy = "System.LinkTypes.Hierarchy-Reverse";
+        protected const string Hierarchy = "System.LinkTypes.Hierarchy-Reverse";
 
         private const string RefreshLogRoute = "/api/latest/systeminfo/refreshlog";
 
@@ -126,6 +126,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private readonly Dictionary<string, AnAzureDevOpsOrganisation> organisations = new(StringComparer.OrdinalIgnoreCase);
 
         private readonly Dictionary<string, Portfolio> adoPortfolios = new(StringComparer.Ordinal);
+
+        private readonly Dictionary<string, Team> adoTeams = new(StringComparer.Ordinal);
 
         private CapturedLogMessages whatWasLogged = new();
 
@@ -181,6 +183,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             jiraAnswersItsLinkTypeListUnreadably = false;
             organisations.Clear();
             adoPortfolios.Clear();
+            adoTeams.Clear();
             warningsOfTheLastRefresh = [];
             nextConnectionId = 9600;
             theAdoConnector = null;
@@ -377,6 +380,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         protected Task<WhatRefreshHistoryShows> WhatRefreshHistoryShowsFor(string adoPortfolio)
             => WhatRefreshHistoryShowsFor(adoPortfolios[adoPortfolio].Id);
 
+        protected Task<WhatRefreshHistoryShows> WhatRefreshHistoryShowsForTheTeam(string adoTeam)
+            => WhatRefreshHistoryShowsFor(adoTeams[adoTeam].Id, RefreshType.Team);
+
         /// <summary>Every Warning the most recent refresh wrote, from the connector and the service alike, worded as the console writes it.</summary>
         protected IReadOnlyList<string> WhatTheLastRefreshWarned() => warningsOfTheLastRefresh;
 
@@ -464,6 +470,93 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         protected Task RefreshesNow(string adoPortfolio) => ThePortfolioRefreshes(adoPortfolios[adoPortfolio]);
+
+        /// <summary>
+        /// A Team on its own Azure DevOps connection, pointed at the organisation at <paramref name="url"/>.
+        /// Its query answers with every work item that organisation holds, all of them in progress.
+        /// </summary>
+        protected void AnAzureDevOpsTeam(string name, string url)
+        {
+            TheOrganisationAt(url);
+
+            var connection = AnAzureDevOpsConnectionTo(url);
+            var team = new Team
+            {
+                Id = connection.Id,
+                Name = name,
+                DataRetrievalValue = TheAdoPortfoliosQuery,
+                WorkTrackingSystemConnectionId = connection.Id,
+                WorkTrackingSystemConnection = connection,
+                WorkItemTypes = [AdoFeatureType],
+                ToDoStates = ["New"],
+                DoingStates = ["Active"],
+                DoneStates = ["Closed"],
+            };
+
+            adoTeams[name] = team;
+        }
+
+        /// <summary>The Team names <paramref name="reference"/> as its Parent Override Field.</summary>
+        protected void TheTeamNamesAsItsParentOverrideField(string adoTeam, string reference)
+        {
+            var team = adoTeams[adoTeam];
+            var fieldId = TheParentOverrideFieldId + team.Id;
+
+            team.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                Id = fieldId,
+                DisplayName = reference,
+                Reference = reference,
+            });
+
+            team.ParentOverrideAdditionalFieldDefinitionId = fieldId;
+        }
+
+        protected Task TheTeamRefreshes(string adoTeam)
+            => TheRefreshOf(services => services.GetRequiredService<ITeamUpdater>().TriggerUpdate(adoTeams[adoTeam].Id));
+
+        /// <summary>
+        /// Refreshes the Team until one refresh downloads only what moved, and answers with when the last
+        /// refresh that downloaded everything ran and with what Refresh History shows after the cheap one.
+        /// </summary>
+        protected async Task<(string LastFullDownloadAt, WhatRefreshHistoryShows AfterACheapRefresh)> TheTeamRefreshesUntilARefreshDownloadsOnlyWhatMoved(string adoTeam)
+        {
+            var lastFullDownloadAt = string.Empty;
+
+            for (var refresh = 0; refresh < 4; refresh++)
+            {
+                await TheTeamRefreshes(adoTeam);
+                var shown = await WhatRefreshHistoryShowsForTheTeam(adoTeam);
+
+                if (shown.NewestRunMode == "Delta" && lastFullDownloadAt.Length > 0)
+                {
+                    return (lastFullDownloadAt, shown);
+                }
+
+                lastFullDownloadAt = shown.NewestRunAt;
+            }
+
+            Assert.Fail("Four refreshes of an unchanged Team in a row all downloaded everything, so no cheap refresh could be observed.");
+            return (lastFullDownloadAt, null!);
+        }
+
+        /// <summary>The parent the Team's work in progress names for an Azure DevOps work item.</summary>
+        protected async Task<string> TheParentTheTeamShowsFor(string adoTeam, int workItemId)
+        {
+            TheRunningLighthouse();
+            using var client = theRunningLighthouse!.CreateClient().AsSystemAdmin();
+            var today = DateTime.Today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            using var response = await client.GetAsync(new Uri($"/api/latest/teams/{adoTeams[adoTeam].Id}/metrics/wip?asOfDate={today}", UriKind.Relative));
+            var body = await response.Content.ReadAsStringAsync();
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+
+            var item = JsonNode.Parse(body)!.AsArray()
+                .OfType<JsonObject>()
+                .FirstOrDefault(workItem => workItem["referenceId"]?.GetValue<string>() == $"{workItemId}");
+
+            return item is null ? $"<{workItemId} is not in the Team's work in progress>" : item["parentWorkItemReference"]?.GetValue<string>() ?? string.Empty;
+        }
 
         /// <summary>The stored Feature for an Azure DevOps work item, keyed by its id as Azure DevOps names it.</summary>
         protected Task<IReadOnlyList<string>> WhatTheWorkItemWaitsOn(int workItemId) => WhatTheFeatureWaitsOn($"{workItemId}");
@@ -607,11 +700,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         /// <summary>
-        /// The newest row Refresh History holds for this Portfolio, read through the endpoint the screen
-        /// reads. A Portfolio refresh also asks for a forecast, which writes a row of its own, so the row is
-        /// found by what it refreshed and not by being the newest one there.
+        /// The newest row Refresh History holds for this Portfolio or Team, read through the endpoint the
+        /// screen reads. A Portfolio refresh also asks for a forecast, which writes a row of its own, so the
+        /// row is found by what it refreshed and not by being the newest one there.
         /// </summary>
-        private async Task<WhatRefreshHistoryShows> WhatRefreshHistoryShowsFor(int portfolioId)
+        private async Task<WhatRefreshHistoryShows> WhatRefreshHistoryShowsFor(int entityId, RefreshType type = RefreshType.Portfolio)
         {
             using var client = theRunningLighthouse!.CreateClient().AsSystemAdmin();
             using var response = await client.GetAsync(new Uri(RefreshLogRoute, UriKind.Relative));
@@ -620,13 +713,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             using var rows = JsonDocument.Parse(body);
             var newest = rows.RootElement.ValueKind == JsonValueKind.Array
                 ? rows.RootElement.EnumerateArray()
-                    .Where(row => IsAPortfolioRowFor(row, portfolioId))
+                    .Where(row => IsARowFor(row, type, entityId))
                     .OrderByDescending(row => row.GetProperty("id").GetInt32())
                     .FirstOrDefault()
                 : default;
 
             Assert.That(newest.ValueKind, Is.EqualTo(JsonValueKind.Object),
-                $"Refresh History holds no row for Portfolio {portfolioId}. It answered {(int)response.StatusCode}: {body}");
+                $"Refresh History holds no row for {type} {entityId}. It answered {(int)response.StatusCode}: {body}");
 
             var findings = newest.TryGetProperty("latestFullRunFindings", out var listed) && listed.ValueKind == JsonValueKind.Array
                 ? listed.EnumerateArray().Select(AsFinding).ToList()
@@ -644,21 +737,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 finding.GetProperty("named").GetString() ?? string.Empty,
                 [.. finding.GetProperty("seen").EnumerateArray().Select(seen => seen.GetString() ?? string.Empty)]);
 
-        private static bool IsAPortfolioRowFor(JsonElement row, int entityId)
+        private static bool IsARowFor(JsonElement row, RefreshType type, int entityId)
         {
             var recordedType = row.GetProperty("type");
-            var isAPortfolioRow = recordedType.ValueKind == JsonValueKind.String
-                ? recordedType.GetString() == nameof(RefreshType.Portfolio)
-                : recordedType.GetInt32() == (int)RefreshType.Portfolio;
+            var isOfThatType = recordedType.ValueKind == JsonValueKind.String
+                ? recordedType.GetString() == $"{type}"
+                : recordedType.GetInt32() == (int)type;
 
-            return isAPortfolioRow && row.GetProperty("entityId").GetInt32() == entityId;
+            return isOfThatType && row.GetProperty("entityId").GetInt32() == entityId;
         }
 
         /// <summary>
         /// Triggers one refresh and waits for the update queue to go idle, keeping what that refresh warned
         /// about and how many requests it sent to Jira.
         /// </summary>
-        private async Task ThePortfolioRefreshes(Portfolio portfolio)
+        private Task ThePortfolioRefreshes(Portfolio portfolio)
+            => TheRefreshOf(services => services.GetRequiredService<IPortfolioUpdater>().TriggerUpdate(portfolio.Id));
+
+        private async Task TheRefreshOf(Action<IServiceProvider> trigger)
         {
             var services = TheRunningLighthouse();
             var statusStore = services.GetRequiredService<IUpdateStatusStore>();
@@ -666,7 +762,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             var warningsBefore = whatWasLogged.WarningsAsWritten.Count;
             var requestsBefore = requestsJiraAnswered.Count;
 
-            services.GetRequiredService<IPortfolioUpdater>().TriggerUpdate(portfolio.Id);
+            trigger(services);
 
             var deadline = DateTime.UtcNow.AddSeconds(60);
             while (statusStore.HasActiveWork())
@@ -745,6 +841,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             foreach (var portfolio in adoPortfolios.Values)
             {
                 portfolios.Add(portfolio);
+            }
+
+            var teams = setupScope.ServiceProvider.GetRequiredService<IRepository<Team>>();
+            foreach (var team in adoTeams.Values)
+            {
+                teams.Add(team);
             }
 
             portfolios.Save().GetAwaiter().GetResult();
