@@ -530,7 +530,7 @@ describe("defaults set once on the connection", () => {
 		// The save dialog for a changed default arrives with the updates it asks about. Until then a changed
 		// default is saved exactly as any other change to the connection.
 		// @driving_port @us-04 @ac-5.4 @contract-shape:bounded-change @retired-by-slice-06
-		it.skip("a default 3 Teams follow saves without asking anything, nested in the connection, as a save does today", async () => {
+		it("a default 3 Teams follow saves without asking anything, nested in the connection, as a save does today", async () => {
 			const server = await givenPriyaOpensJiraDcPayments();
 
 			await whenPriyaSetsTheTeamsParentOverrideDefault(CausedBy);
@@ -546,7 +546,7 @@ describe("defaults set once on the connection", () => {
 		});
 
 		// @error @us-04 @contract-shape:unbounded-preservation
-		it.skip("a save that changes neither a default nor a field sends the defaults as they were and asks nothing", async () => {
+		it("a save that changes neither a default nor a field sends the defaults as they were and asks nothing", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
 					defaults: { parentOverrideForTeams: 11 },
