@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-10-16
+updated: 2026-10-17
 description: >
   KPI contracts — per-outcome data collection, dashboard mapping, alerting thresholds.
   Created during the DEVOPS wave of work-tracking-oauth-authentication.
@@ -2292,5 +2292,100 @@ outcomes:
     alerting:
       - condition: "request count > target"
         action: "backend build fails (red)"
+    acceptance_scenarios: []   # DISTILL fills
+    status: designed-not-shipped
+
+  # --- epic-6298-report-pdf-export (DEVOPS 2026-10-17) ------------------------------------------------------
+  # One new event, ReportPdfExportStarted (provisional 20, re-read on main at landing), carrying report_template
+  # exactly as ReportCreated / ReportOpened do. That is the maintainer's explicit exception to name-only-first
+  # (2026-10-17: "would have taken the property, so we can see which reports get printed"), like epic-5878's.
+  # Emitted on the Export PDF click; it counts the choice, cancelled print dialogs included. The clients (slice 04) report the
+  # existing ReportOpened (report_template ThenAndNow) with source Cli / Mcp for a report read. Per-browser
+  # proxies as in epic-5878. K3 (cold readers, conversation log), K5 (skill eval record), G2 (dogfood timing)
+  # and G4 (build size before/after slice 02) are measured by hand and have no contract here.
+
+  - id: OUT-6298-K1-pdf-export-used
+    feature: epic-6298-report-pdf-export
+    title: Browsers that read reports export one as a PDF (north star)
+    target: ">= 20% of browsers that report ReportOpened (source Browser) also report ReportPdfExportStarted within 90 days of the release carrying slice 01. DISCUSS stated it per instance, which the pipe cannot express."
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "ReportPdfExportStarted (provisional 20), slice 01, property report_template in {ThenAndNow}: the Export PDF click on the report view, before navigating to the print page. Never from the print route."
+        - "Denominator: ReportOpened (existing, epic-5878), filtered to source Browser."
+      derivation: "Distinct browsers with >= 1 ReportPdfExportStarted / distinct browsers with >= 1 ReportOpened from source Browser, 90 days from the release carrying slice 01."
+      surfacing: ["docs/settings/usagedata.md row (slice 01)", "collector dashboard"]
+    acceptance_scenarios: "@kpi-OUT-6298-K1-pdf-export-used - Vitest: consented click on Export PDF reports exactly ReportPdfExportStarted with report_template ThenAndNow, once per click; a type the browser cannot map reports nothing; not consented reports nothing; the print route reports nothing; returning from print reports no ReportOpened. Backend: the name maps to its integer; Fits refuses ReportPdfExportStarted without report_template and report_template on any event but the three report events"
+    measurement_window: "90 days from the release carrying slice 01"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "Counts the choice, not a saved file: a cancelled dialog counts. Per browser, not per instance."
+
+  - id: OUT-6298-K2-pdf-export-recurs
+    feature: epic-6298-report-pdf-export
+    title: Exporters export again in another week (recurring cadence)
+    target: ">= 30% of browsers that reported ReportPdfExportStarted report it in >= 2 distinct ISO weeks within 90 days"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "ReportPdfExportStarted (OUT-6298-K1)."
+      derivation: "Per browser: count distinct ISO weeks with >= 1 ReportPdfExportStarted within 90 days of its first; success at >= 2."
+      surfacing: ["collector dashboard"]
+    acceptance_scenarios: "covered by OUT-6298-K1's scenarios"
+    measurement_window: "90 days from the release carrying slice 01, cohorts by first-export week"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "Lower bound: a person on two browsers is two exporters, never one recurring one."
+
+  - id: OUT-6298-K6-exported-report-types
+    feature: epic-6298-report-pdf-export
+    title: Which report types get exported as a PDF
+    reason: "Maintainer, 2026-10-17: 'would have taken the property, so we can see which reports get printed (I'd be curious about this)'. The project rule prefers name-only events; this is the maintainer's explicit exception, the same as Then & Now's report_template (epic-5878)."
+    target: "Exploratory, no threshold: the share of exports per report type, and per type the exporting browsers / browsers reporting ReportOpened of that type. Meaningful once a second report type exists (#6299 or Signals); until then every export is ThenAndNow."
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "ReportPdfExportStarted, property report_template (closed UsageDataReportTemplate; values appended as report types ship)."
+        - "ReportOpened, property report_template, source Browser, for the per-type rate."
+      derivation: "Exports grouped by report_template / all exports; per type, distinct exporting browsers / distinct browsers reporting ReportOpened with that report_template."
+      surfacing: ["docs/settings/usagedata.md row (slice 01)", "collector dashboard"]
+    acceptance_scenarios: "covered by OUT-6298-K1's scenarios (the exact report_template value)"
+    measurement_window: "from the release carrying slice 01; read once a second report type has been released for 90 days"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "A type the browser cannot disclose sends no event, so a version that lags its server's report types under-counts them."
+
+  - id: OUT-6298-K4-reports-read-by-clients
+    feature: epic-6298-report-pdf-export
+    title: Reports are read through lh or MCP
+    target: ">= 5 distinct client identifiers (source Cli or Mcp) report ReportOpened within 90 days of the clients release carrying slice 04"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "ReportOpened with report_template ThenAndNow, source Cli / Mcp: a successful lh report get or lighthouse_{team,portfolio}_report_get of a type the client can disclose (slice 04). List, refusals (403, 404, version gate, 422 template-not-supported) and unknown types report nothing."
+      derivation: "Distinct identifiers with >= 1 ReportOpened from source Cli or Mcp within 90 days of the clients release."
+      surfacing: ["docs/settings/usagedata.md 'A report was opened' row extended at slice 04 finalize", "collector dashboard"]
+    acceptance_scenarios: "@kpi-OUT-6298-K4-reports-read-by-clients - clients tests: consented lh report get and *_report_get report ReportOpened with ThenAndNow and source Cli / Mcp once per run; report list, refusals and unknown types report nothing; not consented reports nothing"
+    measurement_window: "90 days from the clients release carrying slice 04"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "Identifiers are per lh install or per running shared MCP server, not per instance: a lower-bound proxy for instances only when each instance has one client."
+
+  - id: OUT-6298-G-pdf-matches-screen
+    feature: epic-6298-report-pdf-export
+    title: The PDF shows the screen's values in the Lighthouse typeface (guardrails G1, G3)
+    target: "100%: every printed value equals the report view's value at export; the Chromium PDF of the print page embeds no font but Quicksand (from slice 02)"
+    measurement_scope: vendor_demo_only
+    measured_by: >
+      CI: acceptance test over the print route with a stale cache entry seeded (the print page shows only the
+      fresh answer, the same one the report view shows on return); E2E (ci_verifysqlite / ci_verifypostgres,
+      chromium headless) page.pdf font check from slice 02. Manual: PDFs from Chrome, Firefox and the Linux
+      Standalone app attached to slices 01-03 (DoD 7).
+    log_fields: {}
+    measurement_window: every push (CI); once per slice 01-03 (manual)
+    gate: hard
+    alerting:
+      - condition: "a value or font assertion fails"
+        action: "frontend or E2E build fails (red)"
     acceptance_scenarios: []   # DISTILL fills
     status: designed-not-shipped

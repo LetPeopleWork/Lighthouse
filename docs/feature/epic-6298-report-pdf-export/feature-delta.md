@@ -1321,3 +1321,351 @@ Story and AC wording changes are listed in `design/upstream-changes.md` for the 
   the skill's `references/then-and-now.md` and re-runs its evals.
 - **ADRs**: ADR-245 (print route), ADR-246 (marks and typeface), ADR-247 (client reads, raw values). All Accepted
   2026-10-17.
+
+---
+
+## Wave: DEVOPS / [REF] Scope and Prior-Wave Reading
+
+**Agent**: Apex (`nw-platform-architect`) · **Date**: 2026-10-17 · **Mode**: autonomous subagent, documents only. Kept
+light, as the maintainer expected ("i assume it's light"). Per-wave review skipped by instruction. **No new
+infrastructure, no new service, no new Lighthouse workflow.**
+
+| # | Decision | Answer for this feature | Source |
+|---|---|---|---|
+| 1 | Deployment target | What Lighthouse already ships: server zips (win-x64, linux-x64, frontend in `wwwroot`), the Docker image (amd64 + arm64) and Helm chart, the Standalone Tauri app (Linux, Windows, macOS) | `ci.yml` package / docker / chart jobs |
+| 2 | Orchestration | Docker / Helm for those who use it; none otherwise. **No chart change**: no value, port, volume or secret | — |
+| 3 | CI/CD | Existing GitHub Actions (`ci.yml` and its callees; E2E in `ci_verifysqlite` / `ci_verifypostgres`); the clients repo's own `ci.yml` | `.github/workflows/` |
+| 4 | Existing infra | All reused; extend, never add a workflow | — |
+| 5 | Observability | Opt-in usage data (browser or client detects, backend forwards to PostHog) plus existing logs; nothing else | `docs/settings/usagedata.md` |
+| 6 | Deployment | Signed calver GitHub release of Lighthouse (`/release`); clients released separately (changesets, manual `pnpm release:version` + commit before the release) | project memory |
+| 7 | Continuous learning | N/A, because the catalogue grows by one event and one client mapping (below); no flag, no A/B | — |
+| 8 | Branching | Trunk-based, push to `main` | `CLAUDE.md` |
+| 9 | Mutation | `per-feature`, ≥ 80% kill. `CLAUDE.md` already says so and was not edited | `CLAUDE.md` |
+
+| Read | Status |
+|---|---|
+| This file: DISCUSS Locked Decisions D10–D28, Outcome KPIs K1–K5 / G1–G4, DoD, Project DISCUSS Checklist (usage-data, clients rows), Maintainer answers; DESIGN DDD-1..23, components, ports, technology, enforcement, Skill shape, Usage data, Changed Assumptions, Open questions, Handoff | ✓ |
+| `design/wave-decisions.md`, `design/upstream-changes.md`, `discuss/wave-decisions.md` (D27), `slices/slice-01..05` (usage-data sections) | ✓ |
+| Precedent `epic-5878-baseline`: DEVOPS sections, `environments.yaml`, `devops/wave-decisions.md` | ✓ |
+| `UsageDataEventName.cs` on this checkout: **last `WorkTrackingSystemFieldsChanged = 19`**; `UsageDataReportTemplate` {`ThenAndNow = 0`}; `UsageDataEventShapes.cs` (plain events carry nothing; `ReportCreated` / `ReportOpened` require `report_template`) | ✓ |
+| Frontend mirror `services/Api/UsageDataService.ts`: **string values** (`ReportOpened: "ReportOpened"`), not numbers, so the "strings out, ints in" trap does not apply to a new member; `useReportOpenedReporter.ts`; `usageDataReporter.ts` (`reportTemplateWeDisclose`, `"then-and-now"` → `ThenAndNow`) | ✓ |
+| `docs/settings/usagedata.md` event table and field table ("On the other N events" counts) | ✓ |
+| `docs/product/kpi-contracts.yaml` (exists, append-only; `measurement_scope` vocabulary) | ✓ |
+| Clients (read only): `packages/client/src/usageData.ts` (client event unions), `packages/cli/src/commandResult.ts` (`REPORTED_COMMANDS`), `mcp-core/src/usageDataPort.ts`, `FEATURE_REQUIRES_SERVER_NEWER_THAN`, `scripts/pack-skills.sh`, `.github/workflows/ci.yml` (pack dry run, release job), `.changeset/` (pending `story-6247-stale-work-items.md`), `skills/README.md`, `skills.drift.test.ts` | ✓ |
+| `story-6193-usage-data-from-clients` (pattern: a client reports the web's event with source `Cli` / `Mcp`) | ✓ (from the clients' code) |
+| Packaging: `Dockerfile`, `vite.config` (`outDir` → `wwwroot`), `package.json` scripts (`build`, `build-docker`), `src-tauri/tauri.conf.json`, `ci_package-linux-standalone.yml`, `.github/actions/package-app` and `build-frontend`, `ci_sbom.yml`, `Program.cs` static files and SPA fallback, `NOTICE`, `public/` | ✓ |
+| `docs/ci-learnings.md` (searched: print, font, usage data, test-time budget, pnpm) | ✓ (targeted) |
+| `Lighthouse.EndToEndTests/playwright.config.ts` (one project, `chromium`, headless) | ✓ |
+| Git tags: `f722a16e3` (first Reports endpoint) is in `v26.10.16.6`, not in `v26.10.10.1` | ✓ |
+
+**Contradictions with DESIGN**: two small ones, both listed in `devops/upstream-changes.md` (a third, a name-only
+export event, was withdrawn when the maintainer answered on 2026-10-17: the event carries `report_template` as DDD-13
+said). The clients report `ReportOpened` for a report read (DESIGN left this
+open). The clients' CI pack dry run has a hard-coded skill list that slice 05 must extend (R25 said "unchanged").
+
+---
+
+## Wave: DEVOPS / [REF] Usage-Data Event Design
+
+**Answered, not "N/A"** (CLAUDE.md DEVOPS rule). One new web event, plus one existing event that the clients now
+report as well.
+
+### New: `ReportPdfExportStarted`, provisional **20**
+
+| Field | Value |
+|---|---|
+| Name | `ReportPdfExportStarted`. "Started" because it counts the choice: a cancelled print dialog counts too, and nothing tells Lighthouse whether a file was saved (D27, measurement caveat) |
+| Integer | **20** on this checkout. The last member is `WorkTrackingSystemFieldsChanged = 19`, so the 19 that DISCUSS and DESIGN wrote is taken. Provisional: **DELIVER slice 01's first step re-reads `UsageDataEventName.cs` on `main` and takes the next integer then**. Tests pin the name, never the integer |
+| Property | **`report_template`**: the closed enum `UsageDataReportTemplate`, today `ThenAndNow` only, extended as report types arrive. It uses the same property, wire values and backend mechanism as `ReportCreated` / `ReportOpened`, so the three events read alike in PostHog. **Answered by the maintainer 2026-10-17**: "would have taken the property, so we can see which reports get printed (I'd be curious about this)". This is an explicit exception to the project's name-only-first rule, the same kind as Then & Now's (5878 DVO-2). It serves `OUT-6298-K6-exported-report-types`. No owner kind: no KPI splits Team from Portfolio |
+| Unknown type | The click handler maps `report.templateKey` through `usageDataReportTemplateOf` (the exhaustive `reportTemplateWeDisclose` record), as `useReportOpenedReporter` does. A type this version does not know maps to `undefined`, and then **nothing is reported**: no event and never free text. In practice it cannot happen, because Export PDF is not offered on a report of a newer type (DDD-15). A new type fails to compile in the record until somebody decides what it discloses |
+| Emitted by | The Export PDF click handler in `ReportView`, through `useUsageDataReporter`, before navigating (DDD-13). Only when the action is operable (report loaded, DDD-15). The print route never emits; the return from print emits no `ReportOpened` (DDD-14) |
+| Frequency | Once per click. No dwell (it is an act, not a look) |
+| Backend shape | **Not a plain event.** `UsageDataEventShapes.EventsThatSayWhichTypeOfReport` gains `ReportPdfExportStarted` beside `ReportCreated` and `ReportOpened`, so the server refuses it without `report_template` and refuses `report_template` on any other event. `PostHogUsageDataPublisher` already writes `report_template` and needs no change. Mirror member `ReportPdfExportStarted: "ReportPdfExportStarted"` in `UsageDataService.ts` (string value); the event is sent with `reportTemplate` |
+| Slice | **01**, the slice that makes the feature usable. The same step adds the `docs/settings/usagedata.md` row |
+
+**Privacy check** (memory: usage data is never personal). What travels: the name, plus the facts every event
+already carries (source `Browser`, the server-held identifier, version, deployment mode, licence tier,
+authentication, timestamp), and the report's **type** as one word from a closed list that the product defines
+(`ThenAndNow`). That word names a kind of report Lighthouse ships, not anything a user wrote or chose to call it.
+What never travels: the report's name or id, the Team or Portfolio (name or id), the windows, any value, the paper
+size, the file name, whether a file was saved, the browser's locale or time zone. None of these has a field it could
+travel in: the only property is an enum, the server refuses any other value, and an unknown type sends nothing.
+
+**Row DELIVER adds to `docs/settings/usagedata.md`** (event table, after "A report was deleted"):
+
+| Event | When it is sent | What travels with it |
+|---|---|---|
+| A report was exported as a PDF | Somebody chose **Export PDF** on a report. Counted when chosen, before the print dialog opens, so it also counts a dialog that was then cancelled. **Never counted when the print page is opened any other way** | Sent with: the report's type (closed list), today only `ThenAndNow`, for *Then & Now*. **Never its name, never which Team or Portfolio it belongs to, never its dates or its numbers, and never whether a file was saved** |
+
+The same step updates the field table. The "Which type of report" row becomes "Only on a report being created,
+opened or exported as a PDF", and its "On the other eighteen events" stays eighteen (21 events, 3 carry it). Every
+other row's "On the other N events" count goes up by one (the disclosure test counts rows). The frontend usage-data tests and the backend name→integer pin (cf. `["ReportDeleted"] = 18` in
+`WorkTrackingSystemFieldsChangedUsageEventTests`) gain the member.
+
+### Existing `ReportOpened`, now also from the clients (slice 04), for K4
+
+**Decided: yes.** `lh report get` and the MCP tools `lighthouse_team_report_get` / `lighthouse_portfolio_report_get`
+report the web's `ReportOpened` with `report_template`, source `Cli` / `Mcp`. They use the clients' existing
+usage-data path (the story 6193 pattern: `REPORTED_COMMANDS` for `lh`, the MCP usage-data port), and only after
+consent.
+
+- **Only on a successful read of a report whose type the client can disclose.** The client maps the server's
+  `templateKey` through an exhaustive record (`"then-and-now"` → `ThenAndNow`, the same pattern as the web's
+  `reportTemplateWeDisclose`). An unknown type (a 422 `template-not-supported`, or a key the client does not know)
+  reports nothing. A 403, a 404 or a version-gate refusal reports nothing.
+- **`… report list` reports nothing**: listing is not reading a report.
+- Once per run or tool call, with no dwell.
+- The clients' `UsageDataEventName` union gains `ReportOpened` as a new occurrence kind that carries `reportTemplate`
+  (closed: `"ThenAndNow"`). No backend change: `ReportOpened` with `report_template` exists since `v26.10.16.6`, and
+  the `reports` version gate already keeps the read (and so the event) away from older servers. DELIVER pins
+  acceptance with one recorded-answer test per client source.
+- Privacy: the same as the web's `ReportOpened`, the type word only. Never the report, the owner, an id or a value.
+- In slice 04's finalize (the Lighthouse docs, not the clients repo), the "A report was opened" row in
+  `docs/settings/usagedata.md` gains: "…, or read one with `lh report get` or the MCP tools
+  `lighthouse_team_report_get` / `lighthouse_portfolio_report_get`. Counted once per run there, with no wait".
+
+**The skill (slice 05): N/A, because** it is text an assistant reads. Its reads go through slice 04's tools, which
+report as described above.
+
+---
+
+## Wave: DEVOPS / [REF] Environment Matrix
+
+Machine artifact: `environments.yaml` (target environments, `scenario_axes` per slice, coexistence, assumptions).
+
+| Environment | Why it exists here |
+|---|---|
+| `clean` | SQLite, auth off, Community, demo data (Team Lightspeed). The E2E creates the report |
+| `browser-chromium` / `browser-firefox` / `browser-webkit-safari` | Each browser has its own print engine. Chromium is tested automatically (the Playwright project); Firefox and Safari are checked by hand (G3) |
+| `standalone-linux-webkitgtk` | **Verified** by the DIVERGE probe. PDF checked by hand for DoD 7 |
+| `standalone-windows-webview2` | Chromium-based, so expected to behave like Chrome. Not probed yet; checked by hand once |
+| `standalone-macos-wkwebview` | **Not verified.** The maintainer checks it after the first release that carries slice 01 (Q2). `afterprint` may not fire there; the Back control covers that case |
+| `server-zip` / `docker` | The bundled font and `licenses/quicksand-OFL.txt` must be in the shipped `wwwroot` (see the packaging verdicts below) |
+| `offline-instance` | No outbound internet: the PDF still prints in Quicksand (D22), and nothing requests Google Fonts |
+| `theme-light` / `theme-dark` | The print page is light under either theme (DDD-5). The screen's drawn marks show in both (DDD-10) |
+| `paper-a4` / `paper-letter` | No panel split across pages, no near-empty last page (DDD-6) |
+| `renamed-terminology` | Header, panels and "how to read this" use the instance's terms |
+| `auth-on-rbac-on` (Viewer) | A Viewer sees and uses Export PDF (D14). No new guard; one Vitest/AT case, no `@auth` E2E |
+| `usage-data-consented` / not consented | The only place `ReportPdfExportStarted` (and the clients' `ReportOpened`) leaves the instance |
+| `clients-vs-older-lighthouse` | Server `v26.10.10.1` or older: the `reports` gate refuses with "upgrade Lighthouse" and reports no event |
+
+**Left out**: Postgres as an axis (nothing is stored, no migration; the E2E still runs on Postgres through
+`ci_verifypostgres`); the kind of work tracking system (only stored reports are read); a hosted tenant (torn down).
+
+---
+
+## Wave: DEVOPS / [REF] CI/CD Pipeline Outline
+
+**Lighthouse: no workflow change.** **Clients: one line in an existing workflow** (slice 05).
+
+| Stage | Workflow | What it does for this feature |
+|---|---|---|
+| Change detection | `ci_changes.yml` | Frontend in 01–03. Backend only for the enum member (01), not `Program.cs`, so no forced live-connector run |
+| Frontend | `ci_frontend.yml` | Vitest: ready predicate; print-once hook with a fake `print` / `afterprint`; DESIGN's structural scans; `quicksand-OFL.txt` byte-equal to the package `LICENSE`; `index.html` names no font host; usage event consented / not consented. `pnpm build` (Biome `--write` in prebuild). The frontend test-time budget guard (story 6302, `docs/ci-learnings.md`) runs last, so keep new tests fast |
+| Backend | `ci_backend.yml` | The enum member and its name→integer pin; nothing else |
+| E2E | `ci_verifysqlite.yml`, `ci_verifypostgres.yml` | One walking skeleton through POMs (below) |
+| SBOM | `ci_sbom.yml` | `cdxgen` picks up `@fontsource-variable/quicksand` (OFL-1.1) from the lockfile automatically, with no change |
+| Package / Docker / Chart / Standalone | existing jobs | Unchanged: `public/` reaches every output (see the packaging section) |
+| Sonar | `ci_sonar_gates.yml` | No new issue. DESIGN's pre-applied rules (`globalThis.print`, `dataset.renderReady`, …) |
+| Release | `ci_release.yml` via `/release` | Calver. `waiting` on main means deploy approval, which the maintainer gives |
+| Clients CI | `lighthouse-clients/.github/workflows/ci.yml` | `pnpm ci` (drift test, eval fixture test). **The "Pack skills (dry run)" step has a hard-coded `expected=(lighthouse lighthouse-refinement lighthouse-daily-flow-review)`. Slice 05 appends `lighthouse-reports`**; otherwise the dry run passes without proving the new zip exists. The release job packs `release-assets/*-skill.zip` by glob and stays unchanged |
+
+**E2E: what is specific to printing** (Playwright: one `chromium` project, headless; it runs twice in CI):
+
+- **Walking skeleton (slice 01)**: on Lightspeed, create a report, choose Export PDF through the report POM, land on
+  the print page POM, wait for `data-render-ready="true"` (never mere visibility), and see the header and no app
+  chrome.
+- **Stub print instead of relying on it**: `page.addInitScript` replaces `window.print` with a recorder that dispatches
+  `afterprint`. The spec then proves "printed once, returned to the report" deterministically. Headless Chromium opens
+  no dialog, and when it fires `afterprint` is not something to depend on. The stub lives in the print POM
+  (`stubPrint()`), never inline in the spec.
+- **`page.emulateMedia({ media: 'print' })`** before asserting print-only styles (for example, the screen-only Back
+  control is hidden). The page has no chrome because of its route, not because of a media query.
+- **Font check (slice 02, DESIGN U-4)**: `page.pdf()` works only in headless Chromium, which is the single project.
+  Read the embedded font names (`/BaseFont /XXXXXX+Name`) straight from the PDF bytes, with no new dependency, if Skia
+  leaves them uncompressed. DELIVER confirms this on the first run and adds a PDF parser only if the names cannot be
+  read.
+- **Produced** depends on the runner's locale and time zone, so assert its format and presence, not a wall-clock
+  value.
+- Run the spec live before committing (memory). In slice 02, grep `Lighthouse.EndToEndTests/` for every mark
+  character that is replaced.
+
+**Local gates**: `pnpm test` and `pnpm build`; backend `dotnet build` plus the filtered `dotnet test` in slice 01
+only. Clients: `pnpm ci` and the pre-commit changeset check.
+
+---
+
+## Wave: DEVOPS / [REF] Monitoring Contracts (KPI → instrument)
+
+The pipe carries no instance, owner or report identity. So, as in Epic 5878, per-instance KPIs are measured per
+browser (or per `lh` install, or per MCP server identifier). The contracts are appended to
+`docs/product/kpi-contracts.yaml` as `OUT-6298-*`.
+
+| KPI | Instrument | Derivation | Scope | Contract |
+|---|---|---|---|---|
+| **K1** (north star) ≥ 20% use Export PDF | `ReportPdfExportStarted` ÷ `ReportOpened` (source `Browser`) | Distinct browsers with ≥ 1 export ÷ distinct browsers with ≥ 1 `ReportOpened`, over the 90 days after the release that carries slice 01 | opt-in | `OUT-6298-K1-pdf-export-used` |
+| **K2** ≥ 30% export in ≥ 2 calendar weeks | `ReportPdfExportStarted` per browser | Of K1's exporters, those with events in ≥ 2 distinct ISO weeks within 90 days | opt-in | `OUT-6298-K2-pdf-export-recurs` |
+| **K3** ≥ 2 of 3 cold readers understand the PDF | Not measurable automatically. The maintainer's conversation log (slice 03 dogfood) | How many readers can say which side is frozen and whether {Cycle Time} improved | manual | none (qualitative, like 5878's K5) |
+| **K4** ≥ 5 instances read a report through the clients | `ReportOpened` with source `Cli` / `Mcp` (new in slice 04) | Distinct client identifiers within 90 days of the clients release; a lower-bound proxy for instances | opt-in | `OUT-6298-K4-reports-read-by-clients` |
+| **K5** skill evals: 3/3 on guardrail cases, ≥ 90% on the rest | Eval record (ADR-231, AC-5.3), run by the maintainer | Per case, 3 runs | vendor | none (a quality gate, recorded with slice 05) |
+| **K6** (maintainer, 2026-10-17) which report types get exported | `report_template` on `ReportPdfExportStarted` | Share of exports per type, and per type exports ÷ `ReportOpened` (source `Browser`) of that type. Meaningful once a second type exists; until then it is 100% `ThenAndNow` | opt-in | `OUT-6298-K6-exported-report-types` |
+| **G1** PDF value = screen value | Acceptance test (shared query key, fresh read) | — | CI | `OUT-6298-G-pdf-matches-screen` |
+| **G2** dialog opens ≤ 2 s after the click | Timed by hand while dogfooding on the dev instance's busiest Team, as slice 01 evidence. No timing goes into usage data (durations are never sent) | — | manual | none |
+| **G3** marks and typeface the same everywhere | E2E `page.pdf` font check (Chromium) plus PDFs made by hand in Chrome, Firefox and Linux Standalone (DoD 7) | — | CI + manual | part of `OUT-6298-G-pdf-matches-screen` |
+| **G4** Standalone and Docker grow ≤ 1 MB | `du -sb` of the built `wwwroot` (and `dist`) before and after slice 02, recorded in slice 02's evidence. Expected growth ≈ 64 KB of woff2 + 4 KB of licence | — | manual | none |
+
+Caveats carried into the contracts: the export counts the choice, cancelled dialogs included. K1's denominator
+leaves out the clients' `ReportOpened` (filter on source `Browser`). K2 per browser is a lower bound: a person who
+uses two browsers counts twice in the denominator and never as one recurring exporter.
+
+---
+
+## Wave: DEVOPS / [REF] Packaging: bundled font and OFL.txt (DDD-11/12)
+
+**No build or packaging config change is needed.** Vite copies `public/**` unchanged to the build root. It emits the
+`@fontsource-variable/quicksand` woff2 files (9–28 KB each, above Vite's 4 KB inline limit) as hashed files under
+`assets/`.
+
+| Output | How `public/licenses/quicksand-OFL.txt` and the fonts get there | Verdict |
+|---|---|---|
+| (a) `wwwroot` / server zips | `pnpm run build` = `vite build --outDir ../Lighthouse.Backend/Lighthouse.Backend/wwwroot` (`build-frontend` action), then `dotnet publish` (`build-backend`, `package-app`) zips `wwwroot` | ✓ included |
+| (b) Docker image | The `node-builder` stage runs `pnpm run build-docker` into `/node/dist`, which is copied into `wwwroot` before `dotnet publish` | ✓ included |
+| (c) Tauri bundle | `beforeBuildCommand: pnpm build-docker` with `frontendDist: ../dist` (the webview's embedded assets), **and** the sidecar's published `wwwroot` copied into `resources/` (`ci_package-linux-standalone.yml`; Windows and macOS do the same) | ✓ included, twice |
+
+- **Serving**: `UseStaticFiles` serves `/licenses/quicksand-OFL.txt` (text/plain) and the woff2 files. No
+  `Cache-Control` is set for assets other than `index.html`. That is fine for content-hashed fonts, and because
+  `index.html` stays `no-store`, a new release never points at a stale hash. A missing `.woff2` would fall through to
+  the SPA shell (`ShouldNotFallBackToSpaShell` excludes only `.js`, `.css`, `.json` and a few others). That is
+  harmless and not worth a `Program.cs` change, which would force the full live-connector suite.
+- **CSP**: none is set anywhere (F8: `tauri.conf.json` has `csp: null`, and the backend sends none). An operator's own
+  reverse-proxy CSP now needs only `font-src 'self'`, and the Google Fonts hosts can be dropped. No docs change: N/A,
+  because Lighthouse does not document a CSP today.
+- **Offline**: the runtime request to Google Fonts goes away. Offline instances render and print in Quicksand.
+- **pnpm 12 minimum release age (24 h)**: `@fontsource-variable/quicksand` 5.3.0 was published 2026-07-19, far
+  past the limit. DELIVER pins that version (or any version at least 24 h old at install time) in `package.json`
+  dependencies, not in the `pnpm-workspace.yaml` overrides.
+- **Licence**: the SBOM lists the package as OFL-1.1 automatically (OSS Attribution page). `NOTICE` defers to the
+  SBOM and needs no change. The OFL text travels as `licenses/quicksand-OFL.txt` (DDD-12) in all three outputs.
+
+---
+
+## Wave: DEVOPS / [REF] Deployment and Release Strategy
+
+**Rollback first.** Nothing is stored, and there is no migration, endpoint or chart value. Rolling back means
+installing the previous release. The only trace left behind is past `ReportPdfExportStarted` events in PostHog,
+which are harmless. The SPA and the backend ship together (same server, `index.html` not cached), so no browser can
+send event 20 to a server that lacks it. The clients roll back by installing the previous npm or binary version; the
+server is untouched.
+
+**Lighthouse** (slices 01–03): each slice lands green on trunk and can be released alone. The maintainer cuts the
+release with `/release` (calver). After the first release that carries slice 01, the maintainer checks Export PDF in
+the released macOS Standalone app (Q2). If it fails, that becomes a follow-up (D28).
+
+**Clients** (slices 04–05), in `lighthouse-clients`:
+
+1. Slice 04 adds one changeset with a **minor** bump for `@letpeoplework/lighthouse-client`, `-cli`, `-mcp-core`,
+   `-mcp-stdio` and `-mcp-http`. It is a new capability, and these are the same five packages as in the `story-6247`
+   precedent, because the stdio and HTTP servers expose the new tools. The pre-commit `check-changeset.mjs` enforces
+   the changeset.
+2. **`FEATURE_REQUIRES_SERVER_NEWER_THAN.reports = "v26.10.10.1"`**, the last release without the report endpoints
+   (`f722a16e3` is in `v26.10.16.6` but not in `v26.10.10.1`). At landing, DELIVER re-checks that every response field
+   the client reads existed in `v26.10.16.6`. If the client reads a field that came later, the gate names the release
+   just before that field instead. **Consequence: the clients release does not wait for a Lighthouse release**,
+   because the endpoints are already out.
+3. Slice 05 adds the skill folder (skill-only, so no changeset) and the `expected=(…)` entry in the clients' CI dry
+   run.
+4. **Before the release**: run `pnpm release:version`, commit and push (manual; see memory). The release job runs only
+   when a package version is not yet published, so **a skill-only change never triggers a release on its own**. Slice
+   05 therefore ships in the release that slice 04's changeset triggers: **one clients release carries slices 04 and
+   05 together (answered by the maintainer 2026-10-17, locked)**. Land 05 before running `release:version`.
+5. The pending `story-6247` changeset goes out in the same release.
+6. The release gate's smoke test runs against the latest Lighthouse. The demo image has no seeded report, so the
+   report smoke test (slice 04 brief) either creates one first or stays out of the gating leg.
+
+---
+
+## Wave: DEVOPS / [REF] Observability
+
+**No log line, metric or dashboard is added.** The print page reads through existing endpoints with their existing
+logging. That includes 5878's `report-read-slow` Warning above 2 s, which also covers the print page's fresh read and
+serves as G2's signal from real instances. The browser logs nothing new. Usage data is as described above.
+
+---
+
+## Wave: DEVOPS / [REF] Mutation Testing Strategy
+
+`per-feature`, ≥ 80%, unchanged; `CLAUDE.md` not edited. Each code base is mutated last, on frozen code. Results go
+in `docs/feature/epic-6298-report-pdf-export/mutation/`, with the excluded files and the JSX-text gap listed beside
+each score.
+
+| Slice(s) | Tool | Scope |
+|---|---|---|
+| 01–03 (one run after 03) | StrykerJS (frontend) | `ReportPrintPage`, `ReportPrintDocument`, the ready / print-once hook, the `ReportView` export handler, the change to `useReportOpenedReporter`, `ChangeMarkIcon`, the mark-kind changes in `thenNowComparison` / `ThenNowLineParts` / `ThenAndNowSummary`, and the "how to read this" component. **Excluded**: the moved theme module (moved, not newly written), `main.tsx`, `index.html` and `App.tsx` routing (bootstrap code, covered by the E2E and the import scans). Copy is pinned by literal assertions |
+| 01 | Stryker.NET | **N/A, because** the backend gains only one enum member and one entry in `EventsThatSayWhichTypeOfReport`: declarations with no logic to mutate. The entry is pinned by the backend `Fits` test |
+| 04 | StrykerJS in the clients (like `story-6193`'s `stryker.6193.clients.json`) | The report reader and summary, the four tool handlers, the `lh report` group, the `reports` gate entry, and the `ReportOpened` occurrence with its template map |
+| 05 | — | **N/A, because** the skill is prose. Its evals (K5) are its gate |
+
+---
+
+## Wave: DEVOPS / [REF] Branching Strategy
+
+Trunk-based on `main` in both repositories. One focused commit per step; push only when green; no autonomous rebase.
+
+---
+
+## Wave: DEVOPS / [REF] Coexistence Matrix
+
+| Must not break | Why it is at risk |
+|---|---|
+| Every page's chrome (header, footer, survey nudge, usage-data ask) | `App.tsx` moves the shell into a layout route (F1) |
+| Theme switching on screen | The themes move out of `main.tsx` (DDD-5) |
+| Typography on every screen | Google Fonts are replaced by bundled Quicksand; headings declare 700 (DESIGN Changed Assumptions) |
+| `ReportOpened` counts | Returning from print must not count as a second opening (DDD-14) |
+| The usage-data disclosure test and the event-table counts | New row; every "other N events" count goes up by 1 |
+| Route-key matcher | `/print/…` maps to no key (F7) |
+| E2E specs and POMs that read ✔ ✘ ± ▲ ▼ | The marks become icons (slice 02) |
+| The clients' existing tools, skills and drift test | Four tools are added, and the `lighthouse` skill must name them |
+| Clients release gating | The pending 6247 changeset; the skill zip list in the dry run |
+
+---
+
+## Wave: DEVOPS / [REF] Pre-requisites from DESIGN
+
+| DESIGN item | Platform answer |
+|---|---|
+| DDD-13 event placement | `ReportPdfExportStarted` with closed `report_template` (as DDD-13 said), provisional 20 |
+| DDD-11/12 font + OFL | Reaches all three outputs with no config change; the SBOM entry is automatic |
+| DDD-17 `reports` gate baseline (open question) | `v26.10.10.1` |
+| DDD-20 skill zip | The existing `pack-skills.sh` and release glob; one more name in the clients' CI dry-run list |
+| DDD-21 no backend change | Confirmed: one enum member, no `Program.cs` change |
+| U-4 E2E font check | `page.pdf` in the existing chromium project, inside `ci_verify*` |
+| Handoff: "the frontend SBOM gains an OFL component" | Automatic through `cdxgen` |
+
+---
+
+## Wave: DEVOPS / [REF] Handoff to DISTILL
+
+To `nw-acceptance-designer`: `environments.yaml` (`scenario_axes` per slice) and the event design above.
+
+- Vitest: with consent, a click reports exactly `ReportPdfExportStarted` with `reportTemplate: ThenAndNow`, once per
+  click; a type the version does not know reports nothing; without consent it reports nothing; the print route
+  reports nothing; the return from print reports no `ReportOpened`.
+- Backend: pin the name→integer; `Fits` refuses `ReportPdfExportStarted` without `report_template`, and still
+  refuses `report_template` on every event outside the three report events.
+- Clients (slice 04): after consent, `lh report get` / `…_report_get` report `ReportOpened` with `ThenAndNow` and
+  source `Cli` / `Mcp`. List, refusals and unknown types report nothing.
+- E2E: one walking skeleton with the print stub and the `data-render-ready` wait. Slice 02 adds the font check.
+- Tags: `@kpi-OUT-6298-*`.
+
+---
+
+## Wave: DEVOPS / [REF] Changed Assumptions
+
+| Was (source) | Now | Why |
+|---|---|---|
+| The export event carries a closed `report_template` (Checklist, DDD-13) | Kept: `ReportPdfExportStarted` with `report_template` (DEVOPS first proposed name-only; the maintainer chose the property on 2026-10-17) | "so we can see which reports get printed" (K6); an explicit exception to name-only-first |
+| Clients release timing open | One clients release for 04 and 05 (maintainer, 2026-10-17, locked) | A skill-only change triggers no release |
+| "Next integer 19" (Checklist, DESIGN reads) | Provisional **20** | `WorkTrackingSystemFieldsChanged = 19` is already on this checkout |
+| The clients' `ReportOpened` for K4: "if DEVOPS maps it" | Mapped: `report get` only, source `Cli` / `Mcp` | K4 has no other instrument |
+| R25 "pack-skills.sh … unchanged", no CI change | The clients' CI dry-run `expected=(…)` list gains `lighthouse-reports` | The list is hard-coded |
+| The `reports` gate baseline would be "read at release" | `v26.10.10.1` now, re-checked at landing | Tags on this checkout |

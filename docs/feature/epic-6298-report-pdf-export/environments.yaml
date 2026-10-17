@@ -1,0 +1,204 @@
+# environments.yaml - consumed by DISTILL for Mandate 4 (Environmental Realism)
+#
+# epic-6298-report-pdf-export (Epic #6298, Report PDF Export). A frontend capability over the existing
+# report read, a print route outside the app shell, a bundled typeface, read-only report tools in
+# lighthouse-clients and a skill. No new container, external system, secret, configuration entry,
+# endpoint or migration. The environments below are the axes along which the feature can behave
+# differently, not deployment targets to stand up.
+#
+# Axes considered and deliberately left OUT:
+#   - database provider as an axis. Nothing is stored; the E2E still runs on Postgres via ci_verifypostgres.
+#   - work tracking system kind. Only stored reports are read.
+#   - hosted (Kubernetes) tenant. Torn down 2026-09-26.
+#   - auth on with RBAC off. Same permissive branch as auth off; no new guard.
+
+schema_version: 1
+feature_id: epic-6298-report-pdf-export
+updated: 2026-10-17
+wave: DEVOPS
+
+target_environments:
+  - name: clean
+    description: >
+      Default instance: SQLite, authentication off, Community, seeded Terminology, demo data (Team
+      Lightspeed, about 100 days). No pre-seeded report; the E2E creates one and exports it.
+    platform: [linux, macos, windows]
+    preconditions: ["Demo data seeded", "Authentication off", "No licence file"]
+
+  - name: browser-chromium
+    description: "Chrome / Edge. The automated engine: Playwright's only project (headless), page.pdf for the font check."
+    platform: [linux, macos, windows]
+    verification: automated
+    preconditions: ["window.print stubbed in E2E (addInitScript recorder that dispatches afterprint)"]
+
+  - name: browser-firefox
+    description: "Firefox print engine. By-hand PDF of the busiest Team's report (DoD 7, G3)."
+    platform: [linux, windows]
+    verification: manual
+
+  - name: browser-webkit-safari
+    description: "Safari print engine. By hand; small spacing differences acceptable (D16)."
+    platform: [macos]
+    verification: manual
+
+  - name: standalone-linux-webkitgtk
+    description: "Tauri on WebKitGTK. Print verified by the DIVERGE probe; by-hand PDF per DoD 7."
+    platform: [linux]
+    verification: manual
+    status: verified
+
+  - name: standalone-windows-webview2
+    description: "Tauri on WebView2 (Chromium-based); expected to behave as Chrome. Not probed; checked by hand once."
+    platform: [windows]
+    verification: manual
+    status: unprobed
+
+  - name: standalone-macos-wkwebview
+    description: >
+      Tauri on WKWebView. Only released, non-inspectable builds exist, so it is checked by the maintainer
+      after the first release carrying slice 01 (Q2). afterprint may not fire; the screen-only Back control
+      covers it. A failure becomes a follow-up (D28).
+    platform: [macos]
+    verification: manual-after-release
+    status: unverified
+
+  - name: server-zip
+    description: "win-x64 / linux-x64 zips; the frontend (fonts in assets/, licenses/quicksand-OFL.txt) is in wwwroot."
+    platform: [linux, windows]
+    preconditions: ["Built by build-frontend + build-backend publish"]
+
+  - name: docker
+    description: "amd64 + arm64 image; node-builder dist copied into wwwroot before dotnet publish."
+    platform: [linux]
+
+  - name: offline-instance
+    description: >
+      No outbound internet. The app and the PDF render in bundled Quicksand; no request to Google Fonts
+      (index.html names no font host).
+    platform: [linux, macos, windows]
+    preconditions: ["Outbound network blocked"]
+
+  - name: theme-light
+    description: "Screen in light theme; print page light."
+    platform: [linux]
+
+  - name: theme-dark
+    description: "Screen in dark theme; the print page is still light (DDD-5); drawn marks on screen in both themes (DDD-10)."
+    platform: [linux]
+
+  - name: paper-a4
+    description: "A4 portrait, 12 mm margins: no panel split, footer never alone, no near-empty last page."
+    platform: [linux]
+
+  - name: paper-letter
+    description: "US Letter portrait, same rules as A4."
+    platform: [linux]
+
+  - name: renamed-terminology
+    description: "Team, Portfolio, Work Item, Cycle Time, Throughput, WIP, Work Item Age renamed; header, panels, how-to-read line use them."
+    platform: [linux]
+
+  - name: auth-on-rbac-on
+    description: "A Viewer with TeamRead / PortfolioRead sees and uses Export PDF (D14); no role -> the report is not readable, as today."
+    platform: [linux]
+    preconditions: ["Authentication enabled", "RBAC on", "Viewer profile"]
+
+  - name: usage-data-consented
+    description: >
+      The only environment where ReportPdfExportStarted (browser) and ReportOpened from lh / MCP leave the
+      instance. Also asserted: nothing without consent.
+    platform: [linux]
+
+  - name: clients-vs-older-lighthouse
+    description: >
+      lh / MCP against Lighthouse v26.10.10.1 or older: the reports gate refuses with "upgrade Lighthouse";
+      no read, no usage event.
+    platform: [linux]
+
+scenario_axes:
+  export_and_print_route:
+    slices: ["01"]
+    vary_over: [clean, browser-chromium]
+    rationale: "Walking skeleton: Export PDF on Lightspeed -> print page ready (data-render-ready) -> header, no chrome -> printed once (stub) -> back on the report. Loading and failure looks never print."
+  theme:
+    slices: ["01", "02"]
+    vary_over: [theme-light, theme-dark]
+    rationale: "Print page light under dark (01); drawn marks visible in both themes on screen (02)."
+  usage_data_emission:
+    slices: ["01", "04"]
+    vary_over: [usage-data-consented]
+    rationale: "01: one ReportPdfExportStarted per click with report_template ThenAndNow (an unmapped type reports nothing); print route emits nothing; return from print emits no ReportOpened. 04: lh report get / *_report_get emit ReportOpened with ThenAndNow, source Cli / Mcp; list, refusals and unknown types emit nothing. Each with and without consent."
+  fonts_and_marks:
+    slices: ["02"]
+    vary_over: [browser-chromium, offline-instance]
+    rationale: "Chromium page.pdf embeds only Quicksand; no external font host; licence file byte-equal to the package LICENSE."
+  page_breaks:
+    slices: ["02"]
+    vary_over: [paper-a4, paper-letter]
+    rationale: "break-inside avoid on summary and panels; footer kept with the last panel. Asserted by print-media CSS rules in Vitest, checked by hand on paper."
+  terminology:
+    slices: ["01", "03"]
+    vary_over: [clean, renamed-terminology]
+    rationale: "Header words (01) and the how-to-read line (03)."
+  access:
+    slices: ["01"]
+    vary_over: [clean, auth-on-rbac-on]
+    rationale: "Export follows read access only; Viewer included. Component/AT level, no @auth E2E."
+  manual_fidelity:
+    slices: ["01", "02", "03"]
+    vary_over: [browser-firefox, browser-webkit-safari, standalone-linux-webkitgtk, standalone-windows-webview2]
+    rationale: "DoD 7 by-hand PDFs; G3. Not automated."
+  packaging:
+    slices: ["02"]
+    vary_over: [server-zip, docker]
+    rationale: "Fonts and licenses/quicksand-OFL.txt present in wwwroot; G4 size delta <= 1 MB recorded in slice 02 evidence."
+  clients_version_gate:
+    slices: ["04"]
+    vary_over: [clients-vs-older-lighthouse]
+    rationale: "FEATURE_REQUIRES_SERVER_NEWER_THAN.reports = v26.10.10.1."
+  standalone_macos:
+    slices: ["01"]
+    vary_over: [standalone-macos-wkwebview]
+    rationale: "Post-release maintainer check (Q2); no automated scenario."
+
+coexistence_matrix:
+  - tool: "App shell (header, footer, survey nudge, usage-data ask) on every page"
+    must_not_break: true
+    note: "App.tsx splits the shell into a layout route; every existing route stays inside it."
+  - tool: "Theme switching"
+    must_not_break: true
+    note: "Themes move from main.tsx into an importable module; main.tsx still chooses by mode."
+  - tool: "Typography across the app"
+    must_not_break: true
+    note: "Google Fonts replaced by bundled Quicksand; headings declare 700 to keep today's look."
+  - tool: "ReportOpened counting (Epic 5878 K2)"
+    must_not_break: true
+    note: "Return from print carries a router-state marker; no second opening."
+  - tool: "Usage-data disclosure test and docs/settings/usagedata.md counts"
+    must_not_break: true
+    note: "One row added; every 'other N events' count +1; integers appended, never renumbered."
+  - tool: "Route-key matcher"
+    must_not_break: true
+    note: "/print/... maps to no key."
+  - tool: "E2E specs / POMs reading mark characters"
+    must_not_break: true
+    note: "Slice 02 replaces the characters with icons; locators use data-change-kind."
+  - tool: "lighthouse-clients tools, lighthouse skill, drift test"
+    must_not_break: true
+    note: "Four tools and lh report added; the lighthouse skill names them."
+  - tool: "lighthouse-clients release"
+    must_not_break: true
+    note: "Pending story-6247 changeset rides along; CI dry-run expected list gains lighthouse-reports."
+
+platform_coverage:
+  Linux: [Ubuntu 24.04, Standalone WebKitGTK]
+  macOS: [Standalone WKWebView (unverified, post-release), Safari (manual)]
+  Windows: [Standalone WebView2 (manual), Chrome / Edge]
+  CI: [GitHub Actions ubuntu-latest, Playwright chromium headless]
+
+deployment_assumptions:
+  - "Ships in the existing artifacts: server zips, Docker image + Helm chart, Standalone Tauri app. No chart change."
+  - "No migration, no endpoint, no stored data; rollback = previous release, nothing to undo."
+  - "public/licenses/quicksand-OFL.txt and the woff2 files reach wwwroot, the Docker image and the Tauri bundle with no config change."
+  - "One usage-data enum member (ReportPdfExportStarted, provisional 20, carrying report_template like ReportOpened); SPA and backend ship together."
+  - "Clients release independent of a Lighthouse release (reports endpoints shipped in v26.10.16.6); manual pnpm release:version + commit before it; one clients release carries slices 04 and 05 (maintainer, 2026-10-17, locked)."
