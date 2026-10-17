@@ -173,6 +173,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(features.Select(feature => feature.ReferenceId), Is.EqualTo(new List<string> { TheFeature }));
         }
 
+        /// <summary>
+        /// Two link types whose ends read alike leave a typed phrase undecided, and reading either would
+        /// quietly read the wrong links. Nothing is read, and the log says why, once for the refresh rather
+        /// than once per Feature or per download.
+        /// </summary>
+        [Test]
+        public async Task A_phrase_two_link_types_share_reads_nothing_and_is_named_once_in_the_log()
+        {
+            var log = new RecordingLogger<JiraWorkTrackingConnector>();
+            var subject = AnInstanceDefining(
+                [StockBlocks, Gate],
+                [
+                    JiraWireFormat.AnEpic(TheFeature, StockBlocks.LinkWhoseInwardIssueIs(WhatBlocksIt)),
+                    JiraWireFormat.AnEpic(WhatItBlocks, Gate.LinkWhoseInwardIssueIs(WhatGatesIt)),
+                ],
+                log);
+            var portfolio = APortfolioNamingAsItsDependencyField("blocks");
+
+            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
+            await subject.GetFeaturesForProject(portfolio, [TheFeature, WhatItBlocks], CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(features.SelectMany(WhatItWaitsOn), Is.Empty);
+                Assert.That(log.Warnings, Has.One.EqualTo(
+                    $"Portfolio {portfolio.Name}: its Dependency Field names 'blocks', which more than one Jira link type uses (Blocks, Gate). "
+                    + "Name a phrase only one of them uses."));
+            }
+        }
+
         private static string AFeatureThatBlocksOneAndIsBlockedByAnother()
             => JiraWireFormat.AnEpic(TheFeature, StockBlocks.LinkWhoseOutwardIssueIs(WhatItBlocks), StockBlocks.LinkWhoseInwardIssueIs(WhatBlocksIt));
 

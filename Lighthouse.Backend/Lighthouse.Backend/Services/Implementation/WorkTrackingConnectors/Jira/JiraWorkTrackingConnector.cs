@@ -105,6 +105,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private readonly ConcurrentDictionary<int, bool> connectionsWhoseCredentialWasAccepted = new();
 
+        /// <summary>
+        /// The Portfolios already told this refresh that their Dependency Field names a phrase several link
+        /// types share. A refresh reads a Portfolio's Features in more than one download, and the same
+        /// sentence once per download would only bury it.
+        /// </summary>
+        private readonly ConcurrentDictionary<int, bool> portfoliosToldTheirDependencyFieldIsShared = new();
+
         public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection) => true;
 
         /// <summary>
@@ -1238,6 +1245,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var theDependencyField = WhatTheNamedAdditionalFieldResolvedTo(
                 portfolio, portfolio.DependencyOverrideAdditionalFieldDefinitionId, customFieldReferences);
             StopUnlessTheDependencyFieldCouldBeLookedUp(portfolio, theDependencyField, resolution.LinkTypes);
+            WarnWhenTheDependencyFieldNamesAPhraseSeveralLinkTypesShare(portfolio, theDependencyField, resolution.LinkTypes);
             var dependencyFieldFindings = WhatReadingTheDependencyFieldFound(portfolio, theDependencyField);
 
             foreach (var issue in issues)
@@ -1297,6 +1305,35 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 + $"its issue link type list with {answer}, so the refresh was stopped. Nothing Lighthouse already holds was changed.",
                 $"GET {JiraRestRoutes.IssueLinkType} answered {answer}.",
                 JiraReadException.AdditionalFieldsFieldName));
+        }
+
+        /// <summary>
+        /// A phrase two link types both answer to reads nothing, which looks exactly like a Portfolio with no
+        /// dependencies. Naming the types that share it tells the administrator which phrase to type instead.
+        /// </summary>
+        private void WarnWhenTheDependencyFieldNamesAPhraseSeveralLinkTypesShare(
+            Portfolio portfolio, ResolvedReference theDependencyField, IssueLinkTypeListing linkTypes)
+        {
+            var named = TheDefinitionNamed(portfolio, portfolio.DependencyOverrideAdditionalFieldDefinitionId);
+
+            if (named is null || named.IsPredefined || !theDependencyField.ResolvedToNothing)
+            {
+                return;
+            }
+
+            var sharingTypes = linkTypes.Types.FindAll(linkType => linkType.AnswersTo(named.Reference));
+
+            if (sharingTypes.Count < 2 || !portfoliosToldTheirDependencyFieldIsShared.TryAdd(portfolio.Id, true))
+            {
+                return;
+            }
+
+            logger.LogWarning(
+                "Portfolio {PortfolioName}: its Dependency Field names '{Reference}', which more than one Jira link type uses ({LinkTypes}). "
+                + "Name a phrase only one of them uses.",
+                portfolio.Name,
+                named.Reference,
+                string.Join(", ", sharingTypes.Select(linkType => linkType.Name)));
         }
 
         /// <summary>
