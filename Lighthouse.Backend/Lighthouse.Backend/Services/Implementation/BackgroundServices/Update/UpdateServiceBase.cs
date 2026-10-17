@@ -226,6 +226,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         }
 
         /// <summary>
+        /// What an operator reads when a refresh stopped because the connector could not read something the
+        /// refresh needs. The connector's own sentence already says what failed and what was kept, so it is
+        /// passed on whole rather than reworded here.
+        /// </summary>
+        protected static string BuildReadFailureReason(WorkTrackingReadException failure)
+            => $"The work tracking system could not be read for this refresh: {failure.Verdict.Message}";
+
+        /// <summary>
         /// Tells connection health how this refresh ended, so the popover can say whether a credential is
         /// the reason the data stopped moving. A cancel is deliberately silent: somebody chose to stop it,
         /// and nothing was learned about the credential — recording it as a failure would put "authentication

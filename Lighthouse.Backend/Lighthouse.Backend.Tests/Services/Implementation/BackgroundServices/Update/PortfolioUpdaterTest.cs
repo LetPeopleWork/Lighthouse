@@ -2,9 +2,11 @@
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
@@ -31,6 +33,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private const string UnreadableValue = "unreadable-stored-value";
 
         private const string RefusalSentence = "Field 'sprnt' does not exist or you do not have permission to view it.";
+
+        private const string ReadFailureSentence =
+            "The relation types could not be listed, so the refresh was stopped. Nothing Lighthouse already holds was changed.";
 
         private const string RefusedQuery = "(project = PROJ AND sprnt is not EMPTY) AND issuetype = \"Epic\"";
 
@@ -742,6 +747,54 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                     + "Printed again underneath, one line carries the same query twice.");
             }
         }
+
+        [Test]
+        public void TriggerUpdate_ConnectorCouldNotReadWhatTheRefreshNeeds_TheSummarySaysWhyItStopped()
+        {
+            var project = SetupPortfolioWhoseReadFails();
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ReadReason(loggerMock), Does.Contain(ReadFailureSentence),
+                    "A stopped refresh whose summary says nothing leaves the operator guessing whether anything was kept.");
+                Assert.That(WhatTheRefreshThrew, Is.InstanceOf<WorkTrackingReadException>(),
+                    "Attaching a reason must not swallow the failure, or the refresh reads as one that worked.");
+                Assert.That(recordedRefresh?.Success, Is.False);
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_ConnectorCouldNotReadWhatTheRefreshNeeds_ThePortfolioAndTheTeamSurfacesSayTheSameThing()
+        {
+            var project = SetupPortfolioWhoseReadFails();
+            var team = CreateTeam();
+            team.UpdateTime = DateTime.Now.AddDays(-1);
+            teamRepoMock.Setup(x => x.GetAll()).Returns([team]);
+            teamRepoMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            teamDataServiceMock.Setup(x => x.UpdateTeamData(team)).ThrowsAsync(CreateReadFailure());
+
+            CreateSubject().TriggerUpdate(project.Id);
+            CreateTeamSubject().TriggerUpdate(team.Id);
+
+            Assert.That(ReadReason(teamLoggerMock), Is.EqualTo(ReadReason(loggerMock)));
+        }
+
+        private Portfolio SetupPortfolioWhoseReadFails()
+        {
+            var project = CreateProject(DateTime.Now.AddDays(-1));
+            SetupProjects(project);
+
+            workItemServiceMock
+                .Setup(x => x.UpdateFeaturesForPortfolio(project))
+                .ThrowsAsync(CreateReadFailure());
+
+            return project;
+        }
+
+        private static AzureDevOpsReadException CreateReadFailure()
+            => new(ConnectionValidationResult.Failure("relation_types_unreadable", ReadFailureSentence));
 
         private static int HowOftenItNames(string query, string reason)
         {

@@ -85,6 +85,12 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
                 throw;
             }
+            catch (WorkTrackingReadException failure)
+            {
+                outcome = outcome with { Reason = BuildReadFailureReason(failure) };
+
+                throw;
+            }
             finally
             {
                 stopwatch.Stop();
