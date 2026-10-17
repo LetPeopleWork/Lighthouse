@@ -116,10 +116,35 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             }
         }
 
-        private static bool Mentions(Type type, Type kept)
-            => type == kept
-                || (type.GetElementType() is { } element && Mentions(element, kept))
-                || type.GetGenericArguments().Any(argument => Mentions(argument, kept));
+        // A listing wrapped in a record of our own is still a listing kept, so the walk looks inside our types too.
+        private static bool Mentions(Type type, Type kept) => Mentions(type, kept, []);
+
+        private static bool Mentions(Type type, Type kept, HashSet<Type> visited)
+        {
+            if (type == kept)
+            {
+                return true;
+            }
+
+            if (!visited.Add(type))
+            {
+                return false;
+            }
+
+            if (type.GetElementType() is { } element && Mentions(element, kept, visited))
+            {
+                return true;
+            }
+
+            if (type.GetGenericArguments().Any(argument => Mentions(argument, kept, visited)))
+            {
+                return true;
+            }
+
+            return type.Assembly == kept.Assembly
+                && type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                    .Any(field => Mentions(field.FieldType, kept, visited));
+        }
 
         [Test]
         [Category("us-03")]
