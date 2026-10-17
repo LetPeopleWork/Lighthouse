@@ -1471,6 +1471,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         /// <summary>
+        /// The line is read by an administrator, so it names the setting as the screen does and says in a
+        /// plain sentence what is wrong and what to type instead.
+        /// </summary>
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_FullRefreshWhereTheDependencyFieldPointsBothWays_WarnsInPlainLanguage()
+        {
+            var portfolio = CreatePortfolio();
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([AFeatureWhoseDependencyFieldPointsBothWays("FTR-1", "Dependency", BothDependencyPhrases, TheFirstReadingDay)]);
+
+            NothingAboveTheFeaturesIsDownloaded();
+
+            await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
+
+            Assert.That(whatTheServiceWrote.Warnings, Has.One.EqualTo(
+                $"Portfolio {portfolio.Name}: its Dependency Field names 'Dependency', which points both ways. "
+                + "Name one end: 'depends on' or 'is depended on by'."));
+        }
+
+        /// <summary>
         /// The same misconfiguration in two different settings is two things for the administrator to fix,
         /// so each setting keeps its own finding.
         /// </summary>

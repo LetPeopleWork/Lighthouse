@@ -1007,18 +1007,38 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             foreach (var finding in findings)
             {
-                logger.LogWarning(
-                    "Portfolio {PortfolioName}: its {Setting} names '{Named}', which the refresh could not read as configured ({FindingKind}). "
-                    + "What it saw: {Seen}",
-                    portfolio.Name,
-                    finding.Setting,
-                    finding.Named,
-                    finding.Kind,
-                    string.Join(", ", finding.Seen.Select(seen => $"'{seen}'")));
+                WarnAbout(portfolio, finding);
             }
 
             return findings;
         }
+
+        private void WarnAbout(Portfolio portfolio, RefreshFinding finding)
+        {
+            var setting = TheNameAnAdministratorKnows(finding.Setting);
+
+            if (finding.Kind == RefreshFindingKind.NamedLinkPointsBothWays)
+            {
+                logger.LogWarning(
+                    "Portfolio {PortfolioName}: its {Setting} names '{Named}', which points both ways. Name one end: {Ends}.",
+                    portfolio.Name,
+                    setting,
+                    finding.Named,
+                    string.Join(" or ", finding.Seen.Select(seen => $"'{seen}'")));
+                return;
+            }
+
+            logger.LogWarning(
+                "Portfolio {PortfolioName}: its {Setting} names '{Named}', which the refresh could not read as configured. What it saw: {Seen}",
+                portfolio.Name,
+                setting,
+                finding.Named,
+                string.Join(", ", finding.Seen.Select(seen => $"'{seen}'")));
+        }
+
+        // The settings are named after the screen's labels, so spacing the words is the label.
+        private static string TheNameAnAdministratorKnows(RefreshFindingSetting setting)
+            => string.Concat(setting.ToString().Select((letter, at) => at > 0 && char.IsUpper(letter) ? $" {letter}" : $"{letter}"));
 
         /// <summary>The scan for the portfolio: the same Feature query, asking only for identity plus the remote change stamp.</summary>
         private async Task<IdentityScan> ScanRemoteFeatureIdentities(IWorkTrackingConnector connector, Portfolio portfolio)

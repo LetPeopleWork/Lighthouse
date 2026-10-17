@@ -1893,7 +1893,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                         answeringType.Name,
                         answeringType.DirectionReadFrom(reference),
                         answeringType.DependencyDirectionReadFrom(reference),
-                        [answeringType.Inward, answeringType.Outward]);
+                        [answeringType.Outward, answeringType.Inward]);
                 }
             }
 

@@ -24,6 +24,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static readonly JiraLinkType Gate = new("Gate", "is gated by", "blocks");
 
+        private static readonly string[] TheStockBlocksPhrasesOutwardFirst = ["blocks", "is blocked by"];
+
         /// <summary>
         /// Jira's stock Blocks type is named the word its outward end reads. Typed exactly as one end reads,
         /// the phrase says which end waits, so the advice to type "blocks" that the both-ways finding gives
@@ -61,6 +63,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(WhatItWaitsOn(feature), Is.Empty);
                 Assert.That(feature.RefreshFindings.Select(finding => finding.Kind), Is.EqualTo(new List<RefreshFindingKind> { RefreshFindingKind.NamedLinkPointsBothWays }));
             }
+        }
+
+        /// <summary>
+        /// The two phrases are always offered outward end first, so the advice reads "blocks" or "is blocked
+        /// by" on every instance rather than in whichever order the phrases happened to be read.
+        /// </summary>
+        [Test]
+        public async Task A_name_pointing_both_ways_offers_the_outward_phrase_before_the_inward_one()
+        {
+            var subject = AnInstanceDefining([StockBlocks], AFeatureThatBlocksOneAndIsBlockedByAnother());
+
+            var feature = (await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("Blocks"), CancellationToken.None)).Single();
+
+            Assert.That(feature.RefreshFindings.Single().Seen, Is.EqualTo(TheStockBlocksPhrasesOutwardFirst));
         }
 
         /// <summary>
